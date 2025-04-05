@@ -23,6 +23,28 @@ describe('resolveIncludes', () => {
     `);
   });
 
+  it('should replace #include directives with names containing alphanumeric and underscore characters', () => {
+    const source = `
+      void main() {
+        #include <common_vec2>
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      common_vec2: 'vec3 color = vec3(1.0, 0.0, 0.0);',
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toBe(`
+      void main() {
+        vec3 color = vec3(1.0, 0.0, 0.0);
+        gl_FragColor = vec4(1.0);
+      }
+    `);
+  });
+
   it('should throw an error if an #include directive has invalid syntax (missing include name)', () => {
     const source = `
       void main() {
