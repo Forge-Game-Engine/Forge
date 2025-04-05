@@ -33,7 +33,7 @@ describe('resolveIncludes', () => {
     const includeMap = {};
 
     expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Invalid syntax for at line 3:9. Expected #include <name> but got "#include <>"',
+      'Invalid shader syntax at line 3:9. Expected #include <name> but got "#include <>"',
     );
   });
 
@@ -47,7 +47,7 @@ describe('resolveIncludes', () => {
     const includeMap = {};
 
     expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Invalid syntax for at line 3:9. Expected #include <name> but got "#include"',
+      'Invalid shader syntax at line 3:9. Expected #include <name> but got "#include"',
     );
   });
 
@@ -61,7 +61,7 @@ describe('resolveIncludes', () => {
     const includeMap = {};
 
     expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Missing include: "missing" at line 3:9',
+      'Missing include for shader: "missing" at line 3:9',
     );
   });
 
