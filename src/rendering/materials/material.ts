@@ -1,3 +1,5 @@
+import { resolveIncludes } from '../shaders';
+
 type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
 
 interface UniformSpec {
@@ -15,8 +17,14 @@ export class Material {
     gl: WebGL2RenderingContext,
     vertexSource: string,
     fragmentSource: string,
+    includesMap: Record<string, string> = {},
   ) {
-    this.program = this._createProgram(gl, vertexSource, fragmentSource);
+    this.program = this._createProgram(
+      gl,
+      vertexSource,
+      fragmentSource,
+      includesMap,
+    );
     this._detectUniforms(gl);
   }
 
@@ -66,12 +74,19 @@ export class Material {
     gl: WebGL2RenderingContext,
     vertexSrc: string,
     fragmentSrc: string,
+    includesMap: Record<string, string>,
   ): WebGLProgram {
-    const vertexShader = this._compileShader(gl, vertexSrc, gl.VERTEX_SHADER);
+    const vertexShader = this._compileShader(
+      gl,
+      vertexSrc,
+      gl.VERTEX_SHADER,
+      includesMap,
+    );
     const fragmentShader = this._compileShader(
       gl,
       fragmentSrc,
       gl.FRAGMENT_SHADER,
+      includesMap,
     );
 
     const program = gl.createProgram()!;
@@ -91,10 +106,13 @@ export class Material {
     gl: WebGL2RenderingContext,
     source: string,
     type: GLenum,
+    includesMap: Record<string, string>,
   ): WebGLShader {
     const shader = gl.createShader(type)!;
 
-    gl.shaderSource(shader, source);
+    const sourceWithIncludes = resolveIncludes(source, includesMap);
+
+    gl.shaderSource(shader, sourceWithIncludes);
     gl.compileShader(shader);
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
