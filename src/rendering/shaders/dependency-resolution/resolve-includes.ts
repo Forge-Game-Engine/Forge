@@ -13,7 +13,7 @@ export function resolveIncludes(
 
         if (!match) {
           throw new Error(
-            `Invalid syntax for at line ${lineNumber + 1}:${line.indexOf('#include') + 1}. Expected #include <name> but got "${line.trim()}"`,
+            `Invalid shader syntax at line ${lineNumber + 1}:${line.indexOf('#include') + 1}. Expected #include <name> but got "${line.trim()}"`,
           );
         }
 
@@ -22,7 +22,7 @@ export function resolveIncludes(
 
         if (!name) {
           throw new Error(
-            `Invalid syntax for at line ${lineNumber + 1}:${col}. Expected #include <name> but got "${fullMatch}"`,
+            `Invalid shader syntax at line ${lineNumber + 1}:${col}. Expected #include <name> but got "${fullMatch}"`,
           );
         }
 
@@ -30,7 +30,7 @@ export function resolveIncludes(
           return line.replace(fullMatch, includeMap[name]);
         } else {
           throw new Error(
-            `Missing include: "${name}" at line ${lineNumber + 1}:${col}`,
+            `Missing include for shader: "${name}" at line ${lineNumber + 1}:${col}`,
           );
         }
       }
