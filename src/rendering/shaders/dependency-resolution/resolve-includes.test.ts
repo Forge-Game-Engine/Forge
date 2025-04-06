@@ -126,6 +126,72 @@ describe('resolveIncludes', () => {
     `);
   });
 
+  it('should handle multiple #include directives with duplicate uniforms', () => {
+    const source = `
+      #include <randomGradient>
+      #include <lighting>
+      void main() {
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      randomGradient: `
+        uniform float u_time;
+
+        vec2 randomGradient(vec2 p) {
+          p = p + 0.02;
+          float x = dot(p, vec2(123.4, 234.5));
+          float y = dot(p, vec2(234.5, 345.6));
+          vec2 gradient = vec2(x, y);
+          gradient = sin(gradient);
+          gradient = gradient * 43758.5453;
+
+          gradient = sin(gradient + u_time);
+          return gradient;
+        }
+      `,
+      lighting: `
+        uniform float u_time;
+
+        float lighting() {
+          float intensity = 0.5 * u_time;
+        }
+      `,
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            
+              uniform float u_time;
+
+              vec2 randomGradient(vec2 p) {
+                p = p + 0.02;
+                float x = dot(p, vec2(123.4, 234.5));
+                float y = dot(p, vec2(234.5, 345.6));
+                vec2 gradient = vec2(x, y);
+                gradient = sin(gradient);
+                gradient = gradient * 43758.5453;
+
+                gradient = sin(gradient + u_time);
+                return gradient;
+              }
+            
+            
+
+
+              float lighting() {
+                float intensity = 0.5 * u_time;
+              }
+            
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
   it('should not include the same snippet multiple times if already resolved', () => {
     const source = `
       #include <common>

@@ -2,6 +2,7 @@ export function resolveIncludes(
   source: string,
   includeMap: Record<string, string>,
   includesAlreadyResolved: string[] = [],
+  resolvedVariables: Set<string> = new Set(),
 ): string {
   const lines = source.split('\n');
 
@@ -35,19 +36,31 @@ export function resolveIncludes(
         if (includeMap[name]) {
           includesAlreadyResolved.push(name);
 
-          return line.replace(
-            fullMatch,
-            resolveIncludes(
-              includeMap[name],
-              includeMap,
-              includesAlreadyResolved,
-            ),
+          const resolvedContent = resolveIncludes(
+            includeMap[name],
+            includeMap,
+            includesAlreadyResolved,
+            resolvedVariables,
           );
+
+          return line.replace(fullMatch, resolvedContent);
         } else {
           throw new Error(
             `Missing include for shader: "${name}" at line ${lineNumber + 1}:${column}`,
           );
         }
+      }
+
+      const variableDeclarationMatch = line.match(
+        /^\s*(uniform|in)\s+\w+\s+\w+;/,
+      );
+
+      if (variableDeclarationMatch) {
+        if (resolvedVariables.has(line.trim())) {
+          return '';
+        }
+
+        resolvedVariables.add(line.trim());
       }
 
       return line;
