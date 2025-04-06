@@ -1,7 +1,7 @@
 import { Alignment, Fit, Layout, RiveEventPayload } from '@rive-app/webgl2';
 import * as forge from '../../../src';
 import { createStarfield } from '../create-starfield';
-import { createShipPilotScene } from './ship-pilot';
+import { createPerlinNoiseScene } from './perlin-noise';
 
 const riveFileUri = 'ui.riv';
 const riveStateMachine = 'Button';
@@ -10,8 +10,8 @@ const riveStartOnClickedEventName = 'OnClick';
 export async function createTitleScene(
   game: forge.Game,
   gameContainer: HTMLElement,
-  imageCache: forge.ImageCache,
   riveCache: forge.RiveCache,
+  time: forge.Time,
 ) {
   const scene = new forge.Scene('title-screen');
 
@@ -70,9 +70,7 @@ export async function createTitleScene(
   layerService.registerLayer(riveRenderLayer);
 
   onStartClickedEvent.registerListener(async () => {
-    game.registerScene(
-      await createShipPilotScene(game, gameContainer, imageCache),
-    );
+    game.registerScene(await createPerlinNoiseScene(game, gameContainer, time));
 
     game.deregisterScene(scene);
   });
