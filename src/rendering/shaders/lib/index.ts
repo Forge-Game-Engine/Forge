@@ -1,4 +1,5 @@
 export { default as perlinNoiseFragmentShader } from './perlin-noise.frag.glsl?raw';
+export { default as perlinNoiseShaderInclude } from './perlin-noise.include.glsl?raw';
 export { default as cubicShaderInclude } from './cubic.include.glsl?raw';
 export { default as quinticShaderInclude } from './quintic.include.glsl?raw';
 export { default as randomGradientShaderInclude } from './random-gradient.include.glsl?raw';
