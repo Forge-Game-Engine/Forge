@@ -11,11 +11,13 @@ esbenp
 Fira
 fract
 GLSL
+inigo
 lerp
 mediump
 Menlo
 perlin
 pingpong
+quilez
 Renderable
 requizits
 rnaumovs
