@@ -9,7 +9,7 @@ export const imageCache = new ImageCache();
 export const riveCache = new RiveCache();
 
 game.registerScene(
-  await createTitleScene(game, gameContainer, imageCache, riveCache),
+  await createTitleScene(game, gameContainer, riveCache, game.time),
 );
 
 game.run();
