@@ -12,6 +12,8 @@ import {
 import { Material } from './material';
 
 export class PerlinNoiseMaterial extends Material {
+  private readonly _time: Time;
+
   constructor(gl: WebGL2RenderingContext, resolution: Vector2, time: Time) {
     super(gl, spriteVertexShader, perlinNoiseFragmentShader, {
       randomGradient: randomGradientShaderInclude,
@@ -27,5 +29,11 @@ export class PerlinNoiseMaterial extends Material {
     );
 
     this.setUniform('u_time', time.time);
+
+    this._time = time;
+  }
+
+  protected override beforeBind(): void {
+    this.setUniform('u_time', this._time.time / 1000);
   }
 }
