@@ -115,12 +115,168 @@ describe('resolveIncludes', () => {
 
     const result = resolveIncludes(source, includeMap);
 
-    expect(result).toBe(`
-      vec3 color = vec3(1.0, 0.0, 0.0);
-      float intensity = 0.5;
+    expect(result).toMatchInlineSnapshot(`
+      "
+            vec3 color = vec3(1.0, 0.0, 0.0);
+            float intensity = 0.5;
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
+  it('should not include the same snippet multiple times if already resolved', () => {
+    const source = `
+      #include <common>
+      #include <common>
       void main() {
         gl_FragColor = vec4(1.0);
       }
+    `;
+    const includeMap = {
+      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            vec3 color = vec3(1.0, 0.0, 0.0);
+
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
+  it('should resolve nested includes and avoid duplicate inclusion', () => {
+    const source = `
+      #include <common>
+      #include <lighting>
+      void main() {
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      common: `
+        vec3 color = vec3(1.0, 0.0, 0.0);
+        #include <lighting>
+      `,
+      lighting: 'float intensity = 0.5;',
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            
+              vec3 color = vec3(1.0, 0.0, 0.0);
+              float intensity = 0.5;
+            
+
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
+  it('should not include the same snippet again if explicitly included after being resolved', () => {
+    const source = `
+      #include <common>
+      void main() {
+        #include <common>
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            vec3 color = vec3(1.0, 0.0, 0.0);
+            void main() {
+
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
+  it('should a basic circular reference', () => {
+    const source = `
+      #include <common>
+      void main() {
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      common: `
+        vec3 color = vec3(1.0, 0.0, 0.0);
+        #include <common>
+      `,
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            
+              vec3 color = vec3(1.0, 0.0, 0.0);
+
+            
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
+  });
+
+  it('should handle a complex circular reference', () => {
+    const source = `
+      #include <common>
+      void main() {
+        gl_FragColor = vec4(1.0);
+      }
+    `;
+    const includeMap = {
+      common: `
+        vec3 color = vec3(1.0, 0.0, 0.0);
+        #include <lighting>
+      `,
+      lighting: `
+        float intensity = 0.5;
+        #include <noise>
+      `,
+      noise: `
+        float noise = 0.1;
+        #include <common>
+      `,
+    };
+
+    const result = resolveIncludes(source, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            
+              vec3 color = vec3(1.0, 0.0, 0.0);
+              
+              float intensity = 0.5;
+              
+              float noise = 0.1;
+
+            
+            
+            
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
     `);
   });
 });

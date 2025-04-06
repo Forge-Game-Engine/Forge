@@ -1,6 +1,7 @@
 export function resolveIncludes(
   source: string,
   includeMap: Record<string, string>,
+  includesAlreadyResolved: string[] = [],
 ): string {
   const lines = source.split('\n');
 
@@ -18,19 +19,33 @@ export function resolveIncludes(
         }
 
         const [fullMatch, name] = match;
-        const col = line.indexOf(fullMatch) + 1;
+
+        const column = line.indexOf(fullMatch) + 1;
 
         if (!name) {
           throw new Error(
-            `Invalid shader syntax at line ${lineNumber + 1}:${col}. Expected #include <name> but got "${fullMatch}"`,
+            `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected #include <name> but got "${fullMatch}"`,
           );
         }
 
+        if (includesAlreadyResolved.includes(name)) {
+          return '';
+        }
+
         if (includeMap[name]) {
-          return line.replace(fullMatch, includeMap[name]);
+          includesAlreadyResolved.push(name);
+
+          return line.replace(
+            fullMatch,
+            resolveIncludes(
+              includeMap[name],
+              includeMap,
+              includesAlreadyResolved,
+            ),
+          );
         } else {
           throw new Error(
-            `Missing include for shader: "${name}" at line ${lineNumber + 1}:${col}`,
+            `Missing include for shader: "${name}" at line ${lineNumber + 1}:${column}`,
           );
         }
       }
