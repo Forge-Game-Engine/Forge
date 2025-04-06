@@ -274,7 +274,7 @@ describe('resolveIncludes', () => {
     `);
   });
 
-  it('should a basic circular reference', () => {
+  it('should handle a basic circular reference', () => {
     const source = `
       #include <common>
       void main() {
