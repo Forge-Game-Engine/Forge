@@ -1,5 +1,6 @@
 import { createContainer, Game, ImageCache, RiveCache } from '../../src';
 import { createTitleScene } from './scenes';
+import { createPerlinNoiseScene } from './scenes/perlin-noise';
 
 export const game = new Game();
 
@@ -9,7 +10,7 @@ export const imageCache = new ImageCache();
 export const riveCache = new RiveCache();
 
 game.registerScene(
-  await createTitleScene(game, gameContainer, riveCache, game.time),
+  await createPerlinNoiseScene(game, gameContainer, game.time),
 );
 
 game.run();
