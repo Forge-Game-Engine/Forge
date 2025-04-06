@@ -29,16 +29,11 @@ export class Material {
   }
 
   /**
-   * Sets a uniform value (number, vec2, matrix, texture, etc.).
-   */
-  public setUniform(name: string, value: UniformValue): void {
-    this._uniformValues.set(name, value);
-  }
-
-  /**
    * Binds the material (program, uniforms, textures).
    */
   public bind(gl: WebGL2RenderingContext): void {
+    this.beforeBind();
+
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -68,6 +63,17 @@ export class Material {
         gl.uniform1iv(loc, value);
       }
     }
+  }
+
+  /**
+   * Sets a uniform value (number, vec2, matrix, texture, etc.).
+   */
+  protected setUniform(name: string, value: UniformValue): void {
+    this._uniformValues.set(name, value);
+  }
+
+  protected beforeBind(): void {
+    // Override in subclasses for custom behavior before binding
   }
 
   private _createProgram(
