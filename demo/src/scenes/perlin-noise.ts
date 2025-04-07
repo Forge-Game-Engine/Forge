@@ -53,11 +53,11 @@ export async function createPerlinNoiseScene(
   world.addEntity(foregroundBatcher);
   world.addSystem(foregroundBatchingSystem);
 
-  const material = new forge.GradientMaterial(
+  const material = new forge.DemoMaterial(
     foregroundRenderLayer.context,
     new forge.Vector2(window.innerWidth, window.innerHeight),
-    await imageCache.getOrLoad('gradient.png'),
-    new forge.Vector2(0.1, 0.8),
+    await imageCache.getOrLoad('funny.png'),
+    game.time,
   );
 
   const renderable = new forge.Renderable(
