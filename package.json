@@ -46,7 +46,7 @@
     "@arethetypeswrong/cli": "^0.17.4",
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
-    "@vitest/ui": "^3.0.9",
+    "@vitest/ui": "^3.1.1",
     "cspell": "^8.18.1",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
