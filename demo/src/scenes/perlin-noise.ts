@@ -3,7 +3,7 @@ import * as forge from '../../../src';
 export async function createPerlinNoiseScene(
   game: forge.Game,
   gameContainer: HTMLElement,
-  time: forge.Time,
+  imageCache: forge.ImageCache,
 ) {
   const scene = new forge.Scene('title-screen');
 
@@ -53,10 +53,11 @@ export async function createPerlinNoiseScene(
   world.addEntity(foregroundBatcher);
   world.addSystem(foregroundBatchingSystem);
 
-  const material = new forge.PerlinNoiseMaterial(
+  const material = new forge.GradientMaterial(
     foregroundRenderLayer.context,
     new forge.Vector2(window.innerWidth, window.innerHeight),
-    time,
+    await imageCache.getOrLoad('gradient.png'),
+    new forge.Vector2(0.1, 0.8),
   );
 
   const renderable = new forge.Renderable(

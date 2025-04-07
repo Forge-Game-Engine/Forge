@@ -1,3 +1,4 @@
+import type { Vector3 } from '../../math';
 import { resolveIncludes } from '../shaders';
 
 type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
@@ -74,6 +75,13 @@ export class Material {
 
   protected beforeBind(): void {
     // Override in subclasses for custom behavior before binding
+  }
+
+  /**
+   * Converts a vector3 to a float32 array.
+   */
+  protected convertToFloat32Array(vector: Vector3): Float32Array {
+    return new Float32Array([vector.x / 255, vector.y / 255, vector.z / 255]);
   }
 
   private _createProgram(

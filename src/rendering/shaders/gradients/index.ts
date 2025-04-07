@@ -1,1 +1,1 @@
-export { default as radialGradientShader } from './radial.frag.glsl?raw';
+export { default as radialGradientShader } from './radial-gradient.frag.glsl?raw';

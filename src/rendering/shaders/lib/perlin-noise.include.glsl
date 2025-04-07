@@ -1,5 +1,3 @@
-uniform vec2 u_resolution;
-
 #include <randomGradient>
 #include <quintic>
 
