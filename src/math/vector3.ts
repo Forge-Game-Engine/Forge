@@ -136,7 +136,11 @@ export class Vector3 {
    * @returns A new Vector3 with floored components
    */
   public floorComponents(): Vector3 {
-    return new Vector3(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z));
+    return new Vector3(
+      Math.floor(this.x),
+      Math.floor(this.y),
+      Math.floor(this.z),
+    );
   }
 
   /**
