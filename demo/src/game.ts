@@ -9,7 +9,7 @@ export const imageCache = new ImageCache();
 export const riveCache = new RiveCache();
 
 game.registerScene(
-  await createPerlinNoiseScene(game, gameContainer, game.time),
+  await createPerlinNoiseScene(game, gameContainer, imageCache),
 );
 
 game.run();
