@@ -63,7 +63,7 @@
     "vitest": "^3.0.9"
   },
   "dependencies": {
-    "@rive-app/webgl2": "^2.26.7",
+    "@rive-app/webgl2": "^2.26.9",
     "@types/howler": "^2.2.12",
     "@types/seedrandom": "^3.0.8",
     "howler": "^2.2.4",
