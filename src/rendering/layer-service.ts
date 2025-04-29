@@ -1,3 +1,4 @@
+import type { Stoppable } from '../common';
 import { Vector2 } from '../math';
 import { RenderLayer } from './render-layers/render-layer';
 import { type CLEAR_STRATEGY_KEYS } from './types';
@@ -16,14 +17,21 @@ export interface CreateLayerOptions {
 /**
  * The `LayerService` class manages the creation, registration, and resizing of render layers.
  */
-export class LayerService {
+export class LayerService implements Stoppable {
   private _layers: Map<string, RenderLayer>;
+  private _resizeListener: (event: Event) => void;
 
   /**
    * Constructs a new instance of the `LayerService` class.
    */
   constructor() {
     this._layers = new Map();
+
+    this._resizeListener = () => {
+      this.resizeAllLayers();
+    };
+
+    window.addEventListener('resize', this._resizeListener);
   }
 
   /**
@@ -62,5 +70,12 @@ export class LayerService {
     for (const layer of this._layers.values()) {
       layer.resize(newDimensions.x, newDimensions.y);
     }
+  }
+
+  /**
+   * Cleans up the layer service by removing the resize event listener.
+   */
+  public stop() {
+    window.removeEventListener('resize', this._resizeListener);
   }
 }

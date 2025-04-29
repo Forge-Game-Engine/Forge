@@ -5,7 +5,7 @@ export * from './sprite';
 export * from './systems';
 export * from './transforms';
 export * from './types';
-export * from './create-canvas';
+export * from './utilities';
 export * from './materials';
 export * from './geometry';
 export * from './renderable';
