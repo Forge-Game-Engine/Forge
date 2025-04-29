@@ -12,7 +12,7 @@ export function addForgeRenderLayer(
   world: World,
   cameraEntity: Entity,
 ) {
-  const canvas = createCanvas(`$forge-layer-${layerName}`, gameContainer);
+  const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer);
   const layer = new ForgeRenderLayer(layerName, canvas);
 
   layerService.registerLayer(layer);
