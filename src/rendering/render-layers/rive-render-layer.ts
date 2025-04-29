@@ -12,7 +12,7 @@ import type { Stoppable } from '../../common';
 /**
  * The `RiveRenderLayer` class represents a rendering layer with its own canvas and rive instance.
  */
-export class RiveRenderLayer extends RenderLayer implements Stoppable {
+export class RiveRenderLayer extends RenderLayer {
   /** The Rive instance associated with the render layer. */
   public rive: Rive;
 
