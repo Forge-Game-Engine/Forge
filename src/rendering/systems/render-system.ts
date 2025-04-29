@@ -2,10 +2,9 @@ import { PositionComponent } from '../../common';
 import { Entity, System } from '../../ecs';
 import { RenderableBatchComponent } from '../components';
 import { Matrix3x3, Vector2 } from '../../math';
-import { createProjectionMatrix } from '../shaders/utils/create-projection-matrix';
+import { createProjectionMatrix } from '../shaders';
 import { CameraComponent } from '../components';
 import type { ForgeRenderLayer } from '../render-layers';
-import type { Camera } from '../camera';
 
 const FLOATS_PER_MATRIX = 9;
 
@@ -16,7 +15,7 @@ export interface RenderSystemOptions {
 
 export class RenderSystem extends System {
   private _layer: ForgeRenderLayer;
-  private _camera: Camera;
+  private _camera: CameraComponent;
   private _cameraPosition: Vector2;
   private _instanceBuffer: WebGLBuffer;
 
