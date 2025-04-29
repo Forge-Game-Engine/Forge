@@ -1,7 +1,7 @@
 import type { Stoppable } from '../common';
 import type { Updatable } from '../game';
 import { Entity, filterEntitiesByComponents } from './entity';
-import type { System } from './types';
+import type { Component, System } from './types';
 
 /**
  * Represents the world in the Entity-Component-System (ECS) architecture.
@@ -186,6 +186,19 @@ export class World implements Updatable, Stoppable {
     this.raiseOnEntitiesChangedEvent();
 
     return this;
+  }
+
+  /**
+   * Builds and adds an entity to the world.
+   * @param name - The name of the entity.
+   * @param components - The components to add to the entity.
+   * @returns The created entity.
+   */
+  public buildAndAddEntity(name: string, components: Component[]): Entity {
+    const entity = new Entity(name, components);
+    this.addEntity(entity);
+
+    return entity;
   }
 
   /**
