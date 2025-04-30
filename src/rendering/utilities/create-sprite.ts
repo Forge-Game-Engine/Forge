@@ -4,6 +4,12 @@ import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
 import { Sprite } from '../sprite';
 
+/**
+ * Creates a sprite using the provided image and render layer.
+ * @param image - The image to use for the sprite.
+ * @param renderLayer - The render layer to which the sprite will be added.
+ * @returns The created sprite.
+ */
 export function createSprite(
   image: HTMLImageElement,
   renderLayer: ForgeRenderLayer,

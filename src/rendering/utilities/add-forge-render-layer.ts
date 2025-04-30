@@ -5,6 +5,16 @@ import { ForgeRenderLayer } from '../render-layers';
 import { RenderSystem, SpriteBatchingSystem } from '../systems';
 import { createCanvas } from './create-canvas';
 
+/**
+ * Adds a Forge render layer to the game container and registers it with the layer service.
+ * It also creates a render system and a batching system for the layer.
+ * @param layerName - The name of the layer.
+ * @param gameContainer - The HTML element that will contain the canvas.
+ * @param layerService - The layer service to register the layer with.
+ * @param world - The ECS world to which the systems will be added.
+ * @param cameraEntity - The entity representing the camera.
+ * @returns An array containing the created layer and canvas.
+ */
 export function addForgeRenderLayer(
   layerName: string,
   gameContainer: HTMLElement,
