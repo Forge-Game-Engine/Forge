@@ -3,6 +3,11 @@ import type { LayerService } from '../layer-service';
 import { ForgeRenderLayer } from '../render-layers';
 import { addForgeRenderLayer } from './add-forge-render-layer';
 
+type LayerDetail = {
+  layer: ForgeRenderLayer;
+  canvas: HTMLCanvasElement;
+};
+
 /**
  * Adds multiple Forge render layers to the game container and registers them with the layer service.
  * It also creates a render system and a batching system per layer.
@@ -20,12 +25,10 @@ export function addForgeRenderLayers(
   world: World,
   cameraEntity: Entity,
 ) {
-  const layerDetails = new Array<
-    Readonly<[ForgeRenderLayer, HTMLCanvasElement]>
-  >();
+  const layerDetails = new Array<LayerDetail>();
 
   for (const layerName of layerNames) {
-    const layerDetail = addForgeRenderLayer(
+    const [layer, canvas] = addForgeRenderLayer(
       layerName,
       gameContainer,
       layerService,
@@ -33,7 +36,7 @@ export function addForgeRenderLayers(
       cameraEntity,
     );
 
-    layerDetails.push(layerDetail);
+    layerDetails.push({ layer, canvas });
   }
 
   return layerDetails;
