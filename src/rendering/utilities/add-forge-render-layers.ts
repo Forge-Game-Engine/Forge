@@ -3,6 +3,11 @@ import type { LayerService } from '../layer-service';
 import { ForgeRenderLayer } from '../render-layers';
 import { addForgeRenderLayer } from './add-forge-render-layer';
 
+/**
+ * Represents the details of a Forge render layer, including the layer itself and its associated canvas.
+ * @property layer - The Forge render layer instance.
+ * @property canvas - The HTML canvas element associated with the render layer.
+ */
 type LayerDetail = {
   layer: ForgeRenderLayer;
   canvas: HTMLCanvasElement;
