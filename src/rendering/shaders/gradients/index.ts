@@ -1,1 +1,3 @@
-export { default as radialGradientShader } from './radial-gradient.frag.glsl?raw';
+import radialGradientShaderSource from './radial-gradient.frag.glsl?raw';
+
+export const radialGradientShader = radialGradientShaderSource;
