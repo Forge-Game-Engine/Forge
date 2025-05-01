@@ -1,7 +1,6 @@
 import {
   createContainer,
   cubicShaderInclude,
-  ForgeShaderSource,
   Game,
   ImageCache,
   perlinNoiseFragmentShader,
@@ -27,18 +26,22 @@ export const imageCache = new ImageCache();
 export const riveCache = new RiveCache();
 export const shaderStore = new ShaderStore();
 
-shaderStore.addInclude(new ForgeShaderSource(cubicShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(perlinNoiseShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(quinticShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(radialGradientShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(randomGradientShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(sdfCircleShaderInclude));
-shaderStore.addInclude(new ForgeShaderSource(sdfOrientedBoxShaderInclude));
+shaderStore.addInclude(
+  cubicShaderInclude,
+  perlinNoiseShaderInclude,
+  quinticShaderInclude,
+  radialGradientShaderInclude,
+  randomGradientShaderInclude,
+  sdfCircleShaderInclude,
+  sdfOrientedBoxShaderInclude,
+);
 
-shaderStore.addShader(new ForgeShaderSource(radialGradientShader));
-shaderStore.addShader(new ForgeShaderSource(perlinNoiseFragmentShader));
-shaderStore.addShader(new ForgeShaderSource(spriteFragmentShader));
-shaderStore.addShader(new ForgeShaderSource(spriteVertexShader));
+shaderStore.addShader(
+  radialGradientShader,
+  perlinNoiseFragmentShader,
+  spriteFragmentShader,
+  spriteVertexShader,
+);
 
 game.registerScene(
   await createPerlinNoiseScene(game, gameContainer, imageCache, shaderStore),
