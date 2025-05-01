@@ -8,6 +8,7 @@ export async function createShipPilotScene(
   game: forge.Game,
   gameContainer: HTMLElement,
   imageCache: forge.ImageCache,
+  shaderStore: forge.ShaderStore,
 ) {
   const scene = new forge.Scene('ship-pilot');
 
@@ -75,7 +76,7 @@ export async function createShipPilotScene(
   world.addEntity(foregroundBatcher);
   world.addEntity(backgroundBatcher);
 
-  await createShip(imageCache, foregroundRenderLayer, world);
+  await createShip(imageCache, foregroundRenderLayer, world, shaderStore);
 
   const starfieldComponent = new StarfieldComponent(10_000, worldSpace);
 
@@ -86,6 +87,7 @@ export async function createShipPilotScene(
   const image = await imageCache.getOrLoad('star_small.png');
   const material = new forge.SpriteMaterial(
     backgroundRenderLayer.context,
+    shaderStore,
     image,
   );
 

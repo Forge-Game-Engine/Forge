@@ -5,10 +5,15 @@ export const createShip = async (
   imageCache: forge.ImageCache,
   renderLayer: forge.ForgeRenderLayer,
   world: forge.World,
+  shaderStore: forge.ShaderStore,
 ) => {
   const image = await imageCache.getOrLoad('ship.png');
 
-  const material = new forge.SpriteMaterial(renderLayer.context, image);
+  const material = new forge.SpriteMaterial(
+    renderLayer.context,
+    shaderStore,
+    image,
+  );
   const renderable = new forge.Renderable(
     forge.createQuadGeometry(renderLayer.context),
     material,
