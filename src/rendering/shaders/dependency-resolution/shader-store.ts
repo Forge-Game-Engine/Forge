@@ -1,4 +1,4 @@
-import type { ForgeShaderSource } from './forge-shader-source';
+import { ForgeShaderSource } from './forge-shader-source';
 import { resolveIncludes } from './resolve-includes';
 
 export class ShaderStore {
@@ -12,20 +12,28 @@ export class ShaderStore {
     this._resolvedShaders = new Map();
   }
 
-  public addShader(shader: ForgeShaderSource): void {
-    if (this._shaders.includes(shader)) {
-      return;
-    }
+  public addShader(...shaders: string[]): void {
+    for (const shader of shaders) {
+      const shaderSource = new ForgeShaderSource(shader);
 
-    this._shaders.push(shader);
+      if (this._shaders.includes(shaderSource)) {
+        return;
+      }
+
+      this._shaders.push(shaderSource);
+    }
   }
 
-  public addInclude(shader: ForgeShaderSource): void {
-    if (this._includes.includes(shader)) {
-      return;
-    }
+  public addInclude(...shaders: string[]): void {
+    for (const shader of shaders) {
+      const shaderSource = new ForgeShaderSource(shader);
 
-    this._includes.push(shader);
+      if (this._includes.includes(shaderSource)) {
+        return;
+      }
+
+      this._includes.push(shaderSource);
+    }
   }
 
   public getShader(name: string): string {
