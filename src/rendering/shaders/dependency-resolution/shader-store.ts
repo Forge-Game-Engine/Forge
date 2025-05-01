@@ -16,8 +16,12 @@ export class ShaderStore {
     for (const shader of shaders) {
       const shaderSource = new ForgeShaderSource(shader);
 
-      if (this._shaders.includes(shaderSource)) {
-        return;
+      if (
+        this._shaders.find(
+          (existingShader) => existingShader.name === shaderSource.name,
+        )
+      ) {
+        continue;
       }
 
       this._shaders.push(shaderSource);
@@ -28,8 +32,12 @@ export class ShaderStore {
     for (const shader of shaders) {
       const shaderSource = new ForgeShaderSource(shader);
 
-      if (this._includes.includes(shaderSource)) {
-        return;
+      if (
+        this._shaders.find(
+          (existingShader) => existingShader.name === shaderSource.name,
+        )
+      ) {
+        continue;
       }
 
       this._includes.push(shaderSource);
