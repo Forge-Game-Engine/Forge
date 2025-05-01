@@ -13,21 +13,25 @@ import {
   spriteVertexShader,
 } from '../shaders';
 
-export const shaderStore = new ShaderStore();
+export function createShaderStore() {
+  const shaderStore = new ShaderStore();
 
-shaderStore.addInclude(
-  cubicShaderInclude,
-  perlinNoiseShaderInclude,
-  quinticShaderInclude,
-  radialGradientShaderInclude,
-  randomGradientShaderInclude,
-  sdfCircleShaderInclude,
-  sdfOrientedBoxShaderInclude,
-);
+  shaderStore.addInclude(
+    cubicShaderInclude,
+    perlinNoiseShaderInclude,
+    quinticShaderInclude,
+    radialGradientShaderInclude,
+    randomGradientShaderInclude,
+    sdfCircleShaderInclude,
+    sdfOrientedBoxShaderInclude,
+  );
 
-shaderStore.addShader(
-  radialGradientShader,
-  perlinNoiseFragmentShader,
-  spriteFragmentShader,
-  spriteVertexShader,
-);
+  shaderStore.addShader(
+    radialGradientShader,
+    perlinNoiseFragmentShader,
+    spriteFragmentShader,
+    spriteVertexShader,
+  );
+
+  return shaderStore;
+}
