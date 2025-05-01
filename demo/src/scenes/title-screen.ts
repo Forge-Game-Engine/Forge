@@ -12,6 +12,7 @@ export async function createTitleScene(
   gameContainer: HTMLElement,
   riveCache: forge.RiveCache,
   imageCache: forge.ImageCache,
+  shaderStore: forge.ShaderStore,
 ) {
   const scene = new forge.Scene('title-screen');
 
@@ -71,7 +72,12 @@ export async function createTitleScene(
 
   onStartClickedEvent.registerListener(async () => {
     game.registerScene(
-      await createPerlinNoiseScene(game, gameContainer, imageCache),
+      await createPerlinNoiseScene(
+        game,
+        gameContainer,
+        imageCache,
+        shaderStore,
+      ),
     );
 
     game.deregisterScene(scene);
