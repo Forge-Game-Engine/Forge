@@ -33,8 +33,8 @@ export class ShaderStore {
       const shaderSource = new ForgeShaderSource(shader);
 
       if (
-        this._shaders.find(
-          (existingShader) => existingShader.name === shaderSource.name,
+        this._includes.find(
+          (existingInclude) => existingInclude.name === shaderSource.name,
         )
       ) {
         continue;
