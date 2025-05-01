@@ -1,3 +1,5 @@
+#property name: sdfOrientedBox
+
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfOrientedBox(in vec2 p, in vec2 a, in vec2 b, float th) {
   float l = length(b - a);

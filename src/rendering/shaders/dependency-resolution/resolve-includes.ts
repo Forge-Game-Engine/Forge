@@ -1,14 +1,17 @@
+import type { ForgeShaderSource } from './forge-shader-source';
+
 export function resolveIncludes(
-  source: string,
-  includeMap: Record<string, string>,
+  source: ForgeShaderSource,
+  includeMap: ForgeShaderSource[],
   includesAlreadyResolved: string[] = [],
   resolvedVariables: Set<string> = new Set(),
 ): string {
-  const lines = source.split('\n');
+  const lines = source.rawSource.split('\n');
 
-  return lines
+  const processedLines = lines
     .map((line, lineNumber) =>
       processLine(
+        source,
         line,
         lineNumber,
         includeMap,
@@ -17,17 +20,22 @@ export function resolveIncludes(
       ),
     )
     .join('\n');
+
+  // Remove consecutive empty lines
+  return processedLines.replace(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
 }
 
 function processLine(
+  source: ForgeShaderSource,
   line: string,
   lineNumber: number,
-  includeMap: Record<string, string>,
+  includeMap: ForgeShaderSource[],
   includesAlreadyResolved: string[],
   resolvedVariables: Set<string>,
 ): string {
   if (isIncludeLine(line)) {
     return processIncludeLine(
+      source,
       line,
       lineNumber,
       includeMap,
@@ -36,8 +44,12 @@ function processLine(
     );
   }
 
-  if (isVariableDeclaration(line)) {
-    return processVariableDeclaration(line, resolvedVariables);
+  if (isVariableDeclarationLine(line)) {
+    return processVariableDeclarationLine(line, resolvedVariables);
+  }
+
+  if (isPropertyLine(line)) {
+    return processPropertyLine();
   }
 
   return line;
@@ -48,9 +60,10 @@ function isIncludeLine(line: string): boolean {
 }
 
 function processIncludeLine(
+  source: ForgeShaderSource,
   line: string,
   lineNumber: number,
-  includeMap: Record<string, string>,
+  includeMap: ForgeShaderSource[],
   includesAlreadyResolved: string[],
   resolvedVariables: Set<string>,
 ): string {
@@ -58,7 +71,7 @@ function processIncludeLine(
 
   if (!match) {
     throw new Error(
-      `Invalid shader syntax at line ${lineNumber + 1}:${line.indexOf('#include') + 1}. Expected #include <name> but got "${line.trim()}"`,
+      `Invalid shader syntax at line ${lineNumber + 1}:${line.indexOf('#include') + 1}. Expected #include <name> but got "${line.trim()}" when resolving "${source.name}"`,
     );
   }
 
@@ -67,7 +80,7 @@ function processIncludeLine(
 
   if (!name) {
     throw new Error(
-      `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected #include <name> but got "${fullMatch}"`,
+      `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected #include <name> but got "${fullMatch}" when resolving "${source.name}"`,
     );
   }
 
@@ -75,16 +88,18 @@ function processIncludeLine(
     return '';
   }
 
-  if (!includeMap[name]) {
+  const includeSource = includeMap.find((include) => include.name === name);
+
+  if (!includeSource) {
     throw new Error(
-      `Missing include for shader: "${name}" at line ${lineNumber + 1}:${column}`,
+      `Missing include for shader: "${name}" at line ${lineNumber + 1}:${column} when resolving "${source.name}"`,
     );
   }
 
   includesAlreadyResolved.push(name);
 
   const resolvedContent = resolveIncludes(
-    includeMap[name],
+    includeSource,
     includeMap,
     includesAlreadyResolved,
     resolvedVariables,
@@ -93,11 +108,11 @@ function processIncludeLine(
   return line.replace(fullMatch, resolvedContent);
 }
 
-function isVariableDeclaration(line: string): boolean {
+function isVariableDeclarationLine(line: string): boolean {
   return /^\s*(uniform|in)\s+\w+\s+\w+;/.test(line);
 }
 
-function processVariableDeclaration(
+function processVariableDeclarationLine(
   line: string,
   resolvedVariables: Set<string>,
 ): string {
@@ -107,4 +122,12 @@ function processVariableDeclaration(
 
   resolvedVariables.add(line.trim());
   return line;
+}
+
+function isPropertyLine(line: string): boolean {
+  return line.includes('#property');
+}
+
+function processPropertyLine(): string {
+  return '';
 }

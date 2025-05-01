@@ -1,5 +1,7 @@
 #version 300 es
 
+#property name: sprite.vert
+
 in vec2 a_position;    // 2D vertex position
 in vec2 a_texCoord;    // Texture coordinate
 

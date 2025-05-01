@@ -1,3 +1,5 @@
+#property name: perlinNoise
+
 #include <randomGradient>
 #include <quintic>
 

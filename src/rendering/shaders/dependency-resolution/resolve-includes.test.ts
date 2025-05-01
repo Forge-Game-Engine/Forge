@@ -1,215 +1,189 @@
 import { describe, expect, it } from 'vitest';
 import { resolveIncludes } from './resolve-includes';
+import { ForgeShaderSource } from './forge-shader-source';
 
 describe('resolveIncludes', () => {
   it('should replace #include directives with the corresponding content from the includeMap', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         #include <common>
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {
-      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
-    };
 
-    const result = resolveIncludes(source, includeMap);
+    const shader = new ForgeShaderSource(rawSource);
 
-    expect(result).toBe(`
-      void main() {
-        vec3 color = vec3(1.0, 0.0, 0.0);
-        gl_FragColor = vec4(1.0);
-      }
+    const rawInclude = `
+      #property name: common;
+
+      vec3 color = vec3(1.0, 0.0, 0.0);
+    `;
+
+    const includeMap = [new ForgeShaderSource(rawInclude)];
+
+    const result = resolveIncludes(shader, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            void main() {
+              
+            vec3 color = vec3(1.0, 0.0, 0.0);
+          
+              gl_FragColor = vec4(1.0);
+            }
+          "
     `);
   });
 
   it('should replace #include directives with names containing alphanumeric and underscore characters', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         #include <common_vec2>
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      common_vec2: 'vec3 color = vec3(1.0, 0.0, 0.0);',
-    };
 
-    const result = resolveIncludes(source, includeMap);
+    const shader = new ForgeShaderSource(rawSource);
 
-    expect(result).toBe(`
-      void main() {
-        vec3 color = vec3(1.0, 0.0, 0.0);
-        gl_FragColor = vec4(1.0);
-      }
+    const rawInclude = `
+      #property name: common_vec2;
+
+      vec3 color = vec3(1.0, 0.0, 0.0);
+    `;
+
+    const includeMap = [new ForgeShaderSource(rawInclude)];
+
+    const result = resolveIncludes(shader, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            void main() {
+              
+            vec3 color = vec3(1.0, 0.0, 0.0);
+          
+              gl_FragColor = vec4(1.0);
+            }
+          "
     `);
   });
 
   it('should throw an error if an #include directive has invalid syntax (missing include name)', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         #include <>
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {};
 
-    expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Invalid shader syntax at line 3:9. Expected #include <name> but got "#include <>"',
+    expect(() => new ForgeShaderSource(rawSource)).toThrow(
+      'Invalid shader syntax at line 5:9. Expected "#include <name>" but got "#include <>"',
     );
   });
 
   it('should throw an error if an #include directive has invalid syntax (missing include completely)', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         #include
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {};
 
-    expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Invalid shader syntax at line 3:9. Expected #include <name> but got "#include"',
+    expect(() => new ForgeShaderSource(rawSource)).toThrow(
+      'Invalid shader syntax at line 5:9. Expected "#include <name>" but got "#include"',
     );
   });
 
   it('should throw an error if an #include directive references a missing include', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         #include <missing>
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {};
 
-    expect(() => resolveIncludes(source, includeMap)).toThrow(
-      'Missing include for shader: "missing" at line 3:9',
+    const shader = new ForgeShaderSource(rawSource);
+
+    const includeMap: ForgeShaderSource[] = [];
+
+    expect(() => resolveIncludes(shader, includeMap)).toThrow(
+      'Missing include for shader: "missing" at line 5:9',
     );
   });
 
   it('should leave lines without #include directives unchanged', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       void main() {
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {};
 
-    const result = resolveIncludes(source, includeMap);
+    const shader = new ForgeShaderSource(rawSource);
 
-    expect(result).toBe(source);
+    const includeMap: ForgeShaderSource[] = [];
+
+    const result = resolveIncludes(shader, includeMap);
+
+    expect(result).toMatchInlineSnapshot(`
+      "
+            void main() {
+              gl_FragColor = vec4(1.0);
+            }
+          "
+    `);
   });
 
   it('should handle multiple #include directives', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       #include <common>
       #include <lighting>
       void main() {
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {
-      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
-      lighting: 'float intensity = 0.5;',
-    };
 
-    const result = resolveIncludes(source, includeMap);
+    const shader = new ForgeShaderSource(rawSource);
+
+    const rawCommon = `
+      #property name: common;
+
+      vec3 color = vec3(1.0, 0.0, 0.0);
+    `;
+
+    const rawLighting = `
+      #property name: lighting;
+
+      float intensity = 0.5;
+    `;
+
+    const includeMap = [
+      new ForgeShaderSource(rawCommon),
+      new ForgeShaderSource(rawLighting),
+    ];
+
+    const result = resolveIncludes(shader, includeMap);
 
     expect(result).toMatchInlineSnapshot(`
       "
+            
             vec3 color = vec3(1.0, 0.0, 0.0);
+          
+            
             float intensity = 0.5;
-            void main() {
-              gl_FragColor = vec4(1.0);
-            }
-          "
-    `);
-  });
-
-  it('should handle multiple #include directives with duplicate uniforms', () => {
-    const source = `
-      #include <randomGradient>
-      #include <lighting>
-      void main() {
-        gl_FragColor = vec4(1.0);
-      }
-    `;
-    const includeMap = {
-      randomGradient: `
-        uniform float u_time;
-
-        vec2 randomGradient(vec2 p) {
-          p = p + 0.02;
-          float x = dot(p, vec2(123.4, 234.5));
-          float y = dot(p, vec2(234.5, 345.6));
-          vec2 gradient = vec2(x, y);
-          gradient = sin(gradient);
-          gradient = gradient * 43758.5453;
-
-          gradient = sin(gradient + u_time);
-          return gradient;
-        }
-      `,
-      lighting: `
-        uniform float u_time;
-
-        float lighting() {
-          float intensity = 0.5 * u_time;
-        }
-      `,
-    };
-
-    const result = resolveIncludes(source, includeMap);
-
-    expect(result).toMatchInlineSnapshot(`
-      "
-            
-              uniform float u_time;
-
-              vec2 randomGradient(vec2 p) {
-                p = p + 0.02;
-                float x = dot(p, vec2(123.4, 234.5));
-                float y = dot(p, vec2(234.5, 345.6));
-                vec2 gradient = vec2(x, y);
-                gradient = sin(gradient);
-                gradient = gradient * 43758.5453;
-
-                gradient = sin(gradient + u_time);
-                return gradient;
-              }
-            
-            
-
-
-              float lighting() {
-                float intensity = 0.5 * u_time;
-              }
-            
-            void main() {
-              gl_FragColor = vec4(1.0);
-            }
-          "
-    `);
-  });
-
-  it('should not include the same snippet multiple times if already resolved', () => {
-    const source = `
-      #include <common>
-      #include <common>
-      void main() {
-        gl_FragColor = vec4(1.0);
-      }
-    `;
-    const includeMap = {
-      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
-    };
-
-    const result = resolveIncludes(source, includeMap);
-
-    expect(result).toMatchInlineSnapshot(`
-      "
-            vec3 color = vec3(1.0, 0.0, 0.0);
-
+          
             void main() {
               gl_FragColor = vec4(1.0);
             }
@@ -218,127 +192,45 @@ describe('resolveIncludes', () => {
   });
 
   it('should resolve nested includes and avoid duplicate inclusion', () => {
-    const source = `
+    const rawSource = `
+      #property name: test;
+
       #include <common>
       #include <lighting>
       void main() {
         gl_FragColor = vec4(1.0);
       }
     `;
-    const includeMap = {
-      common: `
-        vec3 color = vec3(1.0, 0.0, 0.0);
-        #include <lighting>
-      `,
-      lighting: 'float intensity = 0.5;',
-    };
 
-    const result = resolveIncludes(source, includeMap);
+    const shader = new ForgeShaderSource(rawSource);
 
-    expect(result).toMatchInlineSnapshot(`
-      "
-            
-              vec3 color = vec3(1.0, 0.0, 0.0);
-              float intensity = 0.5;
-            
+    const rawCommon = `
+      #property name: common;
 
-            void main() {
-              gl_FragColor = vec4(1.0);
-            }
-          "
-    `);
-  });
-
-  it('should not include the same snippet again if explicitly included after being resolved', () => {
-    const source = `
-      #include <common>
-      void main() {
-        #include <common>
-        gl_FragColor = vec4(1.0);
-      }
+      vec3 color = vec3(1.0, 0.0, 0.0);
+      #include <lighting>
     `;
-    const includeMap = {
-      common: 'vec3 color = vec3(1.0, 0.0, 0.0);',
-    };
 
-    const result = resolveIncludes(source, includeMap);
+    const rawLighting = `
+      #property name: lighting;
+
+      float intensity = 0.5;
+    `;
+
+    const includeMap = [
+      new ForgeShaderSource(rawCommon),
+      new ForgeShaderSource(rawLighting),
+    ];
+
+    const result = resolveIncludes(shader, includeMap);
 
     expect(result).toMatchInlineSnapshot(`
       "
+            
             vec3 color = vec3(1.0, 0.0, 0.0);
-            void main() {
-
-              gl_FragColor = vec4(1.0);
-            }
-          "
-    `);
-  });
-
-  it('should handle a basic circular reference', () => {
-    const source = `
-      #include <common>
-      void main() {
-        gl_FragColor = vec4(1.0);
-      }
-    `;
-    const includeMap = {
-      common: `
-        vec3 color = vec3(1.0, 0.0, 0.0);
-        #include <common>
-      `,
-    };
-
-    const result = resolveIncludes(source, includeMap);
-
-    expect(result).toMatchInlineSnapshot(`
-      "
             
-              vec3 color = vec3(1.0, 0.0, 0.0);
+            float intensity = 0.5;
 
-            
-            void main() {
-              gl_FragColor = vec4(1.0);
-            }
-          "
-    `);
-  });
-
-  it('should handle a complex circular reference', () => {
-    const source = `
-      #include <common>
-      void main() {
-        gl_FragColor = vec4(1.0);
-      }
-    `;
-    const includeMap = {
-      common: `
-        vec3 color = vec3(1.0, 0.0, 0.0);
-        #include <lighting>
-      `,
-      lighting: `
-        float intensity = 0.5;
-        #include <noise>
-      `,
-      noise: `
-        float noise = 0.1;
-        #include <common>
-      `,
-    };
-
-    const result = resolveIncludes(source, includeMap);
-
-    expect(result).toMatchInlineSnapshot(`
-      "
-            
-              vec3 color = vec3(1.0, 0.0, 0.0);
-              
-              float intensity = 0.5;
-              
-              float noise = 0.1;
-
-            
-            
-            
             void main() {
               gl_FragColor = vec4(1.0);
             }

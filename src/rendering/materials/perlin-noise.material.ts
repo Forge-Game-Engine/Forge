@@ -1,23 +1,18 @@
 import type { Time } from '../../common';
 import type { Vector2 } from '../../math';
-import {
-  perlinNoiseFragmentShader,
-  perlinNoiseShaderInclude,
-  quinticShaderInclude,
-  randomGradientShaderInclude,
-  spriteVertexShader,
-} from '../shaders';
+import type { ShaderStore } from '../shaders';
 import { Material } from './material';
 
 export class PerlinNoiseMaterial extends Material {
   private readonly _time: Time;
 
-  constructor(gl: WebGL2RenderingContext, resolution: Vector2, time: Time) {
-    super(gl, spriteVertexShader, perlinNoiseFragmentShader, {
-      randomGradient: randomGradientShaderInclude,
-      quintic: quinticShaderInclude,
-      perlinNoise: perlinNoiseShaderInclude,
-    });
+  constructor(
+    gl: WebGL2RenderingContext,
+    shaderStore: ShaderStore,
+    resolution: Vector2,
+    time: Time,
+  ) {
+    super('sprite.vert', 'perlinNoise.frag', shaderStore, gl);
 
     this.setUniform(
       'u_resolution',

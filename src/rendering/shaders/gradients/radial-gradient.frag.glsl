@@ -1,4 +1,7 @@
 #version 300 es
+
+#property name: radialGradient.frag
+
 precision mediump float;
 
 uniform vec2 u_resolution;
