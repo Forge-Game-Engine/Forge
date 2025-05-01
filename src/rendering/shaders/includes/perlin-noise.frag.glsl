@@ -1,10 +1,13 @@
 #version 300 es
+
+#property name: perlinNoise.frag
+
 precision mediump float;
 
 uniform vec2 u_resolution;
 
 #include <perlinNoise>
-
+ 
 out vec4 fragColor;
 
 void main() {

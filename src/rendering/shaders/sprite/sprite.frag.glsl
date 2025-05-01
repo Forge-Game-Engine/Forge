@@ -1,4 +1,7 @@
 #version 300 es
+
+#property name: sprite.frag
+
 precision mediump float;
 
 uniform sampler2D u_texture;  // The sprite texture

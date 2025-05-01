@@ -1,5 +1,5 @@
 import type { Vector3 } from '../../math';
-import { resolveIncludes } from '../shaders';
+import type { ShaderStore } from '../shaders';
 
 type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
 
@@ -11,21 +11,19 @@ interface UniformSpec {
 export class Material {
   public readonly program: WebGLProgram;
 
-  private _uniforms: Map<string, UniformSpec> = new Map();
-  private _uniformValues: Map<string, UniformValue> = new Map();
+  private readonly _uniforms: Map<string, UniformSpec> = new Map();
+  private readonly _uniformValues: Map<string, UniformValue> = new Map();
 
   constructor(
+    vertexSourceName: string,
+    fragmentSourceName: string,
+    shaderStore: ShaderStore,
     gl: WebGL2RenderingContext,
-    vertexSource: string,
-    fragmentSource: string,
-    includesMap: Record<string, string> = {},
   ) {
-    this.program = this._createProgram(
-      gl,
-      vertexSource,
-      fragmentSource,
-      includesMap,
-    );
+    const vertexSource = shaderStore.getShader(vertexSourceName);
+    const fragmentSource = shaderStore.getShader(fragmentSourceName);
+
+    this.program = this._createProgram(gl, vertexSource, fragmentSource);
     this._detectUniforms(gl);
   }
 
@@ -69,7 +67,7 @@ export class Material {
   /**
    * Sets a uniform value (number, vec2, matrix, texture, etc.).
    */
-  protected setUniform(name: string, value: UniformValue): void {
+  public setUniform(name: string, value: UniformValue): void {
     this._uniformValues.set(name, value);
   }
 
@@ -88,19 +86,12 @@ export class Material {
     gl: WebGL2RenderingContext,
     vertexSrc: string,
     fragmentSrc: string,
-    includesMap: Record<string, string>,
   ): WebGLProgram {
-    const vertexShader = this._compileShader(
-      gl,
-      vertexSrc,
-      gl.VERTEX_SHADER,
-      includesMap,
-    );
+    const vertexShader = this._compileShader(gl, vertexSrc, gl.VERTEX_SHADER);
     const fragmentShader = this._compileShader(
       gl,
       fragmentSrc,
       gl.FRAGMENT_SHADER,
-      includesMap,
     );
 
     const program = gl.createProgram()!;
@@ -120,13 +111,10 @@ export class Material {
     gl: WebGL2RenderingContext,
     source: string,
     type: GLenum,
-    includesMap: Record<string, string>,
   ): WebGLShader {
     const shader = gl.createShader(type)!;
 
-    const sourceWithIncludes = resolveIncludes(source, includesMap);
-
-    gl.shaderSource(shader, sourceWithIncludes);
+    gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {

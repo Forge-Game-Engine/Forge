@@ -4,6 +4,7 @@ export async function createPerlinNoiseScene(
   game: forge.Game,
   gameContainer: HTMLElement,
   imageCache: forge.ImageCache,
+  shaderStore: forge.ShaderStore,
 ) {
   const scene = new forge.Scene('title-screen');
 
@@ -55,6 +56,7 @@ export async function createPerlinNoiseScene(
 
   const material = new forge.GradientMaterial(
     foregroundRenderLayer.context,
+    shaderStore,
     new forge.Vector2(window.innerWidth, window.innerHeight),
     await imageCache.getOrLoad('gradient.png'),
     new forge.Vector2(0.1, 0.8),

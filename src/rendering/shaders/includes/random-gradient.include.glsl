@@ -1,3 +1,5 @@
+#property name: randomGradient
+
 uniform float u_time;
 
 vec2 randomGradient(vec2 p, float timeMultiplier) {
