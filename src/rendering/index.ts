@@ -10,3 +10,4 @@ export * from './utilities';
 export * from './materials';
 export * from './geometry';
 export * from './renderable';
+export * from './color';
