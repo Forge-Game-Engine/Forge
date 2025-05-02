@@ -2,7 +2,7 @@ import { Alignment, Fit, Layout } from '@rive-app/webgl2';
 import type { RiveCache } from '../../asset-loading';
 import type { LayerService } from '../layer-service';
 import { RiveRenderLayer } from '../render-layers';
-import { DEFAULT_LAYERS } from '../types';
+import { DEFAULT_LAYERS } from '../enums';
 import { createCanvas } from './create-canvas';
 
 /**

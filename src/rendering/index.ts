@@ -5,7 +5,7 @@ export * from './sprite';
 export * from './systems';
 export * from './shaders';
 export * from './transforms';
-export * from './types';
+export * from './enums';
 export * from './utilities';
 export * from './materials';
 export * from './geometry';
