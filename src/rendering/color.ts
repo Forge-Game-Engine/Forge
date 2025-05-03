@@ -1,33 +1,42 @@
 import { clamp } from '../math';
 
 /**
- * The `Color` class represents a color that can be created using RGB or HSL.
+ * The `Color` class represents a color that can be created using RGB(A) or HSL(A).
  */
 export class Color {
   private _r: number;
   private _g: number;
   private _b: number;
+  private _a: number;
 
   /**
-   * Constructs a new `Color` instance using RGB values.
+   * Constructs a new `Color` instance using RGBA values.
    * @param r - The red component (0-255).
    * @param g - The green component (0-255).
    * @param b - The blue component (0-255).
+   * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
    */
-  constructor(r: number, g: number, b: number) {
+  constructor(r: number, g: number, b: number, a: number = 1) {
     this._r = clamp(r, 0, 255);
     this._g = clamp(g, 0, 255);
     this._b = clamp(b, 0, 255);
+    this._a = clamp(a, 0, 1);
   }
 
   /**
-   * Creates a `Color` instance using HSL values.
+   * Creates a `Color` instance using HSLA values.
    * @param h - The hue (0-360).
    * @param s - The saturation (0-100).
    * @param l - The lightness (0-100).
+   * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
    * @returns A new `Color` instance.
    */
-  public static fromHSL(h: number, s: number, l: number): Color {
+  public static fromHSLA(
+    h: number,
+    s: number,
+    l: number,
+    a: number = 1,
+  ): Color {
     const normalizedH = h / 360;
     const normalizedS = s / 100;
     const normalizedL = l / 100;
@@ -61,6 +70,7 @@ export class Color {
       Math.round(r * 255),
       Math.round(g * 255),
       Math.round(b * 255),
+      a,
     );
   }
 
@@ -86,10 +96,17 @@ export class Color {
   }
 
   /**
-   * Converts the color to a CSS-compatible RGB string.
-   * @returns The RGB string (e.g., `rgb(255, 0, 0)`).
+   * Gets the alpha component of the color.
    */
-  public toRGBString(): string {
-    return `rgb(${this._r}, ${this._g}, ${this._b})`;
+  get a(): number {
+    return this._a;
+  }
+
+  /**
+   * Converts the color to a CSS-compatible RGBA string.
+   * @returns The RGBA string (e.g., `rgba(255, 0, 0, 1)`).
+   */
+  public toRGBAString(): string {
+    return `rgba(${this._r}, ${this._g}, ${this._b}, ${this._a})`;
   }
 }
