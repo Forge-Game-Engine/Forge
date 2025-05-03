@@ -1,6 +1,6 @@
 {
   "name": "@forge-game-engine/forge",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
