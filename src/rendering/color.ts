@@ -109,4 +109,17 @@ export class Color {
   public toRGBAString(): string {
     return `rgba(${this._r}, ${this._g}, ${this._b}, ${this._a})`;
   }
+
+  /**
+   * Converts the color to a glsl-compatible float32 array.
+   * @returns The RGBA array (e.g. `[1, 0, 0, 1]` for red).
+   */
+  public toFloat32Array(): Float32Array {
+    return new Float32Array([
+      this._r / 255,
+      this._g / 255,
+      this._b / 255,
+      this._a,
+    ]);
+  }
 }

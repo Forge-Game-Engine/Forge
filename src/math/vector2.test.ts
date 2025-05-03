@@ -126,5 +126,13 @@ describe('Vector2', () => {
       const vector = new Vector2(2.123, 3.456);
       expect(vector.toString()).toBe('(2.1, 3.5)');
     });
+
+    it('should convert vector to Float32Array', () => {
+      const vector = new Vector2(2, 3);
+      const floatArray = vector.toFloat32Array();
+
+      expect(floatArray).toBeInstanceOf(Float32Array);
+      expect(floatArray).toEqual(new Float32Array([2, 3]));
+    });
   });
 });
