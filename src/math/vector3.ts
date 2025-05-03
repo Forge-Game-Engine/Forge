@@ -223,4 +223,12 @@ export class Vector3 {
   static get backward(): Vector3 {
     return new Vector3(0, 0, -1);
   }
+
+  /**
+   * Converts the 3d vector to a glsl-compatible float32 array.
+   * @returns The 3d vector array (e.g. `[5, 3, 8]` for a `new Vector3(5, 3, 8)`).
+   */
+  public toFloat32Array(): Float32Array {
+    return new Float32Array([this.x, this.y, this.z]);
+  }
 }

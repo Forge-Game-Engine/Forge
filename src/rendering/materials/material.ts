@@ -1,4 +1,5 @@
-import type { Vector3 } from '../../math';
+import type { Vector2, Vector3 } from '../../math';
+import type { Color } from '../color';
 import type { ShaderStore } from '../shaders';
 
 type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
@@ -69,6 +70,20 @@ export class Material {
    */
   public setUniform(name: string, value: UniformValue): void {
     this._uniformValues.set(name, value);
+  }
+
+  /**
+   * Sets a color uniform as a float32 array using the color's RGBA values.
+   */
+  public setColorUniform(name: string, color: Color): void {
+    this.setUniform(name, color.toFloat32Array());
+  }
+
+  /**
+   * Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
+   */
+  public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
+    this.setUniform(name, vector.toFloat32Array());
   }
 
   protected beforeBind(): void {

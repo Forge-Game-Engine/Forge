@@ -194,4 +194,12 @@ export class Vector2 {
   public equals(value: Vector2): boolean {
     return this.x === value.x && this.y === value.y;
   }
+
+  /**
+   * Converts the 2d vector to a glsl-compatible float32 array.
+   * @returns The 2d vector array (e.g. `[5, 3]` for a `new Vector2(5, 3)`).
+   */
+  public toFloat32Array(): Float32Array {
+    return new Float32Array([this.x, this.y]);
+  }
 }

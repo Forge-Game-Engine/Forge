@@ -52,4 +52,14 @@ describe('Color', () => {
 
     expect(color.toRGBAString()).toBe('rgba(34, 139, 34, 1)');
   });
+
+  it('should convert the color to a glsl-compatible Float32Array', () => {
+    const color = new Color(255, 128, 64, 0.5);
+
+    const floatArray = color.toFloat32Array();
+
+    expect(floatArray).toEqual(
+      new Float32Array([1, 0.5019607843137255, 0.25098039215686274, 0.5]),
+    );
+  });
 });
