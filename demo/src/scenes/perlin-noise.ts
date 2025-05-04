@@ -20,15 +20,20 @@ export async function createPerlinNoiseScene(
     new forge.InputsComponent(),
   ]);
 
-  const inputSystem = new forge.InputSystem(gameContainer);
-
-  world.addEntity(inputsEntity);
-  world.addSystem(inputSystem);
-
   const cameraEntity = new forge.Entity('world camera', [
     new forge.CameraComponent({ allowZooming: false, allowPanning: false }),
     new forge.PositionComponent(0, 0),
   ]);
+
+  const inputSystem = new forge.InputSystem(
+    gameContainer,
+    cameraEntity,
+    window.innerWidth,
+    window.innerHeight,
+  );
+
+  world.addEntity(inputsEntity);
+  world.addSystem(inputSystem);
 
   const cameraSystem = new forge.CameraSystem(inputsEntity, game.time);
 

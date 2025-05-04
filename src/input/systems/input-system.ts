@@ -1,4 +1,4 @@
-import { PositionComponent, Space } from '../../common';
+import { PositionComponent } from '../../common';
 import { Entity, System } from '../../ecs';
 import { Vector2 } from '../../math';
 import { CameraComponent, screenToWorldSpace } from '../../rendering';
