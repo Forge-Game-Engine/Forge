@@ -3,188 +3,201 @@ import { screenToWorldSpace } from './screen-to-world-space';
 import { Vector2 } from '../../math';
 
 describe('screenToWorldSpace', () => {
-  it('should convert screen position to world position correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(300, 250);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle negative screen position correctly', () => {
-    const screenPosition = new Vector2(-800, -600);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(-500, -350);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle negative camera position correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(-100, -100);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(100, 50);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle negative canvas center correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(-400, -300);
-    const expectedWorldPosition = new Vector2(700, 550);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle negative camera zoom correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = -2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(-100, -50);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle fractional camera zoom correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = 0.5;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(900, 700);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle zero screen position correctly', () => {
-    const screenPosition = new Vector2(0, 0);
-    const cameraPosition = new Vector2(100, 100);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(-100, -50);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle zero camera position correctly', () => {
-    const screenPosition = new Vector2(800, 600);
+  it('should convert screen position to world position correctly with the default camera and pointer in the center of the screen', () => {
+    const screenPosition = new Vector2(400, 300);
     const cameraPosition = new Vector2(0, 0);
-    const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(200, 150);
-
-    const result = screenToWorldSpace(
-      screenPosition,
-      cameraPosition,
-      cameraZoom,
-      canvasCenter,
-    );
-
-    expect(result).toEqual(expectedWorldPosition);
-  });
-
-  it('should handle zero camera zoom correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
     const cameraZoom = 1;
-    const canvasCenter = new Vector2(400, 300);
-    const expectedWorldPosition = new Vector2(500, 400);
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(0, 0);
 
     const result = screenToWorldSpace(
       screenPosition,
       cameraPosition,
       cameraZoom,
-      canvasCenter,
+      screenWidth,
+      screenHeight,
     );
 
     expect(result).toEqual(expectedWorldPosition);
   });
 
-  it('should handle zero canvas center correctly', () => {
-    const screenPosition = new Vector2(800, 600);
-    const cameraPosition = new Vector2(100, 100);
+  it('should convert screen position to world position correctly with the default camera and pointer is close to the top-left of the screen', () => {
+    const screenPosition = new Vector2(100, 100);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 1;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(-300, -200);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the camera panned and pointer in the center of the screen', () => {
+    const screenPosition = new Vector2(400, 300);
+    const cameraPosition = new Vector2(-100, -100);
+    const cameraZoom = 1;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(-100, -100);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the camera panned and pointer is offsetting the pan', () => {
+    const screenPosition = new Vector2(500, 400);
+    const cameraPosition = new Vector2(-100, -100);
+    const cameraZoom = 1;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(0, 0);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the default camera position, zoomed in and pointer in the center of the screen', () => {
+    const screenPosition = new Vector2(400, 300);
+    const cameraPosition = new Vector2(0, 0);
     const cameraZoom = 2;
-    const canvasCenter = new Vector2(0, 0);
-    const expectedWorldPosition = new Vector2(500, 400);
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(0, 0);
 
     const result = screenToWorldSpace(
       screenPosition,
       cameraPosition,
       cameraZoom,
-      canvasCenter,
+      screenWidth,
+      screenHeight,
     );
 
     expect(result).toEqual(expectedWorldPosition);
   });
 
-  it('should handle both zero screen position and camera position correctly', () => {
+  it('should convert screen position to world position correctly with the default camera position, zoomed out and pointer in the center of the screen', () => {
+    const screenPosition = new Vector2(400, 300);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 0.5;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(0, 0);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the default camera and pointer exactly in the top-left', () => {
+    const screenPosition = new Vector2(0, 0);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 1;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(-400, -300);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the default camera, zoomed in and pointer exactly in the top-left', () => {
     const screenPosition = new Vector2(0, 0);
     const cameraPosition = new Vector2(0, 0);
     const cameraZoom = 2;
-    const canvasCenter = new Vector2(400, 300);
+    const screenWidth = 800;
+    const screenHeight = 600;
+
     const expectedWorldPosition = new Vector2(-200, -150);
 
     const result = screenToWorldSpace(
       screenPosition,
       cameraPosition,
       cameraZoom,
-      canvasCenter,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the default camera, zoomed out and pointer exactly in the top-left', () => {
+    const screenPosition = new Vector2(0, 0);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 0.5;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(-800, -600);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
+
+  it('should convert screen position to world position correctly with the camera panned, zoomed in and pointer exactly in the top-left', () => {
+    const screenPosition = new Vector2(0, 0);
+    const cameraPosition = new Vector2(100, 100);
+    const cameraZoom = 2;
+    const screenWidth = 800;
+    const screenHeight = 600;
+
+    const expectedWorldPosition = new Vector2(-100, -50);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
     );
 
     expect(result).toEqual(expectedWorldPosition);
