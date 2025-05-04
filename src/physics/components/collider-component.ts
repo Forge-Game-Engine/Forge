@@ -1,5 +1,5 @@
 import type { Component } from '../../ecs';
-import { BoxCollider as Collider } from '../colliders';
+import type { Collider } from '../colliders';
 
 /**
  * The `ColliderComponent` class represents a component that holds a `Collider` instance.
