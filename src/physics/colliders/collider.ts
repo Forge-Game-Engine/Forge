@@ -5,7 +5,7 @@ import { Vector2 } from '../../math';
  * It provides methods to check containment, combine with other colliders,
  * and calculate bounding boxes.
  */
-export interface Collider<T extends Collider<T>> {
+export interface Collider {
   /** The maximum x-coordinate of the collider */
   maxX: number;
 

@@ -5,7 +5,7 @@ import type { Collider } from './collider';
  * The `PolygonCollider` class represents a polygonal collider defined by an array of points.
  * It provides methods to check containment, combine with other colliders, and calculate bounding boxes.
  */
-export class PolygonCollider implements Collider<PolygonCollider> {
+export class PolygonCollider implements Collider {
   /** The points defining the polygon */
   public points: Vector2[];
 

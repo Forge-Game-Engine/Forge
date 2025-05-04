@@ -5,7 +5,7 @@ import type { Collider } from './collider';
  * The `BoxCollider` class represents a rectangular collider defined by a point and dimensions.
  * It provides methods to check containment, combine with other colliders, and calculate bounding boxes.
  */
-export class BoxCollider implements Collider<BoxCollider> {
+export class BoxCollider implements Collider {
   /** The bottom-left corner point of the box collider */
   public point: Vector2;
 
