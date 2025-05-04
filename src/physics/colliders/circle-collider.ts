@@ -3,7 +3,7 @@ import type { Collider } from './collider';
 
 /**
  * The `CircleCollider` class represents a circular collider defined by a center point and radius.
- * It provides methods to check containment, combine with other colliders, and calculate bounding boxes.
+ * It provides methods to check containment and access bounding coordinates (min/max x and y).
  */
 export class CircleCollider implements Collider<CircleCollider> {
   public center: Vector2;
