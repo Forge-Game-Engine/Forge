@@ -1,5 +1,7 @@
+import { PositionComponent, Space } from '../../common';
 import { Entity, System } from '../../ecs';
 import { Vector2 } from '../../math';
+import { CameraComponent, screenToWorldSpace } from '../../rendering';
 import { InputsComponent } from '../components';
 
 /**
@@ -14,15 +16,26 @@ export class InputSystem extends System {
   private _mouseButtonPresses = new Set<number>();
   private _mouseButtonDowns = new Set<number>();
   private _mouseButtonUps = new Set<number>();
-  private _mouseCoordinates = new Vector2();
+  private _localMouseCoordinates = new Vector2();
+  private _worldMouseCoordinates = new Vector2();
+
   private _gameContainer: HTMLElement;
+  private _screenWidth: number;
+  private _screenHeight: number;
+  private _cameraPosition: PositionComponent;
+  private _camera: CameraComponent;
 
   /**
    * Constructs a new instance of the `InputSystem` class and sets up event listeners
    * for various input events.
    * @param gameContainer - The HTML element that contains the game.
    */
-  constructor(gameContainer: HTMLElement) {
+  constructor(
+    gameContainer: HTMLElement,
+    cameraEntity: Entity,
+    screenWidth: number,
+    screenHeight: number,
+  ) {
     super('input', [InputsComponent.symbol]);
 
     this._gameContainer = gameContainer;
@@ -45,6 +58,15 @@ export class InputSystem extends System {
       this.onMouseDownHandler(event),
     );
     window.addEventListener('mouseup', (event) => this.onMouseUpHandler(event));
+
+    this._cameraPosition = cameraEntity.getComponentRequired<PositionComponent>(
+      PositionComponent.symbol,
+    );
+    this._camera = cameraEntity.getComponentRequired<CameraComponent>(
+      CameraComponent.symbol,
+    );
+    this._screenWidth = screenWidth;
+    this._screenHeight = screenHeight;
   }
 
   /**
@@ -64,7 +86,8 @@ export class InputSystem extends System {
     inputs.mouseButtonDowns = this._mouseButtonDowns;
     inputs.mouseButtonUps = this._mouseButtonUps;
     inputs.scrollDelta = this._scrollDelta;
-    inputs.mouseCoordinates = this._mouseCoordinates;
+    inputs.localMouseCoordinates = this._localMouseCoordinates;
+    inputs.worldMouseCoordinates = this._worldMouseCoordinates;
 
     this.clearInputs();
   }
@@ -140,8 +163,16 @@ export class InputSystem extends System {
    * @param event - The mouse event.
    */
   public updateCursorPosition(event: MouseEvent) {
-    this._mouseCoordinates.x = event.clientX;
-    this._mouseCoordinates.y = event.clientY;
+    this._localMouseCoordinates.x = event.clientX;
+    this._localMouseCoordinates.y = event.clientY;
+
+    this._worldMouseCoordinates = screenToWorldSpace(
+      this._localMouseCoordinates,
+      this._cameraPosition,
+      this._camera.zoom,
+      this._screenWidth,
+      this._screenHeight,
+    );
   }
 
   /**

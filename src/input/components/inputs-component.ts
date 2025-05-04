@@ -45,9 +45,14 @@ export class InputsComponent implements Component {
   public mouseButtonUps = new Set<number>();
 
   /**
-   * The current coordinates of the mouse cursor.
+   * The current coordinates of the mouse cursor in screen space, where [x: 0, y: 0] is the top-left of the screen.
    */
-  public mouseCoordinates = new Vector2();
+  public localMouseCoordinates = new Vector2();
+
+  /**
+   * The current coordinates of the mouse cursor in world space, where [x: 0, y: 0] is the center of the world.
+   */
+  public worldMouseCoordinates = new Vector2();
 
   public static symbol = Symbol('Inputs');
 
