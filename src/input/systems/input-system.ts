@@ -166,13 +166,15 @@ export class InputSystem extends System {
     this._localMouseCoordinates.x = event.clientX;
     this._localMouseCoordinates.y = event.clientY;
 
-    this._worldMouseCoordinates = screenToWorldSpace(
+    const worldCoordinates = screenToWorldSpace(
       this._localMouseCoordinates,
       this._cameraPosition,
       this._camera.zoom,
       this._screenWidth,
       this._screenHeight,
     );
+    this._worldMouseCoordinates.x = worldCoordinates.x;
+    this._worldMouseCoordinates.y = worldCoordinates.y;
   }
 
   /**
