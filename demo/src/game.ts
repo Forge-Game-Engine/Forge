@@ -44,7 +44,14 @@ shaderStore.addShader(
 );
 
 game.registerScene(
-  await createPerlinNoiseScene(game, gameContainer, imageCache, shaderStore),
+  await createPerlinNoiseScene(
+    game,
+    gameContainer,
+    imageCache,
+    shaderStore,
+    window.innerWidth,
+    window.innerHeight,
+  ),
 );
 
 game.run();
