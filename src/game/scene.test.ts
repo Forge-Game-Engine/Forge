@@ -42,7 +42,7 @@ describe('Scene', () => {
 
   it('should register multiple updatable objects', () => {
     const updatable2 = new TestUpdatable();
-    scene.registerUpdatables([updatable, updatable2]);
+    scene.registerUpdatables(updatable, updatable2);
     scene.update(time);
     expect(updatable.update).toHaveBeenCalledWith(time);
     expect(updatable2.update).toHaveBeenCalledWith(time);
@@ -50,8 +50,8 @@ describe('Scene', () => {
 
   it('should deregister multiple updatable objects', () => {
     const updatable2 = new TestUpdatable();
-    scene.registerUpdatables([updatable, updatable2]);
-    scene.deregisterUpdatables([updatable, updatable2]);
+    scene.registerUpdatables(updatable, updatable2);
+    scene.deregisterUpdatables(updatable, updatable2);
     scene.update(time);
     expect(updatable.update).not.toHaveBeenCalled();
     expect(updatable2.update).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe('Scene', () => {
 
   it('should register multiple stoppable objects', () => {
     const stoppable2 = new TestStoppable();
-    scene.registerStoppables([stoppable, stoppable2]);
+    scene.registerStoppables(stoppable, stoppable2);
     scene.stop();
     expect(stoppable.stop).toHaveBeenCalled();
     expect(stoppable2.stop).toHaveBeenCalled();
@@ -67,8 +67,8 @@ describe('Scene', () => {
 
   it('should deregister multiple stoppable objects', () => {
     const stoppable2 = new TestStoppable();
-    scene.registerStoppables([stoppable, stoppable2]);
-    scene.deregisterStoppables([stoppable, stoppable2]);
+    scene.registerStoppables(stoppable, stoppable2);
+    scene.deregisterStoppables(stoppable, stoppable2);
     scene.stop();
     expect(stoppable.stop).not.toHaveBeenCalled();
     expect(stoppable2.stop).not.toHaveBeenCalled();

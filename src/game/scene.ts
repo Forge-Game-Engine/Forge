@@ -51,7 +51,7 @@ export class Scene implements Updatable, Stoppable {
    * Registers multiple updatable objects to the scene.
    * @param updatables - An array or iterable of updatable objects to register.
    */
-  public registerUpdatables(updatables: Iterable<Updatable>) {
+  public registerUpdatables(...updatables: Updatable[]) {
     for (const updatable of updatables) {
       this._updatables.add(updatable);
     }
@@ -61,7 +61,7 @@ export class Scene implements Updatable, Stoppable {
    * Deregisters multiple updatable objects from the scene.
    * @param updatables - An array or iterable of updatable objects to deregister.
    */
-  public deregisterUpdatables(updatables: Iterable<Updatable>) {
+  public deregisterUpdatables(...updatables: Updatable[]) {
     for (const updatable of updatables) {
       this._updatables.delete(updatable);
     }
@@ -87,7 +87,7 @@ export class Scene implements Updatable, Stoppable {
    * Registers multiple stoppable objects to the scene.
    * @param stoppables - An array or iterable of stoppable objects to register.
    */
-  public registerStoppables(stoppables: Iterable<Stoppable>) {
+  public registerStoppables(...stoppables: Stoppable[]) {
     for (const stoppable of stoppables) {
       this._stoppables.add(stoppable);
     }
@@ -97,7 +97,7 @@ export class Scene implements Updatable, Stoppable {
    * Deregisters multiple stoppable objects from the scene.
    * @param stoppables - An array or iterable of stoppable objects to deregister.
    */
-  public deregisterStoppables(stoppables: Iterable<Stoppable>) {
+  public deregisterStoppables(...stoppables: Stoppable[]) {
     for (const stoppable of stoppables) {
       this._stoppables.delete(stoppable);
     }
