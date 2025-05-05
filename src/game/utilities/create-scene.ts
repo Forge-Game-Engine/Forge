@@ -33,7 +33,7 @@ export function createScene(
   name: string,
   game: Game,
   container: HTMLElement,
-  sceneCreationOptions: Partial<SceneCreationOptions>,
+  sceneCreationOptions?: Partial<SceneCreationOptions>,
 ) {
   const mergedOptions = {
     ...defaultSceneCreationOptions,
@@ -69,6 +69,10 @@ export function createScene(
 
   scene.registerUpdatable(world);
   scene.registerStoppables(world, layerService);
+
+  window.addEventListener('resize', () => {
+    layerService.resizeAllLayers();
+  });
 
   return {
     scene,
