@@ -6,6 +6,7 @@ import {
   radialGradientShader,
   radialGradientShaderInclude,
   randomGradientShaderInclude,
+  sdfBoxShaderInclude,
   sdfCircleShaderInclude,
   sdfOrientedBoxShaderInclude,
   ShaderStore,
@@ -35,6 +36,7 @@ export function createShaderStore() {
     quinticShaderInclude,
     radialGradientShaderInclude,
     randomGradientShaderInclude,
+    sdfBoxShaderInclude,
     sdfCircleShaderInclude,
     sdfOrientedBoxShaderInclude,
   );
