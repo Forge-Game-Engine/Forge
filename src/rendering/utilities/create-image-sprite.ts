@@ -1,6 +1,7 @@
 import { SpriteMaterial } from '../materials';
 import type { ForgeRenderLayer } from '../render-layers';
 import type { ShaderStore } from '../shaders';
+import type { Sprite } from '../sprite';
 import { createSprite } from './create-sprite';
 
 /**
@@ -14,7 +15,7 @@ export function createImageSprite(
   image: HTMLImageElement,
   renderLayer: ForgeRenderLayer,
   shaderStore: ShaderStore,
-) {
+): Sprite {
   const material = new SpriteMaterial(renderLayer.context, shaderStore, image);
   const sprite = createSprite(material, renderLayer, image.width, image.height);
 

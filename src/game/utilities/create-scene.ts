@@ -1,5 +1,5 @@
 import { PositionComponent } from '../../common';
-import { World } from '../../ecs';
+import { Entity, World } from '../../ecs';
 import { InputsComponent, InputSystem } from '../../input';
 import { Vector2 } from '../../math';
 import {
@@ -29,12 +29,20 @@ export const defaultSceneCreationOptions: SceneCreationOptions = {
   cameraStartPosition: new Vector2(0, 0),
 };
 
+type SceneCreationResult = {
+  scene: Scene;
+  world: World;
+  layerService: LayerService;
+  cameraEntity: Entity;
+  inputsEntity: Entity;
+};
+
 export function createScene(
   name: string,
   game: Game,
   container: HTMLElement,
   sceneCreationOptions?: Partial<SceneCreationOptions>,
-) {
+): SceneCreationResult {
   const mergedOptions = {
     ...defaultSceneCreationOptions,
     ...sceneCreationOptions,

@@ -17,7 +17,7 @@ export function createSprite(
   renderLayer: ForgeRenderLayer,
   width: number,
   height: number,
-) {
+): Sprite {
   const renderable = new Renderable(
     createQuadGeometry(renderLayer.context),
     material,
