@@ -1,24 +1,23 @@
 import { createQuadGeometry } from '../geometry';
-import { SpriteMaterial } from '../materials';
+import { Material } from '../materials';
 import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
-import type { ShaderStore } from '../shaders';
 import { Sprite } from '../sprite';
 
 /**
- * Creates a sprite using the provided image and render layer.
- * @param image - The image to use for the sprite.
+ * Creates a sprite using the provided material and render layer.
+ * @param material - The material to use for the sprite.
  * @param renderLayer - The render layer to which the sprite will be added.
- * @param shaderStore - The shader store to use for the sprite's material.
+ * @param width - The width of the sprite.
+ * @param height - The height of the sprite.
  * @returns The created sprite.
  */
 export function createSprite(
-  image: HTMLImageElement,
+  material: Material,
   renderLayer: ForgeRenderLayer,
-  shaderStore: ShaderStore,
+  width: number,
+  height: number,
 ) {
-  const material = new SpriteMaterial(renderLayer.context, shaderStore, image);
-
   const renderable = new Renderable(
     createQuadGeometry(renderLayer.context),
     material,
@@ -27,8 +26,8 @@ export function createSprite(
   const sprite = new Sprite({
     renderable,
     renderLayer,
-    width: image.width,
-    height: image.height,
+    width,
+    height,
   });
 
   return sprite;
