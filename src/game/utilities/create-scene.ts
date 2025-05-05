@@ -70,8 +70,15 @@ export function createScene(
   scene.registerUpdatable(world);
   scene.registerStoppables(world, layerService);
 
-  window.addEventListener('resize', () => {
+  const resizeListener = () => {
     layerService.resizeAllLayers();
+  };
+  window.addEventListener('resize', resizeListener);
+
+  scene.registerStoppables({
+    stop: () => {
+      window.removeEventListener('resize', resizeListener);
+    },
   });
 
   return {
