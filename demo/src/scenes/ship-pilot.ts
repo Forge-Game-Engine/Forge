@@ -74,13 +74,7 @@ export async function createShipPilotScene(
 
   const shipMovementSystem = new ShipMovementSystem(inputsEntity, game.time);
   const animationSystem = new forge.AnimationSystem(game.time);
-  const starSystem = new StarSystem(
-    starPool,
-    new forge.BoxCollider(
-      new forge.Vector2(-2500, -2500),
-      new forge.Vector2(5000, 5000),
-    ),
-  );
+  const starSystem = new StarSystem(starPool);
 
   const starfieldSystem = new StarfieldSystem(starPool);
 

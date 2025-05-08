@@ -1,2 +1,2 @@
-export * from './colliders';
+export * from './systems';
 export * from './components';

@@ -1,4 +1,3 @@
-export * from './calculate-box-collider';
 export * from './clamp';
 export * from './degrees-to-radians';
 export * from './lerp';

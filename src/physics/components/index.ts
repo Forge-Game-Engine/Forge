@@ -1,1 +1,1 @@
-export * from './collider-component';
+export * from './physics-body-component';
