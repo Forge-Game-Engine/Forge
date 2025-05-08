@@ -46,6 +46,9 @@
     "@arethetypeswrong/cli": "^0.17.4",
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
+    "@types/matter-js": "^0.19.8",
+    "@types/howler": "^2.2.12",
+    "@types/seedrandom": "^3.0.8",
     "@vitest/ui": "^3.1.2",
     "cspell": "^9.0.0",
     "eslint": "^9.26.0",
@@ -62,12 +65,12 @@
     "vite-plugin-dts": "^4.5.3",
     "vitest": "^3.0.9"
   },
+  "peerDependencies": {
+    "howler": "^2.2.4",
+    "matter-js": "^0.20.0"
+  },
   "dependencies": {
     "@rive-app/webgl2": "^2.27.1",
-    "@types/howler": "^2.2.12",
-    "@types/seedrandom": "^3.0.8",
-    "howler": "^2.2.4",
-    "matter-js": "^0.20.0",
     "seedrandom": "^3.0.5"
   }
 }
