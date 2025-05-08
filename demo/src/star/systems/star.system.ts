@@ -22,7 +22,7 @@ export class StarSystem extends forge.System {
     positionComponent.x += starComponent.velocity.x;
     positionComponent.y += starComponent.velocity.y;
 
-    if (positionComponent.magnitudeSquared() > 1500 * 1500) {
+    if (positionComponent.magnitudeSquared() > MAX_POSITION_MAGNITUDE_SQUARED) {
       this._pool.release(entity);
     }
   }
