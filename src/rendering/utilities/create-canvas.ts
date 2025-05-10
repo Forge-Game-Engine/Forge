@@ -18,6 +18,9 @@ export function createCanvas(
   canvas.width = width || window.innerWidth;
   canvas.height = height || window.innerHeight;
 
+  canvas.style.width = `${canvas.width}px`;
+  canvas.style.height = `${canvas.height}px`;
+
   container.appendChild(canvas);
 
   return canvas;
