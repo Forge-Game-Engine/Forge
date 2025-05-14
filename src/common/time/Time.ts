@@ -115,4 +115,12 @@ export class Time {
 
     this._times.push(time);
   }
+
+  /**
+   * Gets the current frames per second (FPS).
+   * @returns The current FPS.
+   */
+  get fps(): number {
+    return this._times.length;
+  }
 }
