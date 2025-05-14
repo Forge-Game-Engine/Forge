@@ -40,7 +40,10 @@ export class Material {
 
     for (const [name, spec] of this._uniforms.entries()) {
       const value = this._uniformValues.get(name);
-      if (value === undefined) continue;
+
+      if (value === undefined) {
+        continue;
+      }
 
       const loc = spec.location;
 
@@ -54,11 +57,17 @@ export class Material {
       } else if (typeof value === 'boolean') {
         gl.uniform1i(loc, value ? 1 : 0);
       } else if (value instanceof Float32Array) {
-        if (value.length === 2) gl.uniform2fv(loc, value);
-        else if (value.length === 3) gl.uniform3fv(loc, value);
-        else if (value.length === 4) gl.uniform4fv(loc, value);
-        else if (value.length === 9) gl.uniformMatrix3fv(loc, false, value);
-        else if (value.length === 16) gl.uniformMatrix4fv(loc, false, value);
+        if (value.length === 2) {
+          gl.uniform2fv(loc, value);
+        } else if (value.length === 3) {
+          gl.uniform3fv(loc, value);
+        } else if (value.length === 4) {
+          gl.uniform4fv(loc, value);
+        } else if (value.length === 9) {
+          gl.uniformMatrix3fv(loc, false, value);
+        } else if (value.length === 16) {
+          gl.uniformMatrix4fv(loc, false, value);
+        }
       } else if (value instanceof Int32Array) {
         gl.uniform1iv(loc, value);
       }
@@ -147,7 +156,10 @@ export class Material {
 
     for (let i = 0; i < numUniforms; i++) {
       const info = gl.getActiveUniform(program, i);
-      if (!info) continue;
+
+      if (!info) {
+        continue;
+      }
 
       const location = gl.getUniformLocation(program, info.name);
       if (location !== null) {

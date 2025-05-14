@@ -134,5 +134,79 @@ describe('Vector2', () => {
       expect(floatArray).toBeInstanceOf(Float32Array);
       expect(floatArray).toEqual(new Float32Array([2, 3]));
     });
+
+    it('should calculate distance to another vector (positive coordinates)', () => {
+      const v1 = new Vector2(1, 2);
+      const v2 = new Vector2(4, 6);
+      expect(v1.distanceTo(v2)).toBeCloseTo(5);
+      expect(v2.distanceTo(v1)).toBeCloseTo(5);
+    });
+
+    it('should calculate distance to another vector (negative coordinates)', () => {
+      const v1 = new Vector2(-1, -2);
+      const v2 = new Vector2(-4, -6);
+      expect(v1.distanceTo(v2)).toBeCloseTo(5);
+      expect(v2.distanceTo(v1)).toBeCloseTo(5);
+    });
+
+    it('should calculate distance to itself as zero', () => {
+      const v = new Vector2(3, 4);
+      expect(v.distanceTo(v)).toBe(0);
+    });
+
+    it('should calculate distance when one vector is at origin', () => {
+      const origin = new Vector2(0, 0);
+      const v = new Vector2(3, 4);
+      expect(origin.distanceTo(v)).toBe(5);
+      expect(v.distanceTo(origin)).toBe(5);
+    });
+
+    it('should calculate distance for floating point coordinates', () => {
+      const v1 = new Vector2(1.5, 2.5);
+      const v2 = new Vector2(4.5, 6.5);
+      expect(v1.distanceTo(v2)).toBeCloseTo(5);
+    });
+
+    it('should rotate vector by 0 radians (no change)', () => {
+      const vector = new Vector2(1, 0);
+      const rotated = vector.rotate(0);
+      expect(rotated.x).toBeCloseTo(1);
+      expect(rotated.y).toBeCloseTo(0);
+    });
+
+    it('should rotate vector by PI/2 radians (90 degrees counterclockwise)', () => {
+      const vector = new Vector2(1, 0);
+      const rotated = vector.rotate(Math.PI / 2);
+      expect(rotated.x).toBeCloseTo(0);
+      expect(rotated.y).toBeCloseTo(1);
+    });
+
+    it('should rotate vector by PI radians (180 degrees)', () => {
+      const vector = new Vector2(1, 0);
+      const rotated = vector.rotate(Math.PI);
+      expect(rotated.x).toBeCloseTo(-1);
+      expect(rotated.y).toBeCloseTo(0);
+    });
+
+    it('should rotate vector by 3*PI/2 radians (270 degrees counterclockwise)', () => {
+      const vector = new Vector2(1, 0);
+      const rotated = vector.rotate((3 * Math.PI) / 2);
+      expect(rotated.x).toBeCloseTo(0);
+      expect(rotated.y).toBeCloseTo(-1);
+    });
+
+    it('should rotate vector by negative angle (clockwise)', () => {
+      const vector = new Vector2(0, 1);
+      const rotated = vector.rotate(-Math.PI / 2);
+      expect(rotated.x).toBeCloseTo(1);
+      expect(rotated.y).toBeCloseTo(0);
+    });
+
+    it('should rotate zero vector and remain zero', () => {
+      const vector = new Vector2(0, 0);
+      const rotated = vector.rotate(Math.PI / 4);
+      expect(rotated.x).toBeCloseTo(0);
+      expect(rotated.y).toBeCloseTo(0);
+    });
   });
 });
