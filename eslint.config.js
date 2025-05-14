@@ -74,6 +74,8 @@ export default [
           },
         },
       ],
+
+      curly: 'error',
     },
   },
 ];

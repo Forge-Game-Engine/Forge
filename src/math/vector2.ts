@@ -157,7 +157,9 @@ export class Vector2 {
   public normalize(): Vector2 {
     const length = this.magnitude();
 
-    if (length === 0) return this;
+    if (length === 0) {
+      return this;
+    }
 
     return this.divide(length);
   }
@@ -201,5 +203,29 @@ export class Vector2 {
    */
   public toFloat32Array(): Float32Array {
     return new Float32Array([this.x, this.y]);
+  }
+
+  /**
+   * Calculates the distance between this vector and another vector.
+   * @param other - The other vector
+   * @returns The distance between the two vectors
+   */
+  public distanceTo(other: Vector2): number {
+    return Math.hypot(other.x - this.x, other.y - this.y);
+  }
+
+  /**
+   * rotates this vector by a given angle in radians.
+   * @param angleInRadians - The angle in radians to rotate the vector
+   * @returns A new Vector2 representing the rotated vector
+   */
+  public rotate(angleInRadians: number): Vector2 {
+    const cos = Math.cos(angleInRadians);
+    const sin = Math.sin(angleInRadians);
+
+    return new Vector2(
+      this.x * cos - this.y * sin,
+      this.x * sin + this.y * cos,
+    );
   }
 }

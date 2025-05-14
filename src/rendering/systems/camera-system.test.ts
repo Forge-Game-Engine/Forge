@@ -48,8 +48,12 @@ describe('CameraSystem', () => {
 
     entity = {
       getComponentRequired: vi.fn((symbol) => {
-        if (symbol === CameraComponent.symbol) return cameraComponent;
-        if (symbol === PositionComponent.symbol) return positionComponent;
+        if (symbol === CameraComponent.symbol) {
+          return cameraComponent;
+        }
+        if (symbol === PositionComponent.symbol) {
+          return positionComponent;
+        }
       }),
     } as unknown as Entity;
   });
