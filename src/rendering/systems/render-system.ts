@@ -57,12 +57,16 @@ export class RenderSystem extends System {
         RenderableBatchComponent.symbol,
       );
 
-    if (batchComponent.renderLayer !== this._layer) return;
+    if (batchComponent.renderLayer !== this._layer) {
+      return;
+    }
 
     const gl = this._layer.context;
 
     for (const [renderable, batch] of batchComponent.batches) {
-      if (batch.length === 0) continue;
+      if (batch.length === 0) {
+        continue;
+      }
 
       renderable.bind(gl);
 

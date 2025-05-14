@@ -126,7 +126,9 @@ export class Vector3 {
   public normalize(): Vector3 {
     const length = this.magnitude();
 
-    if (length === 0) return this;
+    if (length === 0) {
+      return this;
+    }
 
     return this.divide(length);
   }

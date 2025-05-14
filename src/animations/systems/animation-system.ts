@@ -63,7 +63,10 @@ export class AnimationSystem extends System {
     animation.elapsed += deltaTime;
 
     let t = animation.elapsed / animation.duration;
-    if (t > 1) t = 1;
+
+    if (t > 1) {
+      t = 1;
+    }
 
     const factor = animation.easing ? animation.easing(t) : t;
     const currentValue =
