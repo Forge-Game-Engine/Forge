@@ -5,8 +5,8 @@ import { Entity, System } from '../../ecs';
 import { PhysicsBodyComponent } from '../components';
 
 export class PhysicsSystem extends System {
-  private _time: Time;
-  private _engine: Engine;
+  private readonly _time: Time;
+  private readonly _engine: Engine;
 
   constructor(time: Time, engine: Engine) {
     super('physics', [
@@ -21,6 +21,7 @@ export class PhysicsSystem extends System {
 
   public override beforeAll(entities: Entity[]): Entity[] {
     Engine.update(this._engine, this._time.deltaTime);
+
     return entities;
   }
 

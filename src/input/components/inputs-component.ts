@@ -54,7 +54,7 @@ export class InputsComponent implements Component {
    */
   public worldMouseCoordinates = new Vector2();
 
-  public static symbol = Symbol('Inputs');
+  public static readonly symbol = Symbol('Inputs');
 
   constructor() {
     this.name = InputsComponent.symbol;

@@ -65,6 +65,7 @@ export class ParameterizedForgeEvent<TInput = null> {
         listener(input);
       } catch (error) {
         console.error(`Error in listener for event ${this.name}:`, error);
+
         throw error;
       }
     }

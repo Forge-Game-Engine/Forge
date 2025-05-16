@@ -48,30 +48,83 @@ export class Material {
       const loc = spec.location;
 
       if (value instanceof WebGLTexture) {
-        gl.activeTexture(gl.TEXTURE0 + textureUnit);
-        gl.bindTexture(gl.TEXTURE_2D, value);
-        gl.uniform1i(loc, textureUnit);
-        textureUnit++;
+        textureUnit = this._bindTexture(gl, loc, value, textureUnit);
       } else if (typeof value === 'number') {
-        gl.uniform1f(loc, value);
+        this._setUniformNumber(gl, loc, value);
       } else if (typeof value === 'boolean') {
-        gl.uniform1i(loc, value ? 1 : 0);
+        this._setUniformBoolean(gl, loc, value);
       } else if (value instanceof Float32Array) {
-        if (value.length === 2) {
-          gl.uniform2fv(loc, value);
-        } else if (value.length === 3) {
-          gl.uniform3fv(loc, value);
-        } else if (value.length === 4) {
-          gl.uniform4fv(loc, value);
-        } else if (value.length === 9) {
-          gl.uniformMatrix3fv(loc, false, value);
-        } else if (value.length === 16) {
-          gl.uniformMatrix4fv(loc, false, value);
-        }
+        this._setUniformFloat32Array(gl, loc, value);
       } else if (value instanceof Int32Array) {
-        gl.uniform1iv(loc, value);
+        this._setUniformInt32Array(gl, loc, value);
       }
     }
+  }
+
+  private _bindTexture(
+    gl: WebGL2RenderingContext,
+    loc: WebGLUniformLocation,
+    texture: WebGLTexture,
+    textureUnit: number,
+  ): number {
+    gl.activeTexture(gl.TEXTURE0 + textureUnit);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(loc, textureUnit);
+
+    return textureUnit + 1;
+  }
+
+  private _setUniformNumber(
+    gl: WebGL2RenderingContext,
+    loc: WebGLUniformLocation,
+    value: number,
+  ): void {
+    gl.uniform1f(loc, value);
+  }
+
+  private _setUniformBoolean(
+    gl: WebGL2RenderingContext,
+    loc: WebGLUniformLocation,
+    value: boolean,
+  ): void {
+    gl.uniform1i(loc, value ? 1 : 0);
+  }
+
+  private _setUniformFloat32Array(
+    gl: WebGL2RenderingContext,
+    loc: WebGLUniformLocation,
+    value: Float32Array,
+  ): void {
+    switch (value.length) {
+      case 2:
+        gl.uniform2fv(loc, value);
+
+        break;
+      case 3:
+        gl.uniform3fv(loc, value);
+
+        break;
+      case 4:
+        gl.uniform4fv(loc, value);
+
+        break;
+      case 9:
+        gl.uniformMatrix3fv(loc, false, value);
+
+        break;
+      case 16:
+        gl.uniformMatrix4fv(loc, false, value);
+
+        break;
+    }
+  }
+
+  private _setUniformInt32Array(
+    gl: WebGL2RenderingContext,
+    loc: WebGLUniformLocation,
+    value: Int32Array,
+  ): void {
+    gl.uniform1iv(loc, value);
   }
 
   /**
@@ -118,13 +171,14 @@ export class Material {
       gl.FRAGMENT_SHADER,
     );
 
-    const program = gl.createProgram()!;
+    const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const log = gl.getProgramInfoLog(program);
+
       throw new Error(`Failed to link program: ${log}`);
     }
 
@@ -143,6 +197,7 @@ export class Material {
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       const log = gl.getShaderInfoLog(shader);
+
       throw new Error(`Shader compile error: ${log}`);
     }
 
@@ -162,6 +217,7 @@ export class Material {
       }
 
       const location = gl.getUniformLocation(program, info.name);
+
       if (location !== null) {
         this._uniforms.set(info.name, {
           location,

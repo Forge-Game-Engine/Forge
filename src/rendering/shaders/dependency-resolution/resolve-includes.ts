@@ -22,6 +22,7 @@ export function resolveIncludes(
     .join('\n');
 
   // Remove consecutive empty lines
+  // eslint-disable-next-line sonarjs/slow-regex
   return processedLines.replace(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
 }
 
@@ -67,7 +68,7 @@ function processIncludeLine(
   includesAlreadyResolved: string[],
   resolvedVariables: Set<string>,
 ): string {
-  const match = line.match(/#include <(\w+)>/);
+  const match = RegExp(/#include <(\w+)>/).exec(line);
 
   if (!match) {
     throw new Error(
@@ -121,6 +122,7 @@ function processVariableDeclarationLine(
   }
 
   resolvedVariables.add(line.trim());
+
   return line;
 }
 

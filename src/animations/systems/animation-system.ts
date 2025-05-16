@@ -21,7 +21,7 @@ export class AnimationSystem extends System {
    * Runs the animation system for a given entity.
    * @param entity - The entity to update animations for.
    */
-  public async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const animationComponent = entity.getComponentRequired<AnimationComponent>(
       AnimationComponent.symbol,
     );

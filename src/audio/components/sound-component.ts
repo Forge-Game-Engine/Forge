@@ -9,7 +9,7 @@ export class SoundComponent implements Component {
   public sound: Howl;
   public playSound: boolean;
 
-  public static symbol = Symbol('Sound');
+  public static readonly symbol = Symbol('Sound');
 
   /**
    * Creates an instance of SoundComponent.

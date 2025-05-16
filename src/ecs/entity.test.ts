@@ -9,7 +9,7 @@ class MockComponent implements Component {
     this.name = MockComponent.symbol;
   }
 
-  public static symbol = Symbol('mock-component');
+  public static readonly symbol = Symbol('mock-component');
 }
 
 test('creating an entity', () => {

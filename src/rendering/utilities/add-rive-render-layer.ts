@@ -1,4 +1,4 @@
-import { Alignment, Fit, Layout } from '@rive-app/webgl2';
+import { Alignment, Fit, Layout, type RiveParameters } from '@rive-app/webgl2';
 import type { RiveCache } from '../../asset-loading';
 import type { LayerService } from '../layer-service';
 import { RiveRenderLayer } from '../render-layers';
@@ -12,7 +12,8 @@ import { createCanvas } from './create-canvas';
  * @param layerService - The layer service to register the layer with.
  * @param riveCache - The Rive cache to load the Rive file from.
  * @param riveFileUri - The URI of the Rive file to load.
- * @param riveStateMachine - The name of the state machine to use in the Rive file.
+ * @param stateMachines - The name of the state machine to use in the Rive file.
+ * @param riveParameters - Additional parameters for the Rive layer.
  * @returns An array containing the created layer, canvas, and Rive file.
  */
 export async function addRiveRenderLayer(
@@ -20,7 +21,8 @@ export async function addRiveRenderLayer(
   layerService: LayerService,
   riveCache: RiveCache,
   riveFileUri: string,
-  riveStateMachine: string,
+  stateMachines: string | string[],
+  riveParameters?: RiveParameters,
 ) {
   const riveFile = await riveCache.getOrLoad(riveFileUri);
 
@@ -28,12 +30,13 @@ export async function addRiveRenderLayer(
 
   const layer = new RiveRenderLayer(DEFAULT_LAYERS.ui, canvas, {
     riveFile,
-    stateMachines: riveStateMachine,
-    canvas: canvas,
+    stateMachines,
+    canvas,
     layout: new Layout({
       fit: Fit.Layout,
       alignment: Alignment.Center,
     }),
+    ...riveParameters,
   });
 
   layerService.registerLayer(layer);

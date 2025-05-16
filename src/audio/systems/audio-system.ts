@@ -17,7 +17,7 @@ export class AudioSystem extends System {
    * @param entity - The entity to update and play sounds for.
    * @returns A promise.
    */
-  public async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const soundComponent = entity.getComponentRequired<SoundComponent>(
       SoundComponent.symbol,
     );

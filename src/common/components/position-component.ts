@@ -7,7 +7,7 @@ import { Vector2 } from '../../math';
 export class PositionComponent extends Vector2 implements Component {
   public name: symbol;
 
-  public static symbol = Symbol('Position');
+  public static readonly symbol = Symbol('Position');
 
   /**
    * Creates an instance of PositionComponent.

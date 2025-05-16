@@ -16,7 +16,7 @@ export class SpriteComponent implements Component {
   public enabled: boolean;
 
   /** A static symbol property that uniquely identifies the `SpriteComponent`. */
-  public static symbol = Symbol('Sprite');
+  public static readonly symbol = Symbol('Sprite');
 
   /**
    * Constructs a new instance of the `SpriteComponent` class with the given `Sprite`.

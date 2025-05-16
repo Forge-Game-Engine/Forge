@@ -78,7 +78,7 @@ export class CameraComponent implements Component {
   public allowZooming: boolean;
 
   /** A static symbol property that uniquely identifies the `CameraComponent`. */
-  public static symbol = Symbol('Camera');
+  public static readonly symbol = Symbol('Camera');
 
   /**
    * Constructs a new instance of the `CameraComponent` class with the given options.

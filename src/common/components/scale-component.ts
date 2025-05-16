@@ -7,7 +7,7 @@ import { Vector2 } from '../../math';
 export class ScaleComponent extends Vector2 implements Component {
   public name: symbol;
 
-  public static symbol = Symbol('Scale');
+  public static readonly symbol = Symbol('Scale');
 
   /**
    * Creates an instance of ScaleComponent.

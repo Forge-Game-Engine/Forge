@@ -8,7 +8,7 @@ export class RotationComponent implements Component {
   public name: symbol;
   public radians: number;
 
-  public static symbol = Symbol('Rotation');
+  public static readonly symbol = Symbol('Rotation');
 
   /**
    * Creates an instance of RotationComponent.

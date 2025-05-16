@@ -81,6 +81,7 @@ export function createScene(
   const resizeListener = () => {
     layerService.resizeAllLayers();
   };
+
   window.addEventListener('resize', resizeListener);
 
   scene.registerStoppables({

@@ -17,7 +17,7 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
   public rive: Rive;
 
   /** The event dispatcher for Rive events. */
-  private _riveEventDispatcher: EventDispatcher<RiveEventPayload>;
+  private readonly _riveEventDispatcher: EventDispatcher<RiveEventPayload>;
 
   /**
    * Constructs a new instance of the `RiveRenderLayer` class.
@@ -99,6 +99,7 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
   public stop() {
     const gl =
       this.canvas.getContext('webgl2') || this.canvas.getContext('webgl');
+
     if (gl) {
       // It's WebGL
       gl.clearColor(0, 0, 0, 0);

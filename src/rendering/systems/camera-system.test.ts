@@ -51,6 +51,7 @@ describe('CameraSystem', () => {
         if (symbol === CameraComponent.symbol) {
           return cameraComponent;
         }
+
         if (symbol === PositionComponent.symbol) {
           return positionComponent;
         }

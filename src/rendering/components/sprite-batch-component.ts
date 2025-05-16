@@ -30,7 +30,7 @@ export class RenderableBatchComponent implements Component {
   public name: symbol;
 
   /** A static symbol property that uniquely identifies the `RenderableBatchComponent`. */
-  public static symbol = Symbol('RenderableBatch');
+  public static readonly symbol = Symbol('RenderableBatch');
 
   /** The map of batched entities. */
   public batches: Map<Renderable, Batch> = new Map();
