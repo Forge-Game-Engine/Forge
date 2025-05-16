@@ -9,9 +9,11 @@ type AttributeSpec = {
 };
 
 export class Geometry {
-  private _attributes: Map<string, Required<AttributeSpec>> = new Map();
+  private readonly _attributes: Map<string, Required<AttributeSpec>> =
+    new Map();
   private _indexBuffer?: WebGLBuffer;
-  private _vaoCache: Map<WebGLProgram, WebGLVertexArrayObject> = new Map();
+  private readonly _vaoCache: Map<WebGLProgram, WebGLVertexArrayObject> =
+    new Map();
 
   /**
    * Adds a vertex attribute to the geometry.
@@ -61,7 +63,7 @@ export class Geometry {
     gl: WebGL2RenderingContext,
     program: WebGLProgram,
   ) {
-    const vao = gl.createVertexArray()!;
+    const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
 
     if (this._indexBuffer) {
@@ -70,8 +72,10 @@ export class Geometry {
 
     for (const [name, attr] of this._attributes) {
       const loc = gl.getAttribLocation(program, name);
+
       if (loc === -1) {
         console.warn(`Attribute ${name} not found in shader`);
+
         continue; // Attribute not used in shader
       }
 
@@ -92,6 +96,7 @@ export class Geometry {
     }
 
     gl.bindVertexArray(null);
+
     return vao;
   }
 }

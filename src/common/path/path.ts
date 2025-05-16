@@ -94,9 +94,9 @@ export class Path implements Iterable<Vector2> {
       next(): IteratorResult<Vector2> {
         if (index < path.length) {
           return { value: path[index++]!, done: false };
-        } else {
-          return { done: true } as IteratorResult<Vector2>;
         }
+
+        return { done: true } as IteratorResult<Vector2>;
       },
     };
   }

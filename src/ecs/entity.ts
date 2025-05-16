@@ -9,12 +9,12 @@ export class Entity {
   /**
    * The unique identifier of the entity.
    */
-  private _id: number;
+  private readonly _id: number;
 
   /**
    * The set of components associated with this entity.
    */
-  private _components: Set<Component>;
+  private readonly _components: Set<Component>;
 
   /**
    * The name of the entity.
@@ -72,21 +72,19 @@ export class Entity {
       for (const component of this._components) {
         if (component.name === symbol) {
           symbolMatched = true;
+
           break;
         }
       }
 
       if (!symbolMatched) {
         allSymbolsMatch = false;
+
         break;
       }
     }
 
-    if (allSymbolsMatch) {
-      return true;
-    }
-
-    return false;
+    return allSymbolsMatch;
   }
 
   /**

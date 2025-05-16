@@ -4,6 +4,7 @@ import { ForgeEvent } from './forge-event';
 describe('When creating an event', () => {
   const event = new ForgeEvent('test-event');
   const logic = vi.fn();
+
   const listener = async () => {
     await new Promise(() => {
       logic('processed event');

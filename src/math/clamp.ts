@@ -7,5 +7,13 @@
  * @returns The clamped value, which will be within the range [min, max].
  */
 export const clamp = (value: number, min: number, max: number): number => {
-  return value < min ? min : value > max ? max : value;
+  if (value < min) {
+    return min;
+  }
+
+  if (value > max) {
+    return max;
+  }
+
+  return value;
 };

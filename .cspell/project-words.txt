@@ -25,6 +25,7 @@ requizits
 rnaumovs
 slevesque
 smoothstep
+sonarjs
 stoppables
 updatables
 webgl

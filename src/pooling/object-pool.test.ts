@@ -7,6 +7,7 @@ describe('ObjectPool', () => {
   let disposeCallback: (instance: number) => void;
 
   beforeEach(() => {
+    // eslint-disable-next-line sonarjs/pseudo-random
     createCallback = vi.fn(() => Math.random());
     disposeCallback = vi.fn();
     pool = new ObjectPool<number>([], createCallback, disposeCallback);

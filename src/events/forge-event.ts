@@ -60,6 +60,7 @@ export class ForgeEvent {
     for (const listener of this._listeners) {
       listener().catch((error) => {
         console.error(`Error in listener for event ${this.name}:`, error);
+
         throw error;
       });
     }

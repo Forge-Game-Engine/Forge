@@ -73,6 +73,7 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     const collisions = Ray.bodyCollisions(ray, body);
     // Should hit two edges (left and right)
     expect(collisions.length).toBe(2);
+
     for (const c of collisions) {
       expect(c.point.y).toBeCloseTo(0);
       expect(Math.abs(c.point.x)).toBeCloseTo(1);
@@ -104,6 +105,7 @@ describe('raycast', () => {
     const end = new Vector2(2, 0);
     const collisions = raycast([body], start, end);
     expect(collisions.length).toBe(2);
+
     for (const c of collisions) {
       expect(c.body).toBe(body);
       expect(Array.isArray(c.vertices)).toBe(true);

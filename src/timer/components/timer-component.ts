@@ -14,7 +14,7 @@ export class TimerComponent implements Component {
   public name: symbol;
   public tasks: TimerTask[];
 
-  public static symbol = Symbol('Timer');
+  public static readonly symbol = Symbol('Timer');
 
   constructor(tasks: TimerTask[] = []) {
     this.name = TimerComponent.symbol;

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,7 @@ export default [
     'prettier',
   ),
   prettier,
+  sonarjs.configs.recommended,
   {
     plugins: {
       '@typescript-eslint': typescriptEslint,
@@ -77,6 +79,33 @@ export default [
 
       curly: 'error',
       'require-await': 'error',
+
+      'no-else-return': [
+        'error',
+        {
+          allowElseIf: false,
+        },
+      ],
+
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'block-like' },
+        { blankLine: 'always', prev: 'block-like', next: '*' },
+        {
+          blankLine: 'always',
+          prev: '*',
+          next: [
+            'block-like',
+            'return',
+            'break',
+            'continue',
+            'throw',
+          ],
+        },
+      ],
+
+      'sonarjs/todo-tag': 'warn',
+      'no-await-in-loop': 'error'
     },
   },
 ];

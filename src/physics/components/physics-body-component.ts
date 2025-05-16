@@ -14,7 +14,7 @@ export class PhysicsBodyComponent implements Component {
    */
   public physicsBody: Body;
 
-  public static symbol = Symbol('PhysicsBody');
+  public static readonly symbol = Symbol('PhysicsBody');
 
   /**
    * Creates an instance of PhysicsBodyComponent.

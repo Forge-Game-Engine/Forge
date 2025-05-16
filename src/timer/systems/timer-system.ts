@@ -3,7 +3,7 @@ import { Time } from '../../common';
 import { TimerComponent } from '../components/timer-component';
 
 export class TimerSystem extends System {
-  private _time: Time;
+  private readonly _time: Time;
 
   constructor(time: Time) {
     super('timer', [TimerComponent.symbol]);
@@ -32,6 +32,7 @@ export class TimerSystem extends System {
         if (task.repeat && task.interval !== undefined) {
           // Periodic task
           task.runsSoFar!++;
+
           if (task.maxRuns !== undefined && task.runsSoFar! >= task.maxRuns) {
             // Remove if we have run it the max times
             timerComponent.tasks.splice(i, 1);

@@ -6,7 +6,7 @@ import type { Component } from '../../ecs';
 export class CursorComponent implements Component {
   public name: symbol;
 
-  public static symbol = Symbol('Cursor');
+  public static readonly symbol = Symbol('Cursor');
 
   /**
    * Constructs a new cursor component.
