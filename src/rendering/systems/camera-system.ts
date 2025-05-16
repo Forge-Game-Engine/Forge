@@ -31,7 +31,7 @@ export class CameraSystem extends System {
    * based on user inputs.
    * @param entity - The entity that contains the `CameraComponent` and `PositionComponent`.
    */
-  public async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const cameraComponent = entity.getComponentRequired<CameraComponent>(
       CameraComponent.symbol,
     );

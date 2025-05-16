@@ -51,7 +51,7 @@ export class RenderSystem extends System {
     return entities;
   }
 
-  public override async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const batchComponent =
       entity.getComponentRequired<RenderableBatchComponent>(
         RenderableBatchComponent.symbol,

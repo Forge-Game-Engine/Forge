@@ -28,7 +28,7 @@ export class ImageCache implements AssetCache<HTMLImageElement> {
    * @returns A promise that resolves when the image is loaded and cached.
    * @throws Will throw an error if the image fails to load.
    */
-  public async load(path: string): Promise<void> {
+  public load(path: string): Promise<void> {
     const image = new Image();
     image.src = path;
 

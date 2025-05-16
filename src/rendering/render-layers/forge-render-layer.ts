@@ -30,7 +30,7 @@ export class ForgeRenderLayer extends RenderLayer {
   ) {
     super(name, canvas);
 
-    const context = canvas.getContext('webgl2');
+    const context = canvas.getContext('webgl2', { antialias: true });
 
     if (!context) {
       throw new Error('Context not found');

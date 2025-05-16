@@ -74,7 +74,7 @@ export class InputSystem extends System {
    * with the current input states.
    * @param entity - The entity to update.
    */
-  public async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const inputs = entity.getComponentRequired<InputsComponent>(
       InputsComponent.symbol,
     );

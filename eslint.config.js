@@ -76,6 +76,7 @@ export default [
       ],
 
       curly: 'error',
+      'require-await': 'error',
     },
   },
 ];

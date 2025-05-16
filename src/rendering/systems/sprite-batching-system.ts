@@ -38,7 +38,7 @@ export class SpriteBatchingSystem extends System {
    * Runs the batching system for the given entity, batching the sprite.
    * @param entity - The entity.
    */
-  public async run(entity: Entity): Promise<void> {
+  public run(entity: Entity): void {
     const spriteComponent = entity.getComponentRequired<SpriteComponent>(
       SpriteComponent.symbol,
     );
