@@ -5,8 +5,9 @@ describe('When creating an event', () => {
   const event = new ForgeEvent('test-event');
   const logic = vi.fn();
   const listener = async () => {
-    await Promise.resolve();
-    logic('processed event');
+    await new Promise(() => {
+      logic('processed event');
+    });
   };
 
   beforeEach(() => {
