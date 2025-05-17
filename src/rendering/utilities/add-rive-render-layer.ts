@@ -21,16 +21,13 @@ export async function addRiveRenderLayer(
   layerService: LayerService,
   riveCache: RiveCache,
   riveFileUri: string,
-  stateMachines: string | string[],
-  riveParameters?: RiveParameters,
+  riveParameters?: Partial<RiveParameters>,
 ) {
   const riveFile = await riveCache.getOrLoad(riveFileUri);
-
   const canvas = createCanvas(DEFAULT_LAYERS.ui, gameContainer);
 
   const layer = new RiveRenderLayer(DEFAULT_LAYERS.ui, canvas, {
     riveFile,
-    stateMachines,
     canvas,
     layout: new Layout({
       fit: Fit.Layout,
