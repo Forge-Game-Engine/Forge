@@ -1,10 +1,4 @@
-import {
-  EventType,
-  Rive,
-  type RiveEventPayload,
-  RiveEventType,
-  type RiveParameters,
-} from '@rive-app/webgl2';
+import { Rive, type RiveEventPayload } from '@rive-app/webgl2';
 import { RenderLayer } from './render-layer';
 import { EventDispatcher, ParameterizedForgeEvent } from '../../events';
 import type { Stoppable } from '../../common';
@@ -12,9 +6,10 @@ import type { Stoppable } from '../../common';
 /**
  * The `RiveRenderLayer` class represents a rendering layer with its own canvas and rive instance.
  */
-export class RiveRenderLayer extends RenderLayer implements Stoppable {
+export class RiveRenderLayer<TModel> extends RenderLayer implements Stoppable {
   /** The Rive instance associated with the render layer. */
   public rive: Rive;
+  public model: TModel;
 
   /** The event dispatcher for Rive events. */
   private readonly _riveEventDispatcher: EventDispatcher<RiveEventPayload>;
@@ -28,15 +23,15 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
   constructor(
     name: string,
     canvas: HTMLCanvasElement,
-    riveParameters: RiveParameters,
+    rive: Rive,
+    riveEventDispatcher: EventDispatcher<RiveEventPayload>,
+    model: TModel,
   ) {
     super(name, canvas);
 
-    const { rive, riveEventDispatcher } =
-      this._createRiveInstance(riveParameters);
-
     this.rive = rive;
     this._riveEventDispatcher = riveEventDispatcher;
+    this.model = model;
   }
 
   /**
@@ -59,38 +54,6 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
     event: ParameterizedForgeEvent<RiveEventPayload>,
   ) {
     this._riveEventDispatcher.addEventListener(riveEventName, event);
-  }
-
-  /**
-   * Creates a new Rive instance with the specified Rive file, canvas, and state machines.
-   * @param riveParameters - The Rive parameters to use. See https://rive.app/docs/runtimes/web/rive-parameters for more information.
-   * @returns An object containing the Rive instance and event dispatcher.
-   */
-  private _createRiveInstance(riveParameters: RiveParameters) {
-    const rive = new Rive({
-      autoplay: true,
-      onLoad: () => {
-        // Prevent a blurry canvas by using the device pixel ratio
-        rive.resizeDrawingSurfaceToCanvas();
-      },
-      ...riveParameters,
-    });
-
-    const riveEventDispatcher = new EventDispatcher<RiveEventPayload>();
-
-    rive.on(EventType.RiveEvent, (event) => {
-      const eventData = event.data as RiveEventPayload;
-
-      if (eventData.type !== RiveEventType.General) {
-        throw new Error(
-          'Forge only handles general rive events. See https://rive.app/docs/editor/events/overview#type for more information.',
-        );
-      }
-
-      riveEventDispatcher.dispatchEvent(eventData.name, eventData);
-    });
-
-    return { rive, riveEventDispatcher };
   }
 
   /**
