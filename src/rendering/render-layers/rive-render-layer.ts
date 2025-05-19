@@ -6,10 +6,9 @@ import type { Stoppable } from '../../common';
 /**
  * The `RiveRenderLayer` class represents a rendering layer with its own canvas and rive instance.
  */
-export class RiveRenderLayer<TModel> extends RenderLayer implements Stoppable {
+export class RiveRenderLayer extends RenderLayer implements Stoppable {
   /** The Rive instance associated with the render layer. */
   public rive: Rive;
-  public model: TModel;
 
   /** The event dispatcher for Rive events. */
   private readonly _riveEventDispatcher: EventDispatcher<RiveEventPayload>;
@@ -25,13 +24,11 @@ export class RiveRenderLayer<TModel> extends RenderLayer implements Stoppable {
     canvas: HTMLCanvasElement,
     rive: Rive,
     riveEventDispatcher: EventDispatcher<RiveEventPayload>,
-    model: TModel,
   ) {
     super(name, canvas);
 
     this.rive = rive;
     this._riveEventDispatcher = riveEventDispatcher;
-    this.model = model;
   }
 
   /**

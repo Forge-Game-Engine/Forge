@@ -14,7 +14,6 @@ import { RiveRenderLayer } from '../render-layers';
 import { DEFAULT_LAYERS } from '../enums';
 import { createCanvas } from './create-canvas';
 import { EventDispatcher } from '../../events';
-import { RiveDataModel } from '../render-layers/rive-data-model';
 
 /**
  * Adds a Rive render layer to the game container and registers it with the layer service.
@@ -26,7 +25,7 @@ import { RiveDataModel } from '../render-layers/rive-data-model';
  * @param riveParameters - Additional parameters for the Rive layer.
  * @returns An array containing the created layer, canvas, and Rive file.
  */
-export async function addRiveRenderLayer<TModel>(
+export async function addRiveRenderLayer(
   riveFileUri: string,
   gameContainer: HTMLElement,
   layerService: LayerService,
@@ -36,17 +35,15 @@ export async function addRiveRenderLayer<TModel>(
   const riveFile = await riveCache.getOrLoad(riveFileUri);
   const canvas = createCanvas(DEFAULT_LAYERS.ui, gameContainer);
 
-  const { rive, riveEventDispatcher, model } = await createRiveInstance<TModel>(
-    {
-      riveFile,
-      canvas,
-      layout: new Layout({
-        fit: Fit.Layout,
-        alignment: Alignment.Center,
-      }),
-      ...riveParameters,
-    },
-  );
+  const { rive, riveEventDispatcher, model } = await createRiveInstance({
+    riveFile,
+    canvas,
+    layout: new Layout({
+      fit: Fit.Layout,
+      alignment: Alignment.Center,
+    }),
+    ...riveParameters,
+  });
 
   const layer = new RiveRenderLayer(
     DEFAULT_LAYERS.ui,
@@ -66,10 +63,9 @@ export async function addRiveRenderLayer<TModel>(
  * @param riveParameters - The Rive parameters to use. See https://rive.app/docs/runtimes/web/rive-parameters for more information.
  * @returns An object containing the Rive instance and event dispatcher.
  */
-function createRiveInstance<TModel>(riveParameters: RiveParameters): Promise<{
+function createRiveInstance(riveParameters: RiveParameters): Promise<{
   rive: Rive;
   riveEventDispatcher: EventDispatcher<RiveEventPayload>;
-  model: TModel;
 }> {
   return new Promise((resolve, reject) => {
     const rive = new Rive({
@@ -92,11 +88,9 @@ function createRiveInstance<TModel>(riveParameters: RiveParameters): Promise<{
           riveEventDispatcher.dispatchEvent(eventData.name, eventData);
         });
 
-        const model = new RiveDataModel(rive);
-
         riveParameters.onLoad?.(event);
 
-        resolve({ rive, riveEventDispatcher, model });
+        resolve({ rive, riveEventDispatcher });
       },
       onLoadError: (error) => {
         console.error('Rive load error:', error);
