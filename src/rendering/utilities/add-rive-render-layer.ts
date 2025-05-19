@@ -35,7 +35,7 @@ export async function addRiveRenderLayer(
   const riveFile = await riveCache.getOrLoad(riveFileUri);
   const canvas = createCanvas(DEFAULT_LAYERS.ui, gameContainer);
 
-  const { rive, riveEventDispatcher, model } = await createRiveInstance({
+  const { rive, riveEventDispatcher } = await createRiveInstance({
     riveFile,
     canvas,
     layout: new Layout({
@@ -50,7 +50,6 @@ export async function addRiveRenderLayer(
     canvas,
     rive,
     riveEventDispatcher,
-    model,
   );
 
   layerService.registerLayer(layer);
