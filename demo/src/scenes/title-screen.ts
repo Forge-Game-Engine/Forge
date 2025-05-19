@@ -46,16 +46,13 @@ export async function createTitleScene(
 
   createStarfield(world, 500, worldSpace);
 
-  const riveFile = await riveCache.getOrLoad(riveFileUri);
-  const riveCanvas = forge.createCanvas(forge.DEFAULT_LAYERS.ui, gameContainer);
-
-  const riveRenderLayer = new forge.RiveRenderLayer(
-    forge.DEFAULT_LAYERS.ui,
-    riveCanvas,
+  const [riveRenderLayer] = await forge.addRiveRenderLayer(
+    riveFileUri,
+    gameContainer,
+    layerService,
+    riveCache,
     {
-      riveFile,
       stateMachines: riveStateMachine,
-      canvas: riveCanvas,
       layout: new Layout({
         fit: Fit.Layout,
         alignment: Alignment.Center,

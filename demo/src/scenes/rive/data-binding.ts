@@ -21,10 +21,10 @@ export async function createDataBindingScene(
   );
 
   await addRiveRenderLayer(
+    RIVE_FILE_URI,
     gameContainer,
     layerService,
     riveCache,
-    RIVE_FILE_URI,
     {
       artboard: RIVE_ARTBOARD,
       stateMachines: RIVE_STATE_MACHINE,
