@@ -1,4 +1,4 @@
-type Listener = () => Promise<void>;
+type Listener = () => void;
 
 /**
  * An event that can be raised and listened to.
@@ -58,11 +58,13 @@ export class ForgeEvent {
    */
   public raise() {
     for (const listener of this._listeners) {
-      listener().catch((error) => {
+      try {
+        listener();
+      } catch (error) {
         console.error(`Error in listener for event ${this.name}:`, error);
 
         throw error;
-      });
+      }
     }
   }
 }
