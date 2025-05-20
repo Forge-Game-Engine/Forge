@@ -1,4 +1,4 @@
-type Listener = () => Promise<void>;
+type Listener = () => void;
 
 /**
  * An event that can be raised and listened to.
