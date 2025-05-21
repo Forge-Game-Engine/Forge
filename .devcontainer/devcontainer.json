@@ -32,7 +32,7 @@
       },
       "extensions": [
         "rnaumovs.color-highlight",
-        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-containers",
         "dbaeumer.vscode-eslint",
         "github.vscode-github-actions",
         "github.vscode-pull-request-github",
@@ -42,7 +42,8 @@
         "yoavbls.pretty-ts-errors",
         "slevesque.shader",
         "vitest.explorer",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "sonarsource.sonarlint-vscode"
       ]
     }
   },

@@ -10,7 +10,7 @@ import type { Component, System } from './types';
 export class World implements Updatable, Stoppable {
   // This could be a local variable in the update method, but for performance reasons, we keep it as a class variable.
   // This is a performance optimization to avoid creating a new array every time.
-  private readonly _systemEntities = new Array<Entity>(5000);
+  private readonly _systemEntities = new Array<Entity>();
 
   /**
    * Callbacks to be invoked when systems change.

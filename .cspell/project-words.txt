@@ -26,6 +26,8 @@ rnaumovs
 slevesque
 smoothstep
 sonarjs
+sonarlint
+sonarsource
 stoppables
 updatables
 webgl

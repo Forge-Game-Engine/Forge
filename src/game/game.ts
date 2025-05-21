@@ -14,12 +14,12 @@ export class Game implements Stoppable {
   /**
    * The current time instance.
    */
-  private _time: Time;
+  private readonly _time: Time;
 
   /**
    * The set of scenes managed by the game.
    */
-  private _scenes: Set<Scene>;
+  private readonly _scenes: Set<Scene>;
 
   /**
    * Creates a new Game instance.
