@@ -63,7 +63,7 @@ export class Entity {
    * @param componentSymbols - The symbols of the components to check.
    * @returns True if the entity contains all specified components, otherwise false.
    */
-  public checkIfEntityContainsAllComponents(componentSymbols: symbol[]) {
+  public containsAllComponents(componentSymbols: symbol[]) {
     let allSymbolsMatch = true;
 
     for (const symbol of componentSymbols) {
@@ -133,9 +133,15 @@ export class Entity {
 
   /**
    * Removes a component from the entity.
-   * @param component - The component to remove.
+   * @param componentName - The name of the component to remove.
    */
-  public removeComponent(component: Component) {
+  public removeComponent(componentName: symbol) {
+    const component = this.getComponent<Component>(componentName);
+
+    if (component === null) {
+      return;
+    }
+
     this._components.delete(component);
   }
 
@@ -168,7 +174,7 @@ export const filterEntitiesByComponents = (
   const result = new Set<Entity>();
 
   for (const entity of entities) {
-    if (entity.checkIfEntityContainsAllComponents(componentSymbols)) {
+    if (entity.containsAllComponents(componentSymbols)) {
       result.add(entity);
     }
   }

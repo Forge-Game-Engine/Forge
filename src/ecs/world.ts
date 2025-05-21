@@ -170,9 +170,7 @@ export class World implements Updatable, Stoppable {
     this._entities.add(entity);
 
     this._systems.forEach((system) => {
-      if (
-        entity.checkIfEntityContainsAllComponents(system.operatesOnComponents)
-      ) {
+      if (entity.containsAllComponents(system.operatesOnComponents)) {
         const entities = this._systemEntities.get(system.name);
 
         if (!entities) {
