@@ -7,6 +7,11 @@ import sdfCircleShaderIncludeSource from './sdf-circle.include.glsl?raw';
 import sdfBoxShaderIncludeSource from './sdf-box.include.glsl?raw';
 import sdfOrientedBoxShaderIncludeSource from './sdf-oriented-box.include.glsl?raw';
 import radialGradientShaderIncludeSource from './radial-gradient.include.glsl?raw';
+import sdfEquilateralTriangleIncludeSource from './sdf-equilateral-triangle.include.glsl?raw';
+import sdfRhombusIncludeSource from './sdf-rhombus.include.glsl?raw';
+import sdfTrapezoidIncludeSource from './sdf-trapezoid.include.glsl?raw';
+import sdfOctagonIncludeSource from './sdf-octagon.include.glsl?raw';
+import sdfHexagonIncludeSource from './sdf-hexagon.include.glsl?raw';
 
 export const perlinNoiseFragmentShader = perlinNoiseFragmentShaderSource;
 export const perlinNoiseShaderInclude = perlinNoiseShaderIncludeSource;
@@ -17,3 +22,9 @@ export const sdfCircleShaderInclude = sdfCircleShaderIncludeSource;
 export const sdfBoxShaderInclude = sdfBoxShaderIncludeSource;
 export const sdfOrientedBoxShaderInclude = sdfOrientedBoxShaderIncludeSource;
 export const radialGradientShaderInclude = radialGradientShaderIncludeSource;
+export const sdfEquilateralTriangleInclude =
+  sdfEquilateralTriangleIncludeSource;
+export const sdfRhombusInclude = sdfRhombusIncludeSource;
+export const sdfTrapezoidInclude = sdfTrapezoidIncludeSource;
+export const sdfOctagonInclude = sdfOctagonIncludeSource;
+export const sdfHexagonInclude = sdfHexagonIncludeSource;
