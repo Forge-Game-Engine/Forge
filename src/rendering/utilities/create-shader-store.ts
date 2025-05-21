@@ -12,6 +12,11 @@ import {
   ShaderStore,
   spriteFragmentShader,
   spriteVertexShader,
+  sdfEquilateralTriangleInclude,
+  sdfRhombusInclude,
+  sdfTrapezoidInclude,
+  sdfOctagonInclude,
+  sdfHexagonInclude,
 } from '../shaders';
 
 /**
@@ -39,6 +44,11 @@ export function createShaderStore() {
     sdfBoxShaderInclude,
     sdfCircleShaderInclude,
     sdfOrientedBoxShaderInclude,
+    sdfEquilateralTriangleInclude,
+    sdfRhombusInclude,
+    sdfTrapezoidInclude,
+    sdfOctagonInclude,
+    sdfHexagonInclude,
   );
 
   shaderStore.addShader(
