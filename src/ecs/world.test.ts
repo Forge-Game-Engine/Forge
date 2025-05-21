@@ -79,8 +79,7 @@ describe('World', () => {
 
     world.stop();
 
-    expect(stopMock).toHaveBeenCalled();
-    expect(stopMock).toHaveBeenCalled();
+    expect(stopMock).toHaveBeenCalledTimes(2);
   });
 
   it('should remove onEntitiesChanged callbacks', () => {
