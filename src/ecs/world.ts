@@ -1,6 +1,6 @@
 import type { Stoppable } from '../common';
 import type { Updatable } from '../game';
-import { Entity, filterEntitiesByComponents } from './entity';
+import { Entity } from './entity';
 import type { Component, System } from './types';
 
 /**
@@ -8,57 +8,52 @@ import type { Component, System } from './types';
  * The world manages entities and systems, and updates systems with the entities they operate on.
  */
 export class World implements Updatable, Stoppable {
-  /**
-   * A map of system names to the entities they operate on.
-   */
-  private _systemEntities = new Map<string, Set<Entity>>();
-
-  private _enabledEntities = new Array<Entity>(5000);
+  // This could be a local variable in the update method, but for performance reasons, we keep it as a class variable.
+  // This is a performance optimization to avoid creating a new array every time.
+  private readonly _systemEntities = new Array<Entity>(5000);
 
   /**
    * Callbacks to be invoked when systems change.
    */
-  private _onSystemsChangedCallbacks = new Set<
+  private readonly _onSystemsChangedCallbacks = new Set<
     (systems: Set<System>) => void
   >();
 
   /**
    * Callbacks to be invoked when entities change.
    */
-  private _onEntitiesChangedCallbacks = new Set<
+  private readonly _onEntitiesChangedCallbacks = new Set<
     (entities: Set<Entity>) => void
   >();
 
   /**
    * The set of systems in the world.
    */
-  private _systems = new Set<System>();
+  private readonly _systems = new Set<System>();
 
   /**
    * The set of entities in the world.
    */
-  private _entities = new Set<Entity>();
+  private readonly _entities = new Set<Entity>();
 
   /**
    * Updates all systems in the world.
    */
   public update() {
     for (const system of this._systems) {
-      const entities = this._systemEntities.get(system.name);
+      this._systemEntities.length = 0;
 
-      if (!entities) {
-        throw new Error(`Unable to get entities for system ${system.name}`);
-      }
+      for (const entity of this._entities) {
+        if (!entity.enabled) {
+          continue;
+        }
 
-      this._enabledEntities.length = 0;
-
-      for (const entity of entities) {
-        if (entity.enabled) {
-          this._enabledEntities.push(entity);
+        if (entity.containsAllComponents(system.operatesOnComponents)) {
+          this._systemEntities.push(entity);
         }
       }
 
-      system.runSystem(this._enabledEntities);
+      system.runSystem(this._systemEntities);
     }
   }
 
@@ -123,10 +118,6 @@ export class World implements Updatable, Stoppable {
    */
   public addSystem(system: System) {
     this._systems.add(system);
-    this._systemEntities.set(
-      system.name,
-      filterEntitiesByComponents(this._entities, system.operatesOnComponents),
-    );
 
     this.raiseOnSystemsChangedEvent();
 
@@ -155,7 +146,6 @@ export class World implements Updatable, Stoppable {
    */
   public removeSystem(system: System) {
     this._systems.delete(system);
-    this._systemEntities.delete(system.name);
     this.raiseOnSystemsChangedEvent();
 
     return this;
@@ -168,18 +158,6 @@ export class World implements Updatable, Stoppable {
    */
   public addEntity(entity: Entity) {
     this._entities.add(entity);
-
-    this._systems.forEach((system) => {
-      if (entity.containsAllComponents(system.operatesOnComponents)) {
-        const entities = this._systemEntities.get(system.name);
-
-        if (!entities) {
-          throw new Error(`Unable to get entities for system ${system.name}`);
-        }
-
-        entities.add(entity);
-      }
-    });
 
     this.raiseOnEntitiesChangedEvent();
 
