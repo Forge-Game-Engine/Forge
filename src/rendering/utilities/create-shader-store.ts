@@ -8,7 +8,12 @@ import {
   randomGradientShaderInclude,
   sdfBoxShaderInclude,
   sdfCircleShaderInclude,
+  sdfEquilateralTriangleInclude,
+  sdfHexagonInclude,
+  sdfOctagonInclude,
   sdfOrientedBoxShaderInclude,
+  sdfRhombusInclude,
+  sdfTrapezoidInclude,
   ShaderStore,
   spriteFragmentShader,
   spriteVertexShader,
@@ -38,7 +43,12 @@ export function createShaderStore() {
     randomGradientShaderInclude,
     sdfBoxShaderInclude,
     sdfCircleShaderInclude,
+    sdfEquilateralTriangleInclude,
+    sdfHexagonInclude,
+    sdfOctagonInclude,
     sdfOrientedBoxShaderInclude,
+    sdfRhombusInclude,
+    sdfTrapezoidInclude,
   );
 
   shaderStore.addShader(
