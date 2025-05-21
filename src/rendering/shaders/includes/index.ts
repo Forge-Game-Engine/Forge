@@ -10,8 +10,8 @@ import radialGradientShaderIncludeSource from './radial-gradient.include.glsl?ra
 import sdfEquilateralTriangleIncludeSource from './sdf-equilateral-triangle.include.glsl?raw';
 import sdfRhombusIncludeSource from './sdf-rhombus.include.glsl?raw';
 import sdfTrapezoidIncludeSource from './sdf-trapezoid.include.glsl?raw';
-import sdfOctagonIncludeSource from './sdf-hexagon.include.glsl?raw';
-import sdfHexagonIncludeSource from './sdf-octagon.include.glsl?raw';
+import sdfOctagonIncludeSource from './sdf-octagon.include.glsl?raw';
+import sdfHexagonIncludeSource from './sdf-hexagon.include.glsl?raw';
 
 export const perlinNoiseFragmentShader = perlinNoiseFragmentShaderSource;
 export const perlinNoiseShaderInclude = perlinNoiseShaderIncludeSource;
