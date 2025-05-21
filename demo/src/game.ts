@@ -5,7 +5,7 @@ import {
   ImageCache,
   RiveCache,
 } from '../../src';
-import { createDataBindingScene } from './scenes';
+import { createShipPilotScene } from './scenes';
 
 export const game = new Game();
 
@@ -16,7 +16,7 @@ export const riveCache = new RiveCache();
 export const shaderStore = createShaderStore();
 
 game.registerScene(
-  await createDataBindingScene(game, gameContainer, riveCache),
+  await createShipPilotScene(game, gameContainer, imageCache, shaderStore),
 );
 
 game.run();
