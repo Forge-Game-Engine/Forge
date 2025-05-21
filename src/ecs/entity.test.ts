@@ -32,7 +32,7 @@ test('removing a component', () => {
   const component = new MockComponent();
   const entity = new Entity('player', [component]);
 
-  entity.removeComponent(component);
+  entity.removeComponent(MockComponent.symbol);
 
   expect(entity.getComponent(MockComponent.symbol)).toBeNull();
 });
