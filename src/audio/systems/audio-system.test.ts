@@ -7,7 +7,7 @@ import { Howl } from 'howler';
 describe('AudioSystem', () => {
   const world = new World();
 
-  it('should play sound if playSound is true', async () => {
+  it('should play sound if playSound is true', () => {
     const mockPlay = vi.fn();
     const mockHowl = { play: mockPlay } as unknown as Howl;
     const soundComponent = new SoundComponent({ src: ['sound.mp3'] });
@@ -23,7 +23,7 @@ describe('AudioSystem', () => {
     expect(soundComponent.playSound).toBe(false);
   });
 
-  it('should not play sound if playSound is false', async () => {
+  it('should not play sound if playSound is false', () => {
     const mockPlay = vi.fn();
     const mockHowl = { play: mockPlay } as unknown as Howl;
     const soundComponent = new SoundComponent({ src: ['sound.mp3'] });
@@ -33,7 +33,7 @@ describe('AudioSystem', () => {
     const entity = new Entity('test', world, [soundComponent]);
     const audioSystem = new AudioSystem();
 
-    await audioSystem.run(entity);
+    audioSystem.run(entity);
 
     expect(mockPlay).not.toHaveBeenCalled();
   });
