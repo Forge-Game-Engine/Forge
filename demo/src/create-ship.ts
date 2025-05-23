@@ -30,7 +30,7 @@ export const createShip = async (
 
   const scaleComponent = new forge.ScaleComponent();
 
-  const shipEntity = new forge.Entity('ship', [
+  const shipEntity = world.buildAndAddEntity('ship', [
     positionComponent,
     scaleComponent,
     new forge.RotationComponent(0),
@@ -40,8 +40,6 @@ export const createShip = async (
       speed: 0.5,
     }),
   ]);
-
-  world.addEntity(shipEntity);
 
   return shipEntity;
 };

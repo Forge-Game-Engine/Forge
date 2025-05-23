@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { System } from './System';
 import { Entity } from '../entity';
+import { World } from '../world';
 
 class TestSystem extends System {
   public run(): void {
@@ -11,12 +12,14 @@ class TestSystem extends System {
 describe('System', () => {
   let system: TestSystem;
   let entities: Entity[];
+  let world: World;
 
   beforeEach(() => {
+    world = new World();
     system = new TestSystem('TestSystem', [Symbol('TestComponent')]);
     entities = [
-      new Entity('Entity1', [], true),
-      new Entity('Entity2', [], true),
+      new Entity('Entity1', world, [], true),
+      new Entity('Entity2', world, [], true),
     ];
   });
 

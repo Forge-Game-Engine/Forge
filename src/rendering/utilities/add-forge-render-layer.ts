@@ -34,13 +34,12 @@ export function addForgeRenderLayer(
 
   world.addSystem(layerRenderSystem);
 
-  const batcherEntity = new Entity('renderable batcher', [
+  const batcherEntity = world.buildAndAddEntity('renderable batcher', [
     new RenderableBatchComponent(layer),
   ]);
 
   const batchingSystem = new SpriteBatchingSystem(batcherEntity);
 
-  world.addEntity(batcherEntity);
   world.addSystem(batchingSystem);
 
   return [layer, canvas] as const;

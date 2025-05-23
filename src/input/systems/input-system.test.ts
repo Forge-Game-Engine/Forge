@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputSystem } from './input-system';
-import { Entity } from '../../ecs';
+import { Entity, World } from '../../ecs';
 import { PositionComponent } from '../../common';
 import { CameraComponent } from '../../rendering';
 import { InputsComponent } from '../components';
@@ -10,10 +10,12 @@ describe('InputSystem', () => {
   let gameContainer: HTMLElement;
   let cameraEntity: Entity;
   let inputSystem: InputSystem;
+  let world: World;
 
   beforeEach(() => {
+    world = new World();
     gameContainer = document.createElement('div');
-    cameraEntity = new Entity('camera', [
+    cameraEntity = new Entity('camera', world, [
       new PositionComponent(0, 0),
       new CameraComponent(),
     ]);
@@ -65,7 +67,7 @@ describe('InputSystem', () => {
 
   it('should handle mouse move events', async () => {
     const inputsComponent = new InputsComponent();
-    const entity = new Entity('inputs', [inputsComponent]);
+    const entity = new Entity('inputs', world, [inputsComponent]);
 
     const mouseMoveEvent = new MouseEvent('mousemove', {
       clientX: 500,
@@ -91,7 +93,7 @@ describe('InputSystem', () => {
   it('should clear inputs after run', async () => {
     const inputsComponent = new InputsComponent();
 
-    const entity = new Entity('inputs', [inputsComponent]);
+    const entity = new Entity('inputs', world, [inputsComponent]);
 
     const keyDownEvent = new KeyboardEvent('keydown', { code: 'KeyA' });
     document.dispatchEvent(keyDownEvent);

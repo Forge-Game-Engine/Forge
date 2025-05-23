@@ -25,7 +25,7 @@ describe('World', () => {
   }
 
   const mock1Component = createMockComponent(Symbol('mock1'));
-  const mock2Component = createMockComponent(Symbol('mock1'));
+  const mock2Component = createMockComponent(Symbol('mock2'));
 
   beforeEach(() => {
     world = new World();
@@ -40,13 +40,11 @@ describe('World', () => {
   it('should call runSystem on each system during update with enabled entities', () => {
     const system = new MockSystem('System1', [mock1Component.name]);
 
-    const entity1 = new Entity('entity1', [mock1Component]);
-    const entity2 = new Entity('entity2', [mock1Component]);
-    entity2.enabled = false;
-
     world.addSystem(system);
-    world.addEntity(entity1);
-    world.addEntity(entity2);
+
+    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity2 = world.buildAndAddEntity('entity2', [mock1Component]);
+    entity2.enabled = false;
 
     world.update();
 
@@ -58,12 +56,10 @@ describe('World', () => {
   it('should call runSystem on each system during update with matching entities', () => {
     const system = new MockSystem('System1', [mock1Component.name]);
 
-    const entity1 = new Entity('entity1', [mock1Component]);
-    const entity2 = new Entity('entity2', [mock2Component]);
+    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity2 = world.buildAndAddEntity('entity2', [mock2Component]);
 
     world.addSystem(system);
-    world.addEntity(entity1);
-    world.addEntity(entity2);
 
     world.update();
 
@@ -87,8 +83,7 @@ describe('World', () => {
     world.onEntitiesChanged(callback);
     world.removeOnEntitiesChangedCallback(callback);
 
-    const entity = new Entity('entity1', []);
-    world.addEntity(entity);
+    world.buildAndAddEntity('entity1', []);
 
     expect(callback).not.toHaveBeenCalled();
   });

@@ -7,7 +7,9 @@ export const createInputs = (
   screenWidth: number,
   screenHeight: number,
 ) => {
-  const inputsEntity = new forge.Entity('input', [new forge.InputsComponent()]);
+  const inputsEntity = world.buildAndAddEntity('input', [
+    new forge.InputsComponent(),
+  ]);
 
   const inputSystem = new forge.InputSystem(
     gameContainer,
@@ -16,7 +18,6 @@ export const createInputs = (
     screenHeight,
   );
 
-  world.addEntity(inputsEntity);
   world.addSystem(inputSystem);
 
   return inputsEntity;

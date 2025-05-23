@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnimationSystem } from './animation-system';
-import { Entity } from '../../ecs';
+import { Entity, World } from '../../ecs';
 import { Time } from '../../common';
 import { type AnimatedProperty, AnimationComponent } from '../components';
 
 describe('AnimationSystem', () => {
+  const world = new World();
+
   it('should update animations and call updateCallback', async () => {
     const mockUpdateCallback = vi.fn();
     const mockFinishedCallback = vi.fn();
@@ -24,7 +26,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', [animationComponent]);
+    const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     await animationSystem.run(entity);
@@ -52,7 +54,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', [animationComponent]);
+    const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     await animationSystem.run(entity);
@@ -80,7 +82,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', [animationComponent]);
+    const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     await animationSystem.run(entity);
@@ -110,7 +112,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', [animationComponent]);
+    const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     await animationSystem.run(entity);

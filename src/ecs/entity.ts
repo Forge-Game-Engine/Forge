@@ -1,5 +1,6 @@
 import type { OrNull } from '../common';
 import type { Component } from './types';
+import type { World } from './world';
 
 /**
  * Represents an entity in the Entity-Component-System (ECS) architecture.
@@ -27,6 +28,11 @@ export class Entity {
   public enabled: boolean;
 
   /**
+   * The world to which this entity belongs.
+   */
+  public world: World;
+
+  /**
    * Creates a new Entity instance.
    * @param name - The name of the entity.
    * @param initialComponents - The initial components to associate with the entity.
@@ -34,12 +40,14 @@ export class Entity {
    */
   constructor(
     name: string,
+    world: World,
     initialComponents: Component[],
     enabled: boolean = true,
   ) {
     this._id = Entity._generateId();
     this._components = new Set<Component>(initialComponents);
     this.name = name;
+    this.world = world;
     this.enabled = enabled;
   }
 
@@ -56,6 +64,7 @@ export class Entity {
    */
   public addComponent(component: Component) {
     this._components.add(component);
+    this.world.updateSystemEntities(this);
   }
 
   /**
@@ -143,6 +152,8 @@ export class Entity {
     }
 
     this._components.delete(component);
+
+    this.world.updateSystemEntities(this);
   }
 
   /**

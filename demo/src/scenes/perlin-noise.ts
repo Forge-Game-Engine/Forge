@@ -16,11 +16,11 @@ export async function createPerlinNoiseScene(
 
   const world = new forge.World();
 
-  const inputsEntity = new forge.Entity('inputs', [
+  const inputsEntity = world.buildAndAddEntity('inputs', [
     new forge.InputsComponent(),
   ]);
 
-  const cameraEntity = new forge.Entity('world camera', [
+  const cameraEntity = world.buildAndAddEntity('world camera', [
     new forge.CameraComponent({ allowZooming: false, allowPanning: false }),
     new forge.PositionComponent(0, 0),
   ]);
@@ -32,12 +32,9 @@ export async function createPerlinNoiseScene(
     window.innerHeight,
   );
 
-  world.addEntity(inputsEntity);
-  world.addSystem(inputSystem);
-
   const cameraSystem = new forge.CameraSystem(inputsEntity, game.time);
 
-  world.addEntity(cameraEntity);
+  world.addSystem(inputSystem);
   world.addSystem(cameraSystem);
 
   const foregroundRenderLayer = addRenderLayer(
@@ -48,15 +45,15 @@ export async function createPerlinNoiseScene(
     cameraEntity,
   );
 
-  const foregroundBatcher = new forge.Entity('foreground renderable batcher', [
-    new forge.RenderableBatchComponent(foregroundRenderLayer),
-  ]);
+  const foregroundBatcher = world.buildAndAddEntity(
+    'foreground renderable batcher',
+    [new forge.RenderableBatchComponent(foregroundRenderLayer)],
+  );
 
   const foregroundBatchingSystem = new forge.SpriteBatchingSystem(
     foregroundBatcher,
   );
 
-  world.addEntity(foregroundBatcher);
   world.addSystem(foregroundBatchingSystem);
 
   const material = new forge.GradientMaterial(
@@ -79,12 +76,10 @@ export async function createPerlinNoiseScene(
     height: window.innerHeight,
   });
 
-  const bg = new forge.Entity('perlin', [
+  world.buildAndAddEntity('perlin', [
     new forge.PositionComponent(0, 0),
     new forge.SpriteComponent(sprite),
   ]);
-
-  world.addEntity(bg);
 
   scene.registerUpdatable(world);
   scene.registerStoppable(world);

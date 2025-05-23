@@ -18,7 +18,9 @@ export function addInputs(
   screenWidth: number,
   screenHeight: number,
 ) {
-  const inputsEntity = new Entity('inputs', [new InputsComponent()]);
+  const inputsEntity = world.buildAndAddEntity('inputs', [
+    new InputsComponent(),
+  ]);
 
   const inputSystem = new InputSystem(
     container,
@@ -27,7 +29,6 @@ export function addInputs(
     screenHeight,
   );
 
-  world.addEntity(inputsEntity);
   world.addSystem(inputSystem);
 
   return inputsEntity;
