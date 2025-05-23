@@ -13,7 +13,7 @@ export class World implements Updatable, Stoppable {
    */
   private _systemEntities = new Map<string, Set<Entity>>();
 
-  private _enabledEntities = new Array<Entity>(5000);
+  private _enabledEntities = new Array<Entity>();
 
   /**
    * Callbacks to be invoked when systems change.
@@ -169,10 +169,19 @@ export class World implements Updatable, Stoppable {
   public addEntity(entity: Entity) {
     this._entities.add(entity);
 
-    this._systems.forEach((system) => {
-      if (
-        entity.checkIfEntityContainsAllComponents(system.operatesOnComponents)
-      ) {
+    this.updateSystemEntities(entity);
+    this.raiseOnEntitiesChangedEvent();
+
+    return this;
+  }
+
+  /**
+   * Updates the entities in the systems based on the components of the given entity.
+   * @param entity - The entity to update.
+   */
+  public updateSystemEntities(entity: Entity) {
+    for (const system of this._systems) {
+      if (entity.containsAllComponents(system.operatesOnComponents)) {
         const entities = this._systemEntities.get(system.name);
 
         if (!entities) {
@@ -181,11 +190,7 @@ export class World implements Updatable, Stoppable {
 
         entities.add(entity);
       }
-    });
-
-    this.raiseOnEntitiesChangedEvent();
-
-    return this;
+    }
   }
 
   /**
@@ -195,7 +200,7 @@ export class World implements Updatable, Stoppable {
    * @returns The created entity.
    */
   public buildAndAddEntity(name: string, components: Component[]): Entity {
-    const entity = new Entity(name, components);
+    const entity = new Entity(name, this, components);
     this.addEntity(entity);
 
     return entity;
@@ -220,6 +225,11 @@ export class World implements Updatable, Stoppable {
    */
   public removeEntity(entity: Entity) {
     this._entities.delete(entity);
+
+    for (const entities of this._systemEntities.values()) {
+      entities.delete(entity);
+    }
+
     this.raiseOnEntitiesChangedEvent();
 
     return this;

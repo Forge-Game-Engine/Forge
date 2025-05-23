@@ -25,12 +25,12 @@ export async function createTitleScene(
 
   const world = new forge.World();
 
-  const cameraEntity = new forge.Entity('world camera', [
+  const cameraEntity = world.buildAndAddEntity('world camera', [
     new forge.CameraComponent({ allowZooming: false, allowPanning: false }),
     new forge.PositionComponent(0, 0),
   ]);
 
-  const inputsEntity = new forge.Entity('inputs', [
+  const inputsEntity = world.buildAndAddEntity('inputs', [
     new forge.InputsComponent(),
   ]);
 
@@ -41,7 +41,6 @@ export async function createTitleScene(
     window.innerHeight,
   );
 
-  world.addEntity(inputsEntity);
   world.addSystem(inputSystem);
 
   createStarfield(world, 500, worldSpace);
@@ -91,7 +90,6 @@ export async function createTitleScene(
 
   const cameraSystem = new forge.CameraSystem(inputsEntity, game.time);
 
-  world.addEntity(cameraEntity);
   world.addSystem(cameraSystem);
 
   scene.registerUpdatable(world);

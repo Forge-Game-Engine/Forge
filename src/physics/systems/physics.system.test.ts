@@ -3,10 +3,10 @@ import {
   Bodies,
   Body,
   Engine as MatterJsPhysicsEngine,
-  World,
+  World as MatterJsWorld,
 } from 'matter-js';
 import { PhysicsSystem } from './physics.system';
-import { Entity } from '../../ecs';
+import { Entity, World } from '../../ecs';
 import { PositionComponent, RotationComponent, Time } from '../../common';
 import { PhysicsBodyComponent } from '../components';
 
@@ -15,8 +15,10 @@ describe('PhysicsSystem', () => {
   let engine: MatterJsPhysicsEngine;
   let physicsSystem: PhysicsSystem;
   let entity: Entity;
+  let world: World;
 
   beforeEach(() => {
+    world = new World();
     time = new Time();
 
     time.update(16);
@@ -25,9 +27,9 @@ describe('PhysicsSystem', () => {
 
     const physicsBody = Bodies.rectangle(0, 0, 10, 20);
 
-    World.add(engine.world, [physicsBody]);
+    MatterJsWorld.add(engine.world, [physicsBody]);
 
-    entity = new Entity('box', [
+    entity = new Entity('box', world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
       new PhysicsBodyComponent(physicsBody),
