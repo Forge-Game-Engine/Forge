@@ -32,7 +32,7 @@ export class Material {
    * Binds the material (program, uniforms, textures).
    */
   public bind(gl: WebGL2RenderingContext): void {
-    this.beforeBind();
+    this.beforeBind(gl);
 
     gl.useProgram(this.program);
 
@@ -148,7 +148,14 @@ export class Material {
     this.setUniform(name, vector.toFloat32Array());
   }
 
-  protected beforeBind(): void {
+  /**
+   * Called before binding the material to allow for custom behavior.
+   * Override this method in subclasses to implement custom logic.
+   *
+   * @param _gl - The WebGL2 rendering context passed into beforeBind.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected beforeBind(_gl: WebGL2RenderingContext): void {
     // Override in subclasses for custom behavior before binding
   }
 
