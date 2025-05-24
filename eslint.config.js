@@ -94,18 +94,13 @@ export default [
         {
           blankLine: 'always',
           prev: '*',
-          next: [
-            'block-like',
-            'return',
-            'break',
-            'continue',
-            'throw',
-          ],
+          next: ['block-like', 'return', 'break', 'continue', 'throw'],
         },
       ],
 
       'sonarjs/todo-tag': 'warn',
-      'no-await-in-loop': 'error'
+      'sonarjs/pseudo-random': 'off',
+      'no-await-in-loop': 'error',
     },
   },
 ];
