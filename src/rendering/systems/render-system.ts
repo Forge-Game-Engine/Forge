@@ -118,6 +118,7 @@ export class RenderSystem extends System {
       }
 
       gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batch.length);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     }
 
     gl.bindVertexArray(null);
