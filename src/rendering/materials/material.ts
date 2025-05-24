@@ -151,6 +151,8 @@ export class Material {
   /**
    * Called before binding the material to allow for custom behavior.
    * Override this method in subclasses to implement custom logic.
+   *
+   * @param _gl - The WebGL2 rendering context passed into beforeBind.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected beforeBind(_gl: WebGL2RenderingContext): void {
