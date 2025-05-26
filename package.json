@@ -71,7 +71,7 @@
     "matter-js": "^0.20.0"
   },
   "dependencies": {
-    "@rive-app/webgl2": "^2.27.2",
+    "@rive-app/webgl2": "^2.28.0",
     "seedrandom": "^3.0.5"
   }
 }
