@@ -9,6 +9,7 @@ import { PhysicsSystem } from './physics.system';
 import { Entity, World } from '../../ecs';
 import { PositionComponent, RotationComponent, Time } from '../../common';
 import { PhysicsBodyComponent } from '../components';
+import { degreesToRadians } from '../../math';
 
 describe('PhysicsSystem', () => {
   let time: Time;
@@ -56,5 +57,24 @@ describe('PhysicsSystem', () => {
     expect(positionComponent.x).toBe(128);
     expect(positionComponent.y).toBe(128.256);
     expect(rotationComponent.radians).toBeCloseTo(7.68);
+  });
+
+  it('should sync static body position and angle from components', () => {
+    // Create a static body and entity
+    const staticBody = Bodies.rectangle(5, 10, 10, 10, { isStatic: true });
+    staticBody.angle = 0.5;
+    const staticEntity = new Entity('static', world, [
+      new PositionComponent(42, 99),
+      new RotationComponent(90),
+      new PhysicsBodyComponent(staticBody),
+    ]);
+
+    // Run system
+    physicsSystem.run(staticEntity);
+
+    // The body should be updated from the components
+    expect(staticBody.position.x).toBe(42);
+    expect(staticBody.position.y).toBe(99);
+    expect(staticBody.angle).toBe(degreesToRadians(90));
   });
 });
