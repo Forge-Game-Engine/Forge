@@ -1,4 +1,4 @@
-import { Engine } from 'matter-js';
+import { Body, Engine } from 'matter-js';
 
 import { PositionComponent, RotationComponent, type Time } from '../../common';
 import { Entity, System } from '../../ecs';
@@ -40,10 +40,15 @@ export class PhysicsSystem extends System {
     );
 
     if (physicsBodyComponent.physicsBody.isStatic) {
-      physicsBodyComponent.physicsBody.position.x = positionComponent.x;
-      physicsBodyComponent.physicsBody.position.y = positionComponent.y;
+      Body.setPosition(physicsBodyComponent.physicsBody, {
+        x: positionComponent.x,
+        y: positionComponent.y,
+      });
 
-      physicsBodyComponent.physicsBody.angle = rotationComponent.radians;
+      Body.setAngle(
+        physicsBodyComponent.physicsBody,
+        rotationComponent.radians,
+      );
     } else {
       positionComponent.x = physicsBodyComponent.physicsBody.position.x;
       positionComponent.y = physicsBodyComponent.physicsBody.position.y;
