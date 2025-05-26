@@ -49,7 +49,7 @@
     "@types/howler": "^2.2.12",
     "@types/matter-js": "^0.19.8",
     "@types/seedrandom": "^3.0.8",
-    "@vitest/ui": "^3.1.2",
+    "@vitest/ui": "^3.1.4",
     "cspell": "^9.0.1",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
