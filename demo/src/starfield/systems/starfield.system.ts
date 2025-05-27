@@ -11,7 +11,7 @@ export class StarfieldSystem extends forge.System {
     this._starPool = starPool;
   }
 
-  public async run(entity: forge.Entity): Promise<void> {
+  public run(entity: forge.Entity): void {
     const starfieldComponent = entity.getComponentRequired<StarfieldComponent>(
       StarfieldComponent.symbol,
     );
