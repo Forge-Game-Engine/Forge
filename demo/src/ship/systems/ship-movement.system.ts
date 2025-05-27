@@ -21,7 +21,7 @@ export class ShipMovementSystem extends forge.System {
     this._time = time;
   }
 
-  public async run(entity: forge.Entity): Promise<void> {
+  public run(entity: forge.Entity): void {
     const player = entity.getComponentRequired<ShipComponent>(
       ShipComponent.symbol,
     );

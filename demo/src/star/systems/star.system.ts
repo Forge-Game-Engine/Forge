@@ -9,7 +9,7 @@ export class StarSystem extends forge.System {
     this._pool = pool;
   }
 
-  public async run(entity: forge.Entity): Promise<void> {
+  public run(entity: forge.Entity): void {
     const starComponent = entity.getComponentRequired<StarComponent>(
       StarComponent.symbol,
     );
