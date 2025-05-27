@@ -44,7 +44,11 @@ export abstract class System implements Stoppable {
     const modifiedEntities = this.beforeAll(entities);
 
     for (const entity of modifiedEntities) {
-      this.run(entity);
+      const shouldEarlyExit = this.run(entity);
+
+      if (shouldEarlyExit) {
+        break;
+      }
     }
   }
 
@@ -52,8 +56,9 @@ export abstract class System implements Stoppable {
    * Abstract method to run the system on a single entity.
    * Must be implemented by subclasses.
    * @param entity - The entity to run the system on.
+   * @return void | boolean - Returns void or a boolean indicating whether to exit early.
    */
-  public abstract run(entity: Entity): void;
+  public abstract run(entity: Entity): void | boolean;
 
   /**
    * Hook method that is called before running the system on all entities.
