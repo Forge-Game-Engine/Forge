@@ -7,7 +7,12 @@ import {
 } from 'matter-js';
 import { PhysicsSystem } from './physics.system';
 import { Entity, World } from '../../ecs';
-import { PositionComponent, RotationComponent, Time } from '../../common';
+import {
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent,
+  Time,
+} from '../../common';
 import { PhysicsBodyComponent } from '../components';
 import { degreesToRadians } from '../../math';
 
@@ -33,6 +38,7 @@ describe('PhysicsSystem', () => {
     entity = new Entity('box', world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
+      new ScaleComponent(1, 1),
       new PhysicsBodyComponent(physicsBody),
     ]);
   });
@@ -66,6 +72,7 @@ describe('PhysicsSystem', () => {
     const staticEntity = new Entity('static', world, [
       new PositionComponent(42, 99),
       new RotationComponent(90),
+      new ScaleComponent(1, 1),
       new PhysicsBodyComponent(staticBody),
     ]);
 

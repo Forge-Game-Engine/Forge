@@ -17,6 +17,7 @@ export class PhysicsSystem extends System {
     super('physics', [
       PositionComponent.symbol,
       RotationComponent.symbol,
+      ScaleComponent.symbol,
       PhysicsBodyComponent.symbol,
     ]);
 
