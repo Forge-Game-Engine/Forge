@@ -1,6 +1,11 @@
 import { Body, Engine } from 'matter-js';
 
-import { PositionComponent, RotationComponent, type Time } from '../../common';
+import {
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent,
+  type Time,
+} from '../../common';
 import { Entity, System } from '../../ecs';
 import { PhysicsBodyComponent } from '../components';
 
@@ -39,6 +44,10 @@ export class PhysicsSystem extends System {
       RotationComponent.symbol,
     );
 
+    const scaleComponent = entity.getComponentRequired<ScaleComponent>(
+      ScaleComponent.symbol,
+    );
+
     if (physicsBodyComponent.physicsBody.isStatic) {
       Body.setPosition(physicsBodyComponent.physicsBody, {
         x: positionComponent.x,
@@ -48,6 +57,12 @@ export class PhysicsSystem extends System {
       Body.setAngle(
         physicsBodyComponent.physicsBody,
         rotationComponent.radians,
+      );
+
+      Body.scale(
+        physicsBodyComponent.physicsBody,
+        scaleComponent.x,
+        scaleComponent.y,
       );
     } else {
       positionComponent.x = physicsBodyComponent.physicsBody.position.x;
