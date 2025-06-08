@@ -29,6 +29,7 @@ export class Game implements Stoppable {
 
   /**
    * Creates a new Game instance.
+   * @param container - The HTML element that will contain the game.
    */
   constructor(container: HTMLElement) {
     this._time = new Time();

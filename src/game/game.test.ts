@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
 import { Time } from '../common';
 import { Scene } from './scene';
+import { createContainer } from '../utilities';
 
 describe('Game', () => {
   let game: Game;
   let scene: Scene;
 
   beforeEach(() => {
-    game = new Game();
+    game = new Game(createContainer('test'));
     scene = new Scene('foo');
   });
 
