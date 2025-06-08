@@ -1,6 +1,6 @@
 # Class: ObjectPool\<T\>
 
-Defined in: [pooling/object-pool.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/pooling/object-pool.ts#L6)
+Defined in: [pooling/object-pool.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/pooling/object-pool.ts#L6)
 
 ## Type Parameters
 
@@ -14,7 +14,7 @@ Defined in: [pooling/object-pool.ts:6](https://github.com/Forge-Game-Engine/Forg
 
 > **new ObjectPool**\<`T`\>(`startingPool`, `createCallback`, `disposeCallback`): `ObjectPool`\<`T`\>
 
-Defined in: [pooling/object-pool.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/pooling/object-pool.ts#L11)
+Defined in: [pooling/object-pool.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/pooling/object-pool.ts#L11)
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Defined in: [pooling/object-pool.ts:11](https://github.com/Forge-Game-Engine/For
 
 > **get**(): `T`
 
-Defined in: [pooling/object-pool.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/pooling/object-pool.ts#L29)
+Defined in: [pooling/object-pool.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/pooling/object-pool.ts#L29)
 
 #### Returns
 
@@ -52,7 +52,7 @@ Defined in: [pooling/object-pool.ts:29](https://github.com/Forge-Game-Engine/For
 
 > **getOrCreate**(): `T`
 
-Defined in: [pooling/object-pool.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/pooling/object-pool.ts#L21)
+Defined in: [pooling/object-pool.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/pooling/object-pool.ts#L21)
 
 #### Returns
 
@@ -64,7 +64,7 @@ Defined in: [pooling/object-pool.ts:21](https://github.com/Forge-Game-Engine/For
 
 > **release**(`instance`): `void`
 
-Defined in: [pooling/object-pool.ts:43](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/pooling/object-pool.ts#L43)
+Defined in: [pooling/object-pool.ts:43](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/pooling/object-pool.ts#L43)
 
 #### Parameters
 

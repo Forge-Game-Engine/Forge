@@ -6,7 +6,7 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #7d7d00;
+  --ifm-color-primary: #6b4b40;
   --ifm-color-primary-dark: #626200;
   --ifm-color-primary-darker: #838300;
   --ifm-color-primary-darkest: #a8a800;
@@ -19,7 +19,7 @@
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #d2d220;
+  --ifm-color-primary: #b58f6b;
   --ifm-color-primary-dark: #aeae1c;
   --ifm-color-primary-darker: #7b7b14;
   --ifm-color-primary-darkest: #52520d;
@@ -30,13 +30,13 @@
 }
 
 .button {
-  background: #000000;
-  color: #fff;
+  background: #ffd900;
+  color: #000;
   border: none;
 }
 
 .hero--primary {
-  color: #ececec;
+  color: #d9d9d9;
 }
 
 [data-theme='dark'] .hero--primary {

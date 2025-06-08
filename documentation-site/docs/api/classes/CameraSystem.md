@@ -1,6 +1,6 @@
 # Class: CameraSystem
 
-Defined in: [rendering/systems/camera-system.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/systems/camera-system.ts#L11)
+Defined in: [rendering/systems/camera-system.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/systems/camera-system.ts#L11)
 
 The `CameraSystem` class manages the camera's
 zooming and panning based on user inputs.
@@ -15,7 +15,7 @@ zooming and panning based on user inputs.
 
 > **new CameraSystem**(`inputEntity`, `time`): `CameraSystem`
 
-Defined in: [rendering/systems/camera-system.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/systems/camera-system.ts#L20)
+Defined in: [rendering/systems/camera-system.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/systems/camera-system.ts#L20)
 
 Constructs a new instance of the `CameraSystem` class.
 
@@ -47,7 +47,7 @@ The `Time` instance for managing time-related operations.
 
 > **isEnabled**: `boolean` = `true`
 
-Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L23)
+Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L23)
 
 Indicates whether the system is enabled.
 
@@ -61,7 +61,7 @@ Indicates whether the system is enabled.
 
 > **name**: `string`
 
-Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L13)
+Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L13)
 
 The name of the system.
 
@@ -75,7 +75,7 @@ The name of the system.
 
 > **operatesOnComponents**: `symbol`[]
 
-Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L18)
+Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L18)
 
 The components that this system operates on.
 
@@ -89,7 +89,7 @@ The components that this system operates on.
 
 > **beforeAll**(`entities`): [`Entity`](Entity.md)[]
 
-Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L69)
+Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L69)
 
 Hook method that is called before running the system on all entities.
 Can be overridden by subclasses to modify the entities before processing.
@@ -118,7 +118,7 @@ The modified entities.
 
 > **run**(`entity`): `void`
 
-Defined in: [rendering/systems/camera-system.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/systems/camera-system.ts#L34)
+Defined in: [rendering/systems/camera-system.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/systems/camera-system.ts#L34)
 
 Runs the camera system for the given entity, updating the camera's zoom and position
 based on user inputs.
@@ -145,7 +145,7 @@ The entity that contains the `CameraComponent` and `PositionComponent`.
 
 > **runSystem**(`entities`): `void`
 
-Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L39)
+Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L39)
 
 Runs the system on the provided entities.
 
@@ -171,7 +171,7 @@ The entities to run the system on.
 
 > **stop**(): `void`
 
-Defined in: [ecs/types/System.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L76)
+Defined in: [ecs/types/System.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L76)
 
 Stops the system. This method can be overridden by subclasses.
 

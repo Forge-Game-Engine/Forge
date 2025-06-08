@@ -2,7 +2,7 @@
 
 > **easeInOutQuint**(`x`): `number`
 
-Defined in: [animations/easing-functions/ease-in-out-quint.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/animations/easing-functions/ease-in-out-quint.ts#L11)
+Defined in: [animations/easing-functions/ease-in-out-quint.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/animations/easing-functions/ease-in-out-quint.ts#L11)
 
 Easing function for "easeInOutQuint".
 

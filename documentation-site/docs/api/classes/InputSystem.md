@@ -1,6 +1,6 @@
 # Class: InputSystem
 
-Defined in: [input/systems/input-system.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L11)
+Defined in: [input/systems/input-system.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L11)
 
 The `InputSystem` class. It tracks key presses,
 mouse button presses, mouse coordinates, and scroll delta values.
@@ -15,7 +15,7 @@ mouse button presses, mouse coordinates, and scroll delta values.
 
 > **new InputSystem**(`gameContainer`, `cameraEntity`, `screenWidth`, `screenHeight`): `InputSystem`
 
-Defined in: [input/systems/input-system.ts:33](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L33)
+Defined in: [input/systems/input-system.ts:33](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L33)
 
 Constructs a new instance of the `InputSystem` class and sets up event listeners
 for various input events.
@@ -54,7 +54,7 @@ The HTML element that contains the game.
 
 > **isEnabled**: `boolean` = `true`
 
-Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L23)
+Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L23)
 
 Indicates whether the system is enabled.
 
@@ -68,7 +68,7 @@ Indicates whether the system is enabled.
 
 > **name**: `string`
 
-Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L13)
+Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L13)
 
 The name of the system.
 
@@ -82,7 +82,7 @@ The name of the system.
 
 > **operatesOnComponents**: `symbol`[]
 
-Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L18)
+Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L18)
 
 The components that this system operates on.
 
@@ -96,7 +96,7 @@ The components that this system operates on.
 
 > **beforeAll**(`entities`): [`Entity`](Entity.md)[]
 
-Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L69)
+Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L69)
 
 Hook method that is called before running the system on all entities.
 Can be overridden by subclasses to modify the entities before processing.
@@ -125,7 +125,7 @@ The modified entities.
 
 > **clearInputs**(): `void`
 
-Defined in: [input/systems/input-system.ts:122](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L122)
+Defined in: [input/systems/input-system.ts:122](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L122)
 
 Clears the current input states.
 
@@ -139,7 +139,7 @@ Clears the current input states.
 
 > **onKeyDownHandler**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:152](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L152)
+Defined in: [input/systems/input-system.ts:152](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L152)
 
 Handles the key down event, updating the key press and key down states.
 
@@ -161,7 +161,7 @@ The keyboard event.
 
 > **onKeyUpHandler**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:143](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L143)
+Defined in: [input/systems/input-system.ts:143](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L143)
 
 Handles the key up event, updating the key press and key up states.
 
@@ -183,7 +183,7 @@ The keyboard event.
 
 > **onMouseDownHandler**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:182](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L182)
+Defined in: [input/systems/input-system.ts:182](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L182)
 
 Handles the mouse down event, updating the mouse button press and mouse button down states.
 
@@ -205,7 +205,7 @@ The mouse event.
 
 > **onMouseUpHandler**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:191](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L191)
+Defined in: [input/systems/input-system.ts:191](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L191)
 
 Handles the mouse up event, updating the mouse button press and mouse button up states.
 
@@ -227,7 +227,7 @@ The mouse event.
 
 > **onWheelEventHandler**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:134](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L134)
+Defined in: [input/systems/input-system.ts:134](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L134)
 
 Handles the wheel event, updating the scroll delta value.
 
@@ -249,7 +249,7 @@ The wheel event.
 
 > **run**(`entity`): `void`
 
-Defined in: [input/systems/input-system.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L77)
+Defined in: [input/systems/input-system.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L77)
 
 Runs the input system for the given entity, updating its `InputsComponent`
 with the current input states.
@@ -276,7 +276,7 @@ The entity to update.
 
 > **runSystem**(`entities`): `void`
 
-Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/System.ts#L39)
+Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L39)
 
 Runs the system on the provided entities.
 
@@ -302,7 +302,7 @@ The entities to run the system on.
 
 > **stop**(): `void`
 
-Defined in: [input/systems/input-system.ts:98](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L98)
+Defined in: [input/systems/input-system.ts:98](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L98)
 
 Stops the input system, removing all event listeners.
 
@@ -320,7 +320,7 @@ Stops the input system, removing all event listeners.
 
 > **updateCursorPosition**(`event`): `void`
 
-Defined in: [input/systems/input-system.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/input/systems/input-system.ts#L165)
+Defined in: [input/systems/input-system.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/input/systems/input-system.ts#L165)
 
 Updates the mouse cursor position.
 

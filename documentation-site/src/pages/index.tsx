@@ -15,7 +15,7 @@ function HomepageHeader() {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <img
-          src="/img/forge-logo.png"
+          src={`${siteConfig.baseUrl}/img/forge-logo.png`}
           alt="Site Logo"
           style={{ display: 'block', margin: '0 auto 1rem', maxWidth: 160 }}
         />

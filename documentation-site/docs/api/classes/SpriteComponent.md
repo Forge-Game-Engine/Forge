@@ -1,6 +1,6 @@
 # Class: SpriteComponent
 
-Defined in: [rendering/components/sprite-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L8)
+Defined in: [rendering/components/sprite-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L8)
 
 The `SpriteComponent` class implements the `Component` interface and represents
 a component that contains a `Sprite`.
@@ -15,7 +15,7 @@ a component that contains a `Sprite`.
 
 > **new SpriteComponent**(`sprite`, `enabled`): `SpriteComponent`
 
-Defined in: [rendering/components/sprite-component.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L26)
+Defined in: [rendering/components/sprite-component.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L26)
 
 Constructs a new instance of the `SpriteComponent` class with the given `Sprite`.
 
@@ -43,7 +43,7 @@ Indicates whether the sprite is enabled or not (default: true).
 
 > **enabled**: `boolean`
 
-Defined in: [rendering/components/sprite-component.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L16)
+Defined in: [rendering/components/sprite-component.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L16)
 
 Indicates whether the sprite is enabled or not.
 
@@ -53,7 +53,7 @@ Indicates whether the sprite is enabled or not.
 
 > **name**: `symbol`
 
-Defined in: [rendering/components/sprite-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L10)
+Defined in: [rendering/components/sprite-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L10)
 
 The name property holds the unique symbol for this component.
 
@@ -67,7 +67,7 @@ The name property holds the unique symbol for this component.
 
 > **sprite**: [`Sprite`](Sprite.md)
 
-Defined in: [rendering/components/sprite-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L13)
+Defined in: [rendering/components/sprite-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L13)
 
 The `Sprite` instance associated with this component.
 
@@ -77,6 +77,6 @@ The `Sprite` instance associated with this component.
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [rendering/components/sprite-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-component.ts#L19)
+Defined in: [rendering/components/sprite-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/sprite-component.ts#L19)
 
 A static symbol property that uniquely identifies the `SpriteComponent`.
