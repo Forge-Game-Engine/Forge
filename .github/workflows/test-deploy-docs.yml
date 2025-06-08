@@ -10,10 +10,6 @@ on:
 permissions:
       contents: read
 
-defaults:
-  run:
-    working-directory: ./documentation-site
-
 jobs:
   test-deploy:
     name: Test deployment
@@ -24,10 +20,16 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
 
       - name: Install dependencies
         run: npm ci
+        working-directory: ./documentation-site
+        
       - name: Test build website
         run: npm run build
+        working-directory: ./documentation-site
