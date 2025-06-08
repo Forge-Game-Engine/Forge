@@ -130,17 +130,6 @@ export class Entity {
   }
 
   /**
-   * Gets multiple components by their names.
-   * @param componentNames - The names of the components to get.
-   * @returns An array of components.
-   */
-  public getComponents<T extends Component>(
-    componentNames: symbol[],
-  ): OrNull<T>[] {
-    return componentNames.map(this.getComponent<T>);
-  }
-
-  /**
    * Removes a component from the entity.
    * @param componentName - The name of the component to remove.
    */

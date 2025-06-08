@@ -11,33 +11,33 @@ export class World implements Updatable, Stoppable {
   /**
    * A map of system names to the entities they operate on.
    */
-  private _systemEntities = new Map<string, Set<Entity>>();
+  private readonly _systemEntities = new Map<string, Set<Entity>>();
 
-  private _enabledEntities = new Array<Entity>();
+  private readonly _enabledEntities = new Array<Entity>();
 
   /**
    * Callbacks to be invoked when systems change.
    */
-  private _onSystemsChangedCallbacks = new Set<
+  private readonly _onSystemsChangedCallbacks = new Set<
     (systems: Set<System>) => void
   >();
 
   /**
    * Callbacks to be invoked when entities change.
    */
-  private _onEntitiesChangedCallbacks = new Set<
+  private readonly _onEntitiesChangedCallbacks = new Set<
     (entities: Set<Entity>) => void
   >();
 
   /**
    * The set of systems in the world.
    */
-  private _systems = new Set<System>();
+  private readonly _systems = new Set<System>();
 
   /**
    * The set of entities in the world.
    */
-  private _entities = new Set<Entity>();
+  private readonly _entities = new Set<Entity>();
 
   /**
    * Updates all systems in the world.

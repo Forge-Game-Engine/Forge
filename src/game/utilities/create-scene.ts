@@ -40,7 +40,6 @@ type SceneCreationResult = {
 export function createScene(
   name: string,
   game: Game,
-  container: HTMLElement,
   sceneCreationOptions?: Partial<SceneCreationOptions>,
 ): SceneCreationResult {
   const mergedOptions = {
@@ -65,7 +64,7 @@ export function createScene(
   ]);
 
   const inputSystem = new InputSystem(
-    container,
+    game.container,
     cameraEntity,
     mergedOptions.screenWidth,
     mergedOptions.screenHeight,

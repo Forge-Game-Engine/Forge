@@ -1,6 +1,6 @@
 # Forge
 
-![logo](assets/forge-logo.png)
+![logo](assets/forge-banner.png)
 
 Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.
 

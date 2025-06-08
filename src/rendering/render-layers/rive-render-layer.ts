@@ -17,7 +17,8 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
    * Constructs a new instance of the `RiveRenderLayer` class.
    * @param name - The name of the render layer.
    * @param canvas - The canvas element associated with the render layer.
-   * @param riveParameters - The Rive parameters to use. See https://rive.app/docs/runtimes/web/rive-parameters for more information.
+   * @param rive - The Rive instance to use for rendering.
+   * @param riveEventDispatcher - The event dispatcher for Rive events.
    */
   constructor(
     name: string,
