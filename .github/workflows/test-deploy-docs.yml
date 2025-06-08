@@ -1,0 +1,35 @@
+name: CI / Documentation Site
+
+on:
+  pull_request:
+    branches:
+      - dev
+    # Review gh actions docs if you want to further define triggers, paths, etc
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
+
+permissions:
+      contents: read
+
+jobs:
+  test-deploy:
+    name: Build Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./documentation-site
+
+      - name: Test build website
+        run: npm run build
+        working-directory: ./documentation-site
