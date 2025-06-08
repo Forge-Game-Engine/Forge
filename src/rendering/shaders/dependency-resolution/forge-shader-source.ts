@@ -30,7 +30,7 @@ export class ForgeShaderSource {
   }
 
   /**
-   * Gets the includes of the shader.
+   * Gets the name of the shader.
    */
   get name(): string {
     return this._name;

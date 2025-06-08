@@ -2,7 +2,7 @@
 
 > **filterEntitiesByComponents**(`entities`, `componentSymbols`): `Set`\<[`Entity`](../classes/Entity.md)\>
 
-Defined in: [ecs/entity.ts:168](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/entity.ts#L168)
+Defined in: [ecs/entity.ts:168](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/entity.ts#L168)
 
 Filters entities by the specified components.
 

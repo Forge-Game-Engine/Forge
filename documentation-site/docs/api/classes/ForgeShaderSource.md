@@ -1,6 +1,6 @@
 # Class: ForgeShaderSource
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:1](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L1)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:1](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L1)
 
 ## Constructors
 
@@ -8,7 +8,7 @@ Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:1](h
 
 > **new ForgeShaderSource**(`rawSource`): `ForgeShaderSource`
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L12)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L12)
 
 Constructs a new instance of the `ShaderMetadata` class.
 
@@ -32,7 +32,7 @@ The raw source code of the shader.
 
 > **get** **includes**(): `Set`\<`string`\>
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L28)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L28)
 
 Gets the includes of the shader.
 
@@ -48,9 +48,9 @@ Gets the includes of the shader.
 
 > **get** **name**(): `string`
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:35](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L35)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:35](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L35)
 
-Gets the includes of the shader.
+Gets the name of the shader.
 
 ##### Returns
 
@@ -64,7 +64,7 @@ Gets the includes of the shader.
 
 > **get** **rawSource**(): `string`
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L21)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L21)
 
 Gets the raw source of the shader.
 
@@ -78,7 +78,7 @@ Gets the raw source of the shader.
 
 > **getPropertyValue**(`name`): `null` \| `string`
 
-Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L44)
+Defined in: [rendering/shaders/dependency-resolution/forge-shader-source.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/shaders/dependency-resolution/forge-shader-source.ts#L44)
 
 Gets the value of a property by its name.
 

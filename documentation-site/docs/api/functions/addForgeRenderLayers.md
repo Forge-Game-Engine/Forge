@@ -2,7 +2,7 @@
 
 > **addForgeRenderLayers**(`layerNames`, `gameContainer`, `layerService`, `world`, `cameraEntity`): `LayerDetail`[]
 
-Defined in: [rendering/utilities/add-forge-render-layers.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/utilities/add-forge-render-layers.ts#L26)
+Defined in: [rendering/utilities/add-forge-render-layers.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/utilities/add-forge-render-layers.ts#L26)
 
 Adds multiple Forge render layers to the game container and registers them with the layer service.
 It also creates a render system and a batching system per layer.

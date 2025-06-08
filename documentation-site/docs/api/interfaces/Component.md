@@ -1,6 +1,6 @@
 # Interface: Component
 
-Defined in: [ecs/types/Component.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/Component.ts#L5)
+Defined in: [ecs/types/Component.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/Component.ts#L5)
 
 Represents a component in the Entity-Component-System (ECS) architecture.
 Each component has a unique name represented by a symbol.
@@ -11,6 +11,6 @@ Each component has a unique name represented by a symbol.
 
 > `readonly` **name**: `symbol`
 
-Defined in: [ecs/types/Component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/Component.ts#L9)
+Defined in: [ecs/types/Component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/ecs/types/Component.ts#L9)
 
 The unique name of the component.

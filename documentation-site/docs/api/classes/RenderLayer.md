@@ -1,6 +1,6 @@
 # Class: `abstract` RenderLayer
 
-Defined in: [rendering/render-layers/render-layer.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L6)
+Defined in: [rendering/render-layers/render-layer.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L6)
 
 The `RenderLayer` class represents a rendering layer with its own canvas and WebGL context.
 
@@ -15,7 +15,7 @@ The `RenderLayer` class represents a rendering layer with its own canvas and Web
 
 > **new RenderLayer**(`name`, `canvas`): `RenderLayer`
 
-Defined in: [rendering/render-layers/render-layer.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L21)
+Defined in: [rendering/render-layers/render-layer.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L21)
 
 Constructs a new instance of the `RenderLayer` class.
 
@@ -43,7 +43,7 @@ The canvas element associated with the render layer.
 
 > **canvas**: `HTMLCanvasElement`
 
-Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L11)
+Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L11)
 
 The canvas element associated with the render layer.
 
@@ -53,7 +53,7 @@ The canvas element associated with the render layer.
 
 > **center**: [`Vector2`](Vector2.md)
 
-Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L14)
+Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L14)
 
 The center of the canvas.
 
@@ -63,7 +63,7 @@ The center of the canvas.
 
 > **name**: `string`
 
-Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L8)
+Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L8)
 
 The name of the render layer.
 
@@ -73,7 +73,7 @@ The name of the render layer.
 
 > **resize**(`width`, `height`): `void`
 
-Defined in: [rendering/render-layers/render-layer.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/render-layers/render-layer.ts#L32)
+Defined in: [rendering/render-layers/render-layer.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/render-layers/render-layer.ts#L32)
 
 Resizes the canvas to the specified width and height, and updates the center.
 

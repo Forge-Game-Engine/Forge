@@ -1,6 +1,6 @@
 # Interface: Batchable
 
-Defined in: [rendering/components/sprite-batch-component.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L12)
+Defined in: [rendering/components/sprite-batch-component.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L12)
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:12](https://github.c
 
 > **height**: `number`
 
-Defined in: [rendering/components/sprite-batch-component.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L16)
+Defined in: [rendering/components/sprite-batch-component.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L16)
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:16](https://github.c
 
 > **pivot**: [`Vector2`](../classes/Vector2.md)
 
-Defined in: [rendering/components/sprite-batch-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L17)
+Defined in: [rendering/components/sprite-batch-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L17)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:17](https://github.c
 
 > **position**: [`PositionComponent`](../classes/PositionComponent.md)
 
-Defined in: [rendering/components/sprite-batch-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L14)
+Defined in: [rendering/components/sprite-batch-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L14)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:14](https://github.c
 
 > **renderable**: [`Renderable`](../classes/Renderable.md)
 
-Defined in: [rendering/components/sprite-batch-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L13)
+Defined in: [rendering/components/sprite-batch-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L13)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:13](https://github.c
 
 > **rotation**: [`OrNull`](../type-aliases/OrNull.md)\<[`RotationComponent`](../classes/RotationComponent.md)\>
 
-Defined in: [rendering/components/sprite-batch-component.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L18)
+Defined in: [rendering/components/sprite-batch-component.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L18)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [rendering/components/sprite-batch-component.ts:18](https://github.c
 
 > **scale**: [`OrNull`](../type-aliases/OrNull.md)\<[`ScaleComponent`](../classes/ScaleComponent.md)\>
 
-Defined in: [rendering/components/sprite-batch-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L19)
+Defined in: [rendering/components/sprite-batch-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L19)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: [rendering/components/sprite-batch-component.ts:19](https://github.c
 
 > **width**: `number`
 
-Defined in: [rendering/components/sprite-batch-component.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/components/sprite-batch-component.ts#L15)
+Defined in: [rendering/components/sprite-batch-component.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/sprite-batch-component.ts#L15)
