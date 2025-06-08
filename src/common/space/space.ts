@@ -59,10 +59,11 @@ export class Space {
 
   /**
    * Sets the dimensions of the space.
-   * @param dimensions - The new dimensions of the space.
+   * @param height - The new height of the space.
+   * @param width - The new width of the space.
    * @returns The updated Space instance.
    */
-  public setValue(width: number, height: number): Space {
+  public setValue(width: number, height: number): this {
     this._width = width;
     this._height = height;
 

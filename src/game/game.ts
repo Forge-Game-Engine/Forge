@@ -12,6 +12,12 @@ export class Game implements Stoppable {
   public onWindowResize: ForgeEvent;
 
   /**
+   * The container element for the game.
+   * This is where the game will render its scenes.
+   */
+  public readonly container: HTMLElement;
+
+  /**
    * The current time instance.
    */
   private readonly _time: Time;
@@ -23,10 +29,13 @@ export class Game implements Stoppable {
 
   /**
    * Creates a new Game instance.
+   * @param container - The HTML element that will contain the game.
    */
-  constructor() {
+  constructor(container: HTMLElement) {
     this._time = new Time();
     this._scenes = new Set<Scene>();
+    this.container = container;
+
     this.onWindowResize = new ForgeEvent('window-resize');
 
     window.addEventListener('resize', () => {

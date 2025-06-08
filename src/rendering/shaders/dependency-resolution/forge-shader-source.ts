@@ -30,7 +30,7 @@ export class ForgeShaderSource {
   }
 
   /**
-   * Gets the includes of the shader.
+   * Gets the name of the shader.
    */
   get name(): string {
     return this._name;
@@ -74,7 +74,7 @@ export class ForgeShaderSource {
   }
 
   private _parseInclude(line: string, lineNumber: number): void {
-    const match = line.match(/#include <(\w+)>/);
+    const match = RegExp(/#include <(\w+)>/).exec(line);
 
     if (!match) {
       throw new Error(
@@ -95,7 +95,7 @@ export class ForgeShaderSource {
   }
 
   private _parseProperty(line: string, lineNumber: number): void {
-    const match = line.match(/#property (\w+)\s*:\s*([\w.]+)/);
+    const match = RegExp(/#property (\w+)\s*:\s*([\w.]+)/).exec(line);
 
     if (!match) {
       throw new Error(

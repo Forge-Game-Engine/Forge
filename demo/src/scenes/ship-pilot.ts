@@ -11,7 +11,7 @@ export async function createShipPilotScene(
   shaderStore: forge.ShaderStore,
 ) {
   const { scene, world, layerService, cameraEntity, inputsEntity } =
-    forge.createScene('ship-pilot', game, gameContainer);
+    forge.createScene('ship-pilot', game);
 
   const worldSpace = new forge.Space(
     window.innerWidth * 5,

@@ -14,11 +14,7 @@ export async function createDataBindingScene(
   gameContainer: HTMLElement,
   riveCache: RiveCache,
 ) {
-  const { scene, layerService } = createScene(
-    'data-binding',
-    game,
-    gameContainer,
-  );
+  const { scene, layerService } = createScene('data-binding', game);
 
   await addRiveRenderLayer(
     RIVE_FILE_URI,
