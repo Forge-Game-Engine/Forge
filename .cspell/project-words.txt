@@ -11,6 +11,7 @@ esbenp
 Fira
 fract
 GLSL
+Infima
 inigo
 lerp
 matterjs
@@ -25,6 +26,7 @@ refac
 Renderable
 renderables
 requizits
+RGBA
 rnaumovs
 slevesque
 smoothstep
