@@ -1,6 +1,6 @@
 # Class: Scene
 
-Defined in: [game/scene.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L7)
+Defined in: [game/scene.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L7)
 
 A scene in the game, which can contain updatable and stoppable objects.
 
@@ -15,7 +15,7 @@ A scene in the game, which can contain updatable and stoppable objects.
 
 > **new Scene**(`name`): `Scene`
 
-Defined in: [game/scene.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L27)
+Defined in: [game/scene.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L27)
 
 Creates a new Scene instance.
 
@@ -37,7 +37,7 @@ The name of the scene.
 
 > **name**: `string`
 
-Defined in: [game/scene.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L11)
+Defined in: [game/scene.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L11)
 
 The name of the scene.
 
@@ -47,7 +47,7 @@ The name of the scene.
 
 > **deregisterStoppable**(`stoppable`): `void`
 
-Defined in: [game/scene.ts:82](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L82)
+Defined in: [game/scene.ts:82](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L82)
 
 Deregisters a stoppable object from the scene.
 
@@ -69,7 +69,7 @@ The stoppable object to deregister.
 
 > **deregisterStoppables**(...`stoppables`): `void`
 
-Defined in: [game/scene.ts:100](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L100)
+Defined in: [game/scene.ts:100](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L100)
 
 Deregisters multiple stoppable objects from the scene.
 
@@ -91,7 +91,7 @@ An array or iterable of stoppable objects to deregister.
 
 > **deregisterUpdatable**(`updatable`): `void`
 
-Defined in: [game/scene.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L46)
+Defined in: [game/scene.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L46)
 
 Deregisters an updatable object from the scene.
 
@@ -113,7 +113,7 @@ The updatable object to deregister.
 
 > **deregisterUpdatables**(...`updatables`): `void`
 
-Defined in: [game/scene.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L64)
+Defined in: [game/scene.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L64)
 
 Deregisters multiple updatable objects from the scene.
 
@@ -135,7 +135,7 @@ An array or iterable of updatable objects to deregister.
 
 > **registerStoppable**(`stoppable`): `void`
 
-Defined in: [game/scene.ts:74](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L74)
+Defined in: [game/scene.ts:74](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L74)
 
 Registers a stoppable object to the scene.
 
@@ -157,7 +157,7 @@ The stoppable object to register.
 
 > **registerStoppables**(...`stoppables`): `void`
 
-Defined in: [game/scene.ts:90](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L90)
+Defined in: [game/scene.ts:90](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L90)
 
 Registers multiple stoppable objects to the scene.
 
@@ -179,7 +179,7 @@ An array or iterable of stoppable objects to register.
 
 > **registerUpdatable**(`updatable`): `void`
 
-Defined in: [game/scene.ts:38](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L38)
+Defined in: [game/scene.ts:38](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L38)
 
 Registers an updatable object to the scene.
 
@@ -201,7 +201,7 @@ The updatable object to register.
 
 > **registerUpdatables**(...`updatables`): `void`
 
-Defined in: [game/scene.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L54)
+Defined in: [game/scene.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L54)
 
 Registers multiple updatable objects to the scene.
 
@@ -223,7 +223,7 @@ An array or iterable of updatable objects to register.
 
 > **stop**(): `void`
 
-Defined in: [game/scene.ts:119](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L119)
+Defined in: [game/scene.ts:119](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L119)
 
 Stops all registered stoppable objects in the scene.
 
@@ -241,7 +241,7 @@ Stops all registered stoppable objects in the scene.
 
 > **update**(`time`): `void`
 
-Defined in: [game/scene.ts:110](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/game/scene.ts#L110)
+Defined in: [game/scene.ts:110](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/game/scene.ts#L110)
 
 Updates the object with the given time.
 

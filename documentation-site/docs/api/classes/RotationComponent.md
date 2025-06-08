@@ -1,6 +1,6 @@
 # Class: RotationComponent
 
-Defined in: [common/components/rotation-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/components/rotation-component.ts#L7)
+Defined in: [common/components/rotation-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/components/rotation-component.ts#L7)
 
 Component to represent the rotation of an entity in 2D space.
 
@@ -14,7 +14,7 @@ Component to represent the rotation of an entity in 2D space.
 
 > **new RotationComponent**(`degrees`): `RotationComponent`
 
-Defined in: [common/components/rotation-component.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/components/rotation-component.ts#L20)
+Defined in: [common/components/rotation-component.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/components/rotation-component.ts#L20)
 
 Creates an instance of RotationComponent.
 
@@ -43,7 +43,7 @@ console.log(rotation.radians); // 1.5708 (approximately)
 
 > **name**: `symbol`
 
-Defined in: [common/components/rotation-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/components/rotation-component.ts#L8)
+Defined in: [common/components/rotation-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/components/rotation-component.ts#L8)
 
 The unique name of the component.
 
@@ -57,7 +57,7 @@ The unique name of the component.
 
 > **radians**: `number`
 
-Defined in: [common/components/rotation-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/components/rotation-component.ts#L9)
+Defined in: [common/components/rotation-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/components/rotation-component.ts#L9)
 
 ***
 
@@ -65,4 +65,4 @@ Defined in: [common/components/rotation-component.ts:9](https://github.com/Forge
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [common/components/rotation-component.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/components/rotation-component.ts#L11)
+Defined in: [common/components/rotation-component.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/components/rotation-component.ts#L11)

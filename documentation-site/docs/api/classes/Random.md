@@ -1,6 +1,6 @@
 # Class: Random
 
-Defined in: [math/random.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/random.ts#L7)
+Defined in: [math/random.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/random.ts#L7)
 
 The `Random` class provides methods to generate random integers and floats
 using a seeded random number generator.
@@ -11,7 +11,7 @@ using a seeded random number generator.
 
 > **new Random**(`seed`): `Random`
 
-Defined in: [math/random.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/random.ts#L14)
+Defined in: [math/random.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/random.ts#L14)
 
 Creates a new instance of the `Random` class with the given seed.
 
@@ -33,7 +33,7 @@ The seed for the random number generator.
 
 > **randomFloat**(`min`, `max`): `number`
 
-Defined in: [math/random.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/random.ts#L42)
+Defined in: [math/random.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/random.ts#L42)
 
 Generates a random float between the specified minimum and maximum values (inclusive).
 
@@ -63,7 +63,7 @@ A random float between min and max.
 
 > **randomInt**(`min`, `max`): `number`
 
-Defined in: [math/random.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/random.ts#L32)
+Defined in: [math/random.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/random.ts#L32)
 
 Generates a random integer between the specified minimum and maximum values (inclusive).
 

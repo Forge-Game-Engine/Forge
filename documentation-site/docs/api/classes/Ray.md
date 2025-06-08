@@ -1,6 +1,6 @@
 # Class: Ray
 
-Defined in: [physics/raycast.ts:82](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L82)
+Defined in: [physics/raycast.ts:82](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L82)
 
 Ray class that represents a ray in 2D space.
 
@@ -10,7 +10,7 @@ Ray class that represents a ray in 2D space.
 
 > **new Ray**(`start`, `end`): `Ray`
 
-Defined in: [physics/raycast.ts:92](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L92)
+Defined in: [physics/raycast.ts:92](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L92)
 
 Creates a new Ray object.
 
@@ -38,7 +38,7 @@ The ending point of the ray
 
 > **end**: [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:84](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L84)
+Defined in: [physics/raycast.ts:84](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L84)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [physics/raycast.ts:84](https://github.com/Forge-Game-Engine/Forge/b
 
 > **start**: [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:83](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L83)
+Defined in: [physics/raycast.ts:83](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L83)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [physics/raycast.ts:83](https://github.com/Forge-Game-Engine/Forge/b
 
 > **vertices**: [`Vector2`](Vector2.md)[] = `[]`
 
-Defined in: [physics/raycast.ts:85](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L85)
+Defined in: [physics/raycast.ts:85](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L85)
 
 ## Accessors
 
@@ -64,7 +64,7 @@ Defined in: [physics/raycast.ts:85](https://github.com/Forge-Game-Engine/Forge/b
 
 > **get** **difference**(): [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:162](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L162)
+Defined in: [physics/raycast.ts:162](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L162)
 
 ##### Returns
 
@@ -78,7 +78,7 @@ Defined in: [physics/raycast.ts:162](https://github.com/Forge-Game-Engine/Forge/
 
 > **get** **isHorizontal**(): `boolean`
 
-Defined in: [physics/raycast.ts:177](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L177)
+Defined in: [physics/raycast.ts:177](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L177)
 
 ##### Returns
 
@@ -92,7 +92,7 @@ Defined in: [physics/raycast.ts:177](https://github.com/Forge-Game-Engine/Forge/
 
 > **get** **isVertical**(): `boolean`
 
-Defined in: [physics/raycast.ts:181](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L181)
+Defined in: [physics/raycast.ts:181](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L181)
 
 ##### Returns
 
@@ -106,7 +106,7 @@ Defined in: [physics/raycast.ts:181](https://github.com/Forge-Game-Engine/Forge/
 
 > **get** **offsetY**(): `number`
 
-Defined in: [physics/raycast.ts:170](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L170)
+Defined in: [physics/raycast.ts:170](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L170)
 
 ##### Returns
 
@@ -120,7 +120,7 @@ Defined in: [physics/raycast.ts:170](https://github.com/Forge-Game-Engine/Forge/
 
 > **get** **slope**(): `number`
 
-Defined in: [physics/raycast.ts:166](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L166)
+Defined in: [physics/raycast.ts:166](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L166)
 
 ##### Returns
 
@@ -132,7 +132,7 @@ Defined in: [physics/raycast.ts:166](https://github.com/Forge-Game-Engine/Forge/
 
 > **calculateNormal**(`referencePoint`): [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:144](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L144)
+Defined in: [physics/raycast.ts:144](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L144)
 
 Calculates the normal vector of the ray at the specified reference point.
 
@@ -156,7 +156,7 @@ The normal vector of the ray at the specified reference point
 
 > **pointInBounds**(`point`): `boolean`
 
-Defined in: [physics/raycast.ts:126](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L126)
+Defined in: [physics/raycast.ts:126](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L126)
 
 Checks if a point is within the bounds of the ray.
 
@@ -180,7 +180,7 @@ True if the point is within the bounds of the ray, false otherwise
 
 > **xValueAt**(`y`): `number`
 
-Defined in: [physics/raycast.ts:114](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L114)
+Defined in: [physics/raycast.ts:114](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L114)
 
 Returns the x value on the ray at the specified y.
 
@@ -204,7 +204,7 @@ The x value on the ray at the specified y
 
 > **yValueAt**(`x`): `number`
 
-Defined in: [physics/raycast.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L102)
+Defined in: [physics/raycast.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L102)
 
 Returns the y value on the ray at the specified x.
 
@@ -228,7 +228,7 @@ The y value on the ray at the specified x
 
 > `static` **bodyCollisions**(`rayA`, `body`): [`RaycastCollision`](../interfaces/RaycastCollision.md)[]
 
-Defined in: [physics/raycast.ts:274](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L274)
+Defined in: [physics/raycast.ts:274](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L274)
 
 #### Parameters
 
@@ -250,7 +250,7 @@ Defined in: [physics/raycast.ts:274](https://github.com/Forge-Game-Engine/Forge/
 
 > `static` **bodyEdges**(`body`): `Ray`[]
 
-Defined in: [physics/raycast.ts:237](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L237)
+Defined in: [physics/raycast.ts:237](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L237)
 
 #### Parameters
 
@@ -268,7 +268,7 @@ Defined in: [physics/raycast.ts:237](https://github.com/Forge-Game-Engine/Forge/
 
 > `static` **collisionPoint**(`rayA`, `rayB`): `null` \| [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:219](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L219)
+Defined in: [physics/raycast.ts:219](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L219)
 
 #### Parameters
 
@@ -290,7 +290,7 @@ Defined in: [physics/raycast.ts:219](https://github.com/Forge-Game-Engine/Forge/
 
 > `static` **intersect**(`rayA`, `rayB`): `null` \| [`Vector2`](Vector2.md)
 
-Defined in: [physics/raycast.ts:185](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/physics/raycast.ts#L185)
+Defined in: [physics/raycast.ts:185](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/physics/raycast.ts#L185)
 
 #### Parameters
 

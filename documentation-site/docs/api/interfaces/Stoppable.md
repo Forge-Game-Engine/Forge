@@ -1,6 +1,6 @@
 # Interface: Stoppable
 
-Defined in: [common/types/Stoppable.ts:1](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/types/Stoppable.ts#L1)
+Defined in: [common/types/Stoppable.ts:1](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/types/Stoppable.ts#L1)
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [common/types/Stoppable.ts:1](https://github.com/Forge-Game-Engine/F
 
 > **stop**: () => `void`
 
-Defined in: [common/types/Stoppable.ts:2](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/common/types/Stoppable.ts#L2)
+Defined in: [common/types/Stoppable.ts:2](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/common/types/Stoppable.ts#L2)
 
 #### Returns
 

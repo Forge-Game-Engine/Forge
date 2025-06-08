@@ -2,7 +2,7 @@
 
 > `const` **CLEAR\_STRATEGY**: `object`
 
-Defined in: [rendering/enums/clear-strategy.enum.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/enums/clear-strategy.enum.ts#L10)
+Defined in: [rendering/enums/clear-strategy.enum.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/enums/clear-strategy.enum.ts#L10)
 
 The `CLEAR_STRATEGY` lookup defines different strategies for clearing the rendering context.
 

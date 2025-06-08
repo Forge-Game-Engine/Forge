@@ -67,11 +67,11 @@
     "vitest": "^3.1.4"
   },
   "peerDependencies": {
+    "@rive-app/webgl2": "^2.29.3",
     "howler": "^2.2.4",
     "matter-js": "^0.20.0"
   },
   "dependencies": {
-    "@rive-app/webgl2": "^2.29.0",
     "seedrandom": "^3.0.5"
   }
 }

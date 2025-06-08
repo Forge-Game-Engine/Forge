@@ -2,7 +2,7 @@
 
 > **createShaderStore**(): [`ShaderStore`](../classes/ShaderStore.md)
 
-Defined in: [rendering/utilities/create-shader-store.ts:35](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/utilities/create-shader-store.ts#L35)
+Defined in: [rendering/utilities/create-shader-store.ts:35](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/utilities/create-shader-store.ts#L35)
 
 Creates and initializes a ShaderStore instance with predefined shader includes and shaders.
 

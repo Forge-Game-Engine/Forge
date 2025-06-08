@@ -1,6 +1,6 @@
 # Class: AnimationSystem
 
-Defined in: [animations/systems/animation-system.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/animations/systems/animation-system.ts#L8)
+Defined in: [animations/systems/animation-system.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/animations/systems/animation-system.ts#L8)
 
 System that manages and updates animations for entities.
 
@@ -14,7 +14,7 @@ System that manages and updates animations for entities.
 
 > **new AnimationSystem**(`time`): `AnimationSystem`
 
-Defined in: [animations/systems/animation-system.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/animations/systems/animation-system.ts#L15)
+Defined in: [animations/systems/animation-system.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/animations/systems/animation-system.ts#L15)
 
 Creates an instance of AnimationSystem.
 
@@ -40,7 +40,7 @@ The Time instance.
 
 > **isEnabled**: `boolean` = `true`
 
-Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L23)
+Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L23)
 
 Indicates whether the system is enabled.
 
@@ -54,7 +54,7 @@ Indicates whether the system is enabled.
 
 > **name**: `string`
 
-Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L13)
+Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L13)
 
 The name of the system.
 
@@ -68,7 +68,7 @@ The name of the system.
 
 > **operatesOnComponents**: `symbol`[]
 
-Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L18)
+Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L18)
 
 The components that this system operates on.
 
@@ -82,7 +82,7 @@ The components that this system operates on.
 
 > **beforeAll**(`entities`): [`Entity`](Entity.md)[]
 
-Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L69)
+Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L69)
 
 Hook method that is called before running the system on all entities.
 Can be overridden by subclasses to modify the entities before processing.
@@ -111,7 +111,7 @@ The modified entities.
 
 > **run**(`entity`): `void`
 
-Defined in: [animations/systems/animation-system.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/animations/systems/animation-system.ts#L24)
+Defined in: [animations/systems/animation-system.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/animations/systems/animation-system.ts#L24)
 
 Runs the animation system for a given entity.
 
@@ -137,7 +137,7 @@ The entity to update animations for.
 
 > **runSystem**(`entities`): `void`
 
-Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L39)
+Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L39)
 
 Runs the system on the provided entities.
 
@@ -163,7 +163,7 @@ The entities to run the system on.
 
 > **stop**(): `void`
 
-Defined in: [ecs/types/System.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/ecs/types/System.ts#L76)
+Defined in: [ecs/types/System.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/ecs/types/System.ts#L76)
 
 Stops the system. This method can be overridden by subclasses.
 

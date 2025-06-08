@@ -1,6 +1,6 @@
 # Class: Vector3
 
-Defined in: [math/vector3.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L5)
+Defined in: [math/vector3.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L5)
 
 Represents a three-dimensional vector with x, y, and z components.
 Provides methods for common vector operations and transformations.
@@ -11,7 +11,7 @@ Provides methods for common vector operations and transformations.
 
 > **new Vector3**(`x`, `y`, `z`): `Vector3`
 
-Defined in: [math/vector3.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L21)
+Defined in: [math/vector3.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L21)
 
 Creates a new Vector3.
 
@@ -45,7 +45,7 @@ The z-coordinate component (default: 0)
 
 > **x**: `number`
 
-Defined in: [math/vector3.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L7)
+Defined in: [math/vector3.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L7)
 
 The x-coordinate component of the vector
 
@@ -55,7 +55,7 @@ The x-coordinate component of the vector
 
 > **y**: `number`
 
-Defined in: [math/vector3.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L10)
+Defined in: [math/vector3.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L10)
 
 The y-coordinate component of the vector
 
@@ -65,7 +65,7 @@ The y-coordinate component of the vector
 
 > **z**: `number`
 
-Defined in: [math/vector3.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L13)
+Defined in: [math/vector3.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L13)
 
 The z-coordinate component of the vector
 
@@ -77,7 +77,7 @@ The z-coordinate component of the vector
 
 > **get** `static` **backward**(): `Vector3`
 
-Defined in: [math/vector3.ts:225](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L225)
+Defined in: [math/vector3.ts:225](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L225)
 
 Returns a unit vector pointing backward (0, 0, -1).
 
@@ -93,7 +93,7 @@ Returns a unit vector pointing backward (0, 0, -1).
 
 > **get** `static` **down**(): `Vector3`
 
-Defined in: [math/vector3.ts:197](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L197)
+Defined in: [math/vector3.ts:197](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L197)
 
 Returns a unit vector pointing downward (0, -1, 0).
 
@@ -109,7 +109,7 @@ Returns a unit vector pointing downward (0, -1, 0).
 
 > **get** `static` **forward**(): `Vector3`
 
-Defined in: [math/vector3.ts:218](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L218)
+Defined in: [math/vector3.ts:218](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L218)
 
 Returns a unit vector pointing forward (0, 0, 1).
 
@@ -125,7 +125,7 @@ Returns a unit vector pointing forward (0, 0, 1).
 
 > **get** `static` **left**(): `Vector3`
 
-Defined in: [math/vector3.ts:204](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L204)
+Defined in: [math/vector3.ts:204](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L204)
 
 Returns a unit vector pointing left (-1, 0, 0).
 
@@ -141,7 +141,7 @@ Returns a unit vector pointing left (-1, 0, 0).
 
 > **get** `static` **one**(): `Vector3`
 
-Defined in: [math/vector3.ts:183](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L183)
+Defined in: [math/vector3.ts:183](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L183)
 
 Returns a vector with components of 1 (1, 1, 1).
 
@@ -157,7 +157,7 @@ Returns a vector with components of 1 (1, 1, 1).
 
 > **get** `static` **right**(): `Vector3`
 
-Defined in: [math/vector3.ts:211](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L211)
+Defined in: [math/vector3.ts:211](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L211)
 
 Returns a unit vector pointing right (1, 0, 0).
 
@@ -173,7 +173,7 @@ Returns a unit vector pointing right (1, 0, 0).
 
 > **get** `static` **up**(): `Vector3`
 
-Defined in: [math/vector3.ts:190](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L190)
+Defined in: [math/vector3.ts:190](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L190)
 
 Returns a unit vector pointing upward (0, 1, 0).
 
@@ -189,7 +189,7 @@ Returns a unit vector pointing upward (0, 1, 0).
 
 > **get** `static` **zero**(): `Vector3`
 
-Defined in: [math/vector3.ts:176](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L176)
+Defined in: [math/vector3.ts:176](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L176)
 
 Returns a zero vector (0, 0, 0).
 
@@ -203,7 +203,7 @@ Returns a zero vector (0, 0, 0).
 
 > **add**(`value`): `Vector3`
 
-Defined in: [math/vector3.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L45)
+Defined in: [math/vector3.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L45)
 
 Returns a new vector that is the sum of this vector and another vector.
 
@@ -227,7 +227,7 @@ A new Vector3 representing the sum
 
 > **clone**(): `Vector3`
 
-Defined in: [math/vector3.ts:152](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L152)
+Defined in: [math/vector3.ts:152](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L152)
 
 Creates a deep copy of this vector.
 
@@ -243,7 +243,7 @@ A new Vector3 with the same component values
 
 > **divide**(`scalar`): `Vector3`
 
-Defined in: [math/vector3.ts:97](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L97)
+Defined in: [math/vector3.ts:97](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L97)
 
 Divides this vector by a scalar value.
 
@@ -267,7 +267,7 @@ A new Vector3 divided by the scalar
 
 > **equals**(`value`): `boolean`
 
-Defined in: [math/vector3.ts:169](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L169)
+Defined in: [math/vector3.ts:169](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L169)
 
 Checks if this vector is equal to another vector.
 
@@ -291,7 +291,7 @@ True if the vectors have the same components, false otherwise
 
 > **floorComponents**(): `Vector3`
 
-Defined in: [math/vector3.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L140)
+Defined in: [math/vector3.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L140)
 
 Returns a new vector with components rounded down to the nearest integer.
 
@@ -307,7 +307,7 @@ A new Vector3 with floored components
 
 > **magnitude**(): `number`
 
-Defined in: [math/vector3.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L109)
+Defined in: [math/vector3.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L109)
 
 Calculates the magnitude (length) of this vector.
 
@@ -323,7 +323,7 @@ The magnitude of the vector
 
 > **magnitudeSquared**(): `number`
 
-Defined in: [math/vector3.ts:118](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L118)
+Defined in: [math/vector3.ts:118](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L118)
 
 Calculates the squared magnitude of this vector.
 This is faster than magnitude() as it avoids the square root.
@@ -340,7 +340,7 @@ The squared magnitude of the vector
 
 > **multiply**(`scalar`): `Vector3`
 
-Defined in: [math/vector3.ts:71](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L71)
+Defined in: [math/vector3.ts:71](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L71)
 
 Multiplies this vector by a scalar value.
 
@@ -364,7 +364,7 @@ A new Vector3 scaled by the input value
 
 > **multiplyComponents**(`vector`): `Vector3`
 
-Defined in: [math/vector3.ts:84](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L84)
+Defined in: [math/vector3.ts:84](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L84)
 
 Multiplies this vector's components by another vector's components.
 
@@ -388,7 +388,7 @@ A new Vector3 with multiplied components
 
 > **normalize**(): `Vector3`
 
-Defined in: [math/vector3.ts:126](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L126)
+Defined in: [math/vector3.ts:126](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L126)
 
 Returns a normalized (unit length) version of this vector.
 
@@ -404,7 +404,7 @@ A new Vector3 with magnitude 1 in the same direction
 
 > **set**(`value`): `this`
 
-Defined in: [math/vector3.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L32)
+Defined in: [math/vector3.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L32)
 
 Sets this vector's components to match another vector.
 
@@ -428,7 +428,7 @@ This vector for chaining
 
 > **subtract**(`value`): `Vector3`
 
-Defined in: [math/vector3.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L58)
+Defined in: [math/vector3.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L58)
 
 Returns a new vector that is the difference between this vector and another vector.
 
@@ -452,7 +452,7 @@ A new Vector3 representing the difference
 
 > **toFloat32Array**(): `Float32Array`
 
-Defined in: [math/vector3.ts:233](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L233)
+Defined in: [math/vector3.ts:233](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L233)
 
 Converts the 3d vector to a glsl-compatible float32 array.
 
@@ -468,7 +468,7 @@ The 3d vector array (e.g. `[5, 3, 8]` for a `new Vector3(5, 3, 8)`).
 
 > **toString**(): `string`
 
-Defined in: [math/vector3.ts:160](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/math/vector3.ts#L160)
+Defined in: [math/vector3.ts:160](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/math/vector3.ts#L160)
 
 Returns a string representation of this vector.
 

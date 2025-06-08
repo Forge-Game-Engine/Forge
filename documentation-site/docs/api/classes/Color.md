@@ -1,6 +1,6 @@
 # Class: Color
 
-Defined in: [rendering/color.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L6)
+Defined in: [rendering/color.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L6)
 
 The `Color` class represents a color that can be created using RGB(A) or HSL(A).
 
@@ -10,7 +10,7 @@ The `Color` class represents a color that can be created using RGB(A) or HSL(A).
 
 > **new Color**(`r`, `g`, `b`, `a`): `Color`
 
-Defined in: [rendering/color.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L19)
+Defined in: [rendering/color.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L19)
 
 Constructs a new `Color` instance using RGBA values.
 
@@ -52,7 +52,7 @@ The alpha component (0-1). Defaults to 1 (fully opaque).
 
 > **get** **a**(): `number`
 
-Defined in: [rendering/color.ts:116](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L116)
+Defined in: [rendering/color.ts:116](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L116)
 
 Gets the alpha component of the color.
 
@@ -68,7 +68,7 @@ Gets the alpha component of the color.
 
 > **get** **b**(): `number`
 
-Defined in: [rendering/color.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L109)
+Defined in: [rendering/color.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L109)
 
 Gets the blue component of the color.
 
@@ -84,7 +84,7 @@ Gets the blue component of the color.
 
 > **get** **g**(): `number`
 
-Defined in: [rendering/color.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L102)
+Defined in: [rendering/color.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L102)
 
 Gets the green component of the color.
 
@@ -100,7 +100,7 @@ Gets the green component of the color.
 
 > **get** **r**(): `number`
 
-Defined in: [rendering/color.ts:95](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L95)
+Defined in: [rendering/color.ts:95](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L95)
 
 Gets the red component of the color.
 
@@ -114,7 +114,7 @@ Gets the red component of the color.
 
 > **toFloat32Array**(): `Float32Array`
 
-Defined in: [rendering/color.ts:132](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L132)
+Defined in: [rendering/color.ts:132](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L132)
 
 Converts the color to a glsl-compatible float32 array.
 
@@ -130,7 +130,7 @@ The RGBA array (e.g. `[1, 0, 0, 1]` for red).
 
 > **toRGBAString**(): `string`
 
-Defined in: [rendering/color.ts:124](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L124)
+Defined in: [rendering/color.ts:124](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L124)
 
 Converts the color to a CSS-compatible RGBA string.
 
@@ -146,7 +146,7 @@ The RGBA string (e.g., `rgba(255, 0, 0, 1)`).
 
 > `static` **fromHSLA**(`h`, `s`, `l`, `a`): `Color`
 
-Defined in: [rendering/color.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L58)
+Defined in: [rendering/color.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L58)
 
 Creates a `Color` instance using HSLA values.
 
@@ -188,7 +188,7 @@ A new `Color` instance.
 
 > `static` **hueToRGB**(`p`, `q`, `t`): `number`
 
-Defined in: [rendering/color.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/color.ts#L26)
+Defined in: [rendering/color.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/color.ts#L26)
 
 #### Parameters
 

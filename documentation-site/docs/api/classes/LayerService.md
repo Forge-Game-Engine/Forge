@@ -1,6 +1,6 @@
 # Class: LayerService
 
-Defined in: [rendering/layer-service.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L20)
+Defined in: [rendering/layer-service.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L20)
 
 The `LayerService` class manages the creation, registration, and resizing of render layers.
 
@@ -14,7 +14,7 @@ The `LayerService` class manages the creation, registration, and resizing of ren
 
 > **new LayerService**(): `LayerService`
 
-Defined in: [rendering/layer-service.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L27)
+Defined in: [rendering/layer-service.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L27)
 
 Constructs a new instance of the `LayerService` class.
 
@@ -28,7 +28,7 @@ Constructs a new instance of the `LayerService` class.
 
 > **getLayer**\<`T`\>(`name`): `T`
 
-Defined in: [rendering/layer-service.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L52)
+Defined in: [rendering/layer-service.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L52)
 
 Retrieves a render layer by its name.
 
@@ -62,7 +62,7 @@ An error if the layer is not found.
 
 > **registerLayer**(`layer`): `void`
 
-Defined in: [rendering/layer-service.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L42)
+Defined in: [rendering/layer-service.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L42)
 
 Registers an existing canvas element as a render layer.
 
@@ -86,7 +86,7 @@ The registered `RenderLayer` instance.
 
 > **resizeAllLayers**(`dimensions?`): `void`
 
-Defined in: [rendering/layer-service.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L66)
+Defined in: [rendering/layer-service.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L66)
 
 Resizes all registered layers to the specified dimensions.
 
@@ -108,7 +108,7 @@ The new dimensions for the layers. If not provided, the window dimensions are us
 
 > **stop**(): `void`
 
-Defined in: [rendering/layer-service.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/rendering/layer-service.ts#L78)
+Defined in: [rendering/layer-service.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/rendering/layer-service.ts#L78)
 
 Cleans up the layer service by removing the resize event listener.
 

@@ -1,6 +1,6 @@
 # Class: ImageCache
 
-Defined in: [asset-loading/asset-caches/image-cache.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/asset-loading/asset-caches/image-cache.ts#L6)
+Defined in: [asset-loading/asset-caches/image-cache.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/asset-loading/asset-caches/image-cache.ts#L6)
 
 Class to manage the caching and loading of images.
 
@@ -24,7 +24,7 @@ Class to manage the caching and loading of images.
 
 > **assets**: `Map`\<`string`, `HTMLImageElement`\>
 
-Defined in: [asset-loading/asset-caches/image-cache.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/asset-loading/asset-caches/image-cache.ts#L7)
+Defined in: [asset-loading/asset-caches/image-cache.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/asset-loading/asset-caches/image-cache.ts#L7)
 
 A map of asset paths to their corresponding assets.
 
@@ -38,7 +38,7 @@ A map of asset paths to their corresponding assets.
 
 > **get**(`path`): `HTMLImageElement`
 
-Defined in: [asset-loading/asset-caches/image-cache.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/asset-loading/asset-caches/image-cache.ts#L15)
+Defined in: [asset-loading/asset-caches/image-cache.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/asset-loading/asset-caches/image-cache.ts#L15)
 
 Retrieves an asset from the cache.
 
@@ -70,7 +70,7 @@ Will throw an error if the image is not found in the cache.
 
 > **getOrLoad**(`path`): `Promise`\<`HTMLImageElement`\>
 
-Defined in: [asset-loading/asset-caches/image-cache.ts:57](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/asset-loading/asset-caches/image-cache.ts#L57)
+Defined in: [asset-loading/asset-caches/image-cache.ts:57](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/asset-loading/asset-caches/image-cache.ts#L57)
 
 Retrieves an asset from the cache if it exists, otherwise loads and caches it.
 
@@ -98,7 +98,7 @@ A promise that resolves to the image element.
 
 > **load**(`path`): `Promise`\<`void`\>
 
-Defined in: [asset-loading/asset-caches/image-cache.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/asset-loading/asset-caches/image-cache.ts#L31)
+Defined in: [asset-loading/asset-caches/image-cache.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/80c88dbc1226e2ea185d187b85121eb9c3da7ead/src/asset-loading/asset-caches/image-cache.ts#L31)
 
 Loads an asset from the specified path and caches it.
 
