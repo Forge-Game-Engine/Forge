@@ -2,7 +2,7 @@
 
 > **isNil**\<`T`\>(`item`): `boolean`
 
-Defined in: [common/utils/is-nil.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/common/utils/is-nil.ts#L12)
+Defined in: [common/utils/is-nil.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/common/utils/is-nil.ts#L12)
 
 Checks if the provided item is `undefined` or `null`.
 

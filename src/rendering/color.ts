@@ -4,10 +4,10 @@ import { clamp } from '../math';
  * The `Color` class represents a color that can be created using RGB(A) or HSL(A).
  */
 export class Color {
-  private _r: number;
-  private _g: number;
-  private _b: number;
-  private _a: number;
+  private readonly _r: number;
+  private readonly _g: number;
+  private readonly _b: number;
+  private readonly _a: number;
 
   /**
    * Constructs a new `Color` instance using RGBA values.

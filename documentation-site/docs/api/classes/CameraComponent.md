@@ -1,6 +1,6 @@
 # Class: CameraComponent
 
-Defined in: [rendering/components/camera-component.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L52)
+Defined in: [rendering/components/camera-component.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L52)
 
 The `CameraComponent` class implements the `Component` interface and represents
 a camera in the rendering system. It provides properties for zooming and panning
@@ -17,7 +17,7 @@ and zooming.
 
 > **new CameraComponent**(`options`): `CameraComponent`
 
-Defined in: [rendering/components/camera-component.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L87)
+Defined in: [rendering/components/camera-component.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L87)
 
 Constructs a new instance of the `CameraComponent` class with the given options.
 
@@ -39,7 +39,7 @@ Partial options to configure the camera component.
 
 > **allowPanning**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:75](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L75)
+Defined in: [rendering/components/camera-component.ts:75](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L75)
 
 Indicates if panning is allowed.
 
@@ -49,7 +49,7 @@ Indicates if panning is allowed.
 
 > **allowZooming**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L78)
+Defined in: [rendering/components/camera-component.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L78)
 
 Indicates if zooming is allowed.
 
@@ -59,7 +59,7 @@ Indicates if zooming is allowed.
 
 > **isStatic**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L72)
+Defined in: [rendering/components/camera-component.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L72)
 
 Indicates if the camera is static (non-movable).
 
@@ -69,7 +69,7 @@ Indicates if the camera is static (non-movable).
 
 > **maxZoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L69)
+Defined in: [rendering/components/camera-component.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L69)
 
 The maximum zoom level allowed.
 
@@ -79,7 +79,7 @@ The maximum zoom level allowed.
 
 > **minZoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L66)
+Defined in: [rendering/components/camera-component.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L66)
 
 The minimum zoom level allowed.
 
@@ -89,7 +89,7 @@ The minimum zoom level allowed.
 
 > **name**: `symbol`
 
-Defined in: [rendering/components/camera-component.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L54)
+Defined in: [rendering/components/camera-component.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L54)
 
 The name property holds the unique symbol for this component.
 
@@ -103,7 +103,7 @@ The name property holds the unique symbol for this component.
 
 > **panSensitivity**: `number`
 
-Defined in: [rendering/components/camera-component.ts:63](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L63)
+Defined in: [rendering/components/camera-component.ts:63](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L63)
 
 The sensitivity of the panning controls.
 
@@ -113,7 +113,7 @@ The sensitivity of the panning controls.
 
 > **zoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:57](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L57)
+Defined in: [rendering/components/camera-component.ts:57](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L57)
 
 The current zoom level of the camera.
 
@@ -123,7 +123,7 @@ The current zoom level of the camera.
 
 > **zoomSensitivity**: `number`
 
-Defined in: [rendering/components/camera-component.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L60)
+Defined in: [rendering/components/camera-component.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L60)
 
 The sensitivity of the zoom controls.
 
@@ -133,7 +133,7 @@ The sensitivity of the zoom controls.
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [rendering/components/camera-component.ts:81](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L81)
+Defined in: [rendering/components/camera-component.ts:81](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L81)
 
 A static symbol property that uniquely identifies the `CameraComponent`.
 
@@ -143,7 +143,7 @@ A static symbol property that uniquely identifies the `CameraComponent`.
 
 > `static` **createDefaultCamera**(`isStatic`): `CameraComponent`
 
-Defined in: [rendering/components/camera-component.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/components/camera-component.ts#L109)
+Defined in: [rendering/components/camera-component.ts:109](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/components/camera-component.ts#L109)
 
 Creates a default camera component with the option to set it as static.
 

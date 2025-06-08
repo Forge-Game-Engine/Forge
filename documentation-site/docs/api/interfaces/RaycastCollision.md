@@ -1,6 +1,6 @@
 # Interface: RaycastCollision
 
-Defined in: [physics/raycast.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/physics/raycast.ts#L60)
+Defined in: [physics/raycast.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/physics/raycast.ts#L60)
 
 RaycastCollision interface that represents a collision between a ray and a body.
 
@@ -10,7 +10,7 @@ RaycastCollision interface that represents a collision between a ray and a body.
 
 > **body**: `Body`
 
-Defined in: [physics/raycast.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/physics/raycast.ts#L64)
+Defined in: [physics/raycast.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/physics/raycast.ts#L64)
 
 The body that was hit by the ray.
 
@@ -20,7 +20,7 @@ The body that was hit by the ray.
 
 > **normal**: [`Vector2`](../classes/Vector2.md)
 
-Defined in: [physics/raycast.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/physics/raycast.ts#L72)
+Defined in: [physics/raycast.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/physics/raycast.ts#L72)
 
 The normal vector of the edge at the point of intersection.
 
@@ -30,7 +30,7 @@ The normal vector of the edge at the point of intersection.
 
 > **point**: [`Vector2`](../classes/Vector2.md)
 
-Defined in: [physics/raycast.ts:68](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/physics/raycast.ts#L68)
+Defined in: [physics/raycast.ts:68](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/physics/raycast.ts#L68)
 
 The point of intersection between the ray and the body.
 
@@ -40,6 +40,6 @@ The point of intersection between the ray and the body.
 
 > **vertices**: [`Vector2`](../classes/Vector2.md)[]
 
-Defined in: [physics/raycast.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/physics/raycast.ts#L76)
+Defined in: [physics/raycast.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/physics/raycast.ts#L76)
 
 The vertices of the body that were hit by the ray.

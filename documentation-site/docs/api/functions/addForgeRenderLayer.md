@@ -2,7 +2,7 @@
 
 > **addForgeRenderLayer**(`layerName`, `gameContainer`, `layerService`, `world`, `cameraEntity`): readonly \[[`ForgeRenderLayer`](../classes/ForgeRenderLayer.md), `HTMLCanvasElement`\]
 
-Defined in: [rendering/utilities/add-forge-render-layer.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/04af294b0d108e7e60d1ae9f40eaa3ca76ca176a/src/rendering/utilities/add-forge-render-layer.ts#L18)
+Defined in: [rendering/utilities/add-forge-render-layer.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/utilities/add-forge-render-layer.ts#L18)
 
 Adds a Forge render layer to the game container and registers it with the layer service.
 It also creates a render system and a batching system for the layer.
