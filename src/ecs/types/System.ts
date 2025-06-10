@@ -1,5 +1,6 @@
 import type { Stoppable } from '../../common';
 import { Entity } from '../entity';
+import type { Query } from './Query';
 
 /**
  * Represents a system in the Entity-Component-System (ECS) architecture.
@@ -15,7 +16,7 @@ export abstract class System implements Stoppable {
   /**
    * The components that this system operates on.
    */
-  public operatesOnComponents: symbol[];
+  public query: Query;
 
   /**
    * Indicates whether the system is enabled.
@@ -25,11 +26,11 @@ export abstract class System implements Stoppable {
   /**
    * Creates a new System instance.
    * @param name - The name of the system.
-   * @param operatesOnComponents - The components that this system operates on.
+   * @param query - The components that this system operates on.
    */
-  constructor(name: string, operatesOnComponents: symbol[]) {
+  constructor(name: string, query: Query) {
     this.name = name;
-    this.operatesOnComponents = operatesOnComponents;
+    this.query = query;
   }
 
   /**

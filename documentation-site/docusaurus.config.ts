@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Forge Documentation',
+  title: 'Forge Game Engine',
   tagline:
     "Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.",
   favicon: 'img/favicon.ico',
@@ -45,10 +45,6 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -65,7 +61,7 @@ const config: Config = {
         entryPoints: ['../src/index.ts'],
         tsconfig: '../tsconfig.json',
         readme: 'none',
-        name: 'Forge API',
+        name: 'API',
       },
     ],
   ],
@@ -73,6 +69,9 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     navbar: {
       logo: {
         alt: 'Forge Logo',
@@ -80,11 +79,11 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'docsSidebar',
+          to: '/docs/category/documentation',
+          label: 'Documentation',
           position: 'left',
-          label: 'Docs',
         },
+        { to: '/docs/api', label: 'API', position: 'left' },
         {
           href: 'https://github.com/Forge-Game-Engine/Forge',
           label: 'GitHub',
@@ -96,7 +95,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [
             {
               label: 'Tutorial',

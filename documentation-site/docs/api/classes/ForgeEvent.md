@@ -1,6 +1,6 @@
 # Class: ForgeEvent
 
-Defined in: [events/forge-event.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L6)
+Defined in: [events/forge-event.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L6)
 
 An event that can be raised and listened to.
 
@@ -10,7 +10,7 @@ An event that can be raised and listened to.
 
 > **new ForgeEvent**(`name`): `ForgeEvent`
 
-Defined in: [events/forge-event.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L28)
+Defined in: [events/forge-event.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L28)
 
 Creates a new event.
 
@@ -32,7 +32,7 @@ The name of the event.
 
 > **name**: `string`
 
-Defined in: [events/forge-event.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L10)
+Defined in: [events/forge-event.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L10)
 
 The name of the event.
 
@@ -44,7 +44,7 @@ The name of the event.
 
 > **get** **listeners**(): `Listener`[]
 
-Defined in: [events/forge-event.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L20)
+Defined in: [events/forge-event.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L20)
 
 Gets the list of listeners registered to this event.
 
@@ -58,7 +58,7 @@ Gets the list of listeners registered to this event.
 
 > **clear**(): `void`
 
-Defined in: [events/forge-event.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L52)
+Defined in: [events/forge-event.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L52)
 
 Clears all listeners from the event.
 
@@ -72,7 +72,7 @@ Clears all listeners from the event.
 
 > **deregisterListener**(`listener`): `void`
 
-Defined in: [events/forge-event.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L45)
+Defined in: [events/forge-event.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L45)
 
 Deregisters a listener from the event.
 
@@ -94,7 +94,7 @@ The listener to deregister.
 
 > **raise**(): `void`
 
-Defined in: [events/forge-event.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L59)
+Defined in: [events/forge-event.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L59)
 
 Raises the event, calling all registered listeners.
 
@@ -108,7 +108,7 @@ Raises the event, calling all registered listeners.
 
 > **registerListener**(`listener`): `void`
 
-Defined in: [events/forge-event.ts:37](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/forge-event.ts#L37)
+Defined in: [events/forge-event.ts:37](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/forge-event.ts#L37)
 
 Registers a listener to the event.
 

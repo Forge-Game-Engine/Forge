@@ -1,6 +1,6 @@
 # Class: Renderable
 
-Defined in: [rendering/renderable.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/renderable.ts#L4)
+Defined in: [rendering/renderable.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/renderable.ts#L4)
 
 ## Constructors
 
@@ -8,7 +8,7 @@ Defined in: [rendering/renderable.ts:4](https://github.com/Forge-Game-Engine/For
 
 > **new Renderable**(`geometry`, `material`): `Renderable`
 
-Defined in: [rendering/renderable.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/renderable.ts#L8)
+Defined in: [rendering/renderable.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/renderable.ts#L8)
 
 #### Parameters
 
@@ -30,7 +30,7 @@ Defined in: [rendering/renderable.ts:8](https://github.com/Forge-Game-Engine/For
 
 > **geometry**: [`Geometry`](Geometry.md)
 
-Defined in: [rendering/renderable.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/renderable.ts#L5)
+Defined in: [rendering/renderable.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/renderable.ts#L5)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [rendering/renderable.ts:5](https://github.com/Forge-Game-Engine/For
 
 > **material**: [`Material`](Material.md)
 
-Defined in: [rendering/renderable.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/renderable.ts#L6)
+Defined in: [rendering/renderable.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/renderable.ts#L6)
 
 ## Methods
 
@@ -46,7 +46,7 @@ Defined in: [rendering/renderable.ts:6](https://github.com/Forge-Game-Engine/For
 
 > **bind**(`gl`): `void`
 
-Defined in: [rendering/renderable.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/renderable.ts#L17)
+Defined in: [rendering/renderable.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/renderable.ts#L17)
 
 Prepares for drawing: binds material and geometry (including VAO).
 The RenderSystem is still responsible for binding instance data & calling draw.

@@ -1,11 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy Documentation
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-    # Review gh actions docs if you want to further define triggers, paths, etc
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
 
 defaults:
   run:

@@ -1,6 +1,6 @@
 # Class: RiveRenderLayer
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L9)
+Defined in: [rendering/render-layers/rive-render-layer.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L9)
 
 The `RiveRenderLayer` class represents a rendering layer with its own canvas and rive instance.
 
@@ -18,7 +18,7 @@ The `RiveRenderLayer` class represents a rendering layer with its own canvas and
 
 > **new RiveRenderLayer**(`name`, `canvas`, `rive`, `riveEventDispatcher`): `RiveRenderLayer`
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L23)
+Defined in: [rendering/render-layers/rive-render-layer.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L23)
 
 Constructs a new instance of the `RiveRenderLayer` class.
 
@@ -62,7 +62,7 @@ The event dispatcher for Rive events.
 
 > **canvas**: `HTMLCanvasElement`
 
-Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/render-layer.ts#L11)
+Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/render-layer.ts#L11)
 
 The canvas element associated with the render layer.
 
@@ -76,7 +76,7 @@ The canvas element associated with the render layer.
 
 > **center**: [`Vector2`](Vector2.md)
 
-Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/render-layer.ts#L14)
+Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/render-layer.ts#L14)
 
 The center of the canvas.
 
@@ -90,7 +90,7 @@ The center of the canvas.
 
 > **name**: `string`
 
-Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/render-layer.ts#L8)
+Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/render-layer.ts#L8)
 
 The name of the render layer.
 
@@ -104,7 +104,7 @@ The name of the render layer.
 
 > **rive**: `Rive`
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L11)
+Defined in: [rendering/render-layers/rive-render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L11)
 
 The Rive instance associated with the render layer.
 
@@ -114,7 +114,7 @@ The Rive instance associated with the render layer.
 
 > **registerRiveEvent**(`riveEventName`, `event`): `void`
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:50](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L50)
+Defined in: [rendering/render-layers/rive-render-layer.ts:50](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L50)
 
 Registers a Rive event with the specified name and event handler.
 
@@ -142,7 +142,7 @@ The event handler to register.
 
 > **resize**(`width`, `height`): `void`
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L40)
+Defined in: [rendering/render-layers/rive-render-layer.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L40)
 
 Resizes the canvas to the specified width and height, and updates the Rive instance.
 
@@ -174,7 +174,7 @@ The new height of the canvas.
 
 > **stop**(): `void`
 
-Defined in: [rendering/render-layers/rive-render-layer.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/render-layers/rive-render-layer.ts#L60)
+Defined in: [rendering/render-layers/rive-render-layer.ts:60](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/render-layers/rive-render-layer.ts#L60)
 
 Stops the render layer by clearing the canvas and cleaning up the Rive instance.
 

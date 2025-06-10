@@ -23,7 +23,7 @@ export class Color {
     this._a = clamp(a, 0, 1);
   }
 
-  public static hueToRGB(p: number, q: number, t: number): number {
+  private static _hueToRGB(p: number, q: number, t: number): number {
     if (t < 0) {
       t += 1;
     }
@@ -76,9 +76,9 @@ export class Color {
           : normalizedL + normalizedS - normalizedL * normalizedS;
       const p = 2 * normalizedL - q;
 
-      r = Color.hueToRGB(p, q, normalizedH + 1 / 3);
-      g = Color.hueToRGB(p, q, normalizedH);
-      b = Color.hueToRGB(p, q, normalizedH - 1 / 3);
+      r = Color._hueToRGB(p, q, normalizedH + 1 / 3);
+      g = Color._hueToRGB(p, q, normalizedH);
+      b = Color._hueToRGB(p, q, normalizedH - 1 / 3);
     }
 
     return new Color(

@@ -1,6 +1,6 @@
 # Class: TimerSystem
 
-Defined in: [timer/systems/timer-system.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/timer/systems/timer-system.ts#L5)
+Defined in: [timer/systems/timer-system.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/systems/timer-system.ts#L5)
 
 Represents a system in the Entity-Component-System (ECS) architecture.
 A system operates on entities that contain specific components.
@@ -16,7 +16,7 @@ Systems are responsible for updating the state of entities.
 
 > **new TimerSystem**(`time`): `TimerSystem`
 
-Defined in: [timer/systems/timer-system.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/timer/systems/timer-system.ts#L8)
+Defined in: [timer/systems/timer-system.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/systems/timer-system.ts#L8)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [timer/systems/timer-system.ts:8](https://github.com/Forge-Game-Engi
 
 > **isEnabled**: `boolean` = `true`
 
-Defined in: [ecs/types/System.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L23)
+Defined in: [ecs/types/System.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L24)
 
 Indicates whether the system is enabled.
 
@@ -52,7 +52,7 @@ Indicates whether the system is enabled.
 
 > **name**: `string`
 
-Defined in: [ecs/types/System.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L13)
+Defined in: [ecs/types/System.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L14)
 
 The name of the system.
 
@@ -62,17 +62,17 @@ The name of the system.
 
 ***
 
-### operatesOnComponents
+### query
 
-> **operatesOnComponents**: `symbol`[]
+> **query**: [`Query`](../type-aliases/Query.md)
 
-Defined in: [ecs/types/System.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L18)
+Defined in: [ecs/types/System.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L19)
 
 The components that this system operates on.
 
 #### Inherited from
 
-[`System`](System.md).[`operatesOnComponents`](System.md#operatesoncomponents)
+[`System`](System.md).[`query`](System.md#query)
 
 ## Methods
 
@@ -80,7 +80,7 @@ The components that this system operates on.
 
 > **beforeAll**(`entities`): [`Entity`](Entity.md)[]
 
-Defined in: [ecs/types/System.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L69)
+Defined in: [ecs/types/System.ts:70](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L70)
 
 Hook method that is called before running the system on all entities.
 Can be overridden by subclasses to modify the entities before processing.
@@ -109,7 +109,7 @@ The modified entities.
 
 > **run**(`entity`): `void`
 
-Defined in: [timer/systems/timer-system.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/timer/systems/timer-system.ts#L13)
+Defined in: [timer/systems/timer-system.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/systems/timer-system.ts#L13)
 
 Abstract method to run the system on a single entity.
 Must be implemented by subclasses.
@@ -138,7 +138,7 @@ void | boolean - Returns void or a boolean indicating whether to exit early.
 
 > **runSystem**(`entities`): `void`
 
-Defined in: [ecs/types/System.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L39)
+Defined in: [ecs/types/System.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L40)
 
 Runs the system on the provided entities.
 
@@ -164,7 +164,7 @@ The entities to run the system on.
 
 > **stop**(): `void`
 
-Defined in: [ecs/types/System.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/ecs/types/System.ts#L76)
+Defined in: [ecs/types/System.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/types/System.ts#L77)
 
 Stops the system. This method can be overridden by subclasses.
 

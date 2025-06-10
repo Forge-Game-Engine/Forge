@@ -2,7 +2,7 @@
 
 > **SceneCreationOptions** = `object`
 
-Defined in: [game/utilities/create-scene.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L14)
+Defined in: [game/utilities/create-scene.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L14)
 
 ## Properties
 
@@ -10,7 +10,7 @@ Defined in: [game/utilities/create-scene.ts:14](https://github.com/Forge-Game-En
 
 > **camera**: `Partial`\<[`CameraComponentOptions`](CameraComponentOptions.md)\>
 
-Defined in: [game/utilities/create-scene.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L17)
+Defined in: [game/utilities/create-scene.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L17)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [game/utilities/create-scene.ts:17](https://github.com/Forge-Game-En
 
 > **cameraEntityName**: `string`
 
-Defined in: [game/utilities/create-scene.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L18)
+Defined in: [game/utilities/create-scene.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L18)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [game/utilities/create-scene.ts:18](https://github.com/Forge-Game-En
 
 > **cameraStartPosition**: [`Vector2`](../classes/Vector2.md)
 
-Defined in: [game/utilities/create-scene.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L20)
+Defined in: [game/utilities/create-scene.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L20)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [game/utilities/create-scene.ts:20](https://github.com/Forge-Game-En
 
 > **inputsEntityName**: `string`
 
-Defined in: [game/utilities/create-scene.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L19)
+Defined in: [game/utilities/create-scene.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L19)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [game/utilities/create-scene.ts:19](https://github.com/Forge-Game-En
 
 > **screenHeight**: `number`
 
-Defined in: [game/utilities/create-scene.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L16)
+Defined in: [game/utilities/create-scene.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L16)
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [game/utilities/create-scene.ts:16](https://github.com/Forge-Game-En
 
 > **screenWidth**: `number`
 
-Defined in: [game/utilities/create-scene.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/game/utilities/create-scene.ts#L15)
+Defined in: [game/utilities/create-scene.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/utilities/create-scene.ts#L15)

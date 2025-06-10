@@ -25,7 +25,7 @@ describe('System', () => {
 
   it('should initialize with given name and components', () => {
     expect(system.name).toBe('TestSystem');
-    expect(system.operatesOnComponents.length).toBe(1);
+    expect(system.query.length).toBe(1);
   });
 
   it('should run system on enabled entities', () => {

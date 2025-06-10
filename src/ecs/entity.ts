@@ -1,5 +1,6 @@
 import type { OrNull } from '../common';
 import type { Component } from './types';
+import type { Query } from './types/Query';
 import type { World } from './world';
 
 /**
@@ -69,13 +70,13 @@ export class Entity {
 
   /**
    * Checks if the entity contains all specified components.
-   * @param componentSymbols - The symbols of the components to check.
+   * @param query - The symbols of the components to check.
    * @returns True if the entity contains all specified components, otherwise false.
    */
-  public containsAllComponents(componentSymbols: symbol[]) {
+  public containsAllComponents(query: Query) {
     let allSymbolsMatch = true;
 
-    for (const symbol of componentSymbols) {
+    for (const symbol of query) {
       let symbolMatched = false;
 
       for (const component of this._components) {
@@ -162,19 +163,19 @@ export class Entity {
 /**
  * Filters entities by the specified components.
  * @param entities - The set of entities to filter.
- * @param componentSymbols - The symbols of the components to filter by.
+ * @param query - The symbols of the components to filter by.
  * @returns An array of entities that contain all specified components.
  */
 export const filterEntitiesByComponents = (
   entities: Set<Entity>,
-  componentSymbols: symbol[],
+  query: Query,
 ): Set<Entity> => {
   // TODO: performance - cache these look ups if possible
 
   const result = new Set<Entity>();
 
   for (const entity of entities) {
-    if (entity.containsAllComponents(componentSymbols)) {
+    if (entity.containsAllComponents(query)) {
       result.add(entity);
     }
   }

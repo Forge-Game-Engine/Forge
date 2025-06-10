@@ -2,7 +2,7 @@
 
 > **isString**\<`T`\>(`value`): `boolean`
 
-Defined in: [utilities/is-string.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/utilities/is-string.ts#L10)
+Defined in: [utilities/is-string.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/utilities/is-string.ts#L10)
 
 Checks if the provided value is a string.
 

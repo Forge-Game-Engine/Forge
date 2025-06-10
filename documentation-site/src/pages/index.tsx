@@ -24,11 +24,14 @@ function HomepageHeader() {
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
+          <Link className="button button--primary button--lg" to="/docs/intro">
+            Get Started! 🔥
+          </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/intro"
+            to="/docs/category/documentation"
           >
-            Get Started! 🔥
+            Documentation
           </Link>
         </div>
       </div>
@@ -41,8 +44,8 @@ export default function Home(): ReactNode {
 
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title={siteConfig.title}
+      description="Forge is a browser-based, code only game engine. It has everything you would expect from an engine, including rendering, audio, input, animations, ECS, etc."
     >
       <HomepageHeader />
       <main>

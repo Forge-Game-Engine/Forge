@@ -2,7 +2,7 @@
 
 > **lerp**(`v0`, `v1`, `t`): `number`
 
-Defined in: [math/lerp.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/math/lerp.ts#L9)
+Defined in: [math/lerp.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/math/lerp.ts#L9)
 
 Performs linear interpolation between two values.
 
