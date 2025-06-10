@@ -1,5 +1,7 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
+import apiSidebar from './docs/api/typedoc-sidebar.cjs';
+
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 /**

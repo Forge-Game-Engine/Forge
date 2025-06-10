@@ -2,7 +2,7 @@
 
 > `const` **DEFAULT\_LAYERS**: `object`
 
-Defined in: [rendering/enums/default-layer-names.enum.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/rendering/enums/default-layer-names.enum.ts#L4)
+Defined in: [rendering/enums/default-layer-names.enum.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/enums/default-layer-names.enum.ts#L4)
 
 The `DEFAULT_LAYERS` object defines the default layer names for rendering.
 

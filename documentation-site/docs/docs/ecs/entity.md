@@ -51,7 +51,7 @@ The [`addComponent`](../../api/classes/Entity.md#addcomponent) instance method w
 playerEntity.addComponent(new HealthBuffComponent(100));
 ```
 
-:::tip
+:::info
 
 The underlying component store is a [Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set). Which means that it will prevent you from accidentally adding the same component *instance* twice. 
 
@@ -112,9 +112,9 @@ The `getComponent` method will return the component if it exists or `null` if it
 
 ``` ts
 const scaleComponent = 
-  playerEntity.getComponent<ScaleComponent>(ScaleComponent.symbol); // scaleComponent could be null
+  playerEntity.getComponent<ScaleComponent>(ScaleComponent.symbol);
 
-if (scaleComponent) {
+if (scaleComponent) { // scaleComponent could be null
   // if the player entity has a scale, double it!
   scaleComponent.x *= 2;
   scaleComponent.y *= 2;
@@ -131,7 +131,7 @@ const scaleComponent =
   scaleComponent.x *= 2;
   scaleComponent.y *= 2;
 ```
-:::tip
+:::info
 
 Although there are legitimate use-cases for `getComponent`. You should always use `getComponentRequired` over `getComponent` if you expect the entity to have a specific component. It prevents the need to do null checks and also ensures that your game will not silently fail if the component is missing. 
 

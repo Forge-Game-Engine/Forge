@@ -3,6 +3,6 @@
   "position": 1,
   "link": {
     "type": "doc",
-    "id": "core-concepts/entity-component-system/index"
+    "id": "docs/ecs/index"
   }
 }

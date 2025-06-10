@@ -1,6 +1,6 @@
 # Class: ParameterizedForgeEvent\<TInput\>
 
-Defined in: [events/parameterized-forge-event.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L8)
+Defined in: [events/parameterized-forge-event.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L8)
 
 An parameterized event that can be raised and listened to.
 
@@ -18,7 +18,7 @@ The type of the input parameter for the listeners.
 
 > **new ParameterizedForgeEvent**\<`TInput`\>(`name`): `ParameterizedForgeEvent`\<`TInput`\>
 
-Defined in: [events/parameterized-forge-event.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L30)
+Defined in: [events/parameterized-forge-event.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L30)
 
 Creates a new ParameterizedEvent instance.
 
@@ -40,7 +40,7 @@ The name of the event.
 
 > **name**: `string`
 
-Defined in: [events/parameterized-forge-event.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L12)
+Defined in: [events/parameterized-forge-event.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L12)
 
 The name of the event.
 
@@ -52,7 +52,7 @@ The name of the event.
 
 > **get** **listeners**(): `Listener`\<`TInput`\>[]
 
-Defined in: [events/parameterized-forge-event.ts:22](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L22)
+Defined in: [events/parameterized-forge-event.ts:22](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L22)
 
 Gets the list of listeners registered to this event.
 
@@ -66,7 +66,7 @@ Gets the list of listeners registered to this event.
 
 > **clear**(): `void`
 
-Defined in: [events/parameterized-forge-event.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L54)
+Defined in: [events/parameterized-forge-event.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L54)
 
 Clears all listeners from the event.
 
@@ -80,7 +80,7 @@ Clears all listeners from the event.
 
 > **deregisterListener**(`listener`): `void`
 
-Defined in: [events/parameterized-forge-event.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L47)
+Defined in: [events/parameterized-forge-event.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L47)
 
 Deregisters a listener from the event.
 
@@ -102,7 +102,7 @@ The listener to deregister.
 
 > **raise**(`input`): `void`
 
-Defined in: [events/parameterized-forge-event.ts:62](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L62)
+Defined in: [events/parameterized-forge-event.ts:62](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L62)
 
 Raises the event, calling all registered listeners with the provided input.
 
@@ -124,7 +124,7 @@ The input parameter to pass to the listeners.
 
 > **registerListener**(`listener`): `void`
 
-Defined in: [events/parameterized-forge-event.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/6a4c05c6b58848e53a4f2ca7d9cd2f9b6c10e5ac/src/events/parameterized-forge-event.ts#L39)
+Defined in: [events/parameterized-forge-event.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/events/parameterized-forge-event.ts#L39)
 
 Registers a listener to the event.
 

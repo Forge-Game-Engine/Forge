@@ -1,4 +1,4 @@
-# Forge API
+# API
 
 ## Classes
 
@@ -77,6 +77,7 @@
 - [LoopMode](type-aliases/LoopMode.md)
 - [MouseButton](type-aliases/MouseButton.md)
 - [OrNull](type-aliases/OrNull.md)
+- [Query](type-aliases/Query.md)
 - [SceneCreationOptions](type-aliases/SceneCreationOptions.md)
 - [SpriteOptions](type-aliases/SpriteOptions.md)
 - [SyncOrAsync](type-aliases/SyncOrAsync.md)

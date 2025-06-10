@@ -125,7 +125,7 @@ export class World implements Updatable, Stoppable {
     this._systems.add(system);
     this._systemEntities.set(
       system.name,
-      filterEntitiesByComponents(this._entities, system.operatesOnComponents),
+      filterEntitiesByComponents(this._entities, system.query),
     );
 
     this.raiseOnSystemsChangedEvent();
@@ -187,7 +187,7 @@ export class World implements Updatable, Stoppable {
         throw new Error(`Unable to get entities for system ${system.name}`);
       }
 
-      if (entity.containsAllComponents(system.operatesOnComponents)) {
+      if (entity.containsAllComponents(system.query)) {
         entities.add(entity);
       } else {
         entities.delete(entity);
