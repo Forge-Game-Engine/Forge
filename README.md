@@ -4,6 +4,8 @@
 
 Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.
 
+[Documentation](https://forge-game-engine.github.io/Forge/)
+
 ## Prerequisites
 
 - Install Docker: https://www.docker.com/products/docker-desktop/
