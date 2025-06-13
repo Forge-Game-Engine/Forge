@@ -6,7 +6,7 @@ sidebar_position: 1
 
 When creating a game, we need to create an instance of the [Game](../../api/classes/Game.md) class.
 
-The game instance is responsible for hosting [scenes](../game/scene.md), the [time](../common/time.md) instance, and the main [game loop](https://gamedev.stackexchange.com/questions/651/what-should-a-main-game-loop-do).
+The game instance is responsible for hosting [scenes](../game-and-scenes/scene.md), the [time](../common/time.md) instance, and the main [game loop](https://gamedev.stackexchange.com/questions/651/what-should-a-main-game-loop-do).
 
 ## Creating a game instance
 
