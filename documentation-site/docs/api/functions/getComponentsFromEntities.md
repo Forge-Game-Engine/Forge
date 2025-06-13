@@ -2,7 +2,7 @@
 
 > **getComponentsFromEntities**\<`T`\>(`name`, `entities`): [`OrNull`](../type-aliases/OrNull.md)\<`T`\>[]
 
-Defined in: [ecs/entity.ts:192](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/ecs/entity.ts#L192)
+Defined in: [ecs/entity.ts:192](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L192)
 
 Gets components from entities by their name.
 

@@ -2,7 +2,7 @@
 
 > **addInputs**(`world`, `container`, `cameraEntity`, `screenWidth`, `screenHeight`): [`Entity`](../classes/Entity.md)
 
-Defined in: [input/utilities/add-inputs.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/input/utilities/add-inputs.ts#L14)
+Defined in: [input/utilities/add-inputs.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/utilities/add-inputs.ts#L14)
 
 Adds an `InputsComponent` to the world and initializes the input system.
 

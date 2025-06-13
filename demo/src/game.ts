@@ -1,22 +1,43 @@
 import {
-  createContainer,
+  addForgeRenderLayers,
+  createImageSprite,
+  createScene,
   createShaderStore,
+  DEFAULT_LAYERS,
   Game,
   ImageCache,
-  RiveCache,
+  PositionComponent,
+  SpriteComponent,
 } from '../../src';
-import { createShipPilotScene } from './scenes';
 
-export const gameContainer = createContainer('forge-demo-game');
+export const game = new Game();
 
-export const game = new Game(gameContainer);
+const imageCache = new ImageCache();
+const shaderStore = createShaderStore();
 
-export const imageCache = new ImageCache();
-export const riveCache = new RiveCache();
-export const shaderStore = createShaderStore();
+const { world, scene, layerService, cameraEntity } = createScene('game', game);
 
-game.registerScene(
-  await createShipPilotScene(game, gameContainer, imageCache, shaderStore),
+game.registerScene(scene);
+
+const [foregroundRenderLayer] = addForgeRenderLayers(
+  [DEFAULT_LAYERS.foreground],
+  game.container,
+  layerService,
+  world,
+  cameraEntity,
 );
+
+const image = await imageCache.getOrLoad('ship.png');
+
+const sprite = createImageSprite(
+  image,
+  foregroundRenderLayer.layer,
+  shaderStore,
+);
+
+world.buildAndAddEntity('sprite', [
+  new PositionComponent(),
+  new SpriteComponent(sprite),
+]);
 
 game.run();

@@ -9,8 +9,8 @@ import { CameraComponent } from '../components';
  * zooming and panning based on user inputs.
  */
 export class CameraSystem extends System {
-  private _inputComponent: InputsComponent;
-  private _time: Time;
+  private readonly _inputComponent: InputsComponent;
+  private readonly _time: Time;
 
   /**
    * Constructs a new instance of the `CameraSystem` class.

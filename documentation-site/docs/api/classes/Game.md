@@ -1,6 +1,6 @@
 # Class: Game
 
-Defined in: [game/game.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L8)
+Defined in: [game/game.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L9)
 
 A game that manages scenes and handles the game loop.
 
@@ -12,19 +12,19 @@ A game that manages scenes and handles the game loop.
 
 ### Constructor
 
-> **new Game**(`container`): `Game`
+> **new Game**(`container?`): `Game`
 
-Defined in: [game/game.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L34)
+Defined in: [game/game.ts:35](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L35)
 
 Creates a new Game instance.
 
 #### Parameters
 
-##### container
-
-`HTMLElement`
+##### container?
 
 The HTML element that will contain the game.
+
+`string` | `HTMLElement`
 
 #### Returns
 
@@ -36,7 +36,7 @@ The HTML element that will contain the game.
 
 > `readonly` **container**: `HTMLElement`
 
-Defined in: [game/game.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L18)
+Defined in: [game/game.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L19)
 
 The container element for the game.
 This is where the game will render its scenes.
@@ -47,7 +47,7 @@ This is where the game will render its scenes.
 
 > **onWindowResize**: [`ForgeEvent`](ForgeEvent.md)
 
-Defined in: [game/game.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L12)
+Defined in: [game/game.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L13)
 
 Event triggered when the window is resized.
 
@@ -59,7 +59,7 @@ Event triggered when the window is resized.
 
 > **get** **time**(): [`Time`](Time.md)
 
-Defined in: [game/game.ts:49](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L49)
+Defined in: [game/game.ts:62](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L62)
 
 Gets the current time instance.
 
@@ -73,7 +73,7 @@ Gets the current time instance.
 
 > **deregisterScene**(`scene`): `void`
 
-Defined in: [game/game.ts:79](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L79)
+Defined in: [game/game.ts:92](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L92)
 
 Deregisters a scene from the game.
 
@@ -95,7 +95,7 @@ The scene to deregister.
 
 > **registerScene**(`scene`): `void`
 
-Defined in: [game/game.ts:71](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L71)
+Defined in: [game/game.ts:84](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L84)
 
 Registers a scene to the game.
 
@@ -117,7 +117,7 @@ The scene to register.
 
 > **run**(`time`): `void`
 
-Defined in: [game/game.ts:57](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L57)
+Defined in: [game/game.ts:70](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L70)
 
 Starts the game loop.
 
@@ -139,7 +139,7 @@ The initial time value.
 
 > **stop**(): `void`
 
-Defined in: [game/game.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/game/game.ts#L87)
+Defined in: [game/game.ts:113](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L113)
 
 Stops the game and all registered scenes.
 
@@ -150,3 +150,26 @@ Stops the game and all registered scenes.
 #### Implementation of
 
 [`Stoppable`](../interfaces/Stoppable.md).[`stop`](../interfaces/Stoppable.md#stop)
+
+***
+
+### swapToScene()
+
+> **swapToScene**(`scene`): `void`
+
+Defined in: [game/game.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/game.ts#L102)
+
+Swaps the current scene with a new one.
+This deregisters all existing scenes and registers the new scene.
+
+#### Parameters
+
+##### scene
+
+[`Scene`](Scene.md)
+
+The new scene to switch to.
+
+#### Returns
+
+`void`

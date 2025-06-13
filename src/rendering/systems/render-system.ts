@@ -14,10 +14,10 @@ export interface RenderSystemOptions {
 }
 
 export class RenderSystem extends System {
-  private _layer: ForgeRenderLayer;
-  private _camera: CameraComponent;
-  private _cameraPosition: Vector2;
-  private _instanceBuffer: WebGLBuffer;
+  private readonly _layer: ForgeRenderLayer;
+  private readonly _camera: CameraComponent;
+  private readonly _cameraPosition: Vector2;
+  private readonly _instanceBuffer: WebGLBuffer;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [RenderableBatchComponent.symbol]);

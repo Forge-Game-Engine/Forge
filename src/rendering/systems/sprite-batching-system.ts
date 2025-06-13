@@ -14,7 +14,7 @@ import {
  * The `SpriteBatchingSystem` class extends the `System` class and manages the batching of sprites.
  */
 export class SpriteBatchingSystem extends System {
-  private _spriteBatch: RenderableBatchComponent;
+  private readonly _spriteBatch: RenderableBatchComponent;
 
   constructor(spriteBatcherEntity: Entity) {
     super('sprite-batching', [

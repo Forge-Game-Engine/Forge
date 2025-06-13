@@ -1,6 +1,6 @@
 # Class: Time
 
-Defined in: [common/time/Time.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L4)
+Defined in: [common/time/Time.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L4)
 
 Class to manage and track time-related information.
 
@@ -10,7 +10,7 @@ Class to manage and track time-related information.
 
 > **new Time**(): `Time`
 
-Defined in: [common/time/Time.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L17)
+Defined in: [common/time/Time.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L17)
 
 Creates an instance of Time.
 
@@ -26,7 +26,7 @@ Creates an instance of Time.
 
 > **get** **deltaTime**(): `number`
 
-Defined in: [common/time/Time.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L56)
+Defined in: [common/time/Time.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L56)
 
 Gets the delta time.
 
@@ -44,7 +44,7 @@ The delta time.
 
 > **get** **fps**(): `number`
 
-Defined in: [common/time/Time.ts:123](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L123)
+Defined in: [common/time/Time.ts:123](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L123)
 
 Gets the current frames per second (FPS).
 
@@ -62,7 +62,7 @@ The current FPS.
 
 > **get** **frames**(): `number`
 
-Defined in: [common/time/Time.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L32)
+Defined in: [common/time/Time.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L32)
 
 Gets the number of frames.
 
@@ -80,7 +80,7 @@ The number of frames.
 
 > **get** **previousTime**(): `number`
 
-Defined in: [common/time/Time.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L72)
+Defined in: [common/time/Time.ts:72](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L72)
 
 Gets the previous time.
 
@@ -98,7 +98,7 @@ The previous time.
 
 > **get** **rawDeltaTime**(): `number`
 
-Defined in: [common/time/Time.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L48)
+Defined in: [common/time/Time.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L48)
 
 Gets the raw delta time.
 
@@ -116,7 +116,7 @@ The raw delta time.
 
 > **get** **rawTime**(): `number`
 
-Defined in: [common/time/Time.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L40)
+Defined in: [common/time/Time.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L40)
 
 Gets the raw time.
 
@@ -134,7 +134,7 @@ The raw time.
 
 > **get** **time**(): `number`
 
-Defined in: [common/time/Time.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L64)
+Defined in: [common/time/Time.ts:64](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L64)
 
 Gets the time.
 
@@ -152,7 +152,7 @@ The time.
 
 > **get** **times**(): `number`[]
 
-Defined in: [common/time/Time.ts:96](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L96)
+Defined in: [common/time/Time.ts:96](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L96)
 
 Gets the times array.
 
@@ -170,7 +170,7 @@ The times array.
 
 > **get** **timeScale**(): `number`
 
-Defined in: [common/time/Time.ts:80](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L80)
+Defined in: [common/time/Time.ts:80](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L80)
 
 Gets the time scale.
 
@@ -184,7 +184,7 @@ The time scale.
 
 > **set** **timeScale**(`value`): `void`
 
-Defined in: [common/time/Time.ts:88](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L88)
+Defined in: [common/time/Time.ts:88](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L88)
 
 Sets the time scale.
 
@@ -206,7 +206,7 @@ The new time scale.
 
 > **update**(`time`): `void`
 
-Defined in: [common/time/Time.ts:104](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/common/time/Time.ts#L104)
+Defined in: [common/time/Time.ts:104](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/time/Time.ts#L104)
 
 Updates the time-related information.
 
