@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Component
 
-An [`Component`](../../api/interfaces/Component) is a simple data container. It has no logic.
+A [`Component`](../../api/interfaces/Component) is a simple data container. It has no logic.
 
 ## Creating a component
 

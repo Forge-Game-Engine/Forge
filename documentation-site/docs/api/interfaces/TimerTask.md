@@ -1,6 +1,6 @@
 # Interface: TimerTask
 
-Defined in: [timer/components/timer-component.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L3)
+Defined in: [timer/components/timer-component.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L3)
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [timer/components/timer-component.ts:3](https://github.com/Forge-Gam
 
 > **callback**: () => `void`
 
-Defined in: [timer/components/timer-component.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L4)
+Defined in: [timer/components/timer-component.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L4)
 
 #### Returns
 
@@ -20,7 +20,7 @@ Defined in: [timer/components/timer-component.ts:4](https://github.com/Forge-Gam
 
 > **delay**: `number`
 
-Defined in: [timer/components/timer-component.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L5)
+Defined in: [timer/components/timer-component.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L5)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [timer/components/timer-component.ts:5](https://github.com/Forge-Gam
 
 > **elapsed**: `number`
 
-Defined in: [timer/components/timer-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L6)
+Defined in: [timer/components/timer-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L6)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [timer/components/timer-component.ts:6](https://github.com/Forge-Gam
 
 > `optional` **interval**: `number`
 
-Defined in: [timer/components/timer-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L8)
+Defined in: [timer/components/timer-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L8)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [timer/components/timer-component.ts:8](https://github.com/Forge-Gam
 
 > `optional` **maxRuns**: `number`
 
-Defined in: [timer/components/timer-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L9)
+Defined in: [timer/components/timer-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L9)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [timer/components/timer-component.ts:9](https://github.com/Forge-Gam
 
 > `optional` **repeat**: `boolean`
 
-Defined in: [timer/components/timer-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L7)
+Defined in: [timer/components/timer-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L7)
 
 ***
 
@@ -60,4 +60,4 @@ Defined in: [timer/components/timer-component.ts:7](https://github.com/Forge-Gam
 
 > `optional` **runsSoFar**: `number`
 
-Defined in: [timer/components/timer-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/timer/components/timer-component.ts#L10)
+Defined in: [timer/components/timer-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/timer/components/timer-component.ts#L10)

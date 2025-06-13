@@ -48,7 +48,7 @@ export function createScene(
   };
 
   const scene = new Scene(name);
-  const layerService = new LayerService();
+  const layerService = new LayerService(game);
   const world = new World();
 
   const cameraEntity = world.buildAndAddEntity(mergedOptions.cameraEntityName, [

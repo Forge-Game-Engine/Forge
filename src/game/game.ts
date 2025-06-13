@@ -1,5 +1,6 @@
 import { type Stoppable, Time } from '../common';
 import { ForgeEvent } from '../events';
+import { createContainer } from '../utilities';
 import { Scene } from './scene';
 
 /**
@@ -9,7 +10,7 @@ export class Game implements Stoppable {
   /**
    * Event triggered when the window is resized.
    */
-  public onWindowResize: ForgeEvent;
+  public readonly onWindowResize: ForgeEvent;
 
   /**
    * The container element for the game.
@@ -31,16 +32,28 @@ export class Game implements Stoppable {
    * Creates a new Game instance.
    * @param container - The HTML element that will contain the game.
    */
-  constructor(container: HTMLElement) {
+  constructor(container?: HTMLElement | string) {
     this._time = new Time();
     this._scenes = new Set<Scene>();
-    this.container = container;
+    this.container = this._determineContainer(container);
 
     this.onWindowResize = new ForgeEvent('window-resize');
 
     window.addEventListener('resize', () => {
       this.onWindowResize.raise();
     });
+  }
+
+  private _determineContainer(container?: HTMLElement | string): HTMLElement {
+    if (typeof container === 'string') {
+      return createContainer(container);
+    }
+
+    if (container instanceof HTMLElement) {
+      return container as HTMLDivElement;
+    }
+
+    return createContainer('forge-game-container');
   }
 
   /**
@@ -79,6 +92,19 @@ export class Game implements Stoppable {
   public deregisterScene(scene: Scene) {
     scene.stop();
     this._scenes.delete(scene);
+  }
+
+  /**
+   * Swaps the current scene with a new one.
+   * This deregisters all existing scenes and registers the new scene.
+   * @param scene - The new scene to switch to.
+   */
+  public swapToScene(scene: Scene) {
+    for (const existingScene of this._scenes) {
+      this.deregisterScene(existingScene);
+    }
+
+    this.registerScene(scene);
   }
 
   /**

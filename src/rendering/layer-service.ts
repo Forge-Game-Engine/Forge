@@ -2,6 +2,7 @@ import type { Stoppable } from '../common';
 import { Vector2 } from '../math';
 import { RenderLayer } from './render-layers/render-layer';
 import { type CLEAR_STRATEGY_KEYS } from './enums';
+import type { Game } from '../game';
 
 /**
  * Options for creating a new render layer.
@@ -18,20 +19,22 @@ export interface CreateLayerOptions {
  * The `LayerService` class manages the creation, registration, and resizing of render layers.
  */
 export class LayerService implements Stoppable {
-  private _layers: Map<string, RenderLayer>;
-  private _resizeListener: (event: Event) => void;
+  private readonly _game: Game;
+  private readonly _layers: Map<string, RenderLayer>;
+  private readonly _resizeListener: () => void;
 
   /**
    * Constructs a new instance of the `LayerService` class.
    */
-  constructor() {
+  constructor(game: Game) {
+    this._game = game;
     this._layers = new Map();
 
     this._resizeListener = () => {
       this.resizeAllLayers();
     };
 
-    window.addEventListener('resize', this._resizeListener);
+    game.onWindowResize.registerListener(this._resizeListener);
   }
 
   /**
@@ -76,6 +79,6 @@ export class LayerService implements Stoppable {
    * Cleans up the layer service by removing the resize event listener.
    */
   public stop() {
-    window.removeEventListener('resize', this._resizeListener);
+    this._game.onWindowResize.deregisterListener(this._resizeListener);
   }
 }

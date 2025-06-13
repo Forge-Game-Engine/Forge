@@ -2,7 +2,7 @@
 
 > `const` **mouseButtons**: `object`
 
-Defined in: [input/constants/mouse-buttons.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/input/constants/mouse-buttons.ts#L3)
+Defined in: [input/constants/mouse-buttons.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/constants/mouse-buttons.ts#L3)
 
 ## Type declaration
 

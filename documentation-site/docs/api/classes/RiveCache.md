@@ -1,6 +1,6 @@
 # Class: RiveCache
 
-Defined in: [asset-loading/asset-caches/rive-cache.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/asset-loading/asset-caches/rive-cache.ts#L7)
+Defined in: [asset-loading/asset-caches/rive-cache.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-caches/rive-cache.ts#L7)
 
 Class to manage the caching and loading of rive files.
 
@@ -24,7 +24,7 @@ Class to manage the caching and loading of rive files.
 
 > **assets**: `Map`\<`string`, `RiveFile`\>
 
-Defined in: [asset-loading/asset-caches/rive-cache.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/asset-loading/asset-caches/rive-cache.ts#L8)
+Defined in: [asset-loading/asset-caches/rive-cache.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-caches/rive-cache.ts#L8)
 
 A map of asset paths to their corresponding assets.
 
@@ -38,7 +38,7 @@ A map of asset paths to their corresponding assets.
 
 > **get**(`path`): `RiveFile`
 
-Defined in: [asset-loading/asset-caches/rive-cache.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/asset-loading/asset-caches/rive-cache.ts#L16)
+Defined in: [asset-loading/asset-caches/rive-cache.ts:16](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-caches/rive-cache.ts#L16)
 
 Retrieves an asset from the cache.
 
@@ -70,7 +70,7 @@ Will throw an error if the rive file is not found in the cache.
 
 > **getOrLoad**(`path`, `assetLoader?`): `Promise`\<`RiveFile`\>
 
-Defined in: [asset-loading/asset-caches/rive-cache.ts:55](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/asset-loading/asset-caches/rive-cache.ts#L55)
+Defined in: [asset-loading/asset-caches/rive-cache.ts:55](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-caches/rive-cache.ts#L55)
 
 Retrieves an asset from the cache if it exists, otherwise loads and caches it.
 
@@ -102,7 +102,7 @@ A promise that resolves to the rive file.
 
 > **load**(`path`, `assetLoader?`): `Promise`\<`void`\>
 
-Defined in: [asset-loading/asset-caches/rive-cache.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/asset-loading/asset-caches/rive-cache.ts#L32)
+Defined in: [asset-loading/asset-caches/rive-cache.ts:32](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-caches/rive-cache.ts#L32)
 
 Loads an asset from the specified path and caches it.
 

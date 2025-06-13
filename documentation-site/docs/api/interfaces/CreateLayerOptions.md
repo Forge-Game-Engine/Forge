@@ -1,6 +1,6 @@
 # Interface: CreateLayerOptions
 
-Defined in: [rendering/layer-service.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/layer-service.ts#L9)
+Defined in: [rendering/layer-service.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/layer-service.ts#L9)
 
 Options for creating a new render layer.
 
@@ -10,7 +10,7 @@ Options for creating a new render layer.
 
 > `optional` **clearStrategy**: [`CLEAR_STRATEGY_KEYS`](../type-aliases/CLEAR_STRATEGY_KEYS.md)
 
-Defined in: [rendering/layer-service.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/layer-service.ts#L14)
+Defined in: [rendering/layer-service.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/layer-service.ts#L14)
 
 The strategy for clearing the layer.
 
@@ -20,7 +20,7 @@ The strategy for clearing the layer.
 
 > `optional` **dimensions**: `object`
 
-Defined in: [rendering/layer-service.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/layer-service.ts#L11)
+Defined in: [rendering/layer-service.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/layer-service.ts#L11)
 
 The dimensions of the layer.
 

@@ -40,13 +40,12 @@ Once you have identified where to initialize your game, you can simply create a 
 ```ts title="src/main.ts"
 import { Game } from '@forge-game-engine/forge';
 
-const container = createContainer('game');
-const game = new Game(container);
+const game = new Game();
 
 game.run();
 ```
 
-Although this won't do anything just yet, we'll first need to add a scene.
+Although this won't do anything just yet, next we need to add a scene.
 
 ### Creating a scene
 
@@ -69,6 +68,8 @@ Then you can register your scene in your game:
 
 ```ts title="src/main.ts"
 import { Game } from '@forge-game-engine/forge';
+// diff-add
+import { createDemoScene } from './create-demo-scene.ts';
 
 const container = createContainer('game');
 const game = new Game(container);
@@ -90,10 +91,8 @@ For now we'll just add a single layer.
 import { 
   createScene, 
   type Game,
-  // diff-add-start
-  addForgeRenderLayers, 
-  DEFAULT_LAYERS
-  // diff-add-end
+  // diff-add
+  addForgeRenderLayers
 } from '@forge-game-engine/forge';
 
 export function createDemoScene(game: Game) {
@@ -102,7 +101,7 @@ export function createDemoScene(game: Game) {
 
   // diff-add-start
   const [foregroundRenderLayer] = addForgeRenderLayers(
-    [DEFAULT_LAYERS.foreground],
+    ['foreground'],
     game.container,
     layerService,
     world,
@@ -117,14 +116,13 @@ export function createDemoScene(game: Game) {
 #### Load an image
 
 We need to fetch an image for our sprite. Any [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement) will do. 
-The easiest way to load and cache images is to use the [ImageCache](#).
+The easiest way to load and cache images is to use the [ImageCache](./api/classes/ImageCache.md).
 
 ```ts title="src/create-demo-scene.ts"
 import { 
   createScene, 
   type Game,
   addForgeRenderLayers, 
-  DEFAULT_LAYERS,
   // diff-add
   ImageCache
 } from '@forge-game-engine/forge';
@@ -137,7 +135,7 @@ export async function createDemoScene(game: Game) {
     createScene('demo', game);
 
   const [foregroundRenderLayer] = addForgeRenderLayers(
-    [DEFAULT_LAYERS.foreground],
+    ['foreground'],
     game.container,
     layerService,
     world,
@@ -161,7 +159,6 @@ import {
   createScene, 
   type Game,
   addForgeRenderLayers, 
-  DEFAULT_LAYERS,
   ImageCache,
   // diff-add-start
   createShaderStore,
@@ -176,7 +173,7 @@ export async function createDemoScene(game: Game) {
     createScene('demo', game);
 
   const [foregroundRenderLayer] = addForgeRenderLayers(
-    [DEFAULT_LAYERS.foreground],
+    ['foreground'],
     game.container,
     layerService,
     world,
@@ -205,3 +202,4 @@ export async function createDemoScene(game: Game) {
   return scene;
 }
 ```
+Congratulations, you should now see something rendered to your screen! 🎉 

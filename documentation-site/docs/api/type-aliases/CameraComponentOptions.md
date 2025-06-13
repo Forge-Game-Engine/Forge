@@ -2,7 +2,7 @@
 
 > **CameraComponentOptions** = `object`
 
-Defined in: [rendering/components/camera-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L6)
+Defined in: [rendering/components/camera-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L6)
 
 Options for configuring the `CameraComponent`.
 
@@ -12,7 +12,7 @@ Options for configuring the `CameraComponent`.
 
 > **allowPanning**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L26)
+Defined in: [rendering/components/camera-component.ts:26](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L26)
 
 Indicates if panning is allowed.
 
@@ -22,7 +22,7 @@ Indicates if panning is allowed.
 
 > **allowZooming**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L29)
+Defined in: [rendering/components/camera-component.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L29)
 
 Indicates if zooming is allowed.
 
@@ -32,7 +32,7 @@ Indicates if zooming is allowed.
 
 > **isStatic**: `boolean`
 
-Defined in: [rendering/components/camera-component.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L23)
+Defined in: [rendering/components/camera-component.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L23)
 
 Indicates if the camera is static (non-movable).
 
@@ -42,7 +42,7 @@ Indicates if the camera is static (non-movable).
 
 > **maxZoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L20)
+Defined in: [rendering/components/camera-component.ts:20](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L20)
 
 The maximum zoom level allowed.
 
@@ -52,7 +52,7 @@ The maximum zoom level allowed.
 
 > **minZoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L17)
+Defined in: [rendering/components/camera-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L17)
 
 The minimum zoom level allowed.
 
@@ -62,7 +62,7 @@ The minimum zoom level allowed.
 
 > **panSensitivity**: `number`
 
-Defined in: [rendering/components/camera-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L14)
+Defined in: [rendering/components/camera-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L14)
 
 The sensitivity of the panning controls.
 
@@ -72,7 +72,7 @@ The sensitivity of the panning controls.
 
 > **zoom**: `number`
 
-Defined in: [rendering/components/camera-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L8)
+Defined in: [rendering/components/camera-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L8)
 
 The current zoom level of the camera.
 
@@ -82,6 +82,6 @@ The current zoom level of the camera.
 
 > **zoomSensitivity**: `number`
 
-Defined in: [rendering/components/camera-component.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/components/camera-component.ts#L11)
+Defined in: [rendering/components/camera-component.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/camera-component.ts#L11)
 
 The sensitivity of the zoom controls.

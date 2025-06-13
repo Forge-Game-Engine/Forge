@@ -2,7 +2,7 @@
 
 > **createTextureFromImage**(`gl`, `image`): `WebGLTexture`
 
-Defined in: [rendering/shaders/utils/create-texture-from-image.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/shaders/utils/create-texture-from-image.ts#L8)
+Defined in: [rendering/shaders/utils/create-texture-from-image.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/utils/create-texture-from-image.ts#L8)
 
 Creates a WebGL texture from an image.
 

@@ -1,6 +1,6 @@
 # Class: AnimationComponent
 
-Defined in: [animations/components/animation-component.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L77)
+Defined in: [animations/components/animation-component.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L77)
 
 Represents an animation component that manages a collection of animations.
 
@@ -14,7 +14,7 @@ Represents an animation component that manages a collection of animations.
 
 > **new AnimationComponent**(`animations`): `AnimationComponent`
 
-Defined in: [animations/components/animation-component.ts:103](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L103)
+Defined in: [animations/components/animation-component.ts:103](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L103)
 
 Creates an instance of AnimationComponent.
 
@@ -48,7 +48,7 @@ const animation = new AnimationComponent({
 
 > **name**: `symbol`
 
-Defined in: [animations/components/animation-component.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L78)
+Defined in: [animations/components/animation-component.ts:78](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L78)
 
 The unique name of the component.
 
@@ -62,7 +62,7 @@ The unique name of the component.
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [animations/components/animation-component.ts:81](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L81)
+Defined in: [animations/components/animation-component.ts:81](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L81)
 
 ## Accessors
 
@@ -72,7 +72,7 @@ Defined in: [animations/components/animation-component.ts:81](https://github.com
 
 > **get** **animations**(): `Required`\<[`AnimatedProperty`](../interfaces/AnimatedProperty.md)\>[]
 
-Defined in: [animations/components/animation-component.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L87)
+Defined in: [animations/components/animation-component.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L87)
 
 Gets the list of animations managed by this component.
 
@@ -88,7 +88,7 @@ An array of AnimatedProperty objects.
 
 > **addAnimation**(`animation`): `void`
 
-Defined in: [animations/components/animation-component.ts:116](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/animations/components/animation-component.ts#L116)
+Defined in: [animations/components/animation-component.ts:116](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L116)
 
 Adds a new animation to the component.
 

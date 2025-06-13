@@ -2,7 +2,7 @@
 
 > **bindTextureToUniform**(`gl`, `texture`, `uniformLocation`, `textureUnit`): `void`
 
-Defined in: [rendering/shaders/utils/bind-texture-to-uniform.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/7a38cd584d26e8fac97f61bf2359fb32ea34a7fc/src/rendering/shaders/utils/bind-texture-to-uniform.ts#L3)
+Defined in: [rendering/shaders/utils/bind-texture-to-uniform.ts:3](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/utils/bind-texture-to-uniform.ts#L3)
 
 ## Parameters
 

@@ -15,8 +15,8 @@ export function createCanvas(
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.id = id;
-  canvas.width = width || window.innerWidth;
-  canvas.height = height || window.innerHeight;
+  canvas.width = width ?? window.innerWidth;
+  canvas.height = height ?? window.innerHeight;
 
   canvas.style.width = `${canvas.width}px`;
   canvas.style.height = `${canvas.height}px`;
