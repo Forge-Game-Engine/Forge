@@ -1,5 +1,4 @@
 import { PositionComponent } from '../../common';
-import { Entity, World } from '../../ecs';
 import { InputsComponent, InputSystem } from '../../input';
 import { Vector2 } from '../../math';
 import {
@@ -11,7 +10,9 @@ import {
   ForgeRenderLayer,
   LayerService,
 } from '../../rendering';
+import type { Entity } from '../entity';
 import type { Game } from '../game';
+import { World } from '../world';
 
 export type WorldCreationOptions = {
   screenWidth: number;

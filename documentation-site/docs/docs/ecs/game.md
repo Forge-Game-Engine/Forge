@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Game Instance
+# Game
 
 When creating a game, we need to create an instance of the [Game](../../api/classes/Game.md) class.
 

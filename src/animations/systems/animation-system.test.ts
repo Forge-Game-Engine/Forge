@@ -5,7 +5,7 @@ import { Time } from '../../common';
 import { type AnimatedProperty, AnimationComponent } from '../components';
 
 describe('AnimationSystem', () => {
-  const world = new World();
+  const world = new World('test-world');
 
   it('should update animations and call updateCallback', async () => {
     const mockUpdateCallback = vi.fn();

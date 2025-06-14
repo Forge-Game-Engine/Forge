@@ -15,7 +15,7 @@ describe('System', () => {
   let world: World;
 
   beforeEach(() => {
-    world = new World();
+    world = new World('TestWorld');
     system = new TestSystem('TestSystem', [Symbol('TestComponent')]);
     entities = [
       new Entity('Entity1', world, [], true),

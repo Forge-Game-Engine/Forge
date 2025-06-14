@@ -1,5 +1,4 @@
-import { type Stoppable, Time } from '../common';
-import type { Updatable } from '../game';
+import { type Stoppable, Time, type Updatable } from '../common';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';
 

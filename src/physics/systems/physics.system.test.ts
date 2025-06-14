@@ -19,7 +19,7 @@ describe('PhysicsSystem', () => {
   let world: World;
 
   beforeEach(() => {
-    world = new World();
+    world = new World('test-world');
     time = new Time();
 
     time.update(16);

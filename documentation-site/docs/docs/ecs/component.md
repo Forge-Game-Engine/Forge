@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 # Component
@@ -12,7 +12,7 @@ To create a component, you need to define a class that implements the [`Componen
 
 :::info
 
-The name property is a [symbol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol). This ensures that even if 2 different components have the same name, they can still be uniquely identified. That said, it's still good practice to give your components unique names.
+The name property is a [symbol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol). This ensures that even if 2 different components have the same name, they can still be uniquely identified. It is good practice to give your components unique names.
 
 :::
 

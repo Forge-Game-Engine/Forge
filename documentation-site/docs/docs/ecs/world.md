@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 2
 ---
 
 # World
@@ -60,20 +60,6 @@ const enemy = new Entity('enemy', world, [new PositionComponent(10, 5)]);
 world.addEntity(enemy);
 ```
 
-## Updating the World
-
-To run your game logic, call `world.update()` each frame:
-
-```ts
-function gameLoop() {
-  world.update();
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();
-```
-
-This will run all enabled systems on all enabled entities that match each system's query.
-
 ## Querying Entities
 
 There are many ways to query the world for a specific entity.
@@ -100,7 +86,7 @@ const movableEntities = world.queryEntities([PositionComponent.symbol]);
 
 ### Querying for a single Entity
 
-If you want to find a specific the entity, usually singleton type entities (camera, inputs, etc.), in the world that match a [`query`](./query.md), you can use the [`queryEntity`](../../api/classes/World.md#queryentity) or [`queryEntityRequired`](../../api/classes/World.md#queryentityrequired) method.
+If you want to find a specific entity, usually singleton type entities (camera, inputs, etc.), in the world that match a [`query`](./query.md), you can use the [`queryEntity`](../../api/classes/World.md#queryentity) or [`queryEntityRequired`](../../api/classes/World.md#queryentityrequired) method.
 
 ```ts
 const world = new World('main-world');
@@ -136,13 +122,13 @@ world.removeSystem(movementSystem);
 
 ## Stopping the World
 
-When you want to clean up (e.g., on game over or scene change), call:
+When you want to clean up (e.g., on game over), call:
 
 ```ts
 world.stop();
 ```
 
-This will call `stop()` on all systems and clear all entities.
+This will call `stop` on all systems and clear all entities.
 
 ## Listening for Changes
 

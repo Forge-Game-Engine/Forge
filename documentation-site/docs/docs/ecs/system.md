@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 5
 ---
 
 # System
@@ -10,7 +10,7 @@ A system iterates over all entities that contain a required set of components an
 
 ## Creating a system
 
-To create a system, you extend the [`System`](../../api/classes/System) class and implement the [`run`](../../api/classes/System#run) method, which is called once per update cycle(frame) for each entity that matches the system's [`query`](../ecs/query.md). You also need to provide the [`query`](../ecs/query.md) to the [`super`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/super)(`System`) constructor.
+To create a system, you extend the [`System`](../../api/classes/System) class and implement the [`run`](../../api/classes/System#run) method, which is called once per update cycle(frame) for each entity that matches the system's [`query`](../ecs/query.md). You need to provide the [`query`](../ecs/query.md) to the [`super`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/super)(`System`) constructor.
 
 ```ts
 export class MovementSystem extends System {
@@ -18,7 +18,7 @@ export class MovementSystem extends System {
     super('MovementSystem', [
       PositionComponent.symbol,
       VelocityComponent.symbol,
-    ]); // the second argument is a query
+    ]); // the second argument is the query
   }
 
   public run(entity: Entity): void {
@@ -74,14 +74,13 @@ Systems can override the `beforeAll` method to perform logic before processing e
 
 ```ts
 public beforeAll(entities: Entity[]): Entity[] {
-  // Only process enabled entities
-  return entities.filter((entity) => entity.enabled);
+  return entities.sort((entity) => entity.zIndex);
 }
 ```
 
 :::warning[**You may not need to use this hook!**]
 
-This hook causes you system to loop through entities twice. Which is not ideal for performance.
+This hook causes you system to loop through entities twice. Which means it can be expensive.
 
 Entities will run through your system in the order that they were added to the world. If you intend on using the this function to sort entities, consider updating the registration order instead. 
 

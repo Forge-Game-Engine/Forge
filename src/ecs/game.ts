@@ -1,5 +1,5 @@
 import { type Stoppable } from '../common';
-import type { World } from '../ecs';
+import type { World } from './world';
 import { ForgeEvent } from '../events';
 import { createContainer } from '../utilities';
 

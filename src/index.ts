@@ -5,7 +5,6 @@ export * from './audio';
 export * from './common';
 export * from './ecs';
 export * from './events';
-export * from './game';
 export * from './input';
 export * from './math';
 export * from './physics';
