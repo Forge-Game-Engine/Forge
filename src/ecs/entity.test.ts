@@ -1,4 +1,4 @@
-import { Entity, filterEntitiesByComponents } from './entity';
+import { Entity } from './entity';
 import { expect, test } from 'vitest';
 import { Component } from './types';
 import { World } from './world';
