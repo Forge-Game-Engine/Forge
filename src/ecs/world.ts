@@ -1,7 +1,7 @@
 import type { Stoppable } from '../common';
 import type { Updatable } from '../game';
-import { Entity, filterEntitiesByComponents } from './entity';
-import type { Component, System } from './types';
+import { Entity } from './entity';
+import type { Component, Query, System } from './types';
 
 /**
  * Represents the world in the Entity-Component-System (ECS) architecture.
@@ -60,6 +60,55 @@ export class World implements Updatable, Stoppable {
 
       system.runSystem(this._enabledEntities);
     }
+  }
+
+  /**
+   * Gets all entities in the world that match the given query.
+   * @returns An array of all entities.
+   */
+  public queryEntities(componentSymbols: Query): Set<Entity> {
+    const entities = new Set<Entity>();
+
+    for (const entity of this._entities) {
+      if (entity.containsAllComponents(componentSymbols)) {
+        entities.add(entity);
+      }
+    }
+
+    return entities;
+  }
+
+  /**
+   * Gets the first entity that matches the given query.
+   * @param query - The query to match against the entities.
+   * @returns The first matching entity, or null if no entity matches.
+   */
+  public queryEntity(query: Query): Entity | null {
+    for (const entity of this._entities) {
+      if (entity.containsAllComponents(query)) {
+        return entity;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets the first entity that matches the given query, or throws an error if no entity matches.
+   * @param query - The query to match against the entities.
+   * @returns The first matching entity.
+   * @throws An error if no entity matches the query.
+   */
+  public queryEntityRequired(query: Query): Entity {
+    const entity = this.queryEntity(query);
+
+    if (entity === null) {
+      throw new Error(
+        `No entity found matching the query: ${query.map((s) => s.description).join(', ')}`,
+      );
+    }
+
+    return entity;
   }
 
   /**
@@ -123,10 +172,7 @@ export class World implements Updatable, Stoppable {
    */
   public addSystem(system: System) {
     this._systems.add(system);
-    this._systemEntities.set(
-      system.name,
-      filterEntitiesByComponents(this._entities, system.query),
-    );
+    this._systemEntities.set(system.name, this.queryEntities(system.query));
 
     this.raiseOnSystemsChangedEvent();
 

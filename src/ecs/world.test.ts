@@ -87,4 +87,99 @@ describe('World', () => {
 
     expect(callback).not.toHaveBeenCalled();
   });
+
+  it('should return all entities matching the query', () => {
+    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity2 = world.buildAndAddEntity('entity2', [
+      mock1Component,
+      mock2Component,
+    ]);
+    const entity3 = world.buildAndAddEntity('entity3', [mock2Component]);
+
+    // Query for entities with mock1Component
+    const result = world.queryEntities([mock1Component.name]);
+    expect(result.has(entity1)).toBe(true);
+    expect(result.has(entity2)).toBe(true);
+    expect(result.has(entity3)).toBe(false);
+    expect(result.size).toBe(2);
+
+    // Query for entities with both mock1Component and mock2Component
+    const resultBoth = world.queryEntities([
+      mock1Component.name,
+      mock2Component.name,
+    ]);
+    expect(resultBoth.has(entity2)).toBe(true);
+    expect(resultBoth.has(entity1)).toBe(false);
+    expect(resultBoth.has(entity3)).toBe(false);
+    expect(resultBoth.size).toBe(1);
+
+    // Query for entities with mock2Component
+    const result2 = world.queryEntities([mock2Component.name]);
+    expect(result2.has(entity2)).toBe(true);
+    expect(result2.has(entity3)).toBe(true);
+    expect(result2.has(entity1)).toBe(false);
+    expect(result2.size).toBe(2);
+
+    // Query for a component that no entity has
+    const unknownComponent = Symbol('unknown');
+    const resultNone = world.queryEntities([unknownComponent]);
+    expect(resultNone.size).toBe(0);
+  });
+
+  it('should return the first entity matching the query in queryEntity', () => {
+    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity2 = world.buildAndAddEntity('entity2', [
+      mock1Component,
+      mock2Component,
+    ]);
+
+    world.buildAndAddEntity('entity3', [mock2Component]);
+
+    // Should return entity1, as it is the first matching entity
+    const result = world.queryEntity([mock1Component.name]);
+    expect(result).toBe(entity1);
+
+    // Should return entity2, as it is the first entity with both components
+    const resultBoth = world.queryEntity([
+      mock1Component.name,
+      mock2Component.name,
+    ]);
+    expect(resultBoth).toBe(entity2);
+
+    // Should return entity3, as it is the first entity with mock2Component only
+    const result2 = world.queryEntity([mock2Component.name]);
+    expect(result2).toBe(entity2); // entity2 is added before entity3 and has mock2Component
+
+    // Should return null if no entity matches
+    const unknownComponent = Symbol('unknown');
+    const resultNone = world.queryEntity([unknownComponent]);
+    expect(resultNone).toBeNull();
+  });
+
+  it('should return the first entity matching the query in queryEntityRequired', () => {
+    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity2 = world.buildAndAddEntity('entity2', [
+      mock1Component,
+      mock2Component,
+    ]);
+
+    // Should return entity1, as it is the first matching entity
+    const result = world.queryEntityRequired([mock1Component.name]);
+    expect(result).toBe(entity1);
+
+    // Should return entity2, as it is the first entity with both components
+    const resultBoth = world.queryEntityRequired([
+      mock1Component.name,
+      mock2Component.name,
+    ]);
+    expect(resultBoth).toBe(entity2);
+  });
+
+  it('should throw an error if no entity matches the query in queryEntityRequired', () => {
+    world.buildAndAddEntity('entity1', [mock1Component]);
+
+    expect(() => world.queryEntityRequired([mock2Component.name])).toThrowError(
+      'No entity found matching the query: mock2',
+    );
+  });
 });

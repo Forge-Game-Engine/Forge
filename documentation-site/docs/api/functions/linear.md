@@ -2,7 +2,7 @@
 
 > **linear**(`t`): `number`
 
-Defined in: [animations/easing-functions/linear.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/easing-functions/linear.ts#L9)
+Defined in: [animations/easing-functions/linear.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/animations/easing-functions/linear.ts#L9)
 
 Easing function for "linear".
 

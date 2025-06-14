@@ -2,7 +2,7 @@
 
 > **isNumber**\<`T`\>(`value`): `boolean`
 
-Defined in: [utilities/is-number.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/utilities/is-number.ts#L10)
+Defined in: [utilities/is-number.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/utilities/is-number.ts#L10)
 
 Checks if the provided value is a number.
 

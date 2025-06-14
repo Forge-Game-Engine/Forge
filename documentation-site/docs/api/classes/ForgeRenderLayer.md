@@ -1,6 +1,6 @@
 # Class: ForgeRenderLayer
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L7)
+Defined in: [rendering/render-layers/forge-render-layer.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L7)
 
 The `ForgeRenderLayer` class represents a rendering layer with its own canvas and WebGL context.
 
@@ -14,7 +14,7 @@ The `ForgeRenderLayer` class represents a rendering layer with its own canvas an
 
 > **new ForgeRenderLayer**(`name`, `canvas`, `clearStrategy`, `sortEntities`): `ForgeRenderLayer`
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:25](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L25)
+Defined in: [rendering/render-layers/forge-render-layer.ts:25](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L25)
 
 Constructs a new instance of the `ForgeRenderLayer` class.
 
@@ -62,7 +62,7 @@ An error if the WebGL2 context is not found.
 
 > **canvas**: `HTMLCanvasElement`
 
-Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/render-layer.ts#L11)
+Defined in: [rendering/render-layers/render-layer.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/render-layer.ts#L11)
 
 The canvas element associated with the render layer.
 
@@ -76,7 +76,7 @@ The canvas element associated with the render layer.
 
 > **center**: [`Vector2`](Vector2.md)
 
-Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/render-layer.ts#L14)
+Defined in: [rendering/render-layers/render-layer.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/render-layer.ts#L14)
 
 The center of the canvas.
 
@@ -90,7 +90,7 @@ The center of the canvas.
 
 > **clearStrategy**: [`CLEAR_STRATEGY_KEYS`](../type-aliases/CLEAR_STRATEGY_KEYS.md)
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L12)
+Defined in: [rendering/render-layers/forge-render-layer.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L12)
 
 The strategy for clearing the render layer.
 
@@ -100,7 +100,7 @@ The strategy for clearing the render layer.
 
 > **context**: `WebGL2RenderingContext`
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L9)
+Defined in: [rendering/render-layers/forge-render-layer.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L9)
 
 The WebGL2 rendering context for the canvas.
 
@@ -110,7 +110,7 @@ The WebGL2 rendering context for the canvas.
 
 > **name**: `string`
 
-Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/render-layer.ts#L8)
+Defined in: [rendering/render-layers/render-layer.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/render-layer.ts#L8)
 
 The name of the render layer.
 
@@ -124,7 +124,7 @@ The name of the render layer.
 
 > **sortEntities**: `boolean`
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L15)
+Defined in: [rendering/render-layers/forge-render-layer.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L15)
 
 Whether to sort entities by their y position before rendering.
 
@@ -134,7 +134,7 @@ Whether to sort entities by their y position before rendering.
 
 > **resize**(`width`, `height`): `void`
 
-Defined in: [rendering/render-layers/forge-render-layer.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/render-layers/forge-render-layer.ts#L46)
+Defined in: [rendering/render-layers/forge-render-layer.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/render-layers/forge-render-layer.ts#L46)
 
 Resizes the canvas to the specified width and height, and updates the center.
 

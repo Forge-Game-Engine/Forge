@@ -1,6 +1,6 @@
 # Class: ShaderStore
 
-Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/dependency-resolution/shader-store.ts#L4)
+Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/dependency-resolution/shader-store.ts#L4)
 
 ## Constructors
 
@@ -8,7 +8,7 @@ Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:4](https://
 
 > **new ShaderStore**(): `ShaderStore`
 
-Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/dependency-resolution/shader-store.ts#L9)
+Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/dependency-resolution/shader-store.ts#L9)
 
 #### Returns
 
@@ -20,7 +20,7 @@ Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:9](https://
 
 > **addInclude**(...`shaders`): `void`
 
-Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/dependency-resolution/shader-store.ts#L31)
+Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/dependency-resolution/shader-store.ts#L31)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:31](https:/
 
 > **addShader**(...`shaders`): `void`
 
-Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/dependency-resolution/shader-store.ts#L15)
+Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/dependency-resolution/shader-store.ts#L15)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:15](https:/
 
 > **getShader**(`name`): `string`
 
-Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/shaders/dependency-resolution/shader-store.ts#L47)
+Defined in: [rendering/shaders/dependency-resolution/shader-store.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/dependency-resolution/shader-store.ts#L47)
 
 #### Parameters
 

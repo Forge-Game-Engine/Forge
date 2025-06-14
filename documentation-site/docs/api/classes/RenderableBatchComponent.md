@@ -1,6 +1,6 @@
 # Class: RenderableBatchComponent
 
-Defined in: [rendering/components/sprite-batch-component.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L28)
+Defined in: [rendering/components/sprite-batch-component.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L28)
 
 The `RenderableBatchComponent` class implements the `Component` interface and represents
 a component that contains a items that can be batched for rendering.
@@ -15,7 +15,7 @@ a component that contains a items that can be batched for rendering.
 
 > **new RenderableBatchComponent**(`renderLayer`): `RenderableBatchComponent`
 
-Defined in: [rendering/components/sprite-batch-component.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L44)
+Defined in: [rendering/components/sprite-batch-component.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L44)
 
 Constructs a new instance of the `RenderableBatchComponent` class.
 
@@ -35,7 +35,7 @@ Constructs a new instance of the `RenderableBatchComponent` class.
 
 > **batches**: `Map`\<[`Renderable`](Renderable.md), [`Batch`](../type-aliases/Batch.md)\>
 
-Defined in: [rendering/components/sprite-batch-component.ts:36](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L36)
+Defined in: [rendering/components/sprite-batch-component.ts:36](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L36)
 
 The map of batched entities.
 
@@ -45,7 +45,7 @@ The map of batched entities.
 
 > **name**: `symbol`
 
-Defined in: [rendering/components/sprite-batch-component.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L30)
+Defined in: [rendering/components/sprite-batch-component.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L30)
 
 The name property holds the unique symbol for this component.
 
@@ -59,7 +59,7 @@ The name property holds the unique symbol for this component.
 
 > `readonly` **renderLayer**: [`RenderLayer`](RenderLayer.md)
 
-Defined in: [rendering/components/sprite-batch-component.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L39)
+Defined in: [rendering/components/sprite-batch-component.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L39)
 
 The render layer to which the batch belongs.
 
@@ -69,6 +69,6 @@ The render layer to which the batch belongs.
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [rendering/components/sprite-batch-component.ts:33](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/components/sprite-batch-component.ts#L33)
+Defined in: [rendering/components/sprite-batch-component.ts:33](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/components/sprite-batch-component.ts#L33)
 
 A static symbol property that uniquely identifies the `RenderableBatchComponent`.

@@ -2,7 +2,7 @@
 
 > **degreesToRadians**(`degrees`): `number`
 
-Defined in: [math/degrees-to-radians.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/degrees-to-radians.ts#L7)
+Defined in: [math/degrees-to-radians.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/degrees-to-radians.ts#L7)
 
 Converts an angle from degrees to radians.
 

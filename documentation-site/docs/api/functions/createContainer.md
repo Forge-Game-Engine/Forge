@@ -2,7 +2,7 @@
 
 > **createContainer**(`id`): `HTMLDivElement`
 
-Defined in: [utilities/create-container.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/utilities/create-container.ts#L7)
+Defined in: [utilities/create-container.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/utilities/create-container.ts#L7)
 
 Creates a new HTML div element with the specified ID and appends it to the document body.
 

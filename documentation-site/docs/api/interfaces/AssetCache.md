@@ -1,6 +1,6 @@
 # Interface: AssetCache\<T\>
 
-Defined in: [asset-loading/asset-cache.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-cache.ts#L6)
+Defined in: [asset-loading/asset-cache.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/asset-loading/asset-cache.ts#L6)
 
 Interface for an asset cache that manages loading and retrieving assets.
 
@@ -18,7 +18,7 @@ The type of asset being cached.
 
 > **assets**: `Map`\<`string`, `T`\>
 
-Defined in: [asset-loading/asset-cache.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-cache.ts#L10)
+Defined in: [asset-loading/asset-cache.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/asset-loading/asset-cache.ts#L10)
 
 A map of asset paths to their corresponding assets.
 
@@ -28,7 +28,7 @@ A map of asset paths to their corresponding assets.
 
 > **get**: (`path`) => `T`
 
-Defined in: [asset-loading/asset-cache.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-cache.ts#L17)
+Defined in: [asset-loading/asset-cache.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/asset-loading/asset-cache.ts#L17)
 
 Retrieves an asset from the cache.
 
@@ -52,7 +52,7 @@ The cached asset.
 
 > **getOrLoad**: (`path`) => `Promise`\<`T`\>
 
-Defined in: [asset-loading/asset-cache.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-cache.ts#L31)
+Defined in: [asset-loading/asset-cache.ts:31](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/asset-loading/asset-cache.ts#L31)
 
 Retrieves an asset from the cache if it exists, otherwise loads and caches it.
 
@@ -76,7 +76,7 @@ A promise that resolves to the asset.
 
 > **load**: (`path`) => `Promise`\<`void`\>
 
-Defined in: [asset-loading/asset-cache.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/asset-loading/asset-cache.ts#L24)
+Defined in: [asset-loading/asset-cache.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/asset-loading/asset-cache.ts#L24)
 
 Loads an asset from the specified path and caches it.
 

@@ -1,6 +1,6 @@
 # Class: Geometry
 
-Defined in: [rendering/geometry/geometry.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/geometry/geometry.ts#L11)
+Defined in: [rendering/geometry/geometry.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/geometry/geometry.ts#L11)
 
 ## Constructors
 
@@ -18,7 +18,7 @@ Defined in: [rendering/geometry/geometry.ts:11](https://github.com/Forge-Game-En
 
 > **addAttribute**(`gl`, `name`, `spec`): `void`
 
-Defined in: [rendering/geometry/geometry.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/geometry/geometry.ts#L21)
+Defined in: [rendering/geometry/geometry.ts:21](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/geometry/geometry.ts#L21)
 
 Adds a vertex attribute to the geometry.
 
@@ -46,7 +46,7 @@ Adds a vertex attribute to the geometry.
 
 > **bind**(`gl`, `program`): `void`
 
-Defined in: [rendering/geometry/geometry.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/geometry/geometry.ts#L46)
+Defined in: [rendering/geometry/geometry.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/geometry/geometry.ts#L46)
 
 Binds the VAO for the given shader program. Will create it on first use.
 
@@ -70,7 +70,7 @@ Binds the VAO for the given shader program. Will create it on first use.
 
 > **setIndexBuffer**(`buffer`): `void`
 
-Defined in: [rendering/geometry/geometry.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/geometry/geometry.ts#L39)
+Defined in: [rendering/geometry/geometry.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/geometry/geometry.ts#L39)
 
 Optionally sets the index buffer for indexed drawing.
 

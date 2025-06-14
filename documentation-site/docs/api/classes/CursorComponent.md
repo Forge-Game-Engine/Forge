@@ -1,6 +1,6 @@
 # Class: CursorComponent
 
-Defined in: [input/components/cursor-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/components/cursor-component.ts#L6)
+Defined in: [input/components/cursor-component.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/input/components/cursor-component.ts#L6)
 
 A marker component representing a cursor.
 
@@ -14,7 +14,7 @@ A marker component representing a cursor.
 
 > **new CursorComponent**(): `CursorComponent`
 
-Defined in: [input/components/cursor-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/components/cursor-component.ts#L14)
+Defined in: [input/components/cursor-component.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/input/components/cursor-component.ts#L14)
 
 Constructs a new cursor component.
 
@@ -28,7 +28,7 @@ Constructs a new cursor component.
 
 > **name**: `symbol`
 
-Defined in: [input/components/cursor-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/components/cursor-component.ts#L7)
+Defined in: [input/components/cursor-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/input/components/cursor-component.ts#L7)
 
 The unique name of the component.
 
@@ -42,4 +42,4 @@ The unique name of the component.
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [input/components/cursor-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/input/components/cursor-component.ts#L9)
+Defined in: [input/components/cursor-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/input/components/cursor-component.ts#L9)

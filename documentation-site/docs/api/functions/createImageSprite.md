@@ -2,7 +2,7 @@
 
 > **createImageSprite**(`image`, `renderLayer`, `shaderStore`): [`Sprite`](../classes/Sprite.md)
 
-Defined in: [rendering/utilities/create-image-sprite.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/utilities/create-image-sprite.ts#L14)
+Defined in: [rendering/utilities/create-image-sprite.ts:14](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/utilities/create-image-sprite.ts#L14)
 
 Creates a sprite using the provided image and render layer.
 
