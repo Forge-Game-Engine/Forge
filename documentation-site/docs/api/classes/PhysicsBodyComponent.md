@@ -1,6 +1,6 @@
 # Class: PhysicsBodyComponent
 
-Defined in: [physics/components/physics-body-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/components/physics-body-component.ts#L8)
+Defined in: [physics/components/physics-body-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/components/physics-body-component.ts#L8)
 
 Component to manage physics bodies in the game.
 This component is used to represent a physics body in the game.
@@ -15,7 +15,7 @@ This component is used to represent a physics body in the game.
 
 > **new PhysicsBodyComponent**(`physicsBody`): `PhysicsBodyComponent`
 
-Defined in: [physics/components/physics-body-component.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/components/physics-body-component.ts#L23)
+Defined in: [physics/components/physics-body-component.ts:23](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/components/physics-body-component.ts#L23)
 
 Creates an instance of PhysicsBodyComponent.
 This component is used to represent a physics body in the game.
@@ -36,7 +36,7 @@ This component is used to represent a physics body in the game.
 
 > **name**: `symbol`
 
-Defined in: [physics/components/physics-body-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/components/physics-body-component.ts#L9)
+Defined in: [physics/components/physics-body-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/components/physics-body-component.ts#L9)
 
 The unique name of the component.
 
@@ -50,7 +50,7 @@ The unique name of the component.
 
 > **physicsBody**: `Body`
 
-Defined in: [physics/components/physics-body-component.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/components/physics-body-component.ts#L15)
+Defined in: [physics/components/physics-body-component.ts:15](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/components/physics-body-component.ts#L15)
 
 The physics body associated with this component.
 This is the Matter.js body that represents the physical properties of the entity.
@@ -61,4 +61,4 @@ This is the Matter.js body that represents the physical properties of the entity
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [physics/components/physics-body-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/components/physics-body-component.ts#L17)
+Defined in: [physics/components/physics-body-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/components/physics-body-component.ts#L17)

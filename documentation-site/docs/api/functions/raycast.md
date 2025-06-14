@@ -2,7 +2,7 @@
 
 > **raycast**(`bodies`, `start`, `end`, `sort`): [`RaycastCollision`](../interfaces/RaycastCollision.md)[]
 
-Defined in: [physics/raycast.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/physics/raycast.ts#L18)
+Defined in: [physics/raycast.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/physics/raycast.ts#L18)
 
 Raycast function that returns an array of RaycastCollision objects
 that represent the intersections between a ray and the bodies in the world.

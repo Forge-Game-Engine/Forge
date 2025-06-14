@@ -1,6 +1,6 @@
 # Class: Entity
 
-Defined in: [ecs/entity.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L10)
+Defined in: [ecs/entity.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L10)
 
 Represents an entity in the Entity-Component-System (ECS) architecture.
 An entity is a container for components and has a unique identifier.
@@ -11,7 +11,7 @@ An entity is a container for components and has a unique identifier.
 
 > **new Entity**(`name`, `world`, `initialComponents`, `enabled`): `Entity`
 
-Defined in: [ecs/entity.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L42)
+Defined in: [ecs/entity.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L42)
 
 Creates a new Entity instance.
 
@@ -49,7 +49,7 @@ Indicates whether the entity is enabled. Defaults to true.
 
 > **enabled**: `boolean`
 
-Defined in: [ecs/entity.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L29)
+Defined in: [ecs/entity.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L29)
 
 Indicates whether the entity is enabled.
 
@@ -59,7 +59,7 @@ Indicates whether the entity is enabled.
 
 > **name**: `string`
 
-Defined in: [ecs/entity.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L24)
+Defined in: [ecs/entity.ts:24](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L24)
 
 The name of the entity.
 
@@ -69,7 +69,7 @@ The name of the entity.
 
 > **world**: [`World`](World.md)
 
-Defined in: [ecs/entity.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L34)
+Defined in: [ecs/entity.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L34)
 
 The world to which this entity belongs.
 
@@ -81,7 +81,7 @@ The world to which this entity belongs.
 
 > **get** **id**(): `number`
 
-Defined in: [ecs/entity.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L58)
+Defined in: [ecs/entity.ts:58](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L58)
 
 Gets the unique identifier of the entity.
 
@@ -95,7 +95,7 @@ Gets the unique identifier of the entity.
 
 > **addComponent**(`component`): `void`
 
-Defined in: [ecs/entity.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L66)
+Defined in: [ecs/entity.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L66)
 
 Adds a component to the entity.
 
@@ -117,7 +117,7 @@ The component to add.
 
 > **containsAllComponents**(`query`): `boolean`
 
-Defined in: [ecs/entity.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L76)
+Defined in: [ecs/entity.ts:76](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L76)
 
 Checks if the entity contains all specified components.
 
@@ -141,7 +141,7 @@ True if the entity contains all specified components, otherwise false.
 
 > **getComponent**\<`T`\>(`componentName`): [`OrNull`](../type-aliases/OrNull.md)\<`T`\>
 
-Defined in: [ecs/entity.ts:105](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L105)
+Defined in: [ecs/entity.ts:105](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L105)
 
 Gets a component by its name.
 
@@ -171,7 +171,7 @@ The component if found, otherwise null.
 
 > **getComponentRequired**\<`T`\>(`componentName`): `T`
 
-Defined in: [ecs/entity.ts:121](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L121)
+Defined in: [ecs/entity.ts:121](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L121)
 
 Gets a component by its name.
 
@@ -205,7 +205,7 @@ An error if the component is not found.
 
 > **removeComponent**(`componentName`): `void`
 
-Defined in: [ecs/entity.ts:137](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/ecs/entity.ts#L137)
+Defined in: [ecs/entity.ts:137](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/entity.ts#L137)
 
 Removes a component from the entity.
 

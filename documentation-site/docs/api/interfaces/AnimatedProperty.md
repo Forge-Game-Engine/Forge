@@ -1,6 +1,6 @@
 # Interface: AnimatedProperty
 
-Defined in: [animations/components/animation-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L8)
+Defined in: [animations/components/animation-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L8)
 
 Represents the properties of an animated object.
 
@@ -10,7 +10,7 @@ Represents the properties of an animated object.
 
 > **duration**: `number`
 
-Defined in: [animations/components/animation-component.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L30)
+Defined in: [animations/components/animation-component.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L30)
 
 The duration of the animation in milliseconds.
 
@@ -20,7 +20,7 @@ The duration of the animation in milliseconds.
 
 > `optional` **easing**: (`t`) => `number`
 
-Defined in: [animations/components/animation-component.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L42)
+Defined in: [animations/components/animation-component.ts:42](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L42)
 
 The easing function to use for the animation.
 
@@ -46,7 +46,7 @@ linear
 
 > `optional` **elapsed**: `number`
 
-Defined in: [animations/components/animation-component.ts:25](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L25)
+Defined in: [animations/components/animation-component.ts:25](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L25)
 
 The elapsed time of the animation.
 
@@ -62,7 +62,7 @@ The elapsed time of the animation.
 
 > `optional` **endValue**: `number`
 
-Defined in: [animations/components/animation-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L19)
+Defined in: [animations/components/animation-component.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L19)
 
 The ending value of the animation.
 
@@ -78,7 +78,7 @@ The ending value of the animation.
 
 > `optional` **finishedCallback**: () => `void`
 
-Defined in: [animations/components/animation-component.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L59)
+Defined in: [animations/components/animation-component.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L59)
 
 The callback function to call when the animation is finished.
 
@@ -92,7 +92,7 @@ The callback function to call when the animation is finished.
 
 > `optional` **loop**: [`LoopMode`](../type-aliases/LoopMode.md)
 
-Defined in: [animations/components/animation-component.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L48)
+Defined in: [animations/components/animation-component.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L48)
 
 The loop mode of the animation.
 
@@ -108,7 +108,7 @@ The loop mode of the animation.
 
 > `optional` **loopCount**: `number`
 
-Defined in: [animations/components/animation-component.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L54)
+Defined in: [animations/components/animation-component.ts:54](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L54)
 
 The number of times the animation should loop. -1 means that it will loop indefinitely.
 
@@ -124,7 +124,7 @@ The number of times the animation should loop. -1 means that it will loop indefi
 
 > `optional` **startValue**: `number`
 
-Defined in: [animations/components/animation-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L13)
+Defined in: [animations/components/animation-component.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L13)
 
 The starting value of the animation.
 
@@ -140,7 +140,7 @@ The starting value of the animation.
 
 > **updateCallback**: (`value`) => `void`
 
-Defined in: [animations/components/animation-component.ts:36](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/components/animation-component.ts#L36)
+Defined in: [animations/components/animation-component.ts:36](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/components/animation-component.ts#L36)
 
 The callback function to update the animated value.
 

@@ -31,6 +31,11 @@
   --hero-font-color: #3b3b3b;
 }
 
+.main-wrapper {
+  align-items: stretch;
+  justify-content: center;
+}
+
 .button--primary {
   background: #ffd900;
   color: #3b3b3b;

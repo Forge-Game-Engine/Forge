@@ -2,7 +2,7 @@
 
 > **addRiveRenderLayer**(`riveFileUri`, `gameContainer`, `layerService`, `riveCache`, `riveParameters?`): `Promise`\<readonly \[[`RiveRenderLayer`](../classes/RiveRenderLayer.md), `HTMLCanvasElement`, `RiveFile`\]\>
 
-Defined in: [rendering/utilities/add-rive-render-layer.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/utilities/add-rive-render-layer.ts#L28)
+Defined in: [rendering/utilities/add-rive-render-layer.ts:28](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/utilities/add-rive-render-layer.ts#L28)
 
 Adds a Rive render layer to the game container and registers it with the layer service.
 It also creates a canvas for the layer.

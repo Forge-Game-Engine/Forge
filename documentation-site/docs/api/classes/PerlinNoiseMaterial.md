@@ -1,6 +1,6 @@
 # Class: PerlinNoiseMaterial
 
-Defined in: [rendering/materials/perlin-noise.material.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/perlin-noise.material.ts#L6)
+Defined in: [rendering/materials/perlin-noise.material.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/perlin-noise.material.ts#L6)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [rendering/materials/perlin-noise.material.ts:6](https://github.com/
 
 > **new PerlinNoiseMaterial**(`gl`, `shaderStore`, `resolution`, `time`): `PerlinNoiseMaterial`
 
-Defined in: [rendering/materials/perlin-noise.material.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/perlin-noise.material.ts#L9)
+Defined in: [rendering/materials/perlin-noise.material.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/perlin-noise.material.ts#L9)
 
 #### Parameters
 
@@ -46,7 +46,7 @@ Defined in: [rendering/materials/perlin-noise.material.ts:9](https://github.com/
 
 > `readonly` **program**: `WebGLProgram`
 
-Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L13)
+Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L13)
 
 #### Inherited from
 
@@ -58,7 +58,7 @@ Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-E
 
 > `protected` **beforeBind**(): `void`
 
-Defined in: [rendering/materials/perlin-noise.material.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/perlin-noise.material.ts#L27)
+Defined in: [rendering/materials/perlin-noise.material.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/perlin-noise.material.ts#L27)
 
 Called before binding the material to allow for custom behavior.
 Override this method in subclasses to implement custom logic.
@@ -77,7 +77,7 @@ Override this method in subclasses to implement custom logic.
 
 > **bind**(`gl`): `void`
 
-Defined in: [rendering/materials/material.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L34)
+Defined in: [rendering/materials/material.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L34)
 
 Binds the material (program, uniforms, textures).
 
@@ -101,7 +101,7 @@ Binds the material (program, uniforms, textures).
 
 > `protected` **convertToFloat32Array**(`vector`): `Float32Array`
 
-Defined in: [rendering/materials/material.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L165)
+Defined in: [rendering/materials/material.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L165)
 
 Converts a vector3 to a float32 array.
 
@@ -125,7 +125,7 @@ Converts a vector3 to a float32 array.
 
 > **setColorUniform**(`name`, `color`): `void`
 
-Defined in: [rendering/materials/material.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L140)
+Defined in: [rendering/materials/material.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L140)
 
 Sets a color uniform as a float32 array using the color's RGBA values.
 
@@ -153,7 +153,7 @@ Sets a color uniform as a float32 array using the color's RGBA values.
 
 > **setUniform**(`name`, `value`): `void`
 
-Defined in: [rendering/materials/material.ts:133](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L133)
+Defined in: [rendering/materials/material.ts:133](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L133)
 
 Sets a uniform value (number, vec2, matrix, texture, etc.).
 
@@ -181,7 +181,7 @@ Sets a uniform value (number, vec2, matrix, texture, etc.).
 
 > **setVectorUniform**(`name`, `vector`): `void`
 
-Defined in: [rendering/materials/material.ts:147](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L147)
+Defined in: [rendering/materials/material.ts:147](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L147)
 
 Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
 

@@ -2,7 +2,7 @@
 
 > **createScene**(`name`, `game`, `sceneCreationOptions?`): `SceneCreationResult`
 
-Defined in: [game/utilities/create-scene.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/game/utilities/create-scene.ts#L40)
+Defined in: [game/utilities/create-scene.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/game/utilities/create-scene.ts#L40)
 
 ## Parameters
 

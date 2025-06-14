@@ -1,6 +1,6 @@
 # Class: PositionComponent
 
-Defined in: [common/components/position-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/components/position-component.ts#L7)
+Defined in: [common/components/position-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/components/position-component.ts#L7)
 
 Component to represent the position of an entity in 2D space.
 
@@ -18,7 +18,7 @@ Component to represent the position of an entity in 2D space.
 
 > **new PositionComponent**(`x`, `y`): `PositionComponent`
 
-Defined in: [common/components/position-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/components/position-component.ts#L17)
+Defined in: [common/components/position-component.ts:17](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/components/position-component.ts#L17)
 
 Creates an instance of PositionComponent.
 
@@ -50,7 +50,7 @@ The y-coordinate of the position.
 
 > **name**: `symbol`
 
-Defined in: [common/components/position-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/components/position-component.ts#L8)
+Defined in: [common/components/position-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/components/position-component.ts#L8)
 
 The unique name of the component.
 
@@ -64,7 +64,7 @@ The unique name of the component.
 
 > **x**: `number`
 
-Defined in: [math/vector2.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L7)
+Defined in: [math/vector2.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L7)
 
 The x-coordinate component of the vector
 
@@ -78,7 +78,7 @@ The x-coordinate component of the vector
 
 > **y**: `number`
 
-Defined in: [math/vector2.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L10)
+Defined in: [math/vector2.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L10)
 
 The y-coordinate component of the vector
 
@@ -92,7 +92,7 @@ The y-coordinate component of the vector
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [common/components/position-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/components/position-component.ts#L10)
+Defined in: [common/components/position-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/components/position-component.ts#L10)
 
 ## Accessors
 
@@ -102,7 +102,7 @@ Defined in: [common/components/position-component.ts:10](https://github.com/Forg
 
 > **get** `static` **down**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:104](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L104)
+Defined in: [math/vector2.ts:104](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L104)
 
 Returns a unit vector pointing downward (0, -1).
 
@@ -122,7 +122,7 @@ Returns a unit vector pointing downward (0, -1).
 
 > **get** `static` **left**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:111](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L111)
+Defined in: [math/vector2.ts:111](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L111)
 
 Returns a unit vector pointing left (-1, 0).
 
@@ -142,7 +142,7 @@ Returns a unit vector pointing left (-1, 0).
 
 > **get** `static` **one**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:132](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L132)
+Defined in: [math/vector2.ts:132](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L132)
 
 Returns a vector with components of 1 (1, 1).
 
@@ -162,7 +162,7 @@ Returns a vector with components of 1 (1, 1).
 
 > **get** `static` **right**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:118](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L118)
+Defined in: [math/vector2.ts:118](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L118)
 
 Returns a unit vector pointing right (1, 0).
 
@@ -182,7 +182,7 @@ Returns a unit vector pointing right (1, 0).
 
 > **get** `static` **up**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:97](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L97)
+Defined in: [math/vector2.ts:97](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L97)
 
 Returns a unit vector pointing upward (0, 1).
 
@@ -202,7 +202,7 @@ Returns a unit vector pointing upward (0, 1).
 
 > **get** `static` **zero**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:125](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L125)
+Defined in: [math/vector2.ts:125](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L125)
 
 Returns a zero vector (0, 0).
 
@@ -220,7 +220,7 @@ Returns a zero vector (0, 0).
 
 > **add**(`value`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L39)
+Defined in: [math/vector2.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L39)
 
 Returns a new vector that is the sum of this vector and another vector.
 
@@ -248,7 +248,7 @@ A new Vector2 representing the sum
 
 > **clone**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:179](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L179)
+Defined in: [math/vector2.ts:179](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L179)
 
 Creates a deep copy of this vector.
 
@@ -268,7 +268,7 @@ A new Vector2 with the same component values
 
 > **distanceTo**(`other`): `number`
 
-Defined in: [math/vector2.ts:213](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L213)
+Defined in: [math/vector2.ts:213](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L213)
 
 Calculates the distance between this vector and another vector.
 
@@ -296,7 +296,7 @@ The distance between the two vectors
 
 > **divide**(`scalar`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L87)
+Defined in: [math/vector2.ts:87](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L87)
 
 Divides this vector by a scalar value.
 
@@ -324,7 +324,7 @@ A new Vector2 divided by the scalar
 
 > **equals**(`value`): `boolean`
 
-Defined in: [math/vector2.ts:196](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L196)
+Defined in: [math/vector2.ts:196](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L196)
 
 Checks if this vector is equal to another vector.
 
@@ -352,7 +352,7 @@ True if the vectors have the same components, false otherwise
 
 > **floorComponents**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:171](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L171)
+Defined in: [math/vector2.ts:171](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L171)
 
 Returns a new vector with components rounded down to the nearest integer.
 
@@ -372,7 +372,7 @@ A new Vector2 with floored components
 
 > **magnitude**(): `number`
 
-Defined in: [math/vector2.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L140)
+Defined in: [math/vector2.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L140)
 
 Calculates the magnitude (length) of this vector.
 
@@ -392,7 +392,7 @@ The magnitude of the vector
 
 > **magnitudeSquared**(): `number`
 
-Defined in: [math/vector2.ts:149](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L149)
+Defined in: [math/vector2.ts:149](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L149)
 
 Calculates the squared magnitude of this vector.
 This is faster than magnitude() as it avoids the square root.
@@ -413,7 +413,7 @@ The squared magnitude of the vector
 
 > **multiply**(`scalar`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:63](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L63)
+Defined in: [math/vector2.ts:63](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L63)
 
 Multiplies this vector by a scalar value.
 
@@ -441,7 +441,7 @@ A new Vector2 scaled by the input value
 
 > **multiplyComponents**(`vector`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:75](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L75)
+Defined in: [math/vector2.ts:75](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L75)
 
 Multiplies this vector's components by another vector's components.
 
@@ -469,7 +469,7 @@ A new Vector2 with multiplied components
 
 > **normalize**(): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:157](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L157)
+Defined in: [math/vector2.ts:157](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L157)
 
 Returns a normalized (unit length) version of this vector.
 
@@ -489,7 +489,7 @@ A new Vector2 with magnitude 1 in the same direction
 
 > **rotate**(`angleInRadians`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:222](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L222)
+Defined in: [math/vector2.ts:222](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L222)
 
 rotates this vector by a given angle in radians.
 
@@ -517,7 +517,7 @@ A new Vector2 representing the rotated vector
 
 > **set**(`value`): `PositionComponent`
 
-Defined in: [math/vector2.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L27)
+Defined in: [math/vector2.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L27)
 
 Sets this vector's components to match another vector.
 
@@ -545,7 +545,7 @@ This vector for chaining
 
 > **subtract**(`value`): [`Vector2`](Vector2.md)
 
-Defined in: [math/vector2.ts:51](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L51)
+Defined in: [math/vector2.ts:51](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L51)
 
 Returns a new vector that is the difference between this vector and another vector.
 
@@ -573,7 +573,7 @@ A new Vector2 representing the difference
 
 > **toFloat32Array**(): `Float32Array`
 
-Defined in: [math/vector2.ts:204](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L204)
+Defined in: [math/vector2.ts:204](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L204)
 
 Converts the 2d vector to a glsl-compatible float32 array.
 
@@ -593,7 +593,7 @@ The 2d vector array (e.g. `[5, 3]` for a `new Vector2(5, 3)`).
 
 > **toString**(): `string`
 
-Defined in: [math/vector2.ts:187](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector2.ts#L187)
+Defined in: [math/vector2.ts:187](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector2.ts#L187)
 
 Returns a string representation of this vector.
 

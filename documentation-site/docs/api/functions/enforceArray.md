@@ -2,7 +2,7 @@
 
 > **enforceArray**\<`T`\>(`value`): `T`[]
 
-Defined in: [utilities/enforce-array.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/utilities/enforce-array.ts#L12)
+Defined in: [utilities/enforce-array.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/utilities/enforce-array.ts#L12)
 
 Ensures that the provided value is returned as an array.
 

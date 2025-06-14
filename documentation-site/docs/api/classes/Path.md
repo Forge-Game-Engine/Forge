@@ -1,6 +1,6 @@
 # Class: Path
 
-Defined in: [common/path/path.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L8)
+Defined in: [common/path/path.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L8)
 
 Class to represent a path consisting of a series of 2D points.
 
@@ -14,7 +14,7 @@ Class to represent a path consisting of a series of 2D points.
 
 > **new Path**(`path`): `Path`
 
-Defined in: [common/path/path.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L18)
+Defined in: [common/path/path.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L18)
 
 Creates an instance of Path.
 
@@ -43,7 +43,7 @@ console.log(path.length); // 2
 
 > **path**: [`Vector2`](Vector2.md)[]
 
-Defined in: [common/path/path.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L9)
+Defined in: [common/path/path.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L9)
 
 ## Accessors
 
@@ -53,7 +53,7 @@ Defined in: [common/path/path.ts:9](https://github.com/Forge-Game-Engine/Forge/b
 
 > **get** **first**(): [`Vector2`](Vector2.md)
 
-Defined in: [common/path/path.ts:61](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L61)
+Defined in: [common/path/path.ts:61](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L61)
 
 Gets the first point in the path.
 
@@ -71,7 +71,7 @@ The first point in the path.
 
 > **get** **last**(): `null` \| [`Vector2`](Vector2.md)
 
-Defined in: [common/path/path.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L69)
+Defined in: [common/path/path.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L69)
 
 Gets the last point in the path.
 
@@ -89,7 +89,7 @@ The last point in the path.
 
 > **get** **length**(): `number`
 
-Defined in: [common/path/path.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L77)
+Defined in: [common/path/path.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L77)
 
 Gets the number of points in the path.
 
@@ -105,7 +105,7 @@ The number of points in the path.
 
 > **\[iterator\]**(): `Iterator`\<[`Vector2`](Vector2.md)\>
 
-Defined in: [common/path/path.ts:89](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L89)
+Defined in: [common/path/path.ts:89](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L89)
 
 Returns an iterator for the path.
 
@@ -133,7 +133,7 @@ for (const point of path) {
 
 > **at**(`index`): [`Vector2`](Vector2.md)
 
-Defined in: [common/path/path.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L27)
+Defined in: [common/path/path.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L27)
 
 Gets the point at the specified index.
 
@@ -157,7 +157,7 @@ The point at the specified index.
 
 > **map**\<`T`\>(`callback`): `T`[]
 
-Defined in: [common/path/path.ts:53](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L53)
+Defined in: [common/path/path.ts:53](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L53)
 
 Maps the path to a new array using the provided callback function.
 
@@ -194,7 +194,7 @@ console.log(pointStrings); // ['[0,0]', '[1,1]']
 
 > **push**(`point`): `void`
 
-Defined in: [common/path/path.ts:41](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/common/path/path.ts#L41)
+Defined in: [common/path/path.ts:41](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/path/path.ts#L41)
 
 Adds a point to the end of the path.
 

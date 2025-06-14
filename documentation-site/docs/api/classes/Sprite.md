@@ -1,6 +1,6 @@
 # Class: Sprite
 
-Defined in: [rendering/sprite.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L39)
+Defined in: [rendering/sprite.ts:39](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L39)
 
 The `Sprite` class represents a sprite in the rendering system.
 
@@ -10,7 +10,7 @@ The `Sprite` class represents a sprite in the rendering system.
 
 > **new Sprite**(`options`): `Sprite`
 
-Defined in: [rendering/sprite.ts:62](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L62)
+Defined in: [rendering/sprite.ts:62](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L62)
 
 Constructs a new instance of the `Sprite` class.
 
@@ -32,7 +32,7 @@ The options for creating the sprite.
 
 > **bleed**: `number`
 
-Defined in: [rendering/sprite.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L44)
+Defined in: [rendering/sprite.ts:44](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L44)
 
 The bleed value applied to the sprite.
 
@@ -42,7 +42,7 @@ The bleed value applied to the sprite.
 
 > **height**: `number`
 
-Defined in: [rendering/sprite.ts:50](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L50)
+Defined in: [rendering/sprite.ts:50](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L50)
 
 The height of the sprite, including the bleed value.
 
@@ -52,7 +52,7 @@ The height of the sprite, including the bleed value.
 
 > **pivot**: [`Vector2`](Vector2.md)
 
-Defined in: [rendering/sprite.ts:53](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L53)
+Defined in: [rendering/sprite.ts:53](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L53)
 
 The pivot point of the sprite.
 
@@ -62,7 +62,7 @@ The pivot point of the sprite.
 
 > `readonly` **renderable**: [`Renderable`](Renderable.md)
 
-Defined in: [rendering/sprite.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L56)
+Defined in: [rendering/sprite.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L56)
 
 The sprite material used for rendering.
 
@@ -72,7 +72,7 @@ The sprite material used for rendering.
 
 > **renderLayer**: [`ForgeRenderLayer`](ForgeRenderLayer.md)
 
-Defined in: [rendering/sprite.ts:41](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L41)
+Defined in: [rendering/sprite.ts:41](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L41)
 
 The render layer to which the sprite belongs.
 
@@ -82,6 +82,6 @@ The render layer to which the sprite belongs.
 
 > **width**: `number`
 
-Defined in: [rendering/sprite.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/sprite.ts#L47)
+Defined in: [rendering/sprite.ts:47](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/sprite.ts#L47)
 
 The width of the sprite, including the bleed value.

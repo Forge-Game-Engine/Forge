@@ -2,7 +2,7 @@
 
 > **createCanvas**(`id`, `container`, `width?`, `height?`): `HTMLCanvasElement`
 
-Defined in: [rendering/utilities/create-canvas.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/utilities/create-canvas.ts#L10)
+Defined in: [rendering/utilities/create-canvas.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/utilities/create-canvas.ts#L10)
 
 Creates a canvas element with the specified ID, dimensions, and appends it to the given container.
 

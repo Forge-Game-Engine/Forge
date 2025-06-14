@@ -2,7 +2,7 @@
 
 > **vectorToRadians**(`vector`): `number`
 
-Defined in: [math/vector-to-radians.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/vector-to-radians.ts#L9)
+Defined in: [math/vector-to-radians.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/vector-to-radians.ts#L9)
 
 Converts a 2D vector to an angle in radians.
 

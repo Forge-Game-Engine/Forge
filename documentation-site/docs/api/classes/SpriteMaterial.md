@@ -1,6 +1,6 @@
 # Class: SpriteMaterial
 
-Defined in: [rendering/materials/sprite.material.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/sprite.material.ts#L4)
+Defined in: [rendering/materials/sprite.material.ts:4](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/sprite.material.ts#L4)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [rendering/materials/sprite.material.ts:4](https://github.com/Forge-
 
 > **new SpriteMaterial**(`gl`, `shaderStore`, `albedoTexture`): `SpriteMaterial`
 
-Defined in: [rendering/materials/sprite.material.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/sprite.material.ts#L7)
+Defined in: [rendering/materials/sprite.material.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/sprite.material.ts#L7)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [rendering/materials/sprite.material.ts:7](https://github.com/Forge-
 
 > `readonly` **albedoTexture**: `HTMLImageElement`
 
-Defined in: [rendering/materials/sprite.material.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/sprite.material.ts#L5)
+Defined in: [rendering/materials/sprite.material.ts:5](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/sprite.material.ts#L5)
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [rendering/materials/sprite.material.ts:5](https://github.com/Forge-
 
 > `readonly` **program**: `WebGLProgram`
 
-Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L13)
+Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L13)
 
 #### Inherited from
 
@@ -62,7 +62,7 @@ Defined in: [rendering/materials/material.ts:13](https://github.com/Forge-Game-E
 
 > `protected` **beforeBind**(`_gl`): `void`
 
-Defined in: [rendering/materials/material.ts:158](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L158)
+Defined in: [rendering/materials/material.ts:158](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L158)
 
 Called before binding the material to allow for custom behavior.
 Override this method in subclasses to implement custom logic.
@@ -89,7 +89,7 @@ The WebGL2 rendering context passed into beforeBind.
 
 > **bind**(`gl`): `void`
 
-Defined in: [rendering/materials/material.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L34)
+Defined in: [rendering/materials/material.ts:34](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L34)
 
 Binds the material (program, uniforms, textures).
 
@@ -113,7 +113,7 @@ Binds the material (program, uniforms, textures).
 
 > `protected` **convertToFloat32Array**(`vector`): `Float32Array`
 
-Defined in: [rendering/materials/material.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L165)
+Defined in: [rendering/materials/material.ts:165](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L165)
 
 Converts a vector3 to a float32 array.
 
@@ -137,7 +137,7 @@ Converts a vector3 to a float32 array.
 
 > **setColorUniform**(`name`, `color`): `void`
 
-Defined in: [rendering/materials/material.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L140)
+Defined in: [rendering/materials/material.ts:140](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L140)
 
 Sets a color uniform as a float32 array using the color's RGBA values.
 
@@ -165,7 +165,7 @@ Sets a color uniform as a float32 array using the color's RGBA values.
 
 > **setUniform**(`name`, `value`): `void`
 
-Defined in: [rendering/materials/material.ts:133](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L133)
+Defined in: [rendering/materials/material.ts:133](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L133)
 
 Sets a uniform value (number, vec2, matrix, texture, etc.).
 
@@ -193,7 +193,7 @@ Sets a uniform value (number, vec2, matrix, texture, etc.).
 
 > **setVectorUniform**(`name`, `vector`): `void`
 
-Defined in: [rendering/materials/material.ts:147](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/rendering/materials/material.ts#L147)
+Defined in: [rendering/materials/material.ts:147](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/materials/material.ts#L147)
 
 Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
 

@@ -136,8 +136,6 @@
 - [easeInOutQuint](functions/easeInOutQuint.md)
 - [easeInOutSine](functions/easeInOutSine.md)
 - [enforceArray](functions/enforceArray.md)
-- [filterEntitiesByComponents](functions/filterEntitiesByComponents.md)
-- [getComponentsFromEntities](functions/getComponentsFromEntities.md)
 - [isNil](functions/isNil.md)
 - [isNumber](functions/isNumber.md)
 - [isOneOf](functions/isOneOf.md)

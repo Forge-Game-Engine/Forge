@@ -2,7 +2,7 @@
 
 > **scaleRelativeToPoint**(`point`, `pivot`, `scale`): [`Vector2`](../classes/Vector2.md)
 
-Defined in: [math/scale-relative-to-point.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/scale-relative-to-point.ts#L11)
+Defined in: [math/scale-relative-to-point.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/scale-relative-to-point.ts#L11)
 
 Scales a point relative to a pivot point by a given scale factor.
 

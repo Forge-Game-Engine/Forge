@@ -2,7 +2,7 @@
 
 > **easeInOutElastic**(`t`): `number`
 
-Defined in: [animations/easing-functions/ease-in-out-elastic.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/animations/easing-functions/ease-in-out-elastic.ts#L11)
+Defined in: [animations/easing-functions/ease-in-out-elastic.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/easing-functions/ease-in-out-elastic.ts#L11)
 
 Easing function for "easeInOutElastic".
 

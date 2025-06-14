@@ -2,7 +2,7 @@
 
 > **clamp**(`value`, `min`, `max`): `number`
 
-Defined in: [math/clamp.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/4b66b21759bd3ab3aaf4c62b3e957c1bb43b7b58/src/math/clamp.ts#L9)
+Defined in: [math/clamp.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/clamp.ts#L9)
 
 Clamps a number to be within a specified range.
 
