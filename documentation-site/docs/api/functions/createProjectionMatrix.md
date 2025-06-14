@@ -2,7 +2,7 @@
 
 > **createProjectionMatrix**(`width`, `height`): [`Matrix3x3`](../classes/Matrix3x3.md)
 
-Defined in: [rendering/shaders/utils/create-projection-matrix.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/rendering/shaders/utils/create-projection-matrix.ts#L10)
+Defined in: [rendering/shaders/utils/create-projection-matrix.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/rendering/shaders/utils/create-projection-matrix.ts#L10)
 
 Creates a projection matrix for mapping 0..width to -1..1 in X and 0..height to -1..1 in Y.
 

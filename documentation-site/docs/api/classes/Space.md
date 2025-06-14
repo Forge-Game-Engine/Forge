@@ -1,6 +1,6 @@
 # Class: Space
 
-Defined in: [common/space/space.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L7)
+Defined in: [common/space/space.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L7)
 
 Class to represent a 2D space with width, height, and center point.
 
@@ -10,7 +10,7 @@ Class to represent a 2D space with width, height, and center point.
 
 > **new Space**(`width`, `height`): `Space`
 
-Defined in: [common/space/space.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L27)
+Defined in: [common/space/space.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L27)
 
 Creates an instance of Space.
 
@@ -47,7 +47,7 @@ console.log(space.center); // Vector2 { x: 400, y: 300 }
 
 > **onSpaceChange**: [`ForgeEvent`](ForgeEvent.md)
 
-Defined in: [common/space/space.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L11)
+Defined in: [common/space/space.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L11)
 
 Event that is raised when the space changes.
 
@@ -59,7 +59,7 @@ Event that is raised when the space changes.
 
 > **get** **center**(): [`Vector2`](Vector2.md)
 
-Defined in: [common/space/space.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L40)
+Defined in: [common/space/space.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L40)
 
 Gets the center point of the space.
 
@@ -77,7 +77,7 @@ The center point of the space.
 
 > **get** **height**(): `number`
 
-Defined in: [common/space/space.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L56)
+Defined in: [common/space/space.ts:56](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L56)
 
 Gets the height of the space.
 
@@ -95,7 +95,7 @@ The height of the space.
 
 > **get** **width**(): `number`
 
-Defined in: [common/space/space.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L48)
+Defined in: [common/space/space.ts:48](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L48)
 
 Gets the width of the space.
 
@@ -111,7 +111,7 @@ The width of the space.
 
 > **setValue**(`width`, `height`): `this`
 
-Defined in: [common/space/space.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/common/space/space.ts#L66)
+Defined in: [common/space/space.ts:66](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/common/space/space.ts#L66)
 
 Sets the dimensions of the space.
 

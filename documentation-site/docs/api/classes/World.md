@@ -1,6 +1,6 @@
 # Class: World
 
-Defined in: [ecs/world.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L10)
+Defined in: [ecs/world.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L10)
 
 Represents the world in the Entity-Component-System (ECS) architecture.
 The world manages entities and systems, and updates systems with the entities they operate on.
@@ -26,7 +26,7 @@ The world manages entities and systems, and updates systems with the entities th
 
 > **addEntities**(`entities`): `World`
 
-Defined in: [ecs/world.ts:216](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L216)
+Defined in: [ecs/world.ts:262](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L262)
 
 Adds multiple entities to the world.
 
@@ -50,7 +50,7 @@ The world instance.
 
 > **addEntity**(`entity`): `World`
 
-Defined in: [ecs/world.ts:169](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L169)
+Defined in: [ecs/world.ts:215](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L215)
 
 Adds an entity to the world.
 
@@ -74,7 +74,7 @@ The world instance.
 
 > **addSystem**(`system`): `World`
 
-Defined in: [ecs/world.ts:124](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L124)
+Defined in: [ecs/world.ts:173](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L173)
 
 Adds a system to the world.
 
@@ -98,7 +98,7 @@ The world instance.
 
 > **addSystems**(...`systems`): `World`
 
-Defined in: [ecs/world.ts:141](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L141)
+Defined in: [ecs/world.ts:187](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L187)
 
 Adds multiple systems to the world.
 
@@ -122,7 +122,7 @@ The world instance.
 
 > **buildAndAddEntity**(`name`, `components`): [`Entity`](Entity.md)
 
-Defined in: [ecs/world.ts:204](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L204)
+Defined in: [ecs/world.ts:250](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L250)
 
 Builds and adds an entity to the world.
 
@@ -152,7 +152,7 @@ The created entity.
 
 > **onEntitiesChanged**(`callback`): `void`
 
-Defined in: [ecs/world.ts:77](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L77)
+Defined in: [ecs/world.ts:126](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L126)
 
 Registers a callback to be invoked when entities change.
 
@@ -174,7 +174,7 @@ The callback to register.
 
 > **onSystemsChanged**(`callback`): `void`
 
-Defined in: [ecs/world.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L69)
+Defined in: [ecs/world.ts:118](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L118)
 
 Registers a callback to be invoked when systems change.
 
@@ -192,11 +192,85 @@ The callback to register.
 
 ***
 
+### queryEntities()
+
+> **queryEntities**(`componentSymbols`): `Set`\<[`Entity`](Entity.md)\>
+
+Defined in: [ecs/world.ts:69](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L69)
+
+Gets all entities in the world that match the given query.
+
+#### Parameters
+
+##### componentSymbols
+
+[`Query`](../type-aliases/Query.md)
+
+#### Returns
+
+`Set`\<[`Entity`](Entity.md)\>
+
+An array of all entities.
+
+***
+
+### queryEntity()
+
+> **queryEntity**(`query`): `null` \| [`Entity`](Entity.md)
+
+Defined in: [ecs/world.ts:86](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L86)
+
+Gets the first entity that matches the given query.
+
+#### Parameters
+
+##### query
+
+[`Query`](../type-aliases/Query.md)
+
+The query to match against the entities.
+
+#### Returns
+
+`null` \| [`Entity`](Entity.md)
+
+The first matching entity, or null if no entity matches.
+
+***
+
+### queryEntityRequired()
+
+> **queryEntityRequired**(`query`): [`Entity`](Entity.md)
+
+Defined in: [ecs/world.ts:102](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L102)
+
+Gets the first entity that matches the given query, or throws an error if no entity matches.
+
+#### Parameters
+
+##### query
+
+[`Query`](../type-aliases/Query.md)
+
+The query to match against the entities.
+
+#### Returns
+
+[`Entity`](Entity.md)
+
+The first matching entity.
+
+#### Throws
+
+An error if no entity matches the query.
+
+***
+
 ### raiseOnEntitiesChangedEvent()
 
 > **raiseOnEntitiesChangedEvent**(): `void`
 
-Defined in: [ecs/world.ts:113](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L113)
+Defined in: [ecs/world.ts:162](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L162)
 
 Raises the entities changed event.
 
@@ -210,7 +284,7 @@ Raises the entities changed event.
 
 > **raiseOnSystemsChangedEvent**(): `void`
 
-Defined in: [ecs/world.ts:104](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L104)
+Defined in: [ecs/world.ts:153](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L153)
 
 Raises the systems changed event.
 
@@ -224,7 +298,7 @@ Raises the systems changed event.
 
 > **removeEntity**(`entity`): `World`
 
-Defined in: [ecs/world.ts:228](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L228)
+Defined in: [ecs/world.ts:274](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L274)
 
 Removes an entity from the world.
 
@@ -248,7 +322,7 @@ The world instance.
 
 > **removeOnEntitiesChangedCallback**(`callback`): `void`
 
-Defined in: [ecs/world.ts:95](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L95)
+Defined in: [ecs/world.ts:144](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L144)
 
 Removes a callback for entities changed events.
 
@@ -270,7 +344,7 @@ The callback to remove.
 
 > **removeOnSystemsChangedCallback**(`callback`): `void`
 
-Defined in: [ecs/world.ts:85](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L85)
+Defined in: [ecs/world.ts:134](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L134)
 
 Removes a callback for systems changed events.
 
@@ -292,7 +366,7 @@ The callback to remove.
 
 > **removeSystem**(`system`): `World`
 
-Defined in: [ecs/world.ts:156](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L156)
+Defined in: [ecs/world.ts:202](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L202)
 
 Removes a system from the world.
 
@@ -316,7 +390,7 @@ The world instance.
 
 > **stop**(): `void`
 
-Defined in: [ecs/world.ts:243](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L243)
+Defined in: [ecs/world.ts:289](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L289)
 
 Stops all systems in the world.
 
@@ -334,7 +408,7 @@ Stops all systems in the world.
 
 > **update**(): `void`
 
-Defined in: [ecs/world.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L45)
+Defined in: [ecs/world.ts:45](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L45)
 
 Updates the object with the given time.
 
@@ -352,7 +426,7 @@ Updates the object with the given time.
 
 > **updateSystemEntities**(`entity`): `void`
 
-Defined in: [ecs/world.ts:182](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/ecs/world.ts#L182)
+Defined in: [ecs/world.ts:228](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/ecs/world.ts#L228)
 
 Updates the entities in the systems based on the components of the given entity.
 

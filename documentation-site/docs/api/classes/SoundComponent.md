@@ -1,6 +1,6 @@
 # Class: SoundComponent
 
-Defined in: [audio/components/sound-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L7)
+Defined in: [audio/components/sound-component.ts:7](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L7)
 
 Component to manage sounds in the game.
 
@@ -14,7 +14,7 @@ Component to manage sounds in the game.
 
 > **new SoundComponent**(`options`, `playSound`): `SoundComponent`
 
-Defined in: [audio/components/sound-component.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L27)
+Defined in: [audio/components/sound-component.ts:27](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L27)
 
 Creates an instance of SoundComponent.
 
@@ -55,7 +55,7 @@ const soundComponent = new SoundComponent({
 
 > **name**: `symbol`
 
-Defined in: [audio/components/sound-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L8)
+Defined in: [audio/components/sound-component.ts:8](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L8)
 
 The unique name of the component.
 
@@ -69,7 +69,7 @@ The unique name of the component.
 
 > **playSound**: `boolean`
 
-Defined in: [audio/components/sound-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L10)
+Defined in: [audio/components/sound-component.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L10)
 
 ***
 
@@ -77,7 +77,7 @@ Defined in: [audio/components/sound-component.ts:10](https://github.com/Forge-Ga
 
 > **sound**: `Howl`
 
-Defined in: [audio/components/sound-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L9)
+Defined in: [audio/components/sound-component.ts:9](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L9)
 
 ***
 
@@ -85,4 +85,4 @@ Defined in: [audio/components/sound-component.ts:9](https://github.com/Forge-Gam
 
 > `readonly` `static` **symbol**: *typeof* [`symbol`](#symbol)
 
-Defined in: [audio/components/sound-component.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/audio/components/sound-component.ts#L12)
+Defined in: [audio/components/sound-component.ts:12](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/audio/components/sound-component.ts#L12)

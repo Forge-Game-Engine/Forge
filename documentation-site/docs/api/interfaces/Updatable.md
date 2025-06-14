@@ -1,6 +1,6 @@
 # Interface: Updatable
 
-Defined in: [game/interfaces/Updatable.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/game/interfaces/Updatable.ts#L6)
+Defined in: [game/interfaces/Updatable.ts:6](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/game/interfaces/Updatable.ts#L6)
 
 Represents an object that can be updated over time.
 
@@ -10,7 +10,7 @@ Represents an object that can be updated over time.
 
 > **update**: (`time`) => `void`
 
-Defined in: [game/interfaces/Updatable.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/game/interfaces/Updatable.ts#L11)
+Defined in: [game/interfaces/Updatable.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/game/interfaces/Updatable.ts#L11)
 
 Updates the object with the given time.
 

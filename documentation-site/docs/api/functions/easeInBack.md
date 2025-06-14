@@ -2,7 +2,7 @@
 
 > **easeInBack**(`t`): `number`
 
-Defined in: [animations/easing-functions/ease-in-back.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/animations/easing-functions/ease-in-back.ts#L11)
+Defined in: [animations/easing-functions/ease-in-back.ts:11](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/animations/easing-functions/ease-in-back.ts#L11)
 
 Easing function for "easeInBack".
 

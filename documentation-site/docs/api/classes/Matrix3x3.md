@@ -1,6 +1,6 @@
 # Class: Matrix3x3
 
-Defined in: [math/matrices/matrix3x3.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L10)
+Defined in: [math/matrices/matrix3x3.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L10)
 
 Represents a 3x3 transformation matrix used for 2D graphics operations.
 The matrix is stored in column-major order as a flat array of 9 numbers.
@@ -16,7 +16,7 @@ Matrix layout:
 
 > **new Matrix3x3**(`matrix`): `Matrix3x3`
 
-Defined in: [math/matrices/matrix3x3.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L18)
+Defined in: [math/matrices/matrix3x3.ts:18](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L18)
 
 Creates a new 3x3 matrix from the given array.
 
@@ -40,7 +40,7 @@ An array of 9 numbers representing the matrix in column-major order
 
 > **get** **data**(): `number`[]
 
-Defined in: [math/matrices/matrix3x3.ts:83](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L83)
+Defined in: [math/matrices/matrix3x3.ts:83](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L83)
 
 ##### Returns
 
@@ -54,7 +54,7 @@ Defined in: [math/matrices/matrix3x3.ts:83](https://github.com/Forge-Game-Engine
 
 > **get** **matrix**(): `number`[]
 
-Defined in: [math/matrices/matrix3x3.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L30)
+Defined in: [math/matrices/matrix3x3.ts:30](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L30)
 
 Gets the underlying matrix array.
 
@@ -70,7 +70,7 @@ The matrix data as a flat array in column-major order
 
 > **rotate**(`radians`): `Matrix3x3`
 
-Defined in: [math/matrices/matrix3x3.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L52)
+Defined in: [math/matrices/matrix3x3.ts:52](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L52)
 
 Applies a rotation transformation to the matrix.
 
@@ -94,7 +94,7 @@ This matrix for chaining
 
 > **scale**(`x`, `y`): `Matrix3x3`
 
-Defined in: [math/matrices/matrix3x3.ts:74](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L74)
+Defined in: [math/matrices/matrix3x3.ts:74](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L74)
 
 Applies a scale transformation to the matrix.
 
@@ -124,7 +124,7 @@ This matrix for chaining
 
 > **translate**(`x`, `y`): `Matrix3x3`
 
-Defined in: [math/matrices/matrix3x3.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/math/matrices/matrix3x3.ts#L40)
+Defined in: [math/matrices/matrix3x3.ts:40](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/math/matrices/matrix3x3.ts#L40)
 
 Applies a translation transformation to the matrix.
 

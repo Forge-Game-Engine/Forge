@@ -1,6 +1,6 @@
 # Class: EventDispatcher\<TData\>
 
-Defined in: [events/event-dispatcher.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/events/event-dispatcher.ts#L10)
+Defined in: [events/event-dispatcher.ts:10](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/events/event-dispatcher.ts#L10)
 
 The `EventDispatcher` class is responsible for managing event listeners
 and dispatching events to those listeners. It allows adding, removing,
@@ -20,7 +20,7 @@ The type of data associated with the events.
 
 > **new EventDispatcher**\<`TData`\>(): `EventDispatcher`\<`TData`\>
 
-Defined in: [events/event-dispatcher.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/events/event-dispatcher.ts#L19)
+Defined in: [events/event-dispatcher.ts:19](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/events/event-dispatcher.ts#L19)
 
 Creates a new instance of the `EventDispatcher` class.
 
@@ -34,7 +34,7 @@ Creates a new instance of the `EventDispatcher` class.
 
 > **addEventListener**(`type`, `event`): `void`
 
-Defined in: [events/event-dispatcher.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/events/event-dispatcher.ts#L29)
+Defined in: [events/event-dispatcher.ts:29](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/events/event-dispatcher.ts#L29)
 
 Adds an event listener for the specified event type.
 
@@ -62,7 +62,7 @@ The event listener to add.
 
 > **dispatchEvent**(`type`, `data`): `void`
 
-Defined in: [events/event-dispatcher.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/events/event-dispatcher.ts#L59)
+Defined in: [events/event-dispatcher.ts:59](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/events/event-dispatcher.ts#L59)
 
 Dispatches an event of the specified type to all registered listeners.
 
@@ -90,7 +90,7 @@ The data associated with the event.
 
 > **removeEventListener**(`type`, `event`): `void`
 
-Defined in: [events/event-dispatcher.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/5b90130e2e0c679482e3bd31c32cbea9b4cffce1/src/events/event-dispatcher.ts#L46)
+Defined in: [events/event-dispatcher.ts:46](https://github.com/Forge-Game-Engine/Forge/blob/7b95769650b59c5ba12aa490e41717344ca6bf1e/src/events/event-dispatcher.ts#L46)
 
 Removes an event listener for the specified event type.
 
