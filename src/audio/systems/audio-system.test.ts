@@ -5,7 +5,7 @@ import { SoundComponent } from '../components';
 import { Howl } from 'howler';
 
 describe('AudioSystem', () => {
-  const world = new World();
+  const world = new World('test-world');
 
   it('should play sound if playSound is true', () => {
     const mockPlay = vi.fn();

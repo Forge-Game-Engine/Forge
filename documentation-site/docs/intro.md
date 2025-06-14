@@ -35,9 +35,9 @@ npm i @forge-game-engine/forge@latest
 You will need to initialize the game in the entry point of your app.
 This will differ depending on the toolchain you use. For example, if you use [vite](https://vite.dev/guide/) with the `vanilla-ts` template. You will have an `index.html` file in the root of your app and a `src/main.ts` file. This file will be the "entry point" of your app.
 
-Once you have identified where to initialize your game, you can simply create a new instance of the `Game` class and invoke the `run` method.
+Once you have identified where to initialize your game, you can simply create a new instance of the `Game` class and invoke the `run` method.`
 
-```ts title="src/main.ts"
+```ts
 import { Game } from '@forge-game-engine/forge';
 
 const game = new Game();
@@ -45,161 +45,128 @@ const game = new Game();
 game.run();
 ```
 
-Although this won't do anything just yet, next we need to add a scene.
+Although this won't do anything just yet, we need to add a world to our game.
 
-### Creating a scene
+### Creating a world
 
-Create a new file adjacent to you `main.ts` file, named `create-demo-scene.ts`.
+```ts
+import {
+  Game,
+  // diff-add
+  createWorld,
+} from '@forge-game-engine/forge';
 
-In this file, you can create a scene.
-
-```ts title="src/create-demo-scene.ts"
-import { createScene, type Game } from '@forge-game-engine/forge';
-
-export function createDemoScene(game: Game) {
-  const { world, scene, layerService, cameraEntity, inputsEntity } =
-    createScene('demo', game);
-
-  return scene;
-}
-```
-
-Then you can register your scene in your game:
-
-```ts title="src/main.ts"
-import { Game } from '@forge-game-engine/forge';
+const game = new Game();
 // diff-add
-import { createDemoScene } from './create-demo-scene.ts';
-
-const container = createContainer('game');
-const game = new Game(container);
-
-// diff-add
-game.registerScene(createDemoScene(game));
+createWorld('world', game);
 
 game.run();
 ```
 
 ### Render a sprite in your scene
 
-#### Create a render layer
-
-Before we can render a sprite, we need to create a render layer. By using multiple render layers, you can control the draw order of groups of renderables.
-For now we'll just add a single layer.
-
-```ts title="src/create-demo-scene.ts"
-import { 
-  createScene, 
-  type Game,
-  // diff-add
-  addForgeRenderLayers
-} from '@forge-game-engine/forge';
-
-export function createDemoScene(game: Game) {
-  const { world, scene, layerService, cameraEntity, inputsEntity } =
-    createScene('demo', game);
-
-  // diff-add-start
-  const [foregroundRenderLayer] = addForgeRenderLayers(
-    ['foreground'],
-    game.container,
-    layerService,
-    world,
-    cameraEntity,
-  );
-  // diff-add-end
-
-  return scene;
-}
-```
-
 #### Load an image
 
-We need to fetch an image for our sprite. Any [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement) will do. 
+We need to fetch an image for our sprite. Any [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement) will do.
 The easiest way to load and cache images is to use the [ImageCache](./api/classes/ImageCache.md).
 
-```ts title="src/create-demo-scene.ts"
-import { 
-  createScene, 
-  type Game,
-  addForgeRenderLayers, 
+```ts
+import {
+  Game,
+  createWorld,
   // diff-add
-  ImageCache
+  ImageCache,
 } from '@forge-game-engine/forge';
 
-// diff-remove
-export function createDemoScene(game: Game) {
-// diff-add
-export async function createDemoScene(game: Game) {
-  const { world, scene, layerService, cameraEntity, inputsEntity } =
-    createScene('demo', game);
+const game = new Game();
+createWorld('world', game);
 
-  const [foregroundRenderLayer] = addForgeRenderLayers(
-    ['foreground'],
-    game.container,
-    layerService,
-    world,
-    cameraEntity,
-  );
+// diff-add-start
+const imageCache = new ImageCache();
+const image = await imageCache.getOrLoad('sprite.png');
+// diff-add-end
 
-  // diff-add-start
-  const imageCache = new ImageCache();
-
-  const image = await imageCache.getOrLoad('sprite.png'); 
-  // diff-add-end
-
-  return scene;
-}
+game.run();
 ```
 
 #### Add a sprite to the world
 
-```ts title="src/create-demo-scene.ts"
-import { 
-  createScene, 
-  type Game,
-  addForgeRenderLayers, 
+We then need to create a sprite.
+
+```ts
+import {
+  Game,
+  createWorld,
   ImageCache,
   // diff-add-start
   createShaderStore,
-  PositionComponent,
-  SpriteComponent,
-  createImageSprite
+  createImageSprite,
   // diff-add-end
 } from '@forge-game-engine/forge';
 
-export async function createDemoScene(game: Game) {
-  const { world, scene, layerService, cameraEntity, inputsEntity } =
-    createScene('demo', game);
+const game = new Game();
 
-  const [foregroundRenderLayer] = addForgeRenderLayers(
-    ['foreground'],
-    game.container,
-    layerService,
-    world,
-    cameraEntity,
-  );
+// diff-remove
+createWorld('world', game);
+// diff-add
+const { renderLayers } = createWorld('world', game);
 
-  const imageCache = new ImageCache();
+const imageCache = new ImageCache();
+const image = await imageCache.getOrLoad('sprite.png');
 
-  const image = await imageCache.getOrLoad('sprite.png');
+// diff-add-start
+const shaderStore = createShaderStore();
 
-  // diff-add-start
-  const shaderStore = createShaderStore();
+const sprite = createImageSprite(
+  image,
+  foregroundRenderLayer.layer,
+  shaderStore,
+);
+// diff-add-end
 
-  const sprite = createImageSprite(
-    image,
-    foregroundRenderLayer.layer,
-    shaderStore,
-  );
-
-  world.buildAndAddEntity('sprite', [
-    new PositionComponent(),
-    new SpriteComponent(sprite)
-  ]);
-  // diff-add-end
-
-  return scene;
-}
+game.run();
 ```
-Congratulations, you should now see something rendered to your screen! 🎉 
+
+Finally we need to add an entity to our world
+
+```ts
+import {
+  Game,
+  createWorld,
+  ImageCache,
+  createShaderStore,
+  createImageSprite,
+  // diff-add-start
+  PositionComponent,
+  SpriteComponent,
+  // diff-add-end
+} from '@forge-game-engine/forge';
+
+const game = new Game();
+// diff-remove
+const { renderLayers } = createWorld('world', game);
+// diff-add
+const { renderLayers, world } = createWorld('world', game);
+
+const imageCache = new ImageCache();
+const image = await imageCache.getOrLoad('sprite.png');
+
+const shaderStore = createShaderStore();
+
+const sprite = createImageSprite(
+  image,
+  foregroundRenderLayer.layer,
+  shaderStore,
+);
+
+// diff-add-start
+world.buildAndAddEntity('sprite', [
+  new PositionComponent(),
+  new SpriteComponent(sprite),
+]);
+// diff-add-end
+
+game.run();
+```
+
+Congratulations, you should now see something rendered to your screen! 🎉

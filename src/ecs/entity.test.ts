@@ -13,7 +13,7 @@ class MockComponent implements Component {
   public static readonly symbol = Symbol('mock-component');
 }
 
-const world = new World();
+const world = new World('test-world');
 
 test('creating an entity', () => {
   const entity = new Entity('player', world, []);

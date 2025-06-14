@@ -2,7 +2,7 @@ import type { Stoppable } from '../common';
 import { Vector2 } from '../math';
 import { RenderLayer } from './render-layers/render-layer';
 import { type CLEAR_STRATEGY_KEYS } from './enums';
-import type { Game } from '../game';
+import type { Game } from '../ecs';
 
 /**
  * Options for creating a new render layer.

@@ -13,7 +13,7 @@ describe('InputSystem', () => {
   let world: World;
 
   beforeEach(() => {
-    world = new World();
+    world = new World('test-world');
     gameContainer = document.createElement('div');
     cameraEntity = new Entity('camera', world, [
       new PositionComponent(0, 0),

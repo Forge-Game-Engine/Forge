@@ -1,9 +1,7 @@
 import {
-  addForgeRenderLayers,
   createImageSprite,
-  createScene,
   createShaderStore,
-  DEFAULT_LAYERS,
+  createWorld,
   Game,
   ImageCache,
   PositionComponent,
@@ -15,25 +13,11 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const { world, scene, layerService, cameraEntity } = createScene('game', game);
-
-game.registerScene(scene);
-
-const [foregroundRenderLayer] = addForgeRenderLayers(
-  [DEFAULT_LAYERS.foreground],
-  game.container,
-  layerService,
-  world,
-  cameraEntity,
-);
+const { world, renderLayers } = createWorld('world', game);
 
 const image = await imageCache.getOrLoad('ship.png');
 
-const sprite = createImageSprite(
-  image,
-  foregroundRenderLayer.layer,
-  shaderStore,
-);
+const sprite = createImageSprite(image, renderLayers[0], shaderStore);
 
 world.buildAndAddEntity('sprite', [
   new PositionComponent(),

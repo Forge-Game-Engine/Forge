@@ -1,17 +1,7 @@
 import { Entity, type World } from '../../ecs';
 import type { LayerService } from '../layer-service';
-import { ForgeRenderLayer } from '../render-layers';
+import type { ForgeRenderLayer } from '../render-layers';
 import { addForgeRenderLayer } from './add-forge-render-layer';
-
-/**
- * Represents the details of a Forge render layer, including the layer itself and its associated canvas.
- * @property layer - The Forge render layer instance.
- * @property canvas - The HTML canvas element associated with the render layer.
- */
-type LayerDetail = {
-  layer: ForgeRenderLayer;
-  canvas: HTMLCanvasElement;
-};
 
 /**
  * Adds multiple Forge render layers to the game container and registers them with the layer service.
@@ -30,10 +20,10 @@ export function addForgeRenderLayers(
   world: World,
   cameraEntity: Entity,
 ) {
-  const layerDetails = new Array<LayerDetail>();
+  const renderLayers = new Array<ForgeRenderLayer>();
 
   for (const layerName of layerNames) {
-    const [layer, canvas] = addForgeRenderLayer(
+    const renderLayer = addForgeRenderLayer(
       layerName,
       gameContainer,
       layerService,
@@ -41,8 +31,8 @@ export function addForgeRenderLayers(
       cameraEntity,
     );
 
-    layerDetails.push({ layer, canvas });
+    renderLayers.push(renderLayer);
   }
 
-  return layerDetails;
+  return renderLayers;
 }

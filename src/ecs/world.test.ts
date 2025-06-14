@@ -28,7 +28,7 @@ describe('World', () => {
   const mock2Component = createMockComponent(Symbol('mock2'));
 
   beforeEach(() => {
-    world = new World();
+    world = new World('test-world');
   });
 
   it('should build and add an entity', () => {
@@ -46,7 +46,7 @@ describe('World', () => {
     const entity2 = world.buildAndAddEntity('entity2', [mock1Component]);
     entity2.enabled = false;
 
-    world.update();
+    world.update(16);
 
     // Only enabled entities should be passed
     expect(runMock).toHaveBeenCalledWith(entity1);
@@ -61,7 +61,7 @@ describe('World', () => {
 
     world.addSystem(system);
 
-    world.update();
+    world.update(16);
 
     // Only enabled entities should be passed
     expect(runMock).toHaveBeenCalledWith(entity1);
