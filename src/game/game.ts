@@ -1,10 +1,10 @@
-import { type Stoppable, Time } from '../common';
+import { type Stoppable } from '../common';
+import type { World } from '../ecs';
 import { ForgeEvent } from '../events';
 import { createContainer } from '../utilities';
-import { Scene } from './scene';
 
 /**
- * A game that manages scenes and handles the game loop.
+ * A game that manages worlds and handles the game loop.
  */
 export class Game implements Stoppable {
   /**
@@ -14,27 +14,21 @@ export class Game implements Stoppable {
 
   /**
    * The container element for the game.
-   * This is where the game will render its scenes.
+   * This is where the game will render its worlds.
    */
   public readonly container: HTMLElement;
 
   /**
-   * The current time instance.
+   * The set of worlds managed by the game.
    */
-  private readonly _time: Time;
-
-  /**
-   * The set of scenes managed by the game.
-   */
-  private readonly _scenes: Set<Scene>;
+  private readonly _worlds: Set<World>;
 
   /**
    * Creates a new Game instance.
    * @param container - The HTML element that will contain the game.
    */
   constructor(container?: HTMLElement | string) {
-    this._time = new Time();
-    this._scenes = new Set<Scene>();
+    this._worlds = new Set<World>();
     this.container = this._determineContainer(container);
 
     this.onWindowResize = new ForgeEvent('window-resize');
@@ -57,64 +51,55 @@ export class Game implements Stoppable {
   }
 
   /**
-   * Gets the current time instance.
-   */
-  get time(): Time {
-    return this._time;
-  }
-
-  /**
    * Starts the game loop.
    * @param time - The initial time value.
    */
   public run(time = 0) {
-    this._time.update(time);
-
-    for (const scene of this._scenes) {
-      scene.update(this._time);
+    for (const world of this._worlds) {
+      world.update(time);
     }
 
     requestAnimationFrame((t) => this.run(t));
   }
 
   /**
-   * Registers a scene to the game.
-   * @param scene - The scene to register.
+   * Registers a world to the game.
+   * @param world - The world to register.
    */
-  public registerScene(scene: Scene) {
-    this._scenes.add(scene);
+  public registerWorld(world: World) {
+    this._worlds.add(world);
   }
 
   /**
-   * Deregisters a scene from the game.
-   * @param scene - The scene to deregister.
+   * Deregisters a world from the game.
+   * @param world - The world to deregister.
    */
-  public deregisterScene(scene: Scene) {
-    scene.stop();
-    this._scenes.delete(scene);
+  public deregisterWorld(world: World) {
+    world.stop();
+    this._worlds.delete(world);
   }
 
   /**
-   * Swaps the current scene with a new one.
-   * This deregisters all existing scenes and registers the new scene.
-   * @param scene - The new scene to switch to.
+   * Swaps the current world with a new one.
+   * This deregisters all existing worlds and registers the new world.
+   * @param world - The new world to switch to.
    */
-  public swapToScene(scene: Scene) {
-    for (const existingScene of this._scenes) {
-      this.deregisterScene(existingScene);
+  public swapToWorld(world: World) {
+    for (const existingWorld of this._worlds) {
+      this.deregisterWorld(existingWorld);
     }
 
-    this.registerScene(scene);
+    this.registerWorld(world);
   }
 
   /**
-   * Stops the game and all registered scenes.
+   * Stops the game and all registered worlds.
    */
   public stop() {
     window.removeEventListener('resize', this.onWindowResize.raise);
 
-    for (const scene of this._scenes) {
-      scene.stop();
+    for (const world of this._worlds) {
+      world.stop();
     }
   }
 }

@@ -1,4 +1,4 @@
-import type { Stoppable } from '../common';
+import { type Stoppable, Time } from '../common';
 import type { Updatable } from '../game';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';
@@ -9,10 +9,23 @@ import type { Component, Query, System } from './types';
  */
 export class World implements Updatable, Stoppable {
   /**
+   * The time instance for the world.
+   */
+  public readonly time = new Time();
+
+  /**
+   * The name of the world.
+   */
+  public readonly name: string;
+
+  /**
    * A map of system names to the entities they operate on.
    */
   private readonly _systemEntities = new Map<string, Set<Entity>>();
 
+  /**
+   * A temporary array to hold enabled entities for system updates.
+   */
   private readonly _enabledEntities = new Array<Entity>();
 
   /**
@@ -40,9 +53,19 @@ export class World implements Updatable, Stoppable {
   private readonly _entities = new Set<Entity>();
 
   /**
+   * Creates a new World instance.
+   * @param name - The name of the world.
+   */
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  /**
    * Updates all systems in the world.
    */
-  public update() {
+  public update(deltaTime: number) {
+    this.time.update(deltaTime);
+
     for (const system of this._systems) {
       const entities = this._systemEntities.get(system.name);
 

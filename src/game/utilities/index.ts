@@ -1,1 +1,1 @@
-export * from './create-scene';
+export * from './create-world';

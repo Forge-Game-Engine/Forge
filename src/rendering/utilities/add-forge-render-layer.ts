@@ -42,5 +42,5 @@ export function addForgeRenderLayer(
 
   world.addSystem(batchingSystem);
 
-  return [layer, canvas] as const;
+  return layer;
 }
