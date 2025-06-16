@@ -31,7 +31,7 @@
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules=false-esm",
-    "check-types": "tsc --noEmit --project ci.tsconfig.json",
+    "check-types": "tsc --noEmit --project tsconfig.ci.json",
     "cspell": "cspell \"**\"",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
