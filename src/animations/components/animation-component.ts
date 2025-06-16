@@ -76,6 +76,7 @@ export type LoopMode = 'none' | 'loop' | 'pingpong';
  */
 export class AnimationComponent implements Component {
   public name: symbol;
+
   private readonly _animations: Required<AnimatedProperty>[];
 
   public static readonly symbol = Symbol('Animation');

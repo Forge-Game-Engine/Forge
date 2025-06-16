@@ -1,9 +1,8 @@
 import { PositionComponent } from '../../common';
 import { Entity, System } from '../../ecs';
-import { RenderableBatchComponent } from '../components';
+import { CameraComponent, RenderableBatchComponent } from '../components';
 import { Matrix3x3, Vector2 } from '../../math';
 import { createProjectionMatrix } from '../shaders';
-import { CameraComponent } from '../components';
 import type { ForgeRenderLayer } from '../render-layers';
 
 const FLOATS_PER_MATRIX = 9;
@@ -39,12 +38,6 @@ export class RenderSystem extends System {
     this._setupGLState();
   }
 
-  private _setupGLState(): void {
-    const gl = this._layer.context;
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  }
-
   public override beforeAll(entities: Entity[]) {
     this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
 
@@ -73,7 +66,7 @@ export class RenderSystem extends System {
       const instanceData = new Float32Array(batch.length * FLOATS_PER_MATRIX);
 
       for (let i = 0; i < batch.length; i++) {
-        const { position, rotation, scale, height, width, pivot } = batch[i]!;
+        const { position, rotation, scale, height, width, pivot } = batch[i];
 
         const mat = this._getSpriteMatrix(
           position,
@@ -129,6 +122,12 @@ export class RenderSystem extends System {
    */
   public override stop(): void {
     this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
+  }
+
+  private _setupGLState(): void {
+    const gl = this._layer.context;
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   /**

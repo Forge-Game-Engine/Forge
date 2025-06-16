@@ -1,34 +1,31 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-plugin-prettier/recommended';
 import sortExports from 'eslint-plugin-sort-exports';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
 import sonarjs from 'eslint-plugin-sonarjs';
+import tseslint from 'typescript-eslint';
+import eslint from '@eslint/js';
+import pluginJest from 'eslint-plugin-jest';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
-
-export default [
-  ...compat.extends(
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ),
-  prettier,
+export default tseslint.config(
+  {
+    ignores: ['**/*.config.js'],
+  },
+  eslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   sonarjs.configs.recommended,
+  prettier,
   {
     plugins: {
-      '@typescript-eslint': typescriptEslint,
       'sort-exports': sortExports,
     },
 
@@ -77,7 +74,31 @@ export default [
         },
       ],
 
+      '@typescript-eslint/prefer-readonly': 'error',
+
+      '@typescript-eslint/member-ordering': [
+        'error',
+        {
+          default: [
+            'public-instance-field',
+            'protected-instance-field',
+            'private-instance-field',
+            'public-static-field',
+            'protected-static-field',
+            'private-static-field',
+            'constructor',
+            'public-static-method',
+            'protected-static-method',
+            'private-static-method',
+            'public-instance-method',
+            'protected-instance-method',
+            'private-instance-method',
+          ],
+        },
+      ],
+
       curly: 'error',
+      'max-params': ['error', 7],
       'require-await': 'error',
 
       'no-else-return': [
@@ -103,4 +124,22 @@ export default [
       'no-await-in-loop': 'error',
     },
   },
-];
+
+  {
+    // update this to match your test files
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    plugins: { jest: pluginJest },
+    languageOptions: {
+      globals: pluginJest.environments.globals.globals,
+    },
+    rules: {
+      'jest/no-disabled-tests': 'warn',
+      'jest/no-focused-tests': 'error',
+      'jest/no-identical-title': 'error',
+      'jest/prefer-to-have-length': 'warn',
+      'jest/valid-expect': 'error',
+      '@typescript-eslint/unbound-method': 'off',
+      'jest/unbound-method': 'off',
+    },
+  },
+);

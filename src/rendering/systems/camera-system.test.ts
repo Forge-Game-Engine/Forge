@@ -59,43 +59,43 @@ describe('CameraSystem', () => {
     } as unknown as Entity;
   });
 
-  it('should update the camera zoom based on scroll input', async () => {
+  it('should update the camera zoom based on scroll input', () => {
     inputsComponent.scrollDelta = 1;
 
-    await cameraSystem.run(entity);
+    cameraSystem.run(entity);
 
     expect(cameraComponent.zoom).toBe(0.9);
   });
 
-  it('should clamp the camera zoom to the min and max zoom levels', async () => {
+  it('should clamp the camera zoom to the min and max zoom levels', () => {
     inputsComponent.scrollDelta = 10;
 
-    await cameraSystem.run(entity);
+    cameraSystem.run(entity);
 
     expect(cameraComponent.zoom).toBe(cameraComponent.minZoom);
 
     inputsComponent.scrollDelta = -20;
 
-    await cameraSystem.run(entity);
+    cameraSystem.run(entity);
 
     expect(cameraComponent.zoom).toBe(cameraComponent.maxZoom);
   });
 
-  it('should update the camera position based on key inputs', async () => {
+  it('should update the camera position based on key inputs', () => {
     (inputsComponent.keyPressed as Mock).mockImplementation((key) => {
       return key === keyCodes.w || key === keyCodes.d;
     });
 
-    await cameraSystem.run(entity);
+    cameraSystem.run(entity);
 
     expect(positionComponent.y).toBeGreaterThan(0);
     expect(positionComponent.x).toBeGreaterThan(0);
   });
 
-  it('should not update the camera if it is static', async () => {
+  it('should not update the camera if it is static', () => {
     cameraComponent.isStatic = true;
 
-    await cameraSystem.run(entity);
+    cameraSystem.run(entity);
 
     expect(cameraComponent.zoom).toBe(1);
     expect(positionComponent.x).toBe(0);

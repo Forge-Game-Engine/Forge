@@ -50,7 +50,7 @@ export const keyCodes = {
   bracketLeft: 'BracketLeft', // [
   bracketRight: 'BracketRight', // ]
   backslash: 'Backslash', // \
-  // eslint-disable-next-line sonarjs/no-commented-code
+
   semicolon: 'Semicolon', // ;
   quote: 'Quote', // '
   comma: 'Comma', // ,

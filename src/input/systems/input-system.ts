@@ -10,20 +10,20 @@ import { InputsComponent } from '../components';
  */
 export class InputSystem extends System {
   private _scrollDelta: number = 0;
-  private _keyPresses = new Set<string>();
+  private readonly _keyPresses = new Set<string>();
   private _keyUps = new Set<string>();
   private _keyDowns = new Set<string>();
-  private _mouseButtonPresses = new Set<number>();
+  private readonly _mouseButtonPresses = new Set<number>();
   private _mouseButtonDowns = new Set<number>();
   private _mouseButtonUps = new Set<number>();
-  private _localMouseCoordinates = new Vector2();
+  private readonly _localMouseCoordinates = new Vector2();
   private _worldMouseCoordinates = new Vector2();
 
-  private _gameContainer: HTMLElement;
-  private _screenWidth: number;
-  private _screenHeight: number;
-  private _cameraPosition: PositionComponent;
-  private _camera: CameraComponent;
+  private readonly _gameContainer: HTMLElement;
+  private readonly _screenWidth: number;
+  private readonly _screenHeight: number;
+  private readonly _cameraPosition: PositionComponent;
+  private readonly _camera: CameraComponent;
 
   /**
    * Constructs a new instance of the `InputSystem` class and sets up event listeners

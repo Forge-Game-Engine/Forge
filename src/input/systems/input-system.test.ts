@@ -65,7 +65,7 @@ describe('InputSystem', () => {
     expect(inputSystem['_mouseButtonUps'].has(0)).toBe(true);
   });
 
-  it('should handle mouse move events', async () => {
+  it('should handle mouse move events', () => {
     const inputsComponent = new InputsComponent();
     const entity = new Entity('inputs', world, [inputsComponent]);
 
@@ -75,7 +75,7 @@ describe('InputSystem', () => {
     });
     window.dispatchEvent(mouseMoveEvent);
 
-    await inputSystem.run(entity);
+    inputSystem.run(entity);
 
     expect(inputsComponent.localMouseCoordinates).toEqual(
       new Vector2(500, 500),
@@ -90,7 +90,7 @@ describe('InputSystem', () => {
     expect(inputSystem['_scrollDelta']).toBe(100);
   });
 
-  it('should clear inputs after run', async () => {
+  it('should clear inputs after run', () => {
     const inputsComponent = new InputsComponent();
 
     const entity = new Entity('inputs', world, [inputsComponent]);
@@ -98,12 +98,12 @@ describe('InputSystem', () => {
     const keyDownEvent = new KeyboardEvent('keydown', { code: 'KeyA' });
     document.dispatchEvent(keyDownEvent);
 
-    await inputSystem.run(entity);
+    inputSystem.run(entity);
 
     expect(inputsComponent.keyPresses.has('KeyA')).toBe(true);
     expect(inputsComponent.keyDowns.has('KeyA')).toBe(true);
 
-    await inputSystem.run(entity);
+    inputSystem.run(entity);
 
     expect(inputsComponent.keyPresses.has('KeyA')).toBe(true);
     expect(inputsComponent.keyDowns.has('KeyA')).toBe(false);
@@ -111,7 +111,7 @@ describe('InputSystem', () => {
     const keyUpEvent = new KeyboardEvent('keyup', { code: 'KeyA' });
     document.dispatchEvent(keyUpEvent);
 
-    await inputSystem.run(entity);
+    inputSystem.run(entity);
 
     expect(inputsComponent.keyUps.has('KeyA')).toBe(true);
     expect(inputsComponent.keyPresses.has('KeyA')).toBe(false);

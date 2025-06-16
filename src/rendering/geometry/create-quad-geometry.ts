@@ -21,7 +21,7 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
   ]);
 
   // Create position buffer
-  const positionBuffer = gl.createBuffer()!;
+  const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
@@ -31,7 +31,7 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
   });
 
   // Create texCoord buffer
-  const texCoordBuffer = gl.createBuffer()!;
+  const texCoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
 

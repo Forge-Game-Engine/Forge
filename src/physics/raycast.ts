@@ -94,94 +94,6 @@ export class Ray {
     this.end = end;
   }
 
-  /**
-   * Returns the y value on the ray at the specified x.
-   * @param x - The x value to check
-   * @returns The y value on the ray at the specified x
-   */
-  public yValueAt(x: number) {
-    //returns the y value on the ray at the specified x
-    //slope-intercept form:
-    //y = m * x + b
-    return this.offsetY + this.slope * x;
-  }
-
-  /**
-   * Returns the x value on the ray at the specified y.
-   * @param y - The y value to check
-   * @returns The x value on the ray at the specified y
-   */
-  public xValueAt(y: number) {
-    //returns the x value on the ray at the specified y
-    //slope-intercept form:
-    //x = (y - b) / m
-    return (y - this.offsetY) / this.slope;
-  }
-
-  /**
-   * Checks if a point is within the bounds of the ray.
-   * @param point - The point to check
-   * @returns True if the point is within the bounds of the ray, false otherwise
-   */
-  public pointInBounds(point: Vector2) {
-    //checks to see if the specified point is within
-    //the ray's bounding box (inclusive)
-    const minX = Math.min(this.start.x, this.end.x);
-    const maxX = Math.max(this.start.x, this.end.x);
-    const minY = Math.min(this.start.y, this.end.y);
-    const maxY = Math.max(this.start.y, this.end.y);
-
-    return (
-      point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
-    );
-  }
-
-  /**
-   * Calculates the normal vector of the ray at the specified reference point.
-   * @param referencePoint - The reference point to calculate the normal vector from
-   * @returns The normal vector of the ray at the specified reference point
-   */
-  public calculateNormal(referencePoint: Vector2) {
-    //    edge v
-    //     <---|--->
-    //  *
-    //  ^ reference point
-    const normal1 = this.difference.normalize().rotate(Math.PI / 2);
-    const normal2 = this.difference.normalize().rotate(Math.PI / -2);
-
-    if (
-      this.start.add(normal1).distanceTo(referencePoint) <
-      this.start.add(normal2).distanceTo(referencePoint)
-    ) {
-      return normal1;
-    }
-
-    return normal2;
-  }
-
-  get difference() {
-    return this.end.subtract(this.start);
-  }
-
-  get slope() {
-    return this.difference.y / this.difference.x;
-  }
-
-  get offsetY() {
-    //the y-offset at x = 0, in slope-intercept form:
-    //b = y - m * x
-    //offsetY = start.y - slope * start.x
-    return this.start.y - this.slope * this.start.x;
-  }
-
-  get isHorizontal() {
-    return compareNum(this.start.y, this.end.y);
-  }
-
-  get isVertical() {
-    return compareNum(this.start.x, this.end.x);
-  }
-
   public static intersect(rayA: Ray, rayB: Ray) {
     if (rayA.isVertical && rayB.isVertical) {
       return null;
@@ -297,6 +209,94 @@ export class Ray {
     }
 
     return rayCollisions;
+  }
+
+  /**
+   * Returns the y value on the ray at the specified x.
+   * @param x - The x value to check
+   * @returns The y value on the ray at the specified x
+   */
+  public yValueAt(x: number) {
+    //returns the y value on the ray at the specified x
+    //slope-intercept form:
+    //y = m * x + b
+    return this.offsetY + this.slope * x;
+  }
+
+  /**
+   * Returns the x value on the ray at the specified y.
+   * @param y - The y value to check
+   * @returns The x value on the ray at the specified y
+   */
+  public xValueAt(y: number) {
+    //returns the x value on the ray at the specified y
+    //slope-intercept form:
+    //x = (y - b) / m
+    return (y - this.offsetY) / this.slope;
+  }
+
+  /**
+   * Checks if a point is within the bounds of the ray.
+   * @param point - The point to check
+   * @returns True if the point is within the bounds of the ray, false otherwise
+   */
+  public pointInBounds(point: Vector2) {
+    //checks to see if the specified point is within
+    //the ray's bounding box (inclusive)
+    const minX = Math.min(this.start.x, this.end.x);
+    const maxX = Math.max(this.start.x, this.end.x);
+    const minY = Math.min(this.start.y, this.end.y);
+    const maxY = Math.max(this.start.y, this.end.y);
+
+    return (
+      point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+    );
+  }
+
+  /**
+   * Calculates the normal vector of the ray at the specified reference point.
+   * @param referencePoint - The reference point to calculate the normal vector from
+   * @returns The normal vector of the ray at the specified reference point
+   */
+  public calculateNormal(referencePoint: Vector2) {
+    //    edge v
+    //     <---|--->
+    //  *
+    //  ^ reference point
+    const normal1 = this.difference.normalize().rotate(Math.PI / 2);
+    const normal2 = this.difference.normalize().rotate(Math.PI / -2);
+
+    if (
+      this.start.add(normal1).distanceTo(referencePoint) <
+      this.start.add(normal2).distanceTo(referencePoint)
+    ) {
+      return normal1;
+    }
+
+    return normal2;
+  }
+
+  get difference() {
+    return this.end.subtract(this.start);
+  }
+
+  get slope() {
+    return this.difference.y / this.difference.x;
+  }
+
+  get offsetY() {
+    //the y-offset at x = 0, in slope-intercept form:
+    //b = y - m * x
+    //offsetY = start.y - slope * start.x
+    return this.start.y - this.slope * this.start.x;
+  }
+
+  get isHorizontal() {
+    return compareNum(this.start.y, this.end.y);
+  }
+
+  get isVertical() {
+    return compareNum(this.start.x, this.end.x);
   }
 }
 

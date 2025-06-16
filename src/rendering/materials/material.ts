@@ -61,6 +61,45 @@ export class Material {
     }
   }
 
+  /**
+   * Sets a uniform value (number, vec2, matrix, texture, etc.).
+   */
+  public setUniform(name: string, value: UniformValue): void {
+    this._uniformValues.set(name, value);
+  }
+
+  /**
+   * Sets a color uniform as a float32 array using the color's RGBA values.
+   */
+  public setColorUniform(name: string, color: Color): void {
+    this.setUniform(name, color.toFloat32Array());
+  }
+
+  /**
+   * Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
+   */
+  public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
+    this.setUniform(name, vector.toFloat32Array());
+  }
+
+  /**
+   * Called before binding the material to allow for custom behavior.
+   * Override this method in subclasses to implement custom logic.
+   *
+   * @param _gl - The WebGL2 rendering context passed into beforeBind.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected beforeBind(_gl: WebGL2RenderingContext): void {
+    // Override in subclasses for custom behavior before binding
+  }
+
+  /**
+   * Converts a vector3 to a float32 array.
+   */
+  protected convertToFloat32Array(vector: Vector3): Float32Array {
+    return new Float32Array([vector.x / 255, vector.y / 255, vector.z / 255]);
+  }
+
   private _bindTexture(
     gl: WebGL2RenderingContext,
     loc: WebGLUniformLocation,
@@ -127,45 +166,6 @@ export class Material {
     gl.uniform1iv(loc, value);
   }
 
-  /**
-   * Sets a uniform value (number, vec2, matrix, texture, etc.).
-   */
-  public setUniform(name: string, value: UniformValue): void {
-    this._uniformValues.set(name, value);
-  }
-
-  /**
-   * Sets a color uniform as a float32 array using the color's RGBA values.
-   */
-  public setColorUniform(name: string, color: Color): void {
-    this.setUniform(name, color.toFloat32Array());
-  }
-
-  /**
-   * Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
-   */
-  public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
-    this.setUniform(name, vector.toFloat32Array());
-  }
-
-  /**
-   * Called before binding the material to allow for custom behavior.
-   * Override this method in subclasses to implement custom logic.
-   *
-   * @param _gl - The WebGL2 rendering context passed into beforeBind.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected beforeBind(_gl: WebGL2RenderingContext): void {
-    // Override in subclasses for custom behavior before binding
-  }
-
-  /**
-   * Converts a vector3 to a float32 array.
-   */
-  protected convertToFloat32Array(vector: Vector3): Float32Array {
-    return new Float32Array([vector.x / 255, vector.y / 255, vector.z / 255]);
-  }
-
   private _createProgram(
     gl: WebGL2RenderingContext,
     vertexSrc: string,
@@ -214,7 +214,10 @@ export class Material {
   private _detectUniforms(gl: WebGL2RenderingContext): void {
     const program = this.program;
 
-    const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    const numUniforms = gl.getProgramParameter(
+      program,
+      gl.ACTIVE_UNIFORMS,
+    ) as number;
 
     for (let i = 0; i < numUniforms; i++) {
       const info = gl.getActiveUniform(program, i);

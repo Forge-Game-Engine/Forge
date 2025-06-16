@@ -6,11 +6,11 @@ import { World } from './world';
 class MockComponent implements Component {
   public name: symbol;
 
+  public static readonly symbol = Symbol('mock-component');
+
   constructor() {
     this.name = MockComponent.symbol;
   }
-
-  public static readonly symbol = Symbol('mock-component');
 }
 
 const world = new World('test-world');

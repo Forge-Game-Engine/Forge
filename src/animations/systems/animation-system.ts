@@ -6,7 +6,7 @@ import { type AnimatedProperty, AnimationComponent } from '../components';
  * System that manages and updates animations for entities.
  */
 export class AnimationSystem extends System {
-  private _time: Time;
+  private readonly _time: Time;
 
   /**
    * Creates an instance of AnimationSystem.
@@ -34,7 +34,7 @@ export class AnimationSystem extends System {
 
     // Iterate backwards so we can safely remove animations
     for (let i = animationComponent.animations.length - 1; i >= 0; i--) {
-      const animation = animationComponent.animations[i]!;
+      const animation = animationComponent.animations[i];
       const animationComplete = this._updateAnimation(animation, deltaTime);
 
       if (animationComplete) {

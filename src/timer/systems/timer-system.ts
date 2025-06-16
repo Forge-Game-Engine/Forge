@@ -23,7 +23,7 @@ export class TimerSystem extends System {
 
     // Iterate backwards to safely remove tasks as needed
     for (let i = timerComponent.tasks.length - 1; i >= 0; i--) {
-      const task = timerComponent.tasks[i]!;
+      const task = timerComponent.tasks[i];
       task.elapsed += deltaTime;
 
       if (task.elapsed >= task.delay) {

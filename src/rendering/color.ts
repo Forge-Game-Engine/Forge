@@ -23,30 +23,6 @@ export class Color {
     this._a = clamp(a, 0, 1);
   }
 
-  private static _hueToRGB(p: number, q: number, t: number): number {
-    if (t < 0) {
-      t += 1;
-    }
-
-    if (t > 1) {
-      t -= 1;
-    }
-
-    if (t < 1 / 6) {
-      return p + (q - p) * 6 * t;
-    }
-
-    if (t < 1 / 2) {
-      return q;
-    }
-
-    if (t < 2 / 3) {
-      return p + (q - p) * (2 / 3 - t) * 6;
-    }
-
-    return p;
-  }
-
   /**
    * Creates a `Color` instance using HSLA values.
    * @param h - The hue (0-360).
@@ -87,6 +63,30 @@ export class Color {
       Math.round(b * 255),
       a,
     );
+  }
+
+  private static _hueToRGB(p: number, q: number, t: number): number {
+    if (t < 0) {
+      t += 1;
+    }
+
+    if (t > 1) {
+      t -= 1;
+    }
+
+    if (t < 1 / 6) {
+      return p + (q - p) * 6 * t;
+    }
+
+    if (t < 1 / 2) {
+      return q;
+    }
+
+    if (t < 2 / 3) {
+      return p + (q - p) * (2 / 3 - t) * 6;
+    }
+
+    return p;
   }
 
   /**

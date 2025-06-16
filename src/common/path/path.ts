@@ -93,7 +93,7 @@ export class Path implements Iterable<Vector2> {
     return {
       next(): IteratorResult<Vector2> {
         if (index < path.length) {
-          return { value: path[index++]!, done: false };
+          return { value: path[index++], done: false };
         }
 
         return { done: true } as IteratorResult<Vector2>;

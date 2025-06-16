@@ -7,7 +7,7 @@ import { type AnimatedProperty, AnimationComponent } from '../components';
 describe('AnimationSystem', () => {
   const world = new World('test-world');
 
-  it('should update animations and call updateCallback', async () => {
+  it('should update animations and call updateCallback', () => {
     const mockUpdateCallback = vi.fn();
     const mockFinishedCallback = vi.fn();
     const time = new Time();
@@ -29,14 +29,14 @@ describe('AnimationSystem', () => {
     const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
-    await animationSystem.run(entity);
+    animationSystem.run(entity);
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
     expect(mockFinishedCallback).toHaveBeenCalled();
     expect(animationComponent.animations.length).toBe(0);
   });
 
-  it('should handle looping animations', async () => {
+  it('should handle looping animations', () => {
     const mockUpdateCallback = vi.fn();
     const time = new Time();
     time.update(1000);
@@ -57,14 +57,14 @@ describe('AnimationSystem', () => {
     const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
-    await animationSystem.run(entity);
+    animationSystem.run(entity);
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
     expect(animationComponent.animations.length).toBe(1);
     expect(animationComponent.animations[0].loopCount).toBe(1);
   });
 
-  it('should handle pingpong animations', async () => {
+  it('should handle pingpong animations', () => {
     const mockUpdateCallback = vi.fn();
     const time = new Time();
     time.update(1000);
@@ -85,7 +85,7 @@ describe('AnimationSystem', () => {
     const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
-    await animationSystem.run(entity);
+    animationSystem.run(entity);
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
     expect(animationComponent.animations.length).toBe(1);
@@ -94,7 +94,7 @@ describe('AnimationSystem', () => {
     expect(animationComponent.animations[0].endValue).toBe(0);
   });
 
-  it('should remove animations when loopCount reaches 0', async () => {
+  it('should remove animations when loopCount reaches 0', () => {
     const mockUpdateCallback = vi.fn();
     const time = new Time();
     time.update(1000);
@@ -115,7 +115,7 @@ describe('AnimationSystem', () => {
     const entity = new Entity('test', world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
-    await animationSystem.run(entity);
+    animationSystem.run(entity);
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
     expect(animationComponent.animations.length).toBe(0);

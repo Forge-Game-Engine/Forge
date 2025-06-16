@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { type Stoppable } from '../common';
 import type { World } from './world';
 import { ForgeEvent } from '../events';
@@ -36,18 +37,6 @@ export class Game implements Stoppable {
     window.addEventListener('resize', () => {
       this.onWindowResize.raise();
     });
-  }
-
-  private _determineContainer(container?: HTMLElement | string): HTMLElement {
-    if (typeof container === 'string') {
-      return createContainer(container);
-    }
-
-    if (container instanceof HTMLElement) {
-      return container as HTMLDivElement;
-    }
-
-    return createContainer('forge-game-container');
   }
 
   /**
@@ -101,5 +90,17 @@ export class Game implements Stoppable {
     for (const world of this._worlds) {
       world.stop();
     }
+  }
+
+  private _determineContainer(container?: HTMLElement | string): HTMLElement {
+    if (typeof container === 'string') {
+      return createContainer(container);
+    }
+
+    if (container instanceof HTMLElement) {
+      return container as HTMLDivElement;
+    }
+
+    return createContainer('forge-game-container');
   }
 }

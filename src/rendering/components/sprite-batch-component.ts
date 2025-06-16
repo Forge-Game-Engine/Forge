@@ -29,14 +29,14 @@ export class RenderableBatchComponent implements Component {
   /** The name property holds the unique symbol for this component. */
   public name: symbol;
 
-  /** A static symbol property that uniquely identifies the `RenderableBatchComponent`. */
-  public static readonly symbol = Symbol('RenderableBatch');
-
   /** The map of batched entities. */
   public batches: Map<Renderable, Batch> = new Map();
 
   /** The render layer to which the batch belongs. */
   public readonly renderLayer: RenderLayer;
+
+  /** A static symbol property that uniquely identifies the `RenderableBatchComponent`. */
+  public static readonly symbol = Symbol('RenderableBatch');
 
   /**
    * Constructs a new instance of the `RenderableBatchComponent` class.
