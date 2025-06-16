@@ -4,6 +4,25 @@ import { clamp } from '../math';
  * The `Color` class represents a color that can be created using RGB(A) or HSL(A).
  */
 export class Color {
+  private readonly _r: number;
+  private readonly _g: number;
+  private readonly _b: number;
+  private readonly _a: number;
+
+  /**
+   * Constructs a new `Color` instance using RGBA values.
+   * @param r - The red component (0-255).
+   * @param g - The green component (0-255).
+   * @param b - The blue component (0-255).
+   * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
+   */
+  constructor(r: number, g: number, b: number, a: number = 1) {
+    this._r = clamp(r, 0, 255);
+    this._g = clamp(g, 0, 255);
+    this._b = clamp(b, 0, 255);
+    this._a = clamp(a, 0, 1);
+  }
+
   /**
    * Creates a `Color` instance using HSLA values.
    * @param h - The hue (0-360).
@@ -68,25 +87,6 @@ export class Color {
     }
 
     return p;
-  }
-
-  private readonly _r: number;
-  private readonly _g: number;
-  private readonly _b: number;
-  private readonly _a: number;
-
-  /**
-   * Constructs a new `Color` instance using RGBA values.
-   * @param r - The red component (0-255).
-   * @param g - The green component (0-255).
-   * @param b - The blue component (0-255).
-   * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
-   */
-  constructor(r: number, g: number, b: number, a: number = 1) {
-    this._r = clamp(r, 0, 255);
-    this._g = clamp(g, 0, 255);
-    this._b = clamp(b, 0, 255);
-    this._a = clamp(a, 0, 1);
   }
 
   /**

@@ -5,9 +5,9 @@ import { Vector2 } from '../../math';
  * Component to represent the position of an entity in 2D space.
  */
 export class PositionComponent extends Vector2 implements Component {
-  public static readonly symbol = Symbol('Position');
-
   public name: symbol;
+
+  public static readonly symbol = Symbol('Position');
 
   /**
    * Creates an instance of PositionComponent.

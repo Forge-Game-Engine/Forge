@@ -5,10 +5,10 @@ import { degreesToRadians } from '../../math';
  * Component to represent the rotation of an entity in 2D space.
  */
 export class RotationComponent implements Component {
-  public static readonly symbol = Symbol('Rotation');
-
   public name: symbol;
   public radians: number;
+
+  public static readonly symbol = Symbol('Rotation');
 
   /**
    * Creates an instance of RotationComponent.

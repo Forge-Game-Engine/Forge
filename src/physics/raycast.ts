@@ -80,6 +80,20 @@ export interface RaycastCollision {
  * Ray class that represents a ray in 2D space.
  */
 export class Ray {
+  public start: Vector2;
+  public end: Vector2;
+  public vertices: Vector2[] = [];
+
+  /**
+   * Creates a new Ray object.
+   * @param start - The starting point of the ray
+   * @param end - The ending point of the ray
+   */
+  constructor(start: Vector2, end: Vector2) {
+    this.start = start;
+    this.end = end;
+  }
+
   public static intersect(rayA: Ray, rayB: Ray) {
     if (rayA.isVertical && rayB.isVertical) {
       return null;
@@ -195,20 +209,6 @@ export class Ray {
     }
 
     return rayCollisions;
-  }
-
-  public start: Vector2;
-  public end: Vector2;
-  public vertices: Vector2[] = [];
-
-  /**
-   * Creates a new Ray object.
-   * @param start - The starting point of the ray
-   * @param end - The ending point of the ray
-   */
-  constructor(start: Vector2, end: Vector2) {
-    this.start = start;
-    this.end = end;
   }
 
   /**

@@ -6,9 +6,6 @@ import { Sprite } from '../sprite';
  * a component that contains a `Sprite`.
  */
 export class SpriteComponent implements Component {
-  /** A static symbol property that uniquely identifies the `SpriteComponent`. */
-  public static readonly symbol = Symbol('Sprite');
-
   /** The name property holds the unique symbol for this component. */
   public name: symbol;
 
@@ -17,6 +14,9 @@ export class SpriteComponent implements Component {
 
   /** Indicates whether the sprite is enabled or not. */
   public enabled: boolean;
+
+  /** A static symbol property that uniquely identifies the `SpriteComponent`. */
+  public static readonly symbol = Symbol('Sprite');
 
   /**
    * Constructs a new instance of the `SpriteComponent` class with the given `Sprite`.

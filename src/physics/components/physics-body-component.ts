@@ -6,8 +6,6 @@ import type { Component } from '../../ecs';
  * This component is used to represent a physics body in the game.
  */
 export class PhysicsBodyComponent implements Component {
-  public static readonly symbol = Symbol('PhysicsBody');
-
   public name: symbol;
 
   /**
@@ -15,6 +13,8 @@ export class PhysicsBodyComponent implements Component {
    * This is the Matter.js body that represents the physical properties of the entity.
    */
   public physicsBody: Body;
+
+  public static readonly symbol = Symbol('PhysicsBody');
 
   /**
    * Creates an instance of PhysicsBodyComponent.

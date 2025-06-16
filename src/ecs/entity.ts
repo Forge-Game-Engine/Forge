@@ -9,19 +9,6 @@ import type { World } from './world';
  */
 export class Entity {
   /**
-   * The counter for generating unique identifiers.
-   */
-  private static _idCounter: number = 0;
-
-  /**
-   * Generates a unique identifier for the entity.
-   * @returns The unique identifier.
-   */
-  private static _generateId() {
-    return Entity._idCounter++;
-  }
-
-  /**
    * The name of the entity.
    */
   public name: string;
@@ -47,6 +34,11 @@ export class Entity {
   private readonly _components: Set<Component>;
 
   /**
+   * The counter for generating unique identifiers.
+   */
+  private static _idCounter: number = 0;
+
+  /**
    * Creates a new Entity instance.
    * @param name - The name of the entity.
    * @param initialComponents - The initial components to associate with the entity.
@@ -63,6 +55,14 @@ export class Entity {
     this.name = name;
     this.world = world;
     this.enabled = enabled;
+  }
+
+  /**
+   * Generates a unique identifier for the entity.
+   * @returns The unique identifier.
+   */
+  private static _generateId() {
+    return Entity._idCounter++;
   }
 
   /**

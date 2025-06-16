@@ -75,11 +75,11 @@ export type LoopMode = 'none' | 'loop' | 'pingpong';
  * Represents an animation component that manages a collection of animations.
  */
 export class AnimationComponent implements Component {
-  public static readonly symbol = Symbol('Animation');
-
   public name: symbol;
 
   private readonly _animations: Required<AnimatedProperty>[];
+
+  public static readonly symbol = Symbol('Animation');
 
   /**
    * Gets the list of animations managed by this component.

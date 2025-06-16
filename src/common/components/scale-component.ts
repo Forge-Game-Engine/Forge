@@ -5,9 +5,9 @@ import { Vector2 } from '../../math';
  * Component to represent the scale of an entity in 2D space.
  */
 export class ScaleComponent extends Vector2 implements Component {
-  public static readonly symbol = Symbol('Scale');
-
   public name: symbol;
+
+  public static readonly symbol = Symbol('Scale');
 
   /**
    * Creates an instance of ScaleComponent.

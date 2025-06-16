@@ -50,23 +50,6 @@ const defaultOptions: CameraComponentOptions = {
  * and zooming.
  */
 export class CameraComponent implements Component {
-  /** A static symbol property that uniquely identifies the `CameraComponent`. */
-  public static readonly symbol = Symbol('Camera');
-
-  /**
-   * Creates a default camera component with the option to set it as static.
-   * @param isStatic - Indicates if the camera should be static (default: false).
-   * @returns A new `CameraComponent` instance with default settings.
-   */
-  public static createDefaultCamera(
-    isStatic: boolean = false,
-  ): CameraComponent {
-    const camera = new CameraComponent();
-    camera.isStatic = isStatic;
-
-    return camera;
-  }
-
   /** The name property holds the unique symbol for this component. */
   public name: symbol;
 
@@ -94,6 +77,9 @@ export class CameraComponent implements Component {
   /** Indicates if zooming is allowed. */
   public allowZooming: boolean;
 
+  /** A static symbol property that uniquely identifies the `CameraComponent`. */
+  public static readonly symbol = Symbol('Camera');
+
   /**
    * Constructs a new instance of the `CameraComponent` class with the given options.
    * @param options - Partial options to configure the camera component.
@@ -113,5 +99,19 @@ export class CameraComponent implements Component {
     this.isStatic = mergedOptions.isStatic;
     this.allowPanning = mergedOptions.allowPanning;
     this.allowZooming = mergedOptions.allowZooming;
+  }
+
+  /**
+   * Creates a default camera component with the option to set it as static.
+   * @param isStatic - Indicates if the camera should be static (default: false).
+   * @returns A new `CameraComponent` instance with default settings.
+   */
+  public static createDefaultCamera(
+    isStatic: boolean = false,
+  ): CameraComponent {
+    const camera = new CameraComponent();
+    camera.isStatic = isStatic;
+
+    return camera;
   }
 }

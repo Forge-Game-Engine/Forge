@@ -4,9 +4,9 @@ import { Component } from './types';
 import { World } from './world';
 
 class MockComponent implements Component {
-  public static readonly symbol = Symbol('mock-component');
-
   public name: symbol;
+
+  public static readonly symbol = Symbol('mock-component');
 
   constructor() {
     this.name = MockComponent.symbol;

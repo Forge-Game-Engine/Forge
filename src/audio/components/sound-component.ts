@@ -5,11 +5,11 @@ import type { Component } from '../../ecs';
  * Component to manage sounds in the game.
  */
 export class SoundComponent implements Component {
-  public static readonly symbol = Symbol('Sound');
-
   public name: symbol;
   public sound: Howl;
   public playSound: boolean;
+
+  public static readonly symbol = Symbol('Sound');
 
   /**
    * Creates an instance of SoundComponent.
