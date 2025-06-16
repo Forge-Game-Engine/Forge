@@ -96,7 +96,11 @@ function createRiveInstance(riveParameters: RiveParameters): Promise<{
 
         riveParameters.onLoadError?.(error);
 
-        reject(error);
+        reject(
+          new Error(
+            `Failed to load Rive file: ${JSON.stringify(error.data)} - type: ${error.type}`,
+          ),
+        );
       },
     });
   });

@@ -11,10 +11,10 @@ export interface TimerTask {
 }
 
 export class TimerComponent implements Component {
+  public static readonly symbol = Symbol('Timer');
+
   public name: symbol;
   public tasks: TimerTask[];
-
-  public static readonly symbol = Symbol('Timer');
 
   constructor(tasks: TimerTask[] = []) {
     this.name = TimerComponent.symbol;

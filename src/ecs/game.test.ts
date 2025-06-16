@@ -1,14 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+/* eslint-disable @typescript-eslint/naming-convention */
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Game } from './game';
 import { createContainer } from '../utilities';
 import { World } from './world';
 
+interface GameMock {
+  registerWorld: Mock;
+  deregisterWorld: Mock;
+  run: Mock;
+  stop: Mock;
+  onWindowResize: {
+    raise: Mock;
+  };
+  _worlds: Set<World>;
+}
+
 describe('Game', () => {
-  let game: Game;
+  let game: GameMock;
   let world: World;
 
   beforeEach(() => {
-    game = new Game(createContainer('test'));
+    game = new Game(createContainer('test')) as unknown as GameMock;
     world = new World('foo');
   });
 

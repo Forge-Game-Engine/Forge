@@ -29,9 +29,11 @@ describe('createProgram', () => {
 
     (gl.createProgram as Mock).mockReturnValue(program);
     (gl.getProgramParameter as Mock).mockReturnValue(true);
-    (createShader as Mock).mockImplementation((gl, _source, type) => {
-      return type === gl.VERTEX_SHADER ? vertexShader : fragmentShader;
-    });
+    (createShader as Mock).mockImplementation(
+      (gl: WebGL2RenderingContext, _source, type) => {
+        return type === gl.VERTEX_SHADER ? vertexShader : fragmentShader;
+      },
+    );
 
     const vertexSource = 'vertex shader source';
     const fragmentSource = 'fragment shader source';
@@ -78,9 +80,11 @@ describe('createProgram', () => {
     (gl.createProgram as Mock).mockReturnValue(program);
     (gl.getProgramParameter as Mock).mockReturnValue(false);
     (gl.getProgramInfoLog as Mock).mockReturnValue('Linking error');
-    (createShader as Mock).mockImplementation((gl, _source, type) => {
-      return type === gl.VERTEX_SHADER ? vertexShader : fragmentShader;
-    });
+    (createShader as Mock).mockImplementation(
+      (gl: WebGL2RenderingContext, _source, type) => {
+        return type === gl.VERTEX_SHADER ? vertexShader : fragmentShader;
+      },
+    );
 
     const vertexSource = 'vertex shader source';
     const fragmentSource = 'fragment shader source';

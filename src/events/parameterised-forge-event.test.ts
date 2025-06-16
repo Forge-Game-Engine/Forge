@@ -5,10 +5,8 @@ describe('When creating an event', () => {
   const event = new ParameterizedForgeEvent<string>('test-event');
   const logic = vi.fn();
 
-  const listener = async (data: string) => {
-    await new Promise(() => {
-      logic(`processed ${data}`);
-    });
+  const listener = (data: string) => {
+    logic(`processed ${data}`);
   };
 
   beforeEach(() => {

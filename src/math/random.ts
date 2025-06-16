@@ -5,7 +5,7 @@ import seedrandom from 'seedrandom';
  * using a seeded random number generator.
  */
 export class Random {
-  private _rng: seedrandom.PRNG;
+  private readonly _rng: seedrandom.PRNG;
 
   /**
    * Creates a new instance of the `Random` class with the given seed.
@@ -13,14 +13,6 @@ export class Random {
    */
   constructor(seed: string = 'seed') {
     this._rng = seedrandom(seed);
-  }
-
-  /**
-   * Generates a random number between 0 (inclusive) and 1 (exclusive).
-   * @returns A random number between 0 and 1.
-   */
-  private _random(): number {
-    return this._rng();
   }
 
   /**
@@ -41,5 +33,13 @@ export class Random {
    */
   public randomFloat(min: number, max: number): number {
     return this._random() * (max - min) + min;
+  }
+
+  /**
+   * Generates a random number between 0 (inclusive) and 1 (exclusive).
+   * @returns A random number between 0 and 1.
+   */
+  private _random(): number {
+    return this._rng();
   }
 }

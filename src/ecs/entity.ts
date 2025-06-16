@@ -9,14 +9,17 @@ import type { World } from './world';
  */
 export class Entity {
   /**
-   * The unique identifier of the entity.
+   * The counter for generating unique identifiers.
    */
-  private readonly _id: number;
+  private static _idCounter: number = 0;
 
   /**
-   * The set of components associated with this entity.
+   * Generates a unique identifier for the entity.
+   * @returns The unique identifier.
    */
-  private readonly _components: Set<Component>;
+  private static _generateId() {
+    return Entity._idCounter++;
+  }
 
   /**
    * The name of the entity.
@@ -32,6 +35,16 @@ export class Entity {
    * The world to which this entity belongs.
    */
   public world: World;
+
+  /**
+   * The unique identifier of the entity.
+   */
+  private readonly _id: number;
+
+  /**
+   * The set of components associated with this entity.
+   */
+  private readonly _components: Set<Component>;
 
   /**
    * Creates a new Entity instance.
@@ -145,17 +158,4 @@ export class Entity {
 
     this.world.updateSystemEntities(this);
   }
-
-  /**
-   * Generates a unique identifier for the entity.
-   * @returns The unique identifier.
-   */
-  private static _generateId() {
-    return Entity._idCounter++;
-  }
-
-  /**
-   * The counter for generating unique identifiers.
-   */
-  private static _idCounter: number = 0;
 }

@@ -4,9 +4,9 @@ import type { Component } from '../../ecs';
  * A marker component representing a cursor.
  */
 export class CursorComponent implements Component {
-  public name: symbol;
-
   public static readonly symbol = Symbol('Cursor');
+
+  public name: symbol;
 
   /**
    * Constructs a new cursor component.

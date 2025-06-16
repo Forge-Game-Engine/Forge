@@ -11,7 +11,7 @@ export class EventDispatcher<TData> {
   /**
    * A map of event types to sets of event listeners.
    */
-  private _listeners: Map<string, Set<ParameterizedForgeEvent<TData>>>;
+  private readonly _listeners: Map<string, Set<ParameterizedForgeEvent<TData>>>;
 
   /**
    * Creates a new instance of the `EventDispatcher` class.

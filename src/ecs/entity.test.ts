@@ -4,13 +4,13 @@ import { Component } from './types';
 import { World } from './world';
 
 class MockComponent implements Component {
+  public static readonly symbol = Symbol('mock-component');
+
   public name: symbol;
 
   constructor() {
     this.name = MockComponent.symbol;
   }
-
-  public static readonly symbol = Symbol('mock-component');
 }
 
 const world = new World('test-world');

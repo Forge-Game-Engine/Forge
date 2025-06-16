@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { type Stoppable, Time, type Updatable } from '../common';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';

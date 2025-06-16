@@ -4,9 +4,9 @@ type PoolCreateCallback<T> = () => T;
 type PoolDisposeCallback<T> = (instance: T) => void;
 
 export class ObjectPool<T extends NonNullable<unknown> = Entity> {
-  private _pool: Array<T>;
-  private _createCallback: PoolCreateCallback<T>;
-  private _disposeCallback: PoolDisposeCallback<T>;
+  private readonly _pool: Array<T>;
+  private readonly _createCallback: PoolCreateCallback<T>;
+  private readonly _disposeCallback: PoolDisposeCallback<T>;
 
   constructor(
     startingPool: Array<T>,
@@ -46,7 +46,7 @@ export class ObjectPool<T extends NonNullable<unknown> = Entity> {
     this._pool.push(instance);
   };
 
-  private _create = (): T => {
+  private readonly _create = (): T => {
     const instance = this._createCallback();
 
     return instance;

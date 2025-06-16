@@ -26,11 +26,11 @@ export type Batch = Batchable[];
  * a component that contains a items that can be batched for rendering.
  */
 export class RenderableBatchComponent implements Component {
-  /** The name property holds the unique symbol for this component. */
-  public name: symbol;
-
   /** A static symbol property that uniquely identifies the `RenderableBatchComponent`. */
   public static readonly symbol = Symbol('RenderableBatch');
+
+  /** The name property holds the unique symbol for this component. */
+  public name: symbol;
 
   /** The map of batched entities. */
   public batches: Map<Renderable, Batch> = new Map();

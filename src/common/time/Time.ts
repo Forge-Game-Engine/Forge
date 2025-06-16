@@ -9,7 +9,7 @@ export class Time {
   private _time: number;
   private _previousTime: number;
   private _timeScale: number;
-  private _times: number[];
+  private readonly _times: number[];
 
   /**
    * Creates an instance of Time.
@@ -109,7 +109,7 @@ export class Time {
     this._deltaTime = this._rawDeltaTime * this._timeScale;
     this._time = this._time + this._deltaTime;
 
-    while (this._times.length > 0 && this._times[0]! <= time - 1000) {
+    while (this._times.length > 0 && this._times[0] <= time - 1000) {
       this._times.shift();
     }
 

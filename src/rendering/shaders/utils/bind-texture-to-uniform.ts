@@ -7,7 +7,9 @@ export const bindTextureToUniform = (
   textureUnit: number = 0,
 ) => {
   if (textureUnit > MAX_TEXTURE_UNITS) {
-    throw `Cannot bind to texture unit greater than ${MAX_TEXTURE_UNITS}.`;
+    throw new Error(
+      `Cannot bind to texture unit greater than ${MAX_TEXTURE_UNITS}.`,
+    );
   }
 
   gl.activeTexture(gl.TEXTURE0 + textureUnit);

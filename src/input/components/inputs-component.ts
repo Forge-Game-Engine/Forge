@@ -7,6 +7,8 @@ import type { MouseButton } from '../constants';
  * presses, and mouse coordinates.
  */
 export class InputsComponent implements Component {
+  public static readonly symbol = Symbol('Inputs');
+
   public name: symbol;
 
   /**
@@ -53,8 +55,6 @@ export class InputsComponent implements Component {
    * The current coordinates of the mouse cursor in world space, where [x: 0, y: 0] is the center of the world.
    */
   public worldMouseCoordinates = new Vector2();
-
-  public static readonly symbol = Symbol('Inputs');
 
   constructor() {
     this.name = InputsComponent.symbol;

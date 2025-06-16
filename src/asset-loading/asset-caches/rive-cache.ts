@@ -39,7 +39,9 @@ export class RiveCache implements AssetCache<RiveFile> {
         this.assets.set(path, file);
       },
       onLoadError: (error) => {
-        throw error;
+        throw new Error(
+          `Failed to load Rive file from path "${path}": ${JSON.stringify(error.data)} - type: ${error.type}`,
+        );
       },
       assetLoader,
     });
