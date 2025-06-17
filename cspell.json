@@ -9,5 +9,5 @@
     }
   ],
   "dictionaries": ["project-words"],
-  "ignorePaths": ["node_modules", "dist", ".cspell", "**/*.svg"]
+  "ignorePaths": ["node_modules", "dist", ".cspell", "**/*.svg", "build"]
 }
