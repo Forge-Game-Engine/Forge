@@ -119,7 +119,7 @@ const shaderStore = createShaderStore();
 
 const sprite = createImageSprite(
   image,
-  foregroundRenderLayer.layer,
+  renderLayers[0],
   shaderStore,
 );
 // diff-add-end
@@ -155,7 +155,7 @@ const shaderStore = createShaderStore();
 
 const sprite = createImageSprite(
   image,
-  foregroundRenderLayer.layer,
+  renderLayers[0],
   shaderStore,
 );
 
