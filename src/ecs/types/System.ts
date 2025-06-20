@@ -1,5 +1,6 @@
 import type { Stoppable } from '../../common';
 import { Entity } from '../entity';
+import { World } from '../world';
 import type { Query } from './Query';
 
 /**
@@ -22,6 +23,11 @@ export abstract class System implements Stoppable {
    * Indicates whether the system is enabled.
    */
   public isEnabled: boolean = true;
+
+  /**
+   * The world in which the system operates.
+   */
+  protected world!: World; // non-null assertion operator used because it will be initialized in the `initialize` method
 
   /**
    * Creates a new System instance.
@@ -51,6 +57,14 @@ export abstract class System implements Stoppable {
         break;
       }
     }
+  }
+
+  /**
+   * Initializes the system with the provided world.
+   * @param world - The world in which the system operates.
+   */
+  public initialize(world: World) {
+    this.world = world;
   }
 
   /**
