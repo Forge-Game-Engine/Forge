@@ -194,6 +194,8 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public addSystem(system: System) {
+    system.initialize(this);
+
     this._systems.add(system);
     this._systemEntities.set(system.name, this.queryEntities(system.query));
 
