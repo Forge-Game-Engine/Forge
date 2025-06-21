@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { type Stoppable, Time, type Updatable } from '../common';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';
@@ -194,8 +193,6 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public addSystem(system: System) {
-    system.initialize(this);
-
     this._systems.add(system);
     this._systemEntities.set(system.name, this.queryEntities(system.query));
 
@@ -285,7 +282,10 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public addEntities(entities: Entity[]) {
-    entities.forEach(this.addEntity);
+    for (const entity of entities) {
+      this.addEntity(entity);
+    }
+
     this.raiseOnEntitiesChangedEvent();
 
     return this;
