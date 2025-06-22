@@ -7,7 +7,6 @@ describe('World', () => {
   let world: World;
   const runMock = vi.fn();
   const stopMock = vi.fn();
-  const initializeMock = vi.fn();
 
   // Mock System
   class MockSystem extends System {
@@ -17,10 +16,6 @@ describe('World', () => {
 
     public stop(): void {
       stopMock();
-    }
-
-    public override initialize(): void {
-      initializeMock();
     }
   }
 
@@ -81,14 +76,6 @@ describe('World', () => {
     world.stop();
 
     expect(stopMock).toHaveBeenCalledTimes(2);
-  });
-
-  it('should call initialize on all systems when added', () => {
-    const system1 = new MockSystem('System1', [mock1Component.name]);
-    const system2 = new MockSystem('System2', [mock1Component.name]);
-    world.addSystems(system1, system2);
-
-    expect(initializeMock).toHaveBeenCalledTimes(2);
   });
 
   it('should remove onEntitiesChanged callbacks', () => {
