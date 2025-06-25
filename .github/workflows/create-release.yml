@@ -2,6 +2,7 @@ name: Create Release
 
 permissions:
   contents: write
+  packages: write
 
 on:
   workflow_dispatch:
@@ -62,6 +63,7 @@ jobs:
 
           git tag v$VERSION
 
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:dev
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} v$VERSION
+          git push origin HEAD:main
+          git push origin HEAD:dev
+          git push origin v$VERSION
+
