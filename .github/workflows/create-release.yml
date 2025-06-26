@@ -28,6 +28,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate a token
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -57,12 +64,19 @@ jobs:
         run: npm publish
 
       - name: Commit and push release
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        
           git add package.json package-lock.json
-          git commit -m "chore(release): v$VERSION"
-
+          git commit -m "chore(release): v$VERSION" || echo "No changes to commit"
+        
           git tag v$VERSION
-
+        
           git push origin HEAD:main
           git push origin HEAD:dev
           git push origin v$VERSION
