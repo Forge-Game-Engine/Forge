@@ -3,6 +3,7 @@ name: Create Release
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -28,20 +29,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate a token
-        id: generate-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-
-      - name: Get GitHub App User ID
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.generate-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,8 +37,7 @@ jobs:
           scope: "@forge-game-engine"
 
       - name: Bump version
-        run: |
-          npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
+        run: npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
@@ -70,28 +56,46 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish
 
-      - name: Commit and push release
+      - name: Commit, tag, and push to release branch
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-          APP_ID: ${{ vars.APP_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name '${{ steps.generate-token.outputs.app-slug }}[bot]'
-          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate-token.outputs.app-slug }}[bot]@users.noreply.github.com'
 
-          git remote set-url origin https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ github.repository }}
-              
+          RELEASE_BRANCH="release/v$VERSION"
+          git checkout -b $RELEASE_BRANCH
+
           git add package.json package-lock.json
           git commit -m "chore(release): v$VERSION" || echo "No changes to commit"
-        
-          git tag v$VERSION
-        
-          echo "=========================="
-          git remote -v
-          echo "=========================="
-          git log -1 --pretty=full
-          echo "=========================="
 
-          git push origin HEAD:main
-          git push origin HEAD:dev
+          git tag v$VERSION
+          git push origin $RELEASE_BRANCH
           git push origin v$VERSION
 
+      - name: Create PR into main and enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create PR to main
+          MAIN_PR_URL=$(gh pr create \
+            --base main \
+            --head release/v$VERSION \
+            --title "Release v$VERSION" \
+            --body "Automated release PR for v$VERSION")
+
+          # Enable auto-merge for main PR
+          gh pr merge "$MAIN_PR_URL" --auto --merge
+
+          echo "Waiting for 'main' to be updated before opening PR into dev..."
+          while [[ "$(gh api repos/${{ github.repository }}/branches/main | jq -r '.commit.sha')" == "$(gh api repos/${{ github.repository }}/pulls --state open --head release/v$VERSION --base main | jq -r '.[0].head.sha')" ]]; do
+            echo "Main branch not updated yet... waiting"
+            sleep 5
+          done
+
+          # Now create PR from main into dev
+          SYNC_PR_URL=$(gh pr create \
+            --base dev \
+            --head main \
+            --title "Sync release v$VERSION to dev" \
+            --body "Syncing the latest release changes from main into dev")
+
+          gh pr merge "$SYNC_PR_URL" --auto --merge
