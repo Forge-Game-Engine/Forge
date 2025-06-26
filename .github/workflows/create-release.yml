@@ -85,7 +85,7 @@ jobs:
             --body "Automated release PR for v$VERSION")
 
           # Enable auto-merge for main PR
-          gh pr merge "$MAIN_PR_URL" --auto --merge
+          gh pr merge "$MAIN_PR_URL" --auto --rebase
 
           echo "Waiting for 'main' to be updated before opening PR into dev..."
           while [[ "$(gh api repos/${{ github.repository }}/branches/main | jq -r '.commit.sha')" == "$(gh api repos/${{ github.repository }}/pulls --state open --head release/v$VERSION --base main | jq -r '.[0].head.sha')" ]]; do
@@ -100,4 +100,4 @@ jobs:
             --title "Sync release v$VERSION to dev" \
             --body "Syncing the latest release changes from main into dev")
 
-          gh pr merge "$SYNC_PR_URL" --auto --merge
+          gh pr merge "$SYNC_PR_URL" --auto --rebase
