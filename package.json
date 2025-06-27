@@ -55,7 +55,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-jest": "^28.14.0",
     "eslint-plugin-prettier": "^5.4.1",
-    "eslint-plugin-sonarjs": "^3.0.2",
+    "eslint-plugin-sonarjs": "^3.0.4",
     "eslint-plugin-sort-exports": "^0.9.1",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
