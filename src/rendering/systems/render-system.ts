@@ -1,9 +1,18 @@
-import { PositionComponent } from '../../common';
+import {
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent,
+} from '../../common';
 import { Entity, System } from '../../ecs';
-import { CameraComponent, RenderableBatchComponent } from '../components';
+import {
+  CameraComponent,
+  RenderableBatchComponent,
+  SpriteComponent,
+} from '../components';
 import { Matrix3x3, Vector2 } from '../../math';
 import { createProjectionMatrix } from '../shaders';
 import type { ForgeRenderLayer } from '../render-layers';
+import { Sprite } from '../sprite';
 
 const FLOATS_PER_MATRIX = 9;
 
@@ -66,15 +75,27 @@ export class RenderSystem extends System {
       const instanceData = new Float32Array(batch.length * FLOATS_PER_MATRIX);
 
       for (let i = 0; i < batch.length; i++) {
-        const { position, rotation, scale, height, width, pivot } = batch[i];
+        const batchedEntity = batch[i];
+
+        const position = batchedEntity.getComponentRequired<PositionComponent>(
+          PositionComponent.symbol,
+        );
+        const rotation = batchedEntity.getComponent<RotationComponent>(
+          RotationComponent.symbol,
+        );
+        const scale = batchedEntity.getComponent<ScaleComponent>(
+          ScaleComponent.symbol,
+        );
+        const spriteComponent =
+          batchedEntity.getComponentRequired<SpriteComponent>(
+            SpriteComponent.symbol,
+          );
 
         const mat = this._getSpriteMatrix(
           position,
           rotation?.radians ?? 0,
-          width,
-          height,
           scale ?? Vector2.one,
-          pivot,
+          spriteComponent.sprite,
         );
 
         for (let j = 0; j < FLOATS_PER_MATRIX; j++) {
@@ -137,10 +158,8 @@ export class RenderSystem extends System {
   private _getSpriteMatrix(
     position: Vector2,
     rotation: number,
-    spriteWidth: number,
-    spriteHeight: number,
     scale: Vector2,
-    pivot: Vector2,
+    sprite: Sprite,
   ): Matrix3x3 {
     const { width, height } = this._layer.canvas;
     const { x: camX, y: camY } = this._cameraPosition;
@@ -168,10 +187,10 @@ export class RenderSystem extends System {
     // 5) Now place this particular sprite
     matrix.translate(position.x, position.y);
     matrix.rotate(rotation);
-    matrix.scale(spriteWidth * scale.x, spriteHeight * scale.y);
+    matrix.scale(sprite.width * scale.x, sprite.height * scale.y);
 
     // 6) Finally apply sprite pivot if needed
-    matrix.translate(-pivot.x, -pivot.y);
+    matrix.translate(-sprite.pivot.x, -sprite.pivot.y);
 
     return matrix;
   }

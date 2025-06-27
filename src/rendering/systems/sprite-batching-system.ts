@@ -1,14 +1,6 @@
-import {
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
-} from '../../common';
+import { PositionComponent } from '../../common';
 import { Entity, System } from '../../ecs';
-import {
-  type Batchable,
-  RenderableBatchComponent,
-  SpriteComponent,
-} from '../components';
+import { RenderableBatchComponent, SpriteComponent } from '../components';
 
 /**
  * The `SpriteBatchingSystem` class extends the `System` class and manages the batching of sprites.
@@ -52,28 +44,10 @@ export class SpriteBatchingSystem extends System {
 
     const { renderable } = spriteComponent.sprite;
 
-    const position = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotation = entity.getComponent<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const scale = entity.getComponent<ScaleComponent>(ScaleComponent.symbol);
-
-    const batchEntry: Batchable = {
-      renderable,
-      width: spriteComponent.sprite.width,
-      height: spriteComponent.sprite.height,
-      pivot: spriteComponent.sprite.pivot,
-      position,
-      rotation,
-      scale,
-    };
-
     if (!this._spriteBatch.batches.has(renderable)) {
       this._spriteBatch.batches.set(renderable, []);
     }
 
-    this._spriteBatch.batches.get(renderable)!.push(batchEntry);
+    this._spriteBatch.batches.get(renderable)!.push(entity);
   }
 }
