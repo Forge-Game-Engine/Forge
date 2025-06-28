@@ -26,12 +26,16 @@ export class RenderSystem extends System {
   private readonly _camera: CameraComponent;
   private readonly _cameraPosition: Vector2;
   private readonly _instanceBuffer: WebGLBuffer;
+  private readonly _projectionMatrix: Matrix3x3;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [RenderableBatchComponent.symbol]);
 
     const { layer, cameraEntity } = options;
     this._layer = layer;
+
+    const { width, height } = layer.canvas;
+    this._projectionMatrix = createProjectionMatrix(width, height);
 
     const cameraPosition = cameraEntity.getComponentRequired<PositionComponent>(
       PositionComponent.symbol,
@@ -182,7 +186,7 @@ export class RenderSystem extends System {
     matrix.translate(-width / 2, -height / 2);
 
     // 4) Apply camera offset (so that cameraPosition is centered on screen)
-    matrix.translate(-camX + width / 2, camY + height / 2);
+    matrix.translate(-camX + width / 2, -camY + height / 2);
 
     // 5) Now place this particular sprite
     matrix.translate(position.x, position.y);

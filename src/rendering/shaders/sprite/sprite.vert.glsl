@@ -1,21 +1,41 @@
 #version 300 es
 
-#property name: sprite.vert
+in vec2 a_position;      // Vertex position (e.g., quad corners)
+in vec2 a_texCoord;      // Texture coordinate
 
-in vec2 a_position;    // 2D vertex position
-in vec2 a_texCoord;    // Texture coordinate
+// Per-instance attributes:
+in vec2 a_instancePos;   // Sprite position
+in float a_instanceRot;  // Sprite rotation (radians)
+in vec2 a_instanceScale; // Sprite scale
+in vec2 a_instanceSize;  // Sprite width/height
+in vec2 a_instancePivot; // Sprite pivot (origin offset)
 
-in mat3 a_instanceMatrix; // 2D transformation matrix (3x3 for 2D)
+// Uniforms for projection/camera:
+uniform mat3 u_projection; // 2D projection/camera matrix
 
-out vec2 v_texCoord;   // Output to fragment shader
+out vec2 v_texCoord;
 
 void main() {
-  // Multiply the 2D position by our matrix to get final position in clip space.
-    vec3 pos = a_instanceMatrix * vec3(a_position, 1.0f);
+    // 1. Scale quad to sprite size and scale
+    vec2 scaled = a_position * a_instanceSize * a_instanceScale;
 
-  // Convert from 2D space to clip space
-    gl_Position = vec4(pos.xy, 0.0f, 1.0f);
+    // 2. Apply pivot (move origin)
+    vec2 pivoted = scaled - a_instancePivot;
 
-  // Pass texture coordinates to the fragment shader
+    // 3. Rotate
+    float c = cos(a_instanceRot);
+    float s = sin(a_instanceRot);
+    vec2 rotated = vec2(
+        c * pivoted.x - s * pivoted.y,
+        s * pivoted.x + c * pivoted.y
+    );
+
+    // 4. Translate to world position
+    vec2 world = rotated + a_instancePos;
+
+    // 5. Project to screen
+    vec3 projected = u_projection * vec3(world, 1.0);
+
+    gl_Position = vec4(projected.xy, 0.0, 1.0);
     v_texCoord = a_texCoord;
 }
