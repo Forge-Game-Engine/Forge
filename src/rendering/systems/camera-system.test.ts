@@ -88,7 +88,7 @@ describe('CameraSystem', () => {
 
     cameraSystem.run(entity);
 
-    expect(positionComponent.y).toBeGreaterThan(0);
+    expect(positionComponent.y).toBeLessThan(0);
     expect(positionComponent.x).toBeGreaterThan(0);
   });
 
