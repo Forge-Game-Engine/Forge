@@ -4,48 +4,24 @@ import {
   ScaleComponent,
 } from '../../common';
 import { Entity, System } from '../../ecs';
-import {
-  CameraComponent,
-  RenderableBatchComponent,
-  SpriteComponent,
-} from '../components';
-import { Matrix3x3, Vector2 } from '../../math';
-import { createProjectionMatrix } from '../shaders';
+import { RenderableBatchComponent, SpriteComponent } from '../components';
 import type { ForgeRenderLayer } from '../render-layers';
-import { Sprite } from '../sprite';
 
-const FLOATS_PER_MATRIX = 9;
+const FLOATS_PER_INSTANCE = 13;
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
-  cameraEntity: Entity;
 }
 
 export class RenderSystem extends System {
   private readonly _layer: ForgeRenderLayer;
-  private readonly _camera: CameraComponent;
-  private readonly _cameraPosition: Vector2;
   private readonly _instanceBuffer: WebGLBuffer;
-  private readonly _projectionMatrix: Matrix3x3;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [RenderableBatchComponent.symbol]);
 
-    const { layer, cameraEntity } = options;
+    const { layer } = options;
     this._layer = layer;
-
-    const { width, height } = layer.canvas;
-    this._projectionMatrix = createProjectionMatrix(width, height);
-
-    const cameraPosition = cameraEntity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const camera = cameraEntity.getComponentRequired<CameraComponent>(
-      CameraComponent.symbol,
-    );
-
-    this._camera = camera;
-    this._cameraPosition = cameraPosition;
 
     this._instanceBuffer = layer.context.createBuffer()!;
     this._setupGLState();
@@ -76,10 +52,11 @@ export class RenderSystem extends System {
 
       renderable.bind(gl);
 
-      const instanceData = new Float32Array(batch.length * FLOATS_PER_MATRIX);
+      const instanceData = new Float32Array(batch.length * FLOATS_PER_INSTANCE); // TODO: move this into the sprite so that we aren't allocating memory every time?
 
       for (let i = 0; i < batch.length; i++) {
         const batchedEntity = batch[i];
+        const instanceDataOffset = i * FLOATS_PER_INSTANCE;
 
         const position = batchedEntity.getComponentRequired<PositionComponent>(
           PositionComponent.symbol,
@@ -95,16 +72,15 @@ export class RenderSystem extends System {
             SpriteComponent.symbol,
           );
 
-        const mat = this._getSpriteMatrix(
-          position,
-          rotation?.radians ?? 0,
-          scale ?? Vector2.one,
-          spriteComponent.sprite,
-        );
-
-        for (let j = 0; j < FLOATS_PER_MATRIX; j++) {
-          instanceData[i * FLOATS_PER_MATRIX + j] = mat.matrix[j]!;
-        }
+        instanceData[instanceDataOffset] = position.x;
+        instanceData[instanceDataOffset + 1] = position.y;
+        instanceData[instanceDataOffset + 2] = rotation?.radians ?? 0;
+        instanceData[instanceDataOffset + 3] = scale?.x ?? 1;
+        instanceData[instanceDataOffset + 4] = scale?.y ?? 1;
+        instanceData[instanceDataOffset + 5] = spriteComponent.sprite.width;
+        instanceData[instanceDataOffset + 6] = spriteComponent.sprite.height;
+        instanceData[instanceDataOffset + 7] = spriteComponent.sprite.pivot.x;
+        instanceData[instanceDataOffset + 8] = spriteComponent.sprite.pivot.y;
       }
 
       // Upload instance transform buffer
@@ -113,26 +89,83 @@ export class RenderSystem extends System {
 
       const program = renderable.material.program;
 
-      const baseLocation = gl.getAttribLocation(program, 'a_instanceMatrix');
+      // Attribute locations
+      const posLoc = gl.getAttribLocation(program, 'a_instancePos');
+      const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
+      const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
+      const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
+      const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
 
-      if (baseLocation === -1) {
-        console.error('a_instanceMatrix not found!');
-      } else {
-        for (let i = 0; i < 3; i++) {
-          const loc = baseLocation + i;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
 
-          gl.enableVertexAttribArray(loc);
-          gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-          gl.vertexAttribPointer(
-            loc,
-            3,
-            gl.FLOAT,
-            false,
-            FLOATS_PER_MATRIX * 4,
-            i * 3 * 4,
-          );
-          gl.vertexAttribDivisor(loc, 1);
-        }
+      // a_instancePos (vec2) - offset 0
+      if (posLoc !== -1) {
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(
+          posLoc,
+          2,
+          gl.FLOAT,
+          false,
+          FLOATS_PER_INSTANCE * 4,
+          0,
+        );
+        gl.vertexAttribDivisor(posLoc, 1);
+      }
+
+      // a_instanceRot (float) - offset 2
+      if (rotLoc !== -1) {
+        gl.enableVertexAttribArray(rotLoc);
+        gl.vertexAttribPointer(
+          rotLoc,
+          1,
+          gl.FLOAT,
+          false,
+          FLOATS_PER_INSTANCE * 4,
+          2 * 4,
+        );
+        gl.vertexAttribDivisor(rotLoc, 1);
+      }
+
+      // a_instanceScale (vec2) - offset 3
+      if (scaleLoc !== -1) {
+        gl.enableVertexAttribArray(scaleLoc);
+        gl.vertexAttribPointer(
+          scaleLoc,
+          2,
+          gl.FLOAT,
+          false,
+          FLOATS_PER_INSTANCE * 4,
+          3 * 4,
+        );
+        gl.vertexAttribDivisor(scaleLoc, 1);
+      }
+
+      // a_instanceSize (vec2) - offset 5
+      if (sizeLoc !== -1) {
+        gl.enableVertexAttribArray(sizeLoc);
+        gl.vertexAttribPointer(
+          sizeLoc,
+          2,
+          gl.FLOAT,
+          false,
+          FLOATS_PER_INSTANCE * 4,
+          5 * 4,
+        );
+        gl.vertexAttribDivisor(sizeLoc, 1);
+      }
+
+      // a_instancePivot (vec2) - offset 7
+      if (pivotLoc !== -1) {
+        gl.enableVertexAttribArray(pivotLoc);
+        gl.vertexAttribPointer(
+          pivotLoc,
+          2,
+          gl.FLOAT,
+          false,
+          FLOATS_PER_INSTANCE * 4,
+          7 * 4,
+        );
+        gl.vertexAttribDivisor(pivotLoc, 1);
       }
 
       gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batch.length);
@@ -153,49 +186,5 @@ export class RenderSystem extends System {
     const gl = this._layer.context;
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  }
-
-  /**
-   * Builds a column-major 3x3 matrix for each sprite instance
-   * (projection -> translation -> rotation -> scale -> pivot).
-   */
-  private _getSpriteMatrix(
-    position: Vector2,
-    rotation: number,
-    scale: Vector2,
-    sprite: Sprite,
-  ): Matrix3x3 {
-    const { width, height } = this._layer.canvas;
-    const { x: camX, y: camY } = this._cameraPosition;
-    const zoom = this._camera.zoom;
-
-    // Start with a standard projection:
-    const matrix = createProjectionMatrix(width, height); // TODO: cache this somewhere, but also remember to update it if canvas size changes
-
-    // 1) Translate so screen center becomes the new origin
-    // TODO: not sure what this does because it uses the width and height of the canvas
-    // and not the sprite/camera coordinates. Might be cachable, might be able to
-    // remove it entirely and just set it in the projection matrix.
-    matrix.translate(width / 2, height / 2);
-
-    // 2) Scale around that center
-    matrix.scale(zoom, zoom);
-
-    // 3) Translate back so that (0, 0) again refers to the top-left corner,
-    //    but now any scaling has happened around the screen center
-    matrix.translate(-width / 2, -height / 2);
-
-    // 4) Apply camera offset (so that cameraPosition is centered on screen)
-    matrix.translate(-camX + width / 2, -camY + height / 2);
-
-    // 5) Now place this particular sprite
-    matrix.translate(position.x, position.y);
-    matrix.rotate(rotation);
-    matrix.scale(sprite.width * scale.x, sprite.height * scale.y);
-
-    // 6) Finally apply sprite pivot if needed
-    matrix.translate(-sprite.pivot.x, -sprite.pivot.y);
-
-    return matrix;
   }
 }

@@ -97,7 +97,6 @@ export function createWorld(
     game.container,
     layerService,
     world,
-    cameraEntity,
   );
 
   world.addSystems(inputSystem, cameraSystem);

@@ -1,6 +1,7 @@
 import {
   AnimationComponent,
   AnimationSystem,
+  CameraComponent,
   createImageSprite,
   createShaderStore,
   createWorld,
@@ -24,12 +25,17 @@ const shaderStore = createShaderStore();
 const space = new Space(1500, 1500);
 const random = new Random('game');
 
-const { world, renderLayers } = createWorld('world', game);
+const { world, renderLayers, cameraEntity } = createWorld('world', game, {
+  camera: {
+    allowPanning: true,
+    allowZooming: true,
+  },
+});
 
 const renderLayer = renderLayers[0];
 
 const image = await imageCache.getOrLoad('star_small.png');
-const sprite = createImageSprite(image, renderLayer, shaderStore);
+const sprite = createImageSprite(image, renderLayer, shaderStore, cameraEntity);
 
 for (let i = 0; i < numberOfStars; i++) {
   const scale = random.randomFloat(0.1, 0.5);

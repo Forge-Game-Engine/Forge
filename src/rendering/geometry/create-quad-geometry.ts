@@ -6,10 +6,9 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
   // Vertex positions for 2 triangles (forming a quad)
   const positions = new Float32Array([
     // Triangle 1
-    0, 0, 1, 0, 0, 1,
-
+    -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
     // Triangle 2
-    0, 1, 1, 0, 1, 1,
+    -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
   ]);
 
   const texCoords = new Float32Array([
