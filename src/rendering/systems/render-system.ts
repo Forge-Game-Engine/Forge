@@ -163,7 +163,7 @@ export class RenderSystem extends System {
     matrix.translate(-width / 2, -height / 2);
 
     // 4) Apply camera offset (so that cameraPosition is centered on screen)
-    matrix.translate(-camX + width / 2, camY + height / 2);
+    matrix.translate(-camX + width / 2, -camY + height / 2);
 
     // 5) Now place this particular sprite
     matrix.translate(position.x, position.y);
