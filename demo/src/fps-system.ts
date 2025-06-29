@@ -1,11 +1,12 @@
-import { Entity, Random, System, World } from '../../src';
+import { Entity, System, World } from '../../src';
 
 export class FPSSystem extends System {
   private readonly _divElement: HTMLDivElement;
   private readonly _world: World;
 
+  private readonly fpsValues = new Array<{ entities: number; fps: number }>();
+
   private _nextUpdate: number = 0;
-  private _random: Random = new Random('fps');
 
   constructor(divElement: HTMLDivElement, world: World) {
     super('fps', []);
@@ -14,10 +15,20 @@ export class FPSSystem extends System {
   }
 
   public beforeAll(entities: Entity[]): Entity[] {
-    if (this._world.time.time > this._nextUpdate) {    
+    if (this._world.time.time > this._nextUpdate) {
       this._divElement.innerHTML = `fps: ${this._world.time.fps}`;
 
-      this._nextUpdate = this._world.time.time + 1000;
+      this._nextUpdate = this._world.time.time + 0;
+
+      this.fpsValues.push({
+        fps: this._world.time.fps,
+        entities: this._world.entityCount,
+      });
+    }
+
+    if (this._world.time.fps < 30 && this._world.time.time > 5000) {
+      console.log(JSON.stringify(this.fpsValues, null, 2));
+      this._world.removeSystem(this);
     }
 
     return entities;
