@@ -26,7 +26,7 @@ export class FPSSystem extends System {
       });
     }
 
-    if (this._world.time.fps < 30 && this._world.time.time > 5000) {
+    if (this._world.time.fps < 30 && this._world.time.time > 2000) {
       console.log(JSON.stringify(this.fpsValues, null, 2));
       this._world.removeSystem(this);
     }

@@ -1,9 +1,11 @@
 import {
   AnimationSystem,
-  createImageSprite,
+  createCanvas,
   createShaderStore,
   createWorld,
   Game,
+  HtmlForgeRenderLayer,
+  HtmlRenderSystem,
   ImageCache,
   Space,
 } from '../../src';
@@ -26,14 +28,18 @@ const { world, renderLayers, cameraEntity } = createWorld('world', game, {
 const renderLayer = renderLayers[0];
 
 const image = await imageCache.getOrLoad('star_small.png');
-const sprite = createImageSprite(image, renderLayer, shaderStore, cameraEntity);
 
 const fpsDivElement = document.getElementById('fps') as HTMLDivElement;
 
+const canvas = createCanvas(`html-forge-layer`, game.container);
+
+const htmlRenderLayer = new HtmlForgeRenderLayer('html-render-layer', canvas);
+
 world.addSystems(
-  new StarSpawnerSystem(world, sprite, space, 0, 100),
+  new StarSpawnerSystem(world, image, space, 0, 20),
   new AnimationSystem(world.time),
   new FPSSystem(fpsDivElement, world),
+  new HtmlRenderSystem({ layer: htmlRenderLayer }, cameraEntity),
 );
 
 game.run();
