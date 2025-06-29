@@ -1,7 +1,6 @@
 import {
   AnimationComponent,
   AnimationSystem,
-  CameraComponent,
   createImageSprite,
   createShaderStore,
   createWorld,
@@ -10,11 +9,13 @@ import {
   ImageCache,
   PositionComponent,
   Random,
+  RiveCache,
   RotationComponent,
   ScaleComponent,
   Space,
   SpriteComponent,
 } from '../../src';
+import { FPSSystem } from './fps-system';
 
 export const game = new Game();
 
@@ -22,7 +23,7 @@ const numberOfStars = 50_000;
 
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
-const space = new Space(1500, 1500);
+const space = new Space(window.innerWidth, window.innerHeight);
 const random = new Random('game');
 
 const { world, renderLayers, cameraEntity } = createWorld('world', game, {
@@ -59,6 +60,11 @@ for (let i = 0; i < numberOfStars; i++) {
   ]);
 }
 
-world.addSystem(new AnimationSystem(world.time));
+const fpsDivElement = document.getElementById('fps') as HTMLDivElement;
+
+world.addSystems(
+  new AnimationSystem(world.time),
+  new FPSSystem(fpsDivElement, world),
+);
 
 game.run();
