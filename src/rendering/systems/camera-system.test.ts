@@ -25,7 +25,7 @@ describe('CameraSystem', () => {
     } as unknown as Entity;
 
     time = {
-      rawDeltaTimeInMilliseconds: 0.016,
+      rawDeltaTimeInMilliseconds: 16,
     } as Time;
 
     cameraSystem = new CameraSystem(inputEntity, time);
