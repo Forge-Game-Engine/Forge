@@ -19,12 +19,6 @@ const time = world.time;
 
 The `Time` instance provides a milliseconds and seconds API.
 
-:::tip
-
-The idiomatic way of using the `Time` object is to use the milliseconds API by default and only use the seconds API where it makes sense to do so. 
-
-:::
-
 ### Milliseconds API
 
 - `rawTimeInMilliseconds`: The current raw time in milliseconds.
