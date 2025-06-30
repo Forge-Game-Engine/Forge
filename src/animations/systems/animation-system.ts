@@ -30,12 +30,10 @@ export class AnimationSystem extends System {
       return;
     }
 
-    const deltaTime = this._time.deltaTime;
-
     // Iterate backwards so we can safely remove animations
     for (let i = animationComponent.animations.length - 1; i >= 0; i--) {
       const animation = animationComponent.animations[i];
-      const animationComplete = this._updateAnimation(animation, deltaTime);
+      const animationComplete = this._updateAnimation(animation);
 
       if (animationComplete) {
         animation.updateCallback(animation.endValue);
@@ -53,14 +51,10 @@ export class AnimationSystem extends System {
   /**
    * Updates a single animation.
    * @param animation - The animation to update.
-   * @param deltaTime - The time elapsed since the last update.
    * @returns True if the animation is complete, false otherwise.
    */
-  private _updateAnimation(
-    animation: Required<AnimatedProperty>,
-    deltaTime: number,
-  ): boolean {
-    animation.elapsed += deltaTime;
+  private _updateAnimation(animation: Required<AnimatedProperty>): boolean {
+    animation.elapsed += this._time.deltaTimeInMilliseconds;
 
     let t = animation.elapsed / animation.duration;
 

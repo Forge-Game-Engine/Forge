@@ -20,7 +20,7 @@ export class PhysicsSystem extends System {
   }
 
   public override beforeAll(entities: Entity[]): Entity[] {
-    Engine.update(this._engine, this._time.deltaTime);
+    Engine.update(this._engine, this._time.deltaTimeInMilliseconds);
 
     return entities;
   }

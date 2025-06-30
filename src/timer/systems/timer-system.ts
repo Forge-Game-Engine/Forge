@@ -19,7 +19,7 @@ export class TimerSystem extends System {
       return;
     }
 
-    const deltaTime = this._time.deltaTime;
+    const deltaTime = this._time.deltaTimeInMilliseconds;
 
     // Iterate backwards to safely remove tasks as needed
     for (let i = timerComponent.tasks.length - 1; i >= 0; i--) {

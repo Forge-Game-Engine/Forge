@@ -56,7 +56,7 @@ export class CameraSystem extends System {
     if (cameraComponent.allowPanning) {
       const zoomPanMultiplier =
         cameraComponent.panSensitivity * (1 / cameraComponent.zoom) +
-        this._time.rawDeltaTime;
+        this._time.rawDeltaTimeInMilliseconds;
 
       if (this._inputComponent.keyPressed(keyCodes.w)) {
         position.y -= zoomPanMultiplier;
