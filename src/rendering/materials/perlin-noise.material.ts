@@ -19,12 +19,12 @@ export class PerlinNoiseMaterial extends Material {
       new Float32Array([resolution.x, resolution.y]),
     );
 
-    this.setUniform('u_time', time.time);
+    this.setUniform('u_time', time.timeInSeconds);
 
     this._time = time;
   }
 
   protected override beforeBind(): void {
-    this.setUniform('u_time', this._time.time / 1000);
+    this.setUniform('u_time', this._time.timeInMilliseconds);
   }
 }

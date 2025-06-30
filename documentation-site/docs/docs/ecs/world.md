@@ -11,6 +11,7 @@ The world:
 - **Stores all entities and systems:** The world keeps track of every [`Entity`](../ecs/entity.md) and [`System`](../ecs/system.md) in your game.
 - **Runs systems:** On each update, the world finds all entities that match each system's [`query`](../ecs/query.md) and calls the system's `run` method for each matching entity.
 - **Manages entity and system lifecycles:** You can add, remove, or build entities and systems at runtime.
+- **Hosts the [time instance](../common/time.md)** 
 
 ## Creating a World
 
