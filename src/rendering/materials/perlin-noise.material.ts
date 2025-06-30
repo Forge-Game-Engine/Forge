@@ -25,6 +25,6 @@ export class PerlinNoiseMaterial extends Material {
   }
 
   protected override beforeBind(): void {
-    this.setUniform('u_time', this._time.timeInMilliseconds);
+    this.setUniform('u_time', this._time.timeInSeconds);
   }
 }
