@@ -1,7 +1,6 @@
-import { Stoppable } from '../../common';
 import { InputAction } from '../input-types';
+import { InputSource } from './input-source';
 
-export interface ActionableInputSource<T> extends Stoppable {
+export interface ActionableInputSource<T> extends InputSource {
   bindAction(inputAction: InputAction, args: T): void;
-  reset(): void;
 }

@@ -1,6 +1,13 @@
 import { type Stoppable, Time, type Updatable } from '../common';
+import { isString } from '../utilities';
+import { systemRegistrationPositions } from './constants';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';
+
+interface SystemOrderPair {
+  system: System;
+  order: number;
+}
 
 /**
  * Represents the world in the Entity-Component-System (ECS) architecture.
@@ -31,7 +38,7 @@ export class World implements Updatable, Stoppable {
    * Callbacks to be invoked when systems change.
    */
   private readonly _onSystemsChangedCallbacks = new Set<
-    (systems: Set<System>) => void
+    (systems: Set<SystemOrderPair>) => void
   >();
 
   /**
@@ -44,7 +51,7 @@ export class World implements Updatable, Stoppable {
   /**
    * The set of systems in the world.
    */
-  private readonly _systems = new Set<System>();
+  private readonly _systems = new Set<SystemOrderPair>();
 
   /**
    * The set of entities in the world.
@@ -65,7 +72,7 @@ export class World implements Updatable, Stoppable {
   public update(deltaTime: number) {
     this.time.update(deltaTime);
 
-    for (const system of this._systems) {
+    for (const { system } of this._systems) {
       const entities = this._systemEntities.get(system.name);
 
       if (!entities) {
@@ -137,7 +144,7 @@ export class World implements Updatable, Stoppable {
    * Registers a callback to be invoked when systems change.
    * @param callback - The callback to register.
    */
-  public onSystemsChanged(callback: (systems: Set<System>) => void) {
+  public onSystemsChanged(callback: (systems: Set<SystemOrderPair>) => void) {
     this._onSystemsChangedCallbacks.add(callback);
   }
 
@@ -154,7 +161,7 @@ export class World implements Updatable, Stoppable {
    * @param callback - The callback to remove.
    */
   public removeOnSystemsChangedCallback(
-    callback: (systems: Set<System>) => void,
+    callback: (systems: Set<SystemOrderPair>) => void,
   ) {
     this._onSystemsChangedCallbacks.delete(callback);
   }
@@ -192,8 +199,19 @@ export class World implements Updatable, Stoppable {
    * @param system - The system to add.
    * @returns The world instance.
    */
-  public addSystem(system: System) {
-    this._systems.add(system);
+  public addSystem(
+    system: System,
+    order: number = systemRegistrationPositions.normal,
+  ) {
+    this._systems.add({ system, order });
+    // Reorder the set by 'order' after adding
+    const sorted = Array.from(this._systems).sort((a, b) => a.order - b.order);
+    this._systems.clear();
+
+    for (const pair of sorted) {
+      this._systems.add(pair);
+    }
+
     this._systemEntities.set(system.name, this.queryEntities(system.query));
 
     this.raiseOnSystemsChangedEvent();
@@ -206,9 +224,22 @@ export class World implements Updatable, Stoppable {
    * @param systems - The systems to add.
    * @returns The world instance.
    */
-  public addSystems(...systems: System[]) {
+  public addSystems(order: number, ...systems: System[]): this;
+  public addSystems(...systems: System[]): this;
+  public addSystems(...args: [number, ...System[]] | System[]): this {
+    let order: number;
+    let systems: System[];
+
+    if (typeof args[0] === 'number') {
+      order = args[0];
+      systems = args.slice(1) as System[];
+    } else {
+      order = systemRegistrationPositions.normal;
+      systems = args as System[];
+    }
+
     for (const system of systems) {
-      this.addSystem(system);
+      this.addSystem(system, order);
     }
 
     this.raiseOnSystemsChangedEvent();
@@ -221,10 +252,20 @@ export class World implements Updatable, Stoppable {
    * @param system - The system to remove.
    * @returns The world instance.
    */
-  public removeSystem(system: System) {
-    this._systems.delete(system);
-    this._systemEntities.delete(system.name);
-    this.raiseOnSystemsChangedEvent();
+  public removeSystem(systemToRemove: string | System) {
+    for (const systemOrderPair of this._systems) {
+      const { system } = systemOrderPair;
+      const isNameMatch =
+        isString(systemToRemove) && system.name === systemToRemove;
+      const isSystemMatch = system === systemToRemove;
+
+      if (isNameMatch || isSystemMatch) {
+        this._systems.delete(systemOrderPair);
+
+        this._systemEntities.delete(system.name);
+        this.raiseOnSystemsChangedEvent();
+      }
+    }
 
     return this;
   }
@@ -248,7 +289,7 @@ export class World implements Updatable, Stoppable {
    * @param entity - The entity to update.
    */
   public updateSystemEntities(entity: Entity) {
-    for (const system of this._systems) {
+    for (const { system } of this._systems) {
       const entities = this._systemEntities.get(system.name);
 
       if (!entities) {
@@ -312,7 +353,7 @@ export class World implements Updatable, Stoppable {
    * Stops all systems in the world.
    */
   public stop() {
-    for (const system of this._systems) {
+    for (const { system } of this._systems) {
       system.stop();
     }
 

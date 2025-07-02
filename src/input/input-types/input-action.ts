@@ -1,4 +1,6 @@
-export class InputAction {
+import { Resettable } from '../../common';
+
+export class InputAction implements Resettable {
   public readonly name: string;
 
   private _fired: boolean = false;

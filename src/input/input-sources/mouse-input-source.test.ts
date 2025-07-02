@@ -20,7 +20,7 @@ describe('MouseInputSource', () => {
   });
 
   it('should bind and trigger action on mousedown', () => {
-    mouseInputSource.bindAction(inputAction, {
+    mouseInputSource.bindAxis1d(inputAction, {
       mouseButton: 0,
       moment: 'down',
     });
@@ -32,7 +32,7 @@ describe('MouseInputSource', () => {
   });
 
   it('should bind and trigger action on mouseup', () => {
-    mouseInputSource.bindAction(inputAction, {
+    mouseInputSource.bindAxis1d(inputAction, {
       mouseButton: 2,
       moment: 'up',
     });
@@ -44,7 +44,7 @@ describe('MouseInputSource', () => {
   });
 
   it('should not trigger action if mouseButton does not match', () => {
-    mouseInputSource.bindAction(inputAction, {
+    mouseInputSource.bindAxis1d(inputAction, {
       mouseButton: 1,
       moment: 'down',
     });
@@ -61,11 +61,11 @@ describe('MouseInputSource', () => {
     const firstAction = { trigger: firstSpy } as unknown as InputAction;
     const secondAction = { trigger: secondSpy } as unknown as InputAction;
 
-    mouseInputSource.bindAction(firstAction, {
+    mouseInputSource.bindAxis1d(firstAction, {
       mouseButton: 0,
       moment: 'down',
     });
-    mouseInputSource.bindAction(secondAction, {
+    mouseInputSource.bindAxis1d(secondAction, {
       mouseButton: 0,
       moment: 'down',
     });

@@ -1,4 +1,5 @@
 export * from './OrNull';
 export * from './Stoppable';
-export * from './SyncOrAsync';
+export * from './Resettable';
 export * from './Updatable';
+export * from './Prettify';

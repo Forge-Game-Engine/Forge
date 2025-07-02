@@ -11,8 +11,8 @@ export class InputSystem extends System {
       InputsComponent.symbol,
     );
 
-    for (const [, action] of inputsComponent.inputActions) {
-      action.reset();
+    for (const inputSource of inputsComponent.inputSources) {
+      inputSource.reset();
     }
   }
 }
