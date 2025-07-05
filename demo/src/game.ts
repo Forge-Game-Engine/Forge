@@ -35,13 +35,13 @@ const { world, renderLayers, inputsEntity } = await createWorld('world', game)
     }),
   )
   .add(registerRendering())
-  .collapse();
+  .execute();
 
 const inputsComponent = inputsEntity.getComponentRequired<InputsComponent>(
   InputsComponent.symbol,
 );
 
-const mouseInputSource = new MouseInputSource();
+const mouseInputSource = new MouseInputSource(game);
 const keyboardInputSource = new KeyboardInputSource();
 
 inputsComponent.inputSources.add(mouseInputSource);
@@ -56,7 +56,7 @@ mouseInputSource.bindAxis1d(zoomInput);
 
 keyboardInputSource.bindAction(fireInput, {
   moment: 'down',
-  keyCode: keyCodes.space,
+  keyCode: keyCodes.f,
 });
 
 inputsComponent.inputActions.set(fireInput.name, fireInput);

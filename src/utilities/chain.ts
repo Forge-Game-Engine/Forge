@@ -18,7 +18,7 @@ export class Chain<Input, Output = Input> {
     return this as unknown as Chain<Input, NextOutput>;
   }
 
-  public async collapse(): Promise<Awaited<Prettify<Output>>> {
+  public async execute(): Promise<Awaited<Prettify<Output>>> {
     let result: unknown = this._initialState;
 
     for (const fn of this._functions) {

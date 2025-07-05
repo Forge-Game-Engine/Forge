@@ -7,6 +7,7 @@ cachable
 commitlint
 dbaeumer
 devcontainers
+eamodio
 esbenp
 Fira
 fract

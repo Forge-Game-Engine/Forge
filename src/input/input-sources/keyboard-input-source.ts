@@ -1,10 +1,10 @@
-import { KeyCode  } from '../constants';
+import { ButtonMoment, buttonMoments, KeyCode } from '../constants';
 import { InputAction } from '../input-types';
 import { ActionableInputSource } from './actionable-input-source';
 
 interface BindArgs {
   keyCode: KeyCode;
-  moment: 'down' | 'up';
+  moment: ButtonMoment;
 }
 
 interface InputWithArgs<TInput, TArgs> {
@@ -26,15 +26,14 @@ export class KeyboardInputSource implements ActionableInputSource<BindArgs> {
   }
 
   public bindAction(input: InputAction, args: BindArgs): void {
-    const existingAction = this._inputActions.find(
+    const actionAlreadyBound = this._inputActions.find(
       (item) =>
-        item.args.keyCode === args.keyCode && item.args.moment === args.moment,
+        item.args.keyCode === args.keyCode &&
+        item.args.moment === args.moment &&
+        item.input.name === input.name,
     );
 
-    if (existingAction) {
-      existingAction.input = input;
-      existingAction.args = args;
-
+    if (actionAlreadyBound) {
       return;
     }
 
@@ -45,10 +44,6 @@ export class KeyboardInputSource implements ActionableInputSource<BindArgs> {
     this._keyPressesDown.clear();
     this._keyPressesUps.clear();
     this._keyPresses.clear();
-
-    for (const action of this._inputActions) {
-      action.input.reset();
-    }
   }
 
   public stop(): void {
@@ -63,7 +58,7 @@ export class KeyboardInputSource implements ActionableInputSource<BindArgs> {
     for (const action of this._inputActions) {
       if (
         action.args.keyCode === (event.code as KeyCode) &&
-        action.args.moment === 'down'
+        action.args.moment === buttonMoments.down
       ) {
         action.input.trigger();
       }
@@ -77,7 +72,7 @@ export class KeyboardInputSource implements ActionableInputSource<BindArgs> {
     for (const action of this._inputActions) {
       if (
         action.args.keyCode === (event.code as KeyCode) &&
-        action.args.moment === 'up'
+        action.args.moment === buttonMoments.up
       ) {
         action.input.trigger();
       }

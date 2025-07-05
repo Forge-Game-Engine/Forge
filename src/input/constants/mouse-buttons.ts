@@ -1,5 +1,3 @@
-export type MouseButton = (typeof mouseButtons)[keyof typeof mouseButtons];
-
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
 export const mouseButtons = {
   left: 0,
@@ -8,3 +6,13 @@ export const mouseButtons = {
   extra1: 3,
   extra2: 4,
 } as const;
+
+export type MouseButton = (typeof mouseButtons)[keyof typeof mouseButtons];
+
+export function getMouseButtonName(
+  button: MouseButton,
+): keyof typeof mouseButtons | undefined {
+  return (Object.keys(mouseButtons) as Array<keyof typeof mouseButtons>).find(
+    (key) => mouseButtons[key] === button,
+  );
+}
