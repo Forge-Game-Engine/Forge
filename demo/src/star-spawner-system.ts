@@ -8,6 +8,8 @@ import {
   RotationComponent,
   ScaleComponent,
   Space,
+  Sprite,
+  SpriteComponent,
   System,
   World,
 } from '../../src';
@@ -16,7 +18,7 @@ export class StarSpawnerSystem extends System {
   private readonly _world: World;
   private readonly _newStarEvery: number;
   private readonly _numberOfStarsToSpawnAtATime: number;
-  private readonly _spriteImage: HTMLImageElement;
+  private readonly _sprite: Sprite;
   private readonly _space: Space;
   private readonly _random: Random = new Random('star-spawner');
 
@@ -24,7 +26,7 @@ export class StarSpawnerSystem extends System {
 
   constructor(
     world: World,
-    spriteImage: HTMLImageElement,
+    sprite: Sprite,
     space: Space,
     newStarEvery: number,
     numberOfStarsToSpawnAtATime: number,
@@ -33,8 +35,8 @@ export class StarSpawnerSystem extends System {
     this._world = world;
     this._newStarEvery = newStarEvery;
     this._numberOfStarsToSpawnAtATime = numberOfStarsToSpawnAtATime;
-    this._spriteImage = spriteImage;
     this._space = space;
+    this._sprite = sprite;
   }
 
   public run(_entity: Entity): void {
@@ -60,11 +62,7 @@ export class StarSpawnerSystem extends System {
         this._random.randomInt(-this._space.width / 2, this._space.width / 2),
         this._random.randomInt(-this._space.height / 2, this._space.height / 2),
       ),
-      new HtmlSpriteComponent(
-        this._spriteImage,
-        this._spriteImage.width,
-        this._spriteImage.height,
-      ),
+      new SpriteComponent(this._sprite),
       new ScaleComponent(scale, scale),
       rotation,
       new AnimationComponent({
