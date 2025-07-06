@@ -320,8 +320,8 @@ export class World implements Updatable, Stoppable {
   }
 
   /**
-   * Gets the set of systems in the world.
-   * @returns The set of systems.
+   * Gets the number of entities in the world.
+   * @returns The number of entities.
    */
   get entityCount(): number {
     return this._entities.size;
