@@ -3,12 +3,21 @@
  */
 export class Time {
   private _frames: number;
-  private _rawTime: number;
-  private _rawDeltaTime: number;
-  private _deltaTime: number;
-  private _time: number;
-  private _previousTime: number;
+
+  private _rawTimeInMilliseconds: number;
+  private _rawDeltaTimeInMilliseconds: number;
+  private _deltaTimeInMilliseconds: number;
+  private _timeInMilliseconds: number;
+  private _previousTimeInMilliseconds: number;
+
+  private _rawTimeInSeconds: number;
+  private _rawDeltaTimeInSeconds: number;
+  private _deltaTimeInSeconds: number;
+  private _timeInSeconds: number;
+  private _previousTimeInSeconds: number;
+
   private _timeScale: number;
+
   private readonly _times: number[];
 
   /**
@@ -16,11 +25,19 @@ export class Time {
    */
   constructor() {
     this._frames = 0;
-    this._rawTime = 0;
-    this._rawDeltaTime = 0;
-    this._deltaTime = 0;
-    this._time = 0;
-    this._previousTime = 0;
+
+    this._rawTimeInMilliseconds = 0;
+    this._rawDeltaTimeInMilliseconds = 0;
+    this._deltaTimeInMilliseconds = 0;
+    this._timeInMilliseconds = 0;
+    this._previousTimeInMilliseconds = 0;
+
+    this._rawTimeInSeconds = 0;
+    this._rawDeltaTimeInSeconds = 0;
+    this._deltaTimeInSeconds = 0;
+    this._timeInSeconds = 0;
+    this._previousTimeInSeconds = 0;
+
     this._timeScale = 1;
     this._times = [];
   }
@@ -34,43 +51,83 @@ export class Time {
   }
 
   /**
-   * Gets the raw time.
-   * @returns The raw time.
+   * Gets the raw time in milliseconds.
+   * @returns The raw time in milliseconds.
    */
-  get rawTime(): number {
-    return this._rawTime;
+  get rawTimeInMilliseconds(): number {
+    return this._rawTimeInMilliseconds;
   }
 
   /**
-   * Gets the raw delta time.
-   * @returns The raw delta time.
+   * Gets the raw delta time in milliseconds.
+   * @returns The raw delta time in milliseconds.
    */
-  get rawDeltaTime(): number {
-    return this._rawDeltaTime;
+  get rawDeltaTimeInMilliseconds(): number {
+    return this._rawDeltaTimeInMilliseconds;
   }
 
   /**
-   * Gets the delta time.
-   * @returns The delta time.
+   * Gets the delta time in milliseconds.
+   * @returns The delta time in milliseconds.
    */
-  get deltaTime(): number {
-    return this._deltaTime;
+  get deltaTimeInMilliseconds(): number {
+    return this._deltaTimeInMilliseconds;
   }
 
   /**
-   * Gets the time.
-   * @returns The time.
+   * Gets the time in milliseconds.
+   * @returns The time in milliseconds.
    */
-  get time(): number {
-    return this._time;
+  get timeInMilliseconds(): number {
+    return this._timeInMilliseconds;
   }
 
   /**
-   * Gets the previous time.
-   * @returns The previous time.
+   * Gets the previous time in milliseconds.
+   * @returns The previous time in milliseconds.
    */
-  get previousTime(): number {
-    return this._previousTime;
+  get previousTimeInMilliseconds(): number {
+    return this._previousTimeInMilliseconds;
+  }
+
+  /**
+   * Gets the raw time in seconds.
+   * @returns The raw time in seconds.
+   */
+  get rawTimeInSeconds(): number {
+    return this._rawTimeInSeconds;
+  }
+
+  /**
+   * Gets the raw delta time in seconds.
+   * @returns The raw delta time in seconds.
+   */
+  get rawDeltaTimeInSeconds(): number {
+    return this._rawDeltaTimeInSeconds;
+  }
+
+  /**
+   * Gets the delta time in seconds.
+   * @returns The delta time in seconds.
+   */
+  get deltaTimeInSeconds(): number {
+    return this._deltaTimeInSeconds;
+  }
+
+  /**
+   * Gets the time in seconds.
+   * @returns The time in seconds.
+   */
+  get timeInSeconds(): number {
+    return this._timeInSeconds;
+  }
+
+  /**
+   * Gets the previous time in seconds.
+   * @returns The previous time in seconds.
+   */
+  get previousTimeInSeconds(): number {
+    return this._previousTimeInSeconds;
   }
 
   /**
@@ -103,11 +160,20 @@ export class Time {
    */
   public update(time: number) {
     this._frames++;
-    this._previousTime = this._rawTime;
-    this._rawTime = time;
-    this._rawDeltaTime = time - this._previousTime;
-    this._deltaTime = this._rawDeltaTime * this._timeScale;
-    this._time = this._time + this._deltaTime;
+
+    this._previousTimeInMilliseconds = this._rawTimeInMilliseconds;
+    this._rawTimeInMilliseconds = time;
+    this._rawDeltaTimeInMilliseconds = time - this._previousTimeInMilliseconds;
+    this._deltaTimeInMilliseconds =
+      this._rawDeltaTimeInMilliseconds * this._timeScale;
+    this._timeInMilliseconds =
+      this._timeInMilliseconds + this._deltaTimeInMilliseconds;
+
+    this._previousTimeInSeconds = this._rawTimeInSeconds;
+    this._rawTimeInSeconds = time / 1000;
+    this._rawDeltaTimeInSeconds = time / 1000 - this._previousTimeInSeconds;
+    this._deltaTimeInSeconds = this._rawDeltaTimeInSeconds * this._timeScale;
+    this._timeInSeconds = this._timeInSeconds + this._deltaTimeInSeconds;
 
     while (this._times.length > 0 && this._times[0] <= time - 1000) {
       this._times.shift();

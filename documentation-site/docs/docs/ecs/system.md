@@ -84,7 +84,7 @@ This hook causes you system to loop through entities twice. Which means it can b
 
 Entities will run through your system in the order that they were added to the world. If you intend on using the this function to sort entities, consider updating the registration order instead. 
 
-Entities are already filtered (with some smart caching) by the components that they contain. If you feel the need to filter in the `beforeAll` hook consider adding a new [tag component](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#tag) to your entities and system query to discriminate between entities.
+Entities are already filtered (with some smart caching) by the components that they contain. If you need to filter in the `beforeAll` hook consider adding a new [tag component](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#tag) to your entities and system query to discriminate between entities.
 
 :::
 

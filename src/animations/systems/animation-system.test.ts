@@ -17,7 +17,7 @@ describe('AnimationSystem', () => {
       startValue: 0,
       endValue: 1,
       elapsed: 0,
-      duration: 1000,
+      duration: 1,
       updateCallback: mockUpdateCallback,
       easing: (t) => t,
       loop: 'none',
