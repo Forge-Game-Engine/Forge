@@ -1,4 +1,4 @@
-import { Entity, type World } from '../../ecs';
+import { type World } from '../../ecs';
 import { RenderableBatchComponent } from '../components';
 import type { LayerService } from '../layer-service';
 import { ForgeRenderLayer } from '../render-layers';
@@ -12,7 +12,6 @@ import { createCanvas } from './create-canvas';
  * @param gameContainer - The HTML element that will contain the canvas.
  * @param layerService - The layer service to register the layer with.
  * @param world - The ECS world to which the systems will be added.
- * @param cameraEntity - The entity representing the camera.
  * @returns An array containing the created layer and canvas.
  */
 export function addForgeRenderLayer(
@@ -20,7 +19,6 @@ export function addForgeRenderLayer(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
-  cameraEntity: Entity,
 ) {
   const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer);
   const layer = new ForgeRenderLayer(layerName, canvas);
@@ -29,7 +27,6 @@ export function addForgeRenderLayer(
 
   const layerRenderSystem = new RenderSystem({
     layer,
-    cameraEntity,
   });
 
   world.addSystem(layerRenderSystem);

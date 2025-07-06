@@ -68,7 +68,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@rive-app/webgl2": "^2.29.3",
+    "@rive-app/webgl2": "^2.30.1",
     "howler": "^2.2.4",
     "matter-js": "^0.20.0"
   },

@@ -53,10 +53,14 @@ export class Material {
         this._setUniformNumber(gl, loc, value);
       } else if (typeof value === 'boolean') {
         this._setUniformBoolean(gl, loc, value);
-      } else if (value instanceof Float32Array) {
-        this._setUniformFloat32Array(gl, loc, value);
       } else if (value instanceof Int32Array) {
         this._setUniformInt32Array(gl, loc, value);
+      } else if (value instanceof Float32Array || Array.isArray(value)) {
+        this._setUniformFloat32Array(gl, loc, value);
+      } else {
+        throw new Error(
+          `Unsupported uniform type for ${name}: ${typeof value}`,
+        );
       }
     }
   }
