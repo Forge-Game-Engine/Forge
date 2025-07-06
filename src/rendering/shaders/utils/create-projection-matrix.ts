@@ -6,14 +6,14 @@ import { Matrix3x3, Vector2 } from '../../../math';
  *
  * @param width - The width of the viewport.
  * @param height - The height of the viewport.
- * @param cameraPos - The position of the camera in world coordinates.
+ * @param cameraPosition - The position of the camera in world coordinates.
  * @param zoom - The zoom level to apply to the projection.
  * @returns A 3x3 projection matrix that can be used for rendering.
  */
-export function createProjectionMatrixWithCamera(
+export function createProjectionMatrix(
   width: number,
   height: number,
-  cameraPos: Vector2,
+  cameraPosition: Vector2,
   zoom: number,
 ): Matrix3x3 {
   const projectionMatrix = Matrix3x3.identity;
@@ -26,7 +26,7 @@ export function createProjectionMatrixWithCamera(
   projectionMatrix.scale(zoom, zoom);
 
   // Center cameraPos on screen
-  projectionMatrix.translate(-cameraPos.x, -cameraPos.y);
+  projectionMatrix.translate(-cameraPosition.x, -cameraPosition.y);
 
   return projectionMatrix;
 }

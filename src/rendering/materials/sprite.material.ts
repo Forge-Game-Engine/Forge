@@ -2,7 +2,7 @@ import { PositionComponent } from '../../common';
 import { Entity } from '../../ecs';
 import { CameraComponent } from '../components';
 import {
-  createProjectionMatrixWithCamera,
+  createProjectionMatrix,
   createTextureFromImage,
   ShaderStore,
 } from '../shaders';
@@ -37,7 +37,7 @@ export class SpriteMaterial extends Material {
 
     this.setUniform(
       'u_projection',
-      createProjectionMatrixWithCamera(
+      createProjectionMatrix(
         gl.canvas.width,
         gl.canvas.height,
         cameraPosition,

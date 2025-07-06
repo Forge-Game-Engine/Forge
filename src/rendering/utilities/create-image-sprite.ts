@@ -1,5 +1,4 @@
 import { Entity } from '../../ecs';
-import { Vector2 } from '../../math';
 import { SpriteMaterial } from '../materials';
 import type { ForgeRenderLayer } from '../render-layers';
 import type { ShaderStore } from '../shaders';
