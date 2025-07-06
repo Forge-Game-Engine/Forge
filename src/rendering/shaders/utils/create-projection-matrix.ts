@@ -1,5 +1,15 @@
 import { Matrix3x3, Vector2 } from '../../../math';
 
+/**
+ * Creates a projection matrix for rendering with a camera.
+ * The projection matrix is centered on the camera position and applies zoom.
+ *
+ * @param width - The width of the viewport.
+ * @param height - The height of the viewport.
+ * @param cameraPos - The position of the camera in world coordinates.
+ * @param zoom - The zoom level to apply to the projection.
+ * @returns A 3x3 projection matrix that can be used for rendering.
+ */
 export function createProjectionMatrixWithCamera(
   width: number,
   height: number,
