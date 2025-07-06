@@ -12,7 +12,7 @@ import {
 import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
 
-const FLOATS_PER_INSTANCE = 13;
+const FLOATS_PER_INSTANCE = 9;
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
