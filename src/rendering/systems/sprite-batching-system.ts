@@ -45,9 +45,12 @@ export class SpriteBatchingSystem extends System {
     const { renderable } = spriteComponent.sprite;
 
     if (!this._spriteBatch.batches.has(renderable)) {
-      this._spriteBatch.batches.set(renderable, []);
+      this._spriteBatch.batches.set(renderable, {
+        entities: [],
+        instanceData: null, // This will be set later when we create the instance data.
+      });
     }
 
-    this._spriteBatch.batches.get(renderable)!.push(entity);
+    this._spriteBatch.batches.get(renderable)!.entities.push(entity);
   }
 }

@@ -4,8 +4,13 @@ import {
   ScaleComponent,
 } from '../../common';
 import { Entity, System } from '../../ecs';
-import { RenderableBatchComponent, SpriteComponent } from '../components';
+import {
+  Batch,
+  RenderableBatchComponent,
+  SpriteComponent,
+} from '../components';
 import type { ForgeRenderLayer } from '../render-layers';
+import { Renderable } from '../renderable';
 
 const FLOATS_PER_INSTANCE = 13;
 
@@ -46,130 +51,7 @@ export class RenderSystem extends System {
     const gl = this._layer.context;
 
     for (const [renderable, batch] of batchComponent.batches) {
-      if (batch.length === 0) {
-        continue;
-      }
-
-      renderable.bind(gl);
-
-      const instanceData = new Float32Array(batch.length * FLOATS_PER_INSTANCE); // TODO: move this into the sprite so that we aren't allocating memory every time?
-
-      for (let i = 0; i < batch.length; i++) {
-        const batchedEntity = batch[i];
-        const instanceDataOffset = i * FLOATS_PER_INSTANCE;
-
-        const position = batchedEntity.getComponentRequired<PositionComponent>(
-          PositionComponent.symbol,
-        );
-        const rotation = batchedEntity.getComponent<RotationComponent>(
-          RotationComponent.symbol,
-        );
-        const scale = batchedEntity.getComponent<ScaleComponent>(
-          ScaleComponent.symbol,
-        );
-        const spriteComponent =
-          batchedEntity.getComponentRequired<SpriteComponent>(
-            SpriteComponent.symbol,
-          );
-
-        instanceData[instanceDataOffset] = position.x;
-        instanceData[instanceDataOffset + 1] = position.y;
-        instanceData[instanceDataOffset + 2] = rotation?.radians ?? 0;
-        instanceData[instanceDataOffset + 3] = scale?.x ?? 1;
-        instanceData[instanceDataOffset + 4] = scale?.y ?? 1;
-        instanceData[instanceDataOffset + 5] = spriteComponent.sprite.width;
-        instanceData[instanceDataOffset + 6] = spriteComponent.sprite.height;
-        instanceData[instanceDataOffset + 7] = spriteComponent.sprite.pivot.x;
-        instanceData[instanceDataOffset + 8] = spriteComponent.sprite.pivot.y;
-      }
-
-      // Upload instance transform buffer
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, instanceData, gl.DYNAMIC_DRAW);
-
-      const program = renderable.material.program;
-
-      // Attribute locations
-      const posLoc = gl.getAttribLocation(program, 'a_instancePos');
-      const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
-      const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
-      const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
-      const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-
-      // a_instancePos (vec2) - offset 0
-      if (posLoc !== -1) {
-        gl.enableVertexAttribArray(posLoc);
-        gl.vertexAttribPointer(
-          posLoc,
-          2,
-          gl.FLOAT,
-          false,
-          FLOATS_PER_INSTANCE * 4,
-          0,
-        );
-        gl.vertexAttribDivisor(posLoc, 1);
-      }
-
-      // a_instanceRot (float) - offset 2
-      if (rotLoc !== -1) {
-        gl.enableVertexAttribArray(rotLoc);
-        gl.vertexAttribPointer(
-          rotLoc,
-          1,
-          gl.FLOAT,
-          false,
-          FLOATS_PER_INSTANCE * 4,
-          2 * 4,
-        );
-        gl.vertexAttribDivisor(rotLoc, 1);
-      }
-
-      // a_instanceScale (vec2) - offset 3
-      if (scaleLoc !== -1) {
-        gl.enableVertexAttribArray(scaleLoc);
-        gl.vertexAttribPointer(
-          scaleLoc,
-          2,
-          gl.FLOAT,
-          false,
-          FLOATS_PER_INSTANCE * 4,
-          3 * 4,
-        );
-        gl.vertexAttribDivisor(scaleLoc, 1);
-      }
-
-      // a_instanceSize (vec2) - offset 5
-      if (sizeLoc !== -1) {
-        gl.enableVertexAttribArray(sizeLoc);
-        gl.vertexAttribPointer(
-          sizeLoc,
-          2,
-          gl.FLOAT,
-          false,
-          FLOATS_PER_INSTANCE * 4,
-          5 * 4,
-        );
-        gl.vertexAttribDivisor(sizeLoc, 1);
-      }
-
-      // a_instancePivot (vec2) - offset 7
-      if (pivotLoc !== -1) {
-        gl.enableVertexAttribArray(pivotLoc);
-        gl.vertexAttribPointer(
-          pivotLoc,
-          2,
-          gl.FLOAT,
-          false,
-          FLOATS_PER_INSTANCE * 4,
-          7 * 4,
-        );
-        gl.vertexAttribDivisor(pivotLoc, 1);
-      }
-
-      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batch.length);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      this._includeBatch(renderable, batch, gl);
     }
 
     gl.bindVertexArray(null);
@@ -185,6 +67,146 @@ export class RenderSystem extends System {
   private _setupGLState(): void {
     const gl = this._layer.context;
     gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  private _includeBatch(
+    renderable: Renderable,
+    batch: Batch,
+    gl: WebGL2RenderingContext,
+  ): void {
+    const { entities } = batch;
+
+    if (entities.length === 0) {
+      return;
+    }
+
+    renderable.bind(gl);
+
+    const requiredBatchSize = entities.length * FLOATS_PER_INSTANCE;
+
+    if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
+      batch.instanceData = new Float32Array(requiredBatchSize * 1.25);
+    }
+
+    for (let i = 0; i < entities.length; i++) {
+      const batchedEntity = entities[i];
+      const instanceDataOffset = i * FLOATS_PER_INSTANCE;
+
+      const position = batchedEntity.getComponentRequired<PositionComponent>(
+        PositionComponent.symbol,
+      );
+      const rotation = batchedEntity.getComponent<RotationComponent>(
+        RotationComponent.symbol,
+      );
+      const scale = batchedEntity.getComponent<ScaleComponent>(
+        ScaleComponent.symbol,
+      );
+      const spriteComponent =
+        batchedEntity.getComponentRequired<SpriteComponent>(
+          SpriteComponent.symbol,
+        );
+
+      batch.instanceData[instanceDataOffset] = position.x;
+      batch.instanceData[instanceDataOffset + 1] = position.y;
+      batch.instanceData[instanceDataOffset + 2] = rotation?.radians ?? 0;
+      batch.instanceData[instanceDataOffset + 3] = scale?.x ?? 1;
+      batch.instanceData[instanceDataOffset + 4] = scale?.y ?? 1;
+      batch.instanceData[instanceDataOffset + 5] = spriteComponent.sprite.width;
+      batch.instanceData[instanceDataOffset + 6] =
+        spriteComponent.sprite.height;
+      batch.instanceData[instanceDataOffset + 7] =
+        spriteComponent.sprite.pivot.x;
+      batch.instanceData[instanceDataOffset + 8] =
+        spriteComponent.sprite.pivot.y;
+    }
+
+    // Upload instance transform buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
+
+    const program = renderable.material.program;
+
+    // Attribute locations
+    const posLoc = gl.getAttribLocation(program, 'a_instancePos');
+    const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
+    const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
+    const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
+    const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
+
+    // a_instancePos (vec2) - offset 0
+    if (posLoc !== -1) {
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(
+        posLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        0,
+      );
+      gl.vertexAttribDivisor(posLoc, 1);
+    }
+
+    // a_instanceRot (float) - offset 2
+    if (rotLoc !== -1) {
+      gl.enableVertexAttribArray(rotLoc);
+      gl.vertexAttribPointer(
+        rotLoc,
+        1,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        2 * 4,
+      );
+      gl.vertexAttribDivisor(rotLoc, 1);
+    }
+
+    // a_instanceScale (vec2) - offset 3
+    if (scaleLoc !== -1) {
+      gl.enableVertexAttribArray(scaleLoc);
+      gl.vertexAttribPointer(
+        scaleLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        3 * 4,
+      );
+      gl.vertexAttribDivisor(scaleLoc, 1);
+    }
+
+    // a_instanceSize (vec2) - offset 5
+    if (sizeLoc !== -1) {
+      gl.enableVertexAttribArray(sizeLoc);
+      gl.vertexAttribPointer(
+        sizeLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        5 * 4,
+      );
+      gl.vertexAttribDivisor(sizeLoc, 1);
+    }
+
+    // a_instancePivot (vec2) - offset 7
+    if (pivotLoc !== -1) {
+      gl.enableVertexAttribArray(pivotLoc);
+      gl.vertexAttribPointer(
+        pivotLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        7 * 4,
+      );
+      gl.vertexAttribDivisor(pivotLoc, 1);
+    }
+
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, entities.length);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 }

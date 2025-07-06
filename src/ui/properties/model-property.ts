@@ -37,7 +37,6 @@ export class ModelProperty<
   }
 
   set value(value: T) {
-    console.log(value);
     this._property.value = value;
   }
 }
