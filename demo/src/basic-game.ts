@@ -13,12 +13,7 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const { world, renderLayers } = createWorld('world', game, {
-  camera: {
-    allowPanning: true,
-    allowZooming: true,
-  }
-});
+const { world, renderLayers } = createWorld('world', game);
 
 const image = await imageCache.getOrLoad('ship.png');
 
