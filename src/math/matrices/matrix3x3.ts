@@ -37,7 +37,7 @@ export class Matrix3x3 {
    * @param y - The y-coordinate translation
    * @returns This matrix for chaining
    */
-  public translate(x: number, y: number): Matrix3x3 {
+  public translate(x: number, y: number): this {
     this._matrix[6] += this._matrix[0] * x + this._matrix[3] * y;
     this._matrix[7] += this._matrix[1] * x + this._matrix[4] * y;
 
@@ -49,7 +49,7 @@ export class Matrix3x3 {
    * @param radians - The rotation angle in radians
    * @returns This matrix for chaining
    */
-  public rotate(radians: number): Matrix3x3 {
+  public rotate(radians: number): this {
     const cosRotation = Math.cos(radians);
     const sinRotation = Math.sin(radians);
     const m0 = this._matrix[0];
@@ -71,7 +71,7 @@ export class Matrix3x3 {
    * @param y - The y-axis scale factor
    * @returns This matrix for chaining
    */
-  public scale(x: number, y: number): Matrix3x3 {
+  public scale(x: number, y: number): this {
     this._matrix[0] *= x;
     this._matrix[1] *= x;
     this._matrix[3] *= y;
@@ -82,5 +82,9 @@ export class Matrix3x3 {
 
   get data(): number[] {
     return this._matrix;
+  }
+
+  static get identity(): Matrix3x3 {
+    return new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   }
 }

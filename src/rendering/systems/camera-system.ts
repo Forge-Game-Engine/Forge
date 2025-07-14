@@ -38,7 +38,6 @@ export class CameraSystem extends System {
       maxZoom,
       zoomSensitivity,
       panInput,
-      panSensitivity,
     } = cameraComponent;
 
     if (isStatic) {
@@ -59,7 +58,8 @@ export class CameraSystem extends System {
 
     if (panInput) {
       const zoomPanMultiplier =
-        panSensitivity * (1 / cameraComponent.zoom) +
+        cameraComponent.panSensitivity *
+        (1 / cameraComponent.zoom) *
         this._time.rawDeltaTimeInMilliseconds;
 
       position.y += panInput.value.y * zoomPanMultiplier;

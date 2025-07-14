@@ -1,25 +1,11 @@
-import {
-  type OrNull,
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
-} from '../../common';
-import type { Component } from '../../ecs';
-import type { Vector2 } from '../../math';
+import type { Component, Entity } from '../../ecs';
 import type { RenderLayer } from '../render-layers';
 import type { Renderable } from '../renderable';
 
-export interface Batchable {
-  renderable: Renderable;
-  position: PositionComponent;
-  width: number;
-  height: number;
-  pivot: Vector2;
-  rotation: OrNull<RotationComponent>;
-  scale: OrNull<ScaleComponent>;
+export interface Batch {
+  entities: Entity[];
+  instanceData: Float32Array | null;
 }
-
-export type Batch = Batchable[];
 
 /**
  * The `RenderableBatchComponent` class implements the `Component` interface and represents

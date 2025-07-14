@@ -1,5 +1,4 @@
 import {
-  createImageSprite,
   createShaderStore,
   createWorld,
   Game,
@@ -11,11 +10,9 @@ import {
   keyCodes,
   mouseButtons,
   MouseInputSource,
-  PositionComponent,
   registerCamera,
   registerInputs,
   registerRendering,
-  SpriteComponent,
 } from '../../src';
 import { FireSystem } from './fire-system';
 
@@ -62,14 +59,25 @@ keyboardInputSource.bindAction(fireInput, {
 inputsComponent.inputActions.set(fireInput.name, fireInput);
 inputsComponent.inputAxis1ds.set(zoomInput.name, zoomInput);
 
-const image = await imageCache.getOrLoad('ship.png');
+const sprites = [
+  'star_medium.png',
+  'star_small.png',
+  'star_large.png',
+  'ship.png',
+  'meteor_detailedLarge.png',
+];
 
-const sprite = createImageSprite(image, renderLayers[0], shaderStore);
-
-world.buildAndAddEntity('sprite', [
-  new PositionComponent(),
-  new SpriteComponent(sprite),
-]);
+for (const sprite of sprites) {
+  await createBatch(
+    sprite,
+    imageCache,
+    world,
+    renderLayers[0],
+    shaderStore,
+    cameraEntity,
+    10_000,
+  );
+}
 
 world.addSystems(new FireSystem());
 

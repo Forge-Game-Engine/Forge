@@ -33,7 +33,7 @@ export type CameraComponentOptions = {
  */
 const defaultOptions: CameraComponentOptions = {
   zoomSensitivity: 0.001,
-  panSensitivity: 0.5,
+  panSensitivity: 3,
   minZoom: 0.5,
   maxZoom: 3,
   isStatic: false,

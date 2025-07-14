@@ -1,3 +1,4 @@
+import { Entity } from '../../ecs';
 import { SpriteMaterial } from '../materials';
 import type { ForgeRenderLayer } from '../render-layers';
 import type { ShaderStore } from '../shaders';
@@ -15,8 +16,14 @@ export function createImageSprite(
   image: HTMLImageElement,
   renderLayer: ForgeRenderLayer,
   shaderStore: ShaderStore,
+  cameraEntity: Entity,
 ): Sprite {
-  const material = new SpriteMaterial(renderLayer.context, shaderStore, image);
+  const material = new SpriteMaterial(
+    renderLayer.context,
+    shaderStore,
+    image,
+    cameraEntity,
+  );
   const sprite = createSprite(material, renderLayer, image.width, image.height);
 
   return sprite;

@@ -359,4 +359,12 @@ export class World implements Updatable, Stoppable {
 
     this._entities.clear();
   }
+
+  /**
+   * Gets the number of entities in the world.
+   * @returns The number of entities.
+   */
+  get entityCount(): number {
+    return this._entities.size;
+  }
 }
