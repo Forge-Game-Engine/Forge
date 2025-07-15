@@ -2,31 +2,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputSystem } from './input-system';
 import { InputsComponent } from '../components';
 import type { Entity } from '../../ecs';
+import { TriggerAction } from '../input-types';
 
 describe('InputSystem', () => {
   let inputSystem: InputSystem;
   let mockEntity: Entity;
-  let mockInputsComponent: InputsComponent;
-  let mockAction1: { reset: () => void };
-  let mockAction2: { reset: () => void };
+  let mockAction1: TriggerAction;
+  let mockAction2: TriggerAction;
 
   beforeEach(() => {
     inputSystem = new InputSystem();
 
-    mockAction1 = { reset: vi.fn() };
-    mockAction2 = { reset: vi.fn() };
+    mockAction1 = new TriggerAction('action1');
+    mockAction2 = new TriggerAction('action2');
 
-    mockInputsComponent = {
-      inputActions: new Map([
-        ['jump', mockAction1],
-        ['run', mockAction2],
-      ]),
-    } as unknown as InputsComponent;
+    const inputComponent = new InputsComponent();
+
+    inputComponent.inputActions.set('action1', mockAction1);
+    inputComponent.inputActions.set('action2', mockAction2);
 
     mockEntity = {
       getComponentRequired: vi.fn().mockImplementation((symbol) => {
         if (symbol === InputsComponent.symbol) {
-          return mockInputsComponent;
+          return inputComponent;
         }
 
         throw new Error('Component not found');
@@ -35,17 +33,15 @@ describe('InputSystem', () => {
   });
 
   it('should call reset on all input actions', () => {
+    mockAction1.trigger();
+    mockAction2.trigger();
+
+    expect(mockAction1.isTriggered).toBe(true);
+    expect(mockAction2.isTriggered).toBe(true);
+
     inputSystem.run(mockEntity);
 
-    expect(mockAction1.reset).toHaveBeenCalledTimes(1);
-    expect(mockAction2.reset).toHaveBeenCalledTimes(1);
-  });
-
-  it('should get InputsComponent using the correct symbol', () => {
-    inputSystem.run(mockEntity);
-
-    expect(mockEntity.getComponentRequired).toHaveBeenCalledWith(
-      InputsComponent.symbol,
-    );
+    expect(mockAction1.isTriggered).toBe(false);
+    expect(mockAction2.isTriggered).toBe(false);
   });
 });

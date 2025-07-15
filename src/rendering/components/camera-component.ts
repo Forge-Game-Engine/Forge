@@ -1,5 +1,5 @@
 import type { Component } from '../../ecs';
-import { InputAxis1d, InputAxis2d } from '../../input';
+import { InputAxis1d, Axis2dAction } from '../../input';
 
 /**
  * Options for configuring the `CameraComponent`.
@@ -25,7 +25,7 @@ export type CameraComponentOptions = {
 
   zoomInput?: InputAxis1d;
 
-  panInput?: InputAxis2d;
+  panInput?: Axis2dAction;
 };
 
 /**
@@ -70,7 +70,7 @@ export class CameraComponent implements Component {
 
   public zoomInput?: InputAxis1d;
 
-  public panInput?: InputAxis2d;
+  public panInput?: Axis2dAction;
 
   /** A static symbol property that uniquely identifies the `CameraComponent`. */
   public static readonly symbol = Symbol('Camera');

@@ -1,6 +1,6 @@
-import { InputAction } from '../input-types';
+import { TriggerAction } from '../input-types';
 import { InputSource } from './input-source';
 
-export interface ActionableInputSource<T> extends InputSource {
-  bindAction(inputAction: InputAction, args: T): void;
+export interface ActionableInputSource<TArgs> extends InputSource {
+  bindAction(inputAction: TriggerAction, args: TArgs): void;
 }

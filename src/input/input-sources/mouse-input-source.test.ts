@@ -1,22 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MouseInputSource } from './mouse-input-source';
-import { InputAction, InputAxis1d, InputAxis2d } from '../input-types';
+import { TriggerAction, InputAxis1d, Axis2dAction } from '../input-types';
 import { Game } from '../../ecs';
 import { axisMeasurements, mouseButtons } from '../constants';
 import { buttonMoments } from '../constants/button-moments';
 
 describe('MouseInputSource', () => {
   let mouseInputSource: MouseInputSource;
-  let inputAction: InputAction;
+  let inputAction: TriggerAction;
   let inputAxis1d: InputAxis1d;
-  let inputAxis2d: InputAxis2d;
+  let inputAxis2d: Axis2dAction;
   let game: Game;
 
   beforeEach(() => {
     global.window = window;
-    inputAction = new InputAction('test-action');
+    inputAction = new TriggerAction('test-action');
     inputAxis1d = new InputAxis1d('test-axis-1d');
-    inputAxis2d = new InputAxis2d('test-axis-2d');
+    inputAxis2d = new Axis2dAction('test-axis-2d');
     game = new Game();
     mouseInputSource = new MouseInputSource(game);
   });
@@ -94,10 +94,10 @@ describe('MouseInputSource', () => {
       button: mouseButtons.left,
     });
 
-    expect(inputAction.fired).toBe(false);
+    expect(inputAction.isTriggered).toBe(false);
 
     game.container.dispatchEvent(mouseDownEvent);
-    expect(inputAction.fired).toBe(true);
+    expect(inputAction.isTriggered).toBe(true);
   });
 
   it('should update an existing action binding if already present', () => {
@@ -106,8 +106,8 @@ describe('MouseInputSource', () => {
       moment: buttonMoments.down,
     };
 
-    const inputAction1 = new InputAction('test-action-1');
-    const inputAction2 = new InputAction('test-action-2');
+    const inputAction1 = new TriggerAction('test-action-1');
+    const inputAction2 = new TriggerAction('test-action-2');
 
     mouseInputSource.bindAction(inputAction, actionArgs);
     mouseInputSource.bindAction(inputAction2, actionArgs);
@@ -117,8 +117,8 @@ describe('MouseInputSource', () => {
     });
     game.container.dispatchEvent(mouseDownEvent);
 
-    expect(inputAction1.fired).toBe(false);
-    expect(inputAction2.fired).toBe(true);
+    expect(inputAction1.isTriggered).toBe(false);
+    expect(inputAction2.isTriggered).toBe(true);
   });
 
   it('should not trigger the action if mouseButton or moment does not match', () => {
@@ -134,7 +134,7 @@ describe('MouseInputSource', () => {
     });
     game.container.dispatchEvent(mouseDownEvent);
 
-    expect(inputAction.fired).toBe(false);
+    expect(inputAction.isTriggered).toBe(false);
 
     inputAction.reset();
 
@@ -144,7 +144,7 @@ describe('MouseInputSource', () => {
     });
     game.container.dispatchEvent(mouseUpEvent);
 
-    expect(inputAction.fired).toBe(false);
+    expect(inputAction.isTriggered).toBe(false);
   });
 
   it('should add a new axis-1d binding if not already present', () => {

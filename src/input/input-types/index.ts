@@ -1,3 +1,3 @@
-export * from './input-action';
-export * from './input-axis-1d';
-export * from './input-axis-2d';
+export * from './trigger-action';
+export * from './axis-1d-action';
+export * from './axis-2d-action';

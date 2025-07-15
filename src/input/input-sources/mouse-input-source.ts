@@ -5,40 +5,39 @@ import {
   axisMeasurements,
   ButtonMoment,
   buttonMoments,
-  getMouseButtonName,
   MouseButton,
 } from '../constants';
-import { InputAction, InputAxis1d, InputAxis2d } from '../input-types';
+import { TriggerAction, InputAxis1d, Axis2dAction } from '../input-types';
 import { ActionableInputSource } from './actionable-input-source';
 import { Axis1dInputSource } from './axis-1d-input-source';
 import { Axis2dInputSource } from './axis-2d-input-source';
 
-interface ActionBindArgs {
+export interface MouseActionBindArgs {
   mouseButton: MouseButton;
   moment: ButtonMoment;
 }
 
-interface Input2dBindArgs {
+export interface MouseInput2dBindArgs {
   type: AxisMeasurement;
 }
 
-interface InputWithArgs<TInput, TArgs> {
+export interface MouseInputWithArgs<TInput, TArgs> {
   input: TInput;
   args: TArgs;
 }
 
 export class MouseInputSource
   implements
-    ActionableInputSource<ActionBindArgs>,
+    ActionableInputSource<MouseActionBindArgs>,
     Axis1dInputSource,
-    Axis2dInputSource<Input2dBindArgs>
+    Axis2dInputSource<MouseInput2dBindArgs>
 {
   private readonly _inputActions: Array<
-    InputWithArgs<InputAction, ActionBindArgs>
+    MouseInputWithArgs<TriggerAction, MouseActionBindArgs>
   >;
   private readonly _inputAxis1d: Array<InputAxis1d>;
   private readonly _inputAxis2d: Array<
-    InputWithArgs<InputAxis2d, Input2dBindArgs>
+    MouseInputWithArgs<Axis2dAction, MouseInput2dBindArgs>
   >;
 
   private readonly _game: Game;
@@ -52,9 +51,11 @@ export class MouseInputSource
   private _scrollDelta = 0;
 
   constructor(game: Game) {
-    this._inputActions = Array<InputWithArgs<InputAction, ActionBindArgs>>();
+    this._inputActions =
+      Array<MouseInputWithArgs<TriggerAction, MouseActionBindArgs>>();
     this._inputAxis1d = Array<InputAxis1d>();
-    this._inputAxis2d = Array<InputWithArgs<InputAxis2d, Input2dBindArgs>>();
+    this._inputAxis2d =
+      Array<MouseInputWithArgs<Axis2dAction, MouseInput2dBindArgs>>();
 
     this._game = game;
     this._containerBoundingClientRect = game.container.getBoundingClientRect();
@@ -65,7 +66,7 @@ export class MouseInputSource
     game.container.addEventListener('mousemove', this._onMouseMoveHandler);
   }
 
-  public bindAction(input: InputAction, args: ActionBindArgs): void {
+  public bindAction(input: TriggerAction, args: MouseActionBindArgs): void {
     const existingAction = this._inputActions.find(
       (item) => item.input === input,
     );
@@ -77,12 +78,9 @@ export class MouseInputSource
       this._inputActions.push({ input, args });
     }
 
-    const mouseButtonName = getMouseButtonName(args.mouseButton) ?? 'unknown';
-    const control = `${mouseButtonName} button ${args.moment}`; // e.g., "left button down"
-
-    input.bindSource({
-      source: 'mouse',
-      displayText: control,
+    input.addBinding({
+      source: this,
+      args,
     });
   }
 
@@ -98,7 +96,7 @@ export class MouseInputSource
     this._inputAxis1d.push(input);
   }
 
-  public bindAxis2d(input: InputAxis2d, args: Input2dBindArgs): void {
+  public bindAxis2d(input: Axis2dAction, args: MouseInput2dBindArgs): void {
     const existingAxis2d = this._inputAxis2d.find(
       (item) => item.args.type === args.type && item.input.name === input.name,
     );
@@ -131,12 +129,14 @@ export class MouseInputSource
   }
 
   private readonly _onMouseDownHandler = (event: MouseEvent) => {
-    this._mouseButtonPresses.add(event.button as MouseButton);
-    this._mouseButtonDowns.add(event.button as MouseButton);
+    const button = event.button as MouseButton;
+
+    this._mouseButtonPresses.add(button);
+    this._mouseButtonDowns.add(button);
 
     for (const action of this._inputActions) {
       if (
-        action.args.mouseButton === (event.button as MouseButton) &&
+        action.args.mouseButton === button &&
         action.args.moment === buttonMoments.down
       ) {
         action.input.trigger();

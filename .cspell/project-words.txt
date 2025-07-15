@@ -28,6 +28,7 @@ refac
 Renderable
 renderables
 requizits
+resettables
 RGBA
 rnaumovs
 slevesque
@@ -37,5 +38,6 @@ sonarlint
 sonarsource
 stoppables
 updatables
+WASD
 webgl
 yoavbls

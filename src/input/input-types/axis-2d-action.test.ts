@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InputAxis2d } from './input-axis-2d';
+import { Axis2dAction } from './axis-2d-action';
 import { Vector2 } from '../../math';
 
-describe('InputAxis2d', () => {
-  let axis: InputAxis2d;
+describe('Axis2dAction', () => {
+  let axis: Axis2dAction;
 
   beforeEach(() => {
-    axis = new InputAxis2d('pan');
+    axis = new Axis2dAction('pan');
     axis.reset();
   });
 
@@ -52,5 +52,27 @@ describe('InputAxis2d', () => {
 
     expect(axis.value.x).toBe(-1);
     expect(axis.value.y).toBe(-2);
+  });
+
+  it('should bind sources correctly', () => {
+    axis.bind({
+      bindingId: 'mouse1',
+      sourceName: 'mouse',
+      displayText: 'Mouse Position Delta',
+    });
+
+    expect(axis.bindings.length).toBe(1);
+    expect(axis.bindings[0].bindingId).toBe('mouse1');
+    expect(axis.bindings[0].displayText).toBe('Mouse Position Delta');
+
+    axis.bind({
+      bindingId: 'keyboard1',
+      sourceName: 'keyboard',
+      displayText: 'WASD Keys',
+    });
+
+    expect(axis.bindings.length).toBe(2);
+    expect(axis.bindings[1].bindingId).toBe('keyboard1');
+    expect(axis.bindings[1].displayText).toBe('WASD Keys');
   });
 });

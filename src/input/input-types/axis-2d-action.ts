@@ -1,14 +1,30 @@
-import { Resettable } from '../../common';
 import { Vector2 } from '../../math';
 import { isNumber } from '../../utilities';
+import { InputAction, InputBinding } from './input-action';
 
-export class InputAxis2d implements Resettable {
+export class Axis2dAction implements InputAction {
   public readonly name: string;
+  public readonly bindings: InputBinding[];
 
   private readonly _value: Vector2 = Vector2.zero;
 
   constructor(name: string) {
     this.name = name;
+    this.bindings = [];
+  }
+
+  public bind(binding: InputBinding): void {
+    this.bindings.push(binding);
+  }
+
+  public unbind(bindingId: string): void {
+    const index = this.bindings.findIndex(
+      (binding) => binding.bindingId === bindingId,
+    );
+
+    if (index !== -1) {
+      this.bindings.splice(index, 1);
+    }
   }
 
   public reset() {

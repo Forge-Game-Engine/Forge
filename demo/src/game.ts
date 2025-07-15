@@ -3,7 +3,7 @@ import {
   createWorld,
   Game,
   ImageCache,
-  InputAction,
+  TriggerAction,
   InputAxis1d,
   InputsComponent,
   KeyboardInputSource,
@@ -14,6 +14,7 @@ import {
   registerInputs,
   registerRendering,
 } from '../../src';
+import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
 export const game = new Game();
@@ -21,10 +22,13 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const fireInput = new InputAction('fire');
+const fireInput = new TriggerAction('fire');
 const zoomInput = new InputAxis1d('zoom');
 
-const { world, renderLayers, inputsEntity } = await createWorld('world', game)
+const { world, renderLayers, inputsEntity, cameraEntity } = await createWorld(
+  'world',
+  game,
+)
   .add(registerInputs())
   .add(
     registerCamera({
@@ -67,8 +71,8 @@ const sprites = [
   'meteor_detailedLarge.png',
 ];
 
-for (const sprite of sprites) {
-  await createBatch(
+const batchPromises = sprites.map((sprite) =>
+  createBatch(
     sprite,
     imageCache,
     world,
@@ -76,8 +80,10 @@ for (const sprite of sprites) {
     shaderStore,
     cameraEntity,
     10_000,
-  );
-}
+  ),
+);
+
+await Promise.all(batchPromises);
 
 world.addSystems(new FireSystem());
 

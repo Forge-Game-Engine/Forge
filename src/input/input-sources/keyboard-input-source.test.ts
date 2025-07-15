@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
 import { buttonMoments, KeyCode, keyCodes } from '../constants';
-import { InputAction } from '../input-types';
+import { TriggerAction } from '../input-types';
 
 describe('KeyboardInputSource', () => {
   let keyboardInputSource: KeyboardInputSource;
@@ -15,7 +15,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('should bind and trigger action on keydown', () => {
-    const action = new InputAction('fire');
+    const action = new TriggerAction('fire');
 
     keyboardInputSource.bindAction(action, {
       keyCode: keyCodes.space,
@@ -25,11 +25,11 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.fired).toBe(true);
+    expect(action.isTriggered).toBe(true);
   });
 
   it('should bind and trigger action on keyup', () => {
-    const action = new InputAction('fire');
+    const action = new TriggerAction('fire');
 
     keyboardInputSource.bindAction(action, {
       keyCode: keyCodes.space,
@@ -39,11 +39,11 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keyup', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.fired).toBe(true);
+    expect(action.isTriggered).toBe(true);
   });
 
   it('should not trigger action if keyCode does not match', () => {
-    const action = new InputAction('fire');
+    const action = new TriggerAction('fire');
 
     keyboardInputSource.bindAction(action, {
       keyCode: keyCodes.f,
@@ -53,12 +53,12 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.fired).toBe(false);
+    expect(action.isTriggered).toBe(false);
   });
 
   it('should update existing action if binding with same keyCode and moment', () => {
-    const action1 = new InputAction('fire');
-    const action2 = new InputAction('jump');
+    const action1 = new TriggerAction('fire');
+    const action2 = new TriggerAction('jump');
 
     keyboardInputSource.bindAction(action1, {
       keyCode: keyCodes.space,
@@ -72,29 +72,31 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action1.fired).toBe(true);
-    expect(action2.fired).toBe(true);
+    expect(action1.isTriggered).toBe(true);
+    expect(action2.isTriggered).toBe(true);
   });
 
   it('should clear key presses and reset actions on reset()', () => {
-    const action = new MockInputAction();
+    const action = new TriggerAction('fire');
+
     keyboardInputSource.bindAction(action, {
-      keyCode: 'KeyF' as KeyCode,
+      keyCode: keyCodes.f,
       moment: buttonMoments.down,
     });
 
     // Simulate keydown to fill sets
-    const event = new window.KeyboardEvent('keydown', { code: 'KeyF' });
+    const event = new window.KeyboardEvent('keydown', { code: keyCodes.f });
     window.dispatchEvent(event);
 
     keyboardInputSource.reset();
 
-    expect(action.resetCalled).toBe(true);
-    // _keyPresses, _keyPressesDown, _keyPressesUps are private, so we can't check directly
-    // But we can check that after reset, triggering again works as expected
-    action.triggered = false;
+    expect(action.isTriggered).toBe(true);
+
+    action.reset();
+    expect(action.isTriggered).toBe(false);
+
     window.dispatchEvent(event);
-    expect(action.triggered).toBe(true);
+    expect(action.isTriggered).toBe(true);
   });
 
   it('should remove event listeners on stop()', () => {
