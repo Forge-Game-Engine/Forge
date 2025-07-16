@@ -28,5 +28,4 @@ export class ImageAnimationComponent implements Component {
     this.numFrames = frames.length;
     this.frameLengthInSeconds = animationDurationSeconds / this.numFrames;
   }
-  
 }

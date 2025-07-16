@@ -1,14 +1,14 @@
 import { Geometry } from './geometry';
 
 export interface SpriteSheetConfig {
-  spritesPerRow: number;    // Number of sprites horizontally
+  spritesPerRow: number; // Number of sprites horizontally
   spritesPerColumn: number; // Number of sprites vertically
-  spriteIndex: number;      // Which sprite to display (0-based index)
+  spriteIndex: number; // Which sprite to display (0-based index)
 }
 
 export function createQuadGeometry(
-  gl: WebGL2RenderingContext, 
-  spriteConfig?: SpriteSheetConfig
+  gl: WebGL2RenderingContext,
+  spriteConfig?: SpriteSheetConfig,
 ): Geometry {
   const geometry = new Geometry();
 
@@ -26,12 +26,12 @@ export function createQuadGeometry(
     // Calculate sprite dimensions in UV space (0-1)
     const spriteUWidth = 1.0 / spriteConfig.spritesPerRow;
     const spriteUHeight = 1.0 / spriteConfig.spritesPerColumn;
-    
+
     // Calculate sprite position
     const spriteIndex = spriteConfig.spriteIndex;
     const spriteX = spriteIndex % spriteConfig.spritesPerRow;
     const spriteY = Math.floor(spriteIndex / spriteConfig.spritesPerRow);
-    
+
     // Calculate UV coordinates for this sprite
     const uLeft = spriteX * spriteUWidth;
     const uRight = uLeft + spriteUWidth;
@@ -40,14 +40,20 @@ export function createQuadGeometry(
 
     texCoords = new Float32Array([
       // Triangle 1
-      uLeft, vBottom,    // bottom-left
-      uRight, vBottom,   // bottom-right  
-      uLeft, vTop,       // top-left
-      
+      uLeft,
+      vBottom, // bottom-left
+      uRight,
+      vBottom, // bottom-right
+      uLeft,
+      vTop, // top-left
+
       // Triangle 2
-      uLeft, vTop,       // top-left
-      uRight, vBottom,   // bottom-right
-      uRight, vTop,      // top-right
+      uLeft,
+      vTop, // top-left
+      uRight,
+      vBottom, // bottom-right
+      uRight,
+      vTop, // top-right
     ]);
   } else {
     // Default full texture coordinates

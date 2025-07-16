@@ -4,7 +4,7 @@ import { ImageAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
 
 export class ImageAnimationSystem extends System {
-  private _time: Time;
+  private readonly _time: Time;
 
   /**
    * Creates an instance of AnimationSystem.

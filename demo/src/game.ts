@@ -34,7 +34,7 @@ const sprite = createImageSprite(
   cameraEntity,
 );
 
-world.buildAndAddEntity('shipanimation', [
+world.buildAndAddEntity('ship-animation', [
   new PositionComponent(),
   new SpriteComponent(sprite),
   new ImageAnimationComponent({

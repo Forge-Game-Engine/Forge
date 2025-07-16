@@ -8,9 +8,9 @@ import {
 } from '../../rendering';
 
 export class AnimationCreator {
-  private _renderLayer: ForgeRenderLayer;
-  private _shaderStore: ShaderStore;
-  private _cameraEntity: Entity;
+  private readonly _renderLayer: ForgeRenderLayer;
+  private readonly _shaderStore: ShaderStore;
+  private readonly _cameraEntity: Entity;
 
   constructor(
     renderLayer: ForgeRenderLayer,
@@ -24,28 +24,29 @@ export class AnimationCreator {
 
   public createAnimation(
     spriteSheet: HTMLImageElement,
-    numColumns: number,
-    numRows: number,
-    numFrames: number = numColumns * numRows,
+    spritesPerColumn: number,
+    spritesPerRow: number,
+    numFrames: number = spritesPerColumn * spritesPerRow,
   ): Renderable[] {
-    let frames: Renderable[] = new Array(numFrames);
+    const frames: Renderable[] = [];
     const spriteSheetMaterial = new SpriteMaterial(
       this._renderLayer.context,
       this._shaderStore,
       spriteSheet,
       this._cameraEntity,
     );
+
     // TODO: Should this store an array of renderables, or an array of quad geometries?
     for (let i = 0; i < numFrames; i++) {
       const renderable = new Renderable(
         createQuadGeometry(this._renderLayer.context, {
-          spritesPerColumn: numColumns,
-          spritesPerRow: numRows,
+          spritesPerColumn: spritesPerColumn,
+          spritesPerRow: spritesPerRow,
           spriteIndex: i,
         }),
         spriteSheetMaterial,
       );
-      frames[i] = renderable;
+      frames.push(renderable);
     }
 
     return frames;
