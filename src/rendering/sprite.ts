@@ -53,7 +53,7 @@ export class Sprite {
   public pivot: Vector2;
 
   /** The sprite material used for rendering. */
-  public readonly renderable: Renderable;
+  public renderable: Renderable;
 
   /**
    * Constructs a new instance of the `Sprite` class.

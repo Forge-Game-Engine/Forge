@@ -1,5 +1,15 @@
-import { createShaderStore, createWorld, Game, ImageCache } from '../../src';
-import { createBatch } from './create-batch';
+import {
+  AnimationCreator,
+  createImageSprite,
+  createShaderStore,
+  createWorld,
+  Game,
+  ImageAnimationComponent,
+  ImageAnimationSystem,
+  ImageCache,
+  PositionComponent,
+  SpriteComponent,
+} from '../../src';
 
 export const game = new Game();
 
@@ -8,24 +18,32 @@ const shaderStore = createShaderStore();
 
 const { world, renderLayers, cameraEntity } = createWorld('world', game);
 
-const sprites = [
-  'star_medium.png',
-  'star_small.png',
-  'star_large.png',
-  'ship.png',
-  'meteor_detailedLarge.png',
-];
+const animationSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
 
-for (const sprite of sprites) {
-  await createBatch(
-    sprite,
-    imageCache,
-    world,
-    renderLayers[0],
-    shaderStore,
-    cameraEntity,
-    10_000,
-  );
-}
+const animationCreator = new AnimationCreator(
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
+const frames = animationCreator.createAnimation(animationSpriteSheet, 6, 6);
+
+const sprite = createImageSprite(
+  animationSpriteSheet,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
+
+world.buildAndAddEntity('shipanimation', [
+  new PositionComponent(),
+  new SpriteComponent(sprite),
+  new ImageAnimationComponent({
+    frames: frames,
+    animationDurationSeconds: 1,
+    repeating: true,
+  }),
+]);
+
+world.addSystems(new ImageAnimationSystem(world.time));
 
 game.run();

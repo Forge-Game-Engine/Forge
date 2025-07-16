@@ -10,6 +10,7 @@ import { createSprite } from './create-sprite';
  * @param image - The image to use for the sprite.
  * @param renderLayer - The render layer to which the sprite will be added.
  * @param shaderStore - The shader store to use for the sprite's material.
+ * @param cameraEntity - The camera entity to which the sprite will be rendered.
  * @returns The created sprite.
  */
 export function createImageSprite(
