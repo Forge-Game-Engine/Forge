@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
 import { buttonMoments, KeyCode, keyCodes } from '../constants';
-import { TriggerAction } from '../input-types';
+import { TriggerAction } from '../actions';
 
 describe('KeyboardInputSource', () => {
   let keyboardInputSource: KeyboardInputSource;
@@ -25,7 +25,7 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
   });
 
   it('should bind and trigger action on keyup', () => {
@@ -39,7 +39,7 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keyup', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
   });
 
   it('should not trigger action if keyCode does not match', () => {
@@ -53,7 +53,7 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
   });
 
   it('should update existing action if binding with same keyCode and moment', () => {
@@ -72,8 +72,8 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    expect(action1.isTriggered).toBe(true);
-    expect(action2.isTriggered).toBe(true);
+    expect(action1.lastBindingTriggered).toBe(true);
+    expect(action2.lastBindingTriggered).toBe(true);
   });
 
   it('should clear key presses and reset actions on reset()', () => {
@@ -90,13 +90,13 @@ describe('KeyboardInputSource', () => {
 
     keyboardInputSource.reset();
 
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
 
     action.reset();
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
 
     window.dispatchEvent(event);
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
   });
 
   it('should remove event listeners on stop()', () => {

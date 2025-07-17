@@ -1,4 +1,4 @@
-import { Axis2dAction } from '../input-types';
+import { Axis2dAction } from '../actions';
 import { InputSource } from './input-source';
 
 export interface Axis2dInputSource<T = never> extends InputSource {

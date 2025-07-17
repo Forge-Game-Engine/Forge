@@ -1,4 +1,5 @@
 import { InputsComponent, InputSystem } from '../../input';
+import { InputManager } from '../../input/input-manager';
 import { systemRegistrationPositions } from '../constants';
 import { World } from '../world';
 
@@ -11,7 +12,8 @@ export const registerInputs =
   <TInputs extends Inputs>(inputs: TInputs) => {
     const { world } = inputs;
 
-    const inputsComponent = new InputsComponent();
+    const inputsManager = new InputManager();
+    const inputsComponent = new InputsComponent(inputsManager);
 
     const inputsEntity = world.buildAndAddEntity(entityName, [inputsComponent]);
 
@@ -20,5 +22,6 @@ export const registerInputs =
     return {
       ...inputs,
       inputsEntity,
+      inputsManager,
     };
   };

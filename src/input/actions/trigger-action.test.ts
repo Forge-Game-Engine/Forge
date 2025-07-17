@@ -13,32 +13,32 @@ describe('InputAction', () => {
   });
 
   it('should not be triggered initially', () => {
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
   });
 
   it('should set triggered to true when trigger is called', () => {
     action.trigger();
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
   });
 
   it('should set triggered to false when reset is called after trigger', () => {
     action.trigger();
     action.reset();
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
   });
 
   it('should keep triggered as false if reset is called without trigger', () => {
     action.reset();
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
   });
 
   it('should be able to trigger multiple times', () => {
     action.trigger();
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
     action.reset();
-    expect(action.isTriggered).toBe(false);
+    expect(action.lastBindingTriggered).toBe(false);
     action.trigger();
-    expect(action.isTriggered).toBe(true);
+    expect(action.lastBindingTriggered).toBe(true);
   });
 
   it('should bind sources correctly', () => {

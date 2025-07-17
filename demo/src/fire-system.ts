@@ -1,4 +1,4 @@
-import { Entity, InputsComponent, System } from '../../src';
+import { Entity, InputsComponent, System, TriggerAction } from '../../src';
 
 export class FireSystem extends System {
   constructor() {
@@ -10,8 +10,12 @@ export class FireSystem extends System {
       InputsComponent.symbol,
     );
 
-    if (inputs.inputActions.get('fire')?.fired) {
-      console.log('Fire action triggered!');
+    const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
+
+    if (fireAction.lastBindingTriggered) {
+      console.log(
+        `Fire action triggered - ${fireAction.lastBindingTriggered.displayText}`,
+      );
     }
   }
 }

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InputAxis1d } from './axis-1d-action';
+import { Axis1dAction } from './axis-1d-action';
 
 describe('InputAxis1d', () => {
-  let axis: InputAxis1d;
+  let axis: Axis1dAction;
 
   beforeEach(() => {
-    axis = new InputAxis1d('zoom');
+    axis = new Axis1dAction('zoom');
   });
 
   it('should initialize with the given name', () => {

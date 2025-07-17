@@ -1,5 +1,5 @@
 import { Resettable, Stoppable } from '../../common';
-import { InputAction } from '../input-types/input-action';
+import { InputAction } from '../actions/input-action';
 
 export type InputSource = Stoppable & Resettable;
 

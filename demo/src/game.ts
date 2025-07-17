@@ -1,19 +1,18 @@
 import {
+  buttonMoments,
   createShaderStore,
   createWorld,
   Game,
   ImageCache,
-  TriggerAction,
-  InputAxis1d,
-  InputsComponent,
   KeyboardInputSource,
+  KeyboardTriggerActionInputBinding,
   keyCodes,
-  mouseButtons,
-  MouseInputSource,
   registerCamera,
   registerInputs,
   registerRendering,
+  TriggerAction,
 } from '../../src';
+import { InputGroup } from '../../src/input/input-group';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -23,45 +22,58 @@ const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
 const fireInput = new TriggerAction('fire');
-const zoomInput = new InputAxis1d('zoom');
 
-const { world, renderLayers, inputsEntity, cameraEntity } = await createWorld(
+const { world, renderLayers, cameraEntity, inputsManager } = await createWorld(
   'world',
   game,
 )
   .add(registerInputs())
-  .add(
-    registerCamera({
-      zoomInput,
-    }),
-  )
+  .add(registerCamera())
   .add(registerRendering())
   .execute();
 
-const inputsComponent = inputsEntity.getComponentRequired<InputsComponent>(
-  InputsComponent.symbol,
+const keyboardInputSource = new KeyboardInputSource(inputsManager);
+
+const defaultInputGroup = new InputGroup('default');
+const alternativeInputGroup = new InputGroup('alternative');
+
+inputsManager.addSource(keyboardInputSource);
+inputsManager.addAction(fireInput);
+inputsManager.setActiveGroup(defaultInputGroup);
+
+defaultInputGroup.bindTriggerAction(
+  new KeyboardTriggerActionInputBinding(
+    fireInput,
+    { keyCode: keyCodes.f, moment: buttonMoments.down },
+    keyboardInputSource,
+  ),
 );
 
-const mouseInputSource = new MouseInputSource(game);
-const keyboardInputSource = new KeyboardInputSource();
+defaultInputGroup.bindTriggerAction(
+  new KeyboardTriggerActionInputBinding(
+    fireInput,
+    { keyCode: keyCodes.space, moment: buttonMoments.up },
+    keyboardInputSource,
+  ),
+);
 
-inputsComponent.inputSources.add(mouseInputSource);
-inputsComponent.inputSources.add(keyboardInputSource);
+alternativeInputGroup.bindTriggerAction(
+  new KeyboardTriggerActionInputBinding(
+    fireInput,
+    { keyCode: keyCodes.space, moment: buttonMoments.up },
+    keyboardInputSource,
+  ),
+);
 
-mouseInputSource.bindAction(fireInput, {
-  moment: 'down',
-  mouseButton: mouseButtons.left,
-});
+alternativeInputGroup.bindTriggerAction(
+  new KeyboardTriggerActionInputBinding(
+    fireInput,
+    { keyCode: keyCodes.b, moment: buttonMoments.up },
+    keyboardInputSource,
+  ),
+);
 
-mouseInputSource.bindAxis1d(zoomInput);
-
-keyboardInputSource.bindAction(fireInput, {
-  moment: 'down',
-  keyCode: keyCodes.f,
-});
-
-inputsComponent.inputActions.set(fireInput.name, fireInput);
-inputsComponent.inputAxis1ds.set(zoomInput.name, zoomInput);
+inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
   'star_medium.png',

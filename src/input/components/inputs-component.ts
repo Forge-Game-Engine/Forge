@@ -1,14 +1,15 @@
 import type { Component } from '../../ecs';
-import { InputGroup } from '../input-group';
+import { InputManager } from '../input-manager';
 
 export class InputsComponent implements Component {
   public readonly name: symbol;
-  public readonly inputGroup: InputGroup;
+
+  public readonly inputManager: InputManager;
 
   public static readonly symbol = Symbol('Inputs');
 
-  constructor(inputGroup: InputGroup) {
+  constructor(inputManager: InputManager) {
     this.name = InputsComponent.symbol;
-    this.inputGroup = inputGroup;
+    this.inputManager = inputManager;
   }
 }

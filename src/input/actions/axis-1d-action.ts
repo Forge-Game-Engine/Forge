@@ -1,6 +1,6 @@
 import { InputAction, InputBinding } from './input-action';
 
-export class InputAxis1d implements InputAction {
+export class Axis1dAction implements InputAction {
   public readonly name: string;
   public readonly bindings: InputBinding[];
 

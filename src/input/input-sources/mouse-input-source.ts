@@ -7,7 +7,7 @@ import {
   buttonMoments,
   MouseButton,
 } from '../constants';
-import { TriggerAction, InputAxis1d, Axis2dAction } from '../input-types';
+import { TriggerAction, Axis1dAction, Axis2dAction } from '../actions';
 import { ActionableInputSource } from './actionable-input-source';
 import { Axis1dInputSource } from './axis-1d-input-source';
 import { Axis2dInputSource } from './axis-2d-input-source';
@@ -35,7 +35,7 @@ export class MouseInputSource
   private readonly _inputActions: Array<
     MouseInputWithArgs<TriggerAction, MouseActionBindArgs>
   >;
-  private readonly _inputAxis1d: Array<InputAxis1d>;
+  private readonly _inputAxis1d: Array<Axis1dAction>;
   private readonly _inputAxis2d: Array<
     MouseInputWithArgs<Axis2dAction, MouseInput2dBindArgs>
   >;
@@ -53,7 +53,7 @@ export class MouseInputSource
   constructor(game: Game) {
     this._inputActions =
       Array<MouseInputWithArgs<TriggerAction, MouseActionBindArgs>>();
-    this._inputAxis1d = Array<InputAxis1d>();
+    this._inputAxis1d = Array<Axis1dAction>();
     this._inputAxis2d =
       Array<MouseInputWithArgs<Axis2dAction, MouseInput2dBindArgs>>();
 
@@ -84,7 +84,7 @@ export class MouseInputSource
     });
   }
 
-  public bindAxis1d(input: InputAxis1d): void {
+  public bindAxis1d(input: Axis1dAction): void {
     const existingAxis1d = this._inputAxis1d.find(
       (item) => item.name === input.name,
     );

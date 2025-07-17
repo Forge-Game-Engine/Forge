@@ -1,6 +1,6 @@
-import { InputAxis1d } from '../input-types';
+import { Axis1dAction } from '../actions';
 import { InputSource } from './input-source';
 
 export interface Axis1dInputSource<T = never> extends InputSource {
-  bindAxis1d(inputAxis: InputAxis1d, args: T): void;
+  bindAxis1d(inputAxis: Axis1dAction, args: T): void;
 }

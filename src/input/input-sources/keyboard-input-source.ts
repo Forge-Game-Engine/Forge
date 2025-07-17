@@ -1,79 +1,53 @@
-import MurmurHash3 from 'imurmurhash';
 import { ButtonMoment, buttonMoments, KeyCode } from '../constants';
-import { TriggerAction } from '../input-types';
 import { ActionableInputSource } from './actionable-input-source';
-import { InputWithArgs } from './input-source';
+import { InputManager } from '../input-manager';
+import { InputBinding } from '../input-binding';
+import { TriggerAction } from '../actions';
 
 interface KeyboardBindArgs {
   moment: ButtonMoment;
   keyCode: KeyCode;
 }
 
-export class KeyboardInputSource
-  implements ActionableInputSource<KeyboardBindArgs>
-{
-  private readonly _inputActions: InputWithArgs<
-    TriggerAction,
-    KeyboardBindArgs
-  >[];
+export class KeyboardTriggerActionInputBinding extends InputBinding<
+  TriggerAction,
+  KeyboardBindArgs
+> {
+  constructor(
+    action: TriggerAction,
+    args: KeyboardBindArgs,
+    source: KeyboardInputSource,
+  ) {
+    super(action, args, source);
+  }
+
+  public override matchesArgs(args: KeyboardBindArgs): boolean {
+    return (
+      this.args.moment === args.moment && this.args.keyCode === args.keyCode
+    );
+  }
+
+  override get displayText(): string {
+    return `On "${this.args.keyCode}" ${this.args.moment}`;
+  }
+}
+
+export class KeyboardInputSource implements ActionableInputSource {
+  private readonly _inputManager: InputManager;
+
   private readonly _keyPresses = new Set<KeyCode>();
   private readonly _keyPressesDown = new Set<KeyCode>();
   private readonly _keyPressesUps = new Set<KeyCode>();
 
-  private readonly _name = 'keyboard';
-
-  constructor() {
-    this._inputActions = [];
+  constructor(inputManager: InputManager) {
+    this._inputManager = inputManager;
 
     window.addEventListener('keydown', this._onKeyDownHandler);
     window.addEventListener('keyup', this._onKeyUpHandler);
   }
 
-  public bindAction(input: TriggerAction, args: KeyboardBindArgs): void {
-    const actionAlreadyBound = this._inputActions.find(
-      (item) =>
-        item.args.keyCode === args.keyCode &&
-        item.args.moment === args.moment &&
-        item.input.name === input.name,
-    );
-
-    if (actionAlreadyBound) {
-      return;
-    }
-
-    this._inputActions.push({ input, args });
-
-    const idHash = MurmurHash3()
-      .hash(input.name)
-      .hash(args.keyCode)
-      .hash(args.moment);
-
-    const bindingId = idHash.result().toString(16);
-    const displayText = `keyboard "${args.keyCode}" on ${args.moment})`;
-
-    input.bind({ bindingId, displayText, sourceName: this._name });
-  }
-
-  public unbindAllFromAction(action: TriggerAction) {
-    const actionsToUnbind = this._inputActions.filter(
-      (item) => item.input.name !== action.name,
-    );
-
-    for (const action of actionsToUnbind) {
-      const bindingsMatchingSource = action.input.bindings.filter(
-        (binding) => binding.sourceName === this._name,
-      );
-
-      for (const binding of bindingsMatchingSource) {
-        action.input.unbind(binding.bindingId);
-      }
-    }
-  }
-
-  public unbindAction(bindingId: string) {
-    for (const inputAction of this._inputActions) {
-      inputAction.input.unbind(bindingId);
-    }
+  get name() {
+    return 'keyboard';
   }
 
   public reset(): void {
@@ -90,27 +64,23 @@ export class KeyboardInputSource
     this._keyPresses.add(event.code as KeyCode);
     this._keyPressesDown.add(event.code as KeyCode);
 
-    for (const action of this._inputActions) {
-      if (
-        action.args.keyCode === (event.code as KeyCode) &&
-        action.args.moment === buttonMoments.down
-      ) {
-        action.input.trigger();
-      }
-    }
+    const args = {
+      moment: buttonMoments.down,
+      keyCode: event.code as KeyCode,
+    };
+
+    this._inputManager.dispatchTriggerAction(this, args);
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
     this._keyPresses.delete(event.code as KeyCode);
     this._keyPressesUps.add(event.code as KeyCode);
 
-    for (const action of this._inputActions) {
-      if (
-        action.args.keyCode === (event.code as KeyCode) &&
-        action.args.moment === buttonMoments.up
-      ) {
-        action.input.trigger();
-      }
-    }
+    const args = {
+      moment: buttonMoments.up,
+      keyCode: event.code as KeyCode,
+    };
+
+    this._inputManager.dispatchTriggerAction(this, args);
   };
 }

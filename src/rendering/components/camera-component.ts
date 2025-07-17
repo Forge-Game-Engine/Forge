@@ -1,5 +1,5 @@
 import type { Component } from '../../ecs';
-import { InputAxis1d, Axis2dAction } from '../../input';
+import { Axis1dAction, Axis2dAction } from '../../input';
 
 /**
  * Options for configuring the `CameraComponent`.
@@ -23,7 +23,7 @@ export type CameraComponentOptions = {
   /** Indicates if the camera is static (non-movable). */
   isStatic: boolean;
 
-  zoomInput?: InputAxis1d;
+  zoomInput?: Axis1dAction;
 
   panInput?: Axis2dAction;
 };
@@ -68,7 +68,7 @@ export class CameraComponent implements Component {
   /** Indicates if the camera is static (non-movable). */
   public isStatic: boolean;
 
-  public zoomInput?: InputAxis1d;
+  public zoomInput?: Axis1dAction;
 
   public panInput?: Axis2dAction;
 

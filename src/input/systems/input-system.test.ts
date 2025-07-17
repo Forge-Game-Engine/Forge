@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputSystem } from './input-system';
 import { InputsComponent } from '../components';
 import type { Entity } from '../../ecs';
-import { TriggerAction } from '../input-types';
+import { TriggerAction } from '../actions';
 
 describe('InputSystem', () => {
   let inputSystem: InputSystem;
@@ -36,12 +36,12 @@ describe('InputSystem', () => {
     mockAction1.trigger();
     mockAction2.trigger();
 
-    expect(mockAction1.isTriggered).toBe(true);
-    expect(mockAction2.isTriggered).toBe(true);
+    expect(mockAction1.lastBindingTriggered).toBe(true);
+    expect(mockAction2.lastBindingTriggered).toBe(true);
 
     inputSystem.run(mockEntity);
 
-    expect(mockAction1.isTriggered).toBe(false);
-    expect(mockAction2.isTriggered).toBe(false);
+    expect(mockAction1.lastBindingTriggered).toBe(false);
+    expect(mockAction2.lastBindingTriggered).toBe(false);
   });
 });
