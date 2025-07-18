@@ -1,5 +1,6 @@
 import { Resettable } from '../common';
-import { InputAction } from './actions';
+import { InputAction, TriggerAction } from './actions';
+import { InputBinding } from './input-binding';
 import { InputGroup } from './input-group';
 import { InputSource } from './input-sources';
 
@@ -12,11 +13,7 @@ export class InputManager implements Resettable {
   private readonly _actions: Set<InputAction>;
 
   private _activeGroup: InputGroup | null;
-
-  // listen to sources
-  // check which group is active
-  // get bindings for actions in that group
-  // execute actions based on bindings
+  private _triggerActionPendingBind: TriggerAction | null = null;
 
   constructor() {
     this._sources = new Set<InputSource>();
@@ -48,22 +45,25 @@ export class InputManager implements Resettable {
     return this._activeGroup;
   }
 
-  public dispatchTriggerAction<TArgs>(
-    inputSource: InputSource,
-    args: TArgs,
-  ): void {
+  public dispatchTriggerAction(binding: InputBinding): void {
     if (!this._activeGroup) {
       return;
     }
 
-    const actionBindingsForSource =
-      this._activeGroup.getTriggerActionBindingsForSource(inputSource);
-
-    for (const actionBinding of actionBindingsForSource) {
-      if (actionBinding.matchesArgs(args)) {
-        actionBinding.action.trigger(actionBinding);
-      }
+    if (this._triggerActionPendingBind) {
+      this._triggerActionPendingBind.bind(binding, this._activeGroup);
+      this._triggerActionPendingBind = null;
     }
+
+    this._activeGroup.dispatchTriggerAction(binding);
+  }
+
+  public bindOnNextTriggerAction(action: TriggerAction) {
+    if (!this._activeGroup) {
+      throw new Error('No active input group set.');
+    }
+
+    this._triggerActionPendingBind = action;
   }
 
   public getAction<TAction extends InputAction>(name: string) {

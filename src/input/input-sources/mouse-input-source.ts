@@ -7,7 +7,7 @@ import {
   buttonMoments,
   MouseButton,
 } from '../constants';
-import { TriggerAction, Axis1dAction, Axis2dAction } from '../actions';
+import { Axis1dAction, Axis2dAction, TriggerAction } from '../actions';
 import { ActionableInputSource } from './actionable-input-source';
 import { Axis1dInputSource } from './axis-1d-input-source';
 import { Axis2dInputSource } from './axis-2d-input-source';
@@ -28,7 +28,7 @@ export interface MouseInputWithArgs<TInput, TArgs> {
 
 export class MouseInputSource
   implements
-    ActionableInputSource<MouseActionBindArgs>,
+    ActionableInputSource,
     Axis1dInputSource,
     Axis2dInputSource<MouseInput2dBindArgs>
 {

@@ -21,8 +21,6 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const fireInput = new TriggerAction('fire');
-
 const { world, renderLayers, cameraEntity, inputsManager } = await createWorld(
   'world',
   game,
@@ -31,6 +29,8 @@ const { world, renderLayers, cameraEntity, inputsManager } = await createWorld(
   .add(registerCamera())
   .add(registerRendering())
   .execute();
+
+const fireInput = new TriggerAction('fire');
 
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 
@@ -41,36 +41,39 @@ inputsManager.addSource(keyboardInputSource);
 inputsManager.addAction(fireInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
-defaultInputGroup.bindTriggerAction(
+defaultInputGroup.triggerActions.add(fireInput);
+alternativeInputGroup.triggerActions.add(fireInput);
+
+fireInput.bind(
   new KeyboardTriggerActionInputBinding(
-    fireInput,
     { keyCode: keyCodes.f, moment: buttonMoments.down },
     keyboardInputSource,
   ),
+  defaultInputGroup,
 );
 
-defaultInputGroup.bindTriggerAction(
+fireInput.bind(
   new KeyboardTriggerActionInputBinding(
-    fireInput,
+    { keyCode: keyCodes.space, moment: buttonMoments.down },
+    keyboardInputSource,
+  ),
+  defaultInputGroup,
+);
+
+fireInput.bind(
+  new KeyboardTriggerActionInputBinding(
     { keyCode: keyCodes.space, moment: buttonMoments.up },
     keyboardInputSource,
   ),
+  alternativeInputGroup,
 );
 
-alternativeInputGroup.bindTriggerAction(
+fireInput.bind(
   new KeyboardTriggerActionInputBinding(
-    fireInput,
-    { keyCode: keyCodes.space, moment: buttonMoments.up },
-    keyboardInputSource,
-  ),
-);
-
-alternativeInputGroup.bindTriggerAction(
-  new KeyboardTriggerActionInputBinding(
-    fireInput,
     { keyCode: keyCodes.b, moment: buttonMoments.up },
     keyboardInputSource,
   ),
+  alternativeInputGroup,
 );
 
 inputsManager.setActiveGroup(alternativeInputGroup);

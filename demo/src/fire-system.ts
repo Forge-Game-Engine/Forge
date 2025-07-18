@@ -12,10 +12,8 @@ export class FireSystem extends System {
 
     const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
 
-    if (fireAction.lastBindingTriggered) {
-      console.log(
-        `Fire action triggered - ${fireAction.lastBindingTriggered.displayText}`,
-      );
+    if (fireAction.isTriggered) {
+      console.log(`Fire action triggered`);
     }
   }
 }

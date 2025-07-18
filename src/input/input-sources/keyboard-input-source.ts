@@ -2,25 +2,13 @@ import { ButtonMoment, buttonMoments, KeyCode } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
 import { InputBinding } from '../input-binding';
-import { TriggerAction } from '../actions';
 
 interface KeyboardBindArgs {
   moment: ButtonMoment;
   keyCode: KeyCode;
 }
 
-export class KeyboardTriggerActionInputBinding extends InputBinding<
-  TriggerAction,
-  KeyboardBindArgs
-> {
-  constructor(
-    action: TriggerAction,
-    args: KeyboardBindArgs,
-    source: KeyboardInputSource,
-  ) {
-    super(action, args, source);
-  }
-
+export class KeyboardTriggerActionInputBinding extends InputBinding<KeyboardBindArgs> {
   public override matchesArgs(args: KeyboardBindArgs): boolean {
     return (
       this.args.moment === args.moment && this.args.keyCode === args.keyCode
@@ -61,26 +49,40 @@ export class KeyboardInputSource implements ActionableInputSource {
   }
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
+    if (event.repeat) {
+      return;
+    }
+
     this._keyPresses.add(event.code as KeyCode);
     this._keyPressesDown.add(event.code as KeyCode);
 
-    const args = {
-      moment: buttonMoments.down,
-      keyCode: event.code as KeyCode,
-    };
+    const binding = new KeyboardTriggerActionInputBinding(
+      {
+        moment: buttonMoments.down,
+        keyCode: event.code as KeyCode,
+      },
+      this,
+    );
 
-    this._inputManager.dispatchTriggerAction(this, args);
+    this._inputManager.dispatchTriggerAction(binding);
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
+    if (event.repeat) {
+      return;
+    }
+
     this._keyPresses.delete(event.code as KeyCode);
     this._keyPressesUps.add(event.code as KeyCode);
 
-    const args = {
-      moment: buttonMoments.up,
-      keyCode: event.code as KeyCode,
-    };
+    const binding = new KeyboardTriggerActionInputBinding(
+      {
+        moment: buttonMoments.up,
+        keyCode: event.code as KeyCode,
+      },
+      this,
+    );
 
-    this._inputManager.dispatchTriggerAction(this, args);
+    this._inputManager.dispatchTriggerAction(binding);
   };
 }
