@@ -1,16 +1,16 @@
 import type { Component } from '../../ecs';
-import type { Renderable } from '../../rendering';
+import type { Geometry } from '../../rendering';
 
 //TODO: 'repeating' is currently ignored. Find a way to have one-time animations
 export interface ImageAnimatedProperties {
-  frames: Renderable[];
+  frameGeometry: Geometry[];
   animationDurationSeconds: number;
   repeating: boolean;
 }
 
 export class ImageAnimationComponent implements Component {
   public name: symbol;
-  public frames: Renderable[];
+  public frameGeometry: Geometry[];
   public repeating: boolean;
   public frameTime: number = 0;
   public animationIndex: number = 0;
@@ -20,12 +20,13 @@ export class ImageAnimationComponent implements Component {
   public static readonly symbol = Symbol('ImageAnimation');
 
   constructor(options: ImageAnimatedProperties) {
-    const { frames, animationDurationSeconds, repeating } = options;
+    const { frameGeometry, animationDurationSeconds, repeating } =
+      options;
     this.name = ImageAnimationComponent.symbol;
-    this.frames = frames;
+    this.frameGeometry = frameGeometry;
     this.repeating = repeating;
 
-    this.numFrames = frames.length;
+    this.numFrames = frameGeometry.length;
     this.frameLengthInSeconds = animationDurationSeconds / this.numFrames;
   }
 }

@@ -8,6 +8,7 @@ import {
   ImageAnimationSystem,
   ImageCache,
   PositionComponent,
+  ScaleComponent,
   SpriteComponent,
 } from '../../src';
 
@@ -20,12 +21,8 @@ const { world, renderLayers, cameraEntity } = createWorld('world', game);
 
 const animationSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
 
-const animationCreator = new AnimationCreator(
-  renderLayers[0],
-  shaderStore,
-  cameraEntity,
-);
-const frames = animationCreator.createAnimation(animationSpriteSheet, 6, 6);
+const animationCreator = new AnimationCreator();
+const frameGemoetry = animationCreator.createAnimation(renderLayers[0], 6, 6); // can be used for any 6x6 sprite sheet on renderLayers[0]
 
 const sprite = createImageSprite(
   animationSpriteSheet,
@@ -34,16 +31,21 @@ const sprite = createImageSprite(
   cameraEntity,
 );
 
-world.buildAndAddEntity('ship-animation', [
-  new PositionComponent(),
-  new SpriteComponent(sprite),
-  new ImageAnimationComponent({
-    frames: frames,
-    animationDurationSeconds: 1,
-    repeating: true,
-  }),
-]);
-
+for (let i = 0; i < 10000; i++) {
+  createShip();
+}
 world.addSystems(new ImageAnimationSystem(world.time));
 
 game.run();
+function createShip() {
+  world.buildAndAddEntity('ship-animation', [
+    new PositionComponent(500 - Math.random() * 1000, 500 -Math.random() * 1000),
+    new SpriteComponent(sprite),
+    new ScaleComponent(0.5, 0.5),
+    new ImageAnimationComponent({
+      frameGeometry: frameGemoetry,
+      animationDurationSeconds: 1,
+      repeating: true,
+    }),
+  ]);
+}

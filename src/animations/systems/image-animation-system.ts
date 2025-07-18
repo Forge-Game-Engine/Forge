@@ -46,8 +46,10 @@ export class ImageAnimationSystem extends System {
       SpriteComponent.symbol,
     );
 
-    spriteComponent.sprite.renderable =
-      imageAnimationComponent.frames[imageAnimationComponent.animationIndex];
+    spriteComponent.sprite.renderable.geometry =
+      imageAnimationComponent.frameGeometry[
+        imageAnimationComponent.animationIndex
+      ];
 
     imageAnimationComponent.animationIndex =
       (imageAnimationComponent.animationIndex + 1) %
