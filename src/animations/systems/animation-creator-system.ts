@@ -24,7 +24,6 @@ export class AnimationCreator {
       });
 
       frameGeometry.push(geometry);
-      console.log(geometry)
     }
 
     return frameGeometry;

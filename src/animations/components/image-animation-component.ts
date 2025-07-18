@@ -20,8 +20,7 @@ export class ImageAnimationComponent implements Component {
   public static readonly symbol = Symbol('ImageAnimation');
 
   constructor(options: ImageAnimatedProperties) {
-    const { frameGeometry, animationDurationSeconds, repeating } =
-      options;
+    const { frameGeometry, animationDurationSeconds, repeating } = options;
     this.name = ImageAnimationComponent.symbol;
     this.frameGeometry = frameGeometry;
     this.repeating = repeating;
