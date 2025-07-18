@@ -1,31 +1,34 @@
 import type { Component } from '../../ecs';
-import type { Geometry } from '../../rendering';
 
 //TODO: 'repeating' is currently ignored. Find a way to have one-time animations
 export interface ImageAnimatedProperties {
-  frameGeometry: Geometry[];
+  geometryTexCoords: Float32Array[];
   animationDurationSeconds: number;
   repeating: boolean;
+  context: WebGL2RenderingContext;
 }
 
 export class ImageAnimationComponent implements Component {
   public name: symbol;
-  public frameGeometry: Geometry[];
+  public geometryTexCoords: Float32Array[];
   public repeating: boolean;
   public frameTime: number = 0;
   public animationIndex: number = 0;
   public frameLengthInSeconds: number;
   public numFrames: number;
+  public context: WebGL2RenderingContext;
 
   public static readonly symbol = Symbol('ImageAnimation');
 
   constructor(options: ImageAnimatedProperties) {
-    const { frameGeometry, animationDurationSeconds, repeating } = options;
+    const { geometryTexCoords, animationDurationSeconds, repeating, context } =
+      options;
     this.name = ImageAnimationComponent.symbol;
-    this.frameGeometry = frameGeometry;
+    this.geometryTexCoords = geometryTexCoords;
     this.repeating = repeating;
 
-    this.numFrames = frameGeometry.length;
+    this.numFrames = geometryTexCoords.length;
     this.frameLengthInSeconds = animationDurationSeconds / this.numFrames;
+    this.context = context;
   }
 }

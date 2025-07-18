@@ -46,10 +46,12 @@ export class ImageAnimationSystem extends System {
       SpriteComponent.symbol,
     );
 
-    spriteComponent.sprite.renderable.geometry =
-      imageAnimationComponent.frameGeometry[
+    spriteComponent.sprite.renderable.geometry.setTexCoords(
+      imageAnimationComponent.context,
+      imageAnimationComponent.geometryTexCoords[
         imageAnimationComponent.animationIndex
-      ];
+      ],
+    );
 
     imageAnimationComponent.animationIndex =
       (imageAnimationComponent.animationIndex + 1) %
