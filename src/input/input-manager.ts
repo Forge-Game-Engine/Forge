@@ -53,6 +53,8 @@ export class InputManager implements Resettable {
     if (this._triggerActionPendingBind) {
       this._triggerActionPendingBind.bind(binding, this._activeGroup);
       this._triggerActionPendingBind = null;
+
+      return;
     }
 
     this._activeGroup.dispatchTriggerAction(binding);
