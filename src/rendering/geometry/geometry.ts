@@ -33,18 +33,6 @@ export class Geometry {
     });
   }
 
-  public setTexCoords(
-    gl: WebGL2RenderingContext,
-    texCoords: Float32Array,
-  ): void {
-    const textureBuffer = this._attributes.get('a_texCoord')?.buffer;
-
-    if (textureBuffer) {
-      // Bind the same buffer and update its contents
-      gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, texCoords);
-    }
-  }
   /**
    * Optionally sets the index buffer for indexed drawing.
    */

@@ -32,7 +32,7 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
   // Create texCoord buffer
   const texCoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
 
   geometry.addAttribute(gl, 'a_texCoord', {
     buffer: texCoordBuffer,
