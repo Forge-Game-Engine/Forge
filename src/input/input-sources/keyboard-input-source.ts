@@ -1,24 +1,7 @@
-import { ButtonMoment, buttonMoments, KeyCode } from '../constants';
+import { buttonMoments, KeyCode } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
-import { InputBinding } from '../input-binding';
-
-interface KeyboardBindArgs {
-  moment: ButtonMoment;
-  keyCode: KeyCode;
-}
-
-export class KeyboardTriggerActionInputBinding extends InputBinding<KeyboardBindArgs> {
-  public override matchesArgs(args: KeyboardBindArgs): boolean {
-    return (
-      this.args.moment === args.moment && this.args.keyCode === args.keyCode
-    );
-  }
-
-  override get displayText(): string {
-    return `On "${this.args.keyCode}" ${this.args.moment}`;
-  }
-}
+import { KeyboardTriggerBinding } from '../bindings';
 
 export class KeyboardInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -56,7 +39,7 @@ export class KeyboardInputSource implements ActionableInputSource {
     this._keyPresses.add(event.code as KeyCode);
     this._keyPressesDown.add(event.code as KeyCode);
 
-    const binding = new KeyboardTriggerActionInputBinding(
+    const binding = new KeyboardTriggerBinding(
       {
         moment: buttonMoments.down,
         keyCode: event.code as KeyCode,
@@ -75,7 +58,7 @@ export class KeyboardInputSource implements ActionableInputSource {
     this._keyPresses.delete(event.code as KeyCode);
     this._keyPressesUps.add(event.code as KeyCode);
 
-    const binding = new KeyboardTriggerActionInputBinding(
+    const binding = new KeyboardTriggerBinding(
       {
         moment: buttonMoments.up,
         keyCode: event.code as KeyCode,

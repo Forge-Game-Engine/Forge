@@ -1,5 +1,5 @@
 import MurmurHash3 from 'imurmurhash';
-import { ActionableInputSource } from './input-sources';
+import { ActionableInputSource } from '../input-sources';
 
 /**
  * InputBinding represents a binding between an input action and an input source.

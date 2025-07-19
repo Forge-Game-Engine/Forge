@@ -1,4 +1,4 @@
-import { InputBinding } from '../input-binding';
+import { InputBinding } from '../bindings/input-binding';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 

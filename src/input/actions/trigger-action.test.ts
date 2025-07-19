@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TriggerAction } from './trigger-action';
+import { InputGroup } from '../input-group';
+import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
+import { InputManager } from '../input-manager';
+import { buttonMoments, keyCodes } from '../constants';
+import { KeyboardTriggerBinding } from '../bindings';
 
 describe('InputAction', () => {
   let action: TriggerAction;
+  let group: InputGroup;
+  let inputSource: ActionableInputSource;
+  let manager: InputManager;
 
   beforeEach(() => {
     action = new TriggerAction('jump');
+    group = new InputGroup('test');
+    manager = new InputManager();
+    inputSource = new KeyboardInputSource(manager);
   });
 
   it('should set the name property from constructor', () => {
@@ -13,53 +24,45 @@ describe('InputAction', () => {
   });
 
   it('should not be triggered initially', () => {
-    expect(action.lastBindingTriggered).toBe(false);
+    expect(action.isTriggered).toBe(false);
   });
 
   it('should set triggered to true when trigger is called', () => {
     action.trigger();
-    expect(action.lastBindingTriggered).toBe(true);
+    expect(action.isTriggered).toBe(true);
   });
 
   it('should set triggered to false when reset is called after trigger', () => {
     action.trigger();
     action.reset();
-    expect(action.lastBindingTriggered).toBe(false);
+    expect(action.isTriggered).toBe(false);
   });
 
   it('should keep triggered as false if reset is called without trigger', () => {
     action.reset();
-    expect(action.lastBindingTriggered).toBe(false);
+    expect(action.isTriggered).toBe(false);
   });
 
   it('should be able to trigger multiple times', () => {
     action.trigger();
-    expect(action.lastBindingTriggered).toBe(true);
+    expect(action.isTriggered).toBe(true);
     action.reset();
-    expect(action.lastBindingTriggered).toBe(false);
+    expect(action.isTriggered).toBe(false);
     action.trigger();
-    expect(action.lastBindingTriggered).toBe(true);
+    expect(action.isTriggered).toBe(true);
   });
 
   it('should bind sources correctly', () => {
-    action.bind({
-      bindingId: 'mouse1',
-      sourceName: 'mouse',
-      displayText: 'Mouse Left Down',
-    });
+    const binding = new KeyboardTriggerBinding(
+      { keyCode: keyCodes.space, moment: buttonMoments.down },
+      inputSource,
+    );
 
-    expect(action.bindings.length).toBe(1);
-    expect(action.bindings[0].bindingId).toBe('mouse1');
-    expect(action.bindings[0].displayText).toBe('Mouse Left Down');
+    action.bind(binding, group);
 
-    action.bind({
-      bindingId: 'keyboard1',
-      sourceName: 'keyboard',
-      displayText: 'Space Down',
-    });
+    const bindings = action.bindings.get(group)?.values().toArray();
 
-    expect(action.bindings.length).toBe(2);
-    expect(action.bindings[1].bindingId).toBe('keyboard1');
-    expect(action.bindings[1].displayText).toBe('Space Down');
+    expect(bindings?.length).toBe(1);
+    expect(bindings?.[0]?.id).toBe(binding.id);
   });
 });

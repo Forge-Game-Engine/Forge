@@ -1,6 +1,6 @@
 import { Resettable } from '../common';
 import { InputAction, TriggerAction } from './actions';
-import { InputBinding } from './input-binding';
+import { InputBinding } from './bindings/input-binding';
 import { InputGroup } from './input-group';
 import { InputSource } from './input-sources';
 
@@ -52,7 +52,7 @@ export class InputManager implements Resettable {
 
     if (this._triggerActionPendingBind) {
       this._triggerActionPendingBind.bind(binding, this._activeGroup);
-      this._triggerActionPendingBind = null;
+      this.stopPendingTriggerActionBinding();
 
       return;
     }
@@ -68,6 +68,10 @@ export class InputManager implements Resettable {
     this._triggerActionPendingBind = action;
   }
 
+  public stopPendingTriggerActionBinding() {
+    this._triggerActionPendingBind = null;
+  }
+
   public getAction<TAction extends InputAction>(name: string) {
     for (const action of this._actions) {
       if (action.name === name) {
@@ -75,7 +79,7 @@ export class InputManager implements Resettable {
       }
     }
 
-    throw new Error(`Action with name "${name}" not found.`);
+    return null;
   }
 
   public reset(): void {

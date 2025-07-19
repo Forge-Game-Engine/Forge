@@ -1,5 +1,5 @@
 import { TriggerAction } from './actions';
-import { InputBinding } from './input-binding';
+import { InputBinding } from './bindings';
 
 /**
  * InputGroup represents a collection of input bindings that can be activated
