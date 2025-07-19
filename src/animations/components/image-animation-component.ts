@@ -6,7 +6,7 @@ Pros:
     Animations can have a default next animation, allowing for one off animations
     Animations can have different times per frame for customization.
     Animations can be reused by the same entity type, for efficiency
-    Animations can have a next animation, letting them finish the current anmation if that is desired.
+    Animations can have a next animation, letting them finish the current animation if that is desired.
     Animations are set per entity type, so that same animations can exist with different options for different entities.
 
 Limitations: 
