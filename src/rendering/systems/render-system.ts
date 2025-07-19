@@ -1,3 +1,4 @@
+import { AnimationManager, ImageAnimationComponent } from '../../animations';
 import {
   PositionComponent,
   RotationComponent,
@@ -12,21 +13,24 @@ import {
 import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
 
-const FLOATS_PER_INSTANCE = 9;
+const FLOATS_PER_INSTANCE = 13;
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
+  animationManager: AnimationManager;
 }
 
 export class RenderSystem extends System {
   private readonly _layer: ForgeRenderLayer;
   private readonly _instanceBuffer: WebGLBuffer;
+  private readonly _animationManager: AnimationManager;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [RenderableBatchComponent.symbol]);
 
-    const { layer } = options;
+    const { layer, animationManager } = options;
     this._layer = layer;
+    this._animationManager = animationManager;
 
     this._instanceBuffer = layer.context.createBuffer()!;
     this._setupGLState();
@@ -107,6 +111,17 @@ export class RenderSystem extends System {
           SpriteComponent.symbol,
         );
 
+      const imageAnimationComponent =
+        batchedEntity.getComponent<ImageAnimationComponent>(
+          ImageAnimationComponent.symbol,
+        );
+
+      const currentFrame = this._animationManager.getAnimationFrame(
+        imageAnimationComponent?.entityType,
+        imageAnimationComponent?.getCurrentAnimation(),
+        imageAnimationComponent?.animationIndex,
+      );
+
       batch.instanceData[instanceDataOffset] = position.x;
       batch.instanceData[instanceDataOffset + 1] = position.y;
       batch.instanceData[instanceDataOffset + 2] = rotation?.radians ?? 0;
@@ -119,6 +134,11 @@ export class RenderSystem extends System {
         spriteComponent.sprite.pivot.x;
       batch.instanceData[instanceDataOffset + 8] =
         spriteComponent.sprite.pivot.y;
+
+      batch.instanceData[instanceDataOffset + 9] = currentFrame?.offset.x ?? 0;
+      batch.instanceData[instanceDataOffset + 10] = currentFrame?.offset.y ?? 0;
+      batch.instanceData[instanceDataOffset + 11] = currentFrame?.scale.x ?? 1;
+      batch.instanceData[instanceDataOffset + 12] = currentFrame?.scale.y ?? 1;
     }
 
     // Upload instance transform buffer
@@ -133,6 +153,8 @@ export class RenderSystem extends System {
     const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
     const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
     const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
+    const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
+    const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
 
@@ -204,6 +226,34 @@ export class RenderSystem extends System {
         7 * 4,
       );
       gl.vertexAttribDivisor(pivotLoc, 1);
+    }
+
+    // a_instancePivot (vec2) - offset 9
+    if (texOffsetLoc !== -1) {
+      gl.enableVertexAttribArray(texOffsetLoc);
+      gl.vertexAttribPointer(
+        texOffsetLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        9 * 4,
+      );
+      gl.vertexAttribDivisor(texOffsetLoc, 1);
+    }
+
+    // a_instancePivot (vec2) - offset 11
+    if (texSizeLoc !== -1) {
+      gl.enableVertexAttribArray(texSizeLoc);
+      gl.vertexAttribPointer(
+        texSizeLoc,
+        2,
+        gl.FLOAT,
+        false,
+        FLOATS_PER_INSTANCE * 4,
+        11 * 4,
+      );
+      gl.vertexAttribDivisor(texSizeLoc, 1);
     }
 
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, entities.length);

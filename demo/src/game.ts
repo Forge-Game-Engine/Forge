@@ -1,47 +1,52 @@
 import {
-  AnimationCreator,
   createImageSprite,
   createShaderStore,
   createWorld,
   Game,
-  ImageAnimationComponent,
   ImageAnimationSystem,
   ImageCache,
-  PositionComponent,
-  ScaleComponent,
-  SpriteComponent,
 } from '../../src';
+import { setupAnimationsDemo } from './animationDemo';
+import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game();
 
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const { world, renderLayers, cameraEntity } = createWorld('world', game);
+const { world, renderLayers, cameraEntity, animationManager, inputsEntity } =
+  createWorld('world', game, {
+    camera: {
+      allowZooming: false,
+      allowPanning: false,
+    },
+  });
 
-const animationSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
+const shipSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
+const adventurerSpriteSheet = await imageCache.getOrLoad(
+  'adventurer_spritesheet.png',
+);
 
-const animationCreator = new AnimationCreator();
-const geometryTexCoords = animationCreator.getGeometryTexCoords(6, 6); // can be used for any 6x6 sprite sheet
-
-const sprite = createImageSprite(
-  animationSpriteSheet,
+const shipSprite = createImageSprite(
+  shipSpriteSheet,
   renderLayers[0],
   shaderStore,
   cameraEntity,
 );
 
-world.buildAndAddEntity('ship-animation', [
-  new PositionComponent(500 - Math.random() * 1000, 500 - Math.random() * 1000),
-  new SpriteComponent(sprite),
-  new ScaleComponent(0.5, 0.5),
-  new ImageAnimationComponent({
-    geometryTexCoords: geometryTexCoords,
-    animationDurationSeconds: 1,
-    repeating: true,
-    context: renderLayers[0].context,
-  }),
-]);
-world.addSystems(new ImageAnimationSystem(world.time));
+const adventureSprite = createImageSprite(
+  adventurerSpriteSheet,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
+
+// The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
+setupAnimationsDemo(animationManager, world, shipSprite, adventureSprite);
+
+world.addSystems(
+  new ImageAnimationSystem(world.time, animationManager),
+  new ControlAdventurerSystem(inputsEntity),
+);
 
 game.run();
