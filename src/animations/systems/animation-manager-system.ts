@@ -56,7 +56,7 @@ export class AnimationManager {
 
     if (
       Array.isArray(animationDurationSeconds) &&
-      animationDurationSeconds.length != numFrames
+      animationDurationSeconds.length !== numFrames
     ) {
       console.error(
         `Animation duration array length (${animationDurationSeconds.length}) must be equal to the number of frames (${numFrames}).`,
@@ -118,7 +118,7 @@ export class AnimationManager {
     frameIndex?: number,
   ): AnimationFrame | undefined {
     if (!entityType || !animationType || frameIndex === undefined) {
-      return {} as AnimationFrame;
+      return undefined;
     }
 
     const animationSet = this.getAnimationSet(entityType, animationType);

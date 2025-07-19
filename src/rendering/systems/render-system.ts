@@ -228,7 +228,7 @@ export class RenderSystem extends System {
       gl.vertexAttribDivisor(pivotLoc, 1);
     }
 
-    // a_instancePivot (vec2) - offset 9
+    // a_instanceTexOffset (vec2) - offset 9
     if (texOffsetLoc !== -1) {
       gl.enableVertexAttribArray(texOffsetLoc);
       gl.vertexAttribPointer(
@@ -242,7 +242,7 @@ export class RenderSystem extends System {
       gl.vertexAttribDivisor(texOffsetLoc, 1);
     }
 
-    // a_instancePivot (vec2) - offset 11
+    // a_instanceTexSize (vec2) - offset 11
     if (texSizeLoc !== -1) {
       gl.enableVertexAttribArray(texSizeLoc);
       gl.vertexAttribPointer(
