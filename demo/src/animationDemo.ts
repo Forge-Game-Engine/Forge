@@ -300,7 +300,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-idle', [
     new PositionComponent(-200, -200),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idle,
@@ -310,7 +310,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-idle-half', [
     new PositionComponent(-200, 0),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idleHalf,
@@ -320,7 +320,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-run', [
     new PositionComponent(-200, 200),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.run,
@@ -330,7 +330,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-attack1', [
     new PositionComponent(0, -200),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack1,
@@ -340,7 +340,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-attack3', [
     new PositionComponent(0, 0),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack3,
@@ -350,7 +350,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
   world.buildAndAddEntity('adventurer-animation-die', [
     new PositionComponent(0, 200),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.die,
@@ -365,7 +365,7 @@ function buildAdventurerControllableEntities(
   world.buildAndAddEntity('adventurer-controllable', [
     new PositionComponent(400, 0),
     new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.5, 0.5),
+    new ScaleComponent(0.3, 0.6),
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,

@@ -11,7 +11,6 @@ in float a_instanceRot;       // Sprite rotation (radians)
 in vec2 a_instanceScale;      // Sprite scale
 in vec2 a_instanceSize;       // Sprite width/height
 in vec2 a_instancePivot;      // Sprite pivot (origin offset)
-in vec2 a_instanceFlip;       // Flip the image on the x and/or y axis
 in vec2 a_instanceTexOffset;  // Texture region offset (UV)
 in vec2 a_instanceTexSize;    // Texture region size (UV)
 
@@ -42,6 +41,5 @@ void main() {
     vec3 projected = u_projection * vec3(world, 1.0);
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
-    vec2 flippedTexCoord = mix(a_texCoord, vec2(1.0) - a_texCoord, a_instanceFlip);
-    v_texCoord = a_instanceTexOffset + flippedTexCoord * a_instanceTexSize;
+    v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;
 }

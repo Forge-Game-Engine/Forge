@@ -14,7 +14,7 @@ import {
 import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
 
-const FLOATS_PER_INSTANCE = 15;
+const FLOATS_PER_INSTANCE = 13;
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
@@ -134,8 +134,10 @@ export class RenderSystem extends System {
       batch.instanceData[instanceDataOffset] = position.x;
       batch.instanceData[instanceDataOffset + 1] = position.y;
       batch.instanceData[instanceDataOffset + 2] = rotation?.radians ?? 0;
-      batch.instanceData[instanceDataOffset + 3] = scale?.x ?? 1;
-      batch.instanceData[instanceDataOffset + 4] = scale?.y ?? 1;
+      batch.instanceData[instanceDataOffset + 3] =
+        (scale?.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+      batch.instanceData[instanceDataOffset + 4] =
+        (scale?.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
       batch.instanceData[instanceDataOffset + 5] = spriteComponent.sprite.width;
       batch.instanceData[instanceDataOffset + 6] =
         spriteComponent.sprite.height;
@@ -143,16 +145,10 @@ export class RenderSystem extends System {
         spriteComponent.sprite.pivot.x;
       batch.instanceData[instanceDataOffset + 8] =
         spriteComponent.sprite.pivot.y;
-      batch.instanceData[instanceDataOffset + 9] = +(
-        flipComponent?.flipX ?? false
-      );
-      batch.instanceData[instanceDataOffset + 10] = +(
-        flipComponent?.flipY ?? false
-      );
-      batch.instanceData[instanceDataOffset + 11] = currentFrame?.offset.x ?? 0;
-      batch.instanceData[instanceDataOffset + 12] = currentFrame?.offset.y ?? 0;
-      batch.instanceData[instanceDataOffset + 13] = currentFrame?.scale.x ?? 1;
-      batch.instanceData[instanceDataOffset + 14] = currentFrame?.scale.y ?? 1;
+      batch.instanceData[instanceDataOffset + 9] = currentFrame?.offset.x ?? 0;
+      batch.instanceData[instanceDataOffset + 10] = currentFrame?.offset.y ?? 0;
+      batch.instanceData[instanceDataOffset + 11] = currentFrame?.scale.x ?? 1;
+      batch.instanceData[instanceDataOffset + 12] = currentFrame?.scale.y ?? 1;
     }
 
     // Upload instance transform buffer
@@ -167,7 +163,6 @@ export class RenderSystem extends System {
     const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
     const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
     const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
-    const instanceFlipLoc = gl.getAttribLocation(program, 'a_instanceFlip');
     const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
     const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
 
@@ -243,21 +238,7 @@ export class RenderSystem extends System {
       gl.vertexAttribDivisor(pivotLoc, 1);
     }
 
-    // a_instanceFlip (vec2) - offset 9
-    if (instanceFlipLoc !== -1) {
-      gl.enableVertexAttribArray(instanceFlipLoc);
-      gl.vertexAttribPointer(
-        instanceFlipLoc,
-        2,
-        gl.FLOAT,
-        false,
-        FLOATS_PER_INSTANCE * 4,
-        9 * 4,
-      );
-      gl.vertexAttribDivisor(instanceFlipLoc, 1);
-    }
-
-    // a_instanceTexOffset (vec2) - offset 11
+    // a_instanceTexOffset (vec2) - offset 9
     if (texOffsetLoc !== -1) {
       gl.enableVertexAttribArray(texOffsetLoc);
       gl.vertexAttribPointer(
@@ -266,12 +247,12 @@ export class RenderSystem extends System {
         gl.FLOAT,
         false,
         FLOATS_PER_INSTANCE * 4,
-        11 * 4,
+        9 * 4,
       );
       gl.vertexAttribDivisor(texOffsetLoc, 1);
     }
 
-    // a_instanceTexSize (vec2) - offset 13
+    // a_instanceTexSize (vec2) - offset 11
     if (texSizeLoc !== -1) {
       gl.enableVertexAttribArray(texSizeLoc);
       gl.vertexAttribPointer(
@@ -280,7 +261,7 @@ export class RenderSystem extends System {
         gl.FLOAT,
         false,
         FLOATS_PER_INSTANCE * 4,
-        13 * 4,
+        11 * 4,
       );
       gl.vertexAttribDivisor(texSizeLoc, 1);
     }
