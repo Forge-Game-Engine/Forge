@@ -22,16 +22,20 @@ export class InputManager implements Resettable {
     this._activeGroup = null;
   }
 
-  public addSource(source: InputSource): void {
-    this._sources.add(source);
+  public addSources(...sources: InputSource[]): void {
+    for (const source of sources) {
+      this._sources.add(source);
+    }
   }
 
   public removeSource(source: InputSource): boolean {
     return this._sources.delete(source);
   }
 
-  public addAction(action: InputAction): void {
-    this._actions.add(action);
+  public addActions(...actions: InputAction[]): void {
+    for (const action of actions) {
+      this._actions.add(action);
+    }
   }
 
   public removeAction(action: InputAction): boolean {

@@ -1,4 +1,10 @@
-import { Entity, InputsComponent, System, TriggerAction } from '../../src';
+import {
+  Axis1dAction,
+  Entity,
+  InputsComponent,
+  System,
+  TriggerAction,
+} from '../../src';
 
 export class FireSystem extends System {
   constructor() {
@@ -11,9 +17,12 @@ export class FireSystem extends System {
     );
 
     const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
+    const zoomAction = inputs.inputManager.getAction<Axis1dAction>('zoom');
 
     if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
     }
+
+    console.log(`Zoom action value: ${zoomAction?.value}`);
   }
 }

@@ -1,13 +1,13 @@
 import { ButtonMoment, MouseButton } from '../constants';
 import { InputBinding } from './input-binding';
 
-export interface MouseBindArgs {
+export interface MouseTriggerBindArgs {
   moment: ButtonMoment;
   mouseButton: MouseButton;
 }
 
-export class MouseTriggerBinding extends InputBinding<MouseBindArgs> {
-  public override matchesArgs(args: MouseBindArgs): boolean {
+export class MouseTriggerBinding extends InputBinding<MouseTriggerBindArgs> {
+  public override matchesArgs(args: MouseTriggerBindArgs): boolean {
     return (
       this.args.moment === args.moment &&
       this.args.mouseButton === args.mouseButton

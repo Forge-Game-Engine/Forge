@@ -47,7 +47,7 @@ describe('InputManager', () => {
 
   it('should dispatch trigger action to active group', () => {
     testAction.bind(triggerInputBinding, inputGroup);
-    manager.addAction(testAction);
+    manager.addActions(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -61,7 +61,7 @@ describe('InputManager', () => {
 
   it('should not dispatch trigger action if no active group', () => {
     testAction.bind(triggerInputBinding, inputGroup);
-    manager.addAction(testAction);
+    manager.addActions(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
@@ -70,7 +70,7 @@ describe('InputManager', () => {
   });
 
   it('should bind trigger action on next dispatch', () => {
-    manager.addAction(testAction);
+    manager.addActions(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -85,7 +85,7 @@ describe('InputManager', () => {
   });
 
   it('should throw when attempting to bind trigger action on next dispatch when no active group is set', () => {
-    manager.addAction(testAction);
+    manager.addActions(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
@@ -95,7 +95,7 @@ describe('InputManager', () => {
   });
 
   it('should stop pending trigger action binding', () => {
-    manager.addAction(testAction);
+    manager.addActions(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -112,13 +112,13 @@ describe('InputManager', () => {
   });
 
   it('should get action by name', () => {
-    manager.addAction(testAction);
+    manager.addActions(testAction);
     const found = manager.getAction('test-action');
     expect(found).toBe(testAction);
   });
 
   it('should throw if action not found by name', () => {
-    manager.addAction(testAction);
+    manager.addActions(testAction);
     const found = manager.getAction('missing');
     expect(found).toBe(null);
   });
@@ -134,10 +134,10 @@ describe('InputManager', () => {
     expect(action1.isTriggered).toBe(true);
     expect(action2.isTriggered).toBe(true);
 
-    manager.addAction(action1);
-    manager.addAction(action2);
-    manager.addSource(source1);
-    manager.addSource(source2);
+    manager.addActions(action1);
+    manager.addActions(action2);
+    manager.addSources(source1);
+    manager.addSources(source2);
 
     manager.reset();
 

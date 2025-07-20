@@ -22,9 +22,11 @@ export abstract class InputBinding<TArgs = unknown> {
   }
 
   private _generateId() {
-    const idHash = MurmurHash3()
-      .hash(this.source.name)
-      .hash(JSON.stringify(this.args));
+    const idHash = MurmurHash3().hash(this.source.name);
+
+    if (this.args) {
+      idHash.hash(JSON.stringify(this.args));
+    }
 
     return idHash.result().toString(16);
   }

@@ -3,7 +3,7 @@ import { Vector2 } from '../../math';
 import { axisMeasurements, buttonMoments, MouseButton } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
-import { MouseTriggerBinding } from '../bindings/mouse-trigger-binding';
+import { MouseAxis1dBinding, MouseTriggerBinding } from '../bindings';
 
 export class MouseInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -89,9 +89,9 @@ export class MouseInputSource implements ActionableInputSource {
   private readonly _onWheelHandler = (event: WheelEvent) => {
     this._scrollDelta = event.deltaY;
 
-    for (const inputAxis of this._inputAxis1d) {
-      inputAxis.set(this._scrollDelta);
-    }
+    const binding = new MouseAxis1dBinding(this);
+
+    this._inputManager.dispatchAxis1dAction(binding, event.deltaY);
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {
