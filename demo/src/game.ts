@@ -41,9 +41,6 @@ inputsManager.addSource(keyboardInputSource);
 inputsManager.addAction(fireInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
-defaultInputGroup.triggerActions.add(fireInput);
-alternativeInputGroup.triggerActions.add(fireInput);
-
 fireInput.bind(
   new KeyboardTriggerActionInputBinding(
     { keyCode: keyCodes.f, moment: buttonMoments.down },

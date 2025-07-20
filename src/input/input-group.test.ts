@@ -46,7 +46,6 @@ describe('InputGroup', () => {
     );
 
     action.bind(binding, group);
-    group.triggerActions.add(action);
 
     group.dispatchTriggerAction(binding);
 
@@ -60,7 +59,6 @@ describe('InputGroup', () => {
     );
 
     action.bind(triggerBinding, group);
-    group.triggerActions.add(action);
 
     const dispatchedBinding1 = new KeyboardTriggerBinding(
       { keyCode: keyCodes.a, moment: buttonMoments.down }, // different key-code
@@ -100,9 +98,6 @@ describe('InputGroup', () => {
     );
 
     action.bind(binding, inactiveGroup);
-
-    activeGroup.triggerActions.add(action);
-    inactiveGroup.triggerActions.add(action);
 
     activeGroup.dispatchTriggerAction(binding);
 

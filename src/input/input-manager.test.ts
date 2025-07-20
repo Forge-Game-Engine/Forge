@@ -47,7 +47,6 @@ describe('InputManager', () => {
 
   it('should dispatch trigger action to active group', () => {
     testAction.bind(triggerInputBinding, inputGroup);
-    inputGroup.triggerActions.add(testAction);
     manager.addAction(testAction);
     manager.setActiveGroup(inputGroup);
 
@@ -62,7 +61,6 @@ describe('InputManager', () => {
 
   it('should not dispatch trigger action if no active group', () => {
     testAction.bind(triggerInputBinding, inputGroup);
-    inputGroup.triggerActions.add(testAction);
     manager.addAction(testAction);
 
     expect(testAction.isTriggered).toBe(false);
@@ -72,7 +70,6 @@ describe('InputManager', () => {
   });
 
   it('should bind trigger action on next dispatch', () => {
-    inputGroup.triggerActions.add(testAction);
     manager.addAction(testAction);
     manager.setActiveGroup(inputGroup);
 
@@ -88,7 +85,6 @@ describe('InputManager', () => {
   });
 
   it('should throw when attempting to bind trigger action on next dispatch when no active group is set', () => {
-    inputGroup.triggerActions.add(testAction);
     manager.addAction(testAction);
 
     expect(testAction.isTriggered).toBe(false);
@@ -99,7 +95,6 @@ describe('InputManager', () => {
   });
 
   it('should stop pending trigger action binding', () => {
-    inputGroup.triggerActions.add(testAction);
     manager.addAction(testAction);
     manager.setActiveGroup(inputGroup);
 

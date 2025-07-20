@@ -41,6 +41,7 @@ export class TriggerAction implements InputAction {
 
     groupBindings.add(binding);
     this.bindings.set(group, groupBindings);
+    group.triggerActions.add(this);
   }
 
   private _findBindingById(id: string, group: InputGroup) {
