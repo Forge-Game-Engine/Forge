@@ -6,7 +6,7 @@ import {
   ImageAnimationSystem,
   ImageCache,
 } from '../../src';
-import { setupAnimationsDemo } from './animationDemo';
+import { setupAnimationsDemo, setupAnimationsStressTest } from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game();
@@ -42,7 +42,8 @@ const adventureSprite = createImageSprite(
 );
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
-setupAnimationsDemo(animationManager, world, shipSprite, adventureSprite);
+// setupAnimationsDemo(animationManager, world, shipSprite, adventureSprite);
+setupAnimationsStressTest(animationManager, world, shipSprite, 10000);
 
 world.addSystems(
   new ImageAnimationSystem(world.time, animationManager),

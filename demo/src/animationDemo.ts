@@ -35,6 +35,18 @@ export function setupAnimationsDemo(
   createAdventurerControllableAnimationSets(animationManager);
   buildAdventurerControllableEntities(world, adventurerSprite);
 }
+
+export function setupAnimationsStressTest(
+  animationManager: AnimationManager,
+  world: World,
+  shipSprite: Sprite,
+  repeats: number,
+) {
+  //left column
+  createShipAnimationSets(animationManager);
+  buildShipEntitiesMult(world, shipSprite, repeats);
+}
+
 function createShipAnimationSets(animationManager: AnimationManager) {
   animationManager.createAnimationSet(
     ENTITY_TYPES.ship,
@@ -264,6 +276,24 @@ function buildShipEntities(world: World, shipSprite: Sprite) {
       0,
     ),
   ]);
+}
+
+function buildShipEntitiesMult(
+  world: World,
+  shipSprite: Sprite,
+  repeats: number,
+) {
+  for (let i = 0; i < repeats; i++) {
+    world.buildAndAddEntity('ship-animation-spin', [
+      new PositionComponent(
+        Math.random() * 1000 - 500,
+        Math.random() * 1000 - 500,
+      ),
+      new SpriteComponent(shipSprite),
+      new ScaleComponent(0.5, 0.5),
+      new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, 0, 3),
+    ]);
+  }
 }
 
 function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
