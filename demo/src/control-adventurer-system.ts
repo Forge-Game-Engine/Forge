@@ -38,7 +38,11 @@ export class ControlAdventurerSystem extends System {
 
     if (this._inputComponent.keyPressed(keyCodes.w)) {
       // jump always happens immediately
-      imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
+      if (
+        imageAnimationComponent.getCurrentAnimation() !==
+        ADVENTURER_ANIMATIONS.jump
+      )
+        imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
     } else if (this._inputComponent.keyPressed(keyCodes.a)) {
       // run and attack happen at the end of the current animation
       imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;

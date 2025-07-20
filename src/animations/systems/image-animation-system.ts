@@ -4,13 +4,17 @@ import { ImageAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
 import { AnimationManager } from './animation-manager-system';
 
+/**
+ * System that manages and updates image-based animations for entities, such as from sprite sheets.
+ */
 export class ImageAnimationSystem extends System {
   private readonly _time: Time;
   private readonly _animationManager: AnimationManager;
 
   /**
-   * Creates an instance of AnimationSystem.
+   * Creates an instance of ImageAnimationSystem.
    * @param time - The Time instance.
+   * @param animationManager - The AnimationManager instance.
    */
   constructor(time: Time, animationManager: AnimationManager) {
     super('imageAnimation', [

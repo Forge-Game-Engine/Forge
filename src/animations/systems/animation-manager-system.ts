@@ -32,8 +32,6 @@ export class AnimationManager {
   > = new Map();
   constructor() {}
 
-  // takes in a single duration, or an array for each frame
-
   public createAnimationSet(
     entityType: string,
     animationType: string,
