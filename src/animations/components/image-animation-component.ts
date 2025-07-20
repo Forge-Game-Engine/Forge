@@ -11,6 +11,9 @@ Pros:
 
 Limitations: 
     All animations for an entity must be on the same sprite sheet.
+
+TODO:
+  - figure out how to allow multiple spritesheets?
     
 */
 export class ImageAnimationComponent implements Component {
@@ -19,6 +22,7 @@ export class ImageAnimationComponent implements Component {
   public animationIndex: number;
   public currentFrameTimeSeconds: number = 0;
   public nextAnimationState?: string;
+  public animationSpeedFactor: number;
 
   // if set directly, the animation can break
   private _currentAnimation: string;
@@ -29,11 +33,13 @@ export class ImageAnimationComponent implements Component {
     entityType: string,
     _currentAnimation: string,
     animationIndex: number = 0,
+    animationSpeedFactor: number = 1.0,
   ) {
     this.name = ImageAnimationComponent.symbol;
     this.entityType = entityType;
     this._currentAnimation = _currentAnimation;
     this.animationIndex = animationIndex;
+    this.animationSpeedFactor = animationSpeedFactor;
   }
 
   public getCurrentAnimation(): string {

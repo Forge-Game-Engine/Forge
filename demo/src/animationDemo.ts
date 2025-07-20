@@ -220,7 +220,7 @@ function createAdventurerControllableAnimationSets(
       nextAnimationState: ADVENTURER_ANIMATIONS.attack3,
     },
   );
-  
+
   animationManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack3,
@@ -233,7 +233,7 @@ function createAdventurerControllableAnimationSets(
       nextAnimationState: ADVENTURER_ANIMATIONS.idle,
     },
   );
-  
+
   animationManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.jump,
@@ -249,13 +249,13 @@ function createAdventurerControllableAnimationSets(
 }
 function buildShipEntities(world: World, shipSprite: Sprite) {
   world.buildAndAddEntity('ship-animation-spin', [
-    new PositionComponent(-700, -150),
+    new PositionComponent(-500, -150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
     new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, 0),
   ]);
   world.buildAndAddEntity('ship-animation-spin-random', [
-    new PositionComponent(-700, 150),
+    new PositionComponent(-500, 150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
     new ImageAnimationComponent(
@@ -346,6 +346,7 @@ function buildAdventurerControllableEntities(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,
       0,
+      2, // speed up the animation by 2x
     ),
     new ControlAdventurerComponent(),
   ]);

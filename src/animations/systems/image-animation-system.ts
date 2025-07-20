@@ -49,7 +49,8 @@ export class ImageAnimationSystem extends System {
     if (
       this._time.timeInSeconds -
         imageAnimationComponent.currentFrameTimeSeconds >=
-      currentFrame.durationSeconds
+      currentFrame.durationSeconds /
+        imageAnimationComponent.animationSpeedFactor
     ) {
       imageAnimationComponent.currentFrameTimeSeconds =
         this._time.timeInSeconds;
