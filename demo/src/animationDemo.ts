@@ -45,7 +45,7 @@ export function setupAnimationsStressTest(
 ) {
   //left column
   createShipAnimationSets(animationManager);
-  buildShipEntitiesMult(world, shipSprite, repeats);
+  buildShipEntitiesMultiple(world, shipSprite, repeats);
 }
 
 function createShipAnimationSets(animationManager: AnimationManager) {
@@ -275,7 +275,7 @@ function buildShipEntities(world: World, shipSprite: Sprite) {
   ]);
 }
 
-function buildShipEntitiesMult(
+function buildShipEntitiesMultiple(
   world: World,
   shipSprite: Sprite,
   repeats: number,

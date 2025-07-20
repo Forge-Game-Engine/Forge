@@ -81,7 +81,7 @@ export class AnimationManager {
         ),
         scale: scale,
         durationSeconds: Array.isArray(animationDurationSeconds)
-          ? animationDurationSeconds[i % animationDurationSeconds.length]
+          ? animationDurationSeconds[i]
           : animationDurationSeconds,
       });
     }
@@ -99,10 +99,7 @@ export class AnimationManager {
       this._entityAnimationSets.set(entityType, currentAnimations);
     }
 
-    this._entityAnimationSets.set(
-      entityType,
-      currentAnimations.set(animationType, animationSet),
-    );
+    currentAnimations.set(animationType, animationSet);
   }
 
   public getAnimationSet(

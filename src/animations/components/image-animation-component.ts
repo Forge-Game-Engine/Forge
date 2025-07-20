@@ -13,7 +13,8 @@ Limitations:
     All animations for an entity must be on the same sprite sheet.
 
 TODO:
-  - figure out how to allow multiple spritesheets?
+  - figure out how to allow multiple spritesheet's?
+  - find a way to enforce animations to complete if needed (eg: a jump must end before the next animation can start)
     
 */
 

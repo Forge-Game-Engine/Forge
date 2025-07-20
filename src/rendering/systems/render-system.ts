@@ -1,8 +1,4 @@
-import {
-  AnimationFrame,
-  AnimationManager,
-  ImageAnimationComponent,
-} from '../../animations';
+import { AnimationManager, ImageAnimationComponent } from '../../animations';
 import {
   FlipComponent,
   PositionComponent,
@@ -125,7 +121,7 @@ export class RenderSystem extends System {
           ImageAnimationComponent.symbol,
         );
 
-      let currentFrame: AnimationFrame | null = null;
+      let currentFrame = null;
 
       if (imageAnimationComponent) {
         currentFrame = this._animationManager.getAnimationFrame(
