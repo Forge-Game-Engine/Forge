@@ -12,7 +12,7 @@ export class FireSystem extends System {
 
     const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
 
-    if (fireAction.isTriggered) {
+    if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
     }
   }

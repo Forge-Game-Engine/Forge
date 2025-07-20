@@ -5,13 +5,13 @@ import {
   Game,
   ImageCache,
   KeyboardInputSource,
-  KeyboardTriggerActionInputBinding,
   keyCodes,
   registerCamera,
   registerInputs,
   registerRendering,
   TriggerAction,
 } from '../../src';
+import { KeyboardTriggerBinding } from '../../src/input/bindings';
 import { InputGroup } from '../../src/input/input-group';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
@@ -21,14 +21,11 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const { world, renderLayers, cameraEntity, inputsManager } = await createWorld(
-  'world',
-  game,
-)
-  .add(registerInputs())
-  .add(registerCamera())
-  .add(registerRendering())
-  .execute();
+const world = createWorld('world', game);
+
+const { inputsManager } = registerInputs(world);
+const cameraEntity = registerCamera(world);
+const { renderLayers } = registerRendering(game, world);
 
 const fireInput = new TriggerAction('fire');
 
@@ -42,7 +39,7 @@ inputsManager.addAction(fireInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
 fireInput.bind(
-  new KeyboardTriggerActionInputBinding(
+  new KeyboardTriggerBinding(
     { keyCode: keyCodes.f, moment: buttonMoments.down },
     keyboardInputSource,
   ),
@@ -50,7 +47,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerActionInputBinding(
+  new KeyboardTriggerBinding(
     { keyCode: keyCodes.space, moment: buttonMoments.down },
     keyboardInputSource,
   ),
@@ -58,7 +55,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerActionInputBinding(
+  new KeyboardTriggerBinding(
     { keyCode: keyCodes.space, moment: buttonMoments.up },
     keyboardInputSource,
   ),
@@ -66,7 +63,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerActionInputBinding(
+  new KeyboardTriggerBinding(
     { keyCode: keyCodes.b, moment: buttonMoments.up },
     keyboardInputSource,
   ),
