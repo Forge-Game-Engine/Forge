@@ -16,6 +16,16 @@ TODO:
   - figure out how to allow multiple spritesheets?
     
 */
+
+export interface ImageAnimationOptions {
+  animationIndex: number;
+  animationSpeedFactor: number;
+}
+
+const defaultOptions: ImageAnimationOptions = {
+  animationIndex: 0,
+  animationSpeedFactor: 1.0,
+};
 export class ImageAnimationComponent implements Component {
   public name: symbol;
   public entityType: string;
@@ -32,9 +42,12 @@ export class ImageAnimationComponent implements Component {
   constructor(
     entityType: string,
     _currentAnimation: string,
-    animationIndex: number = 0,
-    animationSpeedFactor: number = 1.0,
+    options: Partial<ImageAnimationOptions> = {},
   ) {
+    const { animationIndex, animationSpeedFactor } = {
+      ...defaultOptions,
+      ...options,
+    };
     this.name = ImageAnimationComponent.symbol;
     this.entityType = entityType;
     this._currentAnimation = _currentAnimation;

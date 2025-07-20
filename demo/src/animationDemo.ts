@@ -1,4 +1,5 @@
 import {
+  FlipComponent,
   PositionComponent,
   ScaleComponent,
   Sprite,
@@ -264,17 +265,13 @@ function buildShipEntities(world: World, shipSprite: Sprite) {
     new PositionComponent(-500, -150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, 0),
+    new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin),
   ]);
   world.buildAndAddEntity('ship-animation-spin-random', [
     new PositionComponent(-500, 150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new ImageAnimationComponent(
-      ENTITY_TYPES.ship,
-      SHIP_ANIMATIONS.spinRandom,
-      0,
-    ),
+    new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spinRandom),
   ]);
 }
 
@@ -291,7 +288,10 @@ function buildShipEntitiesMult(
       ),
       new SpriteComponent(shipSprite),
       new ScaleComponent(0.5, 0.5),
-      new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, 0, 3),
+      new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, {
+        animationSpeedFactor: 1 + Math.random() * 2,
+      }),
+      new FlipComponent(Math.random() < 0.5),
     ]);
   }
 }
@@ -304,7 +304,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idle,
-      0,
     ),
   ]);
 
@@ -315,7 +314,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idleHalf,
-      0,
     ),
   ]);
 
@@ -326,7 +324,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.run,
-      0,
     ),
   ]);
 
@@ -337,7 +334,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack1,
-      0,
     ),
   ]);
 
@@ -348,7 +344,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack3,
-      0,
     ),
   ]);
 
@@ -359,7 +354,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.die,
-      0,
     ),
   ]);
 }
@@ -375,9 +369,11 @@ function buildAdventurerControllableEntities(
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,
-      0,
-      2, // speed up the animation by 2x
+      {
+        animationSpeedFactor: 2,
+      },
     ),
     new ControlAdventurerComponent(),
+    new FlipComponent(),
   ]);
 }

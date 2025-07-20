@@ -1,5 +1,6 @@
 import {
   Entity,
+  FlipComponent,
   ImageAnimationComponent,
   InputsComponent,
   keyCodes,
@@ -15,6 +16,7 @@ export class ControlAdventurerSystem extends System {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       ImageAnimationComponent.symbol,
+      FlipComponent.symbol,
     ]);
 
     const inputComponent = inputsEntity.getComponentRequired<InputsComponent>(
@@ -30,15 +32,20 @@ export class ControlAdventurerSystem extends System {
         ImageAnimationComponent.symbol,
       );
 
+    const flipComponent = entity.getComponentRequired<FlipComponent>(
+      FlipComponent.symbol,
+    );
+
     if (this._inputComponent.keyPressed(keyCodes.w)) {
       // jump always happens immediately
       imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
-    } else if (
-      this._inputComponent.keyPressed(keyCodes.a) ||
-      this._inputComponent.keyPressed(keyCodes.d)
-    ) {
+    } else if (this._inputComponent.keyPressed(keyCodes.a)) {
       // run and attack happen at the end of the current animation
       imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+      flipComponent.flipX = true;
+    } else if (this._inputComponent.keyPressed(keyCodes.d)) {
+      imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+      flipComponent.flipX = false;
     } else if (this._inputComponent.keyPressed(keyCodes.space)) {
       imageAnimationComponent.nextAnimationState =
         ADVENTURER_ANIMATIONS.attack1;

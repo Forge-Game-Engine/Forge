@@ -108,17 +108,19 @@ export class AnimationManager {
   public getAnimationSet(
     entityType: string,
     animationType: string,
-  ): AnimationSet | undefined {
-    return this._entityAnimationSets.get(entityType)?.get(animationType);
+  ): AnimationSet | null {
+    return (
+      this._entityAnimationSets.get(entityType)?.get(animationType) ?? null
+    );
   }
 
   public getAnimationFrame(
     entityType?: string,
     animationType?: string,
     frameIndex?: number,
-  ): AnimationFrame | undefined {
+  ): AnimationFrame | null {
     if (!entityType || !animationType || frameIndex === undefined) {
-      return undefined;
+      return null;
     }
 
     const animationSet = this.getAnimationSet(entityType, animationType);
@@ -128,7 +130,7 @@ export class AnimationManager {
         `No animation set found for entity type: ${entityType}, animation: ${animationType}`,
       );
 
-      return undefined;
+      return null;
     }
 
     const imageAnimationFrames = animationSet.animationFrames;
