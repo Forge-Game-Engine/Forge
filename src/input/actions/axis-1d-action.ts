@@ -1,28 +1,17 @@
-import { InputAction, InputBinding } from './input-action';
+import { InputBinding } from '../bindings';
+import { InputGroup } from '../input-group';
+import { InputAction } from './input-action';
 
 export class Axis1dAction implements InputAction {
   public readonly name: string;
-  public readonly bindings: InputBinding[];
+
+  public bindings: Map<InputGroup, Set<InputBinding>>;
 
   private _value: number = 0;
 
   constructor(name: string) {
     this.name = name;
-    this.bindings = [];
-  }
-
-  public bind(binding: InputBinding): void {
-    this.bindings.push(binding);
-  }
-
-  public unbind(bindingId: string): void {
-    const index = this.bindings.findIndex(
-      (binding) => binding.bindingId === bindingId,
-    );
-
-    if (index !== -1) {
-      this.bindings.splice(index, 1);
-    }
+    this.bindings = new Map<InputGroup, Set<InputBinding>>();
   }
 
   public reset() {
@@ -35,5 +24,37 @@ export class Axis1dAction implements InputAction {
 
   public set(value: number) {
     this._value = value;
+  }
+
+  public bind<TArgs>(binding: InputBinding<TArgs>, group: InputGroup): void {
+    const existingBinding = this._findBindingById(binding.id, group);
+
+    if (existingBinding) {
+      console.warn(
+        `Binding with ID ${binding.id} already exists in group "${group.name}". Not adding again.`,
+      );
+
+      return;
+    }
+
+    const groupBindings = this.bindings.get(group) ?? new Set<InputBinding>();
+
+    groupBindings.add(binding);
+    this.bindings.set(group, groupBindings);
+    group.axis1dActions.add(this);
+  }
+
+  private _findBindingById(id: string, group: InputGroup) {
+    const groupBindings = this.bindings.get(group);
+
+    if (!groupBindings) {
+      return null;
+    }
+
+    for (const binding of groupBindings) {
+      if (binding.id === id) {
+        return binding;
+      }
+    }
   }
 }

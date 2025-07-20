@@ -6,12 +6,15 @@ import {
   ImageCache,
   KeyboardInputSource,
   keyCodes,
+  mouseButtons,
+  MouseInputSource,
   registerCamera,
   registerInputs,
   registerRendering,
   TriggerAction,
 } from '../../src';
 import { KeyboardTriggerBinding } from '../../src/input/bindings';
+import { MouseTriggerBinding } from '../../src/input/bindings/mouse-trigger-binding';
 import { InputGroup } from '../../src/input/input-group';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
@@ -30,6 +33,7 @@ const { renderLayers } = registerRendering(game, world);
 const fireInput = new TriggerAction('fire');
 
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
+const mouseInputSource = new MouseInputSource(inputsManager, game);
 
 const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
@@ -66,6 +70,14 @@ fireInput.bind(
   new KeyboardTriggerBinding(
     { keyCode: keyCodes.b, moment: buttonMoments.up },
     keyboardInputSource,
+  ),
+  alternativeInputGroup,
+);
+
+fireInput.bind(
+  new MouseTriggerBinding(
+    { mouseButton: mouseButtons.left, moment: buttonMoments.down },
+    mouseInputSource,
   ),
   alternativeInputGroup,
 );
