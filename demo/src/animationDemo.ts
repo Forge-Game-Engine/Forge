@@ -89,7 +89,7 @@ function createAdventurerAnimationSets(animationManager: AnimationManager) {
     0.1,
     {
       endPositionPercentage: new Vector2(1, 1 / 8),
-      numFrames: 8, // even though we are limiting this to 4 frames, the end position and sprites per row is still the same
+      numFrames: 6, // even though we are limiting this to 6 frames, the end position and sprites per row is still the same
     },
   );
 

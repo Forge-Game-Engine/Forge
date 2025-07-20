@@ -61,16 +61,18 @@ export class ImageAnimationSystem extends System {
 
       if (imageAnimationComponent.animationIndex < animationSet.numFrames - 1) {
         imageAnimationComponent.animationIndex++;
-      } else {
-        imageAnimationComponent.animationIndex = 0;
 
-        if (imageAnimationComponent.nextAnimationState) {
-          imageAnimationComponent.nextAnimation();
-        } else if (animationSet.nextAnimationState) {
-          imageAnimationComponent.setCurrentAnimation(
-            animationSet.nextAnimationState,
-          );
-        }
+        return;
+      }
+
+      imageAnimationComponent.animationIndex = 0;
+
+      if (imageAnimationComponent.nextAnimationState) {
+        imageAnimationComponent.nextAnimation();
+      } else if (animationSet.nextAnimationState) {
+        imageAnimationComponent.setCurrentAnimation(
+          animationSet.nextAnimationState,
+        );
       }
     }
   }
