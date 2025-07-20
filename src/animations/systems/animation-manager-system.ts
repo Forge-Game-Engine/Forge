@@ -1,4 +1,5 @@
 import { Vector2 } from '../../math';
+import { ImageAnimationComponent } from '../components';
 
 export interface AnimationSet {
   animationFrames: AnimationFrame[];
@@ -110,13 +111,15 @@ export class AnimationManager {
   }
 
   public getAnimationFrame(
-    entityType?: string,
-    animationType?: string,
-    frameIndex?: number,
+    imageAnimationComponent: ImageAnimationComponent | null,
   ): AnimationFrame | null {
-    if (!entityType || !animationType || frameIndex === undefined) {
+    if (!imageAnimationComponent) {
       return null;
     }
+
+    const entityType = imageAnimationComponent.entityType;
+    const animationType = imageAnimationComponent.getCurrentAnimation();
+    const frameIndex = imageAnimationComponent.animationIndex;
 
     const animationSet = this.getAnimationSet(entityType, animationType);
 

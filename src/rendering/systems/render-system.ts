@@ -111,25 +111,17 @@ export class RenderSystem extends System {
         batchedEntity.getComponentRequired<SpriteComponent>(
           SpriteComponent.symbol,
         );
-
       const flipComponent = batchedEntity.getComponent<FlipComponent>(
         FlipComponent.symbol,
       );
-
       const imageAnimationComponent =
         batchedEntity.getComponent<ImageAnimationComponent>(
           ImageAnimationComponent.symbol,
         );
 
-      let currentFrame = null;
-
-      if (imageAnimationComponent) {
-        currentFrame = this._animationManager.getAnimationFrame(
-          imageAnimationComponent?.entityType,
-          imageAnimationComponent?.getCurrentAnimation(),
-          imageAnimationComponent?.animationIndex,
-        );
-      }
+      const currentFrame = this._animationManager.getAnimationFrame(
+        imageAnimationComponent,
+      );
 
       batch.instanceData[instanceDataOffset] = position.x;
       batch.instanceData[instanceDataOffset + 1] = position.y;
