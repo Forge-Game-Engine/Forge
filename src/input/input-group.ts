@@ -1,4 +1,5 @@
-import { Axis1dAction, TriggerAction } from './actions';
+import { Vector2 } from '../math';
+import { Axis1dAction, Axis2dAction, TriggerAction } from './actions';
 import { InputBinding } from './bindings';
 
 /**
@@ -10,12 +11,14 @@ export class InputGroup {
 
   public readonly triggerActions: Set<TriggerAction>;
   public readonly axis1dActions: Set<Axis1dAction>;
+  public readonly axis2dActions: Set<Axis2dAction>;
 
   constructor(name: string) {
     this.name = name;
 
     this.triggerActions = new Set();
     this.axis1dActions = new Set();
+    this.axis2dActions = new Set();
   }
 
   public dispatchTriggerAction(binding: InputBinding): void {
@@ -36,6 +39,22 @@ export class InputGroup {
 
   public dispatchAxis1dAction(binding: InputBinding, value: number): void {
     for (const action of this.axis1dActions) {
+      const actionBindings = action.bindings.get(this);
+
+      if (!actionBindings) {
+        continue;
+      }
+
+      for (const actionBinding of actionBindings) {
+        if (actionBinding.matchesArgs(binding.args)) {
+          action.set(value);
+        }
+      }
+    }
+  }
+
+  public dispatchAxis2dAction(binding: InputBinding, value: Vector2): void {
+    for (const action of this.axis2dActions) {
       const actionBindings = action.bindings.get(this);
 
       if (!actionBindings) {

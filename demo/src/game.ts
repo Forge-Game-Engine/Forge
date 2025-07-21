@@ -1,5 +1,7 @@
 import {
+  actionResetTypes,
   Axis1dAction,
+  Axis2dAction,
   buttonMoments,
   createShaderStore,
   createWorld,
@@ -17,6 +19,7 @@ import {
 import {
   KeyboardTriggerBinding,
   MouseAxis1dBinding,
+  MouseAxis2dBinding,
 } from '../../src/input/bindings';
 import { MouseTriggerBinding } from '../../src/input/bindings/mouse-trigger-binding';
 import { InputGroup } from '../../src/input/input-group';
@@ -31,14 +34,14 @@ const shaderStore = createShaderStore();
 const world = createWorld('world', game);
 
 const zoomInput = new Axis1dAction('zoom');
+const panInput = new Axis2dAction('pan', actionResetTypes.noReset);
+const fireInput = new TriggerAction('fire');
 
 const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {
   zoomInput,
 });
 const { renderLayers } = registerRendering(game, world);
-
-const fireInput = new TriggerAction('fire');
 
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);
@@ -47,7 +50,7 @@ const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
 
 inputsManager.addSources(keyboardInputSource, mouseInputSource);
-inputsManager.addActions(fireInput, zoomInput);
+inputsManager.addActions(fireInput, zoomInput, panInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
 fireInput.bind(
@@ -91,6 +94,8 @@ fireInput.bind(
 );
 
 zoomInput.bind(new MouseAxis1dBinding(mouseInputSource), alternativeInputGroup);
+
+panInput.bind(new MouseAxis2dBinding(mouseInputSource), alternativeInputGroup);
 
 // inputsManager.bindOnNextAxis1dAction(zoomInput);
 

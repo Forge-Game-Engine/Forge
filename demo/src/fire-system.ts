@@ -18,11 +18,13 @@ export class FireSystem extends System {
 
     const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
     const zoomAction = inputs.inputManager.getAction<Axis1dAction>('zoom');
+    const panAction = inputs.inputManager.getAction<Axis1dAction>('pan');
 
     if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
     }
 
     console.log(`Zoom action value: ${zoomAction?.value}`);
+    console.log(`Pan action value: ${panAction?.value}`);
   }
 }

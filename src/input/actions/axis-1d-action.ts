@@ -1,4 +1,5 @@
 import { InputBinding } from '../bindings';
+import { ActionResetType, actionResetTypes } from '../constants';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 
@@ -8,14 +9,17 @@ export class Axis1dAction implements InputAction {
   public bindings: Map<InputGroup, Set<InputBinding>>;
 
   private _value: number = 0;
+  private readonly _actionResetType: ActionResetType;
 
-  constructor(name: string) {
+  constructor(name: string, actionResetType: ActionResetType = 'zero') {
     this.name = name;
     this.bindings = new Map<InputGroup, Set<InputBinding>>();
+    this._actionResetType = actionResetType;
   }
 
   public reset() {
-    this._value = 0;
+    this._value =
+      this._actionResetType === actionResetTypes.zero ? 0 : this._value;
   }
 
   get value(): number {

@@ -1,9 +1,13 @@
 import { Game } from '../../ecs';
 import { Vector2 } from '../../math';
-import { axisMeasurements, buttonMoments, MouseButton } from '../constants';
+import { buttonMoments, MouseButton } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
-import { MouseAxis1dBinding, MouseTriggerBinding } from '../bindings';
+import {
+  MouseAxis1dBinding,
+  MouseAxis2dBinding,
+  MouseTriggerBinding,
+} from '../bindings';
 
 export class MouseInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -15,7 +19,6 @@ export class MouseInputSource implements ActionableInputSource {
   private readonly _mouseButtonUps = new Set<MouseButton>();
 
   private readonly _lastMousePosition = Vector2.zero;
-  private _scrollDelta = 0;
 
   constructor(inputManager: InputManager, game: Game) {
     this._inputManager = inputManager;
@@ -36,7 +39,6 @@ export class MouseInputSource implements ActionableInputSource {
     this._mouseButtonDowns.clear();
     this._mouseButtonUps.clear();
     this._mouseButtonPresses.clear();
-    this._scrollDelta = 0;
   }
 
   public stop(): void {
@@ -87,8 +89,6 @@ export class MouseInputSource implements ActionableInputSource {
   };
 
   private readonly _onWheelHandler = (event: WheelEvent) => {
-    this._scrollDelta = event.deltaY;
-
     const binding = new MouseAxis1dBinding(this);
 
     this._inputManager.dispatchAxis1dAction(binding, event.deltaY);
@@ -98,20 +98,9 @@ export class MouseInputSource implements ActionableInputSource {
     const x = event.clientX - this._containerBoundingClientRect.left;
     const y = event.clientY - this._containerBoundingClientRect.top;
 
-    for (const inputAxis of this._inputAxis2d) {
-      if (inputAxis.args.type === axisMeasurements.absolute) {
-        inputAxis.input.set(x, y);
+    const binding = new MouseAxis2dBinding(this);
 
-        continue;
-      }
-
-      if (inputAxis.args.type === axisMeasurements.delta) {
-        const deltaX = x - this._lastMousePosition.x;
-        const deltaY = y - this._lastMousePosition.y;
-
-        inputAxis.input.set(deltaX, deltaY);
-      }
-    }
+    this._inputManager.dispatchAxis2dAction(binding, new Vector2(x, y));
 
     this._lastMousePosition.x = x;
     this._lastMousePosition.y = y;

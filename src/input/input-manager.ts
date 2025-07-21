@@ -1,5 +1,11 @@
 import { Resettable } from '../common';
-import { Axis1dAction, InputAction, TriggerAction } from './actions';
+import { Vector2 } from '../math';
+import {
+  Axis1dAction,
+  Axis2dAction,
+  InputAction,
+  TriggerAction,
+} from './actions';
 import { InputBinding } from './bindings/input-binding';
 import { InputGroup } from './input-group';
 import { InputSource } from './input-sources';
@@ -15,6 +21,7 @@ export class InputManager implements Resettable {
   private _activeGroup: InputGroup | null;
   private _triggerActionPendingBind: TriggerAction | null = null;
   private _axis1dActionPendingBind: Axis1dAction | null = null;
+  private _axis2dActionPendingBind: Axis2dAction | null = null;
 
   constructor() {
     this._sources = new Set<InputSource>();
@@ -102,6 +109,33 @@ export class InputManager implements Resettable {
 
   public stopPendingAxis1dActionBinding() {
     this._axis1dActionPendingBind = null;
+  }
+
+  public dispatchAxis2dAction(binding: InputBinding, value: Vector2): void {
+    if (!this._activeGroup) {
+      return;
+    }
+
+    if (this._axis2dActionPendingBind) {
+      this._axis2dActionPendingBind.bind(binding, this._activeGroup);
+      this.stopPendingAxis2dActionBinding();
+
+      return;
+    }
+
+    this._activeGroup.dispatchAxis2dAction(binding, value);
+  }
+
+  public bindOnNextAxis2dAction(action: Axis2dAction) {
+    if (!this._activeGroup) {
+      throw new Error('No active input group set.');
+    }
+
+    this._axis2dActionPendingBind = action;
+  }
+
+  public stopPendingAxis2dActionBinding() {
+    this._axis2dActionPendingBind = null;
   }
 
   public getAction<TAction extends InputAction>(name: string) {
