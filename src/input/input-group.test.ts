@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { InputGroup } from './input-group';
 import { KeyboardInputSource } from './input-sources';
 import { InputManager } from './input-manager';

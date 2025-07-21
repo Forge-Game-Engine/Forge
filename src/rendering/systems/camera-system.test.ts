@@ -1,14 +1,9 @@
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CameraSystem } from './camera-system';
-import { Entity, Game, World } from '../../ecs';
-import {
-  Axis1dAction,
-  Axis2dAction,
-  InputsComponent,
-  keyCodes,
-} from '../../input';
+import { Entity, World } from '../../ecs';
+import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraComponent } from '../components';
-import { PositionComponent, Time } from '../../common';
+import { PositionComponent } from '../../common';
 import { Vector2 } from '../../math';
 
 describe('CameraSystem', () => {

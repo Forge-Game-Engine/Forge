@@ -1,5 +1,6 @@
 import { type World } from '../../ecs';
 import { InputsComponent } from '../components';
+import { InputManager } from '../input-manager';
 import { InputSystem } from '../systems';
 
 /**
@@ -8,8 +9,10 @@ import { InputSystem } from '../systems';
  * @returns The entity that contains the `InputsComponent`.
  */
 export function addInputs(world: World) {
+  const inputManager = new InputManager();
+
   const inputsEntity = world.buildAndAddEntity('inputs', [
-    new InputsComponent(),
+    new InputsComponent(inputManager),
   ]);
 
   const inputSystem = new InputSystem();
