@@ -1,9 +1,13 @@
 import { AnimationManager } from '../../animations';
 import { type World } from '../../ecs';
-import { RenderableBatchComponent } from '../components';
+import {
+  ParticleBatchComponent,
+  RenderableBatchComponent,
+} from '../components';
 import type { LayerService } from '../layer-service';
 import { ForgeRenderLayer } from '../render-layers';
 import { RenderSystem, SpriteBatchingSystem } from '../systems';
+import { ParticleBatchingSystem } from '../systems/particle-batching-system';
 import { createCanvas } from './create-canvas';
 
 /**
@@ -36,11 +40,14 @@ export function addForgeRenderLayer(
 
   const batcherEntity = world.buildAndAddEntity('renderable batcher', [
     new RenderableBatchComponent(layer),
+    new ParticleBatchComponent(layer),
   ]);
 
-  const batchingSystem = new SpriteBatchingSystem(batcherEntity);
+  const spriteBatchingSystem = new SpriteBatchingSystem(batcherEntity);
+  const particleBatchingSystem = new ParticleBatchingSystem(batcherEntity);
 
-  world.addSystem(batchingSystem);
+  world.addSystem(spriteBatchingSystem);
+  world.addSystem(particleBatchingSystem);
 
   return layer;
 }

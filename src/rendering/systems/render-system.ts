@@ -8,6 +8,8 @@ import {
 import { Entity, System } from '../../ecs';
 import {
   Batch,
+  ParticleBatch,
+  ParticleBatchComponent,
   RenderableBatchComponent,
   SpriteComponent,
 } from '../components';
@@ -27,7 +29,10 @@ export class RenderSystem extends System {
   private readonly _animationManager: AnimationManager;
 
   constructor(options: RenderSystemOptions) {
-    super('renderer', [RenderableBatchComponent.symbol]);
+    super('renderer', [
+      RenderableBatchComponent.symbol,
+      ParticleBatchComponent.symbol,
+    ]);
 
     const { layer, animationManager } = options;
     this._layer = layer;
@@ -49,6 +54,11 @@ export class RenderSystem extends System {
         RenderableBatchComponent.symbol,
       );
 
+    const particleBatchComponent =
+      entity.getComponentRequired<ParticleBatchComponent>(
+        ParticleBatchComponent.symbol,
+      );
+
     if (batchComponent.renderLayer !== this._layer) {
       return;
     }
@@ -56,7 +66,11 @@ export class RenderSystem extends System {
     const gl = this._layer.context;
 
     for (const [renderable, batch] of batchComponent.batches) {
-      this._includeBatch(renderable, batch, gl);
+      this._includeSpriteBatch(renderable, batch, gl);
+    }
+
+    for (const [renderable, batch] of particleBatchComponent.batches) {
+      this._includeParticleBatch(renderable, batch, gl);
     }
 
     gl.bindVertexArray(null);
@@ -75,7 +89,7 @@ export class RenderSystem extends System {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
-  private _includeBatch(
+  private _includeSpriteBatch(
     renderable: Renderable,
     batch: Batch,
     gl: WebGL2RenderingContext,
@@ -149,6 +163,60 @@ export class RenderSystem extends System {
 
     const program = renderable.material.program;
 
+    this._setupInstanceAttributesAndDraw(gl, program, entities.length);
+  }
+
+  private _includeParticleBatch(
+    renderable: Renderable,
+    batch: ParticleBatch,
+    gl: WebGL2RenderingContext,
+  ): void {
+    const { particles } = batch;
+
+    if (particles.length === 0) {
+      return;
+    }
+
+    renderable.bind(gl);
+
+    const requiredBatchSize = particles.length * FLOATS_PER_INSTANCE;
+
+    if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
+      batch.instanceData = new Float32Array(requiredBatchSize * 1.25);
+    }
+
+    for (let i = 0; i < particles.length; i++) {
+      const batchedParticle = particles[i];
+      const instanceDataOffset = i * FLOATS_PER_INSTANCE;
+
+      batch.instanceData[instanceDataOffset] = batchedParticle.positionX;
+      batch.instanceData[instanceDataOffset + 1] = batchedParticle.positionY;
+      batch.instanceData[instanceDataOffset + 2] = batchedParticle.rotation;
+      batch.instanceData[instanceDataOffset + 3] = batchedParticle.scale;
+      batch.instanceData[instanceDataOffset + 4] = batchedParticle.scale;
+      batch.instanceData[instanceDataOffset + 5] = batchedParticle.width;
+      batch.instanceData[instanceDataOffset + 6] = batchedParticle.height;
+      batch.instanceData[instanceDataOffset + 7] = 0;
+      batch.instanceData[instanceDataOffset + 8] = 0;
+      batch.instanceData[instanceDataOffset + 9] = 0;
+      batch.instanceData[instanceDataOffset + 10] = 0;
+      batch.instanceData[instanceDataOffset + 11] = 1;
+      batch.instanceData[instanceDataOffset + 12] = 1;
+    }
+
+    // Upload instance transform buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
+
+    const program = renderable.material.program;
+
+    this._setupInstanceAttributesAndDraw(gl, program, particles.length);
+  }
+  private _setupInstanceAttributesAndDraw(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+    batchLength: number,
+  ) {
     // Attribute locations
     const posLoc = gl.getAttribLocation(program, 'a_instancePos');
     const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
@@ -258,7 +326,7 @@ export class RenderSystem extends System {
       gl.vertexAttribDivisor(texSizeLoc, 1);
     }
 
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, entities.length);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 }
