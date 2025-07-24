@@ -3,8 +3,7 @@ import { Axis1dAction, Axis2dAction, TriggerAction } from './actions';
 import { InputInteraction } from './interactions';
 
 /**
- * InputGroup represents a collection of interactions that can be activated
- * together.
+ * InputGroup represents a collection of interactions that can be activated or deactivated together.
  */
 export class InputGroup {
   public readonly name: string;
