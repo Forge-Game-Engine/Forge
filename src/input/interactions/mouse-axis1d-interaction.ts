@@ -1,13 +1,13 @@
 import { ActionableInputSource } from '../input-sources';
-import { InputBinding } from './input-binding';
+import { InputInteraction } from './input-interaction';
 
-export class MouseAxis1dBinding extends InputBinding<void> {
+export class MouseAxis1dInteraction extends InputInteraction<void> {
   constructor(source: ActionableInputSource) {
     super(undefined, source);
   }
 
   public override matchesArgs(): boolean {
-    return true; // This binding does not have specific args to match against as it is the scroll axis.
+    return true; // This interaction does not have specific args to match against as it is the scroll wheel.
   }
 
   override get displayText(): string {

@@ -1,17 +1,17 @@
-import { InputBinding } from '../bindings/input-binding';
+import { InputInteraction } from '../interactions/input-interaction';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 
 export class TriggerAction implements InputAction {
   public readonly name: string;
 
-  public bindings: Map<InputGroup, Set<InputBinding>>;
+  public interactions: Map<InputGroup, Set<InputInteraction>>;
 
   private _triggered: boolean = false;
 
   constructor(name: string) {
     this.name = name;
-    this.bindings = new Map();
+    this.interactions = new Map();
   }
 
   public trigger() {
@@ -26,34 +26,41 @@ export class TriggerAction implements InputAction {
     return this._triggered;
   }
 
-  public bind<TArgs>(binding: InputBinding<TArgs>, group: InputGroup): void {
-    const existingBinding = this._findBindingById(binding.id, group);
+  public bind<TArgs>(
+    interaction: InputInteraction<TArgs>,
+    group: InputGroup,
+  ): void {
+    const existingInteraction = this._findInteractionById(
+      interaction.id,
+      group,
+    );
 
-    if (existingBinding) {
+    if (existingInteraction) {
       console.warn(
-        `Binding with ID ${binding.id} already exists in group "${group.name}". Not adding again.`,
+        `Binding with interaction "${interaction.id}" already exists in group "${group.name}". Not adding again.`,
       );
 
       return;
     }
 
-    const groupBindings = this.bindings.get(group) ?? new Set<InputBinding>();
+    const groupInteractions =
+      this.interactions.get(group) ?? new Set<InputInteraction>();
 
-    groupBindings.add(binding);
-    this.bindings.set(group, groupBindings);
+    groupInteractions.add(interaction);
+    this.interactions.set(group, groupInteractions);
     group.triggerActions.add(this);
   }
 
-  private _findBindingById(id: string, group: InputGroup) {
-    const groupBindings = this.bindings.get(group);
+  private _findInteractionById(id: string, group: InputGroup) {
+    const groupInteractions = this.interactions.get(group);
 
-    if (!groupBindings) {
+    if (!groupInteractions) {
       return null;
     }
 
-    for (const binding of groupBindings) {
-      if (binding.id === id) {
-        return binding;
+    for (const interaction of groupInteractions) {
+      if (interaction.id === id) {
+        return interaction;
       }
     }
   }

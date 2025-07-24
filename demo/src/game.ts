@@ -7,22 +7,20 @@ import {
   createWorld,
   Game,
   ImageCache,
+  InputGroup,
   KeyboardInputSource,
+  KeyboardTriggerInteraction,
   keyCodes,
+  MouseAxis1dInteraction,
+  MouseAxis2dInteraction,
   mouseButtons,
   MouseInputSource,
+  MouseTriggerInteraction,
   registerCamera,
   registerInputs,
   registerRendering,
   TriggerAction,
 } from '../../src';
-import {
-  KeyboardTriggerBinding,
-  MouseAxis1dBinding,
-  MouseAxis2dBinding,
-} from '../../src/input/bindings';
-import { MouseTriggerBinding } from '../../src/input/bindings/mouse-trigger-binding';
-import { InputGroup } from '../../src/input/input-group';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -54,7 +52,7 @@ inputsManager.addActions(fireInput, zoomInput, panInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
 fireInput.bind(
-  new KeyboardTriggerBinding(
+  new KeyboardTriggerInteraction(
     { keyCode: keyCodes.f, moment: buttonMoments.down },
     keyboardInputSource,
   ),
@@ -62,7 +60,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerBinding(
+  new KeyboardTriggerInteraction(
     { keyCode: keyCodes.space, moment: buttonMoments.down },
     keyboardInputSource,
   ),
@@ -70,7 +68,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerBinding(
+  new KeyboardTriggerInteraction(
     { keyCode: keyCodes.space, moment: buttonMoments.up },
     keyboardInputSource,
   ),
@@ -78,7 +76,7 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new KeyboardTriggerBinding(
+  new KeyboardTriggerInteraction(
     { keyCode: keyCodes.b, moment: buttonMoments.up },
     keyboardInputSource,
   ),
@@ -86,16 +84,22 @@ fireInput.bind(
 );
 
 fireInput.bind(
-  new MouseTriggerBinding(
+  new MouseTriggerInteraction(
     { mouseButton: mouseButtons.left, moment: buttonMoments.down },
     mouseInputSource,
   ),
   alternativeInputGroup,
 );
 
-zoomInput.bind(new MouseAxis1dBinding(mouseInputSource), alternativeInputGroup);
+zoomInput.bind(
+  new MouseAxis1dInteraction(mouseInputSource),
+  alternativeInputGroup,
+);
 
-panInput.bind(new MouseAxis2dBinding(mouseInputSource), alternativeInputGroup);
+panInput.bind(
+  new MouseAxis2dInteraction(mouseInputSource),
+  alternativeInputGroup,
+);
 
 // inputsManager.bindOnNextAxis1dAction(zoomInput);
 

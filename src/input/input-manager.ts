@@ -6,7 +6,7 @@ import {
   InputAction,
   TriggerAction,
 } from './actions';
-import { InputBinding } from './bindings/input-binding';
+import { InputInteraction } from './interactions/input-interaction';
 import { InputGroup } from './input-group';
 import { InputSource } from './input-sources';
 
@@ -57,19 +57,19 @@ export class InputManager implements Resettable {
     return this._activeGroup;
   }
 
-  public dispatchTriggerAction(binding: InputBinding): void {
+  public dispatchTriggerAction(interaction: InputInteraction): void {
     if (!this._activeGroup) {
       return;
     }
 
     if (this._triggerActionPendingBind) {
-      this._triggerActionPendingBind.bind(binding, this._activeGroup);
+      this._triggerActionPendingBind.bind(interaction, this._activeGroup);
       this.stopPendingTriggerActionBinding();
 
       return;
     }
 
-    this._activeGroup.dispatchTriggerAction(binding);
+    this._activeGroup.dispatchTriggerAction(interaction);
   }
 
   public bindOnNextTriggerAction(action: TriggerAction) {
@@ -84,19 +84,22 @@ export class InputManager implements Resettable {
     this._triggerActionPendingBind = null;
   }
 
-  public dispatchAxis1dAction(binding: InputBinding, value: number): void {
+  public dispatchAxis1dAction(
+    interaction: InputInteraction,
+    value: number,
+  ): void {
     if (!this._activeGroup) {
       return;
     }
 
     if (this._axis1dActionPendingBind) {
-      this._axis1dActionPendingBind.bind(binding, this._activeGroup);
+      this._axis1dActionPendingBind.bind(interaction, this._activeGroup);
       this.stopPendingAxis1dActionBinding();
 
       return;
     }
 
-    this._activeGroup.dispatchAxis1dAction(binding, value);
+    this._activeGroup.dispatchAxis1dAction(interaction, value);
   }
 
   public bindOnNextAxis1dAction(action: Axis1dAction) {
@@ -111,19 +114,22 @@ export class InputManager implements Resettable {
     this._axis1dActionPendingBind = null;
   }
 
-  public dispatchAxis2dAction(binding: InputBinding, value: Vector2): void {
+  public dispatchAxis2dAction(
+    interaction: InputInteraction,
+    value: Vector2,
+  ): void {
     if (!this._activeGroup) {
       return;
     }
 
     if (this._axis2dActionPendingBind) {
-      this._axis2dActionPendingBind.bind(binding, this._activeGroup);
+      this._axis2dActionPendingBind.bind(interaction, this._activeGroup);
       this.stopPendingAxis2dActionBinding();
 
       return;
     }
 
-    this._activeGroup.dispatchAxis2dAction(binding, value);
+    this._activeGroup.dispatchAxis2dAction(interaction, value);
   }
 
   public bindOnNextAxis2dAction(action: Axis2dAction) {

@@ -1,7 +1,7 @@
 import { buttonMoments, KeyCode } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
-import { KeyboardTriggerBinding } from '../bindings';
+import { KeyboardTriggerInteraction } from '../interactions';
 
 export class KeyboardInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -39,7 +39,7 @@ export class KeyboardInputSource implements ActionableInputSource {
     this._keyPresses.add(event.code as KeyCode);
     this._keyPressesDown.add(event.code as KeyCode);
 
-    const binding = new KeyboardTriggerBinding(
+    const interaction = new KeyboardTriggerInteraction(
       {
         moment: buttonMoments.down,
         keyCode: event.code as KeyCode,
@@ -47,7 +47,7 @@ export class KeyboardInputSource implements ActionableInputSource {
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(binding);
+    this._inputManager.dispatchTriggerAction(interaction);
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
@@ -58,7 +58,7 @@ export class KeyboardInputSource implements ActionableInputSource {
     this._keyPresses.delete(event.code as KeyCode);
     this._keyPressesUps.add(event.code as KeyCode);
 
-    const binding = new KeyboardTriggerBinding(
+    const interaction = new KeyboardTriggerInteraction(
       {
         moment: buttonMoments.up,
         keyCode: event.code as KeyCode,
@@ -66,6 +66,6 @@ export class KeyboardInputSource implements ActionableInputSource {
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(binding);
+    this._inputManager.dispatchTriggerAction(interaction);
   };
 }

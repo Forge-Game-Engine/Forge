@@ -1,13 +1,13 @@
 import { ButtonMoment, KeyCode } from '../constants';
-import { InputBinding } from './input-binding';
+import { InputInteraction } from './input-interaction';
 
-export interface KeyboardBindArgs {
+export interface KeyboardTriggerInteractionArgs {
   moment: ButtonMoment;
   keyCode: KeyCode;
 }
 
-export class KeyboardTriggerBinding extends InputBinding<KeyboardBindArgs> {
-  public override matchesArgs(args: KeyboardBindArgs): boolean {
+export class KeyboardTriggerInteraction extends InputInteraction<KeyboardTriggerInteractionArgs> {
+  public override matchesArgs(args: KeyboardTriggerInteractionArgs): boolean {
     return (
       this.args.moment === args.moment && this.args.keyCode === args.keyCode
     );

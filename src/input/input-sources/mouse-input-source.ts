@@ -4,10 +4,10 @@ import { buttonMoments, MouseButton } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
 import {
-  MouseAxis1dBinding,
-  MouseAxis2dBinding,
-  MouseTriggerBinding,
-} from '../bindings';
+  MouseAxis1dInteraction,
+  MouseAxis2dInteraction,
+  MouseTriggerInteraction,
+} from '../interactions';
 
 export class MouseInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -60,7 +60,7 @@ export class MouseInputSource implements ActionableInputSource {
     this._mouseButtonPresses.add(button);
     this._mouseButtonDowns.add(button);
 
-    const binding = new MouseTriggerBinding(
+    const interaction = new MouseTriggerInteraction(
       {
         moment: buttonMoments.down,
         mouseButton: button,
@@ -68,7 +68,7 @@ export class MouseInputSource implements ActionableInputSource {
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(binding);
+    this._inputManager.dispatchTriggerAction(interaction);
   };
 
   private readonly _onMouseUpHandler = (event: MouseEvent) => {
@@ -77,7 +77,7 @@ export class MouseInputSource implements ActionableInputSource {
     this._mouseButtonPresses.delete(button);
     this._mouseButtonUps.add(button);
 
-    const binding = new MouseTriggerBinding(
+    const interaction = new MouseTriggerInteraction(
       {
         moment: buttonMoments.up,
         mouseButton: button,
@@ -85,22 +85,22 @@ export class MouseInputSource implements ActionableInputSource {
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(binding);
+    this._inputManager.dispatchTriggerAction(interaction);
   };
 
   private readonly _onWheelHandler = (event: WheelEvent) => {
-    const binding = new MouseAxis1dBinding(this);
+    const interaction = new MouseAxis1dInteraction(this);
 
-    this._inputManager.dispatchAxis1dAction(binding, event.deltaY);
+    this._inputManager.dispatchAxis1dAction(interaction, event.deltaY);
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {
     const x = event.clientX - this._containerBoundingClientRect.left;
     const y = event.clientY - this._containerBoundingClientRect.top;
 
-    const binding = new MouseAxis2dBinding(this);
+    const interaction = new MouseAxis2dInteraction(this);
 
-    this._inputManager.dispatchAxis2dAction(binding, new Vector2(x, y));
+    this._inputManager.dispatchAxis2dAction(interaction, new Vector2(x, y));
 
     this._lastMousePosition.x = x;
     this._lastMousePosition.y = y;

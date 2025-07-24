@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Axis1dAction } from './axis-1d-action';
-import { MouseAxis1dBinding } from '../bindings';
+import { MouseAxis1dInteraction } from '../interactions';
 import { ActionableInputSource, MouseInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { Game } from '../../ecs';
@@ -46,13 +46,13 @@ describe('InputAxis1d', () => {
   });
 
   it('should bind sources correctly', () => {
-    const binding = new MouseAxis1dBinding(source);
+    const interaction = new MouseAxis1dInteraction(source);
 
-    action.bind(binding, group);
+    action.bind(interaction, group);
 
-    const bindings = action.bindings.get(group)?.values().toArray();
+    const interactions = action.interactions.get(group)?.values().toArray();
 
-    expect(bindings?.length).toBe(1);
-    expect(bindings?.[0]?.id).toBe(binding.id);
+    expect(interactions?.length).toBe(1);
+    expect(interactions?.[0]?.id).toBe(interaction.id);
   });
 });

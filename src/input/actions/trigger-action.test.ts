@@ -4,7 +4,7 @@ import { InputGroup } from '../input-group';
 import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { buttonMoments, keyCodes } from '../constants';
-import { KeyboardTriggerBinding } from '../bindings';
+import { KeyboardTriggerInteraction } from '../interactions';
 
 describe('InputAction', () => {
   let action: TriggerAction;
@@ -53,16 +53,16 @@ describe('InputAction', () => {
   });
 
   it('should bind sources correctly', () => {
-    const binding = new KeyboardTriggerBinding(
+    const interaction = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down },
       inputSource,
     );
 
-    action.bind(binding, group);
+    action.bind(interaction, group);
 
-    const bindings = action.bindings.get(group)?.values().toArray();
+    const interactions = action.interactions.get(group)?.values().toArray();
 
-    expect(bindings?.length).toBe(1);
-    expect(bindings?.[0]?.id).toBe(binding.id);
+    expect(interactions?.length).toBe(1);
+    expect(interactions?.[0]?.id).toBe(interaction.id);
   });
 });

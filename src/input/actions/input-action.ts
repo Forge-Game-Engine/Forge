@@ -1,8 +1,8 @@
 import { Resettable } from '../../common';
-import { InputBinding } from '../bindings';
+import { InputInteraction } from '../interactions';
 import { InputGroup } from '../input-group';
 
 export interface InputAction extends Resettable {
   get name(): string;
-  bind<TArgs>(binding: InputBinding<TArgs>, group: InputGroup): void;
+  bind<TArgs>(interaction: InputInteraction<TArgs>, group: InputGroup): void;
 }

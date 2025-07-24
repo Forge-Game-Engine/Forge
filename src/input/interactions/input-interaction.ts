@@ -2,10 +2,9 @@ import MurmurHash3 from 'imurmurhash';
 import { ActionableInputSource } from '../input-sources';
 
 /**
- * InputBinding represents a binding between an input action and an input source.
- * It includes the action, arguments, source, and display text for the binding.
+ * InputInteraction represents an interaction with an input source.
  */
-export abstract class InputBinding<TArgs = unknown> {
+export abstract class InputInteraction<TArgs = unknown> {
   public id: string;
   public readonly args: TArgs;
   public readonly source: ActionableInputSource;

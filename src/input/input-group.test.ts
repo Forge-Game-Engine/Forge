@@ -4,7 +4,7 @@ import { KeyboardInputSource } from './input-sources';
 import { InputManager } from './input-manager';
 import { buttonMoments, keyCodes } from './constants';
 import { TriggerAction } from './actions';
-import { KeyboardTriggerBinding } from './bindings';
+import { KeyboardTriggerInteraction } from './interactions';
 
 describe('InputGroup', () => {
   let group: InputGroup;
@@ -28,78 +28,78 @@ describe('InputGroup', () => {
   });
 
   it('should not trigger any actions if triggerActions is empty', () => {
-    const binding = new KeyboardTriggerBinding(
+    const interaction = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down },
       source,
     );
 
-    group.dispatchTriggerAction(binding);
+    group.dispatchTriggerAction(interaction);
 
     expect(group.triggerActions.size).toBe(0);
     expect(action.isTriggered).toBe(false);
   });
 
-  it('should trigger action if binding matches', () => {
-    const binding = new KeyboardTriggerBinding(
+  it('should trigger action if interaction matches', () => {
+    const interaction = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down },
       source,
     );
 
-    action.bind(binding, group);
+    action.bind(interaction, group);
 
-    group.dispatchTriggerAction(binding);
+    group.dispatchTriggerAction(interaction);
 
     expect(action.isTriggered).toBe(true);
   });
 
-  it('should not trigger action if binding does not match', () => {
-    const triggerBinding = new KeyboardTriggerBinding(
+  it('should not trigger action if interaction does not match', () => {
+    const triggerInteraction = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down },
       source,
     );
 
-    action.bind(triggerBinding, group);
+    action.bind(triggerInteraction, group);
 
-    const dispatchedBinding1 = new KeyboardTriggerBinding(
+    const dispatchedInteraction1 = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.a, moment: buttonMoments.down }, // different key-code
       source,
     );
 
-    group.dispatchTriggerAction(dispatchedBinding1);
+    group.dispatchTriggerAction(dispatchedInteraction1);
 
     expect(action.isTriggered).toBe(false);
 
-    const dispatchedBinding2 = new KeyboardTriggerBinding(
+    const dispatchedInteraction2 = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.up }, // same key-code, different moment
       source,
     );
 
-    group.dispatchTriggerAction(dispatchedBinding2);
+    group.dispatchTriggerAction(dispatchedInteraction2);
 
     expect(action.isTriggered).toBe(false);
 
-    const dispatchedBinding3 = new KeyboardTriggerBinding(
+    const dispatchedInteraction3 = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down }, // same key-code and moment (even though different instance)
       source,
     );
 
-    group.dispatchTriggerAction(dispatchedBinding3);
+    group.dispatchTriggerAction(dispatchedInteraction3);
 
     expect(action.isTriggered).toBe(true);
   });
 
-  it('should skip actions with no bindings for the group', () => {
+  it('should skip actions with no interaction for the group', () => {
     const activeGroup = new InputGroup('active-group');
     const inactiveGroup = new InputGroup('inactive-group');
 
-    const binding = new KeyboardTriggerBinding(
+    const interaction = new KeyboardTriggerInteraction(
       { keyCode: keyCodes.space, moment: buttonMoments.down },
       source,
     );
 
-    action.bind(binding, inactiveGroup);
+    action.bind(interaction, inactiveGroup);
 
-    activeGroup.dispatchTriggerAction(binding);
+    activeGroup.dispatchTriggerAction(interaction);
 
     expect(action.isTriggered).toBe(false);
   });

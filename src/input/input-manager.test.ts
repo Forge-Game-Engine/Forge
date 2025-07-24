@@ -3,13 +3,13 @@ import { InputManager } from './input-manager';
 import { TriggerAction } from './actions';
 import { ActionableInputSource } from './input-sources';
 import { InputGroup } from './input-group';
-import { InputBinding } from './bindings/input-binding';
+import { InputInteraction } from './interactions/input-interaction';
 
 function createMockInputSource(): ActionableInputSource {
   return { name: 'test-input-source', reset: vi.fn(), stop: vi.fn() };
 }
 
-class TestTriggerActionInputBinding extends InputBinding<string> {
+class TestTriggerActionInputInteraction extends InputInteraction<string> {
   constructor(args: string, source: ActionableInputSource) {
     super(args, source);
   }
@@ -23,14 +23,14 @@ describe('InputManager', () => {
   let manager: InputManager;
   let inputGroup: InputGroup;
   let testInputSource: ActionableInputSource;
-  let triggerInputBinding: InputBinding;
+  let triggerInputInteraction: InputInteraction;
   let testAction: TriggerAction;
 
   beforeEach(() => {
     manager = new InputManager();
     inputGroup = new InputGroup('test-group');
     testInputSource = createMockInputSource();
-    triggerInputBinding = new TestTriggerActionInputBinding(
+    triggerInputInteraction = new TestTriggerActionInputInteraction(
       'test',
       testInputSource,
     );
@@ -46,13 +46,13 @@ describe('InputManager', () => {
   });
 
   it('should dispatch trigger action to active group', () => {
-    testAction.bind(triggerInputBinding, inputGroup);
+    testAction.bind(triggerInputInteraction, inputGroup);
     manager.addActions(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(true);
 
     manager.reset();
@@ -60,12 +60,12 @@ describe('InputManager', () => {
   });
 
   it('should not dispatch trigger action if no active group', () => {
-    testAction.bind(triggerInputBinding, inputGroup);
+    testAction.bind(triggerInputInteraction, inputGroup);
     manager.addActions(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(false);
   });
 
@@ -77,10 +77,10 @@ describe('InputManager', () => {
 
     manager.bindOnNextTriggerAction(testAction);
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(false);
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(true);
   });
 
@@ -104,10 +104,10 @@ describe('InputManager', () => {
 
     manager.stopPendingTriggerActionBinding();
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(false);
 
-    manager.dispatchTriggerAction(triggerInputBinding);
+    manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(false);
   });
 

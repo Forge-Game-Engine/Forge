@@ -1,10 +1,10 @@
 import { Vector2 } from '../math';
 import { Axis1dAction, Axis2dAction, TriggerAction } from './actions';
-import { InputBinding } from './bindings';
+import { InputInteraction } from './interactions';
 
 /**
- * InputGroup represents a collection of input bindings that can be activated
- * together. It is used to group related input actions and manage their bindings.
+ * InputGroup represents a collection of interactions that can be activated
+ * together.
  */
 export class InputGroup {
   public readonly name: string;
@@ -21,48 +21,54 @@ export class InputGroup {
     this.axis2dActions = new Set();
   }
 
-  public dispatchTriggerAction(binding: InputBinding): void {
+  public dispatchTriggerAction(interaction: InputInteraction): void {
     for (const action of this.triggerActions) {
-      const actionBindings = action.bindings.get(this);
+      const interactionsForAction = action.interactions.get(this);
 
-      if (!actionBindings) {
+      if (!interactionsForAction) {
         continue;
       }
 
-      for (const actionBinding of actionBindings) {
-        if (actionBinding.matchesArgs(binding.args)) {
+      for (const interactionForAction of interactionsForAction) {
+        if (interactionForAction.matchesArgs(interaction.args)) {
           action.trigger();
         }
       }
     }
   }
 
-  public dispatchAxis1dAction(binding: InputBinding, value: number): void {
+  public dispatchAxis1dAction(
+    interaction: InputInteraction,
+    value: number,
+  ): void {
     for (const action of this.axis1dActions) {
-      const actionBindings = action.bindings.get(this);
+      const interactionsForAction = action.interactions.get(this);
 
-      if (!actionBindings) {
+      if (!interactionsForAction) {
         continue;
       }
 
-      for (const actionBinding of actionBindings) {
-        if (actionBinding.matchesArgs(binding.args)) {
+      for (const interactionForAction of interactionsForAction) {
+        if (interactionForAction.matchesArgs(interaction.args)) {
           action.set(value);
         }
       }
     }
   }
 
-  public dispatchAxis2dAction(binding: InputBinding, value: Vector2): void {
+  public dispatchAxis2dAction(
+    interaction: InputInteraction,
+    value: Vector2,
+  ): void {
     for (const action of this.axis2dActions) {
-      const actionBindings = action.bindings.get(this);
+      const interactionsForAction = action.interactions.get(this);
 
-      if (!actionBindings) {
+      if (!interactionsForAction) {
         continue;
       }
 
-      for (const actionBinding of actionBindings) {
-        if (actionBinding.matchesArgs(binding.args)) {
+      for (const interactionForAction of interactionsForAction) {
+        if (interactionForAction.matchesArgs(interaction.args)) {
           action.set(value);
         }
       }
