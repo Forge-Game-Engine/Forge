@@ -55,7 +55,7 @@ animationDemo.setupAnimationsDemo(
 
 world.addSystems(
   new ImageAnimationSystem(world.time, spriteAnimationManager),
-  new ControlAdventurerSystem(),
+  new ControlAdventurerSystem(inputsManager),
 );
 
 game.run();

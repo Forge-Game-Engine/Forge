@@ -36,12 +36,12 @@ export class ImageAnimationSystem extends System {
       );
     const animationSet = this._animationManager.getAnimationSet(
       imageAnimationComponent.entityType,
-      imageAnimationComponent.currentAnimation,
+      imageAnimationComponent.currentAnimationSetName,
     );
 
     if (!animationSet) {
       throw new Error(
-        `No animation set found for entity type: ${imageAnimationComponent.entityType}, animation: ${imageAnimationComponent.currentAnimation}`,
+        `No animation set found for entity type: ${imageAnimationComponent.entityType}, animation: ${imageAnimationComponent.currentAnimationSetName}`,
       );
     }
 

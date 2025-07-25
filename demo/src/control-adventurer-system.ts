@@ -2,7 +2,7 @@ import {
   Entity,
   FlipComponent,
   ImageAnimationComponent,
-  InputsComponent,
+  InputManager,
   System,
   TriggerAction,
 } from '../../src';
@@ -10,13 +10,14 @@ import { ADVENTURER_ANIMATIONS } from './animationEnums';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
-  constructor() {
+  private readonly _inputsManager: InputManager;
+  constructor(inputsManager: InputManager) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       ImageAnimationComponent.symbol,
       FlipComponent.symbol,
-      InputsComponent.symbol,
     ]);
+    this._inputsManager = inputsManager;
   }
 
   public run(entity: Entity): void {
@@ -29,18 +30,15 @@ export class ControlAdventurerSystem extends System {
       FlipComponent.symbol,
     );
 
-    const inputs = entity.getComponentRequired<InputsComponent>(
-      InputsComponent.symbol,
-    );
-
-    const attackAction = inputs.inputManager.getAction<TriggerAction>('attack');
-    const runRAction = inputs.inputManager.getAction<TriggerAction>('runR');
-    const runLAction = inputs.inputManager.getAction<TriggerAction>('runL');
-    const jumpAction = inputs.inputManager.getAction<TriggerAction>('jump');
+    const attackAction = this._inputsManager.getAction<TriggerAction>('attack');
+    const runRAction = this._inputsManager.getAction<TriggerAction>('runR');
+    const runLAction = this._inputsManager.getAction<TriggerAction>('runL');
+    const jumpAction = this._inputsManager.getAction<TriggerAction>('jump');
 
     if (
       jumpAction?.isTriggered &&
-      imageAnimationComponent.currentAnimation !== ADVENTURER_ANIMATIONS.jump
+      imageAnimationComponent.currentAnimationSetName !==
+        ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
       imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);

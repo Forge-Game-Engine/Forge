@@ -3,7 +3,6 @@ import {
   FlipComponent,
   InputGroup,
   InputManager,
-  InputsComponent,
   KeyboardInputSource,
   KeyboardTriggerInteraction,
   keyCodes,
@@ -44,7 +43,7 @@ export function setupAnimationsDemo(
 
   //right column
   createAdventurerControllableAnimationSets(animationManager);
-  buildAdventurerControllableEntities(world, adventurerSprite, inputsManager);
+  buildAdventurerControllableEntities(world, adventurerSprite);
 }
 
 export function setupAnimationsStressTest(
@@ -422,7 +421,6 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
 function buildAdventurerControllableEntities(
   world: World,
   adventurerSprite: Sprite,
-  inputsManager: InputManager,
 ) {
   world.buildAndAddEntity('adventurer-controllable', [
     new PositionComponent(400, 0),
@@ -437,6 +435,5 @@ function buildAdventurerControllableEntities(
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),
-    new InputsComponent(inputsManager),
   ]);
 }

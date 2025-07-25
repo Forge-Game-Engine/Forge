@@ -10,6 +10,11 @@ export class FlipComponent implements Component {
 
   public static readonly symbol = Symbol('Flip');
 
+  /**
+   * Creates an instance of FlipComponent.
+   * @param flipX - Whether to flip the entity in the x direction.
+   * @param flipY - Whether to flip the entity in the y direction.
+   */
   constructor(flipX: boolean = false, flipY: boolean = false) {
     this.name = FlipComponent.symbol;
     this.flipX = flipX;
