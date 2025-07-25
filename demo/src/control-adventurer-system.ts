@@ -2,22 +2,21 @@ import {
   Entity,
   FlipComponent,
   ImageAnimationComponent,
-  InputsComponent,
-  keyCodes,
+  InputManager,
   ParticleEmitterComponent,
   PositionComponent,
   System,
+  TriggerAction,
 } from '../../src';
 import { ADVENTURER_ANIMATIONS } from './animationEnums';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
-  private readonly _inputComponent: InputsComponent;
+  private readonly _inputsManager: InputManager;
   private readonly _particleEmitterAttack: ParticleEmitterComponent;
   private readonly _particleEmitterJump: ParticleEmitterComponent;
-
   constructor(
-    inputsEntity: Entity,
+    inputsManager: InputManager,
     particleEmitterComponent1: ParticleEmitterComponent,
     particleEmitterComponent2: ParticleEmitterComponent,
   ) {
@@ -27,12 +26,7 @@ export class ControlAdventurerSystem extends System {
       FlipComponent.symbol,
       PositionComponent.symbol,
     ]);
-
-    const inputComponent = inputsEntity.getComponentRequired<InputsComponent>(
-      InputsComponent.symbol,
-    );
-
-    this._inputComponent = inputComponent;
+    this._inputsManager = inputsManager;
     this._particleEmitterAttack = particleEmitterComponent1;
     this._particleEmitterJump = particleEmitterComponent2;
   }
@@ -51,27 +45,31 @@ export class ControlAdventurerSystem extends System {
       PositionComponent.symbol,
     );
 
-    if (this._inputComponent.keyPressed(keyCodes.w)) {
-      // jump always happens immediately
-      if (
-        imageAnimationComponent.getCurrentAnimation() !==
+    const attackAction = this._inputsManager.getAction<TriggerAction>('attack');
+    const runRAction = this._inputsManager.getAction<TriggerAction>('runR');
+    const runLAction = this._inputsManager.getAction<TriggerAction>('runL');
+    const jumpAction = this._inputsManager.getAction<TriggerAction>('jump');
+
+    if (
+      jumpAction?.isTriggered &&
+      imageAnimationComponent.currentAnimationSetName !==
         ADVENTURER_ANIMATIONS.jump
-      ) {
-        imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
-        this._particleEmitterJump.emit(
-          positionComponent.x,
-          positionComponent.y + 50,
-        );
-      }
-    } else if (this._inputComponent.keyPressed(keyCodes.a)) {
+    ) {
+      // jump always happens immediately
+      imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
+      this._particleEmitterJump.emit(
+        positionComponent.x,
+        positionComponent.y + 50,
+      );
+    } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
-      imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = true;
-    } else if (this._inputComponent.keyPressed(keyCodes.d)) {
-      imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+    } else if (runRAction?.isTriggered) {
+      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = false;
-    } else if (this._inputComponent.keyPressed(keyCodes.space)) {
-      imageAnimationComponent.nextAnimationState =
+    } else if (attackAction?.isTriggered) {
+      imageAnimationComponent.nextAnimationSetName =
         ADVENTURER_ANIMATIONS.attack1;
       this._particleEmitterAttack.setOptions({
         minRotation: flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4,

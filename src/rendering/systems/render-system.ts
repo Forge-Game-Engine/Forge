@@ -1,4 +1,7 @@
-import { AnimationManager, ImageAnimationComponent } from '../../animations';
+import {
+  ImageAnimationComponent,
+  SpriteAnimationManager,
+} from '../../animations';
 import {
   FlipComponent,
   PositionComponent,
@@ -20,13 +23,13 @@ const FLOATS_PER_INSTANCE = 13;
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
-  animationManager: AnimationManager;
+  animationManager: SpriteAnimationManager;
 }
 
 export class RenderSystem extends System {
   private readonly _layer: ForgeRenderLayer;
   private readonly _instanceBuffer: WebGLBuffer;
-  private readonly _animationManager: AnimationManager;
+  private readonly _animationManager: SpriteAnimationManager;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [

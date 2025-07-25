@@ -8,5 +8,5 @@
  * isString(123); // returns false
  */
 export function isString<T>(value: T): boolean {
-  return typeof value === 'string';
+  return typeof value === 'string' || value instanceof String;
 }

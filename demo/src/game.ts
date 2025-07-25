@@ -8,6 +8,10 @@ import {
   ImageCache,
   ParticleEmitterComponent,
   ParticleManagerSystem,
+  registerCamera,
+  registerInputs,
+  registerRendering,
+  registerSpriteAnimationManager,
 } from '../../src';
 import * as animationDemo from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
@@ -17,13 +21,11 @@ export const game = new Game();
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
-const { world, renderLayers, cameraEntity, animationManager, inputsEntity } =
-  createWorld('world', game, {
-    camera: {
-      allowZooming: false,
-      allowPanning: false,
-    },
-  });
+const world = createWorld('world', game);
+const { inputsManager } = registerInputs(world);
+const cameraEntity = registerCamera(world, {});
+const spriteAnimationManager = registerSpriteAnimationManager();
+const { renderLayers } = registerRendering(game, world, spriteAnimationManager);
 
 const shipSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
 const adventurerSpriteSheet = await imageCache.getOrLoad(
@@ -46,12 +48,13 @@ const adventureSprite = createImageSprite(
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
 animationDemo.setupAnimationsDemo(
-  animationManager,
+  spriteAnimationManager,
   world,
   shipSprite,
   adventureSprite,
+  inputsManager,
 );
-// animationDemo.setupAnimationsStressTest(animationManager, world, shipSprite, 10000);
+// animationDemo.setupAnimationsStressTest(spriteAnimationManager, world, shipSprite, 10000);
 
 const blueCircleRenderable = await createImageRenderable(
   'blue-circle.png',
@@ -113,9 +116,9 @@ const particleEmitterStar =
   );
 
 world.addSystems(
-  new ImageAnimationSystem(world.time, animationManager),
+  new ImageAnimationSystem(world.time, spriteAnimationManager),
   new ControlAdventurerSystem(
-    inputsEntity,
+    inputsManager,
     particleEmitterStar,
     particleEmitterCircle,
   ),

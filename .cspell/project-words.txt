@@ -7,6 +7,7 @@ cachable
 commitlint
 dbaeumer
 devcontainers
+eamodio
 esbenp
 Fira
 fract
@@ -27,6 +28,7 @@ refac
 Renderable
 renderables
 requizits
+resettables
 RGBA
 rnaumovs
 slevesque
@@ -36,6 +38,7 @@ sonarlint
 sonarsource
 stoppables
 updatables
+WASD
 webgl
 yoavbls
 spritesheet
