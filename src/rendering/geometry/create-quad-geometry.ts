@@ -11,10 +11,10 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
     -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
   ]);
 
+  // Default full texture coordinates
   const texCoords = new Float32Array([
     // Triangle 1
     0, 0, 1, 0, 0, 1,
-
     // Triangle 2
     0, 1, 1, 0, 1, 1,
   ]);

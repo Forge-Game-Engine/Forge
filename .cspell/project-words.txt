@@ -41,3 +41,4 @@ updatables
 WASD
 webgl
 yoavbls
+spritesheet
