@@ -2,42 +2,39 @@ import type { Component } from '../../ecs';
 import { ForgeRenderLayer, Renderable } from '../../rendering';
 import { ParticleComponent } from './particle-component';
 
+export interface MinMax {
+  min: number;
+  max: number;
+}
+
 export interface ParticleEmitterOptions {
-  minNumParticles: number;
-  maxNumParticles: number;
-  minSpeed: number;
-  maxSpeed: number;
-  minScale: number;
-  maxScale: number;
+  numParticles: MinMax;
+  speed: MinMax;
+  scale: MinMax;
+  rotation: MinMax;
+  rotationSpeed: MinMax;
+  lifetime: MinMax;
   lifetimeScaleReduction: number;
   height: number;
   width: number;
-  minRotation: number;
-  maxRotation: number;
-  minRotationSpeed: number;
-  maxRotationSpeed: number;
-  minLifetime: number;
-  maxLifetime: number;
   emitDuration: number;
+  positionX: number;
+  positionY: number;
 }
 
 const defaultOptions: ParticleEmitterOptions = {
-  minNumParticles: 5,
-  maxNumParticles: 10,
-  minSpeed: 10,
-  maxSpeed: 20,
-  minScale: 1,
-  maxScale: 1,
+  numParticles: { min: 5, max: 10 },
+  speed: { min: 10, max: 20 },
+  scale: { min: 1, max: 1 },
+  rotation: { min: 0, max: 360 },
+  rotationSpeed: { min: 0, max: 0 },
+  lifetime: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   height: 10,
   width: 10,
-  minRotation: 0,
-  maxRotation: 360,
-  minRotationSpeed: 0,
-  maxRotationSpeed: 0,
-  minLifetime: 1,
-  maxLifetime: 3,
   emitDuration: 0,
+  positionX: 0,
+  positionY: 0,
 };
 export class ParticleEmitterComponent implements Component {
   public name: symbol;
@@ -46,21 +43,15 @@ export class ParticleEmitterComponent implements Component {
   public positionX: number = 0;
   public positionY: number = 0;
   public particles: ParticleComponent[] = [];
-  public minNumParticles: number;
-  public maxNumParticles: number;
-  public minSpeed: number;
-  public maxSpeed: number;
-  public minScale: number;
-  public maxScale: number;
+  public numParticles: MinMax;
+  public speed: MinMax;
+  public scale: MinMax;
+  public rotation: MinMax; // In radians
+  public rotationSpeed: MinMax;
+  public lifetime: MinMax;
   public lifetimeScaleReduction: number; // The final particle scale will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;
-  public minRotation: number; // In radians
-  public maxRotation: number;
-  public minRotationSpeed: number;
-  public maxRotationSpeed: number;
-  public minLifetime: number;
-  public maxLifetime: number;
   public emitDuration: number; // How long the emitter will emit particles
   public emitStartTime: number = 0;
   public emitCount: number = 0;
@@ -76,23 +67,18 @@ export class ParticleEmitterComponent implements Component {
     options: Partial<ParticleEmitterOptions> = {},
   ) {
     const {
-      minNumParticles,
-      maxNumParticles,
-      minSpeed,
-      maxSpeed,
-      minScale: minScale,
-      maxScale: maxScale,
+      numParticles,
+      speed,
+      scale,
+      rotation,
+      rotationSpeed,
+      lifetime,
       lifetimeScaleReduction,
-
       height,
       width,
-      minRotation,
-      maxRotation,
-      minRotationSpeed,
-      maxRotationSpeed,
-      minLifetime,
-      maxLifetime,
       emitDuration,
+      positionX,
+      positionY,
     } = {
       ...defaultOptions,
       ...options,
@@ -100,71 +86,55 @@ export class ParticleEmitterComponent implements Component {
     this.name = ParticleEmitterComponent.symbol;
     this.renderable = renderable;
     this.renderLayer = renderLayer;
-    this.minNumParticles = minNumParticles;
-    this.maxNumParticles = maxNumParticles;
-    this.minSpeed = minSpeed;
-    this.maxSpeed = maxSpeed;
-    this.minScale = minScale;
-    this.maxScale = maxScale;
+    this.numParticles = numParticles;
+    this.speed = speed;
+    this.scale = scale;
+    this.rotation = rotation;
+    this.rotationSpeed = rotationSpeed;
+    this.lifetime = lifetime;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;
-    this.minRotation = minRotation;
-    this.maxRotation = maxRotation;
-    this.minRotationSpeed = minRotationSpeed;
-    this.maxRotationSpeed = maxRotationSpeed;
-    this.minLifetime = minLifetime;
-    this.maxLifetime = maxLifetime;
     this.emitDuration = emitDuration;
+    this.positionX = positionX;
+    this.positionY = positionY;
   }
 
   public setOptions(options: Partial<ParticleEmitterOptions>): void {
     const {
-      minNumParticles,
-      maxNumParticles,
-      minSpeed,
-      maxSpeed,
-      minScale: minScale,
-      maxScale: maxScale,
+      numParticles,
+      speed,
+      scale,
+      rotation,
+      rotationSpeed,
+      lifetime,
       lifetimeScaleReduction,
-
       height,
       width,
-      minRotation,
-      maxRotation,
-      minRotationSpeed,
-      maxRotationSpeed,
-      minLifetime,
-      maxLifetime,
       emitDuration,
+      positionX,
+      positionY,
     } = {
       ...this,
       ...options,
     };
 
-    this.minNumParticles = minNumParticles;
-    this.maxNumParticles = maxNumParticles;
-    this.minSpeed = minSpeed;
-    this.maxSpeed = maxSpeed;
-    this.minScale = minScale;
-    this.maxScale = maxScale;
+    this.numParticles = numParticles;
+    this.speed = speed;
+    this.scale = scale;
+    this.rotation = rotation;
+    this.rotationSpeed = rotationSpeed;
+    this.lifetime = lifetime;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;
-    this.minRotation = minRotation;
-    this.maxRotation = maxRotation;
-    this.minRotationSpeed = minRotationSpeed;
-    this.maxRotationSpeed = maxRotationSpeed;
-    this.minLifetime = minLifetime;
-    this.maxLifetime = maxLifetime;
     this.emitDuration = emitDuration;
+    this.positionX = positionX;
+    this.positionY = positionY;
   }
 
   // Only emits if not already emitting
-  public emit(positionX: number, positionY: number): void {
-    this.positionX = positionX;
-    this.positionY = positionY;
-
+  public emit(): void {
     if (!this.currentlyEmitting) {
       this.startEmitting = true;
     }

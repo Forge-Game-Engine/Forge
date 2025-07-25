@@ -1,6 +1,10 @@
 import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
-import { ParticleComponent, ParticleEmitterComponent } from '../components';
+import {
+  MinMax,
+  ParticleComponent,
+  ParticleEmitterComponent,
+} from '../components';
 
 /**
  * System that manages and updates particles.
@@ -33,14 +37,10 @@ export class ParticleManagerSystem extends System {
       particleEmitterComponent.emitCount = 0;
       particleEmitterComponent.currentlyEmitting = true;
       particleEmitterComponent.amountToEmit = Math.floor(
-        this._getValueInRange(
-          particleEmitterComponent.minNumParticles,
-          particleEmitterComponent.maxNumParticles,
-        ) + 1,
+        this._getValueInRange(particleEmitterComponent.numParticles) + 1,
       );
     }
 
-    //create particles
     if (particleEmitterComponent.currentlyEmitting) {
       if (
         particleEmitterComponent.emitCount <
@@ -58,46 +58,37 @@ export class ParticleManagerSystem extends System {
           targetEmitCount - particleEmitterComponent.emitCount;
 
         for (let i = 0; i < amountToEmit; i++) {
-          const speed = this._getValueInRange(
-            particleEmitterComponent.minSpeed,
-            particleEmitterComponent.maxSpeed,
-          );
+          const speed = this._getValueInRange(particleEmitterComponent.speed);
 
           const originalScale = this._getValueInRange(
-            particleEmitterComponent.minScale,
-            particleEmitterComponent.maxScale,
+            particleEmitterComponent.scale,
           );
 
           const lifetimeSeconds = this._getValueInRange(
-            particleEmitterComponent.minLifetime,
-            particleEmitterComponent.maxLifetime,
+            particleEmitterComponent.lifetime,
           );
 
           const rotation = this._getValueInRangeRadians(
-            particleEmitterComponent.minRotation,
-            particleEmitterComponent.maxRotation,
+            particleEmitterComponent.rotation,
           );
 
           const rotationSpeed = this._getValueInRange(
-            particleEmitterComponent.minRotationSpeed,
-            particleEmitterComponent.maxRotationSpeed,
+            particleEmitterComponent.rotationSpeed,
           );
 
-          const particle = new ParticleComponent(
-            particleEmitterComponent.positionX,
-            particleEmitterComponent.positionY,
-            {
-              speed,
-              originalScale,
-              scaleChangeFactor:
-                particleEmitterComponent.lifetimeScaleReduction,
-              height: particleEmitterComponent.height,
-              width: particleEmitterComponent.width,
-              rotation,
-              rotationSpeed,
-              lifetimeSeconds,
-            },
-          );
+          const particle = new ParticleComponent({
+            speed,
+            originalScale,
+            lifetimeScaleReduction:
+              particleEmitterComponent.lifetimeScaleReduction,
+            height: particleEmitterComponent.height,
+            width: particleEmitterComponent.width,
+            rotation,
+            rotationSpeed,
+            lifetimeSeconds,
+            positionX: particleEmitterComponent.positionX,
+            positionY: particleEmitterComponent.positionY,
+          });
 
           particleEmitterComponent.particles.push(particle);
           particleEmitterComponent.emitCount++;
@@ -120,11 +111,11 @@ export class ParticleManagerSystem extends System {
     }
   }
 
-  private _getValueInRange(min: number, max: number): number {
+  private _getValueInRange({ min, max }: MinMax): number {
     return Math.random() * (max - min) + min;
   }
 
-  private _getValueInRangeRadians(min: number, max: number): number {
+  private _getValueInRangeRadians({ min, max }: MinMax): number {
     const range = (max - min + Math.PI * 2) % (Math.PI * 2);
 
     return (Math.random() * range + min + Math.PI * 2) % (Math.PI * 2);

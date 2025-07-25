@@ -74,34 +74,44 @@ const starRenderable = await createImageRenderable(
 
 const blueCircleEmitter = world.buildAndAddEntity('blue-circle-emitter', [
   new ParticleEmitterComponent(blueCircleRenderable, renderLayers[0], {
-    minSpeed: 150,
-    maxSpeed: 200,
-    minLifetime: 0.2,
-    maxLifetime: 0.4,
+    speed: {
+      min: 150,
+      max: 200,
+    },
+    scale: {
+      min: 2,
+      max: 2,
+    },
+    rotation: {
+      min: (3 * Math.PI) / 4,
+      max: -(3 * Math.PI) / 4,
+    },
+    numParticles: { min: 20, max: 30 },
+    lifetime: {
+      min: 0.2,
+      max: 0.4,
+    },
     emitDuration: 0,
-    minNumParticles: 20,
-    maxNumParticles: 30,
-    minRotation: (3 * Math.PI) / 4,
-    maxRotation: -(3 * Math.PI) / 4,
-    minScale: 2,
-    maxScale: 2,
   }),
 ]);
 
 const starEmitter = world.buildAndAddEntity('star-emitter', [
   new ParticleEmitterComponent(starRenderable, renderLayers[0], {
-    minSpeed: 150,
-    maxSpeed: 200,
-    minRotationSpeed: -0.5,
-    maxRotationSpeed: 0.5,
-    minLifetime: 0.5,
-    maxLifetime: 1,
+    speed: {
+      min: 150,
+      max: 200,
+    },
+    scale: {
+      min: 3,
+      max: 5,
+    },
+    rotationSpeed: {
+      min: -0.5,
+      max: 0.5,
+    },
+    numParticles: { min: 20, max: 30 },
     emitDuration: 0.2,
-    minNumParticles: 20,
-    maxNumParticles: 30,
     lifetimeScaleReduction: 0.2,
-    minScale: 3,
-    maxScale: 5,
   }),
 ]);
 
