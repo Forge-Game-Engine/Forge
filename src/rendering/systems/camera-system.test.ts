@@ -1,101 +1,77 @@
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CameraSystem } from './camera-system';
-import { Entity } from '../../ecs';
-import { InputsComponent, keyCodes } from '../../input';
+import { Entity, World } from '../../ecs';
+import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraComponent } from '../components';
-import { PositionComponent, Time } from '../../common';
+import { PositionComponent } from '../../common';
+import { Vector2 } from '../../math';
 
 describe('CameraSystem', () => {
-  let inputEntity: Entity;
-  let time: Time;
   let cameraSystem: CameraSystem;
   let entity: Entity;
-  let inputsComponent: InputsComponent;
   let cameraComponent: CameraComponent;
   let positionComponent: PositionComponent;
+  let world: World;
+  let zoomInput: Axis1dAction;
+  let panInput: Axis2dAction;
 
   beforeEach(() => {
-    inputsComponent = {
-      scrollDelta: 0,
-      keyPressed: vi.fn(),
-    } as unknown as InputsComponent;
+    world = new World('test');
 
-    inputEntity = {
-      getComponentRequired: vi.fn().mockReturnValue(inputsComponent),
-    } as unknown as Entity;
+    panInput = new Axis2dAction('pan');
+    zoomInput = new Axis1dAction('zoom');
 
-    time = {
-      rawDeltaTimeInMilliseconds: 16,
-    } as Time;
+    cameraSystem = new CameraSystem(world.time);
 
-    cameraSystem = new CameraSystem(inputEntity, time);
+    cameraComponent = new CameraComponent({
+      panInput,
+      zoomInput,
+    });
+    positionComponent = new PositionComponent();
 
-    cameraComponent = {
-      isStatic: false,
-      allowZooming: true,
-      allowPanning: true,
-      zoom: 1,
-      zoomSensitivity: 0.1,
-      minZoom: 0.5,
-      maxZoom: 2,
-      panSensitivity: 0.5,
-    } as CameraComponent;
+    entity = new Entity('camera', world, [cameraComponent, positionComponent]);
 
-    positionComponent = {
-      x: 0,
-      y: 0,
-    } as PositionComponent;
-
-    entity = {
-      getComponentRequired: vi.fn((symbol) => {
-        if (symbol === CameraComponent.symbol) {
-          return cameraComponent;
-        }
-
-        if (symbol === PositionComponent.symbol) {
-          return positionComponent;
-        }
-      }),
-    } as unknown as Entity;
+    world.addEntity(entity);
+    world.addSystem(cameraSystem);
   });
 
   it('should update the camera zoom based on scroll input', () => {
-    inputsComponent.scrollDelta = 1;
+    zoomInput.set(100);
 
-    cameraSystem.run(entity);
+    world.update(16.6666);
 
     expect(cameraComponent.zoom).toBe(0.9);
   });
 
   it('should clamp the camera zoom to the min and max zoom levels', () => {
-    inputsComponent.scrollDelta = 10;
+    zoomInput.set(2000);
 
     cameraSystem.run(entity);
 
     expect(cameraComponent.zoom).toBe(cameraComponent.minZoom);
 
-    inputsComponent.scrollDelta = -20;
+    zoomInput.set(-5000);
 
-    cameraSystem.run(entity);
+    world.update(16.6666);
 
     expect(cameraComponent.zoom).toBe(cameraComponent.maxZoom);
   });
 
   it('should update the camera position based on key inputs', () => {
-    (inputsComponent.keyPressed as Mock).mockImplementation((key) => {
-      return key === keyCodes.w || key === keyCodes.d;
-    });
+    panInput.set(new Vector2(50, -30));
 
-    cameraSystem.run(entity);
+    world.update(16.6666);
 
-    expect(positionComponent.y).toBeLessThan(0);
     expect(positionComponent.x).toBeGreaterThan(0);
+    expect(positionComponent.y).toBeLessThan(0);
   });
 
   it('should not update the camera if it is static', () => {
     cameraComponent.isStatic = true;
+    panInput.set(new Vector2(50, -30));
+    zoomInput.set(-5000);
 
-    cameraSystem.run(entity);
+    world.update(16.6666);
 
     expect(cameraComponent.zoom).toBe(1);
     expect(positionComponent.x).toBe(0);

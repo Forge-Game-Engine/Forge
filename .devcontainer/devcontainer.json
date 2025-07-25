@@ -43,7 +43,8 @@
         "slevesque.shader",
         "vitest.explorer",
         "streetsidesoftware.code-spell-checker",
-        "sonarsource.sonarlint-vscode"
+        "sonarsource.sonarlint-vscode",
+        "eamodio.gitlens"
       ]
     }
   },

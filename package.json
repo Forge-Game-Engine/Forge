@@ -73,6 +73,8 @@
     "matter-js": "^0.20.0"
   },
   "dependencies": {
+    "@types/imurmurhash": "^0.1.4",
+    "imurmurhash": "^0.1.4",
     "seedrandom": "^3.0.5"
   }
 }

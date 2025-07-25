@@ -97,4 +97,6 @@ export const keyCodes = {
   f10: 'F10',
   f11: 'F11',
   f12: 'F12',
-};
+} as const;
+
+export type KeyCode = (typeof keyCodes)[keyof typeof keyCodes];

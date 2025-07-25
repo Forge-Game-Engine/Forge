@@ -1,4 +1,3 @@
-import type { OrNull } from '../common';
 import type { Component } from './types';
 import type { Query } from './types/Query';
 import type { World } from './world';
@@ -115,7 +114,7 @@ export class Entity {
    * @param componentName - The name of the component to get.
    * @returns The component if found, otherwise null.
    */
-  public getComponent<T extends Component>(componentName: symbol): OrNull<T> {
+  public getComponent<T extends Component>(componentName: symbol): T | null {
     for (const component of this._components) {
       if (component.name === componentName) {
         return component as T;
