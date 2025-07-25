@@ -1,9 +1,17 @@
 import {
+  buttonMoments,
   FlipComponent,
+  InputGroup,
+  InputManager,
+  InputsComponent,
+  KeyboardInputSource,
+  KeyboardTriggerInteraction,
+  keyCodes,
   PositionComponent,
   ScaleComponent,
   Sprite,
   SpriteComponent,
+  TriggerAction,
   Vector2,
   World,
 } from '../../src';
@@ -13,8 +21,8 @@ import {
   SHIP_ANIMATIONS,
 } from './animationEnums';
 import {
-  SpriteAnimationManager,
   ImageAnimationComponent,
+  SpriteAnimationManager,
 } from '../../src/animations';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
@@ -23,7 +31,9 @@ export function setupAnimationsDemo(
   world: World,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
+  inputsManager: InputManager,
 ) {
+  setupInputs(inputsManager);
   //left column
   createShipAnimationSets(animationManager);
   buildShipEntities(world, shipSprite);
@@ -34,7 +44,7 @@ export function setupAnimationsDemo(
 
   //right column
   createAdventurerControllableAnimationSets(animationManager);
-  buildAdventurerControllableEntities(world, adventurerSprite);
+  buildAdventurerControllableEntities(world, adventurerSprite, inputsManager);
 }
 
 export function setupAnimationsStressTest(
@@ -46,6 +56,53 @@ export function setupAnimationsStressTest(
   //left column
   createShipAnimationSets(spriteAnimationManager);
   buildShipEntitiesMultiple(world, shipSprite, repeats);
+}
+
+function setupInputs(inputsManager: InputManager) {
+  const defaultInputGroup = new InputGroup('default');
+
+  const keyboardInputSource = new KeyboardInputSource(inputsManager);
+
+  const attackInput = new TriggerAction('attack');
+  const runRInput = new TriggerAction('runR');
+  const runLInput = new TriggerAction('runL');
+  const jumpInput = new TriggerAction('jump');
+
+  inputsManager.addSources(keyboardInputSource);
+  inputsManager.addActions(attackInput, runRInput, runLInput, jumpInput);
+  inputsManager.setActiveGroup(defaultInputGroup);
+
+  attackInput.bind(
+    new KeyboardTriggerInteraction(
+      { keyCode: keyCodes.space, moment: buttonMoments.down },
+      keyboardInputSource,
+    ),
+    defaultInputGroup,
+  );
+
+  runRInput.bind(
+    new KeyboardTriggerInteraction(
+      { keyCode: keyCodes.d, moment: buttonMoments.down },
+      keyboardInputSource,
+    ),
+    defaultInputGroup,
+  );
+
+  runLInput.bind(
+    new KeyboardTriggerInteraction(
+      { keyCode: keyCodes.a, moment: buttonMoments.down },
+      keyboardInputSource,
+    ),
+    defaultInputGroup,
+  );
+
+  jumpInput.bind(
+    new KeyboardTriggerInteraction(
+      { keyCode: keyCodes.w, moment: buttonMoments.down },
+      keyboardInputSource,
+    ),
+    defaultInputGroup,
+  );
 }
 
 function createShipAnimationSets(animationManager: SpriteAnimationManager) {
@@ -184,6 +241,7 @@ function createAdventurerAnimationSets(
     },
   );
 }
+
 function createAdventurerControllableAnimationSets(
   animationManager: SpriteAnimationManager,
 ) {
@@ -262,6 +320,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 }
+
 function buildShipEntities(world: World, shipSprite: Sprite) {
   world.buildAndAddEntity('ship-animation-spin', [
     new PositionComponent(-500, -150),
@@ -363,6 +422,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
 function buildAdventurerControllableEntities(
   world: World,
   adventurerSprite: Sprite,
+  inputsManager: InputManager,
 ) {
   world.buildAndAddEntity('adventurer-controllable', [
     new PositionComponent(400, 0),
@@ -377,5 +437,6 @@ function buildAdventurerControllableEntities(
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),
+    new InputsComponent(inputsManager),
   ]);
 }

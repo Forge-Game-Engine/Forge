@@ -1,4 +1,5 @@
 import type { Component } from '../../ecs';
+import { Axis1dAction, Axis2dAction } from '../../input';
 
 /**
  * Options for configuring the `CameraComponent`.
@@ -22,11 +23,9 @@ export type CameraComponentOptions = {
   /** Indicates if the camera is static (non-movable). */
   isStatic: boolean;
 
-  /** Indicates if panning is allowed. */
-  allowPanning: boolean;
+  zoomInput?: Axis1dAction;
 
-  /** Indicates if zooming is allowed. */
-  allowZooming: boolean;
+  panInput?: Axis2dAction;
 };
 
 /**
@@ -39,8 +38,6 @@ const defaultOptions: CameraComponentOptions = {
   maxZoom: 3,
   isStatic: false,
   zoom: 1,
-  allowPanning: true,
-  allowZooming: true,
 };
 
 /**
@@ -71,11 +68,9 @@ export class CameraComponent implements Component {
   /** Indicates if the camera is static (non-movable). */
   public isStatic: boolean;
 
-  /** Indicates if panning is allowed. */
-  public allowPanning: boolean;
+  public zoomInput?: Axis1dAction;
 
-  /** Indicates if zooming is allowed. */
-  public allowZooming: boolean;
+  public panInput?: Axis2dAction;
 
   /** A static symbol property that uniquely identifies the `CameraComponent`. */
   public static readonly symbol = Symbol('Camera');
@@ -97,8 +92,8 @@ export class CameraComponent implements Component {
     this.minZoom = mergedOptions.minZoom;
     this.maxZoom = mergedOptions.maxZoom;
     this.isStatic = mergedOptions.isStatic;
-    this.allowPanning = mergedOptions.allowPanning;
-    this.allowZooming = mergedOptions.allowZooming;
+    this.zoomInput = mergedOptions.zoomInput;
+    this.panInput = mergedOptions.panInput;
   }
 
   /**

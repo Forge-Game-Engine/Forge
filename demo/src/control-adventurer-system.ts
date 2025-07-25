@@ -3,27 +3,20 @@ import {
   FlipComponent,
   ImageAnimationComponent,
   InputsComponent,
-  keyCodes,
   System,
+  TriggerAction,
 } from '../../src';
 import { ADVENTURER_ANIMATIONS } from './animationEnums';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
-  private readonly _inputComponent: InputsComponent;
-
-  constructor(inputsEntity: Entity) {
+  constructor() {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       ImageAnimationComponent.symbol,
       FlipComponent.symbol,
-    ]);
-
-    const inputComponent = inputsEntity.getComponentRequired<InputsComponent>(
       InputsComponent.symbol,
-    );
-
-    this._inputComponent = inputComponent;
+    ]);
   }
 
   public run(entity: Entity): void {
@@ -36,20 +29,29 @@ export class ControlAdventurerSystem extends System {
       FlipComponent.symbol,
     );
 
-    if (this._inputComponent.keyPressed(keyCodes.w)) {
+    const inputs = entity.getComponentRequired<InputsComponent>(
+      InputsComponent.symbol,
+    );
+
+    const attackAction = inputs.inputManager.getAction<TriggerAction>('attack');
+    const runRAction = inputs.inputManager.getAction<TriggerAction>('runR');
+    const runLAction = inputs.inputManager.getAction<TriggerAction>('runL');
+    const jumpAction = inputs.inputManager.getAction<TriggerAction>('jump');
+
+    if (
+      jumpAction?.isTriggered &&
+      imageAnimationComponent.currentAnimation !== ADVENTURER_ANIMATIONS.jump
+    ) {
       // jump always happens immediately
-      if (
-        imageAnimationComponent.currentAnimation !== ADVENTURER_ANIMATIONS.jump
-      )
-        imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
-    } else if (this._inputComponent.keyPressed(keyCodes.a)) {
+      imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
+    } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
       imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = true;
-    } else if (this._inputComponent.keyPressed(keyCodes.d)) {
+    } else if (runRAction?.isTriggered) {
       imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = false;
-    } else if (this._inputComponent.keyPressed(keyCodes.space)) {
+    } else if (attackAction?.isTriggered) {
       imageAnimationComponent.nextAnimationSetName =
         ADVENTURER_ANIMATIONS.attack1;
     }
