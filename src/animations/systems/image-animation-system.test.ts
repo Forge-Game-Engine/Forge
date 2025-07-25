@@ -59,6 +59,8 @@ describe('test running ImageAnimationSystem', () => {
       animationFrames: [animationFrame, animationFrame],
       numFrames: 2,
       nextAnimationSetName: 'run',
+      startCallback: null,
+      endCallback: null,
     };
     vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
@@ -90,6 +92,8 @@ describe('test running ImageAnimationSystem', () => {
       animationFrames: [animationFrame],
       numFrames: 1,
       nextAnimationSetName: 'run',
+      startCallback: null,
+      endCallback: null,
     };
 
     vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
@@ -123,6 +127,8 @@ describe('test running ImageAnimationSystem', () => {
       animationFrames: [animationFrame],
       numFrames: 1,
       nextAnimationSetName: 'run',
+      startCallback: null,
+      endCallback: null,
     };
     vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
@@ -157,6 +163,8 @@ describe('test running ImageAnimationSystem', () => {
       animationFrames: [animationFrame, animationFrame],
       numFrames: 2,
       nextAnimationSetName: 'run',
+      startCallback: null,
+      endCallback: null,
     };
     vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
@@ -188,6 +196,8 @@ describe('test running ImageAnimationSystem', () => {
       animationFrames: [animationFrame],
       numFrames: 1,
       nextAnimationSetName: null,
+      startCallback: null,
+      endCallback: null,
     };
 
     vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(

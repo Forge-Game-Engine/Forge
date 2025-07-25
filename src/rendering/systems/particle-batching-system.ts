@@ -35,7 +35,7 @@ export class ParticleBatchingSystem extends System {
 
     for (const particleEmitter of particleEmitterComponent.emitters.values()) {
       if (particleEmitter.renderLayer !== this._particleBatch.renderLayer) {
-        return;
+        continue;
       }
 
       const renderable = particleEmitter.renderable;

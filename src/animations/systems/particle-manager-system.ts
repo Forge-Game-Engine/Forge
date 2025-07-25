@@ -99,8 +99,8 @@ export class ParticleManagerSystem extends System {
       particleEmitter.startEmitting = false;
       particleEmitter.emitCount = 0;
       particleEmitter.currentlyEmitting = true;
-      particleEmitter.amountToEmit = Math.floor(
-        this._getValueInRange(particleEmitter.numParticles) + 1,
+      particleEmitter.amountToEmit = Math.round(
+        this._getValueInRange(particleEmitter.numParticles),
       );
     }
   }
@@ -120,10 +120,22 @@ export class ParticleManagerSystem extends System {
   }
 
   private _getValueInRange({ min, max }: MinMax): number {
+    if (min > max) {
+      [min, max] = [max, min];
+    }
+
     return Math.random() * (max - min) + min;
   }
 
   private _getValueInRangeRadians({ min, max }: MinMax): number {
+    if (min > max) {
+      [min, max] = [max, min];
+    }
+
+    if (min === 0 && max === 2 * Math.PI) {
+      return Math.random() * (2 * Math.PI);
+    }
+
     const range = (max - min + Math.PI * 2) % (Math.PI * 2);
 
     return (Math.random() * range + min + Math.PI * 2) % (Math.PI * 2);

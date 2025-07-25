@@ -26,7 +26,7 @@ const defaultOptions: ParticleEmitterOptions = {
   numParticles: { min: 5, max: 10 },
   speed: { min: 10, max: 20 },
   scale: { min: 1, max: 1 },
-  rotation: { min: 0, max: 360 },
+  rotation: { min: 0, max: 2 * Math.PI },
   rotationSpeed: { min: 0, max: 0 },
   lifetime: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
