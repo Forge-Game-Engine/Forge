@@ -63,7 +63,7 @@ export class ParticleEmitter {
   public rotation: MinMax; // In radians
   public rotationSpeed: MinMax;
   public lifetime: MinMax;
-  public lifetimeScaleReduction: number; // The final particle scale will be scale * lifetimeScaleReduction
+  public lifetimeScaleReduction: number; // The particle scale at the end of its lifetime will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;
   public emitDuration: number; // How long the emitter will emit particles
