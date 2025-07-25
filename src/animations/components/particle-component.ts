@@ -63,9 +63,10 @@ export class ParticleComponent implements Component {
     this.ageSeconds += deltaTimeInSeconds;
     this.positionX += this.speed * deltaTimeInSeconds * Math.sin(this.rotation);
     this.positionY -= this.speed * deltaTimeInSeconds * Math.cos(this.rotation);
+    const ageRatio = this.ageSeconds / this.lifetimeSeconds;
     this.scale =
-      this.originalScale * (1 - this.ageSeconds / this.lifetimeSeconds) +
-      this.lifetimeScaleReduction * (this.ageSeconds / this.lifetimeSeconds);
+      this.originalScale * (1 - ageRatio) +
+      this.lifetimeScaleReduction * ageRatio;
     this.rotation += this.rotationSpeed * deltaTimeInSeconds;
   }
 }
