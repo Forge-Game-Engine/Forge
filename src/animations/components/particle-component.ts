@@ -56,12 +56,12 @@ export class ParticleComponent implements Component {
   }
 
   public update(deltaTimeInSeconds: number): void {
-    this.ageSeconds += deltaTimeInSeconds; // Convert milliseconds to seconds
-    this.positionX += this.speed * deltaTimeInSeconds * Math.sin(this.rotation); // Update position based on speed
-    this.positionY -= this.speed * deltaTimeInSeconds * Math.cos(this.rotation); // Update position based on speed
+    this.ageSeconds += deltaTimeInSeconds;
+    this.positionX += this.speed * deltaTimeInSeconds * Math.sin(this.rotation);
+    this.positionY -= this.speed * deltaTimeInSeconds * Math.cos(this.rotation);
     this.scale =
       this.originalScale * (1 - this.ageSeconds / this.lifetimeSeconds) +
-      this.scaleChangeFactor * (this.ageSeconds / this.lifetimeSeconds); // Update scale based on age
-    this.rotation += this.rotationSpeed * deltaTimeInSeconds; // Update rotation
+      this.scaleChangeFactor * (this.ageSeconds / this.lifetimeSeconds);
+    this.rotation += this.rotationSpeed * deltaTimeInSeconds;
   }
 }
