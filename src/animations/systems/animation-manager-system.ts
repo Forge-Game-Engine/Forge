@@ -1,3 +1,4 @@
+import { Entity } from '../../ecs';
 import { Vector2 } from '../../math';
 import { ImageAnimationComponent } from '../components';
 
@@ -18,7 +19,17 @@ export interface AnimationSet {
    * If not set, the animation will repeat by default.
    */
   nextAnimationSetName: string | null;
+  /**
+   * The callback function to run at the start of the animation.
+   */
+  startCallback: ((entity: Entity) => void) | null;
+  /**
+   * The callback function to run at the end of the animation.
+   */
+  endCallback: ((entity: Entity) => void) | null;
 }
+
+// TODO: Allow callbacks to happen at any frame, and to allow an array of callbacks per frame.
 
 /**
  * Interface representing a single frame of an animation.
@@ -62,8 +73,19 @@ export interface OptionalCreateAnimationSetParams {
   /**
    * The name of the next animation set to switch to after this animation completes.
    * If not set, the animation will repeat by default.
+   * @default null
    */
   nextAnimationSetName: string | null;
+  /**
+   * The callback function to run at the start of the animation.
+   * @default null
+   */
+  startCallback?: ((entity: Entity) => void) | null;
+  /**
+   * The callback function to run at the end of the animation.
+   * @default null
+   */
+  endCallback?: ((entity: Entity) => void) | null;
 }
 
 /**
@@ -104,12 +126,16 @@ export class SpriteAnimationManager {
       startPositionPercentage,
       endPositionPercentage,
       numFrames,
-      nextAnimationSetName: nextAnimationSetName,
+      nextAnimationSetName,
+      startCallback,
+      endCallback,
     } = {
       startPositionPercentage: Vector2.zero,
       endPositionPercentage: Vector2.one,
       numFrames: spritesPerColumn * spritesPerRow,
       nextAnimationSetName: null,
+      startCallback: null,
+      endCallback: null,
       ...options,
     };
 
@@ -147,6 +173,8 @@ export class SpriteAnimationManager {
       animationFrames: animationFrames,
       numFrames,
       nextAnimationSetName,
+      startCallback,
+      endCallback,
     };
 
     const currentAnimations =

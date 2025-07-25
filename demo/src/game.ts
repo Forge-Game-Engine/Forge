@@ -6,7 +6,7 @@ import {
   Game,
   ImageAnimationSystem,
   ImageCache,
-  ParticleEmitterComponent,
+  ParticleEmitter,
   ParticleManagerSystem,
   registerCamera,
   registerInputs,
@@ -46,16 +46,6 @@ const adventureSprite = createImageSprite(
   cameraEntity,
 );
 
-// The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
-animationDemo.setupAnimationsDemo(
-  spriteAnimationManager,
-  world,
-  shipSprite,
-  adventureSprite,
-  inputsManager,
-);
-// animationDemo.setupAnimationsStressTest(spriteAnimationManager, world, shipSprite, 10000);
-
 const blueCircleRenderable = await createImageRenderable(
   'blue-circle.png',
   imageCache,
@@ -72,31 +62,10 @@ const starRenderable = await createImageRenderable(
   cameraEntity,
 );
 
-const blueCircleEmitter = world.buildAndAddEntity('blue-circle-emitter', [
-  new ParticleEmitterComponent(blueCircleRenderable, renderLayers[0], {
-    speed: {
-      min: 150,
-      max: 200,
-    },
-    scale: {
-      min: 2,
-      max: 2,
-    },
-    rotation: {
-      min: (3 * Math.PI) / 4,
-      max: -(3 * Math.PI) / 4,
-    },
-    numParticles: { min: 20, max: 30 },
-    lifetime: {
-      min: 0.2,
-      max: 0.4,
-    },
-    emitDuration: 0,
-  }),
-]);
-
-const starEmitter = world.buildAndAddEntity('star-emitter', [
-  new ParticleEmitterComponent(starRenderable, renderLayers[0], {
+const attackParticleEmitter = new ParticleEmitter(
+  starRenderable,
+  renderLayers[0],
+  {
     speed: {
       min: 250,
       max: 300,
@@ -116,26 +85,48 @@ const starEmitter = world.buildAndAddEntity('star-emitter', [
     },
     emitDuration: 0.1,
     lifetimeScaleReduction: 0,
-  }),
-]);
+  },
+);
+const jumpParticleEmitter = new ParticleEmitter(
+  blueCircleRenderable,
+  renderLayers[0],
+  {
+    speed: {
+      min: 150,
+      max: 200,
+    },
+    scale: {
+      min: 2,
+      max: 2,
+    },
+    rotation: {
+      min: (3 * Math.PI) / 4,
+      max: -(3 * Math.PI) / 4,
+    },
+    numParticles: { min: 20, max: 30 },
+    lifetime: {
+      min: 0.2,
+      max: 0.4,
+    },
+    emitDuration: 0,
+  },
+);
 
-const particleEmitterCircle =
-  blueCircleEmitter.getComponentRequired<ParticleEmitterComponent>(
-    ParticleEmitterComponent.symbol,
-  );
-
-const particleEmitterStar =
-  starEmitter.getComponentRequired<ParticleEmitterComponent>(
-    ParticleEmitterComponent.symbol,
-  );
+// The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
+animationDemo.setupAnimationsDemo(
+  spriteAnimationManager,
+  world,
+  shipSprite,
+  adventureSprite,
+  inputsManager,
+  attackParticleEmitter,
+  jumpParticleEmitter,
+);
+// animationDemo.setupAnimationsStressTest(spriteAnimationManager, world, shipSprite, 10000);
 
 world.addSystems(
   new ImageAnimationSystem(world.time, spriteAnimationManager),
-  new ControlAdventurerSystem(
-    inputsManager,
-    particleEmitterStar,
-    particleEmitterCircle,
-  ),
+  new ControlAdventurerSystem(inputsManager),
   new ParticleManagerSystem(world.time),
 );
 

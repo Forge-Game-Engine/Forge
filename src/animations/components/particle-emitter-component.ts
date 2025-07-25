@@ -36,8 +36,22 @@ const defaultOptions: ParticleEmitterOptions = {
   positionX: 0,
   positionY: 0,
 };
+
 export class ParticleEmitterComponent implements Component {
   public name: symbol;
+  public emitters: Map<string, ParticleEmitter> = new Map();
+  public static readonly symbol = Symbol('ParticleEmitter');
+
+  constructor(emitters: { name: string; emitter: ParticleEmitter }[]) {
+    this.name = ParticleEmitterComponent.symbol;
+
+    for (const { name, emitter } of emitters) {
+      this.emitters.set(name, emitter);
+    }
+  }
+}
+
+export class ParticleEmitter {
   public renderable: Renderable;
   public renderLayer: ForgeRenderLayer;
   public positionX: number = 0;
@@ -58,8 +72,6 @@ export class ParticleEmitterComponent implements Component {
   public amountToEmit: number = 0;
   public startEmitting: boolean = false;
   public currentlyEmitting: boolean = false;
-
-  public static readonly symbol = Symbol('ParticleEmitter');
 
   constructor(
     renderable: Renderable,
@@ -83,7 +95,6 @@ export class ParticleEmitterComponent implements Component {
       ...defaultOptions,
       ...options,
     };
-    this.name = ParticleEmitterComponent.symbol;
     this.renderable = renderable;
     this.renderLayer = renderLayer;
     this.numParticles = numParticles;

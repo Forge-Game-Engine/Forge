@@ -58,10 +58,16 @@ export class ImageAnimationSystem extends System {
         this._time.timeInSeconds;
 
       if (imageAnimationComponent.animationIndex < animationSet.numFrames - 1) {
+        if (imageAnimationComponent.animationIndex === 0) {
+          animationSet.startCallback?.(entity);
+        }
+
         imageAnimationComponent.animationIndex++;
 
         return;
       }
+
+      animationSet.endCallback?.(entity);
 
       imageAnimationComponent.animationIndex = 0;
 

@@ -3,6 +3,7 @@ import { Time } from '../../common';
 import {
   MinMax,
   ParticleComponent,
+  ParticleEmitter,
   ParticleEmitterComponent,
 } from '../components';
 
@@ -31,78 +32,85 @@ export class ParticleManagerSystem extends System {
         ParticleEmitterComponent.symbol,
       );
 
-    if (particleEmitterComponent.startEmitting) {
-      particleEmitterComponent.emitStartTime = this._time.timeInSeconds;
-      particleEmitterComponent.startEmitting = false;
-      particleEmitterComponent.emitCount = 0;
-      particleEmitterComponent.currentlyEmitting = true;
-      particleEmitterComponent.amountToEmit = Math.floor(
-        this._getValueInRange(particleEmitterComponent.numParticles) + 1,
-      );
-    }
+    for (const particleEmitter of particleEmitterComponent.emitters.values()) {
+      this._checkStartEmitting(particleEmitter);
 
-    if (particleEmitterComponent.currentlyEmitting) {
-      if (
-        particleEmitterComponent.emitCount <
-        particleEmitterComponent.amountToEmit
-      ) {
+      this._emitNewParticles(particleEmitter);
+
+      this._updateParticles(particleEmitter);
+    }
+  }
+
+  private _emitNewParticles(particleEmitter: ParticleEmitter) {
+    if (particleEmitter.currentlyEmitting) {
+      if (particleEmitter.emitCount < particleEmitter.amountToEmit) {
         const progress = Math.min(
-          (this._time.timeInSeconds - particleEmitterComponent.emitStartTime) /
-            particleEmitterComponent.emitDuration,
+          (this._time.timeInSeconds - particleEmitter.emitStartTime) /
+            particleEmitter.emitDuration,
           1,
         );
         const targetEmitCount = Math.floor(
-          progress * particleEmitterComponent.amountToEmit,
+          progress * particleEmitter.amountToEmit,
         );
-        const amountToEmit =
-          targetEmitCount - particleEmitterComponent.emitCount;
+        const amountToEmit = targetEmitCount - particleEmitter.emitCount;
 
         for (let i = 0; i < amountToEmit; i++) {
-          const speed = this._getValueInRange(particleEmitterComponent.speed);
+          const speed = this._getValueInRange(particleEmitter.speed);
 
-          const originalScale = this._getValueInRange(
-            particleEmitterComponent.scale,
-          );
+          const originalScale = this._getValueInRange(particleEmitter.scale);
 
           const lifetimeSeconds = this._getValueInRange(
-            particleEmitterComponent.lifetime,
+            particleEmitter.lifetime,
           );
 
           const rotation = this._getValueInRangeRadians(
-            particleEmitterComponent.rotation,
+            particleEmitter.rotation,
           );
 
           const rotationSpeed = this._getValueInRange(
-            particleEmitterComponent.rotationSpeed,
+            particleEmitter.rotationSpeed,
           );
 
           const particle = new ParticleComponent({
             speed,
             originalScale,
-            lifetimeScaleReduction:
-              particleEmitterComponent.lifetimeScaleReduction,
-            height: particleEmitterComponent.height,
-            width: particleEmitterComponent.width,
+            lifetimeScaleReduction: particleEmitter.lifetimeScaleReduction,
+            height: particleEmitter.height,
+            width: particleEmitter.width,
             rotation,
             rotationSpeed,
             lifetimeSeconds,
-            positionX: particleEmitterComponent.positionX,
-            positionY: particleEmitterComponent.positionY,
+            positionX: particleEmitter.positionX,
+            positionY: particleEmitter.positionY,
           });
 
-          particleEmitterComponent.particles.push(particle);
-          particleEmitterComponent.emitCount++;
+          particleEmitter.particles.push(particle);
+          particleEmitter.emitCount++;
         }
       } else {
-        particleEmitterComponent.currentlyEmitting = false;
+        particleEmitter.currentlyEmitting = false;
       }
     }
+  }
 
-    for (let i = particleEmitterComponent.particles.length - 1; i >= 0; i--) {
-      const particle = particleEmitterComponent.particles[i];
+  private _checkStartEmitting(particleEmitter: ParticleEmitter) {
+    if (particleEmitter.startEmitting) {
+      particleEmitter.emitStartTime = this._time.timeInSeconds;
+      particleEmitter.startEmitting = false;
+      particleEmitter.emitCount = 0;
+      particleEmitter.currentlyEmitting = true;
+      particleEmitter.amountToEmit = Math.floor(
+        this._getValueInRange(particleEmitter.numParticles) + 1,
+      );
+    }
+  }
+
+  private _updateParticles(particleEmitter: ParticleEmitter) {
+    for (let i = particleEmitter.particles.length - 1; i >= 0; i--) {
+      const particle = particleEmitter.particles[i];
 
       if (particle.ageSeconds >= particle.lifetimeSeconds) {
-        particleEmitterComponent.particles.splice(i, 1);
+        particleEmitter.particles.splice(i, 1);
 
         continue;
       }

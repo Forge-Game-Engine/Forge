@@ -3,7 +3,6 @@ import {
   FlipComponent,
   ImageAnimationComponent,
   InputManager,
-  ParticleEmitterComponent,
   PositionComponent,
   System,
   TriggerAction,
@@ -13,13 +12,7 @@ import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
   private readonly _inputsManager: InputManager;
-  private readonly _particleEmitterAttack: ParticleEmitterComponent;
-  private readonly _particleEmitterJump: ParticleEmitterComponent;
-  constructor(
-    inputsManager: InputManager,
-    particleEmitterComponent1: ParticleEmitterComponent,
-    particleEmitterComponent2: ParticleEmitterComponent,
-  ) {
+  constructor(inputsManager: InputManager) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       ImageAnimationComponent.symbol,
@@ -27,8 +20,6 @@ export class ControlAdventurerSystem extends System {
       PositionComponent.symbol,
     ]);
     this._inputsManager = inputsManager;
-    this._particleEmitterAttack = particleEmitterComponent1;
-    this._particleEmitterJump = particleEmitterComponent2;
   }
 
   public run(entity: Entity): void {
@@ -39,10 +30,6 @@ export class ControlAdventurerSystem extends System {
 
     const flipComponent = entity.getComponentRequired<FlipComponent>(
       FlipComponent.symbol,
-    );
-
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
     );
 
     const attackAction = this._inputsManager.getAction<TriggerAction>('attack');
@@ -57,11 +44,6 @@ export class ControlAdventurerSystem extends System {
     ) {
       // jump always happens immediately
       imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
-      this._particleEmitterJump.setOptions({
-        positionX: positionComponent.x,
-        positionY: positionComponent.y + 50,
-      });
-      this._particleEmitterJump.emit();
     } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
       imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
@@ -72,15 +54,6 @@ export class ControlAdventurerSystem extends System {
     } else if (attackAction?.isTriggered) {
       imageAnimationComponent.nextAnimationSetName =
         ADVENTURER_ANIMATIONS.attack1;
-      this._particleEmitterAttack.setOptions({
-        rotation: {
-          min: flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4,
-          max: flipComponent.flipX ? -Math.PI / 4 : (3 * Math.PI) / 4,
-        },
-        positionX: positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
-        positionY: positionComponent.y + 20,
-      });
-      this._particleEmitterAttack.emit();
     }
   }
 }

@@ -1,5 +1,6 @@
 import {
   buttonMoments,
+  Entity,
   FlipComponent,
   InputGroup,
   InputManager,
@@ -21,6 +22,8 @@ import {
 } from './animationEnums';
 import {
   ImageAnimationComponent,
+  ParticleEmitter,
+  ParticleEmitterComponent,
   SpriteAnimationManager,
 } from '../../src/animations';
 import { ControlAdventurerComponent } from './control-adventurer-component';
@@ -31,6 +34,8 @@ export function setupAnimationsDemo(
   shipSprite: Sprite,
   adventurerSprite: Sprite,
   inputsManager: InputManager,
+  attackParticleEmitter: ParticleEmitter,
+  jumpParticleEmitter: ParticleEmitter,
 ) {
   setupInputs(inputsManager);
   //left column
@@ -43,7 +48,12 @@ export function setupAnimationsDemo(
 
   //right column
   createAdventurerControllableAnimationSets(animationManager);
-  buildAdventurerControllableEntities(world, adventurerSprite);
+  buildAdventurerControllableEntities(
+    world,
+    adventurerSprite,
+    attackParticleEmitter,
+    jumpParticleEmitter,
+  );
 }
 
 export function setupAnimationsStressTest(
@@ -244,6 +254,47 @@ function createAdventurerAnimationSets(
 function createAdventurerControllableAnimationSets(
   animationManager: SpriteAnimationManager,
 ) {
+  const attackParticles = (entity: Entity) => {
+    const positionComponent = entity.getComponentRequired<PositionComponent>(
+      PositionComponent.symbol,
+    );
+    const flipComponent = entity.getComponentRequired<FlipComponent>(
+      FlipComponent.symbol,
+    );
+    const emitter = entity
+      .getComponentRequired<ParticleEmitterComponent>(
+        ParticleEmitterComponent.symbol,
+      )
+      .emitters.get('attack');
+
+    emitter?.setOptions({
+      rotation: {
+        min: flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4,
+        max: flipComponent.flipX ? -Math.PI / 4 : (3 * Math.PI) / 4,
+      },
+      positionX: positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
+      positionY: positionComponent.y + 20,
+    });
+    emitter?.emit();
+  };
+
+  const jumpParticles = (entity: Entity) => {
+    // Emit particles when the jump animation starts
+    const positionComponent = entity.getComponentRequired<PositionComponent>(
+      PositionComponent.symbol,
+    );
+    const emitter = entity
+      .getComponentRequired<ParticleEmitterComponent>(
+        ParticleEmitterComponent.symbol,
+      )
+      .emitters.get('jump');
+    emitter?.setOptions({
+      positionX: positionComponent.x,
+      positionY: positionComponent.y + 50,
+    });
+    emitter?.emit();
+  };
+
   animationManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.idle,
@@ -277,6 +328,7 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 2 / 8),
       endPositionPercentage: new Vector2(10 / 13, 3 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2,
+      startCallback: attackParticles,
     },
   );
 
@@ -290,6 +342,7 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 3 / 8),
       endPositionPercentage: new Vector2(10 / 13, 4 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack3,
+      startCallback: attackParticles,
     },
   );
 
@@ -303,6 +356,7 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 4 / 8),
       endPositionPercentage: new Vector2(10 / 13, 5 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
+      startCallback: attackParticles,
     },
   );
 
@@ -316,6 +370,8 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 5 / 8),
       endPositionPercentage: new Vector2(6 / 13, 6 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
+      startCallback: jumpParticles,
+      endCallback: jumpParticles, // also emit particles when the jump animation ends
     },
   );
 }
@@ -421,6 +477,8 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
 function buildAdventurerControllableEntities(
   world: World,
   adventurerSprite: Sprite,
+  attackParticleEmitter: ParticleEmitter,
+  jumpParticleEmitter: ParticleEmitter,
 ) {
   world.buildAndAddEntity('adventurer-controllable', [
     new PositionComponent(400, 0),
@@ -435,5 +493,15 @@ function buildAdventurerControllableEntities(
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),
+    new ParticleEmitterComponent([
+      {
+        name: 'attack',
+        emitter: attackParticleEmitter,
+      },
+      {
+        name: 'jump',
+        emitter: jumpParticleEmitter,
+      },
+    ]),
   ]);
 }

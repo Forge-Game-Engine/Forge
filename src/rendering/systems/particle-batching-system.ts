@@ -33,23 +33,23 @@ export class ParticleBatchingSystem extends System {
         ParticleEmitterComponent.symbol,
       );
 
-    if (
-      particleEmitterComponent.renderLayer !== this._particleBatch.renderLayer
-    ) {
-      return;
+    for (const particleEmitter of particleEmitterComponent.emitters.values()) {
+      if (particleEmitter.renderLayer !== this._particleBatch.renderLayer) {
+        return;
+      }
+
+      const renderable = particleEmitter.renderable;
+
+      if (!this._particleBatch.batches.has(renderable)) {
+        this._particleBatch.batches.set(renderable, {
+          particles: [],
+          instanceData: null,
+        });
+      }
+
+      this._particleBatch.batches
+        .get(renderable)!
+        .particles.push(...particleEmitter.particles);
     }
-
-    const renderable = particleEmitterComponent.renderable;
-
-    if (!this._particleBatch.batches.has(renderable)) {
-      this._particleBatch.batches.set(renderable, {
-        particles: [],
-        instanceData: null,
-      });
-    }
-
-    this._particleBatch.batches
-      .get(renderable)!
-      .particles.push(...particleEmitterComponent.particles);
   }
 }
