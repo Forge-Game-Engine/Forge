@@ -215,6 +215,7 @@ export class RenderSystem extends System {
 
     this._setupInstanceAttributesAndDraw(gl, program, particles.length);
   }
+
   private _setupInstanceAttributesAndDraw(
     gl: WebGL2RenderingContext,
     program: WebGLProgram,

@@ -8,11 +8,11 @@ import { ParticleBatchComponent } from '../components';
 export class ParticleBatchingSystem extends System {
   private readonly _particleBatch: ParticleBatchComponent;
 
-  constructor(spriteBatcherEntity: Entity) {
+  constructor(batcherEntity: Entity) {
     super('particle-batching', [ParticleEmitterComponent.symbol]);
 
     this._particleBatch =
-      spriteBatcherEntity.getComponentRequired<ParticleBatchComponent>(
+      batcherEntity.getComponentRequired<ParticleBatchComponent>(
         ParticleBatchComponent.symbol,
       );
   }

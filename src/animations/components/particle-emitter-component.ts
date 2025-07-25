@@ -52,16 +52,16 @@ export class ParticleEmitterComponent implements Component {
   public maxSpeed: number;
   public minScale: number;
   public maxScale: number;
-  public lifetimeScaleReduction: number; // the final particle scale will be scale * lifetimeScaleReduction
+  public lifetimeScaleReduction: number; // The final particle scale will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;
-  public minRotation: number; // in radians
+  public minRotation: number; // In radians
   public maxRotation: number;
   public minRotationSpeed: number;
   public maxRotationSpeed: number;
   public minLifetime: number;
   public maxLifetime: number;
-  public emitDuration: number; // how long the emitter will emit particles
+  public emitDuration: number; // How long the emitter will emit particles
   public emitStartTime: number = 0;
   public emitCount: number = 0;
   public amountToEmit: number = 0;
@@ -160,7 +160,7 @@ export class ParticleEmitterComponent implements Component {
     this.emitDuration = emitDuration;
   }
 
-  // only emits if not already emitting
+  // Only emits if not already emitting
   public emit(positionX: number, positionY: number): void {
     this.positionX = positionX;
     this.positionY = positionY;

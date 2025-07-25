@@ -62,10 +62,12 @@ export class ParticleManagerSystem extends System {
             particleEmitterComponent.minSpeed,
             particleEmitterComponent.maxSpeed,
           );
+
           const originalScale = this._getValueInRange(
             particleEmitterComponent.minScale,
             particleEmitterComponent.maxScale,
           );
+
           const lifetimeSeconds = this._getValueInRange(
             particleEmitterComponent.minLifetime,
             particleEmitterComponent.maxLifetime,
@@ -105,7 +107,6 @@ export class ParticleManagerSystem extends System {
       }
     }
 
-    // manage particles
     for (let i = particleEmitterComponent.particles.length - 1; i >= 0; i--) {
       const particle = particleEmitterComponent.particles[i];
 
@@ -114,8 +115,6 @@ export class ParticleManagerSystem extends System {
 
         continue;
       }
-
-      // Update the particle
 
       particle.update(this._time.deltaTimeInSeconds);
     }

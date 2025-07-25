@@ -235,7 +235,7 @@ function createAdventurerAnimationSets(
     0.1,
     {
       startPositionPercentage: new Vector2(0, 7 / 8),
-      endPositionPercentage: new Vector2(7 / 13, 8 / 8),
+      endPositionPercentage: new Vector2(7 / 13, 1),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle, // go back to idle after dying
     },
   );
