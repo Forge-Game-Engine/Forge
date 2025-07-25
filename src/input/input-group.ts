@@ -1,5 +1,5 @@
 import { Vector2 } from '../math';
-import { Axis1dAction, Axis2dAction, TriggerAction } from './actions';
+import { Axis1dAction, Axis2dAction, TriggerAction, HoldAction } from './actions';
 import { InputInteraction } from './interactions';
 
 /**
@@ -11,6 +11,7 @@ export class InputGroup {
   public readonly triggerActions: Set<TriggerAction>;
   public readonly axis1dActions: Set<Axis1dAction>;
   public readonly axis2dActions: Set<Axis2dAction>;
+  public readonly holdActions: Set<HoldAction>;
 
   constructor(name: string) {
     this.name = name;
@@ -18,6 +19,7 @@ export class InputGroup {
     this.triggerActions = new Set();
     this.axis1dActions = new Set();
     this.axis2dActions = new Set();
+    this.holdActions = new Set();
   }
 
   public dispatchTriggerAction(interaction: InputInteraction): void {
@@ -31,6 +33,24 @@ export class InputGroup {
       for (const interactionForAction of interactionsForAction) {
         if (interactionForAction.matchesArgs(interaction.args)) {
           action.trigger();
+        }
+      }
+    }
+  }
+
+  public dispatchHoldAction(interaction: InputInteraction): void {
+    for (const action of this.holdActions) {
+      const interactionsForAction = action.interactions.get(this);
+
+      if (!interactionsForAction) {
+        continue;
+      }
+
+      for (const interactionForAction of interactionsForAction) {
+        if (interactionForAction.matchesArgs(interaction.args)) {
+          action.hold();
+        }else{
+          action.release();
         }
       }
     }

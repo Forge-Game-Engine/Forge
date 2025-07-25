@@ -72,6 +72,14 @@ export class InputManager implements Resettable {
     this._activeGroup.dispatchTriggerAction(interaction);
   }
 
+  public dispatchHoldAction(interaction: InputInteraction): void {
+    if (!this._activeGroup) {
+      return;
+    }
+
+    this._activeGroup.dispatchHoldAction(interaction);
+  }
+
   public bindOnNextTriggerAction(action: TriggerAction) {
     if (!this._activeGroup) {
       throw new Error('No active input group set.');

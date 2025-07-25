@@ -8,6 +8,7 @@ import {
   Game,
   ImageCache,
   InputGroup,
+  KeyboardHoldInteraction,
   KeyboardInputSource,
   KeyboardTriggerInteraction,
   keyCodes,
@@ -21,6 +22,7 @@ import {
   registerRendering,
   TriggerAction,
 } from '../../src';
+import { HoldAction } from '../../src/input/actions/hold-action';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -34,6 +36,7 @@ const world = createWorld('world', game);
 const zoomInput = new Axis1dAction('zoom');
 const panInput = new Axis2dAction('pan', actionResetTypes.noReset);
 const fireInput = new TriggerAction('fire');
+const runInput= new HoldAction('run');
 
 const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {
@@ -48,7 +51,7 @@ const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
 
 inputsManager.addSources(keyboardInputSource, mouseInputSource);
-inputsManager.addActions(fireInput, zoomInput, panInput);
+inputsManager.addActions(fireInput, zoomInput, panInput, runInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
 fireInput.bind(
@@ -62,6 +65,14 @@ fireInput.bind(
 fireInput.bind(
   new KeyboardTriggerInteraction(
     { keyCode: keyCodes.space, moment: buttonMoments.down },
+    keyboardInputSource,
+  ),
+  defaultInputGroup,
+);
+
+runInput.bind(
+  new KeyboardHoldInteraction(
+    { keyCode: keyCodes.k, moment: buttonMoments.hold },
     keyboardInputSource,
   ),
   defaultInputGroup,
@@ -103,7 +114,7 @@ panInput.bind(
 
 // inputsManager.bindOnNextAxis1dAction(zoomInput);
 
-inputsManager.setActiveGroup(alternativeInputGroup);
+//inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
   'star_medium.png',
