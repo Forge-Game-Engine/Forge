@@ -285,22 +285,22 @@ export class RenderSystem extends System {
   }
 
   private _setupInstanceAttributes(
-    atrLoc: number,
+    attributeLocation: number,
     gl: WebGL2RenderingContext,
     size: number,
     index: number,
   ) {
-    if (atrLoc !== -1) {
-      gl.enableVertexAttribArray(atrLoc);
+    if (attributeLocation !== -1) {
+      gl.enableVertexAttribArray(attributeLocation);
       gl.vertexAttribPointer(
-        atrLoc,
+        attributeLocation,
         size,
         gl.FLOAT,
         false,
         FLOATS_PER_INSTANCE * 4,
         index * 4,
       );
-      gl.vertexAttribDivisor(atrLoc, 1);
+      gl.vertexAttribDivisor(attributeLocation, 1);
     }
   }
 }
