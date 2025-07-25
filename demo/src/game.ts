@@ -98,8 +98,8 @@ const blueCircleEmitter = world.buildAndAddEntity('blue-circle-emitter', [
 const starEmitter = world.buildAndAddEntity('star-emitter', [
   new ParticleEmitterComponent(starRenderable, renderLayers[0], {
     speed: {
-      min: 150,
-      max: 200,
+      min: 250,
+      max: 300,
     },
     scale: {
       min: 3,
@@ -110,8 +110,12 @@ const starEmitter = world.buildAndAddEntity('star-emitter', [
       max: 0.5,
     },
     numParticles: { min: 20, max: 30 },
-    emitDuration: 0.2,
-    lifetimeScaleReduction: 0.2,
+    lifetime: {
+      min: 0.1,
+      max: 0.2,
+    },
+    emitDuration: 0.1,
+    lifetimeScaleReduction: 0,
   }),
 ]);
 

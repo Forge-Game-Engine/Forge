@@ -56,7 +56,7 @@ export class ParticleEmitterComponent implements Component {
   public emitStartTime: number = 0;
   public emitCount: number = 0;
   public amountToEmit: number = 0;
-  public startEmitting: boolean = true;
+  public startEmitting: boolean = false;
   public currentlyEmitting: boolean = false;
 
   public static readonly symbol = Symbol('ParticleEmitter');
