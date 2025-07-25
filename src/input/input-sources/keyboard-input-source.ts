@@ -41,7 +41,7 @@ export class KeyboardInputSource implements ActionableInputSource {
     this._keyPresses.add(keyCode);
     this._keyPressesHold.add(keyCode);
 
-    const interaction = new KeyboardTriggerInteraction(
+    const interaction = new KeyboardHoldInteraction(
       {
         moment: buttonMoments.hold,
         keyCode,
