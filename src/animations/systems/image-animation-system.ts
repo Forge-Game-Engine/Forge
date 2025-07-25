@@ -2,21 +2,21 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { ImageAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import { AnimationManager } from './animation-manager-system';
+import { SpriteAnimationManager } from './animation-manager-system';
 
 /**
  * System that manages and updates image-based animations for entities, such as from sprite sheets.
  */
 export class ImageAnimationSystem extends System {
   private readonly _time: Time;
-  private readonly _animationManager: AnimationManager;
+  private readonly _animationManager: SpriteAnimationManager;
 
   /**
    * Creates an instance of ImageAnimationSystem.
    * @param time - The Time instance.
-   * @param animationManager - The AnimationManager instance.
+   * @param animationManager - The SpriteAnimationManager instance.
    */
-  constructor(time: Time, animationManager: AnimationManager) {
+  constructor(time: Time, animationManager: SpriteAnimationManager) {
     super('imageAnimation', [
       ImageAnimationComponent.symbol,
       SpriteComponent.symbol,
@@ -36,15 +36,13 @@ export class ImageAnimationSystem extends System {
       );
     const animationSet = this._animationManager.getAnimationSet(
       imageAnimationComponent.entityType,
-      imageAnimationComponent.getCurrentAnimation(),
+      imageAnimationComponent.currentAnimation,
     );
 
     if (!animationSet) {
-      console.warn(
-        `No animation set found for entity type: ${imageAnimationComponent.entityType}, animation: ${imageAnimationComponent.getCurrentAnimation()}`,
+      throw new Error(
+        `No animation set found for entity type: ${imageAnimationComponent.entityType}, animation: ${imageAnimationComponent.currentAnimation}`,
       );
-
-      return;
     }
 
     const currentFrame =
@@ -67,11 +65,11 @@ export class ImageAnimationSystem extends System {
 
       imageAnimationComponent.animationIndex = 0;
 
-      if (imageAnimationComponent.nextAnimationState) {
+      if (imageAnimationComponent.nextAnimationSetName) {
         imageAnimationComponent.nextAnimation();
-      } else if (animationSet.nextAnimationState) {
+      } else if (animationSet.nextAnimationSetName) {
         imageAnimationComponent.setCurrentAnimation(
-          animationSet.nextAnimationState,
+          animationSet.nextAnimationSetName,
         );
       }
     }

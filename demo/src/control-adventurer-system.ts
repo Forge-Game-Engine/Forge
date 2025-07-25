@@ -39,19 +39,18 @@ export class ControlAdventurerSystem extends System {
     if (this._inputComponent.keyPressed(keyCodes.w)) {
       // jump always happens immediately
       if (
-        imageAnimationComponent.getCurrentAnimation() !==
-        ADVENTURER_ANIMATIONS.jump
+        imageAnimationComponent.currentAnimation !== ADVENTURER_ANIMATIONS.jump
       )
         imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
     } else if (this._inputComponent.keyPressed(keyCodes.a)) {
       // run and attack happen at the end of the current animation
-      imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = true;
     } else if (this._inputComponent.keyPressed(keyCodes.d)) {
-      imageAnimationComponent.nextAnimationState = ADVENTURER_ANIMATIONS.run;
+      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = false;
     } else if (this._inputComponent.keyPressed(keyCodes.space)) {
-      imageAnimationComponent.nextAnimationState =
+      imageAnimationComponent.nextAnimationSetName =
         ADVENTURER_ANIMATIONS.attack1;
     }
   }

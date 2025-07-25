@@ -1,4 +1,4 @@
-import { AnimationManager } from '../../animations';
+import { SpriteAnimationManager } from '../../animations';
 import { type World } from '../../ecs';
 import type { LayerService } from '../layer-service';
 import type { ForgeRenderLayer } from '../render-layers';
@@ -18,7 +18,7 @@ export function addForgeRenderLayers(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
-  animationManager: AnimationManager,
+  animationManager: SpriteAnimationManager,
 ) {
   const renderLayers = new Array<ForgeRenderLayer>();
 

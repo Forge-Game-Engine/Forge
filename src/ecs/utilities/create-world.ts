@@ -1,4 +1,4 @@
-import { AnimationManager } from '../../animations';
+import { SpriteAnimationManager } from '../../animations';
 import { PositionComponent } from '../../common';
 import { InputsComponent, InputSystem } from '../../input';
 import { Vector2 } from '../../math';
@@ -41,7 +41,7 @@ type WorldCreationResult = {
   cameraEntity: Entity;
   inputsEntity: Entity;
   renderLayers: ForgeRenderLayer[];
-  animationManager: AnimationManager;
+  animationManager: SpriteAnimationManager;
 };
 
 /**
@@ -85,7 +85,7 @@ export function createWorld(
     new InputsComponent(),
   ]);
 
-  const animationManager = new AnimationManager();
+  const animationManager = new SpriteAnimationManager();
 
   const inputSystem = new InputSystem(
     game.container,
