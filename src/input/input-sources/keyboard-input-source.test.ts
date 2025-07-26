@@ -34,6 +34,21 @@ describe('KeyboardInputSource', () => {
     );
   });
 
+    it('should bind and trigger action on hold keydown', () => {
+    const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
+    window.dispatchEvent(event);
+
+    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: {
+          moment: buttonMoments.hold,
+          keyCode: keyCodes.space,
+        },
+        source: keyboardInputSource,
+      }),
+    );
+  });
+
   it('should bind and trigger action on keyup', () => {
     const event = new window.KeyboardEvent('keyup', { code: keyCodes.space });
     window.dispatchEvent(event);
