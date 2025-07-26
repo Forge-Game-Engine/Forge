@@ -214,4 +214,114 @@ describe('test running ImageAnimationSystem', () => {
     expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
     expect(imageAnimationComponent.currentAnimationSetName).toBe('idle');
   });
+
+  it('should call the correct callback for the current animation frame', () => {
+    const animationFrame: AnimationFrame = {
+      durationSeconds: 1,
+      offset: new Vector2(0, 0),
+      scale: new Vector2(1, 1),
+    };
+
+    const callback = vi.fn();
+
+    const mockAnimationSet: AnimationSet = {
+      animationFrames: [animationFrame, animationFrame],
+      numFrames: 2,
+      nextAnimationSetName: null,
+      animationCallbacks: new Map([[0, callback]]),
+    };
+
+    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+      mockAnimationSet,
+    );
+
+    const imageAnimationComponent =
+      entity.getComponentRequired<ImageAnimationComponent>(
+        ImageAnimationComponent.symbol,
+      );
+    imageAnimationComponent.currentFrameTimeSeconds = 0;
+    imageAnimationComponent.setCurrentAnimation('idle');
+
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
+
+    imageAnimationSystem.run(entity);
+
+    expect(callback).toHaveBeenCalledWith(entity);
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call multiple callbacks for the same frame index in the correct order', () => {
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+
+    const entityType = 'testEntity';
+    const animationType = 'idle';
+    const spritesPerColumn = 1;
+    const spritesPerRow = 1;
+    const frameDuration = 0.5;
+
+    const animationManager = new SpriteAnimationManager();
+    animationManager.createAnimationSet(
+      entityType,
+      animationType,
+      spritesPerColumn,
+      spritesPerRow,
+      frameDuration,
+      {
+        animationCallbacks: [
+          { percentage: 0, callback: callback1 },
+          { percentage: 0, callback: callback2 },
+        ],
+      },
+    );
+
+    const imageAnimationComponent =
+      entity.getComponentRequired<ImageAnimationComponent>(
+        ImageAnimationComponent.symbol,
+      );
+    imageAnimationComponent.currentFrameTimeSeconds = 0;
+    imageAnimationComponent.setCurrentAnimation(animationType);
+
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
+
+    imageAnimationSystem = new ImageAnimationSystem(time, animationManager);
+    imageAnimationSystem.run(entity);
+
+    expect(callback1).toHaveBeenCalledWith(entity);
+    expect(callback2).toHaveBeenCalledWith(entity);
+    expect(callback1).toHaveBeenCalledBefore(callback2);
+  });
+
+  it('should not call callbacks if the animation index has not changed', () => {
+    const animationFrame: AnimationFrame = {
+      durationSeconds: 1,
+      offset: new Vector2(0, 0),
+      scale: new Vector2(1, 1),
+    };
+
+    const callback = vi.fn();
+
+    const mockAnimationSet: AnimationSet = {
+      animationFrames: [animationFrame],
+      numFrames: 1,
+      nextAnimationSetName: null,
+      animationCallbacks: new Map([[0, callback]]),
+    };
+
+    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+      mockAnimationSet,
+    );
+
+    const imageAnimationComponent =
+      entity.getComponentRequired<ImageAnimationComponent>(
+        ImageAnimationComponent.symbol,
+      );
+    imageAnimationComponent.currentFrameTimeSeconds = 0;
+    imageAnimationComponent.animationIndex = 0;
+
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
+    imageAnimationSystem.run(entity);
+
+    expect(callback).not.toHaveBeenCalled();
+  });
 });
