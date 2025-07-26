@@ -109,7 +109,7 @@ const jumpParticleEmitter = new ParticleEmitter(
       min: 0.2,
       max: 0.4,
     },
-    emitDuration: 0,
+    emitDurationSeconds: 0,
   },
 );
 

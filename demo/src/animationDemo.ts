@@ -297,7 +297,7 @@ function createAdventurerControllableAnimationSets(
       positionX: () => positionComponent.x - 15 + Math.random() * 30,
       positionY: () => positionComponent.y + 70,
     });
-    emitter?.emit();
+    emitter?.emitIfNotEmitting();
   };
 
   const runMovement =

@@ -100,7 +100,7 @@ export class ParticleManagerSystem extends System {
   private _getAmountToEmit(particleEmitter: ParticleEmitter) {
     const emitProgress = Math.min(
       (this._time.timeInSeconds - particleEmitter.emitStartTime) /
-        particleEmitter.emitDuration,
+        particleEmitter.emitDurationSeconds,
       1,
     );
     const targetEmitCount = Math.ceil(

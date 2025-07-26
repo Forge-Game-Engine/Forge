@@ -19,7 +19,7 @@ export interface ParticleEmitterOptions {
   lifetimeScaleReduction: number;
   height: number;
   width: number;
-  emitDuration: number;
+  emitDurationSeconds: number;
   positionX: positionFunction;
   positionY: positionFunction;
 }
@@ -34,7 +34,7 @@ const defaultOptions: ParticleEmitterOptions = {
   lifetimeScaleReduction: 0,
   height: 10,
   width: 10,
-  emitDuration: 0,
+  emitDurationSeconds: 0,
   positionX: () => 0,
   positionY: () => 0,
 };
@@ -69,7 +69,7 @@ export class ParticleEmitter {
   public lifetimeScaleReduction: number; // The particle scale at the end of its lifetime will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;
-  public emitDuration: number; // How long the emitter will emit particles
+  public emitDurationSeconds: number; // How long the emitter will emit particles
   public emitStartTime: number;
   public emitCount: number;
   public amountToEmit: number;
@@ -91,7 +91,7 @@ export class ParticleEmitter {
       lifetimeScaleReduction,
       height,
       width,
-      emitDuration,
+      emitDurationSeconds,
       positionX,
       positionY,
     } = {
@@ -109,7 +109,7 @@ export class ParticleEmitter {
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;
-    this.emitDuration = emitDuration;
+    this.emitDurationSeconds = emitDurationSeconds;
     this.positionX = positionX;
     this.positionY = positionY;
     this.particles = [];
@@ -131,7 +131,7 @@ export class ParticleEmitter {
       lifetimeScaleReduction,
       height,
       width,
-      emitDuration,
+      emitDurationSeconds: emitDurationSeconds,
       positionX,
       positionY,
     } = {
@@ -148,15 +148,18 @@ export class ParticleEmitter {
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;
-    this.emitDuration = emitDuration;
+    this.emitDurationSeconds = emitDurationSeconds;
     this.positionX = positionX;
     this.positionY = positionY;
   }
 
-  // Only emits if not already emitting
-  public emit(): void {
+  public emitIfNotEmitting(): void {
     if (!this.currentlyEmitting) {
       this.startEmitting = true;
     }
+  }
+
+  public emit(): void {
+    this.startEmitting = true;
   }
 }
