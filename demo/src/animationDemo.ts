@@ -254,34 +254,43 @@ function createAdventurerAnimationSets(
 function createAdventurerControllableAnimationSets(
   animationManager: SpriteAnimationManager,
 ) {
-  const attackParticles = (rotationAdd: number) => (entity: Entity) => {
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const flipComponent = entity.getComponentRequired<FlipComponent>(
-      FlipComponent.symbol,
-    );
-    const emitter = entity
-      .getComponentRequired<ParticleEmitterComponent>(
-        ParticleEmitterComponent.symbol,
-      )
-      .emitters.get('attack');
+  const attackParticles =
+    (rotationAdd: number, heightChange: number) => (entity: Entity) => {
+      const positionComponent = entity.getComponentRequired<PositionComponent>(
+        PositionComponent.symbol,
+      );
+      const flipComponent = entity.getComponentRequired<FlipComponent>(
+        FlipComponent.symbol,
+      );
+      const emitter = entity
+        .getComponentRequired<ParticleEmitterComponent>(
+          ParticleEmitterComponent.symbol,
+        )
+        .emitters.get('attack');
 
-    emitter?.setOptions({
-      rotation: {
-        min: flipComponent.flipX
-          ? -rotationAdd + (-3 * Math.PI) / 4
-          : rotationAdd + Math.PI / 4,
-        max: flipComponent.flipX
-          ? -rotationAdd - Math.PI / 4
-          : rotationAdd + (3 * Math.PI) / 4,
-      },
-      positionX: () =>
-        positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
-      positionY: () => positionComponent.y + 20,
-    });
-    emitter?.emit();
-  };
+      emitter?.setOptions({
+        rotation: {
+          min: flipComponent.flipX
+            ? -rotationAdd + (-3 * Math.PI) / 4
+            : rotationAdd + Math.PI / 4,
+          max: flipComponent.flipX
+            ? -rotationAdd - Math.PI / 4
+            : rotationAdd + (3 * Math.PI) / 4,
+        },
+        positionX: () =>
+          positionComponent.x +
+          (flipComponent.flipX ? -1 : 1) *
+            (30 +
+              (20 * emitter?.currentEmitDuration) /
+                emitter?.emitDurationSeconds),
+        positionY: () =>
+          positionComponent.y +
+          20 +
+          (heightChange * emitter?.currentEmitDuration) /
+            emitter?.emitDurationSeconds,
+      });
+      emitter?.emit();
+    };
 
   const jumpParticles = (entity: Entity) => {
     // Emit particles when the jump animation starts
@@ -353,7 +362,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0.2,
-          callback: attackParticles(-1),
+          callback: attackParticles(-1, -30),
         },
       ],
     },
@@ -372,7 +381,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0,
-          callback: attackParticles(1),
+          callback: attackParticles(1, 30),
         },
       ],
     },
@@ -391,7 +400,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0.2,
-          callback: attackParticles(0),
+          callback: attackParticles(0, 0),
         },
       ],
     },

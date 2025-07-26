@@ -33,6 +33,8 @@ export class ParticleManagerSystem extends System {
       );
 
     for (const particleEmitter of particleEmitterComponent.emitters.values()) {
+      particleEmitter.currentEmitDuration += this._time.deltaTimeInSeconds;
+
       this._checkStartEmitting(particleEmitter);
 
       this._emitNewParticles(particleEmitter);
@@ -43,7 +45,7 @@ export class ParticleManagerSystem extends System {
 
   private _checkStartEmitting(particleEmitter: ParticleEmitter) {
     if (particleEmitter.startEmitting) {
-      particleEmitter.emitStartTime = this._time.timeInSeconds;
+      particleEmitter.currentEmitDuration = 0;
       particleEmitter.startEmitting = false;
       particleEmitter.emitCount = 0;
       particleEmitter.currentlyEmitting = true;
@@ -99,8 +101,7 @@ export class ParticleManagerSystem extends System {
 
   private _getAmountToEmit(particleEmitter: ParticleEmitter) {
     const emitProgress = Math.min(
-      (this._time.timeInSeconds - particleEmitter.emitStartTime) /
-        particleEmitter.emitDurationSeconds,
+      particleEmitter.currentEmitDuration / particleEmitter.emitDurationSeconds,
       1,
     );
     const targetEmitCount = Math.ceil(

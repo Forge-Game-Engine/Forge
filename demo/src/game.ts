@@ -78,12 +78,12 @@ const attackParticleEmitter = new ParticleEmitter(
       min: -0.5,
       max: 0.5,
     },
-    numParticles: { min: 20, max: 30 },
+    numParticles: { min: 60, max: 80 },
     lifetime: {
       min: 0.2,
       max: 0.3,
     },
-    emitDurationSeconds: 0.1,
+    emitDurationSeconds: 0.3,
     lifetimeScaleReduction: 0,
   },
 );
