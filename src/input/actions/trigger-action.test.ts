@@ -60,8 +60,8 @@ describe('InputAction', () => {
 
     action.bind(interaction, group);
 
-    const interactions = Array.from(action.interactions.get(group)?.values() ?? []);
-
+    const interactions = action.interactions.get(group)?.values().toArray();
+    
     expect(interactions?.length).toBe(1);
     expect(interactions?.[0]?.id).toBe(interaction.id);
   });
