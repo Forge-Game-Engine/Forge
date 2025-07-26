@@ -3,6 +3,7 @@ import { Vector2 } from '../math';
 import {
   Axis1dAction,
   Axis2dAction,
+  HoldAction,
   InputAction,
   TriggerAction,
 } from './actions';
@@ -20,6 +21,7 @@ export class InputManager implements Resettable {
 
   private _activeGroup: InputGroup | null;
   private _triggerActionPendingBind: TriggerAction | null = null;
+  private _holdActionPendingBind: HoldAction | null = null;
   private _axis1dActionPendingBind: Axis1dAction | null = null;
   private _axis2dActionPendingBind: Axis2dAction | null = null;
 
@@ -74,6 +76,13 @@ export class InputManager implements Resettable {
 
   public dispatchHoldAction(interaction: InputInteraction): void {
     if (!this._activeGroup) {
+      return;
+    }
+
+    if (this._holdActionPendingBind) {
+      this._holdActionPendingBind.bind(interaction, this._activeGroup);
+      this.stopPendingTriggerActionBinding();
+
       return;
     }
 

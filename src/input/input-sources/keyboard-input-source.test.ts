@@ -10,6 +10,7 @@ describe('KeyboardInputSource', () => {
   beforeEach(() => {
     inputManager = {
       dispatchTriggerAction: vi.fn(),
+      dispatchHoldAction: vi.fn(),    
     } as unknown as InputManager;
     keyboardInputSource = new KeyboardInputSource(inputManager);
   });

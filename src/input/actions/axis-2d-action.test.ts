@@ -55,8 +55,8 @@ describe('InputAxis2d', () => {
     const interaction = new MouseAxis2dInteraction(source);
 
     action.bind(interaction, group);
-
-    const interactions = action.interactions.get(group)?.values().toArray();
+    
+    const interactions = Array.from(action.interactions.get(group)?.values() ?? []);
 
     expect(interactions?.length).toBe(1);
     expect(interactions?.[0]?.id).toBe(interaction.id);
