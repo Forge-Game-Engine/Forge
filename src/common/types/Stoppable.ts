@@ -1,3 +1,3 @@
 export interface Stoppable {
-  stop: () => void;
+  stop(): void;
 }

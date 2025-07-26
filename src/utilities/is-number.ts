@@ -8,5 +8,5 @@
  * isNumber('5'); // returns false
  */
 export function isNumber<T>(value: T): boolean {
-  return typeof value === 'number';
+  return typeof value === 'number' || value instanceof Number;
 }
