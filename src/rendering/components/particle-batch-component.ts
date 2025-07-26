@@ -17,7 +17,7 @@ export class ParticleBatchComponent implements Component {
   public name: symbol;
 
   /** The map of batched particles. */
-  public batches: Map<Renderable, ParticleBatch> = new Map();
+  public batches: Map<Renderable, ParticleBatch>;
 
   /** The render layer to which the batch belongs. */
   public readonly renderLayer: RenderLayer;
@@ -31,5 +31,6 @@ export class ParticleBatchComponent implements Component {
   constructor(renderLayer: RenderLayer) {
     this.name = ParticleBatchComponent.symbol;
     this.renderLayer = renderLayer;
+    this.batches = new Map();
   }
 }

@@ -27,8 +27,8 @@ export class ImageAnimationComponent implements Component {
   public name: symbol;
   public entityType: string;
   public animationIndex: number;
-  public currentFrameTimeSeconds: number = 0;
-  public nextAnimationSetName: string | null = null;
+  public currentFrameTimeSeconds: number;
+  public nextAnimationSetName: string | null;
   public animationSpeedFactor: number;
   public currentAnimationSetName: string;
   public isChangingAnimation: boolean = false;
@@ -55,6 +55,8 @@ export class ImageAnimationComponent implements Component {
     this.currentAnimationSetName = currentAnimationSetName;
     this.animationIndex = animationIndex;
     this.animationSpeedFactor = animationSpeedFactor;
+    this.currentFrameTimeSeconds = 0;
+    this.nextAnimationSetName = null;
   }
 
   public onAnimationEnd(): void {

@@ -41,11 +41,12 @@ const defaultOptions: ParticleEmitterOptions = {
 
 export class ParticleEmitterComponent implements Component {
   public name: symbol;
-  public emitters: Map<string, ParticleEmitter> = new Map();
+  public emitters: Map<string, ParticleEmitter>;
   public static readonly symbol = Symbol('ParticleEmitter');
 
   constructor(emitters: { name: string; emitter: ParticleEmitter }[]) {
     this.name = ParticleEmitterComponent.symbol;
+    this.emitters = new Map();
 
     for (const { name, emitter } of emitters) {
       this.emitters.set(name, emitter);
@@ -58,7 +59,7 @@ export class ParticleEmitter {
   public renderLayer: ForgeRenderLayer;
   public positionX: positionFunction;
   public positionY: positionFunction;
-  public particles: ParticleComponent[] = [];
+  public particles: ParticleComponent[];
   public numParticles: MinMax;
   public speed: MinMax;
   public scale: MinMax;
@@ -69,11 +70,11 @@ export class ParticleEmitter {
   public height: number;
   public width: number;
   public emitDuration: number; // How long the emitter will emit particles
-  public emitStartTime: number = 0;
-  public emitCount: number = 0;
-  public amountToEmit: number = 0;
-  public startEmitting: boolean = false;
-  public currentlyEmitting: boolean = false;
+  public emitStartTime: number;
+  public emitCount: number;
+  public amountToEmit: number;
+  public startEmitting: boolean;
+  public currentlyEmitting: boolean;
 
   constructor(
     renderable: Renderable,
@@ -111,6 +112,12 @@ export class ParticleEmitter {
     this.emitDuration = emitDuration;
     this.positionX = positionX;
     this.positionY = positionY;
+    this.particles = [];
+    this.emitStartTime = 0;
+    this.emitCount = 0;
+    this.amountToEmit = 0;
+    this.startEmitting = false;
+    this.currentlyEmitting = false;
   }
 
   public setOptions(options: Partial<ParticleEmitterOptions>): void {

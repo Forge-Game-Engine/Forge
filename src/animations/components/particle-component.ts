@@ -23,10 +23,10 @@ export class ParticleComponent implements Component {
   public width: number;
   public rotation: number;
   public rotationSpeed: number;
-  public ageSeconds: number = 0;
   public lifetimeSeconds: number;
   public positionX: number;
   public positionY: number;
+  public ageSeconds: number;
 
   public static readonly symbol = Symbol('Particle');
 
@@ -57,6 +57,7 @@ export class ParticleComponent implements Component {
     this.lifetimeSeconds = lifetimeSeconds;
     this.positionX = positionX;
     this.positionY = positionY;
+    this.ageSeconds = 0;
   }
 
   public update(deltaTimeInSeconds: number): void {
