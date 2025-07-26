@@ -83,7 +83,7 @@ const attackParticleEmitter = new ParticleEmitter(
       min: 0.2,
       max: 0.3,
     },
-    emitDuration: 0.1,
+    emitDurationSeconds: 0.1,
     lifetimeScaleReduction: 0,
   },
 );
