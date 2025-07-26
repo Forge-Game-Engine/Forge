@@ -332,40 +332,11 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 1 / 8),
       endPositionPercentage: new Vector2(8 / 13, 2 / 8),
-      animationCallbacks: [
-        {
-          percentage: 0,
-          callback: runMovement(5, 0),
-        },
-        {
-          percentage: 1 / 7,
-          callback: runMovement(5, -5),
-        },
-        {
-          percentage: 2 / 7,
-          callback: runMovement(5, 0),
-        },
-        {
-          percentage: 3 / 7,
-          callback: runMovement(5, 5),
-        },
-        {
-          percentage: 4 / 7,
-          callback: runMovement(5, 0),
-        },
-        {
-          percentage: 5 / 7,
-          callback: runMovement(5, -5),
-        },
-        {
-          percentage: 6 / 7,
-          callback: runMovement(5, 0),
-        },
-        {
-          percentage: 1,
-          callback: runMovement(5, 5),
-        },
-      ],
+      // Create a callback for each of the 8 frames
+      animationCallbacks: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
+        percentage: i / 7,
+        callback: runMovement(5, 0),
+      })),
     },
   );
 
