@@ -19,6 +19,7 @@ import {
 import type { ForgeRenderLayer } from '../render-layers';
 import { Renderable } from '../renderable';
 import {
+  BATCH_GROWTH_FACTOR,
   FLOATS_PER_INSTANCE,
   HEIGHT_OFFSET,
   PIVOT_X_OFFSET,
@@ -60,7 +61,7 @@ export class RenderSystem extends System {
   }
 
   public override beforeAll(entities: Entity[]) {
-    this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
+    // this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
 
     return entities;
   }
@@ -71,14 +72,14 @@ export class RenderSystem extends System {
         RenderableBatchComponent.symbol,
       );
 
+    if (batchComponent.renderLayer !== this._layer) {
+      return;
+    }
+
     const particleBatchComponent =
       entity.getComponentRequired<ParticleBatchComponent>(
         ParticleBatchComponent.symbol,
       );
-
-    if (batchComponent.renderLayer !== this._layer) {
-      return;
-    }
 
     const gl = this._layer.context;
 
@@ -122,7 +123,9 @@ export class RenderSystem extends System {
     const requiredBatchSize = entities.length * FLOATS_PER_INSTANCE;
 
     if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
-      batch.instanceData = new Float32Array(requiredBatchSize * 1.25);
+      batch.instanceData = new Float32Array(
+        requiredBatchSize * BATCH_GROWTH_FACTOR,
+      );
     }
 
     for (let i = 0; i < entities.length; i++) {
@@ -184,9 +187,7 @@ export class RenderSystem extends System {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
 
-    const program = renderable.material.program;
-
-    this._setupInstanceAttributesAndDraw(gl, program, entities.length);
+    this._setupInstanceAttributesAndDraw(gl, renderable, entities.length);
   }
 
   private _includeParticleBatch(
@@ -205,7 +206,9 @@ export class RenderSystem extends System {
     const requiredBatchSize = particles.length * FLOATS_PER_INSTANCE;
 
     if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
-      batch.instanceData = new Float32Array(requiredBatchSize * 1.25);
+      batch.instanceData = new Float32Array(
+        requiredBatchSize * BATCH_GROWTH_FACTOR,
+      );
     }
 
     for (let i = 0; i < particles.length; i++) {
@@ -238,16 +241,15 @@ export class RenderSystem extends System {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
 
-    const program = renderable.material.program;
-
-    this._setupInstanceAttributesAndDraw(gl, program, particles.length);
+    this._setupInstanceAttributesAndDraw(gl, renderable, particles.length);
   }
 
   private _setupInstanceAttributesAndDraw(
     gl: WebGL2RenderingContext,
-    program: WebGLProgram,
+    renderable: Renderable,
     batchLength: number,
   ) {
+    const program = renderable.material.program;
     // Attribute locations
     const posLoc = gl.getAttribLocation(program, 'a_instancePos');
     const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
@@ -287,20 +289,22 @@ export class RenderSystem extends System {
   private _setupInstanceAttributes(
     attributeLocation: number,
     gl: WebGL2RenderingContext,
-    size: number,
+    numComponents: number,
     index: number,
   ) {
-    if (attributeLocation !== -1) {
-      gl.enableVertexAttribArray(attributeLocation);
-      gl.vertexAttribPointer(
-        attributeLocation,
-        size,
-        gl.FLOAT,
-        false,
-        FLOATS_PER_INSTANCE * 4,
-        index * 4,
-      );
-      gl.vertexAttribDivisor(attributeLocation, 1);
+    if (attributeLocation === -1) {
+      return;
     }
+
+    gl.enableVertexAttribArray(attributeLocation);
+    gl.vertexAttribPointer(
+      attributeLocation,
+      numComponents,
+      gl.FLOAT,
+      false,
+      FLOATS_PER_INSTANCE * 4,
+      index * 4,
+    );
+    gl.vertexAttribDivisor(attributeLocation, 1);
   }
 }

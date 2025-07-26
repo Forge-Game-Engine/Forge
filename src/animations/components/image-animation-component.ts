@@ -31,6 +31,7 @@ export class ImageAnimationComponent implements Component {
   public nextAnimationSetName: string | null = null;
   public animationSpeedFactor: number;
   public currentAnimationSetName: string;
+  public isChangingAnimation: boolean = false;
 
   public static readonly symbol = Symbol('ImageAnimation');
 
@@ -59,12 +60,17 @@ export class ImageAnimationComponent implements Component {
   public setCurrentAnimation(animation: string): void {
     this.nextAnimationSetName = null;
     this.currentAnimationSetName = animation;
+    this.isChangingAnimation = true;
     this.animationIndex = 0;
   }
 
   public nextAnimation(): void {
-    if (this.nextAnimationSetName) {
-      this.setCurrentAnimation(this.nextAnimationSetName);
+    if (!this.nextAnimationSetName) {
+      throw new Error(
+        'No next animation set name specified. Use setCurrentAnimation to set the next animation.',
+      );
     }
+
+    this.setCurrentAnimation(this.nextAnimationSetName);
   }
 }

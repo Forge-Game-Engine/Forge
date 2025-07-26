@@ -290,7 +290,7 @@ function createAdventurerControllableAnimationSets(
       .emitters.get('jump');
     emitter?.setOptions({
       positionX: positionComponent.x,
-      positionY: positionComponent.y + 50,
+      positionY: positionComponent.y + 70,
     });
     emitter?.emit();
   };
@@ -328,7 +328,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 2 / 8),
       endPositionPercentage: new Vector2(10 / 13, 3 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2,
-      startCallback: attackParticles,
+      animationCallbacks: [
+        {
+          percentage: 0,
+          callback: attackParticles,
+        },
+      ],
     },
   );
 
@@ -342,7 +347,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 3 / 8),
       endPositionPercentage: new Vector2(10 / 13, 4 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack3,
-      startCallback: attackParticles,
+      animationCallbacks: [
+        {
+          percentage: 0,
+          callback: attackParticles,
+        },
+      ],
     },
   );
 
@@ -356,7 +366,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 4 / 8),
       endPositionPercentage: new Vector2(10 / 13, 5 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
-      startCallback: attackParticles,
+      animationCallbacks: [
+        {
+          percentage: 0,
+          callback: attackParticles,
+        },
+      ],
     },
   );
 
@@ -370,8 +385,16 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 5 / 8),
       endPositionPercentage: new Vector2(6 / 13, 6 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
-      startCallback: jumpParticles,
-      endCallback: jumpParticles, // also emit particles when the jump animation ends
+      animationCallbacks: [
+        {
+          percentage: 0,
+          callback: jumpParticles,
+        },
+        {
+          percentage: 1,
+          callback: jumpParticles,
+        },
+      ],
     },
   );
 }
@@ -450,6 +473,9 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack1,
+      {
+        animationSpeedFactor: 4,
+      },
     ),
   ]);
 
@@ -488,7 +514,7 @@ function buildAdventurerControllableEntities(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,
       {
-        animationSpeedFactor: 2,
+        animationSpeedFactor: 1,
       },
     ),
     new ControlAdventurerComponent(),

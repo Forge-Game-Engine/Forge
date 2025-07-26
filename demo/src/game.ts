@@ -87,6 +87,7 @@ const attackParticleEmitter = new ParticleEmitter(
     lifetimeScaleReduction: 0,
   },
 );
+
 const jumpParticleEmitter = new ParticleEmitter(
   blueCircleRenderable,
   renderLayers[0],
@@ -101,7 +102,7 @@ const jumpParticleEmitter = new ParticleEmitter(
     },
     rotation: {
       min: (3 * Math.PI) / 4,
-      max: -(3 * Math.PI) / 4,
+      max: (5 * Math.PI) / 4,
     },
     numParticles: { min: 20, max: 30 },
     lifetime: {

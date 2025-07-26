@@ -1,4 +1,6 @@
 export const FLOATS_PER_INSTANCE = 13;
+export const BATCH_GROWTH_FACTOR = 1.25;
+
 export const POSITION_X_OFFSET = 0;
 export const POSITION_Y_OFFSET = 1;
 export const ROTATION_OFFSET = 2;
