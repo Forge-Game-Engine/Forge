@@ -339,7 +339,7 @@ function createAdventurerControllableAnimationSets(
         },
         {
           percentage: 1 / 7,
-          callback: runMovement(5, 10),
+          callback: runMovement(5, -5),
         },
         {
           percentage: 2 / 7,
@@ -347,7 +347,7 @@ function createAdventurerControllableAnimationSets(
         },
         {
           percentage: 3 / 7,
-          callback: runMovement(5, -10),
+          callback: runMovement(5, 5),
         },
         {
           percentage: 4 / 7,
@@ -355,7 +355,7 @@ function createAdventurerControllableAnimationSets(
         },
         {
           percentage: 5 / 7,
-          callback: runMovement(5, 10),
+          callback: runMovement(5, -5),
         },
         {
           percentage: 6 / 7,
@@ -363,7 +363,7 @@ function createAdventurerControllableAnimationSets(
         },
         {
           percentage: 1,
-          callback: runMovement(5, -10),
+          callback: runMovement(5, 5),
         },
       ],
     },
@@ -564,9 +564,6 @@ function buildAdventurerControllableEntities(
     new ImageAnimationComponent(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,
-      {
-        animationSpeedFactor: 1,
-      },
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),

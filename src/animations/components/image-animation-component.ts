@@ -57,11 +57,15 @@ export class ImageAnimationComponent implements Component {
     this.animationSpeedFactor = animationSpeedFactor;
   }
 
+  public onAnimationEnd(): void {
+    this.animationIndex = 0;
+    this.isChangingAnimation = true;
+  }
+
   public setCurrentAnimation(animation: string): void {
     this.nextAnimationSetName = null;
     this.currentAnimationSetName = animation;
-    this.isChangingAnimation = true;
-    this.animationIndex = 0;
+    this.onAnimationEnd();
   }
 
   public nextAnimation(): void {

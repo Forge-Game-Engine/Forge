@@ -74,7 +74,7 @@ export class ImageAnimationSystem extends System {
         return;
       }
 
-      imageAnimationComponent.animationIndex = 0;
+      imageAnimationComponent.onAnimationEnd();
 
       if (imageAnimationComponent.nextAnimationSetName) {
         imageAnimationComponent.nextAnimation();
