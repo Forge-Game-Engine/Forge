@@ -254,7 +254,7 @@ function createAdventurerAnimationSets(
 function createAdventurerControllableAnimationSets(
   animationManager: SpriteAnimationManager,
 ) {
-  const attackParticles = (entity: Entity) => {
+  const attackParticles = (rotationAdd: number) => (entity: Entity) => {
     const positionComponent = entity.getComponentRequired<PositionComponent>(
       PositionComponent.symbol,
     );
@@ -269,8 +269,12 @@ function createAdventurerControllableAnimationSets(
 
     emitter?.setOptions({
       rotation: {
-        min: flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4,
-        max: flipComponent.flipX ? -Math.PI / 4 : (3 * Math.PI) / 4,
+        min:
+          rotationAdd +
+          (flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4),
+        max:
+          rotationAdd +
+          (flipComponent.flipX ? -Math.PI / 4 : (3 * Math.PI) / 4),
       },
       positionX: positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
       positionY: positionComponent.y + 20,
@@ -295,6 +299,18 @@ function createAdventurerControllableAnimationSets(
     emitter?.emit();
   };
 
+  const runMovement =
+    (xChange: number, yChange: number) => (entity: Entity) => {
+      const positionComponent = entity.getComponentRequired<PositionComponent>(
+        PositionComponent.symbol,
+      );
+      const flipComponent = entity.getComponentRequired<FlipComponent>(
+        FlipComponent.symbol,
+      );
+      positionComponent.x += xChange * (flipComponent.flipX ? -1 : 1);
+      positionComponent.y += yChange;
+    };
+
   animationManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.idle,
@@ -315,6 +331,40 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 1 / 8),
       endPositionPercentage: new Vector2(8 / 13, 2 / 8),
+      animationCallbacks: [
+        {
+          percentage: 0,
+          callback: runMovement(5, 0),
+        },
+        {
+          percentage: 1 / 7,
+          callback: runMovement(5, 10),
+        },
+        {
+          percentage: 2 / 7,
+          callback: runMovement(5, 0),
+        },
+        {
+          percentage: 3 / 7,
+          callback: runMovement(5, -10),
+        },
+        {
+          percentage: 4 / 7,
+          callback: runMovement(5, 0),
+        },
+        {
+          percentage: 5 / 7,
+          callback: runMovement(5, 10),
+        },
+        {
+          percentage: 6 / 7,
+          callback: runMovement(5, 0),
+        },
+        {
+          percentage: 1,
+          callback: runMovement(5, -10),
+        },
+      ],
     },
   );
 
@@ -330,8 +380,8 @@ function createAdventurerControllableAnimationSets(
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2,
       animationCallbacks: [
         {
-          percentage: 0,
-          callback: attackParticles,
+          percentage: 0.2,
+          callback: attackParticles(-1),
         },
       ],
     },
@@ -350,7 +400,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0,
-          callback: attackParticles,
+          callback: attackParticles(1),
         },
       ],
     },
@@ -368,8 +418,8 @@ function createAdventurerControllableAnimationSets(
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
       animationCallbacks: [
         {
-          percentage: 0,
-          callback: attackParticles,
+          percentage: 0.2,
+          callback: attackParticles(0),
         },
       ],
     },

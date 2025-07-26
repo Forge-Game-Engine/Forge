@@ -288,10 +288,6 @@ export class SpriteAnimationManager {
       let newCallback = callback;
 
       if (animationCallbacksMap.has(frameIndex)) {
-        console.info(
-          `Duplicate Callback: A callback for frame index ${frameIndex} already exists. Creating a new callback that combines both.`,
-        );
-
         const existingCallback = animationCallbacksMap.get(frameIndex);
 
         newCallback = (entity: Entity) => {
