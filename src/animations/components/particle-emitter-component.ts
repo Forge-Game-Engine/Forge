@@ -2,6 +2,8 @@ import type { Component } from '../../ecs';
 import { ForgeRenderLayer, Renderable } from '../../rendering';
 import { ParticleComponent } from './particle-component';
 
+export type positionFunction = () => number;
+
 export interface MinMax {
   min: number;
   max: number;
@@ -18,8 +20,8 @@ export interface ParticleEmitterOptions {
   height: number;
   width: number;
   emitDuration: number;
-  positionX: number;
-  positionY: number;
+  positionX: positionFunction;
+  positionY: positionFunction;
 }
 
 const defaultOptions: ParticleEmitterOptions = {
@@ -33,8 +35,8 @@ const defaultOptions: ParticleEmitterOptions = {
   height: 10,
   width: 10,
   emitDuration: 0,
-  positionX: 0,
-  positionY: 0,
+  positionX: () => 0,
+  positionY: () => 0,
 };
 
 export class ParticleEmitterComponent implements Component {
@@ -54,8 +56,8 @@ export class ParticleEmitterComponent implements Component {
 export class ParticleEmitter {
   public renderable: Renderable;
   public renderLayer: ForgeRenderLayer;
-  public positionX: number = 0;
-  public positionY: number = 0;
+  public positionX: positionFunction;
+  public positionY: positionFunction;
   public particles: ParticleComponent[] = [];
   public numParticles: MinMax;
   public speed: MinMax;

@@ -269,15 +269,16 @@ function createAdventurerControllableAnimationSets(
 
     emitter?.setOptions({
       rotation: {
-        min:
-          rotationAdd +
-          (flipComponent.flipX ? (-3 * Math.PI) / 4 : Math.PI / 4),
-        max:
-          rotationAdd +
-          (flipComponent.flipX ? -Math.PI / 4 : (3 * Math.PI) / 4),
+        min: flipComponent.flipX
+          ? -rotationAdd + (-3 * Math.PI) / 4
+          : rotationAdd + Math.PI / 4,
+        max: flipComponent.flipX
+          ? -rotationAdd - Math.PI / 4
+          : rotationAdd + (3 * Math.PI) / 4,
       },
-      positionX: positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
-      positionY: positionComponent.y + 20,
+      positionX: () =>
+        positionComponent.x + 30 * (flipComponent.flipX ? -1 : 1),
+      positionY: () => positionComponent.y + 20,
     });
     emitter?.emit();
   };
@@ -293,8 +294,8 @@ function createAdventurerControllableAnimationSets(
       )
       .emitters.get('jump');
     emitter?.setOptions({
-      positionX: positionComponent.x,
-      positionY: positionComponent.y + 70,
+      positionX: () => positionComponent.x - 15 + Math.random() * 30,
+      positionY: () => positionComponent.y + 70,
     });
     emitter?.emit();
   };

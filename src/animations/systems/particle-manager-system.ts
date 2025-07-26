@@ -89,8 +89,8 @@ export class ParticleManagerSystem extends System {
           lifetimeScaleReduction: particleEmitter.lifetimeScaleReduction,
           height: particleEmitter.height,
           width: particleEmitter.width,
-          positionX: particleEmitter.positionX,
-          positionY: particleEmitter.positionY,
+          positionX: particleEmitter.positionX(),
+          positionY: particleEmitter.positionY(),
         }),
       );
       particleEmitter.emitCount++;
