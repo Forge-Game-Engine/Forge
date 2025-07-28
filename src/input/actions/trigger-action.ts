@@ -9,7 +9,7 @@ export class TriggerAction implements InputAction {
 
   private _triggered: boolean = false;
 
-  constructor(name: string) {
+  constructor(name: string = 'triggerAction') {
     this.name = name;
     this.interactions = new Map();
   }

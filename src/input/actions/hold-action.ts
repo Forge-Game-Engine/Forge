@@ -7,7 +7,7 @@ export class HoldAction implements InputAction {
   public interactions: Map<InputGroup, Set<InputInteraction>>;
   private _held: boolean = false;
 
-  constructor(name: string) {
+  constructor(name: string = 'holdAction') {
     this.name = name;
     this.interactions = new Map();
   }
