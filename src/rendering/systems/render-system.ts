@@ -11,8 +11,6 @@ import {
 import { Entity, System } from '../../ecs';
 import {
   Batch,
-  ParticleBatch,
-  ParticleBatchComponent,
   RenderableBatchComponent,
   SpriteComponent,
 } from '../components';
@@ -47,10 +45,7 @@ export class RenderSystem extends System {
   private readonly _animationManager: SpriteAnimationManager;
 
   constructor(options: RenderSystemOptions) {
-    super('renderer', [
-      RenderableBatchComponent.symbol,
-      ParticleBatchComponent.symbol,
-    ]);
+    super('renderer', [RenderableBatchComponent.symbol]);
 
     const { layer, animationManager } = options;
     this._layer = layer;
@@ -76,19 +71,10 @@ export class RenderSystem extends System {
       return;
     }
 
-    const particleBatchComponent =
-      entity.getComponentRequired<ParticleBatchComponent>(
-        ParticleBatchComponent.symbol,
-      );
-
     const gl = this._layer.context;
 
     for (const [renderable, batch] of batchComponent.batches) {
       this._includeSpriteBatch(renderable, batch, gl);
-    }
-
-    for (const [renderable, batch] of particleBatchComponent.batches) {
-      this._includeParticleBatch(renderable, batch, gl);
     }
 
     gl.bindVertexArray(null);
@@ -188,60 +174,6 @@ export class RenderSystem extends System {
     gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
 
     this._setupInstanceAttributesAndDraw(gl, renderable, entities.length);
-  }
-
-  private _includeParticleBatch(
-    renderable: Renderable,
-    batch: ParticleBatch,
-    gl: WebGL2RenderingContext,
-  ): void {
-    const { particles } = batch;
-
-    if (particles.length === 0) {
-      return;
-    }
-
-    renderable.bind(gl);
-
-    const requiredBatchSize = particles.length * FLOATS_PER_INSTANCE;
-
-    if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
-      batch.instanceData = new Float32Array(
-        requiredBatchSize * BATCH_GROWTH_FACTOR,
-      );
-    }
-
-    for (let i = 0; i < particles.length; i++) {
-      const batchedParticle = particles[i];
-      const instanceDataOffset = i * FLOATS_PER_INSTANCE;
-
-      batch.instanceData[instanceDataOffset + POSITION_X_OFFSET] =
-        batchedParticle.positionX;
-      batch.instanceData[instanceDataOffset + POSITION_Y_OFFSET] =
-        batchedParticle.positionY;
-      batch.instanceData[instanceDataOffset + ROTATION_OFFSET] =
-        batchedParticle.rotation;
-      batch.instanceData[instanceDataOffset + SCALE_X_OFFSET] =
-        batchedParticle.scale;
-      batch.instanceData[instanceDataOffset + SCALE_Y_OFFSET] =
-        batchedParticle.scale;
-      batch.instanceData[instanceDataOffset + WIDTH_OFFSET] =
-        batchedParticle.width;
-      batch.instanceData[instanceDataOffset + HEIGHT_OFFSET] =
-        batchedParticle.height;
-      batch.instanceData[instanceDataOffset + PIVOT_X_OFFSET] = 0;
-      batch.instanceData[instanceDataOffset + PIVOT_Y_OFFSET] = 0;
-      batch.instanceData[instanceDataOffset + TEX_OFFSET_X_OFFSET] = 0;
-      batch.instanceData[instanceDataOffset + TEX_OFFSET_Y_OFFSET] = 0;
-      batch.instanceData[instanceDataOffset + TEX_SIZE_X_OFFSET] = 1;
-      batch.instanceData[instanceDataOffset + TEX_SIZE_Y_OFFSET] = 1;
-    }
-
-    // Upload instance transform buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
-
-    this._setupInstanceAttributesAndDraw(gl, renderable, particles.length);
   }
 
   private _setupInstanceAttributesAndDraw(

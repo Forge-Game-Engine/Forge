@@ -1,18 +1,19 @@
 import {
-  createImageRenderable,
-  createImageSprite,
+  createImageNameSprite,
   createShaderStore,
   createWorld,
   Game,
   ImageAnimationSystem,
   ImageCache,
   ParticleEmitter,
-  ParticleManagerSystem,
+  ParticleEmitterSystem,
+  ParticleUpdateSystem,
   registerCamera,
   registerInputs,
   registerRendering,
   registerSpriteAnimationManager,
 } from '../../src';
+import { AgeSystem } from '../../src/animations/systems/age-system';
 import * as animationDemo from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
 
@@ -27,26 +28,23 @@ const cameraEntity = registerCamera(world, {});
 const spriteAnimationManager = registerSpriteAnimationManager();
 const { renderLayers } = registerRendering(game, world, spriteAnimationManager);
 
-const shipSpriteSheet = await imageCache.getOrLoad('ship_spritesheet.png');
-const adventurerSpriteSheet = await imageCache.getOrLoad(
+const shipSprite = await createImageNameSprite(
+  'ship_spritesheet.png',
+  imageCache,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
+
+const adventureSprite = await createImageNameSprite(
   'adventurer_spritesheet.png',
-);
-
-const shipSprite = createImageSprite(
-  shipSpriteSheet,
+  imageCache,
   renderLayers[0],
   shaderStore,
   cameraEntity,
 );
 
-const adventureSprite = createImageSprite(
-  adventurerSpriteSheet,
-  renderLayers[0],
-  shaderStore,
-  cameraEntity,
-);
-
-const blueCircleRenderable = await createImageRenderable(
+const blueCircleSprite = await createImageNameSprite(
   'blue-circle.png',
   imageCache,
   renderLayers[0],
@@ -54,7 +52,7 @@ const blueCircleRenderable = await createImageRenderable(
   cameraEntity,
 );
 
-const starRenderable = await createImageRenderable(
+const starSprite = await createImageNameSprite(
   'star_small.png',
   imageCache,
   renderLayers[0],
@@ -62,34 +60,30 @@ const starRenderable = await createImageRenderable(
   cameraEntity,
 );
 
-const attackParticleEmitter = new ParticleEmitter(
-  starRenderable,
-  renderLayers[0],
-  {
-    speed: {
-      min: 250,
-      max: 300,
-    },
-    scale: {
-      min: 3,
-      max: 5,
-    },
-    rotationSpeed: {
-      min: -0.5,
-      max: 0.5,
-    },
-    numParticles: { min: 60, max: 80 },
-    lifetime: {
-      min: 0.2,
-      max: 0.3,
-    },
-    emitDurationSeconds: 0.3,
-    lifetimeScaleReduction: 0,
+const attackParticleEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
+  speed: {
+    min: 250,
+    max: 300,
   },
-);
+  scale: {
+    min: 0.6,
+    max: 1,
+  },
+  rotationSpeed: {
+    min: -0.5,
+    max: 0.5,
+  },
+  numParticles: { min: 60, max: 80 },
+  lifetime: {
+    min: 0.2,
+    max: 0.3,
+  },
+  emitDurationSeconds: 0.3,
+  lifetimeScaleReduction: 0,
+});
 
 const jumpParticleEmitter = new ParticleEmitter(
-  blueCircleRenderable,
+  blueCircleSprite,
   renderLayers[0],
   {
     speed: {
@@ -97,12 +91,12 @@ const jumpParticleEmitter = new ParticleEmitter(
       max: 200,
     },
     scale: {
-      min: 2,
-      max: 2,
+      min: 0.1,
+      max: 0.1,
     },
     rotation: {
-      min: (3 * Math.PI) / 4,
-      max: (5 * Math.PI) / 4,
+      min: 135,
+      max: 225,
     },
     numParticles: { min: 20, max: 30 },
     lifetime: {
@@ -128,7 +122,9 @@ animationDemo.setupAnimationsDemo(
 world.addSystems(
   new ImageAnimationSystem(world.time, spriteAnimationManager),
   new ControlAdventurerSystem(inputsManager),
-  new ParticleManagerSystem(world.time),
+  new ParticleEmitterSystem(world),
+  new ParticleUpdateSystem(world.time),
+  new AgeSystem(world),
 );
 
 game.run();

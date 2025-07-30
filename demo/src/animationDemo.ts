@@ -270,12 +270,8 @@ function createAdventurerControllableAnimationSets(
 
       emitter?.setOptions({
         rotation: {
-          min: flipComponent.flipX
-            ? -rotationAdd + (-3 * Math.PI) / 4
-            : rotationAdd + Math.PI / 4,
-          max: flipComponent.flipX
-            ? -rotationAdd - Math.PI / 4
-            : rotationAdd + (3 * Math.PI) / 4,
+          min: flipComponent.flipX ? -rotationAdd - 120 : rotationAdd + 60,
+          max: flipComponent.flipX ? -rotationAdd - 60 : rotationAdd + 120,
         },
         positionX: () =>
           positionComponent.x +
@@ -362,7 +358,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0.2,
-          callback: attackParticles(-1, -30),
+          callback: attackParticles(-60, -30),
         },
       ],
     },
@@ -381,7 +377,7 @@ function createAdventurerControllableAnimationSets(
       animationCallbacks: [
         {
           percentage: 0,
-          callback: attackParticles(1, 30),
+          callback: attackParticles(60, 30),
         },
       ],
     },

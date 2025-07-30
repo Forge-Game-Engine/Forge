@@ -1,25 +1,34 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
+import { Entity, System, World } from '../../ecs';
 import {
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent,
+  Time,
+} from '../../common';
+import {
+  AgeComponent,
   MinMax,
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
 } from '../components';
+import { SpriteComponent } from '../../rendering';
 
 /**
  * System that manages and updates particles.
  */
-export class ParticleManagerSystem extends System {
+export class ParticleEmitterSystem extends System {
   private readonly _time: Time;
+  private readonly _world: World;
 
   /**
    * Creates an instance of ParticleManagerSystem.
-   * @param time - The Time instance.
+   * @param world - The World instance.
    */
-  constructor(time: Time) {
-    super('particleManager', [ParticleEmitterComponent.symbol]);
-    this._time = time;
+  constructor(world: World) {
+    super('particleEmitter', [ParticleEmitterComponent.symbol]);
+    this._time = world.time;
+    this._world = world;
   }
 
   /**
@@ -38,8 +47,6 @@ export class ParticleManagerSystem extends System {
       this._checkStartEmitting(particleEmitter);
 
       this._emitNewParticles(particleEmitter);
-
-      this._updateParticles(particleEmitter);
     }
   }
 
@@ -80,21 +87,23 @@ export class ParticleManagerSystem extends System {
         particleEmitter.rotationSpeed,
       );
 
-      particleEmitter.particles.push(
+      this._world.buildAndAddEntity('particle', [
+        new SpriteComponent(particleEmitter.sprite),
         new ParticleComponent({
           speed,
           originalScale,
-          lifetimeSeconds,
-          rotation,
-          rotationSpeed,
-
           lifetimeScaleReduction: particleEmitter.lifetimeScaleReduction,
-          height: particleEmitter.height,
-          width: particleEmitter.width,
-          positionX: particleEmitter.positionX(),
-          positionY: particleEmitter.positionY(),
+          rotationSpeed,
         }),
-      );
+        new AgeComponent(lifetimeSeconds),
+        new PositionComponent(
+          particleEmitter.positionX(),
+          particleEmitter.positionY(),
+        ),
+        new ScaleComponent(originalScale, originalScale),
+        new RotationComponent(rotation),
+      ]);
+
       particleEmitter.emitCount++;
     }
   }
@@ -111,20 +120,6 @@ export class ParticleManagerSystem extends System {
     return targetEmitCount - particleEmitter.emitCount;
   }
 
-  private _updateParticles(particleEmitter: ParticleEmitter) {
-    for (let i = particleEmitter.particles.length - 1; i >= 0; i--) {
-      const particle = particleEmitter.particles[i];
-
-      if (particle.ageSeconds >= particle.lifetimeSeconds) {
-        particleEmitter.particles.splice(i, 1);
-
-        continue;
-      }
-
-      particle.update(this._time.deltaTimeInSeconds);
-    }
-  }
-
   private _getValueInRange({ min, max }: MinMax): number {
     if (min > max) {
       [min, max] = [max, min];
@@ -138,10 +133,10 @@ export class ParticleManagerSystem extends System {
       [min, max] = [max, min];
     }
 
-    const range = (max - min) % (2 * Math.PI);
+    const range = (max - min) % 360;
 
     if (range === 0 && max !== min) {
-      return Math.random() * 2 * Math.PI;
+      return Math.random() * 360;
     }
 
     return Math.random() * range + min;

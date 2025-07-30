@@ -6,4 +6,4 @@ export * from './add-camera';
 export * from './create-image-sprite';
 export * from './create-sprite';
 export * from './create-shader-store';
-export * from './create-image-renderable';
+export * from './create-image-name-sprite';

@@ -1,6 +1,5 @@
 import type { Component } from '../../ecs';
-import { ForgeRenderLayer, Renderable } from '../../rendering';
-import { ParticleComponent } from './particle-component';
+import { ForgeRenderLayer, Sprite } from '../../rendering';
 
 export type positionFunction = () => number;
 
@@ -28,7 +27,7 @@ const defaultOptions: ParticleEmitterOptions = {
   numParticles: { min: 5, max: 10 },
   speed: { min: 10, max: 20 },
   scale: { min: 1, max: 1 },
-  rotation: { min: 0, max: 2 * Math.PI },
+  rotation: { min: 0, max: 360 },
   rotationSpeed: { min: 0, max: 0 },
   lifetime: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
@@ -55,11 +54,10 @@ export class ParticleEmitterComponent implements Component {
 }
 
 export class ParticleEmitter {
-  public renderable: Renderable;
+  public sprite: Sprite;
   public renderLayer: ForgeRenderLayer;
   public positionX: positionFunction;
   public positionY: positionFunction;
-  public particles: ParticleComponent[];
   public numParticles: MinMax;
   public speed: MinMax;
   public scale: MinMax;
@@ -77,7 +75,7 @@ export class ParticleEmitter {
   public currentlyEmitting: boolean;
 
   constructor(
-    renderable: Renderable,
+    sprite: Sprite,
     renderLayer: ForgeRenderLayer,
     options: Partial<ParticleEmitterOptions> = {},
   ) {
@@ -98,7 +96,7 @@ export class ParticleEmitter {
       ...defaultOptions,
       ...options,
     };
-    this.renderable = renderable;
+    this.sprite = sprite;
     this.renderLayer = renderLayer;
     this.numParticles = numParticles;
     this.speed = speed;
@@ -112,7 +110,6 @@ export class ParticleEmitter {
     this.emitDurationSeconds = emitDurationSeconds;
     this.positionX = positionX;
     this.positionY = positionY;
-    this.particles = [];
     this.currentEmitDuration = 0;
     this.emitCount = 0;
     this.amountToEmit = 0;
