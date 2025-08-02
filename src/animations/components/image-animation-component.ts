@@ -74,7 +74,7 @@ export class ImageAnimationComponent implements Component {
     if (!this.nextAnimationSetName) {
       throw new Error(
         `No next animation set name specified for entity type "${this.entityType}" with current animation "${this.currentAnimationSetName}". ` +
-        'Set the variable "nextAnimationSetName", or use setCurrentAnimation() to set the next animation.',
+          'Set the variable "nextAnimationSetName", or use setCurrentAnimation() to set the next animation.',
       );
     }
 
