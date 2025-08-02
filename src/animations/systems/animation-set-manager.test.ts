@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SpriteAnimationManager } from './animation-manager-system';
+import { AnimationSetManager } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { ImageAnimationComponent } from '../components';
 
 describe('SpriteAnimationManager', () => {
-  let animationManager: SpriteAnimationManager;
+  let animationSetManager: AnimationSetManager;
 
   beforeEach(() => {
-    animationManager = new SpriteAnimationManager();
+    animationSetManager = new AnimationSetManager();
   });
 
   describe('createAnimationSet', () => {
@@ -18,7 +18,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 3;
       const frameDuration = 0.5;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -26,7 +26,7 @@ describe('SpriteAnimationManager', () => {
         frameDuration,
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -45,7 +45,7 @@ describe('SpriteAnimationManager', () => {
       const frameDurations = [0.5, 0.5]; // Incorrect length
 
       expect(() => {
-        animationManager.createAnimationSet(
+        animationSetManager.createAnimationSet(
           entityType,
           animationType,
           spritesPerColumn,
@@ -65,7 +65,7 @@ describe('SpriteAnimationManager', () => {
       const frameDurations = [0.5, 0.7]; // Incorrect length
       const numFrames = 2;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -74,7 +74,7 @@ describe('SpriteAnimationManager', () => {
         { numFrames },
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -93,7 +93,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 2;
       const frameDuration = 0.3;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -101,7 +101,7 @@ describe('SpriteAnimationManager', () => {
         frameDuration,
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -115,7 +115,7 @@ describe('SpriteAnimationManager', () => {
 
   describe('getAnimationSet', () => {
     it('should return null if no animation set exists for the given entity type and animation type', () => {
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         'nonexistent',
         'idle',
       );
@@ -129,7 +129,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 1;
       const frameDuration = 1;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -137,7 +137,7 @@ describe('SpriteAnimationManager', () => {
         frameDuration,
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -148,7 +148,7 @@ describe('SpriteAnimationManager', () => {
 
   describe('getAnimationFrame', () => {
     it('should return null if ImageAnimationComponent is null', () => {
-      const frame = animationManager.getAnimationFrame(null);
+      const frame = animationSetManager.getAnimationFrame(null);
       expect(frame).toBeNull();
     });
 
@@ -159,7 +159,7 @@ describe('SpriteAnimationManager', () => {
       );
 
       expect(() => {
-        animationManager.getAnimationFrame(imageAnimationComponent);
+        animationSetManager.getAnimationFrame(imageAnimationComponent);
       }).toThrow(
         'No animation set found for entity type: nonexistent, animation: idle',
       );
@@ -172,7 +172,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 2;
       const frameDuration = 0.5;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -184,7 +184,9 @@ describe('SpriteAnimationManager', () => {
         animationType,
         { animationIndex: 1 },
       );
-      const frame = animationManager.getAnimationFrame(imageAnimationComponent);
+      const frame = animationSetManager.getAnimationFrame(
+        imageAnimationComponent,
+      );
       expect(frame).not.toBeNull();
       expect(frame?.durationSeconds).toBe(frameDuration);
     });
@@ -196,7 +198,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 3;
       const frameDuration = 0.5;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -204,7 +206,7 @@ describe('SpriteAnimationManager', () => {
         frameDuration,
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -239,7 +241,7 @@ describe('SpriteAnimationManager', () => {
       const startPositionPercentage = new Vector2(0.25, 0.25);
       const endPositionPercentage = new Vector2(0.75, 0.75);
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -248,7 +250,7 @@ describe('SpriteAnimationManager', () => {
         { startPositionPercentage, endPositionPercentage },
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -281,7 +283,7 @@ describe('SpriteAnimationManager', () => {
       const frameDuration = 1;
       const nextAnimationSetName = 'idle';
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -290,7 +292,7 @@ describe('SpriteAnimationManager', () => {
         { nextAnimationSetName },
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );
@@ -305,7 +307,7 @@ describe('SpriteAnimationManager', () => {
       const spritesPerRow = 1;
       const frameDuration = 1;
 
-      animationManager.createAnimationSet(
+      animationSetManager.createAnimationSet(
         entityType,
         animationType,
         spritesPerColumn,
@@ -313,7 +315,7 @@ describe('SpriteAnimationManager', () => {
         frameDuration,
       );
 
-      const animationSet = animationManager.getAnimationSet(
+      const animationSet = animationSetManager.getAnimationSet(
         entityType,
         animationType,
       );

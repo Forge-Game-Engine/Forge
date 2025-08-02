@@ -21,15 +21,15 @@ import {
   SHIP_ANIMATIONS,
 } from './animationEnums';
 import {
+  AnimationSetManager,
   ImageAnimationComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
-  SpriteAnimationManager,
 } from '../../src/animations';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
-  animationManager: SpriteAnimationManager,
+  animationSetManager: AnimationSetManager,
   world: World,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
@@ -39,15 +39,15 @@ export function setupAnimationsDemo(
 ) {
   setupInputs(inputsManager);
   //left column
-  createShipAnimationSets(animationManager);
+  createShipAnimationSets(animationSetManager);
   buildShipEntities(world, shipSprite);
 
   //middle column
-  createAdventurerAnimationSets(animationManager);
+  createAdventurerAnimationSets(animationSetManager);
   buildAdventurerEntities(world, adventurerSprite);
 
   //right column
-  createAdventurerControllableAnimationSets(animationManager);
+  createAdventurerControllableAnimationSets(animationSetManager);
   buildAdventurerControllableEntities(
     world,
     adventurerSprite,
@@ -57,13 +57,13 @@ export function setupAnimationsDemo(
 }
 
 export function setupAnimationsStressTest(
-  spriteAnimationManager: SpriteAnimationManager,
+  animationSetManager: AnimationSetManager,
   world: World,
   shipSprite: Sprite,
   repeats: number,
 ) {
   //left column
-  createShipAnimationSets(spriteAnimationManager);
+  createShipAnimationSets(animationSetManager);
   buildShipEntitiesMultiple(world, shipSprite, repeats);
 }
 
@@ -114,8 +114,8 @@ function setupInputs(inputsManager: InputManager) {
   );
 }
 
-function createShipAnimationSets(animationManager: SpriteAnimationManager) {
-  animationManager.createAnimationSet(
+function createShipAnimationSets(animationSetManager: AnimationSetManager) {
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.ship,
     SHIP_ANIMATIONS.spinRandom,
     6,
@@ -126,7 +126,7 @@ function createShipAnimationSets(animationManager: SpriteAnimationManager) {
       0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     ],
   );
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.ship,
     SHIP_ANIMATIONS.spin,
     6,
@@ -136,9 +136,9 @@ function createShipAnimationSets(animationManager: SpriteAnimationManager) {
 }
 
 function createAdventurerAnimationSets(
-  animationManager: SpriteAnimationManager,
+  animationSetManager: AnimationSetManager,
 ) {
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.idle,
     1,
@@ -149,7 +149,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.idleHalf,
     1,
@@ -161,7 +161,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.run,
     1,
@@ -174,7 +174,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack1,
     1,
@@ -186,7 +186,7 @@ function createAdventurerAnimationSets(
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2, // next animation after this one
     },
   );
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack2,
     1,
@@ -198,7 +198,7 @@ function createAdventurerAnimationSets(
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack1, // cycle back to the first animation
     },
   );
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack3,
     1,
@@ -211,7 +211,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.jump,
     1,
@@ -224,7 +224,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.damage,
     1,
@@ -237,7 +237,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.die,
     1,
@@ -252,7 +252,7 @@ function createAdventurerAnimationSets(
 }
 
 function createAdventurerControllableAnimationSets(
-  animationManager: SpriteAnimationManager,
+  animationSetManager: AnimationSetManager,
 ) {
   const attackParticles =
     (rotationAdd: number, heightChange: number) => (entity: Entity) => {
@@ -317,7 +317,7 @@ function createAdventurerControllableAnimationSets(
       positionComponent.y += yChange;
     };
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.idle,
     1,
@@ -328,7 +328,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.run,
     1,
@@ -345,7 +345,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack1,
     1,
@@ -364,7 +364,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack2,
     1,
@@ -383,7 +383,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack3,
     1,
@@ -402,7 +402,7 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
-  animationManager.createAnimationSet(
+  animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.jump,
     1,

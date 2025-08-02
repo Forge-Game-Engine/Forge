@@ -2,27 +2,27 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { ImageAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import { SpriteAnimationManager } from './animation-manager-system';
+import { AnimationSetManager } from './animation-set-manager';
 
 /**
  * System that manages and updates image-based animations for entities, such as from sprite sheets.
  */
 export class ImageAnimationSystem extends System {
   private readonly _time: Time;
-  private readonly _spriteAnimationManager: SpriteAnimationManager;
+  private readonly _spriteAnimationManager: AnimationSetManager;
 
   /**
    * Creates an instance of ImageAnimationSystem.
    * @param time - The Time instance.
-   * @param animationManager - The SpriteAnimationManager instance.
+   * @param animationSetManager - The SpriteAnimationManager instance.
    */
-  constructor(time: Time, animationManager: SpriteAnimationManager) {
+  constructor(time: Time, animationSetManager: AnimationSetManager) {
     super('imageAnimation', [
       ImageAnimationComponent.symbol,
       SpriteComponent.symbol,
     ]);
     this._time = time;
-    this._spriteAnimationManager = animationManager;
+    this._spriteAnimationManager = animationSetManager;
   }
 
   /**

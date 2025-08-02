@@ -101,7 +101,7 @@ const defaultCreateAnimationSetParams: OptionalCreateAnimationSetParams = {
 /**
  * Manages sprite animations for all entities, allowing for the creation and retrieval of animation sets.
  */
-export class SpriteAnimationManager {
+export class AnimationSetManager {
   /**
    * Maps an entity type to a map of animation sets.
    * The key is the entityType, and the value is a map where the key is the

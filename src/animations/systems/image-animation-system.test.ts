@@ -7,23 +7,23 @@ import { Sprite, SpriteComponent } from '../../rendering';
 import {
   AnimationFrame,
   AnimationSet,
-  SpriteAnimationManager,
-} from './animation-manager-system';
+  AnimationSetManager,
+} from './animation-set-manager';
 import { Vector2 } from '../../math';
 
 describe('test running ImageAnimationSystem', () => {
   let time: Time;
-  let animationManager: SpriteAnimationManager;
+  let animationSetManager: AnimationSetManager;
   let imageAnimationSystem: ImageAnimationSystem;
   let entity: Entity;
 
   beforeEach(() => {
     time = new Time();
-    animationManager = {
+    animationSetManager = {
       getAnimationSet: vi.fn(),
-    } as unknown as SpriteAnimationManager;
+    } as unknown as AnimationSetManager;
 
-    imageAnimationSystem = new ImageAnimationSystem(time, animationManager);
+    imageAnimationSystem = new ImageAnimationSystem(time, animationSetManager);
 
     const game = new Game();
 
@@ -41,7 +41,7 @@ describe('test running ImageAnimationSystem', () => {
   });
 
   it('should throw an error if no animation set is found', () => {
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(null);
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(null);
 
     expect(() => imageAnimationSystem.run(entity)).toThrow(
       'No animation set found for entity type: testEntity, animation: idle',
@@ -61,7 +61,7 @@ describe('test running ImageAnimationSystem', () => {
       nextAnimationSetName: 'run',
       animationCallbacks: new Map(),
     };
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -94,7 +94,7 @@ describe('test running ImageAnimationSystem', () => {
       animationCallbacks: new Map(),
     };
 
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -127,7 +127,7 @@ describe('test running ImageAnimationSystem', () => {
       nextAnimationSetName: 'run',
       animationCallbacks: new Map(),
     };
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -162,7 +162,7 @@ describe('test running ImageAnimationSystem', () => {
       nextAnimationSetName: 'run',
       animationCallbacks: new Map(),
     };
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -195,7 +195,7 @@ describe('test running ImageAnimationSystem', () => {
       animationCallbacks: new Map(),
     };
 
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -231,7 +231,7 @@ describe('test running ImageAnimationSystem', () => {
       animationCallbacks: new Map([[0, callback]]),
     };
 
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 
@@ -260,8 +260,8 @@ describe('test running ImageAnimationSystem', () => {
     const spritesPerRow = 1;
     const frameDuration = 0.5;
 
-    const animationManager = new SpriteAnimationManager();
-    animationManager.createAnimationSet(
+    const animationSetManager = new AnimationSetManager();
+    animationSetManager.createAnimationSet(
       entityType,
       animationType,
       spritesPerColumn,
@@ -284,7 +284,7 @@ describe('test running ImageAnimationSystem', () => {
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem = new ImageAnimationSystem(time, animationManager);
+    imageAnimationSystem = new ImageAnimationSystem(time, animationSetManager);
     imageAnimationSystem.run(entity);
 
     expect(callback1).toHaveBeenCalledWith(entity);
@@ -308,7 +308,7 @@ describe('test running ImageAnimationSystem', () => {
       animationCallbacks: new Map([[0, callback]]),
     };
 
-    vi.spyOn(animationManager, 'getAnimationSet').mockReturnValue(
+    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
       mockAnimationSet,
     );
 

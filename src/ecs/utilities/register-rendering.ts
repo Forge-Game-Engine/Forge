@@ -1,4 +1,4 @@
-import { SpriteAnimationManager } from '../../animations';
+import { AnimationSetManager } from '../../animations';
 import {
   addForgeRenderLayers,
   DEFAULT_LAYER_NAMES,
@@ -10,7 +10,7 @@ import { World } from '../world';
 export const registerRendering = (
   game: Game,
   world: World,
-  animationManager: SpriteAnimationManager,
+  animationSetManager: AnimationSetManager,
   renderLayerNames: string[] = DEFAULT_LAYER_NAMES,
 ) => {
   const layerService = new LayerService(game);
@@ -19,7 +19,7 @@ export const registerRendering = (
     game.container,
     layerService,
     world,
-    animationManager,
+    animationSetManager,
   );
 
   game.onWindowResize.registerListener(() => {

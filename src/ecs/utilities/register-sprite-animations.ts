@@ -1,4 +1,4 @@
-import { SpriteAnimationManager } from '../../animations';
+import { AnimationSetManager } from '../../animations';
 
 /**
  * Registers a new SpriteAnimationManager instance.
@@ -7,5 +7,5 @@ import { SpriteAnimationManager } from '../../animations';
  * @returns A new instance of SpriteAnimationManager.
  */
 export const registerSpriteAnimationManager = () => {
-  return new SpriteAnimationManager();
+  return new AnimationSetManager();
 };
