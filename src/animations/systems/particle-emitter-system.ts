@@ -57,7 +57,7 @@ export class ParticleEmitterSystem extends System {
       particleEmitter.emitCount = 0;
       particleEmitter.currentlyEmitting = true;
       particleEmitter.amountToEmit = Math.round(
-        this._getValueInRange(particleEmitter.numParticles),
+        this._getValueInRange(particleEmitter.numParticlesRange),
       );
     }
   }
@@ -75,16 +75,20 @@ export class ParticleEmitterSystem extends System {
     const amountToEmit = this._getAmountToEmit(particleEmitter);
 
     for (let i = 0; i < amountToEmit; i++) {
-      const speed = this._getValueInRange(particleEmitter.speed);
+      const speed = this._getValueInRange(particleEmitter.speedRange);
 
-      const originalScale = this._getValueInRange(particleEmitter.scale);
+      const originalScale = this._getValueInRange(particleEmitter.scaleRange);
 
-      const lifetimeSeconds = this._getValueInRange(particleEmitter.lifetime);
+      const lifetimeSeconds = this._getValueInRange(
+        particleEmitter.lifetimeSecondsRange,
+      );
 
-      const rotation = this._getValueInRangeRadians(particleEmitter.rotation);
+      const rotation = this._getValueInRangeRadians(
+        particleEmitter.rotationRange,
+      );
 
       const rotationSpeed = this._getValueInRange(
-        particleEmitter.rotationSpeed,
+        particleEmitter.rotationSpeedRange,
       );
 
       this._world.buildAndAddEntity('particle', [

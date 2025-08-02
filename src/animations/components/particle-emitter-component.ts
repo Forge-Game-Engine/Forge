@@ -9,12 +9,12 @@ export interface MinMax {
 }
 
 export interface ParticleEmitterOptions {
-  numParticles: MinMax;
-  speed: MinMax;
-  scale: MinMax;
-  rotation: MinMax;
-  rotationSpeed: MinMax;
-  lifetime: MinMax;
+  numParticlesRange: MinMax;
+  speedRange: MinMax;
+  scaleRange: MinMax;
+  rotationRange: MinMax;
+  rotationSpeedRange: MinMax;
+  lifetimeSecondsRange: MinMax;
   lifetimeScaleReduction: number;
   height: number;
   width: number;
@@ -24,12 +24,12 @@ export interface ParticleEmitterOptions {
 }
 
 const defaultOptions: ParticleEmitterOptions = {
-  numParticles: { min: 5, max: 10 },
-  speed: { min: 10, max: 20 },
-  scale: { min: 1, max: 1 },
-  rotation: { min: 0, max: 360 },
-  rotationSpeed: { min: 0, max: 0 },
-  lifetime: { min: 1, max: 3 },
+  numParticlesRange: { min: 5, max: 10 },
+  speedRange: { min: 10, max: 20 },
+  scaleRange: { min: 1, max: 1 },
+  rotationRange: { min: 0, max: 360 },
+  rotationSpeedRange: { min: 0, max: 0 },
+  lifetimeSecondsRange: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   height: 10,
   width: 10,
@@ -58,12 +58,12 @@ export class ParticleEmitter {
   public renderLayer: ForgeRenderLayer;
   public positionX: positionFunction;
   public positionY: positionFunction;
-  public numParticles: MinMax;
-  public speed: MinMax;
-  public scale: MinMax;
-  public rotation: MinMax; // In radians
-  public rotationSpeed: MinMax;
-  public lifetime: MinMax;
+  public numParticlesRange: MinMax;
+  public speedRange: MinMax;
+  public scaleRange: MinMax;
+  public rotationRange: MinMax; // In radians
+  public rotationSpeedRange: MinMax;
+  public lifetimeSecondsRange: MinMax;
   public lifetimeScaleReduction: number; // The particle scale at the end of its lifetime will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;
@@ -80,12 +80,12 @@ export class ParticleEmitter {
     options: Partial<ParticleEmitterOptions> = {},
   ) {
     const {
-      numParticles,
-      speed,
-      scale,
-      rotation,
-      rotationSpeed,
-      lifetime,
+      numParticlesRange,
+      speedRange,
+      scaleRange,
+      rotationRange,
+      rotationSpeedRange,
+      lifetimeSecondsRange,
       lifetimeScaleReduction,
       height,
       width,
@@ -98,12 +98,12 @@ export class ParticleEmitter {
     };
     this.sprite = sprite;
     this.renderLayer = renderLayer;
-    this.numParticles = numParticles;
-    this.speed = speed;
-    this.scale = scale;
-    this.rotation = rotation;
-    this.rotationSpeed = rotationSpeed;
-    this.lifetime = lifetime;
+    this.numParticlesRange = numParticlesRange;
+    this.speedRange = speedRange;
+    this.scaleRange = scaleRange;
+    this.rotationRange = rotationRange;
+    this.rotationSpeedRange = rotationSpeedRange;
+    this.lifetimeSecondsRange = lifetimeSecondsRange;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;
@@ -119,12 +119,12 @@ export class ParticleEmitter {
 
   public setOptions(options: Partial<ParticleEmitterOptions>): void {
     const {
-      numParticles,
-      speed,
-      scale,
-      rotation,
-      rotationSpeed,
-      lifetime,
+      numParticlesRange,
+      speedRange,
+      scaleRange,
+      rotationRange,
+      rotationSpeedRange,
+      lifetimeSecondsRange,
       lifetimeScaleReduction,
       height,
       width,
@@ -136,12 +136,12 @@ export class ParticleEmitter {
       ...options,
     };
 
-    this.numParticles = numParticles;
-    this.speed = speed;
-    this.scale = scale;
-    this.rotation = rotation;
-    this.rotationSpeed = rotationSpeed;
-    this.lifetime = lifetime;
+    this.numParticlesRange = numParticlesRange;
+    this.speedRange = speedRange;
+    this.scaleRange = scaleRange;
+    this.rotationRange = rotationRange;
+    this.rotationSpeedRange = rotationSpeedRange;
+    this.lifetimeSecondsRange = lifetimeSecondsRange;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.height = height;
     this.width = width;

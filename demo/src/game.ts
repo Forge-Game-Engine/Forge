@@ -61,20 +61,20 @@ const starSprite = await createImageNameSprite(
 );
 
 const attackParticleEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
-  speed: {
+  speedRange: {
     min: 250,
     max: 300,
   },
-  scale: {
+  scaleRange: {
     min: 0.6,
     max: 1,
   },
-  rotationSpeed: {
+  rotationSpeedRange: {
     min: -0.5,
     max: 0.5,
   },
-  numParticles: { min: 60, max: 80 },
-  lifetime: {
+  numParticlesRange: { min: 60, max: 80 },
+  lifetimeSecondsRange: {
     min: 0.2,
     max: 0.3,
   },
@@ -86,20 +86,20 @@ const jumpParticleEmitter = new ParticleEmitter(
   blueCircleSprite,
   renderLayers[0],
   {
-    speed: {
+    speedRange: {
       min: 150,
       max: 200,
     },
-    scale: {
+    scaleRange: {
       min: 0.1,
       max: 0.1,
     },
-    rotation: {
+    rotationRange: {
       min: 135,
       max: 225,
     },
-    numParticles: { min: 20, max: 30 },
-    lifetime: {
+    numParticlesRange: { min: 20, max: 30 },
+    lifetimeSecondsRange: {
       min: 0.2,
       max: 0.4,
     },

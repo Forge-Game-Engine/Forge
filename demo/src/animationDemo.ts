@@ -269,7 +269,7 @@ function createAdventurerControllableAnimationSets(
         .emitters.get('attack');
 
       emitter?.setOptions({
-        rotation: {
+        rotationRange: {
           min: flipComponent.flipX ? -rotationAdd - 120 : rotationAdd + 60,
           max: flipComponent.flipX ? -rotationAdd - 60 : rotationAdd + 120,
         },
