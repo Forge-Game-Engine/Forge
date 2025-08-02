@@ -54,7 +54,7 @@ export class ParticleEmitter {
   public emitDurationSeconds: number; // How long the emitter will emit particles
   public currentEmitDuration: number;
   public emitCount: number;
-  public amountToEmit: number;
+  public totalAmountToEmit: number;
   public startEmitting: boolean;
   public currentlyEmitting: boolean;
 
@@ -96,7 +96,7 @@ export class ParticleEmitter {
     this.positionY = positionY;
     this.currentEmitDuration = 0;
     this.emitCount = 0;
-    this.amountToEmit = 0;
+    this.totalAmountToEmit = 0;
     this.startEmitting = false;
     this.currentlyEmitting = false;
   }

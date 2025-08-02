@@ -59,7 +59,7 @@ export class ParticleEmitterSystem extends System {
       particleEmitter.startEmitting = false;
       particleEmitter.emitCount = 0;
       particleEmitter.currentlyEmitting = true;
-      particleEmitter.amountToEmit = Math.round(
+      particleEmitter.totalAmountToEmit = Math.round(
         this._getRandomValueInRange(particleEmitter.numParticlesRange),
       );
     }
@@ -68,16 +68,17 @@ export class ParticleEmitterSystem extends System {
   private _emitNewParticles(particleEmitter: ParticleEmitter) {
     if (
       !particleEmitter.currentlyEmitting ||
-      particleEmitter.emitCount >= particleEmitter.amountToEmit
+      particleEmitter.emitCount >= particleEmitter.totalAmountToEmit
     ) {
       particleEmitter.currentlyEmitting = false;
 
       return;
     }
 
-    const amountToEmit = this._getAmountToEmit(particleEmitter);
+    const currentAmountToEmit =
+      this._getAmountToEmitBasedOnDuration(particleEmitter);
 
-    for (let i = 0; i < amountToEmit; i++) {
+    for (let i = 0; i < currentAmountToEmit; i++) {
       const speed = this._getRandomValueInRange(particleEmitter.speedRange);
 
       const originalScale = this._getRandomValueInRange(
@@ -112,18 +113,18 @@ export class ParticleEmitterSystem extends System {
         new ScaleComponent(originalScale, originalScale),
         new RotationComponent(rotation),
       ]);
-
-      particleEmitter.emitCount++;
     }
+
+    particleEmitter.emitCount += currentAmountToEmit;
   }
 
-  private _getAmountToEmit(particleEmitter: ParticleEmitter) {
+  private _getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
     const emitProgress = Math.min(
       particleEmitter.currentEmitDuration / particleEmitter.emitDurationSeconds,
       1,
     );
     const targetEmitCount = Math.ceil(
-      emitProgress * particleEmitter.amountToEmit,
+      emitProgress * particleEmitter.totalAmountToEmit,
     );
 
     return targetEmitCount - particleEmitter.emitCount;
