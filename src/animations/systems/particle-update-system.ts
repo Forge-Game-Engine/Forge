@@ -48,6 +48,9 @@ export class ParticleUpdateSystem extends System {
       ScaleComponent.symbol,
     );
 
+    rotationComponent.radians +=
+      particleComponent.rotationSpeed * this._time.deltaTimeInSeconds;
+
     positionComponent.x +=
       particleComponent.speed *
       this._time.deltaTimeInSeconds *
@@ -62,8 +65,5 @@ export class ParticleUpdateSystem extends System {
       particleComponent.lifetimeScaleReduction * ageRatio;
     scaleComponent.x = newScale;
     scaleComponent.y = newScale;
-
-    rotationComponent.radians +=
-      particleComponent.rotationSpeed * this._time.deltaTimeInSeconds;
   }
 }

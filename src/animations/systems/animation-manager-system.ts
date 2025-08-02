@@ -85,6 +85,11 @@ export interface OptionalCreateAnimationSetParams {
   }>;
 }
 
+type AnimationCallbackData = {
+  percentage: number;
+  callback: AnimationCallback;
+};
+
 const defaultCreateAnimationSetParams: OptionalCreateAnimationSetParams = {
   startPositionPercentage: Vector2.zero,
   endPositionPercentage: Vector2.one,
@@ -271,7 +276,7 @@ export class SpriteAnimationManager {
    * @returns A Map where the key is the frame index and the value is the callback function.
    */
   private _setupAnimationCallbacks(
-    animationCallbacks: { percentage: number; callback: AnimationCallback }[],
+    animationCallbacks: AnimationCallbackData[],
     numFrames: number,
   ) {
     const animationCallbacksMap = new Map<number, AnimationCallback>();

@@ -13,6 +13,7 @@ import {
   ParticleEmitterComponent,
 } from '../components';
 import { SpriteComponent } from '../../rendering';
+import { Random } from '../../math';
 
 /**
  * System that manages and updates particles.
@@ -20,6 +21,7 @@ import { SpriteComponent } from '../../rendering';
 export class ParticleEmitterSystem extends System {
   private readonly _time: Time;
   private readonly _world: World;
+  private readonly _random: Random;
 
   /**
    * Creates an instance of ParticleManagerSystem.
@@ -29,6 +31,7 @@ export class ParticleEmitterSystem extends System {
     super('particleEmitter', [ParticleEmitterComponent.symbol]);
     this._time = world.time;
     this._world = world;
+    this._random = new Random();
   }
 
   /**
@@ -57,7 +60,7 @@ export class ParticleEmitterSystem extends System {
       particleEmitter.emitCount = 0;
       particleEmitter.currentlyEmitting = true;
       particleEmitter.amountToEmit = Math.round(
-        this._getValueInRange(particleEmitter.numParticlesRange),
+        this._getRandomValueInRange(particleEmitter.numParticlesRange),
       );
     }
   }
@@ -75,19 +78,21 @@ export class ParticleEmitterSystem extends System {
     const amountToEmit = this._getAmountToEmit(particleEmitter);
 
     for (let i = 0; i < amountToEmit; i++) {
-      const speed = this._getValueInRange(particleEmitter.speedRange);
+      const speed = this._getRandomValueInRange(particleEmitter.speedRange);
 
-      const originalScale = this._getValueInRange(particleEmitter.scaleRange);
+      const originalScale = this._getRandomValueInRange(
+        particleEmitter.scaleRange,
+      );
 
-      const lifetimeSeconds = this._getValueInRange(
+      const lifetimeSeconds = this._getRandomValueInRange(
         particleEmitter.lifetimeSecondsRange,
       );
 
-      const rotation = this._getValueInRangeRadians(
+      const rotation = this._getRandomValueInRangeRadians(
         particleEmitter.rotationRange,
       );
 
-      const rotationSpeed = this._getValueInRange(
+      const rotationSpeed = this._getRandomValueInRange(
         particleEmitter.rotationSpeedRange,
       );
 
@@ -124,15 +129,15 @@ export class ParticleEmitterSystem extends System {
     return targetEmitCount - particleEmitter.emitCount;
   }
 
-  private _getValueInRange({ min, max }: MinMax): number {
+  private _getRandomValueInRange({ min, max }: MinMax): number {
     if (min > max) {
       [min, max] = [max, min];
     }
 
-    return Math.random() * (max - min) + min;
+    return this._random.randomFloat(min, max);
   }
 
-  private _getValueInRangeRadians({ min, max }: MinMax): number {
+  private _getRandomValueInRangeRadians({ min, max }: MinMax): number {
     if (min > max) {
       [min, max] = [max, min];
     }
@@ -140,9 +145,9 @@ export class ParticleEmitterSystem extends System {
     const range = (max - min) % 360;
 
     if (range === 0 && max !== min) {
-      return Math.random() * 360;
+      return this._random.randomFloat(0, 360);
     }
 
-    return Math.random() * range + min;
+    return this._random.randomFloat(min, min + range);
   }
 }

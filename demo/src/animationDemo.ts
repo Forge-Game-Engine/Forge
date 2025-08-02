@@ -543,15 +543,11 @@ function buildAdventurerControllableEntities(
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),
-    new ParticleEmitterComponent([
-      {
-        name: 'attack',
-        emitter: attackParticleEmitter,
-      },
-      {
-        name: 'jump',
-        emitter: jumpParticleEmitter,
-      },
-    ]),
+    new ParticleEmitterComponent(
+      new Map<string, ParticleEmitter>([
+        ['attack', attackParticleEmitter],
+        ['jump', jumpParticleEmitter],
+      ]),
+    ),
   ]);
 }
