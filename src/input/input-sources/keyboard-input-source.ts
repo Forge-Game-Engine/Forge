@@ -1,7 +1,10 @@
 import { buttonMoments, KeyCode } from '../constants';
 import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
-import { KeyboardTriggerInteraction, KeyboardHoldInteraction } from '../interactions';
+import {
+  KeyboardHoldInteraction,
+  KeyboardTriggerInteraction,
+} from '../interactions';
 
 export class KeyboardInputSource implements ActionableInputSource {
   private readonly _inputManager: InputManager;
@@ -9,7 +12,7 @@ export class KeyboardInputSource implements ActionableInputSource {
   private readonly _keyPresses = new Set<KeyCode>();
   private readonly _keyPressesDown = new Set<KeyCode>();
   private readonly _keyPressesUps = new Set<KeyCode>();
-  private readonly _keyPressesHold = new Set<KeyCode>(); 
+  private readonly _keyPressesHold = new Set<KeyCode>();
 
   constructor(inputManager: InputManager) {
     this._inputManager = inputManager;
@@ -36,21 +39,20 @@ export class KeyboardInputSource implements ActionableInputSource {
   }
 
   private readonly _onKeyHoldHandler = (event: KeyboardEvent) => {
-   const keyCode = event.code as KeyCode;
+    const keyCode = event.code as KeyCode;
 
     this._keyPresses.add(keyCode);
     this._keyPressesHold.add(keyCode);
 
     const interaction = new KeyboardHoldInteraction(
       {
-        moment: buttonMoments.hold,
         keyCode,
       },
       this,
     );
 
     this._inputManager.dispatchHoldAction(interaction);
-  }
+  };
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
     if (event.repeat) {
@@ -92,6 +94,6 @@ export class KeyboardInputSource implements ActionableInputSource {
     );
 
     this._inputManager.dispatchTriggerAction(interaction);
-    this._inputManager.activeGroup?.dispatchHoldAction(interaction)
+    this._inputManager.activeGroup?.dispatchHoldAction(interaction);
   };
 }

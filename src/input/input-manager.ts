@@ -21,7 +21,7 @@ export class InputManager implements Resettable {
 
   private _activeGroup: InputGroup | null;
   private _triggerActionPendingBind: TriggerAction | null = null;
-  private _holdActionPendingBind: HoldAction | null = null;
+  private readonly _holdActionPendingBind: HoldAction | null = null;
   private _axis1dActionPendingBind: Axis1dAction | null = null;
   private _axis2dActionPendingBind: Axis2dAction | null = null;
 

@@ -10,7 +10,7 @@ describe('KeyboardInputSource', () => {
   beforeEach(() => {
     inputManager = {
       dispatchTriggerAction: vi.fn(),
-      dispatchHoldAction: vi.fn(),    
+      dispatchHoldAction: vi.fn(),
     } as unknown as InputManager;
     keyboardInputSource = new KeyboardInputSource(inputManager);
   });
@@ -34,14 +34,29 @@ describe('KeyboardInputSource', () => {
     );
   });
 
-    it('should bind and trigger action on hold keydown', () => {
+  it('should bind and trigger action on hold keydown', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
     expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
       expect.objectContaining({
         args: {
-          moment: buttonMoments.hold,
+          keyCode: keyCodes.space,
+        },
+        source: keyboardInputSource,
+      }),
+    );
+  });
+
+  it('should dispatch hold action only when the key is held', () => {
+    const holdEvent = new window.KeyboardEvent('keydown', {
+      code: keyCodes.space,
+    });
+    window.dispatchEvent(holdEvent);
+
+    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: {
           keyCode: keyCodes.space,
         },
         source: keyboardInputSource,

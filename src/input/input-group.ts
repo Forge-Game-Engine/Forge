@@ -1,5 +1,10 @@
 import { Vector2 } from '../math';
-import { Axis1dAction, Axis2dAction, TriggerAction, HoldAction } from './actions';
+import {
+  Axis1dAction,
+  Axis2dAction,
+  HoldAction,
+  TriggerAction,
+} from './actions';
 import { InputInteraction } from './interactions';
 
 /**
@@ -49,7 +54,7 @@ export class InputGroup {
       for (const interactionForAction of interactionsForAction) {
         if (interactionForAction.matchesArgs(interaction.args)) {
           action.hold();
-        }else{
+        } else {
           action.release();
         }
       }
