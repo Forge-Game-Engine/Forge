@@ -119,6 +119,10 @@ export class ParticleEmitterSystem extends System {
   }
 
   private _getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
+    if (particleEmitter.emitDurationSeconds <= 0) {
+      return particleEmitter.totalAmountToEmit - particleEmitter.emitCount;
+    }
+
     const emitProgress = Math.min(
       particleEmitter.currentEmitDuration / particleEmitter.emitDurationSeconds,
       1,
