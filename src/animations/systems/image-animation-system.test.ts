@@ -11,6 +11,17 @@ import {
 } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
+import { nextAnimation, setCurrentAnimation } from '../image-animation-helper';
+
+// Mock the image animation helper module
+vi.mock('../image-animation-helper', async () => {
+  const actual = await vi.importActual('../image-animation-helper');
+
+  return {
+    ...actual,
+    nextAnimation: vi.fn(),
+  };
+});
 
 describe('test running ImageAnimationSystem', () => {
   let time: Time;
@@ -139,7 +150,6 @@ describe('test running ImageAnimationSystem', () => {
     imageAnimationComponent.currentFrameTimeSeconds = 0;
     imageAnimationComponent.animationIndex = 0;
     imageAnimationComponent.nextAnimationSetName = 'jump';
-    vi.spyOn(imageAnimationComponent, 'nextAnimation');
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
@@ -147,7 +157,7 @@ describe('test running ImageAnimationSystem', () => {
 
     expect(imageAnimationComponent.animationIndex).toBe(0);
     expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(imageAnimationComponent.nextAnimation).toHaveBeenCalled();
+    expect(nextAnimation).toHaveBeenCalledWith(imageAnimationComponent);
   });
 
   it('should not update animation index if frame duration has not been exceeded', () => {
@@ -243,7 +253,7 @@ describe('test running ImageAnimationSystem', () => {
         ImageAnimationComponent.symbol,
       );
     imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.setCurrentAnimation('idle');
+    setCurrentAnimation(imageAnimationComponent, 'idle');
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
@@ -283,7 +293,7 @@ describe('test running ImageAnimationSystem', () => {
         ImageAnimationComponent.symbol,
       );
     imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.setCurrentAnimation(animationType);
+    setCurrentAnimation(imageAnimationComponent, animationType);
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 

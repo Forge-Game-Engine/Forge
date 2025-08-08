@@ -58,26 +58,4 @@ export class ImageAnimationComponent implements Component {
     this.currentFrameTimeSeconds = 0;
     this.nextAnimationSetName = null;
   }
-
-  public onAnimationEnd(): void {
-    this.animationIndex = 0;
-    this.isChangingAnimation = true;
-  }
-
-  public setCurrentAnimation(animation: string): void {
-    this.nextAnimationSetName = null;
-    this.currentAnimationSetName = animation;
-    this.onAnimationEnd();
-  }
-
-  public nextAnimation(): void {
-    if (!this.nextAnimationSetName) {
-      throw new Error(
-        `No next animation set name specified for entity type "${this.entityType}" with current animation "${this.currentAnimationSetName}". ` +
-          'Set the nextAnimationSetName property on this component instance, or use setCurrentAnimation() to set the next animation.',
-      );
-    }
-
-    this.setCurrentAnimation(this.nextAnimationSetName);
-  }
 }

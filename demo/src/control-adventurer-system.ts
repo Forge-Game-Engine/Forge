@@ -4,6 +4,7 @@ import {
   ImageAnimationComponent,
   InputManager,
   PositionComponent,
+  setCurrentAnimation,
   System,
   TriggerAction,
 } from '../../src';
@@ -43,7 +44,7 @@ export class ControlAdventurerSystem extends System {
         ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
-      imageAnimationComponent.setCurrentAnimation(ADVENTURER_ANIMATIONS.jump);
+      setCurrentAnimation(imageAnimationComponent, ADVENTURER_ANIMATIONS.jump);
     } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
       imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
