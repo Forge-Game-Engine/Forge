@@ -1,7 +1,7 @@
 import {
   Entity,
   FlipComponent,
-  ImageAnimationComponent,
+  SpriteAnimationComponent,
   InputManager,
   PositionComponent,
   setCurrentAnimation,
@@ -16,7 +16,7 @@ export class ControlAdventurerSystem extends System {
   constructor(inputsManager: InputManager) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
-      ImageAnimationComponent.symbol,
+      SpriteAnimationComponent.symbol,
       FlipComponent.symbol,
       PositionComponent.symbol,
     ]);
@@ -24,9 +24,9 @@ export class ControlAdventurerSystem extends System {
   }
 
   public run(entity: Entity): void {
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
 
     const flipComponent = entity.getComponentRequired<FlipComponent>(
@@ -40,20 +40,20 @@ export class ControlAdventurerSystem extends System {
 
     if (
       jumpAction?.isTriggered &&
-      imageAnimationComponent.currentAnimationSetName !==
+      spriteAnimationComponent.currentAnimationSetName !==
         ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
-      setCurrentAnimation(imageAnimationComponent, ADVENTURER_ANIMATIONS.jump);
+      setCurrentAnimation(spriteAnimationComponent, ADVENTURER_ANIMATIONS.jump);
     } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
-      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
+      spriteAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = true;
     } else if (runRAction?.isTriggered) {
-      imageAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
+      spriteAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = false;
     } else if (attackAction?.isTriggered) {
-      imageAnimationComponent.nextAnimationSetName =
+      spriteAnimationComponent.nextAnimationSetName =
         ADVENTURER_ANIMATIONS.attack1;
     }
   }

@@ -5,16 +5,15 @@ import {
   ScaleComponent,
   Time,
 } from '../../common';
+import { AgeComponent } from '../../animations/components';
+import { SpriteComponent } from '../../rendering';
+import { Random } from '../../math';
 import {
-  AgeComponent,
   MinMax,
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
-} from '../components';
-import { SpriteComponent } from '../../rendering';
-import { Random } from '../../math';
-
+} from '../';
 /**
  * System that emits particles based on ParticleEmitters
  */

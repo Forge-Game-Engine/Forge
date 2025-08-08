@@ -22,10 +22,10 @@ import {
 } from './animationEnums';
 import {
   AnimationSetManager,
-  ImageAnimationComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
-} from '../../src/animations';
+  SpriteAnimationComponent,
+} from '../../src';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
@@ -431,13 +431,13 @@ function buildShipEntities(world: World, shipSprite: Sprite) {
     new PositionComponent(-500, -150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin),
+    new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin),
   ]);
   world.buildAndAddEntity('ship-animation-spin-random', [
     new PositionComponent(-500, 150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spinRandom),
+    new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spinRandom),
   ]);
 }
 
@@ -454,7 +454,7 @@ function buildShipEntitiesMultiple(
       ),
       new SpriteComponent(shipSprite),
       new ScaleComponent(0.5, 0.5),
-      new ImageAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, {
+      new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, {
         animationSpeedFactor: 1 + Math.random() * 2,
       }),
       new FlipComponent(Math.random() < 0.5),
@@ -467,7 +467,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(-200, -200),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idle,
     ),
@@ -477,7 +477,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(-200, 0),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.idleHalf,
     ),
@@ -487,7 +487,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(-200, 200),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.run,
     ),
@@ -497,7 +497,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(0, -200),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack1,
       {
@@ -510,7 +510,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(0, 0),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.attack3,
     ),
@@ -520,7 +520,7 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new PositionComponent(0, 200),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurer,
       ADVENTURER_ANIMATIONS.die,
     ),
@@ -537,7 +537,7 @@ function buildAdventurerControllableEntities(
     new PositionComponent(400, 0),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
-    new ImageAnimationComponent(
+    new SpriteAnimationComponent(
       ENTITY_TYPES.adventurerControllable,
       ADVENTURER_ANIMATIONS.idle,
     ),

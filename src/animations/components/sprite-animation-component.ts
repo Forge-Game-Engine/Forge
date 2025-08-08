@@ -2,7 +2,7 @@ import type { Component } from '../../ecs';
 /**
  * Options for configuring the image animation component.
  */
-export interface ImageAnimationOptions {
+export interface SpriteAnimationOptions {
   /**
    * The index of the current animation frame.
    * @default 0
@@ -15,7 +15,7 @@ export interface ImageAnimationOptions {
   animationSpeedFactor: number;
 }
 
-const defaultOptions: ImageAnimationOptions = {
+const defaultOptions: SpriteAnimationOptions = {
   animationIndex: 0,
   animationSpeedFactor: 1.0,
 };
@@ -23,7 +23,7 @@ const defaultOptions: ImageAnimationOptions = {
 /**
  * Component that manages image-based animations for entities, such as from sprite sheets.
  */
-export class ImageAnimationComponent implements Component {
+export class SpriteAnimationComponent implements Component {
   public name: symbol;
   public entityType: string;
   public animationIndex: number;
@@ -33,10 +33,10 @@ export class ImageAnimationComponent implements Component {
   public currentAnimationSetName: string;
   public isChangingAnimation: boolean = false;
 
-  public static readonly symbol = Symbol('ImageAnimation');
+  public static readonly symbol = Symbol('SpriteAnimation');
 
   /**
-   * Creates an instance of ImageAnimationComponent.
+   * Creates an instance of SpriteAnimationComponent.
    * @param entityType - The type of the entity this animation component belongs to.
    * @param currentAnimationSetName - The name of the current animation.
    * @param options - Optional parameters to configure the animation component.
@@ -44,13 +44,13 @@ export class ImageAnimationComponent implements Component {
   constructor(
     entityType: string,
     currentAnimationSetName: string,
-    options: Partial<ImageAnimationOptions> = {},
+    options: Partial<SpriteAnimationOptions> = {},
   ) {
     const { animationIndex, animationSpeedFactor } = {
       ...defaultOptions,
       ...options,
     };
-    this.name = ImageAnimationComponent.symbol;
+    this.name = SpriteAnimationComponent.symbol;
     this.entityType = entityType;
     this.currentAnimationSetName = currentAnimationSetName;
     this.animationIndex = animationIndex;

@@ -1,29 +1,25 @@
 import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
-import { ImageAnimationComponent } from '../components';
+import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
 import { AnimationSetManager } from './animation-set-manager';
-import {
-  nextAnimation,
-  onAnimationEnd,
-  setCurrentAnimation,
-} from '../image-animation-helper';
+import { nextAnimation, onAnimationEnd, setCurrentAnimation } from '..';
 
 /**
  * System that manages and updates image-based animations for entities, such as from sprite sheets.
  */
-export class ImageAnimationSystem extends System {
+export class SpriteAnimationSystem extends System {
   private readonly _time: Time;
   private readonly _spriteAnimationManager: AnimationSetManager;
 
   /**
-   * Creates an instance of ImageAnimationSystem.
+   * Creates an instance of SpriteAnimationSystem.
    * @param time - The Time instance.
    * @param animationSetManager - The SpriteAnimationManager instance.
    */
   constructor(time: Time, animationSetManager: AnimationSetManager) {
-    super('imageAnimation', [
-      ImageAnimationComponent.symbol,
+    super('spriteAnimation', [
+      SpriteAnimationComponent.symbol,
       SpriteComponent.symbol,
     ]);
     this._time = time;
@@ -35,57 +31,60 @@ export class ImageAnimationSystem extends System {
    * @param entity - The entity to update animations for.
    */
   public run(entity: Entity): void {
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
     const animationSet = this._spriteAnimationManager.getAnimationSet(
-      imageAnimationComponent.entityType,
-      imageAnimationComponent.currentAnimationSetName,
+      spriteAnimationComponent.entityType,
+      spriteAnimationComponent.currentAnimationSetName,
     );
 
     if (!animationSet) {
       throw new Error(
-        `No animation set found for entity type: ${imageAnimationComponent.entityType}, animation: ${imageAnimationComponent.currentAnimationSetName}`,
+        `No animation set found for entity type: ${spriteAnimationComponent.entityType}, animation: ${spriteAnimationComponent.currentAnimationSetName}`,
       );
     }
 
     // allows animations to be triggered on the first frame of an animation
-    if (imageAnimationComponent.isChangingAnimation) {
-      imageAnimationComponent.isChangingAnimation = false;
+    if (spriteAnimationComponent.isChangingAnimation) {
+      spriteAnimationComponent.isChangingAnimation = false;
       animationSet.animationCallbacks
-        .get(imageAnimationComponent.animationIndex)
+        .get(spriteAnimationComponent.animationIndex)
         ?.raise(entity);
     }
 
     const currentFrame =
-      animationSet.animationFrames[imageAnimationComponent.animationIndex];
+      animationSet.animationFrames[spriteAnimationComponent.animationIndex];
 
     if (
       this._time.timeInSeconds -
-        imageAnimationComponent.currentFrameTimeSeconds >=
+        spriteAnimationComponent.currentFrameTimeSeconds >=
       currentFrame.durationSeconds /
-        imageAnimationComponent.animationSpeedFactor
+        spriteAnimationComponent.animationSpeedFactor
     ) {
-      imageAnimationComponent.currentFrameTimeSeconds =
+      spriteAnimationComponent.currentFrameTimeSeconds =
         this._time.timeInSeconds;
 
-      if (imageAnimationComponent.animationIndex < animationSet.numFrames - 1) {
-        imageAnimationComponent.animationIndex++;
+      if (
+        spriteAnimationComponent.animationIndex <
+        animationSet.numFrames - 1
+      ) {
+        spriteAnimationComponent.animationIndex++;
         animationSet.animationCallbacks
-          .get(imageAnimationComponent.animationIndex)
+          .get(spriteAnimationComponent.animationIndex)
           ?.raise(entity);
 
         return;
       }
 
-      onAnimationEnd(imageAnimationComponent);
+      onAnimationEnd(spriteAnimationComponent);
 
-      if (imageAnimationComponent.nextAnimationSetName) {
-        nextAnimation(imageAnimationComponent);
+      if (spriteAnimationComponent.nextAnimationSetName) {
+        nextAnimation(spriteAnimationComponent);
       } else if (animationSet.nextAnimationSetName) {
         setCurrentAnimation(
-          imageAnimationComponent,
+          spriteAnimationComponent,
           animationSet.nextAnimationSetName,
         );
       }

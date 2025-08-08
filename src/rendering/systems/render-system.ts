@@ -1,4 +1,7 @@
-import { AnimationSetManager, ImageAnimationComponent } from '../../animations';
+import {
+  AnimationSetManager,
+  SpriteAnimationComponent,
+} from '../../animations';
 import {
   FlipComponent,
   PositionComponent,
@@ -131,13 +134,13 @@ export class RenderSystem extends System {
       const flipComponent = batchedEntity.getComponent<FlipComponent>(
         FlipComponent.symbol,
       );
-      const imageAnimationComponent =
-        batchedEntity.getComponent<ImageAnimationComponent>(
-          ImageAnimationComponent.symbol,
+      const spriteAnimationComponent =
+        batchedEntity.getComponent<SpriteAnimationComponent>(
+          SpriteAnimationComponent.symbol,
         );
 
       const currentFrame = this._animationSetManager.getAnimationFrame(
-        imageAnimationComponent,
+        spriteAnimationComponent,
       );
 
       batch.instanceData[instanceDataOffset + POSITION_X_OFFSET] = position.x;

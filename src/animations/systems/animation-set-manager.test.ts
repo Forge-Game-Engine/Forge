@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationSetManager } from './animation-set-manager';
 import { Vector2 } from '../../math';
-import { ImageAnimationComponent } from '../components';
+import { SpriteAnimationComponent } from '../components';
 
 describe('SpriteAnimationManager', () => {
   let animationSetManager: AnimationSetManager;
@@ -147,19 +147,19 @@ describe('SpriteAnimationManager', () => {
   });
 
   describe('getAnimationFrame', () => {
-    it('should return null if ImageAnimationComponent is null', () => {
+    it('should return null if SpriteAnimationComponent is null', () => {
       const frame = animationSetManager.getAnimationFrame(null);
       expect(frame).toBeNull();
     });
 
     it('should throw an error if no animation set exists for the given entity type and animation type', () => {
-      const imageAnimationComponent = new ImageAnimationComponent(
+      const spriteAnimationComponent = new SpriteAnimationComponent(
         'nonexistent',
         'idle',
       );
 
       expect(() => {
-        animationSetManager.getAnimationFrame(imageAnimationComponent);
+        animationSetManager.getAnimationFrame(spriteAnimationComponent);
       }).toThrow(
         'No animation set found for entity type: nonexistent, animation: idle',
       );
@@ -179,13 +179,13 @@ describe('SpriteAnimationManager', () => {
         spritesPerRow,
         frameDuration,
       );
-      const imageAnimationComponent = new ImageAnimationComponent(
+      const spriteAnimationComponent = new SpriteAnimationComponent(
         entityType,
         animationType,
         { animationIndex: 1 },
       );
       const frame = animationSetManager.getAnimationFrame(
-        imageAnimationComponent,
+        spriteAnimationComponent,
       );
       expect(frame).not.toBeNull();
       expect(frame?.durationSeconds).toBe(frameDuration);

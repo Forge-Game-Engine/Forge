@@ -1,7 +1,7 @@
 import { Entity } from '../../ecs';
 import { ParameterizedForgeEvent } from '../../events';
 import { Vector2 } from '../../math';
-import { ImageAnimationComponent } from '../components';
+import { SpriteAnimationComponent } from '../components';
 
 export type AnimationCallback = (entity: Entity) => void;
 /**
@@ -203,19 +203,19 @@ export class AnimationSetManager {
   }
 
   /**
-   * Retrieves the current animation frame for a given ImageAnimationComponent.
-   * @param imageAnimationComponent - The ImageAnimationComponent to get the current frame for.
+   * Retrieves the current animation frame for a given SpriteAnimationComponent.
+   * @param spriteAnimationComponent - The SpriteAnimationComponent to get the current frame for.
    * @returns The current AnimationFrame or null if the component is not provided.
    */
   public getAnimationFrame(
-    imageAnimationComponent: ImageAnimationComponent | null,
+    spriteAnimationComponent: SpriteAnimationComponent | null,
   ): AnimationFrame | null {
-    if (!imageAnimationComponent) {
+    if (!spriteAnimationComponent) {
       return null;
     }
 
     const { entityType, currentAnimationSetName, animationIndex } =
-      imageAnimationComponent;
+      spriteAnimationComponent;
 
     const animationSet = this.getAnimationSet(
       entityType,

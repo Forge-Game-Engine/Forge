@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ImageAnimationSystem } from './image-animation-system';
+import { SpriteAnimationSystem } from './sprite-animation-system';
 import { createWorld, Entity, Game } from '../../ecs';
 import { Time } from '../../common';
-import { ImageAnimationComponent } from '../components';
+import { SpriteAnimationComponent } from '../components';
 import { Sprite, SpriteComponent } from '../../rendering';
 import {
   AnimationFrame,
@@ -11,7 +11,7 @@ import {
 } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
-import { nextAnimation, setCurrentAnimation } from '../image-animation-helper';
+import { nextAnimation, setCurrentAnimation } from '..';
 
 // Mock the image animation helper module
 vi.mock('../image-animation-helper', async () => {
@@ -23,10 +23,10 @@ vi.mock('../image-animation-helper', async () => {
   };
 });
 
-describe('test running ImageAnimationSystem', () => {
+describe('test running SpriteAnimationSystem', () => {
   let time: Time;
   let animationSetManager: AnimationSetManager;
-  let imageAnimationSystem: ImageAnimationSystem;
+  let spriteAnimationSystem: SpriteAnimationSystem;
   let entity: Entity;
 
   beforeEach(() => {
@@ -35,7 +35,10 @@ describe('test running ImageAnimationSystem', () => {
       getAnimationSet: vi.fn(),
     } as unknown as AnimationSetManager;
 
-    imageAnimationSystem = new ImageAnimationSystem(time, animationSetManager);
+    spriteAnimationSystem = new SpriteAnimationSystem(
+      time,
+      animationSetManager,
+    );
 
     const game = new Game();
 
@@ -45,7 +48,7 @@ describe('test running ImageAnimationSystem', () => {
       'name',
       world,
       [
-        new ImageAnimationComponent('testEntity', 'idle'),
+        new SpriteAnimationComponent('testEntity', 'idle'),
         new SpriteComponent({} as Sprite),
       ],
       true,
@@ -55,7 +58,7 @@ describe('test running ImageAnimationSystem', () => {
   it('should throw an error if no animation set is found', () => {
     vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(null);
 
-    expect(() => imageAnimationSystem.run(entity)).toThrow(
+    expect(() => spriteAnimationSystem.run(entity)).toThrow(
       'No animation set found for entity type: testEntity, animation: idle',
     );
   });
@@ -77,19 +80,19 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
-    expect(imageAnimationComponent.animationIndex).toBe(1);
-    expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.animationIndex).toBe(1);
+    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
   });
 
   it('should reset the animation index and switch to the next animation set if available', () => {
@@ -110,20 +113,20 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
-    expect(imageAnimationComponent.animationIndex).toBe(0);
-    expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(imageAnimationComponent.currentAnimationSetName).toBe('run');
+    expect(spriteAnimationComponent.animationIndex).toBe(0);
+    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.currentAnimationSetName).toBe('run');
   });
 
   it('should call nextAnimation if nextAnimationSetName is set on the component', () => {
@@ -143,21 +146,21 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
-    imageAnimationComponent.nextAnimationSetName = 'jump';
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.nextAnimationSetName = 'jump';
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
-    expect(imageAnimationComponent.animationIndex).toBe(0);
-    expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(nextAnimation).toHaveBeenCalledWith(imageAnimationComponent);
+    expect(spriteAnimationComponent.animationIndex).toBe(0);
+    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
+    expect(nextAnimation).toHaveBeenCalledWith(spriteAnimationComponent);
   });
 
   it('should not update animation index if frame duration has not been exceeded', () => {
@@ -177,19 +180,19 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
-    expect(imageAnimationComponent.animationIndex).toBe(0);
-    expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(0);
+    expect(spriteAnimationComponent.animationIndex).toBe(0);
+    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(0);
   });
 
   it('should reset animation index and not switch animation set if nextAnimationSetName is not set', () => {
@@ -210,20 +213,20 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
-    expect(imageAnimationComponent.animationIndex).toBe(0);
-    expect(imageAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(imageAnimationComponent.currentAnimationSetName).toBe('idle');
+    expect(spriteAnimationComponent.animationIndex).toBe(0);
+    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.currentAnimationSetName).toBe('idle');
   });
 
   it('should call the correct callback for the current animation frame', () => {
@@ -248,16 +251,16 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    setCurrentAnimation(imageAnimationComponent, 'idle');
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    setCurrentAnimation(spriteAnimationComponent, 'idle');
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
     expect(callback).toHaveBeenCalledWith(entity);
     expect(callback).toHaveBeenCalledTimes(1);
@@ -288,17 +291,20 @@ describe('test running ImageAnimationSystem', () => {
       },
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    setCurrentAnimation(imageAnimationComponent, animationType);
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    setCurrentAnimation(spriteAnimationComponent, animationType);
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
-    imageAnimationSystem = new ImageAnimationSystem(time, animationSetManager);
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem = new SpriteAnimationSystem(
+      time,
+      animationSetManager,
+    );
+    spriteAnimationSystem.run(entity);
 
     expect(callback1).toHaveBeenCalledWith(entity);
     expect(callback2).toHaveBeenCalledWith(entity);
@@ -327,15 +333,15 @@ describe('test running ImageAnimationSystem', () => {
       mockAnimationSet,
     );
 
-    const imageAnimationComponent =
-      entity.getComponentRequired<ImageAnimationComponent>(
-        ImageAnimationComponent.symbol,
+    const spriteAnimationComponent =
+      entity.getComponentRequired<SpriteAnimationComponent>(
+        SpriteAnimationComponent.symbol,
       );
-    imageAnimationComponent.currentFrameTimeSeconds = 0;
-    imageAnimationComponent.animationIndex = 0;
+    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
-    imageAnimationSystem.run(entity);
+    spriteAnimationSystem.run(entity);
 
     expect(callback).not.toHaveBeenCalled();
   });

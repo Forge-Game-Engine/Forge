@@ -3,7 +3,6 @@ import {
   createShaderStore,
   createWorld,
   Game,
-  ImageAnimationSystem,
   ImageCache,
   ParticleEmitter,
   ParticleEmitterSystem,
@@ -12,6 +11,7 @@ import {
   registerInputs,
   registerRendering,
   registerSpriteAnimationManager,
+  SpriteAnimationSystem,
 } from '../../src';
 import { AgeSystem } from '../../src/animations/systems/age-system';
 import * as animationDemo from './animationDemo';
@@ -120,7 +120,7 @@ animationDemo.setupAnimationsDemo(
 // animationDemo.setupAnimationsStressTest(spriteAnimationManager, world, shipSprite, 10000);
 
 world.addSystems(
-  new ImageAnimationSystem(world.time, spriteAnimationManager),
+  new SpriteAnimationSystem(world.time, spriteAnimationManager),
   new ControlAdventurerSystem(inputsManager),
   new ParticleEmitterSystem(world),
   new ParticleUpdateSystem(world.time),

@@ -5,8 +5,8 @@ import {
   ScaleComponent,
   Time,
 } from '../../common';
-import { AgeComponent, ParticleComponent } from '../components';
-
+import { AgeComponent } from '../../animations/components';
+import { ParticleComponent } from '../';
 /**
  * System that manages and updates particles.
  */
