@@ -10,6 +10,7 @@ import {
   AnimationSetManager,
 } from './animation-set-manager';
 import { Vector2 } from '../../math';
+import { ParameterizedForgeEvent } from '../../events';
 
 describe('test running ImageAnimationSystem', () => {
   let time: Time;
@@ -223,12 +224,14 @@ describe('test running ImageAnimationSystem', () => {
     };
 
     const callback = vi.fn();
+    const event = new ParameterizedForgeEvent<Entity>('0');
+    event.registerListener(callback);
 
     const mockAnimationSet: AnimationSet = {
       animationFrames: [animationFrame, animationFrame],
       numFrames: 2,
       nextAnimationSetName: null,
-      animationCallbacks: new Map([[0, callback]]),
+      animationCallbacks: new Map([[0, event]]),
     };
 
     vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
@@ -300,12 +303,14 @@ describe('test running ImageAnimationSystem', () => {
     };
 
     const callback = vi.fn();
+    const event = new ParameterizedForgeEvent<Entity>('0');
+    event.registerListener(callback);
 
     const mockAnimationSet: AnimationSet = {
       animationFrames: [animationFrame],
       numFrames: 1,
       nextAnimationSetName: null,
-      animationCallbacks: new Map([[0, callback]]),
+      animationCallbacks: new Map([[0, event]]),
     };
 
     vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(

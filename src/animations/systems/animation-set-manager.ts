@@ -1,4 +1,5 @@
 import { Entity } from '../../ecs';
+import { ParameterizedForgeEvent } from '../../events';
 import { Vector2 } from '../../math';
 import { ImageAnimationComponent } from '../components';
 
@@ -24,7 +25,7 @@ export interface AnimationSet {
    * Map of callbacks to run at specific frames of the animation.
    * The key is the frame index, and the value is the callback function.
    */
-  animationCallbacks: Map<number, AnimationCallback>;
+  animationCallbacks: Map<number, ParameterizedForgeEvent<Entity>>;
 }
 
 /**
@@ -279,7 +280,10 @@ export class AnimationSetManager {
     animationCallbacks: AnimationCallbackData[],
     numFrames: number,
   ) {
-    const animationCallbacksMap = new Map<number, AnimationCallback>();
+    const animationCallbacksMap = new Map<
+      number,
+      ParameterizedForgeEvent<Entity>
+    >();
 
     for (const { percentage, callback } of animationCallbacks) {
       if (percentage < 0 || percentage > 1) {
@@ -290,22 +294,13 @@ export class AnimationSetManager {
 
       const frameIndex = Math.round(percentage * (numFrames - 1));
 
-      let newCallback = callback;
+      const event =
+        animationCallbacksMap.get(frameIndex) ??
+        new ParameterizedForgeEvent<Entity>(frameIndex.toString());
 
-      if (animationCallbacksMap.has(frameIndex)) {
-        const existingCallback = animationCallbacksMap.get(frameIndex);
+      event.registerListener(callback);
 
-        console.debug(
-          `Multiple callbacks for frame index ${frameIndex} given. Combining callbacks into one.`,
-        );
-
-        newCallback = (entity: Entity) => {
-          existingCallback?.(entity);
-          callback(entity);
-        };
-      }
-
-      animationCallbacksMap.set(frameIndex, newCallback);
+      animationCallbacksMap.set(frameIndex, event);
     }
 
     return animationCallbacksMap;

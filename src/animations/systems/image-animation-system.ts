@@ -48,9 +48,9 @@ export class ImageAnimationSystem extends System {
     // allows animations to be triggered on the first frame of an animation
     if (imageAnimationComponent.isChangingAnimation) {
       imageAnimationComponent.isChangingAnimation = false;
-      animationSet.animationCallbacks.get(
-        imageAnimationComponent.animationIndex,
-      )?.(entity);
+      animationSet.animationCallbacks
+        .get(imageAnimationComponent.animationIndex)
+        ?.raise(entity);
     }
 
     const currentFrame =
@@ -67,9 +67,9 @@ export class ImageAnimationSystem extends System {
 
       if (imageAnimationComponent.animationIndex < animationSet.numFrames - 1) {
         imageAnimationComponent.animationIndex++;
-        animationSet.animationCallbacks.get(
-          imageAnimationComponent.animationIndex,
-        )?.(entity);
+        animationSet.animationCallbacks
+          .get(imageAnimationComponent.animationIndex)
+          ?.raise(entity);
 
         return;
       }
