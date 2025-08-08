@@ -16,7 +16,7 @@ import { SpriteComponent } from '../../rendering';
 import { Random } from '../../math';
 
 /**
- * System that manages and updates particles.
+ * System that emits particles based on ParticleEmitters
  */
 export class ParticleEmitterSystem extends System {
   private readonly _time: Time;
@@ -24,7 +24,7 @@ export class ParticleEmitterSystem extends System {
   private readonly _random: Random;
 
   /**
-   * Creates an instance of ParticleManagerSystem.
+   * Creates an instance of ParticleEmitterSystem.
    * @param world - The World instance.
    */
   constructor(world: World) {
@@ -47,13 +47,13 @@ export class ParticleEmitterSystem extends System {
     for (const particleEmitter of particleEmitterComponent.emitters.values()) {
       particleEmitter.currentEmitDuration += this._time.deltaTimeInSeconds;
 
-      this._checkStartEmitting(particleEmitter);
+      this._startEmittingParticles(particleEmitter);
 
       this._emitNewParticles(particleEmitter);
     }
   }
 
-  private _checkStartEmitting(particleEmitter: ParticleEmitter) {
+  private _startEmittingParticles(particleEmitter: ParticleEmitter) {
     if (particleEmitter.startEmitting) {
       particleEmitter.currentEmitDuration = 0;
       particleEmitter.startEmitting = false;
@@ -89,7 +89,7 @@ export class ParticleEmitterSystem extends System {
         particleEmitter.lifetimeSecondsRange,
       );
 
-      const rotation = this._getRandomValueInRangeRadians(
+      const rotation = this._getRandomValueInRangeDegrees(
         particleEmitter.rotationRange,
       );
 
@@ -142,7 +142,7 @@ export class ParticleEmitterSystem extends System {
     return this._random.randomFloat(min, max);
   }
 
-  private _getRandomValueInRangeRadians({ min, max }: MinMax): number {
+  private _getRandomValueInRangeDegrees({ min, max }: MinMax): number {
     if (min > max) {
       [min, max] = [max, min];
     }

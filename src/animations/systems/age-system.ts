@@ -3,14 +3,14 @@ import { Time } from '../../common';
 import { AgeComponent } from '../components/age-component';
 
 /**
- * System that manages and updates particles.
+ * System that manages and updates entity aging and lifetime.
  */
 export class AgeSystem extends System {
   private readonly _time: Time;
   private readonly _world: World;
 
   /**
-   * Creates an instance of ParticleManagerSystem.
+   * Creates an instance of AgeSystem.
    * @param world - The World instance.
    */
   constructor(world: World) {
@@ -20,8 +20,8 @@ export class AgeSystem extends System {
   }
 
   /**
-   * Runs the animation system for a given entity.
-   * @param entity - The entity to update animations for.
+   * Runs the age system for a given entity, removing it if its age exceeds its lifetime.
+   * @param entity - The entity to update the age for.
    */
   public run(entity: Entity): void {
     const ageComponent = entity.getComponentRequired<AgeComponent>(

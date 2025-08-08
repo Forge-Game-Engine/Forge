@@ -13,7 +13,7 @@ import { AgeComponent, ParticleComponent } from '../components';
 export class ParticleUpdateSystem extends System {
   private readonly _time: Time;
   /**
-   * Creates an instance of ParticleManagerSystem.
+   * Creates an instance of ParticleUpdateSystem.
    * @param time - The Time instance.
    */
   constructor(time: Time) {
