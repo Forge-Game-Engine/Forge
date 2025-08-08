@@ -2,18 +2,18 @@ import { ForgeRenderLayer, Sprite } from '../../rendering';
 
 export type ParticleSpawnPositionFunction = () => number;
 
-export interface MinMax {
+export interface MinMaxRange {
   min: number;
   max: number;
 }
 
 export interface ParticleEmitterOptions {
-  numParticlesRange: MinMax;
-  speedRange: MinMax;
-  scaleRange: MinMax;
-  rotationRange: MinMax;
-  rotationSpeedRange: MinMax;
-  lifetimeSecondsRange: MinMax;
+  numParticlesRange: MinMaxRange;
+  speedRange: MinMaxRange;
+  scaleRange: MinMaxRange;
+  rotationRange: MinMaxRange;
+  rotationSpeedRange: MinMaxRange;
+  lifetimeSecondsRange: MinMaxRange;
   lifetimeScaleReduction: number;
   height: number;
   width: number;
@@ -42,12 +42,12 @@ export class ParticleEmitter {
   public renderLayer: ForgeRenderLayer;
   public positionX: ParticleSpawnPositionFunction;
   public positionY: ParticleSpawnPositionFunction;
-  public numParticlesRange: MinMax;
-  public speedRange: MinMax;
-  public scaleRange: MinMax;
-  public rotationRange: MinMax; // In radians
-  public rotationSpeedRange: MinMax;
-  public lifetimeSecondsRange: MinMax;
+  public numParticlesRange: MinMaxRange;
+  public speedRange: MinMaxRange;
+  public scaleRange: MinMaxRange;
+  public rotationRange: MinMaxRange; // In radians
+  public rotationSpeedRange: MinMaxRange;
+  public lifetimeSecondsRange: MinMaxRange;
   public lifetimeScaleReduction: number; // The particle scale at the end of its lifetime will be scale * lifetimeScaleReduction
   public height: number;
   public width: number;

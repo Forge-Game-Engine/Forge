@@ -11,7 +11,7 @@ import {
 import { SpriteComponent } from '../../rendering';
 import { Random } from '../../math';
 import {
-  MinMax,
+  MinMaxRange,
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
@@ -135,7 +135,7 @@ export class ParticleEmitterSystem extends System {
     return targetEmitCount - particleEmitter.emitCount;
   }
 
-  private _getRandomValueInRange({ min, max }: MinMax): number {
+  private _getRandomValueInRange({ min, max }: MinMaxRange): number {
     if (min > max) {
       [min, max] = [max, min];
     }
@@ -143,7 +143,7 @@ export class ParticleEmitterSystem extends System {
     return this._random.randomFloat(min, max);
   }
 
-  private _getRandomValueInRangeDegrees({ min, max }: MinMax): number {
+  private _getRandomValueInRangeDegrees({ min, max }: MinMaxRange): number {
     if (min > max) {
       [min, max] = [max, min];
     }
