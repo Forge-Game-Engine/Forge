@@ -1,4 +1,4 @@
-import { SpriteAnimationComponent } from './';
+import { SpriteAnimationComponent } from '.';
 
 export function onAnimationEnd(
   spriteAnimationComponent: SpriteAnimationComponent,

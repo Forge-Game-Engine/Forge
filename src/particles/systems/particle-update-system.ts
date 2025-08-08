@@ -1,11 +1,12 @@
 import { Entity, System } from '../../ecs';
 import {
+  AgeComponent,
   PositionComponent,
   RotationComponent,
   ScaleComponent,
+  SpeedComponent,
   Time,
 } from '../../common';
-import { AgeComponent } from '../../animations/components';
 import { ParticleComponent } from '../';
 /**
  * System that manages and updates particles.
@@ -23,6 +24,7 @@ export class ParticleUpdateSystem extends System {
       PositionComponent.symbol,
       RotationComponent.symbol,
       ScaleComponent.symbol,
+      SpeedComponent.symbol,
     ]);
     this._time = time;
   }
@@ -47,18 +49,22 @@ export class ParticleUpdateSystem extends System {
     const scaleComponent = entity.getComponentRequired<ScaleComponent>(
       ScaleComponent.symbol,
     );
+    const speedComponent = entity.getComponentRequired<SpeedComponent>(
+      SpeedComponent.symbol,
+    );
 
     rotationComponent.radians +=
       particleComponent.rotationSpeed * this._time.deltaTimeInSeconds;
 
     positionComponent.x +=
-      particleComponent.speed *
+      speedComponent.speed *
       this._time.deltaTimeInSeconds *
       Math.sin(rotationComponent.radians);
     positionComponent.y -=
-      particleComponent.speed *
+      speedComponent.speed *
       this._time.deltaTimeInSeconds *
       Math.cos(rotationComponent.radians);
+
     const ageRatio = ageComponent.ageSeconds / ageComponent.lifetimeSeconds;
     const newScale =
       particleComponent.originalScale * (1 - ageRatio) +

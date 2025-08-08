@@ -1,4 +1,5 @@
 import {
+  AgeSystem,
   createImageNameSprite,
   createShaderStore,
   createWorld,
@@ -13,7 +14,6 @@ import {
   registerSpriteAnimationManager,
   SpriteAnimationSystem,
 } from '../../src';
-import { AgeSystem } from '../../src/animations/systems/age-system';
 import * as animationDemo from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
 

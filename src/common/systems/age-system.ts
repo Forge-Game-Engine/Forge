@@ -1,6 +1,6 @@
 import { Entity, System, World } from '../../ecs';
 import { Time } from '../../common';
-import { AgeComponent } from '../components/age-component';
+import { AgeComponent } from '../../common/components/age-component';
 
 /**
  * System that manages and updates entity aging and lifetime.

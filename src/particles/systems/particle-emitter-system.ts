@@ -1,11 +1,13 @@
 import { Entity, System, World } from '../../ecs';
 import {
+  AgeComponent,
   PositionComponent,
   RotationComponent,
   ScaleComponent,
+  SpeedComponent,
   Time,
 } from '../../common';
-import { AgeComponent } from '../../animations/components';
+
 import { SpriteComponent } from '../../rendering';
 import { Random } from '../../math';
 import {
@@ -99,7 +101,6 @@ export class ParticleEmitterSystem extends System {
       this._world.buildAndAddEntity('particle', [
         new SpriteComponent(particleEmitter.sprite),
         new ParticleComponent({
-          speed,
           originalScale,
           lifetimeScaleReduction: particleEmitter.lifetimeScaleReduction,
           rotationSpeed,
@@ -111,6 +112,7 @@ export class ParticleEmitterSystem extends System {
         ),
         new ScaleComponent(originalScale, originalScale),
         new RotationComponent(rotation),
+        new SpeedComponent(speed),
       ]);
     }
 

@@ -1,4 +1,4 @@
 export * from './components';
 export * from './easing-functions';
 export * from './systems';
-export * from './image-animation-helper';
+export * from './sprite-animation-helper';
