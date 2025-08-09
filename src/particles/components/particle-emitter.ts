@@ -1,10 +1,9 @@
 import { ForgeRenderLayer, Sprite } from '../../rendering';
 
 /**
- * Type for a function that returns a number representing the X/Y spawn position of the particle
+ * Type for a function that returns a number representing the X and Y spawn position of the particle
  */
-export type ParticleSpawnPositionFunction = () => number;
-//TODO: make the x and y spawn position a single function that returns a vector 2
+export type ParticleSpawnPositionFunction = () => { x: number; y: number };
 
 /**
  * Interface for range values with a min and max value.
@@ -67,15 +66,10 @@ export interface ParticleEmitterOptions {
    */
   emitDurationSeconds: number;
   /**
-   * The function to determine the X position of the emitted particles.
-   * @default () => 0
+   * The function to determine the X and Y spawn positions of the emitted particles.
+   * @default () => {x: 0, y: 0 },
    */
-  positionX: ParticleSpawnPositionFunction;
-  /**
-   * The function to determine the Y position of the emitted particles.
-   * @default () => 0
-   */
-  positionY: ParticleSpawnPositionFunction;
+  spawnPosition: ParticleSpawnPositionFunction;
 }
 
 const defaultOptions: ParticleEmitterOptions = {
@@ -87,8 +81,7 @@ const defaultOptions: ParticleEmitterOptions = {
   lifetimeSecondsRange: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   emitDurationSeconds: 0,
-  positionX: () => 0,
-  positionY: () => 0,
+  spawnPosition: () => ({ x: 0, y: 0 }),
 };
 
 /**
@@ -99,8 +92,7 @@ const defaultOptions: ParticleEmitterOptions = {
 export class ParticleEmitter {
   public sprite: Sprite;
   public renderLayer: ForgeRenderLayer;
-  public positionX: ParticleSpawnPositionFunction;
-  public positionY: ParticleSpawnPositionFunction;
+  public spawnPosition: ParticleSpawnPositionFunction;
   public numParticlesRange: MinMaxRange;
   public speedRange: MinMaxRange;
   public scaleRange: MinMaxRange;
@@ -135,8 +127,7 @@ export class ParticleEmitter {
       lifetimeSecondsRange,
       lifetimeScaleReduction,
       emitDurationSeconds,
-      positionX,
-      positionY,
+      spawnPosition,
     } = {
       ...defaultOptions,
       ...options,
@@ -151,8 +142,7 @@ export class ParticleEmitter {
     this.lifetimeSecondsRange = lifetimeSecondsRange;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.emitDurationSeconds = emitDurationSeconds;
-    this.positionX = positionX;
-    this.positionY = positionY;
+    this.spawnPosition = spawnPosition;
     this.currentEmitDuration = 0;
     this.emitCount = 0;
     this.totalAmountToEmit = 0;
@@ -174,8 +164,7 @@ export class ParticleEmitter {
       lifetimeSecondsRange,
       lifetimeScaleReduction,
       emitDurationSeconds: emitDurationSeconds,
-      positionX,
-      positionY,
+      spawnPosition,
     } = {
       ...this,
       ...options,
@@ -189,8 +178,7 @@ export class ParticleEmitter {
     this.lifetimeSecondsRange = lifetimeSecondsRange;
     this.lifetimeScaleReduction = lifetimeScaleReduction;
     this.emitDurationSeconds = emitDurationSeconds;
-    this.positionX = positionX;
-    this.positionY = positionY;
+    this.spawnPosition = spawnPosition;
   }
 
   /**

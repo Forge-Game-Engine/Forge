@@ -7,6 +7,7 @@ import {
   Game,
   ImageCache,
   ParticleEmitter,
+  ParticleEmitterComponent,
   ParticleEmitterSystem,
   ParticlePositionSystem,
   registerAnimationSetManager,
@@ -107,6 +108,45 @@ const jumpParticleEmitter = new ParticleEmitter(
     emitDurationSeconds: 0,
   },
 );
+
+const smileEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
+  speedRange: {
+    min: 80,
+    max: 200,
+  },
+  rotationRange: {
+    min: 180,
+    max: 180,
+  },
+  numParticlesRange: { min: 200, max: 200 },
+  lifetimeSecondsRange: {
+    min: 1,
+    max: 8,
+  },
+  emitDurationSeconds: 2,
+  lifetimeScaleReduction: 0,
+});
+
+world.buildAndAddEntity('smile', [
+  new ParticleEmitterComponent(new Map([['smile', smileEmitter]])),
+]);
+
+smileEmitter.setOptions({
+  spawnPosition: () => {
+    const point =
+      (smileEmitter.currentEmitDuration ?? 0) /
+      smileEmitter.emitDurationSeconds;
+
+    const x = point * 1200 - 600;
+    const y = x ** 2 * 0.003 - x ** 4 * 0.1 ** 8;
+
+    return { x, y };
+  },
+});
+
+setTimeout(() => {
+  smileEmitter.emit();
+}, 1000);
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
 animationDemo.setupAnimationsDemo(

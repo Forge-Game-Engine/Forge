@@ -111,6 +111,8 @@ export class ParticleEmitterSystem extends System {
         particleEmitter.rotationSpeedRange,
       );
 
+      const spawnPosition = particleEmitter.spawnPosition();
+
       this._world.buildAndAddEntity('particle', [
         new SpriteComponent(particleEmitter.sprite),
         new ParticleComponent({
@@ -121,10 +123,7 @@ export class ParticleEmitterSystem extends System {
           originalScale,
           particleEmitter.lifetimeScaleReduction,
         ),
-        new PositionComponent(
-          particleEmitter.positionX(),
-          particleEmitter.positionY(),
-        ),
+        new PositionComponent(spawnPosition.x, spawnPosition.y),
         new ScaleComponent(originalScale, originalScale),
         new RotationComponent(rotation),
         new SpeedComponent(speed),
