@@ -13,7 +13,7 @@ import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
 import { nextAnimation, setCurrentAnimation } from '../sprite-animation-helper';
 
-// Mock the image animation helper module
+// Mock the sprite animation helper module
 vi.mock('../sprite-animation-helper', async () => {
   const actual = await vi.importActual('../sprite-animation-helper');
 

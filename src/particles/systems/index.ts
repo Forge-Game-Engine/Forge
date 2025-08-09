@@ -1,2 +1,2 @@
 export * from './particle-emitter-system';
-export * from './particle-update-system';
+export * from './particle-position-system';

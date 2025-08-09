@@ -1,6 +1,6 @@
 import type { Component } from '../../ecs';
 /**
- * Options for configuring the image animation component.
+ * Options for configuring the sprite animation component.
  */
 export interface SpriteAnimationOptions {
   /**

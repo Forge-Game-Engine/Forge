@@ -3,7 +3,7 @@ import { AnimationSetManager } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { SpriteAnimationComponent } from '../components';
 
-describe('SpriteAnimationManager', () => {
+describe('AnimationSetManager', () => {
   let animationSetManager: AnimationSetManager;
 
   beforeEach(() => {

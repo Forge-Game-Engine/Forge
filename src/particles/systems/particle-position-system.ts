@@ -1,53 +1,45 @@
 import { Entity, System } from '../../ecs';
 import {
-  AgeComponent,
   PositionComponent,
   RotationComponent,
-  ScaleComponent,
   SpeedComponent,
   Time,
 } from '../../common';
-import { ParticleComponent } from '../';
+import { ParticleComponent } from '..';
 /**
- * System that manages and updates particles.
+ * System that manages and updates particle position.
  */
-export class ParticleUpdateSystem extends System {
+export class ParticlePositionSystem extends System {
   private readonly _time: Time;
   /**
-   * Creates an instance of ParticleUpdateSystem.
+   * Creates an instance of ParticlePositionSystem.
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('particleUpdate', [
+    super('particlePosition', [
       ParticleComponent.symbol,
-      AgeComponent.symbol,
       PositionComponent.symbol,
       RotationComponent.symbol,
-      ScaleComponent.symbol,
       SpeedComponent.symbol,
     ]);
     this._time = time;
   }
 
   /**
-   * Runs the animation system for a given entity.
-   * @param entity - The entity to update animations for.
+   * Runs the particle position system for a given entity.
+   * This method updates the rotation based on the particle's rotation speed,
+   * and updates the position based on the speed and rotation.
+   * @param entity - The entity to update particle position for.
    */
   public run(entity: Entity): void {
     const particleComponent = entity.getComponentRequired<ParticleComponent>(
       ParticleComponent.symbol,
-    );
-    const ageComponent = entity.getComponentRequired<AgeComponent>(
-      AgeComponent.symbol,
     );
     const positionComponent = entity.getComponentRequired<PositionComponent>(
       PositionComponent.symbol,
     );
     const rotationComponent = entity.getComponentRequired<RotationComponent>(
       RotationComponent.symbol,
-    );
-    const scaleComponent = entity.getComponentRequired<ScaleComponent>(
-      ScaleComponent.symbol,
     );
     const speedComponent = entity.getComponentRequired<SpeedComponent>(
       SpeedComponent.symbol,
@@ -64,12 +56,5 @@ export class ParticleUpdateSystem extends System {
       speedComponent.speed *
       this._time.deltaTimeInSeconds *
       Math.cos(rotationComponent.radians);
-
-    const ageRatio = ageComponent.ageSeconds / ageComponent.lifetimeSeconds;
-    const newScale =
-      particleComponent.originalScale * (1 - ageRatio) +
-      particleComponent.lifetimeScaleReduction * ageRatio;
-    scaleComponent.x = newScale;
-    scaleComponent.y = newScale;
   }
 }

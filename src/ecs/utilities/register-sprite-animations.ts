@@ -1,11 +1,11 @@
 import { AnimationSetManager } from '../../animations';
 
 /**
- * Registers a new SpriteAnimationManager instance.
+ * Registers a new AnimationSetManager instance.
  * This instance is used to create and manage sprite animations in the game.
  *
- * @returns A new instance of SpriteAnimationManager.
+ * @returns A new instance of AnimationSetManager.
  */
-export const registerSpriteAnimationManager = () => {
+export const registerAnimationSetManager = () => {
   return new AnimationSetManager();
 };

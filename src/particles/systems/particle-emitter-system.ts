@@ -1,6 +1,7 @@
 import { Entity, System, World } from '../../ecs';
 import {
   AgeComponent,
+  AgeScaleComponent,
   PositionComponent,
   RotationComponent,
   ScaleComponent,
@@ -36,8 +37,8 @@ export class ParticleEmitterSystem extends System {
   }
 
   /**
-   * Runs the animation system for a given entity.
-   * @param entity - The entity to update animations for.
+   * Runs the particle emitter system for a given entity.
+   * @param entity - The entity to update particle emitters for.
    */
   public run(entity: Entity): void {
     const particleEmitterComponent =
@@ -54,6 +55,12 @@ export class ParticleEmitterSystem extends System {
     }
   }
 
+  /**
+   * Starts emitting particles from the emitter if `startEmitting` is set to true.
+   * This will reset the current emit duration and start the emission process,
+   * as well as choose a number of particles to emit.
+   * @param particleEmitter The particle emitter to start emitting from.
+   */
   private _startEmittingParticles(particleEmitter: ParticleEmitter) {
     if (particleEmitter.startEmitting) {
       particleEmitter.currentEmitDuration = 0;
@@ -66,6 +73,12 @@ export class ParticleEmitterSystem extends System {
     }
   }
 
+  /**
+   * Emits new particles from the emitter.
+   * Emits a portion of the total amount to emit, based on emit duration.
+   * If emit duration is zero, it will immediately emit all particles.
+   * @param particleEmitter The particle emitter to emit particles from.
+   */
   private _emitNewParticles(particleEmitter: ParticleEmitter) {
     if (
       !particleEmitter.currentlyEmitting ||
@@ -101,11 +114,13 @@ export class ParticleEmitterSystem extends System {
       this._world.buildAndAddEntity('particle', [
         new SpriteComponent(particleEmitter.sprite),
         new ParticleComponent({
-          originalScale,
-          lifetimeScaleReduction: particleEmitter.lifetimeScaleReduction,
           rotationSpeed,
         }),
         new AgeComponent(lifetimeSeconds),
+        new AgeScaleComponent(
+          originalScale,
+          particleEmitter.lifetimeScaleReduction,
+        ),
         new PositionComponent(
           particleEmitter.positionX(),
           particleEmitter.positionY(),
@@ -119,6 +134,11 @@ export class ParticleEmitterSystem extends System {
     particleEmitter.emitCount += currentAmountToEmit;
   }
 
+  /**
+   * Gets the amount of particles to emit based on the current emit duration.
+   * @param particleEmitter The particle emitter to get the amount from.
+   * @returns The number of particles to emit.
+   */
   private _getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
     if (particleEmitter.emitDurationSeconds <= 0) {
       return particleEmitter.totalAmountToEmit - particleEmitter.emitCount;
@@ -135,6 +155,12 @@ export class ParticleEmitterSystem extends System {
     return targetEmitCount - particleEmitter.emitCount;
   }
 
+  /**
+   * Gets a random value within the specified range.
+   * If min > max, swaps min and max.
+   * @param minMax The range to get the random value from.
+   * @returns A random value within the specified range.
+   */
   private _getRandomValueInRange({ min, max }: MinMaxRange): number {
     if (min > max) {
       [min, max] = [max, min];
@@ -143,6 +169,12 @@ export class ParticleEmitterSystem extends System {
     return this._random.randomFloat(min, max);
   }
 
+  /**
+   * Gets a random value within the specified range in degrees.
+   * If min > max, swaps min and max.
+   * @param minMax The range to get the random value from.
+   * @returns A random value within the specified range, from 0-360 degrees
+   */
   private _getRandomValueInRangeDegrees({ min, max }: MinMaxRange): number {
     if (min > max) {
       [min, max] = [max, min];

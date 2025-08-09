@@ -4,6 +4,7 @@ import { AgeComponent } from '../../common/components/age-component';
 
 /**
  * System that manages and updates entity aging and lifetime.
+ * Removes entities from the world once they have existed longer than their lifetime.
  */
 export class AgeSystem extends System {
   private readonly _time: Time;

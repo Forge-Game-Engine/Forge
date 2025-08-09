@@ -1,5 +1,9 @@
 import { SpriteAnimationComponent } from '.';
 
+/**
+ * Function to be called at the end of a sprite animation, to set it up for the next animation
+ * @param spriteAnimationComponent - the sprite animation component to act on
+ */
 export function onAnimationEnd(
   spriteAnimationComponent: SpriteAnimationComponent,
 ): void {
@@ -7,6 +11,11 @@ export function onAnimationEnd(
   spriteAnimationComponent.isChangingAnimation = true;
 }
 
+/**
+ * Function to immediately set the current animation of a sprite animation
+ * @param spriteAnimationComponent - the sprite animation component to act on
+ * @param animation - the name of the next animation to run
+ */
 export function setCurrentAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
   animation: string,
@@ -16,6 +25,10 @@ export function setCurrentAnimation(
   onAnimationEnd(spriteAnimationComponent);
 }
 
+/**
+ * Function to make the sprite animation component go to its next animation, set from `nextAnimationSetName`
+ * @param spriteAnimationComponent - the sprite animation component to act on
+ */
 export function nextAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
 ): void {

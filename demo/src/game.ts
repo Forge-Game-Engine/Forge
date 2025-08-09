@@ -1,4 +1,5 @@
 import {
+  AgeScaleSystem,
   AgeSystem,
   createImageNameSprite,
   createShaderStore,
@@ -7,11 +8,11 @@ import {
   ImageCache,
   ParticleEmitter,
   ParticleEmitterSystem,
-  ParticleUpdateSystem,
+  ParticlePositionSystem,
+  registerAnimationSetManager,
   registerCamera,
   registerInputs,
   registerRendering,
-  registerSpriteAnimationManager,
   SpriteAnimationSystem,
 } from '../../src';
 import * as animationDemo from './animationDemo';
@@ -25,8 +26,8 @@ const shaderStore = createShaderStore();
 const world = createWorld('world', game);
 const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {});
-const spriteAnimationManager = registerSpriteAnimationManager();
-const { renderLayers } = registerRendering(game, world, spriteAnimationManager);
+const animationSetManager = registerAnimationSetManager();
+const { renderLayers } = registerRendering(game, world, animationSetManager);
 
 const shipSprite = await createImageNameSprite(
   'ship_spritesheet.png',
@@ -109,7 +110,7 @@ const jumpParticleEmitter = new ParticleEmitter(
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
 animationDemo.setupAnimationsDemo(
-  spriteAnimationManager,
+  animationSetManager,
   world,
   shipSprite,
   adventureSprite,
@@ -117,14 +118,15 @@ animationDemo.setupAnimationsDemo(
   attackParticleEmitter,
   jumpParticleEmitter,
 );
-// animationDemo.setupAnimationsStressTest(spriteAnimationManager, world, shipSprite, 10000);
+// animationDemo.setupAnimationsStressTest(animationSetManager, world, shipSprite, 10000);
 
 world.addSystems(
-  new SpriteAnimationSystem(world.time, spriteAnimationManager),
+  new SpriteAnimationSystem(world.time, animationSetManager),
   new ControlAdventurerSystem(inputsManager),
   new ParticleEmitterSystem(world),
-  new ParticleUpdateSystem(world.time),
+  new ParticlePositionSystem(world.time),
   new AgeSystem(world),
+  new AgeScaleSystem(),
 );
 
 game.run();

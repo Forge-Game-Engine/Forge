@@ -10,12 +10,12 @@ import { nextAnimation, onAnimationEnd, setCurrentAnimation } from '..';
  */
 export class SpriteAnimationSystem extends System {
   private readonly _time: Time;
-  private readonly _spriteAnimationManager: AnimationSetManager;
+  private readonly _animationSetManager: AnimationSetManager;
 
   /**
    * Creates an instance of SpriteAnimationSystem.
    * @param time - The Time instance.
-   * @param animationSetManager - The SpriteAnimationManager instance.
+   * @param animationSetManager - The AnimationSetManager instance.
    */
   constructor(time: Time, animationSetManager: AnimationSetManager) {
     super('spriteAnimation', [
@@ -23,7 +23,7 @@ export class SpriteAnimationSystem extends System {
       SpriteComponent.symbol,
     ]);
     this._time = time;
-    this._spriteAnimationManager = animationSetManager;
+    this._animationSetManager = animationSetManager;
   }
 
   /**
@@ -35,7 +35,7 @@ export class SpriteAnimationSystem extends System {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    const animationSet = this._spriteAnimationManager.getAnimationSet(
+    const animationSet = this._animationSetManager.getAnimationSet(
       spriteAnimationComponent.entityType,
       spriteAnimationComponent.currentAnimationSetName,
     );
