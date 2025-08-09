@@ -11,11 +11,11 @@ import {
 } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
-import { nextAnimation, setCurrentAnimation } from '..';
+import { nextAnimation, setCurrentAnimation } from '../sprite-animation-helper';
 
 // Mock the image animation helper module
-vi.mock('../image-animation-helper', async () => {
-  const actual = await vi.importActual('../image-animation-helper');
+vi.mock('../sprite-animation-helper', async () => {
+  const actual = await vi.importActual('../sprite-animation-helper');
 
   return {
     ...actual,

@@ -23,7 +23,7 @@ export interface AnimationSet {
   nextAnimationSetName: string | null;
   /**
    * Map of callbacks to run at specific frames of the animation.
-   * The key is the frame index, and the value is the callback function.
+   * The key is the frame index, and the value is the forge event which calls the callback.
    */
   animationCallbacks: Map<number, ParameterizedForgeEvent<Entity>>;
 }
