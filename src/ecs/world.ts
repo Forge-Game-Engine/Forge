@@ -69,8 +69,8 @@ export class World implements Updatable, Stoppable {
   /**
    * Updates all systems in the world.
    */
-  public update(deltaTime: number) {
-    this.time.update(deltaTime);
+  public update(rawTimeInMilliseconds: number) {
+    this.time.update(rawTimeInMilliseconds);
 
     for (const { system } of this._systems) {
       const entities = this._systemEntities.get(system.name);
