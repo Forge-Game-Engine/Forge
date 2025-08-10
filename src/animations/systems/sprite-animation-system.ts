@@ -3,7 +3,11 @@ import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
 import { AnimationSetManager } from './animation-set-manager';
-import { nextAnimation, onAnimationEnd, setCurrentAnimation } from '..';
+import {
+  goToNextAnimation,
+  finishAnimation,
+  immediatelySetCurrentAnimation,
+} from '..';
 
 /**
  * System that manages and updates image-based animations for entities, such as from sprite sheets.
@@ -78,12 +82,12 @@ export class SpriteAnimationSystem extends System {
         return;
       }
 
-      onAnimationEnd(spriteAnimationComponent);
+      finishAnimation(spriteAnimationComponent);
 
       if (spriteAnimationComponent.nextAnimationSetName) {
-        nextAnimation(spriteAnimationComponent);
+        goToNextAnimation(spriteAnimationComponent);
       } else if (animationSet.nextAnimationSetName) {
-        setCurrentAnimation(
+        immediatelySetCurrentAnimation(
           spriteAnimationComponent,
           animationSet.nextAnimationSetName,
         );

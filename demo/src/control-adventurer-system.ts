@@ -1,10 +1,10 @@
 import {
   Entity,
   FlipComponent,
-  SpriteAnimationComponent,
+  immediatelySetCurrentAnimation,
   InputManager,
   PositionComponent,
-  setCurrentAnimation,
+  SpriteAnimationComponent,
   System,
   TriggerAction,
 } from '../../src';
@@ -44,7 +44,10 @@ export class ControlAdventurerSystem extends System {
         ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
-      setCurrentAnimation(spriteAnimationComponent, ADVENTURER_ANIMATIONS.jump);
+      immediatelySetCurrentAnimation(
+        spriteAnimationComponent,
+        ADVENTURER_ANIMATIONS.jump,
+      );
     } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
       spriteAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;

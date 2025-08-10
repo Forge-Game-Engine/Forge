@@ -19,8 +19,8 @@ export class AgeScaleSystem extends System {
   }
 
   /**
-   * Runs the age system for a given entity, removing it if its age exceeds its lifetime.
-   * @param entity - The entity to update the age for.
+   * Updates the entity's scale based on its age, interpolating between the original scale and the lifetime scale reduction.
+   * @param entity - The entity whose scale will be updated according to its age.
    */
   public run(entity: Entity): void {
     const ageComponent = entity.getComponentRequired<AgeComponent>(

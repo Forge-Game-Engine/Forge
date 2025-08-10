@@ -1,7 +1,7 @@
 import type { Component } from '../../ecs';
 
 /**
- * Component to track an entity with age's scale change over its lifetime
+ * Component to track how an entity's scale changes with age over its lifetime
  */
 export class AgeScaleComponent implements Component {
   public name: symbol;
@@ -13,7 +13,7 @@ export class AgeScaleComponent implements Component {
    * Creates an instance of the AgeScaleComponent.
    * @param originalScale - The original scale of the entity.
    * @param lifetimeScaleReduction - The reduction in scale of the entity over its lifetime.
-   * The entities final scale will equal to originalScale * lifetimeScaleReduction.
+   * The entity's final scale will equal to originalScale * lifetimeScaleReduction.
    */
   constructor(originalScale: number, lifetimeScaleReduction: number) {
     this.name = AgeScaleComponent.symbol;

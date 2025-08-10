@@ -11,7 +11,7 @@ export class SpeedComponent implements Component {
 
   /**
    * Creates an instance of SpeedComponent.
-   * @param speed - the entities speed
+   * @param speed - the entity's speed
    */
   constructor(speed: number) {
     this.name = SpeedComponent.symbol;

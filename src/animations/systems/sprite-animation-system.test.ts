@@ -11,7 +11,10 @@ import {
 } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
-import { nextAnimation, setCurrentAnimation } from '../sprite-animation-helper';
+import {
+  immediatelySetCurrentAnimation,
+  goToNextAnimation,
+} from '../sprite-animation-helper';
 
 // Mock the sprite animation helper module
 vi.mock('../sprite-animation-helper', async () => {
@@ -160,7 +163,7 @@ describe('test running SpriteAnimationSystem', () => {
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
     expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(nextAnimation).toHaveBeenCalledWith(spriteAnimationComponent);
+    expect(goToNextAnimation).toHaveBeenCalledWith(spriteAnimationComponent);
   });
 
   it('should not update animation index if frame duration has not been exceeded', () => {
@@ -256,7 +259,7 @@ describe('test running SpriteAnimationSystem', () => {
         SpriteAnimationComponent.symbol,
       );
     spriteAnimationComponent.currentFrameTimeSeconds = 0;
-    setCurrentAnimation(spriteAnimationComponent, 'idle');
+    immediatelySetCurrentAnimation(spriteAnimationComponent, 'idle');
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
@@ -296,7 +299,7 @@ describe('test running SpriteAnimationSystem', () => {
         SpriteAnimationComponent.symbol,
       );
     spriteAnimationComponent.currentFrameTimeSeconds = 0;
-    setCurrentAnimation(spriteAnimationComponent, animationType);
+    immediatelySetCurrentAnimation(spriteAnimationComponent, animationType);
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
