@@ -15,14 +15,14 @@ export function finishAnimation(
  * Function to immediately set the current animation of a sprite animation
  * If the sprite animation component had a next animation assigned, that next animation will be ignored and removed
  * @param spriteAnimationComponent - the sprite animation component to act on
- * @param animationSetName - the name of the next animation to run
+ * @param animationName - the name of the next animation to run
  */
 export function immediatelySetCurrentAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
-  animationSetName: string,
+  animationName: string,
 ): void {
   spriteAnimationComponent.nextAnimationName = null;
-  spriteAnimationComponent.currentAnimationName = animationSetName;
+  spriteAnimationComponent.currentAnimationName = animationName;
   finishAnimation(spriteAnimationComponent);
 }
 
@@ -35,8 +35,8 @@ export function goToNextAnimation(
 ): void {
   if (!spriteAnimationComponent.nextAnimationName) {
     throw new Error(
-      `No next animation set name specified for entity type "${spriteAnimationComponent.animationSetName}" with current animation "${spriteAnimationComponent.currentAnimationName}". 
-        Set the nextAnimationSetName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
+      `No next animation name specified for animation set "${spriteAnimationComponent.animationSetName}" with current animation name "${spriteAnimationComponent.currentAnimationName}". 
+        Set the nextAnimationName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
     );
   }
 
