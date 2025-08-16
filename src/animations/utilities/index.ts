@@ -1,2 +1,2 @@
-export * from './sprite-animation-helper';
+export * from './sprite-animation-lifecycle-helper';
 export * from './animation-set-manager';

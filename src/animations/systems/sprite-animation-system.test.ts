@@ -11,20 +11,7 @@ import {
 } from '../utilities/animation-set-manager';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
-import {
-  goToNextAnimation,
-  immediatelySetCurrentAnimation,
-} from '../utilities';
-
-// Mock the sprite animation helper module
-vi.mock('../utilities/sprite-animation-helper', async () => {
-  const actual = await vi.importActual('../utilities/sprite-animation-helper');
-
-  return {
-    ...actual,
-    goToNextAnimation: vi.fn(),
-  };
-});
+import { immediatelySetCurrentAnimation } from '../utilities';
 
 describe('test running SpriteAnimationSystem', () => {
   let time: Time;
@@ -133,6 +120,8 @@ describe('test running SpriteAnimationSystem', () => {
   });
 
   it('should call nextAnimation if nextAnimationSetName is set on the component', () => {
+    const nextAnimationName = 'next';
+
     const animationFrame: AnimationFrame = {
       durationSeconds: 1,
       offset: new Vector2(0, 0),
@@ -141,7 +130,7 @@ describe('test running SpriteAnimationSystem', () => {
 
     const mockAnimation: Animation = {
       frames: [animationFrame],
-      nextAnimationName: 'run',
+      nextAnimationName,
       animationEvents: new Map(),
       animationName: 'test',
     };
@@ -155,7 +144,7 @@ describe('test running SpriteAnimationSystem', () => {
       );
     spriteAnimationComponent.currentFrameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
-    spriteAnimationComponent.nextAnimationName = 'jump';
+    spriteAnimationComponent.nextAnimationName = nextAnimationName;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
@@ -163,7 +152,9 @@ describe('test running SpriteAnimationSystem', () => {
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
     expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(goToNextAnimation).toHaveBeenCalledWith(spriteAnimationComponent);
+    expect(spriteAnimationComponent.currentAnimationName).toBe(
+      nextAnimationName,
+    );
   });
 
   it('should not update animation index if frame duration has not been exceeded', () => {

@@ -25,23 +25,3 @@ export function immediatelySetCurrentAnimation(
   spriteAnimationComponent.currentAnimationName = animationName;
   finishAnimation(spriteAnimationComponent);
 }
-
-/**
- * Function to make the sprite animation component go to its next animation that it was assigned
- * @param spriteAnimationComponent - the sprite animation component to act on
- */
-export function goToNextAnimation(
-  spriteAnimationComponent: SpriteAnimationComponent,
-): void {
-  if (!spriteAnimationComponent.nextAnimationName) {
-    throw new Error(
-      `No next animation name specified for animation set "${spriteAnimationComponent.animationSetName}" with current animation name "${spriteAnimationComponent.currentAnimationName}". 
-        Set the nextAnimationName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
-    );
-  }
-
-  immediatelySetCurrentAnimation(
-    spriteAnimationComponent,
-    spriteAnimationComponent.nextAnimationName,
-  );
-}
