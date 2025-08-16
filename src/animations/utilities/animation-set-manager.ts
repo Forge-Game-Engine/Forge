@@ -3,7 +3,6 @@ import { ParameterizedForgeEvent } from '../../events';
 import { Vector2 } from '../../math';
 import { SpriteAnimationComponent } from '../components';
 
-export type AnimationCallback = (entity: Entity) => void;
 /**
  * Interface representing a set of animation frames for a specific animation type.
  */
@@ -13,19 +12,18 @@ export interface AnimationSet {
    */
   animationFrames: AnimationFrame[];
   /**
-   * The total number of frames in the animation.
-   */
-  numFrames: number;
-  /**
    * The name of the next animation set to switch to after this animation completes.
    * If not set, the animation will repeat by default.
    */
   nextAnimationSetName: string | null;
   /**
-   * Map of callbacks to run at specific frames of the animation.
+   * Map of events to run at specific frames of the animation.
    * The key is the frame index, and the value is the forge event which calls the callback.
    */
-  animationCallbacks: Map<number, ParameterizedForgeEvent<Entity>>;
+  animationEvents: AnimationEventData;
+
+  // TODO: add this
+  // animationName
 }
 
 /**
@@ -51,7 +49,7 @@ export interface AnimationFrame {
 /**
  * Optional parameters for creating an animation set.
  */
-export interface OptionalCreateAnimationSetParams {
+export interface AnimationSetCreationParams {
   /**
    * The starting position of the animation frames in the sprite sheet, as a percentage.
    * @default (0, 0).
@@ -75,28 +73,22 @@ export interface OptionalCreateAnimationSetParams {
   nextAnimationSetName: string | null;
 
   /**
-   * Callback functions to run at specific percentage points of the animation.
-   * percentage is a number between 0 and 1, representing the progress of the animation.
-   * percentage = 0 means the first frame of the animation, and percentage = 1 means the last frame of the animation.
-   * @default []
+   * Callback functions to run at specific frames of the animation.
+   * frame is a number between 0 and numFrames - 1, representing the current frame of the animation.
+   * frames must be whole numbers
+   * @default new Map()
    */
-  animationCallbacks: Array<{
-    percentage: number;
-    callback: AnimationCallback;
-  }>;
+  animationEvents: AnimationEventData;
 }
 
-type AnimationCallbackData = {
-  percentage: number;
-  callback: AnimationCallback;
-};
+export type AnimationEventData = Map<number, ParameterizedForgeEvent<Entity>>;
 
-const defaultCreateAnimationSetParams: OptionalCreateAnimationSetParams = {
+const defaultCreateAnimationSetParams: AnimationSetCreationParams = {
   startPositionPercentage: Vector2.zero,
   endPositionPercentage: Vector2.one,
   numFrames: 0, // This will be calculated based on spritesPerColumn and spritesPerRow
   nextAnimationSetName: null,
-  animationCallbacks: [],
+  animationEvents: new Map(),
 };
 
 /**
@@ -131,14 +123,14 @@ export class AnimationSetManager {
     spritesPerColumn: number,
     spritesPerRow: number,
     animationFrameDurationSeconds: number | number[],
-    options?: Partial<OptionalCreateAnimationSetParams>,
+    options?: Partial<AnimationSetCreationParams>,
   ): void {
     const {
       startPositionPercentage,
       endPositionPercentage,
       numFrames,
       nextAnimationSetName,
-      animationCallbacks,
+      animationEvents,
     } = {
       ...defaultCreateAnimationSetParams,
       numFrames: spritesPerColumn * spritesPerRow,
@@ -159,7 +151,7 @@ export class AnimationSetManager {
       (endPositionPercentage.y - startPositionPercentage.y) / spritesPerColumn,
     );
 
-    const animationFrames: AnimationFrame[] = this._generateAnimationFrames(
+    const animationFrames = this._generateAnimationFrames(
       numFrames,
       spritesPerRow,
       startPositionPercentage,
@@ -167,16 +159,12 @@ export class AnimationSetManager {
       animationFrameDurationSeconds,
     );
 
-    const animationCallbacksMap = this._setupAnimationCallbacks(
-      animationCallbacks,
-      numFrames,
-    );
+    this._validateAnimationEvents(animationEvents, numFrames);
 
     const animationSet: AnimationSet = {
-      animationFrames: animationFrames,
-      numFrames,
+      animationFrames,
       nextAnimationSetName,
-      animationCallbacks: animationCallbacksMap,
+      animationEvents,
     };
 
     const currentAnimations =
@@ -208,12 +196,8 @@ export class AnimationSetManager {
    * @returns The current AnimationFrame or null if the component is not provided.
    */
   public getAnimationFrame(
-    spriteAnimationComponent: SpriteAnimationComponent | null,
-  ): AnimationFrame | null {
-    if (!spriteAnimationComponent) {
-      return null;
-    }
-
+    spriteAnimationComponent: SpriteAnimationComponent,
+  ): AnimationFrame {
     const { entityType, currentAnimationSetName, animationIndex } =
       spriteAnimationComponent;
 
@@ -270,39 +254,20 @@ export class AnimationSetManager {
     return animationFrames;
   }
 
-  /**
-   * Sets up animation callbacks based on the provided parameters.
-   * @param animationCallbacks - An array of objects containing percentage and callback.
-   * @param numFrames - The total number of frames in the animation.
-   * @returns A Map where the key is the frame index and the value is the callback function.
-   */
-  private _setupAnimationCallbacks(
-    animationCallbacks: AnimationCallbackData[],
+  private _validateAnimationEvents(
+    animationEvents: AnimationEventData,
     numFrames: number,
   ) {
-    const animationCallbacksMap = new Map<
-      number,
-      ParameterizedForgeEvent<Entity>
-    >();
-
-    for (const { percentage, callback } of animationCallbacks) {
-      if (percentage < 0 || percentage > 1) {
-        throw new Error(
-          `Invalid Percentage: percentage ${percentage} must be between 0 and 1.`,
-        );
+    for (const [frame] of animationEvents) {
+      if (frame < 0 || frame >= numFrames) {
+        throw new Error(`Invalid animation event frame: ${frame}`);
       }
 
-      const frameIndex = Math.round(percentage * (numFrames - 1));
-
-      const event =
-        animationCallbacksMap.get(frameIndex) ??
-        new ParameterizedForgeEvent<Entity>(frameIndex.toString());
-
-      event.registerListener(callback);
-
-      animationCallbacksMap.set(frameIndex, event);
+      if (!Number.isInteger(frame)) {
+        throw new Error(
+          `Animation event frame must be a whole number, frame: ${frame}`,
+        );
+      }
     }
-
-    return animationCallbacksMap;
   }
 }

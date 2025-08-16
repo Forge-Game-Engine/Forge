@@ -1,4 +1,4 @@
-import { SpriteAnimationComponent } from './components';
+import { SpriteAnimationComponent } from '../components';
 
 /**
  * Function to be called at the end of a sprite animation, to set it up for the next animation
@@ -13,7 +13,7 @@ export function finishAnimation(
 
 /**
  * Function to immediately set the current animation of a sprite animation
- * Will ignore and remove the `nextAnimationSetName` of the component, and force the animation to the specified one
+ * If the sprite animation component had a next animation assigned, that next animation will be ignored and removed
  * @param spriteAnimationComponent - the sprite animation component to act on
  * @param animationSetName - the name of the next animation to run
  */
@@ -27,7 +27,7 @@ export function immediatelySetCurrentAnimation(
 }
 
 /**
- * Function to make the sprite animation component go to its next animation, set from `nextAnimationSetName`
+ * Function to make the sprite animation component go to its next animation that it was assigned
  * @param spriteAnimationComponent - the sprite animation component to act on
  */
 export function goToNextAnimation(

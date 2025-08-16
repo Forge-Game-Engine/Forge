@@ -2,10 +2,10 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import { AnimationSetManager } from './animation-set-manager';
+import { AnimationSetManager } from '../utilities/animation-set-manager';
 import {
-  goToNextAnimation,
   finishAnimation,
+  goToNextAnimation,
   immediatelySetCurrentAnimation,
 } from '..';
 
@@ -53,7 +53,7 @@ export class SpriteAnimationSystem extends System {
     // allows animations to be triggered on the first frame of an animation
     if (spriteAnimationComponent.isChangingAnimation) {
       spriteAnimationComponent.isChangingAnimation = false;
-      animationSet.animationCallbacks
+      animationSet.animationEvents
         .get(spriteAnimationComponent.animationIndex)
         ?.raise(entity);
     }
@@ -72,10 +72,10 @@ export class SpriteAnimationSystem extends System {
 
       if (
         spriteAnimationComponent.animationIndex <
-        animationSet.numFrames - 1
+        animationSet.animationFrames.length - 1
       ) {
         spriteAnimationComponent.animationIndex++;
-        animationSet.animationCallbacks
+        animationSet.animationEvents
           .get(spriteAnimationComponent.animationIndex)
           ?.raise(entity);
 

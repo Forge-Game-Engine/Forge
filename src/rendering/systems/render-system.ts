@@ -1,4 +1,5 @@
 import {
+  AnimationFrame,
   AnimationSetManager,
   SpriteAnimationComponent,
 } from '../../animations';
@@ -139,34 +140,18 @@ export class RenderSystem extends System {
           SpriteAnimationComponent.symbol,
         );
 
-      const currentFrame = this._animationSetManager.getAnimationFrame(
-        spriteAnimationComponent,
-      );
+      const animationFrame = spriteAnimationComponent
+        ? this._animationSetManager.getAnimationFrame(spriteAnimationComponent)
+        : null;
 
-      batch.instanceData[instanceDataOffset + POSITION_X_OFFSET] = position.x;
-      batch.instanceData[instanceDataOffset + POSITION_Y_OFFSET] = position.y;
-      batch.instanceData[instanceDataOffset + ROTATION_OFFSET] =
-        rotation?.radians ?? 0;
-      batch.instanceData[instanceDataOffset + SCALE_X_OFFSET] =
-        (scale?.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-      batch.instanceData[instanceDataOffset + SCALE_Y_OFFSET] =
-        (scale?.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
-      batch.instanceData[instanceDataOffset + WIDTH_OFFSET] =
-        spriteComponent.sprite.width;
-      batch.instanceData[instanceDataOffset + HEIGHT_OFFSET] =
-        spriteComponent.sprite.height;
-      batch.instanceData[instanceDataOffset + PIVOT_X_OFFSET] =
-        spriteComponent.sprite.pivot.x;
-      batch.instanceData[instanceDataOffset + PIVOT_Y_OFFSET] =
-        spriteComponent.sprite.pivot.y;
-      batch.instanceData[instanceDataOffset + TEX_OFFSET_X_OFFSET] =
-        currentFrame?.offset.x ?? 0;
-      batch.instanceData[instanceDataOffset + TEX_OFFSET_Y_OFFSET] =
-        currentFrame?.offset.y ?? 0;
-      batch.instanceData[instanceDataOffset + TEX_SIZE_X_OFFSET] =
-        currentFrame?.scale.x ?? 1;
-      batch.instanceData[instanceDataOffset + TEX_SIZE_Y_OFFSET] =
-        currentFrame?.scale.y ?? 1;
+      this._populateInstanceData(batch.instanceData, instanceDataOffset, {
+        position,
+        rotation,
+        scale,
+        spriteComponent,
+        flipComponent,
+        animationFrame,
+      });
     }
 
     // Upload instance transform buffer
@@ -174,6 +159,55 @@ export class RenderSystem extends System {
     gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
 
     this._setupInstanceAttributesAndDraw(gl, renderable, entities.length);
+  }
+
+  private _populateInstanceData(
+    instanceData: Float32Array,
+    offset: number,
+    components: {
+      position: PositionComponent;
+      rotation: RotationComponent | null;
+      scale: ScaleComponent | null;
+      spriteComponent: SpriteComponent;
+      flipComponent: FlipComponent | null;
+      animationFrame?: AnimationFrame | null;
+    },
+  ): void {
+    const {
+      position,
+      rotation,
+      scale,
+      spriteComponent,
+      flipComponent,
+      animationFrame,
+    } = components;
+
+    // Position
+    instanceData[offset + POSITION_X_OFFSET] = position.x;
+    instanceData[offset + POSITION_Y_OFFSET] = position.y;
+
+    // Rotation
+    instanceData[offset + ROTATION_OFFSET] = rotation?.radians ?? 0;
+
+    // Scale with flip consideration
+    instanceData[offset + SCALE_X_OFFSET] =
+      (scale?.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+    instanceData[offset + SCALE_Y_OFFSET] =
+      (scale?.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+
+    // Sprite dimensions
+    instanceData[offset + WIDTH_OFFSET] = spriteComponent.sprite.width;
+    instanceData[offset + HEIGHT_OFFSET] = spriteComponent.sprite.height;
+
+    // Sprite pivot
+    instanceData[offset + PIVOT_X_OFFSET] = spriteComponent.sprite.pivot.x;
+    instanceData[offset + PIVOT_Y_OFFSET] = spriteComponent.sprite.pivot.y;
+
+    // Texture coordinates (animation frame or defaults)
+    instanceData[offset + TEX_OFFSET_X_OFFSET] = animationFrame?.offset.x ?? 0;
+    instanceData[offset + TEX_OFFSET_Y_OFFSET] = animationFrame?.offset.y ?? 0;
+    instanceData[offset + TEX_SIZE_X_OFFSET] = animationFrame?.scale.x ?? 1;
+    instanceData[offset + TEX_SIZE_Y_OFFSET] = animationFrame?.scale.y ?? 1;
   }
 
   private _setupInstanceAttributesAndDraw(

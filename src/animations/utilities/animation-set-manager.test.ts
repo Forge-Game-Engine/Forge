@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationSetManager } from './animation-set-manager';
 import { Vector2 } from '../../math';
 import { SpriteAnimationComponent } from '../components';
+import { ParameterizedForgeEvent } from '../../events';
+import { Entity } from '../../ecs';
 
 describe('AnimationSetManager', () => {
   let animationSetManager: AnimationSetManager;
@@ -31,7 +33,6 @@ describe('AnimationSetManager', () => {
         animationType,
       );
       expect(animationSet).not.toBeNull();
-      expect(animationSet?.numFrames).toBe(spritesPerColumn * spritesPerRow);
       expect(animationSet?.animationFrames.length).toBe(
         spritesPerColumn * spritesPerRow,
       );
@@ -80,10 +81,49 @@ describe('AnimationSetManager', () => {
       );
 
       expect(animationSet).not.toBeNull();
-      expect(animationSet?.numFrames).toBe(numFrames);
       expect(animationSet?.animationFrames.length).toBe(numFrames);
       expect(animationSet?.animationFrames[0].durationSeconds).toBe(0.5);
       expect(animationSet?.animationFrames[1].durationSeconds).toBe(0.7);
+    });
+
+    it('should throw an error if animation events contain invalid frames', () => {
+      const entityType = 'player';
+      const animationType1 = 'wrong 1';
+      const animationType2 = 'wrong 2';
+      const spritesPerColumn = 2;
+      const spritesPerRow = 1;
+      const frameDuration = 1;
+
+      expect(() => {
+        animationSetManager.createAnimationSet(
+          entityType,
+          animationType1,
+          spritesPerColumn,
+          spritesPerRow,
+          frameDuration,
+          {
+            animationEvents: new Map([
+              [0, new ParameterizedForgeEvent<Entity>('test')],
+              [1.5, new ParameterizedForgeEvent<Entity>('test')],
+            ]),
+          },
+        );
+      }).toThrow('Animation event frame must be a whole number, frame: 1.5');
+
+      expect(() => {
+        animationSetManager.createAnimationSet(
+          entityType,
+          animationType2,
+          spritesPerColumn,
+          spritesPerRow,
+          frameDuration,
+          {
+            animationEvents: new Map([
+              [3, new ParameterizedForgeEvent<Entity>('test')],
+            ]),
+          },
+        );
+      }).toThrow('Invalid animation event frame: 3');
     });
 
     it('should use default values for optional parameters', () => {
@@ -142,16 +182,11 @@ describe('AnimationSetManager', () => {
         animationType,
       );
       expect(animationSet).not.toBeNull();
-      expect(animationSet?.numFrames).toBe(1);
+      expect(animationSet?.animationFrames.length).toBe(1);
     });
   });
 
   describe('getAnimationFrame', () => {
-    it('should return null if SpriteAnimationComponent is null', () => {
-      const frame = animationSetManager.getAnimationFrame(null);
-      expect(frame).toBeNull();
-    });
-
     it('should throw an error if no animation set exists for the given entity type and animation type', () => {
       const spriteAnimationComponent = new SpriteAnimationComponent(
         'nonexistent',
@@ -320,7 +355,6 @@ describe('AnimationSetManager', () => {
         animationType,
       );
       expect(animationSet).not.toBeNull();
-      expect(animationSet?.numFrames).toBe(1);
       expect(animationSet?.animationFrames.length).toBe(1);
       expect(animationSet?.animationFrames[0].durationSeconds).toBe(
         frameDuration,

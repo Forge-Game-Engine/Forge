@@ -1,4 +1,5 @@
 import {
+  AnimationEventData,
   buttonMoments,
   Entity,
   FlipComponent,
@@ -7,6 +8,7 @@ import {
   KeyboardInputSource,
   KeyboardTriggerInteraction,
   keyCodes,
+  ParameterizedForgeEvent,
   PositionComponent,
   ScaleComponent,
   Sprite,
@@ -336,6 +338,14 @@ function createAdventurerControllableAnimationSets(
     },
   );
 
+  const runMovementAnimationEvents: AnimationEventData = new Map();
+  [0, 1, 2, 3, 4, 5, 6, 7].forEach((i) => {
+    const event = new ParameterizedForgeEvent<Entity>('run');
+
+    event.registerListener(runMovement(5, 0));
+    runMovementAnimationEvents.set(i, event);
+  });
+
   animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.run,
@@ -346,12 +356,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 1 / 8),
       endPositionPercentage: new Vector2(8 / 13, 2 / 8),
       // Create a callback for each of the 8 frames
-      animationCallbacks: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
-        percentage: i / 7,
-        callback: runMovement(5, 0),
-      })),
+      animationEvents: runMovementAnimationEvents,
     },
   );
+
+  const attackEvent1 = new ParameterizedForgeEvent<Entity>('attack1');
+  attackEvent1.registerListener(attackParticles(-60, -30));
 
   animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
@@ -363,14 +373,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 2 / 8),
       endPositionPercentage: new Vector2(10 / 13, 3 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2,
-      animationCallbacks: [
-        {
-          percentage: 0.2,
-          callback: attackParticles(-60, -30),
-        },
-      ],
+      animationEvents: new Map([[2, attackEvent1]]),
     },
   );
+
+  const attackEvent2 = new ParameterizedForgeEvent<Entity>('attack2');
+  attackEvent2.registerListener(attackParticles(60, 30));
 
   animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
@@ -382,14 +390,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 3 / 8),
       endPositionPercentage: new Vector2(10 / 13, 4 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.attack3,
-      animationCallbacks: [
-        {
-          percentage: 0,
-          callback: attackParticles(60, 30),
-        },
-      ],
+      animationEvents: new Map([[0, attackEvent2]]),
     },
   );
+
+  const attackEvent3 = new ParameterizedForgeEvent<Entity>('attack3');
+  attackEvent3.registerListener(attackParticles(0, 0));
 
   animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
@@ -401,14 +407,12 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 4 / 8),
       endPositionPercentage: new Vector2(10 / 13, 5 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
-      animationCallbacks: [
-        {
-          percentage: 0.2,
-          callback: attackParticles(0, 0),
-        },
-      ],
+      animationEvents: new Map([[2, attackEvent3]]),
     },
   );
+
+  const jumpEvent = new ParameterizedForgeEvent<Entity>('jump');
+  jumpEvent.registerListener(jumpParticles);
 
   animationSetManager.createAnimationSet(
     ENTITY_TYPES.adventurerControllable,
@@ -420,16 +424,10 @@ function createAdventurerControllableAnimationSets(
       startPositionPercentage: new Vector2(0, 5 / 8),
       endPositionPercentage: new Vector2(6 / 13, 6 / 8),
       nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
-      animationCallbacks: [
-        {
-          percentage: 0,
-          callback: jumpParticles,
-        },
-        {
-          percentage: 1,
-          callback: jumpParticles,
-        },
-      ],
+      animationEvents: new Map([
+        [0, jumpEvent],
+        [5, jumpEvent],
+      ]),
     },
   );
 }
