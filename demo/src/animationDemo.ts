@@ -41,15 +41,15 @@ export function setupAnimationsDemo(
 ) {
   setupInputs(inputsManager);
   //left column
-  createShipAnimationSets(animationSetManager);
+  createShipAnimations(animationSetManager);
   buildShipEntities(world, shipSprite);
 
   //middle column
-  createAdventurerAnimationSets(animationSetManager);
+  createAdventurerAnimations(animationSetManager);
   buildAdventurerEntities(world, adventurerSprite);
 
   //right column
-  createAdventurerControllableAnimationSets(animationSetManager);
+  createAdventurerControllableAnimations(animationSetManager);
   buildAdventurerControllableEntities(
     world,
     adventurerSprite,
@@ -65,7 +65,7 @@ export function setupAnimationsStressTest(
   repeats: number,
 ) {
   //left column
-  createShipAnimationSets(animationSetManager);
+  createShipAnimations(animationSetManager);
   buildShipEntitiesMultiple(world, shipSprite, repeats);
 }
 
@@ -116,8 +116,8 @@ function setupInputs(inputsManager: InputManager) {
   );
 }
 
-function createShipAnimationSets(animationSetManager: AnimationSetManager) {
-  animationSetManager.createAnimationSet(
+function createShipAnimations(animationSetManager: AnimationSetManager) {
+  animationSetManager.createAnimation(
     ENTITY_TYPES.ship,
     SHIP_ANIMATIONS.spinRandom,
     6,
@@ -128,7 +128,7 @@ function createShipAnimationSets(animationSetManager: AnimationSetManager) {
       0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     ],
   );
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.ship,
     SHIP_ANIMATIONS.spin,
     6,
@@ -137,10 +137,10 @@ function createShipAnimationSets(animationSetManager: AnimationSetManager) {
   );
 }
 
-function createAdventurerAnimationSets(
+function createAdventurerAnimations(
   animationSetManager: AnimationSetManager,
 ) {
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.idle,
     1,
@@ -151,7 +151,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.idleHalf,
     1,
@@ -163,7 +163,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.run,
     1,
@@ -176,7 +176,7 @@ function createAdventurerAnimationSets(
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack1,
     1,
@@ -185,10 +185,10 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 2 / 8),
       endPositionPercentage: new Vector2(10 / 13, 3 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2, // next animation after this one
+      nextAnimationName: ADVENTURER_ANIMATIONS.attack2, // next animation after this one
     },
   );
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack2,
     1,
@@ -197,10 +197,10 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 3 / 8),
       endPositionPercentage: new Vector2(10 / 13, 4 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.attack1, // cycle back to the first animation
+      nextAnimationName: ADVENTURER_ANIMATIONS.attack1, // cycle back to the first animation
     },
   );
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.attack3,
     1,
@@ -209,11 +209,11 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 4 / 8),
       endPositionPercentage: new Vector2(10 / 13, 5 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.jump, // go to jump after attacking
+      nextAnimationName: ADVENTURER_ANIMATIONS.jump, // go to jump after attacking
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.jump,
     1,
@@ -222,11 +222,11 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 5 / 8),
       endPositionPercentage: new Vector2(6 / 13, 6 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.damage, // go to damage after jumping
+      nextAnimationName: ADVENTURER_ANIMATIONS.damage, // go to damage after jumping
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.damage,
     1,
@@ -235,11 +235,11 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 6 / 8),
       endPositionPercentage: new Vector2(4 / 13, 7 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.attack3, // go to attack3 after damaging
+      nextAnimationName: ADVENTURER_ANIMATIONS.attack3, // go to attack3 after damaging
     },
   );
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.die,
     1,
@@ -248,12 +248,12 @@ function createAdventurerAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 7 / 8),
       endPositionPercentage: new Vector2(7 / 13, 1),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.idle, // go back to idle after dying
+      nextAnimationName: ADVENTURER_ANIMATIONS.idle, // go back to idle after dying
     },
   );
 }
 
-function createAdventurerControllableAnimationSets(
+function createAdventurerControllableAnimations(
   animationSetManager: AnimationSetManager,
 ) {
   const attackParticles =
@@ -327,7 +327,7 @@ function createAdventurerControllableAnimationSets(
       positionComponent.y += yChange;
     };
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.idle,
     1,
@@ -346,7 +346,7 @@ function createAdventurerControllableAnimationSets(
     runMovementAnimationEvents.set(i, event);
   });
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.run,
     1,
@@ -363,7 +363,7 @@ function createAdventurerControllableAnimationSets(
   const attackEvent1 = new ParameterizedForgeEvent<Entity>('attack1');
   attackEvent1.registerListener(attackParticles(-60, -30));
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack1,
     1,
@@ -372,7 +372,7 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 2 / 8),
       endPositionPercentage: new Vector2(10 / 13, 3 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.attack2,
+      nextAnimationName: ADVENTURER_ANIMATIONS.attack2,
       animationEvents: new Map([[2, attackEvent1]]),
     },
   );
@@ -380,7 +380,7 @@ function createAdventurerControllableAnimationSets(
   const attackEvent2 = new ParameterizedForgeEvent<Entity>('attack2');
   attackEvent2.registerListener(attackParticles(60, 30));
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack2,
     1,
@@ -389,7 +389,7 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 3 / 8),
       endPositionPercentage: new Vector2(10 / 13, 4 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.attack3,
+      nextAnimationName: ADVENTURER_ANIMATIONS.attack3,
       animationEvents: new Map([[0, attackEvent2]]),
     },
   );
@@ -397,7 +397,7 @@ function createAdventurerControllableAnimationSets(
   const attackEvent3 = new ParameterizedForgeEvent<Entity>('attack3');
   attackEvent3.registerListener(attackParticles(0, 0));
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.attack3,
     1,
@@ -406,7 +406,7 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 4 / 8),
       endPositionPercentage: new Vector2(10 / 13, 5 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
+      nextAnimationName: ADVENTURER_ANIMATIONS.idle,
       animationEvents: new Map([[2, attackEvent3]]),
     },
   );
@@ -414,7 +414,7 @@ function createAdventurerControllableAnimationSets(
   const jumpEvent = new ParameterizedForgeEvent<Entity>('jump');
   jumpEvent.registerListener(jumpParticles);
 
-  animationSetManager.createAnimationSet(
+  animationSetManager.createAnimation(
     ENTITY_TYPES.adventurerControllable,
     ADVENTURER_ANIMATIONS.jump,
     1,
@@ -423,7 +423,7 @@ function createAdventurerControllableAnimationSets(
     {
       startPositionPercentage: new Vector2(0, 5 / 8),
       endPositionPercentage: new Vector2(6 / 13, 6 / 8),
-      nextAnimationSetName: ADVENTURER_ANIMATIONS.idle,
+      nextAnimationName: ADVENTURER_ANIMATIONS.idle,
       animationEvents: new Map([
         [0, jumpEvent],
         [5, jumpEvent],

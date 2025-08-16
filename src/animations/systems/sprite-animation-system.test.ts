@@ -5,8 +5,8 @@ import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { Sprite, SpriteComponent } from '../../rendering';
 import {
+  Animation,
   AnimationFrame,
-  AnimationSet,
   AnimationSetManager,
 } from '../utilities/animation-set-manager';
 import { Vector2 } from '../../math';
@@ -35,7 +35,7 @@ describe('test running SpriteAnimationSystem', () => {
   beforeEach(() => {
     time = new Time();
     animationSetManager = {
-      getAnimationSet: vi.fn(),
+      getAnimation: vi.fn(),
     } as unknown as AnimationSetManager;
 
     spriteAnimationSystem = new SpriteAnimationSystem(
@@ -58,11 +58,11 @@ describe('test running SpriteAnimationSystem', () => {
     );
   });
 
-  it('should throw an error if no animation set is found', () => {
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(null);
+  it('should throw an error if no animation is found', () => {
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(null);
 
     expect(() => spriteAnimationSystem.run(entity)).toThrow(
-      'No animation set found for entity type: testEntity, animation: idle',
+      'No animation found for animation set: testEntity, animation name: idle',
     );
   });
 
@@ -73,13 +73,14 @@ describe('test running SpriteAnimationSystem', () => {
       scale: new Vector2(1, 1),
     };
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame, animationFrame],
-      nextAnimationSetName: 'run',
+    const mockAnimation: Animation = {
+      frames: [animationFrame, animationFrame],
+      nextAnimationName: 'run',
       animationEvents: new Map(),
+      animationName: 'test',
     };
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -104,14 +105,15 @@ describe('test running SpriteAnimationSystem', () => {
       scale: new Vector2(1, 1),
     };
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame],
-      nextAnimationSetName: 'run',
+    const mockAnimation: Animation = {
+      frames: [animationFrame],
+      nextAnimationName: 'run',
       animationEvents: new Map(),
+      animationName: 'test',
     };
 
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -127,7 +129,7 @@ describe('test running SpriteAnimationSystem', () => {
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
     expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(spriteAnimationComponent.currentAnimationSetName).toBe('run');
+    expect(spriteAnimationComponent.currentAnimationName).toBe('run');
   });
 
   it('should call nextAnimation if nextAnimationSetName is set on the component', () => {
@@ -137,13 +139,14 @@ describe('test running SpriteAnimationSystem', () => {
       scale: new Vector2(1, 1),
     };
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame],
-      nextAnimationSetName: 'run',
+    const mockAnimation: Animation = {
+      frames: [animationFrame],
+      nextAnimationName: 'run',
       animationEvents: new Map(),
+      animationName: 'test',
     };
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -152,7 +155,7 @@ describe('test running SpriteAnimationSystem', () => {
       );
     spriteAnimationComponent.currentFrameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
-    spriteAnimationComponent.nextAnimationSetName = 'jump';
+    spriteAnimationComponent.nextAnimationName = 'jump';
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
 
@@ -170,13 +173,14 @@ describe('test running SpriteAnimationSystem', () => {
       scale: new Vector2(1, 1),
     };
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame, animationFrame],
-      nextAnimationSetName: 'run',
+    const mockAnimation: Animation = {
+      frames: [animationFrame, animationFrame],
+      nextAnimationName: 'run',
       animationEvents: new Map(),
+      animationName: 'test',
     };
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -201,14 +205,15 @@ describe('test running SpriteAnimationSystem', () => {
       scale: new Vector2(1, 1),
     };
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame],
-      nextAnimationSetName: null,
+    const mockAnimation: Animation = {
+      frames: [animationFrame],
+      nextAnimationName: null,
       animationEvents: new Map(),
+      animationName: 'test',
     };
 
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -224,7 +229,7 @@ describe('test running SpriteAnimationSystem', () => {
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
     expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(spriteAnimationComponent.currentAnimationSetName).toBe('idle');
+    expect(spriteAnimationComponent.currentAnimationName).toBe('idle');
   });
 
   it('should call the correct callback for the current animation frame', () => {
@@ -238,14 +243,15 @@ describe('test running SpriteAnimationSystem', () => {
     const event = new ParameterizedForgeEvent<Entity>('0');
     event.registerListener(callback);
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame, animationFrame],
-      nextAnimationSetName: null,
+    const mockAnimation: Animation = {
+      frames: [animationFrame, animationFrame],
+      nextAnimationName: null,
       animationEvents: new Map([[0, event]]),
+      animationName: 'test',
     };
 
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =
@@ -274,14 +280,15 @@ describe('test running SpriteAnimationSystem', () => {
     const event = new ParameterizedForgeEvent<Entity>('0');
     event.registerListener(callback);
 
-    const mockAnimationSet: AnimationSet = {
-      animationFrames: [animationFrame],
-      nextAnimationSetName: null,
+    const mockAnimation: Animation = {
+      frames: [animationFrame],
+      nextAnimationName: null,
       animationEvents: new Map([[0, event]]),
+      animationName: 'test',
     };
 
-    vi.spyOn(animationSetManager, 'getAnimationSet').mockReturnValue(
-      mockAnimationSet,
+    vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
+      mockAnimation,
     );
 
     const spriteAnimationComponent =

@@ -21,8 +21,8 @@ export function immediatelySetCurrentAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
   animationSetName: string,
 ): void {
-  spriteAnimationComponent.nextAnimationSetName = null;
-  spriteAnimationComponent.currentAnimationSetName = animationSetName;
+  spriteAnimationComponent.nextAnimationName = null;
+  spriteAnimationComponent.currentAnimationName = animationSetName;
   finishAnimation(spriteAnimationComponent);
 }
 
@@ -33,15 +33,15 @@ export function immediatelySetCurrentAnimation(
 export function goToNextAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
 ): void {
-  if (!spriteAnimationComponent.nextAnimationSetName) {
+  if (!spriteAnimationComponent.nextAnimationName) {
     throw new Error(
-      `No next animation set name specified for entity type "${spriteAnimationComponent.entityType}" with current animation "${spriteAnimationComponent.currentAnimationSetName}". 
+      `No next animation set name specified for entity type "${spriteAnimationComponent.animationSetName}" with current animation "${spriteAnimationComponent.currentAnimationName}". 
         Set the nextAnimationSetName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
     );
   }
 
   immediatelySetCurrentAnimation(
     spriteAnimationComponent,
-    spriteAnimationComponent.nextAnimationSetName,
+    spriteAnimationComponent.nextAnimationName,
   );
 }

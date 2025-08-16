@@ -40,7 +40,7 @@ export class ControlAdventurerSystem extends System {
 
     if (
       jumpAction?.isTriggered &&
-      spriteAnimationComponent.currentAnimationSetName !==
+      spriteAnimationComponent.currentAnimationName !==
         ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
@@ -50,13 +50,13 @@ export class ControlAdventurerSystem extends System {
       );
     } else if (runLAction?.isTriggered) {
       // run and attack happen at the end of the current animation
-      spriteAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
+      spriteAnimationComponent.nextAnimationName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = true;
     } else if (runRAction?.isTriggered) {
-      spriteAnimationComponent.nextAnimationSetName = ADVENTURER_ANIMATIONS.run;
+      spriteAnimationComponent.nextAnimationName = ADVENTURER_ANIMATIONS.run;
       flipComponent.flipX = false;
     } else if (attackAction?.isTriggered) {
-      spriteAnimationComponent.nextAnimationSetName =
+      spriteAnimationComponent.nextAnimationName =
         ADVENTURER_ANIMATIONS.attack1;
     }
   }

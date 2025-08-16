@@ -25,25 +25,25 @@ const defaultOptions: SpriteAnimationOptions = {
  */
 export class SpriteAnimationComponent implements Component {
   public name: symbol;
-  public entityType: string;
+  public animationSetName: string;
   public animationIndex: number;
   public currentFrameTimeSeconds: number;
-  public nextAnimationSetName: string | null;
+  public nextAnimationName: string | null;
   public animationSpeedFactor: number;
-  public currentAnimationSetName: string;
+  public currentAnimationName: string;
   public isChangingAnimation: boolean = false;
 
   public static readonly symbol = Symbol('SpriteAnimation');
 
   /**
    * Creates an instance of SpriteAnimationComponent.
-   * @param entityType - The type of the entity this animation component belongs to.
-   * @param currentAnimationSetName - The name of the current animation.
+   * @param animationSetName - The name of the animation set this component belongs to.
+   * @param currentAnimationName - The name of the current animation.
    * @param options - Optional parameters to configure the animation component.
    */
   constructor(
-    entityType: string,
-    currentAnimationSetName: string,
+    animationSetName: string,
+    currentAnimationName: string,
     options: Partial<SpriteAnimationOptions> = {},
   ) {
     const { animationIndex, animationSpeedFactor } = {
@@ -51,11 +51,11 @@ export class SpriteAnimationComponent implements Component {
       ...options,
     };
     this.name = SpriteAnimationComponent.symbol;
-    this.entityType = entityType;
-    this.currentAnimationSetName = currentAnimationSetName;
+    this.animationSetName = animationSetName;
+    this.currentAnimationName = currentAnimationName;
     this.animationIndex = animationIndex;
     this.animationSpeedFactor = animationSpeedFactor;
     this.currentFrameTimeSeconds = 0;
-    this.nextAnimationSetName = null;
+    this.nextAnimationName = null;
   }
 }

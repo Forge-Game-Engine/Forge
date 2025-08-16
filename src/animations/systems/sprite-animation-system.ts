@@ -39,14 +39,14 @@ export class SpriteAnimationSystem extends System {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    const animationSet = this._animationSetManager.getAnimationSet(
-      spriteAnimationComponent.entityType,
-      spriteAnimationComponent.currentAnimationSetName,
+    const animationSet = this._animationSetManager.getAnimation(
+      spriteAnimationComponent.animationSetName,
+      spriteAnimationComponent.currentAnimationName,
     );
 
     if (!animationSet) {
       throw new Error(
-        `No animation set found for entity type: ${spriteAnimationComponent.entityType}, animation: ${spriteAnimationComponent.currentAnimationSetName}`,
+        `No animation found for animation set: ${spriteAnimationComponent.animationSetName}, animation name: ${spriteAnimationComponent.currentAnimationName}`,
       );
     }
 
@@ -59,7 +59,7 @@ export class SpriteAnimationSystem extends System {
     }
 
     const currentFrame =
-      animationSet.animationFrames[spriteAnimationComponent.animationIndex];
+      animationSet.frames[spriteAnimationComponent.animationIndex];
 
     if (
       this._time.timeInSeconds -
@@ -72,7 +72,7 @@ export class SpriteAnimationSystem extends System {
 
       if (
         spriteAnimationComponent.animationIndex <
-        animationSet.animationFrames.length - 1
+        animationSet.frames.length - 1
       ) {
         spriteAnimationComponent.animationIndex++;
         animationSet.animationEvents
@@ -84,12 +84,12 @@ export class SpriteAnimationSystem extends System {
 
       finishAnimation(spriteAnimationComponent);
 
-      if (spriteAnimationComponent.nextAnimationSetName) {
+      if (spriteAnimationComponent.nextAnimationName) {
         goToNextAnimation(spriteAnimationComponent);
-      } else if (animationSet.nextAnimationSetName) {
+      } else if (animationSet.nextAnimationName) {
         immediatelySetCurrentAnimation(
           spriteAnimationComponent,
-          animationSet.nextAnimationSetName,
+          animationSet.nextAnimationName,
         );
       }
     }
