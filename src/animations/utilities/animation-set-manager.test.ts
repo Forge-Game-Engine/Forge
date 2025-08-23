@@ -310,4 +310,67 @@ describe('AnimationSetManager', () => {
       expect(animation?.frames.length).toBe(1);
     });
   });
+  describe('getDefaultNextAnimation', () => {
+    it('should throw an error if no default next animation name is found', () => {
+      const animationSetName = 'player';
+      const animationName = 'idle';
+      const spritesPerColumn = 1;
+      const spritesPerRow = 1;
+      const frameDuration = 1;
+
+      animationSetManager.createAnimation(
+        animationSetName,
+        animationName,
+        spritesPerColumn,
+        spritesPerRow,
+        frameDuration,
+      );
+
+      const animation = animationSetManager.getAnimation(
+        animationSetName,
+        animationName,
+      );
+      expect(animation).not.toBeNull();
+
+      expect(() =>
+        animationSetManager.getDefaultNextAnimation(animation),
+      ).toThrowError();
+    });
+
+    it('should retrieve the default next animation', () => {
+      const animationSetName = 'player';
+      const animationName = 'walk';
+      const spritesPerColumn = 1;
+      const spritesPerRow = 1;
+      const frameDuration = 1;
+      const nextAnimationName = 'run';
+
+      animationSetManager.createAnimation(
+        animationSetName,
+        animationName,
+        spritesPerColumn,
+        spritesPerRow,
+        frameDuration,
+        { nextAnimationName },
+      );
+      animationSetManager.createAnimation(
+        animationSetName,
+        nextAnimationName,
+        spritesPerColumn,
+        spritesPerRow,
+        frameDuration,
+      );
+
+      const animation = animationSetManager.getAnimation(
+        animationSetName,
+        animationName,
+      );
+      expect(animation).not.toBeNull();
+
+      const nextAnimation =
+        animationSetManager.getDefaultNextAnimation(animation);
+      expect(nextAnimation).not.toBeNull();
+      expect(nextAnimation?.name).toBe(nextAnimationName);
+    });
+  });
 });

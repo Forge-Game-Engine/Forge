@@ -21,7 +21,7 @@ export interface Animation {
   frames: AnimationFrame[];
   /**
    * The name of the default next animation to switch to after this animation completes.
-   * This does NOT take precedence over the next animation in the spriteAnimationComponent itself.
+   * The next animation set in the spriteAnimationComponent takes precedence over this value.
    * If not set, this animation will repeat by default.
    */
   defaultNextAnimationName: string | null;
@@ -200,20 +200,18 @@ export class AnimationSetManager {
   /**
    * Retrieves the next animation of the entered animation.
    * @param animation - The current animation.
-   * @returns The next animation, or itself if there is no next animation specified on the component.
+   * @returns The next animation.
    */
   public getDefaultNextAnimation(animation: Animation): Animation {
-    const { defaultNextAnimationName: nextAnimationName, animationSetName } =
-      animation;
+    const { defaultNextAnimationName, animationSetName } = animation;
 
-    if (!nextAnimationName) {
-      return animation;
+    if (!defaultNextAnimationName) {
+      throw Error(
+        `No default next animation name found for animation: ${animation.name}`,
+      );
     }
 
-    return (
-      this._animationSets.get(animationSetName)?.get(nextAnimationName) ??
-      animation
-    );
+    return this.getAnimation(animationSetName, defaultNextAnimationName);
   }
 
   /**
