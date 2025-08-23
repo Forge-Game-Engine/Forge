@@ -68,7 +68,7 @@ export class RenderSystem extends System {
     const gl = this._layer.context;
 
     for (const [renderable, batch] of batchComponent.batches) {
-      this._includeSpriteBatch(renderable, batch, gl);
+      this._includeBatch(renderable, batch, gl);
     }
 
     gl.bindVertexArray(null);
@@ -87,7 +87,7 @@ export class RenderSystem extends System {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
-  private _includeSpriteBatch(
+  private _includeBatch(
     renderable: Renderable,
     batch: Batch,
     gl: WebGL2RenderingContext,

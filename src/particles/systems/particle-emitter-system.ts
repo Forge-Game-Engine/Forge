@@ -93,44 +93,52 @@ export class ParticleEmitterSystem extends System {
       this._getAmountToEmitBasedOnDuration(particleEmitter);
 
     for (let i = 0; i < currentAmountToEmit; i++) {
-      const speed = this._getRandomValueInRange(particleEmitter.speedRange);
-
-      const originalScale = this._getRandomValueInRange(
-        particleEmitter.scaleRange,
-      );
-
-      const lifetimeSeconds = this._getRandomValueInRange(
-        particleEmitter.lifetimeSecondsRange,
-      );
-
-      const rotation = this._getRandomValueInRangeDegrees(
-        particleEmitter.rotationRange,
-      );
-
-      const rotationSpeed = this._getRandomValueInRange(
-        particleEmitter.rotationSpeedRange,
-      );
-
-      const spawnPosition = particleEmitter.spawnPosition();
-
-      this._world.buildAndAddEntity('particle', [
-        new SpriteComponent(particleEmitter.sprite),
-        new ParticleComponent({
-          rotationSpeed,
-        }),
-        new AgeComponent(lifetimeSeconds),
-        new AgeScaleComponent(
-          originalScale,
-          particleEmitter.lifetimeScaleReduction,
-        ),
-        new PositionComponent(spawnPosition.x, spawnPosition.y),
-        new ScaleComponent(originalScale, originalScale),
-        new RotationComponent(rotation),
-        new SpeedComponent(speed),
-      ]);
+      this._emitParticle(particleEmitter);
     }
 
     particleEmitter.emitCount += currentAmountToEmit;
+  }
+
+  /**
+   * Emits a single particle from the given particle emitter.
+   * @param particleEmitter The particle emitter to emit a particle from.
+   */
+  private _emitParticle(particleEmitter: ParticleEmitter) {
+    const speed = this._getRandomValueInRange(particleEmitter.speedRange);
+
+    const originalScale = this._getRandomValueInRange(
+      particleEmitter.scaleRange,
+    );
+
+    const lifetimeSeconds = this._getRandomValueInRange(
+      particleEmitter.lifetimeSecondsRange,
+    );
+
+    const rotation = this._getRandomValueInRangeDegrees(
+      particleEmitter.rotationRange,
+    );
+
+    const rotationSpeed = this._getRandomValueInRange(
+      particleEmitter.rotationSpeedRange,
+    );
+
+    const spawnPosition = particleEmitter.spawnPosition();
+
+    this._world.buildAndAddEntity('particle', [
+      new SpriteComponent(particleEmitter.sprite),
+      new ParticleComponent({
+        rotationSpeed,
+      }),
+      new AgeComponent(lifetimeSeconds),
+      new AgeScaleComponent(
+        originalScale,
+        particleEmitter.lifetimeScaleReduction,
+      ),
+      new PositionComponent(spawnPosition.x, spawnPosition.y),
+      new ScaleComponent(originalScale, originalScale),
+      new RotationComponent(rotation),
+      new SpeedComponent(speed),
+    ]);
   }
 
   /**
