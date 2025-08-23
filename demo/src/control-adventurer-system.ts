@@ -40,8 +40,7 @@ export class ControlAdventurerSystem extends System {
 
     if (
       jumpAction?.isTriggered &&
-      spriteAnimationComponent.currentAnimationName !==
-        ADVENTURER_ANIMATIONS.jump
+      spriteAnimationComponent.animationName !== ADVENTURER_ANIMATIONS.jump
     ) {
       // jump always happens immediately
       immediatelySetCurrentAnimation(

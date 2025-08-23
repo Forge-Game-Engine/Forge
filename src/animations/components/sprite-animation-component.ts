@@ -7,7 +7,7 @@ export interface SpriteAnimationOptions {
    * The index of the current animation frame.
    * @default 0
    */
-  animationIndex: number;
+  startingAnimationIndex: number;
   /**
    * The speed factor for the animation.
    * @default 1.0
@@ -16,21 +16,21 @@ export interface SpriteAnimationOptions {
 }
 
 const defaultOptions: SpriteAnimationOptions = {
-  animationIndex: 0,
+  startingAnimationIndex: 0,
   animationSpeedFactor: 1.0,
 };
 
 /**
- * Component that manages image-based animations for entities, such as from sprite sheets.
+ * Component to store sprite animation information for entities, such as from sprite sheets.
  */
 export class SpriteAnimationComponent implements Component {
   public name: symbol;
   public animationSetName: string;
   public animationIndex: number;
-  public currentFrameTimeSeconds: number;
+  public frameTimeSeconds: number;
   public nextAnimationName: string | null;
   public animationSpeedFactor: number;
-  public currentAnimationName: string;
+  public animationName: string;
   public isChangingAnimation: boolean = false;
 
   public static readonly symbol = Symbol('SpriteAnimation');
@@ -38,24 +38,24 @@ export class SpriteAnimationComponent implements Component {
   /**
    * Creates an instance of SpriteAnimationComponent.
    * @param animationSetName - The name of the animation set this component belongs to.
-   * @param currentAnimationName - The name of the current animation.
+   * @param animationName - The name of the current animation.
    * @param options - Optional parameters to configure the animation component.
    */
   constructor(
     animationSetName: string,
-    currentAnimationName: string,
+    animationName: string,
     options: Partial<SpriteAnimationOptions> = {},
   ) {
-    const { animationIndex, animationSpeedFactor } = {
+    const { startingAnimationIndex, animationSpeedFactor } = {
       ...defaultOptions,
       ...options,
     };
     this.name = SpriteAnimationComponent.symbol;
     this.animationSetName = animationSetName;
-    this.currentAnimationName = currentAnimationName;
-    this.animationIndex = animationIndex;
+    this.animationName = animationName;
+    this.animationIndex = startingAnimationIndex;
     this.animationSpeedFactor = animationSpeedFactor;
-    this.currentFrameTimeSeconds = 0;
+    this.frameTimeSeconds = 0;
     this.nextAnimationName = null;
   }
 }

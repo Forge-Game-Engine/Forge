@@ -193,7 +193,7 @@ export class AnimationSetManager {
   ): AnimationFrame {
     const {
       animationSetName: entityType,
-      currentAnimationName: currentAnimationSetName,
+      animationName: currentAnimationSetName,
       animationIndex,
     } = spriteAnimationComponent;
 

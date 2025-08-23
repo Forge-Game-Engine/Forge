@@ -8,10 +8,10 @@ import {
   Animation,
   AnimationFrame,
   AnimationSetManager,
-} from '../utilities/animation-set-manager';
+  immediatelySetCurrentAnimation,
+} from '../utilities';
 import { Vector2 } from '../../math';
 import { ParameterizedForgeEvent } from '../../events';
-import { immediatelySetCurrentAnimation } from '../utilities';
 
 describe('test running SpriteAnimationSystem', () => {
   let time: Time;
@@ -74,7 +74,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
@@ -82,7 +82,7 @@ describe('test running SpriteAnimationSystem', () => {
     spriteAnimationSystem.run(entity);
 
     expect(spriteAnimationComponent.animationIndex).toBe(1);
-    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.frameTimeSeconds).toBe(2);
   });
 
   it('should reset the animation index and switch to the next animation set if available', () => {
@@ -107,7 +107,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
@@ -115,8 +115,8 @@ describe('test running SpriteAnimationSystem', () => {
     spriteAnimationSystem.run(entity);
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
-    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(spriteAnimationComponent.currentAnimationName).toBe('run');
+    expect(spriteAnimationComponent.frameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.animationName).toBe('run');
   });
 
   it('should call nextAnimation if nextAnimationSetName is set on the component', () => {
@@ -142,7 +142,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
     spriteAnimationComponent.nextAnimationName = nextAnimationName;
 
@@ -151,10 +151,8 @@ describe('test running SpriteAnimationSystem', () => {
     spriteAnimationSystem.run(entity);
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
-    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(spriteAnimationComponent.currentAnimationName).toBe(
-      nextAnimationName,
-    );
+    expect(spriteAnimationComponent.frameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.animationName).toBe(nextAnimationName);
   });
 
   it('should not update animation index if frame duration has not been exceeded', () => {
@@ -178,7 +176,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
@@ -186,7 +184,7 @@ describe('test running SpriteAnimationSystem', () => {
     spriteAnimationSystem.run(entity);
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
-    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(0);
+    expect(spriteAnimationComponent.frameTimeSeconds).toBe(0);
   });
 
   it('should reset animation index and not switch animation set if nextAnimationSetName is not set', () => {
@@ -211,7 +209,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
@@ -219,8 +217,8 @@ describe('test running SpriteAnimationSystem', () => {
     spriteAnimationSystem.run(entity);
 
     expect(spriteAnimationComponent.animationIndex).toBe(0);
-    expect(spriteAnimationComponent.currentFrameTimeSeconds).toBe(2);
-    expect(spriteAnimationComponent.currentAnimationName).toBe('idle');
+    expect(spriteAnimationComponent.frameTimeSeconds).toBe(2);
+    expect(spriteAnimationComponent.animationName).toBe('idle');
   });
 
   it('should call the correct callback for the current animation frame', () => {
@@ -249,7 +247,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     immediatelySetCurrentAnimation(spriteAnimationComponent, 'idle');
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(2);
@@ -286,7 +284,7 @@ describe('test running SpriteAnimationSystem', () => {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    spriteAnimationComponent.currentFrameTimeSeconds = 0;
+    spriteAnimationComponent.frameTimeSeconds = 0;
     spriteAnimationComponent.animationIndex = 0;
 
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);

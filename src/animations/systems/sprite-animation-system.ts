@@ -2,11 +2,11 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import { AnimationSetManager } from '../utilities/animation-set-manager';
+import { AnimationSetManager } from '../utilities';
 import { finishAnimation, immediatelySetCurrentAnimation } from '../utilities';
 
 /**
- * System that manages and updates image-based animations for entities, such as from sprite sheets.
+ * System that manages and updates sprite animations for entities, such as from sprite sheets.
  */
 export class SpriteAnimationSystem extends System {
   private readonly _time: Time;
@@ -37,12 +37,12 @@ export class SpriteAnimationSystem extends System {
       );
     const animationSet = this._animationSetManager.getAnimation(
       spriteAnimationComponent.animationSetName,
-      spriteAnimationComponent.currentAnimationName,
+      spriteAnimationComponent.animationName,
     );
 
     if (!animationSet) {
       throw new Error(
-        `No animation found for animation set: ${spriteAnimationComponent.animationSetName}, animation name: ${spriteAnimationComponent.currentAnimationName}`,
+        `No animation found for animation set: ${spriteAnimationComponent.animationSetName}, animation name: ${spriteAnimationComponent.animationName}`,
       );
     }
 
@@ -57,14 +57,15 @@ export class SpriteAnimationSystem extends System {
     const currentFrame =
       animationSet.frames[spriteAnimationComponent.animationIndex];
 
-    if (
-      this._time.timeInSeconds -
-        spriteAnimationComponent.currentFrameTimeSeconds >=
+    const currentFrameTimeSeconds =
+      this._time.timeInSeconds - spriteAnimationComponent.frameTimeSeconds;
+
+    const adjustedFrameDuration =
       currentFrame.durationSeconds /
-        spriteAnimationComponent.animationSpeedFactor
-    ) {
-      spriteAnimationComponent.currentFrameTimeSeconds =
-        this._time.timeInSeconds;
+      spriteAnimationComponent.animationSpeedFactor;
+
+    if (currentFrameTimeSeconds >= adjustedFrameDuration) {
+      spriteAnimationComponent.frameTimeSeconds = this._time.timeInSeconds;
 
       if (
         spriteAnimationComponent.animationIndex <
@@ -99,7 +100,7 @@ export class SpriteAnimationSystem extends System {
   ): void {
     if (!spriteAnimationComponent.nextAnimationName) {
       throw new Error(
-        `No next animation name specified for animation set "${spriteAnimationComponent.animationSetName}" with current animation name "${spriteAnimationComponent.currentAnimationName}". 
+        `No next animation name specified for animation set "${spriteAnimationComponent.animationSetName}" with current animation name "${spriteAnimationComponent.animationName}". 
         Set the nextAnimationName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
       );
     }

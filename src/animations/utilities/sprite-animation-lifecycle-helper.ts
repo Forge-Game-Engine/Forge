@@ -22,6 +22,6 @@ export function immediatelySetCurrentAnimation(
   animationName: string,
 ): void {
   spriteAnimationComponent.nextAnimationName = null;
-  spriteAnimationComponent.currentAnimationName = animationName;
+  spriteAnimationComponent.animationName = animationName;
   finishAnimation(spriteAnimationComponent);
 }

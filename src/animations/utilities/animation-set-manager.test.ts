@@ -210,7 +210,7 @@ describe('AnimationSetManager', () => {
       const spriteAnimationComponent = new SpriteAnimationComponent(
         animationSetName,
         animationName,
-        { animationIndex: 1 },
+        { startingAnimationIndex: 1 },
       );
       const frame = animationSetManager.getAnimationFrame(
         spriteAnimationComponent,
