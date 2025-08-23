@@ -42,11 +42,11 @@ export function setupAnimationsDemo(
   setupInputs(inputsManager);
   //left column
   createShipAnimations(animationSetManager);
-  buildShipEntities(world, shipSprite);
+  buildShipEntities(world, shipSprite, animationSetManager);
 
   //middle column
   createAdventurerAnimations(animationSetManager);
-  buildAdventurerEntities(world, adventurerSprite);
+  buildAdventurerEntities(world, adventurerSprite, animationSetManager);
 
   //right column
   createAdventurerControllableAnimations(animationSetManager);
@@ -55,6 +55,7 @@ export function setupAnimationsDemo(
     adventurerSprite,
     attackParticleEmitter,
     jumpParticleEmitter,
+    animationSetManager,
   );
 }
 
@@ -66,7 +67,7 @@ export function setupAnimationsStressTest(
 ) {
   //left column
   createShipAnimations(animationSetManager);
-  buildShipEntitiesMultiple(world, shipSprite, repeats);
+  buildShipEntitiesMultiple(world, shipSprite, repeats, animationSetManager);
 }
 
 function setupInputs(inputsManager: InputManager) {
@@ -137,9 +138,7 @@ function createShipAnimations(animationSetManager: AnimationSetManager) {
   );
 }
 
-function createAdventurerAnimations(
-  animationSetManager: AnimationSetManager,
-) {
+function createAdventurerAnimations(animationSetManager: AnimationSetManager) {
   animationSetManager.createAnimation(
     ENTITY_TYPES.adventurer,
     ADVENTURER_ANIMATIONS.idle,
@@ -432,18 +431,29 @@ function createAdventurerControllableAnimations(
   );
 }
 
-function buildShipEntities(world: World, shipSprite: Sprite) {
+function buildShipEntities(
+  world: World,
+  shipSprite: Sprite,
+  animationSetManager: AnimationSetManager,
+) {
   world.buildAndAddEntity('ship-animation-spin', [
     new PositionComponent(-500, -150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin),
+    new SpriteAnimationComponent(
+      animationSetManager.getAnimation(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin),
+    ),
   ]);
   world.buildAndAddEntity('ship-animation-spin-random', [
     new PositionComponent(-500, 150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
-    new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spinRandom),
+    new SpriteAnimationComponent(
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.ship,
+        SHIP_ANIMATIONS.spinRandom,
+      ),
+    ),
   ]);
 }
 
@@ -451,6 +461,7 @@ function buildShipEntitiesMultiple(
   world: World,
   shipSprite: Sprite,
   repeats: number,
+  animationSetManager: AnimationSetManager,
 ) {
   for (let i = 0; i < repeats; i++) {
     world.buildAndAddEntity('ship-animation-spin', [
@@ -460,22 +471,34 @@ function buildShipEntitiesMultiple(
       ),
       new SpriteComponent(shipSprite),
       new ScaleComponent(0.5, 0.5),
-      new SpriteAnimationComponent(ENTITY_TYPES.ship, SHIP_ANIMATIONS.spin, {
-        animationSpeedFactor: 1 + Math.random() * 2,
-      }),
+      new SpriteAnimationComponent(
+        animationSetManager.getAnimation(
+          ENTITY_TYPES.ship,
+          SHIP_ANIMATIONS.spin,
+        ),
+        {
+          animationSpeedFactor: 1 + Math.random() * 2,
+        },
+      ),
       new FlipComponent(Math.random() < 0.5),
     ]);
   }
 }
 
-function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
+function buildAdventurerEntities(
+  world: World,
+  adventurerSprite: Sprite,
+  animationSetManager: AnimationSetManager,
+) {
   world.buildAndAddEntity('adventurer-animation-idle', [
     new PositionComponent(-200, -200),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.idle,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.idle,
+      ),
     ),
   ]);
 
@@ -484,8 +507,10 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.idleHalf,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.idleHalf,
+      ),
     ),
   ]);
 
@@ -494,8 +519,10 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.run,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.run,
+      ),
     ),
   ]);
 
@@ -504,8 +531,10 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.attack1,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.attack1,
+      ),
       {
         animationSpeedFactor: 4,
       },
@@ -517,8 +546,10 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.attack3,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.attack3,
+      ),
     ),
   ]);
 
@@ -527,8 +558,10 @@ function buildAdventurerEntities(world: World, adventurerSprite: Sprite) {
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurer,
-      ADVENTURER_ANIMATIONS.die,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurer,
+        ADVENTURER_ANIMATIONS.die,
+      ),
     ),
   ]);
 }
@@ -538,14 +571,17 @@ function buildAdventurerControllableEntities(
   adventurerSprite: Sprite,
   attackParticleEmitter: ParticleEmitter,
   jumpParticleEmitter: ParticleEmitter,
+  animationSetManager: AnimationSetManager,
 ) {
   world.buildAndAddEntity('adventurer-controllable', [
     new PositionComponent(400, 0),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),
     new SpriteAnimationComponent(
-      ENTITY_TYPES.adventurerControllable,
-      ADVENTURER_ANIMATIONS.idle,
+      animationSetManager.getAnimation(
+        ENTITY_TYPES.adventurerControllable,
+        ADVENTURER_ANIMATIONS.idle,
+      ),
     ),
     new ControlAdventurerComponent(),
     new FlipComponent(),

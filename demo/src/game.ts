@@ -28,7 +28,7 @@ const world = createWorld('world', game);
 const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {});
 const animationSetManager = registerAnimationSetManager();
-const { renderLayers } = registerRendering(game, world, animationSetManager);
+const { renderLayers } = registerRendering(game, world);
 
 const shipSprite = await createImageNameSprite(
   'ship_spritesheet.png',
@@ -162,7 +162,7 @@ animationDemo.setupAnimationsDemo(
 
 world.addSystems(
   new SpriteAnimationSystem(world.time, animationSetManager),
-  new ControlAdventurerSystem(inputsManager),
+  new ControlAdventurerSystem(inputsManager, animationSetManager),
   new ParticleEmitterSystem(world),
   new ParticlePositionSystem(world.time),
   new AgeSystem(world),

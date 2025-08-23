@@ -1,4 +1,5 @@
 import type { Component } from '../../ecs';
+import { Animation } from '../utilities';
 /**
  * Options for configuring the sprite animation component.
  */
@@ -25,25 +26,22 @@ const defaultOptions: SpriteAnimationOptions = {
  */
 export class SpriteAnimationComponent implements Component {
   public name: symbol;
-  public animationSetName: string;
   public animationIndex: number;
   public frameTimeSeconds: number;
-  public nextAnimationName: string | null;
+  public nextAnimation: Animation | null;
   public animationSpeedFactor: number;
-  public animationName: string;
+  public animation: Animation;
   public isChangingAnimation: boolean = false;
 
   public static readonly symbol = Symbol('SpriteAnimation');
 
   /**
    * Creates an instance of SpriteAnimationComponent.
-   * @param animationSetName - The name of the animation set this component belongs to.
-   * @param animationName - The name of the current animation.
+   * @param currentAnimation - The current animation the sprite should have.
    * @param options - Optional parameters to configure the animation component.
    */
   constructor(
-    animationSetName: string,
-    animationName: string,
+    currentAnimation: Animation,
     options: Partial<SpriteAnimationOptions> = {},
   ) {
     const { startingAnimationIndex, animationSpeedFactor } = {
@@ -51,11 +49,10 @@ export class SpriteAnimationComponent implements Component {
       ...options,
     };
     this.name = SpriteAnimationComponent.symbol;
-    this.animationSetName = animationSetName;
-    this.animationName = animationName;
+    this.animation = currentAnimation;
     this.animationIndex = startingAnimationIndex;
     this.animationSpeedFactor = animationSpeedFactor;
     this.frameTimeSeconds = 0;
-    this.nextAnimationName = null;
+    this.nextAnimation = null;
   }
 }

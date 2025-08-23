@@ -1,8 +1,4 @@
-import {
-  AnimationFrame,
-  AnimationSetManager,
-  SpriteAnimationComponent,
-} from '../../animations';
+import { AnimationFrame, SpriteAnimationComponent } from '../../animations';
 import {
   FlipComponent,
   PositionComponent,
@@ -37,20 +33,17 @@ import {
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
-  animationSetManager: AnimationSetManager;
 }
 
 export class RenderSystem extends System {
   private readonly _layer: ForgeRenderLayer;
   private readonly _instanceBuffer: WebGLBuffer;
-  private readonly _animationSetManager: AnimationSetManager;
 
   constructor(options: RenderSystemOptions) {
     super('renderer', [RenderableBatchComponent.symbol]);
 
-    const { layer, animationSetManager } = options;
+    const { layer } = options;
     this._layer = layer;
-    this._animationSetManager = animationSetManager;
 
     this._instanceBuffer = layer.context.createBuffer()!;
     this._setupGLState();
@@ -140,9 +133,10 @@ export class RenderSystem extends System {
           SpriteAnimationComponent.symbol,
         );
 
-      const animationFrame = spriteAnimationComponent
-        ? this._animationSetManager.getAnimationFrame(spriteAnimationComponent)
-        : null;
+      const animationFrame =
+        spriteAnimationComponent?.animation?.frames[
+          spriteAnimationComponent?.animationIndex
+        ];
 
       this._populateInstanceData(batch.instanceData, instanceDataOffset, {
         position,

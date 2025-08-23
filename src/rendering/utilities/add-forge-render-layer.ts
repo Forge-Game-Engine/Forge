@@ -1,4 +1,3 @@
-import { AnimationSetManager } from '../../animations';
 import { type World } from '../../ecs';
 import { RenderableBatchComponent } from '../components';
 import type { LayerService } from '../layer-service';
@@ -21,7 +20,6 @@ export function addForgeRenderLayer(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
-  animationSetManager: AnimationSetManager,
 ) {
   const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer);
   const layer = new ForgeRenderLayer(layerName, canvas);
@@ -30,7 +28,6 @@ export function addForgeRenderLayer(
 
   const layerRenderSystem = new RenderSystem({
     layer,
-    animationSetManager,
   });
 
   world.addSystem(layerRenderSystem);

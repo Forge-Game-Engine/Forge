@@ -2,8 +2,12 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import { AnimationSetManager } from '../utilities';
-import { finishAnimation, immediatelySetCurrentAnimation } from '../utilities';
+import {
+  Animation,
+  AnimationSetManager,
+  finishAnimation,
+  immediatelySetCurrentAnimation,
+} from '../utilities';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.
@@ -35,79 +39,65 @@ export class SpriteAnimationSystem extends System {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    const animationSet = this._animationSetManager.getAnimation(
-      spriteAnimationComponent.animationSetName,
-      spriteAnimationComponent.animationName,
-    );
-
-    if (!animationSet) {
-      throw new Error(
-        `No animation found for animation set: ${spriteAnimationComponent.animationSetName}, animation name: ${spriteAnimationComponent.animationName}`,
-      );
-    }
+    const { animation, animationSpeedFactor, nextAnimation } =
+      spriteAnimationComponent;
 
     // allows animations to be triggered on the first frame of an animation
     if (spriteAnimationComponent.isChangingAnimation) {
       spriteAnimationComponent.isChangingAnimation = false;
-      animationSet.animationEvents
-        .get(spriteAnimationComponent.animationIndex)
-        ?.raise(entity);
+      this._raiseAnimationEvent(animation, spriteAnimationComponent, entity);
     }
 
-    const currentFrame =
-      animationSet.frames[spriteAnimationComponent.animationIndex];
+    const currentFrameDurationSeconds =
+      animation.frames[spriteAnimationComponent.animationIndex].durationSeconds;
 
     const currentFrameTimeSeconds =
       this._time.timeInSeconds - spriteAnimationComponent.frameTimeSeconds;
 
     const adjustedFrameDuration =
-      currentFrame.durationSeconds /
-      spriteAnimationComponent.animationSpeedFactor;
+      currentFrameDurationSeconds / animationSpeedFactor;
 
     if (currentFrameTimeSeconds >= adjustedFrameDuration) {
       spriteAnimationComponent.frameTimeSeconds = this._time.timeInSeconds;
 
       if (
         spriteAnimationComponent.animationIndex <
-        animationSet.frames.length - 1
+        animation.frames.length - 1
       ) {
         spriteAnimationComponent.animationIndex++;
-        animationSet.animationEvents
-          .get(spriteAnimationComponent.animationIndex)
-          ?.raise(entity);
+        this._raiseAnimationEvent(animation, spriteAnimationComponent, entity);
 
         return;
       }
 
       finishAnimation(spriteAnimationComponent);
 
-      if (spriteAnimationComponent.nextAnimationName) {
-        this._goToNextAnimation(spriteAnimationComponent);
-      } else if (animationSet.nextAnimationName) {
+      if (nextAnimation) {
+        immediatelySetCurrentAnimation(spriteAnimationComponent, nextAnimation);
+      } else if (animation.defaultNextAnimationName) {
+        const defaultNextAnimation =
+          this._animationSetManager.getDefaultNextAnimation(animation);
         immediatelySetCurrentAnimation(
           spriteAnimationComponent,
-          animationSet.nextAnimationName,
+          defaultNextAnimation,
         );
       }
     }
   }
-  /**
-   * Function to make the sprite animation component go to its next animation that it was assigned
-   * @param spriteAnimationComponent - the sprite animation component to act on
-   */
-  private _goToNextAnimation(
-    spriteAnimationComponent: SpriteAnimationComponent,
-  ): void {
-    if (!spriteAnimationComponent.nextAnimationName) {
-      throw new Error(
-        `No next animation name specified for animation set "${spriteAnimationComponent.animationSetName}" with current animation name "${spriteAnimationComponent.animationName}". 
-        Set the nextAnimationName property on spriteAnimationComponent component instance, or use setCurrentAnimation() to set the next animation.`,
-      );
-    }
 
-    immediatelySetCurrentAnimation(
-      spriteAnimationComponent,
-      spriteAnimationComponent.nextAnimationName,
-    );
+  /**
+   * Raises an animation event for the specified entity on the current frame
+   * @param animation - The animation to raise the event for
+   * @param spriteAnimationComponent - The sprite animation component
+   * @param entity - The entity the animation belongs to
+   */
+  private _raiseAnimationEvent(
+    animation: Animation,
+    spriteAnimationComponent: SpriteAnimationComponent,
+    entity: Entity,
+  ) {
+    animation.animationEvents
+      .get(spriteAnimationComponent.animationIndex)
+      ?.raise(entity);
   }
 }

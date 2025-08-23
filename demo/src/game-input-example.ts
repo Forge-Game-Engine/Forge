@@ -16,7 +16,6 @@ import {
   mouseButtons,
   MouseInputSource,
   MouseTriggerInteraction,
-  registerAnimationSetManager,
   registerCamera,
   registerInputs,
   registerRendering,
@@ -40,8 +39,7 @@ const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {
   zoomInput,
 });
-const animationSetManager = registerAnimationSetManager();
-const { renderLayers } = registerRendering(game, world, animationSetManager);
+const { renderLayers } = registerRendering(game, world);
 
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);

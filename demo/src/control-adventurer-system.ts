@@ -1,4 +1,5 @@
 import {
+  AnimationSetManager,
   Entity,
   FlipComponent,
   immediatelySetCurrentAnimation,
@@ -13,7 +14,11 @@ import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
   private readonly _inputsManager: InputManager;
-  constructor(inputsManager: InputManager) {
+  private readonly _animationSetManager: AnimationSetManager;
+  constructor(
+    inputsManager: InputManager,
+    animationSetManager: AnimationSetManager,
+  ) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       SpriteAnimationComponent.symbol,
@@ -21,6 +26,7 @@ export class ControlAdventurerSystem extends System {
       PositionComponent.symbol,
     ]);
     this._inputsManager = inputsManager;
+    this._animationSetManager = animationSetManager;
   }
 
   public run(entity: Entity): void {
@@ -40,23 +46,35 @@ export class ControlAdventurerSystem extends System {
 
     if (
       jumpAction?.isTriggered &&
-      spriteAnimationComponent.animationName !== ADVENTURER_ANIMATIONS.jump
+      spriteAnimationComponent.animation.name !== ADVENTURER_ANIMATIONS.jump
     ) {
-      // jump always happens immediately
-      immediatelySetCurrentAnimation(
-        spriteAnimationComponent,
+      const jumpAnimation = this._animationSetManager.getAnimation(
+        spriteAnimationComponent.animation.animationSetName,
         ADVENTURER_ANIMATIONS.jump,
       );
+      // jump always happens immediately
+      immediatelySetCurrentAnimation(spriteAnimationComponent, jumpAnimation);
     } else if (runLAction?.isTriggered) {
+      const runAnimation = this._animationSetManager.getAnimation(
+        spriteAnimationComponent.animation.animationSetName,
+        ADVENTURER_ANIMATIONS.run,
+      );
       // run and attack happen at the end of the current animation
-      spriteAnimationComponent.nextAnimationName = ADVENTURER_ANIMATIONS.run;
+      spriteAnimationComponent.nextAnimation = runAnimation;
       flipComponent.flipX = true;
     } else if (runRAction?.isTriggered) {
-      spriteAnimationComponent.nextAnimationName = ADVENTURER_ANIMATIONS.run;
+      const runAnimation = this._animationSetManager.getAnimation(
+        spriteAnimationComponent.animation.animationSetName,
+        ADVENTURER_ANIMATIONS.run,
+      );
+      spriteAnimationComponent.nextAnimation = runAnimation;
       flipComponent.flipX = false;
     } else if (attackAction?.isTriggered) {
-      spriteAnimationComponent.nextAnimationName =
-        ADVENTURER_ANIMATIONS.attack1;
+      const attackAnimation = this._animationSetManager.getAnimation(
+        spriteAnimationComponent.animation.animationSetName,
+        ADVENTURER_ANIMATIONS.attack1,
+      );
+      spriteAnimationComponent.nextAnimation = attackAnimation;
     }
   }
 }

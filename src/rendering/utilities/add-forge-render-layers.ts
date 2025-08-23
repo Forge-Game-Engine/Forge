@@ -1,4 +1,3 @@
-import { AnimationSetManager } from '../../animations';
 import { type World } from '../../ecs';
 import type { LayerService } from '../layer-service';
 import type { ForgeRenderLayer } from '../render-layers';
@@ -19,7 +18,6 @@ export function addForgeRenderLayers(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
-  animationSetManager: AnimationSetManager,
 ) {
   const renderLayers = new Array<ForgeRenderLayer>();
 
@@ -29,7 +27,6 @@ export function addForgeRenderLayers(
       gameContainer,
       layerService,
       world,
-      animationSetManager,
     );
 
     renderLayers.push(renderLayer);

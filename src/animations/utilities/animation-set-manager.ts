@@ -1,7 +1,6 @@
 import { Entity } from '../../ecs';
 import { ParameterizedForgeEvent } from '../../events';
 import { Vector2 } from '../../math';
-import { SpriteAnimationComponent } from '../components';
 
 /**
  * Interface representing a group of animation frames for a specific animation name.
@@ -10,16 +9,22 @@ export interface Animation {
   /**
    * The name of this animation.
    */
-  animationName: string;
+  name: string;
+
+  /**
+   * The name of the animation set this animation belongs to.
+   */
+  animationSetName: string;
   /**
    * The frames of the animation.
    */
   frames: AnimationFrame[];
   /**
-   * The name of the next animation to switch to after this animation completes.
+   * The name of the default next animation to switch to after this animation completes.
+   * This does NOT take precedence over the next animation in the spriteAnimationComponent itself.
    * If not set, this animation will repeat by default.
    */
-  nextAnimationName: string | null;
+  defaultNextAnimationName: string | null;
   /**
    * Map of events to run at specific frames of the animation.
    * The key is the frame index, and the value is the forge event to be raised.
@@ -155,9 +160,10 @@ export class AnimationSetManager {
     );
 
     const animationSet: Animation = {
-      animationName,
+      name: animationName,
+      animationSetName,
       frames: animationFrames,
-      nextAnimationName,
+      defaultNextAnimationName: nextAnimationName,
       animationEvents,
     };
 
@@ -177,37 +183,37 @@ export class AnimationSetManager {
   public getAnimation(
     animationSetName: string,
     animationName: string,
-  ): Animation | null {
-    return (
-      this._animationSets.get(animationSetName)?.get(animationName) ?? null
-    );
-  }
+  ): Animation {
+    const animation = this._animationSets
+      .get(animationSetName)
+      ?.get(animationName);
 
-  /**
-   * Retrieves the current animation frame for a given SpriteAnimationComponent.
-   * @param spriteAnimationComponent - The SpriteAnimationComponent to get the current frame for.
-   * @returns The current AnimationFrame or null if the component is not provided.
-   */
-  public getAnimationFrame(
-    spriteAnimationComponent: SpriteAnimationComponent,
-  ): AnimationFrame {
-    const {
-      animationSetName: entityType,
-      animationName: currentAnimationSetName,
-      animationIndex,
-    } = spriteAnimationComponent;
-
-    const animationSet = this.getAnimation(entityType, currentAnimationSetName);
-
-    if (!animationSet) {
-      throw new Error(
-        `No animation found for entity type: ${entityType}, animation: ${currentAnimationSetName}`,
+    if (!animation) {
+      throw Error(
+        `Animation not found for animation set: ${animationSetName}, animation name: ${animationName}`,
       );
     }
 
-    const { frames: animationFrames } = animationSet;
+    return animation;
+  }
 
-    return animationFrames[animationIndex];
+  /**
+   * Retrieves the next animation of the entered animation.
+   * @param animation - The current animation.
+   * @returns The next animation, or itself if there is no next animation specified on the component.
+   */
+  public getDefaultNextAnimation(animation: Animation): Animation {
+    const { defaultNextAnimationName: nextAnimationName, animationSetName } =
+      animation;
+
+    if (!nextAnimationName) {
+      return animation;
+    }
+
+    return (
+      this._animationSets.get(animationSetName)?.get(nextAnimationName) ??
+      animation
+    );
   }
 
   /**

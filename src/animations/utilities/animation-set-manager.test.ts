@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationSetManager } from './animation-set-manager';
 import { Vector2 } from '../../math';
-import { SpriteAnimationComponent } from '../components';
 import { ParameterizedForgeEvent } from '../../events';
 import { Entity } from '../../ecs';
 
@@ -147,78 +146,6 @@ describe('AnimationSetManager', () => {
       expect(animation?.frames[0].offset).toEqual(Vector2.zero);
       expect(animation?.frames[0].scale).toEqual(new Vector2(0.5, 0.5));
     });
-  });
-
-  describe('getAnimation', () => {
-    it('should return null if no animation exists for the given animation set and animation name', () => {
-      const animation = animationSetManager.getAnimation('nonexistent', 'idle');
-      expect(animation).toBeNull();
-    });
-
-    it('should retrieve the correct animation', () => {
-      const animationSetName = 'player';
-      const animationName = 'jump';
-      const spritesPerColumn = 1;
-      const spritesPerRow = 1;
-      const frameDuration = 1;
-
-      animationSetManager.createAnimation(
-        animationSetName,
-        animationName,
-        spritesPerColumn,
-        spritesPerRow,
-        frameDuration,
-      );
-
-      const animation = animationSetManager.getAnimation(
-        animationSetName,
-        animationName,
-      );
-      expect(animation).not.toBeNull();
-      expect(animation?.frames.length).toBe(1);
-    });
-  });
-
-  describe('getAnimationFrame', () => {
-    it('should throw an error if no animation exists for the given entity type and animation type', () => {
-      const spriteAnimationComponent = new SpriteAnimationComponent(
-        'nonexistent',
-        'idle',
-      );
-
-      expect(() => {
-        animationSetManager.getAnimationFrame(spriteAnimationComponent);
-      }).toThrow(
-        'No animation found for entity type: nonexistent, animation: idle',
-      );
-    });
-
-    it('should retrieve the correct animation frame', () => {
-      const animationSetName = 'player';
-      const animationName = 'walk';
-      const spritesPerColumn = 2;
-      const spritesPerRow = 2;
-      const frameDuration = 0.5;
-
-      animationSetManager.createAnimation(
-        animationSetName,
-        animationName,
-        spritesPerColumn,
-        spritesPerRow,
-        frameDuration,
-      );
-      const spriteAnimationComponent = new SpriteAnimationComponent(
-        animationSetName,
-        animationName,
-        { startingAnimationIndex: 1 },
-      );
-      const frame = animationSetManager.getAnimationFrame(
-        spriteAnimationComponent,
-      );
-      expect(frame).not.toBeNull();
-      expect(frame?.durationSeconds).toBe(frameDuration);
-    });
-
     it('should correctly calculate frame offsets and scales', () => {
       const animationSetName = 'player';
       const animationName = 'walk';
@@ -325,7 +252,7 @@ describe('AnimationSetManager', () => {
         animationName,
       );
       expect(animation).not.toBeNull();
-      expect(animation?.nextAnimationName).toBe(nextAnimationName);
+      expect(animation?.defaultNextAnimationName).toBe(nextAnimationName);
     });
 
     it('should handle single frame animations correctly', () => {
@@ -350,6 +277,37 @@ describe('AnimationSetManager', () => {
       expect(animation).not.toBeNull();
       expect(animation?.frames.length).toBe(1);
       expect(animation?.frames[0].durationSeconds).toBe(frameDuration);
+    });
+  });
+
+  describe('getAnimation', () => {
+    it('should throw an error if no animation exists for the given animation set and animation name', () => {
+      expect(() =>
+        animationSetManager.getAnimation('nonexistent', 'idle'),
+      ).toThrowError();
+    });
+
+    it('should retrieve the correct animation', () => {
+      const animationSetName = 'player';
+      const animationName = 'jump';
+      const spritesPerColumn = 1;
+      const spritesPerRow = 1;
+      const frameDuration = 1;
+
+      animationSetManager.createAnimation(
+        animationSetName,
+        animationName,
+        spritesPerColumn,
+        spritesPerRow,
+        frameDuration,
+      );
+
+      const animation = animationSetManager.getAnimation(
+        animationSetName,
+        animationName,
+      );
+      expect(animation).not.toBeNull();
+      expect(animation?.frames.length).toBe(1);
     });
   });
 });

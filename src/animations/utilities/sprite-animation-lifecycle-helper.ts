@@ -1,4 +1,5 @@
 import { SpriteAnimationComponent } from '../components';
+import { Animation } from './animation-set-manager';
 
 /**
  * Function to be called at the end of a sprite animation, to set it up for the next animation
@@ -15,13 +16,13 @@ export function finishAnimation(
  * Function to immediately set the current animation of a sprite animation
  * If the sprite animation component had a next animation assigned, that next animation will be ignored and removed
  * @param spriteAnimationComponent - the sprite animation component to act on
- * @param animationName - the name of the next animation to run
+ * @param animation - the next animation to run
  */
 export function immediatelySetCurrentAnimation(
   spriteAnimationComponent: SpriteAnimationComponent,
-  animationName: string,
+  animation: Animation,
 ): void {
-  spriteAnimationComponent.nextAnimationName = null;
-  spriteAnimationComponent.animationName = animationName;
+  spriteAnimationComponent.nextAnimation = null;
+  spriteAnimationComponent.animation = animation;
   finishAnimation(spriteAnimationComponent);
 }
