@@ -12,7 +12,6 @@ import { createCanvas } from './create-canvas';
  * @param gameContainer - The HTML element that will contain the canvas.
  * @param layerService - The layer service to register the layer with.
  * @param world - The ECS world to which the systems will be added.
- * @param animationSetManager - The sprite animation manager to handle animations.
  * @returns An array containing the created layer and canvas.
  */
 export function addForgeRenderLayer(
@@ -36,9 +35,9 @@ export function addForgeRenderLayer(
     new RenderableBatchComponent(layer),
   ]);
 
-  const spriteBatchingSystem = new SpriteBatchingSystem(batcherEntity);
+  const batchingSystem = new SpriteBatchingSystem(batcherEntity);
 
-  world.addSystem(spriteBatchingSystem);
+  world.addSystem(batchingSystem);
 
   return layer;
 }
