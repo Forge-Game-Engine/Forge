@@ -34,10 +34,13 @@ export class AgeScaleSystem extends System {
     );
 
     const ageRatio = ageComponent.ageSeconds / ageComponent.lifetimeSeconds;
-    const newScale =
-      ageScaleComponent.originalScale * (1 - ageRatio) +
-      ageScaleComponent.lifetimeScaleReduction * ageRatio;
-    scaleComponent.x = newScale;
-    scaleComponent.y = newScale;
+    const newScaleX =
+      ageScaleComponent.originalScaleX * (1 - ageRatio) +
+      ageScaleComponent.finalLifetimeScaleX * ageRatio;
+    const newScaleY =
+      ageScaleComponent.originalScaleY * (1 - ageRatio) +
+      ageScaleComponent.finalLifetimeScaleY * ageRatio;
+    scaleComponent.x = newScaleX;
+    scaleComponent.y = newScaleY;
   }
 }

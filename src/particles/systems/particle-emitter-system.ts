@@ -132,6 +132,8 @@ export class ParticleEmitterSystem extends System {
       new AgeComponent(lifetimeSeconds),
       new AgeScaleComponent(
         originalScale,
+        originalScale,
+        particleEmitter.lifetimeScaleReduction,
         particleEmitter.lifetimeScaleReduction,
       ),
       new PositionComponent(spawnPosition.x, spawnPosition.y),

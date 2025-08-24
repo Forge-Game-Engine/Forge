@@ -10,7 +10,7 @@ describe('AgeScaleSystem', () => {
     // Arrange
     const ageComponent = new AgeComponent(10); // ageSeconds = 5, lifetimeSeconds = 10
     ageComponent.ageSeconds = 5;
-    const ageScaleComponent = new AgeScaleComponent(1, 0.5); // originalScale = 1, lifetimeScaleReduction = 0.5
+    const ageScaleComponent = new AgeScaleComponent(1, 1, 0.5, 0.1); // originalScale = (1,1), lifetimeScaleReduction = (0.5,0.1)
     const scaleComponent = new ScaleComponent(1, 1);
 
     const entity = new Entity('test', world, [
@@ -25,17 +25,19 @@ describe('AgeScaleSystem', () => {
     system.run(entity);
 
     // Assert
-    const expectedScale = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
-    expect(scaleComponent.x).toBe(expectedScale);
-    expect(scaleComponent.y).toBe(expectedScale);
+    const expectedScaleX = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
+    const expectedScaleY = 0.55; // Calculated as: 1 * (1 - 0.5) + 0.1 * 0.5
+    expect(scaleComponent.x).toBe(expectedScaleX);
+    expect(scaleComponent.y).toBe(expectedScaleY);
   });
 
   it('should show the end scale at the end of the lifetime', () => {
     // Arrange
-    const expectedScale = 0.79;
     const ageComponent = new AgeComponent(10); // ageSeconds = 5, lifetimeSeconds = 10
     ageComponent.ageSeconds = 10;
-    const ageScaleComponent = new AgeScaleComponent(1, expectedScale); // originalScale = 1, lifetimeScaleReduction = 0.5
+    const ageScaleComponent = new AgeScaleComponent(2, 3, 0, 0.3); // originalScale = (2,3), lifetimeScaleReduction = (0,0.3)
+    const expectedScaleX = 0;
+    const expectedScaleY = 0.3;
     const scaleComponent = new ScaleComponent(1, 1);
 
     const entity = new Entity('test', world, [
@@ -50,7 +52,7 @@ describe('AgeScaleSystem', () => {
     system.run(entity);
 
     // Assert
-    expect(scaleComponent.x).toBe(expectedScale);
-    expect(scaleComponent.y).toBe(expectedScale);
+    expect(scaleComponent.x).toBe(expectedScaleX);
+    expect(scaleComponent.y).toBe(expectedScaleY);
   });
 });

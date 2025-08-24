@@ -5,19 +5,29 @@ import type { Component } from '../../ecs';
  */
 export class AgeScaleComponent implements Component {
   public name: symbol;
-  public originalScale: number;
-  public lifetimeScaleReduction: number;
+  public originalScaleX: number;
+  public originalScaleY: number;
+  public finalLifetimeScaleX: number;
+  public finalLifetimeScaleY: number;
   public static readonly symbol = Symbol('AgeScale');
 
   /**
    * Creates an instance of the AgeScaleComponent.
-   * @param originalScale - The original scale of the entity.
-   * @param lifetimeScaleReduction - The reduction in scale of the entity over its lifetime.
-   * The entity's final scale will equal to originalScale * lifetimeScaleReduction.
+   * @param originalScaleX - The original x scale of the entity.
+   * @param originalScaleY - The original y scale of the entity.
+   * @param finalLifetimeScaleX - The final x scale the entity will have at the end of its lifetime
+   * @param finalLifetimeScaleY - The final y scale the entity will have at the end of its lifetime
    */
-  constructor(originalScale: number, lifetimeScaleReduction: number) {
+  constructor(
+    originalScaleX: number,
+    originalScaleY: number,
+    finalLifetimeScaleX: number,
+    finalLifetimeScaleY: number,
+  ) {
     this.name = AgeScaleComponent.symbol;
-    this.originalScale = originalScale;
-    this.lifetimeScaleReduction = lifetimeScaleReduction;
+    this.originalScaleX = originalScaleX;
+    this.originalScaleY = originalScaleY;
+    this.finalLifetimeScaleX = finalLifetimeScaleX;
+    this.finalLifetimeScaleY = finalLifetimeScaleY;
   }
 }
