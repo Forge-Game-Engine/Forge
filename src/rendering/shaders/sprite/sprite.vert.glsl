@@ -18,18 +18,21 @@ uniform mat3 u_projection; // 2D projection/camera matrix
 out vec2 v_texCoord;
 
 void main() {
-    // 1. Scale quad to sprite size and scale
-    vec2 scaled = a_position * a_instanceSize * a_instanceScale;
+    // Convert pivot from [0,1] to [-0.5,0.5] coordinate space
+    vec2 normalizedPivot = a_instancePivot - 0.5;
+    
+    // 1. Apply pivot (move origin)
+    vec2 pivoted = a_position - normalizedPivot;
 
-    // 2. Apply pivot (move origin)
-    vec2 pivoted = scaled - a_instancePivot;
+    // 2. Scale quad to sprite size and scale
+    vec2 scaled = pivoted * a_instanceSize * a_instanceScale;
 
     // 3. Rotate
     float c = cos(a_instanceRot);
     float s = sin(a_instanceRot);
     vec2 rotated = vec2(
-        c * pivoted.x - s * pivoted.y,
-        s * pivoted.x + c * pivoted.y
+        c * scaled.x - s * scaled.y,
+        s * scaled.x + c * scaled.y
     );
 
     // 4. Translate to world position
