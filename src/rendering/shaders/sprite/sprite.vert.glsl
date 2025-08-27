@@ -6,11 +6,13 @@ in vec2 a_position;      // Vertex position (e.g., quad corners)
 in vec2 a_texCoord;      // Texture coordinate
 
 // Per-instance attributes:
-in vec2 a_instancePos;   // Sprite position
-in float a_instanceRot;  // Sprite rotation (radians)
-in vec2 a_instanceScale; // Sprite scale
-in vec2 a_instanceSize;  // Sprite width/height
-in vec2 a_instancePivot; // Sprite pivot (origin offset)
+in vec2 a_instancePos;        // Sprite position
+in float a_instanceRot;       // Sprite rotation (radians)
+in vec2 a_instanceScale;      // Sprite scale
+in vec2 a_instanceSize;       // Sprite width/height
+in vec2 a_instancePivot;      // Sprite pivot (origin offset)
+in vec2 a_instanceTexOffset;  // Texture region offset (UV)
+in vec2 a_instanceTexSize;    // Texture region size (UV)
 
 // Uniforms for projection/camera:
 uniform mat3 u_projection; // 2D projection/camera matrix
@@ -42,5 +44,5 @@ void main() {
     vec3 projected = u_projection * vec3(world, 1.0);
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
-    v_texCoord = a_texCoord;
+    v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;
 }

@@ -1,3 +1,4 @@
+import { SpriteAnimationManager } from '../../animations';
 import { type World } from '../../ecs';
 import { RenderableBatchComponent } from '../components';
 import type { LayerService } from '../layer-service';
@@ -12,6 +13,7 @@ import { createCanvas } from './create-canvas';
  * @param gameContainer - The HTML element that will contain the canvas.
  * @param layerService - The layer service to register the layer with.
  * @param world - The ECS world to which the systems will be added.
+ * @param animationManager - The sprite animation manager to handle animations.
  * @returns An array containing the created layer and canvas.
  */
 export function addForgeRenderLayer(
@@ -19,6 +21,7 @@ export function addForgeRenderLayer(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
+  animationManager: SpriteAnimationManager,
 ) {
   const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer);
   const layer = new ForgeRenderLayer(layerName, canvas);
@@ -27,6 +30,7 @@ export function addForgeRenderLayer(
 
   const layerRenderSystem = new RenderSystem({
     layer,
+    animationManager,
   });
 
   world.addSystem(layerRenderSystem);
