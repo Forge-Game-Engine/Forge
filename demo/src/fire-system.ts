@@ -1,4 +1,5 @@
 import {
+  Axis1dAction,
   Entity,
   InputsComponent,
   System,
@@ -18,13 +19,16 @@ export class FireSystem extends System {
 
     const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
     const runAction = inputs.inputManager.getAction<HoldAction>('run');
+    const axisAction = inputs.inputManager.getAction<Axis1dAction>('axis');
 
     if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
     }
 
-    if(runAction?.isHeld) {
+    if (runAction?.isHeld) {
       console.log(`Run action is being held`);
     }
+
+    console.log(`Axis action value: ${axisAction?.value}`);
   }
 }

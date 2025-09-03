@@ -8,6 +8,7 @@ import {
   Game,
   ImageCache,
   InputGroup,
+  KeyboardAxis1dInteraction,
   KeyboardHoldInteraction,
   KeyboardInputSource,
   KeyboardTriggerInteraction,
@@ -23,6 +24,7 @@ import {
   TriggerAction,
 } from '../../src';
 import { HoldAction } from '../../src/input/actions/hold-action';
+import { KeyboardAxis1dInputSource } from '../../src/input/input-sources/keyboard-axis1d-input-source';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -36,7 +38,8 @@ const world = createWorld('world', game);
 const zoomInput = new Axis1dAction('zoom');
 const panInput = new Axis2dAction('pan', actionResetTypes.noReset);
 const fireInput = new TriggerAction('fire');
-const runInput= new HoldAction('run');
+const runInput = new HoldAction('run');
+const axisInput = new Axis1dAction('axis');
 
 const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {
@@ -47,12 +50,27 @@ const { renderLayers } = registerRendering(game, world);
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);
 
+const keyboardAxis1dInputSource = new KeyboardAxis1dInputSource(
+  inputsManager,
+  keyCodes.m,
+  keyCodes.n,
+);
+
 const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
 
-inputsManager.addSources(keyboardInputSource, mouseInputSource);
-inputsManager.addActions(fireInput, zoomInput, panInput, runInput);
+inputsManager.addSources(
+  keyboardInputSource,
+  mouseInputSource,
+  keyboardAxis1dInputSource,
+);
+inputsManager.addActions(fireInput, zoomInput, panInput, runInput, axisInput);
 inputsManager.setActiveGroup(defaultInputGroup);
+
+keyboardAxis1dInputSource.bindAxis1d(axisInput, {
+  negativeKey: keyCodes.m,
+  positiveKey: keyCodes.n,
+});
 
 fireInput.bind(
   new KeyboardTriggerInteraction(
@@ -71,9 +89,15 @@ fireInput.bind(
 );
 
 runInput.bind(
-  new KeyboardHoldInteraction(
-    { keyCode: keyCodes.k, moment: buttonMoments.hold },
-    keyboardInputSource,
+  new KeyboardHoldInteraction({ keyCode: keyCodes.k }, keyboardInputSource),
+  defaultInputGroup,
+);
+
+axisInput.bind(
+  new KeyboardAxis1dInteraction(
+    keyboardAxis1dInputSource,
+    keyCodes.m,
+    keyCodes.n,
   ),
   defaultInputGroup,
 );
@@ -111,10 +135,6 @@ panInput.bind(
   new MouseAxis2dInteraction(mouseInputSource),
   alternativeInputGroup,
 );
-
-// inputsManager.bindOnNextAxis1dAction(zoomInput);
-
-//inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
   'star_medium.png',

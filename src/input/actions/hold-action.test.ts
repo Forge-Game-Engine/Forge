@@ -3,7 +3,7 @@ import { HoldAction } from './hold-action';
 import { InputGroup } from '../input-group';
 import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
-import { buttonMoments, keyCodes } from '../constants';
+import { keyCodes } from '../constants';
 import { KeyboardHoldInteraction } from '../interactions';
 
 describe('HoldAction', () => {
@@ -54,7 +54,7 @@ describe('HoldAction', () => {
 
   it('should bind sources correctly', () => {
     const interaction = new KeyboardHoldInteraction(
-      { keyCode: keyCodes.space, moment: buttonMoments.down },
+      { keyCode: keyCodes.space },
       inputSource,
     );
 
