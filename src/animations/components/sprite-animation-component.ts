@@ -1,24 +1,39 @@
-import type { Component } from '../../ecs';
-import { Animation } from '../utilities';
+import type { Component, Entity } from '../../ecs';
+import { ParameterizedForgeEvent } from '../../events';
+import type { Animation, AnimationFrame, AnimationSet } from '../types';
+
 /**
  * Options for configuring the sprite animation component.
  */
 export interface SpriteAnimationOptions {
   /**
-   * The index of the current animation frame.
-   * @default 0
+   * The speed factor for the animation set.
+   */
+  playbackSpeed: number;
+
+  /**
+   * The starting animation index within the animation set.
    */
   startingAnimationIndex: number;
+
   /**
-   * The speed factor for the animation.
-   * @default 1.0
+   * Event that is raised when the animation changes.
    */
-  animationSpeedFactor: number;
+  animationChangeEvent: ParameterizedForgeEvent<[Entity, Animation]> | null;
+
+  /**
+   * Event that is raised when the animation frame changes.
+   */
+  onAnimationFrameChangeEvent: ParameterizedForgeEvent<
+    [Entity, AnimationFrame]
+  > | null;
 }
 
 const defaultOptions: SpriteAnimationOptions = {
+  playbackSpeed: 1,
   startingAnimationIndex: 0,
-  animationSpeedFactor: 1.0,
+  animationChangeEvent: null,
+  onAnimationFrameChangeEvent: null,
 };
 
 /**
@@ -26,12 +41,18 @@ const defaultOptions: SpriteAnimationOptions = {
  */
 export class SpriteAnimationComponent implements Component {
   public name: symbol;
+
+  public animationSet: AnimationSet;
   public animationIndex: number;
-  public frameTimeSeconds: number;
-  public nextAnimation: Animation | null;
-  public animationSpeedFactor: number;
-  public animation: Animation;
-  public isChangingAnimation: boolean = false;
+  public animationFrameIndex: number;
+  public playbackSpeed: number;
+  public lastFrameChangeTimeInSeconds: number;
+  public animationChangeEvent: ParameterizedForgeEvent<
+    [Entity, Animation]
+  > | null;
+  public animationFrameChangeEvent: ParameterizedForgeEvent<
+    [Entity, AnimationFrame]
+  > | null;
 
   public static readonly symbol = Symbol('SpriteAnimation');
 
@@ -41,18 +62,27 @@ export class SpriteAnimationComponent implements Component {
    * @param options - Optional parameters to configure the animation component.
    */
   constructor(
-    currentAnimation: Animation,
+    animationSet: AnimationSet,
     options: Partial<SpriteAnimationOptions> = {},
   ) {
-    const { startingAnimationIndex, animationSpeedFactor } = {
+    const {
+      playbackSpeed,
+      startingAnimationIndex,
+      animationChangeEvent,
+      onAnimationFrameChangeEvent,
+    } = {
       ...defaultOptions,
       ...options,
     };
+
     this.name = SpriteAnimationComponent.symbol;
-    this.animation = currentAnimation;
+
+    this.animationSet = animationSet;
+    this.playbackSpeed = playbackSpeed;
     this.animationIndex = startingAnimationIndex;
-    this.animationSpeedFactor = animationSpeedFactor;
-    this.frameTimeSeconds = 0;
-    this.nextAnimation = null;
+    this.animationFrameIndex = 0;
+    this.lastFrameChangeTimeInSeconds = 0;
+    this.animationChangeEvent = animationChangeEvent;
+    this.animationFrameChangeEvent = onAnimationFrameChangeEvent;
   }
 }
