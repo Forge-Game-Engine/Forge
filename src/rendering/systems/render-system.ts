@@ -230,22 +230,17 @@ export class RenderSystem extends System {
 
     // a_instancePos (vec2) - offset 0
     this._setupInstanceAttributes(posLoc, gl, 2, POSITION_X_OFFSET);
-    this._setupInstanceAttributes(posLoc, gl, 2, POSITION_X_OFFSET);
 
     // a_instanceRot (float) - offset 2
-    this._setupInstanceAttributes(rotLoc, gl, 1, ROTATION_OFFSET);
     this._setupInstanceAttributes(rotLoc, gl, 1, ROTATION_OFFSET);
 
     // a_instanceScale (vec2) - offset 3
     this._setupInstanceAttributes(scaleLoc, gl, 2, SCALE_X_OFFSET);
-    this._setupInstanceAttributes(scaleLoc, gl, 2, SCALE_X_OFFSET);
 
     // a_instanceSize (vec2) - offset 5
     this._setupInstanceAttributes(sizeLoc, gl, 2, WIDTH_OFFSET);
-    this._setupInstanceAttributes(sizeLoc, gl, 2, WIDTH_OFFSET);
 
     // a_instancePivot (vec2) - offset 7
-    this._setupInstanceAttributes(pivotLoc, gl, 2, PIVOT_X_OFFSET);
     this._setupInstanceAttributes(pivotLoc, gl, 2, PIVOT_X_OFFSET);
 
     // a_instanceTexOffset (vec2) - offset 9
