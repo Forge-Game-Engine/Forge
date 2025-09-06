@@ -8,14 +8,14 @@ import { RenderableBatchComponent, SpriteComponent } from '../components';
 export class SpriteBatchingSystem extends System {
   private readonly _spriteBatch: RenderableBatchComponent;
 
-  constructor(spriteBatcherEntity: Entity) {
+  constructor(batcherEntity: Entity) {
     super('sprite-batching', [
       PositionComponent.symbol,
       SpriteComponent.symbol,
     ]);
 
     this._spriteBatch =
-      spriteBatcherEntity.getComponentRequired<RenderableBatchComponent>(
+      batcherEntity.getComponentRequired<RenderableBatchComponent>(
         RenderableBatchComponent.symbol,
       );
   }

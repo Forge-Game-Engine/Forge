@@ -16,7 +16,7 @@ export class RenderableBatchComponent implements Component {
   public name: symbol;
 
   /** The map of batched entities. */
-  public batches: Map<Renderable, Batch> = new Map();
+  public batches: Map<Renderable, Batch>;
 
   /** The render layer to which the batch belongs. */
   public readonly renderLayer: RenderLayer;
@@ -30,5 +30,6 @@ export class RenderableBatchComponent implements Component {
   constructor(renderLayer: RenderLayer) {
     this.name = RenderableBatchComponent.symbol;
     this.renderLayer = renderLayer;
+    this.batches = new Map();
   }
 }

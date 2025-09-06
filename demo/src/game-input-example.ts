@@ -19,7 +19,6 @@ import {
   registerCamera,
   registerInputs,
   registerRendering,
-  registerSpriteAnimationManager,
   TriggerAction,
 } from '../../src';
 import { createBatch } from './create-batch';
@@ -40,8 +39,7 @@ const { inputsManager } = registerInputs(world);
 const cameraEntity = registerCamera(world, {
   zoomInput,
 });
-const spriteAnimationManager = registerSpriteAnimationManager();
-const { renderLayers } = registerRendering(game, world, spriteAnimationManager);
+const { renderLayers } = registerRendering(game, world);
 
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);

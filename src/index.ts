@@ -1,5 +1,6 @@
 // forge engine exports
 export * from './animations';
+export * from './particles';
 export * from './asset-loading';
 export * from './audio';
 export * from './common';
