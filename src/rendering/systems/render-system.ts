@@ -139,12 +139,10 @@ export class RenderSystem extends System {
       let animationFrame: AnimationFrame | null = null;
 
       if (spriteAnimationComponent) {
-        const { animationSet, animationFrameIndex, animationIndex } =
+        const { currentAnimation, animationFrameIndex } =
           spriteAnimationComponent;
 
-        animationFrame = animationSet
-          .getAnimation(animationIndex)
-          .getFrame(animationFrameIndex);
+        animationFrame = currentAnimation.getFrame(animationFrameIndex);
       }
 
       this._populateInstanceData(batch.instanceData, instanceDataOffset, {

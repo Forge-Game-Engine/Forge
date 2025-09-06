@@ -1,4 +1,11 @@
+import { Entity } from '../../ecs';
+import { ParameterizedForgeEvent } from '../../events';
 import { AnimationFrame } from './AnimationFrame';
+
+export type OnAnimationChangeEvent = ParameterizedForgeEvent<Entity>;
+export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<
+  [Entity, AnimationFrame]
+>; // would it be better to have a different event for every frame (instead of 1 for all frames)?
 
 /**
  * Interface representing a group of animation frames for a specific animation name.
@@ -15,6 +22,21 @@ export class Animation {
   public frames: AnimationFrame[];
 
   /**
+   * Event that is raised when the animation starts.
+   */
+  public onAnimationStartEvent: OnAnimationChangeEvent;
+
+  /**
+   * Event that is raised when the animation ends.
+   */
+  public onAnimationEndEvent: OnAnimationChangeEvent;
+
+  /**
+   * Event that is raised every frame change
+   */
+  public onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
+
+  /**
    * Creates an instance of Animation.
    * @param name - The name of the animation.
    * @param frames - The frames of the animation.
@@ -26,6 +48,15 @@ export class Animation {
 
     this.name = name;
     this.frames = frames;
+    this.onAnimationStartEvent = new ParameterizedForgeEvent<Entity>(
+      'AnimationStartEvent',
+    );
+    this.onAnimationEndEvent = new ParameterizedForgeEvent<Entity>(
+      'AnimationEndEvent',
+    );
+    this.onAnimationFrameChangeEvent = new ParameterizedForgeEvent<
+      [Entity, AnimationFrame]
+    >('AnimationFrameChangeEvent');
   }
 
   /**
