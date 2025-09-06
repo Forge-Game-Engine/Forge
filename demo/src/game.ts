@@ -2,6 +2,9 @@ import {
   AgeScaleSystem,
   AgeSystem,
   createImageNameSprite,
+  AgeScaleSystem,
+  AgeSystem,
+  createImageNameSprite,
   createShaderStore,
   createWorld,
   Game,
@@ -13,6 +16,7 @@ import {
   registerCamera,
   registerInputs,
   registerRendering,
+  SpriteAnimationSystem,
   SpriteAnimationSystem,
 } from '../../src';
 import * as animationDemo from './animationDemo';
@@ -155,6 +159,7 @@ animationDemo.setupAnimationsDemo(
   // attackParticleEmitter,
   // jumpParticleEmitter,
 );
+// animationDemo.setupAnimationsStressTest(animationSetManager, world, shipSprite, 10000);
 // animationDemo.setupAnimationsStressTest(animationSetManager, world, shipSprite, 10000);
 
 world.addSystems(
