@@ -95,7 +95,7 @@ export class MouseInputSource implements InputSource, Resettable, Stoppable {
   private readonly _onWheelHandler = (event: WheelEvent) => {
     const interaction = new MouseAxis1dInteraction(this);
 
-    this._inputManager.dispatchAxis1dAction(interaction, event.deltaY);
+    this._inputManager.dispatchAxis1dAction(interaction, event.deltaY / 100);
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {

@@ -50,7 +50,7 @@ export class CameraSystem extends System {
 
     if (zoomInput) {
       cameraComponent.zoom = math.clamp(
-        zoom - zoomInput.value * zoomSensitivity,
+        zoom - zoomInput.value * zoomSensitivity * 100,
         minZoom,
         maxZoom,
       );
