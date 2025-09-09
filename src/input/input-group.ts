@@ -53,9 +53,7 @@ export class InputGroup {
 
       for (const interactionForAction of interactionsForAction) {
         if (interactionForAction.matchesArgs(interaction.args)) {
-          action.hold();
-        } else {
-          action.release();
+          action.startHold();
         }
       }
     }

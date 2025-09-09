@@ -1,8 +1,8 @@
-import { ActionableInputSource } from '../input-sources';
+import { MouseInputSource } from '../input-sources';
 import { InputInteraction } from './input-interaction';
 
 export class MouseAxis1dInteraction extends InputInteraction<void> {
-  constructor(source: ActionableInputSource) {
+  constructor(source: MouseInputSource) {
     super(undefined, source);
   }
 

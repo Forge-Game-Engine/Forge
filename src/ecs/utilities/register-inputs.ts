@@ -1,4 +1,8 @@
-import { InputsComponent, InputSystem } from '../../input';
+import {
+  InputsComponent,
+  ResetInputSystem,
+  UpdateInputSystem,
+} from '../../input';
 import { InputManager } from '../../input/input-manager';
 import { systemRegistrationPositions } from '../constants';
 import { World } from '../world';
@@ -9,7 +13,11 @@ export const registerInputs = (world: World, entityName: string = 'inputs') => {
 
   const inputsEntity = world.buildAndAddEntity(entityName, [inputsComponent]);
 
-  world.addSystem(new InputSystem(), systemRegistrationPositions.late);
+  world.addSystem(
+    new UpdateInputSystem(world),
+    systemRegistrationPositions.early,
+  );
+  world.addSystem(new ResetInputSystem(), systemRegistrationPositions.late);
 
   return {
     inputsEntity,

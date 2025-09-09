@@ -2,6 +2,7 @@ import { InputInteraction } from '../interactions';
 import { ActionResetType, actionResetTypes } from '../constants';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
+import { InputManager } from '../input-manager';
 
 export class Axis1dAction implements InputAction {
   public readonly name: string;
@@ -11,10 +12,16 @@ export class Axis1dAction implements InputAction {
   private _value: number = 0;
   private readonly _actionResetType: ActionResetType;
 
-  constructor(name: string, actionResetType: ActionResetType = 'zero') {
+  constructor(
+    name: string,
+    inputManager: InputManager,
+    actionResetType: ActionResetType = 'zero',
+  ) {
     this.name = name;
     this.interactions = new Map<InputGroup, Set<InputInteraction>>();
     this._actionResetType = actionResetType;
+
+    inputManager.registerAxis1dAction(this);
   }
 
   public reset() {

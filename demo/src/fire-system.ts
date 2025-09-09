@@ -1,10 +1,4 @@
-import {
-  Entity,
-  InputsComponent,
-  System,
-  TriggerAction,
-} from '../../src';
-import { HoldAction } from '../../src/input/actions/hold-action';
+import { Entity, InputsComponent, System } from '../../src';
 
 export class FireSystem extends System {
   constructor() {
@@ -16,14 +10,14 @@ export class FireSystem extends System {
       InputsComponent.symbol,
     );
 
-    const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
-    const runAction = inputs.inputManager.getAction<HoldAction>('run');
+    const fireAction = inputs.inputManager.getTriggerAction('fire');
+    const runAction = inputs.inputManager.getHoldAction('run');
 
     if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
     }
 
-    if(runAction?.isHeld) {
+    if (runAction?.isHeld) {
       console.log(`Run action is being held`);
     }
   }

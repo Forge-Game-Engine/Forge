@@ -1,5 +1,5 @@
 import MurmurHash3 from 'imurmurhash';
-import { ActionableInputSource } from '../input-sources';
+import { InputSource } from '../input-sources';
 
 /**
  * InputInteraction represents an interaction with an input source.
@@ -7,9 +7,9 @@ import { ActionableInputSource } from '../input-sources';
 export abstract class InputInteraction<TArgs = unknown> {
   public id: string;
   public readonly args: TArgs;
-  public readonly source: ActionableInputSource;
+  public readonly source: InputSource;
 
-  constructor(args: TArgs, source: ActionableInputSource) {
+  constructor(args: TArgs, source: InputSource) {
     this.args = args;
     this.source = source;
 

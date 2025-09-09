@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Axis2dAction } from './axis-2d-action';
 import { MouseAxis2dInteraction } from '../interactions';
-import { ActionableInputSource, MouseInputSource } from '../input-sources';
+import { MouseInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { Game } from '../../ecs';
 import { InputGroup } from '../input-group';
@@ -11,12 +11,12 @@ describe('InputAxis2d', () => {
   let action: Axis2dAction;
   let manager: InputManager;
   let game: Game;
-  let source: ActionableInputSource;
+  let source: MouseInputSource;
   let group: InputGroup;
 
   beforeEach(() => {
-    action = new Axis2dAction('pan');
     manager = new InputManager();
+    action = new Axis2dAction('pan', manager);
     game = new Game();
     source = new MouseInputSource(manager, game);
     group = new InputGroup('test');
@@ -55,7 +55,7 @@ describe('InputAxis2d', () => {
     const interaction = new MouseAxis2dInteraction(source);
 
     action.bind(interaction, group);
-    
+
     const interactions = action.interactions.get(group)?.values().toArray();
 
     expect(interactions?.length).toBe(1);

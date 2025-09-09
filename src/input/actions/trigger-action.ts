@@ -1,6 +1,7 @@
 import { InputInteraction } from '../interactions/input-interaction';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
+import { InputManager } from '../input-manager';
 
 export class TriggerAction implements InputAction {
   public readonly name: string;
@@ -9,9 +10,10 @@ export class TriggerAction implements InputAction {
 
   private _triggered: boolean = false;
 
-  constructor(name: string = 'triggerAction') {
+  constructor(name: string, inputManager: InputManager) {
     this.name = name;
     this.interactions = new Map();
+    inputManager.registerTriggerAction(this);
   }
 
   public trigger() {

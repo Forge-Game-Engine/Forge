@@ -10,6 +10,7 @@ export class InputsComponent implements Component {
 
   constructor(inputManager: InputManager) {
     this.name = InputsComponent.symbol;
+
     this.inputManager = inputManager;
   }
 }

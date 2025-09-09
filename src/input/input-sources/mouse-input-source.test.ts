@@ -15,6 +15,10 @@ describe('MouseInputSource', () => {
     inputManager = {
       dispatchAxis1dAction: vi.fn(),
       dispatchAxis2dAction: vi.fn(),
+      addUpdatable: vi.fn(),
+      addResettable: vi.fn(),
+      removeUpdatable: vi.fn(),
+      removeResettable: vi.fn(),
     } as unknown as InputManager;
 
     game = new Game();

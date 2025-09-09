@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TriggerAction } from './trigger-action';
 import { InputGroup } from '../input-group';
-import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
+import { InputSource, KeyboardInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { buttonMoments, keyCodes } from '../constants';
 import { KeyboardTriggerInteraction } from '../interactions';
@@ -9,13 +9,13 @@ import { KeyboardTriggerInteraction } from '../interactions';
 describe('InputAction', () => {
   let action: TriggerAction;
   let group: InputGroup;
-  let inputSource: ActionableInputSource;
+  let inputSource: InputSource;
   let manager: InputManager;
 
   beforeEach(() => {
-    action = new TriggerAction('jump');
-    group = new InputGroup('test');
     manager = new InputManager();
+    action = new TriggerAction('jump', manager);
+    group = new InputGroup('test');
     inputSource = new KeyboardInputSource(manager);
   });
 

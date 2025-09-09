@@ -1,7 +1,7 @@
 import { Entity, System } from '../../ecs';
 import { InputsComponent } from '../components';
 
-export class InputSystem extends System {
+export class ResetInputSystem extends System {
   constructor() {
     super('input', [InputsComponent.symbol]);
   }

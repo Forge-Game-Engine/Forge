@@ -33,12 +33,17 @@ const shaderStore = createShaderStore();
 
 const world = createWorld('world', game);
 
-const zoomInput = new Axis1dAction('zoom');
-const panInput = new Axis2dAction('pan', actionResetTypes.noReset);
-const fireInput = new TriggerAction('fire');
-const runInput= new HoldAction('run');
-
 const { inputsManager } = registerInputs(world);
+
+const zoomInput = new Axis1dAction('zoom', inputsManager);
+const panInput = new Axis2dAction(
+  'pan',
+  inputsManager,
+  actionResetTypes.noReset,
+);
+const fireInput = new TriggerAction('fire', inputsManager);
+const runInput = new HoldAction('run', inputsManager);
+
 const cameraEntity = registerCamera(world, {
   zoomInput,
 });
@@ -50,8 +55,6 @@ const mouseInputSource = new MouseInputSource(inputsManager, game);
 const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
 
-inputsManager.addSources(keyboardInputSource, mouseInputSource);
-inputsManager.addActions(fireInput, zoomInput, panInput, runInput);
 inputsManager.setActiveGroup(defaultInputGroup);
 
 fireInput.bind(
@@ -71,11 +74,8 @@ fireInput.bind(
 );
 
 runInput.bind(
-  new KeyboardHoldInteraction(
-    { keyCode: keyCodes.k, moment: buttonMoments.hold },
-    keyboardInputSource,
-  ),
-  defaultInputGroup,
+  new KeyboardHoldInteraction({ keyCode: keyCodes.space }, keyboardInputSource),
+  alternativeInputGroup,
 );
 
 fireInput.bind(
@@ -112,9 +112,9 @@ panInput.bind(
   alternativeInputGroup,
 );
 
-// inputsManager.bindOnNextAxis1dAction(zoomInput);
+inputsManager.bindOnNextAxis1dAction(zoomInput);
 
-//inputsManager.setActiveGroup(alternativeInputGroup);
+inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
   'star_medium.png',

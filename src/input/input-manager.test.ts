@@ -1,16 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { InputManager } from './input-manager';
 import { TriggerAction } from './actions';
-import { ActionableInputSource } from './input-sources';
+import { InputSource } from './input-sources';
 import { InputGroup } from './input-group';
 import { InputInteraction } from './interactions/input-interaction';
 
-function createMockInputSource(): ActionableInputSource {
-  return { name: 'test-input-source', reset: vi.fn(), stop: vi.fn() };
+function createMockInputSource(): InputSource {
+  return { name: 'test-input-source' };
 }
 
 class TestTriggerActionInputInteraction extends InputInteraction<string> {
-  constructor(args: string, source: ActionableInputSource) {
+  constructor(args: string, source: InputSource) {
     super(args, source);
   }
 
@@ -22,7 +22,7 @@ class TestTriggerActionInputInteraction extends InputInteraction<string> {
 describe('InputManager', () => {
   let manager: InputManager;
   let inputGroup: InputGroup;
-  let testInputSource: ActionableInputSource;
+  let testInputSource: InputSource;
   let triggerInputInteraction: InputInteraction;
   let testAction: TriggerAction;
 
@@ -34,7 +34,7 @@ describe('InputManager', () => {
       'test',
       testInputSource,
     );
-    testAction = new TriggerAction('test-action');
+    testAction = new TriggerAction('test-action', manager);
   });
 
   it('should set and get active group', () => {
@@ -47,21 +47,18 @@ describe('InputManager', () => {
 
   it('should dispatch trigger action to active group', () => {
     testAction.bind(triggerInputInteraction, inputGroup);
-    manager.addActions(testAction);
+    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
 
     manager.dispatchTriggerAction(triggerInputInteraction);
     expect(testAction.isTriggered).toBe(true);
-
-    manager.reset();
-    expect(testAction.isTriggered).toBe(false);
   });
 
   it('should not dispatch trigger action if no active group', () => {
     testAction.bind(triggerInputInteraction, inputGroup);
-    manager.addActions(testAction);
+    manager.registerTriggerAction(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
@@ -70,7 +67,7 @@ describe('InputManager', () => {
   });
 
   it('should bind trigger action on next dispatch', () => {
-    manager.addActions(testAction);
+    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -85,7 +82,7 @@ describe('InputManager', () => {
   });
 
   it('should throw when attempting to bind trigger action on next dispatch when no active group is set', () => {
-    manager.addActions(testAction);
+    manager.registerTriggerAction(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
@@ -95,7 +92,7 @@ describe('InputManager', () => {
   });
 
   it('should stop pending trigger action binding', () => {
-    manager.addActions(testAction);
+    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -112,38 +109,14 @@ describe('InputManager', () => {
   });
 
   it('should get action by name', () => {
-    manager.addActions(testAction);
-    const found = manager.getAction('test-action');
+    manager.registerTriggerAction(testAction);
+    const found = manager.getTriggerAction('test-action');
     expect(found).toBe(testAction);
   });
 
   it('should throw if action not found by name', () => {
-    manager.addActions(testAction);
-    const found = manager.getAction('missing');
+    manager.registerTriggerAction(testAction);
+    const found = manager.getTriggerAction('missing');
     expect(found).toBe(null);
-  });
-
-  it('should reset all actions and sources', () => {
-    const action1 = new TriggerAction('test-action1');
-    const action2 = new TriggerAction('test-action2');
-    const source1 = createMockInputSource();
-    const source2 = createMockInputSource();
-
-    action1.trigger();
-    action2.trigger();
-    expect(action1.isTriggered).toBe(true);
-    expect(action2.isTriggered).toBe(true);
-
-    manager.addActions(action1);
-    manager.addActions(action2);
-    manager.addSources(source1);
-    manager.addSources(source2);
-
-    manager.reset();
-
-    expect(action1.isTriggered).toBe(false);
-    expect(action2.isTriggered).toBe(false);
-    expect(source1.reset).toHaveBeenCalled();
-    expect(source2.reset).toHaveBeenCalled();
   });
 });

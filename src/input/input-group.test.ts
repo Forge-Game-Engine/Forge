@@ -13,10 +13,10 @@ describe('InputGroup', () => {
   let action: TriggerAction;
 
   beforeEach(() => {
-    group = new InputGroup('test-group');
     manager = new InputManager();
+    group = new InputGroup('test-group');
     source = new KeyboardInputSource(manager);
-    action = new TriggerAction('test-action');
+    action = new TriggerAction('test-action', manager);
   });
 
   it('should initialize with the given name', () => {

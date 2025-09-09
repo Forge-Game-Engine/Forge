@@ -1,39 +1,39 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { HoldAction } from './hold-action';
 import { InputGroup } from '../input-group';
-import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
+import { KeyboardInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
-import { buttonMoments, keyCodes } from '../constants';
+import { keyCodes } from '../constants';
 import { KeyboardHoldInteraction } from '../interactions';
 
 describe('HoldAction', () => {
   let action: HoldAction;
   let group: InputGroup;
-  let inputSource: ActionableInputSource;
+  let inputSource: KeyboardInputSource;
   let manager: InputManager;
 
   beforeEach(() => {
-    action = new HoldAction('jump');
-    group = new InputGroup('test');
     manager = new InputManager();
+    action = new HoldAction('accelerate', manager);
+    group = new InputGroup('test');
     inputSource = new KeyboardInputSource(manager);
   });
 
   it('should set the name property from constructor', () => {
-    expect(action.name).toBe('jump');
+    expect(action.name).toBe('accelerate');
   });
 
   it('should not be held initially', () => {
     expect(action.isHeld).toBe(false);
   });
 
-  it('should set held to true when hold is called', () => {
-    action.hold();
+  it('should set held to true when start hold is called', () => {
+    action.startHold();
     expect(action.isHeld).toBe(true);
   });
 
   it('should set held to false when reset is called after hold', () => {
-    action.hold();
+    action.startHold();
     action.reset();
     expect(action.isHeld).toBe(false);
   });
@@ -44,17 +44,17 @@ describe('HoldAction', () => {
   });
 
   it('should be able to hold multiple times', () => {
-    action.hold();
+    action.startHold();
     expect(action.isHeld).toBe(true);
     action.reset();
     expect(action.isHeld).toBe(false);
-    action.hold();
+    action.startHold();
     expect(action.isHeld).toBe(true);
   });
 
   it('should bind sources correctly', () => {
     const interaction = new KeyboardHoldInteraction(
-      { keyCode: keyCodes.space, moment: buttonMoments.down },
+      { keyCode: keyCodes.w },
       inputSource,
     );
 

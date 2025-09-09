@@ -4,7 +4,7 @@
 export interface Updatable {
   /**
    * Updates the object with the given time.
-   * @param deltaTime - The time between the last frame and the current one.
+   * @param deltaTime - The time between the last frame and the current one in milliseconds.
    */
   update: (deltaTime: number) => void;
 }

@@ -1,54 +1,119 @@
-import { Resettable } from '../common';
 import { Vector2 } from '../math';
 import {
   Axis1dAction,
   Axis2dAction,
   HoldAction,
-  InputAction,
   TriggerAction,
 } from './actions';
 import { InputInteraction } from './interactions/input-interaction';
 import { InputGroup } from './input-group';
-import { InputSource } from './input-sources';
+import { Resettable, Updatable } from '../common';
 
 /**
  * InputManager is responsible for managing input sources, groups, and actions.
  * It is the top-level class that coordinates input handling.
  */
-export class InputManager implements Resettable {
-  private readonly _sources: Set<InputSource>;
-  private readonly _actions: Set<InputAction>;
-
+export class InputManager implements Updatable {
   private _activeGroup: InputGroup | null;
   private _triggerActionPendingBind: TriggerAction | null = null;
-  private readonly _holdActionPendingBind: HoldAction | null = null;
+  private _holdActionPendingBind: HoldAction | null = null;
   private _axis1dActionPendingBind: Axis1dAction | null = null;
   private _axis2dActionPendingBind: Axis2dAction | null = null;
 
+  private readonly _updatables: Set<Updatable>;
+  private readonly _resettables: Set<Resettable>;
+
+  private readonly _triggerActions: Map<string, TriggerAction>;
+  private readonly _holdActions: Map<string, HoldAction>;
+  private readonly _axis1dActions: Map<string, Axis1dAction>;
+  private readonly _axis2dActions: Map<string, Axis2dAction>;
+
   constructor() {
-    this._sources = new Set<InputSource>();
-    this._actions = new Set<InputAction>();
     this._activeGroup = null;
+
+    this._updatables = new Set();
+    this._resettables = new Set();
+
+    this._triggerActions = new Map();
+    this._holdActions = new Map();
+    this._axis1dActions = new Map();
+    this._axis2dActions = new Map();
   }
 
-  public addSources(...sources: InputSource[]): void {
-    for (const source of sources) {
-      this._sources.add(source);
+  public registerTriggerAction(action: TriggerAction): void {
+    const { name } = action;
+
+    if (this._triggerActions.has(name)) {
+      throw new Error(`TriggerAction with name ${name} is already registered.`);
     }
+
+    this._triggerActions.set(name, action);
+    this.addResettable(action);
   }
 
-  public removeSource(source: InputSource): boolean {
-    return this._sources.delete(source);
+  public deregisterTriggerAction(name: string): void {
+    this._triggerActions.delete(name);
   }
 
-  public addActions(...actions: InputAction[]): void {
-    for (const action of actions) {
-      this._actions.add(action);
+  public getTriggerAction(name: string) {
+    return this._triggerActions.get(name) ?? null;
+  }
+
+  public registerHoldAction(action: HoldAction): void {
+    const { name } = action;
+
+    if (this._holdActions.has(name)) {
+      throw new Error(`HoldAction with name ${name} is already registered.`);
     }
+
+    this._holdActions.set(name, action);
+    this.addResettable(action);
   }
 
-  public removeAction(action: InputAction): boolean {
-    return this._actions.delete(action);
+  public deregisterHoldAction(name: string): void {
+    this._holdActions.delete(name);
+  }
+
+  public getHoldAction(name: string) {
+    return this._holdActions.get(name) ?? null;
+  }
+
+  public registerAxis1dAction(action: Axis1dAction): void {
+    const { name } = action;
+
+    if (this._axis1dActions.has(name)) {
+      throw new Error(`Axis1dAction with name ${name} is already registered.`);
+    }
+
+    this._axis1dActions.set(name, action);
+    this.addResettable(action);
+  }
+
+  public deregisterAxis1dAction(name: string): void {
+    this._axis1dActions.delete(name);
+  }
+
+  public getAxis1dAction(name: string) {
+    return this._axis1dActions.get(name) ?? null;
+  }
+
+  public registerAxis2dAction(action: Axis2dAction): void {
+    const { name } = action;
+
+    if (this._axis2dActions.has(name)) {
+      throw new Error(`Axis2dAction with name ${name} is already registered.`);
+    }
+
+    this._axis2dActions.set(name, action);
+    this.addResettable(action);
+  }
+
+  public deregisterAxis2dAction(name: string): void {
+    this._axis2dActions.delete(name);
+  }
+
+  public getAxis2dAction(name: string) {
+    return this._axis2dActions.get(name) ?? null;
   }
 
   public setActiveGroup(group: InputGroup | null): void {
@@ -99,6 +164,18 @@ export class InputManager implements Resettable {
 
   public stopPendingTriggerActionBinding() {
     this._triggerActionPendingBind = null;
+  }
+
+  public bindOnNextHoldAction(action: HoldAction) {
+    if (!this._activeGroup) {
+      throw new Error('No active input group set.');
+    }
+
+    this._holdActionPendingBind = action;
+  }
+
+  public stopPendingHoldActionBinding() {
+    this._holdActionPendingBind = null;
   }
 
   public dispatchAxis1dAction(
@@ -161,35 +238,34 @@ export class InputManager implements Resettable {
     this._axis2dActionPendingBind = null;
   }
 
-  public getAction<TAction extends InputAction>(name: string) {
-    for (const action of this._actions) {
-      if (action.name === name) {
-        return action as TAction;
-      }
+  public addUpdatable(...updatables: Updatable[]): void {
+    for (const updatable of updatables) {
+      this._updatables.add(updatable);
     }
+  }
 
-    return null;
+  public removeUpdatable(source: Updatable): void {
+    this._updatables.delete(source);
+  }
+
+  public addResettable(...resettables: Resettable[]): void {
+    for (const resettable of resettables) {
+      this._resettables.add(resettable);
+    }
+  }
+
+  public removeResettable(resettable: Resettable): void {
+    this._resettables.delete(resettable);
+  }
+
+  public update(deltaTime: number): void {
+    for (const updatable of this._updatables) {
+      updatable.update(deltaTime);
+    }
   }
 
   public reset(): void {
-    this._resetAll(this._actions);
-    this._resetAll(this._sources);
-  }
-
-  private _resetAll(resettables: Map<string, Resettable>): void;
-  private _resetAll(resettables: Iterable<Resettable>): void;
-  private _resetAll(
-    resettables: Map<string, Resettable> | Iterable<Resettable>,
-  ): void {
-    if (resettables instanceof Map) {
-      for (const resettable of resettables.values()) {
-        resettable.reset();
-      }
-
-      return;
-    }
-
-    for (const resettable of resettables) {
+    for (const resettable of this._resettables) {
       resettable.reset();
     }
   }

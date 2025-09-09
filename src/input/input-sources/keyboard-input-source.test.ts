@@ -11,6 +11,10 @@ describe('KeyboardInputSource', () => {
     inputManager = {
       dispatchTriggerAction: vi.fn(),
       dispatchHoldAction: vi.fn(),
+      addUpdatable: vi.fn(),
+      addResettable: vi.fn(),
+      removeUpdatable: vi.fn(),
+      removeResettable: vi.fn(),
     } as unknown as InputManager;
     keyboardInputSource = new KeyboardInputSource(inputManager);
   });
@@ -34,9 +38,11 @@ describe('KeyboardInputSource', () => {
     );
   });
 
-  it('should bind and trigger action on hold keydown', () => {
+  it('should bind and trigger hold action keydown + update', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
+
+    keyboardInputSource.update();
 
     expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -48,11 +54,40 @@ describe('KeyboardInputSource', () => {
     );
   });
 
-  it('should dispatch hold action only when the key is held', () => {
-    const holdEvent = new window.KeyboardEvent('keydown', {
+  it('should bind and trigger hold action keydown + update after multiple updates', () => {
+    const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
+    window.dispatchEvent(event);
+
+    keyboardInputSource.update();
+    keyboardInputSource.update();
+    keyboardInputSource.update();
+
+    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: {
+          keyCode: keyCodes.space,
+        },
+        source: keyboardInputSource,
+      }),
+    );
+  });
+
+  it('should bind and not trigger hold action keydown + update after multiple updates and key up', () => {
+    const keyDownEvent = new window.KeyboardEvent('keydown', {
       code: keyCodes.space,
     });
-    window.dispatchEvent(holdEvent);
+    window.dispatchEvent(keyDownEvent);
+
+    keyboardInputSource.update();
+    keyboardInputSource.update();
+    keyboardInputSource.update();
+
+    const keyUpEvent = new window.KeyboardEvent('keyup', {
+      code: keyCodes.space,
+    });
+    window.dispatchEvent(keyUpEvent);
+
+    keyboardInputSource.update();
 
     expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
       expect.objectContaining({

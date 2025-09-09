@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Axis1dAction } from './axis-1d-action';
 import { MouseAxis1dInteraction } from '../interactions';
-import { ActionableInputSource, MouseInputSource } from '../input-sources';
+import { MouseInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { Game } from '../../ecs';
 import { InputGroup } from '../input-group';
@@ -10,12 +10,12 @@ describe('InputAxis1d', () => {
   let action: Axis1dAction;
   let manager: InputManager;
   let game: Game;
-  let source: ActionableInputSource;
+  let source: MouseInputSource;
   let group: InputGroup;
 
   beforeEach(() => {
-    action = new Axis1dAction('zoom');
     manager = new InputManager();
+    action = new Axis1dAction('zoom', manager);
     game = new Game();
     source = new MouseInputSource(manager, game);
     group = new InputGroup('test');

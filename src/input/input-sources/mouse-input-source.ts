@@ -1,15 +1,16 @@
 import { Game } from '../../ecs';
 import { Vector2 } from '../../math';
 import { buttonMoments, MouseButton } from '../constants';
-import { ActionableInputSource } from './actionable-input-source';
 import { InputManager } from '../input-manager';
 import {
   MouseAxis1dInteraction,
   MouseAxis2dInteraction,
   MouseTriggerInteraction,
 } from '../interactions';
+import { InputSource } from './input-source';
+import { Resettable, Stoppable } from '../../common';
 
-export class MouseInputSource implements ActionableInputSource {
+export class MouseInputSource implements InputSource, Resettable, Stoppable {
   private readonly _inputManager: InputManager;
   private readonly _game: Game;
   private readonly _containerBoundingClientRect: DOMRect;
@@ -29,6 +30,8 @@ export class MouseInputSource implements ActionableInputSource {
     game.container.addEventListener('mouseup', this._onMouseUpHandler);
     game.container.addEventListener('wheel', this._onWheelHandler);
     game.container.addEventListener('mousemove', this._onMouseMoveHandler);
+
+    this._inputManager.addResettable(this);
   }
 
   get name() {
@@ -52,6 +55,7 @@ export class MouseInputSource implements ActionableInputSource {
       'mousemove',
       this._onMouseMoveHandler,
     );
+    this._inputManager.removeResettable(this);
   }
 
   private readonly _onMouseDownHandler = (event: MouseEvent) => {

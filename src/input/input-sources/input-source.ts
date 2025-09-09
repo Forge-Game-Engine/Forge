@@ -1,7 +1,8 @@
-import { Resettable, Stoppable } from '../../common';
 import { InputAction } from '../actions/input-action';
 
-export type InputSource = Stoppable & Resettable;
+export interface InputSource {
+  get name(): string;
+}
 
 export interface InputWithArgs<TInput extends InputAction, TArgs> {
   input: TInput;
