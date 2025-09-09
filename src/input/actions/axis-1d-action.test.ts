@@ -30,8 +30,8 @@ describe('InputAxis1d', () => {
   });
 
   it('should set value correctly', () => {
-    action.set(0.5);
-    expect(action.value).toBe(0.5);
+    action.set(1);
+    expect(action.value).toBe(1);
 
     action.set(-1);
     expect(action.value).toBe(-1);

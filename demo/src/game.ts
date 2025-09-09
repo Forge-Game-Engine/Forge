@@ -23,6 +23,7 @@ import {
   TriggerAction,
 } from '../../src';
 import { HoldAction } from '../../src/input/actions/hold-action';
+import { KeyboardAxis1dInputSource } from '../../src/input/input-sources/keyboard-axis1d-input-source';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -52,10 +53,21 @@ const { renderLayers } = registerRendering(game, world);
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);
 
+const keyboardAxis1dInputSource = new KeyboardAxis1dInputSource(
+  inputsManager,
+  keyCodes.m,
+  keyCodes.n,
+);
+
 const defaultInputGroup = new InputGroup('default');
 const alternativeInputGroup = new InputGroup('alternative');
 
 inputsManager.setActiveGroup(defaultInputGroup);
+
+keyboardAxis1dInputSource.bindAxis1d(zoomInput, {
+  negativeKey: keyCodes.m,
+  positiveKey: keyCodes.n,
+});
 
 fireInput.bind(
   new KeyboardTriggerInteraction(
