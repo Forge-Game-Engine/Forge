@@ -27,8 +27,8 @@ export class SpriteAnimationComponent implements Component {
    * @param options - Optional parameters to configure the animation component.
    */
   constructor(
-    animationInputs: AnimationInputs,
     animationController: AnimationController,
+    animationInputs: AnimationInputs,
     playbackSpeed: number = 1,
   ) {
     this.name = SpriteAnimationComponent.symbol;

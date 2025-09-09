@@ -51,7 +51,7 @@ export class AnimationCondition {
   }
 
   public validateCondition(inputValue: AnimationInputType): boolean | null {
-    if (typeof inputValue != typeof this.inputType) {
+    if (typeof inputValue !== this.inputType) {
       return null;
     }
 
@@ -66,8 +66,6 @@ export class AnimationCondition {
         return inputValue > this.inputCondition;
       case '>=':
         return inputValue >= this.inputCondition;
-      default:
-        throw new Error('Unknown comparator:', this.inputConditionComparator);
     }
   }
 }

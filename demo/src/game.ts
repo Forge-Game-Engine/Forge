@@ -2,9 +2,6 @@ import {
   AgeScaleSystem,
   AgeSystem,
   createImageNameSprite,
-  AgeScaleSystem,
-  AgeSystem,
-  createImageNameSprite,
   createShaderStore,
   createWorld,
   Game,
@@ -17,10 +14,9 @@ import {
   registerInputs,
   registerRendering,
   SpriteAnimationSystem,
-  SpriteAnimationSystem,
 } from '../../src';
 import * as animationDemo from './animationDemo';
-// import { ControlAdventurerSystem } from './control-adventurer-system';
+import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game();
 
@@ -40,21 +36,21 @@ const shipSprite = await createImageNameSprite(
   cameraEntity,
 );
 
-// const adventureSprite = await createImageNameSprite(
-//   'adventurer_spritesheet.png',
-//   imageCache,
-//   renderLayers[0],
-//   shaderStore,
-//   cameraEntity,
-// );
+const adventureSprite = await createImageNameSprite(
+  'adventurer_spritesheet.png',
+  imageCache,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
 
-// const blueCircleSprite = await createImageNameSprite(
-//   'blue-circle.png',
-//   imageCache,
-//   renderLayers[0],
-//   shaderStore,
-//   cameraEntity,
-// );
+const blueCircleSprite = await createImageNameSprite(
+  'blue-circle.png',
+  imageCache,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
 
 const starSprite = await createImageNameSprite(
   'star_small.png',
@@ -64,52 +60,52 @@ const starSprite = await createImageNameSprite(
   cameraEntity,
 );
 
-// const attackParticleEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
-//   speedRange: {
-//     min: 250,
-//     max: 300,
-//   },
-//   scaleRange: {
-//     min: 0.6,
-//     max: 1,
-//   },
-//   rotationSpeedRange: {
-//     min: -0.5,
-//     max: 0.5,
-//   },
-//   numParticlesRange: { min: 60, max: 80 },
-//   lifetimeSecondsRange: {
-//     min: 0.2,
-//     max: 0.3,
-//   },
-//   emitDurationSeconds: 0.3,
-//   lifetimeScaleReduction: 0,
-// });
+const attackParticleEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
+  speedRange: {
+    min: 250,
+    max: 300,
+  },
+  scaleRange: {
+    min: 0.6,
+    max: 1,
+  },
+  rotationSpeedRange: {
+    min: -0.5,
+    max: 0.5,
+  },
+  numParticlesRange: { min: 60, max: 80 },
+  lifetimeSecondsRange: {
+    min: 0.2,
+    max: 0.3,
+  },
+  emitDurationSeconds: 0.3,
+  lifetimeScaleReduction: 0,
+});
 
-// const jumpParticleEmitter = new ParticleEmitter(
-//   blueCircleSprite,
-//   renderLayers[0],
-//   {
-//     speedRange: {
-//       min: 150,
-//       max: 200,
-//     },
-//     scaleRange: {
-//       min: 0.1,
-//       max: 0.1,
-//     },
-//     rotationRange: {
-//       min: 135,
-//       max: 225,
-//     },
-//     numParticlesRange: { min: 20, max: 30 },
-//     lifetimeSecondsRange: {
-//       min: 0.2,
-//       max: 0.4,
-//     },
-//     emitDurationSeconds: 0,
-//   },
-// );
+const jumpParticleEmitter = new ParticleEmitter(
+  blueCircleSprite,
+  renderLayers[0],
+  {
+    speedRange: {
+      min: 150,
+      max: 200,
+    },
+    scaleRange: {
+      min: 0.1,
+      max: 0.1,
+    },
+    rotationRange: {
+      min: 135,
+      max: 225,
+    },
+    numParticlesRange: { min: 20, max: 30 },
+    lifetimeSecondsRange: {
+      min: 0.2,
+      max: 0.4,
+    },
+    emitDurationSeconds: 0,
+  },
+);
 
 const smileEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
   speedRange: {
@@ -154,21 +150,19 @@ setTimeout(() => {
 animationDemo.setupAnimationsDemo(
   world,
   shipSprite,
-  // adventureSprite,
+  adventureSprite,
   inputsManager,
-  // attackParticleEmitter,
-  // jumpParticleEmitter,
+  attackParticleEmitter,
+  jumpParticleEmitter,
 );
-// animationDemo.setupAnimationsStressTest(animationSetManager, world, shipSprite, 10000);
-// animationDemo.setupAnimationsStressTest(animationSetManager, world, shipSprite, 10000);
 
 world.addSystems(
   new SpriteAnimationSystem(world.time),
-  // new ControlAdventurerSystem(inputsManager),
-  // new ParticleEmitterSystem(world),
-  // new ParticlePositionSystem(world.time),
-  // new AgeSystem(world),
-  // new AgeScaleSystem(),
+  new ControlAdventurerSystem(inputsManager),
+  new ParticleEmitterSystem(world),
+  new ParticlePositionSystem(world.time),
+  new AgeSystem(world),
+  new AgeScaleSystem(),
 );
 
 game.run();

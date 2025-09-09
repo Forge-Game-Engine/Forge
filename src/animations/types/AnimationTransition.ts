@@ -22,7 +22,7 @@ interface TransitionMetadata {
 }
 
 const defaultTransitionMetadata: TransitionMetadata = {
-  finishCurrentAnimationBeforeTransitioning: false,
+  finishCurrentAnimationBeforeTransitioning: true,
   conditionMustBeTrueAtTheEndOfTheAnimation: false,
 };
 
@@ -47,11 +47,13 @@ export class AnimationTransition {
   // Callback
   public onAnimationChange: OnAnimationChangeEvent;
 
+  // TODO: look at changing this to take in a fromAnimation. This will mean that the entry, exit and any states will also have to be animations somehow
+  // TODO: allow this to take a list of fromStates, to make transitions easier to create
   constructor(
     fromState: string,
     toAnimation: Animation,
     conditions: AnimationCondition[],
-    metadata: Partial<TransitionMetadata>,
+    metadata?: Partial<TransitionMetadata>,
   ) {
     const {
       finishCurrentAnimationBeforeTransitioning,

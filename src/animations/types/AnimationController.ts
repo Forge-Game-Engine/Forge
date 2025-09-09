@@ -12,20 +12,18 @@ States:
     It has a list of transitions. Each associated with 2 states
 */
 
-export const ANY_STATE = 'any';
-export const ENTRY_STATE = 'entry';
-
 import { Animation } from './Animation';
 import { AnimationInputs } from './AnimationInputs';
 import { AnimationTransition } from './AnimationTransition';
+import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
 
 // TODO: add ability to use the 'exit' state
 // TODO: possibly store states in an array
 export class AnimationController {
   public animationTransitions: AnimationTransition[];
-  public nextAnimation?: Animation;
+  public nextAnimation?: { animation: Animation; index: number };
 
-  constructor(animationTransitions: AnimationTransition[]) {
+  constructor(...animationTransitions: AnimationTransition[]) {
     this.animationTransitions = animationTransitions;
   }
 
@@ -48,25 +46,27 @@ export class AnimationController {
   ): Animation | null {
     const currentState = currentAnimation.name;
 
-    const nextAnimation = this._getNextAnimation(
+    let nextAnimation = this._getNextAnimation(
       currentState,
       inputs,
       endOfAnimation,
     );
 
-    if (nextAnimation) {
-      return nextAnimation;
+    if (!nextAnimation && endOfAnimation) {
+      nextAnimation = this.nextAnimation?.animation ?? currentAnimation;
     }
 
-    if (endOfAnimation && this.nextAnimation) {
-      return this.nextAnimation ?? currentAnimation;
+    if (nextAnimation) {
+      this.nextAnimation = undefined;
+
+      return nextAnimation;
     }
 
     return null;
   }
 
   public getEntryAnimation(inputs: AnimationInputs): Animation {
-    const currentState = ENTRY_STATE;
+    const currentState = DEFAULT_ANIMATION_STATES.entry;
 
     const nextAnimation = this._getNextAnimation(currentState, inputs, true);
 
@@ -84,16 +84,31 @@ export class AnimationController {
     inputs: AnimationInputs,
     endOfAnimation: boolean,
   ): Animation | null {
-    for (const transition of this.animationTransitions) {
+    // for (const transition of this.animationTransitions) {
+    for (let i = 0; i < this.animationTransitions.length; i++) {
+      const transition = this.animationTransitions[i];
+
       if (
         (transition.fromState === currentState ||
-          transition.fromState === ANY_STATE) &&
+          transition.fromState === DEFAULT_ANIMATION_STATES.any) &&
         transition.validateConditions(inputs)
       ) {
         if (
-          endOfAnimation ||
+          !endOfAnimation &&
           !transition.finishCurrentAnimationBeforeTransitioning
         ) {
+          inputs.resetTriggers();
+
+          return transition.toAnimation;
+        }
+
+        if (endOfAnimation) {
+          inputs.resetTriggers();
+
+          if (this.nextAnimation && this.nextAnimation.index < i) {
+            return this.nextAnimation.animation;
+          }
+
           return transition.toAnimation;
         }
 
@@ -101,10 +116,21 @@ export class AnimationController {
           transition.finishCurrentAnimationBeforeTransitioning &&
           !transition.conditionMustBeTrueAtTheEndOfTheAnimation
         ) {
-          this.nextAnimation = transition.toAnimation;
+          if (!this.nextAnimation || this.nextAnimation.index > i) {
+            console.log(
+              `setting next animation to ${transition.toAnimation.name}`,
+            );
+            // to ensure that the next animation chosen has the highest priority, we must store its index
+            this.nextAnimation = {
+              animation: transition.toAnimation,
+              index: i,
+            };
+          }
         }
       }
     }
+
+    inputs.resetTriggers();
 
     return null;
   }

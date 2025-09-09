@@ -100,7 +100,21 @@ export class AnimationInputs {
    * @param defaultValue The default value of the trigger input.
    */
   public registerTrigger(name: string, defaultValue = false): void {
+    this._validateInputNameDoesNotExist(name);
     this.inputs.push(new AnimationInput(name, defaultValue, true));
+  }
+
+  public setTrigger(name: string, value: boolean = true): void {
+    this._validateInputType(name, 'boolean');
+    const input = this._getInput(name);
+    input.value = value;
+  }
+
+  public getTrigger(name: string): boolean {
+    this._validateInputType(name, 'boolean');
+    const input = this._getInput(name);
+
+    return input.value as boolean;
   }
 
   /**
@@ -109,7 +123,24 @@ export class AnimationInputs {
    * @param defaultValue The default value of the toggle input.
    */
   public registerToggle(name: string, defaultValue = false): void {
+    this._validateInputNameDoesNotExist(name);
     this.inputs.push(new AnimationInput(name, defaultValue));
+  }
+
+  public setToggle(name: string, value: boolean): void {
+    this.setTrigger(name, value);
+  }
+
+  public getToggle(name: string): boolean {
+    return this.getTrigger(name);
+  }
+
+  public resetTriggers() {
+    this.inputs.forEach((element) => {
+      if (element.resetOnFrameEnd) {
+        element.value = false;
+      }
+    });
   }
 
   /**
@@ -118,7 +149,21 @@ export class AnimationInputs {
    * @param defaultValue The default value of the number input.
    */
   public registerNumber(name: string, defaultValue = 0): void {
+    this._validateInputNameDoesNotExist(name);
     this.inputs.push(new AnimationInput(name, defaultValue));
+  }
+
+  public setNumber(name: string, value: number): void {
+    this._validateInputType(name, 'number');
+    const input = this._getInput(name);
+    input.value = value;
+  }
+
+  public getNumber(name: string): number {
+    this._validateInputType(name, 'number');
+    const input = this._getInput(name);
+
+    return input.value as number;
   }
 
   /**
@@ -127,6 +172,48 @@ export class AnimationInputs {
    * @param defaultValue The default value of the text input.
    */
   public registerText(name: string, defaultValue = ''): void {
+    this._validateInputNameDoesNotExist(name);
     this.inputs.push(new AnimationInput(name, defaultValue));
+  }
+
+  public setText(name: string, value: string): void {
+    this._validateInputType(name, 'string');
+    const input = this._getInput(name);
+    input.value = value;
+  }
+
+  public getText(name: string): string {
+    this._validateInputType(name, 'string');
+    const input = this._getInput(name);
+
+    return input.value as string;
+  }
+
+  private _validateInputNameDoesNotExist(name: string) {
+    if (this.inputs.find((input) => input.name === name)) {
+      throw new Error(`Input with name ${name} already exists.`);
+    }
+  }
+
+  private _validateInputType(name: string, type: AnimationInputTypeNames) {
+    const input = this.inputs.find((input) => input.name === name);
+
+    if (!input) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    if (typeof input.value !== type) {
+      throw new Error(`Input with name ${name} is not of type ${type}.`);
+    }
+  }
+
+  private _getInput(name: string): AnimationInput {
+    const input = this.inputs.find((input) => input.name === name);
+
+    if (!input) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    return input;
   }
 }

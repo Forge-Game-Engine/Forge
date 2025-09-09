@@ -70,7 +70,7 @@ export class SpriteAnimationSystem extends System {
 
     if (endOfAnimation && !nextAnimation) {
       throw new Error(
-        'Something went wrong: No next animation was found at the end of the animation.',
+        `No next animation found at end of animation '${currentAnimation.name}'. Check animation controller transitions.`,
       );
     }
 
@@ -83,6 +83,8 @@ export class SpriteAnimationSystem extends System {
       nextAnimation.onAnimationStartEvent.raise(entity);
       spriteAnimationComponent.currentAnimation = nextAnimation;
       spriteAnimationComponent.animationFrameIndex = 0;
+      spriteAnimationComponent.lastFrameChangeTimeInSeconds =
+        this._time.timeInSeconds;
 
       return;
     }
