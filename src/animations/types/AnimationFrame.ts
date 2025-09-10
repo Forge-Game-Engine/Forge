@@ -18,4 +18,8 @@ export interface AnimationFrame {
    * The duration of the frame in seconds.
    */
   durationSeconds: number;
+  /**
+   * The index of the frame in the animation sequence.
+   */
+  frameIndex: number;
 }

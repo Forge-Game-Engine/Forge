@@ -83,15 +83,10 @@ export class AnimationTransition {
 
       for (const input of animationInputs.inputs) {
         if (condition.inputName === input.name) {
+          conditionInputFound = true;
           const validation = condition.validateCondition(input.value);
 
-          if (validation === null) {
-            continue;
-          }
-
-          conditionInputFound = true;
-
-          if (validation === false) {
+          if (!validation) {
             return false;
           }
 

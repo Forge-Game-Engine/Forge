@@ -36,6 +36,7 @@ function generateAnimationFrames(
       durationSeconds: Array.isArray(animationFrameDurationSeconds)
         ? animationFrameDurationSeconds[i]
         : animationFrameDurationSeconds,
+      frameIndex: i,
     });
   }
 

@@ -84,7 +84,6 @@ export class AnimationController {
     inputs: AnimationInputs,
     endOfAnimation: boolean,
   ): Animation | null {
-    // for (const transition of this.animationTransitions) {
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
 

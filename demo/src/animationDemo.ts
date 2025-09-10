@@ -1,6 +1,8 @@
 import {
+  AnimationCondition,
   AnimationController,
   AnimationInputs,
+  AnimationTransition,
   buttonMoments,
   createAnimation,
   DEFAULT_ANIMATION_STATES,
@@ -12,24 +14,17 @@ import {
   KeyboardTriggerInteraction,
   keyCodes,
   ParticleEmitter,
-  ParameterizedForgeEvent,
+  ParticleEmitterComponent,
   PositionComponent,
   ScaleComponent,
   Sprite,
+  SpriteAnimationComponent,
   SpriteComponent,
   TriggerAction,
-  ParticleEmitterComponent,
-  SpriteAnimationComponent,
-  AnimationTransition,
-  World,
   Vector2,
-  AnimationCondition,
+  World,
 } from '../../src';
-import {
-  ADVENTURER_ANIMATIONS,
-  ENTITY_TYPES,
-  SHIP_ANIMATIONS,
-} from './animationEnums';
+import { ADVENTURER_ANIMATIONS, SHIP_ANIMATIONS } from './animationEnums';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
@@ -42,8 +37,8 @@ export function setupAnimationsDemo(
 ) {
   setupInputs(inputsManager);
 
-  // const ShipController = createShipAnimationController();
-  // buildShipEntities(world, shipSprite, ShipController);
+  const ShipController = createShipAnimationController();
+  buildShipEntities(world, shipSprite, ShipController);
 
   const controller = createAdventurerControllableController();
   const inputs = createAdventurerControllableInputs();
@@ -214,76 +209,87 @@ function createAdventurerControllableController() {
     emitter?.emitIfNotEmitting();
   };
 
-  const runMovement =
-    (xChange: number, yChange: number) => (entity: Entity) => {
-      const positionComponent = entity.getComponentRequired<PositionComponent>(
-        PositionComponent.symbol,
-      );
-      const flipComponent = entity.getComponentRequired<FlipComponent>(
-        FlipComponent.symbol,
-      );
-      positionComponent.x += xChange * (flipComponent.flipX ? -1 : 1);
-      positionComponent.y += yChange;
-    };
+  const runMovement = (xChange: number, yChange: number, entity: Entity) => {
+    const positionComponent = entity.getComponentRequired<PositionComponent>(
+      PositionComponent.symbol,
+    );
+    const flipComponent = entity.getComponentRequired<FlipComponent>(
+      FlipComponent.symbol,
+    );
+    positionComponent.x += xChange * (flipComponent.flipX ? -1 : 1);
+    positionComponent.y += yChange;
+  };
 
+  // create idle animation
   const idle = createAnimation(ADVENTURER_ANIMATIONS.idle, 1, 13, 0.1, {
     endPositionPercentage: new Vector2(1, 1 / 8),
   });
 
-  // const runMovementAnimationEvents: AnimationEventData = new Map();
-  // [0, 1, 2, 3, 4, 5, 6, 7].forEach((i) => {
-  //   const event = new ParameterizedForgeEvent<Entity>('run');
-
-  //   event.registerListener(runMovement(5, 0));
-  //   runMovementAnimationEvents.set(i, event);
-  // });
-
+  // create run animation and callback
   const run = createAnimation(ADVENTURER_ANIMATIONS.run, 1, 8, 0.1, {
     startPositionPercentage: new Vector2(0, 1 / 8),
     endPositionPercentage: new Vector2(8 / 13, 2 / 8),
-    // Create a callback for each of the 8 frames
-    // animationEvents: runMovementAnimationEvents,
   });
 
-  // const attackEvent1 = new ParameterizedForgeEvent<Entity>('attack1');
-  // attackEvent1.registerListener(attackParticles(-60, -30));
+  run.onAnimationFrameChangeEvent.registerListener(
+    ({ entity, animationFrame }) => {
+      const frameIndex = animationFrame.frameIndex;
 
+      runMovement(5, (((frameIndex + 1) % 3) - 1) * -5, entity);
+    },
+  );
+
+  // create attack1 animations and callbacks
   const attack1 = createAnimation(ADVENTURER_ANIMATIONS.attack1, 1, 10, 0.1, {
     startPositionPercentage: new Vector2(0, 2 / 8),
     endPositionPercentage: new Vector2(10 / 13, 3 / 8),
-    // animationEvents: new Map([[2, attackEvent1]]),
   });
 
-  // const attackEvent2 = new ParameterizedForgeEvent<Entity>('attack2');
-  // attackEvent2.registerListener(attackParticles(60, 30));
+  attack1.onAnimationFrameChangeEvent.registerListener(
+    ({ entity, animationFrame }) => {
+      if (animationFrame.frameIndex === 2) {
+        attackParticles(-60, -30)(entity);
+      }
+    },
+  );
 
+  // create attack2 animation and callbacks
   const attack2 = createAnimation(ADVENTURER_ANIMATIONS.attack2, 1, 10, 0.1, {
     startPositionPercentage: new Vector2(0, 3 / 8),
     endPositionPercentage: new Vector2(10 / 13, 4 / 8),
-    // animationEvents: new Map([[0, attackEvent2]]),
   });
 
-  // const attackEvent3 = new ParameterizedForgeEvent<Entity>('attack3');
-  // attackEvent3.registerListener(attackParticles(0, 0));
+  attack2.onAnimationFrameChangeEvent.registerListener(
+    ({ entity, animationFrame }) => {
+      if (animationFrame.frameIndex === 0) {
+        attackParticles(60, 30)(entity);
+      }
+    },
+  );
 
+  // create attack3 animation and callbacks
   const attack3 = createAnimation(ADVENTURER_ANIMATIONS.attack3, 1, 10, 0.1, {
     startPositionPercentage: new Vector2(0, 4 / 8),
     endPositionPercentage: new Vector2(10 / 13, 5 / 8),
-    // animationEvents: new Map([[2, attackEvent3]]),
   });
 
-  // const jumpEvent = new ParameterizedForgeEvent<Entity>('jump');
-  // jumpEvent.registerListener(jumpParticles);
+  attack3.onAnimationFrameChangeEvent.registerListener(
+    ({ entity, animationFrame }) => {
+      if (animationFrame.frameIndex === 2) {
+        attackParticles(0, 0)(entity);
+      }
+    },
+  );
 
+  // create jump animation and callbacks
   const jump = createAnimation(ADVENTURER_ANIMATIONS.jump, 1, 6, 0.1, {
     startPositionPercentage: new Vector2(0, 5 / 8),
     endPositionPercentage: new Vector2(6 / 13, 6 / 8),
-    // animationEvents: new Map([
-    //   [0, jumpEvent],
-    //   [5, jumpEvent],
-    // ]),
   });
+  jump.onAnimationStartEvent.registerListener(jumpParticles);
+  jump.onAnimationEndEvent.registerListener(jumpParticles);
 
+  // create animation conditions
   const runCondition = new AnimationCondition('run', 'boolean');
   const attackCondition = new AnimationCondition('attack', 'string', 'attack');
   const jumpCondition = new AnimationCondition('jump', 'boolean');
@@ -300,6 +306,7 @@ function createAdventurerControllableController() {
     '>=',
   );
 
+  // create animation controller and transitions
   const controller = new AnimationController(
     new AnimationTransition(DEFAULT_ANIMATION_STATES.entry, idle, []),
     // at any time we can jump
@@ -320,10 +327,10 @@ function createAdventurerControllableController() {
       attack1.name,
       attack2,
       [midHealthCondition],
-      // { conditionMustBeTrueAtTheEndOfTheAnimation: true }, // the health must be enough at the end of the animation
+      { conditionMustBeTrueAtTheEndOfTheAnimation: true }, // the health must be enough at the end of the animation
     ),
     new AnimationTransition(attack2.name, attack3, [maxHealthCondition], {
-      // conditionMustBeTrueAtTheEndOfTheAnimation: true,
+      conditionMustBeTrueAtTheEndOfTheAnimation: true,
     }),
     // ...if not, it goes to run, then idle
     new AnimationTransition(attack1.name, run, [runCondition]),

@@ -2,6 +2,7 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
+import { Animation } from '../types';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.
@@ -80,11 +81,16 @@ export class SpriteAnimationSystem extends System {
         currentAnimation.onAnimationEndEvent.raise(entity);
       }
 
-      nextAnimation.onAnimationStartEvent.raise(entity);
-      spriteAnimationComponent.currentAnimation = nextAnimation;
       spriteAnimationComponent.animationFrameIndex = 0;
-      spriteAnimationComponent.lastFrameChangeTimeInSeconds =
-        this._time.timeInSeconds;
+      spriteAnimationComponent.currentAnimation = nextAnimation;
+      nextAnimation.onAnimationStartEvent.raise(entity);
+
+      this._onChangeAnimationFrame(
+        nextAnimation,
+        entity,
+        spriteAnimationComponent.animationFrameIndex,
+        spriteAnimationComponent,
+      );
 
       return;
     }
@@ -94,14 +100,37 @@ export class SpriteAnimationSystem extends System {
       return;
     }
 
-    currentAnimation.onAnimationFrameChangeEvent.raise([
+    spriteAnimationComponent.animationFrameIndex++;
+
+    this._onChangeAnimationFrame(
+      currentAnimation,
       entity,
-      currentAnimationFrame,
-    ]);
+      spriteAnimationComponent.animationFrameIndex,
+      spriteAnimationComponent,
+    );
+  }
+
+  /**
+   * Handles the logic when an animation frame changes, including raising events and updating the last frame change time.
+   * @param animation - The current animation.
+   * @param entity - The entity whose animation frame has changed.
+   * @param animationFrameIndex - The index of the new animation frame.
+   * @param spriteAnimationComponent - The SpriteAnimationComponent of the entity.
+   */
+  private _onChangeAnimationFrame(
+    animation: Animation,
+    entity: Entity,
+    animationFrameIndex: number,
+    spriteAnimationComponent: SpriteAnimationComponent,
+  ) {
+    const animationFrame = animation.getFrame(animationFrameIndex);
+
+    animation.onAnimationFrameChangeEvent.raise({
+      entity,
+      animationFrame,
+    });
 
     spriteAnimationComponent.lastFrameChangeTimeInSeconds =
       this._time.timeInSeconds;
-
-    spriteAnimationComponent.animationFrameIndex++;
   }
 }

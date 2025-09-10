@@ -3,9 +3,10 @@ import { ParameterizedForgeEvent } from '../../events';
 import { AnimationFrame } from './AnimationFrame';
 
 export type OnAnimationChangeEvent = ParameterizedForgeEvent<Entity>;
-export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<
-  [Entity, AnimationFrame]
->; // would it be better to have a different event for every frame (instead of 1 for all frames)?
+export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<{
+  entity: Entity;
+  animationFrame: AnimationFrame;
+}>; // would it be better to have a different event for every frame (instead of 1 for all frames)?
 
 /**
  * Interface representing a group of animation frames for a specific animation name.
@@ -32,7 +33,7 @@ export class Animation {
   public onAnimationEndEvent: OnAnimationChangeEvent;
 
   /**
-   * Event that is raised every frame change
+   * Event that is raised every frame change. This includes the first and last frame change of an animation
    */
   public onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
 
@@ -54,9 +55,10 @@ export class Animation {
     this.onAnimationEndEvent = new ParameterizedForgeEvent<Entity>(
       'AnimationEndEvent',
     );
-    this.onAnimationFrameChangeEvent = new ParameterizedForgeEvent<
-      [Entity, AnimationFrame]
-    >('AnimationFrameChangeEvent');
+    this.onAnimationFrameChangeEvent = new ParameterizedForgeEvent<{
+      entity: Entity;
+      animationFrame: AnimationFrame;
+    }>('AnimationFrameChangeEvent');
   }
 
   /**

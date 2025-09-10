@@ -50,11 +50,7 @@ export class AnimationCondition {
     }
   }
 
-  public validateCondition(inputValue: AnimationInputType): boolean | null {
-    if (typeof inputValue !== this.inputType) {
-      return null;
-    }
-
+  public validateCondition(inputValue: AnimationInputType): boolean {
     switch (this.inputConditionComparator) {
       case '=':
         return inputValue === this.inputCondition;
