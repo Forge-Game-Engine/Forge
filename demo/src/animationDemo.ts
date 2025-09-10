@@ -130,17 +130,17 @@ function createShipAnimationController() {
 
   const animationController = new AnimationController(
     new AnimationTransition(
-      DEFAULT_ANIMATION_STATES.entry,
+      [DEFAULT_ANIMATION_STATES.entry],
       shipSpinAnimation,
       [],
     ),
     new AnimationTransition(
-      shipSpinAnimation.name,
+      [shipSpinAnimation.name],
       shipSpinRandomAnimation,
       [],
     ),
     new AnimationTransition(
-      shipSpinRandomAnimation.name,
+      [shipSpinRandomAnimation.name],
       shipSpinAnimation,
       [],
     ),
@@ -308,39 +308,42 @@ function createAdventurerControllableController() {
 
   // create animation controller and transitions
   const controller = new AnimationController(
-    new AnimationTransition(DEFAULT_ANIMATION_STATES.entry, idle, []),
     // at any time we can jump
     new AnimationTransition(
-      DEFAULT_ANIMATION_STATES.any,
+      [DEFAULT_ANIMATION_STATES.any],
       jump,
       [jumpCondition],
       { finishCurrentAnimationBeforeTransitioning: false }, // we can interrupt any animation to jump
     ),
     // we can run or attack from idle, jump, or run
-    new AnimationTransition(idle.name, run, [runCondition]),
-    new AnimationTransition(idle.name, attack1, [attackCondition]),
-    new AnimationTransition(jump.name, run, [runCondition]),
-    new AnimationTransition(jump.name, attack1, [attackCondition]),
-    new AnimationTransition(run.name, attack1, [attackCondition]),
+    new AnimationTransition([idle.name, jump.name], run, [runCondition]),
+    new AnimationTransition([idle.name, jump.name], attack1, [attackCondition]),
+    new AnimationTransition([run.name], attack1, [attackCondition]),
     // attacks follow other attacks if we have enough health...
     new AnimationTransition(
-      attack1.name,
+      [attack1.name],
       attack2,
       [midHealthCondition],
       { conditionMustBeTrueAtTheEndOfTheAnimation: true }, // the health must be enough at the end of the animation
     ),
-    new AnimationTransition(attack2.name, attack3, [maxHealthCondition], {
+    new AnimationTransition([attack2.name], attack3, [maxHealthCondition], {
       conditionMustBeTrueAtTheEndOfTheAnimation: true,
     }),
     // ...if not, it goes to run, then idle
-    new AnimationTransition(attack1.name, run, [runCondition]),
-    new AnimationTransition(attack2.name, run, [runCondition]),
-    new AnimationTransition(attack3.name, run, [runCondition]),
-    new AnimationTransition(attack1.name, idle, []),
-    new AnimationTransition(attack2.name, idle, []),
-    new AnimationTransition(attack3.name, idle, []),
+    new AnimationTransition([attack1.name, attack2.name, attack3.name], run, [
+      runCondition,
+    ]),
+    new AnimationTransition(
+      [attack1.name, attack2.name, attack3.name],
+      idle,
+      [],
+    ),
     // after a jump, we can go to idle. Because this has no conditions, it must be last (or it would take priority over the run and attack transitions from jump)
-    new AnimationTransition(jump.name, idle, []),
+    new AnimationTransition(
+      [DEFAULT_ANIMATION_STATES.entry, jump.name],
+      idle,
+      [],
+    ),
   );
 
   return controller;

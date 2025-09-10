@@ -34,7 +34,7 @@ import { AnimationInputs } from './AnimationInputs';
 
 export class AnimationTransition {
   // States
-  public fromState: string;
+  public fromStates: string[];
   public toAnimation: Animation;
 
   // Conditions
@@ -50,7 +50,7 @@ export class AnimationTransition {
   // TODO: look at changing this to take in a fromAnimation. This will mean that the entry, exit and any states will also have to be animations somehow
   // TODO: allow this to take a list of fromStates, to make transitions easier to create
   constructor(
-    fromState: string,
+    fromStates: string[],
     toAnimation: Animation,
     conditions: AnimationCondition[],
     metadata?: Partial<TransitionMetadata>,
@@ -65,7 +65,7 @@ export class AnimationTransition {
     this.conditionMustBeTrueAtTheEndOfTheAnimation =
       conditionMustBeTrueAtTheEndOfTheAnimation;
 
-    this.fromState = fromState;
+    this.fromStates = fromStates;
     this.toAnimation = toAnimation;
 
     this.conditions = conditions;
@@ -96,7 +96,7 @@ export class AnimationTransition {
 
       if (!conditionInputFound) {
         throw new Error(
-          `Condition from animation ${this.fromState} to ${this.toAnimation.name} looking for input: ${condition.inputName} did not find any inputs `,
+          `Condition from animations "${this.fromStates.join(', ')}" to "${this.toAnimation.name}" looking for input: ${condition.inputName} did not find any inputs `,
         );
       }
     }
@@ -104,3 +104,6 @@ export class AnimationTransition {
     return true;
   }
 }
+
+// TODO: add more conditions for text (contains, starts with, ends with, etc)
+// TODO: make different conditions for different input types

@@ -88,9 +88,9 @@ export class AnimationController {
 
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
-      const isValidFromState =
-        transition.fromState === currentState ||
-        transition.fromState === DEFAULT_ANIMATION_STATES.any;
+      const isValidFromState = transition.fromStates.some(
+        (s) => s === currentState || s === DEFAULT_ANIMATION_STATES.any,
+      );
 
       if (!isValidFromState || !transition.validateConditions(inputs)) {
         continue;
