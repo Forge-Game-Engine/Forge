@@ -116,7 +116,10 @@ export class AnimationController {
         break;
       }
 
-      if (!hasNextAnimationWithHigherPriority) {
+      if (
+        !hasNextAnimationWithHigherPriority &&
+        !transition.conditionMustBeTrueAtTheEndOfTheAnimation
+      ) {
         // to ensure that the next animation chosen has the highest priority, we must store its index
         this.nextAnimation = {
           animation: transition.toAnimation,
