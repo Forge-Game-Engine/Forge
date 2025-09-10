@@ -330,7 +330,7 @@ function createAdventurerControllableController() {
       { conditionMustBeTrueAtTheEndOfTheAnimation: true }, // the health must be enough at the end of the animation
     ),
     new AnimationTransition(attack2.name, attack3, [maxHealthCondition], {
-      conditionMustBeTrueAtTheEndOfTheAnimation: true,
+      conditionMustBeTrueAtTheEndOfTheAnimation: true, //TODO: this is not working currently
     }),
     // ...if not, it goes to run, then idle
     new AnimationTransition(attack1.name, run, [runCondition]),

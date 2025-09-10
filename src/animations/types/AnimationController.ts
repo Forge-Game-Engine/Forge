@@ -84,53 +84,49 @@ export class AnimationController {
     inputs: AnimationInputs,
     endOfAnimation: boolean,
   ): Animation | null {
+    let nextAnimation: Animation | null = null;
+
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
+      const isValidFromState =
+        transition.fromState === currentState ||
+        transition.fromState === DEFAULT_ANIMATION_STATES.any;
 
-      if (
-        (transition.fromState === currentState ||
-          transition.fromState === DEFAULT_ANIMATION_STATES.any) &&
-        transition.validateConditions(inputs)
-      ) {
-        if (
-          !endOfAnimation &&
-          !transition.finishCurrentAnimationBeforeTransitioning
-        ) {
-          inputs.resetTriggers();
+      if (!isValidFromState || !transition.validateConditions(inputs)) {
+        continue;
+      }
 
-          return transition.toAnimation;
-        }
+      const hasNextAnimationWithHigherPriority =
+        this.nextAnimation && this.nextAnimation.index < i;
 
-        if (endOfAnimation) {
-          inputs.resetTriggers();
+      const transitionAnimationsNow =
+        (!endOfAnimation &&
+          !transition.finishCurrentAnimationBeforeTransitioning) ||
+        (endOfAnimation && !hasNextAnimationWithHigherPriority);
 
-          if (this.nextAnimation && this.nextAnimation.index < i) {
-            return this.nextAnimation.animation;
-          }
+      if (transitionAnimationsNow) {
+        nextAnimation = transition.toAnimation;
 
-          return transition.toAnimation;
-        }
+        break;
+      }
 
-        if (
-          transition.finishCurrentAnimationBeforeTransitioning &&
-          !transition.conditionMustBeTrueAtTheEndOfTheAnimation
-        ) {
-          if (!this.nextAnimation || this.nextAnimation.index > i) {
-            console.log(
-              `setting next animation to ${transition.toAnimation.name}`,
-            );
-            // to ensure that the next animation chosen has the highest priority, we must store its index
-            this.nextAnimation = {
-              animation: transition.toAnimation,
-              index: i,
-            };
-          }
-        }
+      if (endOfAnimation && this.nextAnimation) {
+        nextAnimation = this.nextAnimation.animation;
+
+        break;
+      }
+
+      if (!hasNextAnimationWithHigherPriority) {
+        // to ensure that the next animation chosen has the highest priority, we must store its index
+        this.nextAnimation = {
+          animation: transition.toAnimation,
+          index: i,
+        };
       }
     }
 
-    inputs.resetTriggers();
+    inputs.clearFrameEndInputs();
 
-    return null;
+    return nextAnimation;
   }
 }

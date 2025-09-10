@@ -135,7 +135,7 @@ export class AnimationInputs {
     return this.getTrigger(name);
   }
 
-  public resetTriggers() {
+  public clearFrameEndInputs() {
     this.inputs.forEach((element) => {
       if (element.resetOnFrameEnd) {
         element.value = false;
