@@ -348,9 +348,9 @@ function createAdventurerControllableController() {
 
 function createAdventurerControllableInputs() {
   const animationInputs = new AnimationInputs();
-  animationInputs.registerTrigger('jump');
+  animationInputs.registerToggle('jump', false, true); // should reset every frame
   animationInputs.registerToggle('run');
-  animationInputs.registerText('attack');
+  animationInputs.registerText('attack', '', true); // should reset every frame
   animationInputs.registerNumber('health', 100);
 
   return animationInputs;

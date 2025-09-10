@@ -41,7 +41,7 @@ export class ControlAdventurerSystem extends System {
       this._inputsManager.getAction<TriggerAction>('takeDamage');
 
     if (jumpAction?.isTriggered) {
-      animationInputs.setTrigger('jump');
+      animationInputs.setToggle('jump', true);
 
       return;
     }
@@ -67,8 +67,6 @@ export class ControlAdventurerSystem extends System {
 
       return;
     }
-
-    animationInputs.setText('attack', 'not attack');
 
     if (takeDamage?.isTriggered) {
       const health = animationInputs.getNumber('health');

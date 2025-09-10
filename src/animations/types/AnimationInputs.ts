@@ -1,5 +1,3 @@
-// export type InputType = 'trigger' | 'toggle' | 'number' | 'text';
-
 export type AnimationInputTypeNames = 'boolean' | 'number' | 'string';
 export type AnimationInputType = boolean | number | string;
 /**
@@ -79,7 +77,6 @@ export class AnimationInput {
 /**
  * A collection of animation inputs categorized by type.
  *
- * Triggers: boolean values that when set to true, resets to false after a single frame.
  * Toggles: boolean values.
  * Numbers: numeric values.
  * Text: string values.
@@ -95,44 +92,30 @@ export class AnimationInputs {
   }
 
   /**
-   * Registers a new trigger input.
-   * @param name The name of the trigger input.
-   * @param defaultValue The default value of the trigger input.
+   * Registers a new toggle input.
+   * @param name The name of the toggle input.
+   * @param defaultValue The default value of the toggle input.
    */
-  public registerTrigger(name: string, defaultValue = false): void {
+  public registerToggle(
+    name: string,
+    defaultValue = false,
+    resetOnFrameEnd = false,
+  ): void {
     this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue, true));
+    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
   }
 
-  public setTrigger(name: string, value: boolean = true): void {
+  public setToggle(name: string, value: boolean): void {
     this._validateInputType(name, 'boolean');
     const input = this._getInput(name);
     input.value = value;
   }
 
-  public getTrigger(name: string): boolean {
+  public getToggle(name: string): boolean {
     this._validateInputType(name, 'boolean');
     const input = this._getInput(name);
 
     return input.value as boolean;
-  }
-
-  /**
-   * Registers a new toggle input.
-   * @param name The name of the toggle input.
-   * @param defaultValue The default value of the toggle input.
-   */
-  public registerToggle(name: string, defaultValue = false): void {
-    this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue));
-  }
-
-  public setToggle(name: string, value: boolean): void {
-    this.setTrigger(name, value);
-  }
-
-  public getToggle(name: string): boolean {
-    return this.getTrigger(name);
   }
 
   public clearFrameEndInputs() {
@@ -148,9 +131,13 @@ export class AnimationInputs {
    * @param name The name of the number input.
    * @param defaultValue The default value of the number input.
    */
-  public registerNumber(name: string, defaultValue = 0): void {
+  public registerNumber(
+    name: string,
+    defaultValue = 0,
+    resetOnFrameEnd = false,
+  ): void {
     this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue));
+    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
   }
 
   public setNumber(name: string, value: number): void {
@@ -171,9 +158,13 @@ export class AnimationInputs {
    * @param name The name of the text input.
    * @param defaultValue The default value of the text input.
    */
-  public registerText(name: string, defaultValue = ''): void {
+  public registerText(
+    name: string,
+    defaultValue = '',
+    resetOnFrameEnd = false,
+  ): void {
     this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue));
+    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
   }
 
   public setText(name: string, value: string): void {
