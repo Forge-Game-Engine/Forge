@@ -10,7 +10,8 @@ describe('KeyboardInputSource', () => {
   beforeEach(() => {
     inputManager = {
       dispatchTriggerAction: vi.fn(),
-      dispatchHoldAction: vi.fn(),
+      dispatchHoldStartAction: vi.fn(),
+      dispatchHoldEndAction: vi.fn(),
       addUpdatable: vi.fn(),
       addResettable: vi.fn(),
       removeUpdatable: vi.fn(),
@@ -42,27 +43,7 @@ describe('KeyboardInputSource', () => {
     const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
     window.dispatchEvent(event);
 
-    keyboardInputSource.update();
-
-    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: {
-          keyCode: keyCodes.space,
-        },
-        source: keyboardInputSource,
-      }),
-    );
-  });
-
-  it('should bind and trigger hold action keydown + update after multiple updates', () => {
-    const event = new window.KeyboardEvent('keydown', { code: keyCodes.space });
-    window.dispatchEvent(event);
-
-    keyboardInputSource.update();
-    keyboardInputSource.update();
-    keyboardInputSource.update();
-
-    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
+    expect(inputManager.dispatchHoldStartAction).toHaveBeenCalledWith(
       expect.objectContaining({
         args: {
           keyCode: keyCodes.space,
@@ -78,18 +59,13 @@ describe('KeyboardInputSource', () => {
     });
     window.dispatchEvent(keyDownEvent);
 
-    keyboardInputSource.update();
-    keyboardInputSource.update();
-    keyboardInputSource.update();
-
     const keyUpEvent = new window.KeyboardEvent('keyup', {
       code: keyCodes.space,
     });
+
     window.dispatchEvent(keyUpEvent);
 
-    keyboardInputSource.update();
-
-    expect(inputManager.dispatchHoldAction).toHaveBeenCalledWith(
+    expect(inputManager.dispatchHoldStartAction).toHaveBeenCalledWith(
       expect.objectContaining({
         args: {
           keyCode: keyCodes.space,

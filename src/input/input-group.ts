@@ -1,4 +1,3 @@
-import { Vector2 } from '../math';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -43,7 +42,7 @@ export class InputGroup {
     }
   }
 
-  public dispatchHoldAction(interaction: InputInteraction): void {
+  public dispatchHoldStartAction(interaction: InputInteraction): void {
     for (const action of this.holdActions) {
       const interactionsForAction = action.interactions.get(this);
 
@@ -54,6 +53,22 @@ export class InputGroup {
       for (const interactionForAction of interactionsForAction) {
         if (interactionForAction.matchesArgs(interaction.args)) {
           action.startHold();
+        }
+      }
+    }
+  }
+
+  public dispatchHoldEndAction(interaction: InputInteraction): void {
+    for (const action of this.holdActions) {
+      const interactionsForAction = action.interactions.get(this);
+
+      if (!interactionsForAction) {
+        continue;
+      }
+
+      for (const interactionForAction of interactionsForAction) {
+        if (interactionForAction.matchesArgs(interaction.args)) {
+          action.endHold();
         }
       }
     }
@@ -80,7 +95,8 @@ export class InputGroup {
 
   public dispatchAxis2dAction(
     interaction: InputInteraction,
-    value: Vector2,
+    x: number,
+    y: number,
   ): void {
     for (const action of this.axis2dActions) {
       const interactionsForAction = action.interactions.get(this);
@@ -91,7 +107,7 @@ export class InputGroup {
 
       for (const interactionForAction of interactionsForAction) {
         if (interactionForAction.matchesArgs(interaction.args)) {
-          action.set(value);
+          action.set(x, y);
         }
       }
     }

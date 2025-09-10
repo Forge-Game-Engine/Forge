@@ -12,7 +12,6 @@ export class FireSystem extends System {
 
     const fireAction = inputs.inputManager.getTriggerAction('fire');
     const runAction = inputs.inputManager.getHoldAction('run');
-    const zoomAction = inputs.inputManager.getAxis1dAction('zoom');
 
     if (fireAction?.isTriggered) {
       console.log(`Fire action triggered`);
@@ -21,7 +20,5 @@ export class FireSystem extends System {
     if (runAction?.isHeld) {
       console.log(`Run action is being held`);
     }
-
-    console.log(`Axis action value: ${zoomAction?.value}`);
   }
 }

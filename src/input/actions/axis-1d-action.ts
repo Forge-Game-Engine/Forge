@@ -3,11 +3,14 @@ import { ActionResetType, actionResetTypes } from '../constants';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 import { InputManager } from '../input-manager';
+import { ParameterizedForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
-export class Axis1dAction implements InputAction {
+export class Axis1dAction implements InputAction, Resettable {
   public readonly name: string;
 
   public interactions: Map<InputGroup, Set<InputInteraction>>;
+  public readonly valueChangeEvent: ParameterizedForgeEvent<number>;
 
   private _value: number = 0;
   private readonly _actionResetType: ActionResetType;
@@ -22,11 +25,16 @@ export class Axis1dAction implements InputAction {
     this._actionResetType = actionResetType;
 
     inputManager.registerAxis1dAction(this);
+
+    this.valueChangeEvent = new ParameterizedForgeEvent(
+      'Axis1d Value Change Event',
+    );
   }
 
   public reset() {
-    this._value =
-      this._actionResetType === actionResetTypes.zero ? 0 : this._value;
+    if (this._actionResetType === actionResetTypes.zero) {
+      this.set(0);
+    }
   }
 
   get value(): number {
@@ -34,7 +42,13 @@ export class Axis1dAction implements InputAction {
   }
 
   public set(value: number) {
+    if (this._value === value) {
+      return;
+    }
+
     this._value = value;
+
+    this.valueChangeEvent.raise(this._value);
   }
 
   public bind<TArgs>(

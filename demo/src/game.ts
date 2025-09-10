@@ -124,8 +124,6 @@ panInput.bind(
   alternativeInputGroup,
 );
 
-inputsManager.bindOnNextAxis1dAction(zoomInput);
-
 inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
@@ -151,5 +149,17 @@ const batchPromises = sprites.map((sprite) =>
 await Promise.all(batchPromises);
 
 world.addSystems(new FireSystem());
+
+zoomInput.valueChangeEvent.registerListener((value) => {
+  console.log(value);
+});
+
+runInput.holdStartEvent.registerListener(() => {
+  console.log('Starting run');
+});
+
+runInput.holdEndEvent.registerListener(() => {
+  console.log('Ending run');
+});
 
 game.run();

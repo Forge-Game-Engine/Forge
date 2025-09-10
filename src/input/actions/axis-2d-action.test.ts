@@ -5,7 +5,6 @@ import { MouseInputSource } from '../input-sources';
 import { InputManager } from '../input-manager';
 import { Game } from '../../ecs';
 import { InputGroup } from '../input-group';
-import { Vector2 } from '../../math';
 
 describe('InputAxis2d', () => {
   let action: Axis2dAction;
@@ -32,17 +31,17 @@ describe('InputAxis2d', () => {
   });
 
   it('should set value correctly', () => {
-    action.set(new Vector2(0.5, 0.5));
+    action.set(0.5, 0.5);
     expect(action.value.x).toBe(0.5);
     expect(action.value.y).toBe(0.5);
 
-    action.set(new Vector2(-1, -1));
+    action.set(-1, -1);
     expect(action.value.x).toBe(-1);
     expect(action.value.y).toBe(-1);
   });
 
   it('should reset value to 0', () => {
-    action.set(new Vector2(1, 1));
+    action.set(1, 1);
     expect(action.value.x).toBe(1);
     expect(action.value.y).toBe(1);
 

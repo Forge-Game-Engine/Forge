@@ -4,30 +4,38 @@ import { ActionResetType, actionResetTypes } from '../constants';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 import { InputManager } from '../input-manager';
+import { ParameterizedForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
-export class Axis2dAction implements InputAction {
+export class Axis2dAction implements InputAction, Resettable {
   public readonly name: string;
 
   public interactions: Map<InputGroup, Set<InputInteraction>>;
+  public readonly valueChangeEvent: ParameterizedForgeEvent<Vector2>;
 
-  private _value: Vector2 = Vector2.zero;
+  private readonly _value: Vector2 = Vector2.zero;
   private readonly _actionResetType: ActionResetType;
 
   constructor(
     name: string,
     inputManager: InputManager,
-    actionResetType: ActionResetType = 'zero',
+    actionResetType: ActionResetType = actionResetTypes.zero,
   ) {
     this.name = name;
+
     this.interactions = new Map();
     this._actionResetType = actionResetType;
+
     inputManager.registerAxis2dAction(this);
+
+    this.valueChangeEvent = new ParameterizedForgeEvent(
+      'Axis2d Value Change Event',
+    );
   }
 
   public reset() {
     if (this._actionResetType === actionResetTypes.zero) {
-      this._value.x = 0;
-      this._value.y = 0;
+      this.set(0, 0);
     }
   }
 
@@ -35,8 +43,15 @@ export class Axis2dAction implements InputAction {
     return this._value;
   }
 
-  public set(value: Vector2) {
-    this._value = value;
+  public set(x: number, y: number) {
+    if (this._value.x === x && this._value.y === y) {
+      return;
+    }
+
+    this._value.x = x;
+    this._value.y = y;
+
+    this.valueChangeEvent.raise(this._value);
   }
 
   public bind<TArgs>(

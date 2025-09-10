@@ -34,19 +34,19 @@ describe('HoldAction', () => {
 
   it('should set held to false when reset is called after hold', () => {
     action.startHold();
-    action.reset();
+    action.endHold();
     expect(action.isHeld).toBe(false);
   });
 
   it('should keep held as false if reset is called without holding', () => {
-    action.reset();
+    action.endHold();
     expect(action.isHeld).toBe(false);
   });
 
   it('should be able to hold multiple times', () => {
     action.startHold();
     expect(action.isHeld).toBe(true);
-    action.reset();
+    action.endHold();
     expect(action.isHeld).toBe(false);
     action.startHold();
     expect(action.isHeld).toBe(true);

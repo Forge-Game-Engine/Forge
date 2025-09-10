@@ -104,7 +104,7 @@ export class MouseInputSource implements InputSource, Resettable, Stoppable {
 
     const interaction = new MouseAxis2dInteraction(this);
 
-    this._inputManager.dispatchAxis2dAction(interaction, new Vector2(x, y));
+    this._inputManager.dispatchAxis2dAction(interaction, x, y);
 
     this._lastMousePosition.x = x;
     this._lastMousePosition.y = y;

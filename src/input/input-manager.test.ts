@@ -47,7 +47,6 @@ describe('InputManager', () => {
 
   it('should dispatch trigger action to active group', () => {
     testAction.bind(triggerInputInteraction, inputGroup);
-    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -58,7 +57,6 @@ describe('InputManager', () => {
 
   it('should not dispatch trigger action if no active group', () => {
     testAction.bind(triggerInputInteraction, inputGroup);
-    manager.registerTriggerAction(testAction);
 
     expect(testAction.isTriggered).toBe(false);
 
@@ -67,7 +65,6 @@ describe('InputManager', () => {
   });
 
   it('should bind trigger action on next dispatch', () => {
-    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -82,8 +79,6 @@ describe('InputManager', () => {
   });
 
   it('should throw when attempting to bind trigger action on next dispatch when no active group is set', () => {
-    manager.registerTriggerAction(testAction);
-
     expect(testAction.isTriggered).toBe(false);
 
     expect(() => manager.bindOnNextTriggerAction(testAction)).toThrow(
@@ -92,7 +87,6 @@ describe('InputManager', () => {
   });
 
   it('should stop pending trigger action binding', () => {
-    manager.registerTriggerAction(testAction);
     manager.setActiveGroup(inputGroup);
 
     expect(testAction.isTriggered).toBe(false);
@@ -109,13 +103,11 @@ describe('InputManager', () => {
   });
 
   it('should get action by name', () => {
-    manager.registerTriggerAction(testAction);
     const found = manager.getTriggerAction('test-action');
     expect(found).toBe(testAction);
   });
 
-  it('should throw if action not found by name', () => {
-    manager.registerTriggerAction(testAction);
+  it('should return null if action not found by name', () => {
     const found = manager.getTriggerAction('missing');
     expect(found).toBe(null);
   });

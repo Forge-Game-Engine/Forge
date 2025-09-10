@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MouseInputSource } from './mouse-input-source';
 import { Game } from '../../ecs';
 import { InputManager } from '../input-manager';
-import { Vector2 } from '../../math';
 
 describe('MouseInputSource', () => {
   let inputManager: InputManager;
@@ -43,7 +42,8 @@ describe('MouseInputSource', () => {
       expect.objectContaining({
         source: mouseInputSource,
       }),
-      new Vector2(200, 400),
+      200,
+      400,
     );
   });
 

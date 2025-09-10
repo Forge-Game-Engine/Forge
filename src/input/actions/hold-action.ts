@@ -2,26 +2,36 @@ import { InputInteraction } from '../interactions';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 import { InputManager } from '../input-manager';
+import { ForgeEvent } from '../../events';
 
 export class HoldAction implements InputAction {
   public readonly name: string;
 
   public interactions: Map<InputGroup, Set<InputInteraction>>;
+  public readonly holdStartEvent: ForgeEvent;
+  public readonly holdEndEvent: ForgeEvent;
 
   private _held: boolean = false;
 
   constructor(name: string, inputManager: InputManager) {
     this.name = name;
+
     this.interactions = new Map();
+
     inputManager.registerHoldAction(this);
+
+    this.holdStartEvent = new ForgeEvent('Hold Start Event');
+    this.holdEndEvent = new ForgeEvent('Hold End Event');
   }
 
   public startHold() {
     this._held = true;
+    this.holdStartEvent.raise();
   }
 
-  public reset() {
+  public endHold() {
     this._held = false;
+    this.holdEndEvent.raise();
   }
 
   get isHeld(): boolean {

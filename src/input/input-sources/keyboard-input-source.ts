@@ -1,4 +1,4 @@
-import { Resettable, Stoppable, Updatable } from '../../common';
+import { Resettable, Stoppable } from '../../common';
 import { buttonMoments, KeyCode } from '../constants';
 import { InputManager } from '../input-manager';
 import {
@@ -7,9 +7,7 @@ import {
 } from '../interactions';
 import { InputSource } from './input-source';
 
-export class KeyboardInputSource
-  implements InputSource, Updatable, Stoppable, Resettable
-{
+export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
   private readonly _inputManager: InputManager;
 
   private readonly _keyPressesDown = new Set<KeyCode>();
@@ -19,7 +17,6 @@ export class KeyboardInputSource
   constructor(inputManager: InputManager) {
     this._inputManager = inputManager;
 
-    this._inputManager.addUpdatable(this);
     this._inputManager.addResettable(this);
 
     window.addEventListener('keydown', this._onKeyDownHandler);
@@ -38,21 +35,7 @@ export class KeyboardInputSource
   public stop(): void {
     window.removeEventListener('keydown', this._onKeyDownHandler);
     window.removeEventListener('keyup', this._onKeyUpHandler);
-    this._inputManager.removeUpdatable(this);
     this._inputManager.removeResettable(this);
-  }
-
-  public update(): void {
-    for (const keyCode of this._keyHolds) {
-      const interaction = new KeyboardHoldInteraction(
-        {
-          keyCode,
-        },
-        this,
-      );
-
-      this._inputManager.dispatchHoldAction(interaction);
-    }
   }
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
@@ -65,7 +48,7 @@ export class KeyboardInputSource
     this._keyPressesDown.add(keyCode);
     this._keyHolds.add(keyCode);
 
-    const interaction = new KeyboardTriggerInteraction(
+    const triggerInteraction = new KeyboardTriggerInteraction(
       {
         moment: buttonMoments.down,
         keyCode,
@@ -73,7 +56,15 @@ export class KeyboardInputSource
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(interaction);
+    const holdInteraction = new KeyboardHoldInteraction(
+      {
+        keyCode,
+      },
+      this,
+    );
+
+    this._inputManager.dispatchTriggerAction(triggerInteraction);
+    this._inputManager.dispatchHoldStartAction(holdInteraction);
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
@@ -86,7 +77,7 @@ export class KeyboardInputSource
     this._keyPressesUps.add(keyCode);
     this._keyHolds.delete(keyCode);
 
-    const interaction = new KeyboardTriggerInteraction(
+    const triggerInteraction = new KeyboardTriggerInteraction(
       {
         moment: buttonMoments.up,
         keyCode,
@@ -94,6 +85,14 @@ export class KeyboardInputSource
       this,
     );
 
-    this._inputManager.dispatchTriggerAction(interaction);
+    const holdInteraction = new KeyboardHoldInteraction(
+      {
+        keyCode,
+      },
+      this,
+    );
+
+    this._inputManager.dispatchTriggerAction(triggerInteraction);
+    this._inputManager.dispatchHoldEndAction(holdInteraction);
   };
 }

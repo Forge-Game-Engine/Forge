@@ -1,4 +1,3 @@
-import { Vector2 } from '../math';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -67,7 +66,6 @@ export class InputManager implements Updatable {
     }
 
     this._holdActions.set(name, action);
-    this.addResettable(action);
   }
 
   public deregisterHoldAction(name: string): void {
@@ -139,7 +137,7 @@ export class InputManager implements Updatable {
     this._activeGroup.dispatchTriggerAction(interaction);
   }
 
-  public dispatchHoldAction(interaction: InputInteraction): void {
+  public dispatchHoldStartAction(interaction: InputInteraction): void {
     if (!this._activeGroup) {
       return;
     }
@@ -151,7 +149,22 @@ export class InputManager implements Updatable {
       return;
     }
 
-    this._activeGroup.dispatchHoldAction(interaction);
+    this._activeGroup.dispatchHoldStartAction(interaction);
+  }
+
+  public dispatchHoldEndAction(interaction: InputInteraction): void {
+    if (!this._activeGroup) {
+      return;
+    }
+
+    if (this._holdActionPendingBind) {
+      this._holdActionPendingBind.bind(interaction, this._activeGroup);
+      this.stopPendingTriggerActionBinding();
+
+      return;
+    }
+
+    this._activeGroup.dispatchHoldEndAction(interaction);
   }
 
   public bindOnNextTriggerAction(action: TriggerAction) {
@@ -210,7 +223,8 @@ export class InputManager implements Updatable {
 
   public dispatchAxis2dAction(
     interaction: InputInteraction,
-    value: Vector2,
+    x: number,
+    y: number,
   ): void {
     if (!this._activeGroup) {
       return;
@@ -223,7 +237,7 @@ export class InputManager implements Updatable {
       return;
     }
 
-    this._activeGroup.dispatchAxis2dAction(interaction, value);
+    this._activeGroup.dispatchAxis2dAction(interaction, x, y);
   }
 
   public bindOnNextAxis2dAction(action: Axis2dAction) {

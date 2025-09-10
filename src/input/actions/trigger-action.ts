@@ -2,22 +2,30 @@ import { InputInteraction } from '../interactions/input-interaction';
 import { InputGroup } from '../input-group';
 import { InputAction } from './input-action';
 import { InputManager } from '../input-manager';
+import { ForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
-export class TriggerAction implements InputAction {
+export class TriggerAction implements InputAction, Resettable {
   public readonly name: string;
 
   public interactions: Map<InputGroup, Set<InputInteraction>>;
+  public readonly triggerEvent: ForgeEvent;
 
   private _triggered: boolean = false;
 
   constructor(name: string, inputManager: InputManager) {
     this.name = name;
+
     this.interactions = new Map();
+
     inputManager.registerTriggerAction(this);
+
+    this.triggerEvent = new ForgeEvent('Trigger Event');
   }
 
   public trigger() {
     this._triggered = true;
+    this.triggerEvent.raise();
   }
 
   public reset() {
