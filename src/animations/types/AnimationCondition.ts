@@ -49,21 +49,29 @@ abstract class AnimationConditionBase<T> {
   protected abstract checkCondition(inputValue: T): boolean;
 }
 
-export class AnimationTextCondition extends AnimationConditionBase<string> {
-  public inputConditionValue: string;
-  public inputConditionComparator: AnimationConditionTextComparator;
+abstract class AnimationConditionWithComparator<
+  T,
+  C,
+> extends AnimationConditionBase<T> {
+  public inputConditionValue: T;
+  public inputConditionComparator: C;
 
   constructor(
     inputName: string,
-    inputConditionComparator: AnimationConditionTextComparator,
-    inputConditionValue: string,
+    inputConditionComparator: C,
+    inputConditionValue: T,
     invertCondition?: boolean,
   ) {
     super(inputName, invertCondition);
     this.inputConditionValue = inputConditionValue;
-    this.inputConditionComparator = inputConditionComparator ?? 'equals';
+    this.inputConditionComparator = inputConditionComparator;
   }
+}
 
+export class AnimationTextCondition extends AnimationConditionWithComparator<
+  string,
+  AnimationConditionTextComparator
+> {
   public validateConditionFromInputs(
     animationInputs: AnimationInputs,
   ): boolean {
@@ -85,21 +93,10 @@ export class AnimationTextCondition extends AnimationConditionBase<string> {
   }
 }
 
-export class AnimationNumberCondition extends AnimationConditionBase<number> {
-  public inputConditionValue: number;
-  public inputConditionComparator: AnimationConditionNumberComparator;
-
-  constructor(
-    inputName: string,
-    inputConditionComparator: AnimationConditionNumberComparator,
-    inputConditionValue: number,
-    invertCondition?: boolean,
-  ) {
-    super(inputName, invertCondition);
-    this.inputConditionValue = inputConditionValue;
-    this.inputConditionComparator = inputConditionComparator ?? 'equals';
-  }
-
+export class AnimationNumberCondition extends AnimationConditionWithComparator<
+  number,
+  AnimationConditionNumberComparator
+> {
   public validateConditionFromInputs(
     animationInputs: AnimationInputs,
   ): boolean {
