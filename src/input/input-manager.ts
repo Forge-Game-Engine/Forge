@@ -4,9 +4,9 @@ import {
   HoldAction,
   TriggerAction,
 } from './actions';
-import { InputInteraction } from './interactions/input-interaction';
 import { InputGroup } from './input-group';
 import { Resettable, Updatable } from '../common';
+import { InputInteraction } from './interactions';
 
 /**
  * InputManager is responsible for managing input sources, groups, and actions.

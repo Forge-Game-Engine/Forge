@@ -16,7 +16,18 @@ export abstract class InputInteraction<TArgs = unknown> {
     this.id = this._generateId();
   }
 
-  public matchesArgs(args: TArgs): boolean {
+  public matches(interaction: InputInteraction<TArgs>): boolean {
+    return (
+      this.matchesArgs(interaction.args) &&
+      this.matchesSource(interaction.source)
+    );
+  }
+
+  public matchesSource(source: InputSource): boolean {
+    return source === this.source;
+  }
+
+  protected matchesArgs(args: TArgs): boolean {
     return JSON.stringify(this.args) === JSON.stringify(args);
   }
 

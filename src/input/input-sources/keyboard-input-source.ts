@@ -2,6 +2,7 @@ import { Resettable, Stoppable } from '../../common';
 import { buttonMoments, KeyCode } from '../constants';
 import { InputManager } from '../input-manager';
 import {
+  KeyboardAxis1dInteraction,
   KeyboardHoldInteraction,
   KeyboardTriggerInteraction,
 } from '../interactions';
@@ -63,8 +64,24 @@ export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
       this,
     );
 
+    const negativeAxis1dInteraction = new KeyboardAxis1dInteraction(
+      {
+        negativeKey: keyCode,
+      },
+      this,
+    );
+
+    const positiveAxis1dInteraction = new KeyboardAxis1dInteraction(
+      {
+        positiveKey: keyCode,
+      },
+      this,
+    );
+
     this._inputManager.dispatchTriggerAction(triggerInteraction);
     this._inputManager.dispatchHoldStartAction(holdInteraction);
+    this._inputManager.dispatchAxis1dAction(negativeAxis1dInteraction, -1);
+    this._inputManager.dispatchAxis1dAction(positiveAxis1dInteraction, 1);
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {

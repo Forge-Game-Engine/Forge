@@ -4,7 +4,6 @@ import { Entity, World } from '../../ecs';
 import { Axis1dAction, Axis2dAction, InputManager } from '../../input';
 import { CameraComponent } from '../components';
 import { PositionComponent } from '../../common';
-import { Vector2 } from '../../math';
 
 describe('CameraSystem', () => {
   let cameraSystem: CameraSystem;

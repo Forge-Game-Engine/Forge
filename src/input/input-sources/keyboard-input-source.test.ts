@@ -12,6 +12,8 @@ describe('KeyboardInputSource', () => {
       dispatchTriggerAction: vi.fn(),
       dispatchHoldStartAction: vi.fn(),
       dispatchHoldEndAction: vi.fn(),
+      dispatchAxis1dAction: vi.fn(),
+      dispatchAxis2dAction: vi.fn(),
       addUpdatable: vi.fn(),
       addResettable: vi.fn(),
       removeUpdatable: vi.fn(),

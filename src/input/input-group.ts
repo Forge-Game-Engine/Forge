@@ -35,7 +35,7 @@ export class InputGroup {
       }
 
       for (const interactionForAction of interactionsForAction) {
-        if (interactionForAction.matchesArgs(interaction.args)) {
+        if (interactionForAction.matches(interaction)) {
           action.trigger();
         }
       }
@@ -51,7 +51,7 @@ export class InputGroup {
       }
 
       for (const interactionForAction of interactionsForAction) {
-        if (interactionForAction.matchesArgs(interaction.args)) {
+        if (interactionForAction.matches(interaction)) {
           action.startHold();
         }
       }
@@ -67,7 +67,7 @@ export class InputGroup {
       }
 
       for (const interactionForAction of interactionsForAction) {
-        if (interactionForAction.matchesArgs(interaction.args)) {
+        if (interactionForAction.matches(interaction)) {
           action.endHold();
         }
       }
@@ -86,7 +86,7 @@ export class InputGroup {
       }
 
       for (const interactionForAction of interactionsForAction) {
-        if (interactionForAction.matchesArgs(interaction.args)) {
+        if (interactionForAction.matches(interaction)) {
           action.set(value);
         }
       }
@@ -106,7 +106,7 @@ export class InputGroup {
       }
 
       for (const interactionForAction of interactionsForAction) {
-        if (interactionForAction.matchesArgs(interaction.args)) {
+        if (interactionForAction.matches(interaction)) {
           action.set(x, y);
         }
       }
