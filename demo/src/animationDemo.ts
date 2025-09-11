@@ -1,7 +1,9 @@
 import {
-  AnimationCondition,
   AnimationController,
   AnimationInputs,
+  AnimationNumberCondition,
+  AnimationTextCondition,
+  AnimationToggleCondition,
   AnimationTransition,
   buttonMoments,
   createAnimation,
@@ -150,6 +152,7 @@ function createShipAnimationController() {
 }
 
 function createAdventurerControllableController() {
+  // **** Create Callbacks ****
   const attackParticles =
     (rotationAdd: number, heightChange: number) => (entity: Entity) => {
       const positionComponent = entity.getComponentRequired<PositionComponent>(
@@ -219,6 +222,8 @@ function createAdventurerControllableController() {
     positionComponent.x += xChange * (flipComponent.flipX ? -1 : 1);
     positionComponent.y += yChange;
   };
+
+  // **** Create Animations ****
 
   // create idle animation
   const idle = createAnimation(ADVENTURER_ANIMATIONS.idle, 1, 13, 0.1, {
@@ -290,20 +295,22 @@ function createAdventurerControllableController() {
   jump.onAnimationEndEvent.registerListener(jumpParticles);
 
   // create animation conditions
-  const runCondition = new AnimationCondition('run', 'boolean');
-  const attackCondition = new AnimationCondition('attack', 'string', 'attack');
-  const jumpCondition = new AnimationCondition('jump', 'boolean');
-  const maxHealthCondition = new AnimationCondition(
+  const runCondition = new AnimationToggleCondition('run');
+  const attackCondition = new AnimationTextCondition(
+    'attack',
+    'startsWith',
+    'attack',
+  ); // if my input starts with "attack"
+  const jumpCondition = new AnimationToggleCondition('jump');
+  const maxHealthCondition = new AnimationNumberCondition(
     'health',
-    'number',
+    'greaterThanOrEqual',
     100,
-    '>=',
   );
-  const midHealthCondition = new AnimationCondition(
+  const midHealthCondition = new AnimationNumberCondition(
     'health',
-    'number',
+    'greaterThanOrEqual',
     50,
-    '>=',
   );
 
   // create animation controller and transitions
@@ -351,10 +358,18 @@ function createAdventurerControllableController() {
 
 function createAdventurerControllableInputs() {
   const animationInputs = new AnimationInputs();
-  animationInputs.registerToggle('jump', false, true); // should reset every frame
-  animationInputs.registerToggle('run');
-  animationInputs.registerText('attack', '', true); // should reset every frame
-  animationInputs.registerNumber('health', 100);
+  animationInputs.registerToggle('jump', {
+    resetOnFrameEnd: true,
+  }); // should reset every frame
+  animationInputs.registerToggle('run', {
+    resetOnFrameEnd: true,
+  });
+  animationInputs.registerText('attack', {
+    resetOnFrameEnd: true,
+  });
+  animationInputs.registerNumber('health', {
+    defaultValue: 100,
+  });
 
   return animationInputs;
 }

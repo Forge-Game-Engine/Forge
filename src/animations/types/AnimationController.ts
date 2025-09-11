@@ -1,24 +1,8 @@
-/*
-Takes in the inputs and current animation.
-Sets the animation and returns the new animation
-
-States:
-    Entry
-    Exit
-    Any 
-
-    user defined
-
-    It has a list of transitions. Each associated with 2 states
-*/
-
 import { Animation } from './Animation';
 import { AnimationInputs } from './AnimationInputs';
 import { AnimationTransition } from './AnimationTransition';
 import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
 
-// TODO: add ability to use the 'exit' state
-// TODO: possibly store states in an array
 export class AnimationController {
   public animationTransitions: AnimationTransition[];
   public nextAnimation?: { animation: Animation; index: number };

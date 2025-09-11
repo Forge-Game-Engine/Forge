@@ -1,19 +1,32 @@
-export type AnimationInputTypeNames = 'boolean' | 'number' | 'string';
-export type AnimationInputType = boolean | number | string;
+interface AnimationInputOptions<T> {
+  resetOnFrameEnd: boolean;
+  defaultValue: T;
+}
 
-export class AnimationInput {
+const defaultTextInputOptions: AnimationInputOptions<string> = {
+  resetOnFrameEnd: false,
+  defaultValue: '',
+};
+
+const defaultNumberInputOptions: AnimationInputOptions<number> = {
+  resetOnFrameEnd: false,
+  defaultValue: 0,
+};
+
+const defaultToggleInputOptions: AnimationInputOptions<boolean> = {
+  resetOnFrameEnd: false,
+  defaultValue: false,
+};
+
+export class AnimationInput<T> {
   public name: string;
-  public value: AnimationInputType;
-  public resetOnFrameEnd: boolean;
+  public value: T;
+  public options: AnimationInputOptions<T>;
 
-  constructor(
-    name: string,
-    value: AnimationInputType,
-    resetOnFrameEnd = false,
-  ) {
+  constructor(name: string, options: AnimationInputOptions<T>) {
     this.name = name;
-    this.value = value;
-    this.resetOnFrameEnd = resetOnFrameEnd;
+    this.value = options.defaultValue;
+    this.options = options;
   }
 }
 
@@ -25,13 +38,17 @@ export class AnimationInput {
  * Text: string values.
  */
 export class AnimationInputs {
-  public inputs: AnimationInput[];
+  public textInputs: AnimationInput<string>[];
+  public numberInputs: AnimationInput<number>[];
+  public toggleInputs: AnimationInput<boolean>[];
 
   /**
    * Creates a new instance of AnimationInputs.
    */
   constructor() {
-    this.inputs = [];
+    this.textInputs = [];
+    this.numberInputs = [];
+    this.toggleInputs = [];
   }
 
   /**
@@ -41,45 +58,22 @@ export class AnimationInputs {
    */
   public registerToggle(
     name: string,
-    defaultValue = false,
-    resetOnFrameEnd = false,
+    inputOptions?: Partial<AnimationInputOptions<boolean>>,
   ): void {
-    this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
+    this._validateInputNameDoesNotExist<boolean>(name, this.toggleInputs);
+    const options = { ...defaultToggleInputOptions, ...inputOptions };
+    this.toggleInputs.push(new AnimationInput(name, options));
   }
 
   public setToggle(name: string, value: boolean): void {
-    this._validateInputType(name, 'boolean');
-    const input = this._getInput(name);
+    const input = this._getInput<boolean>(name, this.toggleInputs);
     input.value = value;
   }
 
-  public getToggle(name: string): boolean {
-    this._validateInputType(name, 'boolean');
-    const input = this._getInput(name);
+  public getToggle(name: string) {
+    const input = this._getInput<boolean>(name, this.toggleInputs);
 
-    return input.value as boolean;
-  }
-
-  public clearFrameEndInputs() {
-    this.inputs.forEach((element) => {
-      if (element.resetOnFrameEnd) {
-        switch (typeof element.value) {
-          case 'number':
-            element.value = 0;
-
-            break;
-          case 'string':
-            element.value = '';
-
-            break;
-          case 'boolean':
-            element.value = false;
-
-            break;
-        }
-      }
-    });
+    return input;
   }
 
   /**
@@ -89,24 +83,22 @@ export class AnimationInputs {
    */
   public registerNumber(
     name: string,
-    defaultValue = 0,
-    resetOnFrameEnd = false,
+    inputOptions?: Partial<AnimationInputOptions<number>>,
   ): void {
-    this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
+    this._validateInputNameDoesNotExist<number>(name, this.numberInputs);
+    const options = { ...defaultNumberInputOptions, ...inputOptions };
+    this.numberInputs.push(new AnimationInput(name, options));
   }
 
-  public setNumber(name: string, value: number): void {
-    this._validateInputType(name, 'number');
-    const input = this._getInput(name);
+  public setNumber(name: string, value: number) {
+    const input = this._getInput<number>(name, this.numberInputs);
     input.value = value;
   }
 
-  public getNumber(name: string): number {
-    this._validateInputType(name, 'number');
-    const input = this._getInput(name);
+  public getNumber(name: string) {
+    const input = this._getInput<number>(name, this.numberInputs);
 
-    return input.value as number;
+    return input;
   }
 
   /**
@@ -116,46 +108,93 @@ export class AnimationInputs {
    */
   public registerText(
     name: string,
-    defaultValue: string = '',
-    resetOnFrameEnd = false,
+    inputOptions?: Partial<AnimationInputOptions<string>>,
   ): void {
-    this._validateInputNameDoesNotExist(name);
-    this.inputs.push(new AnimationInput(name, defaultValue, resetOnFrameEnd));
+    this._validateInputNameDoesNotExist<string>(name, this.textInputs);
+    const options = { ...defaultTextInputOptions, ...inputOptions };
+    this.textInputs.push(new AnimationInput(name, options));
   }
 
   public setText(name: string, value: string): void {
-    this._validateInputType(name, 'string');
-    const input = this._getInput(name);
+    const input = this._getInput<string>(name, this.textInputs);
     input.value = value;
   }
 
-  public getText(name: string): string {
-    this._validateInputType(name, 'string');
-    const input = this._getInput(name);
+  public getText(name: string) {
+    const input = this._getInput<string>(name, this.textInputs);
 
-    return input.value as string;
+    return input;
   }
 
-  private _validateInputNameDoesNotExist(name: string) {
-    if (this.inputs.find((input) => input.name === name)) {
-      throw new Error(`Input with name ${name} already exists.`);
-    }
+  public getAllInputs() {
+    return [...this.toggleInputs, ...this.numberInputs, ...this.textInputs];
   }
 
-  private _validateInputType(name: string, type: AnimationInputTypeNames) {
-    const input = this.inputs.find((input) => input.name === name);
+  public getInputByName(
+    name: string,
+  ): AnimationInput<string> | AnimationInput<number> | AnimationInput<boolean> {
+    const input =
+      this.textInputs.find((input) => input.name === name) ||
+      this.numberInputs.find((input) => input.name === name) ||
+      this.toggleInputs.find((input) => input.name === name);
 
     if (!input) {
       throw new Error(`Input with name ${name} does not exist.`);
     }
 
-    if (typeof input.value !== type) {
-      throw new Error(`Input with name ${name} is not of type ${type}.`);
+    return input;
+  }
+
+  public getTextInputByName(name: string): AnimationInput<string> {
+    const input = this.textInputs.find((input) => input.name === name);
+
+    if (!input) {
+      throw new Error(`Text input with name ${name} does not exist.`);
+    }
+
+    return input;
+  }
+
+  public getNumberInputByName(name: string): AnimationInput<number> {
+    const input = this.numberInputs.find((input) => input.name === name);
+
+    if (!input) {
+      throw new Error(`Number input with name ${name} does not exist.`);
+    }
+
+    return input;
+  }
+
+  public getToggleInputByName(name: string): AnimationInput<boolean> {
+    const input = this.toggleInputs.find((input) => input.name === name);
+
+    if (!input) {
+      throw new Error(`Toggle input with name ${name} does not exist.`);
+    }
+
+    return input;
+  }
+
+  public clearFrameEndInputs() {
+    const inputs = this.getAllInputs();
+    inputs.forEach((element) => {
+      if (element.options.resetOnFrameEnd) {
+        element.value = element.options.defaultValue;
+      }
+    });
+  }
+
+  private _validateInputNameDoesNotExist<T>(
+    name: string,
+    animationInputArray: AnimationInput<T>[],
+  ) {
+    if (animationInputArray.find((input) => input.name === name)) {
+      throw new Error(`Input with name ${name} already exists.`);
     }
   }
 
-  private _getInput(name: string): AnimationInput {
-    const input = this.inputs.find((input) => input.name === name);
+  private _getInput<T>(name: string, animationInputArray: AnimationInput<T>[]) {
+    const input = animationInputArray.find((input) => input.name === name);
 
     if (!input) {
       throw new Error(`Input with name ${name} does not exist.`);

@@ -4,5 +4,4 @@ export type DEFAULT_ANIMATION_STATES_KEYS =
 export const DEFAULT_ANIMATION_STATES = {
   entry: 'entry',
   any: 'any',
-  //   exit: 'exit', -- Not implemented yet
 } as const;

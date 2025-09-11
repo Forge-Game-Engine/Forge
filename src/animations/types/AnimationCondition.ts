@@ -8,60 +8,129 @@ Conditions:
 
 */
 
-import { AnimationInputType, AnimationInputTypeNames } from './AnimationInputs';
+import { AnimationInputs } from './AnimationInputs';
 
-type AnimationConditionComparator = '<' | '<=' | '>' | '>=' | '=';
+type AnimationConditionNumberComparator =
+  | 'equals'
+  | 'lessThan'
+  | 'lessThanOrEqual'
+  | 'greaterThan'
+  | 'greaterThanOrEqual';
 
-export class AnimationCondition {
-  public inputType: AnimationInputTypeNames;
+type AnimationConditionTextComparator =
+  | 'equals'
+  | 'contains'
+  | 'isContainedIn'
+  | 'startsWith'
+  | 'endsWith';
+
+export type AnimationCondition =
+  | AnimationTextCondition
+  | AnimationNumberCondition
+  | AnimationToggleCondition;
+
+abstract class AnimationConditionBase<T> {
   public inputName: string;
-  public inputConditionComparator: AnimationConditionComparator;
-  public inputCondition: AnimationInputType;
+  public invertCondition: boolean;
+
+  constructor(inputName: string, invertCondition?: boolean) {
+    this.inputName = inputName;
+    this.invertCondition = invertCondition ?? false;
+  }
+
+  public abstract validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean;
+
+  protected validateCondition(inputValue: T): boolean {
+    return this.checkCondition(inputValue) !== this.invertCondition;
+  }
+
+  protected abstract checkCondition(inputValue: T): boolean;
+}
+
+export class AnimationTextCondition extends AnimationConditionBase<string> {
+  public inputConditionValue: string;
+  public inputConditionComparator: AnimationConditionTextComparator;
 
   constructor(
     inputName: string,
-    inputType: AnimationInputTypeNames,
-    inputCondition?: AnimationInputType,
-    inputConditionComparator: AnimationConditionComparator = '=',
+    inputConditionComparator: AnimationConditionTextComparator,
+    inputConditionValue: string,
+    invertCondition?: boolean,
   ) {
-    this.inputName = inputName;
-    this.inputType = inputType;
-    this.inputConditionComparator = inputConditionComparator;
-
-    if (inputCondition) {
-      this.inputCondition = inputCondition;
-
-      return;
-    }
-
-    switch (inputType) {
-      case 'boolean':
-        this.inputCondition = true;
-
-        break;
-      case 'number':
-        this.inputCondition = 0;
-
-        break;
-      case 'string':
-        this.inputCondition = '';
-
-        break;
-    }
+    super(inputName, invertCondition);
+    this.inputConditionValue = inputConditionValue;
+    this.inputConditionComparator = inputConditionComparator ?? 'equals';
   }
 
-  public validateCondition(inputValue: AnimationInputType): boolean {
-    switch (this.inputConditionComparator) {
-      case '=':
-        return inputValue === this.inputCondition;
-      case '<':
-        return inputValue < this.inputCondition;
-      case '<=':
-        return inputValue <= this.inputCondition;
-      case '>':
-        return inputValue > this.inputCondition;
-      case '>=':
-        return inputValue >= this.inputCondition;
-    }
+  public validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean {
+    const input = animationInputs.getTextInputByName(this.inputName);
+
+    return this.validateCondition(input.value);
+  }
+
+  protected checkCondition(inputValue: string): boolean {
+    const conditionComparator = {
+      equals: () => inputValue === this.inputConditionValue,
+      contains: () => inputValue.includes(this.inputConditionValue),
+      isContainedIn: () => this.inputConditionValue.includes(inputValue),
+      startsWith: () => inputValue.startsWith(this.inputConditionValue),
+      endsWith: () => inputValue.endsWith(this.inputConditionValue),
+    };
+
+    return conditionComparator[this.inputConditionComparator]();
+  }
+}
+
+export class AnimationNumberCondition extends AnimationConditionBase<number> {
+  public inputConditionValue: number;
+  public inputConditionComparator: AnimationConditionNumberComparator;
+
+  constructor(
+    inputName: string,
+    inputConditionComparator: AnimationConditionNumberComparator,
+    inputConditionValue: number,
+    invertCondition?: boolean,
+  ) {
+    super(inputName, invertCondition);
+    this.inputConditionValue = inputConditionValue;
+    this.inputConditionComparator = inputConditionComparator ?? 'equals';
+  }
+
+  public validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean {
+    const input = animationInputs.getNumberInputByName(this.inputName);
+
+    return this.validateCondition(input.value);
+  }
+
+  protected checkCondition(inputValue: number): boolean {
+    const conditionComparator = {
+      equals: () => inputValue === this.inputConditionValue,
+      lessThan: () => inputValue < this.inputConditionValue,
+      lessThanOrEqual: () => inputValue <= this.inputConditionValue,
+      greaterThan: () => inputValue > this.inputConditionValue,
+      greaterThanOrEqual: () => inputValue >= this.inputConditionValue,
+    };
+
+    return conditionComparator[this.inputConditionComparator]();
+  }
+}
+
+export class AnimationToggleCondition extends AnimationConditionBase<boolean> {
+  public validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean {
+    const input = animationInputs.getToggleInputByName(this.inputName);
+
+    return this.validateCondition(input.value);
+  }
+
+  protected checkCondition(inputValue: boolean): boolean {
+    return inputValue === true;
   }
 }

@@ -47,8 +47,6 @@ export class AnimationTransition {
   // Callback
   public onAnimationChange: OnAnimationChangeEvent;
 
-  // TODO: look at changing this to take in a fromAnimation. This will mean that the entry, exit and any states will also have to be animations somehow
-  // TODO: allow this to take a list of fromStates, to make transitions easier to create
   constructor(
     fromStates: string[],
     toAnimation: Animation,
@@ -76,34 +74,16 @@ export class AnimationTransition {
   }
 
   public validateConditions(animationInputs: AnimationInputs): boolean {
-    let conditionInputFound: boolean;
-
     for (const condition of this.conditions) {
-      conditionInputFound = false;
+      const validation = condition.validateConditionFromInputs(animationInputs);
 
-      for (const input of animationInputs.inputs) {
-        if (condition.inputName === input.name) {
-          conditionInputFound = true;
-          const validation = condition.validateCondition(input.value);
-
-          if (!validation) {
-            return false;
-          }
-
-          break;
-        }
-      }
-
-      if (!conditionInputFound) {
-        throw new Error(
-          `Condition from animations "${this.fromStates.join(', ')}" to "${this.toAnimation.name}" looking for input: ${condition.inputName} did not find any inputs `,
-        );
+      if (!validation) {
+        return false;
       }
     }
 
     return true;
   }
 }
-
 // TODO: add more conditions for text (contains, starts with, ends with, etc)
 // TODO: make different conditions for different input types

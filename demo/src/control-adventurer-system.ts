@@ -63,14 +63,14 @@ export class ControlAdventurerSystem extends System {
     animationInputs.setToggle('run', false);
 
     if (attackAction?.isTriggered) {
-      animationInputs.setText('attack', 'attack');
+      animationInputs.setText('attack', 'attack is being set');
 
       return;
     }
 
     if (takeDamage?.isTriggered) {
       const health = animationInputs.getNumber('health');
-      animationInputs.setNumber('health', health - 50);
+      health.value = Math.max(0, health.value - 50);
     }
   }
 }
