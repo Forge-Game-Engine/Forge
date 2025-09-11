@@ -94,20 +94,13 @@ export class AnimationController {
       const hasNextAnimationWithHigherPriority =
         this.nextAnimationTransition && this.nextAnimationTransition.index < i;
 
-      const transitionAnimationsNow =
+      const transitionAnimationWithCurrentTransition =
         (!endOfAnimation &&
           !transition.finishCurrentAnimationBeforeTransitioning) ||
         (endOfAnimation && !hasNextAnimationWithHigherPriority);
 
-      if (transitionAnimationsNow) {
+      if (transitionAnimationWithCurrentTransition) {
         nextAnimationTransition = transition;
-
-        break;
-      }
-
-      if (endOfAnimation && this.nextAnimationTransition) {
-        nextAnimationTransition =
-          this.nextAnimationTransition.animationTransition;
 
         break;
       }
