@@ -30,13 +30,6 @@ export class AnimationInput<T> {
   }
 }
 
-/**
- * A collection of animation inputs categorized by type.
- *
- * Toggles: boolean values.
- * Numbers: numeric values.
- * Text: string values.
- */
 export class AnimationInputs {
   public textInputs: AnimationInput<string>[];
   public numberInputs: AnimationInput<number>[];
@@ -51,79 +44,64 @@ export class AnimationInputs {
     this.toggleInputs = [];
   }
 
-  /**
-   * Registers a new toggle input.
-   * @param name The name of the toggle input.
-   * @param defaultValue The default value of the toggle input.
-   */
   public registerToggle(
     name: string,
     inputOptions?: Partial<AnimationInputOptions<boolean>>,
   ): void {
-    this._validateInputNameDoesNotExist<boolean>(name, this.toggleInputs);
-    const options = { ...defaultToggleInputOptions, ...inputOptions };
-    this.toggleInputs.push(new AnimationInput(name, options));
+    this._registerInput(
+      name,
+      this.toggleInputs,
+      defaultToggleInputOptions,
+      inputOptions,
+    );
   }
 
   public setToggle(name: string, value: boolean): void {
-    const input = this._getInput<boolean>(name, this.toggleInputs);
-    input.value = value;
+    this._getInput<boolean>(name, this.toggleInputs).value = value;
   }
 
   public getToggle(name: string) {
-    const input = this._getInput<boolean>(name, this.toggleInputs);
-
-    return input;
+    return this._getInput<boolean>(name, this.toggleInputs);
   }
 
-  /**
-   * Registers a new number input.
-   * @param name The name of the number input.
-   * @param defaultValue The default value of the number input.
-   */
   public registerNumber(
     name: string,
     inputOptions?: Partial<AnimationInputOptions<number>>,
   ): void {
-    this._validateInputNameDoesNotExist<number>(name, this.numberInputs);
-    const options = { ...defaultNumberInputOptions, ...inputOptions };
-    this.numberInputs.push(new AnimationInput(name, options));
+    this._registerInput(
+      name,
+      this.numberInputs,
+      defaultNumberInputOptions,
+      inputOptions,
+    );
   }
 
   public setNumber(name: string, value: number) {
-    const input = this._getInput<number>(name, this.numberInputs);
-    input.value = value;
+    this._getInput<number>(name, this.numberInputs).value = value;
   }
 
   public getNumber(name: string) {
-    const input = this._getInput<number>(name, this.numberInputs);
-
-    return input;
+    return this._getInput<number>(name, this.numberInputs);
   }
 
-  /**
-   * Registers a new text input.
-   * @param name The name of the text input.
-   * @param defaultValue The default value of the text input.
-   */
   public registerText(
     name: string,
     inputOptions?: Partial<AnimationInputOptions<string>>,
   ): void {
-    this._validateInputNameDoesNotExist<string>(name, this.textInputs);
-    const options = { ...defaultTextInputOptions, ...inputOptions };
-    this.textInputs.push(new AnimationInput(name, options));
+    this._registerInput(
+      name,
+      this.textInputs,
+      defaultTextInputOptions,
+      inputOptions,
+    );
   }
 
   public setText(name: string, value: string): void {
-    const input = this._getInput<string>(name, this.textInputs);
-    input.value = value;
+    this._getInput<string>(name, this.textInputs).value = value;
   }
 
   public getText(name: string) {
-    const input = this._getInput<string>(name, this.textInputs);
-
-    return input;
+    return this._getInput<string>(name, this.textInputs);
   }
 
   public getAllInputs() {
@@ -145,36 +123,6 @@ export class AnimationInputs {
     return input;
   }
 
-  public getTextInputByName(name: string): AnimationInput<string> {
-    const input = this.textInputs.find((input) => input.name === name);
-
-    if (!input) {
-      throw new Error(`Text input with name ${name} does not exist.`);
-    }
-
-    return input;
-  }
-
-  public getNumberInputByName(name: string): AnimationInput<number> {
-    const input = this.numberInputs.find((input) => input.name === name);
-
-    if (!input) {
-      throw new Error(`Number input with name ${name} does not exist.`);
-    }
-
-    return input;
-  }
-
-  public getToggleInputByName(name: string): AnimationInput<boolean> {
-    const input = this.toggleInputs.find((input) => input.name === name);
-
-    if (!input) {
-      throw new Error(`Toggle input with name ${name} does not exist.`);
-    }
-
-    return input;
-  }
-
   public clearFrameEndInputs() {
     const inputs = this.getAllInputs();
     inputs.forEach((element) => {
@@ -184,13 +132,18 @@ export class AnimationInputs {
     });
   }
 
-  private _validateInputNameDoesNotExist<T>(
+  private _registerInput<T>(
     name: string,
     animationInputArray: AnimationInput<T>[],
+    defaultInputOptions: AnimationInputOptions<T>,
+    inputOptions?: Partial<AnimationInputOptions<T>>,
   ) {
     if (animationInputArray.find((input) => input.name === name)) {
       throw new Error(`Input with name ${name} already exists.`);
     }
+
+    const options = { ...defaultInputOptions, ...inputOptions };
+    animationInputArray.push(new AnimationInput(name, options));
   }
 
   private _getInput<T>(name: string, animationInputArray: AnimationInput<T>[]) {

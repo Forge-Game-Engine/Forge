@@ -49,15 +49,11 @@ export class AnimationController {
     if (nextAnimationTransition) {
       nextAnimationTransition.onAnimationChange.raise(entity);
       this.nextAnimationTransition = undefined;
+
+      return nextAnimationTransition.toAnimation;
     }
 
-    const nextAnimation = nextAnimationTransition?.toAnimation ?? null;
-
-    if (endOfAnimation) {
-      return nextAnimation ?? currentAnimation;
-    }
-
-    return nextAnimation;
+    return endOfAnimation ? currentAnimation : null;
   }
 
   public getEntryAnimation(inputs: AnimationInputs): Animation {

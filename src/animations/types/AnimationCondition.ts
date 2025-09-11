@@ -1,13 +1,3 @@
-/*
-Conditions:
-    An optional list of conditions
-    Each condition has a target input
-    For triggers and toggles, the condition is true when the input is true
-    For numbers, their is another option for greater than, less than, equal to
-    For strings, the condition is true when the input is equal to the value
-
-*/
-
 import { AnimationInputs } from './AnimationInputs';
 
 type AnimationConditionNumberComparator =
@@ -75,7 +65,7 @@ export class AnimationTextCondition extends AnimationConditionWithComparator<
   public validateConditionFromInputs(
     animationInputs: AnimationInputs,
   ): boolean {
-    const input = animationInputs.getTextInputByName(this.inputName);
+    const input = animationInputs.getText(this.inputName);
 
     return this.validateCondition(input.value);
   }
@@ -100,7 +90,7 @@ export class AnimationNumberCondition extends AnimationConditionWithComparator<
   public validateConditionFromInputs(
     animationInputs: AnimationInputs,
   ): boolean {
-    const input = animationInputs.getNumberInputByName(this.inputName);
+    const input = animationInputs.getNumber(this.inputName);
 
     return this.validateCondition(input.value);
   }
@@ -122,7 +112,7 @@ export class AnimationToggleCondition extends AnimationConditionBase<boolean> {
   public validateConditionFromInputs(
     animationInputs: AnimationInputs,
   ): boolean {
-    const input = animationInputs.getToggleInputByName(this.inputName);
+    const input = animationInputs.getToggle(this.inputName);
 
     return this.validateCondition(input.value);
   }
