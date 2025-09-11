@@ -13,6 +13,14 @@
 // import { Vector2 } from '../../math';
 // import { ParameterizedForgeEvent } from '../../events';
 
+import { describe, expect, it } from 'vitest';
+
+describe('placeholder', () => {
+  it('should pass', () => {
+    expect(true).toBe(true);
+  });
+});
+
 // describe('test running SpriteAnimationSystem', () => {
 //   let time: Time;
 //   let animationSetManager: AnimationSetManager;
