@@ -45,7 +45,7 @@ export class AnimationTransition {
   public readonly conditionMustBeTrueAtTheEndOfTheAnimation: boolean;
 
   // Callback
-  public onAnimationChange: OnAnimationChangeEvent;
+  public onAnimationChange: OnAnimationChangeEvent; //TODO: this currently is not called on the first transition (from 'entry')
 
   constructor(
     fromStates: string[],
@@ -85,5 +85,3 @@ export class AnimationTransition {
     return true;
   }
 }
-// TODO: add more conditions for text (contains, starts with, ends with, etc)
-// TODO: make different conditions for different input types

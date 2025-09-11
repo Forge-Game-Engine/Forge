@@ -313,6 +313,13 @@ function createAdventurerControllableController() {
     50,
   );
 
+  const runToAttackTransition = new AnimationTransition([run.name], attack1, [
+    attackCondition,
+  ]);
+  runToAttackTransition.onAnimationChange.registerListener(() =>
+    console.log('transitioning from run to attack1'),
+  );
+
   // create animation controller and transitions
   const controller = new AnimationController(
     // at any time we can jump
@@ -325,7 +332,7 @@ function createAdventurerControllableController() {
     // we can run or attack from idle, jump, or run
     new AnimationTransition([idle.name, jump.name], run, [runCondition]),
     new AnimationTransition([idle.name, jump.name], attack1, [attackCondition]),
-    new AnimationTransition([run.name], attack1, [attackCondition]),
+    runToAttackTransition,
     // attacks follow other attacks if we have enough health...
     new AnimationTransition(
       [attack1.name],

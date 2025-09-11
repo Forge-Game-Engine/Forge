@@ -1,3 +1,4 @@
+import { Entity } from '../../ecs';
 import { Animation } from './Animation';
 import { AnimationInputs } from './AnimationInputs';
 import { AnimationTransition } from './AnimationTransition';
@@ -5,7 +6,10 @@ import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
 
 export class AnimationController {
   public animationTransitions: AnimationTransition[];
-  public nextAnimation?: { animation: Animation; index: number };
+  public nextAnimationTransition?: {
+    animationTransition: AnimationTransition;
+    index: number;
+  };
 
   constructor(...animationTransitions: AnimationTransition[]) {
     this.animationTransitions = animationTransitions;
@@ -24,51 +28,62 @@ export class AnimationController {
    * Returns null if the animation is not changing
    */
   public findNextAnimation(
+    entity: Entity,
     currentAnimation: Animation,
     inputs: AnimationInputs,
     endOfAnimation: boolean,
   ): Animation | null {
     const currentState = currentAnimation.name;
 
-    let nextAnimation = this._getNextAnimation(
+    let nextAnimationTransition = this._getNextAnimation(
       currentState,
       inputs,
       endOfAnimation,
     );
 
-    if (!nextAnimation && endOfAnimation) {
-      nextAnimation = this.nextAnimation?.animation ?? currentAnimation;
+    if (!nextAnimationTransition && endOfAnimation) {
+      nextAnimationTransition =
+        this.nextAnimationTransition?.animationTransition ?? null;
     }
 
-    if (nextAnimation) {
-      this.nextAnimation = undefined;
-
-      return nextAnimation;
+    if (nextAnimationTransition) {
+      nextAnimationTransition.onAnimationChange.raise(entity);
+      this.nextAnimationTransition = undefined;
     }
 
-    return null;
+    const nextAnimation = nextAnimationTransition?.toAnimation ?? null;
+
+    if (endOfAnimation) {
+      return nextAnimation ?? currentAnimation;
+    }
+
+    return nextAnimation;
   }
 
   public getEntryAnimation(inputs: AnimationInputs): Animation {
     const currentState = DEFAULT_ANIMATION_STATES.entry;
 
-    const nextAnimation = this._getNextAnimation(currentState, inputs, true);
+    const nextAnimationTransition = this._getNextAnimation(
+      currentState,
+      inputs,
+      true,
+    );
 
-    if (!nextAnimation) {
+    if (!nextAnimationTransition) {
       throw new Error(
         `No transition with satisfied conditions exists from '${currentState}'`,
       );
     }
 
-    return nextAnimation;
+    return nextAnimationTransition.toAnimation;
   }
 
   private _getNextAnimation(
     currentState: string,
     inputs: AnimationInputs,
     endOfAnimation: boolean,
-  ): Animation | null {
-    let nextAnimation: Animation | null = null;
+  ): AnimationTransition | null {
+    let nextAnimationTransition: AnimationTransition | null = null;
 
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
@@ -81,7 +96,7 @@ export class AnimationController {
       }
 
       const hasNextAnimationWithHigherPriority =
-        this.nextAnimation && this.nextAnimation.index < i;
+        this.nextAnimationTransition && this.nextAnimationTransition.index < i;
 
       const transitionAnimationsNow =
         (!endOfAnimation &&
@@ -89,13 +104,14 @@ export class AnimationController {
         (endOfAnimation && !hasNextAnimationWithHigherPriority);
 
       if (transitionAnimationsNow) {
-        nextAnimation = transition.toAnimation;
+        nextAnimationTransition = transition;
 
         break;
       }
 
-      if (endOfAnimation && this.nextAnimation) {
-        nextAnimation = this.nextAnimation.animation;
+      if (endOfAnimation && this.nextAnimationTransition) {
+        nextAnimationTransition =
+          this.nextAnimationTransition.animationTransition;
 
         break;
       }
@@ -105,8 +121,8 @@ export class AnimationController {
         !transition.conditionMustBeTrueAtTheEndOfTheAnimation
       ) {
         // to ensure that the next animation chosen has the highest priority, we must store its index
-        this.nextAnimation = {
-          animation: transition.toAnimation,
+        this.nextAnimationTransition = {
+          animationTransition: transition,
           index: i,
         };
       }
@@ -114,6 +130,6 @@ export class AnimationController {
 
     inputs.clearFrameEndInputs();
 
-    return nextAnimation;
+    return nextAnimationTransition;
   }
 }

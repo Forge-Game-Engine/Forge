@@ -64,6 +64,7 @@ export class SpriteAnimationSystem extends System {
         currentAnimation.frames.length - 1;
 
     const nextAnimation = animationController.findNextAnimation(
+      entity,
       currentAnimation,
       animationInputs,
       endOfAnimation,
