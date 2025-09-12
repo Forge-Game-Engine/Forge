@@ -4,28 +4,43 @@ import { AnimationInputs } from './AnimationInputs';
 import { AnimationTransition } from './AnimationTransition';
 import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
 
-export class AnimationController {
-  public animationTransitions: AnimationTransition[];
-  public nextAnimationTransition?: {
-    animationTransition: AnimationTransition;
-    index: number;
-  };
+type PendingTransition = {
+  animationTransition: AnimationTransition;
+  index: number;
+};
 
+/**
+ * Class to manage animation transitions based on animation conditions and inputs
+ */
+export class AnimationController {
+  /**
+   * A list of animation transitions used to find the next animation
+   */
+  public animationTransitions: AnimationTransition[];
+  /**
+   * Stores a transition that meets its conditions but cannot execute immediately.
+   * This happens when a transition's conditions are satisfied mid-animation, but the
+   * transition requires waiting until the current animation finishes.
+   *
+   * The index represents the transition's priority (lower index = higher priority).
+   */
+  private _pendingTransition: PendingTransition | null = null;
+
+  /**
+   * Creates a new instance of AnimationController.
+   * @param animationTransitions - an array of animation transitions to initialize the controller with
+   */
   constructor(...animationTransitions: AnimationTransition[]) {
     this.animationTransitions = animationTransitions;
   }
 
-  public registerTransition(transition: AnimationTransition) {
-    this.animationTransitions.push(transition);
-  }
-
   /**
    * Finds the next animation to play based on the transitions. Returns null if the animation is not changing.
-   * If no rule is triggered at the end of an animation, returns the current animation
+   * If no transition is triggered at the end of an animation, returns the current animation
    * @param currentAnimation - the current animation
    * @param inputs - the animation inputs
    * @param endOfAnimation - whether we are at the end of the current animation
-   * Returns null if the animation is not changing
+   * @returns the next animation, or null if the animation is not changing
    */
   public findNextAnimation(
     entity: Entity,
@@ -35,20 +50,15 @@ export class AnimationController {
   ): Animation | null {
     const currentState = currentAnimation.name;
 
-    let nextAnimationTransition = this._getNextAnimation(
+    const nextAnimationTransition = this._getNextAnimationTransition(
       currentState,
       inputs,
       endOfAnimation,
     );
 
-    if (!nextAnimationTransition && endOfAnimation) {
-      nextAnimationTransition =
-        this.nextAnimationTransition?.animationTransition ?? null;
-    }
-
     if (nextAnimationTransition) {
       nextAnimationTransition.onAnimationChange.raise(entity);
-      this.nextAnimationTransition = undefined;
+      this._pendingTransition = null;
 
       return nextAnimationTransition.toAnimation;
     }
@@ -56,10 +66,15 @@ export class AnimationController {
     return endOfAnimation ? currentAnimation : null;
   }
 
+  /**
+   * Gets the entry animation for the given inputs.
+   * @param inputs - the animation inputs
+   * @returns the animation to play on entry, based on the 'entry' state
+   */
   public getEntryAnimation(inputs: AnimationInputs): Animation {
     const currentState = DEFAULT_ANIMATION_STATES.entry;
 
-    const nextAnimationTransition = this._getNextAnimation(
+    const nextAnimationTransition = this._getNextAnimationTransition(
       currentState,
       inputs,
       true,
@@ -74,7 +89,14 @@ export class AnimationController {
     return nextAnimationTransition.toAnimation;
   }
 
-  private _getNextAnimation(
+  /**
+   * Gets the next animation transition based on the current state, inputs, and whether we are at the end of the animation.
+   * @param currentState - the current animation state
+   * @param inputs - the animation inputs
+   * @param endOfAnimation - whether we are at the end of the current animation
+   * @returns the next animation transition, or null if none is found
+   */
+  private _getNextAnimationTransition(
     currentState: string,
     inputs: AnimationInputs,
     endOfAnimation: boolean,
@@ -83,38 +105,41 @@ export class AnimationController {
 
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
-      const isValidFromState = transition.fromStates.some(
+      const hasValidFromState = transition.fromStates.some(
         (s) => s === currentState || s === DEFAULT_ANIMATION_STATES.any,
       );
 
-      if (!isValidFromState || !transition.validateConditions(inputs)) {
+      if (!hasValidFromState || !transition.validateConditions(inputs)) {
         continue;
       }
 
-      const hasNextAnimationWithHigherPriority =
-        this.nextAnimationTransition && this.nextAnimationTransition.index < i;
+      const hasPendingAnimationWithHigherPriority =
+        this._pendingTransition && this._pendingTransition.index < i;
 
-      const transitionAnimationWithCurrentTransition =
+      const useCurrentAnimationTransition =
         (!endOfAnimation &&
           !transition.finishCurrentAnimationBeforeTransitioning) ||
-        (endOfAnimation && !hasNextAnimationWithHigherPriority);
+        (endOfAnimation && !hasPendingAnimationWithHigherPriority);
 
-      if (transitionAnimationWithCurrentTransition) {
+      if (useCurrentAnimationTransition) {
         nextAnimationTransition = transition;
 
         break;
       }
 
       if (
-        !hasNextAnimationWithHigherPriority &&
+        !hasPendingAnimationWithHigherPriority &&
         !transition.conditionMustBeTrueAtTheEndOfTheAnimation
       ) {
-        // to ensure that the next animation chosen has the highest priority, we must store its index
-        this.nextAnimationTransition = {
+        this._pendingTransition = {
           animationTransition: transition,
           index: i,
         };
       }
+    }
+
+    if (endOfAnimation && !nextAnimationTransition && this._pendingTransition) {
+      nextAnimationTransition = this._pendingTransition.animationTransition;
     }
 
     inputs.clearFrameEndInputs();

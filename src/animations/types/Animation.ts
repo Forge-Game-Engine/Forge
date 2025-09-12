@@ -2,11 +2,17 @@ import { Entity } from '../../ecs';
 import { ParameterizedForgeEvent } from '../../events';
 import { AnimationFrame } from './AnimationFrame';
 
+/**
+ * Event type that is raised when the animation changes.
+ */
 export type OnAnimationChangeEvent = ParameterizedForgeEvent<Entity>;
+/**
+ * Event type that is raised when the animation frame changes.
+ */
 export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<{
   entity: Entity;
   animationFrame: AnimationFrame;
-}>; // would it be better to have a different event for every frame (instead of 1 for all frames)?
+}>;
 
 /**
  * Interface representing a group of animation frames for a specific animation name.
@@ -67,7 +73,7 @@ export class Animation {
    * @returns The requested AnimationFrame.
    */
   public getFrame(frameIndex: number): AnimationFrame {
-    if (frameIndex < 0 || frameIndex > this.frames.length - 1) {
+    if (frameIndex < 0 || frameIndex >= this.frames.length) {
       throw new Error('Frame index is out of bounds.');
     }
 
