@@ -8,7 +8,7 @@ describe('AnimationInputs', () => {
     animationInputs = new AnimationInputs();
   });
 
-  describe('registerToggle', () => {
+  describe('Toggle functions', () => {
     it('should register a new toggle input with default options', () => {
       animationInputs.registerToggle('toggle1');
       const toggle = animationInputs.getToggle('toggle1');
@@ -29,9 +29,7 @@ describe('AnimationInputs', () => {
         'Input with name toggle1 already exists.',
       );
     });
-  });
 
-  describe('setToggle', () => {
     it('should set the value of a toggle input', () => {
       animationInputs.registerToggle('toggle1');
       animationInputs.setToggle('toggle1', true);
@@ -40,7 +38,7 @@ describe('AnimationInputs', () => {
     });
   });
 
-  describe('registerNumber', () => {
+  describe('Number functions', () => {
     it('should register a new number input with default options', () => {
       animationInputs.registerNumber('number1');
       const number = animationInputs.getNumber('number1');
@@ -64,13 +62,12 @@ describe('AnimationInputs', () => {
 
     it('should not throw an error if a different type input with the same name already exists', () => {
       animationInputs.registerToggle('inputName');
+      animationInputs.registerText('inputName');
       expect(() =>
         animationInputs.registerNumber('inputName'),
       ).not.toThrowError();
     });
-  });
 
-  describe('setNumber', () => {
     it('should set the value of a number input', () => {
       animationInputs.registerNumber('number1');
       animationInputs.setNumber('number1', 100);
@@ -79,7 +76,7 @@ describe('AnimationInputs', () => {
     });
   });
 
-  describe('registerText', () => {
+  describe('Text functions', () => {
     it('should register a new text input with default options', () => {
       animationInputs.registerText('text1');
       const text = animationInputs.getText('text1');
@@ -100,9 +97,6 @@ describe('AnimationInputs', () => {
         'Input with name text1 already exists.',
       );
     });
-  });
-
-  describe('setText', () => {
     it('should set the value of a text input', () => {
       animationInputs.registerText('text1');
       animationInputs.setText('text1', 'world');
@@ -111,7 +105,7 @@ describe('AnimationInputs', () => {
     });
   });
 
-  describe('getInputByName', () => {
+  describe('General functions', () => {
     it('should return the correct input by name', () => {
       animationInputs.registerToggle('toggle1');
       animationInputs.registerNumber('number1');
@@ -131,9 +125,7 @@ describe('AnimationInputs', () => {
         'Input with name nonexistent does not exist.',
       );
     });
-  });
 
-  describe('clearFrameEndInputs', () => {
     it('should reset inputs with resetOnFrameEnd set to true', () => {
       animationInputs.registerToggle('toggle1', { resetOnFrameEnd: true });
       animationInputs.registerNumber('number1', {
@@ -157,12 +149,18 @@ describe('AnimationInputs', () => {
     });
 
     it('should not reset inputs with resetOnFrameEnd set to false', () => {
-      animationInputs.registerToggle('toggle1', { resetOnFrameEnd: false });
-      animationInputs.setToggle('toggle1', true);
+      animationInputs.registerToggle('toggle1', {
+        resetOnFrameEnd: false,
+        defaultValue: false,
+      });
+      animationInputs.getToggle('toggle1').value = true;
+      animationInputs.registerText('text1', { defaultValue: 'someVal' });
+      animationInputs.getText('text1').value = 'someDifferentValue';
 
       animationInputs.clearFrameEndInputs();
 
       expect(animationInputs.getToggle('toggle1').value).toBe(true);
+      expect(animationInputs.getText('text1').value).toBe('someDifferentValue');
     });
   });
 });

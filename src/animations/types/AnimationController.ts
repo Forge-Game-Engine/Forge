@@ -37,6 +37,7 @@ export class AnimationController {
   /**
    * Finds the next animation to play based on the transitions. Returns null if the animation is not changing.
    * If no transition is triggered at the end of an animation, returns the current animation
+   * @param entity - the entity this controller is acting on
    * @param currentAnimation - the current animation
    * @param inputs - the animation inputs
    * @param endOfAnimation - whether we are at the end of the current animation
@@ -103,10 +104,16 @@ export class AnimationController {
   ): AnimationTransition | null {
     let nextAnimationTransition: AnimationTransition | null = null;
 
+    // this ensures the 'any' state cannot override the 'begin' state
+    const isEntryState = currentState === DEFAULT_ANIMATION_STATES.entry;
+
     for (let i = 0; i < this.animationTransitions.length; i++) {
       const transition = this.animationTransitions[i];
+
       const hasValidFromState = transition.fromStates.some(
-        (s) => s === currentState || s === DEFAULT_ANIMATION_STATES.any,
+        (s) =>
+          s === currentState ||
+          (s === DEFAULT_ANIMATION_STATES.any && !isEntryState),
       );
 
       if (!hasValidFromState || !transition.validateConditions(inputs)) {

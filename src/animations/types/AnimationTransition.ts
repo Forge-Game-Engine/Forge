@@ -7,7 +7,7 @@ import { AnimationInputs } from './AnimationInputs';
 /**
  * Metadata for an animation transition.
  */
-interface TransitionMetadata {
+export interface TransitionMetadata {
   /**
    * If true, the current animation must finish before transitioning to the next animation.
    * If false, the transition can happen immediately when the conditions are met.
@@ -22,7 +22,7 @@ interface TransitionMetadata {
   conditionMustBeTrueAtTheEndOfTheAnimation: boolean;
 }
 
-const defaultTransitionMetadata: TransitionMetadata = {
+export const defaultTransitionMetadata: TransitionMetadata = {
   finishCurrentAnimationBeforeTransitioning: true,
   conditionMustBeTrueAtTheEndOfTheAnimation: false,
 };

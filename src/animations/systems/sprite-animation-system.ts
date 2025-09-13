@@ -121,7 +121,8 @@ export class SpriteAnimationSystem extends System {
   }
 
   /**
-   * Handles the logic when an animation frame changes, including raising events and updating the last frame change time.
+   * Handles the logic when an animation frame changes, including raising events for the new frame,
+   * and updating the last frame change time.
    * @param animation - The current animation.
    * @param entity - The entity whose animation frame has changed.
    * @param spriteAnimationComponent - The SpriteAnimationComponent of the entity.

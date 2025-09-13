@@ -1,253 +1,234 @@
-// import { beforeEach, describe, expect, it, vi } from 'vitest';
-// import { SpriteAnimationSystem } from './sprite-animation-system';
-// import { createWorld, Entity, Game } from '../../ecs';
-// import { Time } from '../../common';
-// import { SpriteAnimationComponent } from '../components';
-// import { Sprite, SpriteComponent } from '../../rendering';
-// import {
-//   Animation,
-//   AnimationFrame,
-//   AnimationSetManager,
-//   immediatelySetCurrentAnimation,
-// } from '../utilities';
-// import { Vector2 } from '../../math';
-// import { ParameterizedForgeEvent } from '../../events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SpriteAnimationSystem } from './sprite-animation-system';
+import { createWorld, Entity, Game } from '../../ecs';
+import { Time } from '../../common';
+import { SpriteAnimationComponent } from '../components';
+import { Sprite, SpriteComponent } from '../../rendering';
+import {
+  Animation,
+  AnimationController,
+  AnimationFrame,
+  AnimationInputs,
+} from '../types';
 
-// describe('test running SpriteAnimationSystem', () => {
-//   let time: Time;
-//   let animationSetManager: AnimationSetManager;
-//   let spriteAnimationSystem: SpriteAnimationSystem;
-//   let entity: Entity;
-//   let animationFrame: AnimationFrame;
-//   const durationSeconds = 1;
+describe('SpriteAnimationSystem', () => {
+  let time: Time;
+  let system: SpriteAnimationSystem;
+  let entity: Entity;
+  let spriteAnimationComponent: SpriteAnimationComponent;
+  let mockAnimation1: Animation;
+  let mockAnimation2: Animation;
 
-//   beforeEach(() => {
-//     time = new Time();
-//     animationSetManager = {
-//       getAnimation: vi.fn(),
-//       getDefaultNextAnimation: vi.fn(),
-//     } as unknown as AnimationSetManager;
+  function makeMockAnimation(name: string, numFrames: number): Animation {
+    const mockFrames = [];
 
-//     spriteAnimationSystem = new SpriteAnimationSystem(
-//       time,
-//       animationSetManager,
-//     );
+    for (let i = 0; i < numFrames; i++) {
+      mockFrames.push({ frameIndex: i, durationSeconds: 1 } as AnimationFrame);
+    }
 
-//     const game = new Game();
+    const animation = new Animation(name, mockFrames);
+    animation.onAnimationEndEvent.raise = vi.fn();
+    animation.onAnimationStartEvent.raise = vi.fn();
+    animation.onAnimationFrameChangeEvent.raise = vi.fn();
 
-//     const world = createWorld('world', game);
+    return animation;
+  }
 
-//     animationFrame = {
-//       durationSeconds,
-//       offset: new Vector2(0, 0),
-//       scale: new Vector2(1, 1),
-//     };
+  beforeEach(() => {
+    time = new Time();
+    system = new SpriteAnimationSystem(time);
 
-//     const startAnimation: Animation = {
-//       animationSetName: 'testEntity',
-//       name: 'idle',
-//       frames: [animationFrame],
-//       defaultNextAnimationName: 'run',
-//       animationEvents: new Map(),
-//     };
+    mockAnimation1 = makeMockAnimation('TestAnimation1', 2);
+    mockAnimation2 = makeMockAnimation('TestAnimation2', 2);
 
-//     entity = new Entity(
-//       'name',
-//       world,
-//       [
-//         new SpriteAnimationComponent(startAnimation),
-//         new SpriteComponent({} as Sprite),
-//       ],
-//       true,
-//     );
-//   });
+    spriteAnimationComponent = new SpriteAnimationComponent(
+      {
+        getEntryAnimation: vi.fn().mockReturnValue(mockAnimation1),
+        findNextAnimation: vi.fn(),
+      } as unknown as AnimationController,
+      {} as AnimationInputs,
+    );
 
-//   it('should update the animation index and frame time when the frame duration is exceeded', () => {
-//     const mockAnimation: Animation = {
-//       frames: [animationFrame, animationFrame],
-//       defaultNextAnimationName: 'run',
-//       animationEvents: new Map(),
-//       name: 'test',
-//       animationSetName: 'testEntity',
-//     };
+    const game = new Game();
 
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 0;
-//     spriteAnimationComponent.animation = mockAnimation;
+    const world = createWorld('world', game);
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(durationSeconds * 2);
+    entity = new Entity('entity', world, [
+      spriteAnimationComponent,
+      new SpriteComponent({} as Sprite),
+    ]);
+  });
 
-//     spriteAnimationSystem.run(entity);
+  it('should not change frame if not enough time has passed', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
 
-//     expect(spriteAnimationComponent.animationIndex).toBe(1);
-//     expect(spriteAnimationComponent.frameTimeSeconds).toBe(durationSeconds * 2);
-//   });
+    system.run(entity);
 
-//   it('should reset the animation index and switch to the next animation set if available', () => {
-//     const mockAnimation: Animation = {
-//       frames: [animationFrame, animationFrame],
-//       defaultNextAnimationName: 'run',
-//       animationEvents: new Map(),
-//       name: 'test',
-//       animationSetName: 'testEntity',
-//     };
+    expect(spriteAnimationComponent.animationFrameIndex).toBe(0);
+  });
 
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 1;
-//     spriteAnimationComponent.animation = mockAnimation;
+  it('should change frame if enough time has passed', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(durationSeconds * 2);
-//     vi.spyOn(animationSetManager, 'getDefaultNextAnimation').mockReturnValue({
-//       ...mockAnimation,
-//       name: 'run',
-//     });
+    system.run(entity);
 
-//     spriteAnimationSystem.run(entity);
+    expect(spriteAnimationComponent.animationFrameIndex).toBe(1);
+    expect(
+      spriteAnimationComponent.currentAnimation.onAnimationFrameChangeEvent
+        .raise,
+    ).toHaveBeenCalled();
+  });
 
-//     expect(spriteAnimationComponent.animationIndex).toBe(0);
-//     expect(spriteAnimationComponent.frameTimeSeconds).toBe(durationSeconds * 2);
-//     expect(spriteAnimationComponent.animation.name).toBe('run');
-//   });
+  it('should switch to the next animation if one is found', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(mockAnimation2);
 
-//   it('should call nextAnimation if nextAnimationSetName is set on the component', () => {
-//     const nextAnimationName = 'next';
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation1);
 
-//     const mockNextAnimation: Animation = {
-//       frames: [animationFrame],
-//       defaultNextAnimationName: null,
-//       animationEvents: new Map(),
-//       name: nextAnimationName,
-//       animationSetName: 'testEntity',
-//     };
+    system.run(entity);
 
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 0;
-//     spriteAnimationComponent.nextAnimation = mockNextAnimation;
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation2);
+    expect(mockAnimation2.onAnimationStartEvent.raise).toHaveBeenCalled();
+  });
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(durationSeconds * 2);
-//     vi.spyOn(animationSetManager, 'getDefaultNextAnimation').mockReturnValue({
-//       ...mockNextAnimation,
-//     });
+  it('should raise onAnimationEndEvent if the animation ends', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.animationFrameIndex =
+      spriteAnimationComponent.currentAnimation.frames.length - 1;
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(mockAnimation2);
 
-//     spriteAnimationSystem.run(entity);
+    system.run(entity);
 
-//     expect(spriteAnimationComponent.animationIndex).toBe(0);
-//     expect(spriteAnimationComponent.frameTimeSeconds).toBe(durationSeconds * 2);
-//     expect(spriteAnimationComponent.animation.name).toBe(nextAnimationName);
-//   });
+    // we swap to the next animation, so the end event should be raised on the old one
+    expect(mockAnimation1.onAnimationEndEvent.raise).toHaveBeenCalled();
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation2);
+    expect(mockAnimation2.onAnimationStartEvent.raise).toHaveBeenCalled();
+  });
 
-//   it('should not update animation index if frame duration has not been exceeded', () => {
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 0;
+  it('should not change frame if no next animation is found and not enough time has passed', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(null);
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(
-//       durationSeconds * 0.5,
-//     );
+    system.run(entity);
 
-//     spriteAnimationSystem.run(entity);
+    expect(spriteAnimationComponent.animationFrameIndex).toBe(0);
+  });
+  it('should change animations if one is found, even if not enough time has passed', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(mockAnimation2);
 
-//     expect(spriteAnimationComponent.animationIndex).toBe(0);
-//     expect(spriteAnimationComponent.frameTimeSeconds).toBe(0);
-//   });
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation1);
 
-//   it('should reset animation index and not switch animation set if nextAnimationSetName is not set', () => {
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 0;
-//     spriteAnimationComponent.animation.defaultNextAnimationName = null;
+    system.run(entity);
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(durationSeconds * 2);
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation2);
+    expect(mockAnimation2.onAnimationStartEvent.raise).toHaveBeenCalled();
+  });
 
-//     spriteAnimationSystem.run(entity);
+  it('should handle playback speed if speed is faster', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
+    spriteAnimationComponent.playbackSpeed = 2;
 
-//     expect(spriteAnimationComponent.animationIndex).toBe(0);
-//     expect(spriteAnimationComponent.frameTimeSeconds).toBe(durationSeconds * 2);
-//     expect(spriteAnimationComponent.animation.name).toBe('idle');
-//   });
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation1);
 
-//   it('should call the correct callback for the current animation frame', () => {
-//     const callbackToRun = vi.fn();
-//     const callbackNotToRun = vi.fn();
-//     const eventToRun = new ParameterizedForgeEvent<Entity>('0');
-//     eventToRun.registerListener(callbackToRun);
-//     const eventNotToRun = new ParameterizedForgeEvent<Entity>('1');
-//     eventNotToRun.registerListener(callbackNotToRun);
+    system.run(entity);
 
-//     const mockAnimation: Animation = {
-//       frames: [animationFrame, animationFrame],
-//       defaultNextAnimationName: null,
-//       animationEvents: new Map([
-//         [0, eventToRun],
-//         [1, eventNotToRun],
-//       ]),
-//       name: 'test',
-//       animationSetName: 'testEntity',
-//     };
+    expect(mockAnimation1.onAnimationFrameChangeEvent.raise).toHaveBeenCalled();
+  });
 
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     immediatelySetCurrentAnimation(spriteAnimationComponent, mockAnimation);
+  it('should handle playback speed if speed is slower', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.playbackSpeed = 0.5;
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(
-//       durationSeconds * 0.5,
-//     );
+    expect(spriteAnimationComponent.currentAnimation).toBe(mockAnimation1);
 
-//     spriteAnimationSystem.run(entity);
+    system.run(entity);
 
-//     expect(callbackToRun).toHaveBeenCalledWith(entity);
-//     expect(callbackToRun).toHaveBeenCalledTimes(1);
-//     expect(callbackNotToRun).toHaveBeenCalledTimes(0);
-//   });
+    expect(
+      mockAnimation1.onAnimationFrameChangeEvent.raise,
+    ).not.toHaveBeenCalled();
+  });
 
-//   it('should not call callbacks if the animation index has not changed', () => {
-//     const callback = vi.fn();
-//     const event = new ParameterizedForgeEvent<Entity>('0');
-//     event.registerListener(callback);
+  it('should reset the animation index when swapping frames', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.animationFrameIndex = 1;
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(mockAnimation2);
 
-//     const mockAnimation: Animation = {
-//       frames: [animationFrame],
-//       defaultNextAnimationName: null,
-//       animationEvents: new Map([[0, event]]),
-//       name: 'test',
-//       animationSetName: 'testEntity',
-//     };
+    system.run(entity);
 
-//     vi.spyOn(animationSetManager, 'getAnimation').mockReturnValue(
-//       mockAnimation,
-//     );
+    expect(spriteAnimationComponent.animationFrameIndex).toBe(0);
+  });
 
-//     const spriteAnimationComponent =
-//       entity.getComponentRequired<SpriteAnimationComponent>(
-//         SpriteAnimationComponent.symbol,
-//       );
-//     spriteAnimationComponent.frameTimeSeconds = 0;
-//     spriteAnimationComponent.animationIndex = 0;
+  it('should raise the frame change event with the next frame', () => {
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.animationFrameIndex = 0;
 
-//     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
-//     spriteAnimationSystem.run(entity);
+    system.run(entity);
 
-//     expect(callback).not.toHaveBeenCalled();
-//   });
-// });
+    expect(
+      mockAnimation1.onAnimationFrameChangeEvent.raise,
+    ).toHaveBeenCalledWith({
+      entity: entity,
+      animationFrame: mockAnimation1.frames[1],
+    });
+  });
+
+  it('should correct work out if it is the end of the animation', () => {
+    spriteAnimationComponent.animationFrameIndex = 0;
+
+    // 1.5s in, we swap from frame 0 to frame 1
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(null);
+    system.run(entity);
+
+    expect(
+      spriteAnimationComponent.animationController.findNextAnimation,
+    ).toHaveBeenCalledWith(
+      entity,
+      mockAnimation1,
+      spriteAnimationComponent.animationInputs,
+      false,
+    );
+
+    // 1.9s in, we have not swapped frames
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.9);
+    system.run(entity);
+
+    expect(
+      spriteAnimationComponent.animationController.findNextAnimation,
+    ).toHaveBeenCalledWith(
+      entity,
+      mockAnimation1,
+      spriteAnimationComponent.animationInputs,
+      false,
+    );
+
+    // 3.5s in, we are at the end of the animation, and must get the next animation to swap to
+    vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(3.5);
+    spriteAnimationComponent.animationController.findNextAnimation = vi
+      .fn()
+      .mockReturnValue(mockAnimation1);
+    system.run(entity);
+
+    expect(
+      spriteAnimationComponent.animationController.findNextAnimation,
+    ).toHaveBeenCalledWith(
+      entity,
+      mockAnimation1,
+      spriteAnimationComponent.animationInputs,
+      true,
+    );
+  });
+});

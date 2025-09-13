@@ -1,6 +1,12 @@
 import { Vector2 } from '../../math';
 import { Animation, AnimationFrame } from '../types';
 
+/**
+ * Validates the duration of animation frames.
+ * @param animationFrameDurationSeconds - The duration of each animation frame in seconds.
+ * This can be a single number for all frames or an array of numbers for each frame.
+ * @param numFrames - The total number of frames in the animation.
+ */
 function validateAnimationFrameDurations(
   animationFrameDurationSeconds: number | number[],
   numFrames: number,
@@ -15,6 +21,15 @@ function validateAnimationFrameDurations(
   }
 }
 
+/**
+ * Generates animation frames based on the provided parameters.
+ * @param numFrames - The total number of frames in the animation.
+ * @param spritesPerRow - The number of sprites in each row of the sprite sheet.
+ * @param startPositionPercentage - The starting position of the animation frames in the sprite sheet, as a percentage.
+ * @param spriteUVSize - The size of each sprite in the sprite sheet, as a percentage.
+ * @param animationFrameDurationSeconds - The duration of each animation frame in seconds.
+ * @returns An array of generated animation frames.
+ */
 function generateAnimationFrames(
   numFrames: number,
   spritesPerRow: number,
