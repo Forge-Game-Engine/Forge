@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CameraSystem } from './camera-system';
 import { Entity, World } from '../../ecs';
-import { Axis1dAction, Axis2dAction, InputManager } from '../../input';
+import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraComponent } from '../components';
 import { PositionComponent } from '../../common';
 
@@ -13,14 +13,12 @@ describe('CameraSystem', () => {
   let world: World;
   let zoomInput: Axis1dAction;
   let panInput: Axis2dAction;
-  let manager: InputManager;
 
   beforeEach(() => {
     world = new World('test');
-    manager = new InputManager();
 
-    panInput = new Axis2dAction('pan', manager);
-    zoomInput = new Axis1dAction('zoom', manager);
+    panInput = new Axis2dAction('pan');
+    zoomInput = new Axis1dAction('zoom');
 
     cameraSystem = new CameraSystem(world.time);
 

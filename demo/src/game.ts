@@ -8,22 +8,19 @@ import {
   Game,
   HoldAction,
   ImageCache,
-  InputGroup,
-  KeyboardAxis1dInteraction,
-  KeyboardHoldInteraction,
   KeyboardInputSource,
-  KeyboardTriggerInteraction,
+  KeyboardTriggerBinding,
   keyCodes,
-  MouseAxis1dInteraction,
-  MouseAxis2dInteraction,
+  MouseAxis1dBinding,
   mouseButtons,
   MouseInputSource,
-  MouseTriggerInteraction,
+  MouseTriggerBinding,
   registerCamera,
   registerInputs,
   registerRendering,
   TriggerAction,
 } from '../../src';
+import { KeyboardHoldBinding } from '../../src/input/bindings/keyboard-hold-binding';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -36,14 +33,24 @@ const world = createWorld('world', game);
 
 const { inputsManager } = registerInputs(world);
 
-const zoomInput = new Axis1dAction('zoom', inputsManager);
+const defaultInputGroupName = 'default';
+
+const zoomInput = new Axis1dAction(
+  'zoom',
+  actionResetTypes.zero,
+  defaultInputGroupName,
+);
 const panInput = new Axis2dAction(
   'pan',
-  inputsManager,
   actionResetTypes.noReset,
+  defaultInputGroupName,
 );
-const fireInput = new TriggerAction('fire', inputsManager);
-const runInput = new HoldAction('run', inputsManager);
+const fireAction = new TriggerAction('fire', defaultInputGroupName);
+const runAction = new HoldAction('run', defaultInputGroupName);
+
+inputsManager.addResettable(zoomInput);
+inputsManager.addResettable(panInput);
+inputsManager.addResettable(fireAction);
 
 const cameraEntity = registerCamera(world, {
   zoomInput,
@@ -53,78 +60,25 @@ const { renderLayers } = registerRendering(game, world);
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);
 
-const defaultInputGroup = new InputGroup('default');
-const alternativeInputGroup = new InputGroup('alternative');
+inputsManager.setActiveGroup(defaultInputGroupName);
 
-inputsManager.setActiveGroup(defaultInputGroup);
-
-zoomInput.bind(
-  new KeyboardAxis1dInteraction(
-    {
-      negativeKey: keyCodes.n,
-      positiveKey: keyCodes.m,
-    },
-    keyboardInputSource,
-  ),
-  alternativeInputGroup,
+mouseInputSource.triggerBindings.add(
+  new MouseTriggerBinding(fireAction, mouseButtons.left, buttonMoments.down),
 );
 
-fireInput.bind(
-  new KeyboardTriggerInteraction(
-    { keyCode: keyCodes.f, moment: buttonMoments.down },
-    keyboardInputSource,
-  ),
-  defaultInputGroup,
+keyboardInputSource.triggerBindings.add(
+  new KeyboardTriggerBinding(fireAction, keyCodes.space, buttonMoments.down),
 );
 
-fireInput.bind(
-  new KeyboardTriggerInteraction(
-    { keyCode: keyCodes.space, moment: buttonMoments.down },
-    keyboardInputSource,
-  ),
-  defaultInputGroup,
+mouseInputSource.axis1dBindings.add(new MouseAxis1dBinding(zoomInput));
+
+mouseInputSource.triggerBindings.add(
+  new MouseTriggerBinding(fireAction, mouseButtons.left, buttonMoments.down),
 );
 
-runInput.bind(
-  new KeyboardHoldInteraction({ keyCode: keyCodes.space }, keyboardInputSource),
-  alternativeInputGroup,
+keyboardInputSource.holdBindings.add(
+  new KeyboardHoldBinding(runAction, keyCodes.shiftLeft),
 );
-
-fireInput.bind(
-  new KeyboardTriggerInteraction(
-    { keyCode: keyCodes.space, moment: buttonMoments.up },
-    keyboardInputSource,
-  ),
-  alternativeInputGroup,
-);
-
-fireInput.bind(
-  new KeyboardTriggerInteraction(
-    { keyCode: keyCodes.b, moment: buttonMoments.up },
-    keyboardInputSource,
-  ),
-  alternativeInputGroup,
-);
-
-fireInput.bind(
-  new MouseTriggerInteraction(
-    { mouseButton: mouseButtons.left, moment: buttonMoments.down },
-    mouseInputSource,
-  ),
-  alternativeInputGroup,
-);
-
-zoomInput.bind(
-  new MouseAxis1dInteraction(mouseInputSource),
-  alternativeInputGroup,
-);
-
-panInput.bind(
-  new MouseAxis2dInteraction(mouseInputSource),
-  alternativeInputGroup,
-);
-
-inputsManager.setActiveGroup(alternativeInputGroup);
 
 const sprites = [
   'star_medium.png',
@@ -148,17 +102,17 @@ const batchPromises = sprites.map((sprite) =>
 
 await Promise.all(batchPromises);
 
-world.addSystems(new FireSystem());
+world.addSystems(new FireSystem(fireAction, runAction));
 
 zoomInput.valueChangeEvent.registerListener((value) => {
   console.log(value);
 });
 
-runInput.holdStartEvent.registerListener(() => {
+runAction.holdStartEvent.registerListener(() => {
   console.log('Starting run');
 });
 
-runInput.holdEndEvent.registerListener(() => {
+runAction.holdEndEvent.registerListener(() => {
   console.log('Ending run');
 });
 

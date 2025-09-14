@@ -9,10 +9,14 @@ export const mouseButtons = {
 
 export type MouseButton = (typeof mouseButtons)[keyof typeof mouseButtons];
 
-export function getMouseButtonName(button: MouseButton): string | null {
-  return (
-    (Object.keys(mouseButtons) as Array<keyof typeof mouseButtons>).find(
-      (key) => mouseButtons[key] === button,
-    ) ?? null
-  );
+export function getMouseButtonName(button: MouseButton): string {
+  const name = (
+    Object.keys(mouseButtons) as Array<keyof typeof mouseButtons>
+  ).find((key) => mouseButtons[key] === button);
+
+  if (!name) {
+    throw new Error(`Unknown mouse button value: ${button}`);
+  }
+
+  return name;
 }

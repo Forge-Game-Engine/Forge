@@ -1,7 +1,7 @@
 import { InputAction } from '../actions/input-action';
 
 export interface InputSource {
-  get name(): string;
+  name: string;
 }
 
 export interface InputWithArgs<TInput extends InputAction, TArgs> {

@@ -2,15 +2,28 @@ import { Game } from '../../ecs';
 import { Vector2 } from '../../math';
 import { buttonMoments, MouseButton } from '../constants';
 import { InputManager } from '../input-manager';
-import {
-  MouseAxis1dInteraction,
-  MouseAxis2dInteraction,
-  MouseTriggerInteraction,
-} from '../interactions';
-import { InputSource } from './input-source';
 import { Resettable, Stoppable } from '../../common';
+import {
+  MouseAxis1dBinding,
+  MouseAxis2dBinding,
+  MouseTriggerBinding,
+} from '../bindings';
+import { TriggerBindableInputSource } from './trigger-bindable-input-source';
+import { Axis1dBindableInputSource } from './axis-1d-bindable-input-source';
+import { Axis2dBindableInputSource } from './axis-2d-bindable-input-source';
 
-export class MouseInputSource implements InputSource, Resettable, Stoppable {
+export class MouseInputSource
+  implements
+    TriggerBindableInputSource<MouseTriggerBinding>,
+    Axis1dBindableInputSource<MouseAxis1dBinding>,
+    Axis2dBindableInputSource<MouseAxis2dBinding>,
+    Resettable,
+    Stoppable
+{
+  public readonly triggerBindings = new Set<MouseTriggerBinding>();
+  public readonly axis1dBindings = new Set<MouseAxis1dBinding>();
+  public readonly axis2dBindings = new Set<MouseAxis2dBinding>();
+
   private readonly _inputManager: InputManager;
   private readonly _game: Game;
   private readonly _containerBoundingClientRect: DOMRect;
@@ -32,6 +45,10 @@ export class MouseInputSource implements InputSource, Resettable, Stoppable {
     game.container.addEventListener('mousemove', this._onMouseMoveHandler);
 
     this._inputManager.addResettable(this);
+
+    this.triggerBindings = new Set();
+    this.axis1dBindings = new Set();
+    this.axis2dBindings = new Set();
   }
 
   get name() {
@@ -64,15 +81,14 @@ export class MouseInputSource implements InputSource, Resettable, Stoppable {
     this._mouseButtonPresses.add(button);
     this._mouseButtonDowns.add(button);
 
-    const interaction = new MouseTriggerInteraction(
-      {
-        moment: buttonMoments.down,
-        mouseButton: button,
-      },
-      this,
-    );
-
-    this._inputManager.dispatchTriggerAction(interaction);
+    for (const binding of this.triggerBindings) {
+      if (
+        binding.mouseButton === button &&
+        binding.moment === buttonMoments.down
+      ) {
+        binding.action.trigger();
+      }
+    }
   };
 
   private readonly _onMouseUpHandler = (event: MouseEvent) => {
@@ -81,33 +97,29 @@ export class MouseInputSource implements InputSource, Resettable, Stoppable {
     this._mouseButtonPresses.delete(button);
     this._mouseButtonUps.add(button);
 
-    const interaction = new MouseTriggerInteraction(
-      {
-        moment: buttonMoments.up,
-        mouseButton: button,
-      },
-      this,
-    );
-
-    this._inputManager.dispatchTriggerAction(interaction);
+    for (const binding of this.triggerBindings) {
+      if (
+        binding.mouseButton === button &&
+        binding.moment === buttonMoments.up
+      ) {
+        binding.action.trigger();
+      }
+    }
   };
 
   private readonly _onWheelHandler = (event: WheelEvent) => {
-    const interaction = new MouseAxis1dInteraction(this);
-
-    this._inputManager.dispatchAxis1dAction(
-      interaction,
-      event.deltaY / 100, // TODO: we cannot assume pixels here https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent/deltaMode
-    );
+    for (const binding of this.axis1dBindings) {
+      binding.action.set(event.deltaY / 100);
+    }
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {
     const x = event.clientX - this._containerBoundingClientRect.left;
     const y = event.clientY - this._containerBoundingClientRect.top;
 
-    const interaction = new MouseAxis2dInteraction(this);
-
-    this._inputManager.dispatchAxis2dAction(interaction, x, y);
+    for (const binding of this.axis2dBindings) {
+      binding.action.set(x, y);
+    }
 
     this._lastMousePosition.x = x;
     this._lastMousePosition.y = y;

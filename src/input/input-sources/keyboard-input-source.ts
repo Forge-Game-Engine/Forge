@@ -1,14 +1,22 @@
 import { Resettable, Stoppable } from '../../common';
+import { KeyboardTriggerBinding } from '../bindings';
+import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding';
 import { buttonMoments, KeyCode } from '../constants';
 import { InputManager } from '../input-manager';
-import {
-  KeyboardAxis1dInteraction,
-  KeyboardHoldInteraction,
-  KeyboardTriggerInteraction,
-} from '../interactions';
-import { InputSource } from './input-source';
+import { HoldBindableInputSource } from './hold-bindable-input-source';
+import { TriggerBindableInputSource } from './trigger-bindable-input-source';
 
-export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
+export class KeyboardInputSource
+  implements
+    TriggerBindableInputSource<KeyboardTriggerBinding>,
+    HoldBindableInputSource<KeyboardHoldBinding>,
+    Stoppable,
+    Resettable
+{
+  public readonly triggerBindings = new Set<KeyboardTriggerBinding>();
+  public readonly holdBindings = new Set<KeyboardHoldBinding>();
+  public readonly name = 'Keyboard';
+
   private readonly _inputManager: InputManager;
 
   private readonly _keyPressesDown = new Set<KeyCode>();
@@ -22,10 +30,6 @@ export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
 
     window.addEventListener('keydown', this._onKeyDownHandler);
     window.addEventListener('keyup', this._onKeyUpHandler);
-  }
-
-  get name() {
-    return 'keyboard';
   }
 
   public reset(): void {
@@ -49,39 +53,20 @@ export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
     this._keyPressesDown.add(keyCode);
     this._keyHolds.add(keyCode);
 
-    const triggerInteraction = new KeyboardTriggerInteraction(
-      {
-        moment: buttonMoments.down,
-        keyCode,
-      },
-      this,
-    );
+    for (const binding of this.triggerBindings) {
+      if (
+        binding.keyCode === keyCode &&
+        binding.moment === buttonMoments.down
+      ) {
+        this._inputManager.dispatchTriggerAction(binding);
+      }
+    }
 
-    const holdInteraction = new KeyboardHoldInteraction(
-      {
-        keyCode,
-      },
-      this,
-    );
-
-    const negativeAxis1dInteraction = new KeyboardAxis1dInteraction(
-      {
-        negativeKey: keyCode,
-      },
-      this,
-    );
-
-    const positiveAxis1dInteraction = new KeyboardAxis1dInteraction(
-      {
-        positiveKey: keyCode,
-      },
-      this,
-    );
-
-    this._inputManager.dispatchTriggerAction(triggerInteraction);
-    this._inputManager.dispatchHoldStartAction(holdInteraction);
-    this._inputManager.dispatchAxis1dAction(negativeAxis1dInteraction, -1);
-    this._inputManager.dispatchAxis1dAction(positiveAxis1dInteraction, 1);
+    for (const binding of this.holdBindings) {
+      if (binding.keyCode === keyCode) {
+        this._inputManager.dispatchHoldStartAction(binding);
+      }
+    }
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
@@ -94,22 +79,20 @@ export class KeyboardInputSource implements InputSource, Stoppable, Resettable {
     this._keyPressesUps.add(keyCode);
     this._keyHolds.delete(keyCode);
 
-    const triggerInteraction = new KeyboardTriggerInteraction(
-      {
-        moment: buttonMoments.up,
-        keyCode,
-      },
-      this,
-    );
+    for (const binding of this.triggerBindings) {
+      if (
+        binding.action.inputGroup === this._inputManager.activeGroup &&
+        binding.keyCode === keyCode &&
+        binding.moment === buttonMoments.up
+      ) {
+        binding.action.trigger();
+      }
+    }
 
-    const holdInteraction = new KeyboardHoldInteraction(
-      {
-        keyCode,
-      },
-      this,
-    );
-
-    this._inputManager.dispatchTriggerAction(triggerInteraction);
-    this._inputManager.dispatchHoldEndAction(holdInteraction);
+    for (const binding of this.holdBindings) {
+      if (binding.keyCode === keyCode) {
+        this._inputManager.dispatchHoldEndAction(binding);
+      }
+    }
   };
 }

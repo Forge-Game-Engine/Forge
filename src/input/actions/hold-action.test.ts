@@ -1,22 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { HoldAction } from './hold-action';
-import { InputGroup } from '../input-group';
-import { KeyboardInputSource } from '../input-sources';
-import { InputManager } from '../input-manager';
-import { keyCodes } from '../constants';
-import { KeyboardHoldInteraction } from '../interactions';
 
 describe('HoldAction', () => {
   let action: HoldAction;
-  let group: InputGroup;
-  let inputSource: KeyboardInputSource;
-  let manager: InputManager;
 
   beforeEach(() => {
-    manager = new InputManager();
-    action = new HoldAction('accelerate', manager);
-    group = new InputGroup('test');
-    inputSource = new KeyboardInputSource(manager);
+    action = new HoldAction('accelerate');
   });
 
   it('should set the name property from constructor', () => {
@@ -50,19 +39,5 @@ describe('HoldAction', () => {
     expect(action.isHeld).toBe(false);
     action.startHold();
     expect(action.isHeld).toBe(true);
-  });
-
-  it('should bind sources correctly', () => {
-    const interaction = new KeyboardHoldInteraction(
-      { keyCode: keyCodes.w },
-      inputSource,
-    );
-
-    action.bind(interaction, group);
-
-    const interactions = action.interactions.get(group)?.values().toArray();
-
-    expect(interactions?.length).toBe(1);
-    expect(interactions?.[0]?.id).toBe(interaction.id);
   });
 });
