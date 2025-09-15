@@ -1,8 +1,8 @@
 import { TriggerAction } from '../actions';
-import { InputBinding } from '../bindings';
-import { InputSource } from './input-source';
+import { InputBinding } from '../input-binding';
+import { InputSource } from '../input-source';
 
-export interface TriggerBindableInputSource<
+export interface TriggerInputSource<
   TTriggerBinding extends InputBinding<TriggerAction>,
 > extends InputSource {
   triggerBindings: Set<TTriggerBinding>;

@@ -1,22 +1,24 @@
-import { Game } from '../../ecs';
-import { Vector2 } from '../../math';
-import { buttonMoments, MouseButton } from '../constants';
-import { InputManager } from '../input-manager';
-import { Resettable, Stoppable } from '../../common';
+import { Game } from '../../../ecs';
+import { Vector2 } from '../../../math';
+import { buttonMoments, MouseButton } from '../../constants';
+import { InputManager } from '../../input-manager';
+import { Resettable, Stoppable } from '../../../common';
 import {
   MouseAxis1dBinding,
   MouseAxis2dBinding,
   MouseTriggerBinding,
 } from '../bindings';
-import { TriggerBindableInputSource } from './trigger-bindable-input-source';
-import { Axis1dBindableInputSource } from './axis-1d-bindable-input-source';
-import { Axis2dBindableInputSource } from './axis-2d-bindable-input-source';
+import {
+  Axis1dInputSource,
+  Axis2dInputSource,
+  TriggerInputSource,
+} from '../../input-sources';
 
 export class MouseInputSource
   implements
-    TriggerBindableInputSource<MouseTriggerBinding>,
-    Axis1dBindableInputSource<MouseAxis1dBinding>,
-    Axis2dBindableInputSource<MouseAxis2dBinding>,
+    TriggerInputSource<MouseTriggerBinding>,
+    Axis1dInputSource<MouseAxis1dBinding>,
+    Axis2dInputSource<MouseAxis2dBinding>,
     Resettable,
     Stoppable
 {

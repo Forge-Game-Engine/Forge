@@ -1,5 +1,5 @@
-import { Axis1dAction } from '../actions';
-import { InputBinding } from './input-binding';
+import { Axis1dAction } from '../../actions';
+import { InputBinding } from '../../input-binding';
 
 export class MouseAxis1dBinding implements InputBinding<Axis1dAction> {
   public readonly action: Axis1dAction;

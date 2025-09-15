@@ -1,15 +1,14 @@
-import { Resettable, Stoppable } from '../../common';
-import { KeyboardTriggerBinding } from '../bindings';
+import { Resettable, Stoppable } from '../../../common';
 import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding';
-import { buttonMoments, KeyCode } from '../constants';
-import { InputManager } from '../input-manager';
-import { HoldBindableInputSource } from './hold-bindable-input-source';
-import { TriggerBindableInputSource } from './trigger-bindable-input-source';
+import { buttonMoments, KeyCode } from '../../constants';
+import { InputManager } from '../../input-manager';
+import { KeyboardTriggerBinding } from '../bindings';
+import { HoldInputSource, TriggerInputSource } from '../../input-sources';
 
 export class KeyboardInputSource
   implements
-    TriggerBindableInputSource<KeyboardTriggerBinding>,
-    HoldBindableInputSource<KeyboardHoldBinding>,
+    TriggerInputSource<KeyboardTriggerBinding>,
+    HoldInputSource<KeyboardHoldBinding>,
     Stoppable,
     Resettable
 {

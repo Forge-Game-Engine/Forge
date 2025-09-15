@@ -1,6 +1,6 @@
-import { TriggerAction } from '../actions';
-import { ButtonMoment, KeyCode } from '../constants';
-import { InputBinding } from './input-binding';
+import { TriggerAction } from '../../actions';
+import { ButtonMoment, KeyCode } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 export interface KeyboardTriggerBindingArgs {
   keyCode: KeyCode;

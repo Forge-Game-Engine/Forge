@@ -20,7 +20,7 @@ import {
   registerRendering,
   TriggerAction,
 } from '../../src';
-import { KeyboardHoldBinding } from '../../src/input/bindings/keyboard-hold-binding';
+import { KeyboardHoldBinding } from '../../src/input/keyboard/bindings/keyboard-hold-binding';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 

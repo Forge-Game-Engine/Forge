@@ -1,4 +1,4 @@
-import { InputAction } from '../actions';
+import { InputAction } from './input-action';
 
 export interface InputBinding<TAction extends InputAction> {
   action: TAction;

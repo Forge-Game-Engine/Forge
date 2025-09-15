@@ -1,4 +1,4 @@
-import { InputAction } from './input-action';
+import { InputAction } from '../input-action';
 import { ForgeEvent } from '../../events';
 
 export class HoldAction implements InputAction {

@@ -1,6 +1,6 @@
-import { HoldAction } from '../actions';
-import { ButtonMoment, KeyCode } from '../constants';
-import { InputBinding } from './input-binding';
+import { HoldAction } from '../../actions';
+import { KeyCode } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 export interface KeyboardHoldBindingArgs {
   keyCode: KeyCode;

@@ -1,6 +1,6 @@
 import { Vector2 } from '../../math';
 import { ActionResetType, actionResetTypes } from '../constants';
-import { InputAction } from './input-action';
+import { InputAction } from '../input-action';
 import { ParameterizedForgeEvent } from '../../events';
 import { Resettable } from '../../common';
 

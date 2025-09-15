@@ -5,7 +5,7 @@ import {
   HoldAction,
   TriggerAction,
 } from './actions';
-import { InputBinding } from './bindings';
+import { InputBinding } from './input-binding';
 
 /**
  * InputManager is responsible for managing input sources, groups, and actions.
