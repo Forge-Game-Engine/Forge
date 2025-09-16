@@ -8,15 +8,15 @@ export class Axis2dAction implements InputAction, Resettable {
   public readonly name: string;
   public readonly valueChangeEvent: ParameterizedForgeEvent<Vector2>;
 
-  public inputGroup: string | null;
+  public inputGroup: string;
 
   private readonly _value: Vector2 = Vector2.zero;
   private readonly _actionResetType: ActionResetType;
 
   constructor(
     name: string,
+    inputGroup: string,
     actionResetType: ActionResetType = actionResetTypes.zero,
-    inputGroup?: string,
   ) {
     this.name = name;
 
@@ -26,7 +26,7 @@ export class Axis2dAction implements InputAction, Resettable {
       'Axis2d Value Change Event',
     );
 
-    this.inputGroup = inputGroup ?? null;
+    this.inputGroup = inputGroup;
   }
 
   public reset() {

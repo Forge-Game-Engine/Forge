@@ -4,7 +4,7 @@ import { HoldAction } from '../../actions';
 import { keyCodes } from '../../constants';
 
 describe('KeyboardHoldBinding', () => {
-  const mockAction: HoldAction = new HoldAction('testHoldAction');
+  const mockAction: HoldAction = new HoldAction('testHoldAction', 'default');
 
   it('should create an instance with correct properties', () => {
     const binding = new KeyboardHoldBinding(mockAction, keyCodes.enter);

@@ -8,6 +8,7 @@ import {
   Game,
   HoldAction,
   ImageCache,
+  KeyboardHoldBinding,
   KeyboardInputSource,
   KeyboardTriggerBinding,
   keyCodes,
@@ -20,7 +21,6 @@ import {
   registerRendering,
   TriggerAction,
 } from '../../src';
-import { KeyboardHoldBinding } from '../../src/input/keyboard/bindings/keyboard-hold-binding';
 import { createBatch } from './create-batch';
 import { FireSystem } from './fire-system';
 
@@ -37,17 +37,20 @@ const defaultInputGroupName = 'default';
 
 const zoomInput = new Axis1dAction(
   'zoom',
-  actionResetTypes.zero,
   defaultInputGroupName,
+  actionResetTypes.zero,
 );
 const panInput = new Axis2dAction(
   'pan',
-  actionResetTypes.noReset,
   defaultInputGroupName,
+  actionResetTypes.noReset,
 );
 const fireAction = new TriggerAction('fire', defaultInputGroupName);
 const runAction = new HoldAction('run', defaultInputGroupName);
 
+// TODO: maybe this should be added in the source or binding or
+// even during the construction of the manager or
+// at least we should be using action type specific methods e.g. `manager.addTriggerAction(fireAction)`?
 inputsManager.addResettable(zoomInput);
 inputsManager.addResettable(panInput);
 inputsManager.addResettable(fireAction);

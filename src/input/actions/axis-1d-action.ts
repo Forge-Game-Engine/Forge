@@ -7,15 +7,15 @@ export class Axis1dAction implements InputAction, Resettable {
   public readonly name: string;
 
   public readonly valueChangeEvent: ParameterizedForgeEvent<number>;
-  public inputGroup: string | null;
+  public inputGroup: string;
 
   private _value: number = 0;
   private readonly _actionResetType: ActionResetType;
 
   constructor(
     name: string,
+    inputGroup: string,
     actionResetType: ActionResetType = 'zero',
-    inputGroup?: string,
   ) {
     this.name = name;
     this._actionResetType = actionResetType;
@@ -24,7 +24,7 @@ export class Axis1dAction implements InputAction, Resettable {
       'Axis1d Value Change Event',
     );
 
-    this.inputGroup = inputGroup ?? null;
+    this.inputGroup = inputGroup;
   }
 
   public reset() {

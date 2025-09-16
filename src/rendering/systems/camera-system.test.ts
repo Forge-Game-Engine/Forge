@@ -17,8 +17,8 @@ describe('CameraSystem', () => {
   beforeEach(() => {
     world = new World('test');
 
-    panInput = new Axis2dAction('pan');
-    zoomInput = new Axis1dAction('zoom');
+    panInput = new Axis2dAction('pan', 'default');
+    zoomInput = new Axis1dAction('zoom', 'default');
 
     cameraSystem = new CameraSystem(world.time);
 

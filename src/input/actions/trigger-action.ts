@@ -6,17 +6,17 @@ export class TriggerAction implements InputAction, Resettable {
   public readonly name: string;
   public readonly triggerEvent: ForgeEvent;
 
-  public inputGroup: string | null;
+  public inputGroup: string;
 
   private _triggered: boolean;
 
-  constructor(name: string, inputGroup?: string) {
+  constructor(name: string, inputGroup: string) {
     this.name = name;
 
     this.triggerEvent = new ForgeEvent('Trigger Event');
 
     this._triggered = false;
-    this.inputGroup = inputGroup ?? null;
+    this.inputGroup = inputGroup;
   }
 
   public trigger() {

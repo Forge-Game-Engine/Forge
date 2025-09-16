@@ -4,7 +4,7 @@ import { TriggerAction } from '../../actions';
 import { buttonMoments, keyCodes } from '../../constants';
 
 describe('KeyboardTriggerBinding', () => {
-  const mockAction = new TriggerAction('testTriggerAction');
+  const mockAction = new TriggerAction('testTriggerAction', 'default');
 
   it('should create an instance with correct properties', () => {
     const binding = new KeyboardTriggerBinding(

@@ -6,17 +6,17 @@ export class HoldAction implements InputAction {
   public readonly holdStartEvent: ForgeEvent;
   public readonly holdEndEvent: ForgeEvent;
 
-  public inputGroup: string | null;
+  public inputGroup: string;
 
   private _held: boolean = false;
 
-  constructor(name: string, inputGroup?: string) {
+  constructor(name: string, inputGroup: string) {
     this.name = name;
 
     this.holdStartEvent = new ForgeEvent('Hold Start Event');
     this.holdEndEvent = new ForgeEvent('Hold End Event');
 
-    this.inputGroup = inputGroup ?? null;
+    this.inputGroup = inputGroup;
   }
 
   public startHold() {

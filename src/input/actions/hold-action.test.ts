@@ -5,7 +5,7 @@ describe('HoldAction', () => {
   let action: HoldAction;
 
   beforeEach(() => {
-    action = new HoldAction('accelerate');
+    action = new HoldAction('accelerate', 'default');
   });
 
   it('should set the name property from constructor', () => {
@@ -14,6 +14,10 @@ describe('HoldAction', () => {
 
   it('should not be held initially', () => {
     expect(action.isHeld).toBe(false);
+  });
+
+  it('should initialize with given group', () => {
+    expect(action.inputGroup).toBe('default');
   });
 
   it('should set held to true when start hold is called', () => {

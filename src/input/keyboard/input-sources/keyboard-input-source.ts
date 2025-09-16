@@ -43,6 +43,7 @@ export class KeyboardInputSource
   }
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
+    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
     if (event.repeat) {
       return;
     }
@@ -69,6 +70,7 @@ export class KeyboardInputSource
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
+    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
     if (event.repeat) {
       return;
     }
@@ -79,12 +81,8 @@ export class KeyboardInputSource
     this._keyHolds.delete(keyCode);
 
     for (const binding of this.triggerBindings) {
-      if (
-        binding.action.inputGroup === this._inputManager.activeGroup &&
-        binding.keyCode === keyCode &&
-        binding.moment === buttonMoments.up
-      ) {
-        binding.action.trigger();
+      if (binding.keyCode === keyCode && binding.moment === buttonMoments.up) {
+        this._inputManager.dispatchTriggerAction(binding);
       }
     }
 

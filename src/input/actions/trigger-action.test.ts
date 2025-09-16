@@ -5,7 +5,7 @@ describe('InputAction', () => {
   let action: TriggerAction;
 
   beforeEach(() => {
-    action = new TriggerAction('jump');
+    action = new TriggerAction('jump', 'default');
   });
 
   it('should set the name property from constructor', () => {
@@ -14,6 +14,10 @@ describe('InputAction', () => {
 
   it('should not be triggered initially', () => {
     expect(action.isTriggered).toBe(false);
+  });
+
+  it('should initialize with given group', () => {
+    expect(action.inputGroup).toBe('default');
   });
 
   it('should set triggered to true when trigger is called', () => {

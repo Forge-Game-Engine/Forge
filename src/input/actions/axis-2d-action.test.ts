@@ -5,11 +5,15 @@ describe('InputAxis2d', () => {
   let action: Axis2dAction;
 
   beforeEach(() => {
-    action = new Axis2dAction('pan');
+    action = new Axis2dAction('pan', 'default');
   });
 
   it('should initialize with the given name', () => {
     expect(action.name).toBe('pan');
+  });
+
+  it('should initialize with given group', () => {
+    expect(action.inputGroup).toBe('default');
   });
 
   it('should initialize value to 0', () => {

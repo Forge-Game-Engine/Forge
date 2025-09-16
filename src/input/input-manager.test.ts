@@ -41,8 +41,8 @@ describe('InputManager', () => {
   it('should dispatch axis1d action only for active group', () => {
     const action = new Axis1dAction(
       'test-action',
-      actionResetTypes.zero,
       group1,
+      actionResetTypes.zero,
     );
 
     const binding = {
@@ -66,8 +66,8 @@ describe('InputManager', () => {
   it('should dispatch axis2d action only for active group', () => {
     const action = new Axis2dAction(
       'test-action',
-      actionResetTypes.zero,
       group1,
+      actionResetTypes.zero,
     );
 
     const binding = {

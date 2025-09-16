@@ -5,7 +5,7 @@ describe('InputAxis1d', () => {
   let action: Axis1dAction;
 
   beforeEach(() => {
-    action = new Axis1dAction('zoom');
+    action = new Axis1dAction('zoom', 'default');
   });
 
   it('should initialize with the given name', () => {
@@ -14,6 +14,10 @@ describe('InputAxis1d', () => {
 
   it('should initialize value to 0', () => {
     expect(action.value).toBe(0);
+  });
+
+  it('should initialize with given group', () => {
+    expect(action.inputGroup).toBe('default');
   });
 
   it('should set value correctly', () => {
