@@ -31,29 +31,26 @@ const shaderStore = createShaderStore();
 
 const world = createWorld('world', game);
 
-const { inputsManager } = registerInputs(world);
-
-const defaultInputGroupName = 'default';
+const gameInputGroup = 'game';
 
 const zoomInput = new Axis1dAction(
   'zoom',
-  defaultInputGroupName,
+  gameInputGroup,
   actionResetTypes.zero,
 );
 const panInput = new Axis2dAction(
   'pan',
-  defaultInputGroupName,
+  gameInputGroup,
   actionResetTypes.noReset,
 );
-const fireAction = new TriggerAction('fire', defaultInputGroupName);
-const runAction = new HoldAction('run', defaultInputGroupName);
+const fireAction = new TriggerAction('fire', gameInputGroup);
+const runAction = new HoldAction('run', gameInputGroup);
 
-// TODO: maybe this should be added in the source or binding or
-// even during the construction of the manager or
-// at least we should be using action type specific methods e.g. `manager.addTriggerAction(fireAction)`?
-inputsManager.addResettable(zoomInput);
-inputsManager.addResettable(panInput);
-inputsManager.addResettable(fireAction);
+const { inputsManager } = registerInputs(world, {
+  triggerActions: [fireAction],
+  axis1dActions: [zoomInput],
+  axis2dActions: [panInput],
+});
 
 const cameraEntity = registerCamera(world, {
   zoomInput,
@@ -63,7 +60,7 @@ const { renderLayers } = registerRendering(game, world);
 const keyboardInputSource = new KeyboardInputSource(inputsManager);
 const mouseInputSource = new MouseInputSource(inputsManager, game);
 
-inputsManager.setActiveGroup(defaultInputGroupName);
+inputsManager.setActiveGroup(gameInputGroup);
 
 mouseInputSource.triggerBindings.add(
   new MouseTriggerBinding(fireAction, mouseButtons.left, buttonMoments.down),
