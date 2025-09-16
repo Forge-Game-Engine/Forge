@@ -239,8 +239,9 @@ function createAdventurerControllableController() {
   run.onAnimationFrameChangeEvent.registerListener(
     ({ entity, animationFrame }) => {
       const frameIndex = animationFrame.frameIndex;
-
-      runMovement(5, (((frameIndex + 1) % 3) - 1) * -5, entity);
+      const upOrDown = frameIndex % 4 === 1 ? -5 : 5;
+      const yChange = frameIndex % 2 === 0 ? 0 : upOrDown;
+      runMovement(5, yChange, entity);
     },
   );
 
