@@ -12,7 +12,6 @@ export const registerRendering = (
   renderLayerNames: string[] = DEFAULT_LAYER_NAMES,
 ) => {
   const layerService = new LayerService(game);
-
   const renderLayers = addForgeRenderLayers(
     renderLayerNames,
     game.container,
