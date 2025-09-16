@@ -5,6 +5,7 @@ import { InputManager } from '../../input-manager';
 import { KeyboardTriggerBinding } from '../bindings';
 import { HoldInputSource, TriggerInputSource } from '../../input-sources';
 
+/** Represents a keyboard input source with associated bindings. */
 export class KeyboardInputSource
   implements
     TriggerInputSource<KeyboardTriggerBinding>,
@@ -12,7 +13,9 @@ export class KeyboardInputSource
     Stoppable,
     Resettable
 {
+  /** The set of trigger bindings associated with this input source. */
   public readonly triggerBindings = new Set<KeyboardTriggerBinding>();
+  /** The set of hold bindings associated with this input source. */
   public readonly holdBindings = new Set<KeyboardHoldBinding>();
   public readonly name = 'Keyboard';
 
@@ -22,6 +25,9 @@ export class KeyboardInputSource
   private readonly _keyPressesUps = new Set<KeyCode>();
   private readonly _keyHolds = new Set<KeyCode>();
 
+  /** Constructs a new KeyboardInputSource.
+   * @param inputManager - The input manager to associate with this input source.
+   */
   constructor(inputManager: InputManager) {
     this._inputManager = inputManager;
 

@@ -1,7 +1,9 @@
 import { Entity, System } from '../../ecs';
 import { InputsComponent } from '../components';
 
+/** A system that resets all input states at the end of each frame. */
 export class ResetInputSystem extends System {
+  /** Constructs a new ResetInputSystem. */
   constructor() {
     super('input', [InputsComponent.symbol]);
   }

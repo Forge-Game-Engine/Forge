@@ -3,19 +3,32 @@ import { InputAction } from '../input-action';
 import { ParameterizedForgeEvent } from '../../events';
 import { Resettable } from '../../common';
 
+/**
+ * An action that represents a 1-dimensional axis input, such as a gamepad trigger or mouse scroll.
+ */
 export class Axis1dAction implements InputAction, Resettable {
   public readonly name: string;
 
+  /**
+   * Event that is raised whenever the axis value changes.
+   * The new value is passed as a parameter to the event listeners.
+   */
   public readonly valueChangeEvent: ParameterizedForgeEvent<number>;
   public inputGroup: string;
 
   private _value: number = 0;
   private readonly _actionResetType: ActionResetType;
 
+  /**
+   * Creates a new Axis1dAction.
+   * @param name - The name of the action.
+   * @param inputGroup - The input group this action belongs to.
+   * @param actionResetType - The type of reset behavior for this action. Defaults to `actionResetTypes.zero`.
+   */
   constructor(
     name: string,
     inputGroup: string,
-    actionResetType: ActionResetType = 'zero',
+    actionResetType: ActionResetType = actionResetTypes.zero,
   ) {
     this.name = name;
     this._actionResetType = actionResetType;
@@ -33,10 +46,12 @@ export class Axis1dAction implements InputAction, Resettable {
     }
   }
 
+  /** Gets the current value of the axis, ranging from -1 to 1. */
   get value(): number {
     return this._value;
   }
 
+  /** Sets the current value of the axis, ranging from -1 to 1. */
   public set(value: number) {
     if (this._value === value) {
       return;

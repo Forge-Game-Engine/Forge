@@ -14,6 +14,7 @@ import {
   TriggerInputSource,
 } from '../../input-sources';
 
+/** Represents a mouse input source with associated bindings. */
 export class MouseInputSource
   implements
     TriggerInputSource<MouseTriggerBinding>,
@@ -22,8 +23,13 @@ export class MouseInputSource
     Resettable,
     Stoppable
 {
+  /** The name of this input source. */
+  public readonly name = 'mouse';
+  /** The set of trigger bindings associated with this input source. */
   public readonly triggerBindings = new Set<MouseTriggerBinding>();
+  /** The set of 1D axis bindings associated with this input source. */
   public readonly axis1dBindings = new Set<MouseAxis1dBinding>();
+  /** The set of 2D axis bindings associated with this input source. */
   public readonly axis2dBindings = new Set<MouseAxis2dBinding>();
 
   private readonly _inputManager: InputManager;
@@ -36,6 +42,10 @@ export class MouseInputSource
 
   private readonly _lastMousePosition = Vector2.zero;
 
+  /** Constructs a new MouseInputSource.
+   * @param inputManager - The input manager to register with.
+   * @param game - The game instance.
+   */
   constructor(inputManager: InputManager, game: Game) {
     this._inputManager = inputManager;
     this._game = game;
@@ -51,10 +61,6 @@ export class MouseInputSource
     this.triggerBindings = new Set();
     this.axis1dBindings = new Set();
     this.axis2dBindings = new Set();
-  }
-
-  get name() {
-    return 'mouse';
   }
 
   public reset(): void {
