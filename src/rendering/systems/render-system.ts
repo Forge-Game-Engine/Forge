@@ -1,4 +1,7 @@
-import { AnimationFrame, SpriteAnimationComponent } from '../../animations';
+import {
+  type AnimationFrame,
+  SpriteAnimationComponent,
+} from '../../animations';
 import {
   FlipComponent,
   PositionComponent,
@@ -133,10 +136,14 @@ export class RenderSystem extends System {
           SpriteAnimationComponent.symbol,
         );
 
-      const animationFrame =
-        spriteAnimationComponent?.animation?.frames[
-          spriteAnimationComponent?.animationIndex
-        ];
+      let animationFrame: AnimationFrame | null = null;
+
+      if (spriteAnimationComponent) {
+        const { currentAnimation, animationFrameIndex } =
+          spriteAnimationComponent;
+
+        animationFrame = currentAnimation.getFrame(animationFrameIndex);
+      }
 
       this._populateInstanceData(batch.instanceData, instanceDataOffset, {
         position,
