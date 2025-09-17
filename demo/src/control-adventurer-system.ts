@@ -3,7 +3,6 @@ import {
   Entity,
   FlipComponent,
   immediatelySetCurrentAnimation,
-  InputManager,
   PositionComponent,
   SpriteAnimationComponent,
   System,
@@ -13,10 +12,17 @@ import { ADVENTURER_ANIMATIONS } from './animationEnums';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
-  private readonly _inputsManager: InputManager;
   private readonly _animationSetManager: AnimationSetManager;
+  private readonly _attackTriggerInput: TriggerAction;
+  private readonly _runRTriggerInput: TriggerAction;
+  private readonly _runLTriggerInput: TriggerAction;
+  private readonly _jumpTriggerInput: TriggerAction;
+
   constructor(
-    inputsManager: InputManager,
+    attackTriggerInput: TriggerAction,
+    runRTriggerInput: TriggerAction,
+    runLTriggerInput: TriggerAction,
+    jumpTriggerInput: TriggerAction,
     animationSetManager: AnimationSetManager,
   ) {
     super('control adventurer', [
@@ -25,7 +31,11 @@ export class ControlAdventurerSystem extends System {
       FlipComponent.symbol,
       PositionComponent.symbol,
     ]);
-    this._inputsManager = inputsManager;
+
+    this._attackTriggerInput = attackTriggerInput;
+    this._runRTriggerInput = runRTriggerInput;
+    this._runLTriggerInput = runLTriggerInput;
+    this._jumpTriggerInput = jumpTriggerInput;
     this._animationSetManager = animationSetManager;
   }
 
@@ -39,13 +49,8 @@ export class ControlAdventurerSystem extends System {
       FlipComponent.symbol,
     );
 
-    const attackAction = this._inputsManager.getAction<TriggerAction>('attack');
-    const runRAction = this._inputsManager.getAction<TriggerAction>('runR');
-    const runLAction = this._inputsManager.getAction<TriggerAction>('runL');
-    const jumpAction = this._inputsManager.getAction<TriggerAction>('jump');
-
     if (
-      jumpAction?.isTriggered &&
+      this._jumpTriggerInput.isTriggered &&
       spriteAnimationComponent.animation.name !== ADVENTURER_ANIMATIONS.jump
     ) {
       const jumpAnimation = this._animationSetManager.getAnimation(
@@ -54,7 +59,11 @@ export class ControlAdventurerSystem extends System {
       );
       // jump always happens immediately
       immediatelySetCurrentAnimation(spriteAnimationComponent, jumpAnimation);
-    } else if (runLAction?.isTriggered) {
+
+      return;
+    }
+
+    if (this._runLTriggerInput.isTriggered) {
       const runAnimation = this._animationSetManager.getAnimation(
         spriteAnimationComponent.animation.animationSetName,
         ADVENTURER_ANIMATIONS.run,
@@ -62,14 +71,20 @@ export class ControlAdventurerSystem extends System {
       // run and attack happen at the end of the current animation
       spriteAnimationComponent.nextAnimation = runAnimation;
       flipComponent.flipX = true;
-    } else if (runRAction?.isTriggered) {
+
+      return;
+    }
+
+    if (this._runRTriggerInput.isTriggered) {
       const runAnimation = this._animationSetManager.getAnimation(
         spriteAnimationComponent.animation.animationSetName,
         ADVENTURER_ANIMATIONS.run,
       );
       spriteAnimationComponent.nextAnimation = runAnimation;
       flipComponent.flipX = false;
-    } else if (attackAction?.isTriggered) {
+    }
+
+    if (this._attackTriggerInput.isTriggered) {
       const attackAnimation = this._animationSetManager.getAnimation(
         spriteAnimationComponent.animation.animationSetName,
         ADVENTURER_ANIMATIONS.attack1,

@@ -1,38 +1,22 @@
 import {
-  actionResetTypes,
   AgeScaleSystem,
   AgeSystem,
-  Axis1dAction,
-  Axis2dAction,
-  buttonMoments,
   createImageNameSprite,
   createShaderStore,
   createWorld,
   Game,
-  HoldAction,
   ImageCache,
-  KeyboardHoldBinding,
-  KeyboardInputSource,
-  KeyboardTriggerBinding,
-  keyCodes,
-  MouseAxis1dBinding,
-  mouseButtons,
-  MouseInputSource,
-  MouseTriggerBinding,
   ParticleEmitter,
   ParticleEmitterComponent,
   ParticleEmitterSystem,
   ParticlePositionSystem,
   registerAnimationSetManager,
   registerCamera,
-  registerInputs,
   registerRendering,
   SpriteAnimationSystem,
-  TriggerAction,
 } from '../../src';
 import * as animationDemo from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
-import { FireSystem } from './fire-system';
 
 export const game = new Game();
 
@@ -40,50 +24,6 @@ const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
 
 const world = createWorld('world', game);
-
-const gameInputGroup = 'game';
-
-const zoomInput = new Axis1dAction(
-  'zoom',
-  gameInputGroup,
-  actionResetTypes.zero,
-);
-const panInput = new Axis2dAction(
-  'pan',
-  gameInputGroup,
-  actionResetTypes.noReset,
-);
-const fireAction = new TriggerAction('fire', gameInputGroup);
-const runAction = new HoldAction('run', gameInputGroup);
-
-const { inputsManager } = registerInputs(world, {
-  triggerActions: [fireAction],
-  axis1dActions: [zoomInput],
-  axis2dActions: [panInput],
-});
-
-const keyboardInputSource = new KeyboardInputSource(inputsManager);
-const mouseInputSource = new MouseInputSource(inputsManager, game);
-
-inputsManager.setActiveGroup(gameInputGroup);
-
-mouseInputSource.triggerBindings.add(
-  new MouseTriggerBinding(fireAction, mouseButtons.left, buttonMoments.down),
-);
-
-keyboardInputSource.triggerBindings.add(
-  new KeyboardTriggerBinding(fireAction, keyCodes.space, buttonMoments.down),
-);
-
-mouseInputSource.axis1dBindings.add(new MouseAxis1dBinding(zoomInput));
-
-mouseInputSource.triggerBindings.add(
-  new MouseTriggerBinding(fireAction, mouseButtons.left, buttonMoments.down),
-);
-
-keyboardInputSource.holdBindings.add(
-  new KeyboardHoldBinding(runAction, keyCodes.shiftLeft),
-);
 
 const cameraEntity = registerCamera(world, {});
 const animationSetManager = registerAnimationSetManager();
@@ -141,20 +81,6 @@ const attackParticleEmitter = new ParticleEmitter(starSprite, renderLayers[0], {
   },
   emitDurationSeconds: 0.3,
   lifetimeScaleReduction: 0,
-});
-
-world.addSystems(new FireSystem(fireAction, runAction));
-
-zoomInput.valueChangeEvent.registerListener((value) => {
-  console.log(value);
-});
-
-runAction.holdStartEvent.registerListener(() => {
-  console.log('Starting run');
-});
-
-runAction.holdEndEvent.registerListener(() => {
-  console.log('Ending run');
 });
 
 const jumpParticleEmitter = new ParticleEmitter(
@@ -222,19 +148,25 @@ setTimeout(() => {
 }, 1000);
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
-animationDemo.setupAnimationsDemo(
-  animationSetManager,
-  world,
-  shipSprite,
-  adventureSprite,
-  inputsManager,
-  attackParticleEmitter,
-  jumpParticleEmitter,
-);
+const { attackInput, jumpInput, runLInput, runRInput } =
+  animationDemo.setupAnimationsDemo(
+    animationSetManager,
+    world,
+    shipSprite,
+    adventureSprite,
+    attackParticleEmitter,
+    jumpParticleEmitter,
+  );
 
 world.addSystems(
   new SpriteAnimationSystem(world.time, animationSetManager),
-  new ControlAdventurerSystem(inputsManager, animationSetManager),
+  new ControlAdventurerSystem(
+    attackInput,
+    runRInput,
+    runLInput,
+    jumpInput,
+    animationSetManager,
+  ),
   new ParticleEmitterSystem(world),
   new ParticlePositionSystem(world.time),
   new AgeSystem(world),

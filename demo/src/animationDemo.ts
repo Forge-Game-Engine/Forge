@@ -1,17 +1,20 @@
 import {
   AnimationEventData,
+  AnimationSetManager,
   buttonMoments,
   Entity,
   FlipComponent,
-  InputGroup,
-  InputManager,
   KeyboardInputSource,
-  KeyboardTriggerInteraction,
+  KeyboardTriggerBinding,
   keyCodes,
   ParameterizedForgeEvent,
+  ParticleEmitter,
+  ParticleEmitterComponent,
   PositionComponent,
+  registerInputs,
   ScaleComponent,
   Sprite,
+  SpriteAnimationComponent,
   SpriteComponent,
   TriggerAction,
   Vector2,
@@ -22,12 +25,6 @@ import {
   ENTITY_TYPES,
   SHIP_ANIMATIONS,
 } from './animationEnums';
-import {
-  AnimationSetManager,
-  ParticleEmitter,
-  ParticleEmitterComponent,
-  SpriteAnimationComponent,
-} from '../../src';
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
@@ -35,11 +32,10 @@ export function setupAnimationsDemo(
   world: World,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
-  inputsManager: InputManager,
   attackParticleEmitter: ParticleEmitter,
   jumpParticleEmitter: ParticleEmitter,
 ) {
-  setupInputs(inputsManager);
+  const inputs = setupInputs(world);
   //left column
   createShipAnimations(animationSetManager);
   buildShipEntities(world, shipSprite, animationSetManager);
@@ -57,6 +53,8 @@ export function setupAnimationsDemo(
     jumpParticleEmitter,
     animationSetManager,
   );
+
+  return inputs;
 }
 
 export function setupAnimationsStressTest(
@@ -70,51 +68,45 @@ export function setupAnimationsStressTest(
   buildShipEntitiesMultiple(world, shipSprite, repeats, animationSetManager);
 }
 
-function setupInputs(inputsManager: InputManager) {
-  const defaultInputGroup = new InputGroup('default');
+function setupInputs(world: World) {
+  const gameInputGroup = 'game';
+
+  const attackInput = new TriggerAction('attack', gameInputGroup);
+  const runRInput = new TriggerAction('runR', gameInputGroup);
+  const runLInput = new TriggerAction('runL', gameInputGroup);
+  const jumpInput = new TriggerAction('jump', gameInputGroup);
+
+  const { inputsManager } = registerInputs(world, {
+    triggerActions: [attackInput, runRInput, runLInput, jumpInput],
+  });
+
+  inputsManager.setActiveGroup(gameInputGroup);
 
   const keyboardInputSource = new KeyboardInputSource(inputsManager);
 
-  const attackInput = new TriggerAction('attack');
-  const runRInput = new TriggerAction('runR');
-  const runLInput = new TriggerAction('runL');
-  const jumpInput = new TriggerAction('jump');
-
-  inputsManager.addSources(keyboardInputSource);
-  inputsManager.addActions(attackInput, runRInput, runLInput, jumpInput);
-  inputsManager.setActiveGroup(defaultInputGroup);
-
-  attackInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.space, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(attackInput, keyCodes.space, buttonMoments.down),
   );
 
-  runRInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.d, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(runRInput, keyCodes.d, buttonMoments.down),
   );
 
-  runLInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.a, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(runLInput, keyCodes.a, buttonMoments.down),
   );
 
-  jumpInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.w, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(jumpInput, keyCodes.w, buttonMoments.down),
   );
+
+  return {
+    inputsManager,
+    attackInput,
+    runRInput,
+    runLInput,
+    jumpInput,
+  };
 }
 
 function createShipAnimations(animationSetManager: AnimationSetManager) {
