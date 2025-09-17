@@ -16,6 +16,10 @@ export class InputManager implements Updatable {
 
   private readonly _updatables: Set<Updatable>;
   private readonly _resettables: Set<Resettable>;
+  private readonly _triggerActions: Set<TriggerAction>;
+  private readonly _axis1dActions: Set<Axis1dAction>;
+  private readonly _axis2dActions: Set<Axis2dAction>;
+  private readonly _holdActions: Set<HoldAction>;
 
   /** Constructs a new InputManager. */
   constructor() {
@@ -23,6 +27,143 @@ export class InputManager implements Updatable {
 
     this._updatables = new Set();
     this._resettables = new Set();
+    this._triggerActions = new Set();
+    this._axis1dActions = new Set();
+    this._axis2dActions = new Set();
+    this._holdActions = new Set();
+  }
+
+  /** Adds new actions to the manager.
+   * @param action - The action(s) to add.
+   */
+  public addTriggerActions(...actions: TriggerAction[]) {
+    for (const action of actions) {
+      this._triggerActions.add(action);
+      this.addResettable(action);
+    }
+  }
+
+  /**
+   * Adds a new 1D axis action to the manager and marks it as resettable.
+   * @param action - The action to add.
+   */
+  public addAxis1dActions(...actions: Axis1dAction[]) {
+    for (const action of actions) {
+      this._axis1dActions.add(action);
+      this.addResettable(action);
+    }
+  }
+
+  /**
+   * Adds a new 2D axis action to the manager and marks it as resettable.
+   * @param action - The action to add.
+   */
+  public addAxis2dActions(...actions: Axis2dAction[]) {
+    for (const action of actions) {
+      this._axis2dActions.add(action);
+      this.addResettable(action);
+    }
+  }
+
+  /**
+   * Adds a new hold action to the manager.
+   * @param action - The action to add.
+   */
+  public addHoldActions(...actions: HoldAction[]) {
+    for (const action of actions) {
+      this._holdActions.add(action);
+    }
+  }
+
+  /** Removes a trigger action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeTriggerAction(action: TriggerAction) {
+    this._triggerActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a 1D axis action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeAxis1dAction(action: Axis1dAction) {
+    this._axis1dActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a 2D axis action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeAxis2dAction(action: Axis2dAction) {
+    this._axis2dActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a hold action from the manager.
+   * @param action - The action to remove.
+   */
+  public removeHoldAction(action: HoldAction) {
+    this._holdActions.delete(action);
+  }
+
+  /** Gets a trigger action by name.
+   * @param name - The name of the action to get.
+   * @returns The TriggerAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getTriggerAction(name: string) {
+    for (const action of this._triggerActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No TriggerAction found with name: ${name}`);
+  }
+
+  /** Gets a 1D axis action by name.
+   * @param name - The name of the action to get.
+   * @returns The Axis1dAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getAxis1dAction(name: string) {
+    for (const action of this._axis1dActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No Axis1dAction found with name: ${name}`);
+  }
+
+  /** Gets a 2D axis action by name.
+   * @param name - The name of the action to get.
+   * @returns The Axis2dAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getAxis2dAction(name: string) {
+    for (const action of this._axis2dActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No Axis2dAction found with name: ${name}`);
+  }
+
+  /** Gets a hold action by name.
+   * @param name - The name of the action to get.
+   * @returns The HoldAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getHoldAction(name: string) {
+    for (const action of this._holdActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No HoldAction found with name: ${name}`);
   }
 
   /** Sets the active input group.

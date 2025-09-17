@@ -36,9 +36,10 @@ smoothstep
 sonarjs
 sonarlint
 sonarsource
+spritesheet
 stoppables
+unmarks
 updatables
 WASD
 webgl
 yoavbls
-spritesheet
