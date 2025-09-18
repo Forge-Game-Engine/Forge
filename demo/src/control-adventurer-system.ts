@@ -1,6 +1,5 @@
 import {
   Axis1dAction,
-  Axis2dAction,
   Entity,
   FlipComponent,
   PositionComponent,
