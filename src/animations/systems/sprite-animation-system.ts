@@ -2,32 +2,25 @@ import { Entity, System } from '../../ecs';
 import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { SpriteComponent } from '../../rendering';
-import {
-  Animation,
-  AnimationSetManager,
-  finishAnimation,
-  immediatelySetCurrentAnimation,
-} from '../utilities';
+import { Animation } from '../types';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.
  */
 export class SpriteAnimationSystem extends System {
   private readonly _time: Time;
-  private readonly _animationSetManager: AnimationSetManager;
 
   /**
    * Creates an instance of SpriteAnimationSystem.
    * @param time - The Time instance.
-   * @param animationSetManager - The AnimationSetManager instance.
    */
-  constructor(time: Time, animationSetManager: AnimationSetManager) {
+  constructor(time: Time) {
     super('spriteAnimation', [
       SpriteAnimationComponent.symbol,
       SpriteComponent.symbol,
     ]);
+
     this._time = time;
-    this._animationSetManager = animationSetManager;
   }
 
   /**
@@ -39,65 +32,116 @@ export class SpriteAnimationSystem extends System {
       entity.getComponentRequired<SpriteAnimationComponent>(
         SpriteAnimationComponent.symbol,
       );
-    const { animation, animationSpeedFactor, nextAnimation } =
-      spriteAnimationComponent;
 
-    // allows animations to be triggered on the first frame of an animation
-    if (spriteAnimationComponent.isChangingAnimation) {
-      spriteAnimationComponent.isChangingAnimation = false;
-      this._raiseAnimationEvent(animation, spriteAnimationComponent, entity);
+    const {
+      currentAnimation,
+      playbackSpeed,
+      lastFrameChangeTimeInSeconds,
+      animationController,
+      animationInputs,
+    } = spriteAnimationComponent;
+
+    const currentAnimationFrame = currentAnimation.getFrame(
+      spriteAnimationComponent.animationFrameIndex,
+    );
+
+    const secondsElapsedSinceLastFrameChange =
+      this._time.timeInSeconds - lastFrameChangeTimeInSeconds;
+
+    const scaledFrameDuration =
+      currentAnimationFrame.durationSeconds / playbackSpeed;
+
+    const changeFrame =
+      secondsElapsedSinceLastFrameChange >= scaledFrameDuration;
+
+    const endOfAnimation =
+      changeFrame &&
+      spriteAnimationComponent.animationFrameIndex >=
+        currentAnimation.frames.length - 1;
+
+    const nextAnimation = animationController.findNextAnimation(
+      entity,
+      currentAnimation,
+      animationInputs,
+      endOfAnimation,
+    );
+
+    if (nextAnimation) {
+      this._processAnimationChange(
+        endOfAnimation,
+        entity,
+        spriteAnimationComponent,
+        nextAnimation,
+      );
+
+      return;
     }
 
-    const currentFrameDurationSeconds =
-      animation.frames[spriteAnimationComponent.animationIndex].durationSeconds;
-
-    const currentFrameTimeSeconds =
-      this._time.timeInSeconds - spriteAnimationComponent.frameTimeSeconds;
-
-    const adjustedFrameDuration =
-      currentFrameDurationSeconds / animationSpeedFactor;
-
-    if (currentFrameTimeSeconds >= adjustedFrameDuration) {
-      spriteAnimationComponent.frameTimeSeconds = this._time.timeInSeconds;
-
-      if (
-        spriteAnimationComponent.animationIndex <
-        animation.frames.length - 1
-      ) {
-        spriteAnimationComponent.animationIndex++;
-        this._raiseAnimationEvent(animation, spriteAnimationComponent, entity);
-
-        return;
-      }
-
-      finishAnimation(spriteAnimationComponent);
-
-      if (nextAnimation) {
-        immediatelySetCurrentAnimation(spriteAnimationComponent, nextAnimation);
-      } else if (animation.defaultNextAnimationName) {
-        const defaultNextAnimation =
-          this._animationSetManager.getDefaultNextAnimation(animation);
-        immediatelySetCurrentAnimation(
-          spriteAnimationComponent,
-          defaultNextAnimation,
-        );
-      }
+    if (!changeFrame) {
+      return;
     }
+
+    spriteAnimationComponent.animationFrameIndex++;
+
+    this._onChangeAnimationFrame(
+      currentAnimation,
+      entity,
+      spriteAnimationComponent,
+    );
   }
 
   /**
-   * Raises an animation event for the specified entity on the current frame
-   * @param animation - The animation to raise the event for
-   * @param spriteAnimationComponent - The sprite animation component
-   * @param entity - The entity the animation belongs to
+   * Processes the change of animations, including raising events and resetting the frame index.
+   * @param endOfAnimation - Whether the current animation has reached its end.
+   * @param entity - The entity whose animation is changing.
+   * @param spriteAnimationComponent - The SpriteAnimationComponent of the entity.
+   * @param nextAnimation - The next animation to switch to.
    */
-  private _raiseAnimationEvent(
-    animation: Animation,
-    spriteAnimationComponent: SpriteAnimationComponent,
+  private _processAnimationChange(
+    endOfAnimation: boolean,
     entity: Entity,
+    spriteAnimationComponent: SpriteAnimationComponent,
+    nextAnimation: Animation,
   ) {
-    animation.animationEvents
-      .get(spriteAnimationComponent.animationIndex)
-      ?.raise(entity);
+    if (endOfAnimation) {
+      spriteAnimationComponent.currentAnimation.onAnimationEndEvent.raise(
+        entity,
+      );
+    }
+
+    spriteAnimationComponent.animationFrameIndex = 0;
+    spriteAnimationComponent.currentAnimation = nextAnimation;
+    nextAnimation.onAnimationStartEvent.raise(entity);
+
+    this._onChangeAnimationFrame(
+      nextAnimation,
+      entity,
+      spriteAnimationComponent,
+    );
+  }
+
+  /**
+   * Handles the logic when an animation frame changes, including raising events for the new frame,
+   * and updating the last frame change time.
+   * @param animation - The current animation.
+   * @param entity - The entity whose animation frame has changed.
+   * @param spriteAnimationComponent - The SpriteAnimationComponent of the entity.
+   */
+  private _onChangeAnimationFrame(
+    animation: Animation,
+    entity: Entity,
+    spriteAnimationComponent: SpriteAnimationComponent,
+  ) {
+    const animationFrame = animation.getFrame(
+      spriteAnimationComponent.animationFrameIndex,
+    );
+
+    animation.onAnimationFrameChangeEvent.raise({
+      entity,
+      animationFrame,
+    });
+
+    spriteAnimationComponent.lastFrameChangeTimeInSeconds =
+      this._time.timeInSeconds;
   }
 }

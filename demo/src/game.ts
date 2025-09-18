@@ -10,7 +10,6 @@ import {
   ParticleEmitterComponent,
   ParticleEmitterSystem,
   ParticlePositionSystem,
-  registerAnimationSetManager,
   registerCamera,
   registerRendering,
   SpriteAnimationSystem,
@@ -26,7 +25,6 @@ const shaderStore = createShaderStore();
 const world = createWorld('world', game);
 
 const cameraEntity = registerCamera(world, {});
-const animationSetManager = registerAnimationSetManager();
 const { renderLayers } = registerRendering(game, world);
 
 const shipSprite = await createImageNameSprite(
@@ -150,7 +148,6 @@ setTimeout(() => {
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
 const { attackInput, jumpInput, runLInput, runRInput } =
   animationDemo.setupAnimationsDemo(
-    animationSetManager,
     world,
     shipSprite,
     adventureSprite,

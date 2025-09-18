@@ -1,58 +1,61 @@
 import type { Component } from '../../ecs';
-import { Animation } from '../utilities';
-/**
- * Options for configuring the sprite animation component.
- */
-export interface SpriteAnimationOptions {
-  /**
-   * The index of the current animation frame.
-   * @default 0
-   */
-  startingAnimationIndex: number;
-  /**
-   * The speed factor for the animation.
-   * @default 1.0
-   */
-  animationSpeedFactor: number;
-}
-
-const defaultOptions: SpriteAnimationOptions = {
-  startingAnimationIndex: 0,
-  animationSpeedFactor: 1.0,
-};
+import { Animation } from '../types';
+import { AnimationController } from '../types/AnimationController';
+import { AnimationInputs } from '../types/AnimationInputs';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.
  */
 export class SpriteAnimationComponent implements Component {
   public name: symbol;
-  public animationIndex: number;
-  public frameTimeSeconds: number;
-  public nextAnimation: Animation | null;
-  public animationSpeedFactor: number;
-  public animation: Animation;
-  public isChangingAnimation: boolean = false;
+
+  /**
+   * The current frame index of the animation being played.
+   */
+  public animationFrameIndex: number;
+  /**
+   * The current animation being played.
+   */
+  public currentAnimation: Animation;
+  /**
+   * The speed multiplier for the animation playback. Larger values result in faster playback.
+   * @default 1
+   */
+  public playbackSpeed: number;
+  /**
+   * The last time (in seconds) the animation frame was changed.
+   */
+  public lastFrameChangeTimeInSeconds: number;
+  /**
+   * The inputs used to determine the current animation from animation transitions.
+   */
+  public animationInputs: AnimationInputs;
+  /**
+   * The animation controller responsible for managing the animations.
+   */
+  public animationController: AnimationController;
 
   public static readonly symbol = Symbol('SpriteAnimation');
 
   /**
    * Creates an instance of SpriteAnimationComponent.
-   * @param currentAnimation - The current animation the sprite should have.
-   * @param options - Optional parameters to configure the animation component.
+   * @param animationController - The AnimationController managing the animations.
+   * @param animationInputs - The inputs used to determine the current animation.
+   * @param playbackSpeed - The speed multiplier for the animation playback.
    */
   constructor(
-    currentAnimation: Animation,
-    options: Partial<SpriteAnimationOptions> = {},
+    animationController: AnimationController,
+    animationInputs: AnimationInputs,
+    playbackSpeed: number = 1,
   ) {
-    const { startingAnimationIndex, animationSpeedFactor } = {
-      ...defaultOptions,
-      ...options,
-    };
     this.name = SpriteAnimationComponent.symbol;
-    this.animation = currentAnimation;
-    this.animationIndex = startingAnimationIndex;
-    this.animationSpeedFactor = animationSpeedFactor;
-    this.frameTimeSeconds = 0;
-    this.nextAnimation = null;
+
+    this.playbackSpeed = playbackSpeed;
+    this.animationFrameIndex = 0;
+    this.lastFrameChangeTimeInSeconds = 0;
+    this.animationInputs = animationInputs;
+    this.animationController = animationController;
+    this.currentAnimation =
+      animationController.getEntryAnimation(animationInputs);
   }
 }
