@@ -13,12 +13,14 @@ export class ControlAdventurerSystem extends System {
   private readonly _runRTriggerInput: TriggerAction;
   private readonly _runLTriggerInput: TriggerAction;
   private readonly _jumpTriggerInput: TriggerAction;
+  private readonly _takeDamageTriggerInput: TriggerAction;
 
   constructor(
     attackTriggerInput: TriggerAction,
     runRTriggerInput: TriggerAction,
     runLTriggerInput: TriggerAction,
     jumpTriggerInput: TriggerAction,
+    takeDamageTriggerInput: TriggerAction,
   ) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
@@ -31,6 +33,7 @@ export class ControlAdventurerSystem extends System {
     this._runRTriggerInput = runRTriggerInput;
     this._runLTriggerInput = runLTriggerInput;
     this._jumpTriggerInput = jumpTriggerInput;
+    this._takeDamageTriggerInput = takeDamageTriggerInput;
   }
 
   public run(entity: Entity): void {
@@ -46,6 +49,7 @@ export class ControlAdventurerSystem extends System {
     const animationInputs = spriteAnimationComponent.animationInputs;
 
     if (this._jumpTriggerInput.isTriggered) {
+      console.log('JUMPPED!');
       animationInputs.setToggle('jump', true);
 
       return;
@@ -73,9 +77,10 @@ export class ControlAdventurerSystem extends System {
       return;
     }
 
-    if (this._attackTriggerInput.isTriggered) {
+    if (this._takeDamageTriggerInput.isTriggered) {
       const health = animationInputs.getNumber('health');
-      health.value = Math.max(0, health.value - 50);
+      health.value = Math.min(0, health.value - 50);
+      console.log(`Health is now ${health.value}`);
     }
   }
 }

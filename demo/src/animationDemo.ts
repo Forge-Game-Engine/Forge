@@ -64,7 +64,13 @@ function setupInputs(world: World) {
   const takeDamageInput = new TriggerAction('takeDamage', gameInputGroup);
 
   const { inputsManager } = registerInputs(world, {
-    triggerActions: [attackInput, runRInput, runLInput, jumpInput],
+    triggerActions: [
+      attackInput,
+      runRInput,
+      runLInput,
+      jumpInput,
+      takeDamageInput,
+    ],
   });
 
   inputsManager.setActiveGroup(gameInputGroup);

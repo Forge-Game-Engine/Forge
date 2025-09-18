@@ -146,7 +146,7 @@ setTimeout(() => {
 }, 1000);
 
 // The controllable character on the right runs with 'a' or 'd', jumps with 'w', and attacks with 'space'.
-const { attackInput, jumpInput, runLInput, runRInput } =
+const { attackInput, jumpInput, runLInput, runRInput, takeDamageInput } =
   animationDemo.setupAnimationsDemo(
     world,
     shipSprite,
@@ -156,13 +156,13 @@ const { attackInput, jumpInput, runLInput, runRInput } =
   );
 
 world.addSystems(
-  new SpriteAnimationSystem(world.time, animationSetManager),
+  new SpriteAnimationSystem(world.time),
   new ControlAdventurerSystem(
     attackInput,
     runRInput,
     runLInput,
     jumpInput,
-    animationSetManager,
+    takeDamageInput,
   ),
   new ParticleEmitterSystem(world),
   new ParticlePositionSystem(world.time),

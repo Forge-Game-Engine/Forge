@@ -28,7 +28,11 @@
         "explorer.confirmPasteNative": false,     
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.fontFamily": "JetBrains Mono, Fira Code, Menlo, Monaco, 'Courier New', monospace",
-        "editor.fontLigatures": true
+        "editor.fontLigatures": true,
+        "typescript.inlayHints.parameterNames.enabled": "all",
+        "typescript.inlayHints.parameterTypes.enabled": true,
+        "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+        "typescript.inlayHints.functionLikeReturnTypes.enabled": true
       },
       "extensions": [
         "rnaumovs.color-highlight",
