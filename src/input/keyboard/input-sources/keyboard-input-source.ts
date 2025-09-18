@@ -2,14 +2,25 @@ import { Resettable, Stoppable } from '../../../common';
 import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding';
 import { buttonMoments, KeyCode } from '../../constants';
 import { InputManager } from '../../input-manager';
-import { KeyboardTriggerBinding } from '../bindings';
-import { HoldInputSource, TriggerInputSource } from '../../input-sources';
+import {
+  KeyboardAxis1dBinding,
+  KeyboardAxis2dBinding,
+  KeyboardTriggerBinding,
+} from '../bindings';
+import {
+  Axis1dInputSource,
+  Axis2dInputSource,
+  HoldInputSource,
+  TriggerInputSource,
+} from '../../input-sources';
 
 /** Represents a keyboard input source with associated bindings. */
 export class KeyboardInputSource
   implements
     TriggerInputSource<KeyboardTriggerBinding>,
     HoldInputSource<KeyboardHoldBinding>,
+    Axis2dInputSource<KeyboardAxis2dBinding>,
+    Axis1dInputSource<KeyboardAxis1dBinding>,
     Stoppable,
     Resettable
 {
@@ -17,6 +28,10 @@ export class KeyboardInputSource
   public readonly triggerBindings = new Set<KeyboardTriggerBinding>();
   /** The set of hold bindings associated with this input source. */
   public readonly holdBindings = new Set<KeyboardHoldBinding>();
+  /** The set of axis-2d bindings associated with this input source. */
+  public readonly axis2dBindings = new Set<KeyboardAxis2dBinding>();
+  /** The set of axis-1d bindings associated with this input source. */
+  public readonly axis1dBindings = new Set<KeyboardAxis1dBinding>();
   public readonly name = 'Keyboard';
 
   private readonly _inputManager: InputManager;
@@ -73,6 +88,37 @@ export class KeyboardInputSource
         this._inputManager.dispatchHoldStartAction(binding);
       }
     }
+
+    for (const binding of this.axis1dBindings) {
+      let value = binding.action.value;
+
+      if (binding.positiveKeyCode === keyCode) {
+        value += 1;
+      } else if (binding.negativeKeyCode === keyCode) {
+        value -= 1;
+      }
+
+      this._inputManager.dispatchAxis1dAction(binding, value);
+    }
+
+    for (const binding of this.axis2dBindings) {
+      let x = binding.action.value.x;
+      let y = binding.action.value.y;
+
+      if (binding.northKeyCode === keyCode) {
+        y += 1;
+      } else if (binding.southKeyCode === keyCode) {
+        y -= 1;
+      }
+
+      if (binding.eastKeyCode === keyCode) {
+        x += 1;
+      } else if (binding.westKeyCode === keyCode) {
+        x -= 1;
+      }
+
+      this._inputManager.dispatchAxis2dAction(binding, x, y);
+    }
   };
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
@@ -96,6 +142,37 @@ export class KeyboardInputSource
       if (binding.keyCode === keyCode) {
         this._inputManager.dispatchHoldEndAction(binding);
       }
+    }
+
+    for (const binding of this.axis1dBindings) {
+      let value = binding.action.value;
+
+      if (binding.positiveKeyCode === keyCode) {
+        value -= 1;
+      } else if (binding.negativeKeyCode === keyCode) {
+        value += 1;
+      }
+
+      this._inputManager.dispatchAxis1dAction(binding, value);
+    }
+
+    for (const binding of this.axis2dBindings) {
+      let x = binding.action.value.x;
+      let y = binding.action.value.y;
+
+      if (binding.northKeyCode === keyCode) {
+        y -= 1;
+      } else if (binding.southKeyCode === keyCode) {
+        y += 1;
+      }
+
+      if (binding.eastKeyCode === keyCode) {
+        x -= 1;
+      } else if (binding.westKeyCode === keyCode) {
+        x += 1;
+      }
+
+      this._inputManager.dispatchAxis2dAction(binding, x, y);
     }
   };
 }
