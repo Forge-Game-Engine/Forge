@@ -10,14 +10,13 @@ import {
   DEFAULT_ANIMATION_STATES,
   Entity,
   FlipComponent,
-  InputGroup,
-  InputManager,
   KeyboardInputSource,
-  KeyboardTriggerInteraction,
+  KeyboardTriggerBinding,
   keyCodes,
   ParticleEmitter,
   ParticleEmitterComponent,
   PositionComponent,
+  registerInputs,
   ScaleComponent,
   Sprite,
   SpriteAnimationComponent,
@@ -33,87 +32,79 @@ export function setupAnimationsDemo(
   world: World,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
-  inputsManager: InputManager,
   attackParticleEmitter: ParticleEmitter,
   jumpParticleEmitter: ParticleEmitter,
 ) {
-  setupInputs(inputsManager);
+  const inputs = setupInputs(world);
 
   const ShipController = createShipAnimationController();
   buildShipEntities(world, shipSprite, ShipController);
 
   const controller = createAdventurerControllableController();
-  const inputs = createAdventurerControllableInputs();
+  const animationInputs = createAdventurerControllableInputs();
   buildAdventurerControllableEntities(
     world,
     adventurerSprite,
     attackParticleEmitter,
     jumpParticleEmitter,
     controller,
-    inputs,
+    animationInputs,
   );
+
+  return inputs;
 }
 
-function setupInputs(inputsManager: InputManager) {
-  const defaultInputGroup = new InputGroup('default');
+function setupInputs(world: World) {
+  const gameInputGroup = 'game';
+
+  const attackInput = new TriggerAction('attack', gameInputGroup);
+  const runRInput = new TriggerAction('runR', gameInputGroup);
+  const runLInput = new TriggerAction('runL', gameInputGroup);
+  const jumpInput = new TriggerAction('jump', gameInputGroup);
+  const takeDamageInput = new TriggerAction('takeDamage', gameInputGroup);
+
+  const { inputsManager } = registerInputs(world, {
+    triggerActions: [
+      attackInput,
+      runRInput,
+      runLInput,
+      jumpInput,
+      takeDamageInput,
+    ],
+  });
+
+  inputsManager.setActiveGroup(gameInputGroup);
 
   const keyboardInputSource = new KeyboardInputSource(inputsManager);
 
-  const attackInput = new TriggerAction('attack');
-  const runRInput = new TriggerAction('runR');
-  const runLInput = new TriggerAction('runL');
-  const jumpInput = new TriggerAction('jump');
-  const takeDamageInput = new TriggerAction('takeDamage');
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(attackInput, keyCodes.space, buttonMoments.down),
+  );
 
-  inputsManager.addSources(keyboardInputSource);
-  inputsManager.addActions(
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(runRInput, keyCodes.d, buttonMoments.down),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(runLInput, keyCodes.a, buttonMoments.down),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(jumpInput, keyCodes.w, buttonMoments.down),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(takeDamageInput, keyCodes.p, buttonMoments.down),
+  );
+
+  return {
+    inputsManager,
     attackInput,
     runRInput,
     runLInput,
     jumpInput,
     takeDamageInput,
-  );
-  inputsManager.setActiveGroup(defaultInputGroup);
-
-  attackInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.space, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
-  );
-
-  runRInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.d, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
-  );
-
-  runLInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.a, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
-  );
-
-  jumpInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.w, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
-  );
-
-  takeDamageInput.bind(
-    new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.p, moment: buttonMoments.down },
-      keyboardInputSource,
-    ),
-    defaultInputGroup,
-  );
+  };
 }
 
 function createShipAnimationController() {

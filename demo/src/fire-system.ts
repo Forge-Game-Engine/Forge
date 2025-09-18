@@ -1,30 +1,23 @@
-import {
-  Axis1dAction,
-  Entity,
-  InputsComponent,
-  System,
-  TriggerAction,
-} from '../../src';
+import { HoldAction, InputsComponent, System, TriggerAction } from '../../src';
 
 export class FireSystem extends System {
-  constructor() {
+  private readonly _fireAction: TriggerAction;
+  private readonly _runAction: HoldAction;
+
+  constructor(fireAction: TriggerAction, runAction: HoldAction) {
     super('FireSystem', [InputsComponent.symbol]);
+
+    this._fireAction = fireAction;
+    this._runAction = runAction;
   }
 
-  public run(entity: Entity) {
-    const inputs = entity.getComponentRequired<InputsComponent>(
-      InputsComponent.symbol,
-    );
-
-    const fireAction = inputs.inputManager.getAction<TriggerAction>('fire');
-    const zoomAction = inputs.inputManager.getAction<Axis1dAction>('zoom');
-    const panAction = inputs.inputManager.getAction<Axis1dAction>('pan');
-
-    if (fireAction?.isTriggered) {
+  public run() {
+    if (this._fireAction.isTriggered) {
       console.log(`Fire action triggered`);
     }
 
-    console.log(`Zoom action value: ${zoomAction?.value}`);
-    console.log(`Pan action value: ${panAction?.value}`);
+    if (this._runAction.isHeld) {
+      console.log(`Run action is being held`);
+    }
   }
 }

@@ -4,3 +4,4 @@ export * from './is-number';
 export * from './is-one-of';
 export * from './enforce-array';
 export * from './chain';
+export * from './at-least-one';

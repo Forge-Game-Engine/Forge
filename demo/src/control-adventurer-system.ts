@@ -1,7 +1,6 @@
 import {
   Entity,
   FlipComponent,
-  InputManager,
   PositionComponent,
   SpriteAnimationComponent,
   System,
@@ -10,15 +9,31 @@ import {
 import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export class ControlAdventurerSystem extends System {
-  private readonly _inputsManager: InputManager;
-  constructor(inputsManager: InputManager) {
+  private readonly _attackTriggerInput: TriggerAction;
+  private readonly _runRTriggerInput: TriggerAction;
+  private readonly _runLTriggerInput: TriggerAction;
+  private readonly _jumpTriggerInput: TriggerAction;
+  private readonly _takeDamageTriggerInput: TriggerAction;
+
+  constructor(
+    attackTriggerInput: TriggerAction,
+    runRTriggerInput: TriggerAction,
+    runLTriggerInput: TriggerAction,
+    jumpTriggerInput: TriggerAction,
+    takeDamageTriggerInput: TriggerAction,
+  ) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
       SpriteAnimationComponent.symbol,
       FlipComponent.symbol,
       PositionComponent.symbol,
     ]);
-    this._inputsManager = inputsManager;
+
+    this._attackTriggerInput = attackTriggerInput;
+    this._runRTriggerInput = runRTriggerInput;
+    this._runLTriggerInput = runLTriggerInput;
+    this._jumpTriggerInput = jumpTriggerInput;
+    this._takeDamageTriggerInput = takeDamageTriggerInput;
   }
 
   public run(entity: Entity): void {
@@ -33,27 +48,20 @@ export class ControlAdventurerSystem extends System {
 
     const animationInputs = spriteAnimationComponent.animationInputs;
 
-    const attackAction = this._inputsManager.getAction<TriggerAction>('attack');
-    const runRAction = this._inputsManager.getAction<TriggerAction>('runR');
-    const runLAction = this._inputsManager.getAction<TriggerAction>('runL');
-    const jumpAction = this._inputsManager.getAction<TriggerAction>('jump');
-    const takeDamage =
-      this._inputsManager.getAction<TriggerAction>('takeDamage');
-
-    if (jumpAction?.isTriggered) {
+    if (this._jumpTriggerInput.isTriggered) {
       animationInputs.setToggle('jump', true);
 
       return;
     }
 
-    if (runLAction?.isTriggered) {
+    if (this._runLTriggerInput.isTriggered) {
       animationInputs.setToggle('run', true);
       flipComponent.flipX = true;
 
       return;
     }
 
-    if (runRAction?.isTriggered) {
+    if (this._runRTriggerInput.isTriggered) {
       animationInputs.setToggle('run', true);
       flipComponent.flipX = false;
 
@@ -62,13 +70,13 @@ export class ControlAdventurerSystem extends System {
 
     animationInputs.setToggle('run', false);
 
-    if (attackAction?.isTriggered) {
+    if (this._attackTriggerInput.isTriggered) {
       animationInputs.setText('attack', 'attack is being set');
 
       return;
     }
 
-    if (takeDamage?.isTriggered) {
+    if (this._takeDamageTriggerInput.isTriggered) {
       const health = animationInputs.getNumber('health');
       health.value = Math.max(0, health.value - 50);
     }

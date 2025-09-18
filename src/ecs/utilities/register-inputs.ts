@@ -1,15 +1,51 @@
-import { InputsComponent, InputSystem } from '../../input';
+import {
+  Axis1dAction,
+  Axis2dAction,
+  HoldAction,
+  InputsComponent,
+  ResetInputSystem,
+  TriggerAction,
+  UpdateInputSystem,
+} from '../../input';
 import { InputManager } from '../../input/input-manager';
 import { systemRegistrationPositions } from '../constants';
 import { World } from '../world';
 
-export const registerInputs = (world: World, entityName: string = 'inputs') => {
+export const registerInputs = (
+  world: World,
+  options: {
+    entityName?: string;
+    triggerActions?: TriggerAction[];
+    axis1dActions?: Axis1dAction[];
+    axis2dActions?: Axis2dAction[];
+    holdActions?: HoldAction[];
+  } = {},
+) => {
   const inputsManager = new InputManager();
   const inputsComponent = new InputsComponent(inputsManager);
 
-  const inputsEntity = world.buildAndAddEntity(entityName, [inputsComponent]);
+  const {
+    entityName,
+    triggerActions = [],
+    axis1dActions = [],
+    axis2dActions = [],
+    holdActions = [],
+  } = options;
 
-  world.addSystem(new InputSystem(), systemRegistrationPositions.late);
+  const inputsEntity = world.buildAndAddEntity(entityName ?? 'inputs', [
+    inputsComponent,
+  ]);
+
+  inputsManager.addTriggerActions(...triggerActions);
+  inputsManager.addAxis1dActions(...axis1dActions);
+  inputsManager.addAxis2dActions(...axis2dActions);
+  inputsManager.addHoldActions(...holdActions);
+
+  world.addSystem(
+    new UpdateInputSystem(world),
+    systemRegistrationPositions.early,
+  );
+  world.addSystem(new ResetInputSystem(), systemRegistrationPositions.late);
 
   return {
     inputsEntity,

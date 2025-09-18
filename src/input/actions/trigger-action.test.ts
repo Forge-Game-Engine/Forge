@@ -1,22 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TriggerAction } from './trigger-action';
-import { InputGroup } from '../input-group';
-import { ActionableInputSource, KeyboardInputSource } from '../input-sources';
-import { InputManager } from '../input-manager';
-import { buttonMoments, keyCodes } from '../constants';
-import { KeyboardTriggerInteraction } from '../interactions';
 
 describe('InputAction', () => {
   let action: TriggerAction;
-  let group: InputGroup;
-  let inputSource: ActionableInputSource;
-  let manager: InputManager;
 
   beforeEach(() => {
-    action = new TriggerAction('jump');
-    group = new InputGroup('test');
-    manager = new InputManager();
-    inputSource = new KeyboardInputSource(manager);
+    action = new TriggerAction('jump', 'default');
   });
 
   it('should set the name property from constructor', () => {
@@ -25,6 +14,10 @@ describe('InputAction', () => {
 
   it('should not be triggered initially', () => {
     expect(action.isTriggered).toBe(false);
+  });
+
+  it('should initialize with given group', () => {
+    expect(action.inputGroup).toBe('default');
   });
 
   it('should set triggered to true when trigger is called', () => {
@@ -50,19 +43,5 @@ describe('InputAction', () => {
     expect(action.isTriggered).toBe(false);
     action.trigger();
     expect(action.isTriggered).toBe(true);
-  });
-
-  it('should bind sources correctly', () => {
-    const interaction = new KeyboardTriggerInteraction(
-      { keyCode: keyCodes.space, moment: buttonMoments.down },
-      inputSource,
-    );
-
-    action.bind(interaction, group);
-
-    const interactions = action.interactions.get(group)?.values().toArray();
-
-    expect(interactions?.length).toBe(1);
-    expect(interactions?.[0]?.id).toBe(interaction.id);
   });
 });

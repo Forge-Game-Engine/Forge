@@ -1,71 +1,64 @@
-import { InputInteraction } from '../interactions';
 import { ActionResetType, actionResetTypes } from '../constants';
-import { InputGroup } from '../input-group';
-import { InputAction } from './input-action';
+import { InputAction } from '../input-action';
+import { ParameterizedForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
-export class Axis1dAction implements InputAction {
+/**
+ * An action that represents a 1-dimensional axis input, such as a gamepad trigger or mouse scroll.
+ */
+export class Axis1dAction implements InputAction, Resettable {
   public readonly name: string;
 
-  public interactions: Map<InputGroup, Set<InputInteraction>>;
+  /**
+   * Event that is raised whenever the axis value changes.
+   * The new value is passed as a parameter to the event listeners.
+   */
+  public readonly valueChangeEvent: ParameterizedForgeEvent<number>;
+  public inputGroup: string;
 
   private _value: number = 0;
   private readonly _actionResetType: ActionResetType;
 
-  constructor(name: string, actionResetType: ActionResetType = 'zero') {
+  /**
+   * Creates a new Axis1dAction.
+   * @param name - The name of the action.
+   * @param inputGroup - The input group this action belongs to.
+   * @param actionResetType - The type of reset behavior for this action. Defaults to `actionResetTypes.zero`.
+   */
+  constructor(
+    name: string,
+    inputGroup: string,
+    actionResetType: ActionResetType = actionResetTypes.zero,
+  ) {
     this.name = name;
-    this.interactions = new Map<InputGroup, Set<InputInteraction>>();
     this._actionResetType = actionResetType;
+
+    this.valueChangeEvent = new ParameterizedForgeEvent(
+      'Axis1d Value Change Event',
+    );
+
+    this.inputGroup = inputGroup;
   }
 
   public reset() {
-    this._value =
-      this._actionResetType === actionResetTypes.zero ? 0 : this._value;
+    if (this._actionResetType === actionResetTypes.zero) {
+      this.set(0);
+    }
   }
 
+  /** Gets the current value of the axis, ranging from -1 to 1. */
   get value(): number {
     return this._value;
   }
 
+  /** Sets the current value of the axis, ranging from -1 to 1. */
   public set(value: number) {
-    this._value = value;
-  }
-
-  public bind<TArgs>(
-    interaction: InputInteraction<TArgs>,
-    group: InputGroup,
-  ): void {
-    const existingInteraction = this._findInteractionById(
-      interaction.id,
-      group,
-    );
-
-    if (existingInteraction) {
-      console.warn(
-        `Binding with interaction "${interaction.id}" already exists in group "${group.name}". Not adding again.`,
-      );
-
+    if (this._value === value) {
       return;
     }
 
-    const groupInteractions =
-      this.interactions.get(group) ?? new Set<InputInteraction>();
+    this._value = value;
 
-    groupInteractions.add(interaction);
-    this.interactions.set(group, groupInteractions);
-    group.axis1dActions.add(this);
-  }
-
-  private _findInteractionById(id: string, group: InputGroup) {
-    const groupInteractions = this.interactions.get(group);
-
-    if (!groupInteractions) {
-      return null;
-    }
-
-    for (const interaction of groupInteractions) {
-      if (interaction.id === id) {
-        return interaction;
-      }
-    }
+    this.valueChangeEvent.raise(this._value);
   }
 }

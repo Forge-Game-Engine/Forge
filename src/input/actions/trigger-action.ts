@@ -1,67 +1,46 @@
-import { InputInteraction } from '../interactions/input-interaction';
-import { InputGroup } from '../input-group';
-import { InputAction } from './input-action';
+import { InputAction } from '../input-action';
+import { ForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
-export class TriggerAction implements InputAction {
+/**
+ * An action that represents a trigger input, such as pressing a button or key.
+ */
+export class TriggerAction implements InputAction, Resettable {
   public readonly name: string;
 
-  public interactions: Map<InputGroup, Set<InputInteraction>>;
+  /** Event that is raised when the action is triggered. */
+  public readonly triggerEvent: ForgeEvent;
 
-  private _triggered: boolean = false;
+  public inputGroup: string;
 
-  constructor(name: string) {
+  private _triggered: boolean;
+
+  /** Creates a new TriggerAction.
+   * @param name - The name of the action.
+   * @param inputGroup - The input group this action belongs to.
+   */
+  constructor(name: string, inputGroup: string) {
     this.name = name;
-    this.interactions = new Map();
+
+    this.triggerEvent = new ForgeEvent('Trigger Event');
+
+    this._triggered = false;
+    this.inputGroup = inputGroup;
   }
 
+  /** Marks the action as triggered and raises the trigger event. */
   public trigger() {
     this._triggered = true;
+    this.triggerEvent.raise();
   }
 
+  /** Resets the action to not triggered. */
   public reset() {
     this._triggered = false;
   }
 
+  /** Gets whether the action is currently triggered. */
   get isTriggered(): boolean {
     return this._triggered;
-  }
-
-  public bind<TArgs>(
-    interaction: InputInteraction<TArgs>,
-    group: InputGroup,
-  ): void {
-    const existingInteraction = this._findInteractionById(
-      interaction.id,
-      group,
-    );
-
-    if (existingInteraction) {
-      console.warn(
-        `Binding with interaction "${interaction.id}" already exists in group "${group.name}". Not adding again.`,
-      );
-
-      return;
-    }
-
-    const groupInteractions =
-      this.interactions.get(group) ?? new Set<InputInteraction>();
-
-    groupInteractions.add(interaction);
-    this.interactions.set(group, groupInteractions);
-    group.triggerActions.add(this);
-  }
-
-  private _findInteractionById(id: string, group: InputGroup) {
-    const groupInteractions = this.interactions.get(group);
-
-    if (!groupInteractions) {
-      return null;
-    }
-
-    for (const interaction of groupInteractions) {
-      if (interaction.id === id) {
-        return interaction;
-      }
-    }
   }
 }

@@ -1,3 +1,6 @@
+/**
+ * A mapping of human-readable key names to their corresponding KeyboardEvent.code values.
+ */
 export const keyCodes = {
   // Alphanumeric keys
   a: 'KeyA',
@@ -99,4 +102,5 @@ export const keyCodes = {
   f12: 'F12',
 } as const;
 
+/** The type of key code. */
 export type KeyCode = (typeof keyCodes)[keyof typeof keyCodes];

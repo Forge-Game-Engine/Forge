@@ -1,178 +1,286 @@
-import { Resettable } from '../common';
-import { Vector2 } from '../math';
+import { Resettable, Updatable } from '../common';
 import {
   Axis1dAction,
   Axis2dAction,
-  InputAction,
+  HoldAction,
   TriggerAction,
 } from './actions';
-import { InputInteraction } from './interactions/input-interaction';
-import { InputGroup } from './input-group';
-import { InputSource } from './input-sources';
+import { InputBinding } from './input-binding';
 
 /**
  * InputManager is responsible for managing input sources, groups, and actions.
  * It is the top-level class that coordinates input handling.
  */
-export class InputManager implements Resettable {
-  private readonly _sources: Set<InputSource>;
-  private readonly _actions: Set<InputAction>;
+export class InputManager implements Updatable {
+  private _activeGroup: string | null;
 
-  private _activeGroup: InputGroup | null;
-  private _triggerActionPendingBind: TriggerAction | null = null;
-  private _axis1dActionPendingBind: Axis1dAction | null = null;
-  private _axis2dActionPendingBind: Axis2dAction | null = null;
+  private readonly _updatables: Set<Updatable>;
+  private readonly _resettables: Set<Resettable>;
+  private readonly _triggerActions: Set<TriggerAction>;
+  private readonly _axis1dActions: Set<Axis1dAction>;
+  private readonly _axis2dActions: Set<Axis2dAction>;
+  private readonly _holdActions: Set<HoldAction>;
 
+  /** Constructs a new InputManager. */
   constructor() {
-    this._sources = new Set<InputSource>();
-    this._actions = new Set<InputAction>();
     this._activeGroup = null;
+
+    this._updatables = new Set();
+    this._resettables = new Set();
+    this._triggerActions = new Set();
+    this._axis1dActions = new Set();
+    this._axis2dActions = new Set();
+    this._holdActions = new Set();
   }
 
-  public addSources(...sources: InputSource[]): void {
-    for (const source of sources) {
-      this._sources.add(source);
-    }
-  }
-
-  public removeSource(source: InputSource): boolean {
-    return this._sources.delete(source);
-  }
-
-  public addActions(...actions: InputAction[]): void {
+  /** Adds new actions to the manager.
+   * @param action - The action(s) to add.
+   */
+  public addTriggerActions(...actions: TriggerAction[]) {
     for (const action of actions) {
-      this._actions.add(action);
+      this._triggerActions.add(action);
+      this.addResettable(action);
     }
   }
 
-  public removeAction(action: InputAction): boolean {
-    return this._actions.delete(action);
+  /**
+   * Adds a new 1D axis action to the manager and marks it as resettable.
+   * @param action - The action to add.
+   */
+  public addAxis1dActions(...actions: Axis1dAction[]) {
+    for (const action of actions) {
+      this._axis1dActions.add(action);
+      this.addResettable(action);
+    }
   }
 
-  public setActiveGroup(group: InputGroup | null): void {
+  /**
+   * Adds a new 2D axis action to the manager and marks it as resettable.
+   * @param action - The action to add.
+   */
+  public addAxis2dActions(...actions: Axis2dAction[]) {
+    for (const action of actions) {
+      this._axis2dActions.add(action);
+      this.addResettable(action);
+    }
+  }
+
+  /**
+   * Adds a new hold action to the manager.
+   * @param action - The action to add.
+   */
+  public addHoldActions(...actions: HoldAction[]) {
+    for (const action of actions) {
+      this._holdActions.add(action);
+    }
+  }
+
+  /** Removes a trigger action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeTriggerAction(action: TriggerAction) {
+    this._triggerActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a 1D axis action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeAxis1dAction(action: Axis1dAction) {
+    this._axis1dActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a 2D axis action from the manager and unmarks it as resettable.
+   * @param action - The action to remove.
+   */
+  public removeAxis2dAction(action: Axis2dAction) {
+    this._axis2dActions.delete(action);
+    this.removeResettable(action);
+  }
+
+  /** Removes a hold action from the manager.
+   * @param action - The action to remove.
+   */
+  public removeHoldAction(action: HoldAction) {
+    this._holdActions.delete(action);
+  }
+
+  /** Gets a trigger action by name.
+   * @param name - The name of the action to get.
+   * @returns The TriggerAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getTriggerAction(name: string) {
+    for (const action of this._triggerActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No TriggerAction found with name: ${name}`);
+  }
+
+  /** Gets a 1D axis action by name.
+   * @param name - The name of the action to get.
+   * @returns The Axis1dAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getAxis1dAction(name: string) {
+    for (const action of this._axis1dActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No Axis1dAction found with name: ${name}`);
+  }
+
+  /** Gets a 2D axis action by name.
+   * @param name - The name of the action to get.
+   * @returns The Axis2dAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getAxis2dAction(name: string) {
+    for (const action of this._axis2dActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No Axis2dAction found with name: ${name}`);
+  }
+
+  /** Gets a hold action by name.
+   * @param name - The name of the action to get.
+   * @returns The HoldAction with the specified name.
+   * @throws Error if no action with the specified name is found.
+   */
+  public getHoldAction(name: string) {
+    for (const action of this._holdActions) {
+      if (action.name === name) {
+        return action;
+      }
+    }
+
+    throw new Error(`No HoldAction found with name: ${name}`);
+  }
+
+  /** Sets the active input group.
+   * @param group - The name of the group to set as active, or null to clear.
+   */
+  public setActiveGroup(group: string | null): void {
     this._activeGroup = group;
   }
 
-  get activeGroup(): InputGroup | null {
+  /** Gets the currently active input group, or null if none is active. */
+  get activeGroup(): string | null {
     return this._activeGroup;
   }
 
-  public dispatchTriggerAction(interaction: InputInteraction): void {
-    if (!this._activeGroup) {
-      return;
+  /**
+   * Dispatches a trigger action if its input group is active.
+   * @param binding - The input binding containing the action to trigger.
+   */
+  public dispatchTriggerAction(binding: InputBinding<TriggerAction>) {
+    if (binding.action.inputGroup === this._activeGroup) {
+      binding.action.trigger();
     }
-
-    if (this._triggerActionPendingBind) {
-      this._triggerActionPendingBind.bind(interaction, this._activeGroup);
-      this.stopPendingTriggerActionBinding();
-
-      return;
-    }
-
-    this._activeGroup.dispatchTriggerAction(interaction);
   }
 
-  public bindOnNextTriggerAction(action: TriggerAction) {
-    if (!this._activeGroup) {
-      throw new Error('No active input group set.');
-    }
-
-    this._triggerActionPendingBind = action;
-  }
-
-  public stopPendingTriggerActionBinding() {
-    this._triggerActionPendingBind = null;
-  }
-
+  /**
+   * Dispatches a 1D axis action if its input group is active.
+   * @param binding - The input binding containing the action to set.
+   * @param value - The value to set for the axis action.
+   */
   public dispatchAxis1dAction(
-    interaction: InputInteraction,
+    binding: InputBinding<Axis1dAction>,
     value: number,
-  ): void {
-    if (!this._activeGroup) {
-      return;
+  ) {
+    if (binding.action.inputGroup === this._activeGroup) {
+      binding.action.set(value);
     }
-
-    if (this._axis1dActionPendingBind) {
-      this._axis1dActionPendingBind.bind(interaction, this._activeGroup);
-      this.stopPendingAxis1dActionBinding();
-
-      return;
-    }
-
-    this._activeGroup.dispatchAxis1dAction(interaction, value);
   }
 
-  public bindOnNextAxis1dAction(action: Axis1dAction) {
-    if (!this._activeGroup) {
-      throw new Error('No active input group set.');
-    }
-
-    this._axis1dActionPendingBind = action;
-  }
-
-  public stopPendingAxis1dActionBinding() {
-    this._axis1dActionPendingBind = null;
-  }
-
+  /**
+   * Dispatches a 2D axis action if its input group is active.
+   * @param binding - The input binding containing the action to set.
+   * @param x - The x value to set for the axis action.
+   * @param y - The y value to set for the axis action.
+   */
   public dispatchAxis2dAction(
-    interaction: InputInteraction,
-    value: Vector2,
-  ): void {
-    if (!this._activeGroup) {
-      return;
+    binding: InputBinding<Axis2dAction>,
+    x: number,
+    y: number,
+  ) {
+    if (binding.action.inputGroup === this._activeGroup) {
+      binding.action.set(x, y);
     }
-
-    if (this._axis2dActionPendingBind) {
-      this._axis2dActionPendingBind.bind(interaction, this._activeGroup);
-      this.stopPendingAxis2dActionBinding();
-
-      return;
-    }
-
-    this._activeGroup.dispatchAxis2dAction(interaction, value);
   }
 
-  public bindOnNextAxis2dAction(action: Axis2dAction) {
-    if (!this._activeGroup) {
-      throw new Error('No active input group set.');
+  /**
+   * Dispatches the start of a hold action if its input group is active.
+   * @param binding - The input binding containing the action to start.
+   */
+  public dispatchHoldStartAction(binding: InputBinding<HoldAction>) {
+    if (binding.action.inputGroup === this._activeGroup) {
+      binding.action.startHold();
     }
-
-    this._axis2dActionPendingBind = action;
   }
 
-  public stopPendingAxis2dActionBinding() {
-    this._axis2dActionPendingBind = null;
+  /**
+   * Dispatches the end of a hold action.
+   * @param binding - The input binding containing the action to end.
+   */
+  public dispatchHoldEndAction(binding: InputBinding<HoldAction>) {
+    // We end the hold regardless of the active group, as the hold may have started
+    binding.action.endHold();
   }
 
-  public getAction<TAction extends InputAction>(name: string) {
-    for (const action of this._actions) {
-      if (action.name === name) {
-        return action as TAction;
-      }
+  /** Adds one or more updatable sources to the manager.
+   * @param updatables - The updatable sources to add.
+   */
+  public addUpdatable(...updatables: Updatable[]): void {
+    for (const updatable of updatables) {
+      this._updatables.add(updatable);
     }
-
-    return null;
   }
 
-  public reset(): void {
-    this._resetAll(this._actions);
-    this._resetAll(this._sources);
+  /** Removes an updatable source from the manager.
+   * @param source - The updatable source to remove.
+   */
+  public removeUpdatable(source: Updatable): void {
+    this._updatables.delete(source);
   }
 
-  private _resetAll(resettables: Map<string, Resettable>): void;
-  private _resetAll(resettables: Iterable<Resettable>): void;
-  private _resetAll(
-    resettables: Map<string, Resettable> | Iterable<Resettable>,
-  ): void {
-    if (resettables instanceof Map) {
-      for (const resettable of resettables.values()) {
-        resettable.reset();
-      }
-
-      return;
-    }
-
+  /** Adds one or more resettable sources to the manager.
+   * @param resettables - The resettable sources to add.
+   */
+  public addResettable(...resettables: Resettable[]): void {
     for (const resettable of resettables) {
+      this._resettables.add(resettable);
+    }
+  }
+
+  /** Removes a resettable source from the manager.
+   * @param resettable - The resettable source to remove.
+   */
+  public removeResettable(resettable: Resettable): void {
+    this._resettables.delete(resettable);
+  }
+
+  /** Updates all updatable sources.
+   * @param deltaTime - The time elapsed since the last update, in milliseconds.
+   */
+  public update(deltaTime: number): void {
+    for (const updatable of this._updatables) {
+      updatable.update(deltaTime);
+    }
+  }
+
+  /** Resets all resettable sources. */
+  public reset(): void {
+    for (const resettable of this._resettables) {
       resettable.reset();
     }
   }
