@@ -1,15 +1,20 @@
 import {
+  actionResetTypes,
   AnimationController,
   AnimationInputs,
   AnimationNumberCondition,
   AnimationTextCondition,
   AnimationToggleCondition,
   AnimationTransition,
+  Axis1dAction,
+  Axis2dAction,
   buttonMoments,
   createAnimation,
   DEFAULT_ANIMATION_STATES,
   Entity,
   FlipComponent,
+  KeyboardAxis1dBinding,
+  KeyboardAxis2dBinding,
   KeyboardInputSource,
   KeyboardTriggerBinding,
   keyCodes,
@@ -62,6 +67,17 @@ function setupInputs(world: World) {
   const runLInput = new TriggerAction('runL', gameInputGroup);
   const jumpInput = new TriggerAction('jump', gameInputGroup);
   const takeDamageInput = new TriggerAction('takeDamage', gameInputGroup);
+  const axis2dInput = new Axis2dAction(
+    'move',
+    gameInputGroup,
+    actionResetTypes.noReset,
+  );
+
+  const axis1dInput = new Axis1dAction(
+    'move1',
+    gameInputGroup,
+    actionResetTypes.noReset,
+  );
 
   const { inputsManager } = registerInputs(world, {
     triggerActions: [
@@ -71,11 +87,31 @@ function setupInputs(world: World) {
       jumpInput,
       takeDamageInput,
     ],
+    axis2dActions: [axis2dInput],
+    axis1dActions: [axis1dInput],
   });
 
   inputsManager.setActiveGroup(gameInputGroup);
 
   const keyboardInputSource = new KeyboardInputSource(inputsManager);
+
+  keyboardInputSource.axis2dBindings.add(
+    new KeyboardAxis2dBinding(
+      axis2dInput,
+      keyCodes.w,
+      keyCodes.s,
+      keyCodes.d,
+      keyCodes.a,
+    ),
+  );
+
+  keyboardInputSource.axis1dBindings.add(
+    new KeyboardAxis1dBinding(axis1dInput, keyCodes.k, keyCodes.l),
+  );
+
+  axis2dInput.valueChangeEvent.registerListener((value) => {
+    console.log(`Axis2d value: x=${value.x}, y=${value.y}`);
+  });
 
   keyboardInputSource.triggerBindings.add(
     new KeyboardTriggerBinding(attackInput, keyCodes.space, buttonMoments.down),
@@ -104,6 +140,8 @@ function setupInputs(world: World) {
     runLInput,
     jumpInput,
     takeDamageInput,
+    axis2dInput,
+    axis1dInput,
   };
 }
 
