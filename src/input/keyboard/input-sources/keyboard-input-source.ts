@@ -74,6 +74,13 @@ export class KeyboardInputSource
     this._keyPressesDown.add(keyCode);
     this._keyHolds.add(keyCode);
 
+    this._handleTriggerBindingsOnKeyDown(keyCode);
+    this._handleHoldBindingsOnKeyDown(keyCode);
+    this._handleAxis1dBindingsOnKeyDown(keyCode);
+    this._handleAxis2dBindingsOnKeyDown(keyCode);
+  };
+
+  private _handleTriggerBindingsOnKeyDown(keyCode: KeyCode): void {
     for (const binding of this.triggerBindings) {
       if (
         binding.keyCode === keyCode &&
@@ -82,13 +89,17 @@ export class KeyboardInputSource
         this._inputManager.dispatchTriggerAction(binding);
       }
     }
+  }
 
+  private _handleHoldBindingsOnKeyDown(keyCode: KeyCode): void {
     for (const binding of this.holdBindings) {
       if (binding.keyCode === keyCode) {
         this._inputManager.dispatchHoldStartAction(binding);
       }
     }
+  }
 
+  private _handleAxis1dBindingsOnKeyDown(keyCode: KeyCode): void {
     for (const binding of this.axis1dBindings) {
       let value = binding.action.value;
 
@@ -100,7 +111,9 @@ export class KeyboardInputSource
 
       this._inputManager.dispatchAxis1dAction(binding, value);
     }
+  }
 
+  private _handleAxis2dBindingsOnKeyDown(keyCode: KeyCode): void {
     for (const binding of this.axis2dBindings) {
       let x = binding.action.value.x;
       let y = binding.action.value.y;
@@ -119,7 +132,7 @@ export class KeyboardInputSource
 
       this._inputManager.dispatchAxis2dAction(binding, x, y);
     }
-  };
+  }
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
@@ -132,18 +145,29 @@ export class KeyboardInputSource
     this._keyPressesUps.add(keyCode);
     this._keyHolds.delete(keyCode);
 
+    this._handleTriggerBindingsOnKeyUp(keyCode);
+    this._handleHoldBindingsOnKeyUp(keyCode);
+    this._handleAxis1dBindingsOnKeyUp(keyCode);
+    this._handleAxis2dBindingsOnKeyUp(keyCode);
+  };
+
+  private _handleTriggerBindingsOnKeyUp(keyCode: KeyCode): void {
     for (const binding of this.triggerBindings) {
       if (binding.keyCode === keyCode && binding.moment === buttonMoments.up) {
         this._inputManager.dispatchTriggerAction(binding);
       }
     }
+  }
 
+  private _handleHoldBindingsOnKeyUp(keyCode: KeyCode): void {
     for (const binding of this.holdBindings) {
       if (binding.keyCode === keyCode) {
         this._inputManager.dispatchHoldEndAction(binding);
       }
     }
+  }
 
+  private _handleAxis1dBindingsOnKeyUp(keyCode: KeyCode): void {
     for (const binding of this.axis1dBindings) {
       let value = binding.action.value;
 
@@ -155,7 +179,9 @@ export class KeyboardInputSource
 
       this._inputManager.dispatchAxis1dAction(binding, value);
     }
+  }
 
+  private _handleAxis2dBindingsOnKeyUp(keyCode: KeyCode): void {
     for (const binding of this.axis2dBindings) {
       let x = binding.action.value.x;
       let y = binding.action.value.y;
@@ -174,5 +200,5 @@ export class KeyboardInputSource
 
       this._inputManager.dispatchAxis2dAction(binding, x, y);
     }
-  };
+  }
 }
