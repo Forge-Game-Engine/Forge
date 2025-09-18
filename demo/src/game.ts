@@ -152,7 +152,6 @@ const {
   runLInput,
   runRInput,
   takeDamageInput,
-  axis2dInput,
   axis1dInput,
 } = animationDemo.setupAnimationsDemo(
   world,
@@ -170,7 +169,6 @@ world.addSystems(
     runLInput,
     jumpInput,
     takeDamageInput,
-    axis2dInput,
     axis1dInput,
   ),
   new ParticleEmitterSystem(world),
