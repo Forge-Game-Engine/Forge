@@ -16,8 +16,8 @@ const defaultMouseAxis2dBindingOptions = {
   cursorOrigin: new Vector2(0.5, 0.5),
 };
 
-export /** Mouse axis 2D input binding. */
-class MouseAxis2dBinding implements InputBinding<Axis2dAction> {
+/** Mouse axis 2D input binding. */
+export class MouseAxis2dBinding implements InputBinding<Axis2dAction> {
   public readonly action: Axis2dAction;
   public readonly displayText: string;
   public readonly cursorValueType: CursorValueType;
