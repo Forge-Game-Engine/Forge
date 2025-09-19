@@ -10,7 +10,6 @@ import {
   Axis2dAction,
   buttonMoments,
   createAnimation,
-  cursorValueTypes,
   DEFAULT_ANIMATION_STATES,
   Entity,
   FlipComponent,
