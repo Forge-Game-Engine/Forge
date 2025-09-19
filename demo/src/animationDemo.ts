@@ -13,11 +13,14 @@ import {
   DEFAULT_ANIMATION_STATES,
   Entity,
   FlipComponent,
+  Game,
   KeyboardAxis1dBinding,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
   KeyboardTriggerBinding,
   keyCodes,
+  MouseAxis2dBinding,
+  MouseInputSource,
   ParticleEmitter,
   ParticleEmitterComponent,
   PositionComponent,
@@ -35,12 +38,13 @@ import { ControlAdventurerComponent } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
   world: World,
+  game: Game,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
   attackParticleEmitter: ParticleEmitter,
   jumpParticleEmitter: ParticleEmitter,
 ) {
-  const inputs = setupInputs(world);
+  const inputs = setupInputs(world, game);
 
   const ShipController = createShipAnimationController();
   buildShipEntities(world, shipSprite, ShipController);
@@ -59,7 +63,7 @@ export function setupAnimationsDemo(
   return inputs;
 }
 
-function setupInputs(world: World) {
+function setupInputs(world: World, game: Game) {
   const gameInputGroup = 'game';
 
   const attackInput = new TriggerAction('attack', gameInputGroup);
@@ -94,6 +98,7 @@ function setupInputs(world: World) {
   inputsManager.setActiveGroup(gameInputGroup);
 
   const keyboardInputSource = new KeyboardInputSource(inputsManager);
+  const mouseInputSource = new MouseInputSource(inputsManager, game);
 
   keyboardInputSource.axis2dBindings.add(
     new KeyboardAxis2dBinding(
@@ -105,13 +110,15 @@ function setupInputs(world: World) {
     ),
   );
 
+  mouseInputSource.axis2dBindings.add(
+    new MouseAxis2dBinding(axis2dInput, {
+      cursorOrigin: new Vector2(0.25, 0.25),
+    }),
+  );
+
   keyboardInputSource.axis1dBindings.add(
     new KeyboardAxis1dBinding(axis1dInput, keyCodes.k, keyCodes.l),
   );
-
-  axis2dInput.valueChangeEvent.registerListener((value) => {
-    console.log(`Axis2d value: x=${value.x}, y=${value.y}`);
-  });
 
   keyboardInputSource.triggerBindings.add(
     new KeyboardTriggerBinding(attackInput, keyCodes.space, buttonMoments.down),
@@ -346,9 +353,6 @@ function createAdventurerControllableController() {
   const runToAttackTransition = new AnimationTransition([run.name], attack1, [
     attackCondition,
   ]);
-  runToAttackTransition.onAnimationChange.registerListener(() =>
-    console.log('transitioning from run to attack1'),
-  );
 
   // create animation controller and transitions
   const controller = new AnimationController(

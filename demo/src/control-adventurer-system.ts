@@ -1,5 +1,4 @@
 import {
-  Axis1dAction,
   Entity,
   FlipComponent,
   PositionComponent,
@@ -15,7 +14,6 @@ export class ControlAdventurerSystem extends System {
   private readonly _runLTriggerInput: TriggerAction;
   private readonly _jumpTriggerInput: TriggerAction;
   private readonly _takeDamageTriggerInput: TriggerAction;
-  private readonly _axis1dInput: Axis1dAction;
 
   constructor(
     attackTriggerInput: TriggerAction,
@@ -23,7 +21,6 @@ export class ControlAdventurerSystem extends System {
     runLTriggerInput: TriggerAction,
     jumpTriggerInput: TriggerAction,
     takeDamageTriggerInput: TriggerAction,
-    axis1dInput: Axis1dAction,
   ) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
@@ -37,7 +34,6 @@ export class ControlAdventurerSystem extends System {
     this._runLTriggerInput = runLTriggerInput;
     this._jumpTriggerInput = jumpTriggerInput;
     this._takeDamageTriggerInput = takeDamageTriggerInput;
-    this._axis1dInput = axis1dInput;
   }
 
   public run(entity: Entity): void {
@@ -51,8 +47,6 @@ export class ControlAdventurerSystem extends System {
     );
 
     const animationInputs = spriteAnimationComponent.animationInputs;
-
-    console.log(`Axis1d value: value=${this._axis1dInput.value}`);
 
     if (this._jumpTriggerInput.isTriggered) {
       animationInputs.setToggle('jump', true);

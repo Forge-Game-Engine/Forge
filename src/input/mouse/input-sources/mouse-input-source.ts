@@ -1,6 +1,6 @@
 import { Game } from '../../../ecs';
 import { Vector2 } from '../../../math';
-import { buttonMoments, MouseButton } from '../../constants';
+import { buttonMoments, cursorValueTypes, MouseButton } from '../../constants';
 import { InputManager } from '../../input-manager';
 import { Resettable, Stoppable } from '../../../common';
 import {
@@ -125,8 +125,29 @@ export class MouseInputSource
     const x = event.clientX - this._containerBoundingClientRect.left;
     const y = event.clientY - this._containerBoundingClientRect.top;
 
+    const normalizedX = x / this._containerBoundingClientRect.width;
+    const normalizedY = y / this._containerBoundingClientRect.height;
+
     for (const binding of this.axis2dBindings) {
-      binding.action.set(x, y);
+      const { cursorValueType } = binding;
+
+      const absoluteXOffset =
+        binding.cursorOrigin.x * this._containerBoundingClientRect.width;
+      const absoluteYOffset =
+        binding.cursorOrigin.y * this._containerBoundingClientRect.height;
+
+      if (cursorValueType === cursorValueTypes.absolute) {
+        binding.action.set(x - absoluteXOffset, y - absoluteYOffset);
+      } else if (cursorValueType === cursorValueTypes.ratio) {
+        binding.action.set(
+          normalizedX - binding.cursorOrigin.x,
+          normalizedY - binding.cursorOrigin.y,
+        );
+      } else {
+        throw new Error(
+          `Unsupported cursor value type: ${cursorValueType as string}`,
+        );
+      }
     }
 
     this._lastMousePosition.x = x;
