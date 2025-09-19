@@ -17,7 +17,7 @@ import {
 import * as animationDemo from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
 
-export const game = new Game();
+export const game = new Game(document.getElementById('demo-container')!);
 
 const imageCache = new ImageCache();
 const shaderStore = createShaderStore();
@@ -155,6 +155,7 @@ const {
   axis1dInput,
 } = animationDemo.setupAnimationsDemo(
   world,
+  game,
   shipSprite,
   adventureSprite,
   attackParticleEmitter,

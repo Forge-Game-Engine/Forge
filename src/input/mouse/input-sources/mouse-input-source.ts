@@ -1,6 +1,6 @@
 import { Game } from '../../../ecs';
 import { Vector2 } from '../../../math';
-import { buttonMoments, MouseButton } from '../../constants';
+import { buttonMoments, cursorValueTypes, MouseButton } from '../../constants';
 import { InputManager } from '../../input-manager';
 import { Resettable, Stoppable } from '../../../common';
 import {
@@ -126,7 +126,25 @@ export class MouseInputSource
     const y = event.clientY - this._containerBoundingClientRect.top;
 
     for (const binding of this.axis2dBindings) {
-      binding.action.set(x, y);
+      const { cursorValueType } = binding;
+
+      if (cursorValueType === cursorValueTypes.absolute) {
+        binding.action.set(x, y);
+      } else if (cursorValueType === cursorValueTypes.screenSpaceRatio) {
+        const normalizedX = x / this._containerBoundingClientRect.width;
+        const normalizedY = y / this._containerBoundingClientRect.height;
+        binding.action.set(normalizedX, normalizedY);
+      } else if (cursorValueType === cursorValueTypes.centerSpaceRatio) {
+        const normalizedX =
+          (x / this._containerBoundingClientRect.width) * 2 - 1;
+        const normalizedY =
+          (y / this._containerBoundingClientRect.height) * 2 - 1;
+        binding.action.set(normalizedX, normalizedY);
+      } else {
+        throw new Error(
+          `Unknown cursor value type: ${cursorValueType as string}`,
+        );
+      }
     }
 
     this._lastMousePosition.x = x;

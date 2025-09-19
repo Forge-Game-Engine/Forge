@@ -52,8 +52,6 @@ export class ControlAdventurerSystem extends System {
 
     const animationInputs = spriteAnimationComponent.animationInputs;
 
-    console.log(`Axis1d value: value=${this._axis1dInput.value}`);
-
     if (this._jumpTriggerInput.isTriggered) {
       animationInputs.setToggle('jump', true);
 
