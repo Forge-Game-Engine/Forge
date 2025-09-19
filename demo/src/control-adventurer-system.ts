@@ -1,5 +1,5 @@
 import {
-  Axis1dAction,
+  Axis2dAction,
   Entity,
   FlipComponent,
   PositionComponent,
@@ -15,7 +15,7 @@ export class ControlAdventurerSystem extends System {
   private readonly _runLTriggerInput: TriggerAction;
   private readonly _jumpTriggerInput: TriggerAction;
   private readonly _takeDamageTriggerInput: TriggerAction;
-  private readonly _axis1dInput: Axis1dAction;
+  private readonly _axis2dInput: Axis2dAction;
 
   constructor(
     attackTriggerInput: TriggerAction,
@@ -23,7 +23,7 @@ export class ControlAdventurerSystem extends System {
     runLTriggerInput: TriggerAction,
     jumpTriggerInput: TriggerAction,
     takeDamageTriggerInput: TriggerAction,
-    axis1dInput: Axis1dAction,
+    axis2dInput: Axis2dAction,
   ) {
     super('control adventurer', [
       ControlAdventurerComponent.symbol,
@@ -37,7 +37,7 @@ export class ControlAdventurerSystem extends System {
     this._runLTriggerInput = runLTriggerInput;
     this._jumpTriggerInput = jumpTriggerInput;
     this._takeDamageTriggerInput = takeDamageTriggerInput;
-    this._axis1dInput = axis1dInput;
+    this._axis2dInput = axis2dInput;
   }
 
   public run(entity: Entity): void {

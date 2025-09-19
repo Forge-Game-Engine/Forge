@@ -2,10 +2,8 @@
 export const cursorValueTypes = {
   /** The axis value is an absolute measurement. */
   absolute: 'absolute',
-  /** The axis value normalized to [0..1] where the top-left of the container is (0, 0) and the bottom-right is (1, 1) */
-  screenSpaceRatio: 'screenSpaceRatio',
-  /** The axis value normalized to [-1..1] where the center of the container is (0, 0) and the top-left is (-1, -1) and the bottom-right is (1, 1) */
-  centerSpaceRatio: 'centerSpaceRatio',
+  /** The axis value is a measurement relative to the width of the screen */
+  ratio: 'ratio',
 } as const;
 
 /** The type of cursor value. */

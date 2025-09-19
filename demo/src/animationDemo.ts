@@ -112,7 +112,9 @@ function setupInputs(world: World, game: Game) {
   );
 
   mouseInputSource.axis2dBindings.add(
-    new MouseAxis2dBinding(axis2dInput, cursorValueTypes.centerSpaceRatio),
+    new MouseAxis2dBinding(axis2dInput, {
+      cursorOrigin: new Vector2(0.25, 0.25),
+    }),
   );
 
   keyboardInputSource.axis1dBindings.add(
@@ -352,7 +354,7 @@ function createAdventurerControllableController() {
   const runToAttackTransition = new AnimationTransition([run.name], attack1, [
     attackCondition,
   ]);
-  
+
   // create animation controller and transitions
   const controller = new AnimationController(
     // at any time we can jump

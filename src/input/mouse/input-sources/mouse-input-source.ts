@@ -125,24 +125,27 @@ export class MouseInputSource
     const x = event.clientX - this._containerBoundingClientRect.left;
     const y = event.clientY - this._containerBoundingClientRect.top;
 
+    const normalizedX = x / this._containerBoundingClientRect.width;
+    const normalizedY = y / this._containerBoundingClientRect.height;
+
     for (const binding of this.axis2dBindings) {
       const { cursorValueType } = binding;
 
+      const absoluteXOffset =
+        binding.cursorOrigin.x * this._containerBoundingClientRect.width;
+      const absoluteYOffset =
+        binding.cursorOrigin.y * this._containerBoundingClientRect.height;
+
       if (cursorValueType === cursorValueTypes.absolute) {
-        binding.action.set(x, y);
-      } else if (cursorValueType === cursorValueTypes.screenSpaceRatio) {
-        const normalizedX = x / this._containerBoundingClientRect.width;
-        const normalizedY = y / this._containerBoundingClientRect.height;
-        binding.action.set(normalizedX, normalizedY);
-      } else if (cursorValueType === cursorValueTypes.centerSpaceRatio) {
-        const normalizedX =
-          (x / this._containerBoundingClientRect.width) * 2 - 1;
-        const normalizedY =
-          (y / this._containerBoundingClientRect.height) * 2 - 1;
-        binding.action.set(normalizedX, normalizedY);
+        binding.action.set(x - absoluteXOffset, y - absoluteYOffset);
+      } else if (cursorValueType === cursorValueTypes.ratio) {
+        binding.action.set(
+          normalizedX - binding.cursorOrigin.x,
+          normalizedY - binding.cursorOrigin.y,
+        );
       } else {
         throw new Error(
-          `Unknown cursor value type: ${cursorValueType as string}`,
+          `Unsupported cursor value type: ${cursorValueType as string}`,
         );
       }
     }
