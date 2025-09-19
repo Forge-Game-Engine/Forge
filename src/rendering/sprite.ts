@@ -67,7 +67,7 @@ export class Sprite {
 
     this.renderLayer = renderLayer;
     this.bleed = bleed;
-    this.pivot = pivot;
+    this.pivot = pivot.clone();
 
     this.width = width + bleed;
     this.height = height + bleed;
