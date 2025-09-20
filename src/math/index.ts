@@ -1,5 +1,6 @@
 export * from './clamp';
 export * from './degrees-to-radians';
+export * from './radians-to-degrees';
 export * from './lerp';
 export * from './matrices';
 export * from './random';
@@ -7,3 +8,5 @@ export * from './scale-relative-to-point';
 export * from './vector2';
 export * from './vector3';
 export * from './vector-to-radians';
+export * from './signed-square';
+export * from './smooth-damp-vector2';
