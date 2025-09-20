@@ -75,8 +75,8 @@ export function smoothDampVector2(
   //prevent over-shooting
   const originMinusCurrentPosX = originalToX - position.x;
   const originMinusCurrentPosY = originalToY - position.y;
-  const newPosMinusOriginX = position.x - originalToX;
-  const newPosMinusOriginY = position.y - originalToY;
+  const newPosMinusOriginX = positionOutput.x - originalToX;
+  const newPosMinusOriginY = positionOutput.y - originalToY;
 
   if (
     originMinusCurrentPosX * newPosMinusOriginX +

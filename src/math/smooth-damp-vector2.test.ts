@@ -131,6 +131,6 @@ describe('smoothDamp Vector2', () => {
     );
 
     // Should clamp to target, not overshoot (allowing for small floating-point error)
-    expect(positionOutput.x).toBeLessThanOrEqual(target.x + 2e-3);
+    expect(positionOutput.x).toBeLessThanOrEqual(target.x + 1e-6);
   });
 });
