@@ -92,17 +92,17 @@ export class Vector2 {
   }
 
   /**
-   * Returns a unit vector pointing upward (0, 1).
+   * Returns a unit vector pointing upward (0, -1).
    */
   static get up(): Vector2 {
-    return new Vector2(0, 1);
+    return new Vector2(0, -1);
   }
 
   /**
-   * Returns a unit vector pointing downward (0, -1).
+   * Returns a unit vector pointing downward (0, 1).
    */
   static get down(): Vector2 {
-    return new Vector2(0, -1);
+    return new Vector2(0, 1);
   }
 
   /**
