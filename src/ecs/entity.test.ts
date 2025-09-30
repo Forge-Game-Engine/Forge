@@ -26,7 +26,7 @@ test('adding a component', () => {
   const entity = new Entity('player', world, []);
   const component = new MockComponent();
 
-  entity.addComponent(component);
+  entity.addComponents(component);
 
   expect(entity.getComponent(MockComponent.symbol)).not.toBeNull();
 });
@@ -35,7 +35,7 @@ test('removing a component', () => {
   const component = new MockComponent();
   const entity = new Entity('player', world, [component]);
 
-  entity.removeComponent(MockComponent.symbol);
+  entity.removeComponents(MockComponent.symbol);
 
   expect(entity.getComponent(MockComponent.symbol)).toBeNull();
 });

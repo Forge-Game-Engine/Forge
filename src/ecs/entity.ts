@@ -72,12 +72,14 @@ export class Entity {
   }
 
   /**
-   * Adds a component to the entity.
-   * @param component - The component to add.
+   * Adds components to the entity.
+   * @param components - The components to add.
    */
-  public addComponent(component: Component) {
-    this._components.add(component);
-    this.world.updateSystemEntities(this);
+  public addComponents(...components: Component[]) {
+    for (const component of components) {
+      this._components.add(component);
+      this.world.updateSystemEntities(this);
+    }
   }
 
   /**
@@ -143,17 +145,19 @@ export class Entity {
   }
 
   /**
-   * Removes a component from the entity.
-   * @param componentName - The name of the component to remove.
+   * Removes components from the entity.
+   * @param componentNames - The name of the components to remove.
    */
-  public removeComponent(componentName: symbol) {
-    const component = this.getComponent<Component>(componentName);
+  public removeComponents(...componentNames: symbol[]) {
+    for (const componentName of componentNames) {
+      const component = this.getComponent<Component>(componentName);
 
-    if (component === null) {
-      return;
+      if (component === null) {
+        continue;
+      }
+
+      this._components.delete(component);
     }
-
-    this._components.delete(component);
 
     this.world.updateSystemEntities(this);
   }

@@ -18,11 +18,11 @@ describe('Vector2', () => {
 
   describe('static properties', () => {
     it('should return correct up vector', () => {
-      expect(Vector2.up.equals(new Vector2(0, 1))).toBe(true);
+      expect(Vector2.up.equals(new Vector2(0, -1))).toBe(true);
     });
 
     it('should return correct down vector', () => {
-      expect(Vector2.down.equals(new Vector2(0, -1))).toBe(true);
+      expect(Vector2.down.equals(new Vector2(0, 1))).toBe(true);
     });
 
     it('should return correct left vector', () => {
