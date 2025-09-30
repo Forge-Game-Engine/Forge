@@ -10,3 +10,4 @@ export * from './vector3';
 export * from './vector-to-radians';
 export * from './signed-square';
 export * from './smooth-damp-vector2';
+export * from './radians-to-vector';
