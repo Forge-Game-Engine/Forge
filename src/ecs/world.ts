@@ -97,9 +97,10 @@ export class World implements Updatable, Stoppable {
    * @returns The entity with the matching id, or null if no entity with that id exists.
    */
   public getEntityById(entityId: number): Entity | null {
-    const entity = [...this._entities].find((entity) => entity.id === entityId);
+    const entity =
+      [...this._entities].find((entity) => entity.id === entityId) ?? null;
 
-    return entity ?? null;
+    return entity;
   }
 
   /**
