@@ -45,7 +45,7 @@ export class World implements Updatable, Stoppable {
    * Callbacks to be invoked when entities change.
    */
   private readonly _onEntitiesChangedCallbacks = new Set<
-    (entities: Set<Entity>) => void
+    (entities: Map<number, Entity>) => void
   >();
 
   /**
@@ -56,7 +56,7 @@ export class World implements Updatable, Stoppable {
   /**
    * The set of entities in the world.
    */
-  private readonly _entities = new Set<Entity>();
+  private readonly _entities = new Map<number, Entity>();
 
   /**
    * Creates a new World instance.
@@ -97,10 +97,7 @@ export class World implements Updatable, Stoppable {
    * @returns The entity with the matching id, or null if no entity with that id exists.
    */
   public getEntityById(entityId: number): Entity | null {
-    const entity =
-      [...this._entities].find((entity) => entity.id === entityId) ?? null;
-
-    return entity;
+    return this._entities.get(entityId) ?? null;
   }
 
   /**
@@ -110,7 +107,7 @@ export class World implements Updatable, Stoppable {
   public queryEntities(componentSymbols: Query): Set<Entity> {
     const entities = new Set<Entity>();
 
-    for (const entity of this._entities) {
+    for (const entity of this._entities.values()) {
       if (entity.containsAllComponents(componentSymbols)) {
         entities.add(entity);
       }
@@ -125,7 +122,7 @@ export class World implements Updatable, Stoppable {
    * @returns The first matching entity, or null if no entity matches.
    */
   public queryEntity(query: Query): Entity | null {
-    for (const entity of this._entities) {
+    for (const entity of this._entities.values()) {
       if (entity.containsAllComponents(query)) {
         return entity;
       }
@@ -164,7 +161,7 @@ export class World implements Updatable, Stoppable {
    * Registers a callback to be invoked when entities change.
    * @param callback - The callback to register.
    */
-  public onEntitiesChanged(callback: (entities: Set<Entity>) => void) {
+  public onEntitiesChanged(callback: (entities: Map<number, Entity>) => void) {
     this._onEntitiesChangedCallbacks.add(callback);
   }
 
@@ -183,7 +180,7 @@ export class World implements Updatable, Stoppable {
    * @param callback - The callback to remove.
    */
   public removeOnEntitiesChangedCallback(
-    callback: (entities: Set<Entity>) => void,
+    callback: (entities: Map<number, Entity>) => void,
   ) {
     this._onEntitiesChangedCallbacks.delete(callback);
   }
@@ -288,7 +285,7 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public addEntity(entity: Entity) {
-    this._entities.add(entity);
+    this._entities.set(entity.id, entity);
 
     this.updateSystemEntities(entity);
     this.raiseOnEntitiesChangedEvent();
@@ -350,7 +347,7 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public removeEntity(entity: Entity) {
-    this._entities.delete(entity);
+    this._entities.delete(entity.id);
 
     for (const entities of this._systemEntities.values()) {
       entities.delete(entity);
