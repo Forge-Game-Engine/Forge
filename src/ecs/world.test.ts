@@ -37,6 +37,14 @@ describe('World', () => {
     expect(entity.getComponent(mock1Component.name)).not.toBeNull();
   });
 
+  it('should get an entity by its id', () => {
+    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    const retrievedEntity = world.getEntityById(entity.id);
+    const nonExistingEntity = world.getEntityById(999);
+    expect(entity).toEqual(retrievedEntity);
+    expect(nonExistingEntity).toBe(null);
+  });
+
   it('should call runSystem on each system during update with enabled entities', () => {
     const system = new MockSystem('System1', [mock1Component.name]);
 
