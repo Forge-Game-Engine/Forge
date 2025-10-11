@@ -29,11 +29,11 @@ describe('ParticlePositionSystem', () => {
     const rotationComponent = entity.getComponentRequired<RotationComponent>(
       RotationComponent.symbol,
     );
-    const initialRadians = rotationComponent.radians;
+    const initialRadians = rotationComponent.local;
 
     system.run(entity);
 
-    expect(rotationComponent.radians).toBeCloseTo(
+    expect(rotationComponent.local).toBeCloseTo(
       initialRadians + Math.PI * time.deltaTimeInSeconds,
     );
   });
@@ -50,19 +50,19 @@ describe('ParticlePositionSystem', () => {
     );
 
     const expectedX =
-      positionComponent.x +
+      positionComponent.local.x +
       speedComponent.speed *
         time.deltaTimeInSeconds *
-        Math.sin(rotationComponent.radians);
+        Math.sin(rotationComponent.local);
     const expectedY =
-      positionComponent.y -
+      positionComponent.local.y -
       speedComponent.speed *
         time.deltaTimeInSeconds *
-        Math.cos(rotationComponent.radians);
+        Math.cos(rotationComponent.local);
 
     system.run(entity);
-    expect(positionComponent.x).toBeCloseTo(expectedX);
-    expect(positionComponent.y).toBeCloseTo(expectedY);
+    expect(positionComponent.local.x).toBeCloseTo(expectedX);
+    expect(positionComponent.local.y).toBeCloseTo(expectedY);
   });
 
   it('should handle multiple runs correctly', () => {
@@ -77,25 +77,25 @@ describe('ParticlePositionSystem', () => {
     );
 
     const newRotation =
-      rotationComponent.radians + Math.PI * time.deltaTimeInSeconds;
+      rotationComponent.local + Math.PI * time.deltaTimeInSeconds;
     const expectedRotation = newRotation + Math.PI * time.deltaTimeInSeconds;
 
     const expectedX =
-      positionComponent.x +
+      positionComponent.local.x +
       speedComponent.speed *
         time.deltaTimeInSeconds *
-        (Math.sin(rotationComponent.radians) + Math.sin(newRotation));
+        (Math.sin(rotationComponent.local) + Math.sin(newRotation));
     const expectedY =
-      positionComponent.y -
+      positionComponent.local.y -
       speedComponent.speed *
         time.deltaTimeInSeconds *
-        (Math.cos(rotationComponent.radians) + Math.cos(newRotation));
+        (Math.cos(rotationComponent.local) + Math.cos(newRotation));
 
     system.run(entity);
     system.run(entity);
 
-    expect(rotationComponent.radians).toBeCloseTo(expectedRotation);
-    expect(positionComponent.x).toBeCloseTo(expectedX);
-    expect(positionComponent.y).toBeCloseTo(expectedY);
+    expect(rotationComponent.local).toBeCloseTo(expectedRotation);
+    expect(positionComponent.local.x).toBeCloseTo(expectedX);
+    expect(positionComponent.local.y).toBeCloseTo(expectedY);
   });
 });

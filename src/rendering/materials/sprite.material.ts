@@ -40,7 +40,7 @@ export class SpriteMaterial extends Material {
       createProjectionMatrix(
         gl.canvas.width,
         gl.canvas.height,
-        cameraPosition,
+        cameraPosition.world,
         camera.zoom,
       ).data,
     );

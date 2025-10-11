@@ -75,3 +75,28 @@ test('removeParent removes the parent', () => {
   expect(child.parent).toBe(null);
   expect(parent1.children.has(child)).toBe(false);
 });
+
+test('containsAllComponents returns true when all components are present', () => {
+  const componentA = new MockComponent();
+  const componentB = new MockComponent();
+  componentB.name = Symbol('mock-component-b');
+  const entity = new Entity('player', world, [componentA, componentB]);
+
+  const query: symbol[] = [componentA.name, componentB.name];
+  expect(entity.containsAllComponents(query)).toBe(true);
+});
+
+test('containsAllComponents returns false when a component is missing', () => {
+  const componentA = new MockComponent();
+  const entity = new Entity('player', world, [componentA]);
+
+  const missingSymbol = Symbol('missing-component');
+  const query: symbol[] = [componentA.name, missingSymbol];
+  expect(entity.containsAllComponents(query)).toBe(false);
+});
+
+test('containsAllComponents returns true for empty query', () => {
+  const entity = new Entity('player', world, []);
+  const query: symbol[] = [];
+  expect(entity.containsAllComponents(query)).toBe(true);
+});

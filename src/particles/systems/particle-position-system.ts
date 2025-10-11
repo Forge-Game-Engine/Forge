@@ -45,16 +45,16 @@ export class ParticlePositionSystem extends System {
       SpeedComponent.symbol,
     );
 
-    positionComponent.x +=
+    positionComponent.local.x +=
       speedComponent.speed *
       this._time.deltaTimeInSeconds *
-      Math.sin(rotationComponent.radians);
-    positionComponent.y -=
+      Math.sin(rotationComponent.local);
+    positionComponent.local.y -=
       speedComponent.speed *
       this._time.deltaTimeInSeconds *
-      Math.cos(rotationComponent.radians);
+      Math.cos(rotationComponent.local);
 
-    rotationComponent.radians +=
+    rotationComponent.local +=
       particleComponent.rotationSpeed * this._time.deltaTimeInSeconds;
   }
 }
