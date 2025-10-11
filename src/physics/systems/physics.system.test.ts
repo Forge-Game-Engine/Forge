@@ -54,9 +54,9 @@ describe('PhysicsSystem', () => {
     physicsSystem.run(entity);
 
     expect(physicsBody.position.y).toBe(128.256);
-    expect(positionComponent.x).toBe(128);
-    expect(positionComponent.y).toBe(128.256);
-    expect(rotationComponent.radians).toBeCloseTo(7.68);
+    expect(positionComponent.world.x).toBe(128);
+    expect(positionComponent.world.y).toBe(128.256);
+    expect(rotationComponent.world).toBeCloseTo(7.68);
   });
 
   it('should sync static body position and angle from components', () => {
@@ -65,7 +65,7 @@ describe('PhysicsSystem', () => {
     staticBody.angle = 0.5;
     const staticEntity = new Entity('static', world, [
       new PositionComponent(42, 99),
-      new RotationComponent(90),
+      new RotationComponent(degreesToRadians(90)),
       new PhysicsBodyComponent(staticBody),
     ]);
 

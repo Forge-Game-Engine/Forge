@@ -62,8 +62,8 @@ export class CameraSystem extends System {
         (1 / cameraComponent.zoom) *
         this._time.rawDeltaTimeInMilliseconds;
 
-      position.y += panInput.value.y * zoomPanMultiplier;
-      position.x += panInput.value.x * zoomPanMultiplier;
+      position.local.y += panInput.value.y * zoomPanMultiplier;
+      position.local.x += panInput.value.x * zoomPanMultiplier;
     }
   }
 }

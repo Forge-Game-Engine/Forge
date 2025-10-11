@@ -6,19 +6,34 @@ import { degreesToRadians } from '../../math';
  */
 export class RotationComponent implements Component {
   public name: symbol;
-  public radians: number;
+
+  /**
+   * The local rotation angle in radians.
+   */
+  public local: number;
+  /**
+   * The world rotation angle in radians.
+   */
+  public world: number;
 
   public static readonly symbol = Symbol('Rotation');
 
   /**
    * Creates an instance of RotationComponent.
-   * @param degrees - The rotation angle in degrees.
-   * @example
-   * const rotation = new RotationComponent(90);
-   * console.log(rotation.radians); // 1.5708 (approximately)
+   * @param radians - The rotation angle in radians.
    */
-  constructor(degrees: number) {
+  constructor(radians: number = 0) {
     this.name = RotationComponent.symbol;
-    this.radians = degreesToRadians(degrees);
+    this.local = radians;
+    this.world = radians;
+  }
+
+  /**
+   * Creates a RotationComponent from an angle in degrees.
+   * @param degrees - The rotation angle in degrees.
+   * @returns A new instance of RotationComponent.
+   */
+  public static fromDegrees(degrees: number): RotationComponent {
+    return new RotationComponent(degreesToRadians(degrees));
   }
 }

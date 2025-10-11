@@ -41,19 +41,16 @@ export class PhysicsSystem extends System {
 
     if (physicsBodyComponent.physicsBody.isStatic) {
       Body.setPosition(physicsBodyComponent.physicsBody, {
-        x: positionComponent.x,
-        y: positionComponent.y,
+        x: positionComponent.world.x,
+        y: positionComponent.world.y,
       });
 
-      Body.setAngle(
-        physicsBodyComponent.physicsBody,
-        rotationComponent.radians,
-      );
+      Body.setAngle(physicsBodyComponent.physicsBody, rotationComponent.world);
     } else {
-      positionComponent.x = physicsBodyComponent.physicsBody.position.x;
-      positionComponent.y = physicsBodyComponent.physicsBody.position.y;
+      positionComponent.world.x = physicsBodyComponent.physicsBody.position.x;
+      positionComponent.world.y = physicsBodyComponent.physicsBody.position.y;
 
-      rotationComponent.radians = physicsBodyComponent.physicsBody.angle;
+      rotationComponent.world = physicsBodyComponent.physicsBody.angle;
     }
   }
 }
