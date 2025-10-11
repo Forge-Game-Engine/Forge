@@ -190,4 +190,56 @@ describe('World', () => {
       'No entity found matching the query: mock2',
     );
   });
+
+  it('should remove an entity from the world', () => {
+    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    expect(world.getEntityById(entity.id)).toBe(entity);
+
+    world.removeEntity(entity);
+
+    expect(world.getEntityById(entity.id)).toBeNull();
+    expect(world.entityCount).toBe(0);
+  });
+
+  it('should remove an entity and its children recursively', () => {
+    const parent = world.buildAndAddEntity('parent', [mock1Component]);
+    const child1 = world.buildAndAddEntity('child1', [mock1Component]);
+    const child2 = world.buildAndAddEntity('child2', [mock1Component]);
+
+    child1.parentTo(parent);
+    child2.parentTo(parent);
+
+    expect(world.getEntityById(parent.id)).toBe(parent);
+    expect(world.getEntityById(child1.id)).toBe(child1);
+    expect(world.getEntityById(child2.id)).toBe(child2);
+
+    world.removeEntity(parent);
+
+    expect(world.getEntityById(parent.id)).toBeNull();
+    expect(world.getEntityById(child1.id)).toBeNull();
+    expect(world.getEntityById(child2.id)).toBeNull();
+    expect(world.entityCount).toBe(0);
+  });
+
+  it('should remove entity from all system entity sets', () => {
+    const system = new MockSystem('System1', [mock1Component.name]);
+    world.addSystem(system);
+
+    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    expect(world.queryEntities([mock1Component.name]).has(entity)).toBe(true);
+
+    world.removeEntity(entity);
+
+    expect(world.queryEntities([mock1Component.name]).has(entity)).toBe(false);
+  });
+
+  it('should raise onEntitiesChanged event when entity is removed', () => {
+    const callback = vi.fn();
+    world.onEntitiesChanged(callback);
+
+    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    world.removeEntity(entity);
+
+    expect(callback).toHaveBeenCalled();
+  });
 });

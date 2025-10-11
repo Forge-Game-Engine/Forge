@@ -262,16 +262,23 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public removeSystem(systemToRemove: string | System) {
-    for (const systemOrderPair of this._systems) {
-      const { system } = systemOrderPair;
+    for (const pair of this._systems) {
+      const { system } = pair;
       const isNameMatch =
         isString(systemToRemove) && system.name === systemToRemove;
       const isSystemMatch = system === systemToRemove;
 
       if (isNameMatch || isSystemMatch) {
-        this._systems.delete(systemOrderPair);
+        this._systems.delete(pair);
+
+        const set = this._systemEntities.get(system.name);
+
+        if (set) {
+          set.clear();
+        }
 
         this._systemEntities.delete(system.name);
+
         this.raiseOnSystemsChangedEvent();
       }
     }
@@ -347,6 +354,10 @@ export class World implements Updatable, Stoppable {
    * @returns The world instance.
    */
   public removeEntity(entity: Entity) {
+    for (const child of entity.children) {
+      this.removeEntity(child);
+    }
+
     this._entities.delete(entity.id);
 
     for (const entities of this._systemEntities.values()) {
@@ -367,6 +378,12 @@ export class World implements Updatable, Stoppable {
     }
 
     this._entities.clear();
+
+    for (const set of this._systemEntities.values()) {
+      set.clear();
+    }
+
+    this._systemEntities.clear();
   }
 
   /**
