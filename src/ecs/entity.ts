@@ -30,7 +30,17 @@ export class Entity {
   /**
    * The set of components associated with this entity.
    */
-  private readonly _components: Set<Component>;
+  private readonly _components: Set<Component>; // TODO: replace this with a map for faster access
+
+  /**
+   * The parent entity, if any.
+   */
+  private _parent: Entity | null = null;
+
+  /**
+   * The child entities of this entity.
+   */
+  private readonly _children: Set<Entity> = new Set();
 
   /**
    * The counter for generating unique identifiers.
@@ -40,6 +50,7 @@ export class Entity {
   /**
    * Creates a new Entity instance.
    * @param name - The name of the entity.
+   * @param world - The world to which this entity belongs.
    * @param initialComponents - The initial components to associate with the entity.
    * @param enabled - Indicates whether the entity is enabled. Defaults to true.
    */
@@ -69,6 +80,42 @@ export class Entity {
    */
   get id() {
     return this._id;
+  }
+
+  /**
+   * Sets the parent of the entity.
+   * @param parent - The parent entity.
+   */
+  public parentTo(parent: Entity) {
+    if (this._parent) {
+      this._parent._children.delete(this);
+    }
+
+    this._parent = parent;
+    parent._children.add(this);
+  }
+
+  public removeParent() {
+    if (this._parent) {
+      this._parent._children.delete(this);
+      this._parent = null;
+    }
+  }
+
+  /**
+   * Gets the parent of the entity.
+   * @returns The parent entity, or null if there is no parent.
+   */
+  get parent() {
+    return this._parent;
+  }
+
+  /**
+   * Gets the child entities of this entity.
+   * @returns A set of child entities.
+   */
+  get children() {
+    return this._children;
   }
 
   /**

@@ -39,3 +39,39 @@ test('removing a component', () => {
 
   expect(entity.getComponent(MockComponent.symbol)).toBeNull();
 });
+
+test("parentTo sets the parent and adds to parent's children", () => {
+  const parent = new Entity('parent', world, []);
+  const child = new Entity('child', world, []);
+
+  child.parentTo(parent);
+
+  expect(child.parent).toBe(parent);
+  expect(parent.children.has(child)).toBe(true);
+});
+
+test("parentTo removes child from previous parent's children", () => {
+  const parent1 = new Entity('parent1', world, []);
+  const parent2 = new Entity('parent2', world, []);
+  const child = new Entity('child', world, []);
+
+  child.parentTo(parent1);
+  expect(parent1.children.has(child)).toBe(true);
+
+  child.parentTo(parent2);
+  expect(child.parent).toBe(parent2);
+  expect(parent2.children.has(child)).toBe(true);
+  expect(parent1.children.has(child)).toBe(false);
+});
+
+test('removeParent removes the parent', () => {
+  const parent1 = new Entity('parent1', world, []);
+  const child = new Entity('child', world, []);
+
+  child.parentTo(parent1);
+  expect(parent1.children.has(child)).toBe(true);
+
+  child.removeParent();
+  expect(child.parent).toBe(null);
+  expect(parent1.children.has(child)).toBe(false);
+});
