@@ -28,9 +28,9 @@ export class Entity {
   private readonly _id: number;
 
   /**
-   * The set of components associated with this entity.
+   * The map of components associated with this entity, keyed by component name.
    */
-  private readonly _components: Set<Component>; // TODO: replace this with a map for faster access
+  private readonly _components: Map<symbol, Component>;
 
   /**
    * The parent entity, if any.
@@ -61,7 +61,9 @@ export class Entity {
     enabled: boolean = true,
   ) {
     this._id = Entity._generateId();
-    this._components = new Set<Component>(initialComponents);
+    this._components = new Map<symbol, Component>(
+      initialComponents.map((component) => [component.name, component]),
+    );
     this.name = name;
     this.world = world;
     this.enabled = enabled;
@@ -95,6 +97,11 @@ export class Entity {
     parent._children.add(this);
   }
 
+  /**
+   * Removes the parent relationship from this entity, if it has one.
+   * This will also remove this entity from its parent's set of children.
+   * If the entity does not have a parent, this method does nothing.
+   */
   public removeParent() {
     if (this._parent) {
       this._parent._children.delete(this);
@@ -115,7 +122,7 @@ export class Entity {
    * @returns A set of child entities.
    */
   get children() {
-    return this._children;
+    return new Set(this._children);
   }
 
   /**
@@ -124,7 +131,7 @@ export class Entity {
    */
   public addComponents(...components: Component[]) {
     for (const component of components) {
-      this._components.add(component);
+      this._components.set(component.name, component);
       this.world.updateSystemEntities(this);
     }
   }
@@ -135,27 +142,13 @@ export class Entity {
    * @returns True if the entity contains all specified components, otherwise false.
    */
   public containsAllComponents(query: Query) {
-    let allSymbolsMatch = true;
-
     for (const symbol of query) {
-      let symbolMatched = false;
-
-      for (const component of this._components) {
-        if (component.name === symbol) {
-          symbolMatched = true;
-
-          break;
-        }
-      }
-
-      if (!symbolMatched) {
-        allSymbolsMatch = false;
-
-        break;
+      if (!this._components.has(symbol)) {
+        return false;
       }
     }
 
-    return allSymbolsMatch;
+    return true;
   }
 
   /**
@@ -164,13 +157,7 @@ export class Entity {
    * @returns The component if found, otherwise null.
    */
   public getComponent<T extends Component>(componentName: symbol): T | null {
-    for (const component of this._components) {
-      if (component.name === componentName) {
-        return component as T;
-      }
-    }
-
-    return null;
+    return (this._components.get(componentName) as T) ?? null;
   }
 
   /**
@@ -197,13 +184,7 @@ export class Entity {
    */
   public removeComponents(...componentNames: symbol[]) {
     for (const componentName of componentNames) {
-      const component = this.getComponent<Component>(componentName);
-
-      if (component === null) {
-        continue;
-      }
-
-      this._components.delete(component);
+      this._components.delete(componentName);
     }
 
     this.world.updateSystemEntities(this);
