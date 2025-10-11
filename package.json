@@ -47,7 +47,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/howler": "^2.2.12",
-    "@types/matter-js": "^0.20.0",
+    "@types/matter-js": "^0.20.2",
     "@types/seedrandom": "^3.0.8",
     "@vitest/ui": "^3.2.4",
     "cspell": "^9.2.1",
