@@ -97,6 +97,11 @@ export class Entity {
     parent._children.add(this);
   }
 
+  /**
+   * Removes the parent relationship from this entity, if it has one.
+   * This will also remove this entity from its parent's set of children.
+   * If the entity does not have a parent, this method does nothing.
+   */
   public removeParent() {
     if (this._parent) {
       this._parent._children.delete(this);
