@@ -122,7 +122,7 @@ export class Entity {
    * @returns A set of child entities.
    */
   get children() {
-    return this._children;
+    return new Set(this._children);
   }
 
   /**
