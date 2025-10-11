@@ -40,7 +40,7 @@ export class AgeScaleSystem extends System {
     const newScaleY =
       ageScaleComponent.originalScaleY * (1 - ageRatio) +
       ageScaleComponent.finalLifetimeScaleY * ageRatio;
-    scaleComponent.x = newScaleX;
-    scaleComponent.y = newScaleY;
+    scaleComponent.local.x = newScaleX;
+    scaleComponent.local.y = newScaleY;
   }
 }

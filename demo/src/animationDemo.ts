@@ -210,13 +210,13 @@ function createAdventurerControllableController() {
         },
         spawnPosition: () => {
           const x =
-            positionComponent.x +
+            positionComponent.local.x +
             (flipComponent.flipX ? -1 : 1) *
               (30 +
                 (20 * emitter?.currentEmitDuration) /
                   emitter?.emitDurationSeconds);
           const y =
-            positionComponent.y +
+            positionComponent.local.y +
             20 +
             (heightChange * emitter?.currentEmitDuration) /
               emitter?.emitDurationSeconds;
@@ -240,8 +240,8 @@ function createAdventurerControllableController() {
     emitter?.setOptions({
       spawnPosition: () => {
         return {
-          x: positionComponent.x - 15 + Math.random() * 30,
-          y: positionComponent.y + 70,
+          x: positionComponent.local.x - 15 + Math.random() * 30,
+          y: positionComponent.local.y + 70,
         };
       },
     });
@@ -255,8 +255,8 @@ function createAdventurerControllableController() {
     const flipComponent = entity.getComponentRequired<FlipComponent>(
       FlipComponent.symbol,
     );
-    positionComponent.x += xChange * (flipComponent.flipX ? -1 : 1);
-    positionComponent.y += yChange;
+    positionComponent.local.x += xChange * (flipComponent.flipX ? -1 : 1);
+    positionComponent.local.y += yChange;
   };
 
   // **** Create Animations ****

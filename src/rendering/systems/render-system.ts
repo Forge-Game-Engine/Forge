@@ -184,17 +184,17 @@ export class RenderSystem extends System {
     } = components;
 
     // Position
-    instanceData[offset + POSITION_X_OFFSET] = position.x;
-    instanceData[offset + POSITION_Y_OFFSET] = position.y;
+    instanceData[offset + POSITION_X_OFFSET] = position.world.x;
+    instanceData[offset + POSITION_Y_OFFSET] = position.world.y;
 
     // Rotation
-    instanceData[offset + ROTATION_OFFSET] = rotation?.radians ?? 0;
+    instanceData[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
 
     // Scale with flip consideration
     instanceData[offset + SCALE_X_OFFSET] =
-      (scale?.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+      (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
     instanceData[offset + SCALE_Y_OFFSET] =
-      (scale?.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+      (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
     // Sprite dimensions
     instanceData[offset + WIDTH_OFFSET] = spriteComponent.sprite.width;

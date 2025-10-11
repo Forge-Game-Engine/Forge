@@ -61,8 +61,8 @@ describe('CameraSystem', () => {
 
     world.update(16.6666);
 
-    expect(positionComponent.x).toBeGreaterThan(0);
-    expect(positionComponent.y).toBeLessThan(0);
+    expect(positionComponent.local.x).toBeGreaterThan(0);
+    expect(positionComponent.local.y).toBeLessThan(0);
   });
 
   it('should not update the camera if it is static', () => {
@@ -73,7 +73,7 @@ describe('CameraSystem', () => {
     world.update(16.6666);
 
     expect(cameraComponent.zoom).toBe(1);
-    expect(positionComponent.x).toBe(0);
-    expect(positionComponent.y).toBe(0);
+    expect(positionComponent.local.x).toBe(0);
+    expect(positionComponent.local.y).toBe(0);
   });
 });
