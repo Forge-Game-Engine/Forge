@@ -190,4 +190,39 @@ describe('World', () => {
       'No entity found matching the query: mock2',
     );
   });
+
+  it('should build and add an entity with parent parameter', () => {
+    const parent = world.buildAndAddEntity('parent', [mock1Component]);
+    const child = world.buildAndAddEntity('child', [mock2Component], {
+      parent,
+    });
+
+    expect(child.parent).toBe(parent);
+    expect(parent.children.has(child)).toBe(true);
+  });
+
+  it('should build and add an entity with enabled=false', () => {
+    const entity = world.buildAndAddEntity(
+      'disabled-entity',
+      [mock1Component],
+      {
+        enabled: false,
+      },
+    );
+
+    expect(entity.enabled).toBe(false);
+    expect(world.getEntityById(entity.id)).toBe(entity);
+  });
+
+  it('should build and add an entity with both enabled and parent parameters', () => {
+    const parent = world.buildAndAddEntity('parent', [mock1Component]);
+    const child = world.buildAndAddEntity('child', [mock2Component], {
+      enabled: false,
+      parent,
+    });
+
+    expect(child.enabled).toBe(false);
+    expect(child.parent).toBe(parent);
+    expect(parent.children.has(child)).toBe(true);
+  });
 });

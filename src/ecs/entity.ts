@@ -3,6 +3,28 @@ import type { Query } from './types/Query';
 import type { World } from './world';
 
 /**
+ * Options for configuring an Entity.
+ */
+export interface EntityOptions {
+  /**
+   * Indicates whether the entity is enabled.
+   */
+  enabled: boolean;
+
+  /**
+   * The optional parent entity to assign at creation.
+   */
+  parent?: Entity;
+}
+
+/**
+ * Default options for an Entity.
+ */
+const defaultEntityOptions: EntityOptions = {
+  enabled: true,
+};
+
+/**
  * Represents an entity in the Entity-Component-System (ECS) architecture.
  * An entity is a container for components and has a unique identifier.
  */
@@ -52,21 +74,30 @@ export class Entity {
    * @param name - The name of the entity.
    * @param world - The world to which this entity belongs.
    * @param initialComponents - The initial components to associate with the entity.
-   * @param enabled - Indicates whether the entity is enabled. Defaults to true.
+   * @param options - Optional configuration for the entity.
    */
   constructor(
     name: string,
     world: World,
     initialComponents: Component[],
-    enabled: boolean = true,
+    options: Partial<EntityOptions> = {},
   ) {
+    const mergedOptions: EntityOptions = {
+      ...defaultEntityOptions,
+      ...options,
+    };
+
     this._id = Entity._generateId();
     this._components = new Map<symbol, Component>(
       initialComponents.map((component) => [component.name, component]),
     );
     this.name = name;
     this.world = world;
-    this.enabled = enabled;
+    this.enabled = mergedOptions.enabled;
+
+    if (mergedOptions.parent) {
+      this.parentTo(mergedOptions.parent);
+    }
   }
 
   /**

@@ -18,8 +18,8 @@ describe('System', () => {
     world = new World('TestWorld');
     system = new TestSystem('TestSystem', [Symbol('TestComponent')]);
     entities = [
-      new Entity('Entity1', world, [], true),
-      new Entity('Entity2', world, [], true),
+      new Entity('Entity1', world, []),
+      new Entity('Entity2', world, []),
     ];
   });
 
