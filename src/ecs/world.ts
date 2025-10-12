@@ -317,10 +317,17 @@ export class World implements Updatable, Stoppable {
    * Builds and adds an entity to the world.
    * @param name - The name of the entity.
    * @param components - The components to add to the entity.
+   * @param enabled - Indicates whether the entity is enabled. Defaults to true.
+   * @param parent - The optional parent entity to assign at creation.
    * @returns The created entity.
    */
-  public buildAndAddEntity(name: string, components: Component[]): Entity {
-    const entity = new Entity(name, this, components);
+  public buildAndAddEntity(
+    name: string,
+    components: Component[],
+    enabled: boolean = true,
+    parent?: Entity,
+  ): Entity {
+    const entity = new Entity(name, this, components, enabled, parent);
     this.addEntity(entity);
 
     return entity;

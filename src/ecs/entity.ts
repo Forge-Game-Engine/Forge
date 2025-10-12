@@ -53,12 +53,14 @@ export class Entity {
    * @param world - The world to which this entity belongs.
    * @param initialComponents - The initial components to associate with the entity.
    * @param enabled - Indicates whether the entity is enabled. Defaults to true.
+   * @param parent - The optional parent entity to assign at creation.
    */
   constructor(
     name: string,
     world: World,
     initialComponents: Component[],
     enabled: boolean = true,
+    parent?: Entity,
   ) {
     this._id = Entity._generateId();
     this._components = new Map<symbol, Component>(
@@ -67,6 +69,10 @@ export class Entity {
     this.name = name;
     this.world = world;
     this.enabled = enabled;
+
+    if (parent) {
+      this.parentTo(parent);
+    }
   }
 
   /**
