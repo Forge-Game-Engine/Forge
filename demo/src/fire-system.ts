@@ -5,7 +5,7 @@ export class FireSystem extends System {
   private readonly _runAction: HoldAction;
 
   constructor(fireAction: TriggerAction, runAction: HoldAction) {
-    super('FireSystem', [InputsComponent.symbol]);
+    super(Symbol('FireSystem'), [InputsComponent.symbol]);
 
     this._fireAction = fireAction;
     this._runAction = runAction;

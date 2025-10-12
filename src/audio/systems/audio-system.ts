@@ -9,7 +9,7 @@ export class AudioSystem extends System {
    * Creates an instance of AudioSystem.
    */
   constructor() {
-    super('sound', [SoundComponent.symbol]);
+    super(Symbol('sound'), [SoundComponent.symbol]);
   }
 
   /**

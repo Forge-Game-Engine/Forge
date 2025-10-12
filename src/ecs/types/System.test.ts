@@ -16,7 +16,7 @@ describe('System', () => {
 
   beforeEach(() => {
     world = new World('TestWorld');
-    system = new TestSystem('TestSystem', [Symbol('TestComponent')]);
+    system = new TestSystem(Symbol('TestSystem'), [Symbol('TestComponent')]);
     entities = [
       new Entity('Entity1', world, [], true),
       new Entity('Entity2', world, [], true),
@@ -24,7 +24,7 @@ describe('System', () => {
   });
 
   it('should initialize with given name and components', () => {
-    expect(system.name).toBe('TestSystem');
+    expect(typeof system.name).toBe('symbol');
     expect(system.query.length).toBe(1);
   });
 

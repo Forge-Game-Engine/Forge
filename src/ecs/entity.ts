@@ -10,7 +10,7 @@ export class Entity {
   /**
    * The name of the entity.
    */
-  public name: string;
+  public name?: string;
 
   /**
    * Indicates whether the entity is enabled.
@@ -49,13 +49,13 @@ export class Entity {
 
   /**
    * Creates a new Entity instance.
-   * @param name - The name of the entity.
+   * @param name - The name of the entity (optional).
    * @param world - The world to which this entity belongs.
    * @param initialComponents - The initial components to associate with the entity.
    * @param enabled - Indicates whether the entity is enabled. Defaults to true.
    */
   constructor(
-    name: string,
+    name: string | undefined,
     world: World,
     initialComponents: Component[],
     enabled: boolean = true,
@@ -170,8 +170,13 @@ export class Entity {
     const component = this.getComponent<T>(componentName);
 
     if (component === null) {
+      const componentNameStr = componentName.toString();
+      const entityIdentifier = this.name
+        ? `"${this.name}"`
+        : `with id ${this._id}`;
+
       throw new Error(
-        `Tried to get required component "${componentName.toString()}" but it is null on the entity "${this.name}"`,
+        `Tried to get required component "${componentNameStr}" but it is null on the entity ${entityIdentifier}`,
       );
     }
 

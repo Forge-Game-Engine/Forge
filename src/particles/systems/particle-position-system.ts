@@ -16,7 +16,7 @@ export class ParticlePositionSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('particlePosition', [
+    super(Symbol('particlePosition'), [
       ParticleComponent.symbol,
       PositionComponent.symbol,
       RotationComponent.symbol,

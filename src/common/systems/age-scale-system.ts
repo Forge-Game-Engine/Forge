@@ -11,7 +11,7 @@ export class AgeScaleSystem extends System {
    * Creates an instance of AgeScaleSystem.
    */
   constructor() {
-    super('AgeScale', [
+    super(Symbol('AgeScale'), [
       AgeComponent.symbol,
       ScaleComponent.symbol,
       AgeScaleComponent.symbol,

@@ -9,7 +9,7 @@ export class SpriteBatchingSystem extends System {
   private readonly _spriteBatch: RenderableBatchComponent;
 
   constructor(batcherEntity: Entity) {
-    super('sprite-batching', [
+    super(Symbol('sprite-batching'), [
       PositionComponent.symbol,
       SpriteComponent.symbol,
     ]);

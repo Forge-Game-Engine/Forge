@@ -15,7 +15,7 @@ export class SpriteAnimationSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('spriteAnimation', [
+    super(Symbol('spriteAnimation'), [
       SpriteAnimationComponent.symbol,
       SpriteComponent.symbol,
     ]);

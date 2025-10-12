@@ -13,7 +13,7 @@ export class TransformSystem extends System {
    * Creates an instance of TransformSystem.
    */
   constructor() {
-    super('Transform', []);
+    super(Symbol('Transform'), []);
   }
 
   /**

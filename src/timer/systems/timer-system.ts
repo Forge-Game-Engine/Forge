@@ -6,7 +6,7 @@ export class TimerSystem extends System {
   private readonly _time: Time;
 
   constructor(time: Time) {
-    super('timer', [TimerComponent.symbol]);
+    super(Symbol('timer'), [TimerComponent.symbol]);
     this._time = time;
   }
 

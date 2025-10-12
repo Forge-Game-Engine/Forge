@@ -7,7 +7,7 @@ export class UpdateInputSystem extends System {
 
   /** Constructs a new UpdateInputSystem. */
   constructor(world: World) {
-    super('input', [InputsComponent.symbol]);
+    super(Symbol('input'), [InputsComponent.symbol]);
     this._world = world;
   }
 

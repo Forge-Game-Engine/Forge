@@ -15,7 +15,7 @@ export class AgeSystem extends System {
    * @param world - The World instance.
    */
   constructor(world: World) {
-    super('Age', [AgeComponent.symbol]);
+    super(Symbol('Age'), [AgeComponent.symbol]);
     this._time = world.time;
     this._world = world;
   }

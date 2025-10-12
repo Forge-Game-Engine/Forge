@@ -30,7 +30,7 @@ export class ParticleEmitterSystem extends System {
    * @param world - The World instance.
    */
   constructor(world: World) {
-    super('particleEmitter', [ParticleEmitterComponent.symbol]);
+    super(Symbol('particleEmitter'), [ParticleEmitterComponent.symbol]);
     this._time = world.time;
     this._world = world;
     this._random = new Random();

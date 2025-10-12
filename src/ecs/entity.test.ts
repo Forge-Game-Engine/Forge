@@ -15,11 +15,18 @@ class MockComponent implements Component {
 
 const world = new World('test-world');
 
-test('creating an entity', () => {
+test('creating an entity with a name', () => {
   const entity = new Entity('player', world, []);
 
   expect(entity).not.toBe(null);
   expect(entity.name).toBe('player');
+});
+
+test('creating an entity without a name', () => {
+  const entity = new Entity(undefined, world, []);
+
+  expect(entity).not.toBe(null);
+  expect(entity.name).toBeUndefined();
 });
 
 test('adding a component', () => {

@@ -46,7 +46,7 @@ describe('World', () => {
   });
 
   it('should call runSystem on each system during update with enabled entities', () => {
-    const system = new MockSystem('System1', [mock1Component.name]);
+    const system = new MockSystem(Symbol('System1'), [mock1Component.name]);
 
     world.addSystem(system);
 
@@ -62,7 +62,7 @@ describe('World', () => {
   });
 
   it('should call runSystem on each system during update with matching entities', () => {
-    const system = new MockSystem('System1', [mock1Component.name]);
+    const system = new MockSystem(Symbol('System1'), [mock1Component.name]);
 
     const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
     const entity2 = world.buildAndAddEntity('entity2', [mock2Component]);
@@ -77,8 +77,8 @@ describe('World', () => {
   });
 
   it('should call stop on all systems when stopped', () => {
-    const system1 = new MockSystem('System1', [mock1Component.name]);
-    const system2 = new MockSystem('System2', [mock1Component.name]);
+    const system1 = new MockSystem(Symbol('System1'), [mock1Component.name]);
+    const system2 = new MockSystem(Symbol('System2'), [mock1Component.name]);
     world.addSystems(system1, system2);
 
     world.stop();

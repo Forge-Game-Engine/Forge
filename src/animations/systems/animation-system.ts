@@ -13,7 +13,7 @@ export class AnimationSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('animation', [AnimationComponent.symbol]);
+    super(Symbol('animation'), [AnimationComponent.symbol]);
     this._time = time;
   }
 

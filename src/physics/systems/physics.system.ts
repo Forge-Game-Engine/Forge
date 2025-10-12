@@ -9,7 +9,7 @@ export class PhysicsSystem extends System {
   private readonly _engine: Engine;
 
   constructor(time: Time, engine: Engine) {
-    super('physics', [
+    super(Symbol('physics'), [
       PositionComponent.symbol,
       RotationComponent.symbol,
       PhysicsBodyComponent.symbol,

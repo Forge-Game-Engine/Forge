@@ -43,7 +43,7 @@ export class RenderSystem extends System {
   private readonly _instanceBuffer: WebGLBuffer;
 
   constructor(options: RenderSystemOptions) {
-    super('renderer', [RenderableBatchComponent.symbol]);
+    super(Symbol('renderer'), [RenderableBatchComponent.symbol]);
 
     const { layer } = options;
     this._layer = layer;

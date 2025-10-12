@@ -15,7 +15,7 @@ export class CameraSystem extends System {
    * @param time - The `Time` instance for managing time-related operations.
    */
   constructor(time: Time) {
-    super('camera', [CameraComponent.symbol, PositionComponent.symbol]);
+    super(Symbol('camera'), [CameraComponent.symbol, PositionComponent.symbol]);
 
     this._time = time;
   }

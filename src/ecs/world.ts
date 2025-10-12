@@ -1,5 +1,4 @@
 import { type Stoppable, Time, type Updatable } from '../common';
-import { isString } from '../utilities';
 import { systemRegistrationPositions } from './constants';
 import { Entity } from './entity';
 import type { Component, Query, System } from './types';
@@ -27,7 +26,7 @@ export class World implements Updatable, Stoppable {
   /**
    * A map of system names to the entities they operate on.
    */
-  private readonly _systemEntities = new Map<string, Set<Entity>>();
+  private readonly _systemEntities = new Map<symbol, Set<Entity>>();
 
   /**
    * A temporary array to hold enabled entities for system updates.
@@ -76,7 +75,9 @@ export class World implements Updatable, Stoppable {
       const entities = this._systemEntities.get(system.name);
 
       if (!entities) {
-        throw new Error(`Unable to get entities for system ${system.name}`);
+        throw new Error(
+          `Unable to get entities for system ${system.name.toString()}`,
+        );
       }
 
       this._enabledEntities.length = 0;
@@ -261,11 +262,11 @@ export class World implements Updatable, Stoppable {
    * @param system - The system to remove.
    * @returns The world instance.
    */
-  public removeSystem(systemToRemove: string | System) {
+  public removeSystem(systemToRemove: symbol | System) {
     for (const systemOrderPair of this._systems) {
       const { system } = systemOrderPair;
       const isNameMatch =
-        isString(systemToRemove) && system.name === systemToRemove;
+        typeof systemToRemove === 'symbol' && system.name === systemToRemove;
       const isSystemMatch = system === systemToRemove;
 
       if (isNameMatch || isSystemMatch) {
@@ -302,7 +303,9 @@ export class World implements Updatable, Stoppable {
       const entities = this._systemEntities.get(system.name);
 
       if (!entities) {
-        throw new Error(`Unable to get entities for system ${system.name}`);
+        throw new Error(
+          `Unable to get entities for system ${system.name.toString()}`,
+        );
       }
 
       if (entity.containsAllComponents(system.query)) {
@@ -315,11 +318,14 @@ export class World implements Updatable, Stoppable {
 
   /**
    * Builds and adds an entity to the world.
-   * @param name - The name of the entity.
+   * @param name - The name of the entity (optional).
    * @param components - The components to add to the entity.
    * @returns The created entity.
    */
-  public buildAndAddEntity(name: string, components: Component[]): Entity {
+  public buildAndAddEntity(
+    name: string | undefined,
+    components: Component[],
+  ): Entity {
     const entity = new Entity(name, this, components);
     this.addEntity(entity);
 

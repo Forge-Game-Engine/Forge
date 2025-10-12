@@ -11,7 +11,7 @@ export abstract class System implements Stoppable {
   /**
    * The name of the system.
    */
-  public name: string;
+  public name: symbol;
 
   /**
    * The components that this system operates on.
@@ -28,7 +28,7 @@ export abstract class System implements Stoppable {
    * @param name - The name of the system.
    * @param query - The components that this system operates on.
    */
-  constructor(name: string, query: Query) {
+  constructor(name: symbol, query: Query) {
     this.name = name;
     this.query = query;
   }

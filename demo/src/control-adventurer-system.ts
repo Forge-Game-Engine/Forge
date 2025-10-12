@@ -22,7 +22,7 @@ export class ControlAdventurerSystem extends System {
     jumpTriggerInput: TriggerAction,
     takeDamageTriggerInput: TriggerAction,
   ) {
-    super('control adventurer', [
+    super(Symbol('control adventurer'), [
       ControlAdventurerComponent.symbol,
       SpriteAnimationComponent.symbol,
       FlipComponent.symbol,
