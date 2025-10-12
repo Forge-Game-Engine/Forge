@@ -181,38 +181,40 @@ spawner.startWaves();
 
 ### Cooldown Timer
 
-Implement ability cooldowns:
+Implement ability cooldowns with data in the component and logic in a system:
 
 ```ts
+// Component stores only data
 class AbilityComponent implements Component {
   name = Symbol('Ability');
   cooldownRemaining = 0;
   cooldownDuration = 3000;  // 3 second cooldown
-  
-  canUse(): boolean {
-    return this.cooldownRemaining <= 0;
-  }
-  
-  use() {
-    if (this.canUse()) {
-      // Execute ability
-      console.log('Ability used!');
-      this.cooldownRemaining = this.cooldownDuration;
-    }
-  }
 }
 
-class CooldownSystem extends System {
+// System contains the logic
+class AbilitySystem extends System {
   constructor() {
-    super('cooldown', [AbilityComponent.symbol]);
+    super('ability', [AbilityComponent.symbol]);
   }
   
   run(entity: Entity) {
     const ability = entity.getComponent(AbilityComponent);
     
+    // Update cooldown
     if (ability.cooldownRemaining > 0) {
       ability.cooldownRemaining -= this.time.deltaTimeInMilliseconds;
       ability.cooldownRemaining = Math.max(0, ability.cooldownRemaining);
+    }
+  }
+  
+  // System method to use ability
+  useAbility(entity: Entity) {
+    const ability = entity.getComponent(AbilityComponent);
+    
+    if (ability.cooldownRemaining <= 0) {
+      // Execute ability logic
+      console.log('Ability used!');
+      ability.cooldownRemaining = ability.cooldownDuration;
     }
   }
 }

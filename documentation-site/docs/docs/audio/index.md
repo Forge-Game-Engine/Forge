@@ -218,17 +218,16 @@ soundComp.sound.on('loaderror', (id, error) => {
 
 ## Complete Examples
 
-### Background Music Manager
+### Background Music System
 
 ```ts
-import { Entity, SoundComponent, AudioSystem } from '@forge-game-engine/forge';
+import { System, Entity, SoundComponent } from '@forge-game-engine/forge';
 
-class MusicManager {
+class MusicSystem extends System {
   private currentMusic: Entity | null = null;
   
-  constructor(private world: World) {
-    // Ensure audio system is added
-    world.addSystem(new AudioSystem());
+  constructor() {
+    super('music', []);
   }
   
   playMusic(musicPath: string, fadeInMs: number = 1000) {
@@ -270,61 +269,71 @@ class MusicManager {
 }
 
 // Usage
-const musicManager = new MusicManager(world);
-musicManager.playMusic('audio/level1-theme.mp3');
+const musicSystem = new MusicSystem();
+world.addSystem(musicSystem);
+world.addSystem(new AudioSystem());
+
+musicSystem.playMusic('audio/level1-theme.mp3');
 ```
 
-### Sound Effect Pool
+### Sound Effect System
 
 ```ts
-import { SoundComponent } from '@forge-game-engine/forge';
+import { System, SoundComponent, PositionComponent } from '@forge-game-engine/forge';
 
-class SoundEffectManager {
-  private sounds = new Map<string, SoundComponent>();
+class SoundEffectSystem extends System {
+  private sounds = new Map<string, HowlOptions>();
   
-  constructor(private world: World) {
-    world.addSystem(new AudioSystem());
+  constructor() {
+    super('sound-effects', []);
   }
   
   registerSound(name: string, options: any) {
-    const sound = new SoundComponent(options);
-    this.sounds.set(name, sound);
+    this.sounds.set(name, options);
   }
   
-  play(name: string) {
-    const sound = this.sounds.get(name);
-    if (sound) {
-      sound.sound.play();
-    }
-  }
-  
-  playAt(name: string, x: number, y: number) {
-    const sound = this.sounds.get(name);
-    if (sound) {
-      // Create temporary entity at position
+  playSound(name: string) {
+    const options = this.sounds.get(name);
+    if (options) {
       const soundEntity = this.world.buildAndAddEntity(`sfx-${name}`, [
-        new PositionComponent(x, y),
-        sound
+        new SoundComponent(options, true) // true = play immediately
       ]);
       
       // Remove entity when sound finishes
+      const sound = soundEntity.getComponent(SoundComponent);
       sound.sound.once('end', () => {
         this.world.removeEntity(soundEntity);
       });
+    }
+  }
+  
+  playSoundAt(name: string, x: number, y: number) {
+    const options = this.sounds.get(name);
+    if (options) {
+      const soundEntity = this.world.buildAndAddEntity(`sfx-${name}`, [
+        new PositionComponent(x, y),
+        new SoundComponent(options, true)
+      ]);
       
-      sound.playSound = true;
+      const sound = soundEntity.getComponent(SoundComponent);
+      sound.sound.once('end', () => {
+        this.world.removeEntity(soundEntity);
+      });
     }
   }
 }
 
 // Usage
-const sfxManager = new SoundEffectManager(world);
-sfxManager.registerSound('jump', { src: ['audio/jump.mp3'] });
-sfxManager.registerSound('shoot', { src: ['audio/shoot.mp3'] });
+const sfxSystem = new SoundEffectSystem();
+world.addSystem(sfxSystem);
+world.addSystem(new AudioSystem());
 
-// Play sounds
-sfxManager.play('jump');
-sfxManager.playAt('shoot', 100, 200); // With position
+sfxSystem.registerSound('jump', { src: ['audio/jump.mp3'] });
+sfxSystem.registerSound('shoot', { src: ['audio/shoot.mp3'] });
+
+// Play sounds from within other systems
+sfxSystem.playSound('jump');
+sfxSystem.playSoundAt('shoot', 100, 200);
 ```
 
 ### Dynamic Audio Based on Game State
