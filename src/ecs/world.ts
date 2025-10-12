@@ -1,7 +1,7 @@
 import { type Stoppable, Time, type Updatable } from '../common';
 import { isString } from '../utilities';
 import { systemRegistrationPositions } from './constants';
-import { Entity } from './entity';
+import { Entity, type EntityOptions } from './entity';
 import type { Component, Query, System } from './types';
 
 interface SystemOrderPair {
@@ -317,17 +317,15 @@ export class World implements Updatable, Stoppable {
    * Builds and adds an entity to the world.
    * @param name - The name of the entity.
    * @param components - The components to add to the entity.
-   * @param enabled - Indicates whether the entity is enabled. Defaults to true.
-   * @param parent - The optional parent entity to assign at creation.
+   * @param options - Optional configuration for the entity.
    * @returns The created entity.
    */
   public buildAndAddEntity(
     name: string,
     components: Component[],
-    enabled: boolean = true,
-    parent?: Entity,
+    options: EntityOptions = {},
   ): Entity {
-    const entity = new Entity(name, this, components, enabled, parent);
+    const entity = new Entity(name, this, components, options);
     this.addEntity(entity);
 
     return entity;

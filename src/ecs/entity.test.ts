@@ -78,14 +78,14 @@ test('removeParent removes the parent', () => {
 
 test('creating an entity with a parent in constructor', () => {
   const parent = new Entity('parent', world, []);
-  const child = new Entity('child', world, [], true, parent);
+  const child = new Entity('child', world, [], { parent });
 
   expect(child.parent).toBe(parent);
   expect(parent.children.has(child)).toBe(true);
 });
 
 test('creating an entity with enabled=false in constructor', () => {
-  const entity = new Entity('disabled-entity', world, [], false);
+  const entity = new Entity('disabled-entity', world, [], { enabled: false });
 
   expect(entity.enabled).toBe(false);
 });

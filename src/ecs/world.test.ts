@@ -193,12 +193,9 @@ describe('World', () => {
 
   it('should build and add an entity with parent parameter', () => {
     const parent = world.buildAndAddEntity('parent', [mock1Component]);
-    const child = world.buildAndAddEntity(
-      'child',
-      [mock2Component],
-      true,
+    const child = world.buildAndAddEntity('child', [mock2Component], {
       parent,
-    );
+    });
 
     expect(child.parent).toBe(parent);
     expect(parent.children.has(child)).toBe(true);
@@ -208,7 +205,9 @@ describe('World', () => {
     const entity = world.buildAndAddEntity(
       'disabled-entity',
       [mock1Component],
-      false,
+      {
+        enabled: false,
+      },
     );
 
     expect(entity.enabled).toBe(false);
@@ -217,12 +216,10 @@ describe('World', () => {
 
   it('should build and add an entity with both enabled and parent parameters', () => {
     const parent = world.buildAndAddEntity('parent', [mock1Component]);
-    const child = world.buildAndAddEntity(
-      'child',
-      [mock2Component],
-      false,
+    const child = world.buildAndAddEntity('child', [mock2Component], {
+      enabled: false,
       parent,
-    );
+    });
 
     expect(child.enabled).toBe(false);
     expect(child.parent).toBe(parent);
