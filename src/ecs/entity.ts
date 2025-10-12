@@ -7,15 +7,22 @@ import type { World } from './world';
  */
 export interface EntityOptions {
   /**
-   * Indicates whether the entity is enabled. Defaults to true.
+   * Indicates whether the entity is enabled.
    */
-  enabled?: boolean;
+  enabled: boolean;
 
   /**
    * The optional parent entity to assign at creation.
    */
   parent?: Entity;
 }
+
+/**
+ * Default options for an Entity.
+ */
+const defaultEntityOptions: EntityOptions = {
+  enabled: true,
+};
 
 /**
  * Represents an entity in the Entity-Component-System (ECS) architecture.
@@ -73,18 +80,23 @@ export class Entity {
     name: string,
     world: World,
     initialComponents: Component[],
-    options: EntityOptions = {},
+    options: Partial<EntityOptions> = {},
   ) {
+    const mergedOptions: EntityOptions = {
+      ...defaultEntityOptions,
+      ...options,
+    };
+
     this._id = Entity._generateId();
     this._components = new Map<symbol, Component>(
       initialComponents.map((component) => [component.name, component]),
     );
     this.name = name;
     this.world = world;
-    this.enabled = options.enabled ?? true;
+    this.enabled = mergedOptions.enabled;
 
-    if (options.parent) {
-      this.parentTo(options.parent);
+    if (mergedOptions.parent) {
+      this.parentTo(mergedOptions.parent);
     }
   }
 

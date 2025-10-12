@@ -323,7 +323,7 @@ export class World implements Updatable, Stoppable {
   public buildAndAddEntity(
     name: string,
     components: Component[],
-    options: EntityOptions = {},
+    options: Partial<EntityOptions> = {},
   ): Entity {
     const entity = new Entity(name, this, components, options);
     this.addEntity(entity);
