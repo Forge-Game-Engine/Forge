@@ -38,6 +38,53 @@ const playerEntity = new Entity('player', world, [
 world.addEntity(entity);
 ```
 
+### Creating entities with parent-child relationships
+
+You can define a parent entity at the time of creation by passing an optional `parent` parameter.
+
+``` ts title="Using Entity constructor"
+const parent = new Entity('parent', world, [
+  new PositionComponent(100, 100)
+]);
+
+// Create child with parent at construction time
+const child = new Entity('child', world, [
+  new PositionComponent(10, 10)
+], true, parent);
+```
+
+``` ts title="Using buildAndAddEntity helper"
+const parent = world.buildAndAddEntity('parent', [
+  new PositionComponent(100, 100)
+]);
+
+// Create child with parent at construction time
+const child = world.buildAndAddEntity('child', [
+  new PositionComponent(10, 10)
+], true, parent);
+```
+
+### Creating disabled entities
+
+You can create entities that are initially disabled by setting the `enabled` parameter to `false`.
+
+``` ts title="Using buildAndAddEntity helper"
+// Create a disabled entity
+const disabledEntity = world.buildAndAddEntity('hidden-entity', [
+  new PositionComponent(0, 0)
+], false);
+
+// Enable it later when needed
+disabledEntity.enabled = true;
+```
+
+``` ts title="Creating disabled child with parent"
+const parent = world.buildAndAddEntity('parent', []);
+
+// Create a disabled child entity with a parent
+const child = world.buildAndAddEntity('child', [], false, parent);
+```
+
 ## Adding and removing components
 
 When creating an entity you will provide it with some initial components.
