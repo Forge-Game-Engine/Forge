@@ -170,7 +170,7 @@
     "build": "vite build",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
-    "check-exports": "attw --pack . --ignore-rules=false-esm --ignore-rules=no-resolution",
+    "check-exports": "attw --pack . --ignore-rules=false-esm --profile node16",
     "check-types": "tsc --noEmit --project tsconfig.ci.json",
     "cspell": "cspell \"**\"",
     "lint": "eslint src",
