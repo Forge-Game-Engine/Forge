@@ -35,7 +35,7 @@ The entity being passed into the run method is guaranteed to contain the compone
 
 ## The run method
 
-The run method is where you logic lives. Here is where you will read and mutate you components. 
+The run method is where you logic lives. Here is where you will read and mutate you components.
 
 ### Early exit
 
@@ -65,7 +65,7 @@ You can temporarily disable a system by setting its `isEnabled` property to `fal
 
 ```ts
 movementSystem.isEnabled = false; // Will not run
-movementSystem.isEnabled = true;  // Will run again
+movementSystem.isEnabled = true; // Will run again
 ```
 
 ## Pre-processing entities
@@ -82,7 +82,7 @@ public beforeAll(entities: Entity[]): Entity[] {
 
 This hook causes you system to loop through entities twice. Which means it can be expensive.
 
-Entities will run through your system in the order that they were added to the world. If you intend on using the this function to sort entities, consider updating the registration order instead. 
+Entities will run through your system in the order that they were added to the world. If you intend on using the this function to sort entities, consider updating the registration order instead.
 
 Entities are already filtered (with some smart caching) by the components that they contain. If you need to filter in the `beforeAll` hook consider adding a new [tag component](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#tag) to your entities and system query to discriminate between entities.
 

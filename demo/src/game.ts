@@ -1,17 +1,18 @@
 import {
   AgeScaleSystem,
-  AgeSystem,
   createImageNameSprite,
   createShaderStore,
   createWorld,
   Game,
   ImageCache,
+  LifetimeTrackingSystem,
   ParticleEmitter,
   ParticleEmitterComponent,
   ParticleEmitterSystem,
   ParticlePositionSystem,
   registerCamera,
   registerRendering,
+  RemoveFromWorldLifecycleSystem,
   SpriteAnimationSystem,
 } from '../../src';
 import * as animationDemo from './animationDemo';
@@ -167,7 +168,8 @@ world.addSystems(
   ),
   new ParticleEmitterSystem(world),
   new ParticlePositionSystem(world.time),
-  new AgeSystem(world),
+  new LifetimeTrackingSystem(world),
+  new RemoveFromWorldLifecycleSystem(world),
   new AgeScaleSystem(),
 );
 

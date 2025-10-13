@@ -1,10 +1,10 @@
 import { Entity, System } from '../../ecs';
 import { ScaleComponent } from '../../common';
-import { AgeComponent } from '../../common/components/age-component';
+import { LifetimeComponent } from '../../lifecycle/components/lifetime-component';
 import { AgeScaleComponent } from '../components/age-scale-component';
 
 /**
- * System that manages the scale of entities with age
+ * System that manages the scale of entities with lifetime
  */
 export class AgeScaleSystem extends System {
   /**
@@ -12,19 +12,19 @@ export class AgeScaleSystem extends System {
    */
   constructor() {
     super('AgeScale', [
-      AgeComponent.symbol,
+      LifetimeComponent.symbol,
       ScaleComponent.symbol,
       AgeScaleComponent.symbol,
     ]);
   }
 
   /**
-   * Updates the entity's scale based on its age, interpolating between the original scale and the lifetime scale reduction.
-   * @param entity - The entity whose scale will be updated according to its age.
+   * Updates the entity's scale based on its lifetime, interpolating between the original scale and the lifetime scale reduction.
+   * @param entity - The entity whose scale will be updated according to its lifetime.
    */
   public run(entity: Entity): void {
-    const ageComponent = entity.getComponentRequired<AgeComponent>(
-      AgeComponent.symbol,
+    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
+      LifetimeComponent.symbol,
     );
     const scaleComponent = entity.getComponentRequired<ScaleComponent>(
       ScaleComponent.symbol,
@@ -33,13 +33,14 @@ export class AgeScaleSystem extends System {
       AgeScaleComponent.symbol,
     );
 
-    const ageRatio = ageComponent.ageSeconds / ageComponent.lifetimeSeconds;
+    const lifetimeRatio =
+      lifetimeComponent.elapsedSeconds / lifetimeComponent.durationSeconds;
     const newScaleX =
-      ageScaleComponent.originalScaleX * (1 - ageRatio) +
-      ageScaleComponent.finalLifetimeScaleX * ageRatio;
+      ageScaleComponent.originalScaleX * (1 - lifetimeRatio) +
+      ageScaleComponent.finalLifetimeScaleX * lifetimeRatio;
     const newScaleY =
-      ageScaleComponent.originalScaleY * (1 - ageRatio) +
-      ageScaleComponent.finalLifetimeScaleY * ageRatio;
+      ageScaleComponent.originalScaleY * (1 - lifetimeRatio) +
+      ageScaleComponent.finalLifetimeScaleY * lifetimeRatio;
     scaleComponent.local.x = newScaleX;
     scaleComponent.local.y = newScaleY;
   }

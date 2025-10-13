@@ -8,7 +8,7 @@ A [`Component`](../../api/interfaces/Component) is a simple data container. It h
 
 ## Creating a component
 
-To create a component, you need to define a class that implements the [`Component`](../../api/interfaces/Component) interface. The interface enforces a [`name`](../../api/interfaces/Component#name) property. 
+To create a component, you need to define a class that implements the [`Component`](../../api/interfaces/Component) interface. The interface enforces a [`name`](../../api/interfaces/Component#name) property.
 
 :::info
 
@@ -16,7 +16,7 @@ The name property is a [symbol](https://developer.mozilla.org/en-US/docs/Web/Jav
 
 :::
 
-You can then add more properties. 
+You can then add more properties.
 
 :::info
 
@@ -24,9 +24,9 @@ These properties represent game state and are generally expected to be [mutable]
 
 :::
 
-Here is an example of the [`RotationComponent`](../../api/classes/RotationComponent): 
+Here is an example of the [`RotationComponent`](../../api/classes/RotationComponent):
 
-``` ts
+```ts
 export class RotationComponent implements Component {
   public name: symbol;
   public radians: number;
@@ -40,5 +40,5 @@ export class RotationComponent implements Component {
 }
 ```
 
-Components are meant to be composed together to make an entity. Try to find a balance between grouping related data together that will be updated together and having too much data coupled together in one component. 
+Components are meant to be composed together to make an entity. Try to find a balance between grouping related data together that will be updated together and having too much data coupled together in one component.
 Components should be small and represent one concept.

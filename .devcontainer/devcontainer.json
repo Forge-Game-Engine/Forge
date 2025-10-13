@@ -25,7 +25,7 @@
         "editor.tabSize": 2,
         "explorer.confirmDragAndDrop": false,
         "diffEditor.ignoreTrimWhitespace": true,
-        "explorer.confirmPasteNative": false,     
+        "explorer.confirmPasteNative": false,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.fontFamily": "JetBrains Mono, Fira Code, Menlo, Monaco, 'Courier New', monospace",
         "editor.fontLigatures": true,

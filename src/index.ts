@@ -6,6 +6,7 @@ export * from './common';
 export * from './ecs';
 export * from './events';
 export * from './input';
+export * from './lifecycle';
 export * from './math';
 export * from './physics';
 export * from './rendering';

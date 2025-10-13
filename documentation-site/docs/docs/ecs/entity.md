@@ -16,23 +16,23 @@ Using the helper is cleaner and has less boilerplate. It is recommend that you u
 
 :::
 
-``` ts title="With helper"
+```ts title="With helper"
 const playerEntity = world.buildAndAddEntity('player', [
   new PositionComponent(10, 15),
   new ScaleComponent(),
   new RotationComponent(),
   new SpriteComponent(sprite),
-  new PlayerComponent()
+  new PlayerComponent(),
 ]);
 ```
 
-``` ts title="Verbose, without helper"
+```ts title="Verbose, without helper"
 const playerEntity = new Entity('player', world, [
   new PositionComponent(10, 15),
   new ScaleComponent(),
   new RotationComponent(),
   new SpriteComponent(sprite),
-  new PlayerComponent()
+  new PlayerComponent(),
 ]);
 
 world.addEntity(entity);
@@ -42,49 +42,51 @@ world.addEntity(entity);
 
 You can define a parent entity at the time of creation by passing an options object with a `parent` property.
 
-``` ts title="Using Entity constructor"
-const parent = new Entity('parent', world, [
-  new PositionComponent(100, 100)
-]);
+```ts title="Using Entity constructor"
+const parent = new Entity('parent', world, [new PositionComponent(100, 100)]);
 
 // Create child with parent at construction time
-const child = new Entity('child', world, [
-  new PositionComponent(10, 10)
-], { parent });
+const child = new Entity('child', world, [new PositionComponent(10, 10)], {
+  parent,
+});
 ```
 
-``` ts title="Using buildAndAddEntity helper"
+```ts title="Using buildAndAddEntity helper"
 const parent = world.buildAndAddEntity('parent', [
-  new PositionComponent(100, 100)
+  new PositionComponent(100, 100),
 ]);
 
 // Create child with parent at construction time
-const child = world.buildAndAddEntity('child', [
-  new PositionComponent(10, 10)
-], { parent });
+const child = world.buildAndAddEntity(
+  'child',
+  [new PositionComponent(10, 10)],
+  { parent },
+);
 ```
 
 ### Creating disabled entities
 
 You can create entities that are initially disabled by passing an options object with `enabled: false`.
 
-``` ts title="Using buildAndAddEntity helper"
+```ts title="Using buildAndAddEntity helper"
 // Create a disabled entity
-const disabledEntity = world.buildAndAddEntity('hidden-entity', [
-  new PositionComponent(0, 0)
-], { enabled: false });
+const disabledEntity = world.buildAndAddEntity(
+  'hidden-entity',
+  [new PositionComponent(0, 0)],
+  { enabled: false },
+);
 
 // Enable it later when needed
 disabledEntity.enabled = true;
 ```
 
-``` ts title="Creating disabled child with parent"
+```ts title="Creating disabled child with parent"
 const parent = world.buildAndAddEntity('parent', []);
 
 // Create a disabled child entity with a parent
 const child = world.buildAndAddEntity('child', [], {
   enabled: false,
-  parent
+  parent,
 });
 ```
 
@@ -95,17 +97,17 @@ However, you will often find the need to add or remove components through out th
 
 ### Adding a component
 
-The [`addComponent`](../../api/classes/Entity.md#addcomponent) instance method will add the component to the entity if it isn't already present. 
+The [`addComponent`](../../api/classes/Entity.md#addcomponent) instance method will add the component to the entity if it isn't already present.
 
-``` ts
+```ts
 playerEntity.addComponent(new HealthBuffComponent(100));
 ```
 
 :::info
 
-The underlying component store is a [Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set). Which means that it will prevent you from accidentally adding the same component *instance* twice. 
+The underlying component store is a [Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set). Which means that it will prevent you from accidentally adding the same component _instance_ twice.
 
-Although it won't prevent you from adding the same *type* of component twice. If you do this, it will likely result in some unintended behavior. 
+Although it won't prevent you from adding the same _type_ of component twice. If you do this, it will likely result in some unintended behavior.
 
 It is recommend that you do not add more than one instance of a component type to an entity. If you feel like you need to do this, consider the pattern used in the [animation feature](https://github.com/Forge-Game-Engine/Forge/tree/6eae4e51dbdc502818b1c2f3a3ffce9e4a1fd125/src/animations).
 
@@ -113,24 +115,24 @@ It is recommend that you do not add more than one instance of a component type t
 
 ### Removing a component
 
-The [`removeComponent`](../../api/classes/Entity.md#removecomponent) instance method will remove the component from the entity if it is present. 
+The [`removeComponent`](../../api/classes/Entity.md#removecomponent) instance method will remove the component from the entity if it is present.
 
-``` ts
+```ts
 playerEntity.removeComponent(HealthBuffComponent.symbol);
 ```
 
 ## Disabling an Entity
 
 If you want to temporarily disable an entity, you can do so by setting the [`enabled`](../../api/classes/Entity.md#enabled-1) property.
-This means it will be ignored when sending entities to the systems. 
+This means it will be ignored when sending entities to the systems.
 
-``` ts
+```ts
 playerEntity.enabled = false;
 ```
 
 You can re-enable it later by setting it to true
 
-``` ts
+```ts
 playerEntity.enabled = true;
 ```
 
@@ -142,7 +144,7 @@ There are several ways to query for components on a specific entity.
 
 If you want to check if an entity contains a list of components, you can use the [`containsAllComponents`](../../api/classes/Entity.md#containsallcomponents) instance method.
 
-``` ts
+```ts
 const canBeFullyTransformed = playerEntity.containsAllComponents([
   PositionComponent.symbol,
   RotationComponent.symbol,
@@ -160,11 +162,13 @@ If you want to get a single component. You can use the [`getComponent`](../../ap
 
 The `getComponent` method will return the component if it exists or `null` if it does not exist.
 
-``` ts
-const scaleComponent = 
-  playerEntity.getComponent<ScaleComponent>(ScaleComponent.symbol);
+```ts
+const scaleComponent = playerEntity.getComponent<ScaleComponent>(
+  ScaleComponent.symbol,
+);
 
-if (scaleComponent) { // scaleComponent could be null
+if (scaleComponent) {
+  // scaleComponent could be null
   // if the player entity has a scale, double it!
   scaleComponent.x *= 2;
   scaleComponent.y *= 2;
@@ -173,16 +177,18 @@ if (scaleComponent) { // scaleComponent could be null
 
 The `getComponentRequired` method will return the component if it exists or throw an error if it does not exist.
 
-``` ts
-const scaleComponent = 
-  playerEntity.getComponentRequired<ScaleComponent>(ScaleComponent.symbol); // will throw if the player does not have a scale
+```ts
+const scaleComponent = playerEntity.getComponentRequired<ScaleComponent>(
+  ScaleComponent.symbol,
+); // will throw if the player does not have a scale
 
-  // the player entity definitely has a scale, double it!
-  scaleComponent.x *= 2;
-  scaleComponent.y *= 2;
+// the player entity definitely has a scale, double it!
+scaleComponent.x *= 2;
+scaleComponent.y *= 2;
 ```
+
 :::info
 
-Although there are legitimate use-cases for `getComponent`. You should always use `getComponentRequired` over `getComponent` if you expect the entity to have a specific component. It prevents the need to do null checks and also ensures that your game will not silently fail if the component is missing. 
+Although there are legitimate use-cases for `getComponent`. You should always use `getComponentRequired` over `getComponent` if you expect the entity to have a specific component. It prevents the need to do null checks and also ensures that your game will not silently fail if the component is missing.
 
 :::

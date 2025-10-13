@@ -38,7 +38,7 @@ const world = new World('home-town');
 game.registerWorld(world);
 ```
 
-:::tip 
+:::tip
 
 If you're using the [`createWorld`](../../api/functions/createWorld.md) utility, it will automatically add the world to your game.
 
@@ -54,7 +54,7 @@ You can remove a world from your game by using the [deregisterWorld](../../api/c
 const world = new World('home-town');
 
 game.registerWorld(world);
-... 
+...
 // later based on some event (e.g. clicking the "exit to main menu" button)
 game.deregisterWorld(world);
 ```
@@ -109,12 +109,12 @@ game.stop(); // also stops all worlds
 
 ## Handling a window resize
 
-When creating a game, a new [`ForgeEvent`](../../api/classes/ForgeEvent.md) is created that gets raised when the window resizes. 
+When creating a game, a new [`ForgeEvent`](../../api/classes/ForgeEvent.md) is created that gets raised when the window resizes.
 
 ```ts
 const game = new Game();
 
 game.onWindowResize.registerListener(() => {
   console.log('window resized!');
-})
+});
 ```

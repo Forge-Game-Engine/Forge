@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'vitest';
+import { ReturnToPoolStrategyComponent } from './return-to-pool-strategy-component';
+import { ObjectPool } from '../../pooling';
+
+describe('ReturnToPoolStrategyComponent', () => {
+  it('should initialize with correct symbol and pool reference', () => {
+    // Arrange
+    const pool = new ObjectPool(() => ({ value: 0 }));
+
+    // Act
+    const component = new ReturnToPoolStrategyComponent(pool);
+
+    // Assert
+    expect(component.name).toBe(ReturnToPoolStrategyComponent.symbol);
+    expect(component.pool).toBe(pool);
+  });
+
+  it('should store the pool reference correctly', () => {
+    // Arrange
+    const pool = new ObjectPool(() => ({ value: 42 }));
+
+    // Act
+    const component = new ReturnToPoolStrategyComponent(pool);
+
+    // Assert
+    expect(component.pool).toBe(pool);
+  });
+
+  it('should be a data-only component', () => {
+    // Arrange
+    const pool = new ObjectPool(() => ({ value: 0 }));
+
+    // Act
+    const component = new ReturnToPoolStrategyComponent(pool);
+
+    // Assert - verify it's a simple data container
+    expect(component.name).toBe(ReturnToPoolStrategyComponent.symbol);
+    expect(component.pool).toBe(pool);
+  });
+});

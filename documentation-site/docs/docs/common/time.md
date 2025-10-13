@@ -46,17 +46,17 @@ The `Time` instance provides a milliseconds and seconds API.
 
 ### Using deltaTime to make your game frame independent
 
-If you have an entity (let's call it the "player") that you wanted to move at rate of 10 units per second on the x-axis. You wouldn't be able to simply add the speed to the position in a system. 
+If you have an entity (let's call it the "player") that you wanted to move at rate of 10 units per second on the x-axis. You wouldn't be able to simply add the speed to the position in a system.
 This would introduce 2 issues:
 
-1) The entity would move 10 units per frame not per second. This is because the `run` method on the system executes *every frame*. That's way too fast!
-2) The player's hardware (including the monitor's refresh rate) would cause the number of frames executed in a second (frames-per-second or FPS) to vary. Meaning that the entity would change speed as the FPS changes!
+1. The entity would move 10 units per frame not per second. This is because the `run` method on the system executes _every frame_. That's way too fast!
+2. The player's hardware (including the monitor's refresh rate) would cause the number of frames executed in a second (frames-per-second or FPS) to vary. Meaning that the entity would change speed as the FPS changes!
 
 The solution is to use deltaTime (the time it took to render the last frame)
 
-❌ You should not do this: 
+❌ You should not do this:
 
-```ts 
+```ts
 ...
 public void run(entity: Entity) {
   const positionComponent = entity.getComponentRequired<PositionComponent>(PositionComponent.symbol);
@@ -95,5 +95,3 @@ You can implement features like a game pause menu by setting the `timeScale` to 
 ```ts
 world.time.timeScale = 0;
 ```
-
-

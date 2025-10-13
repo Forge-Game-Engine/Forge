@@ -28,7 +28,8 @@ export default defineConfig({
       },
       formats: ['es', 'cjs'],
       name: 'Forge',
-      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (format, entryName) =>
+        `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
     },
     minify: false,
   },

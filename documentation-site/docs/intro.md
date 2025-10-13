@@ -117,11 +117,7 @@ const image = await imageCache.getOrLoad('sprite.png');
 // diff-add-start
 const shaderStore = createShaderStore();
 
-const sprite = createImageSprite(
-  image,
-  renderLayers[0],
-  shaderStore,
-);
+const sprite = createImageSprite(image, renderLayers[0], shaderStore);
 // diff-add-end
 
 game.run();
@@ -153,11 +149,7 @@ const image = await imageCache.getOrLoad('sprite.png');
 
 const shaderStore = createShaderStore();
 
-const sprite = createImageSprite(
-  image,
-  renderLayers[0],
-  shaderStore,
-);
+const sprite = createImageSprite(image, renderLayers[0], shaderStore);
 
 // diff-add-start
 world.buildAndAddEntity('sprite', [
