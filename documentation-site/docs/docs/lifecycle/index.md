@@ -20,9 +20,9 @@ A data-only component that tracks an entity's lifetime:
 
 ```typescript
 class LifetimeComponent {
-  elapsedSeconds: number;    // Current elapsed time
-  durationSeconds: number;   // Total lifetime duration
-  hasExpired: boolean;       // Set to true when elapsed >= duration
+  elapsedSeconds: number; // Current elapsed time
+  durationSeconds: number; // Total lifetime duration
+  hasExpired: boolean; // Set to true when elapsed >= duration
 }
 ```
 
@@ -148,15 +148,15 @@ world.addSystems(
 // Spawn a bullet from the pool
 function fireBullet(x: number, y: number) {
   const bullet = bulletPool.acquire();
-  
+
   // Reset bullet state
   bullet.getComponent<PositionComponent>(PositionComponent.symbol)!.x = x;
   bullet.getComponent<PositionComponent>(PositionComponent.symbol)!.y = y;
-  
+
   // Add lifetime and pool strategy
   bullet.addComponent(new LifetimeComponent(5.0)); // 5 second lifetime
   bullet.addComponent(new ReturnToPoolStrategyComponent(bulletPool));
-  
+
   world.addEntity(bullet);
 }
 ```
@@ -195,7 +195,7 @@ import {
 class DelayedActionComponent implements Component {
   name = Symbol('DelayedAction');
   action: () => void;
-  
+
   constructor(action: () => void) {
     this.action = action;
   }
@@ -209,15 +209,15 @@ class DelayedActionSystem extends System {
       DelayedActionComponent.symbol,
     ]);
   }
-  
+
   run(entity: Entity): void {
     const lifetime = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol
+      LifetimeComponent.symbol,
     );
     const delayed = entity.getComponentRequired<DelayedActionComponent>(
-      DelayedActionComponent.symbol
+      DelayedActionComponent.symbol,
     );
-    
+
     if (lifetime.hasExpired) {
       delayed.action();
     }
@@ -258,9 +258,10 @@ The lifecycle module works seamlessly with other Forge systems:
 1. **Always add a strategy component**: Entities with `LifetimeComponent` should also have a strategy component (`RemoveFromWorldStrategyComponent` or `ReturnToPoolStrategyComponent`)
 
 2. **Add systems in the correct order**: Add `LifetimeTrackingSystem` before the handler systems:
+
    ```typescript
    world.addSystems(
-     new LifetimeTrackingSystem(world),      // First: track lifetime
+     new LifetimeTrackingSystem(world), // First: track lifetime
      new RemoveFromWorldLifecycleSystem(world), // Then: handle expired entities
    );
    ```
