@@ -1,8 +1,8 @@
 {
-  "label": "Lifecycle",
+  "label": "Entity Lifetime",
   "position": 4,
   "link": {
     "type": "generated-index",
-    "description": "The lifecycle module provides a flexible system for managing entity lifetimes with customizable strategies."
+    "description": "Automatically manage entity lifetimes with timed removal or object pooling."
   }
 }
