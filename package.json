@@ -184,7 +184,7 @@
   "description": "",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "@commitlint/cli": "^19.8.1",
+    "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@types/howler": "^2.2.12",
     "@types/matter-js": "^0.20.2",
