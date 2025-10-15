@@ -8,7 +8,6 @@ import { ReturnToPoolStrategyComponent } from '../strategies/return-to-pool-stra
  * with both LifetimeComponent and ReturnToPoolStrategyComponent.
  */
 export class ReturnToPoolLifecycleSystem extends System {
-
   /**
    * Creates an instance of ReturnToPoolLifecycleSystem.
    */

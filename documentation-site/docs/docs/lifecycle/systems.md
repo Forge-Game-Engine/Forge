@@ -31,6 +31,7 @@ world.addSystem(new LifetimeTrackingSystem(world));
 ## RemoveFromWorldLifecycleSystem
 
 Removes expired entities from the world. Only processes entities that have both:
+
 - `LifetimeComponent` (with `hasExpired` set to `true`)
 - `RemoveFromWorldStrategyComponent`
 
@@ -52,6 +53,7 @@ world.addSystems(
 ## ReturnToPoolLifecycleSystem
 
 Returns expired entities to their object pool and removes them from the world. Only processes entities that have both:
+
 - `LifetimeComponent` (with `hasExpired` set to `true`)
 - `ReturnToPoolStrategyComponent`
 
@@ -73,6 +75,7 @@ world.addSystems(
 ### Behavior
 
 When an entity expires:
+
 1. Calls the pool's `release()` method with the entity
 2. Removes the entity from the world
 
