@@ -45,6 +45,16 @@
         "default": "./dist/audio.cjs"
       }
     },
+    "./common": {
+      "import": {
+        "types": "./dist/common.d.ts",
+        "default": "./dist/common.js"
+      },
+      "require": {
+        "types": "./dist/common.d.ts",
+        "default": "./dist/common.cjs"
+      }
+    },
     "./ecs": {
       "import": {
         "types": "./dist/ecs.d.ts",
