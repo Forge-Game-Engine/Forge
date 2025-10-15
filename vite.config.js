@@ -17,6 +17,7 @@ export default defineConfig({
         ecs: path.resolve(__dirname, 'src/ecs/index.ts'),
         events: path.resolve(__dirname, 'src/events/index.ts'),
         input: path.resolve(__dirname, 'src/input/index.ts'),
+        lifecycle: path.resolve(__dirname, 'src/lifecycle/index.ts'),
         math: path.resolve(__dirname, 'src/math/index.ts'),
         particles: path.resolve(__dirname, 'src/particles/index.ts'),
         physics: path.resolve(__dirname, 'src/physics/index.ts'),
@@ -28,7 +29,8 @@ export default defineConfig({
       },
       formats: ['es', 'cjs'],
       name: 'Forge',
-      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (format, entryName) =>
+        `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
     },
     minify: false,
   },

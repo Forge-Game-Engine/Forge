@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: 'lts/*'
           registry-url: https://npm.pkg.github.com/
-          scope: "@forge-game-engine"
+          scope: '@forge-game-engine'
 
       - name: Bump version
         run: |

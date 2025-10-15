@@ -2,20 +2,27 @@ import type { Entity } from '../ecs';
 
 type PoolCreateCallback<T> = () => T;
 type PoolDisposeCallback<T> = (instance: T) => void;
+type PoolHydrateCallback<T> = (instance: T) => void;
+
+type PoolingOptions<T> = {
+  createCallback: PoolCreateCallback<T>;
+  disposeCallback?: PoolDisposeCallback<T>;
+  hydrateCallback?: PoolHydrateCallback<T>;
+};
 
 export class ObjectPool<T extends NonNullable<unknown> = Entity> {
   private readonly _pool: Array<T>;
   private readonly _createCallback: PoolCreateCallback<T>;
-  private readonly _disposeCallback: PoolDisposeCallback<T>;
+  private readonly _disposeCallback?: PoolDisposeCallback<T>;
+  private readonly _hydrateCallback?: PoolHydrateCallback<T>;
 
-  constructor(
-    startingPool: Array<T>,
-    createCallback: PoolCreateCallback<T>,
-    disposeCallback: PoolDisposeCallback<T>,
-  ) {
-    this._pool = startingPool;
+  constructor(options: PoolingOptions<T>, startingPool: Array<T> = []) {
+    const { createCallback, disposeCallback, hydrateCallback } = options;
+
     this._createCallback = createCallback;
     this._disposeCallback = disposeCallback;
+    this._hydrateCallback = hydrateCallback;
+    this._pool = startingPool;
   }
 
   public getOrCreate = (): T => {
@@ -37,11 +44,13 @@ export class ObjectPool<T extends NonNullable<unknown> = Entity> {
       throw new Error('Pooled item is undefined');
     }
 
+    this._hydrateCallback?.(item);
+
     return item;
   };
 
   public release = (instance: T) => {
-    this._disposeCallback(instance);
+    this._disposeCallback?.(instance);
 
     this._pool.push(instance);
   };

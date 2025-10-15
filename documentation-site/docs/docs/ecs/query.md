@@ -25,7 +25,7 @@ export class MovementSystem extends System {
         PositionComponent.symbol,
         VelocityComponent.symbol,
       ] // this is a query
-    ); 
+    );
   }
 
   public run(entity: Entity): void {

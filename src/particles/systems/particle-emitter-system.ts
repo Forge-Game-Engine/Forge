@@ -1,6 +1,5 @@
 import { Entity, System, World } from '../../ecs';
 import {
-  AgeComponent,
   AgeScaleComponent,
   PositionComponent,
   RotationComponent,
@@ -8,6 +7,10 @@ import {
   SpeedComponent,
   Time,
 } from '../../common';
+import {
+  LifetimeComponent,
+  RemoveFromWorldStrategyComponent,
+} from '../../lifecycle';
 
 import { SpriteComponent } from '../../rendering';
 import { Random } from '../../math';
@@ -129,7 +132,8 @@ export class ParticleEmitterSystem extends System {
       new ParticleComponent({
         rotationSpeed,
       }),
-      new AgeComponent(lifetimeSeconds),
+      new LifetimeComponent(lifetimeSeconds),
+      new RemoveFromWorldStrategyComponent(),
       new AgeScaleComponent(
         originalScale,
         originalScale,
