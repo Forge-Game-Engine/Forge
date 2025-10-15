@@ -1,4 +1,4 @@
-import { Entity, System, World } from '../../ecs';
+import { Entity, System } from '../../ecs';
 import { LifetimeComponent } from '../components/lifetime-component';
 import { ReturnToPoolStrategyComponent } from '../strategies/return-to-pool-strategy-component';
 
@@ -8,18 +8,15 @@ import { ReturnToPoolStrategyComponent } from '../strategies/return-to-pool-stra
  * with both LifetimeComponent and ReturnToPoolStrategyComponent.
  */
 export class ReturnToPoolLifecycleSystem extends System {
-  private readonly _world: World;
 
   /**
    * Creates an instance of ReturnToPoolLifecycleSystem.
-   * @param world - The World instance.
    */
-  constructor(world: World) {
+  constructor() {
     super('ReturnToPoolLifecycle', [
       LifetimeComponent.symbol,
       ReturnToPoolStrategyComponent.symbol,
     ]);
-    this._world = world;
   }
 
   /**
@@ -38,9 +35,6 @@ export class ReturnToPoolLifecycleSystem extends System {
 
       // Return to pool
       poolStrategyComponent.pool.release(entity);
-
-      // Remove from world
-      this._world.removeEntity(entity);
     }
   }
 }

@@ -21,4 +21,10 @@ export class LifetimeComponent implements Component {
     this.durationSeconds = durationSeconds;
     this.hasExpired = false;
   }
+
+  public reset(durationSeconds: number = this.durationSeconds): void {
+    this.durationSeconds = durationSeconds;
+    this.elapsedSeconds = 0;
+    this.hasExpired = false;
+  }
 }

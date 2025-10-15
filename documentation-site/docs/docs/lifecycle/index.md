@@ -11,10 +11,20 @@ To use lifetime management, you need to:
 3. Add components to entities that should expire
 
 ```typescript
+import { Entity } from '@forge-game-engine/forge';
 import {
+  RemoveFromWorldStrategyComponent,
+  LifetimeComponent
   LifetimeTrackingSystem,
   RemoveFromWorldLifecycleSystem,
-} from '@forge-game-engine/forge';
+} from '@forge-game-engine/forge/lifecycle';
+
+const entity = world.buildAndAddEntity(
+  'short-lived-entity', [
+    new LifetimeComponent(3), // will expire in 3 seconds
+    new RemoveFromWorldStrategyComponent() // when it expires, it will be removed from the world
+  ]
+);
 
 // Add systems to your world
 world.addSystems(
@@ -22,9 +32,3 @@ world.addSystems(
   new RemoveFromWorldLifecycleSystem(world),
 );
 ```
-
-## Learn More
-
-- [Example Use Cases](./examples.md) - Common patterns for using lifetime management
-- [Components Reference](./components.md) - Detailed component documentation
-- [Systems Reference](./systems.md) - Detailed system documentation

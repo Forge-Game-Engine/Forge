@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Components
 
 ## LifetimeComponent
@@ -8,37 +12,25 @@ Tracks an entity's lifetime and expiration status.
 
 - `elapsedSeconds: number` - Current elapsed time since creation
 - `durationSeconds: number` - Total lifetime duration
-- `hasExpired: boolean` - Automatically set to `true` when elapsed time reaches duration
-
-### Constructor
-
-```typescript
-new LifetimeComponent(durationSeconds: number)
-```
+- `hasExpired: boolean` - Set to `true` when elapsed time reaches duration by the [LifetimeTrackingSystem](./systems.md#lifetimetrackingsystem)
 
 ### Example
 
 ```typescript
 // Entity that expires after 5 seconds
-const lifetime = new LifetimeComponent(5.0);
+const lifetime = new LifetimeComponent(5);
 ```
 
 ## RemoveFromWorldStrategyComponent
 
 Marks an entity to be removed from the world when its lifetime expires.
 
-### Constructor
-
-```typescript
-new RemoveFromWorldStrategyComponent()
-```
-
 ### Example
 
 ```typescript
-// Create an explosion effect that automatically removes itself
+// Create an explosion effect that gets removed from the world after 2 seconds
 world.buildAndAddEntity('explosion', [
-  new LifetimeComponent(2.0),
+  new LifetimeComponent(2),
   new RemoveFromWorldStrategyComponent(),
   new SpriteComponent(explosionSprite),
   new PositionComponent(x, y),
@@ -49,29 +41,36 @@ world.buildAndAddEntity('explosion', [
 
 Marks an entity to be returned to an object pool when its lifetime expires, enabling entity reuse for better performance.
 
-### Constructor
-
-```typescript
-new ReturnToPoolStrategyComponent<T>(pool: ObjectPool<T>)
-```
-
 ### Example
 
 ```typescript
-// Create a pool for bullet entities
-const bulletPool = new ObjectPool<Entity>(
-  [],
-  () => world.buildEntity('bullet', [/* components */]),
-  (bullet) => {
-    // Clean up bullet state when returned to pool
-    bullet.removeComponent(LifetimeComponent.symbol);
-    bullet.removeComponent(ReturnToPoolStrategyComponent.symbol);
-  }
-);
+const pool = new ObjectPool<Entity>({
+  createCallback: (): Entity =>
+    world.buildAndAddEntity('blue-circle', [
+      new PositionComponent(0, 0),
+      new SpriteComponent(blueCircleSprite),
+      new LifetimeComponent(1),
+      new ReturnToPoolStrategyComponent(pool),
+    ]),
+  disposeCallback: (entity: Entity) => {
+    entity.enabled = false;
+  },
+  hydrateCallback: (entity: Entity) => {
+    entity.enabled = true;
+    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
+      LifetimeComponent.symbol,
+    );
+    lifetimeComponent.reset(1);
+  },
+});
 
-// Create a bullet that returns to the pool after 5 seconds
-const bullet = bulletPool.getOrCreate();
-bullet.addComponent(new LifetimeComponent(5.0));
-bullet.addComponent(new ReturnToPoolStrategyComponent(bulletPool));
-world.addEntity(bullet);
+setInterval(() => {
+  pool.getOrCreate();
+}, 500);
+
+world.addSystems(
+  new LifetimeTrackingSystem(world),
+  new RemoveFromWorldLifecycleSystem(world),
+  new ReturnToPoolLifecycleSystem(),
+);
 ```

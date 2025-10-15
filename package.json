@@ -75,6 +75,16 @@
         "default": "./dist/input.cjs"
       }
     },
+    "./lifecycle": {
+      "import": {
+        "types": "./dist/lifecycle.d.ts",
+        "default": "./dist/lifecycle.js"
+      },
+      "require": {
+        "types": "./dist/lifecycle.d.ts",
+        "default": "./dist/lifecycle.cjs"
+      }
+    },
     "./math": {
       "import": {
         "types": "./dist/math.d.ts",
