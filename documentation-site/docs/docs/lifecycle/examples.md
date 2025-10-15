@@ -50,7 +50,12 @@ import {
   RemoveFromWorldStrategyComponent,
 } from '@forge-game-engine/forge';
 
-function fireBullet(x: number, y: number, directionX: number, directionY: number) {
+function fireBullet(
+  x: number,
+  y: number,
+  directionX: number,
+  directionY: number,
+) {
   world.buildAndAddEntity('bullet', [
     new LifetimeComponent(3.0), // Bullet exists for 3 seconds
     new RemoveFromWorldStrategyComponent(),
@@ -89,26 +94,26 @@ const bulletPool = new ObjectPool<Entity>(
     // Clean up when bullet returns to pool
     bullet.removeComponent(LifetimeComponent.symbol);
     bullet.removeComponent(ReturnToPoolStrategyComponent.symbol);
-  }
+  },
 );
 
 // Fire a bullet using the pool
 function fireBullet(x: number, y: number, vx: number, vy: number) {
   const bullet = bulletPool.getOrCreate();
-  
+
   // Reset bullet position and velocity
   const pos = bullet.getComponent<PositionComponent>(PositionComponent.symbol)!;
   pos.x = x;
   pos.y = y;
-  
+
   const vel = bullet.getComponent<VelocityComponent>(VelocityComponent.symbol)!;
   vel.x = vx;
   vel.y = vy;
-  
+
   // Add lifetime components
   bullet.addComponent(new LifetimeComponent(5.0));
   bullet.addComponent(new ReturnToPoolStrategyComponent(bulletPool));
-  
+
   world.addEntity(bullet);
 }
 ```

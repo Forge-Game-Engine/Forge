@@ -5,11 +5,10 @@ import { ObjectPool } from '../../pooling';
 describe('ReturnToPoolStrategyComponent', () => {
   it('should initialize with correct symbol and pool reference', () => {
     // Arrange
-    const pool = new ObjectPool<{ value: number }>(
-      [],
-      () => ({ value: 0 }),
-      vi.fn(),
-    );
+    const pool = new ObjectPool<{ value: number }>({
+      createCallback: () => ({ value: 0 }),
+      disposeCallback: vi.fn(),
+    });
 
     // Act
     const component = new ReturnToPoolStrategyComponent(pool);
@@ -21,11 +20,10 @@ describe('ReturnToPoolStrategyComponent', () => {
 
   it('should store the pool reference correctly', () => {
     // Arrange
-    const pool = new ObjectPool<{ value: number }>(
-      [],
-      () => ({ value: 42 }),
-      vi.fn(),
-    );
+    const pool = new ObjectPool<{ value: number }>({
+      createCallback: () => ({ value: 42 }),
+      disposeCallback: vi.fn(),
+    });
 
     // Act
     const component = new ReturnToPoolStrategyComponent(pool);
@@ -36,11 +34,10 @@ describe('ReturnToPoolStrategyComponent', () => {
 
   it('should be a data-only component', () => {
     // Arrange
-    const pool = new ObjectPool<{ value: number }>(
-      [],
-      () => ({ value: 0 }),
-      vi.fn(),
-    );
+    const pool = new ObjectPool<{ value: number }>({
+      createCallback: () => ({ value: 0 }),
+      disposeCallback: vi.fn(),
+    });
 
     // Act
     const component = new ReturnToPoolStrategyComponent(pool);
