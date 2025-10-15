@@ -14,6 +14,7 @@ export default defineConfig({
         animations: path.resolve(__dirname, 'src/animations/index.ts'),
         'asset-loading': path.resolve(__dirname, 'src/asset-loading/index.ts'),
         audio: path.resolve(__dirname, 'src/audio/index.ts'),
+        common: path.resolve(__dirname, 'src/common/index.ts'),
         ecs: path.resolve(__dirname, 'src/ecs/index.ts'),
         events: path.resolve(__dirname, 'src/events/index.ts'),
         input: path.resolve(__dirname, 'src/input/index.ts'),
