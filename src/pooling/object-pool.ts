@@ -34,8 +34,6 @@ export class ObjectPool<T extends NonNullable<unknown> = Entity> {
   };
 
   public get = (): T => {
-    console.log('⚡ getting from pool');
-
     if (this._pool.length === 0) {
       throw new Error('Pool is empty');
     }
@@ -52,16 +50,12 @@ export class ObjectPool<T extends NonNullable<unknown> = Entity> {
   };
 
   public release = (instance: T) => {
-    console.log('💦 releasing to pool');
-
     this._disposeCallback?.(instance);
 
     this._pool.push(instance);
   };
 
   private readonly _create = (): T => {
-    console.log('✨ creating new instance for pool');
-
     const instance = this._createCallback();
 
     return instance;
