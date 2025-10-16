@@ -2,8 +2,6 @@
   "name": "@forge-game-engine/forge",
   "version": "0.14.1",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
   "exports": {
     "./animations": {
       "import": {
