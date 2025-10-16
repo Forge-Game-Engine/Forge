@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import path from 'path';
+import path from 'node:path';
 import dts from 'vite-plugin-dts';
 
 export default defineConfig({
@@ -10,7 +10,6 @@ export default defineConfig({
     target: 'es2022',
     lib: {
       entry: {
-        index: path.resolve(__dirname, 'src/index.ts'),
         animations: path.resolve(__dirname, 'src/animations/index.ts'),
         'asset-loading': path.resolve(__dirname, 'src/asset-loading/index.ts'),
         audio: path.resolve(__dirname, 'src/audio/index.ts'),
