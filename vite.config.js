@@ -39,5 +39,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['setup-tests.ts'],
   },
-  plugins: [dts({ tsconfigPath: './tsconfig.build.json', rollupTypes: true })],
+  plugins: [
+    dts({
+      tsconfigPath: './tsconfig.build.json',
+      rollupTypes: false,
+      outDir: 'dist',
+      entryRoot: 'src',
+    }),
+  ],
 });
