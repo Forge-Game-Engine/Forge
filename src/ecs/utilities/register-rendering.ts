@@ -1,7 +1,7 @@
 import {
   addForgeRenderLayers,
   DEFAULT_LAYER_NAMES,
-  ForgeRenderLayer,
+  type ForgeRenderLayer,
   LayerService,
 } from '../../rendering';
 import { Game } from '../game';
