@@ -2,7 +2,7 @@ import { ImageCache } from '../../asset-loading';
 import { Entity } from '../../ecs';
 import { ForgeRenderLayer } from '../render-layers';
 import { ShaderStore } from '../shaders';
-import { Sprite } from '../sprite';
+import type { Sprite } from '../sprite';
 import { createImageSprite } from './create-image-sprite';
 
 /**
