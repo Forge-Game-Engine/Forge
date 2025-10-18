@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LifetimeTrackingSystem } from './lifetime-tracking-system';
-import { World } from '../../ecs';
-import { LifetimeComponent } from '../components/lifetime-component';
+import { World } from 'forge/ecs';
+import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
 
 describe('LifetimeTrackingSystem', () => {
   let world: World;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { System } from './System';
-import { Entity } from '../entity';
-import { World } from '../world';
+import { Entity } from 'forge/ecs/entity';
+import { World } from 'forge/ecs/world';
 
 class TestSystem extends System {
   public run(): void {

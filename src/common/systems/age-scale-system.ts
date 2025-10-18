@@ -1,7 +1,7 @@
-import { Entity, System } from '../../ecs';
-import { ScaleComponent } from '../../common';
-import { LifetimeComponent } from '../../lifecycle/components/lifetime-component';
-import { AgeScaleComponent } from '../components/age-scale-component';
+import { Entity, System } from 'forge/ecs';
+import { ScaleComponent } from 'forge/common';
+import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
+import { AgeScaleComponent } from 'forge/common/components/age-scale-component';
 
 /**
  * System that manages the scale of entities with lifetime

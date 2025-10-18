@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnimationController } from './AnimationController';
-import { Entity } from '../../ecs';
+import { Entity } from 'forge/ecs';
 import { Animation } from './Animation';
 import { AnimationInputs } from './AnimationInputs';
 import {

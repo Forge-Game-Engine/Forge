@@ -1,4 +1,4 @@
-import { Entity, System } from '../../ecs';
+import { Entity, System } from 'forge/ecs';
 import {
   PositionComponent,
   RotationComponent,

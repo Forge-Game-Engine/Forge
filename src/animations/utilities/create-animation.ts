@@ -1,5 +1,5 @@
-import { Vector2 } from '../../math';
-import { Animation, AnimationFrame } from '../types';
+import { Vector2 } from 'forge/math';
+import { Animation, AnimationFrame } from 'forge/animations/types';
 
 /**
  * Validates the duration of animation frames.

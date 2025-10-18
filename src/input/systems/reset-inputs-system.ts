@@ -1,5 +1,5 @@
-import { Entity, System } from '../../ecs';
-import { InputsComponent } from '../components';
+import { Entity, System } from 'forge/ecs';
+import { InputsComponent } from 'forge/input/components';
 
 /** A system that resets all input states at the end of each frame. */
 export class ResetInputSystem extends System {

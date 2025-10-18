@@ -1,4 +1,4 @@
-import type { AssetCache } from '../asset-cache';
+import type { AssetCache } from 'forge/asset-loading/asset-cache';
 
 /**
  * Class to manage the caching and loading of images.

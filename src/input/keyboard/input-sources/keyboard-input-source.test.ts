@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
-import { buttonMoments, keyCodes } from '../../constants';
-import { InputManager } from '../../input-manager';
-import { HoldAction, TriggerAction } from '../../actions';
-import { KeyboardHoldBinding, KeyboardTriggerBinding } from '../bindings';
+import { buttonMoments, keyCodes } from 'forge/input/constants';
+import { InputManager } from 'forge/input/input-manager';
+import { HoldAction, TriggerAction } from 'forge/input/actions';
+import { KeyboardHoldBinding, KeyboardTriggerBinding } from 'forge/input/keyboard/bindings';
 
 describe('KeyboardInputSource', () => {
   const group = 'default';

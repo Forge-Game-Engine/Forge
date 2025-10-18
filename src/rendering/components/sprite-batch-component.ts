@@ -1,6 +1,6 @@
-import type { Component, Entity } from '../../ecs';
-import type { RenderLayer } from '../render-layers';
-import type { Renderable } from '../renderable';
+import type { Component, Entity } from 'forge/ecs';
+import type { RenderLayer } from 'forge/rendering/render-layers';
+import type { Renderable } from 'forge/rendering/renderable';
 
 export interface Batch {
   entities: Entity[];

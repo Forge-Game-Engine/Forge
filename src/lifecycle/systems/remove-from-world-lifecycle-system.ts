@@ -1,6 +1,6 @@
-import { Entity, System, World } from '../../ecs';
-import { LifetimeComponent } from '../components/lifetime-component';
-import { RemoveFromWorldStrategyComponent } from '../strategies/remove-from-world-strategy-component';
+import { Entity, System, World } from 'forge/ecs';
+import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
+import { RemoveFromWorldStrategyComponent } from 'forge/lifecycle/strategies/remove-from-world-strategy-component';
 
 /**
  * System that removes entities from the world when they have expired.

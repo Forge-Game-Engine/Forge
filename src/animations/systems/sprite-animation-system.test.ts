@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpriteAnimationSystem } from './sprite-animation-system';
-import { createWorld, Entity, Game } from '../../ecs';
-import { Time } from '../../common';
-import { SpriteAnimationComponent } from '../components';
-import { Sprite, SpriteComponent } from '../../rendering';
+import { createWorld, Entity, Game } from 'forge/ecs';
+import { Time } from 'forge/common';
+import { SpriteAnimationComponent } from 'forge/animations/components';
+import { Sprite, SpriteComponent } from 'forge/rendering';
 import {
   Animation,
   AnimationController,

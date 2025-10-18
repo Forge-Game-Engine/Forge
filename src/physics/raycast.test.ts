@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Matter from 'matter-js';
 import { Ray, raycast } from './raycast';
-import { Vector2 } from '../math';
+import { Vector2 } from 'forge/math';
 
 // Helper: create a rectangle Matter.Body at (x, y) with width and height
 function createRect(x: number, y: number, w: number, h: number) {

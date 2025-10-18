@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { InputManager } from '../input-manager';
+import type { Component } from 'forge/ecs';
+import { InputManager } from 'forge/input/input-manager';
 
 /**
  * Component that provides access to the InputManager for an entity.

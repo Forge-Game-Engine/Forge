@@ -1,5 +1,5 @@
-import { Entity, System, World } from '../../ecs';
-import { InputsComponent } from '../components';
+import { Entity, System, World } from 'forge/ecs';
+import { InputsComponent } from 'forge/input/components';
 
 /** A system that updates all input states each frame. */
 export class UpdateInputSystem extends System {

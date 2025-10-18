@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from 'forge/ecs';
 
 /**
  * Strategy component that marks an entity to be removed from the world when its lifetime expires.

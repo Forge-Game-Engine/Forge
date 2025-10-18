@@ -1,5 +1,5 @@
-import type { Game } from '../game';
-import { World } from '../world';
+import type { Game } from 'forge/ecs/game';
+import { World } from 'forge/ecs/world';
 
 /**
  * Creates a new world with the specified name and registers it with the game.

@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math';
+import { Vector2 } from 'forge/math';
 
 /**
  * Converts a position from screen space to world space.

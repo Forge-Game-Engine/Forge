@@ -1,5 +1,5 @@
-import { SoundComponent } from '../components';
-import { Entity, System } from '../../ecs';
+import { SoundComponent } from 'forge/audio/components';
+import { Entity, System } from 'forge/ecs';
 
 /**
  * System to manage and play sounds for entities with a SoundComponent.

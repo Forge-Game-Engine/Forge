@@ -1,8 +1,8 @@
-import { Entity } from '../../ecs';
-import { SpriteMaterial } from '../materials';
-import type { ForgeRenderLayer } from '../render-layers';
-import type { ShaderStore } from '../shaders';
-import type { Sprite } from '../sprite';
+import { Entity } from 'forge/ecs';
+import { SpriteMaterial } from 'forge/rendering/materials';
+import type { ForgeRenderLayer } from 'forge/rendering/render-layers';
+import type { ShaderStore } from 'forge/rendering/shaders';
+import type { Sprite } from 'forge/rendering/sprite';
 import { createSprite } from './create-sprite';
 
 /**

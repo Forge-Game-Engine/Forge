@@ -1,6 +1,6 @@
-import { InputAction } from '../input-action';
-import { ForgeEvent } from '../../events';
-import { Resettable } from '../../common';
+import { InputAction } from 'forge/input/input-action';
+import { ForgeEvent } from 'forge/events';
+import { Resettable } from 'forge/common';
 
 /**
  * An action that represents a trigger input, such as pressing a button or key.

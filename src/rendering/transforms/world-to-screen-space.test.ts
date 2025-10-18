@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { worldToScreenSpace } from './world-to-screen-space';
-import { Vector2 } from '../../math';
+import { Vector2 } from 'forge/math';
 
 describe('worldToScreenSpace', () => {
   it('should convert world position to screen position correctly', () => {

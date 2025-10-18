@@ -1,6 +1,6 @@
-import { PositionComponent } from '../../common';
-import { Entity } from '../../ecs';
-import { CameraComponent } from '../components';
+import { PositionComponent } from 'forge/common';
+import { Entity } from 'forge/ecs';
+import { CameraComponent } from 'forge/rendering/components';
 import {
   createProjectionMatrix,
   createTextureFromImage,

@@ -1,5 +1,5 @@
-import { type Stoppable, Time, type Updatable } from '../common';
-import { isString } from '../utilities';
+import { type Stoppable, Time, type Updatable } from 'forge/common';
+import { isString } from 'forge/utilities';
 import { systemRegistrationPositions } from './constants';
 import { Entity, type EntityOptions } from './entity';
 import type { Component, Query, System } from './types';

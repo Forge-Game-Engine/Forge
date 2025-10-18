@@ -4,7 +4,7 @@
 // https://github.com/liabru/matter-js/issues/181
 
 import Matter from 'matter-js';
-import { Vector2 } from '../math';
+import { Vector2 } from 'forge/math';
 
 /**
  * Raycast function that returns an array of RaycastCollision objects

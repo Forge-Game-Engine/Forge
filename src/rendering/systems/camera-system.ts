@@ -1,7 +1,7 @@
-import { PositionComponent, Time } from '../../common';
-import * as math from '../../math';
-import { Entity, System } from '../../ecs';
-import { CameraComponent } from '../components';
+import { PositionComponent, Time } from 'forge/common';
+import * as math from 'forge/math';
+import { Entity, System } from 'forge/ecs';
+import { CameraComponent } from 'forge/rendering/components';
 
 /**
  * The `CameraSystem` class manages the camera's

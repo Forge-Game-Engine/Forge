@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Game } from './game';
-import { createContainer } from '../utilities';
+import { createContainer } from 'forge/utilities';
 import { World } from './world';
 
 interface GameMock {

@@ -1,8 +1,8 @@
-import { ImageCache } from '../../asset-loading';
-import { Entity } from '../../ecs';
-import { ForgeRenderLayer } from '../render-layers';
-import { ShaderStore } from '../shaders';
-import type { Sprite } from '../sprite';
+import { ImageCache } from 'forge/asset-loading';
+import { Entity } from 'forge/ecs';
+import { ForgeRenderLayer } from 'forge/rendering/render-layers';
+import { ShaderStore } from 'forge/rendering/shaders';
+import type { Sprite } from 'forge/rendering/sprite';
 import { createImageSprite } from './create-image-sprite';
 
 /**

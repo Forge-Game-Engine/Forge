@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from 'forge/ecs';
 
 /**
  * Component that tracks the elapsed time and duration of an entity's lifetime.

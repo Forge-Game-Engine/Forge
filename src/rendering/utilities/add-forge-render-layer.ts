@@ -1,8 +1,8 @@
-import { type World } from '../../ecs';
-import { RenderableBatchComponent } from '../components';
-import type { LayerService } from '../layer-service';
-import { ForgeRenderLayer } from '../render-layers';
-import { RenderSystem, SpriteBatchingSystem } from '../systems';
+import { type World } from 'forge/ecs';
+import { RenderableBatchComponent } from 'forge/rendering/components';
+import type { LayerService } from 'forge/rendering/layer-service';
+import { ForgeRenderLayer } from 'forge/rendering/render-layers';
+import { RenderSystem, SpriteBatchingSystem } from 'forge/rendering/systems';
 import { createCanvas } from './create-canvas';
 
 /**

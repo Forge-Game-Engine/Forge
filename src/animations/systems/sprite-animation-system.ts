@@ -1,8 +1,8 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { SpriteAnimationComponent } from '../components';
-import { SpriteComponent } from '../../rendering';
-import { Animation } from '../types';
+import { Entity, System } from 'forge/ecs';
+import { Time } from 'forge/common';
+import { SpriteAnimationComponent } from 'forge/animations/components';
+import { SpriteComponent } from 'forge/rendering';
+import { Animation } from 'forge/animations/types';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.

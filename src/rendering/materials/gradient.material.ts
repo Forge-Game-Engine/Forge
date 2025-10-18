@@ -1,5 +1,5 @@
-import { Vector2 } from '../../math';
-import { createTextureFromImage, ShaderStore } from '../shaders';
+import { Vector2 } from 'forge/math';
+import { createTextureFromImage, ShaderStore } from 'forge/rendering/shaders';
 import { Material } from './material';
 
 export class GradientMaterial extends Material {

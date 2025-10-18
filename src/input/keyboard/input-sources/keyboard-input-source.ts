@@ -1,7 +1,7 @@
-import { Resettable, Stoppable } from '../../../common';
-import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding';
-import { buttonMoments, KeyCode } from '../../constants';
-import { InputManager } from '../../input-manager';
+import { Resettable, Stoppable } from 'forge/common';
+import { KeyboardHoldBinding } from 'forge/input/keyboard/bindings/keyboard-hold-binding';
+import { buttonMoments, KeyCode } from 'forge/input/constants';
+import { InputManager } from 'forge/input/input-manager';
 import {
   KeyboardAxis1dBinding,
   KeyboardAxis2dBinding,

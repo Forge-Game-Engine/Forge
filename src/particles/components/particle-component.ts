@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from 'forge/ecs';
 
 /**
  * Represents the properties of a particle.

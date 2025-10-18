@@ -1,7 +1,7 @@
-import { PositionComponent } from '../../common';
-import type { Entity, World } from '../../ecs';
-import { CameraComponent, type CameraComponentOptions } from '../components';
-import { CameraSystem } from '../systems';
+import { PositionComponent } from 'forge/common';
+import type { Entity, World } from 'forge/ecs';
+import { CameraComponent, type CameraComponentOptions } from 'forge/rendering/components';
+import { CameraSystem } from 'forge/rendering/systems';
 
 /**
  * Adds a camera entity to the world with the specified options.

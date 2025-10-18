@@ -4,8 +4,8 @@ import {
   type ForgeRenderLayer,
   LayerService,
 } from '../../rendering';
-import { Game } from '../game';
-import { World } from '../world';
+import { Game } from 'forge/ecs/game';
+import { World } from 'forge/ecs/world';
 
 export const registerRendering = (
   game: Game,

@@ -1,11 +1,11 @@
-import { Entity, System } from '../../ecs';
+import { Entity, System } from 'forge/ecs';
 import {
   PositionComponent,
   RotationComponent,
   SpeedComponent,
   Time,
 } from '../../common';
-import { ParticleComponent } from '..';
+import { ParticleComponent } from 'forge/particles';
 /**
  * System that manages and updates particle position.
  */

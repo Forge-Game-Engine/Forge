@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { Axis1dAction, Axis2dAction } from '../../input';
+import type { Component } from 'forge/ecs';
+import { Axis1dAction, Axis2dAction } from 'forge/input';
 
 /**
  * Options for configuring the `CameraComponent`.

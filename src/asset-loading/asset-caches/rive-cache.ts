@@ -1,5 +1,5 @@
 import { type AssetLoadCallback, RiveFile } from '@rive-app/webgl2';
-import type { AssetCache } from '../asset-cache';
+import type { AssetCache } from 'forge/asset-loading/asset-cache';
 
 /**
  * Class to manage the caching and loading of rive files.

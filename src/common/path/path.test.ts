@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Path } from './path';
-import { Vector2 } from '../../math';
+import { Vector2 } from 'forge/math';
 
 describe('Path', () => {
   it('should create an instance of Path', () => {

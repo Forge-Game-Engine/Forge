@@ -1,4 +1,4 @@
-import { Entity, System, World } from '../../ecs';
+import { Entity, System, World } from 'forge/ecs';
 import {
   AgeScaleComponent,
   PositionComponent,
@@ -12,8 +12,8 @@ import {
   RemoveFromWorldStrategyComponent,
 } from '../../lifecycle';
 
-import { SpriteComponent } from '../../rendering';
-import { Random } from '../../math';
+import { SpriteComponent } from 'forge/rendering';
+import { Random } from 'forge/math';
 import {
   MinMaxRange,
   ParticleComponent,

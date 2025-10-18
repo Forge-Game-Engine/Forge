@@ -1,6 +1,6 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { TimerComponent } from '../components/timer-component';
+import { Entity, System } from 'forge/ecs';
+import { Time } from 'forge/common';
+import { TimerComponent } from 'forge/timer/components/timer-component';
 
 export class TimerSystem extends System {
   private readonly _time: Time;

@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import type { ObjectPool } from '../../pooling';
+import type { Component } from 'forge/ecs';
+import type { ObjectPool } from 'forge/pooling';
 
 /**
  * Strategy component that marks an entity to be returned to a pool when its lifetime expires.

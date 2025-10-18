@@ -1,6 +1,6 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { type AnimatedProperty, AnimationComponent } from '../components';
+import { Entity, System } from 'forge/ecs';
+import { Time } from 'forge/common';
+import { type AnimatedProperty, AnimationComponent } from 'forge/animations/components';
 
 /**
  * System that manages and updates animations for entities.

@@ -6,6 +6,11 @@ export default defineConfig({
   server: {
     host: '127.0.0.1', // see https://vite.dev/guide/troubleshooting.html#dev-containers-vs-code-port-forwarding
   },
+  resolve: {
+    alias: {
+      'forge': path.resolve(__dirname, 'src'),
+    },
+  },
   build: {
     target: 'es2022',
     lib: {
@@ -42,10 +47,7 @@ export default defineConfig({
   plugins: [
     dts({
       tsconfigPath: './tsconfig.build.json',
-      rollupTypes: false,
-      outDir: 'dist',
-      entryRoot: 'src',
-      insertTypesEntry: true,
+      rollupTypes: true,
     }),
   ],
 });

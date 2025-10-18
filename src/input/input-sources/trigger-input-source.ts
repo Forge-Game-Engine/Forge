@@ -1,6 +1,6 @@
-import { TriggerAction } from '../actions';
-import { InputBinding } from '../input-binding';
-import { InputSource } from '../input-source';
+import { TriggerAction } from 'forge/input/actions';
+import { InputBinding } from 'forge/input/input-binding';
+import { InputSource } from 'forge/input/input-source';
 
 /** Represents a trigger input source with associated bindings. */
 export interface TriggerInputSource<

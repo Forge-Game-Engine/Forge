@@ -9,12 +9,12 @@ import {
   type RiveFile,
   type RiveParameters,
 } from '@rive-app/webgl2';
-import type { RiveCache } from '../../asset-loading';
-import type { LayerService } from '../layer-service';
-import { RiveRenderLayer } from '../render-layers';
-import { DEFAULT_LAYERS } from '../enums';
+import type { RiveCache } from 'forge/asset-loading';
+import type { LayerService } from 'forge/rendering/layer-service';
+import { RiveRenderLayer } from 'forge/rendering/render-layers';
+import { DEFAULT_LAYERS } from 'forge/rendering/enums';
 import { createCanvas } from './create-canvas';
-import { EventDispatcher } from '../../events';
+import { EventDispatcher } from 'forge/events';
 
 /**
  * Adds a Rive render layer to the game container and registers it with the layer service.

@@ -1,4 +1,4 @@
-import { Matrix3x3, Vector2 } from '../../../math';
+import { Matrix3x3, Vector2 } from 'forge/math';
 
 /**
  * Creates a projection matrix for rendering with a camera.

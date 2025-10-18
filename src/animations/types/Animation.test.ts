@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Animation } from './Animation';
 import { AnimationFrame } from './AnimationFrame';
-import { ParameterizedForgeEvent } from '../../events';
+import { ParameterizedForgeEvent } from 'forge/events';
 
 describe('Animation', () => {
   const mockFrame1 = {} as AnimationFrame;

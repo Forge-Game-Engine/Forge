@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { Sprite } from '../sprite';
+import type { Component } from 'forge/ecs';
+import { Sprite } from 'forge/rendering/sprite';
 
 /**
  * The `SpriteComponent` class implements the `Component` interface and represents
