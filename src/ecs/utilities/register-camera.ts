@@ -5,7 +5,7 @@ import {
   CameraComponentOptions,
   CameraSystem,
 } from '../../rendering';
-import { Entity } from '../entity';
+import type { Entity } from '../entity';
 import { World } from '../world';
 
 export const registerCamera = (
