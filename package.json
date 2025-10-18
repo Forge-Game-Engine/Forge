@@ -174,8 +174,8 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "vite --config vite.demo.config.js",
-    "build": "vite build",
+    "dev": "tsc --watch --project tsconfig.build.json --noEmitOnError false",
+    "build": "tsc --project tsconfig.build.json --noEmitOnError false",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile node16",
