@@ -30,13 +30,13 @@ export class HoldAction implements InputAction {
   }
 
   /** Marks the action as being held and raises the hold start event. */
-  public startHold() {
+  public startHold(): void {
     this._held = true;
     this.holdStartEvent.raise();
   }
 
   /** Marks the action as not being held and raises the hold end event. */
-  public endHold() {
+  public endHold(): void {
     this._held = false;
     this.holdEndEvent.raise();
   }

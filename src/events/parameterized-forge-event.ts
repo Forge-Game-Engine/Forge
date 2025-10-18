@@ -19,7 +19,7 @@ export class ParameterizedForgeEvent<TInput = null> {
   /**
    * Gets the list of listeners registered to this event.
    */
-  get listeners() {
+  get listeners(): Listener<TInput>[] {
     return this._listeners;
   }
 
@@ -36,7 +36,7 @@ export class ParameterizedForgeEvent<TInput = null> {
    * Registers a listener to the event.
    * @param listener - The listener to register.
    */
-  public registerListener(listener: Listener<TInput>) {
+  public registerListener(listener: Listener<TInput>): void {
     this._listeners.push(listener);
   }
 
@@ -44,14 +44,14 @@ export class ParameterizedForgeEvent<TInput = null> {
    * Deregisters a listener from the event.
    * @param listener - The listener to deregister.
    */
-  public deregisterListener(listener: Listener<TInput>) {
+  public deregisterListener(listener: Listener<TInput>): void {
     this._listeners = this._listeners.filter((l) => l !== listener);
   }
 
   /**
    * Clears all listeners from the event.
    */
-  public clear() {
+  public clear(): void {
     this._listeners = [];
   }
 
@@ -59,7 +59,7 @@ export class ParameterizedForgeEvent<TInput = null> {
    * Raises the event, calling all registered listeners with the provided input.
    * @param input - The input parameter to pass to the listeners.
    */
-  public raise(input: TInput) {
+  public raise(input: TInput): void {
     for (const listener of this._listeners) {
       try {
         listener(input);

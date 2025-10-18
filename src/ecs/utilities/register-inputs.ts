@@ -9,6 +9,7 @@ import {
 } from '../../input';
 import { InputManager } from '../../input/input-manager';
 import { systemRegistrationPositions } from '../constants';
+import { Entity } from '../entity';
 import { World } from '../world';
 
 export const registerInputs = (
@@ -20,7 +21,10 @@ export const registerInputs = (
     axis2dActions?: Axis2dAction[];
     holdActions?: HoldAction[];
   } = {},
-) => {
+): {
+  inputsEntity: Entity;
+  inputsManager: InputManager;
+} => {
   const inputsManager = new InputManager();
   const inputsComponent = new InputsComponent(inputsManager);
 

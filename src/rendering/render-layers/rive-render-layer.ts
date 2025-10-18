@@ -37,7 +37,7 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
    * @param width - The new width of the canvas.
    * @param height - The new height of the canvas.
    */
-  public override resize(width: number, height: number) {
+  public override resize(width: number, height: number): void {
     super.resize(width, height);
     this.rive.resizeDrawingSurfaceToCanvas();
   }
@@ -50,14 +50,14 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
   public registerRiveEvent(
     riveEventName: string,
     event: ParameterizedForgeEvent<RiveEventPayload>,
-  ) {
+  ): void {
     this._riveEventDispatcher.addEventListener(riveEventName, event);
   }
 
   /**
    * Stops the render layer by clearing the canvas and cleaning up the Rive instance.
    */
-  public stop() {
+  public stop(): void {
     const gl =
       this.canvas.getContext('webgl2') || this.canvas.getContext('webgl');
 

@@ -1,5 +1,5 @@
 import { PositionComponent } from '../../common';
-import { World } from '../../ecs';
+import { Entity, World } from '../../ecs';
 import { CameraComponent, type CameraComponentOptions } from '../components';
 import { CameraSystem } from '../systems';
 
@@ -12,7 +12,7 @@ import { CameraSystem } from '../systems';
 export function addCamera(
   world: World,
   cameraOptions: Partial<CameraComponentOptions>,
-) {
+): Entity {
   const cameraEntity = world.buildAndAddEntity('camera', [
     new CameraComponent(cameraOptions),
     new PositionComponent(0, 0),

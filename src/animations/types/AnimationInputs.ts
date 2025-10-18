@@ -116,7 +116,7 @@ export class AnimationInputs {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getToggle(name: string) {
+  public getToggle(name: string): AnimationInput<boolean> {
     return this._getInput<boolean>(name, this.toggleInputs);
   }
 
@@ -142,7 +142,7 @@ export class AnimationInputs {
    * @param name - the name of the input
    * @param value - the new value for the input
    */
-  public setNumber(name: string, value: number) {
+  public setNumber(name: string, value: number): void {
     this._getInput<number>(name, this.numberInputs).value = value;
   }
 
@@ -151,7 +151,7 @@ export class AnimationInputs {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getNumber(name: string) {
+  public getNumber(name: string): AnimationInput<number> {
     return this._getInput<number>(name, this.numberInputs);
   }
 
@@ -186,7 +186,7 @@ export class AnimationInputs {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getText(name: string) {
+  public getText(name: string): AnimationInput<string> {
     return this._getInput<string>(name, this.textInputs);
   }
 
@@ -194,7 +194,7 @@ export class AnimationInputs {
    * Gets all registered inputs.
    * @returns An array of all registered inputs of all types
    */
-  public getAllInputs() {
+  public getAllInputs(): AnimationInput<string | number | boolean>[] {
     return [...this.toggleInputs, ...this.numberInputs, ...this.textInputs];
   }
 
@@ -221,7 +221,7 @@ export class AnimationInputs {
   /**
    * Resets all inputs that are set to reset at the end of the animation frame to their default values.
    */
-  public clearFrameEndInputs() {
+  public clearFrameEndInputs(): void {
     const inputs = this.getAllInputs();
     inputs.forEach((element) => {
       if (element.options.resetOnFrameEnd) {

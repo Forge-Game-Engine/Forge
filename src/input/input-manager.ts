@@ -36,7 +36,7 @@ export class InputManager implements Updatable {
   /** Adds new actions to the manager.
    * @param action - The action(s) to add.
    */
-  public addTriggerActions(...actions: TriggerAction[]) {
+  public addTriggerActions(...actions: TriggerAction[]): void {
     for (const action of actions) {
       this._triggerActions.add(action);
       this.addResettable(action);
@@ -47,7 +47,7 @@ export class InputManager implements Updatable {
    * Adds a new 1D axis action to the manager and marks it as resettable.
    * @param action - The action to add.
    */
-  public addAxis1dActions(...actions: Axis1dAction[]) {
+  public addAxis1dActions(...actions: Axis1dAction[]): void {
     for (const action of actions) {
       this._axis1dActions.add(action);
       this.addResettable(action);
@@ -58,7 +58,7 @@ export class InputManager implements Updatable {
    * Adds a new 2D axis action to the manager and marks it as resettable.
    * @param action - The action to add.
    */
-  public addAxis2dActions(...actions: Axis2dAction[]) {
+  public addAxis2dActions(...actions: Axis2dAction[]): void {
     for (const action of actions) {
       this._axis2dActions.add(action);
       this.addResettable(action);
@@ -69,7 +69,7 @@ export class InputManager implements Updatable {
    * Adds a new hold action to the manager.
    * @param action - The action to add.
    */
-  public addHoldActions(...actions: HoldAction[]) {
+  public addHoldActions(...actions: HoldAction[]): void {
     for (const action of actions) {
       this._holdActions.add(action);
     }
@@ -78,7 +78,7 @@ export class InputManager implements Updatable {
   /** Removes a trigger action from the manager and unmarks it as resettable.
    * @param action - The action to remove.
    */
-  public removeTriggerAction(action: TriggerAction) {
+  public removeTriggerAction(action: TriggerAction): void {
     this._triggerActions.delete(action);
     this.removeResettable(action);
   }
@@ -86,7 +86,7 @@ export class InputManager implements Updatable {
   /** Removes a 1D axis action from the manager and unmarks it as resettable.
    * @param action - The action to remove.
    */
-  public removeAxis1dAction(action: Axis1dAction) {
+  public removeAxis1dAction(action: Axis1dAction): void {
     this._axis1dActions.delete(action);
     this.removeResettable(action);
   }
@@ -94,7 +94,7 @@ export class InputManager implements Updatable {
   /** Removes a 2D axis action from the manager and unmarks it as resettable.
    * @param action - The action to remove.
    */
-  public removeAxis2dAction(action: Axis2dAction) {
+  public removeAxis2dAction(action: Axis2dAction): void {
     this._axis2dActions.delete(action);
     this.removeResettable(action);
   }
@@ -102,7 +102,7 @@ export class InputManager implements Updatable {
   /** Removes a hold action from the manager.
    * @param action - The action to remove.
    */
-  public removeHoldAction(action: HoldAction) {
+  public removeHoldAction(action: HoldAction): void {
     this._holdActions.delete(action);
   }
 
@@ -111,7 +111,7 @@ export class InputManager implements Updatable {
    * @returns The TriggerAction with the specified name.
    * @throws Error if no action with the specified name is found.
    */
-  public getTriggerAction(name: string) {
+  public getTriggerAction(name: string): TriggerAction {
     for (const action of this._triggerActions) {
       if (action.name === name) {
         return action;
@@ -126,7 +126,7 @@ export class InputManager implements Updatable {
    * @returns The Axis1dAction with the specified name.
    * @throws Error if no action with the specified name is found.
    */
-  public getAxis1dAction(name: string) {
+  public getAxis1dAction(name: string): Axis1dAction {
     for (const action of this._axis1dActions) {
       if (action.name === name) {
         return action;
@@ -141,7 +141,7 @@ export class InputManager implements Updatable {
    * @returns The Axis2dAction with the specified name.
    * @throws Error if no action with the specified name is found.
    */
-  public getAxis2dAction(name: string) {
+  public getAxis2dAction(name: string): Axis2dAction {
     for (const action of this._axis2dActions) {
       if (action.name === name) {
         return action;
@@ -156,7 +156,7 @@ export class InputManager implements Updatable {
    * @returns The HoldAction with the specified name.
    * @throws Error if no action with the specified name is found.
    */
-  public getHoldAction(name: string) {
+  public getHoldAction(name: string): HoldAction {
     for (const action of this._holdActions) {
       if (action.name === name) {
         return action;
@@ -182,7 +182,7 @@ export class InputManager implements Updatable {
    * Dispatches a trigger action if its input group is active.
    * @param binding - The input binding containing the action to trigger.
    */
-  public dispatchTriggerAction(binding: InputBinding<TriggerAction>) {
+  public dispatchTriggerAction(binding: InputBinding<TriggerAction>): void {
     if (binding.action.inputGroup === this._activeGroup) {
       binding.action.trigger();
     }
@@ -196,7 +196,7 @@ export class InputManager implements Updatable {
   public dispatchAxis1dAction(
     binding: InputBinding<Axis1dAction>,
     value: number,
-  ) {
+  ): void {
     if (binding.action.inputGroup === this._activeGroup) {
       binding.action.set(value);
     }
@@ -212,7 +212,7 @@ export class InputManager implements Updatable {
     binding: InputBinding<Axis2dAction>,
     x: number,
     y: number,
-  ) {
+  ): void {
     if (binding.action.inputGroup === this._activeGroup) {
       binding.action.set(x, y);
     }
@@ -222,7 +222,7 @@ export class InputManager implements Updatable {
    * Dispatches the start of a hold action if its input group is active.
    * @param binding - The input binding containing the action to start.
    */
-  public dispatchHoldStartAction(binding: InputBinding<HoldAction>) {
+  public dispatchHoldStartAction(binding: InputBinding<HoldAction>): void {
     if (binding.action.inputGroup === this._activeGroup) {
       binding.action.startHold();
     }
@@ -232,7 +232,7 @@ export class InputManager implements Updatable {
    * Dispatches the end of a hold action.
    * @param binding - The input binding containing the action to end.
    */
-  public dispatchHoldEndAction(binding: InputBinding<HoldAction>) {
+  public dispatchHoldEndAction(binding: InputBinding<HoldAction>): void {
     // We end the hold regardless of the active group, as the hold may have started
     binding.action.endHold();
   }

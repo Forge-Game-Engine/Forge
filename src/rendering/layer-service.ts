@@ -42,7 +42,7 @@ export class LayerService implements Stoppable {
    * @param layer - The render layer.
    * @returns The registered `RenderLayer` instance.
    */
-  public registerLayer(layer: RenderLayer) {
+  public registerLayer(layer: RenderLayer): void {
     this._layers.set(layer.name, layer);
   }
 
@@ -66,7 +66,7 @@ export class LayerService implements Stoppable {
    * Resizes all registered layers to the specified dimensions.
    * @param dimensions - The new dimensions for the layers. If not provided, the window dimensions are used.
    */
-  public resizeAllLayers(dimensions?: Vector2) {
+  public resizeAllLayers(dimensions?: Vector2): void {
     const newDimensions =
       dimensions || new Vector2(window.innerWidth, window.innerHeight);
 
@@ -78,7 +78,7 @@ export class LayerService implements Stoppable {
   /**
    * Cleans up the layer service by removing the resize event listener.
    */
-  public stop() {
+  public stop(): void {
     this._game.onWindowResize.deregisterListener(this._resizeListener);
   }
 }

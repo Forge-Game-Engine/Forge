@@ -14,6 +14,6 @@
  * signedSquare(0);   // 0
  * ```
  */
-export function signedSquare(x: number) {
+export function signedSquare(x: number): number {
   return x * Math.abs(x);
 }

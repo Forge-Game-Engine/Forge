@@ -6,6 +6,6 @@
  * @param t - The input value (typically between 0 and 1).
  * @returns The eased value, which is the same as the input value.
  */
-export function linear(t: number) {
+export function linear(t: number): number {
   return t;
 }

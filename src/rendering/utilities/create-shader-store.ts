@@ -32,7 +32,7 @@ import {
  * @returns {ShaderStore} A ShaderStore instance populated with the predefined shader includes
  * and shaders.
  */
-export function createShaderStore() {
+export function createShaderStore(): ShaderStore {
   const shaderStore = new ShaderStore();
 
   shaderStore.addInclude(

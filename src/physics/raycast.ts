@@ -20,7 +20,7 @@ export function raycast(
   start: Vector2,
   end: Vector2,
   sort = true,
-) {
+): RaycastCollision[] {
   const query = Matter.Query.ray(bodies, start, end);
   const raycastCollisions = new Array<RaycastCollision>();
   const ray = new Ray(start, end);
@@ -94,7 +94,7 @@ export class Ray {
     this.end = end;
   }
 
-  public static intersect(rayA: Ray, rayB: Ray) {
+  public static intersect(rayA: Ray, rayB: Ray): Vector2 | null {
     if (rayA.isVertical && rayB.isVertical) {
       return null;
     }
@@ -128,7 +128,7 @@ export class Ray {
     return new Vector2(x, rayA.yValueAt(x));
   }
 
-  public static collisionPoint(rayA: Ray, rayB: Ray) {
+  public static collisionPoint(rayA: Ray, rayB: Ray): Vector2 | null {
     const intersection = Ray.intersect(rayA, rayB);
 
     if (!intersection) {
@@ -146,7 +146,7 @@ export class Ray {
     return intersection;
   }
 
-  public static bodyEdges(body: Matter.Body) {
+  public static bodyEdges(body: Matter.Body): Ray[] {
     const edges = new Array<Ray>();
 
     for (let i = body.parts.length - 1; i >= 0; i--) {
@@ -183,7 +183,10 @@ export class Ray {
     return edges;
   }
 
-  public static bodyCollisions(rayA: Ray, body: Matter.Body) {
+  public static bodyCollisions(
+    rayA: Ray,
+    body: Matter.Body,
+  ): RaycastCollision[] {
     const rayCollisions = new Array<RaycastCollision>();
     const edges = Ray.bodyEdges(body);
 
@@ -216,7 +219,7 @@ export class Ray {
    * @param x - The x value to check
    * @returns The y value on the ray at the specified x
    */
-  public yValueAt(x: number) {
+  public yValueAt(x: number): number {
     //returns the y value on the ray at the specified x
     //slope-intercept form:
     //y = m * x + b
@@ -228,7 +231,7 @@ export class Ray {
    * @param y - The y value to check
    * @returns The x value on the ray at the specified y
    */
-  public xValueAt(y: number) {
+  public xValueAt(y: number): number {
     //returns the x value on the ray at the specified y
     //slope-intercept form:
     //x = (y - b) / m
@@ -240,7 +243,7 @@ export class Ray {
    * @param point - The point to check
    * @returns True if the point is within the bounds of the ray, false otherwise
    */
-  public pointInBounds(point: Vector2) {
+  public pointInBounds(point: Vector2): boolean {
     //checks to see if the specified point is within
     //the ray's bounding box (inclusive)
     const minX = Math.min(this.start.x, this.end.x);
@@ -258,7 +261,7 @@ export class Ray {
    * @param referencePoint - The reference point to calculate the normal vector from
    * @returns The normal vector of the ray at the specified reference point
    */
-  public calculateNormal(referencePoint: Vector2) {
+  public calculateNormal(referencePoint: Vector2): Vector2 {
     //    edge v
     //     <---|--->
     //  *
@@ -276,26 +279,26 @@ export class Ray {
     return normal2;
   }
 
-  get difference() {
+  get difference(): Vector2 {
     return this.end.subtract(this.start);
   }
 
-  get slope() {
+  get slope(): number {
     return this.difference.y / this.difference.x;
   }
 
-  get offsetY() {
+  get offsetY(): number {
     //the y-offset at x = 0, in slope-intercept form:
     //b = y - m * x
     //offsetY = start.y - slope * start.x
     return this.start.y - this.slope * this.start.x;
   }
 
-  get isHorizontal() {
+  get isHorizontal(): boolean {
     return compareNum(this.start.y, this.end.y);
   }
 
-  get isVertical() {
+  get isVertical(): boolean {
     return compareNum(this.start.x, this.end.x);
   }
 }

@@ -158,7 +158,7 @@ export class Time {
    * Updates the time-related information.
    * @param time - The current time.
    */
-  public update(time: number) {
+  public update(time: number): void {
     this._frames++;
 
     this._previousTimeInMilliseconds = this._rawTimeInMilliseconds;

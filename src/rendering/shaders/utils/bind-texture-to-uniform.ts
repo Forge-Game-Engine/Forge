@@ -5,7 +5,7 @@ export const bindTextureToUniform = (
   texture: WebGLTexture,
   uniformLocation: WebGLUniformLocation,
   textureUnit: number = 0,
-) => {
+): void => {
   if (textureUnit > MAX_TEXTURE_UNITS) {
     throw new Error(
       `Cannot bind to texture unit greater than ${MAX_TEXTURE_UNITS}.`,

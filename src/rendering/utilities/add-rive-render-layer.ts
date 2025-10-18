@@ -6,6 +6,7 @@ import {
   Rive,
   type RiveEventPayload,
   RiveEventType,
+  RiveFile,
   type RiveParameters,
 } from '@rive-app/webgl2';
 import type { RiveCache } from '../../asset-loading';
@@ -31,7 +32,7 @@ export async function addRiveRenderLayer(
   layerService: LayerService,
   riveCache: RiveCache,
   riveParameters?: Partial<RiveParameters>,
-) {
+): Promise<readonly [RiveRenderLayer, HTMLCanvasElement, RiveFile]> {
   const riveFile = await riveCache.getOrLoad(riveFileUri);
   const canvas = createCanvas(DEFAULT_LAYERS.ui, gameContainer);
 

@@ -24,7 +24,7 @@ export class Vector2 {
    * @param value - The vector to copy components from
    * @returns This vector for chaining
    */
-  public set(value: Vector2) {
+  public set(value: Vector2): this {
     this.x = value.x;
     this.y = value.y;
 

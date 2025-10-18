@@ -17,7 +17,7 @@ export function addForgeRenderLayers(
   gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
-) {
+): ForgeRenderLayer[] {
   const renderLayers = new Array<ForgeRenderLayer>();
 
   for (const layerName of layerNames) {
