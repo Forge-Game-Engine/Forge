@@ -21,7 +21,7 @@ export class TimerComponent implements Component {
     this.tasks = tasks;
   }
 
-  public addTask(task: TimerTask) {
+  public addTask(task: TimerTask): void {
     // Initialize defaults
     task.elapsed = 0;
     task.runsSoFar = task.runsSoFar ?? 0;

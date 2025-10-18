@@ -49,7 +49,7 @@ export class ObjectPool<T extends NonNullable<unknown> = Entity> {
     return item;
   };
 
-  public release = (instance: T) => {
+  public release = (instance: T): void => {
     this._disposeCallback?.(instance);
 
     this._pool.push(instance);

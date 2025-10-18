@@ -2,6 +2,7 @@ import { ImageCache } from '../../asset-loading';
 import { Entity } from '../../ecs';
 import { ForgeRenderLayer } from '../render-layers';
 import { ShaderStore } from '../shaders';
+import { Sprite } from '../sprite';
 import { createImageSprite } from './create-image-sprite';
 
 /**
@@ -19,7 +20,7 @@ export async function createImageNameSprite(
   renderLayer: ForgeRenderLayer,
   shaderStore: ShaderStore,
   cameraEntity: Entity,
-) {
+): Promise<Sprite> {
   const image = await imageCache.getOrLoad(imageName);
 
   return createImageSprite(image, renderLayer, shaderStore, cameraEntity);

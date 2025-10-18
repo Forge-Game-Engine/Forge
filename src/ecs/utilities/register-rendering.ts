@@ -1,6 +1,7 @@
 import {
   addForgeRenderLayers,
   DEFAULT_LAYER_NAMES,
+  ForgeRenderLayer,
   LayerService,
 } from '../../rendering';
 import { Game } from '../game';
@@ -10,7 +11,10 @@ export const registerRendering = (
   game: Game,
   world: World,
   renderLayerNames: string[] = DEFAULT_LAYER_NAMES,
-) => {
+): {
+  renderLayers: ForgeRenderLayer[];
+  layerService: LayerService;
+} => {
   const layerService = new LayerService(game);
   const renderLayers = addForgeRenderLayers(
     renderLayerNames,

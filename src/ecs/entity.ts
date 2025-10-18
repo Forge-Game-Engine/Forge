@@ -111,7 +111,7 @@ export class Entity {
   /**
    * Gets the unique identifier of the entity.
    */
-  get id() {
+  get id(): number {
     return this._id;
   }
 
@@ -119,7 +119,7 @@ export class Entity {
    * Sets the parent of the entity.
    * @param parent - The parent entity.
    */
-  public parentTo(parent: Entity) {
+  public parentTo(parent: Entity): void {
     if (this._parent) {
       this._parent._children.delete(this);
     }
@@ -133,7 +133,7 @@ export class Entity {
    * This will also remove this entity from its parent's set of children.
    * If the entity does not have a parent, this method does nothing.
    */
-  public removeParent() {
+  public removeParent(): void {
     if (this._parent) {
       this._parent._children.delete(this);
       this._parent = null;
@@ -144,7 +144,7 @@ export class Entity {
    * Gets the parent of the entity.
    * @returns The parent entity, or null if there is no parent.
    */
-  get parent() {
+  get parent(): Entity | null {
     return this._parent;
   }
 
@@ -152,7 +152,7 @@ export class Entity {
    * Gets the child entities of this entity.
    * @returns A set of child entities.
    */
-  get children() {
+  get children(): Set<Entity> {
     return new Set(this._children);
   }
 
@@ -160,7 +160,7 @@ export class Entity {
    * Adds components to the entity.
    * @param components - The components to add.
    */
-  public addComponents(...components: Component[]) {
+  public addComponents(...components: Component[]): void {
     for (const component of components) {
       this._components.set(component.name, component);
       this.world.updateSystemEntities(this);
@@ -172,7 +172,7 @@ export class Entity {
    * @param query - The symbols of the components to check.
    * @returns True if the entity contains all specified components, otherwise false.
    */
-  public containsAllComponents(query: Query) {
+  public containsAllComponents(query: Query): boolean {
     for (const symbol of query) {
       if (!this._components.has(symbol)) {
         return false;
@@ -213,7 +213,7 @@ export class Entity {
    * Removes components from the entity.
    * @param componentNames - The name of the components to remove.
    */
-  public removeComponents(...componentNames: symbol[]) {
+  public removeComponents(...componentNames: symbol[]): void {
     for (const componentName of componentNames) {
       this._components.delete(componentName);
     }

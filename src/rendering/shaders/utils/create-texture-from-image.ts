@@ -8,7 +8,7 @@
 export const createTextureFromImage = (
   gl: WebGL2RenderingContext,
   image: TexImageSource,
-) => {
+): WebGLTexture | null => {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
 

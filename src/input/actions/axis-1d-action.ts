@@ -40,7 +40,7 @@ export class Axis1dAction implements InputAction, Resettable {
     this.inputGroup = inputGroup;
   }
 
-  public reset() {
+  public reset(): void {
     if (this._actionResetType === actionResetTypes.zero) {
       this.set(0);
     }
@@ -52,7 +52,7 @@ export class Axis1dAction implements InputAction, Resettable {
   }
 
   /** Sets the current value of the axis, ranging from -1 to 1. */
-  public set(value: number) {
+  public set(value: number): void {
     if (this._value === value) {
       return;
     }

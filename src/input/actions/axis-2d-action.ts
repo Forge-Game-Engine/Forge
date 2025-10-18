@@ -43,7 +43,7 @@ export class Axis2dAction implements InputAction, Resettable {
     this.inputGroup = inputGroup;
   }
 
-  public reset() {
+  public reset(): void {
     if (this._actionResetType === actionResetTypes.zero) {
       this.set(0, 0);
     }
@@ -55,7 +55,7 @@ export class Axis2dAction implements InputAction, Resettable {
   }
 
   /** Sets the current value of the axis as a Vector2, where x and y range from -1 to 1. */
-  public set(x: number, y: number) {
+  public set(x: number, y: number): void {
     if (this._value.x === x && this._value.y === y) {
       return;
     }

@@ -29,7 +29,7 @@ export abstract class RenderLayer {
    * @param width - The new width of the canvas.
    * @param height - The new height of the canvas.
    */
-  public resize(width: number, height: number) {
+  public resize(width: number, height: number): void {
     this.canvas.width = width;
     this.canvas.height = height;
 

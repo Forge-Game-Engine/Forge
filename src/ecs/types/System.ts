@@ -37,7 +37,7 @@ export abstract class System implements Stoppable {
    * Runs the system on the provided entities.
    * @param entities - The entities to run the system on.
    */
-  public runSystem(entities: Entity[]) {
+  public runSystem(entities: Entity[]): void {
     if (!this.isEnabled) {
       return;
     }
@@ -67,14 +67,14 @@ export abstract class System implements Stoppable {
    * @param entities - The entities to be processed.
    * @returns The modified entities.
    */
-  public beforeAll(entities: Entity[]) {
+  public beforeAll(entities: Entity[]): Entity[] {
     return entities;
   }
 
   /**
    * Stops the system. This method can be overridden by subclasses.
    */
-  public stop() {
+  public stop(): void {
     return;
   }
 }

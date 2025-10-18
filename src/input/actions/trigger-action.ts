@@ -29,13 +29,13 @@ export class TriggerAction implements InputAction, Resettable {
   }
 
   /** Marks the action as triggered and raises the trigger event. */
-  public trigger() {
+  public trigger(): void {
     this._triggered = true;
     this.triggerEvent.raise();
   }
 
   /** Resets the action to not triggered. */
-  public reset() {
+  public reset(): void {
     this._triggered = false;
   }
 

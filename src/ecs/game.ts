@@ -43,7 +43,7 @@ export class Game implements Stoppable {
    * Starts the game loop.
    * @param time - The initial time value.
    */
-  public run(time = 0) {
+  public run(time = 0): void {
     for (const world of this._worlds) {
       world.update(time);
     }
@@ -55,7 +55,7 @@ export class Game implements Stoppable {
    * Registers a world to the game.
    * @param world - The world to register.
    */
-  public registerWorld(world: World) {
+  public registerWorld(world: World): void {
     this._worlds.add(world);
   }
 
@@ -63,7 +63,7 @@ export class Game implements Stoppable {
    * Deregisters a world from the game.
    * @param world - The world to deregister.
    */
-  public deregisterWorld(world: World) {
+  public deregisterWorld(world: World): void {
     world.stop();
     this._worlds.delete(world);
   }
@@ -73,7 +73,7 @@ export class Game implements Stoppable {
    * This deregisters all existing worlds and registers the new world.
    * @param world - The new world to switch to.
    */
-  public swapToWorld(world: World) {
+  public swapToWorld(world: World): void {
     for (const existingWorld of this._worlds) {
       this.deregisterWorld(existingWorld);
     }
@@ -84,7 +84,7 @@ export class Game implements Stoppable {
   /**
    * Stops the game and all registered worlds.
    */
-  public stop() {
+  public stop(): void {
     window.removeEventListener('resize', this.onWindowResize.raise);
 
     for (const world of this._worlds) {

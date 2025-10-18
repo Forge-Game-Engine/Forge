@@ -4,6 +4,6 @@
  * @param radians - The angle in radians to convert.
  * @returns The equivalent angle in degrees.
  */
-export function radiansToDegrees(radians: number) {
+export function radiansToDegrees(radians: number): number {
   return (radians * 180) / Math.PI;
 }
