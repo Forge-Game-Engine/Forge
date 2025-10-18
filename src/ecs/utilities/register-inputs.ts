@@ -9,7 +9,7 @@ import {
 } from '../../input';
 import { InputManager } from '../../input/input-manager';
 import { systemRegistrationPositions } from '../constants';
-import { Entity } from '../entity';
+import type { Entity } from '../entity';
 import { World } from '../world';
 
 export const registerInputs = (
