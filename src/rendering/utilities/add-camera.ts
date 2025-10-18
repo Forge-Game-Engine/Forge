@@ -1,5 +1,5 @@
 import { PositionComponent } from '../../common';
-import { Entity, World } from '../../ecs';
+import type { Entity, World } from '../../ecs';
 import { CameraComponent, type CameraComponentOptions } from '../components';
 import { CameraSystem } from '../systems';
 
