@@ -5,161 +5,161 @@
   "exports": {
     "./animations": {
       "import": {
-        "types": "./dist/animations.d.ts",
+        "types": "./dist/animations/index.d.ts",
         "default": "./dist/animations.js"
       },
       "require": {
-        "types": "./dist/animations.d.ts",
+        "types": "./dist/animations/index.d.ts",
         "default": "./dist/animations.cjs"
       }
     },
     "./asset-loading": {
       "import": {
-        "types": "./dist/asset-loading.d.ts",
+        "types": "./dist/asset-loading/index.d.ts",
         "default": "./dist/asset-loading.js"
       },
       "require": {
-        "types": "./dist/asset-loading.d.ts",
+        "types": "./dist/asset-loading/index.d.ts",
         "default": "./dist/asset-loading.cjs"
       }
     },
     "./audio": {
       "import": {
-        "types": "./dist/audio.d.ts",
+        "types": "./dist/audio/index.d.ts",
         "default": "./dist/audio.js"
       },
       "require": {
-        "types": "./dist/audio.d.ts",
+        "types": "./dist/audio/index.d.ts",
         "default": "./dist/audio.cjs"
       }
     },
     "./common": {
       "import": {
-        "types": "./dist/common.d.ts",
+        "types": "./dist/common/index.d.ts",
         "default": "./dist/common.js"
       },
       "require": {
-        "types": "./dist/common.d.ts",
+        "types": "./dist/common/index.d.ts",
         "default": "./dist/common.cjs"
       }
     },
     "./ecs": {
       "import": {
-        "types": "./dist/ecs.d.ts",
+        "types": "./dist/ecs/index.d.ts",
         "default": "./dist/ecs.js"
       },
       "require": {
-        "types": "./dist/ecs.d.ts",
+        "types": "./dist/ecs/index.d.ts",
         "default": "./dist/ecs.cjs"
       }
     },
     "./events": {
       "import": {
-        "types": "./dist/events.d.ts",
+        "types": "./dist/events/index.d.ts",
         "default": "./dist/events.js"
       },
       "require": {
-        "types": "./dist/events.d.ts",
+        "types": "./dist/events/index.d.ts",
         "default": "./dist/events.cjs"
       }
     },
     "./input": {
       "import": {
-        "types": "./dist/input.d.ts",
+        "types": "./dist/input/index.d.ts",
         "default": "./dist/input.js"
       },
       "require": {
-        "types": "./dist/input.d.ts",
+        "types": "./dist/input/index.d.ts",
         "default": "./dist/input.cjs"
       }
     },
     "./lifecycle": {
       "import": {
-        "types": "./dist/lifecycle.d.ts",
+        "types": "./dist/lifecycle/index.d.ts",
         "default": "./dist/lifecycle.js"
       },
       "require": {
-        "types": "./dist/lifecycle.d.ts",
+        "types": "./dist/lifecycle/index.d.ts",
         "default": "./dist/lifecycle.cjs"
       }
     },
     "./math": {
       "import": {
-        "types": "./dist/math.d.ts",
+        "types": "./dist/math/index.d.ts",
         "default": "./dist/math.js"
       },
       "require": {
-        "types": "./dist/math.d.ts",
+        "types": "./dist/math/index.d.ts",
         "default": "./dist/math.cjs"
       }
     },
     "./particles": {
       "import": {
-        "types": "./dist/particles.d.ts",
+        "types": "./dist/particles/index.d.ts",
         "default": "./dist/particles.js"
       },
       "require": {
-        "types": "./dist/particles.d.ts",
+        "types": "./dist/particles/index.d.ts",
         "default": "./dist/particles.cjs"
       }
     },
     "./physics": {
       "import": {
-        "types": "./dist/physics.d.ts",
+        "types": "./dist/physics/index.d.ts",
         "default": "./dist/physics.js"
       },
       "require": {
-        "types": "./dist/physics.d.ts",
+        "types": "./dist/physics/index.d.ts",
         "default": "./dist/physics.cjs"
       }
     },
     "./pooling": {
       "import": {
-        "types": "./dist/pooling.d.ts",
+        "types": "./dist/pooling/index.d.ts",
         "default": "./dist/pooling.js"
       },
       "require": {
-        "types": "./dist/pooling.d.ts",
+        "types": "./dist/pooling/index.d.ts",
         "default": "./dist/pooling.cjs"
       }
     },
     "./rendering": {
       "import": {
-        "types": "./dist/rendering.d.ts",
+        "types": "./dist/rendering/index.d.ts",
         "default": "./dist/rendering.js"
       },
       "require": {
-        "types": "./dist/rendering.d.ts",
+        "types": "./dist/rendering/index.d.ts",
         "default": "./dist/rendering.cjs"
       }
     },
     "./timer": {
       "import": {
-        "types": "./dist/timer.d.ts",
+        "types": "./dist/timer/index.d.ts",
         "default": "./dist/timer.js"
       },
       "require": {
-        "types": "./dist/timer.d.ts",
+        "types": "./dist/timer/index.d.ts",
         "default": "./dist/timer.cjs"
       }
     },
     "./ui": {
       "import": {
-        "types": "./dist/ui.d.ts",
+        "types": "./dist/ui/index.d.ts",
         "default": "./dist/ui.js"
       },
       "require": {
-        "types": "./dist/ui.d.ts",
+        "types": "./dist/ui/index.d.ts",
         "default": "./dist/ui.cjs"
       }
     },
     "./utilities": {
       "import": {
-        "types": "./dist/utilities.d.ts",
+        "types": "./dist/utilities/index.d.ts",
         "default": "./dist/utilities.js"
       },
       "require": {
-        "types": "./dist/utilities.d.ts",
+        "types": "./dist/utilities/index.d.ts",
         "default": "./dist/utilities.cjs"
       }
     }
@@ -174,8 +174,8 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "vite --config vite.demo.config.js",
-    "build": "vite build",
+    "dev": "tsc --watch --project tsconfig.build.json",
+    "build": "node scripts/build.js",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile node16",
