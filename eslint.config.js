@@ -122,6 +122,7 @@ export default tseslint.config(
       'sonarjs/todo-tag': 'warn',
       'sonarjs/pseudo-random': 'off',
       'no-await-in-loop': 'error',
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
     },
   },
 

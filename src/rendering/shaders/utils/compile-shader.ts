@@ -11,7 +11,7 @@ export const createShader = (
   gl: WebGL2RenderingContext,
   source: string,
   type: GLenum,
-) => {
+): WebGLShader => {
   const shader = gl.createShader(type);
 
   if (!shader) {

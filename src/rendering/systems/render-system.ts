@@ -52,7 +52,7 @@ export class RenderSystem extends System {
     this._setupGLState();
   }
 
-  public override beforeAll(entities: Entity[]) {
+  public override beforeAll(entities: Entity[]): Entity[] {
     this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
 
     return entities;

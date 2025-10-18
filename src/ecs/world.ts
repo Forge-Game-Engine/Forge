@@ -69,7 +69,7 @@ export class World implements Updatable, Stoppable {
   /**
    * Updates all systems in the world.
    */
-  public update(rawTimeInMilliseconds: number) {
+  public update(rawTimeInMilliseconds: number): void {
     this.time.update(rawTimeInMilliseconds);
 
     for (const { system } of this._systems) {
@@ -153,7 +153,9 @@ export class World implements Updatable, Stoppable {
    * Registers a callback to be invoked when systems change.
    * @param callback - The callback to register.
    */
-  public onSystemsChanged(callback: (systems: Set<SystemOrderPair>) => void) {
+  public onSystemsChanged(
+    callback: (systems: Set<SystemOrderPair>) => void,
+  ): void {
     this._onSystemsChangedCallbacks.add(callback);
   }
 
@@ -161,7 +163,9 @@ export class World implements Updatable, Stoppable {
    * Registers a callback to be invoked when entities change.
    * @param callback - The callback to register.
    */
-  public onEntitiesChanged(callback: (entities: Map<number, Entity>) => void) {
+  public onEntitiesChanged(
+    callback: (entities: Map<number, Entity>) => void,
+  ): void {
     this._onEntitiesChangedCallbacks.add(callback);
   }
 
@@ -171,7 +175,7 @@ export class World implements Updatable, Stoppable {
    */
   public removeOnSystemsChangedCallback(
     callback: (systems: Set<SystemOrderPair>) => void,
-  ) {
+  ): void {
     this._onSystemsChangedCallbacks.delete(callback);
   }
 
@@ -181,14 +185,14 @@ export class World implements Updatable, Stoppable {
    */
   public removeOnEntitiesChangedCallback(
     callback: (entities: Map<number, Entity>) => void,
-  ) {
+  ): void {
     this._onEntitiesChangedCallbacks.delete(callback);
   }
 
   /**
    * Raises the systems changed event.
    */
-  public raiseOnSystemsChangedEvent() {
+  public raiseOnSystemsChangedEvent(): void {
     for (const callback of this._onSystemsChangedCallbacks) {
       callback(this._systems);
     }
@@ -197,7 +201,7 @@ export class World implements Updatable, Stoppable {
   /**
    * Raises the entities changed event.
    */
-  public raiseOnEntitiesChangedEvent() {
+  public raiseOnEntitiesChangedEvent(): void {
     for (const callback of this._onEntitiesChangedCallbacks) {
       callback(this._entities);
     }
@@ -211,7 +215,7 @@ export class World implements Updatable, Stoppable {
   public addSystem(
     system: System,
     order: number = systemRegistrationPositions.normal,
-  ) {
+  ): this {
     this._systems.add({ system, order });
     // Reorder the set by 'order' after adding
     const sorted = Array.from(this._systems).sort((a, b) => a.order - b.order);
@@ -261,7 +265,7 @@ export class World implements Updatable, Stoppable {
    * @param system - The system to remove.
    * @returns The world instance.
    */
-  public removeSystem(systemToRemove: string | System) {
+  public removeSystem(systemToRemove: string | System): this {
     for (const systemOrderPair of this._systems) {
       const { system } = systemOrderPair;
       const isNameMatch =
@@ -284,7 +288,7 @@ export class World implements Updatable, Stoppable {
    * @param entity - The entity to add.
    * @returns The world instance.
    */
-  public addEntity(entity: Entity) {
+  public addEntity(entity: Entity): this {
     this._entities.set(entity.id, entity);
 
     this.updateSystemEntities(entity);
@@ -297,7 +301,7 @@ export class World implements Updatable, Stoppable {
    * Updates the entities in the systems based on the components of the given entity.
    * @param entity - The entity to update.
    */
-  public updateSystemEntities(entity: Entity) {
+  public updateSystemEntities(entity: Entity): void {
     for (const { system } of this._systems) {
       const entities = this._systemEntities.get(system.name);
 
@@ -336,7 +340,7 @@ export class World implements Updatable, Stoppable {
    * @param entities - The entities to add.
    * @returns The world instance.
    */
-  public addEntities(entities: Entity[]) {
+  public addEntities(entities: Entity[]): this {
     for (const entity of entities) {
       this.addEntity(entity);
     }
@@ -351,7 +355,7 @@ export class World implements Updatable, Stoppable {
    * @param entity - The entity to remove.
    * @returns The world instance.
    */
-  public removeEntity(entity: Entity) {
+  public removeEntity(entity: Entity): this {
     this._entities.delete(entity.id);
 
     for (const entities of this._systemEntities.values()) {
@@ -366,7 +370,7 @@ export class World implements Updatable, Stoppable {
   /**
    * Stops all systems in the world.
    */
-  public stop() {
+  public stop(): void {
     for (const { system } of this._systems) {
       system.stop();
     }

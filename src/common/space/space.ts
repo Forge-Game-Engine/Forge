@@ -37,7 +37,7 @@ export class Space {
    * Gets the center point of the space.
    * @returns The center point of the space.
    */
-  get center() {
+  get center(): Vector2 {
     return this._center;
   }
 
@@ -45,7 +45,7 @@ export class Space {
    * Gets the width of the space.
    * @returns The width of the space.
    */
-  get width() {
+  get width(): number {
     return this._width;
   }
 
@@ -53,7 +53,7 @@ export class Space {
    * Gets the height of the space.
    * @returns The height of the space.
    */
-  get height() {
+  get height(): number {
     return this._height;
   }
 

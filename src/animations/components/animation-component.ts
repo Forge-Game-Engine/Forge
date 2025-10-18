@@ -84,7 +84,7 @@ export class AnimationComponent implements Component {
    * Gets the list of animations managed by this component.
    * @returns An array of AnimatedProperty objects.
    */
-  get animations() {
+  get animations(): Required<AnimatedProperty>[] {
     return this._animations;
   }
 
@@ -113,7 +113,7 @@ export class AnimationComponent implements Component {
    * Adds a new animation to the component.
    * @param animation - The AnimatedProperty object to add.
    */
-  public addAnimation(animation: AnimatedProperty) {
+  public addAnimation(animation: AnimatedProperty): void {
     const mergedAnimation = { ...animationDefaults, ...animation };
 
     this._animations.push(mergedAnimation);

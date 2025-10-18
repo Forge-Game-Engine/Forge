@@ -17,7 +17,7 @@ export class ForgeEvent {
   /**
    * Gets the list of listeners registered to this event.
    */
-  get listeners() {
+  get listeners(): Listener[] {
     return this._listeners;
   }
 
@@ -34,7 +34,7 @@ export class ForgeEvent {
    * Registers a listener to the event.
    * @param listener - The listener to register.
    */
-  public registerListener(listener: Listener) {
+  public registerListener(listener: Listener): void {
     this._listeners.push(listener);
   }
 
@@ -42,21 +42,21 @@ export class ForgeEvent {
    * Deregisters a listener from the event.
    * @param listener - The listener to deregister.
    */
-  public deregisterListener(listener: Listener) {
+  public deregisterListener(listener: Listener): void {
     this._listeners = this._listeners.filter((l) => l !== listener);
   }
 
   /**
    * Clears all listeners from the event.
    */
-  public clear() {
+  public clear(): void {
     this._listeners = [];
   }
 
   /**
    * Raises the event, calling all registered listeners.
    */
-  public raise() {
+  public raise(): void {
     for (const listener of this._listeners) {
       try {
         listener();
