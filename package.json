@@ -174,8 +174,8 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "tsc --watch --project tsconfig.build.json",
-    "build": "node scripts/build.js",
+    "dev": "tsc --watch --project tsconfig.build.json --skipLibCheck --noEmitOnError false",
+    "build": "tsc --project tsconfig.build.json --skipLibCheck --noEmitOnError false && tsc-alias --project tsconfig.build.json",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile node16",
@@ -209,6 +209,7 @@
     "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0",
     "vite": "^7.1.9",
