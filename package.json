@@ -175,7 +175,7 @@
   },
   "scripts": {
     "dev": "vite --config vite.demo.config.js",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-dts-imports.js",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile node16",

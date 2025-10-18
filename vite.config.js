@@ -45,6 +45,7 @@ export default defineConfig({
       rollupTypes: false,
       outDir: 'dist',
       entryRoot: 'src',
+      insertTypesEntry: true,
     }),
   ],
 });
