@@ -1,4 +1,4 @@
-import { ForgeRenderLayer, Sprite } from 'forge/rendering';
+import { ForgeRenderLayer, Sprite } from '../../rendering';
 
 /**
  * Type for a function that returns a number representing the X and Y spawn position of the particle

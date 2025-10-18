@@ -1,8 +1,8 @@
-import { Game } from 'forge/ecs';
-import { Vector2 } from 'forge/math';
-import { buttonMoments, cursorValueTypes, MouseButton } from 'forge/input/constants';
-import { InputManager } from 'forge/input/input-manager';
-import { Resettable, Stoppable } from 'forge/common';
+import { Game } from '../../../ecs';
+import { Vector2 } from '../../../math';
+import { buttonMoments, cursorValueTypes, MouseButton } from '../../constants';
+import { InputManager } from '../../input-manager';
+import { Resettable, Stoppable } from '../../../common';
 import {
   MouseAxis1dBinding,
   MouseAxis2dBinding,

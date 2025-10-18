@@ -1,6 +1,6 @@
-import type { Component } from 'forge/ecs';
-import { enforceArray } from 'forge/utilities';
-import { linear } from 'forge/animations/easing-functions';
+import type { Component } from '../../ecs';
+import { enforceArray } from '../../utilities';
+import { linear } from '../easing-functions';
 
 /**
  * Represents the properties of an animated object.

@@ -1,7 +1,7 @@
-import type { Component } from 'forge/ecs';
-import { Animation } from 'forge/animations/types';
-import { AnimationController } from 'forge/animations/types/AnimationController';
-import { AnimationInputs } from 'forge/animations/types/AnimationInputs';
+import type { Component } from '../../ecs';
+import { Animation } from '../types';
+import { AnimationController } from '../types/AnimationController';
+import { AnimationInputs } from '../types/AnimationInputs';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.

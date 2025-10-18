@@ -1,5 +1,5 @@
-import { Entity } from 'forge/ecs';
-import { ParameterizedForgeEvent } from 'forge/events';
+import { Entity } from '../../ecs';
+import { ParameterizedForgeEvent } from '../../events';
 import { AnimationFrame } from './AnimationFrame';
 
 /**

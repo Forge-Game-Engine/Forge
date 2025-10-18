@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AudioSystem } from './audio-system';
-import { Entity, World } from 'forge/ecs';
-import { SoundComponent } from 'forge/audio/components';
+import { Entity, World } from '../../ecs';
+import { SoundComponent } from '../components';
 import { Howl } from 'howler';
 
 describe('AudioSystem', () => {

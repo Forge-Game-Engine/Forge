@@ -1,6 +1,6 @@
-import { Axis2dAction } from 'forge/input/actions';
-import { KeyCode } from 'forge/input/constants';
-import { InputBinding } from 'forge/input/input-binding';
+import { Axis2dAction } from '../../actions';
+import { KeyCode } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 /** Arguments for constructing a KeyboardAxis2dBinding. */
 export interface KeyboardAxis2dBindingArgs {

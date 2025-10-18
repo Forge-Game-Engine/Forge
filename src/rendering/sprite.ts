@@ -1,4 +1,4 @@
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../math';
 import type { ForgeRenderLayer } from './render-layers';
 import { Renderable } from './renderable';
 

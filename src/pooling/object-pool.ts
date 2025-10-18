@@ -1,4 +1,4 @@
-import type { Entity } from 'forge/ecs';
+import type { Entity } from '../ecs';
 
 type PoolCreateCallback<T> = () => T;
 type PoolDisposeCallback<T> = (instance: T) => void;

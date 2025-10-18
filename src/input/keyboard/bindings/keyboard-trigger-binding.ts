@@ -1,6 +1,6 @@
-import { TriggerAction } from 'forge/input/actions';
-import { ButtonMoment, KeyCode } from 'forge/input/constants';
-import { InputBinding } from 'forge/input/input-binding';
+import { TriggerAction } from '../../actions';
+import { ButtonMoment, KeyCode } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 /** Arguments for constructing a KeyboardTriggerBinding. */
 export interface KeyboardTriggerBindingArgs {

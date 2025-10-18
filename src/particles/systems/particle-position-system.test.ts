@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ParticlePositionSystem } from './particle-position-system';
-import { Entity, World } from 'forge/ecs';
-import { ParticleComponent } from 'forge/particles/components/particle-component';
+import { Entity, World } from '../../ecs';
+import { ParticleComponent } from '../components/particle-component';
 import {
   PositionComponent,
   RotationComponent,

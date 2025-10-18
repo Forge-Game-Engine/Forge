@@ -1,6 +1,6 @@
-import { type World } from 'forge/ecs';
-import type { LayerService } from 'forge/rendering/layer-service';
-import type { ForgeRenderLayer } from 'forge/rendering/render-layers';
+import { type World } from '../../ecs';
+import type { LayerService } from '../layer-service';
+import type { ForgeRenderLayer } from '../render-layers';
 import { addForgeRenderLayer } from './add-forge-render-layer';
 
 /**

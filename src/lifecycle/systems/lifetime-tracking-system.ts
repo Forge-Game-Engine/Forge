@@ -1,6 +1,6 @@
-import { Entity, System, World } from 'forge/ecs';
-import { Time } from 'forge/common';
-import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
+import { Entity, System, World } from '../../ecs';
+import { Time } from '../../common';
+import { LifetimeComponent } from '../components/lifetime-component';
 
 /**
  * System that tracks entity lifetime and updates the hasExpired flag.

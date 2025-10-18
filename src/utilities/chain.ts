@@ -1,4 +1,4 @@
-import { Prettify } from 'forge/common';
+import { Prettify } from '../common';
 
 type UnknownFunction = (input: unknown) => unknown;
 

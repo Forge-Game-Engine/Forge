@@ -1,7 +1,7 @@
 import { Rive, type RiveEventPayload } from '@rive-app/webgl2';
 import { RenderLayer } from './render-layer';
-import { EventDispatcher, ParameterizedForgeEvent } from 'forge/events';
-import type { Stoppable } from 'forge/common';
+import { EventDispatcher, ParameterizedForgeEvent } from '../../events';
+import type { Stoppable } from '../../common';
 
 /**
  * The `RiveRenderLayer` class represents a rendering layer with its own canvas and rive instance.

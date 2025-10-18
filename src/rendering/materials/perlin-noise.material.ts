@@ -1,6 +1,6 @@
-import type { Time } from 'forge/common';
-import type { Vector2 } from 'forge/math';
-import type { ShaderStore } from 'forge/rendering/shaders';
+import type { Time } from '../../common';
+import type { Vector2 } from '../../math';
+import type { ShaderStore } from '../shaders';
 import { Material } from './material';
 
 export class PerlinNoiseMaterial extends Material {

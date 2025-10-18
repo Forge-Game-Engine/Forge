@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { KeyboardHoldBinding } from './keyboard-hold-binding';
-import { HoldAction } from 'forge/input/actions';
-import { keyCodes } from 'forge/input/constants';
+import { HoldAction } from '../../actions';
+import { keyCodes } from '../../constants';
 
 describe('KeyboardHoldBinding', () => {
   const mockAction: HoldAction = new HoldAction('testHoldAction', 'default');

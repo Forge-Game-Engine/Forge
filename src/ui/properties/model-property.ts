@@ -1,5 +1,5 @@
 import { EventCallback } from '@rive-app/webgl2';
-import { ParameterizedForgeEvent } from 'forge/events';
+import { ParameterizedForgeEvent } from '../../events';
 
 interface RivePropertyInstanceValue<T> {
   get value(): T;

@@ -1,6 +1,6 @@
-import { HoldAction } from 'forge/input/actions';
-import { KeyCode } from 'forge/input/constants';
-import { InputBinding } from 'forge/input/input-binding';
+import { HoldAction } from '../../actions';
+import { KeyCode } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 /** Arguments for constructing a KeyboardHoldBinding. */
 export interface KeyboardHoldBindingArgs {

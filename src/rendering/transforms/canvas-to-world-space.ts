@@ -1,4 +1,4 @@
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../../math';
 
 /**
  * Converts a position from canvas space to world space.

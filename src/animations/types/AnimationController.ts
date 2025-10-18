@@ -1,4 +1,4 @@
-import { Entity } from 'forge/ecs';
+import { Entity } from '../../ecs';
 import { Animation } from './Animation';
 import { AnimationInputs } from './AnimationInputs';
 import { AnimationTransition } from './AnimationTransition';

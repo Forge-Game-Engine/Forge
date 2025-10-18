@@ -1,5 +1,5 @@
-import type { Stoppable } from 'forge/common';
-import { Entity } from 'forge/ecs/entity';
+import type { Stoppable } from '../../common';
+import { Entity } from '../entity';
 import type { Query } from './Query';
 
 /**

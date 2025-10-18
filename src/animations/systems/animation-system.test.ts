@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnimationSystem } from './animation-system';
-import { Entity, World } from 'forge/ecs';
-import { Time } from 'forge/common';
-import { type AnimatedProperty, AnimationComponent } from 'forge/animations/components';
+import { Entity, World } from '../../ecs';
+import { Time } from '../../common';
+import { type AnimatedProperty, AnimationComponent } from '../components';
 
 describe('AnimationSystem', () => {
   const world = new World('test-world');

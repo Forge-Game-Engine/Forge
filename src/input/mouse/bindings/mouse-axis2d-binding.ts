@@ -1,7 +1,7 @@
-import { Vector2 } from 'forge/math';
-import { Axis2dAction } from 'forge/input/actions';
-import { CursorValueType, cursorValueTypes } from 'forge/input/constants';
-import { InputBinding } from 'forge/input/input-binding';
+import { Vector2 } from '../../../math';
+import { Axis2dAction } from '../../actions';
+import { CursorValueType, cursorValueTypes } from '../../constants';
+import { InputBinding } from '../../input-binding';
 
 /** Options for the MouseAxis2dBinding. */
 interface MouseAxis2dBindingOptions {

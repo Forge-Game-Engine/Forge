@@ -6,10 +6,10 @@ import {
   World as MatterJsWorld,
 } from 'matter-js';
 import { PhysicsSystem } from './physics.system';
-import { Entity, World } from 'forge/ecs';
-import { PositionComponent, RotationComponent, Time } from 'forge/common';
-import { PhysicsBodyComponent } from 'forge/physics/components';
-import { degreesToRadians } from 'forge/math';
+import { Entity, World } from '../../ecs';
+import { PositionComponent, RotationComponent, Time } from '../../common';
+import { PhysicsBodyComponent } from '../components';
+import { degreesToRadians } from '../../math';
 
 describe('PhysicsSystem', () => {
   let time: Time;

@@ -1,5 +1,5 @@
 import { RenderLayer } from './render-layer';
-import { CLEAR_STRATEGY, type CLEAR_STRATEGY_KEYS } from 'forge/rendering/enums';
+import { CLEAR_STRATEGY, type CLEAR_STRATEGY_KEYS } from '../enums';
 
 /**
  * The `ForgeRenderLayer` class represents a rendering layer with its own canvas and WebGL context.

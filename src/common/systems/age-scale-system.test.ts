@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Entity, World } from 'forge/ecs';
+import { Entity, World } from '../../ecs';
 import { AgeScaleSystem } from './age-scale-system';
-import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
-import { AgeScaleComponent, ScaleComponent } from 'forge/common';
+import { LifetimeComponent } from '../../lifecycle/components/lifetime-component';
+import { AgeScaleComponent, ScaleComponent } from '../../common';
 
 describe('AgeScaleSystem', () => {
   const world = new World('test');

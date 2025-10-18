@@ -1,4 +1,4 @@
-import { clamp } from 'forge/math';
+import { clamp } from '../math';
 
 /**
  * The `Color` class represents a color that can be created using RGB(A) or HSL(A).

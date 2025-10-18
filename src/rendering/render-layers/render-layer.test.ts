@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RenderLayer } from './render-layer';
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../../math';
 
 class TestRenderLayer extends RenderLayer {
   constructor(name: string, canvas: HTMLCanvasElement) {

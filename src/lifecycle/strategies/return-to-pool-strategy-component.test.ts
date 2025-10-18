@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ReturnToPoolStrategyComponent } from './return-to-pool-strategy-component';
-import { ObjectPool } from 'forge/pooling';
+import { ObjectPool } from '../../pooling';
 
 describe('ReturnToPoolStrategyComponent', () => {
   it('should initialize with correct symbol and pool reference', () => {

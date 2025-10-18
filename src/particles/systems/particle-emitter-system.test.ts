@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParticleEmitterSystem } from './particle-emitter-system';
-import { Entity, World } from 'forge/ecs';
-import { ParticleEmitter, ParticleEmitterComponent } from 'forge/particles/components';
-import { ForgeRenderLayer, Sprite } from 'forge/rendering';
+import { Entity, World } from '../../ecs';
+import { ParticleEmitter, ParticleEmitterComponent } from '../components';
+import { ForgeRenderLayer, Sprite } from '../../rendering';
 
 describe('_startEmittingParticles', () => {
   const world: World = new World('test');

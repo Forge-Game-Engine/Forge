@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { canvasToWorldSpace } from './canvas-to-world-space';
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../../math';
 
 describe('canvasToWorldSpace', () => {
   it('should convert canvas position to world position correctly', () => {

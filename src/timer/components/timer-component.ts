@@ -1,4 +1,4 @@
-import type { Component } from 'forge/ecs';
+import type { Component } from '../../ecs';
 
 export interface TimerTask {
   callback: () => void;

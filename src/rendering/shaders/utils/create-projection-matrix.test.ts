@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createProjectionMatrix } from './create-projection-matrix';
-import { Matrix3x3, Vector2 } from 'forge/math';
+import { Matrix3x3, Vector2 } from '../../../math';
 
 describe('createProjectionMatrix', () => {
   it('should create a correct projection matrix for given width and height', () => {

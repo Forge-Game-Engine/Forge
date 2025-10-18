@@ -1,5 +1,5 @@
-import type { Component } from 'forge/ecs';
-import { degreesToRadians } from 'forge/math';
+import type { Component } from '../../ecs';
+import { degreesToRadians } from '../../math';
 
 /**
  * Component to represent the rotation of an entity in 2D space.

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { Entity } from 'forge/ecs/entity';
-import { World } from 'forge/ecs/world';
-import { PositionComponent } from 'forge/common/components/position-component';
-import { RotationComponent } from 'forge/common/components/rotation-component';
-import { ScaleComponent } from 'forge/common/components/scale-component';
+import { Entity } from '../../ecs/entity';
+import { World } from '../../ecs/world';
+import { PositionComponent } from '../components/position-component';
+import { RotationComponent } from '../components/rotation-component';
+import { ScaleComponent } from '../components/scale-component';
 import { TransformSystem } from './transform-system';
 
 describe('TransformSystem', () => {

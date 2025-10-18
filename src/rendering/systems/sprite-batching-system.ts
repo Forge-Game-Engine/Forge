@@ -1,6 +1,6 @@
-import { PositionComponent } from 'forge/common';
-import { Entity, System } from 'forge/ecs';
-import { RenderableBatchComponent, SpriteComponent } from 'forge/rendering/components';
+import { PositionComponent } from '../../common';
+import { Entity, System } from '../../ecs';
+import { RenderableBatchComponent, SpriteComponent } from '../components';
 
 /**
  * The `SpriteBatchingSystem` class extends the `System` class and manages the batching of sprites.

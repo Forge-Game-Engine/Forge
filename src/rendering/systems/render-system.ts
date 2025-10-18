@@ -8,14 +8,14 @@ import {
   RotationComponent,
   ScaleComponent,
 } from '../../common';
-import { Entity, System } from 'forge/ecs';
+import { Entity, System } from '../../ecs';
 import {
   Batch,
   RenderableBatchComponent,
   SpriteComponent,
 } from '../components';
-import type { ForgeRenderLayer } from 'forge/rendering/render-layers';
-import { Renderable } from 'forge/rendering/renderable';
+import type { ForgeRenderLayer } from '../render-layers';
+import { Renderable } from '../renderable';
 import {
   BATCH_GROWTH_FACTOR,
   FLOATS_PER_INSTANCE,

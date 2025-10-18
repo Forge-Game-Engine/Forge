@@ -1,5 +1,5 @@
-import { ForgeEvent } from 'forge/events';
-import { Vector2 } from 'forge/math';
+import { ForgeEvent } from '../../events';
+import { Vector2 } from '../../math';
 
 /**
  * Class to represent a 2D space with width, height, and center point.

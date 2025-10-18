@@ -1,4 +1,4 @@
-import { Resettable, Updatable } from 'forge/common';
+import { Resettable, Updatable } from '../common';
 import {
   Axis1dAction,
   Axis2dAction,

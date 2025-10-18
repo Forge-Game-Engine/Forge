@@ -1,8 +1,8 @@
-import { createQuadGeometry } from 'forge/rendering/geometry';
-import { Material } from 'forge/rendering/materials';
-import type { ForgeRenderLayer } from 'forge/rendering/render-layers';
-import { Renderable } from 'forge/rendering/renderable';
-import { Sprite } from 'forge/rendering/sprite';
+import { createQuadGeometry } from '../geometry';
+import { Material } from '../materials';
+import type { ForgeRenderLayer } from '../render-layers';
+import { Renderable } from '../renderable';
+import { Sprite } from '../sprite';
 
 /**
  * Creates a sprite using the provided material and render layer.

@@ -1,8 +1,8 @@
-import { Vector2 } from 'forge/math';
-import { ActionResetType, actionResetTypes } from 'forge/input/constants';
-import { InputAction } from 'forge/input/input-action';
-import { ParameterizedForgeEvent } from 'forge/events';
-import { Resettable } from 'forge/common';
+import { Vector2 } from '../../math';
+import { ActionResetType, actionResetTypes } from '../constants';
+import { InputAction } from '../input-action';
+import { ParameterizedForgeEvent } from '../../events';
+import { Resettable } from '../../common';
 
 /**
  * An action that represents a 2-dimensional axis input, such as a joystick or mouse position.

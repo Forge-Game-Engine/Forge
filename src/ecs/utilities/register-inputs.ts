@@ -7,10 +7,10 @@ import {
   TriggerAction,
   UpdateInputSystem,
 } from '../../input';
-import { InputManager } from 'forge/input/input-manager';
-import { systemRegistrationPositions } from 'forge/ecs/constants';
-import type { Entity } from 'forge/ecs/entity';
-import { World } from 'forge/ecs/world';
+import { InputManager } from '../../input/input-manager';
+import { systemRegistrationPositions } from '../constants';
+import type { Entity } from '../entity';
+import { World } from '../world';
 
 export const registerInputs = (
   world: World,

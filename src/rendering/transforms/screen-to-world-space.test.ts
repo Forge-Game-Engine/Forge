@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { screenToWorldSpace } from './screen-to-world-space';
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../../math';
 
 describe('screenToWorldSpace', () => {
   it('should convert screen position to world position correctly with the default camera and pointer in the center of the screen', () => {

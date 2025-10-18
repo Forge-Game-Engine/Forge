@@ -1,12 +1,12 @@
-import { PositionComponent } from 'forge/common';
-import { Vector2 } from 'forge/math';
+import { PositionComponent } from '../../common';
+import { Vector2 } from '../../math';
 import {
   CameraComponent,
   CameraComponentOptions,
   CameraSystem,
 } from '../../rendering';
-import type { Entity } from 'forge/ecs/entity';
-import { World } from 'forge/ecs/world';
+import type { Entity } from '../entity';
+import { World } from '../world';
 
 export const registerCamera = (
   world: World,

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RemoveFromWorldLifecycleSystem } from './remove-from-world-lifecycle-system';
-import { World } from 'forge/ecs';
-import { LifetimeComponent } from 'forge/lifecycle/components/lifetime-component';
-import { RemoveFromWorldStrategyComponent } from 'forge/lifecycle/strategies/remove-from-world-strategy-component';
+import { World } from '../../ecs';
+import { LifetimeComponent } from '../components/lifetime-component';
+import { RemoveFromWorldStrategyComponent } from '../strategies/remove-from-world-strategy-component';
 
 describe('RemoveFromWorldLifecycleSystem', () => {
   let world: World;

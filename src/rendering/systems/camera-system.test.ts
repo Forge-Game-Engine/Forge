@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CameraSystem } from './camera-system';
-import { Entity, World } from 'forge/ecs';
-import { Axis1dAction, Axis2dAction } from 'forge/input';
-import { CameraComponent } from 'forge/rendering/components';
-import { PositionComponent } from 'forge/common';
+import { Entity, World } from '../../ecs';
+import { Axis1dAction, Axis2dAction } from '../../input';
+import { CameraComponent } from '../components';
+import { PositionComponent } from '../../common';
 
 describe('CameraSystem', () => {
   let cameraSystem: CameraSystem;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { KeyboardTriggerBinding } from './keyboard-trigger-binding';
-import { TriggerAction } from 'forge/input/actions';
-import { buttonMoments, keyCodes } from 'forge/input/constants';
+import { TriggerAction } from '../../actions';
+import { buttonMoments, keyCodes } from '../../constants';
 
 describe('KeyboardTriggerBinding', () => {
   const mockAction = new TriggerAction('testTriggerAction', 'default');

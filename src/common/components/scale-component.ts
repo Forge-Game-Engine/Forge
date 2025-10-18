@@ -1,5 +1,5 @@
-import type { Component } from 'forge/ecs';
-import { Vector2 } from 'forge/math';
+import type { Component } from '../../ecs';
+import { Vector2 } from '../../math';
 
 /**
  * Component to represent the scale of an entity in 2D space.

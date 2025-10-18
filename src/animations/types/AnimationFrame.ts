@@ -1,4 +1,4 @@
-import { Vector2 } from 'forge/math';
+import { Vector2 } from '../../math';
 
 /**
  * Interface representing a single frame of an animation.
