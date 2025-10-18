@@ -2,7 +2,16 @@
 
 /**
  * Post-processes .d.ts files to add .js extensions to relative imports.
+ * 
  * This is required for proper TypeScript module resolution with ESM and package exports.
+ * When using node16/nodenext module resolution, TypeScript requires explicit file extensions
+ * in import statements within .d.ts files.
+ * 
+ * TypeScript will only emit .js extensions in declaration files if the source code uses them,
+ * which would require changing all source files. This script automates the post-processing
+ * approach, which is a standard solution used by several major TypeScript packages.
+ * 
+ * @see https://www.typescriptlang.org/docs/handbook/modules/theory.html#typescript-imitates-the-hosts-module-resolution-but-with-types
  */
 
 import fs from 'fs';
