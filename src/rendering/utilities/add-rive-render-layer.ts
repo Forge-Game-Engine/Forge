@@ -6,7 +6,7 @@ import {
   Rive,
   type RiveEventPayload,
   RiveEventType,
-  RiveFile,
+  type RiveFile,
   type RiveParameters,
 } from '@rive-app/webgl2';
 import type { RiveCache } from '../../asset-loading';
