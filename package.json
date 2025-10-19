@@ -110,7 +110,7 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --config vite.config.demo.js",
     "build": "tsc --project tsconfig.build.json",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
