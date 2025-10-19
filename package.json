@@ -7,160 +7,96 @@
       "import": {
         "types": "./dist/animations/index.d.ts",
         "default": "./dist/animations.js"
-      },
-      "require": {
-        "types": "./dist/animations/index.d.ts",
-        "default": "./dist/animations.cjs"
       }
     },
     "./asset-loading": {
       "import": {
         "types": "./dist/asset-loading/index.d.ts",
         "default": "./dist/asset-loading.js"
-      },
-      "require": {
-        "types": "./dist/asset-loading/index.d.ts",
-        "default": "./dist/asset-loading.cjs"
       }
     },
     "./audio": {
       "import": {
         "types": "./dist/audio/index.d.ts",
         "default": "./dist/audio.js"
-      },
-      "require": {
-        "types": "./dist/audio/index.d.ts",
-        "default": "./dist/audio.cjs"
       }
     },
     "./common": {
       "import": {
         "types": "./dist/common/index.d.ts",
         "default": "./dist/common.js"
-      },
-      "require": {
-        "types": "./dist/common/index.d.ts",
-        "default": "./dist/common.cjs"
       }
     },
     "./ecs": {
       "import": {
         "types": "./dist/ecs/index.d.ts",
         "default": "./dist/ecs.js"
-      },
-      "require": {
-        "types": "./dist/ecs/index.d.ts",
-        "default": "./dist/ecs.cjs"
       }
     },
     "./events": {
       "import": {
         "types": "./dist/events/index.d.ts",
         "default": "./dist/events.js"
-      },
-      "require": {
-        "types": "./dist/events/index.d.ts",
-        "default": "./dist/events.cjs"
       }
     },
     "./input": {
       "import": {
         "types": "./dist/input/index.d.ts",
         "default": "./dist/input.js"
-      },
-      "require": {
-        "types": "./dist/input/index.d.ts",
-        "default": "./dist/input.cjs"
       }
     },
     "./lifecycle": {
       "import": {
         "types": "./dist/lifecycle/index.d.ts",
         "default": "./dist/lifecycle.js"
-      },
-      "require": {
-        "types": "./dist/lifecycle/index.d.ts",
-        "default": "./dist/lifecycle.cjs"
       }
     },
     "./math": {
       "import": {
         "types": "./dist/math/index.d.ts",
         "default": "./dist/math.js"
-      },
-      "require": {
-        "types": "./dist/math/index.d.ts",
-        "default": "./dist/math.cjs"
       }
     },
     "./particles": {
       "import": {
         "types": "./dist/particles/index.d.ts",
         "default": "./dist/particles.js"
-      },
-      "require": {
-        "types": "./dist/particles/index.d.ts",
-        "default": "./dist/particles.cjs"
       }
     },
     "./physics": {
       "import": {
         "types": "./dist/physics/index.d.ts",
         "default": "./dist/physics.js"
-      },
-      "require": {
-        "types": "./dist/physics/index.d.ts",
-        "default": "./dist/physics.cjs"
       }
     },
     "./pooling": {
       "import": {
         "types": "./dist/pooling/index.d.ts",
         "default": "./dist/pooling.js"
-      },
-      "require": {
-        "types": "./dist/pooling/index.d.ts",
-        "default": "./dist/pooling.cjs"
       }
     },
     "./rendering": {
       "import": {
         "types": "./dist/rendering/index.d.ts",
         "default": "./dist/rendering.js"
-      },
-      "require": {
-        "types": "./dist/rendering/index.d.ts",
-        "default": "./dist/rendering.cjs"
       }
     },
     "./timer": {
       "import": {
         "types": "./dist/timer/index.d.ts",
         "default": "./dist/timer.js"
-      },
-      "require": {
-        "types": "./dist/timer/index.d.ts",
-        "default": "./dist/timer.cjs"
       }
     },
     "./ui": {
       "import": {
         "types": "./dist/ui/index.d.ts",
         "default": "./dist/ui.js"
-      },
-      "require": {
-        "types": "./dist/ui/index.d.ts",
-        "default": "./dist/ui.cjs"
       }
     },
     "./utilities": {
       "import": {
         "types": "./dist/utilities/index.d.ts",
         "default": "./dist/utilities.js"
-      },
-      "require": {
-        "types": "./dist/utilities/index.d.ts",
-        "default": "./dist/utilities.cjs"
       }
     }
   },
@@ -174,11 +110,11 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "vite --config vite.demo.config.js",
-    "build": "vite build",
+    "dev": "vite",
+    "build": "tsc --project tsconfig.build.json",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
-    "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile node16",
+  "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",
     "check-types": "tsc --noEmit --project tsconfig.ci.json",
     "cspell": "cspell \"**\"",
     "lint": "eslint src",
