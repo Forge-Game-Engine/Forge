@@ -114,7 +114,7 @@
     "build": "tsc --project tsconfig.build.json",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
-  "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",
+    "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",
     "check-types": "tsc --noEmit --project tsconfig.ci.json",
     "cspell": "cspell \"**\"",
     "lint": "eslint src",
