@@ -4,5 +4,5 @@ import baseConfig from './vite.config.base.js';
 
 export default defineConfig({
   ...baseConfig,
-  root: path.resolve(__dirname, 'demo'), 
+  root: path.resolve(__dirname, 'demo'),
 });
