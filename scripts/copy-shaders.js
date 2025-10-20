@@ -103,7 +103,8 @@ async function convertGlslToJavaScript() {
     const filename = basename(shaderFile);
     const exportName = glslFileToExportName(filename);
 
-    const jsContent = `export const ${exportName} = \`${shaderSource}\`;\n`;
+    const escapedShaderSource = shaderSource.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    const jsContent = `export const ${exportName} = \`${escapedShaderSource}\`;\n`;
     const dtsContent = `export declare const ${exportName}: string;\n`;
 
     await writeFile(jsPath, jsContent, 'utf-8');
