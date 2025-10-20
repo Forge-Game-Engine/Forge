@@ -111,7 +111,7 @@
   },
   "scripts": {
     "dev": "vite --config vite.config.demo.js",
-    "build": "tsc --project tsconfig.build.json && node scripts/copy-shaders.js",
+    "build": "node scripts/copy-shaders.js && tsc --project tsconfig.build.json",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",

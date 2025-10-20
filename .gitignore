@@ -128,3 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Generated shader TypeScript files (auto-generated from .glsl files)
+src/rendering/shaders/**/*.frag.ts
+src/rendering/shaders/**/*.vert.ts
+src/rendering/shaders/**/*.include.ts
