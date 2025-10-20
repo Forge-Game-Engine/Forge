@@ -168,7 +168,7 @@ function buildNewIndexContent(importMatches, originalContent) {
     const exportName = glslFileToExportName(glslBaseName + '.glsl');
 
     let out = '';
-    const exportRegex = new RegExp(`export\\s+const\\s+(\\w+)\\s*=\\s*${importedName}`);
+    const exportRegex = new RegExp(`export\\s+const\\s+(\\w+)\\s*=\\s*${importedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
     for (const line of lines) {
       const exportMatch = line.match(exportRegex);
       if (exportMatch) {
