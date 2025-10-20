@@ -18,13 +18,13 @@ const distDir = join(projectRoot, 'dist');
  */
 async function findFiles(dir, pattern) {
   const files = [];
-  
+
   async function walk(currentDir) {
     const entries = await readdir(currentDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = join(currentDir, entry.name);
-      
+
       if (entry.isDirectory()) {
         await walk(fullPath);
       } else if (entry.isFile() && entry.name.match(pattern)) {
@@ -32,7 +32,7 @@ async function findFiles(dir, pattern) {
       }
     }
   }
-  
+
   await walk(dir);
   return files;
 }
