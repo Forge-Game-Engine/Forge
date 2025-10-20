@@ -1,1 +1,3 @@
-export { radialGradientFragGlsl as radialGradientShader } from './radial-gradient.frag.js';
+import radialGradientShaderSource from './radial-gradient.frag.glsl?raw';
+
+export const radialGradientShader = radialGradientShaderSource;
