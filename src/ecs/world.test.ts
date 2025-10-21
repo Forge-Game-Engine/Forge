@@ -3,6 +3,11 @@ import { World } from './world';
 import { Entity } from './entity';
 import { System } from './types';
 
+// Mock Component
+function createMockComponent(name: symbol) {
+  return { name };
+}
+
 describe('World', () => {
   let world: World;
   const runMock = vi.fn();
@@ -17,11 +22,6 @@ describe('World', () => {
     public stop(): void {
       stopMock();
     }
-  }
-
-  // Mock Component
-  function createMockComponent(name: symbol) {
-    return { name };
   }
 
   const mock1Component = createMockComponent(Symbol('mock1'));
@@ -224,5 +224,63 @@ describe('World', () => {
     expect(child.enabled).toBe(false);
     expect(child.parent).toBe(parent);
     expect(parent.children.has(child)).toBe(true);
+  });
+
+  it('should remove an entity and its children recursively', () => {
+    const parent = world.buildAndAddEntity('parent', [mock1Component]);
+    const child = world.buildAndAddEntity('child', [mock1Component], {
+      parent,
+    });
+    const grandchild = world.buildAndAddEntity('grandchild', [mock1Component], {
+      parent: child,
+    });
+
+    expect(world.getEntityById(parent.id)).toBe(parent);
+    expect(world.getEntityById(child.id)).toBe(child);
+    expect(world.getEntityById(grandchild.id)).toBe(grandchild);
+
+    world.removeEntity(parent);
+
+    expect(world.getEntityById(parent.id)).toBeNull();
+    expect(world.getEntityById(child.id)).toBeNull();
+    expect(world.getEntityById(grandchild.id)).toBeNull();
+  });
+
+  it('should remove entity from systems when removed', () => {
+    const system = new MockSystem('SystemForRemoval', [mock1Component.name]);
+    world.addSystem(system);
+
+    runMock.mockClear();
+    const entity = world.buildAndAddEntity('entity-for-system', [
+      mock1Component,
+    ]);
+
+    // ensure system sees the entity initially
+    world.update(16);
+    expect(runMock).toHaveBeenCalledWith(entity);
+
+    runMock.mockClear();
+    world.removeEntity(entity);
+
+    // after removal the system should no longer receive the entity
+    world.update(16);
+    expect(runMock).not.toHaveBeenCalled();
+  });
+
+  it('should raise onEntitiesChanged for each removed entity during recursive removal', () => {
+    const callback = vi.fn();
+    world.onEntitiesChanged(callback);
+
+    const parent = world.buildAndAddEntity('parent-evt', [mock1Component]);
+    world.buildAndAddEntity('child-evt', [mock1Component], {
+      parent,
+    });
+
+    callback.mockClear();
+
+    world.removeEntity(parent);
+
+    // removeEntity is called for child then parent, so the callback should be invoked twice
+    expect(callback).toHaveBeenCalledTimes(2);
   });
 });
