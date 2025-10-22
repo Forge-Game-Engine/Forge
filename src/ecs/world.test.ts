@@ -283,4 +283,14 @@ describe('World', () => {
     // removeEntity is called for child then parent, so the callback should be invoked twice
     expect(callback).toHaveBeenCalledTimes(2);
   });
+
+  it('should throw when adding a duplicate system', () => {
+    const system = new MockSystem('DuplicateSystem', [mock1Component.name]);
+
+    world.addSystem(system);
+
+    expect(() => world.addSystem(system)).toThrowError(
+      `Unable to add system "DuplicateSystem" to world "test-world", it already exists in the world.`,
+    );
+  });
 });

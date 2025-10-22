@@ -89,3 +89,11 @@ test('creating an entity with enabled=false in constructor', () => {
 
   expect(entity.enabled).toBe(false);
 });
+
+test('addComponents throws when adding a component that already exists', () => {
+  const entity = new Entity('player', world, [new MockComponent()]);
+
+  expect(() => entity.addComponents(new MockComponent())).toThrowError(
+    `Unable to add component "${MockComponent.symbol.toString()}" to entity "${entity.name}", it already exists on the entity.`,
+  );
+});

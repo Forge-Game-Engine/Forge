@@ -159,9 +159,16 @@ export class Entity {
   /**
    * Adds components to the entity.
    * @param components - The components to add.
+   * @throws An error if a component with the same name already exists on the entity.
    */
   public addComponents(...components: Component[]): void {
     for (const component of components) {
+      if (this._components.has(component.name)) {
+        throw new Error(
+          `Unable to add component "${component.name.toString()}" to entity "${this.name}", it already exists on the entity.`,
+        );
+      }
+
       this._components.set(component.name, component);
       this.world.updateSystemEntities(this);
     }
