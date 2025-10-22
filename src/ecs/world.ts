@@ -216,6 +216,12 @@ export class World implements Updatable, Stoppable {
     system: System,
     order: number = systemRegistrationPositions.normal,
   ): this {
+    if (this._systemEntities.has(system.name)) {
+      throw new Error(
+        `Unable to add system "${system.name}" to world "${this.name}", it already exists in the world.`,
+      );
+    }
+
     this._systems.add({ system, order });
     // Reorder the set by 'order' after adding
     const sorted = Array.from(this._systems).sort((a, b) => a.order - b.order);
@@ -254,8 +260,6 @@ export class World implements Updatable, Stoppable {
     for (const system of systems) {
       this.addSystem(system, order);
     }
-
-    this.raiseOnSystemsChangedEvent();
 
     return this;
   }
