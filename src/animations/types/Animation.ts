@@ -1,6 +1,6 @@
-import { Entity } from '../../ecs';
-import { ParameterizedForgeEvent } from '../../events';
-import { AnimationFrame } from './AnimationFrame';
+import { Entity } from '../../ecs/index.js';
+import { ParameterizedForgeEvent } from '../../events/index.js';
+import { AnimationFrame } from './AnimationFrame.js';
 
 /**
  * Event type that is raised when the animation changes.

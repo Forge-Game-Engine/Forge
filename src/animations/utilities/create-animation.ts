@@ -1,5 +1,5 @@
-import { Vector2 } from '../../math';
-import { Animation, AnimationFrame } from '../types';
+import { Vector2 } from '../../math/index.js';
+import { Animation, AnimationFrame } from '../types/index.js';
 
 /**
  * Validates the duration of animation frames.

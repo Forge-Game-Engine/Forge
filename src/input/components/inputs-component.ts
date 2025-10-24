@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { InputManager } from '../input-manager';
+import type { Component } from '../../ecs/index.js';
+import { InputManager } from '../input-manager.js';
 
 /**
  * Component that provides access to the InputManager for an entity.

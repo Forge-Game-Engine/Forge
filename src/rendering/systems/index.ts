@@ -1,3 +1,3 @@
-export * from './camera-system';
-export * from './render-system';
-export * from './sprite-batching-system';
+export * from './camera-system.js';
+export * from './render-system.js';
+export * from './sprite-batching-system.js';

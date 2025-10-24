@@ -1,2 +1,2 @@
-export * from './bindings';
-export * from './input-sources';
+export * from './bindings/index.js';
+export * from './input-sources/index.js';

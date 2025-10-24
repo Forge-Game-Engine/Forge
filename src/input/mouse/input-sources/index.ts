@@ -1,1 +1,1 @@
-export * from './mouse-input-source';
+export * from './mouse-input-source.js';

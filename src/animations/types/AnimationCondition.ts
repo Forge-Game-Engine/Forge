@@ -1,4 +1,4 @@
-import { AnimationInputs } from './AnimationInputs';
+import { AnimationInputs } from './AnimationInputs.js';
 
 /**
  * Comparator types for number animation conditions.

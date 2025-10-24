@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { Axis1dAction, Axis2dAction } from '../../input';
+import type { Component } from '../../ecs/index.js';
+import { Axis1dAction, Axis2dAction } from '../../input/index.js';
 
 /**
  * Options for configuring the `CameraComponent`.

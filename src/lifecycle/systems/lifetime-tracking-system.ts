@@ -1,6 +1,6 @@
-import { Entity, System, World } from '../../ecs';
-import { Time } from '../../common';
-import { LifetimeComponent } from '../components/lifetime-component';
+import { Entity, System, World } from '../../ecs/index.js';
+import { Time } from '../../common/index.js';
+import { LifetimeComponent } from '../components/lifetime-component.js';
 
 /**
  * System that tracks entity lifetime and updates the hasExpired flag.

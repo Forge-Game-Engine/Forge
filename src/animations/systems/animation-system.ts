@@ -1,6 +1,9 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { type AnimatedProperty, AnimationComponent } from '../components';
+import { Entity, System } from '../../ecs/index.js';
+import { Time } from '../../common/index.js';
+import {
+  type AnimatedProperty,
+  AnimationComponent,
+} from '../components/index.js';
 
 /**
  * System that manages and updates animations for entities.

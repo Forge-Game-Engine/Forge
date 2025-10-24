@@ -1,2 +1,2 @@
-export * from './reset-inputs-system';
-export * from './update-inputs-system';
+export * from './reset-inputs-system.js';
+export * from './update-inputs-system.js';

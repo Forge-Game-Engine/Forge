@@ -1,6 +1,6 @@
-import { HoldAction } from '../../actions';
-import { KeyCode } from '../../constants';
-import { InputBinding } from '../../input-binding';
+import { HoldAction } from '../../actions/index.js';
+import { KeyCode } from '../../constants/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Arguments for constructing a KeyboardHoldBinding. */
 export interface KeyboardHoldBindingArgs {

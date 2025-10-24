@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math';
+import { Vector2 } from '../../math/index.js';
 
 type MapPathCallback<T> = (point: Vector2, index: number, path: Vector2[]) => T;
 

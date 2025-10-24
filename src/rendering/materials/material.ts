@@ -1,6 +1,6 @@
-import type { Vector2, Vector3 } from '../../math';
-import type { Color } from '../color';
-import type { ShaderStore } from '../shaders';
+import type { Vector2, Vector3 } from '../../math/index.js';
+import type { Color } from '../color.js';
+import type { ShaderStore } from '../shaders/index.js';
 
 type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
 

@@ -1,6 +1,6 @@
-import type { Component } from '../../ecs';
-import { enforceArray } from '../../utilities';
-import { linear } from '../easing-functions';
+import type { Component } from '../../ecs/index.js';
+import { enforceArray } from '../../utilities/index.js';
+import { linear } from '../easing-functions/index.js';
 
 /**
  * Represents the properties of an animated object.

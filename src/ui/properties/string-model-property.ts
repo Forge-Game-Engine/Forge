@@ -1,5 +1,5 @@
 import { ViewModelInstanceString } from '@rive-app/webgl2';
-import { ModelProperty } from './model-property';
+import { ModelProperty } from './model-property.js';
 
 /**
  * Represents a model property that holds a string value.

@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { degreesToRadians } from '../../math';
+import type { Component } from '../../ecs/index.js';
+import { degreesToRadians } from '../../math/index.js';
 
 /**
  * Component to represent the rotation of an entity in 2D space.

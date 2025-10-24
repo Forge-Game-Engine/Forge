@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math';
+import { Vector2 } from '../../math/index.js';
 
 /**
  * The `RenderLayer` class represents a rendering layer with its own canvas and WebGL context.

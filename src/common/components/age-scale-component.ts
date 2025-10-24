@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from '../../ecs/index.js';
 
 /**
  * Component to track how an entity's scale changes with age over its lifetime

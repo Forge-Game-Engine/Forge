@@ -1,8 +1,8 @@
-import type { Stoppable } from '../common';
-import { Vector2 } from '../math';
-import { RenderLayer } from './render-layers/render-layer';
-import { type CLEAR_STRATEGY_KEYS } from './enums';
-import type { Game } from '../ecs';
+import type { Stoppable } from '../common/index.js';
+import { Vector2 } from '../math/index.js';
+import { RenderLayer } from './render-layers/render-layer.js';
+import { type CLEAR_STRATEGY_KEYS } from './enums/index.js';
+import type { Game } from '../ecs/index.js';
 
 /**
  * Options for creating a new render layer.

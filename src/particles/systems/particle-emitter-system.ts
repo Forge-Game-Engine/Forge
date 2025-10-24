@@ -1,4 +1,4 @@
-import { Entity, System, World } from '../../ecs';
+import { Entity, System, World } from '../../ecs/index.js';
 import {
   AgeScaleComponent,
   PositionComponent,
@@ -6,20 +6,20 @@ import {
   ScaleComponent,
   SpeedComponent,
   Time,
-} from '../../common';
+} from '../../common/index.js';
 import {
   LifetimeComponent,
   RemoveFromWorldStrategyComponent,
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
-import { SpriteComponent } from '../../rendering';
-import { Random } from '../../math';
+import { SpriteComponent } from '../../rendering/index.js';
+import { Random } from '../../math/index.js';
 import {
   MinMaxRange,
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
-} from '../';
+} from '..//index.js';
 /**
  * System that emits particles based on ParticleEmitters
  */

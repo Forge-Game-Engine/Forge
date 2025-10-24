@@ -1,7 +1,7 @@
-import { Entity, System } from '../../ecs';
-import { ScaleComponent } from '../../common';
-import { LifetimeComponent } from '../../lifecycle/components/lifetime-component';
-import { AgeScaleComponent } from '../components/age-scale-component';
+import { Entity, System } from '../../ecs/index.js';
+import { ScaleComponent } from '../../common/index.js';
+import { LifetimeComponent } from '../../lifecycle/components/lifetime-component.js';
+import { AgeScaleComponent } from '../components/age-scale-component.js';
 
 /**
  * System that manages the scale of entities with lifetime

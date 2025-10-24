@@ -1,7 +1,7 @@
-import type { Time } from '../../common';
-import type { Vector2 } from '../../math';
-import type { ShaderStore } from '../shaders';
-import { Material } from './material';
+import type { Time } from '../../common/index.js';
+import type { Vector2 } from '../../math/index.js';
+import type { ShaderStore } from '../shaders/index.js';
+import { Material } from './material.js';
 
 export class PerlinNoiseMaterial extends Material {
   private readonly _time: Time;

@@ -1,1 +1,1 @@
-export * from './physics.system';
+export * from './physics.system.js';

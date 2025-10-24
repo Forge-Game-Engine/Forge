@@ -1,4 +1,4 @@
-import { Vector2 } from './vector2';
+import { Vector2 } from './vector2.js';
 
 /**
  * Converts a 2D vector to an angle in radians.

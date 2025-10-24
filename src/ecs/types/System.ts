@@ -1,6 +1,6 @@
-import type { Stoppable } from '../../common';
-import { Entity } from '../entity';
-import type { Query } from './Query';
+import type { Stoppable } from '../../common/index.js';
+import { Entity } from '../entity.js';
+import type { Query } from './Query.js';
 
 /**
  * Represents a system in the Entity-Component-System (ECS) architecture.

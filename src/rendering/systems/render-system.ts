@@ -1,21 +1,21 @@
 import {
   type AnimationFrame,
   SpriteAnimationComponent,
-} from '../../animations';
+} from '../../animations/index.js';
 import {
   FlipComponent,
   PositionComponent,
   RotationComponent,
   ScaleComponent,
-} from '../../common';
-import { Entity, System } from '../../ecs';
+} from '../../common/index.js';
+import { Entity, System } from '../../ecs/index.js';
 import {
   Batch,
   RenderableBatchComponent,
   SpriteComponent,
-} from '../components';
-import type { ForgeRenderLayer } from '../render-layers';
-import { Renderable } from '../renderable';
+} from '../components/index.js';
+import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { Renderable } from '../renderable.js';
 import {
   BATCH_GROWTH_FACTOR,
   FLOATS_PER_INSTANCE,
@@ -32,7 +32,7 @@ import {
   TEX_SIZE_X_OFFSET,
   TEX_SIZE_Y_OFFSET,
   WIDTH_OFFSET,
-} from './render-constants';
+} from './render-constants.js';
 
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;

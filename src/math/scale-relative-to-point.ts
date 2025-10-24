@@ -1,4 +1,4 @@
-import { Vector2 } from './vector2';
+import { Vector2 } from './vector2.js';
 
 /**
  * Scales a point relative to a pivot point by a given scale factor.

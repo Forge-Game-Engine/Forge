@@ -1,2 +1,2 @@
-export * from './animation-component';
-export * from './sprite-animation-component';
+export * from './animation-component.js';
+export * from './sprite-animation-component.js';

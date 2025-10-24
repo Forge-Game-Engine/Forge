@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from '../../ecs/index.js';
 
 /**
  * Represents the properties of a particle.

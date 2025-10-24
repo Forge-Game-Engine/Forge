@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { ParticleEmitter } from './particle-emitter';
+import type { Component } from '../../ecs/index.js';
+import { ParticleEmitter } from './particle-emitter.js';
 
 /**
  * Represents a component responsible for managing particle emitters in a system.

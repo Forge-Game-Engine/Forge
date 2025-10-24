@@ -1,4 +1,4 @@
-import { Geometry } from './geometry';
+import { Geometry } from './geometry.js';
 
 export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
   const geometry = new Geometry();

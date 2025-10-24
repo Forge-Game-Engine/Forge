@@ -1,3 +1,3 @@
-export * from './components';
-export * from './systems';
-export * from './strategies';
+export * from './components/index.js';
+export * from './systems/index.js';
+export * from './strategies/index.js';

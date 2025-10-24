@@ -1,5 +1,5 @@
-import type { Geometry } from './geometry';
-import type { Material } from './materials';
+import type { Geometry } from './geometry/index.js';
+import type { Material } from './materials/index.js';
 
 export class Renderable {
   public geometry: Geometry;

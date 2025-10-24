@@ -1,3 +1,3 @@
-export * from './forge-event';
-export * from './parameterized-forge-event';
-export * from './event-dispatcher';
+export * from './forge-event.js';
+export * from './parameterized-forge-event.js';
+export * from './event-dispatcher.js';

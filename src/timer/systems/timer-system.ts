@@ -1,6 +1,6 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { TimerComponent } from '../components/timer-component';
+import { Entity, System } from '../../ecs/index.js';
+import { Time } from '../../common/index.js';
+import { TimerComponent } from '../components/timer-component.js';
 
 export class TimerSystem extends System {
   private readonly _time: Time;

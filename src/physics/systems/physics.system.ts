@@ -1,8 +1,12 @@
 import { Body, Engine } from 'matter-js';
 
-import { PositionComponent, RotationComponent, type Time } from '../../common';
-import { Entity, System } from '../../ecs';
-import { PhysicsBodyComponent } from '../components';
+import {
+  PositionComponent,
+  RotationComponent,
+  type Time,
+} from '../../common/index.js';
+import { Entity, System } from '../../ecs/index.js';
+import { PhysicsBodyComponent } from '../components/index.js';
 
 export class PhysicsSystem extends System {
   private readonly _time: Time;

@@ -1,12 +1,12 @@
-import { PositionComponent } from '../../common';
-import { Entity } from '../../ecs';
-import { CameraComponent } from '../components';
+import { PositionComponent } from '../../common/index.js';
+import { Entity } from '../../ecs/index.js';
+import { CameraComponent } from '../components/index.js';
 import {
   createProjectionMatrix,
   createTextureFromImage,
   ShaderStore,
-} from '../shaders';
-import { Material } from './material';
+} from '../shaders/index.js';
+import { Material } from './material.js';
 
 export class SpriteMaterial extends Material {
   public readonly albedoTexture: HTMLImageElement;

@@ -1,4 +1,4 @@
-import { createShader } from './compile-shader';
+import { createShader } from './compile-shader.js';
 
 /**
  * Creates and links a WebGL shader program.

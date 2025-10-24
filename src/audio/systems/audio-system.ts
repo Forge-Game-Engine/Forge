@@ -1,5 +1,5 @@
-import { SoundComponent } from '../components';
-import { Entity, System } from '../../ecs';
+import { SoundComponent } from '../components/index.js';
+import { Entity, System } from '../../ecs/index.js';
 
 /**
  * System to manage and play sounds for entities with a SoundComponent.

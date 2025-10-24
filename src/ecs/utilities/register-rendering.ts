@@ -3,9 +3,9 @@ import {
   DEFAULT_LAYER_NAMES,
   type ForgeRenderLayer,
   LayerService,
-} from '../../rendering';
-import { Game } from '../game';
-import { World } from '../world';
+} from '../../rendering/index.js';
+import { Game } from '../game.js';
+import { World } from '../world.js';
 
 export const registerRendering = (
   game: Game,

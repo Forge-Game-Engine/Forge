@@ -1,4 +1,4 @@
-import { InputAction } from './input-action';
+import { InputAction } from './input-action.js';
 
 /** Represents a binding between an input and an action. */
 export interface InputBinding<TAction extends InputAction> {

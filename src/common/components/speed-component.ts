@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from '../../ecs/index.js';
 
 /**
  * Component to track an entities speed.

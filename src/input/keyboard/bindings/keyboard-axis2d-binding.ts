@@ -1,6 +1,6 @@
-import { Axis2dAction } from '../../actions';
-import { KeyCode } from '../../constants';
-import { InputBinding } from '../../input-binding';
+import { Axis2dAction } from '../../actions/index.js';
+import { KeyCode } from '../../constants/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Arguments for constructing a KeyboardAxis2dBinding. */
 export interface KeyboardAxis2dBindingArgs {

@@ -1,3 +1,3 @@
-export * from './lifetime-tracking-system';
-export * from './remove-from-world-lifecycle-system';
-export * from './return-to-pool-lifecycle-system';
+export * from './lifetime-tracking-system.js';
+export * from './remove-from-world-lifecycle-system.js';
+export * from './return-to-pool-lifecycle-system.js';

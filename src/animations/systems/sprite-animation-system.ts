@@ -1,8 +1,8 @@
-import { Entity, System } from '../../ecs';
-import { Time } from '../../common';
-import { SpriteAnimationComponent } from '../components';
-import { SpriteComponent } from '../../rendering';
-import { Animation } from '../types';
+import { Entity, System } from '../../ecs/index.js';
+import { Time } from '../../common/index.js';
+import { SpriteAnimationComponent } from '../components/index.js';
+import { SpriteComponent } from '../../rendering/index.js';
+import { Animation } from '../types/index.js';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.

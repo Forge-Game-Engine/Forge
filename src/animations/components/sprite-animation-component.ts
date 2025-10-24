@@ -1,7 +1,7 @@
-import type { Component } from '../../ecs';
-import { Animation } from '../types';
-import { AnimationController } from '../types/AnimationController';
-import { AnimationInputs } from '../types/AnimationInputs';
+import type { Component } from '../../ecs/index.js';
+import { Animation } from '../types/index.js';
+import { AnimationController } from '../types/AnimationController.js';
+import { AnimationInputs } from '../types/AnimationInputs.js';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.

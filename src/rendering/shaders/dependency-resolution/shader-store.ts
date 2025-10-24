@@ -1,5 +1,5 @@
-import { ForgeShaderSource } from './forge-shader-source';
-import { resolveIncludes } from './resolve-includes';
+import { ForgeShaderSource } from './forge-shader-source.js';
+import { resolveIncludes } from './resolve-includes.js';
 
 export class ShaderStore {
   private readonly _shaders: ForgeShaderSource[];

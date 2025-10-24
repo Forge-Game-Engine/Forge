@@ -1,1 +1,1 @@
-export * from './audio-system';
+export * from './audio-system.js';

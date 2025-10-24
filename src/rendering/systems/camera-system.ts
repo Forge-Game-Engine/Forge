@@ -1,7 +1,7 @@
-import { PositionComponent, Time } from '../../common';
-import * as math from '../../math';
-import { Entity, System } from '../../ecs';
-import { CameraComponent } from '../components';
+import { PositionComponent, Time } from '../../common/index.js';
+import * as math from '../../math/index.js';
+import { Entity, System } from '../../ecs/index.js';
+import { CameraComponent } from '../components/index.js';
 
 /**
  * The `CameraSystem` class manages the camera's

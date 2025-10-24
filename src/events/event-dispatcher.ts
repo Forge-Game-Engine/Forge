@@ -1,4 +1,4 @@
-import type { ParameterizedForgeEvent } from './parameterized-forge-event';
+import type { ParameterizedForgeEvent } from './parameterized-forge-event.js';
 
 /**
  * The `EventDispatcher` class is responsible for managing event listeners

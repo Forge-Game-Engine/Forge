@@ -1,6 +1,6 @@
-import type { Component } from './types';
-import type { Query } from './types/Query';
-import type { World } from './world';
+import type { Component } from './types/index.js';
+import type { Query } from './types/Query.js';
+import type { World } from './world.js';
 
 /**
  * Options for configuring an Entity.

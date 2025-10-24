@@ -1,2 +1,2 @@
-export * from './components';
-export * from './systems';
+export * from './components/index.js';
+export * from './systems/index.js';

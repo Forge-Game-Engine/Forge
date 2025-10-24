@@ -1,2 +1,2 @@
-export * from './particle-emitter-system';
-export * from './particle-position-system';
+export * from './particle-emitter-system.js';
+export * from './particle-position-system.js';

@@ -1,7 +1,7 @@
-import { type World } from '../../ecs';
-import type { LayerService } from '../layer-service';
-import type { ForgeRenderLayer } from '../render-layers';
-import { addForgeRenderLayer } from './add-forge-render-layer';
+import { type World } from '../../ecs/index.js';
+import type { LayerService } from '../layer-service.js';
+import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { addForgeRenderLayer } from './add-forge-render-layer.js';
 
 /**
  * Adds multiple Forge render layers to the game container and registers them with the layer service.

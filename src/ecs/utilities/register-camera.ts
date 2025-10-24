@@ -1,12 +1,12 @@
-import { PositionComponent } from '../../common';
-import { Vector2 } from '../../math';
+import { PositionComponent } from '../../common/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
   CameraComponent,
   CameraComponentOptions,
   CameraSystem,
-} from '../../rendering';
-import type { Entity } from '../entity';
-import { World } from '../world';
+} from '../../rendering/index.js';
+import type { Entity } from '../entity.js';
+import { World } from '../world.js';
 
 export const registerCamera = (
   world: World,

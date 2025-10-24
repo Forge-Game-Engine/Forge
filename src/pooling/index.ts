@@ -1,1 +1,1 @@
-export * from './object-pool';
+export * from './object-pool.js';

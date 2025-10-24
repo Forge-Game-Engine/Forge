@@ -1,3 +1,3 @@
-export * from './Component';
-export * from './System';
-export * from './Query';
+export * from './Component.js';
+export * from './System.js';
+export * from './Query.js';
