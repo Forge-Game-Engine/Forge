@@ -1,6 +1,6 @@
-import { Entity, System } from '../../ecs';
-import { LifetimeComponent } from '../components/lifetime-component';
-import { ReturnToPoolStrategyComponent } from '../strategies/return-to-pool-strategy-component';
+import { Entity, System } from '../../ecs/index.js';
+import { LifetimeComponent } from '../components/lifetime-component.js';
+import { ReturnToPoolStrategyComponent } from '../strategies/return-to-pool-strategy-component.js';
 
 /**
  * System that returns entities to their pool when they have expired.

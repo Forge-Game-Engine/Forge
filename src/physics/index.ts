@@ -1,3 +1,3 @@
-export * from './systems';
-export * from './components';
-export * from './raycast';
+export * from './systems/index.js';
+export * from './components/index.js';
+export * from './raycast.js';

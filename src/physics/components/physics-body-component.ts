@@ -1,5 +1,5 @@
 import type { Body } from 'matter-js';
-import type { Component } from '../../ecs';
+import type { Component } from '../../ecs/index.js';
 
 /**
  * Component to manage physics bodies in the game.

@@ -1,9 +1,9 @@
-import { Entity } from '../../ecs';
-import { SpriteMaterial } from '../materials';
-import type { ForgeRenderLayer } from '../render-layers';
-import type { ShaderStore } from '../shaders';
-import type { Sprite } from '../sprite';
-import { createSprite } from './create-sprite';
+import { Entity } from '../../ecs/index.js';
+import { SpriteMaterial } from '../materials/index.js';
+import type { ForgeRenderLayer } from '../render-layers/index.js';
+import type { ShaderStore } from '../shaders/index.js';
+import type { Sprite } from '../sprite.js';
+import { createSprite } from './create-sprite.js';
 
 /**
  * Creates a sprite using the provided image and render layer.

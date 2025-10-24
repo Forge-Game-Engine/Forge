@@ -1,18 +1,18 @@
-import { Resettable, Stoppable } from '../../../common';
-import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding';
-import { buttonMoments, KeyCode } from '../../constants';
-import { InputManager } from '../../input-manager';
+import { Resettable, Stoppable } from '../../../common/index.js';
+import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding.js';
+import { buttonMoments, KeyCode } from '../../constants/index.js';
+import { InputManager } from '../../input-manager.js';
 import {
   KeyboardAxis1dBinding,
   KeyboardAxis2dBinding,
   KeyboardTriggerBinding,
-} from '../bindings';
+} from '../bindings/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
   HoldInputSource,
   TriggerInputSource,
-} from '../../input-sources';
+} from '../../input-sources/index.js';
 
 /** Represents a keyboard input source with associated bindings. */
 export class KeyboardInputSource

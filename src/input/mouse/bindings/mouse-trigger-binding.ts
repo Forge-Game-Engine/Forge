@@ -1,6 +1,10 @@
-import { TriggerAction } from '../../actions';
-import { ButtonMoment, getMouseButtonName, MouseButton } from '../../constants';
-import { InputBinding } from '../../input-binding';
+import { TriggerAction } from '../../actions/index.js';
+import {
+  ButtonMoment,
+  getMouseButtonName,
+  MouseButton,
+} from '../../constants/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Arguments for constructing a MouseTriggerBinding. */
 export interface MouseTriggerBindingArgs {

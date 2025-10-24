@@ -1,2 +1,2 @@
-export * from './image-cache';
-export * from './rive-cache';
+export * from './image-cache.js';
+export * from './rive-cache.js';

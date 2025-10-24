@@ -1,6 +1,6 @@
-import { TriggerAction } from '../../actions';
-import { ButtonMoment, KeyCode } from '../../constants';
-import { InputBinding } from '../../input-binding';
+import { TriggerAction } from '../../actions/index.js';
+import { ButtonMoment, KeyCode } from '../../constants/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Arguments for constructing a KeyboardTriggerBinding. */
 export interface KeyboardTriggerBindingArgs {

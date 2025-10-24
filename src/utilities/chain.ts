@@ -1,4 +1,4 @@
-import { Prettify } from '../common';
+import { Prettify } from '../common/index.js';
 
 type UnknownFunction = (input: unknown) => unknown;
 

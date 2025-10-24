@@ -1,6 +1,9 @@
-import { PositionComponent } from '../../common';
-import { Entity, System } from '../../ecs';
-import { RenderableBatchComponent, SpriteComponent } from '../components';
+import { PositionComponent } from '../../common/index.js';
+import { Entity, System } from '../../ecs/index.js';
+import {
+  RenderableBatchComponent,
+  SpriteComponent,
+} from '../components/index.js';
 
 /**
  * The `SpriteBatchingSystem` class extends the `System` class and manages the batching of sprites.

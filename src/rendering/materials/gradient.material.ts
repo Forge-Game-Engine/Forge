@@ -1,6 +1,6 @@
-import { Vector2 } from '../../math';
-import { createTextureFromImage, ShaderStore } from '../shaders';
-import { Material } from './material';
+import { Vector2 } from '../../math/index.js';
+import { createTextureFromImage, ShaderStore } from '../shaders/index.js';
+import { Material } from './material.js';
 
 export class GradientMaterial extends Material {
   public readonly gradientTexture: HTMLImageElement;

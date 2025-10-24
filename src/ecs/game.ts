@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { type Stoppable } from '../common';
-import type { World } from './world';
-import { ForgeEvent } from '../events';
-import { createContainer } from '../utilities';
+import { type Stoppable } from '../common/index.js';
+import type { World } from './world.js';
+import { ForgeEvent } from '../events/index.js';
+import { createContainer } from '../utilities/index.js';
 
 /**
  * A game that manages worlds and handles the game loop.

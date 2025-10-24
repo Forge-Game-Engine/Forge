@@ -1,6 +1,6 @@
-import { Axis2dAction } from '../actions';
-import { InputBinding } from '../input-binding';
-import { InputSource } from '../input-source';
+import { Axis2dAction } from '../actions/index.js';
+import { InputBinding } from '../input-binding.js';
+import { InputSource } from '../input-source.js';
 
 /** Represents a two-dimensional axis input source with associated bindings. */
 export interface Axis2dInputSource<

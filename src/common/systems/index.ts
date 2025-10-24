@@ -1,2 +1,2 @@
-export * from './age-scale-system';
-export * from './transform-system';
+export * from './age-scale-system.js';
+export * from './transform-system.js';

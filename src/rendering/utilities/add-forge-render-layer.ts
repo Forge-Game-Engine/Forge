@@ -1,9 +1,9 @@
-import { type World } from '../../ecs';
-import { RenderableBatchComponent } from '../components';
-import type { LayerService } from '../layer-service';
-import { ForgeRenderLayer } from '../render-layers';
-import { RenderSystem, SpriteBatchingSystem } from '../systems';
-import { createCanvas } from './create-canvas';
+import { type World } from '../../ecs/index.js';
+import { RenderableBatchComponent } from '../components/index.js';
+import type { LayerService } from '../layer-service.js';
+import { ForgeRenderLayer } from '../render-layers/index.js';
+import { RenderSystem, SpriteBatchingSystem } from '../systems/index.js';
+import { createCanvas } from './create-canvas.js';
 
 /**
  * Adds a Forge render layer to the game container and registers it with the layer service.

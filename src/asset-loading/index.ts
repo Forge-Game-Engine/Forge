@@ -1,2 +1,2 @@
-export * from './asset-cache';
-export * from './asset-caches';
+export * from './asset-cache.js';
+export * from './asset-caches/index.js';

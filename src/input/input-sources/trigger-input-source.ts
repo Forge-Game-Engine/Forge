@@ -1,6 +1,6 @@
-import { TriggerAction } from '../actions';
-import { InputBinding } from '../input-binding';
-import { InputSource } from '../input-source';
+import { TriggerAction } from '../actions/index.js';
+import { InputBinding } from '../input-binding.js';
+import { InputSource } from '../input-source.js';
 
 /** Represents a trigger input source with associated bindings. */
 export interface TriggerInputSource<

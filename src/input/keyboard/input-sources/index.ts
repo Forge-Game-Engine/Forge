@@ -1,1 +1,1 @@
-export * from './keyboard-input-source';
+export * from './keyboard-input-source.js';

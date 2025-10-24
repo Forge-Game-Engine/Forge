@@ -1,9 +1,9 @@
-import { Entity, System } from '../../ecs';
+import { Entity, System } from '../../ecs/index.js';
 import {
   PositionComponent,
   RotationComponent,
   ScaleComponent,
-} from '../../common';
+} from '../../common/index.js';
 
 /**
  * System that manages the scale of entities with age

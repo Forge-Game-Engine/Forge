@@ -1,5 +1,5 @@
-import { Axis1dAction } from '../../actions';
-import { InputBinding } from '../../input-binding';
+import { Axis1dAction } from '../../actions/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Mouse axis 1D input binding. */
 export class MouseAxis1dBinding implements InputBinding<Axis1dAction> {

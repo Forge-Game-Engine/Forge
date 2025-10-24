@@ -17,7 +17,7 @@ import {
   ShaderStore,
   spriteFragmentShader,
   spriteVertexShader,
-} from '../shaders';
+} from '../shaders/index.js';
 
 /**
  * Creates and initializes a ShaderStore instance with predefined shader includes and shaders.

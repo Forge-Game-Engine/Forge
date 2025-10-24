@@ -1,4 +1,4 @@
-import { Vector2 } from './vector2';
+import { Vector2 } from './vector2.js';
 
 // this function implements a smooth damp follow behavior, found from here:
 // https://github.com/Unity-Technologies/UnityCsReference/blob/02d565cf3dd0f6b15069ba976064c75dc2705b08/Runtime/Export/Math/Vector2.cs#L243

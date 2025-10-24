@@ -6,11 +6,11 @@ import {
   ResetInputSystem,
   TriggerAction,
   UpdateInputSystem,
-} from '../../input';
-import { InputManager } from '../../input/input-manager';
-import { systemRegistrationPositions } from '../constants';
-import type { Entity } from '../entity';
-import { World } from '../world';
+} from '../../input/index.js';
+import { InputManager } from '../../input/input-manager.js';
+import { systemRegistrationPositions } from '../constants/index.js';
+import type { Entity } from '../entity.js';
+import { World } from '../world.js';
 
 export const registerInputs = (
   world: World,

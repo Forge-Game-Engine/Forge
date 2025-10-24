@@ -1,7 +1,10 @@
-import { PositionComponent } from '../../common';
-import type { Entity, World } from '../../ecs';
-import { CameraComponent, type CameraComponentOptions } from '../components';
-import { CameraSystem } from '../systems';
+import { PositionComponent } from '../../common/index.js';
+import type { Entity, World } from '../../ecs/index.js';
+import {
+  CameraComponent,
+  type CameraComponentOptions,
+} from '../components/index.js';
+import { CameraSystem } from '../systems/index.js';
 
 /**
  * Adds a camera entity to the world with the specified options.

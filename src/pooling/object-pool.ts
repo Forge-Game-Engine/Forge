@@ -1,4 +1,4 @@
-import type { Entity } from '../ecs';
+import type { Entity } from '../ecs/index.js';
 
 type PoolCreateCallback<T> = () => T;
 type PoolDisposeCallback<T> = (instance: T) => void;

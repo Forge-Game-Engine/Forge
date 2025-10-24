@@ -1,5 +1,5 @@
 import { ViewModelInstanceTrigger } from '@rive-app/webgl2';
-import { ForgeEvent } from '../../events';
+import { ForgeEvent } from '../../events/index.js';
 
 /**
  * Represents a model trigger that can be used in a view model.

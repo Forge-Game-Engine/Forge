@@ -1,8 +1,8 @@
-import { type Stoppable, Time, type Updatable } from '../common';
-import { isString } from '../utilities';
-import { systemRegistrationPositions } from './constants';
-import { Entity, type EntityOptions } from './entity';
-import type { Component, Query, System } from './types';
+import { type Stoppable, Time, type Updatable } from '../common/index.js';
+import { isString } from '../utilities/index.js';
+import { systemRegistrationPositions } from './constants/index.js';
+import { Entity, type EntityOptions } from './entity.js';
+import type { Component, Query, System } from './types/index.js';
 
 interface SystemOrderPair {
   system: System;

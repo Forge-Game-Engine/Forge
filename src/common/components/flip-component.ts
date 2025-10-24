@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs';
+import type { Component } from '../../ecs/index.js';
 
 /**
  * Component to flip an entity's rendering in the x or y direction

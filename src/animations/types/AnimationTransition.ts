@@ -1,8 +1,8 @@
-import { Entity } from '../../ecs';
-import { ParameterizedForgeEvent } from '../../events';
-import { Animation, OnAnimationChangeEvent } from './Animation';
-import { AnimationCondition } from './AnimationCondition';
-import { AnimationInputs } from './AnimationInputs';
+import { Entity } from '../../ecs/index.js';
+import { ParameterizedForgeEvent } from '../../events/index.js';
+import { Animation, OnAnimationChangeEvent } from './Animation.js';
+import { AnimationCondition } from './AnimationCondition.js';
+import { AnimationInputs } from './AnimationInputs.js';
 
 /**
  * Metadata for an animation transition.

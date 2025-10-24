@@ -1,5 +1,5 @@
-import type { Component } from '../../ecs';
-import { Vector2 } from '../../math';
+import type { Component } from '../../ecs/index.js';
+import { Vector2 } from '../../math/index.js';
 
 /**
  * Component to represent the scale of an entity in 2D space.

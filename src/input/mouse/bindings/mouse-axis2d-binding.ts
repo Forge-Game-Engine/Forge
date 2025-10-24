@@ -1,7 +1,7 @@
-import { Vector2 } from '../../../math';
-import { Axis2dAction } from '../../actions';
-import { CursorValueType, cursorValueTypes } from '../../constants';
-import { InputBinding } from '../../input-binding';
+import { Vector2 } from '../../../math/index.js';
+import { Axis2dAction } from '../../actions/index.js';
+import { CursorValueType, cursorValueTypes } from '../../constants/index.js';
+import { InputBinding } from '../../input-binding.js';
 
 /** Options for the MouseAxis2dBinding. */
 interface MouseAxis2dBindingOptions {

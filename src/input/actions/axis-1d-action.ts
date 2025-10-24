@@ -1,7 +1,7 @@
-import { ActionResetType, actionResetTypes } from '../constants';
-import { InputAction } from '../input-action';
-import { ParameterizedForgeEvent } from '../../events';
-import { Resettable } from '../../common';
+import { ActionResetType, actionResetTypes } from '../constants/index.js';
+import { InputAction } from '../input-action.js';
+import { ParameterizedForgeEvent } from '../../events/index.js';
+import { Resettable } from '../../common/index.js';
 
 /**
  * An action that represents a 1-dimensional axis input, such as a gamepad trigger or mouse scroll.

@@ -1,5 +1,5 @@
-import type { Game } from '../game';
-import { World } from '../world';
+import type { Game } from '../game.js';
+import { World } from '../world.js';
 
 /**
  * Creates a new world with the specified name and registers it with the game.

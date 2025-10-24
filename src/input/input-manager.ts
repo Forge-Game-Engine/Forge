@@ -1,11 +1,11 @@
-import { Resettable, Updatable } from '../common';
+import { Resettable, Updatable } from '../common/index.js';
 import {
   Axis1dAction,
   Axis2dAction,
   HoldAction,
   TriggerAction,
-} from './actions';
-import { InputBinding } from './input-binding';
+} from './actions/index.js';
+import { InputBinding } from './input-binding.js';
 
 /**
  * InputManager is responsible for managing input sources, groups, and actions.

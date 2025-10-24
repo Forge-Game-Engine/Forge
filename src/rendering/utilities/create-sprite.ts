@@ -1,8 +1,8 @@
-import { createQuadGeometry } from '../geometry';
-import { Material } from '../materials';
-import type { ForgeRenderLayer } from '../render-layers';
-import { Renderable } from '../renderable';
-import { Sprite } from '../sprite';
+import { createQuadGeometry } from '../geometry/index.js';
+import { Material } from '../materials/index.js';
+import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { Renderable } from '../renderable.js';
+import { Sprite } from '../sprite.js';
 
 /**
  * Creates a sprite using the provided material and render layer.

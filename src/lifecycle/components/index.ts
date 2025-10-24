@@ -1,1 +1,1 @@
-export * from './lifetime-component';
+export * from './lifetime-component.js';

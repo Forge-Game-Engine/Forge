@@ -1,6 +1,6 @@
-import type { Component, Entity } from '../../ecs';
-import type { RenderLayer } from '../render-layers';
-import type { Renderable } from '../renderable';
+import type { Component, Entity } from '../../ecs/index.js';
+import type { RenderLayer } from '../render-layers/index.js';
+import type { Renderable } from '../renderable.js';
 
 export interface Batch {
   entities: Entity[];

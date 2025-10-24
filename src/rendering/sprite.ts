@@ -1,6 +1,6 @@
-import { Vector2 } from '../math';
-import type { ForgeRenderLayer } from './render-layers';
-import { Renderable } from './renderable';
+import { Vector2 } from '../math/index.js';
+import type { ForgeRenderLayer } from './render-layers/index.js';
+import { Renderable } from './renderable.js';
 
 /**
  * Options for creating a `Sprite`.

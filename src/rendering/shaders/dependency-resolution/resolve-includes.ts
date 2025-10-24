@@ -1,4 +1,4 @@
-import type { ForgeShaderSource } from './forge-shader-source';
+import type { ForgeShaderSource } from './forge-shader-source.js';
 
 export function resolveIncludes(
   source: ForgeShaderSource,

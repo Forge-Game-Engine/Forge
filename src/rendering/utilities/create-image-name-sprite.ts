@@ -1,9 +1,9 @@
-import { ImageCache } from '../../asset-loading';
-import { Entity } from '../../ecs';
-import { ForgeRenderLayer } from '../render-layers';
-import { ShaderStore } from '../shaders';
-import type { Sprite } from '../sprite';
-import { createImageSprite } from './create-image-sprite';
+import { ImageCache } from '../../asset-loading/index.js';
+import { Entity } from '../../ecs/index.js';
+import { ForgeRenderLayer } from '../render-layers/index.js';
+import { ShaderStore } from '../shaders/index.js';
+import type { Sprite } from '../sprite.js';
+import { createImageSprite } from './create-image-sprite.js';
 
 /**
  * Creates a sprite using the provided image name and render layer.

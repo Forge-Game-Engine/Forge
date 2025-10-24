@@ -1,3 +1,3 @@
-export * from './camera-component';
-export * from './sprite-component';
-export * from './sprite-batch-component';
+export * from './camera-component.js';
+export * from './sprite-component.js';
+export * from './sprite-batch-component.js';

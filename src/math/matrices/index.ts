@@ -1,1 +1,1 @@
-export * from './matrix3x3';
+export * from './matrix3x3.js';

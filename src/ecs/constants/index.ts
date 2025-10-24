@@ -1,1 +1,1 @@
-export * from './system-registration-position';
+export * from './system-registration-position.js';

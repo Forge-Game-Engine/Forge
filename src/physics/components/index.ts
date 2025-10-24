@@ -1,1 +1,1 @@
-export * from './physics-body-component';
+export * from './physics-body-component.js';

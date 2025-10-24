@@ -1,8 +1,8 @@
-import { Entity } from '../../ecs';
-import { Animation } from './Animation';
-import { AnimationInputs } from './AnimationInputs';
-import { AnimationTransition } from './AnimationTransition';
-import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
+import { Entity } from '../../ecs/index.js';
+import { Animation } from './Animation.js';
+import { AnimationInputs } from './AnimationInputs.js';
+import { AnimationTransition } from './AnimationTransition.js';
+import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates.js';
 
 type PendingTransition = {
   animationTransition: AnimationTransition;

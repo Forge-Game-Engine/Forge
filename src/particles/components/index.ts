@@ -1,3 +1,3 @@
-export * from './particle-component';
-export * from './particle-emitter';
-export * from './particle-emitter-component';
+export * from './particle-component.js';
+export * from './particle-emitter.js';
+export * from './particle-emitter-component.js';

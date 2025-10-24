@@ -1,1 +1,1 @@
-export * from './timer-system';
+export * from './timer-system.js';

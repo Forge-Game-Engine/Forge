@@ -1,18 +1,22 @@
-import { Game } from '../../../ecs';
-import { Vector2 } from '../../../math';
-import { buttonMoments, cursorValueTypes, MouseButton } from '../../constants';
-import { InputManager } from '../../input-manager';
-import { Resettable, Stoppable } from '../../../common';
+import { Game } from '../../../ecs/index.js';
+import { Vector2 } from '../../../math/index.js';
+import {
+  buttonMoments,
+  cursorValueTypes,
+  MouseButton,
+} from '../../constants/index.js';
+import { InputManager } from '../../input-manager.js';
+import { Resettable, Stoppable } from '../../../common/index.js';
 import {
   MouseAxis1dBinding,
   MouseAxis2dBinding,
   MouseTriggerBinding,
-} from '../bindings';
+} from '../bindings/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
   TriggerInputSource,
-} from '../../input-sources';
+} from '../../input-sources/index.js';
 
 /** Represents a mouse input source with associated bindings. */
 export class MouseInputSource

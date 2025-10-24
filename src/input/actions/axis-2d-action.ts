@@ -1,8 +1,8 @@
-import { Vector2 } from '../../math';
-import { ActionResetType, actionResetTypes } from '../constants';
-import { InputAction } from '../input-action';
-import { ParameterizedForgeEvent } from '../../events';
-import { Resettable } from '../../common';
+import { Vector2 } from '../../math/index.js';
+import { ActionResetType, actionResetTypes } from '../constants/index.js';
+import { InputAction } from '../input-action.js';
+import { ParameterizedForgeEvent } from '../../events/index.js';
+import { Resettable } from '../../common/index.js';
 
 /**
  * An action that represents a 2-dimensional axis input, such as a joystick or mouse position.

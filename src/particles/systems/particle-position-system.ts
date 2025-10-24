@@ -1,11 +1,11 @@
-import { Entity, System } from '../../ecs';
+import { Entity, System } from '../../ecs/index.js';
 import {
   PositionComponent,
   RotationComponent,
   SpeedComponent,
   Time,
-} from '../../common';
-import { ParticleComponent } from '..';
+} from '../../common/index.js';
+import { ParticleComponent } from '../index.js';
 /**
  * System that manages and updates particle position.
  */

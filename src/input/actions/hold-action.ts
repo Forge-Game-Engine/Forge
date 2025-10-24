@@ -1,5 +1,5 @@
-import { InputAction } from '../input-action';
-import { ForgeEvent } from '../../events';
+import { InputAction } from '../input-action.js';
+import { ForgeEvent } from '../../events/index.js';
 
 /**
  * An action that represents a hold input, such as holding down a button or key.

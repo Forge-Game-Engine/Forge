@@ -1,7 +1,7 @@
-export * from './Animation';
-export * from './AnimationController';
-export * from './AnimationInputs';
-export * from './AnimationCondition';
-export * from './AnimationTransition';
-export * from './DefaultAnimationStates';
-export type * from './AnimationFrame';
+export * from './Animation.js';
+export * from './AnimationController.js';
+export * from './AnimationInputs.js';
+export * from './AnimationCondition.js';
+export * from './AnimationTransition.js';
+export * from './DefaultAnimationStates.js';
+export type * from './AnimationFrame.js';
