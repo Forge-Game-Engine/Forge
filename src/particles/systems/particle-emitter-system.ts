@@ -19,7 +19,7 @@ import {
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
-} from '..//index.js';
+} from '../index.js';
 /**
  * System that emits particles based on ParticleEmitters
  */
