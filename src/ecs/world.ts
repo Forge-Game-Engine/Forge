@@ -217,7 +217,7 @@ export class World implements Updatable, Stoppable {
     order: number = systemRegistrationPositions.normal,
   ): this {
     if (this._systemEntities.has(system.name)) {
-      throw new Error(
+      console.warn(
         `Unable to add system "${system.name}" to world "${this.name}", it already exists in the world.`,
       );
     }
