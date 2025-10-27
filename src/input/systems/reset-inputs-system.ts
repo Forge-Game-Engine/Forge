@@ -5,7 +5,7 @@ import { InputsComponent } from '../components/index.js';
 export class ResetInputSystem extends System {
   /** Constructs a new ResetInputSystem. */
   constructor() {
-    super('input', [InputsComponent.symbol]);
+    super('reset-inputs', [InputsComponent.symbol]);
   }
 
   public run(entity: Entity): void {
