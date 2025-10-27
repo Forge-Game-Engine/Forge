@@ -1,4 +1,4 @@
-import { Rive, type RiveEventPayload } from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 import { RenderLayer } from './render-layer.js';
 import {
   EventDispatcher,
@@ -11,10 +11,10 @@ import type { Stoppable } from '../../common/index.js';
  */
 export class RiveRenderLayer extends RenderLayer implements Stoppable {
   /** The Rive instance associated with the render layer. */
-  public rive: Rive;
+  public rive: Rive.Rive;
 
   /** The event dispatcher for Rive events. */
-  private readonly _riveEventDispatcher: EventDispatcher<RiveEventPayload>;
+  private readonly _riveEventDispatcher: EventDispatcher<Rive.RiveEventPayload>;
 
   /**
    * Constructs a new instance of the `RiveRenderLayer` class.
@@ -26,8 +26,8 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
   constructor(
     name: string,
     canvas: HTMLCanvasElement,
-    rive: Rive,
-    riveEventDispatcher: EventDispatcher<RiveEventPayload>,
+    rive: Rive.Rive,
+    riveEventDispatcher: EventDispatcher<Rive.RiveEventPayload>,
   ) {
     super(name, canvas);
 
@@ -52,7 +52,7 @@ export class RiveRenderLayer extends RenderLayer implements Stoppable {
    */
   public registerRiveEvent(
     riveEventName: string,
-    event: ParameterizedForgeEvent<RiveEventPayload>,
+    event: ParameterizedForgeEvent<Rive.RiveEventPayload>,
   ): void {
     this._riveEventDispatcher.addEventListener(riveEventName, event);
   }

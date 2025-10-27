@@ -1,4 +1,4 @@
-import { ViewModelInstanceTrigger } from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 import { ForgeEvent } from '../../events/index.js';
 
 /**
@@ -12,14 +12,14 @@ export class ModelTrigger {
    */
   public readonly onRaised: ForgeEvent;
 
-  private readonly _trigger: ViewModelInstanceTrigger;
+  private readonly _trigger: Rive.ViewModelInstanceTrigger;
 
   /**
    * Creates a new instance of the ModelTrigger class.
    *
    * @param trigger - The Rive trigger instance to encapsulate.
    */
-  constructor(trigger: ViewModelInstanceTrigger) {
+  constructor(trigger: Rive.ViewModelInstanceTrigger) {
     this._trigger = trigger;
 
     this.onRaised = new ForgeEvent(`${trigger.name}Changed`);

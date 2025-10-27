@@ -1,11 +1,11 @@
-import { EventCallback } from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 
 interface RivePropertyInstanceValue<T> {
   get value(): T;
   get name(): string;
   set value(val: T);
-  on(callback: EventCallback): void;
+  on(callback: Rive.EventCallback): void;
 }
 
 /**
