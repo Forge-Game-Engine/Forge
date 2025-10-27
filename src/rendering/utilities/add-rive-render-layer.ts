@@ -1,14 +1,4 @@
-import {
-  Alignment,
-  EventType,
-  Fit,
-  Layout,
-  Rive,
-  type RiveEventPayload,
-  RiveEventType,
-  type RiveFile,
-  type RiveParameters,
-} from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 import type { RiveCache } from '../../asset-loading/index.js';
 import type { LayerService } from '../layer-service.js';
 import { RiveRenderLayer } from '../render-layers/index.js';
@@ -31,17 +21,17 @@ export async function addRiveRenderLayer(
   gameContainer: HTMLElement,
   layerService: LayerService,
   riveCache: RiveCache,
-  riveParameters?: Partial<RiveParameters>,
-): Promise<readonly [RiveRenderLayer, HTMLCanvasElement, RiveFile]> {
+  riveParameters?: Partial<Rive.RiveParameters>,
+): Promise<readonly [RiveRenderLayer, HTMLCanvasElement, Rive.RiveFile]> {
   const riveFile = await riveCache.getOrLoad(riveFileUri);
   const canvas = createCanvas(DEFAULT_LAYERS.ui, gameContainer);
 
   const { rive, riveEventDispatcher } = await createRiveInstance({
     riveFile,
     canvas,
-    layout: new Layout({
-      fit: Fit.Layout,
-      alignment: Alignment.Center,
+    layout: new Rive.Layout({
+      fit: Rive.Fit.Layout,
+      alignment: Rive.Alignment.Center,
     }),
     ...riveParameters,
   });
@@ -63,23 +53,24 @@ export async function addRiveRenderLayer(
  * @param riveParameters - The Rive parameters to use. See https://rive.app/docs/runtimes/web/rive-parameters for more information.
  * @returns An object containing the Rive instance and event dispatcher.
  */
-function createRiveInstance(riveParameters: RiveParameters): Promise<{
-  rive: Rive;
-  riveEventDispatcher: EventDispatcher<RiveEventPayload>;
+function createRiveInstance(riveParameters: Rive.RiveParameters): Promise<{
+  rive: Rive.Rive;
+  riveEventDispatcher: EventDispatcher<Rive.RiveEventPayload>;
 }> {
   return new Promise((resolve, reject) => {
-    const rive = new Rive({
+    const rive = new Rive.Rive({
       autoplay: true,
       ...riveParameters,
       onLoad: (event) => {
         rive.resizeDrawingSurfaceToCanvas();
 
-        const riveEventDispatcher = new EventDispatcher<RiveEventPayload>();
+        const riveEventDispatcher =
+          new EventDispatcher<Rive.RiveEventPayload>();
 
-        rive.on(EventType.RiveEvent, (event) => {
-          const eventData = event.data as RiveEventPayload;
+        rive.on(Rive.EventType.RiveEvent, (event) => {
+          const eventData = event.data as Rive.RiveEventPayload;
 
-          if (eventData.type !== RiveEventType.General) {
+          if (eventData.type !== Rive.RiveEventType.General) {
             throw new Error(
               'Forge only handles general rive events. See https://rive.app/docs/editor/events/overview#type for more information.',
             );

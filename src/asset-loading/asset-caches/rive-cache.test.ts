@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RiveCache } from './rive-cache';
-import { RiveFile } from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 
 vi.mock('@rive-app/webgl2', () => {
   return {
@@ -24,7 +24,7 @@ describe('RiveCache', () => {
   });
 
   it('should retrieve a Rive file from the cache', () => {
-    const mockRiveFile = {} as unknown as RiveFile;
+    const mockRiveFile = {} as unknown as Rive.RiveFile;
     riveCache.assets.set('path/to/file.riv', mockRiveFile);
 
     const retrievedFile = riveCache.get('path/to/file.riv');

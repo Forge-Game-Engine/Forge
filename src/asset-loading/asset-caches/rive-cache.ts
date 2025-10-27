@@ -1,11 +1,11 @@
-import { type AssetLoadCallback, RiveFile } from '@rive-app/webgl2';
+import Rive from '@rive-app/webgl2';
 import type { AssetCache } from '../asset-cache.js';
 
 /**
  * Class to manage the caching and loading of rive files.
  */
-export class RiveCache implements AssetCache<RiveFile> {
-  public assets = new Map<string, RiveFile>();
+export class RiveCache implements AssetCache<Rive.RiveFile> {
+  public assets = new Map<string, Rive.RiveFile>();
 
   /**
    * Retrieves a rive file from the cache.
@@ -13,7 +13,7 @@ export class RiveCache implements AssetCache<RiveFile> {
    * @returns The cached rive file.
    * @throws Will throw an error if the rive file is not found in the cache.
    */
-  public get(path: string): RiveFile {
+  public get(path: string): Rive.RiveFile {
     const riveFile = this.assets.get(path);
 
     if (!riveFile) {
@@ -31,9 +31,9 @@ export class RiveCache implements AssetCache<RiveFile> {
    */
   public async load(
     path: string,
-    assetLoader?: AssetLoadCallback,
+    assetLoader?: Rive.AssetLoadCallback,
   ): Promise<void> {
-    const file = new RiveFile({
+    const file = new Rive.RiveFile({
       src: path,
       onLoad: () => {
         this.assets.set(path, file);
@@ -56,8 +56,8 @@ export class RiveCache implements AssetCache<RiveFile> {
    */
   public async getOrLoad(
     path: string,
-    assetLoader?: AssetLoadCallback,
-  ): Promise<RiveFile> {
+    assetLoader?: Rive.AssetLoadCallback,
+  ): Promise<Rive.RiveFile> {
     if (!this.assets.has(path)) {
       await this.load(path, assetLoader);
     }
