@@ -284,13 +284,14 @@ describe('World', () => {
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
-  it('should throw when adding a duplicate system', () => {
+  it('should not throw when adding the same system instance twice and should warn', () => {
     const system = new MockSystem('DuplicateSystem', [mock1Component.name]);
 
     world.addSystem(system);
 
-    expect(() => world.addSystem(system)).toThrowError(
-      `Unable to add system "DuplicateSystem" to world "test-world", it already exists in the world.`,
-    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(() => world.addSystem(system)).not.toThrow();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
