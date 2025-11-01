@@ -11,8 +11,8 @@ import {
 export class SpriteBatchingSystem extends System {
   private readonly _spriteBatch: RenderableBatchComponent;
 
-  constructor(batcherEntity: Entity) {
-    super('sprite-batching', [
+  constructor(batchName: string, batcherEntity: Entity) {
+    super(`${batchName}-sprite-batching`, [
       PositionComponent.symbol,
       SpriteComponent.symbol,
     ]);
