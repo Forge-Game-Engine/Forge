@@ -1,37 +1,37 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AudioSystem } from './audio-system';
 import { Entity, World } from '../../ecs';
-import { SoundComponent } from '../components';
+import { AudioComponent } from '../components';
 import { Howl } from 'howler';
 
 describe('AudioSystem', () => {
   const world = new World('test-world');
 
-  it('should play sound if playSound is true', () => {
+  it('should play audio if playSound is true', () => {
     const mockPlay = vi.fn();
     const mockHowl = { play: mockPlay } as unknown as Howl;
-    const soundComponent = new SoundComponent({ src: ['sound.mp3'] });
-    soundComponent.sound = mockHowl;
-    soundComponent.playSound = true;
+    const audioComponent = new AudioComponent({ src: ['sound.mp3'] });
+    audioComponent.sound = mockHowl;
+    audioComponent.playSound = true;
 
-    const entity = new Entity('test', world, [soundComponent]);
-    const audioSystem = new AudioSystem();
+    const entity = new Entity('test', world, [audioComponent]);
+    const audioSystem = new AudioSystem(world);
 
     audioSystem.run(entity);
 
     expect(mockPlay).toHaveBeenCalled();
-    expect(soundComponent.playSound).toBe(false);
+    expect(audioComponent.playSound).toBe(false);
   });
 
-  it('should not play sound if playSound is false', () => {
+  it('should not play audio if playSound is false', () => {
     const mockPlay = vi.fn();
     const mockHowl = { play: mockPlay } as unknown as Howl;
-    const soundComponent = new SoundComponent({ src: ['sound.mp3'] });
-    soundComponent.sound = mockHowl;
-    soundComponent.playSound = false;
+    const audioComponent = new AudioComponent({ src: ['sound.mp3'] });
+    audioComponent.sound = mockHowl;
+    audioComponent.playSound = false;
 
-    const entity = new Entity('test', world, [soundComponent]);
-    const audioSystem = new AudioSystem();
+    const entity = new Entity('test', world, [audioComponent]);
+    const audioSystem = new AudioSystem(world);
 
     audioSystem.run(entity);
 
