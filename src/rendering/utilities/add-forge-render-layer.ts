@@ -35,7 +35,7 @@ export function addForgeRenderLayer(
     new RenderableBatchComponent(layer),
   ]);
 
-  const batchingSystem = new SpriteBatchingSystem(batcherEntity);
+  const batchingSystem = new SpriteBatchingSystem(layerName, batcherEntity);
 
   world.addSystem(batchingSystem);
 
