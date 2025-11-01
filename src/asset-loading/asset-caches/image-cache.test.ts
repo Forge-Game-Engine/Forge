@@ -28,7 +28,9 @@ describe('ImageCache', () => {
     mockImage.onload = vi.fn();
     mockImage.onerror = vi.fn();
 
-    vi.spyOn(global, 'Image').mockImplementation(() => mockImage);
+    vi.spyOn(globalThis, 'Image').mockImplementation(function () {
+      return mockImage;
+    });
 
     const imageLoadPromise = imageCache.load('path/to/image.png');
 
@@ -45,7 +47,9 @@ describe('ImageCache', () => {
     mockImage.onload = vi.fn();
     mockImage.onerror = vi.fn();
 
-    vi.spyOn(global, 'Image').mockImplementation(() => mockImage);
+    vi.spyOn(globalThis, 'Image').mockImplementation(function () {
+      return mockImage;
+    });
 
     const imageLoadPromise = imageCache.load('path/to/image.png');
 
@@ -64,9 +68,12 @@ describe('ImageCache', () => {
     mockImage.onload = vi.fn();
     mockImage.onerror = vi.fn();
 
-    vi.spyOn(global, 'Image').mockImplementation(() => mockImage);
+    vi.spyOn(globalThis, 'Image').mockImplementation(function () {
+      return mockImage;
+    });
 
     const retrievedImagePromise = imageCache.getOrLoad('path/to/image.png');
+
     mockImage.onload?.(new Event('load'));
     const retrievedImage = await retrievedImagePromise;
 
