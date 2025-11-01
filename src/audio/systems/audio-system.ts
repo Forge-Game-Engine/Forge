@@ -1,15 +1,19 @@
-import { SoundComponent } from '../components/index.js';
-import { Entity, System } from '../../ecs/index.js';
+import { AudioComponent } from '../components/index.js';
+import { Entity, System, World } from '../../ecs/index.js';
 
 /**
- * System to manage and play sounds for entities with a SoundComponent.
+ * System to manage and play audio for entities with a AudioComponent.
  */
 export class AudioSystem extends System {
+  private readonly _world: World;
+
   /**
    * Creates an instance of AudioSystem.
    */
-  constructor() {
-    super('sound', [SoundComponent.symbol]);
+  constructor(world: World) {
+    super('audio', [AudioComponent.symbol]);
+
+    this._world = world;
   }
 
   /**
@@ -18,13 +22,30 @@ export class AudioSystem extends System {
    * @returns A promise.
    */
   public run(entity: Entity): void {
-    const soundComponent = entity.getComponentRequired<SoundComponent>(
-      SoundComponent.symbol,
+    const audioComponent = entity.getComponentRequired<AudioComponent>(
+      AudioComponent.symbol,
     );
 
-    if (soundComponent.playSound) {
-      soundComponent.sound.play();
-      soundComponent.playSound = false;
+    if (audioComponent.playSound) {
+      audioComponent.sound.play();
+      audioComponent.playSound = false;
+    }
+  }
+
+  /**
+   * Stops the audio system and unloads all sounds.
+   */
+  public stop(): void {
+    const allEntitiesWithAudio = this._world.queryEntities([
+      AudioComponent.symbol,
+    ]);
+
+    for (const entityWithAudio of allEntitiesWithAudio) {
+      const audioComponent =
+        entityWithAudio.getComponentRequired<AudioComponent>(
+          AudioComponent.symbol,
+        );
+      audioComponent.sound.unload();
     }
   }
 }

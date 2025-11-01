@@ -1,1 +1,1 @@
-export * from './sound-component.js';
+export * from './audio-component.js';

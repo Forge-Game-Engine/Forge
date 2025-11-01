@@ -2,9 +2,9 @@ import { Howl, type HowlOptions } from 'howler';
 import type { Component } from '../../ecs/index.js';
 
 /**
- * Component to manage sounds in the game.
+ * Component to manage audio in the game.
  */
-export class SoundComponent implements Component {
+export class AudioComponent implements Component {
   public name: symbol;
   public sound: Howl;
   public playSound: boolean;
@@ -12,20 +12,20 @@ export class SoundComponent implements Component {
   public static readonly symbol = Symbol('Sound');
 
   /**
-   * Creates an instance of SoundComponent.
+   * Creates an instance of AudioComponent.
    * @param options - The HowlOptions to configure the sound.
-   * @param playSound - A boolean indicating whether to play the sound immediately.
+   * @param playSound - A boolean indicating whether to play the sound immediately. Default is false.
    *
    * @see {@link https://github.com/goldfire/howler.js#documentation|Howler.js Documentation}
    *
    * @example
-   * const soundComponent = new SoundComponent({
+   * const audioComponent = new AudioComponent({
    *   src: ['sound.mp3'],
    *   volume: 0.5,
    * }, true);
    */
   constructor(options: HowlOptions, playSound = false) {
-    this.name = SoundComponent.symbol;
+    this.name = AudioComponent.symbol;
     this.sound = new Howl(options);
     this.playSound = playSound;
   }
