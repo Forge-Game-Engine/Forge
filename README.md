@@ -2,65 +2,80 @@
 
 ![logo](assets/forge-banner.png)
 
-Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.
+Forge is a **browser-based game engine** that lets you create games directly in your browser. It comes with everything you need to get started, including graphics rendering, audio, animations, input handling, and more.
 
-[Documentation](https://forge-game-engine.github.io/Forge/)
+[Check out the documentation](https://forge-game-engine.github.io/Forge/)
 
-## Prerequisites
+---
 
-- Install Docker: https://www.docker.com/products/docker-desktop/
-- Install vscode: https://code.visualstudio.com/
+## Try the Demo
 
-## Installation
+You can try a working demo of Forge in your browser without installing anything:  
+[Live Demo](https://forge-game-engine.github.io/Forge/)
 
-Clone the repository and open up the dev environment:
+Just open the link and start experimenting with the engine right away!
+
+---
+
+## What Forge Can Do
+
+Forge provides the core systems you need to build games:
+
+- Render graphics in your browser
+- Play audio and music
+- Animate characters and objects
+- Handle input from keyboard and mouse
+- Manage game entities and simple logic
+
+Forge allows you to create most types of games right in the browser!
+
+---
+
+## Who Is This For?
+
+Forge is designed for:
+
+- **Game enthusiasts** who want to prototype and experiment
+- **Students** learning game development
+- **Creators** who want a browser-friendly, easy-to-use engine
+
+---
+
+## For Developers (Optional)
+
+If you want to dive into the code:
 
 ```sh
-git clone https://github.com/forge-game-engine/Forge.git && \
-cd Forge && \
-code .
-```
-
-## Running the Demo
-
-To run the demo application:
-
-```sh
+git clone https://github.com/forge-game-engine/Forge.git
+cd Forge
+npm install
 npm run dev
-```
 
-## Building the Project
 
-To build the project:
-
-```sh
+Build the project:
 npm run build
-```
 
-## Running Tests
 
-To run the tests:
-
-```sh
+Run tests:
 npm test
-```
 
-## What the engine is
 
-The engine is where all the code is stored that is usable for most types of games. For example: the renderer, audio systems, animations, mouse pointer, etc.
 
-## What the engine is not
 
-The engine is not a place to store code that is hyper-specific to a game. For example: a system for collecting coins.
 
-## What if my system is specific to a particular genre?
+This section is mainly for contributors who want to work on the engine itself.
 
-You can make a separate folder or package outside of the engine.
 
-## Acknowledgements
 
-- [Howler.js](https://howlerjs.com/)
-- [Vite](https://vite.dev/)
-- [Rive](https://rive.app/)
-- [Kenny](https://www.kenney.nl/)
-- [MatterJS](https://brm.io/matter-js/)
+
+Acknowledgements
+
+Howler.js
+
+Vite
+
+Rive
+
+Kenny
+
+MatterJS
