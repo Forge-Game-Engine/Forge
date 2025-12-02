@@ -48,7 +48,7 @@ export class RenderSystem extends System {
     const { layer } = options;
     this._layer = layer;
 
-    this._instanceBuffer = layer.context.createBuffer()!;
+    this._instanceBuffer = layer.context.createBuffer();
     this._setupGLState();
   }
 
