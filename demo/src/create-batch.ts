@@ -5,6 +5,7 @@ import {
   ImageCache,
   PositionComponent,
   Random,
+  ScaleComponent,
   ShaderStore,
   SpriteComponent,
   World,
@@ -34,11 +35,24 @@ export const createBatch = async (
   for (let i = 0; i < size; i++) {
     const entity = world.buildAndAddEntity('sprite', [
       new PositionComponent(
-        random.randomFloat(-5000, 5000),
-        random.randomFloat(-5000, 5000),
+        random.randomFloat(-window.innerWidth / 2, window.innerWidth / 2),
+        random.randomFloat(-window.innerHeight / 2, window.innerHeight / 2),
       ),
       new SpriteComponent(sprite),
+      new ScaleComponent(0.1, 0.1),
     ]);
+
+    const iterations = 10000;
+
+    const start = performance.now();
+
+    for (let i = 0; i < iterations; i++) {
+      entity.getComponent(PositionComponent.symbol);
+    }
+
+    const total = performance.now() - start;
+
+    console.log('Single call:', total / iterations, 'ms');
 
     entities.push(entity);
   }
