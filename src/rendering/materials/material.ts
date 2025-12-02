@@ -58,7 +58,7 @@ export class Material {
       } else if (value instanceof Float32Array || Array.isArray(value)) {
         this._setUniformFloat32Array(gl, loc, value);
       } else {
-        throw new Error(
+        throw new TypeError(
           `Unsupported uniform type for ${name}: ${typeof value}`,
         );
       }
