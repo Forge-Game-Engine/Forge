@@ -13,6 +13,15 @@ export interface RenderableOptions {
   instanceDataPopulator?: InstanceDataPopulator;
 }
 
+function isRenderableOptions(value: unknown): value is RenderableOptions {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'geometry' in value &&
+    'material' in value
+  );
+}
+
 export class Renderable {
   public geometry: Geometry;
   public material: Material;
@@ -24,7 +33,7 @@ export class Renderable {
     geometryOrOptions: Geometry | RenderableOptions,
     material?: Material,
   ) {
-    if ('geometry' in geometryOrOptions && 'material' in geometryOrOptions) {
+    if (material === undefined && isRenderableOptions(geometryOrOptions)) {
       // Options object constructor
       this.geometry = geometryOrOptions.geometry;
       this.material = geometryOrOptions.material;
@@ -33,7 +42,7 @@ export class Renderable {
         defaultSpriteInstanceDataPopulator;
     } else {
       // Legacy constructor for backwards compatibility
-      this.geometry = geometryOrOptions;
+      this.geometry = geometryOrOptions as Geometry;
       this.material = material!;
       this.instanceDataPopulator = defaultSpriteInstanceDataPopulator;
     }
