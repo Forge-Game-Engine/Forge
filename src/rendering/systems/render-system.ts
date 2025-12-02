@@ -37,6 +37,9 @@ import {
 export interface RenderSystemOptions {
   layer: ForgeRenderLayer;
 }
+// TODO: This system only caters for sprite via instancing. And is tightly coupled to an instance data layout.
+// This means it is tightly couple to the sprite.frag shader and it's specific attributes.
+// In the future we may want to abstract this further to allow for different renderable types and shaders.
 
 export class RenderSystem extends System {
   private readonly _layer: ForgeRenderLayer;
