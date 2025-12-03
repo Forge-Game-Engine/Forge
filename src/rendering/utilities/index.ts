@@ -7,3 +7,4 @@ export * from './create-image-sprite.js';
 export * from './create-sprite.js';
 export * from './create-shader-store.js';
 export * from './create-image-name-sprite.js';
+export * from './setup-instance-attribute.js';

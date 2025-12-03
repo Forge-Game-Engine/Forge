@@ -19,7 +19,7 @@ export const createBatch = async (
   shaderStore: ShaderStore,
   cameraEntity: Entity,
   size: number = 1000,
-) => {
+): Promise<Entity[]> => {
   const image = await imageCache.getOrLoad(imageSrc);
 
   const sprite = createImageSprite(
@@ -41,18 +41,6 @@ export const createBatch = async (
       new SpriteComponent(sprite),
       new ScaleComponent(0.1, 0.1),
     ]);
-
-    const iterations = 10000;
-
-    const start = performance.now();
-
-    for (let i = 0; i < iterations; i++) {
-      entity.getComponent(PositionComponent.symbol);
-    }
-
-    const total = performance.now() - start;
-
-    console.log('Single call:', total / iterations, 'ms');
 
     entities.push(entity);
   }
