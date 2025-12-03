@@ -52,6 +52,7 @@ export class Geometry {
     for (const vao of this._vaoCache.values()) {
       gl.deleteVertexArray(vao);
     }
+
     this._vaoCache.clear();
   }
 
