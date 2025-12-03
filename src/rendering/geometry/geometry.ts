@@ -11,7 +11,6 @@ type AttributeSpec = {
 export class Geometry {
   private readonly _attributes: Map<string, Required<AttributeSpec>> =
     new Map();
-  private _indexBuffer?: WebGLBuffer;
   private readonly _vaoCache: Map<WebGLProgram, WebGLVertexArrayObject> =
     new Map();
 
@@ -34,13 +33,6 @@ export class Geometry {
   }
 
   /**
-   * Optionally sets the index buffer for indexed drawing.
-   */
-  public setIndexBuffer(buffer: WebGLBuffer): void {
-    this._indexBuffer = buffer;
-  }
-
-  /**
    * Binds the VAO for the given shader program. Will create it on first use.
    */
   public bind(gl: WebGL2RenderingContext, program: WebGLProgram): void {
@@ -56,6 +48,14 @@ export class Geometry {
     gl.bindVertexArray(vao);
   }
 
+  public dispose(gl: WebGL2RenderingContext): void {
+    for (const vao of this._vaoCache.values()) {
+      gl.deleteVertexArray(vao);
+    }
+
+    this._vaoCache.clear();
+  }
+
   /**
    * Creates a new VAO
    */
@@ -66,37 +66,49 @@ export class Geometry {
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
 
-    if (this._indexBuffer) {
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    }
-
-    for (const [name, attr] of this._attributes) {
-      const loc = gl.getAttribLocation(program, name);
-
-      if (loc === -1) {
-        console.warn(`Attribute ${name} not found in shader`);
-
-        continue; // Attribute not used in shader
-      }
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, attr.buffer);
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(
-        loc,
-        attr.size,
-        attr.type,
-        attr.normalized,
-        attr.stride,
-        attr.offset,
-      );
-
-      if (attr.divisor && attr.divisor > 0) {
-        gl.vertexAttribDivisor(loc, attr.divisor);
-      }
-    }
+    this._bindVertexAttributes(gl, program);
 
     gl.bindVertexArray(null);
 
     return vao;
+  }
+
+  private _bindVertexAttributes(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+  ) {
+    for (const [name, attributeSpec] of this._attributes) {
+      this._bindVertexAttribute(gl, program, name, attributeSpec);
+    }
+  }
+
+  private _bindVertexAttribute(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+    name: string,
+    attributeSpec: Required<AttributeSpec>,
+  ): void {
+    const loc = gl.getAttribLocation(program, name);
+
+    if (loc === -1) {
+      console.warn(`Attribute ${name} not found in shader`);
+
+      return; // Attribute not used in shader
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, attributeSpec.buffer);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(
+      loc,
+      attributeSpec.size,
+      attributeSpec.type,
+      attributeSpec.normalized,
+      attributeSpec.stride,
+      attributeSpec.offset,
+    );
+
+    if (attributeSpec.divisor && attributeSpec.divisor > 0) {
+      gl.vertexAttribDivisor(loc, attributeSpec.divisor);
+    }
   }
 }

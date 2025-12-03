@@ -1,21 +1,15 @@
 import {
-  createImageNameSprite,
+  Axis1dAction,
   createShaderStore,
   createWorld,
-  Entity,
   Game,
   ImageCache,
-  LifetimeComponent,
-  LifetimeTrackingSystem,
-  ObjectPool,
-  PositionComponent,
+  MouseInputSource,
   registerCamera,
+  registerInputs,
   registerRendering,
-  RemoveFromWorldLifecycleSystem,
-  ReturnToPoolLifecycleSystem,
-  ReturnToPoolStrategyComponent,
-  SpriteComponent,
 } from '../../src';
+import { createBatch } from './create-batch';
 
 export const game = new Game(document.getElementById('demo-container')!);
 
@@ -24,45 +18,32 @@ const shaderStore = createShaderStore();
 
 const world = createWorld('world', game);
 
-const cameraEntity = registerCamera(world, {});
+const zoomInput = new Axis1dAction('zoom', 'game');
+
+const { inputsManager } = registerInputs(world, {
+  axis1dActions: [zoomInput],
+});
+
+const mouseInputSource = new MouseInputSource(inputsManager, game);
+
+mouseInputSource.axis1dBindings.add({
+  action: zoomInput,
+  displayText: 'Zoom',
+});
+
+const cameraEntity = registerCamera(world, {
+  zoomInput,
+});
 const { renderLayers } = registerRendering(game, world);
 
-const blueCircleSprite = await createImageNameSprite(
+await createBatch(
   'blue-circle.png',
   imageCache,
+  world,
   renderLayers[0],
   shaderStore,
   cameraEntity,
-);
-
-const pool = new ObjectPool<Entity>({
-  createCallback: (): Entity =>
-    world.buildAndAddEntity('blue-circle', [
-      new PositionComponent(0, 0),
-      new SpriteComponent(blueCircleSprite),
-      new LifetimeComponent(1),
-      new ReturnToPoolStrategyComponent(pool),
-    ]),
-  disposeCallback: (entity: Entity) => {
-    entity.enabled = false;
-  },
-  hydrateCallback: (entity: Entity) => {
-    entity.enabled = true;
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
-    lifetimeComponent.reset(1);
-  },
-});
-
-setInterval(() => {
-  pool.getOrCreate();
-}, 500);
-
-world.addSystems(
-  new LifetimeTrackingSystem(world),
-  new RemoveFromWorldLifecycleSystem(world),
-  new ReturnToPoolLifecycleSystem(),
+  40_000,
 );
 
 game.run();

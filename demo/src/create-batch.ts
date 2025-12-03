@@ -5,6 +5,7 @@ import {
   ImageCache,
   PositionComponent,
   Random,
+  ScaleComponent,
   ShaderStore,
   SpriteComponent,
   World,
@@ -18,7 +19,7 @@ export const createBatch = async (
   shaderStore: ShaderStore,
   cameraEntity: Entity,
   size: number = 1000,
-) => {
+): Promise<Entity[]> => {
   const image = await imageCache.getOrLoad(imageSrc);
 
   const sprite = createImageSprite(
@@ -34,10 +35,11 @@ export const createBatch = async (
   for (let i = 0; i < size; i++) {
     const entity = world.buildAndAddEntity('sprite', [
       new PositionComponent(
-        random.randomFloat(-5000, 5000),
-        random.randomFloat(-5000, 5000),
+        random.randomFloat(-window.innerWidth / 2, window.innerWidth / 2),
+        random.randomFloat(-window.innerHeight / 2, window.innerHeight / 2),
       ),
       new SpriteComponent(sprite),
+      new ScaleComponent(0.1, 0.1),
     ]);
 
     entities.push(entity);
