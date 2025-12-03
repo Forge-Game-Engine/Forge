@@ -4,7 +4,7 @@ import type { Material } from './materials/index.js';
 
 type BindInstanceDataCallback = (
   entity: Entity,
-  bindSpriteInstanceData: Float32Array,
+  instanceDataBuffer: Float32Array,
   offset: number,
 ) => void;
 
