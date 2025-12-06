@@ -15,10 +15,10 @@ import {
 import { SpriteComponent } from '../../rendering/index.js';
 import { Random } from '../../math/index.js';
 import {
-  MinMaxRange,
   ParticleComponent,
   ParticleEmitter,
   ParticleEmitterComponent,
+  Range,
 } from '../index.js';
 /**
  * System that emits particles based on ParticleEmitters
@@ -174,11 +174,7 @@ export class ParticleEmitterSystem extends System {
    * @param minMax The range to get the random value from.
    * @returns A random value within the specified range.
    */
-  private _getRandomValueInRange({ min, max }: MinMaxRange): number {
-    if (min > max) {
-      [min, max] = [max, min];
-    }
-
+  private _getRandomValueInRange({ min, max }: Range): number {
     return this._random.randomFloat(min, max);
   }
 
@@ -188,11 +184,7 @@ export class ParticleEmitterSystem extends System {
    * @param minMax The range to get the random value from.
    * @returns A random value within the specified range, from 0-360 degrees
    */
-  private _getRandomValueInRangeDegrees({ min, max }: MinMaxRange): number {
-    if (min > max) {
-      [min, max] = [max, min];
-    }
-
+  private _getRandomValueInRangeDegrees({ min, max }: Range): number {
     const range = (max - min) % 360;
 
     if (range === 0 && max !== min) {
