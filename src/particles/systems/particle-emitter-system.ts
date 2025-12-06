@@ -170,7 +170,6 @@ export class ParticleEmitterSystem extends System {
 
   /**
    * Gets a random value within the specified range.
-   * If min > max, swaps min and max.
    * @param minMax The range to get the random value from.
    * @returns A random value within the specified range.
    */
@@ -180,7 +179,6 @@ export class ParticleEmitterSystem extends System {
 
   /**
    * Gets a random value within the specified range in degrees.
-   * If min > max, swaps min and max.
    * @param minMax The range to get the random value from.
    * @returns A random value within the specified range, from 0-360 degrees
    */

@@ -287,7 +287,7 @@ describe('_getRandomValueInRange', () => {
     expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(5);
   });
 
-  it('should swap min and max when min > max', () => {
+  it('should handle when min > max', () => {
     const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
       numParticlesRange: { min: 10, max: 8 },
       emitDurationSeconds: 0,
