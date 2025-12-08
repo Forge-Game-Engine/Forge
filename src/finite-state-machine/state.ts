@@ -1,6 +1,3 @@
-import { Transition } from './transition.js';
-
-export interface State<TInput> {
+export interface State {
   readonly name: string;
-  readonly transitions: Transition<TInput>[];
 }

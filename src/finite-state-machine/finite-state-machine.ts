@@ -1,54 +1,62 @@
 import { State } from './state.js';
 import { Transition } from './transition.js';
 
-export class FiniteStateMachine<TInput> {
-  public readonly entryState: State<TInput>;
-  public readonly exitState: State<TInput>;
+export class FiniteStateMachine<TInput, TState extends State> {
+  private _currentState: TState;
+  private readonly _states: Map<TState, Transition<TInput, TState>[]>;
 
-  private readonly _states: State<TInput>[];
-  private _currentState: State<TInput>;
+  constructor(states: TState[], startingState?: TState) {
+    if (states.length === 0) {
+      throw new Error(
+        'FiniteStateMachine must be initialized with at least one state.',
+      );
+    }
 
-  constructor() {
-    this.entryState = {
-      name: 'entry',
-      transitions: [],
-    };
+    if (startingState && !states.includes(startingState)) {
+      throw new Error('Starting state must be one of the provided states.');
+    }
 
-    this.exitState = {
-      name: 'exit',
-      transitions: [],
-    };
+    this._states = new Map();
 
-    this._states = [this.entryState, this.exitState];
+    for (const state of states) {
+      this.addState(state);
+    }
 
-    this._currentState = this.entryState;
+    this._currentState = startingState || states[0];
   }
 
   public addTransition(
-    fromState: State<TInput>,
-    transition: Transition<TInput>,
+    fromState: TState,
+    transition: Transition<TInput, TState>,
   ): void {
-    if (fromState === this.exitState) {
-      throw new Error('Cannot add transitions from the exit state.');
+    const stateTransitions = this._states.get(fromState);
+
+    if (!stateTransitions) {
+      throw new Error(
+        `State with name "${fromState.name}" does not exist in the finite state machine.`,
+      );
     }
 
-    fromState.transitions.push(transition);
+    stateTransitions.push(transition);
+    this._states.set(fromState, stateTransitions);
   }
 
-  public addState(state: State<TInput>): void {
-    if (this._states.some((s) => s.name === state.name)) {
-      throw new Error(`State with name "${state.name}" already exists.`);
+  public addState(state: TState): void {
+    if (this._states.has(state)) {
+      throw new Error(
+        `The state "${state.name}" already exists in the finite state machine.`,
+      );
     }
 
-    this._states.push(state);
+    this._states.set(state, []);
   }
 
-  public getCurrentState(): State<TInput> {
+  public getCurrentState(): TState {
     return this._currentState;
   }
 
   public update(input: TInput): void {
-    for (const transition of this._currentState.transitions) {
+    for (const transition of this._states.get(this._currentState) || []) {
       if (transition.satisfies(input)) {
         this._currentState = transition.toState;
 
