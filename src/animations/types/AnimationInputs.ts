@@ -223,11 +223,12 @@ export class AnimationInputs {
    */
   public clearFrameEndInputs(): void {
     const inputs = this.getAllInputs();
-    inputs.forEach((element) => {
-      if (element.options.resetOnFrameEnd) {
-        element.value = element.options.defaultValue;
+
+    for (const input of inputs) {
+      if (input.options.resetOnFrameEnd) {
+        input.value = input.options.defaultValue;
       }
-    });
+    }
   }
 
   /**
@@ -243,7 +244,7 @@ export class AnimationInputs {
     defaultInputOptions: AnimationInputOptions<T>,
     inputOptions?: Partial<AnimationInputOptions<T>>,
   ) {
-    if (animationInputArray.find((input) => input.name === name)) {
+    if (animationInputArray.some((input) => input.name === name)) {
       throw new Error(`Input with name ${name} already exists.`);
     }
 
