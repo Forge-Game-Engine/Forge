@@ -1,8 +1,10 @@
 import {
   actionResetTypes,
   AnimationClip,
+  AnimationExitTimeCondition,
   AnimationInputs,
   AnimationToggleCondition,
+  AnimationTriggerCondition,
   Axis1dAction,
   Axis2dAction,
   buttonMoments,
@@ -41,8 +43,8 @@ export function setupAnimationsDemo(
 ): ReturnType<typeof setupInputs> {
   const inputs = setupInputs(world, game);
 
-  const ShipController = createShipAnimationController();
-  buildShipEntities(world, shipSprite, ShipController);
+  // const ShipController = createShipAnimationController();
+  // buildShipEntities(world, shipSprite, ShipController);
 
   const controller = createAdventurerControllableController();
   const animationInputs = createAdventurerControllableInputs();
@@ -182,7 +184,11 @@ function createAdventurerControllableController() {
 
   // create animation conditions
   const runCondition = new AnimationToggleCondition('run');
-  const jumpCondition = new AnimationToggleCondition('jump');
+  const jumpCondition = new AnimationTriggerCondition('jump');
+
+  const fullExitTimeCondition = new AnimationExitTimeCondition(
+    'animationClipPlaybackPercentage',
+  );
 
   // create animation controller and transitions
   const stateMachine = new FiniteStateMachine<AnimationInputs, AnimationClip>([
@@ -199,30 +205,34 @@ function createAdventurerControllableController() {
 
   stateMachine.addTransition(
     idle,
-    run,
+    jump,
     new Transition((input) => jumpCondition.validateConditionFromInputs(input)),
   );
 
-  stateMachine.addTransition(jump, idle, new Transition(() => true));
-  stateMachine.addTransition(run, idle, new Transition(() => true));
+  stateMachine.addTransition(
+    jump,
+    idle,
+    new Transition((input) =>
+      fullExitTimeCondition.validateConditionFromInputs(input),
+    ),
+  );
+  stateMachine.addTransition(
+    run,
+    idle,
+    new Transition((input) =>
+      fullExitTimeCondition.validateConditionFromInputs(input),
+    ),
+  );
 
   return stateMachine;
 }
 
 function createAdventurerControllableInputs() {
   const animationInputs = new AnimationInputs();
-  animationInputs.registerToggle('jump', {
-    resetOnFrameEnd: true,
-  }); // should reset every frame
-  animationInputs.registerToggle('run', {
-    resetOnFrameEnd: true,
-  });
-  animationInputs.registerText('attack', {
-    resetOnFrameEnd: true,
-  });
-  animationInputs.registerNumber('health', {
-    defaultValue: 100,
-  });
+  animationInputs.registerTrigger('jump');
+  animationInputs.registerToggle('run');
+  animationInputs.registerText('attack');
+  animationInputs.registerNumber('health', 100);
 
   return animationInputs;
 }

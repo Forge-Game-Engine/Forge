@@ -214,3 +214,65 @@ export class AnimationToggleCondition extends AnimationConditionBase<boolean> {
     return inputValue === true;
   }
 }
+
+/**
+ * Class for trigger (boolean)-based animation conditions.
+ */
+export class AnimationTriggerCondition extends AnimationConditionBase<boolean> {
+  /**
+   * Method to validate the condition based on all of the animation inputs.
+   * @param animationInputs - The animation inputs to validate the condition against.
+   * @returns Whether the condition is met based on the animation inputs.
+   */
+  public validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean {
+    const input = animationInputs.getTrigger(this.inputName);
+
+    return this.validateCondition(input.value);
+  }
+
+  /**
+   * Method to check the condition based on the input value.
+   * @param inputValue - the value of the input to validate the condition against
+   * @returns Whether the condition is met based on the input value.
+   */
+  protected checkCondition(inputValue: boolean): boolean {
+    return inputValue === true;
+  }
+}
+
+export class AnimationExitTimeCondition extends AnimationConditionBase<number> {
+  public readonly exitTime: number;
+
+  constructor(
+    inputName: string,
+    exitTime: number = 1,
+    invertCondition?: boolean,
+  ) {
+    super(inputName, invertCondition);
+    this.exitTime = exitTime;
+  }
+
+  /**
+   * Method to validate the condition based on all of the animation inputs.
+   * @param animationInputs - The animation inputs to validate the condition against.
+   * @returns Whether the condition is met based on the animation inputs.
+   */
+  public validateConditionFromInputs(
+    animationInputs: AnimationInputs,
+  ): boolean {
+    const inputValue = animationInputs.animationClipPlaybackPercentage;
+
+    return this.validateCondition(inputValue);
+  }
+
+  /**
+   * Method to check the condition based on the input value.
+   * @param inputValue - the value of the input to validate the condition against
+   * @returns Whether the condition is met based on the input value.
+   */
+  protected checkCondition(inputValue: number): boolean {
+    return inputValue >= this.exitTime;
+  }
+}

@@ -49,7 +49,9 @@ export class ControlAdventurerSystem extends System {
     const animationInputs = spriteAnimationComponent.animationInputs;
 
     if (this._jumpTriggerInput.isTriggered) {
-      animationInputs.setToggle('jump', true);
+      console.log('Jumping!');
+
+      animationInputs.setTrigger('jump');
 
       return;
     }

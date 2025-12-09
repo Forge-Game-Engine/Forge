@@ -10,8 +10,10 @@ import {
   registerInputs,
   registerRendering,
   SpriteAnimationSystem,
+  TriggerAction,
 } from '../../src';
 import { setupAnimationsDemo } from './animationDemo';
+import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game(document.getElementById('demo-container')!);
 
@@ -57,8 +59,18 @@ const adventurerSprite = createImageSprite(
   cameraEntity,
 );
 
-setupAnimationsDemo(world, game, shipSprite, adventurerSprite);
+const { attackInput, runRInput, runLInput, jumpInput, takeDamageInput } =
+  setupAnimationsDemo(world, game, shipSprite, adventurerSprite);
 
 world.addSystem(new SpriteAnimationSystem(world.time));
+world.addSystem(
+  new ControlAdventurerSystem(
+    attackInput,
+    runRInput,
+    runLInput,
+    jumpInput,
+    takeDamageInput,
+  ),
+);
 
 game.run();

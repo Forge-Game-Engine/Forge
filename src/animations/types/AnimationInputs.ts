@@ -1,79 +1,48 @@
-/**
- * Defines the common options for an animation input.
- */
-interface AnimationInputOptions<T> {
-  /**
-   * Whether the input should reset to its default value at the end of each animation frame.
-   * @default false.
-   */
-  resetOnFrameEnd: boolean;
-  /**
-   * The default value of the input.
-   * @default false or 0 or ''.
-   */
-  defaultValue: T;
-}
-
-const defaultTextInputOptions: AnimationInputOptions<string> = {
-  resetOnFrameEnd: false,
-  defaultValue: '',
-};
-
-const defaultNumberInputOptions: AnimationInputOptions<number> = {
-  resetOnFrameEnd: false,
-  defaultValue: 0,
-};
-
-const defaultToggleInputOptions: AnimationInputOptions<boolean> = {
-  resetOnFrameEnd: false,
-  defaultValue: false,
-};
+import { Updatable } from '../../common';
 
 /**
- * Generic Class representing a single animation input with common values.
+ * Interface representing a single animation input
  */
-export class AnimationInput<T> {
+export interface AnimationInput<T> {
   /**
    * The name of the input.
    */
-  public name: string;
+  name: string;
+
   /**
    * The current value of the input.
    */
-  public value: T;
-  /**
-   * The options for the input.
-   */
-  public options: AnimationInputOptions<T>;
-
-  /**
-   * Creates a new instance of AnimationInput.
-   * @param name - the name of the input
-   * @param options - the options for the input
-   */
-  constructor(name: string, options: AnimationInputOptions<T>) {
-    this.name = name;
-    this.value = options.defaultValue;
-    this.options = options;
-  }
+  value: T;
 }
 
 /**
  * Class to store and manage all animation inputs used in the animation controller
  */
-export class AnimationInputs {
+export class AnimationInputs implements Updatable {
   /**
    * An array of text inputs (string) used in the animation controller
    */
   public textInputs: AnimationInput<string>[];
+
   /**
    * An array of number inputs (number) used in the animation controller
    */
   public numberInputs: AnimationInput<number>[];
+
   /**
    * An array of toggle inputs (boolean) used in the animation controller
    */
   public toggleInputs: AnimationInput<boolean>[];
+
+  /**
+   * An array of trigger inputs (boolean) used in the animation controller
+   */
+  public triggerInputs: AnimationInput<boolean>[];
+
+  /**
+   * The current playback percentage of the animation clip (0 to 1)
+   */
+  public animationClipPlaybackPercentage: number = 0;
 
   /**
    * Creates a new instance of AnimationInputs.
@@ -83,23 +52,22 @@ export class AnimationInputs {
     this.textInputs = [];
     this.numberInputs = [];
     this.toggleInputs = [];
+    this.triggerInputs = [];
+  }
+
+  public update(): void {
+    for (const triggerInput of this.triggerInputs) {
+      triggerInput.value = false;
+    }
   }
 
   /**
    * Registers a new toggle input.
    * @param name - the name of the input
-   * @param inputOptions - the options for the input
+   * @param startingValue - the starting value for the input. Default is false.
    */
-  public registerToggle(
-    name: string,
-    inputOptions?: Partial<AnimationInputOptions<boolean>>,
-  ): void {
-    this._registerInput(
-      name,
-      this.toggleInputs,
-      defaultToggleInputOptions,
-      inputOptions,
-    );
+  public registerToggle(name: string, startingValue: boolean = false): void {
+    this._registerInput(name, this.toggleInputs, startingValue);
   }
 
   /**
@@ -108,7 +76,7 @@ export class AnimationInputs {
    * @param value - the new value for the input
    */
   public setToggle(name: string, value: boolean): void {
-    this._getInput<boolean>(name, this.toggleInputs).value = value;
+    this.getToggle(name).value = value;
   }
 
   /**
@@ -121,20 +89,37 @@ export class AnimationInputs {
   }
 
   /**
+   * Registers a new trigger input.
+   * @param name - the name of the input
+   */
+  public registerTrigger(name: string): void {
+    this._registerInput(name, this.triggerInputs, false);
+  }
+
+  /**
+   * Sets the value of a trigger input to true.
+   * @param name - the name of the input
+   */
+  public setTrigger(name: string): void {
+    this.getTrigger(name).value = true;
+  }
+
+  /**
+   * Gets the value of a trigger input.
+   * @param name - the name of the input
+   * @returns The current value of the input
+   */
+  public getTrigger(name: string): AnimationInput<boolean> {
+    return this._getInput<boolean>(name, this.triggerInputs);
+  }
+
+  /**
    * Registers a new number input.
    * @param name - the name of the input
-   * @param inputOptions - the options for the input
+   * @param startingValue - the starting value for the input. Default is 0.
    */
-  public registerNumber(
-    name: string,
-    inputOptions?: Partial<AnimationInputOptions<number>>,
-  ): void {
-    this._registerInput(
-      name,
-      this.numberInputs,
-      defaultNumberInputOptions,
-      inputOptions,
-    );
+  public registerNumber(name: string, startingValue: number = 0): void {
+    this._registerInput(name, this.numberInputs, startingValue);
   }
 
   /**
@@ -143,7 +128,7 @@ export class AnimationInputs {
    * @param value - the new value for the input
    */
   public setNumber(name: string, value: number): void {
-    this._getInput<number>(name, this.numberInputs).value = value;
+    this.getNumber(name).value = value;
   }
 
   /**
@@ -158,18 +143,10 @@ export class AnimationInputs {
   /**
    * Registers a new text input.
    * @param name - the name of the input
-   * @param inputOptions - the options for the input
+   * @param startingValue - the starting value for the input. Default is an empty string.
    */
-  public registerText(
-    name: string,
-    inputOptions?: Partial<AnimationInputOptions<string>>,
-  ): void {
-    this._registerInput(
-      name,
-      this.textInputs,
-      defaultTextInputOptions,
-      inputOptions,
-    );
+  public registerText(name: string, startingValue: string = ''): void {
+    this._registerInput(name, this.textInputs, startingValue);
   }
 
   /**
@@ -178,7 +155,7 @@ export class AnimationInputs {
    * @param value - the new value for the input
    */
   public setText(name: string, value: string): void {
-    this._getInput<string>(name, this.textInputs).value = value;
+    this.getText(name).value = value;
   }
 
   /**
@@ -191,65 +168,21 @@ export class AnimationInputs {
   }
 
   /**
-   * Gets all registered inputs.
-   * @returns An array of all registered inputs of all types
-   */
-  public getAllInputs(): AnimationInput<string | number | boolean>[] {
-    return [...this.toggleInputs, ...this.numberInputs, ...this.textInputs];
-  }
-
-  /**
-   * Gets an input by name, regardless of its type.
-   * @param name - the name of the input
-   * @returns The input with the specified name
-   */
-  public getInputByName(
-    name: string,
-  ): AnimationInput<string> | AnimationInput<number> | AnimationInput<boolean> {
-    const input =
-      this.textInputs.find((input) => input.name === name) ||
-      this.numberInputs.find((input) => input.name === name) ||
-      this.toggleInputs.find((input) => input.name === name);
-
-    if (!input) {
-      throw new Error(`Input with name ${name} does not exist.`);
-    }
-
-    return input;
-  }
-
-  /**
-   * Resets all inputs that are set to reset at the end of the animation frame to their default values.
-   */
-  public clearFrameEndInputs(): void {
-    const inputs = this.getAllInputs();
-
-    for (const input of inputs) {
-      if (input.options.resetOnFrameEnd) {
-        input.value = input.options.defaultValue;
-      }
-    }
-  }
-
-  /**
    * A generic method to register a new input of any type.
    * @param name - the name of the input
    * @param animationInputArray - the array to register the input in
-   * @param defaultInputOptions - the default options for the input
-   * @param inputOptions - any additional options for the input
+   * @param startingValue - the starting value for the input.
    */
   private _registerInput<T>(
     name: string,
     animationInputArray: AnimationInput<T>[],
-    defaultInputOptions: AnimationInputOptions<T>,
-    inputOptions?: Partial<AnimationInputOptions<T>>,
+    startingValue: T,
   ) {
     if (animationInputArray.some((input) => input.name === name)) {
       throw new Error(`Input with name ${name} already exists.`);
     }
 
-    const options = { ...defaultInputOptions, ...inputOptions };
-    animationInputArray.push(new AnimationInput(name, options));
+    animationInputArray.push({ name, value: startingValue });
   }
 
   /**
