@@ -5,7 +5,7 @@ import { Time } from '../../common';
 import { SpriteAnimationComponent } from '../components';
 import { Sprite, SpriteComponent } from '../../rendering';
 import {
-  Animation,
+  AnimationClip,
   AnimationController,
   AnimationFrame,
   AnimationInputs,
@@ -16,17 +16,17 @@ describe('SpriteAnimationSystem', () => {
   let system: SpriteAnimationSystem;
   let entity: Entity;
   let spriteAnimationComponent: SpriteAnimationComponent;
-  let mockAnimation1: Animation;
-  let mockAnimation2: Animation;
+  let mockAnimation1: AnimationClip;
+  let mockAnimation2: AnimationClip;
 
-  function makeMockAnimation(name: string, numFrames: number): Animation {
+  function makeMockAnimation(name: string, numFrames: number): AnimationClip {
     const mockFrames = [];
 
     for (let i = 0; i < numFrames; i++) {
       mockFrames.push({ frameIndex: i, durationSeconds: 1 } as AnimationFrame);
     }
 
-    const animation = new Animation(name, mockFrames);
+    const animation = new AnimationClip(name, mockFrames);
     animation.onAnimationEndEvent.raise = vi.fn();
     animation.onAnimationStartEvent.raise = vi.fn();
     animation.onAnimationFrameChangeEvent.raise = vi.fn();
@@ -81,7 +81,7 @@ describe('SpriteAnimationSystem', () => {
 
   it('should switch to the next animation if one is found', () => {
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(mockAnimation2);
 
@@ -97,7 +97,7 @@ describe('SpriteAnimationSystem', () => {
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
     spriteAnimationComponent.animationFrameIndex =
       spriteAnimationComponent.currentAnimation.frames.length - 1;
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(mockAnimation2);
 
@@ -111,7 +111,7 @@ describe('SpriteAnimationSystem', () => {
 
   it('should not change frame if no next animation is found and not enough time has passed', () => {
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(null);
 
@@ -121,7 +121,7 @@ describe('SpriteAnimationSystem', () => {
   });
   it('should change animations if one is found, even if not enough time has passed', () => {
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(0.5);
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(mockAnimation2);
 
@@ -160,7 +160,7 @@ describe('SpriteAnimationSystem', () => {
   it('should reset the animation index when swapping frames', () => {
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
     spriteAnimationComponent.animationFrameIndex = 1;
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(mockAnimation2);
 
@@ -188,13 +188,13 @@ describe('SpriteAnimationSystem', () => {
 
     // 1.5s in, we swap from frame 0 to frame 1
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(1.5);
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(null);
     system.run(entity);
 
     expect(
-      spriteAnimationComponent.animationController.findNextAnimation,
+      spriteAnimationComponent.stateMachine.findNextAnimation,
     ).toHaveBeenCalledWith(
       entity,
       mockAnimation1,
@@ -207,7 +207,7 @@ describe('SpriteAnimationSystem', () => {
     system.run(entity);
 
     expect(
-      spriteAnimationComponent.animationController.findNextAnimation,
+      spriteAnimationComponent.stateMachine.findNextAnimation,
     ).toHaveBeenCalledWith(
       entity,
       mockAnimation1,
@@ -217,13 +217,13 @@ describe('SpriteAnimationSystem', () => {
 
     // 3.5s in, we are at the end of the animation, and must get the next animation to swap to
     vi.spyOn(time, 'timeInSeconds', 'get').mockReturnValue(3.5);
-    spriteAnimationComponent.animationController.findNextAnimation = vi
+    spriteAnimationComponent.stateMachine.findNextAnimation = vi
       .fn()
       .mockReturnValue(mockAnimation1);
     system.run(entity);
 
     expect(
-      spriteAnimationComponent.animationController.findNextAnimation,
+      spriteAnimationComponent.stateMachine.findNextAnimation,
     ).toHaveBeenCalledWith(
       entity,
       mockAnimation1,

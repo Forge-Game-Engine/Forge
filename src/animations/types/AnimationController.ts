@@ -1,5 +1,5 @@
 import { Entity } from '../../ecs/index.js';
-import { Animation } from './Animation.js';
+import { AnimationClip } from './AnimationClip.js';
 import { AnimationInputs } from './AnimationInputs.js';
 import { AnimationTransition } from './AnimationTransition.js';
 import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates.js';
@@ -45,10 +45,10 @@ export class AnimationController {
    */
   public findNextAnimation(
     entity: Entity,
-    currentAnimation: Animation,
+    currentAnimation: AnimationClip,
     inputs: AnimationInputs,
     endOfAnimation: boolean,
-  ): Animation | null {
+  ): AnimationClip | null {
     const currentState = currentAnimation.name;
 
     const nextAnimationTransition = this._getNextAnimationTransition(
@@ -72,7 +72,7 @@ export class AnimationController {
    * @param inputs - the animation inputs
    * @returns the animation to play on entry, based on the 'entry' state
    */
-  public getEntryAnimation(inputs: AnimationInputs): Animation {
+  public getEntryAnimation(inputs: AnimationInputs): AnimationClip {
     const currentState = DEFAULT_ANIMATION_STATES.entry;
 
     const nextAnimationTransition = this._getNextAnimationTransition(

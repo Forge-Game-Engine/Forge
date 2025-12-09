@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnimationController } from './AnimationController';
 import { Entity } from '../../ecs';
-import { Animation } from './Animation';
+import { AnimationClip } from './AnimationClip';
 import { AnimationInputs } from './AnimationInputs';
 import {
   AnimationTransition,
@@ -11,13 +11,13 @@ import {
 import { DEFAULT_ANIMATION_STATES } from './DefaultAnimationStates';
 
 describe('AnimationController', () => {
-  const currentAnimation = { name: 'idle' } as Animation;
-  const nextAnimation1 = { name: 'run' } as Animation;
-  const nextAnimation2 = { name: 'jump' } as Animation;
+  const currentAnimation = { name: 'idle' } as AnimationClip;
+  const nextAnimation1 = { name: 'run' } as AnimationClip;
+  const nextAnimation2 = { name: 'jump' } as AnimationClip;
 
   function getMockTransition(
     fromStates: string[],
-    toAnimation: Animation,
+    toAnimation: AnimationClip,
     conditionFulfilled: boolean,
     metadata?: Partial<TransitionMetadata>,
   ) {
@@ -75,7 +75,7 @@ describe('AnimationController', () => {
 
     it('should return null if no valid transition is found and not at the end of animation', () => {
       const mockEntity = {} as Entity;
-      const currentAnimation = { name: 'idle' } as Animation;
+      const currentAnimation = { name: 'idle' } as AnimationClip;
       const inputs = new AnimationInputs();
       const mockTransition = getMockTransition(
         [nextAnimation1.name],
@@ -96,7 +96,7 @@ describe('AnimationController', () => {
     });
     it('should return null if a valid transition is found, but not at the end of animation', () => {
       const mockEntity = {} as Entity;
-      const currentAnimation = { name: 'idle' } as Animation;
+      const currentAnimation = { name: 'idle' } as AnimationClip;
       const inputs = new AnimationInputs();
       const mockTransition = getMockTransition(
         [currentAnimation.name],
@@ -118,7 +118,7 @@ describe('AnimationController', () => {
 
     it('should return the current animation if at the end of animation and no valid transition is found', () => {
       const mockEntity = {} as Entity;
-      const currentAnimation = { name: 'idle' } as Animation;
+      const currentAnimation = { name: 'idle' } as AnimationClip;
       const inputs = new AnimationInputs();
       const mockTransition = getMockTransition(
         [currentAnimation.name],
@@ -140,7 +140,7 @@ describe('AnimationController', () => {
 
     it('should use pending transitions at the end of animation', () => {
       const mockEntity = {} as Entity;
-      const currentAnimation = { name: 'idle' } as Animation;
+      const currentAnimation = { name: 'idle' } as AnimationClip;
       const inputs = new AnimationInputs();
       const mockTransition = getMockTransition(
         [currentAnimation.name],
@@ -348,7 +348,7 @@ describe('AnimationController', () => {
     it('should successfully use transitions with multiple from states', () => {
       const mockEntity = {} as Entity;
       const inputs = new AnimationInputs();
-      const walkAnimation = { name: 'walk' } as Animation;
+      const walkAnimation = { name: 'walk' } as AnimationClip;
 
       // Transition that accepts multiple from states
       const multiStateTransition = getMockTransition(

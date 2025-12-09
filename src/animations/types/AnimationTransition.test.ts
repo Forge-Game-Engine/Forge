@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnimationTransition } from './AnimationTransition';
-import { Animation } from './Animation';
+import { AnimationClip } from './AnimationClip';
 import {
   AnimationCondition,
   AnimationToggleCondition,
@@ -8,9 +8,9 @@ import {
 import { AnimationInputs } from './AnimationInputs';
 
 describe('AnimationTransition', () => {
-  const mockAnimation: Animation = {
+  const mockAnimation: AnimationClip = {
     name: 'mockAnimation',
-  } as Animation;
+  } as AnimationClip;
 
   const mockConditionTrue: AnimationCondition = {
     validateConditionFromInputs: vi.fn().mockReturnValue(true),

@@ -1,57 +1,32 @@
 import { Vector2 } from '../../math/index.js';
-import { Animation, AnimationFrame } from '../types/index.js';
-
-/**
- * Validates the duration of animation frames.
- * @param animationFrameDurationSeconds - The duration of each animation frame in seconds.
- * This can be a single number for all frames or an array of numbers for each frame.
- * @param numFrames - The total number of frames in the animation.
- */
-function validateAnimationFrameDurations(
-  animationFrameDurationSeconds: number | number[],
-  numFrames: number,
-) {
-  if (
-    Array.isArray(animationFrameDurationSeconds) &&
-    animationFrameDurationSeconds.length !== numFrames
-  ) {
-    throw new Error(
-      `Animation duration array length (${animationFrameDurationSeconds.length}) must be equal to the number of frames (${numFrames}).`,
-    );
-  }
-}
+import { AnimationClip, AnimationFrame } from '../types/index.js';
 
 /**
  * Generates animation frames based on the provided parameters.
- * @param numFrames - The total number of frames in the animation.
+ * @param numberOfFrames - The total number of frames in the animation.
  * @param spritesPerRow - The number of sprites in each row of the sprite sheet.
  * @param startPositionPercentage - The starting position of the animation frames in the sprite sheet, as a percentage.
  * @param spriteUVSize - The size of each sprite in the sprite sheet, as a percentage.
- * @param animationFrameDurationSeconds - The duration of each animation frame in seconds.
  * @returns An array of generated animation frames.
  */
 function generateAnimationFrames(
-  numFrames: number,
+  numberOfFrames: number,
   spritesPerRow: number,
   startPositionPercentage: Vector2,
   spriteUVSize: Vector2,
-  animationFrameDurationSeconds: number | number[],
 ) {
   const animationFrames: AnimationFrame[] = [];
 
-  for (let i = 0; i < numFrames; i++) {
+  for (let i = 0; i < numberOfFrames; i++) {
     const row = Math.floor(i / spritesPerRow);
     const col = i % spritesPerRow;
+
     animationFrames.push({
       offset: new Vector2(
         startPositionPercentage.x + col * spriteUVSize.x,
         startPositionPercentage.y + row * spriteUVSize.y,
       ),
-      scale: spriteUVSize,
-      durationSeconds: Array.isArray(animationFrameDurationSeconds)
-        ? animationFrameDurationSeconds[i]
-        : animationFrameDurationSeconds,
-      frameIndex: i,
+      dimensions: spriteUVSize,
     });
   }
 
@@ -61,7 +36,7 @@ function generateAnimationFrames(
 /**
  * Optional parameters for creating an animation.
  */
-export interface AnimationCreationParams {
+export interface AnimationCreationOptions {
   /**
    * The starting position of the animation frames in the sprite sheet, as a percentage.
    * @default (0, 0).
@@ -74,7 +49,7 @@ export interface AnimationCreationParams {
   endPositionPercentage: Vector2;
 }
 
-const defaultCreateAnimationSetParams: AnimationCreationParams = {
+const defaultCreateAnimationSetParams: AnimationCreationOptions = {
   startPositionPercentage: Vector2.zero,
   endPositionPercentage: Vector2.one,
 };
@@ -83,9 +58,6 @@ const defaultCreateAnimationSetParams: AnimationCreationParams = {
  * @param animationName - The name of the animation (e.g., 'walk', 'run').
  * @param spritesPerColumn - The number of sprites in each column of the sprite sheet.
  * @param spritesPerRow - The number of sprites in each row of the sprite sheet.
- * @param frameDurationSeconds - The duration of each animation frame in seconds.
- * This can be a single number for all frames or an array of numbers for each frame. If an array is provided,
- * its length must match the total number of frames.
  * @param options - Optional parameters for creating the animation set.
  * @returns An Animation object containing the generated animation frames.
  */
@@ -93,17 +65,14 @@ export function createAnimation(
   animationName: string,
   spritesPerColumn: number,
   spritesPerRow: number,
-  frameDurationSeconds: number | number[],
-  options?: Partial<AnimationCreationParams>,
-): Animation {
+  options?: Partial<AnimationCreationOptions>,
+): AnimationClip {
   const { startPositionPercentage, endPositionPercentage } = {
     ...defaultCreateAnimationSetParams,
     ...options,
   };
 
   const numFrames = spritesPerColumn * spritesPerRow;
-
-  validateAnimationFrameDurations(frameDurationSeconds, numFrames);
 
   const spriteUVSize = new Vector2(
     (endPositionPercentage.x - startPositionPercentage.x) / spritesPerRow,
@@ -115,10 +84,9 @@ export function createAnimation(
     spritesPerRow,
     startPositionPercentage,
     spriteUVSize,
-    frameDurationSeconds,
   );
 
-  const animation = new Animation(animationName, animationFrames);
+  const animation = new AnimationClip(animationName, animationFrames);
 
   return animation;
 }

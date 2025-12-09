@@ -1,6 +1,6 @@
 import { Entity } from '../../ecs/index.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
-import { Animation, OnAnimationChangeEvent } from './Animation.js';
+import { AnimationClip, OnAnimationChangeEvent } from './AnimationClip.js';
 import { AnimationCondition } from './AnimationCondition.js';
 import { AnimationInputs } from './AnimationInputs.js';
 
@@ -38,7 +38,7 @@ export class AnimationTransition {
   /**
    * The animation to transition to when the conditions are fulfilled
    */
-  public toAnimation: Animation;
+  public toAnimation: AnimationClip;
 
   /**
    * An array of conditions that must be fulfilled for the transition to occur
@@ -66,7 +66,7 @@ export class AnimationTransition {
    */
   constructor(
     fromStates: string[],
-    toAnimation: Animation,
+    toAnimation: AnimationClip,
     conditions: AnimationCondition[],
     metadata?: Partial<TransitionMetadata>,
   ) {

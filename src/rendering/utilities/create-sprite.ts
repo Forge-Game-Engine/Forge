@@ -63,9 +63,9 @@ function bindInstanceData(
   let animationFrame: AnimationFrame | null = null;
 
   if (spriteAnimationComponent) {
-    const { currentAnimation, animationFrameIndex } = spriteAnimationComponent;
+    const { stateMachine, animationFrameIndex } = spriteAnimationComponent;
 
-    animationFrame = currentAnimation.getFrame(animationFrameIndex);
+    animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
   }
 
   // Position
@@ -98,9 +98,9 @@ function bindInstanceData(
   instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] =
     animationFrame?.offset.y ?? 0;
   instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] =
-    animationFrame?.scale.x ?? 1;
+    animationFrame?.dimensions.x ?? 1;
   instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
-    animationFrame?.scale.y ?? 1;
+    animationFrame?.dimensions.y ?? 1;
 }
 
 function setupInstanceAttributes(

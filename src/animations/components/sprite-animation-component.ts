@@ -1,7 +1,6 @@
 import type { Component } from '../../ecs/index.js';
-import { Animation } from '../types/index.js';
-import { AnimationController } from '../types/AnimationController.js';
-import { AnimationInputs } from '../types/AnimationInputs.js';
+import { AnimationClip, AnimationInputs } from '../types/index.js';
+import { FiniteStateMachine } from '../../finite-state-machine/finite-state-machine.js';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.
@@ -15,15 +14,14 @@ export class SpriteAnimationComponent implements Component {
   public animationFrameIndex: number;
 
   /**
-   * The current animation being played.
-   */
-  public currentAnimation: Animation;
-
-  /**
    * The speed multiplier for the animation playback. Larger values result in faster playback.
-   * @default 1
    */
   public playbackSpeed: number;
+
+  /**
+   * The duration (in milliseconds) of each frame in the animation.
+   */
+  public frameDurationMilliseconds: number;
 
   /**
    * The last time (in seconds) the animation frame was changed.
@@ -38,29 +36,32 @@ export class SpriteAnimationComponent implements Component {
   /**
    * The animation controller responsible for managing the animations.
    */
-  public animationController: AnimationController;
+  public stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>;
 
   public static readonly symbol = Symbol('SpriteAnimation');
 
   /**
    * Creates an instance of SpriteAnimationComponent.
-   * @param animationController - The AnimationController managing the animations.
-   * @param animationInputs - The inputs used to determine the current animation.
-   * @param playbackSpeed - The speed multiplier for the animation playback.
+   * @param stateMachine - The FiniteStateMachine managing the animations.
+   * @param startingInputs - The inputs used to determine the current animation.
+   * @param frameDurationMilliseconds - The duration (in milliseconds) of each frame in the animation. Defaults to 33.3333 ms (30 fps).
+   * @param playbackSpeed - The speed multiplier for the animation playback. Defaults to 1.
    */
   constructor(
-    animationController: AnimationController,
-    animationInputs: AnimationInputs,
+    stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,
+    startingInputs: AnimationInputs,
+    frameDurationMilliseconds: number = 33.3333, // 30 fps
     playbackSpeed: number = 1,
   ) {
     this.name = SpriteAnimationComponent.symbol;
 
-    this.playbackSpeed = playbackSpeed;
     this.animationFrameIndex = 0;
     this.lastFrameChangeTimeInSeconds = 0;
-    this.animationInputs = animationInputs;
-    this.animationController = animationController;
-    this.currentAnimation =
-      animationController.getEntryAnimation(animationInputs);
+    this.playbackSpeed = playbackSpeed;
+    this.frameDurationMilliseconds = frameDurationMilliseconds;
+    this.animationInputs = startingInputs;
+    this.stateMachine = stateMachine;
+
+    stateMachine.update(startingInputs);
   }
 }
