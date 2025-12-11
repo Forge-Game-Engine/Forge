@@ -30,7 +30,7 @@ describe('AnimationInputs', () => {
       animationInputs.registerToggle('toggle1');
       animationInputs.setToggle('toggle1', true);
       const toggle = animationInputs.getToggle('toggle1');
-      expect(toggle.value).toBe(true);
+      expect(toggle?.value).toBe(true);
     });
   });
 
