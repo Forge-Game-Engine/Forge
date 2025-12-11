@@ -80,6 +80,11 @@ export class ControlAdventurerSystem extends System {
 
     if (this._takeDamageTriggerInput.isTriggered) {
       const health = animationInputs.getNumber('health');
+
+      if (!health) {
+        throw new Error('Health input not found');
+      }
+
       health.value = Math.max(0, health.value - 50);
     }
   }

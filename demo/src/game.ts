@@ -10,7 +10,6 @@ import {
   registerInputs,
   registerRendering,
   SpriteAnimationSystem,
-  TriggerAction,
 } from '../../src';
 import { setupAnimationsDemo } from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';

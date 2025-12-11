@@ -41,8 +41,8 @@ export function setupAnimationsDemo(
 ): ReturnType<typeof setupInputs> {
   const inputs = setupInputs(world, game);
 
-  // const ShipController = createShipAnimationController();
-  // buildShipEntities(world, shipSprite, ShipController);
+  const ShipController = createShipAnimationController();
+  buildShipEntities(world, shipSprite, ShipController);
 
   const controller = createAdventurerControllableController();
   const animationInputs = createAdventurerControllableInputs();
