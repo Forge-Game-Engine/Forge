@@ -22,22 +22,22 @@ export class AnimationInputs implements Updatable {
   /**
    * An array of text inputs (string) used in the animation controller
    */
-  public textInputs: AnimationInput<string>[];
+  public textInputs: AnimationInput<string>[]; // TODO: Performance - Replace with a map
 
   /**
    * An array of number inputs (number) used in the animation controller
    */
-  public numberInputs: AnimationInput<number>[];
+  public numberInputs: AnimationInput<number>[]; // TODO: Performance - Replace with a map
 
   /**
    * An array of toggle inputs (boolean) used in the animation controller
    */
-  public toggleInputs: AnimationInput<boolean>[];
+  public toggleInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
 
   /**
    * An array of trigger inputs (boolean) used in the animation controller
    */
-  public triggerInputs: AnimationInput<boolean>[];
+  public triggerInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
 
   /**
    * The current playback percentage of the animation clip (0 to 1)
@@ -76,7 +76,13 @@ export class AnimationInputs implements Updatable {
    * @param value - the new value for the input
    */
   public setToggle(name: string, value: boolean): void {
-    this.getToggle(name).value = value;
+    const toggle = this.getToggle(name);
+
+    if (!toggle) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    toggle.value = value;
   }
 
   /**
@@ -84,7 +90,7 @@ export class AnimationInputs implements Updatable {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getToggle(name: string): AnimationInput<boolean> {
+  public getToggle(name: string): AnimationInput<boolean> | null {
     return this._getInput<boolean>(name, this.toggleInputs);
   }
 
@@ -101,7 +107,13 @@ export class AnimationInputs implements Updatable {
    * @param name - the name of the input
    */
   public setTrigger(name: string): void {
-    this.getTrigger(name).value = true;
+    const trigger = this.getTrigger(name);
+
+    if (!trigger) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    trigger.value = true;
   }
 
   /**
@@ -109,7 +121,7 @@ export class AnimationInputs implements Updatable {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getTrigger(name: string): AnimationInput<boolean> {
+  public getTrigger(name: string): AnimationInput<boolean> | null {
     return this._getInput<boolean>(name, this.triggerInputs);
   }
 
@@ -128,7 +140,13 @@ export class AnimationInputs implements Updatable {
    * @param value - the new value for the input
    */
   public setNumber(name: string, value: number): void {
-    this.getNumber(name).value = value;
+    const number = this.getNumber(name);
+
+    if (!number) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    number.value = value;
   }
 
   /**
@@ -136,7 +154,7 @@ export class AnimationInputs implements Updatable {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getNumber(name: string): AnimationInput<number> {
+  public getNumber(name: string): AnimationInput<number> | null {
     return this._getInput<number>(name, this.numberInputs);
   }
 
@@ -155,7 +173,13 @@ export class AnimationInputs implements Updatable {
    * @param value - the new value for the input
    */
   public setText(name: string, value: string): void {
-    this.getText(name).value = value;
+    const text = this.getText(name);
+
+    if (!text) {
+      throw new Error(`Input with name ${name} does not exist.`);
+    }
+
+    text.value = value;
   }
 
   /**
@@ -163,7 +187,7 @@ export class AnimationInputs implements Updatable {
    * @param name - the name of the input
    * @returns The current value of the input
    */
-  public getText(name: string): AnimationInput<string> {
+  public getText(name: string): AnimationInput<string> | null {
     return this._getInput<string>(name, this.textInputs);
   }
 
@@ -195,7 +219,7 @@ export class AnimationInputs implements Updatable {
     const input = animationInputArray.find((input) => input.name === name);
 
     if (!input) {
-      throw new Error(`Input with name ${name} does not exist.`);
+      return null;
     }
 
     return input;

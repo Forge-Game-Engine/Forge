@@ -1,22 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Transition } from './transition.js';
-import type { State } from './state.js';
 
 describe('Transition', () => {
-  it('constructor assigns toState and predicates', () => {
-    const toState: State<number> = { name: 'next', transitions: [] };
-    const predicates = [() => true];
-    const transition = new Transition<number>(toState, predicates);
+  it('constructor assigns predicates', () => {
+    const predicate = () => true;
+    const transition = new Transition<number>(predicate);
 
-    expect(transition.toState).toBe(toState);
-    expect(transition.predicates).toBe(predicates);
+    expect(transition.predicates).toEqual([predicate]);
   });
 
   it('satisfies returns true when all predicates return true and passes input through', () => {
-    const toState: State<number> = { name: 'next', transitions: [] };
     const p1 = vi.fn((input: number) => input > 5);
     const p2 = vi.fn((input: number) => input < 10);
-    const transition = new Transition<number>(toState, [p1, p2]);
+    const transition = new Transition<number>(p1, p2);
 
     const result = transition.satisfies(7);
 
@@ -26,10 +22,9 @@ describe('Transition', () => {
   });
 
   it('satisfies returns false if any predicate returns false and does not call later predicates', () => {
-    const toState: State<number> = { name: 'next', transitions: [] };
     const p1 = vi.fn((input: number) => input > 5);
     const p2 = vi.fn((input: number) => input < 10);
-    const transition = new Transition<number>(toState, [p1, p2]);
+    const transition = new Transition<number>(p1, p2);
 
     const result = transition.satisfies(3);
 
@@ -39,8 +34,7 @@ describe('Transition', () => {
   });
 
   it('satisfies returns true when there are no predicates (empty array)', () => {
-    const toState: State<number> = { name: 'next', transitions: [] };
-    const transition = new Transition<number>(toState, []);
+    const transition = new Transition<number>();
 
     const result = transition.satisfies(3);
 

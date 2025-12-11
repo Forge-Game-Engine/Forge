@@ -1,7 +1,6 @@
 import { Entity, System } from '../../ecs/index.js';
 import { Time } from '../../common/index.js';
 import { SpriteAnimationComponent } from '../components/index.js';
-import { clamp } from '../../math/clamp.js';
 
 /**
  * System that manages and updates sprite animations for entities, such as from sprite sheets.
@@ -42,10 +41,10 @@ export class SpriteAnimationSystem extends System {
       this._time.timeInSeconds - lastFrameChangeTimeInSeconds;
 
     const scaledFrameDurationInSeconds =
-      (frameDurationMilliseconds *
-        (1 / currentAnimationClip.playbackSpeed) *
-        (1 / spriteAnimationComponent.playbackSpeed)) /
-      1000;
+      frameDurationMilliseconds /
+      1000 /
+      (currentAnimationClip.playbackSpeed *
+        spriteAnimationComponent.playbackSpeed);
 
     const frameHasFinished =
       secondsElapsedSinceLastFrameChange >= scaledFrameDurationInSeconds;

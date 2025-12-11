@@ -18,8 +18,6 @@ import {
   keyCodes,
   MouseAxis2dBinding,
   MouseInputSource,
-  ParticleEmitter,
-  ParticleEmitterComponent,
   PositionComponent,
   registerInputs,
   ScaleComponent,
@@ -200,28 +198,24 @@ function createAdventurerControllableController() {
   stateMachine.addTransition(
     idle,
     run,
-    new Transition((input) => runCondition.validateConditionFromInputs(input)),
+    new Transition((input) => runCondition.satisfies(input)),
   );
 
   stateMachine.addTransition(
     idle,
     jump,
-    new Transition((input) => jumpCondition.validateConditionFromInputs(input)),
+    new Transition((input) => jumpCondition.satisfies(input)),
   );
 
   stateMachine.addTransition(
     jump,
     idle,
-    new Transition((input) =>
-      fullExitTimeCondition.validateConditionFromInputs(input),
-    ),
+    new Transition((input) => fullExitTimeCondition.satisfies(input)),
   );
   stateMachine.addTransition(
     run,
     idle,
-    new Transition((input) =>
-      fullExitTimeCondition.validateConditionFromInputs(input),
-    ),
+    new Transition((input) => fullExitTimeCondition.satisfies(input)),
   );
 
   return stateMachine;
@@ -237,7 +231,7 @@ function createAdventurerControllableInputs() {
   return animationInputs;
 }
 
-function buildShipEntities(
+function buildShipEntities( 
   world: World,
   shipSprite: Sprite,
   stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,

@@ -10,7 +10,7 @@ describe('FiniteStateMachine', () => {
       { name: 'exit' },
     ]);
     fsm.update(42);
-    expect(fsm.getCurrentState().name).toBe('entry');
+    expect(fsm.currentState.name).toBe('entry');
   });
 
   it('update follows a matching transition to the target state', () => {
@@ -20,18 +20,16 @@ describe('FiniteStateMachine', () => {
 
     const fsm = new FiniteStateMachine<number, State>([entry, target, exit]);
 
-    const transition = new Transition<number, State>(target, [
-      (input) => input === 1,
-    ]);
+    const transition = new Transition<number>((input) => input === 1);
 
-    fsm.addTransition(entry, transition);
+    fsm.addTransition(entry, target, transition);
 
     // before update still entry
-    expect(fsm.getCurrentState()).toBe(entry);
+    expect(fsm.currentState).toBe(entry);
 
     // update with matching input moves to target
     fsm.update(1);
-    expect(fsm.getCurrentState()).toBe(target);
+    expect(fsm.currentState).toBe(target);
   });
 
   it('only the first matching transition is used (order matters)', () => {
@@ -41,16 +39,16 @@ describe('FiniteStateMachine', () => {
 
     const fsm = new FiniteStateMachine<number, State>([entry, s1, s2]);
 
-    const t1 = new Transition<number, State>(s1, [(input) => input === 2]);
-    const t2 = new Transition<number, State>(s2, [(input) => input === 2]);
+    const t1 = new Transition<number>((input) => input === 2);
+    const t2 = new Transition<number>((input) => input === 2);
 
     // add t1 first, then t2
-    fsm.addTransition(entry, t1);
-    fsm.addTransition(entry, t2);
+    fsm.addTransition(entry, s1, t1);
+    fsm.addTransition(entry, s2, t2);
 
     // input 2 should match t1 (first), so go to s1
     fsm.update(2);
-    expect(fsm.getCurrentState()).toBe(s1);
+    expect(fsm.currentState).toBe(s1);
   });
 
   it('throws error when adding the same state twice', () => {
@@ -82,7 +80,7 @@ describe('FiniteStateMachine', () => {
     const entry: State = { name: 'entry' };
     const target: State = { name: 'target' };
     const fsm = new FiniteStateMachine<number, State>([entry, target], target);
-    expect(fsm.getCurrentState()).toBe(target);
+    expect(fsm.currentState).toBe(target);
   });
 
   it('addTransition throws when fromState does not exist in the machine', () => {
@@ -90,9 +88,9 @@ describe('FiniteStateMachine', () => {
     const unknown: State = { name: 'unknown' };
     const fsm = new FiniteStateMachine<number, State>([entry]);
 
-    const t = new Transition<number, State>(entry, [() => true]);
+    const t = new Transition<number>(() => true);
 
-    expect(() => fsm.addTransition(unknown, t)).toThrow(
+    expect(() => fsm.addTransition(unknown, unknown, t)).toThrow(
       `State with name "unknown" does not exist in the finite state machine.`,
     );
   });
