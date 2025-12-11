@@ -49,7 +49,9 @@ export class ControlAdventurerSystem extends System {
     const animationInputs = spriteAnimationComponent.animationInputs;
 
     if (this._jumpTriggerInput.isTriggered) {
-      animationInputs.setToggle('jump', true);
+      console.log('Jumping!');
+
+      animationInputs.setTrigger('jump');
 
       return;
     }
@@ -78,6 +80,11 @@ export class ControlAdventurerSystem extends System {
 
     if (this._takeDamageTriggerInput.isTriggered) {
       const health = animationInputs.getNumber('health');
+
+      if (!health) {
+        throw new Error('Health input not found');
+      }
+
       health.value = Math.max(0, health.value - 50);
     }
   }

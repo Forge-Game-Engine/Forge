@@ -1,5 +1,6 @@
 import {
   Axis1dAction,
+  createImageSprite,
   createShaderStore,
   createWorld,
   Game,
@@ -8,8 +9,10 @@ import {
   registerCamera,
   registerInputs,
   registerRendering,
+  SpriteAnimationSystem,
 } from '../../src';
-import { createBatch } from './create-batch';
+import { setupAnimationsDemo } from './animationDemo';
+import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game(document.getElementById('demo-container')!);
 
@@ -36,14 +39,37 @@ const cameraEntity = registerCamera(world, {
 });
 const { renderLayers } = registerRendering(game, world);
 
-await createBatch(
-  'blue-circle.png',
-  imageCache,
-  world,
+const shipImage = await imageCache.getOrLoad('ship_spritesheet.png');
+const adventurerImage = await imageCache.getOrLoad(
+  'adventurer_spritesheet.png',
+);
+
+const shipSprite = createImageSprite(
+  shipImage,
   renderLayers[0],
   shaderStore,
   cameraEntity,
-  40_000,
+);
+
+const adventurerSprite = createImageSprite(
+  adventurerImage,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
+);
+
+const { attackInput, runRInput, runLInput, jumpInput, takeDamageInput } =
+  setupAnimationsDemo(world, game, shipSprite, adventurerSprite);
+
+world.addSystem(new SpriteAnimationSystem(world.time));
+world.addSystem(
+  new ControlAdventurerSystem(
+    attackInput,
+    runRInput,
+    runLInput,
+    jumpInput,
+    takeDamageInput,
+  ),
 );
 
 game.run();

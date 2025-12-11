@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Animation } from './Animation';
+import { AnimationClip } from './AnimationClip';
 import { AnimationFrame } from './AnimationFrame';
 import { ParameterizedForgeEvent } from '../../events';
 
@@ -10,7 +10,7 @@ describe('Animation', () => {
 
   describe('constructor', () => {
     it('should create an Animation instance with the given name and frames', () => {
-      const animation = new Animation('TestAnimation', mockFrames);
+      const animation = new AnimationClip('TestAnimation', mockFrames);
 
       expect(animation.name).toBe('TestAnimation');
       expect(animation.frames).toEqual(mockFrames);
@@ -26,7 +26,7 @@ describe('Animation', () => {
     });
 
     it('should throw an error if no frames are provided', () => {
-      expect(() => new Animation('TestAnimation', [])).toThrowError(
+      expect(() => new AnimationClip('TestAnimation', [])).toThrowError(
         'Animation must contain at least one frame.',
       );
     });
@@ -34,14 +34,14 @@ describe('Animation', () => {
 
   describe('getFrame', () => {
     it('should return the correct frame for a valid index', () => {
-      const animation = new Animation('TestAnimation', mockFrames);
+      const animation = new AnimationClip('TestAnimation', mockFrames);
 
       expect(animation.getFrame(0)).toBe(mockFrame1);
       expect(animation.getFrame(1)).toBe(mockFrame2);
     });
 
     it('should throw an error if the index is out of bounds', () => {
-      const animation = new Animation('TestAnimation', mockFrames);
+      const animation = new AnimationClip('TestAnimation', mockFrames);
 
       expect(() => animation.getFrame(-1)).toThrowError(
         'Frame index is out of bounds.',

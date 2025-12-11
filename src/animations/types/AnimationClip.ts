@@ -17,7 +17,7 @@ export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<{
 /**
  * Interface representing a group of animation frames for a specific animation name.
  */
-export class Animation {
+export class AnimationClip {
   /**
    * The name of this animation.
    */
@@ -26,35 +26,44 @@ export class Animation {
   /**
    * The frames of the animation.
    */
-  public frames: AnimationFrame[];
+  public readonly frames: AnimationFrame[];
 
   /**
    * Event that is raised when the animation starts.
    */
-  public onAnimationStartEvent: OnAnimationChangeEvent;
+  public readonly onAnimationStartEvent: OnAnimationChangeEvent;
 
   /**
    * Event that is raised when the animation ends.
    */
-  public onAnimationEndEvent: OnAnimationChangeEvent;
+  public readonly onAnimationEndEvent: OnAnimationChangeEvent;
 
   /**
    * Event that is raised every frame change. This includes the first and last frame change of an animation
    */
-  public onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
+  public readonly onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
+
+  public playbackSpeed: number;
 
   /**
    * Creates an instance of Animation.
    * @param name - The name of the animation.
    * @param frames - The frames of the animation.
+   * @param playbackSpeed - The speed multiplier for the animation playback. Defaults to 1.
    */
-  constructor(name: string, frames: AnimationFrame[]) {
+  constructor(
+    name: string,
+    frames: AnimationFrame[],
+    playbackSpeed: number = 1,
+  ) {
     if (frames.length === 0) {
       throw new Error('Animation must contain at least one frame.');
     }
 
     this.name = name;
     this.frames = frames;
+    this.playbackSpeed = playbackSpeed;
+
     this.onAnimationStartEvent = new ParameterizedForgeEvent<Entity>(
       'AnimationStartEvent',
     );
@@ -69,14 +78,14 @@ export class Animation {
 
   /**
    * Gets a specific frame of the animation, looping if the index exceeds the number of frames.
-   * @param frameIndex - The index of the frame to retrieve.
+   * @param index - The index of the frame to retrieve.
    * @returns The requested AnimationFrame.
    */
-  public getFrame(frameIndex: number): AnimationFrame {
-    if (frameIndex < 0 || frameIndex >= this.frames.length) {
+  public getFrame(index: number): AnimationFrame {
+    if (index < 0 || index >= this.frames.length) {
       throw new Error('Frame index is out of bounds.');
     }
 
-    return this.frames[frameIndex];
+    return this.frames[index];
   }
 }

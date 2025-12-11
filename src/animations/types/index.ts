@@ -1,5 +1,4 @@
-export * from './Animation.js';
-export * from './AnimationController.js';
+export * from './AnimationClip.js';
 export * from './AnimationInputs.js';
 export * from './AnimationCondition.js';
 export * from './AnimationTransition.js';

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationInputs } from './AnimationInputs';
 
 describe('AnimationInputs', () => {
+  // TODO: add tests for trigger inputs
+  // TODO: add tests for default values when registering inputs
+
   let animationInputs: AnimationInputs;
 
   beforeEach(() => {
@@ -12,15 +15,8 @@ describe('AnimationInputs', () => {
     it('should register a new toggle input with default options', () => {
       animationInputs.registerToggle('toggle1');
       const toggle = animationInputs.getToggle('toggle1');
-      expect(toggle.name).toBe('toggle1');
-      expect(toggle.value).toBe(false);
-      expect(toggle.options.resetOnFrameEnd).toBe(false);
-    });
-
-    it('should register a new toggle input with custom options', () => {
-      animationInputs.registerToggle('toggle2', { resetOnFrameEnd: true });
-      const toggle = animationInputs.getToggle('toggle2');
-      expect(toggle.options.resetOnFrameEnd).toBe(true);
+      expect(toggle?.name).toBe('toggle1');
+      expect(toggle?.value).toBe(false);
     });
 
     it('should throw an error if a toggle with the same name already exists', () => {
@@ -34,7 +30,7 @@ describe('AnimationInputs', () => {
       animationInputs.registerToggle('toggle1');
       animationInputs.setToggle('toggle1', true);
       const toggle = animationInputs.getToggle('toggle1');
-      expect(toggle.value).toBe(true);
+      expect(toggle?.value).toBe(true);
     });
   });
 
@@ -42,15 +38,14 @@ describe('AnimationInputs', () => {
     it('should register a new number input with default options', () => {
       animationInputs.registerNumber('number1');
       const number = animationInputs.getNumber('number1');
-      expect(number.name).toBe('number1');
-      expect(number.value).toBe(0);
-      expect(number.options.resetOnFrameEnd).toBe(false);
+      expect(number?.name).toBe('number1');
+      expect(number?.value).toBe(0);
     });
 
     it('should register a new number input with custom options', () => {
-      animationInputs.registerNumber('number2', { defaultValue: 42 });
+      animationInputs.registerNumber('number2', 42);
       const number = animationInputs.getNumber('number2');
-      expect(number.value).toBe(42);
+      expect(number?.value).toBe(42);
     });
 
     it('should throw an error if a number input with the same name already exists', () => {
@@ -72,23 +67,24 @@ describe('AnimationInputs', () => {
       animationInputs.registerNumber('number1');
       animationInputs.setNumber('number1', 100);
       const number = animationInputs.getNumber('number1');
-      expect(number.value).toBe(100);
+      expect(number?.value).toBe(100);
     });
   });
 
   describe('Text functions', () => {
     it('should register a new text input with default options', () => {
       animationInputs.registerText('text1');
+
       const text = animationInputs.getText('text1');
-      expect(text.name).toBe('text1');
-      expect(text.value).toBe('');
-      expect(text.options.resetOnFrameEnd).toBe(false);
+
+      expect(text?.name).toBe('text1');
+      expect(text?.value).toBe('');
     });
 
     it('should register a new text input with custom options', () => {
-      animationInputs.registerText('text2', { defaultValue: 'hello' });
+      animationInputs.registerText('text2', 'hello');
       const text = animationInputs.getText('text2');
-      expect(text.value).toBe('hello');
+      expect(text?.value).toBe('hello');
     });
 
     it('should throw an error if a text input with the same name already exists', () => {
@@ -101,7 +97,7 @@ describe('AnimationInputs', () => {
       animationInputs.registerText('text1');
       animationInputs.setText('text1', 'world');
       const text = animationInputs.getText('text1');
-      expect(text.value).toBe('world');
+      expect(text?.value).toBe('world');
     });
   });
 
@@ -110,57 +106,56 @@ describe('AnimationInputs', () => {
       animationInputs.registerToggle('toggle1');
       animationInputs.registerNumber('number1');
       animationInputs.registerText('text1');
+      animationInputs.registerTrigger('trigger1');
 
-      const toggle = animationInputs.getInputByName('toggle1');
-      const number = animationInputs.getInputByName('number1');
-      const text = animationInputs.getInputByName('text1');
+      const toggle = animationInputs.getToggle('toggle1');
+      const number = animationInputs.getNumber('number1');
+      const text = animationInputs.getText('text1');
+      const trigger = animationInputs.getTrigger('trigger1');
 
-      expect(toggle.name).toBe('toggle1');
-      expect(number.name).toBe('number1');
-      expect(text.name).toBe('text1');
+      expect(toggle?.name).toBe('toggle1');
+      expect(number?.name).toBe('number1');
+      expect(text?.name).toBe('text1');
+      expect(trigger?.name).toBe('trigger1');
     });
 
-    it('should throw an error if the input does not exist', () => {
-      expect(() => animationInputs.getInputByName('nonexistent')).toThrowError(
+    it('should return null if the input does not exist', () => {
+      const textInput = animationInputs.getText('nonexistent');
+      const numberInput = animationInputs.getNumber('nonexistent');
+      const toggleInput = animationInputs.getToggle('nonexistent');
+      const triggerInput = animationInputs.getTrigger('nonexistent');
+
+      expect(textInput).toBeNull();
+      expect(numberInput).toBeNull();
+      expect(toggleInput).toBeNull();
+      expect(triggerInput).toBeNull();
+    });
+
+    it('should throw an error when setting a non-existent input', () => {
+      expect(() => animationInputs.setToggle('nonexistent', true)).toThrowError(
+        'Input with name nonexistent does not exist.',
+      );
+      expect(() => animationInputs.setNumber('nonexistent', 10)).toThrowError(
+        'Input with name nonexistent does not exist.',
+      );
+      expect(() =>
+        animationInputs.setText('nonexistent', 'value'),
+      ).toThrowError('Input with name nonexistent does not exist.');
+      expect(() => animationInputs.setTrigger('nonexistent')).toThrowError(
         'Input with name nonexistent does not exist.',
       );
     });
 
-    it('should reset inputs with resetOnFrameEnd set to true', () => {
-      animationInputs.registerToggle('toggle1', { resetOnFrameEnd: true });
-      animationInputs.registerNumber('number1', {
-        resetOnFrameEnd: true,
-        defaultValue: 10,
-      });
-      animationInputs.registerText('text1', {
-        resetOnFrameEnd: true,
-        defaultValue: 'default',
-      });
+    it('should set triggers to false on update', () => {
+      animationInputs.registerTrigger('trigger1');
+      animationInputs.setTrigger('trigger1');
 
-      animationInputs.setToggle('toggle1', true);
-      animationInputs.setNumber('number1', 42);
-      animationInputs.setText('text1', 'changed');
+      let trigger = animationInputs.getTrigger('trigger1')!;
+      expect(trigger.value).toBe(true);
 
-      animationInputs.clearFrameEndInputs();
-
-      expect(animationInputs.getToggle('toggle1').value).toBe(false);
-      expect(animationInputs.getNumber('number1').value).toBe(10);
-      expect(animationInputs.getText('text1').value).toBe('default');
-    });
-
-    it('should not reset inputs with resetOnFrameEnd set to false', () => {
-      animationInputs.registerToggle('toggle1', {
-        resetOnFrameEnd: false,
-        defaultValue: false,
-      });
-      animationInputs.getToggle('toggle1').value = true;
-      animationInputs.registerText('text1', { defaultValue: 'someVal' });
-      animationInputs.getText('text1').value = 'someDifferentValue';
-
-      animationInputs.clearFrameEndInputs();
-
-      expect(animationInputs.getToggle('toggle1').value).toBe(true);
-      expect(animationInputs.getText('text1').value).toBe('someDifferentValue');
+      animationInputs.update();
+      trigger = animationInputs.getTrigger('trigger1')!;
+      expect(trigger.value).toBe(false);
     });
   });
 });
