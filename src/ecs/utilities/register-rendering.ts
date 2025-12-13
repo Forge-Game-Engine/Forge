@@ -1,3 +1,4 @@
+import { Vector2 } from '../../math/vector2.js';
 import {
   addForgeRenderLayers,
   DEFAULT_LAYER_NAMES,
@@ -23,9 +24,18 @@ export const registerRendering = (
     world,
   );
 
-  game.onWindowResize.registerListener(() => {
-    layerService.resizeAllLayers();
-  });
+  const resizeAllLayers = () => {
+    const gameSize = new Vector2(
+      game.container.clientWidth,
+      game.container.clientHeight,
+    );
+
+    layerService.resizeAllLayers(gameSize);
+  };
+
+  game.onWindowResize.registerListener(resizeAllLayers);
+
+  resizeAllLayers();
 
   return {
     renderLayers,
