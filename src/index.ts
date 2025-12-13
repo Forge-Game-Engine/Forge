@@ -14,3 +14,4 @@ export * from './timer/index.js';
 export * from './utilities/index.js';
 export * from './pooling/index.js';
 export * from './ui/index.js';
+export * from './finite-state-machine/index.js';
