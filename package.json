@@ -98,6 +98,12 @@
         "types": "./dist/utilities/index.d.ts",
         "default": "./dist/utilities/index.js"
       }
+    },
+    "./fsm": {
+      "import": {
+        "types": "./dist/finite-state-machine/index.d.ts",
+        "default": "./dist/finite-state-machine/index.js"
+      }
     }
   },
   "types": "./dist/index.d.ts",
