@@ -1,6 +1,6 @@
-import { Transition } from '../../finite-state-machine/transition';
-import { Predicate } from '../../utilities';
-import { AnimationInputs } from './AnimationInputs';
+import { Transition } from '../../finite-state-machine/index.js';
+import { Predicate } from '../../utilities/index.js';
+import { AnimationInputs } from './AnimationInputs.js';
 
 export type AnimationExitType = 'immediate' | 'atEndOfAnimation';
 
