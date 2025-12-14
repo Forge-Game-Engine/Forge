@@ -1,4 +1,4 @@
-import { Updatable } from '../../common';
+import { Updatable } from '../../common/index.js';
 
 /**
  * Interface representing a single animation input
