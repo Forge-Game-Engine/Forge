@@ -1,4 +1,4 @@
-import { Transition } from '../../finite-state-machine/transition';
+import { Transition } from '../../finite-state-machine';
 import { Predicate } from '../../utilities';
 import { AnimationInputs } from './AnimationInputs';
 
