@@ -70,7 +70,7 @@ export class Color {
       b = Color._hueToRGB(p, q, normalizedH - 1 / 3);
     }
 
-    return new Color(Math.round(r), Math.round(g), Math.round(b), a);
+    return new Color(r, g, b, a);
   }
 
   private static _hueToRGB(p: number, q: number, t: number): number {
