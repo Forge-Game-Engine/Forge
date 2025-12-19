@@ -25,7 +25,7 @@ export class Matrix3x3 {
 
   /**
    * Gets the underlying matrix array.
-   * @returns The matrix data as a flat array in column-major order
+   * @returns {Float32Array} The matrix data as a Float32Array in column-major order
    */
   get matrix(): Float32Array {
     return this._matrix;
