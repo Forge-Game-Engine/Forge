@@ -1,4 +1,5 @@
 import { Vector2 } from '../math/index.js';
+import { Color } from './color.js';
 import type { ForgeRenderLayer } from './render-layers/index.js';
 import { Renderable } from './renderable.js';
 
@@ -23,6 +24,9 @@ export type SpriteOptions = {
 
   /** The pivot point of the sprite (optional). */
   pivot?: Vector2;
+
+  /** The tint color of the sprite (optional). */
+  tintColor?: Color;
 };
 
 /**
@@ -31,6 +35,7 @@ export type SpriteOptions = {
 const defaultOptions = {
   bleed: 1,
   pivot: new Vector2(0.5, 0.5),
+  tintColor: Color.transparent,
 };
 
 /**
@@ -52,6 +57,9 @@ export class Sprite {
   /** The pivot point of the sprite. */
   public pivot: Vector2;
 
+  /** The tint color of the sprite. */
+  public tintColor: Color;
+
   /** The sprite material used for rendering. */
   public readonly renderable: Renderable;
 
@@ -60,10 +68,11 @@ export class Sprite {
    * @param options - The options for creating the sprite.
    */
   constructor(options: SpriteOptions) {
-    const { renderable, bleed, pivot, renderLayer, width, height } = {
-      ...defaultOptions,
-      ...options,
-    };
+    const { renderable, bleed, pivot, renderLayer, width, height, tintColor } =
+      {
+        ...defaultOptions,
+        ...options,
+      };
 
     this.renderLayer = renderLayer;
     this.bleed = bleed;
@@ -71,6 +80,7 @@ export class Sprite {
 
     this.width = width + bleed;
     this.height = height + bleed;
+    this.tintColor = tintColor;
 
     this.renderable = renderable;
   }
