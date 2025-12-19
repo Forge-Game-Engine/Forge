@@ -1,8 +1,14 @@
-import type { Vector2, Vector3 } from '../../math/index.js';
+import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import type { Color } from '../color.js';
 import type { ShaderStore } from '../shaders/index.js';
 
-type UniformValue = number | boolean | Float32Array | Int32Array | WebGLTexture;
+type UniformValue =
+  | number
+  | boolean
+  | Float32Array
+  | Int32Array
+  | WebGLTexture
+  | Matrix3x3;
 
 interface UniformSpec {
   location: WebGLUniformLocation;
@@ -53,9 +59,11 @@ export class Material {
         this._setUniformNumber(gl, loc, value);
       } else if (typeof value === 'boolean') {
         this._setUniformBoolean(gl, loc, value);
+      } else if (value instanceof Matrix3x3) {
+        this._setUniformFloat32Array(gl, loc, value.matrix);
       } else if (value instanceof Int32Array) {
         this._setUniformInt32Array(gl, loc, value);
-      } else if (value instanceof Float32Array || Array.isArray(value)) {
+      } else if (value instanceof Float32Array) {
         this._setUniformFloat32Array(gl, loc, value);
       } else {
         throw new TypeError(

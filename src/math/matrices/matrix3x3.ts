@@ -9,7 +9,7 @@
  */
 export class Matrix3x3 {
   /** The underlying matrix data stored as a flat array in column-major order */
-  private _matrix: number[];
+  private _matrix: Float32Array;
 
   /**
    * Creates a new 3x3 matrix from the given array.
@@ -20,14 +20,14 @@ export class Matrix3x3 {
       throw new Error('Matrix3x3 requires exactly 9 elements');
     }
 
-    this._matrix = matrix;
+    this._matrix = new Float32Array(matrix);
   }
 
   /**
    * Gets the underlying matrix array.
    * @returns The matrix data as a flat array in column-major order
    */
-  get matrix(): number[] {
+  get matrix(): Float32Array {
     return this._matrix;
   }
 
@@ -78,10 +78,6 @@ export class Matrix3x3 {
     this._matrix[4] *= y;
 
     return this;
-  }
-
-  get data(): number[] {
-    return this._matrix;
   }
 
   static get identity(): Matrix3x3 {
