@@ -52,7 +52,7 @@ export class CameraSystem extends System {
       // Use multiplicative (exponential) scaling so scrolling has consistent effect
       // regardless of current zoom level. Positive zoomInput.value will reduce zoom,
       // negative will increase it.
-      const scaleFactor = Math.pow(1 + zoomSensitivity * 50, -zoomInput.value);
+      const scaleFactor = Math.pow(1 + zoomSensitivity, -zoomInput.value);
       cameraComponent.zoom = math.clamp(zoom * scaleFactor, minZoom, maxZoom);
     }
 
