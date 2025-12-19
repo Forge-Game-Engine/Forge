@@ -132,7 +132,7 @@ function setupInstanceAttributes(
   const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
   const tintColorLoc = gl.getAttribLocation(program, 'a_instanceTint');
 
-  const stride = floatsPerInstance * 4; // 13 floats per instance, 4 bytes each
+  const stride = floatsPerInstance * 4; // 17 floats per instance, 4 bytes each
 
   // a_instancePos (vec2) - offset 0
   setupInstanceAttribute(posLoc, gl, 2, stride, POSITION_X_OFFSET * 4);
