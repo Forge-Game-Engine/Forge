@@ -28,11 +28,15 @@ import {
   TEX_OFFSET_Y_OFFSET,
   TEX_SIZE_X_OFFSET,
   TEX_SIZE_Y_OFFSET,
+  TINT_COLOR_A_OFFSET,
+  TINT_COLOR_B_OFFSET,
+  TINT_COLOR_G_OFFSET,
+  TINT_COLOR_R_OFFSET,
   WIDTH_OFFSET,
 } from '../systems/render-constants.js';
 import { setupInstanceAttribute } from './setup-instance-attribute.js';
 
-const floatsPerInstance = 13;
+const floatsPerInstance = 17;
 
 function bindInstanceData(
   entity: Entity,
@@ -101,6 +105,16 @@ function bindInstanceData(
     animationFrame?.dimensions.x ?? 1;
   instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
     animationFrame?.dimensions.y ?? 1;
+
+  // Tint color
+  instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] =
+    spriteComponent.sprite.tintColor.r;
+  instanceDataBufferArray[offset + TINT_COLOR_G_OFFSET] =
+    spriteComponent.sprite.tintColor.g;
+  instanceDataBufferArray[offset + TINT_COLOR_B_OFFSET] =
+    spriteComponent.sprite.tintColor.b;
+  instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] =
+    spriteComponent.sprite.tintColor.a;
 }
 
 function setupInstanceAttributes(
@@ -116,8 +130,9 @@ function setupInstanceAttributes(
   const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
   const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
   const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
+  const tintColorLoc = gl.getAttribLocation(program, 'a_instanceTint');
 
-  const stride = floatsPerInstance * 4; // 13 floats per instance, 4 bytes each
+  const stride = floatsPerInstance * 4; // 17 floats per instance, 4 bytes each
 
   // a_instancePos (vec2) - offset 0
   setupInstanceAttribute(posLoc, gl, 2, stride, POSITION_X_OFFSET * 4);
@@ -139,6 +154,9 @@ function setupInstanceAttributes(
 
   // a_instanceTexSize (vec2) - offset 11
   setupInstanceAttribute(texSizeLoc, gl, 2, stride, TEX_SIZE_X_OFFSET * 4);
+
+  // a_instanceTint (vec4) - offset 13
+  setupInstanceAttribute(tintColorLoc, gl, 4, stride, TINT_COLOR_R_OFFSET * 4);
 }
 
 /**

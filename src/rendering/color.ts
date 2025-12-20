@@ -9,17 +9,30 @@ export class Color {
   private readonly _b: number;
   private readonly _a: number;
 
+  /** White color constant rgba(1, 1, 1, 1) */
+  public static readonly white: Color = new Color(1, 1, 1, 1);
+  /** Black color constant rgba(0, 0, 0, 1) */
+  public static readonly black: Color = new Color(0, 0, 0, 1);
+  /** Red color constant rgba(1, 0, 0, 1) */
+  public static readonly red: Color = new Color(1, 0, 0, 1);
+  /** Green color constant rgba(0, 1, 0, 1) */
+  public static readonly green: Color = new Color(0, 1, 0, 1);
+  /** Blue color constant rgba(0, 0, 1, 1) */
+  public static readonly blue: Color = new Color(0, 0, 1, 1);
+  /** Transparent color constant rgba(0, 0, 0, 0) */
+  public static readonly transparent: Color = new Color(0, 0, 0, 0);
+
   /**
    * Constructs a new `Color` instance using RGBA values.
-   * @param r - The red component (0-255).
-   * @param g - The green component (0-255).
-   * @param b - The blue component (0-255).
+   * @param r - The red component (0-1).
+   * @param g - The green component (0-1).
+   * @param b - The blue component (0-1).
    * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
    */
   constructor(r: number, g: number, b: number, a: number = 1) {
-    this._r = clamp(r, 0, 255);
-    this._g = clamp(g, 0, 255);
-    this._b = clamp(b, 0, 255);
+    this._r = clamp(r, 0, 1);
+    this._g = clamp(g, 0, 1);
+    this._b = clamp(b, 0, 1);
     this._a = clamp(a, 0, 1);
   }
 
@@ -57,12 +70,7 @@ export class Color {
       b = Color._hueToRGB(p, q, normalizedH - 1 / 3);
     }
 
-    return new Color(
-      Math.round(r * 255),
-      Math.round(g * 255),
-      Math.round(b * 255),
-      a,
-    );
+    return new Color(r, g, b, a);
   }
 
   private static _hueToRGB(p: number, q: number, t: number): number {
@@ -116,7 +124,7 @@ export class Color {
    * @returns The RGBA string (e.g., `rgba(255, 0, 0, 1)`).
    */
   public toRGBAString(): string {
-    return `rgba(${this._r}, ${this._g}, ${this._b}, ${this._a})`;
+    return `rgba(${Math.round(this._r * 255)}, ${Math.round(this._g * 255)}, ${Math.round(this._b * 255)}, ${this._a})`;
   }
 
   /**
@@ -124,11 +132,6 @@ export class Color {
    * @returns The RGBA array (e.g. `[1, 0, 0, 1]` for red).
    */
   public toFloat32Array(): Float32Array {
-    return new Float32Array([
-      this._r / 255,
-      this._g / 255,
-      this._b / 255,
-      this._a,
-    ]);
+    return new Float32Array([this._r, this._g, this._b, this._a]);
   }
 }
