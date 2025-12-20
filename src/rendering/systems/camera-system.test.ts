@@ -34,12 +34,56 @@ describe('CameraSystem', () => {
     world.addSystem(cameraSystem);
   });
 
-  it('should update the camera zoom based on scroll input', () => {
-    zoomInput.set(100);
+  it('should update the camera zoom(out) based on scroll input', () => {
+    cameraComponent.minZoom = 0.00001;
+    cameraComponent.maxZoom = 10000;
 
+    zoomInput.set(1);
     world.update(16.6666);
 
     expect(cameraComponent.zoom).toBe(0.5);
+  });
+
+  it('should update the camera zoom(in) based on scroll input', () => {
+    cameraComponent.minZoom = 0.00001;
+    cameraComponent.maxZoom = 10000;
+
+    zoomInput.set(-1);
+    world.update(16.6666);
+
+    expect(cameraComponent.zoom).toBe(2);
+  });
+
+  it('should update the camera zoom(out) when scrolled twice', () => {
+    cameraComponent.minZoom = 0.00001;
+    cameraComponent.maxZoom = 10000;
+
+    zoomInput.set(1);
+    world.update(16.6666);
+
+    zoomInput.set(1);
+    world.update(16.6666);
+
+    expect(cameraComponent.zoom).toBe(0.25);
+  });
+
+  it('should return to the same position when zooming in and out again', () => {
+    cameraComponent.minZoom = 0.00001;
+    cameraComponent.maxZoom = 10000;
+
+    zoomInput.set(-1);
+    world.update(16.6666);
+
+    zoomInput.set(-1);
+    world.update(16.6666);
+
+    zoomInput.set(1);
+    world.update(16.6666);
+
+    zoomInput.set(1);
+    world.update(16.6666);
+
+    expect(cameraComponent.zoom).toBe(1);
   });
 
   it('should clamp the camera zoom to the min and max zoom levels', () => {
