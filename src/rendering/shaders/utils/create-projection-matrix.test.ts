@@ -157,6 +157,10 @@ describe('createProjectionMatrix', () => {
     const result = createProjectionMatrix(width, height, cameraPosition, zoom);
 
     // Use toBeCloseTo for floating-point comparisons to handle Float32Array precision
+    // values used in the test are of type `number` which is a double-precision floats
+    // but the matrix is stored as `Float32Array` which are single-precision floats
+    // we use single-precision floats in the implementation for performance reasons
+    // and because we send these matrices to the GPU which typically uses single-precision floats
     expect(result.matrix[0]).toBeCloseTo(scaleX);
     expect(result.matrix[1]).toBeCloseTo(0);
     expect(result.matrix[2]).toBeCloseTo(0);
