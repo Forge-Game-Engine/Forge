@@ -1,6 +1,6 @@
 {
   "name": "@forge-game-engine/forge",
-  "version": "0.15.3",
+  "version": "0.16.0",
   "type": "module",
   "exports": {
     "./animations": {
