@@ -42,7 +42,7 @@ export class SpriteMaterial extends Material {
         gl.canvas.height,
         cameraPosition.world,
         camera.zoom,
-      ).data,
+      ),
     );
   }
 }
