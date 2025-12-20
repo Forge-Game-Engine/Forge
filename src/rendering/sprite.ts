@@ -35,7 +35,7 @@ export type SpriteOptions = {
 const defaultOptions = {
   bleed: 1,
   pivot: new Vector2(0.5, 0.5),
-  tintColor: Color.transparent,
+  tintColor: Color.white,
 };
 
 /**

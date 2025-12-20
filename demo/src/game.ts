@@ -1,5 +1,6 @@
 import {
   Axis1dAction,
+  Color,
   createImageSprite,
   createShaderStore,
   createWorld,

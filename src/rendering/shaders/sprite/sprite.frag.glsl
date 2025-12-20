@@ -12,5 +12,5 @@ out vec4 fragColor;           // Output color
 
 void main() {
   vec4 tex = texture(u_texture, v_texCoord);
-  fragColor = vec4((tex.rgb + v_tint.rgb * v_tint.a), tex.a);
+  fragColor = vec4(tex.rgb * v_tint.rgb, tex.a);  
 }

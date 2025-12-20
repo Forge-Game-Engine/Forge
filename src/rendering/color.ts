@@ -124,7 +124,7 @@ export class Color {
    * @returns The RGBA string (e.g., `rgba(255, 0, 0, 1)`).
    */
   public toRGBAString(): string {
-    return `rgba(${this._r * 255}, ${this._g * 255}, ${this._b * 255}, ${this._a * 255})`;
+    return `rgba(${this._r * 255}, ${this._g * 255}, ${this._b * 255}, ${this._a})`;
   }
 
   /**
