@@ -1,9 +1,8 @@
 import React, { JSX } from 'react';
-import { createGame } from './create-game';
-import code from '!!raw-loader!./create-game';
+import { createGame } from './_create-game';
+import code from '!!raw-loader!./_create-game';
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 import { ScrollWheel } from '@site/src/components/_ScrollWheel';
 
 export default function Rendering(): JSX.Element {
