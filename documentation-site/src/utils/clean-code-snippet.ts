@@ -1,6 +1,5 @@
 /* eslint-disable sonarjs/regex-complexity */
 /* eslint-disable sonarjs/slow-regex */
-/* eslint-disable sonarjs/slow-regex */
 export const cleanCodeSnippet = (code: string): string => {
   // Remove single-line "// @ts-nocheck" comments
   let out = code.replaceAll(/^\s*\/\/\s*@ts-nocheck\s*$/gm, '');
