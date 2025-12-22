@@ -1,0 +1,21 @@
+.keyBox {
+  border-radius: 3px;
+  border-left: 5px solid #d1d16c;
+  border-right: 5px solid #d1d16c;
+  border-bottom: 5px solid #a0a053;
+  width: 35px;
+  display: inline-block;
+  align-self: baseline;
+}
+
+.keyTop {
+  padding-top: 5px;
+  width: 25px;
+  height: 30px;
+  background-color: #ffff87;
+  font-weight: bold;
+  font-size: 1em;
+  color: black;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; 
+  text-align: center;
+}

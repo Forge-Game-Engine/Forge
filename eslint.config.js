@@ -10,7 +10,7 @@ import pluginJest from 'eslint-plugin-jest';
 
 export default tseslint.config(
   {
-    ignores: ['**/*.config.js'],
+    ignores: ['**/*.config.js', '**/*.snippet.ts'],
   },
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,

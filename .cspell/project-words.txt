@@ -10,6 +10,7 @@ devcontainers
 eamodio
 esbenp
 Fira
+Flaticon
 fract
 GLSL
 Infima
@@ -32,6 +33,7 @@ resettables
 RGBA
 rnaumovs
 slevesque
+Smashicons
 smoothstep
 sonarjs
 sonarlint
