@@ -3,27 +3,23 @@ import { RenderableBatchComponent } from '../components/index.js';
 import type { LayerService } from '../layer-service.js';
 import { ForgeRenderLayer } from '../render-layers/index.js';
 import { RenderSystem, SpriteBatchingSystem } from '../systems/index.js';
-import { createCanvas } from './create-canvas.js';
 
 /**
  * Adds a Forge render layer to the game container and registers it with the layer service.
  * It also creates a render system and a batching system for the layer.
  * @param layerName - The name of the layer.
- * @param gameContainer - The HTML element that will contain the canvas.
+ * @param _gameContainer - The HTML element that will contain the canvas (unused, kept for backward compatibility).
  * @param layerService - The layer service to register the layer with.
  * @param world - The ECS world to which the systems will be added.
  * @returns An array containing the created layer and canvas.
  */
 export function addForgeRenderLayer(
   layerName: string,
-  gameContainer: HTMLElement,
+  _gameContainer: HTMLElement,
   layerService: LayerService,
   world: World,
 ): ForgeRenderLayer {
-  const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer); // TODO: Move this into the layer service?
-  const layer = new ForgeRenderLayer(layerName, canvas);
-
-  layerService.registerLayer(layer);
+  const layer = layerService.createForgeRenderLayer(layerName);
 
   const layerRenderSystem = new RenderSystem({
     layer,

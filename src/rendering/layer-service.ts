@@ -1,6 +1,7 @@
 import type { Stoppable } from '../common/index.js';
 import { Vector2 } from '../math/index.js';
 import { RenderLayer } from './render-layers/render-layer.js';
+import { ForgeRenderLayer } from './render-layers/forge-render-layer.js';
 import { type CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import type { Game } from '../ecs/index.js';
 
@@ -35,6 +36,31 @@ export class LayerService implements Stoppable {
     };
 
     game.onWindowResize.registerListener(this._resizeListener);
+  }
+
+  /**
+   * Creates a new Forge render layer with a canvas and registers it.
+   * @param layerName - The name of the layer.
+   * @param clearStrategy - The strategy for clearing the layer (optional).
+   * @param sortEntities - Whether to sort entities by their y position before rendering (optional).
+   * @returns The created `ForgeRenderLayer` instance.
+   */
+  public createForgeRenderLayer(
+    layerName: string,
+    clearStrategy?: CLEAR_STRATEGY_KEYS,
+    sortEntities?: boolean,
+  ): ForgeRenderLayer {
+    const canvas = this._createCanvas(`forge-layer-${layerName}`);
+    const layer = new ForgeRenderLayer(
+      layerName,
+      canvas,
+      clearStrategy,
+      sortEntities,
+    );
+
+    this.registerLayer(layer);
+
+    return layer;
   }
 
   /**
@@ -80,5 +106,24 @@ export class LayerService implements Stoppable {
    */
   public stop(): void {
     this._game.onWindowResize.deregisterListener(this._resizeListener);
+  }
+
+  /**
+   * Creates a canvas element and appends it to the game container.
+   * @param id - The ID to assign to the canvas element.
+   * @returns The created canvas element.
+   */
+  private _createCanvas(id: string): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.id = id;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+
+    this._game.container.appendChild(canvas);
+
+    return canvas;
   }
 }
