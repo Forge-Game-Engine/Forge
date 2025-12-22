@@ -1,0 +1,22 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px;
+  gap: 8px;
+  max-width: 500px;
+  min-width: 300px;
+  margin: 10px;
+  vertical-align: top;
+
+  background-color: var(--card-background-color);
+  border-radius: 8px;
+  border-top: 1px solid var(--card-highlight-color);
+  border-left: 1px solid var(--card-highlight-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.container p {
+  display: inline-block;
+  max-width: 80%;
+  margin: 0;
+}

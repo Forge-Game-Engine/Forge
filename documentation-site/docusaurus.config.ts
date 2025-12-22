@@ -5,10 +5,10 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Forge Game Engine',
+  title: 'Forge',
   tagline:
     "Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.",
-  favicon: 'img/favicon.ico',
+  favicon: 'img/forge-logo.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -73,6 +73,7 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
+      title: 'Forge',
       logo: {
         alt: 'Forge Logo',
         src: 'img/forge-logo.png',
@@ -84,6 +85,17 @@ const config: Config = {
           position: 'left',
         },
         { to: '/docs/api', label: 'API', position: 'left' },
+        {
+          type: 'dropdown',
+          label: 'Demos',
+          position: 'left',
+          items: [
+            {
+              to: 'demos/rendering',
+              label: 'Rendering',
+            },
+          ],
+        },
         {
           href: 'https://github.com/Forge-Game-Engine/Forge',
           label: 'GitHub',
@@ -102,6 +114,10 @@ const config: Config = {
               to: '/docs/intro',
             },
           ],
+        },
+        {
+          title: 'Legal',
+          items: [{ label: 'Credits and attributions', to: '/docs/credits' }],
         },
         {
           title: 'More',
