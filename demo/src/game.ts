@@ -1,23 +1,21 @@
 import {
   Axis1dAction,
   createImageSprite,
-  createShaderStore,
   createWorld,
   Game,
-  ImageCache,
   MouseInputSource,
   registerCamera,
   registerInputs,
   registerRendering,
   SpriteAnimationSystem,
 } from '../../src';
+import { createRenderContext } from '../../src/rendering/render-context';
 import { setupAnimationsDemo } from './animationDemo';
 import { ControlAdventurerSystem } from './control-adventurer-system';
 
 export const game = new Game(document.getElementById('demo-container')!);
 
-const imageCache = new ImageCache();
-const shaderStore = createShaderStore();
+const renderContext = createRenderContext();
 
 const world = createWorld('world', game);
 
@@ -39,22 +37,17 @@ const cameraEntity = registerCamera(world, {
 });
 const { renderLayers } = registerRendering(game, world);
 
-const shipImage = await imageCache.getOrLoad('ship_spritesheet.png');
-const adventurerImage = await imageCache.getOrLoad(
-  'adventurer_spritesheet.png',
-);
-
-const shipSprite = createImageSprite(
-  shipImage,
+const shipSprite = await createImageSprite(
+  'ship_spritesheet.png',
   renderLayers[0],
-  shaderStore,
+  renderContext,
   cameraEntity,
 );
 
-const adventurerSprite = createImageSprite(
-  adventurerImage,
+const adventurerSprite = await createImageSprite(
+  'adventurer_spritesheet.png',
   renderLayers[0],
-  shaderStore,
+  renderContext,
   cameraEntity,
 );
 

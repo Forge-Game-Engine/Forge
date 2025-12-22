@@ -5,6 +5,5 @@ export * from './add-rive-render-layer.js';
 export * from './add-camera.js';
 export * from './create-image-sprite.js';
 export * from './create-sprite.js';
-export * from './create-shader-store.js';
-export * from './create-image-name-sprite.js';
+export * from './create-shader-cache.js';
 export * from './setup-instance-attribute.js';

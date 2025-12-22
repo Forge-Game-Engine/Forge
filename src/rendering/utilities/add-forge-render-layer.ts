@@ -20,7 +20,7 @@ export function addForgeRenderLayer(
   layerService: LayerService,
   world: World,
 ): ForgeRenderLayer {
-  const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer);
+  const canvas = createCanvas(`forge-layer-${layerName}`, gameContainer); // TODO: Move this into the layer service?
   const layer = new ForgeRenderLayer(layerName, canvas);
 
   layerService.registerLayer(layer);

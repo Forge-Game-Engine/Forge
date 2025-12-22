@@ -1,5 +1,5 @@
 import { Vector2 } from '../../math/index.js';
-import { createTextureFromImage, ShaderStore } from '../shaders/index.js';
+import { createTextureFromImage } from '../shaders/index.js';
 import { Material } from './material.js';
 
 export class GradientMaterial extends Material {
@@ -7,12 +7,13 @@ export class GradientMaterial extends Material {
 
   constructor(
     gl: WebGL2RenderingContext,
-    shaderStore: ShaderStore,
+    vertexShaderSource: string,
+    fragmentShaderSource: string,
     resolution: Vector2,
     gradientTexture: HTMLImageElement,
     center: Vector2 = new Vector2(0.5, 0.5),
   ) {
-    super('sprite.vert', 'radialGradient.frag', shaderStore, gl);
+    super(vertexShaderSource, fragmentShaderSource, gl);
 
     this.setUniform(
       'u_resolution',

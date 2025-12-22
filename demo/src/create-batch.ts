@@ -2,30 +2,26 @@ import {
   createImageSprite,
   Entity,
   ForgeRenderLayer,
-  ImageCache,
   PositionComponent,
   Random,
   ScaleComponent,
-  ShaderStore,
   SpriteComponent,
   World,
 } from '../../src';
+import { RenderContext } from '../../src/rendering/render-context';
 
 export const createBatch = async (
   imageSrc: string,
-  imageCache: ImageCache,
   world: World,
   renderLayer: ForgeRenderLayer,
-  shaderStore: ShaderStore,
+  renderContext: RenderContext,
   cameraEntity: Entity,
   size: number = 1000,
 ): Promise<Entity[]> => {
-  const image = await imageCache.getOrLoad(imageSrc);
-
-  const sprite = createImageSprite(
-    image,
+  const sprite = await createImageSprite(
+    imageSrc,
     renderLayer,
-    shaderStore,
+    renderContext,
     cameraEntity,
   );
 

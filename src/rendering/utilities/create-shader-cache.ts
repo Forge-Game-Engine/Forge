@@ -14,10 +14,12 @@ import {
   sdfOrientedBoxShaderInclude,
   sdfRhombusInclude,
   sdfTrapezoidInclude,
-  ShaderStore,
+  ShaderCache,
   spriteFragmentShader,
   spriteVertexShader,
 } from '../shaders/index.js';
+
+// TODO - Move into ShaderCache class with options to add includes and shaders
 
 /**
  * Creates and initializes a ShaderStore instance with predefined shader includes and shaders.
@@ -29,13 +31,13 @@ import {
  * The shaders added to the ShaderStore include fragment and vertex shaders for rendering
  * radial gradients, Perlin noise, and sprites.
  *
- * @returns {ShaderStore} A ShaderStore instance populated with the predefined shader includes
+ * @returns {ShaderCache} A ShaderStore instance populated with the predefined shader includes
  * and shaders.
  */
-export function createShaderStore(): ShaderStore {
-  const shaderStore = new ShaderStore();
+export function createShaderCache(): ShaderCache {
+  const shaderCache = new ShaderCache();
 
-  shaderStore.addInclude(
+  shaderCache.addInclude(
     cubicShaderInclude,
     perlinNoiseShaderInclude,
     quinticShaderInclude,
@@ -51,12 +53,12 @@ export function createShaderStore(): ShaderStore {
     sdfTrapezoidInclude,
   );
 
-  shaderStore.addShader(
+  shaderCache.addShader(
     radialGradientShader,
     perlinNoiseFragmentShader,
     spriteFragmentShader,
     spriteVertexShader,
   );
 
-  return shaderStore;
+  return shaderCache;
 }

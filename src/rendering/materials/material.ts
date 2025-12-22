@@ -1,6 +1,5 @@
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import type { Color } from '../color.js';
-import type { ShaderStore } from '../shaders/index.js';
 
 type UniformValue =
   | number
@@ -22,15 +21,15 @@ export class Material {
   private readonly _uniformValues: Map<string, UniformValue> = new Map();
 
   constructor(
-    vertexSourceName: string,
-    fragmentSourceName: string,
-    shaderStore: ShaderStore,
+    vertexShaderSource: string,
+    fragmentShaderSource: string,
     gl: WebGL2RenderingContext,
   ) {
-    const vertexSource = shaderStore.getShader(vertexSourceName);
-    const fragmentSource = shaderStore.getShader(fragmentSourceName);
-
-    this.program = this._createProgram(gl, vertexSource, fragmentSource);
+    this.program = this._createProgram(
+      gl,
+      vertexShaderSource,
+      fragmentShaderSource,
+    );
     this._detectUniforms(gl);
   }
 
@@ -180,13 +179,17 @@ export class Material {
 
   private _createProgram(
     gl: WebGL2RenderingContext,
-    vertexSrc: string,
-    fragmentSrc: string,
+    vertexShaderSource: string,
+    fragmentShaderSource: string,
   ): WebGLProgram {
-    const vertexShader = this._compileShader(gl, vertexSrc, gl.VERTEX_SHADER);
+    const vertexShader = this._compileShader(
+      gl,
+      vertexShaderSource,
+      gl.VERTEX_SHADER,
+    );
     const fragmentShader = this._compileShader(
       gl,
-      fragmentSrc,
+      fragmentShaderSource,
       gl.FRAGMENT_SHADER,
     );
 

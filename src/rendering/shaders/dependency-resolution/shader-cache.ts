@@ -1,7 +1,7 @@
 import { ForgeShaderSource } from './forge-shader-source.js';
 import { resolveIncludes } from './resolve-includes.js';
 
-export class ShaderStore {
+export class ShaderCache {
   private readonly _shaders: ForgeShaderSource[];
   private readonly _includes: ForgeShaderSource[];
   private readonly _resolvedShaders: Map<string, string>;
@@ -17,7 +17,7 @@ export class ShaderStore {
       const shaderSource = new ForgeShaderSource(shader);
 
       if (
-        this._shaders.find(
+        this._shaders.some(
           (existingShader) => existingShader.name === shaderSource.name,
         )
       ) {
@@ -33,7 +33,7 @@ export class ShaderStore {
       const shaderSource = new ForgeShaderSource(shader);
 
       if (
-        this._includes.find(
+        this._includes.some(
           (existingInclude) => existingInclude.name === shaderSource.name,
         )
       ) {
