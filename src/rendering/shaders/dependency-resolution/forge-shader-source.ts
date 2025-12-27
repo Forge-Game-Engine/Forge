@@ -74,7 +74,7 @@ export class ForgeShaderSource {
   }
 
   private _parseInclude(line: string, lineNumber: number): void {
-    const match = RegExp(/#include <(\w+)>/).exec(line);
+    const match = new RegExp(/#include <(\w+)>/).exec(line);
 
     if (!match) {
       throw new Error(
@@ -95,7 +95,7 @@ export class ForgeShaderSource {
   }
 
   private _parseProperty(line: string, lineNumber: number): void {
-    const match = RegExp(/#property (\w+)\s*:\s*([\w.]+)/).exec(line);
+    const match = new RegExp(/#property (\w+)\s*:\s*([\w.]+)/).exec(line);
 
     if (!match) {
       throw new Error(

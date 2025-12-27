@@ -4,21 +4,25 @@ import { CameraComponent } from '../components/index.js';
 import {
   createProjectionMatrix,
   createTextureFromImage,
-  ShaderStore,
 } from '../shaders/index.js';
 import { Material } from './material.js';
 
+// TODO - separate the material and instance of a material. Material is just the shaders.
+// Instance holds uniforms, textures, etc.
 export class SpriteMaterial extends Material {
   public readonly albedoTexture: HTMLImageElement;
   public readonly cameraEntity: Entity;
 
   constructor(
     gl: WebGL2RenderingContext,
-    shaderStore: ShaderStore,
+    // TODO - Concrete Materials like the SpriteMaterial should look up their shaders from the renderContext, does this break the dependency inversion principle?
+    // Maybe these concrete classes should just be instances that take in the shaders?
+    vertexShaderSource: string,
+    fragmentShaderSource: string,
     albedoTexture: HTMLImageElement,
     cameraEntity: Entity,
   ) {
-    super('sprite.vert', 'sprite.frag', shaderStore, gl);
+    super(vertexShaderSource, fragmentShaderSource, gl);
 
     this.albedoTexture = albedoTexture;
 

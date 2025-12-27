@@ -1,46 +1,47 @@
+import { PositionComponent } from '../../common/index.js';
 import { Entity, System } from '../../ecs/index.js';
-import { Batch, RenderableBatchComponent } from '../components/index.js';
-import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { CameraComponent } from '../components/index.js';
+import { RenderContext } from '../render-context.js';
+import { InstanceBatch, RenderLayerComponent } from '../render-layers/index.js';
 import { Renderable } from '../renderable.js';
-import { BATCH_GROWTH_FACTOR } from './render-constants.js';
-
-export interface RenderSystemOptions {
-  layer: ForgeRenderLayer;
-}
+import { createProjectionMatrix } from '../shaders/index.js';
 
 export class RenderSystem extends System {
-  private readonly _layer: ForgeRenderLayer;
-  private readonly _instanceBuffer: WebGLBuffer;
+  private readonly _renderContext: RenderContext;
 
-  constructor(options: RenderSystemOptions) {
-    super(`${options.layer.name}-renderer`, [RenderableBatchComponent.symbol]);
+  constructor(renderContext: RenderContext) {
+    super('renderer', [RenderLayerComponent.symbol]);
 
-    const { layer } = options;
-    this._layer = layer;
+    this._renderContext = renderContext;
 
-    this._instanceBuffer = layer.context.createBuffer();
     this._setupGLState();
   }
 
   public override beforeAll(entities: Entity[]): Entity[] {
-    this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
+    entities.sort((a, b) => {
+      const orderA = a.getComponentRequired<RenderLayerComponent>(
+        RenderLayerComponent.symbol,
+      ).order;
+      const orderB = b.getComponentRequired<RenderLayerComponent>(
+        RenderLayerComponent.symbol,
+      ).order;
+
+      return orderA - orderB;
+    });
+
+    this._renderContext.gl.clear(this._renderContext.gl.COLOR_BUFFER_BIT);
 
     return entities;
   }
 
   public run(entity: Entity): void {
-    const batchComponent =
-      entity.getComponentRequired<RenderableBatchComponent>(
-        RenderableBatchComponent.symbol,
-      );
+    const layerComponent = entity.getComponentRequired<RenderLayerComponent>(
+      RenderLayerComponent.symbol,
+    );
 
-    if (batchComponent.renderLayer !== this._layer) {
-      return;
-    }
+    const { gl } = this._renderContext;
 
-    const gl = this._layer.context;
-
-    for (const [renderable, batch] of batchComponent.batches) {
+    for (const [renderable, batch] of layerComponent.renderables) {
       this._includeBatch(renderable, batch, gl);
     }
 
@@ -51,52 +52,79 @@ export class RenderSystem extends System {
    * Called once at system stop to clear.
    */
   public override stop(): void {
-    this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
+    this._renderContext.gl.clear(this._renderContext.gl.COLOR_BUFFER_BIT);
   }
 
   private _setupGLState(): void {
-    const gl = this._layer.context;
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const { gl } = this._renderContext;
+
+    gl.enable(gl.BLEND); // TODO: these might need to be material specific
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: these might need to be material specific
   }
 
   private _includeBatch(
     renderable: Renderable,
-    batch: Batch,
+    batch: InstanceBatch,
     gl: WebGL2RenderingContext,
   ): void {
     const { entities } = batch;
 
-    if (entities.length === 0) {
+    if (entities.size === 0) {
       return;
     }
 
+    const { cameraEntity } = renderable;
+
+    const cameraPosition = cameraEntity.getComponentRequired<PositionComponent>(
+      PositionComponent.symbol,
+    );
+
+    const camera = cameraEntity.getComponentRequired<CameraComponent>(
+      CameraComponent.symbol,
+    );
+
+    const projectionMatrix = createProjectionMatrix(
+      gl.canvas.width,
+      gl.canvas.height,
+      cameraPosition.world,
+      camera.zoom,
+    );
+
+    renderable.material.setUniform('u_projection', projectionMatrix);
+
     renderable.bind(gl);
 
-    const requiredBatchSize = entities.length * renderable.floatsPerInstance;
-
-    if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
-      batch.instanceData = new Float32Array(
-        requiredBatchSize * BATCH_GROWTH_FACTOR,
+    if (camera.scissorRect) {
+      gl.enable(gl.SCISSOR_TEST);
+      gl.scissor(
+        Math.floor(camera.scissorRect.origin.x * gl.canvas.width),
+        Math.floor(camera.scissorRect.origin.y * gl.canvas.height),
+        Math.floor(camera.scissorRect.size.x * gl.canvas.width),
+        Math.floor(camera.scissorRect.size.y * gl.canvas.height),
       );
     }
 
-    for (let i = 0; i < entities.length; i++) {
-      const batchedEntity = entities[i];
-      const instanceDataOffset = i * renderable.floatsPerInstance;
+    const requiredBatchSize = entities.size * renderable.floatsPerInstance;
 
-      renderable.bindInstanceData(
-        batchedEntity,
-        batch.instanceData,
-        instanceDataOffset,
+    if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
+      batch.buffer = new Float32Array(
+        requiredBatchSize * batch.bufferGrowthFactor,
       );
+    }
+
+    let instanceDataOffset = 0;
+
+    for (const entity of entities) {
+      renderable.bindInstanceData(entity, batch.buffer, instanceDataOffset);
+
+      instanceDataOffset += renderable.floatsPerInstance;
     }
 
     // Upload instance transform buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._renderContext.instanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, batch.buffer, gl.DYNAMIC_DRAW);
 
-    this._setupInstanceAttributesAndDraw(gl, renderable, entities.length);
+    this._setupInstanceAttributesAndDraw(gl, renderable, entities.size);
   }
 
   private _setupInstanceAttributesAndDraw(
@@ -104,11 +132,11 @@ export class RenderSystem extends System {
     renderable: Renderable,
     batchLength: number,
   ) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._renderContext.instanceBuffer);
 
     renderable.setupInstanceAttributes(gl, renderable);
 
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // still assumes a quad for sprites
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: still assumes a quad for sprites
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: these might need to be material specific & is already called in _setupGLState
   }
 }

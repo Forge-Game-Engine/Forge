@@ -1,15 +1,11 @@
 import { Vector2 } from '../math/index.js';
 import { Color } from './color.js';
-import type { ForgeRenderLayer } from './render-layers/index.js';
 import { Renderable } from './renderable.js';
 
 /**
  * Options for creating a `Sprite`.
  */
 export type SpriteOptions = {
-  /** The render layer to which the sprite belongs. */
-  renderLayer: ForgeRenderLayer;
-
   /** The renderable to use for the sprite. */
   renderable: Renderable;
 
@@ -42,9 +38,6 @@ const defaultOptions = {
  * The `Sprite` class represents a sprite in the rendering system.
  */
 export class Sprite {
-  /** The render layer to which the sprite belongs. */
-  public renderLayer: ForgeRenderLayer;
-
   /** The bleed value applied to the sprite. */
   public bleed: number;
 
@@ -60,7 +53,7 @@ export class Sprite {
   /** The tint color of the sprite. */
   public tintColor: Color;
 
-  /** The sprite material used for rendering. */
+  /** The renderable associated with the sprite. */
   public readonly renderable: Renderable;
 
   /**
@@ -68,13 +61,11 @@ export class Sprite {
    * @param options - The options for creating the sprite.
    */
   constructor(options: SpriteOptions) {
-    const { renderable, bleed, pivot, renderLayer, width, height, tintColor } =
-      {
-        ...defaultOptions,
-        ...options,
-      };
+    const { renderable, bleed, pivot, width, height, tintColor } = {
+      ...defaultOptions,
+      ...options,
+    };
 
-    this.renderLayer = renderLayer;
     this.bleed = bleed;
     this.pivot = pivot.clone();
 

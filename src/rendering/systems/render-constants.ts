@@ -2,7 +2,6 @@
  * Constants used in the rendering system for batching
  */
 export const FLOATS_PER_INSTANCE = 13;
-export const BATCH_GROWTH_FACTOR = 1.25;
 
 /**
  * Constants used to batch sprite information together

@@ -1,25 +1,28 @@
 import {
   Axis1dAction,
+  createCanvas,
   createImageSprite,
-  createShaderStore,
   createWorld,
   Game,
-  ImageCache,
   MouseInputSource,
+  PositionComponent,
+  Rect,
   registerCamera,
   registerInputs,
-  registerRendering,
-  SpriteAnimationSystem,
+  RenderLayerComponent,
+  RenderSystem,
+  ScaleComponent,
+  SpriteComponent,
+  Vector2,
 } from '../../src';
-import { setupAnimationsDemo } from './animationDemo';
-import { ControlAdventurerSystem } from './control-adventurer-system';
+import { createRenderContext } from '../../src/rendering/render-context';
 
 export const game = new Game(document.getElementById('demo-container')!);
-
-const imageCache = new ImageCache();
-const shaderStore = createShaderStore();
-
 const world = createWorld('world', game);
+
+const canvas = createCanvas('forge', game.container);
+
+const renderContext = createRenderContext({ canvas });
 
 const zoomInput = new Axis1dAction('zoom', 'game');
 
@@ -34,42 +37,52 @@ mouseInputSource.axis1dBindings.add({
   displayText: 'Zoom',
 });
 
-const cameraEntity = registerCamera(world, {
+const leftCameraEntity = registerCamera(world, {
   zoomInput,
+  scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
 });
-const { renderLayers } = registerRendering(game, world);
 
-const shipImage = await imageCache.getOrLoad('ship_spritesheet.png');
-const adventurerImage = await imageCache.getOrLoad(
-  'adventurer_spritesheet.png',
+const rightCameraEntity = registerCamera(world, {
+  zoomInput,
+  scissorRect: new Rect(new Vector2(0.5, 0), new Vector2(0.5, 1)),
+});
+
+const planetSprite = await createImageSprite(
+  'planet.png',
+  renderContext,
+  leftCameraEntity,
 );
 
-const shipSprite = createImageSprite(
-  shipImage,
-  renderLayers[0],
-  shaderStore,
-  cameraEntity,
+const shipSprite = await createImageSprite(
+  'planet02.png',
+  renderContext,
+  rightCameraEntity,
 );
 
-const adventurerSprite = createImageSprite(
-  adventurerImage,
-  renderLayers[0],
-  shaderStore,
-  cameraEntity,
-);
+const renderLayerComponent = new RenderLayerComponent();
 
-const { attackInput, runRInput, runLInput, jumpInput, takeDamageInput } =
-  setupAnimationsDemo(world, game, shipSprite, adventurerSprite);
+for (let i = 0; i < 1000; i++) {
+  const planetEntity = world.buildAndAddEntity('planet', [
+    new SpriteComponent(planetSprite),
+    new PositionComponent(0, 0),
+    new ScaleComponent(0.1, 0.1),
+  ]);
 
-world.addSystem(new SpriteAnimationSystem(world.time));
-world.addSystem(
-  new ControlAdventurerSystem(
-    attackInput,
-    runRInput,
-    runLInput,
-    jumpInput,
-    takeDamageInput,
-  ),
-);
+  renderLayerComponent.addEntity(planetSprite.renderable, planetEntity);
+}
+
+for (let i = 0; i < 1000; i++) {
+  const shipEntity = world.buildAndAddEntity('ship', [
+    new SpriteComponent(shipSprite),
+    new PositionComponent(0, 0),
+    new ScaleComponent(0.1, 0.1),
+  ]);
+
+  renderLayerComponent.addEntity(shipSprite.renderable, shipEntity);
+}
+
+world.buildAndAddEntity('foreground render layer', [renderLayerComponent]);
+
+world.addSystem(new RenderSystem(renderContext));
 
 game.run();

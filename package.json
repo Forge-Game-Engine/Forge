@@ -87,12 +87,6 @@
         "default": "./dist/timer/index.js"
       }
     },
-    "./ui": {
-      "import": {
-        "types": "./dist/ui/index.d.ts",
-        "default": "./dist/ui/index.js"
-      }
-    },
     "./utilities": {
       "import": {
         "types": "./dist/utilities/index.d.ts",

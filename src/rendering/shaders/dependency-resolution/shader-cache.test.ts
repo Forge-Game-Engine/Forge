@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ShaderStore } from './shader-store';
+import { ShaderCache } from './shader-cache';
 
 describe('ShaderStore', () => {
   it('should add a shader to the store', () => {
-    const store = new ShaderStore();
+    const store = new ShaderCache();
     const shader = `
       #property name: testShader;
 
@@ -18,7 +18,7 @@ describe('ShaderStore', () => {
   });
 
   it('should not add the same shader twice', () => {
-    const store = new ShaderStore();
+    const store = new ShaderCache();
     const shader = `
       #property name: testShader;
 
@@ -34,7 +34,7 @@ describe('ShaderStore', () => {
   });
 
   it('should resolve a shader with includes', () => {
-    const store = new ShaderStore();
+    const store = new ShaderCache();
 
     const shader = `
       #property name: testShader;
@@ -61,7 +61,7 @@ describe('ShaderStore', () => {
   });
 
   it('should throw an error if a shader is not found', () => {
-    const store = new ShaderStore();
+    const store = new ShaderCache();
 
     expect(() => store.getShader('nonExistentShader')).toThrow(
       'Shader with name nonExistentShader not found.',
@@ -69,7 +69,7 @@ describe('ShaderStore', () => {
   });
 
   it('should cache resolved shaders', () => {
-    const store = new ShaderStore();
+    const store = new ShaderCache();
 
     const shader = `
       #property name: testShader;

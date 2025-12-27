@@ -1,7 +1,7 @@
 import { ForgeShaderSource } from './forge-shader-source.js';
 import { resolveIncludes } from './resolve-includes.js';
 
-export class ShaderStore {
+export class ShaderCache {
   private readonly _shaders: ForgeShaderSource[];
   private readonly _includes: ForgeShaderSource[];
   private readonly _resolvedShaders: Map<string, string>;
@@ -12,12 +12,12 @@ export class ShaderStore {
     this._resolvedShaders = new Map();
   }
 
-  public addShader(...shaders: string[]): void {
-    for (const shader of shaders) {
-      const shaderSource = new ForgeShaderSource(shader);
+  public addShader(...rawShaders: string[]): void {
+    for (const rawShader of rawShaders) {
+      const shaderSource = new ForgeShaderSource(rawShader);
 
       if (
-        this._shaders.find(
+        this._shaders.some(
           (existingShader) => existingShader.name === shaderSource.name,
         )
       ) {
@@ -28,12 +28,12 @@ export class ShaderStore {
     }
   }
 
-  public addInclude(...shaders: string[]): void {
-    for (const shader of shaders) {
-      const shaderSource = new ForgeShaderSource(shader);
+  public addInclude(...rawIncludes: string[]): void {
+    for (const rawInclude of rawIncludes) {
+      const shaderSource = new ForgeShaderSource(rawInclude);
 
       if (
-        this._includes.find(
+        this._includes.some(
           (existingInclude) => existingInclude.name === shaderSource.name,
         )
       ) {
@@ -44,6 +44,11 @@ export class ShaderStore {
     }
   }
 
+  /**
+   * Retrieves and resolves a shader by name.
+   * @param name - The name of the shader to retrieve.
+   * @returns The resolved shader source code.
+   */
   public getShader(name: string): string {
     if (this._resolvedShaders.has(name)) {
       return this._resolvedShaders.get(name)!;

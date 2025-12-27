@@ -1,31 +1,44 @@
-import { Entity } from '../../ecs/index.js';
-import { SpriteMaterial } from '../materials/index.js';
-import type { ForgeRenderLayer } from '../render-layers/index.js';
-import type { ShaderStore } from '../shaders/index.js';
+import { Entity } from '../../ecs/entity.js';
+import { Material } from '../materials/index.js';
+import { RenderContext } from '../render-context.js';
+import { createTextureFromImage } from '../shaders/index.js';
 import type { Sprite } from '../sprite.js';
 import { createSprite } from './create-sprite.js';
 
 /**
  * Creates a sprite using the provided image and render layer.
- * @param image - The image to use for the sprite.
- * @param renderLayer - The render layer to which the sprite will be added.
- * @param shaderStore - The shader store to use for the sprite's material.
- * @param cameraEntity - The camera entity to which the sprite will be rendered.
+ * @param imagePath - The path to the image to be used for the sprite.
+ * @param renderContext - The render context used for shader retrieval.
+ * @param cameraEntity - The camera entity for the renderable.
+ * @param vertexShaderName - The vertex shader to use for the sprite material.
+ * @param fragmentShaderName - The fragment shader to use for the sprite material.
  * @returns The created sprite.
  */
-export function createImageSprite(
-  image: HTMLImageElement,
-  renderLayer: ForgeRenderLayer,
-  shaderStore: ShaderStore,
+export async function createImageSprite(
+  imagePath: string,
+  renderContext: RenderContext,
   cameraEntity: Entity,
-): Sprite {
-  const material = new SpriteMaterial(
-    renderLayer.context,
-    shaderStore,
-    image,
+  vertexShaderName: string = 'sprite.vert',
+  fragmentShaderName: string = 'sprite.frag',
+): Promise<Sprite> {
+  const { shaderCache, imageCache, gl } = renderContext;
+
+  const spriteVertexShader = shaderCache.getShader(vertexShaderName);
+  const spriteFragmentShader = shaderCache.getShader(fragmentShaderName);
+
+  const image = await imageCache.getOrLoad(imagePath);
+
+  const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
+
+  material.setUniform('u_texture', createTextureFromImage(gl, image));
+
+  const sprite = createSprite(
+    material,
+    renderContext,
     cameraEntity,
+    image.width,
+    image.height,
   );
-  const sprite = createSprite(material, renderLayer, image.width, image.height);
 
   return sprite;
 }
