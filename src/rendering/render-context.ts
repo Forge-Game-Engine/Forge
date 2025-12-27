@@ -1,8 +1,8 @@
-import { ImageCache } from '../asset-loading';
-import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums';
-import { UniformValue } from './materials';
-import { ShaderCache } from './shaders';
-import { createShaderCache } from './utilities';
+import { ImageCache } from '../asset-loading/index.js';
+import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
+import { UniformValue } from './materials/index.js';
+import { ShaderCache } from './shaders/index.js';
+import { createShaderCache } from './utilities/index.js';
 
 /**
  * The rendering context.
