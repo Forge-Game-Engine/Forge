@@ -3,8 +3,8 @@
  *
  * @param id - The ID to assign to the canvas element.
  * @param container - The HTML element to which the canvas will be appended.
- * @param width - The width of the canvas (default: window.innerWidth).
- * @param height - The height of the canvas (default: window.innerHeight).
+ * @param width - The width of the canvas (default: container.clientWidth).
+ * @param height - The height of the canvas (default: container.clientHeight).
  * @returns The created canvas element.
  */
 export function createCanvas(
@@ -15,8 +15,8 @@ export function createCanvas(
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.id = id;
-  canvas.width = width ?? window.innerWidth;
-  canvas.height = height ?? window.innerHeight;
+  canvas.width = width ?? container.clientWidth;
+  canvas.height = height ?? container.clientHeight;
 
   canvas.style.width = `${canvas.width}px`;
   canvas.style.height = `${canvas.height}px`;
