@@ -1,5 +1,4 @@
 export * from './components/index.js';
-export * from './layer-service.js';
 export * from './render-layers/index.js';
 export * from './sprite.js';
 export * from './systems/index.js';

@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParticleEmitterSystem } from './particle-emitter-system';
 import { Entity, World } from '../../ecs';
 import { ParticleEmitter, ParticleEmitterComponent } from '../components';
-import { ForgeRenderLayer, Sprite } from '../../rendering';
+import { RenderLayerComponent, Sprite } from '../../rendering';
 
 describe('_startEmittingParticles', () => {
   const world: World = new World('test');
   const system = new ParticleEmitterSystem(world);
   const mockSprite = {} as Sprite; // Mock sprite object
-  const mockRenderLayer = {} as ForgeRenderLayer; // Mock render layer object
+  const mockRenderLayer = {} as RenderLayerComponent; // Mock render layer object
 
   it('should start emitting when startEmitting is true', () => {
     const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
@@ -64,7 +64,7 @@ describe('ParticleEmitterSystem', () => {
   it('should process all emitters in the entity', () => {
     const system = new ParticleEmitterSystem(world);
     const mockSprite = {} as Sprite;
-    const mockRenderLayer = {} as ForgeRenderLayer;
+    const mockRenderLayer = {} as RenderLayerComponent;
 
     // Create multiple emitters
     const emitter1 = new ParticleEmitter(mockSprite, mockRenderLayer, {
@@ -101,7 +101,7 @@ describe('_emitNewParticles', () => {
   let world: World;
   let system: ParticleEmitterSystem;
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as ForgeRenderLayer;
+  const mockRenderLayer = {} as RenderLayerComponent;
   beforeEach(() => {
     world = new World('test');
     system = new ParticleEmitterSystem(world);
@@ -207,7 +207,7 @@ describe('_getAmountToEmitBasedOnDuration', () => {
   let world: World;
   let system: ParticleEmitterSystem;
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as ForgeRenderLayer;
+  const mockRenderLayer = {} as RenderLayerComponent;
   beforeEach(() => {
     world = new World('test');
     system = new ParticleEmitterSystem(world);
@@ -260,7 +260,7 @@ describe('_getRandomValueInRange', () => {
   let world: World;
   let system: ParticleEmitterSystem;
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as ForgeRenderLayer;
+  const mockRenderLayer = {} as RenderLayerComponent;
   beforeEach(() => {
     world = new World('test');
     system = new ParticleEmitterSystem(world);

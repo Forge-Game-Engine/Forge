@@ -1,7 +1,4 @@
 export * from './create-canvas.js';
-export * from './add-forge-render-layer.js';
-export * from './add-forge-render-layers.js';
-export * from './add-rive-render-layer.js';
 export * from './add-camera.js';
 export * from './create-image-sprite.js';
 export * from './create-sprite.js';

@@ -23,7 +23,7 @@ export function resolveIncludes(
 
   // Remove consecutive empty lines
   // eslint-disable-next-line sonarjs/slow-regex
-  return processedLines.replace(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
+  return processedLines.replaceAll(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
 }
 
 function processLine(

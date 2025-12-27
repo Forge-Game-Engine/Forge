@@ -17,18 +17,21 @@ export class Renderable {
   public readonly geometry: Geometry;
   public readonly material: Material;
   public readonly floatsPerInstance: number;
+  public readonly cameraEntity: Entity;
   public readonly bindInstanceData: BindInstanceDataCallback;
   public readonly setupInstanceAttributes: SetupInstanceAttributes;
 
   constructor(
     geometry: Geometry,
     material: Material,
+    cameraEntity: Entity,
     floatsPerInstance: number,
     bindInstanceData: BindInstanceDataCallback,
     setupInstanceAttributes: SetupInstanceAttributes,
   ) {
     this.geometry = geometry;
     this.material = material;
+    this.cameraEntity = cameraEntity;
     this.floatsPerInstance = floatsPerInstance;
     this.bindInstanceData = bindInstanceData;
     this.setupInstanceAttributes = setupInstanceAttributes;

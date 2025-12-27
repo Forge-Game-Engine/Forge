@@ -11,3 +11,4 @@ export * from './vector-to-radians.js';
 export * from './signed-square.js';
 export * from './smooth-damp-vector2.js';
 export * from './radians-to-vector.js';
+export * from './Rect.js';

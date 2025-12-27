@@ -1,5 +1,6 @@
 import type { Component } from '../../ecs/index.js';
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
+import { Rect } from '../../math/index.js';
 
 /**
  * Options for configuring the `CameraComponent`.
@@ -23,9 +24,14 @@ export type CameraComponentOptions = {
   /** Indicates if the camera is static (non-movable). */
   isStatic: boolean;
 
+  /** Optional input action for zooming the camera. */
   zoomInput?: Axis1dAction;
 
+  /** Optional input action for panning the camera. */
   panInput?: Axis2dAction;
+
+  /** Optional scissor rectangle to limit the camera's rendering area. */
+  scissorRect?: Rect;
 };
 
 /**
@@ -68,6 +74,8 @@ export class CameraComponent implements Component {
   /** Indicates if the camera is static (non-movable). */
   public isStatic: boolean;
 
+  public scissorRect?: Rect;
+
   public zoomInput?: Axis1dAction;
 
   public panInput?: Axis2dAction;
@@ -94,6 +102,7 @@ export class CameraComponent implements Component {
     this.isStatic = mergedOptions.isStatic;
     this.zoomInput = mergedOptions.zoomInput;
     this.panInput = mergedOptions.panInput;
+    this.scissorRect = mergedOptions.scissorRect;
   }
 
   /**

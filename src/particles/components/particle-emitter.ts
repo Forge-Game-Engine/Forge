@@ -1,4 +1,4 @@
-import { ForgeRenderLayer, Sprite } from '../../rendering/index.js';
+import { RenderLayerComponent, Sprite } from '../../rendering/index.js';
 
 /**
  * Type for a function that returns a number representing the X and Y spawn position of the particle
@@ -91,7 +91,7 @@ const defaultOptions: ParticleEmitterOptions = {
  */
 export class ParticleEmitter {
   public sprite: Sprite;
-  public renderLayer: ForgeRenderLayer;
+  public renderLayer: RenderLayerComponent;
   public spawnPosition: ParticleSpawnPositionFunction;
   public numParticlesRange: Range;
   public speedRange: Range;
@@ -115,7 +115,7 @@ export class ParticleEmitter {
    */
   constructor(
     sprite: Sprite,
-    renderLayer: ForgeRenderLayer,
+    renderLayer: RenderLayerComponent,
     options: Partial<ParticleEmitterOptions> = {},
   ) {
     const {
@@ -163,7 +163,7 @@ export class ParticleEmitter {
       rotationSpeedRange,
       lifetimeSecondsRange,
       lifetimeScaleReduction,
-      emitDurationSeconds: emitDurationSeconds,
+      emitDurationSeconds,
       spawnPosition,
     } = {
       ...this,

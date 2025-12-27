@@ -12,7 +12,7 @@ import { Entity } from '../../ecs/entity.js';
 import { SpriteComponent } from '../components/sprite-component.js';
 import { createQuadGeometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
-import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { RenderContext } from '../render-context.js';
 import { Renderable } from '../renderable.js';
 import { Sprite } from '../sprite.js';
 import {
@@ -160,22 +160,25 @@ function setupInstanceAttributes(
 }
 
 /**
- * Creates a sprite using the provided material and render layer.
+ * Creates a sprite using the provided material and render context.
  * @param material - The material to use for the sprite.
- * @param renderLayer - The render layer to which the sprite will be added.
+ * @param renderContext - The render context to be used.
+ * @param cameraEntity - The camera entity for the renderable.
  * @param width - The width of the sprite.
  * @param height - The height of the sprite.
  * @returns The created sprite.
  */
 export function createSprite(
   material: Material,
-  renderLayer: ForgeRenderLayer,
+  renderContext: RenderContext,
+  cameraEntity: Entity,
   width: number,
   height: number,
 ): Sprite {
   const renderable = new Renderable(
-    createQuadGeometry(renderLayer.context),
+    createQuadGeometry(renderContext.gl),
     material,
+    cameraEntity,
     floatsPerInstance,
     bindInstanceData,
     setupInstanceAttributes,
@@ -183,7 +186,6 @@ export function createSprite(
 
   const sprite = new Sprite({
     renderable,
-    renderLayer,
     width,
     height,
   });

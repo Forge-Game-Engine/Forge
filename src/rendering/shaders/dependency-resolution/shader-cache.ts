@@ -12,9 +12,9 @@ export class ShaderCache {
     this._resolvedShaders = new Map();
   }
 
-  public addShader(...shaders: string[]): void {
-    for (const shader of shaders) {
-      const shaderSource = new ForgeShaderSource(shader);
+  public addShader(...rawShaders: string[]): void {
+    for (const rawShader of rawShaders) {
+      const shaderSource = new ForgeShaderSource(rawShader);
 
       if (
         this._shaders.some(
@@ -28,9 +28,9 @@ export class ShaderCache {
     }
   }
 
-  public addInclude(...shaders: string[]): void {
-    for (const shader of shaders) {
-      const shaderSource = new ForgeShaderSource(shader);
+  public addInclude(...rawIncludes: string[]): void {
+    for (const rawInclude of rawIncludes) {
+      const shaderSource = new ForgeShaderSource(rawInclude);
 
       if (
         this._includes.some(
@@ -44,6 +44,11 @@ export class ShaderCache {
     }
   }
 
+  /**
+   * Retrieves and resolves a shader by name.
+   * @param name - The name of the shader to retrieve.
+   * @returns The resolved shader source code.
+   */
   public getShader(name: string): string {
     if (this._resolvedShaders.has(name)) {
       return this._resolvedShaders.get(name)!;

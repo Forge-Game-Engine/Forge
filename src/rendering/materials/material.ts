@@ -1,7 +1,7 @@
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import type { Color } from '../color.js';
 
-type UniformValue =
+export type UniformValue =
   | number
   | boolean
   | Float32Array
@@ -37,8 +37,6 @@ export class Material {
    * Binds the material (program, uniforms, textures).
    */
   public bind(gl: WebGL2RenderingContext): void {
-    this.beforeBind(gl);
-
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -47,6 +45,8 @@ export class Material {
       const value = this._uniformValues.get(name);
 
       if (value === undefined) {
+        // TODO- do we need default values?
+        // do we specify those in the shader?
         continue;
       }
 
@@ -91,24 +91,6 @@ export class Material {
    */
   public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
     this.setUniform(name, vector.toFloat32Array());
-  }
-
-  /**
-   * Called before binding the material to allow for custom behavior.
-   * Override this method in subclasses to implement custom logic.
-   *
-   * @param _gl - The WebGL2 rendering context passed into beforeBind.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected beforeBind(_gl: WebGL2RenderingContext): void {
-    // Override in subclasses for custom behavior before binding
-  }
-
-  /**
-   * Converts a vector3 to a float32 array.
-   */
-  protected convertToFloat32Array(vector: Vector3): Float32Array {
-    return new Float32Array([vector.x / 255, vector.y / 255, vector.z / 255]);
   }
 
   private _bindTexture(

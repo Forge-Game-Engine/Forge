@@ -1,7 +1,6 @@
 import {
   createImageSprite,
   Entity,
-  ForgeRenderLayer,
   PositionComponent,
   Random,
   ScaleComponent,
@@ -13,17 +12,11 @@ import { RenderContext } from '../../src/rendering/render-context';
 export const createBatch = async (
   imageSrc: string,
   world: World,
-  renderLayer: ForgeRenderLayer,
   renderContext: RenderContext,
   cameraEntity: Entity,
   size: number = 1000,
 ): Promise<Entity[]> => {
-  const sprite = await createImageSprite(
-    imageSrc,
-    renderLayer,
-    renderContext,
-    cameraEntity,
-  );
+  const sprite = await createImageSprite(imageSrc, renderContext, cameraEntity);
 
   const random = new Random(imageSrc);
   const entities: Entity[] = [];
