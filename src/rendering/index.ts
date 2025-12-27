@@ -10,3 +10,4 @@ export * from './materials/index.js';
 export * from './geometry/index.js';
 export * from './renderable.js';
 export * from './color.js';
+export * from './render-context.js';
