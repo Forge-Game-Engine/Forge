@@ -17,8 +17,8 @@ export class HoldAction implements InputAction {
   private _held: boolean = false;
 
   /** Creates a new HoldAction.
-   * @param inputGroup - The input group this action belongs to.
    * @param name - The name of the action.
+   * @param inputGroup - The input group this action belongs to.
    */
   constructor(name: string, inputGroup?: string) {
     this.name = name;
