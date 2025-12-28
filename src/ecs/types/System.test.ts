@@ -28,7 +28,7 @@ describe('System', () => {
 
   it('should initialize with default name', () => {
     const defaultSystem = new TestSystem([]);
-    expect(defaultSystem.name).toBe('<anonymous system>');
+    expect(defaultSystem.name).toBe('[anonymous system]');
   });
 
   it('should run system on enabled entities', () => {

@@ -63,7 +63,7 @@ export class World implements Updatable, Stoppable {
    * @param name - The name of the world.
    */
   constructor(name?: string) {
-    this.name = name ?? '<anonymous world>';
+    this.name = name ?? '[anonymous world]';
   }
 
   /**

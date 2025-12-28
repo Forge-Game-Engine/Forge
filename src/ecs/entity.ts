@@ -99,7 +99,7 @@ export class Entity {
     );
     this.world = world;
     this.enabled = mergedOptions.enabled;
-    this.name = mergedOptions.name ?? '<anonymous entity>';
+    this.name = mergedOptions.name ?? '[anonymous entity]';
 
     if (mergedOptions.parent) {
       this.parentTo(mergedOptions.parent);

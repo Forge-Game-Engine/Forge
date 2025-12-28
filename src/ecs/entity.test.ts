@@ -12,7 +12,7 @@ test('creating an entity with no name', () => {
   const entity = new Entity(world, []);
 
   expect(entity).not.toBe(null);
-  expect(entity.name).toBe('<anonymous entity>');
+  expect(entity.name).toBe('[anonymous entity]');
 });
 
 test('creating an entity', () => {
