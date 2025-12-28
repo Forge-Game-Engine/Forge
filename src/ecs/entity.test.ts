@@ -100,7 +100,7 @@ test('addComponents throws when adding a component that already exists', () => {
   );
 });
 
-test('addComponents does throws when adding a second component that does not exists', () => {
+test('addComponents does not throw when adding a second component that does not exists', () => {
   const entity = new Entity(world, [new MockComponent1()]);
 
   expect(() => entity.addComponents(new MockComponent2())).not.toThrowError();
