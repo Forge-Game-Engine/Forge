@@ -1,5 +1,9 @@
-import { createWorld, Game, World } from '../ecs';
-import { createCanvas, createRenderContext, RenderContext } from '../rendering';
+import { createWorld, Game, World } from '../ecs/index.js';
+import {
+  createCanvas,
+  createRenderContext,
+  RenderContext,
+} from '../rendering/index.js';
 
 export function createGame(containerId: string): {
   game: Game;
