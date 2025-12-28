@@ -13,7 +13,7 @@ describe('LifetimeTrackingSystem', () => {
   it('should update elapsed time each frame', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
-    world.buildAndAddEntity(, [lifetimeComponent]);
+    world.buildAndAddEntity([lifetimeComponent]);
     const system = new LifetimeTrackingSystem(world);
     world.addSystem(system);
 
@@ -28,28 +28,28 @@ describe('LifetimeTrackingSystem', () => {
   it('should handle entities with elapsed time within duration', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
-    world.buildAndAddEntity(, [lifetimeComponent]);
+    world.buildAndAddEntity([lifetimeComponent]);
     const system = new LifetimeTrackingSystem(world);
     world.addSystem(system);
 
     // Act
-    lifetimeComponent.elapsedSeconds = 3.0; // Set elapsed to less than duration
+    lifetimeComponent.elapsedSeconds = 3; // Set elapsed to less than duration
     world.update(0.1);
 
     // Assert
-    expect(lifetimeComponent.elapsedSeconds).toBeGreaterThan(3.0);
+    expect(lifetimeComponent.elapsedSeconds).toBeGreaterThan(3);
     expect(lifetimeComponent.hasExpired).toBe(false);
   });
 
   it('should set hasExpired to true when elapsed time equals duration', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
-    world.buildAndAddEntity(, [lifetimeComponent]);
+    world.buildAndAddEntity([lifetimeComponent]);
     const system = new LifetimeTrackingSystem(world);
     world.addSystem(system);
 
     // Act
-    lifetimeComponent.elapsedSeconds = 5.0;
+    lifetimeComponent.elapsedSeconds = 5;
     world.update(0.1);
 
     // Assert
@@ -60,7 +60,7 @@ describe('LifetimeTrackingSystem', () => {
   it('should set hasExpired to true when elapsed time exceeds duration', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
-    world.buildAndAddEntity(, [lifetimeComponent]);
+    world.buildAndAddEntity([lifetimeComponent]);
     const system = new LifetimeTrackingSystem(world);
     world.addSystem(system);
 
@@ -76,12 +76,12 @@ describe('LifetimeTrackingSystem', () => {
   it('should not remove entity from world - only track lifetime', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
-    world.buildAndAddEntity(, [lifetimeComponent]);
+    world.buildAndAddEntity([lifetimeComponent]);
     const system = new LifetimeTrackingSystem(world);
     world.addSystem(system);
 
     // Act
-    lifetimeComponent.elapsedSeconds = 5.0;
+    lifetimeComponent.elapsedSeconds = 5;
     world.update(0.1);
 
     // Assert
