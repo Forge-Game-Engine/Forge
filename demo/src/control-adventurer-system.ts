@@ -22,12 +22,15 @@ export class ControlAdventurerSystem extends System {
     jumpTriggerInput: TriggerAction,
     takeDamageTriggerInput: TriggerAction,
   ) {
-    super('control adventurer', [
-      ControlAdventurerComponent.symbol,
-      SpriteAnimationComponent.symbol,
-      FlipComponent.symbol,
-      PositionComponent.symbol,
-    ]);
+    super(
+      [
+        ControlAdventurerComponent,
+        SpriteAnimationComponent,
+        FlipComponent,
+        PositionComponent,
+      ],
+      'ControlAdventurerSystem',
+    );
 
     this._attackTriggerInput = attackTriggerInput;
     this._runRTriggerInput = runRTriggerInput;
@@ -37,14 +40,11 @@ export class ControlAdventurerSystem extends System {
   }
 
   public run(entity: Entity): void {
-    const spriteAnimationComponent =
-      entity.getComponentRequired<SpriteAnimationComponent>(
-        SpriteAnimationComponent.symbol,
-      );
-
-    const flipComponent = entity.getComponentRequired<FlipComponent>(
-      FlipComponent.symbol,
+    const spriteAnimationComponent = entity.getComponentRequired(
+      SpriteAnimationComponent,
     );
+
+    const flipComponent = entity.getComponentRequired(FlipComponent);
 
     const animationInputs = spriteAnimationComponent.animationInputs;
 

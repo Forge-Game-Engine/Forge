@@ -1,12 +1,10 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import { degreesToRadians } from '../../math/index.js';
 
 /**
  * Component to represent the rotation of an entity in 2D space.
  */
-export class RotationComponent implements Component {
-  public name: symbol;
-
+export class RotationComponent extends Component {
   /**
    * The local rotation angle in radians.
    */
@@ -16,14 +14,13 @@ export class RotationComponent implements Component {
    */
   public world: number;
 
-  public static readonly symbol = Symbol('Rotation');
-
   /**
    * Creates an instance of RotationComponent.
    * @param radians - The rotation angle in radians.
    */
   constructor(radians: number = 0) {
-    this.name = RotationComponent.symbol;
+    super();
+
     this.local = radians;
     this.world = radians;
   }

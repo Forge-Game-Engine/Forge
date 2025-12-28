@@ -14,7 +14,7 @@ describe('AudioSystem', () => {
     audioComponent.sound = mockHowl;
     audioComponent.playSound = true;
 
-    const entity = new Entity('test', world, [audioComponent]);
+    const entity = new Entity(world, [audioComponent]);
     const audioSystem = new AudioSystem(world);
 
     audioSystem.run(entity);
@@ -30,7 +30,7 @@ describe('AudioSystem', () => {
     audioComponent.sound = mockHowl;
     audioComponent.playSound = false;
 
-    const entity = new Entity('test', world, [audioComponent]);
+    const entity = new Entity(world, [audioComponent]);
     const audioSystem = new AudioSystem(world);
 
     audioSystem.run(entity);

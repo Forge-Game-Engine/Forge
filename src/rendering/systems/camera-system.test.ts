@@ -28,7 +28,7 @@ describe('CameraSystem', () => {
     });
     positionComponent = new PositionComponent();
 
-    entity = new Entity('camera', world, [cameraComponent, positionComponent]);
+    entity = new Entity(world, [cameraComponent, positionComponent]);
 
     world.addEntity(entity);
     world.addSystem(cameraSystem);

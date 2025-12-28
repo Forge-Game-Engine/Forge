@@ -13,7 +13,7 @@ export class SpriteAnimationSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('spriteAnimation', [SpriteAnimationComponent.symbol]);
+    super([SpriteAnimationComponent], 'sprite-animation');
 
     this._time = time;
   }
@@ -23,10 +23,9 @@ export class SpriteAnimationSystem extends System {
    * @param entity - The entity to update animations for.
    */
   public run(entity: Entity): void {
-    const spriteAnimationComponent =
-      entity.getComponentRequired<SpriteAnimationComponent>(
-        SpriteAnimationComponent.symbol,
-      );
+    const spriteAnimationComponent = entity.getComponentRequired(
+      SpriteAnimationComponent,
+    );
 
     const {
       lastFrameChangeTimeInSeconds,

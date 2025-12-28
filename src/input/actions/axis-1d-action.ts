@@ -21,13 +21,13 @@ export class Axis1dAction implements InputAction, Resettable {
 
   /**
    * Creates a new Axis1dAction.
-   * @param name - The name of the action.
    * @param inputGroup - The input group this action belongs to.
+   * @param name - The name of the action.
    * @param actionResetType - The type of reset behavior for this action. Defaults to `actionResetTypes.zero`.
    */
   constructor(
     name: string,
-    inputGroup: string,
+    inputGroup?: string,
     actionResetType: ActionResetType = actionResetTypes.zero,
   ) {
     this.name = name;
@@ -37,7 +37,7 @@ export class Axis1dAction implements InputAction, Resettable {
       'Axis1d Value Change Event',
     );
 
-    this.inputGroup = inputGroup;
+    this.inputGroup = inputGroup ?? 'game';
   }
 
   public reset(): void {

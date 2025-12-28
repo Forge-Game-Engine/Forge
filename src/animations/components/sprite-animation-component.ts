@@ -1,13 +1,11 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import { AnimationClip, AnimationInputs } from '../types/index.js';
 import { FiniteStateMachine } from '../../finite-state-machine/finite-state-machine.js';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.
  */
-export class SpriteAnimationComponent implements Component {
-  public name: symbol;
-
+export class SpriteAnimationComponent extends Component {
   /**
    * The current frame index of the animation being played.
    */
@@ -38,8 +36,6 @@ export class SpriteAnimationComponent implements Component {
    */
   public stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>;
 
-  public static readonly symbol = Symbol('SpriteAnimation');
-
   /**
    * Creates an instance of SpriteAnimationComponent.
    * @param stateMachine - The FiniteStateMachine managing the animations.
@@ -53,7 +49,7 @@ export class SpriteAnimationComponent implements Component {
     frameDurationMilliseconds: number = 33.3333, // 30 fps
     playbackSpeed: number = 1,
   ) {
-    this.name = SpriteAnimationComponent.symbol;
+    super();
 
     this.animationFrameIndex = 0;
     this.lastFrameChangeTimeInSeconds = 0;

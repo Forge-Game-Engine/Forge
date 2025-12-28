@@ -17,7 +17,7 @@ describe('_startEmittingParticles', () => {
     const emitterComponent = new ParticleEmitterComponent(
       new Map([['testEmitter', emitter]]),
     );
-    const entity = new Entity('emitter', world, [emitterComponent]);
+    const entity = new Entity( world, [emitterComponent]);
 
     expect(emitter.startEmitting).toBe(false);
     expect(emitter.currentlyEmitting).toBe(false);
@@ -40,7 +40,7 @@ describe('_startEmittingParticles', () => {
     const emitterComponent = new ParticleEmitterComponent(
       new Map([['testEmitter', emitter]]),
     );
-    const entity = new Entity('emitter', world, [emitterComponent]);
+    const entity = new Entity( world, [emitterComponent]);
 
     expect(emitter.startEmitting).toBe(false);
     expect(emitter.currentlyEmitting).toBe(false);
@@ -81,7 +81,7 @@ describe('ParticleEmitterSystem', () => {
       ]),
     );
 
-    const entity = world.buildAndAddEntity('emitter', [emitterComponent]);
+    const entity = world.buildAndAddEntity(, [emitterComponent]);
 
     // Mock time delta
     vi.spyOn(world.time, 'deltaTimeInSeconds', 'get').mockReturnValue(0.1);
@@ -119,7 +119,7 @@ describe('_emitNewParticles', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     const initialEntityCount = world.entityCount;
 
@@ -142,7 +142,7 @@ describe('_emitNewParticles', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     const initialEntityCount = world.entityCount;
 
@@ -164,7 +164,7 @@ describe('_emitNewParticles', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     const initialEntityCount = world.entityCount;
 
@@ -186,7 +186,7 @@ describe('_emitNewParticles', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     world.update(0 * 1000);
 
@@ -226,7 +226,7 @@ describe('_getAmountToEmitBasedOnDuration', () => {
       new Map([['emitter', emitter]]),
     );
 
-    const entity = world.buildAndAddEntity('emitter', [emitterComponent]);
+    const entity = world.buildAndAddEntity(, [emitterComponent]);
 
     expect(world.entityCount).toBe(1);
     system.run(entity);
@@ -247,7 +247,7 @@ describe('_getAmountToEmitBasedOnDuration', () => {
       new Map([['emitter', emitter]]),
     );
 
-    const entity = world.buildAndAddEntity('emitter', [emitterComponent]);
+    const entity = world.buildAndAddEntity(, [emitterComponent]);
 
     expect(world.entityCount).toBe(1);
     system.run(entity);
@@ -279,7 +279,7 @@ describe('_getRandomValueInRange', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     world.update(0);
 
@@ -299,7 +299,7 @@ describe('_getRandomValueInRange', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     world.update(0);
 
@@ -319,7 +319,7 @@ describe('_getRandomValueInRange', () => {
       new Map([['emitter', emitter]]),
     );
 
-    world.buildAndAddEntity('emitter', [emitterComponent]);
+    world.buildAndAddEntity(, [emitterComponent]);
 
     world.update(0);
 

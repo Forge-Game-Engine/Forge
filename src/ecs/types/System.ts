@@ -25,11 +25,11 @@ export abstract class System implements Stoppable {
 
   /**
    * Creates a new System instance.
-   * @param name - The name of the system.
    * @param query - The components that this system operates on.
+   * @param name - The name of the system. Defaults to '<anonymous system>'.
    */
-  constructor(name: string, query: Query) {
-    this.name = name;
+  constructor(query: Query, name?: string) {
+    this.name = name ?? '<anonymous system>';
     this.query = query;
   }
 

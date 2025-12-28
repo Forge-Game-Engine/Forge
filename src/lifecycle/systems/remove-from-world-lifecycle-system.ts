@@ -15,10 +15,10 @@ export class RemoveFromWorldLifecycleSystem extends System {
    * @param world - The World instance.
    */
   constructor(world: World) {
-    super('RemoveFromWorldLifecycle', [
-      LifetimeComponent.symbol,
-      RemoveFromWorldStrategyComponent.symbol,
-    ]);
+    super(
+      [LifetimeComponent, RemoveFromWorldStrategyComponent],
+      'remove-from-world-lifecycle',
+    );
     this._world = world;
   }
 
@@ -27,9 +27,7 @@ export class RemoveFromWorldLifecycleSystem extends System {
    * @param entity - The entity to check and potentially remove.
    */
   public run(entity: Entity): void {
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
+    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
 
     if (lifetimeComponent.hasExpired) {
       this._world.removeEntity(entity);

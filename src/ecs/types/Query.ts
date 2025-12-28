@@ -1,1 +1,3 @@
-export type Query = Array<symbol>;
+import { ComponentCtor } from './Component.js';
+
+export type Query = ReadonlyArray<ComponentCtor>;

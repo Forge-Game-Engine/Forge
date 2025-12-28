@@ -15,7 +15,7 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     // Arrange
     const lifetimeComponent = new LifetimeComponent(5);
     const strategyComponent = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('test', [lifetimeComponent, strategyComponent]);
+    world.buildAndAddEntity(, [lifetimeComponent, strategyComponent]);
     const system = new RemoveFromWorldLifecycleSystem(world);
     world.addSystem(system);
 
@@ -31,7 +31,7 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     const lifetimeComponent = new LifetimeComponent(5);
     lifetimeComponent.hasExpired = true;
     const strategyComponent = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('test', [lifetimeComponent, strategyComponent]);
+    world.buildAndAddEntity(, [lifetimeComponent, strategyComponent]);
     const system = new RemoveFromWorldLifecycleSystem(world);
     world.addSystem(system);
 
@@ -46,12 +46,12 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     // Arrange
     const lifetimeOnlyComponent = new LifetimeComponent(5);
     lifetimeOnlyComponent.hasExpired = true;
-    world.buildAndAddEntity('test-no-strategy', [lifetimeOnlyComponent]);
+    world.buildAndAddEntity(, [lifetimeOnlyComponent]);
 
     const lifetimeComponent = new LifetimeComponent(5);
     lifetimeComponent.hasExpired = true;
     const strategyComponent = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('test-with-strategy', [
+    world.buildAndAddEntity(, [
       lifetimeComponent,
       strategyComponent,
     ]);
@@ -71,7 +71,7 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     const expiredComponent1 = new LifetimeComponent(5);
     expiredComponent1.hasExpired = true;
     const strategyComponent1 = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('expired-1', [
+    world.buildAndAddEntity(, [
       expiredComponent1,
       strategyComponent1,
     ]);
@@ -79,12 +79,12 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     const activeComponent = new LifetimeComponent(5);
     activeComponent.hasExpired = false;
     const strategyComponent2 = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('active', [activeComponent, strategyComponent2]);
+    world.buildAndAddEntity(, [activeComponent, strategyComponent2]);
 
     const expiredComponent2 = new LifetimeComponent(5);
     expiredComponent2.hasExpired = true;
     const strategyComponent3 = new RemoveFromWorldStrategyComponent();
-    world.buildAndAddEntity('expired-2', [
+    world.buildAndAddEntity(, [
       expiredComponent2,
       strategyComponent3,
     ]);

@@ -15,7 +15,7 @@ describe('ParticlePositionSystem', () => {
   let entity: Entity;
 
   beforeEach(() => {
-    entity = new Entity('entity', {} as World, [
+    entity = new Entity({} as World, [
       new PositionComponent(0, 0),
       new RotationComponent(20),
       new SpeedComponent(10),
@@ -26,9 +26,7 @@ describe('ParticlePositionSystem', () => {
   });
 
   it('should update rotation based on rotation speed and delta time', () => {
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
     const initialRadians = rotationComponent.local;
 
     system.run(entity);
@@ -39,15 +37,9 @@ describe('ParticlePositionSystem', () => {
   });
 
   it('should update position based on speed, rotation, and delta time', () => {
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const speedComponent = entity.getComponentRequired<SpeedComponent>(
-      SpeedComponent.symbol,
-    );
+    const positionComponent = entity.getComponentRequired(PositionComponent);
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
+    const speedComponent = entity.getComponentRequired(SpeedComponent);
 
     const expectedX =
       positionComponent.local.x +
@@ -66,15 +58,9 @@ describe('ParticlePositionSystem', () => {
   });
 
   it('should handle multiple runs correctly', () => {
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const speedComponent = entity.getComponentRequired<SpeedComponent>(
-      SpeedComponent.symbol,
-    );
+    const positionComponent = entity.getComponentRequired(PositionComponent);
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
+    const speedComponent = entity.getComponentRequired(SpeedComponent);
 
     const newRotation =
       rotationComponent.local + Math.PI * time.deltaTimeInSeconds;

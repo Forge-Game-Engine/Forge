@@ -26,7 +26,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', world, [animationComponent]);
+    const entity = new Entity(world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     animationSystem.run(entity);
@@ -54,7 +54,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', world, [animationComponent]);
+    const entity = new Entity(world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     animationSystem.run(entity);
@@ -82,7 +82,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', world, [animationComponent]);
+    const entity = new Entity(world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     animationSystem.run(entity);
@@ -112,7 +112,7 @@ describe('AnimationSystem', () => {
     };
 
     const animationComponent = new AnimationComponent([animation]);
-    const entity = new Entity('test', world, [animationComponent]);
+    const entity = new Entity(world, [animationComponent]);
     const animationSystem = new AnimationSystem(time);
 
     animationSystem.run(entity);

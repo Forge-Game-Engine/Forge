@@ -103,7 +103,10 @@ async function convertGlslToJavaScript() {
     const filename = basename(shaderFile);
     const exportName = glslFileToExportName(filename);
 
-    const escapedShaderSource = shaderSource.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    const escapedShaderSource = shaderSource
+      .replaceAll('\\', '\\\\')
+      .replaceAll('`', '\\`')
+      .replaceAll('$', String.raw`\$`);
     const jsContent = `export const ${exportName} = \`${escapedShaderSource}\`;\n`;
     const dtsContent = `export declare const ${exportName}: string;\n`;
 
@@ -125,7 +128,9 @@ function parseIndexMatches(originalContent) {
 
   const rawImportMatches = [...originalContent.matchAll(IMPORT_REGEX)];
   const rawExportFromMatches = [...originalContent.matchAll(EXPORT_FROM_REGEX)];
-  const rawExportConstMatches = [...originalContent.matchAll(EXPORT_CONST_REGEX)];
+  const rawExportConstMatches = [
+    ...originalContent.matchAll(EXPORT_CONST_REGEX),
+  ];
 
   const importMatches = [];
 
@@ -168,7 +173,9 @@ function buildNewIndexContent(importMatches, originalContent) {
     const exportName = glslFileToExportName(glslBaseName + '.glsl');
 
     let out = '';
-    const exportRegex = new RegExp(`export\\s+const\\s+(\\w+)\\s*=\\s*${importedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    const exportRegex = new RegExp(
+      String.raw`export\s+const\s+(\w+)\s*=\s*${importedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+    );
     for (const line of lines) {
       const exportMatch = line.match(exportRegex);
       if (exportMatch) {

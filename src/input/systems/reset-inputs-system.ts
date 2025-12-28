@@ -5,13 +5,11 @@ import { InputsComponent } from '../components/index.js';
 export class ResetInputSystem extends System {
   /** Constructs a new ResetInputSystem. */
   constructor() {
-    super('reset-inputs', [InputsComponent.symbol]);
+    super([InputsComponent], 'reset-inputs');
   }
 
   public run(entity: Entity): void {
-    const inputsComponent = entity.getComponentRequired<InputsComponent>(
-      InputsComponent.symbol,
-    );
+    const inputsComponent = entity.getComponentRequired(InputsComponent);
 
     inputsComponent.inputManager.reset();
   }

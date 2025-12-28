@@ -16,7 +16,7 @@ export class AnimationSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('animation', [AnimationComponent.symbol]);
+    super([AnimationComponent], 'animation');
     this._time = time;
   }
 
@@ -25,9 +25,7 @@ export class AnimationSystem extends System {
    * @param entity - The entity to update animations for.
    */
   public run(entity: Entity): void {
-    const animationComponent = entity.getComponentRequired<AnimationComponent>(
-      AnimationComponent.symbol,
-    );
+    const animationComponent = entity.getComponentRequired(AnimationComponent);
 
     if (animationComponent.animations.length === 0) {
       return;

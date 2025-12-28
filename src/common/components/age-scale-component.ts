@@ -1,15 +1,13 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 
 /**
  * Component to track how an entity's scale changes with age over its lifetime
  */
-export class AgeScaleComponent implements Component {
-  public name: symbol;
+export class AgeScaleComponent extends Component {
   public originalScaleX: number;
   public originalScaleY: number;
   public finalLifetimeScaleX: number;
   public finalLifetimeScaleY: number;
-  public static readonly symbol = Symbol('AgeScale');
 
   /**
    * Creates an instance of the AgeScaleComponent.
@@ -24,7 +22,8 @@ export class AgeScaleComponent implements Component {
     finalLifetimeScaleX: number,
     finalLifetimeScaleY: number,
   ) {
-    this.name = AgeScaleComponent.symbol;
+    super();
+
     this.originalScaleX = originalScaleX;
     this.originalScaleY = originalScaleY;
     this.finalLifetimeScaleX = finalLifetimeScaleX;

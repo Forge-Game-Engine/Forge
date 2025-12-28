@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import { enforceArray } from '../../utilities/index.js';
 import { linear } from '../easing-functions/index.js';
 
@@ -74,11 +74,8 @@ export type LoopMode = 'none' | 'loop' | 'pingpong';
 /**
  * Represents an animation component that manages a collection of animations.
  */
-export class AnimationComponent implements Component {
-  public name: symbol;
+export class AnimationComponent extends Component {
   private readonly _animations: Required<AnimatedProperty>[];
-
-  public static readonly symbol = Symbol('Animation');
 
   /**
    * Gets the list of animations managed by this component.
@@ -101,7 +98,8 @@ export class AnimationComponent implements Component {
    *   });
    */
   constructor(animations: AnimatedProperty[] | AnimatedProperty = []) {
-    this.name = AnimationComponent.symbol;
+    super();
+
     this._animations = [];
 
     for (const animation of enforceArray(animations)) {

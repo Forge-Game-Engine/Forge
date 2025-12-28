@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 
 export interface TimerTask {
   callback: () => void;
@@ -10,14 +10,12 @@ export interface TimerTask {
   runsSoFar?: number; // how many times this task has executed so far
 }
 
-export class TimerComponent implements Component {
-  public name: symbol;
+export class TimerComponent extends Component {
   public tasks: TimerTask[];
 
-  public static readonly symbol = Symbol('Timer');
-
   constructor(tasks: TimerTask[] = []) {
-    this.name = TimerComponent.symbol;
+    super();
+
     this.tasks = tasks;
   }
 

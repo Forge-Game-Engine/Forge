@@ -23,24 +23,23 @@ export class Axis2dAction implements InputAction, Resettable {
 
   /**
    * Creates a new Axis2dAction.
-   * @param name - The name of the action.
    * @param inputGroup - The input group this action belongs to.
+   * @param name - The name of the action.
    * @param actionResetType - The type of reset behavior for this action. Defaults to `actionResetTypes.zero`.
    */
   constructor(
     name: string,
-    inputGroup: string,
+    inputGroup?: string,
     actionResetType: ActionResetType = actionResetTypes.zero,
   ) {
     this.name = name;
-
     this._actionResetType = actionResetType;
 
     this.valueChangeEvent = new ParameterizedForgeEvent(
       'Axis2d Value Change Event',
     );
 
-    this.inputGroup = inputGroup;
+    this.inputGroup = inputGroup ?? 'game';
   }
 
   public reset(): void {

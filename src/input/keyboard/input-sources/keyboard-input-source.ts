@@ -48,8 +48,8 @@ export class KeyboardInputSource
 
     this._inputManager.addResettable(this);
 
-    window.addEventListener('keydown', this._onKeyDownHandler);
-    window.addEventListener('keyup', this._onKeyUpHandler);
+    globalThis.addEventListener('keydown', this._onKeyDownHandler);
+    globalThis.addEventListener('keyup', this._onKeyUpHandler);
   }
 
   public reset(): void {
@@ -58,8 +58,8 @@ export class KeyboardInputSource
   }
 
   public stop(): void {
-    window.removeEventListener('keydown', this._onKeyDownHandler);
-    window.removeEventListener('keyup', this._onKeyUpHandler);
+    globalThis.removeEventListener('keydown', this._onKeyDownHandler);
+    globalThis.removeEventListener('keyup', this._onKeyUpHandler);
     this._inputManager.removeResettable(this);
   }
 

@@ -32,13 +32,13 @@ describe('World', () => {
   });
 
   it('should build and add an entity', () => {
-    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity = world.buildAndAddEntity(, [mock1Component]);
 
     expect(entity.getComponent(mock1Component.name)).not.toBeNull();
   });
 
   it('should get an entity by its id', () => {
-    const entity = world.buildAndAddEntity('entity1', [mock1Component]);
+    const entity = world.buildAndAddEntity(, [mock1Component]);
     const retrievedEntity = world.getEntityById(entity.id);
     const nonExistingEntity = world.getEntityById(999);
     expect(entity).toEqual(retrievedEntity);
@@ -50,8 +50,8 @@ describe('World', () => {
 
     world.addSystem(system);
 
-    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
-    const entity2 = world.buildAndAddEntity('entity2', [mock1Component]);
+    const entity1 = world.buildAndAddEntity(, [mock1Component]);
+    const entity2 = world.buildAndAddEntity(, [mock1Component]);
     entity2.enabled = false;
 
     world.update(16);
@@ -64,8 +64,8 @@ describe('World', () => {
   it('should call runSystem on each system during update with matching entities', () => {
     const system = new MockSystem('System1', [mock1Component.name]);
 
-    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
-    const entity2 = world.buildAndAddEntity('entity2', [mock2Component]);
+    const entity1 = world.buildAndAddEntity(, [mock1Component]);
+    const entity2 = world.buildAndAddEntity(, [mock2Component]);
 
     world.addSystem(system);
 
@@ -91,18 +91,18 @@ describe('World', () => {
     world.onEntitiesChanged(callback);
     world.removeOnEntitiesChangedCallback(callback);
 
-    world.buildAndAddEntity('entity1', []);
+    world.buildAndAddEntity(, []);
 
     expect(callback).not.toHaveBeenCalled();
   });
 
   it('should return all entities matching the query', () => {
-    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
-    const entity2 = world.buildAndAddEntity('entity2', [
+    const entity1 = world.buildAndAddEntity(, [mock1Component]);
+    const entity2 = world.buildAndAddEntity(, [
       mock1Component,
       mock2Component,
     ]);
-    const entity3 = world.buildAndAddEntity('entity3', [mock2Component]);
+    const entity3 = world.buildAndAddEntity(, [mock2Component]);
 
     // Query for entities with mock1Component
     const result = world.queryEntities([mock1Component.name]);
@@ -135,13 +135,13 @@ describe('World', () => {
   });
 
   it('should return the first entity matching the query in queryEntity', () => {
-    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
-    const entity2 = world.buildAndAddEntity('entity2', [
+    const entity1 = world.buildAndAddEntity(, [mock1Component]);
+    const entity2 = world.buildAndAddEntity(, [
       mock1Component,
       mock2Component,
     ]);
 
-    world.buildAndAddEntity('entity3', [mock2Component]);
+    world.buildAndAddEntity(, [mock2Component]);
 
     // Should return entity1, as it is the first matching entity
     const result = world.queryEntity([mock1Component.name]);
@@ -165,8 +165,8 @@ describe('World', () => {
   });
 
   it('should return the first entity matching the query in queryEntityRequired', () => {
-    const entity1 = world.buildAndAddEntity('entity1', [mock1Component]);
-    const entity2 = world.buildAndAddEntity('entity2', [
+    const entity1 = world.buildAndAddEntity(, [mock1Component]);
+    const entity2 = world.buildAndAddEntity(, [
       mock1Component,
       mock2Component,
     ]);
@@ -184,7 +184,7 @@ describe('World', () => {
   });
 
   it('should throw an error if no entity matches the query in queryEntityRequired', () => {
-    world.buildAndAddEntity('entity1', [mock1Component]);
+    world.buildAndAddEntity(, [mock1Component]);
 
     expect(() => world.queryEntityRequired([mock2Component.name])).toThrowError(
       'No entity found matching the query: mock2',
@@ -192,8 +192,8 @@ describe('World', () => {
   });
 
   it('should build and add an entity with parent parameter', () => {
-    const parent = world.buildAndAddEntity('parent', [mock1Component]);
-    const child = world.buildAndAddEntity('child', [mock2Component], {
+    const parent = world.buildAndAddEntity(, [mock1Component]);
+    const child = world.buildAndAddEntity(, [mock2Component], {
       parent,
     });
 
@@ -215,8 +215,8 @@ describe('World', () => {
   });
 
   it('should build and add an entity with both enabled and parent parameters', () => {
-    const parent = world.buildAndAddEntity('parent', [mock1Component]);
-    const child = world.buildAndAddEntity('child', [mock2Component], {
+    const parent = world.buildAndAddEntity(, [mock1Component]);
+    const child = world.buildAndAddEntity(, [mock2Component], {
       enabled: false,
       parent,
     });
@@ -227,11 +227,11 @@ describe('World', () => {
   });
 
   it('should remove an entity and its children recursively', () => {
-    const parent = world.buildAndAddEntity('parent', [mock1Component]);
-    const child = world.buildAndAddEntity('child', [mock1Component], {
+    const parent = world.buildAndAddEntity(, [mock1Component]);
+    const child = world.buildAndAddEntity(, [mock1Component], {
       parent,
     });
-    const grandchild = world.buildAndAddEntity('grandchild', [mock1Component], {
+    const grandchild = world.buildAndAddEntity(, [mock1Component], {
       parent: child,
     });
 
@@ -251,7 +251,7 @@ describe('World', () => {
     world.addSystem(system);
 
     runMock.mockClear();
-    const entity = world.buildAndAddEntity('entity-for-system', [
+    const entity = world.buildAndAddEntity(, [
       mock1Component,
     ]);
 
@@ -271,8 +271,8 @@ describe('World', () => {
     const callback = vi.fn();
     world.onEntitiesChanged(callback);
 
-    const parent = world.buildAndAddEntity('parent-evt', [mock1Component]);
-    world.buildAndAddEntity('child-evt', [mock1Component], {
+    const parent = world.buildAndAddEntity(, [mock1Component]);
+    world.buildAndAddEntity(, [mock1Component], {
       parent,
     });
 

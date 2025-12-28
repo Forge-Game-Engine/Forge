@@ -6,8 +6,6 @@ describe('LifetimeComponent', () => {
     // Arrange & Act
     const component = new LifetimeComponent(5);
 
-    // Assert
-    expect(component.name).toBe(LifetimeComponent.symbol);
     expect(component.elapsedSeconds).toBe(0);
     expect(component.durationSeconds).toBe(5);
     expect(component.hasExpired).toBe(false);

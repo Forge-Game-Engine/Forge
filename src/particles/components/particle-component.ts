@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 
 /**
  * Represents the properties of a particle.
@@ -14,19 +14,17 @@ export interface ParticleOptions {
  * Represents a particle component.
  * This class is used to define properties and behavior for particles, such as their rotation speed.
  */
-export class ParticleComponent implements Component {
-  public name: symbol;
+export class ParticleComponent extends Component {
   public rotationSpeed: number;
-
-  public static readonly symbol = Symbol('Particle');
 
   /**
    * Creates an instance of ParticleComponent.
    * @param options - The configuration options for the particle component.
    */
   constructor(options: ParticleOptions) {
+    super();
+
     const { rotationSpeed } = options;
-    this.name = ParticleComponent.symbol;
 
     this.rotationSpeed = rotationSpeed;
   }

@@ -15,7 +15,7 @@ export class CameraSystem extends System {
    * @param time - The `Time` instance for managing time-related operations.
    */
   constructor(time: Time) {
-    super('camera', [CameraComponent.symbol, PositionComponent.symbol]);
+    super([CameraComponent, PositionComponent], 'camera');
 
     this._time = time;
   }
@@ -26,9 +26,7 @@ export class CameraSystem extends System {
    * @param entity - The entity that contains the `CameraComponent` and `PositionComponent`.
    */
   public run(entity: Entity): void {
-    const cameraComponent = entity.getComponentRequired<CameraComponent>(
-      CameraComponent.symbol,
-    );
+    const cameraComponent = entity.getComponentRequired(CameraComponent);
 
     const {
       isStatic,
@@ -44,9 +42,7 @@ export class CameraSystem extends System {
       return;
     }
 
-    const position = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const position = entity.getComponentRequired(PositionComponent);
 
     if (zoomInput) {
       // Use multiplicative (exponential) scaling so scrolling has consistent effect

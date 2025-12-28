@@ -1,15 +1,12 @@
 import { Howl, type HowlOptions } from 'howler';
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 
 /**
  * Component to manage audio in the game.
  */
-export class AudioComponent implements Component {
-  public name: symbol;
+export class AudioComponent extends Component {
   public sound: Howl;
   public playSound: boolean;
-
-  public static readonly symbol = Symbol('Sound');
 
   /**
    * Creates an instance of AudioComponent.
@@ -25,7 +22,8 @@ export class AudioComponent implements Component {
    * }, true);
    */
   constructor(options: HowlOptions, playSound = false) {
-    this.name = AudioComponent.symbol;
+    super();
+
     this.sound = new Howl(options);
     this.playSound = playSound;
   }

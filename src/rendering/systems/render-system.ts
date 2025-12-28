@@ -10,7 +10,7 @@ export class RenderSystem extends System {
   private readonly _renderContext: RenderContext;
 
   constructor(renderContext: RenderContext) {
-    super('renderer', [RenderLayerComponent.symbol]);
+    super([RenderLayerComponent], 'renderer');
 
     this._renderContext = renderContext;
 
@@ -19,12 +19,8 @@ export class RenderSystem extends System {
 
   public override beforeAll(entities: Entity[]): Entity[] {
     entities.sort((a, b) => {
-      const orderA = a.getComponentRequired<RenderLayerComponent>(
-        RenderLayerComponent.symbol,
-      ).order;
-      const orderB = b.getComponentRequired<RenderLayerComponent>(
-        RenderLayerComponent.symbol,
-      ).order;
+      const orderA = a.getComponentRequired(RenderLayerComponent).order;
+      const orderB = b.getComponentRequired(RenderLayerComponent).order;
 
       return orderA - orderB;
     });
@@ -35,9 +31,7 @@ export class RenderSystem extends System {
   }
 
   public run(entity: Entity): void {
-    const layerComponent = entity.getComponentRequired<RenderLayerComponent>(
-      RenderLayerComponent.symbol,
-    );
+    const layerComponent = entity.getComponentRequired(RenderLayerComponent);
 
     const { gl } = this._renderContext;
 
@@ -75,13 +69,9 @@ export class RenderSystem extends System {
 
     const { cameraEntity } = renderable;
 
-    const cameraPosition = cameraEntity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const cameraPosition = cameraEntity.getComponentRequired(PositionComponent);
 
-    const camera = cameraEntity.getComponentRequired<CameraComponent>(
-      CameraComponent.symbol,
-    );
+    const camera = cameraEntity.getComponentRequired(CameraComponent);
 
     const projectionMatrix = createProjectionMatrix(
       gl.canvas.width,

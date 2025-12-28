@@ -1,14 +1,11 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 
 /**
  * Component to flip an entity's rendering in the x or y direction
  */
-export class FlipComponent implements Component {
-  public name: symbol;
+export class FlipComponent extends Component {
   public flipX: boolean;
   public flipY: boolean;
-
-  public static readonly symbol = Symbol('Flip');
 
   /**
    * Creates an instance of FlipComponent.
@@ -16,7 +13,8 @@ export class FlipComponent implements Component {
    * @param flipY - Whether to flip the entity in the y direction.
    */
   constructor(flipX: boolean = false, flipY: boolean = false) {
-    this.name = FlipComponent.symbol;
+    super();
+
     this.flipX = flipX;
     this.flipY = flipY;
   }

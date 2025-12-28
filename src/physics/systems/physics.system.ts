@@ -13,11 +13,10 @@ export class PhysicsSystem extends System {
   private readonly _engine: Engine;
 
   constructor(time: Time, engine: Engine) {
-    super('physics', [
-      PositionComponent.symbol,
-      RotationComponent.symbol,
-      PhysicsBodyComponent.symbol,
-    ]);
+    super(
+      [PositionComponent, RotationComponent, PhysicsBodyComponent],
+      'physics',
+    );
 
     this._time = time;
     this._engine = engine;
@@ -31,17 +30,11 @@ export class PhysicsSystem extends System {
 
   public override run(entity: Entity): void {
     const physicsBodyComponent =
-      entity.getComponentRequired<PhysicsBodyComponent>(
-        PhysicsBodyComponent.symbol,
-      );
+      entity.getComponentRequired(PhysicsBodyComponent);
 
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const positionComponent = entity.getComponentRequired(PositionComponent);
 
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
 
     if (physicsBodyComponent.physicsBody.isStatic) {
       Body.setPosition(physicsBodyComponent.physicsBody, {
