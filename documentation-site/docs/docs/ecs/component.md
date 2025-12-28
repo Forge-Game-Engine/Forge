@@ -4,11 +4,11 @@ sidebar_position: 4
 
 # Component
 
-A [`Component`](../../api/interfaces/Component) is a simple data container. It has no logic.
+A [`Component`](../../api/classes/Component) is a simple data container. It has no logic.
 
 ## Creating a component
 
-To create a component, you need to define a class that implements the [`Component`](../../api/interfaces/Component) interface. The interface enforces a [`name`](../../api/interfaces/Component#name) property.
+To create a component, you need to define a class that implements the [`Component`](../../api/classes/Component) interface. The interface enforces a [`name`](../../api/classes/Component#name) property.
 
 :::info
 
@@ -27,14 +27,13 @@ These properties represent game state and are generally expected to be [mutable]
 Here is an example of the [`RotationComponent`](../../api/classes/RotationComponent):
 
 ```ts
-export class RotationComponent implements Component {
-  public name: symbol;
+export class RotationComponent extends Component {
   public radians: number;
 
-  public static readonly symbol = Symbol('Rotation');
-
   constructor(degrees: number) {
-    this.name = RotationComponent.symbol;
+    super();
+
+    this.name = RotationComponent;
     this.radians = (degrees * Math.PI) / 180;
   }
 }
