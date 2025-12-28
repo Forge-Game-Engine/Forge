@@ -13,7 +13,7 @@ describe('AgeScaleSystem', () => {
     const ageScaleComponent = new AgeScaleComponent(1, 1, 0.5, 0.1); // originalScale = (1,1), lifetimeScaleReduction = (0.5,0.1)
     const scaleComponent = new ScaleComponent(1, 1);
 
-    const entity = new Entity('test', world, [
+    const entity = new Entity(world, [
       lifetimeComponent,
       scaleComponent,
       ageScaleComponent,
@@ -40,7 +40,7 @@ describe('AgeScaleSystem', () => {
     const expectedScaleY = 0.3;
     const scaleComponent = new ScaleComponent(1, 1);
 
-    const entity = new Entity('test', world, [
+    const entity = new Entity(world, [
       lifetimeComponent,
       scaleComponent,
       ageScaleComponent,

@@ -15,7 +15,7 @@ export class LifetimeTrackingSystem extends System {
    * @param world - The World instance.
    */
   constructor(world: World) {
-    super('LifetimeTracking', [LifetimeComponent.symbol]);
+    super([LifetimeComponent], 'lifetime-tracking');
     this._time = world.time;
   }
 
@@ -24,9 +24,7 @@ export class LifetimeTrackingSystem extends System {
    * @param entity - The entity to update.
    */
   public run(entity: Entity): void {
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
+    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
 
     lifetimeComponent.elapsedSeconds += this._time.deltaTimeInSeconds;
 

@@ -16,12 +16,10 @@ export class ParticlePositionSystem extends System {
    * @param time - The Time instance.
    */
   constructor(time: Time) {
-    super('particlePosition', [
-      ParticleComponent.symbol,
-      PositionComponent.symbol,
-      RotationComponent.symbol,
-      SpeedComponent.symbol,
-    ]);
+    super(
+      [ParticleComponent, PositionComponent, RotationComponent, SpeedComponent],
+      'particle-position',
+    );
     this._time = time;
   }
 
@@ -32,18 +30,10 @@ export class ParticlePositionSystem extends System {
    * @param entity - The entity to update particle position for.
    */
   public run(entity: Entity): void {
-    const particleComponent = entity.getComponentRequired<ParticleComponent>(
-      ParticleComponent.symbol,
-    );
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const speedComponent = entity.getComponentRequired<SpeedComponent>(
-      SpeedComponent.symbol,
-    );
+    const particleComponent = entity.getComponentRequired(ParticleComponent);
+    const positionComponent = entity.getComponentRequired(PositionComponent);
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
+    const speedComponent = entity.getComponentRequired(SpeedComponent);
 
     positionComponent.local.x +=
       speedComponent.speed *

@@ -16,10 +16,10 @@ export function addCamera(
   world: World,
   cameraOptions: Partial<CameraComponentOptions>,
 ): Entity {
-  const cameraEntity = world.buildAndAddEntity('camera', [
-    new CameraComponent(cameraOptions),
-    new PositionComponent(0, 0),
-  ]);
+  const cameraEntity = world.buildAndAddEntity(
+    [new CameraComponent(cameraOptions), new PositionComponent(0, 0)],
+    { name: 'camera' },
+  );
 
   world.addSystem(new CameraSystem(world.time));
 

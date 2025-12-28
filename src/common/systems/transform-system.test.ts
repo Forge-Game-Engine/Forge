@@ -11,7 +11,7 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const entity = new Entity('root', world, [
+    const entity = new Entity(world, [
       new PositionComponent(10, 20),
       new RotationComponent(Math.PI / 4),
       new ScaleComponent(2, 3),
@@ -19,13 +19,9 @@ describe('TransformSystem', () => {
 
     system.run(entity);
 
-    const position = entity.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotation = entity.getComponent<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const scale = entity.getComponent<ScaleComponent>(ScaleComponent.symbol);
+    const position = entity.getComponent(PositionComponent);
+    const rotation = entity.getComponent(RotationComponent);
+    const scale = entity.getComponent(ScaleComponent);
 
     expect(position?.world.x).toBe(10);
     expect(position?.world.y).toBe(20);
@@ -38,13 +34,13 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(100, 200),
       new RotationComponent(0),
       new ScaleComponent(1, 1),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(10, 20),
       new RotationComponent(0),
       new ScaleComponent(1, 1),
@@ -57,9 +53,7 @@ describe('TransformSystem', () => {
     // Then process child
     system.run(child);
 
-    const childPosition = child.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const childPosition = child.getComponent(PositionComponent);
 
     expect(childPosition?.world.x).toBe(110);
     expect(childPosition?.world.y).toBe(220);
@@ -69,13 +63,13 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(Math.PI / 2), // 90 degrees
       new ScaleComponent(1, 1),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(10, 0),
       new RotationComponent(0),
       new ScaleComponent(1, 1),
@@ -86,9 +80,7 @@ describe('TransformSystem', () => {
     system.run(parent);
     system.run(child);
 
-    const childPosition = child.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const childPosition = child.getComponent(PositionComponent);
 
     // After 90-degree rotation, (10, 0) becomes approximately (0, 10)
     expect(childPosition?.world.x).toBeCloseTo(0, 5);
@@ -99,13 +91,13 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
       new ScaleComponent(2, 3),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(10, 20),
       new RotationComponent(0),
       new ScaleComponent(1, 1),
@@ -116,9 +108,7 @@ describe('TransformSystem', () => {
     system.run(parent);
     system.run(child);
 
-    const childPosition = child.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const childPosition = child.getComponent(PositionComponent);
 
     // Child position scaled by parent scale
     expect(childPosition?.world.x).toBe(20);
@@ -129,13 +119,13 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(Math.PI / 4),
       new ScaleComponent(1, 1),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(Math.PI / 4),
       new ScaleComponent(1, 1),
@@ -146,9 +136,7 @@ describe('TransformSystem', () => {
     system.run(parent);
     system.run(child);
 
-    const childRotation = child.getComponent<RotationComponent>(
-      RotationComponent.symbol,
-    );
+    const childRotation = child.getComponent(RotationComponent);
 
     // Child rotation = parent rotation + child local rotation
     expect(childRotation?.world).toBeCloseTo(Math.PI / 2, 5);
@@ -158,13 +146,13 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
       new ScaleComponent(2, 3),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
       new ScaleComponent(4, 5),
@@ -175,9 +163,7 @@ describe('TransformSystem', () => {
     system.run(parent);
     system.run(child);
 
-    const childScale = child.getComponent<ScaleComponent>(
-      ScaleComponent.symbol,
-    );
+    const childScale = child.getComponent(ScaleComponent);
 
     // Child scale = parent scale * child local scale
     expect(childScale?.world.x).toBe(8);
@@ -188,19 +174,19 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const grandparent = new Entity('grandparent', world, [
+    const grandparent = new Entity(world, [
       new PositionComponent(100, 100),
       new RotationComponent(0),
       new ScaleComponent(2, 2),
     ]);
 
-    const parent = new Entity('parent', world, [
+    const parent = new Entity(world, [
       new PositionComponent(10, 10),
       new RotationComponent(0),
       new ScaleComponent(2, 2),
     ]);
 
-    const child = new Entity('child', world, [
+    const child = new Entity(world, [
       new PositionComponent(5, 5),
       new RotationComponent(0),
       new ScaleComponent(2, 2),
@@ -213,12 +199,8 @@ describe('TransformSystem', () => {
     system.run(parent);
     system.run(child);
 
-    const childPosition = child.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const childScale = child.getComponent<ScaleComponent>(
-      ScaleComponent.symbol,
-    );
+    const childPosition = child.getComponent(PositionComponent);
+    const childScale = child.getComponent(ScaleComponent);
 
     // Position: grandparent(100,100) + parent_local(10,10)*2 + child_local(5,5)*4
     // = 100 + 20 + 20 = 140
@@ -234,9 +216,9 @@ describe('TransformSystem', () => {
     const world = new World('test-world');
     const system = new TransformSystem();
 
-    const parent = new Entity('parent', world, [new PositionComponent(10, 20)]);
+    const parent = new Entity(world, [new PositionComponent(10, 20)]);
 
-    const child = new Entity('child', world, [new PositionComponent(5, 5)]);
+    const child = new Entity(world, [new PositionComponent(5, 5)]);
 
     child.parentTo(parent);
 
@@ -246,9 +228,7 @@ describe('TransformSystem', () => {
       system.run(child);
     }).not.toThrow();
 
-    const childPosition = child.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
+    const childPosition = child.getComponent(PositionComponent);
 
     expect(childPosition?.world.x).toBe(15);
     expect(childPosition?.world.y).toBe(25);

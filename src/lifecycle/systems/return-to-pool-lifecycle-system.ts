@@ -12,10 +12,10 @@ export class ReturnToPoolLifecycleSystem extends System {
    * Creates an instance of ReturnToPoolLifecycleSystem.
    */
   constructor() {
-    super('ReturnToPoolLifecycle', [
-      LifetimeComponent.symbol,
-      ReturnToPoolStrategyComponent.symbol,
-    ]);
+    super(
+      [LifetimeComponent, ReturnToPoolStrategyComponent],
+      'return-to-pool-lifecycle',
+    );
   }
 
   /**
@@ -23,14 +23,12 @@ export class ReturnToPoolLifecycleSystem extends System {
    * @param entity - The entity to check and potentially return to pool.
    */
   public run(entity: Entity): void {
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
+    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
 
     if (lifetimeComponent.hasExpired) {
-      const poolStrategyComponent = entity.getComponentRequired<
-        ReturnToPoolStrategyComponent<Entity>
-      >(ReturnToPoolStrategyComponent.symbol);
+      const poolStrategyComponent = entity.getComponentRequired(
+        ReturnToPoolStrategyComponent,
+      );
 
       // Return to pool
       poolStrategyComponent.pool.release(entity);

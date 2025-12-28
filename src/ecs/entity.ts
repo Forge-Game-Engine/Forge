@@ -1,4 +1,4 @@
-import type { Component } from './types/index.js';
+import { Component, ComponentCtor } from './types/index.js';
 import type { Query } from './types/Query.js';
 import type { World } from './world.js';
 
@@ -10,6 +10,11 @@ export interface EntityOptions {
    * Indicates whether the entity is enabled.
    */
   enabled: boolean;
+
+  /**
+   * The name of the entity.
+   */
+  name?: string;
 
   /**
    * The optional parent entity to assign at creation.
@@ -71,13 +76,11 @@ export class Entity {
 
   /**
    * Creates a new Entity instance.
-   * @param name - The name of the entity.
    * @param world - The world to which this entity belongs.
    * @param initialComponents - The initial components to associate with the entity.
    * @param options - Optional configuration for the entity.
    */
   constructor(
-    name: string,
     world: World,
     initialComponents: Component[],
     options: Partial<EntityOptions> = {},
@@ -89,11 +92,14 @@ export class Entity {
 
     this._id = Entity._generateId();
     this._components = new Map<symbol, Component>(
-      initialComponents.map((component) => [component.name, component]),
+      initialComponents.map((component) => [
+        (component.constructor as ComponentCtor).id,
+        component,
+      ]),
     );
-    this.name = name;
     this.world = world;
     this.enabled = mergedOptions.enabled;
+    this.name = mergedOptions.name ?? '[anonymous entity]';
 
     if (mergedOptions.parent) {
       this.parentTo(mergedOptions.parent);
@@ -163,25 +169,28 @@ export class Entity {
    */
   public addComponents(...components: Component[]): void {
     for (const component of components) {
-      if (this._components.has(component.name)) {
+      const type = component.constructor as ComponentCtor;
+      const key = type.id;
+
+      if (this._components.has(key)) {
         throw new Error(
-          `Unable to add component "${component.name.toString()}" to entity "${this.name}", it already exists on the entity.`,
+          `Unable to add component "${key.toString()}" to entity "${this.name}", it already exists on the entity.`,
         );
       }
 
-      this._components.set(component.name, component);
+      this._components.set(key, component);
       this.world.updateSystemEntities(this);
     }
   }
 
   /**
    * Checks if the entity contains all specified components.
-   * @param query - The symbols of the components to check.
+   * @param query - The types of the components to check.
    * @returns True if the entity contains all specified components, otherwise false.
    */
   public containsAllComponents(query: Query): boolean {
-    for (const symbol of query) {
-      if (!this._components.has(symbol)) {
+    for (const ComponentType of query) {
+      if (!this._components.has(ComponentType.id)) {
         return false;
       }
     }
@@ -191,38 +200,42 @@ export class Entity {
 
   /**
    * Gets a component by its name.
-   * @param componentName - The name of the component to get.
+   * @param componentType - The type of the component to get.
    * @returns The component if found, otherwise null.
    */
-  public getComponent<T extends Component>(componentName: symbol): T | null {
-    return (this._components.get(componentName) as T) ?? null;
+  public getComponent<C extends ComponentCtor>(
+    componentType: C,
+  ): InstanceType<C> | null {
+    return (this._components.get(componentType.id) as InstanceType<C>) ?? null;
   }
 
   /**
    * Gets a component by its name.
-   * @param componentName - The name of the component to get.
+   * @param componentType - The type of the component to get.
    * @returns The component if found.
    * @throws An error if the component is not found.
    */
-  public getComponentRequired<T extends Component>(componentName: symbol): T {
-    const component = this.getComponent<T>(componentName);
+  public getComponentRequired<C extends ComponentCtor>(
+    componentType: C,
+  ): InstanceType<C> {
+    const componentInstance = this.getComponent(componentType);
 
-    if (component === null) {
+    if (componentInstance === null) {
       throw new Error(
-        `Tried to get required component "${componentName.toString()}" but it is null on the entity "${this.name}"`,
+        `Tried to get required component "${componentType.id.toString()}" but it is null on the entity "${this.name}"`,
       );
     }
 
-    return component;
+    return componentInstance;
   }
 
   /**
    * Removes components from the entity.
-   * @param componentNames - The name of the components to remove.
+   * @param componentTypes - The types of the components to remove.
    */
-  public removeComponents(...componentNames: symbol[]): void {
-    for (const componentName of componentNames) {
-      this._components.delete(componentName);
+  public removeComponents(...componentTypes: ComponentCtor[]): void {
+    for (const ComponentType of componentTypes) {
+      this._components.delete(ComponentType.id);
     }
 
     this.world.updateSystemEntities(this);

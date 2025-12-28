@@ -43,26 +43,17 @@ function bindInstanceData(
   instanceDataBufferArray: Float32Array,
   offset: number,
 ) {
-  const position = entity.getComponentRequired<PositionComponent>(
-    PositionComponent.symbol,
-  );
+  const position = entity.getComponentRequired(PositionComponent);
 
-  const rotation = entity.getComponent<RotationComponent>(
-    RotationComponent.symbol,
-  );
+  const rotation = entity.getComponent(RotationComponent);
 
-  const scale = entity.getComponent<ScaleComponent>(ScaleComponent.symbol);
+  const scale = entity.getComponent(ScaleComponent);
 
-  const spriteComponent = entity.getComponentRequired<SpriteComponent>(
-    SpriteComponent.symbol,
+  const spriteComponent = entity.getComponentRequired(SpriteComponent);
+  const flipComponent = entity.getComponent(FlipComponent);
+  const spriteAnimationComponent = entity.getComponent(
+    SpriteAnimationComponent,
   );
-  const flipComponent = entity.getComponent<FlipComponent>(
-    FlipComponent.symbol,
-  );
-  const spriteAnimationComponent =
-    entity.getComponent<SpriteAnimationComponent>(
-      SpriteAnimationComponent.symbol,
-    );
 
   let animationFrame: AnimationFrame | null = null;
 

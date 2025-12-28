@@ -6,14 +6,12 @@ export class TimerSystem extends System {
   private readonly _time: Time;
 
   constructor(time: Time) {
-    super('timer', [TimerComponent.symbol]);
+    super([TimerComponent], 'timer');
     this._time = time;
   }
 
   public run(entity: Entity): void {
-    const timerComponent = entity.getComponentRequired<TimerComponent>(
-      TimerComponent.symbol,
-    );
+    const timerComponent = entity.getComponentRequired(TimerComponent);
 
     if (timerComponent.tasks.length === 0) {
       return;

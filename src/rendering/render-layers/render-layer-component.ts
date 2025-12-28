@@ -16,10 +16,7 @@ const defaultOptions: Required<RenderLayerComponentOptions> = {
 /**
  * The `ForgeRenderLayer` class represents a rendering layer with its own canvas and WebGL context.
  */
-export class RenderLayerComponent implements Component {
-  /** The name of the render layer. */
-  public name: symbol;
-
+export class RenderLayerComponent extends Component {
   /** The order of the render layer (lower numbers are rendered first). */
   public order: number;
 
@@ -29,21 +26,19 @@ export class RenderLayerComponent implements Component {
   /** The map of renderables to their associated instance batches. */
   public readonly renderables: Map<Renderable, InstanceBatch>;
 
-  /** A static symbol property that uniquely identifies the `SpriteComponent`. */
-  public static readonly symbol = Symbol('Sprite');
-
   /**
    * Constructs a new instance of the `RenderLayerComponent` class.
    * @param options - The options for configuring the render layer.
    * @throws An error if the WebGL2 context is not found.
    */
   constructor(options: RenderLayerComponentOptions = {}) {
+    super();
+
     const { order, sortEntities } = {
       ...defaultOptions,
       ...options,
     };
 
-    this.name = RenderLayerComponent.symbol;
     this.order = order;
 
     this.sortEntities = sortEntities;

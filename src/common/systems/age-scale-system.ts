@@ -11,11 +11,7 @@ export class AgeScaleSystem extends System {
    * Creates an instance of AgeScaleSystem.
    */
   constructor() {
-    super('AgeScale', [
-      LifetimeComponent.symbol,
-      ScaleComponent.symbol,
-      AgeScaleComponent.symbol,
-    ]);
+    super([LifetimeComponent, ScaleComponent, AgeScaleComponent], 'age-scale');
   }
 
   /**
@@ -23,15 +19,9 @@ export class AgeScaleSystem extends System {
    * @param entity - The entity whose scale will be updated according to its lifetime.
    */
   public run(entity: Entity): void {
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
-    const scaleComponent = entity.getComponentRequired<ScaleComponent>(
-      ScaleComponent.symbol,
-    );
-    const ageScaleComponent = entity.getComponentRequired<AgeScaleComponent>(
-      AgeScaleComponent.symbol,
-    );
+    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
+    const scaleComponent = entity.getComponentRequired(ScaleComponent);
+    const ageScaleComponent = entity.getComponentRequired(AgeScaleComponent);
 
     const lifetimeRatio =
       lifetimeComponent.elapsedSeconds / lifetimeComponent.durationSeconds;

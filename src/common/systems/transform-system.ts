@@ -13,7 +13,7 @@ export class TransformSystem extends System {
    * Creates an instance of TransformSystem.
    */
   constructor() {
-    super('Transform', []);
+    super([], 'transform');
   }
 
   /**
@@ -21,17 +21,9 @@ export class TransformSystem extends System {
    * @param entity - The entity whose world transform will be updated.
    */
   public run(entity: Entity): void {
-    const positionComponent = entity.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
-
-    const rotationComponent = entity.getComponent<RotationComponent>(
-      RotationComponent.symbol,
-    );
-
-    const scaleComponent = entity.getComponent<ScaleComponent>(
-      ScaleComponent.symbol,
-    );
+    const positionComponent = entity.getComponent(PositionComponent);
+    const rotationComponent = entity.getComponent(RotationComponent);
+    const scaleComponent = entity.getComponent(ScaleComponent);
 
     const parent = entity.parent;
 
@@ -83,15 +75,9 @@ export class TransformSystem extends System {
     rotationComponent: RotationComponent | null,
     scaleComponent: ScaleComponent | null,
   ): void {
-    const parentPosition = parent.getComponent<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const parentRotation = parent.getComponent<RotationComponent>(
-      RotationComponent.symbol,
-    );
-    const parentScale = parent.getComponent<ScaleComponent>(
-      ScaleComponent.symbol,
-    );
+    const parentPosition = parent.getComponent(PositionComponent);
+    const parentRotation = parent.getComponent(RotationComponent);
+    const parentScale = parent.getComponent(ScaleComponent);
 
     this._applyParentRotation(rotationComponent, parentRotation);
     this._applyParentScale(scaleComponent, parentScale);

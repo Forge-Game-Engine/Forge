@@ -62,8 +62,8 @@ export class World implements Updatable, Stoppable {
    * Creates a new World instance.
    * @param name - The name of the world.
    */
-  constructor(name: string) {
-    this.name = name;
+  constructor(name?: string) {
+    this.name = name ?? '[anonymous world]';
   }
 
   /**
@@ -142,7 +142,7 @@ export class World implements Updatable, Stoppable {
 
     if (entity === null) {
       throw new Error(
-        `No entity found matching the query: ${query.map((s) => s.description).join(', ')}`,
+        `No entity found matching the query: ${query.map((s) => s.id.description).join(', ')}`,
       );
     }
 
@@ -323,17 +323,15 @@ export class World implements Updatable, Stoppable {
 
   /**
    * Builds and adds an entity to the world.
-   * @param name - The name of the entity.
    * @param components - The components to add to the entity.
    * @param options - Optional configuration for the entity.
    * @returns The created entity.
    */
   public buildAndAddEntity(
-    name: string,
     components: Component[],
     options: Partial<EntityOptions> = {},
   ): Entity {
-    const entity = new Entity(name, this, components, options);
+    const entity = new Entity(this, components, options);
     this.addEntity(entity);
 
     return entity;

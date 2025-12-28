@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
 import { Rect } from '../../math/index.js';
 
@@ -52,10 +52,7 @@ const defaultOptions: CameraComponentOptions = {
  * sensitivity, as well as options to restrict zoom levels and enable/disable panning
  * and zooming.
  */
-export class CameraComponent implements Component {
-  /** The name property holds the unique symbol for this component. */
-  public name: symbol;
-
+export class CameraComponent extends Component {
   /** The current zoom level of the camera. */
   public zoom: number;
 
@@ -80,20 +77,18 @@ export class CameraComponent implements Component {
 
   public panInput?: Axis2dAction;
 
-  /** A static symbol property that uniquely identifies the `CameraComponent`. */
-  public static readonly symbol = Symbol('Camera');
-
   /**
    * Constructs a new instance of the `CameraComponent` class with the given options.
    * @param options - Partial options to configure the camera component.
    */
   constructor(options: Partial<CameraComponentOptions> = defaultOptions) {
+    super();
+
     const mergedOptions: CameraComponentOptions = {
       ...defaultOptions,
       ...options,
     };
 
-    this.name = CameraComponent.symbol;
     this.zoom = mergedOptions.zoom;
     this.zoomSensitivity = mergedOptions.zoomSensitivity;
     this.panSensitivity = mergedOptions.panSensitivity;

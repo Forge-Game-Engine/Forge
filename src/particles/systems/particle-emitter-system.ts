@@ -33,7 +33,7 @@ export class ParticleEmitterSystem extends System {
    * @param world - The World instance.
    */
   constructor(world: World) {
-    super('particleEmitter', [ParticleEmitterComponent.symbol]);
+    super([ParticleEmitterComponent], 'particle-emitter');
     this._time = world.time;
     this._world = world;
     this._random = new Random();
@@ -44,10 +44,9 @@ export class ParticleEmitterSystem extends System {
    * @param entity - The entity to update particle emitters for.
    */
   public run(entity: Entity): void {
-    const particleEmitterComponent =
-      entity.getComponentRequired<ParticleEmitterComponent>(
-        ParticleEmitterComponent.symbol,
-      );
+    const particleEmitterComponent = entity.getComponentRequired(
+      ParticleEmitterComponent,
+    );
 
     for (const particleEmitter of particleEmitterComponent.emitters.values()) {
       particleEmitter.currentEmitDuration += this._time.deltaTimeInSeconds;
@@ -127,7 +126,7 @@ export class ParticleEmitterSystem extends System {
 
     const spawnPosition = particleEmitter.spawnPosition();
 
-    this._world.buildAndAddEntity('particle', [
+    this._world.buildAndAddEntity([
       new SpriteComponent(particleEmitter.sprite),
       new ParticleComponent({
         rotationSpeed,

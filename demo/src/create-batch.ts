@@ -22,7 +22,7 @@ export const createBatch = async (
   const entities: Entity[] = [];
 
   for (let i = 0; i < size; i++) {
-    const entity = world.buildAndAddEntity('sprite', [
+    const entity = world.buildAndAddEntity([
       new PositionComponent(
         random.randomFloat(-window.innerWidth / 2, window.innerWidth / 2),
         random.randomFloat(-window.innerHeight / 2, window.innerHeight / 2),

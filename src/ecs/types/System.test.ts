@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { System } from './System';
 import { Entity } from '../entity';
 import { World } from '../world';
+import { PositionComponent } from '../../common';
 
 class TestSystem extends System {
   public run(): void {
@@ -16,16 +17,18 @@ describe('System', () => {
 
   beforeEach(() => {
     world = new World('TestWorld');
-    system = new TestSystem('TestSystem', [Symbol('TestComponent')]);
-    entities = [
-      new Entity('Entity1', world, []),
-      new Entity('Entity2', world, []),
-    ];
+    system = new TestSystem([PositionComponent], 'TestSystem');
+    entities = [new Entity(world, []), new Entity(world, [])];
   });
 
   it('should initialize with given name and components', () => {
     expect(system.name).toBe('TestSystem');
     expect(system.query.length).toBe(1);
+  });
+
+  it('should initialize with default name', () => {
+    const defaultSystem = new TestSystem([]);
+    expect(defaultSystem.name).toBe('[anonymous system]');
   });
 
   it('should run system on enabled entities', () => {

@@ -3,46 +3,48 @@ import { expect, test } from 'vitest';
 import { Component } from './types';
 import { World } from './world';
 
-class MockComponent implements Component {
-  public name: symbol;
-
-  public static readonly symbol = Symbol('mock-component');
-
-  constructor() {
-    this.name = MockComponent.symbol;
-  }
-}
+class MockComponent1 extends Component {}
+class MockComponent2 extends Component {}
 
 const world = new World('test-world');
 
+test('creating an entity with no name', () => {
+  const entity = new Entity(world, []);
+
+  expect(entity).not.toBe(null);
+  expect(entity.name).toBe('[anonymous entity]');
+});
+
 test('creating an entity', () => {
-  const entity = new Entity('player', world, []);
+  const entity = new Entity(world, [], {
+    name: 'player',
+  });
 
   expect(entity).not.toBe(null);
   expect(entity.name).toBe('player');
 });
 
 test('adding a component', () => {
-  const entity = new Entity('player', world, []);
-  const component = new MockComponent();
+  const entity = new Entity(world, []);
+  const component = new MockComponent1();
 
   entity.addComponents(component);
 
-  expect(entity.getComponent(MockComponent.symbol)).not.toBeNull();
+  expect(entity.getComponent(MockComponent1)).not.toBeNull();
 });
 
 test('removing a component', () => {
-  const component = new MockComponent();
-  const entity = new Entity('player', world, [component]);
+  const component = new MockComponent1();
+  const entity = new Entity(world, [component]);
 
-  entity.removeComponents(MockComponent.symbol);
+  entity.removeComponents(MockComponent1);
 
-  expect(entity.getComponent(MockComponent.symbol)).toBeNull();
+  expect(entity.getComponent(MockComponent1)).toBeNull();
 });
 
 test("parentTo sets the parent and adds to parent's children", () => {
-  const parent = new Entity('parent', world, []);
-  const child = new Entity('child', world, []);
+  const parent = new Entity(world, []);
+  const child = new Entity(world, []);
 
   child.parentTo(parent);
 
@@ -51,9 +53,9 @@ test("parentTo sets the parent and adds to parent's children", () => {
 });
 
 test("parentTo removes child from previous parent's children", () => {
-  const parent1 = new Entity('parent1', world, []);
-  const parent2 = new Entity('parent2', world, []);
-  const child = new Entity('child', world, []);
+  const parent1 = new Entity(world, []);
+  const parent2 = new Entity(world, []);
+  const child = new Entity(world, []);
 
   child.parentTo(parent1);
   expect(parent1.children.has(child)).toBe(true);
@@ -65,8 +67,8 @@ test("parentTo removes child from previous parent's children", () => {
 });
 
 test('removeParent removes the parent', () => {
-  const parent1 = new Entity('parent1', world, []);
-  const child = new Entity('child', world, []);
+  const parent1 = new Entity(world, []);
+  const child = new Entity(world, []);
 
   child.parentTo(parent1);
   expect(parent1.children.has(child)).toBe(true);
@@ -77,23 +79,29 @@ test('removeParent removes the parent', () => {
 });
 
 test('creating an entity with a parent in constructor', () => {
-  const parent = new Entity('parent', world, []);
-  const child = new Entity('child', world, [], { parent });
+  const parent = new Entity(world, []);
+  const child = new Entity(world, [], { parent });
 
   expect(child.parent).toBe(parent);
   expect(parent.children.has(child)).toBe(true);
 });
 
 test('creating an entity with enabled=false in constructor', () => {
-  const entity = new Entity('disabled-entity', world, [], { enabled: false });
+  const entity = new Entity(world, [], { enabled: false });
 
   expect(entity.enabled).toBe(false);
 });
 
 test('addComponents throws when adding a component that already exists', () => {
-  const entity = new Entity('player', world, [new MockComponent()]);
+  const entity = new Entity(world, [new MockComponent1()]);
 
-  expect(() => entity.addComponents(new MockComponent())).toThrowError(
-    `Unable to add component "${MockComponent.symbol.toString()}" to entity "${entity.name}", it already exists on the entity.`,
+  expect(() => entity.addComponents(new MockComponent1())).toThrowError(
+    `Unable to add component "${MockComponent1.id.toString()}" to entity "${entity.name}", it already exists on the entity.`,
   );
+});
+
+test('addComponents does not throw when adding a second component that does not exists', () => {
+  const entity = new Entity(world, [new MockComponent1()]);
+
+  expect(() => entity.addComponents(new MockComponent2())).not.toThrowError();
 });

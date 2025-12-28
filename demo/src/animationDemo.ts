@@ -231,14 +231,14 @@ function createAdventurerControllableInputs() {
   return animationInputs;
 }
 
-function buildShipEntities( 
+function buildShipEntities(
   world: World,
   shipSprite: Sprite,
   stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,
 ) {
   const animationInputs = new AnimationInputs();
 
-  world.buildAndAddEntity('ship-animation-spin', [
+  world.buildAndAddEntity([
     new PositionComponent(-500, -150),
     new SpriteComponent(shipSprite),
     new ScaleComponent(0.5, 0.5),
@@ -252,7 +252,7 @@ function buildAdventurerControllableEntities(
   stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,
   animationInputs: AnimationInputs,
 ) {
-  world.buildAndAddEntity('adventurer-controllable', [
+  world.buildAndAddEntity([
     new PositionComponent(400, 0),
     new SpriteComponent(adventurerSprite),
     new ScaleComponent(0.3, 0.6),

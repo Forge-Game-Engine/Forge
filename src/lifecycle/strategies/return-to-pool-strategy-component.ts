@@ -1,4 +1,4 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import type { ObjectPool } from '../../pooling/index.js';
 
 /**
@@ -7,17 +7,16 @@ import type { ObjectPool } from '../../pooling/index.js';
  */
 export class ReturnToPoolStrategyComponent<
   T extends NonNullable<unknown>,
-> implements Component {
-  public name: symbol;
+> extends Component {
   public pool: ObjectPool<T>;
-  public static readonly symbol = Symbol('ReturnToPoolStrategy');
 
   /**
    * Creates an instance of the ReturnToPoolStrategyComponent.
    * @param pool - The object pool to return the entity to.
    */
   constructor(pool: ObjectPool<T>) {
-    this.name = ReturnToPoolStrategyComponent.symbol;
+    super();
+
     this.pool = pool;
   }
 }

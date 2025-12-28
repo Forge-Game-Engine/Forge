@@ -75,16 +75,16 @@ export class RenderContext {
 }
 
 export interface RenderContextOptions {
-  canvas: HTMLCanvasElement;
   shaderCache?: ShaderCache;
   imageCache?: ImageCache;
   clearStrategy?: CLEAR_STRATEGY_KEYS;
 }
 
 export function createRenderContext(
-  options: RenderContextOptions,
+  canvas: HTMLCanvasElement,
+  options: RenderContextOptions = {},
 ): RenderContext {
-  const { shaderCache, imageCache, canvas, clearStrategy } = options;
+  const { shaderCache, imageCache, clearStrategy } = options;
 
   return new RenderContext(
     shaderCache ?? createShaderCache(),

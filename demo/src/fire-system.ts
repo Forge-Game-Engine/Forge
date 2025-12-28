@@ -5,13 +5,13 @@ export class FireSystem extends System {
   private readonly _runAction: HoldAction;
 
   constructor(fireAction: TriggerAction, runAction: HoldAction) {
-    super('FireSystem', [InputsComponent.symbol]);
+    super([InputsComponent], 'FireSystem');
 
     this._fireAction = fireAction;
     this._runAction = runAction;
   }
 
-  public run() {
+  public run(): void {
     if (this._fireAction.isTriggered) {
       console.log(`Fire action triggered`);
     }

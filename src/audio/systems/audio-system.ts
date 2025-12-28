@@ -11,7 +11,7 @@ export class AudioSystem extends System {
    * Creates an instance of AudioSystem.
    */
   constructor(world: World) {
-    super('audio', [AudioComponent.symbol]);
+    super([AudioComponent], 'audio');
 
     this._world = world;
   }
@@ -22,9 +22,7 @@ export class AudioSystem extends System {
    * @returns A promise.
    */
   public run(entity: Entity): void {
-    const audioComponent = entity.getComponentRequired<AudioComponent>(
-      AudioComponent.symbol,
-    );
+    const audioComponent = entity.getComponentRequired(AudioComponent);
 
     if (audioComponent.playSound) {
       audioComponent.sound.play();
@@ -36,15 +34,11 @@ export class AudioSystem extends System {
    * Stops the audio system and unloads all sounds.
    */
   public stop(): void {
-    const allEntitiesWithAudio = this._world.queryEntities([
-      AudioComponent.symbol,
-    ]);
+    const allEntitiesWithAudio = this._world.queryEntities([AudioComponent]);
 
     for (const entityWithAudio of allEntitiesWithAudio) {
       const audioComponent =
-        entityWithAudio.getComponentRequired<AudioComponent>(
-          AudioComponent.symbol,
-        );
+        entityWithAudio.getComponentRequired(AudioComponent);
       audioComponent.sound.unload();
     }
   }

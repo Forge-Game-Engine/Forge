@@ -1,9 +1,8 @@
 import {
   Axis1dAction,
-  createCanvas,
+  createGame,
   createImageSprite,
-  createWorld,
-  Game,
+  MouseAxis1dBinding,
   MouseInputSource,
   PositionComponent,
   Rect,
@@ -15,16 +14,10 @@ import {
   SpriteComponent,
   Vector2,
 } from '../../src';
-import { createRenderContext } from '../../src/rendering/render-context';
 
-export const game = new Game(document.getElementById('demo-container')!);
-const world = createWorld('world', game);
+const { game, world, renderContext } = createGame('demo-container');
 
-const canvas = createCanvas('forge', game.container);
-
-const renderContext = createRenderContext({ canvas });
-
-const zoomInput = new Axis1dAction('zoom', 'game');
+const zoomInput = new Axis1dAction('zoom');
 
 const { inputsManager } = registerInputs(world, {
   axis1dActions: [zoomInput],
@@ -32,10 +25,7 @@ const { inputsManager } = registerInputs(world, {
 
 const mouseInputSource = new MouseInputSource(inputsManager, game);
 
-mouseInputSource.axis1dBindings.add({
-  action: zoomInput,
-  displayText: 'Zoom',
-});
+mouseInputSource.axis1dBindings.add(new MouseAxis1dBinding(zoomInput));
 
 const leftCameraEntity = registerCamera(world, {
   zoomInput,
@@ -62,7 +52,7 @@ const shipSprite = await createImageSprite(
 const renderLayerComponent = new RenderLayerComponent();
 
 for (let i = 0; i < 1000; i++) {
-  const planetEntity = world.buildAndAddEntity('planet', [
+  const planetEntity = world.buildAndAddEntity([
     new SpriteComponent(planetSprite),
     new PositionComponent(0, 0),
     new ScaleComponent(0.1, 0.1),
@@ -72,7 +62,7 @@ for (let i = 0; i < 1000; i++) {
 }
 
 for (let i = 0; i < 1000; i++) {
-  const shipEntity = world.buildAndAddEntity('ship', [
+  const shipEntity = world.buildAndAddEntity([
     new SpriteComponent(shipSprite),
     new PositionComponent(0, 0),
     new ScaleComponent(0.1, 0.1),
@@ -81,7 +71,7 @@ for (let i = 0; i < 1000; i++) {
   renderLayerComponent.addEntity(shipSprite.renderable, shipEntity);
 }
 
-world.buildAndAddEntity('foreground render layer', [renderLayerComponent]);
+world.buildAndAddEntity([renderLayerComponent]);
 
 world.addSystem(new RenderSystem(renderContext));
 

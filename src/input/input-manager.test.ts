@@ -13,7 +13,7 @@ describe('InputManager', () => {
   });
 
   it('should set and get activeGroup', () => {
-    expect(manager.activeGroup).toBeNull();
+    expect(manager.activeGroup).toBe('game'); // default is 'game'
     manager.setActiveGroup('group1');
     expect(manager.activeGroup).toBe('group1');
     manager.setActiveGroup(null);

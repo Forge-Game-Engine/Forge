@@ -32,12 +32,8 @@ export class SpriteMaterial extends Material {
 
   protected beforeBind(gl: WebGL2RenderingContext): void {
     const cameraPosition =
-      this.cameraEntity.getComponentRequired<PositionComponent>(
-        PositionComponent.symbol,
-      );
-    const camera = this.cameraEntity.getComponentRequired<CameraComponent>(
-      CameraComponent.symbol,
-    );
+      this.cameraEntity.getComponentRequired(PositionComponent);
+    const camera = this.cameraEntity.getComponentRequired(CameraComponent);
 
     this.setUniform(
       'u_projection',

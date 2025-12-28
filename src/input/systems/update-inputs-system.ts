@@ -7,14 +7,12 @@ export class UpdateInputSystem extends System {
 
   /** Constructs a new UpdateInputSystem. */
   constructor(world: World) {
-    super('update-input', [InputsComponent.symbol]);
+    super([InputsComponent], 'update-input');
     this._world = world;
   }
 
   public run(entity: Entity): void {
-    const inputsComponent = entity.getComponentRequired<InputsComponent>(
-      InputsComponent.symbol,
-    );
+    const inputsComponent = entity.getComponentRequired(InputsComponent);
 
     inputsComponent.inputManager.update(
       this._world.time.deltaTimeInMilliseconds,

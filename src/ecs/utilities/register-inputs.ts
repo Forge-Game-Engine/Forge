@@ -29,16 +29,16 @@ export const registerInputs = (
   const inputsComponent = new InputsComponent(inputsManager);
 
   const {
-    entityName,
+    entityName = 'inputs',
     triggerActions = [],
     axis1dActions = [],
     axis2dActions = [],
     holdActions = [],
   } = options;
 
-  const inputsEntity = world.buildAndAddEntity(entityName ?? 'inputs', [
-    inputsComponent,
-  ]);
+  const inputsEntity = world.buildAndAddEntity([inputsComponent], {
+    name: entityName,
+  });
 
   inputsManager.addTriggerActions(...triggerActions);
   inputsManager.addAxis1dActions(...axis1dActions);

@@ -22,8 +22,8 @@ export class InputManager implements Updatable {
   private readonly _holdActions: Set<HoldAction>;
 
   /** Constructs a new InputManager. */
-  constructor() {
-    this._activeGroup = null;
+  constructor(activeGroup: string = 'game') {
+    this._activeGroup = activeGroup;
 
     this._updatables = new Set();
     this._resettables = new Set();

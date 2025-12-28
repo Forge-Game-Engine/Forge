@@ -14,10 +14,13 @@ export const registerCamera = (
   entityPosition: Vector2 = Vector2.zero,
   entityName: string = 'camera',
 ): Entity => {
-  const cameraEntity = world.buildAndAddEntity(entityName, [
-    new CameraComponent(cameraOptions),
-    new PositionComponent(entityPosition.x, entityPosition.y),
-  ]);
+  const cameraEntity = world.buildAndAddEntity(
+    [
+      new CameraComponent(cameraOptions),
+      new PositionComponent(entityPosition.x, entityPosition.y),
+    ],
+    { name: entityName },
+  );
 
   world.addSystem(new CameraSystem(world.time));
 

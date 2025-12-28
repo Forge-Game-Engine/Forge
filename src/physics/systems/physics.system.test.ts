@@ -30,7 +30,7 @@ describe('PhysicsSystem', () => {
 
     MatterJsWorld.add(engine.world, [physicsBody]);
 
-    entity = new Entity('box', world, [
+    entity = new Entity(world, [
       new PositionComponent(0, 0),
       new RotationComponent(0),
       new PhysicsBodyComponent(physicsBody),
@@ -38,15 +38,9 @@ describe('PhysicsSystem', () => {
   });
 
   it('should update entity position and rotation in run', () => {
-    const { physicsBody } = entity.getComponentRequired<PhysicsBodyComponent>(
-      PhysicsBodyComponent.symbol,
-    );
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
+    const { physicsBody } = entity.getComponentRequired(PhysicsBodyComponent);
+    const positionComponent = entity.getComponentRequired(PositionComponent);
+    const rotationComponent = entity.getComponentRequired(RotationComponent);
 
     Body.applyForce(physicsBody, { x: -10, y: -20 }, { x: 0.1, y: 0.1 });
 
@@ -63,7 +57,7 @@ describe('PhysicsSystem', () => {
     // Create a static body and entity
     const staticBody = Bodies.rectangle(5, 10, 10, 10, { isStatic: true });
     staticBody.angle = 0.5;
-    const staticEntity = new Entity('static', world, [
+    const staticEntity = new Entity(world, [
       new PositionComponent(42, 99),
       new RotationComponent(degreesToRadians(90)),
       new PhysicsBodyComponent(staticBody),

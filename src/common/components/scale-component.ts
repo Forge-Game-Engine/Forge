@@ -1,12 +1,10 @@
-import type { Component } from '../../ecs/index.js';
+import { Component } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 
 /**
  * Component to represent the scale of an entity in 2D space.
  */
-export class ScaleComponent implements Component {
-  public name: symbol;
-
+export class ScaleComponent extends Component {
   /**
    * The local scale of the entity relative to its parent (if any).
    */
@@ -16,15 +14,13 @@ export class ScaleComponent implements Component {
    */
   public world: Vector2;
 
-  public static readonly symbol = Symbol('Scale');
-
   /**
    * Creates an instance of ScaleComponent.
    * @param x - The scale factor along the x-axis.
    * @param y - The scale factor along the y-axis.
    */
   constructor(x: number = 1, y: number = 1) {
-    this.name = ScaleComponent.symbol;
+    super();
 
     this.local = new Vector2(x, y);
     this.world = new Vector2(x, y);
