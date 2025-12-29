@@ -91,8 +91,8 @@ const config: Config = {
           position: 'left',
           items: [
             {
-              to: 'demos/rendering',
-              label: 'Rendering',
+              to: 'demos/space-shooter',
+              label: 'Space Shooter',
             },
           ],
         },

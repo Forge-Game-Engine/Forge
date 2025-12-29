@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShaderCache } from './shader-cache';
 
-describe('ShaderStore', () => {
+describe('ShaderCache', () => {
   it('should add a shader to the store', () => {
     const store = new ShaderCache();
     const shader = `

@@ -1,24 +1,19 @@
 .demoContainer {
   display: flex;
-  justify-content: center;
+  justify-content: start;
   align-items: center;
   flex-direction: row;
-  height: 50vh;
+  margin-top: 8px;
 }
 
 .demoBox {
   height: 600px;
   width: 60%;
   background-color: black;
-  border-radius: 8px;
-  border-top: 1px solid var(--card-highlight-color);
-  border-left: 1px solid var(--card-highlight-color);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .demoBox canvas {
   position: absolute;
-  border-radius: 8px;
 }
 
 .codeBlock {
@@ -27,9 +22,6 @@
   max-height: 600px;
   width: 40%;
   overflow-y: auto;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-top: 1px solid var(--card-highlight-color);
-  border-left: 1px solid var(--card-highlight-color);
 }
 
 .demoContainer h1 {

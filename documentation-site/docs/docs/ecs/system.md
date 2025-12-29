@@ -16,8 +16,8 @@ To create a system, you extend the [`System`](../../api/classes/System) class an
 export class MovementSystem extends System {
   constructor() {
     super('MovementSystem', [
-      PositionComponent.symbol,
-      VelocityComponent.symbol,
+      PositionComponent,
+      VelocityComponent,
     ]); // the second argument is the query
   }
 

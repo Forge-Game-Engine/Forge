@@ -17,7 +17,7 @@ Using the helper is cleaner and has less boilerplate. It is recommend that you u
 :::
 
 ```ts title="With helper"
-const playerEntity = world.buildAndAddEntity('player', [
+const playerEntity = world.buildAndAddEntity([
   new PositionComponent(10, 15),
   new ScaleComponent(),
   new RotationComponent(),
@@ -27,7 +27,7 @@ const playerEntity = world.buildAndAddEntity('player', [
 ```
 
 ```ts title="Verbose, without helper"
-const playerEntity = new Entity('player', world, [
+const playerEntity = new Entity(world, [
   new PositionComponent(10, 15),
   new ScaleComponent(),
   new RotationComponent(),
@@ -43,16 +43,16 @@ world.addEntity(entity);
 You can define a parent entity at the time of creation by passing an options object with a `parent` property.
 
 ```ts title="Using Entity constructor"
-const parent = new Entity('parent', world, [new PositionComponent(100, 100)]);
+const parent = new Entity(world, [new PositionComponent(100, 100)]);
 
 // Create child with parent at construction time
-const child = new Entity('child', world, [new PositionComponent(10, 10)], {
+const child = new Entity(world, [new PositionComponent(10, 10)], {
   parent,
 });
 ```
 
 ```ts title="Using buildAndAddEntity helper"
-const parent = world.buildAndAddEntity('parent', [
+const parent = world.buildAndAddEntity([
   new PositionComponent(100, 100),
 ]);
 
@@ -81,10 +81,10 @@ disabledEntity.enabled = true;
 ```
 
 ```ts title="Creating disabled child with parent"
-const parent = world.buildAndAddEntity('parent', []);
+const parent = world.buildAndAddEntity([]);
 
 // Create a disabled child entity with a parent
-const child = world.buildAndAddEntity('child', [], {
+const child = world.buildAndAddEntity([], {
   enabled: false,
   parent,
 });
@@ -118,7 +118,7 @@ It is recommend that you do not add more than one instance of a component type t
 The [`removeComponent`](../../api/classes/Entity.md#removecomponent) instance method will remove the component from the entity if it is present.
 
 ```ts
-playerEntity.removeComponent(HealthBuffComponent.symbol);
+playerEntity.removeComponent(HealthBuffComponent);
 ```
 
 ## Disabling an Entity
@@ -146,9 +146,9 @@ If you want to check if an entity contains a list of components, you can use the
 
 ```ts
 const canBeFullyTransformed = playerEntity.containsAllComponents([
-  PositionComponent.symbol,
-  RotationComponent.symbol,
-  ScaleComponent.symbol
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent
 ]);
 
 if (canBeFullyTransformed) {
@@ -163,9 +163,7 @@ If you want to get a single component. You can use the [`getComponent`](../../ap
 The `getComponent` method will return the component if it exists or `null` if it does not exist.
 
 ```ts
-const scaleComponent = playerEntity.getComponent<ScaleComponent>(
-  ScaleComponent.symbol,
-);
+const scaleComponent = playerEntity.getComponent(ScaleComponent);
 
 if (scaleComponent) {
   // scaleComponent could be null
@@ -178,9 +176,7 @@ if (scaleComponent) {
 The `getComponentRequired` method will return the component if it exists or throw an error if it does not exist.
 
 ```ts
-const scaleComponent = playerEntity.getComponentRequired<ScaleComponent>(
-  ScaleComponent.symbol,
-); // will throw if the player does not have a scale
+const scaleComponent = playerEntity.getComponentRequired(ScaleComponent); // will throw if the player does not have a scale
 
 // the player entity definitely has a scale, double it!
 scaleComponent.x *= 2;

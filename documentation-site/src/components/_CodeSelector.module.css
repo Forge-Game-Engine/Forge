@@ -1,0 +1,46 @@
+.container {
+  height: 600px;
+  margin-left: 20px;
+  width: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.codeSelector {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 10px;
+  min-height: 50px;
+  overflow-x: hidden;
+}
+
+.codeSelector:hover {
+  overflow-x: auto;
+}
+
+.codeSelector button {
+  background-color: var(--card-background-color);
+  border: none;
+  text-align: center;
+  padding: 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-right: 5px;
+  text-wrap: nowrap;
+}
+
+.codeSelector button:hover {
+  background-color: var(--card-highlight-color);
+}
+
+.codeSelector button.selected {
+  background-color: var(--card-highlight-color);
+  border-bottom: 2px solid var(--ifm-color-primary);
+  font-weight: bold;
+}
+
+.codeBlock {
+  margin: 0;
+  overflow-y: auto;
+  border-radius: 0;
+}

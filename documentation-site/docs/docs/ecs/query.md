@@ -9,11 +9,7 @@ A [query](../../api/type-aliases/Query.md) is an [alias](https://www.typescriptl
 This is how you would define a query:
 
 ```ts
-const transformQuery = [
-  PositionComponent.symbol,
-  RotationComponent.symbol,
-  ScaleComponent.symbol,
-];
+const transformQuery = [PositionComponent, RotationComponent, ScaleComponent];
 ```
 
 But usually you would just pass the array into the super constructor:
@@ -22,8 +18,8 @@ But usually you would just pass the array into the super constructor:
 export class MovementSystem extends System {
   constructor() {
     super('MovementSystem', [
-        PositionComponent.symbol,
-        VelocityComponent.symbol,
+        PositionComponent,
+        VelocityComponent,
       ] // this is a query
     );
   }

@@ -1,10 +1,14 @@
 import React, { FC, ReactNode } from 'react';
 import Layout from '@theme/Layout';
-import CodeBlock from '@theme/CodeBlock';
 import { useGame } from '@site/src/hooks/useGame';
 import styles from './_Demo.module.css';
-import { cleanCodeSnippet } from '@site/src/utils/clean-code-snippet';
 import { Game } from '@forge-game-engine/forge/ecs';
+import { CodeSelector } from './_CodeSelector';
+
+interface CodeFile {
+  name: string;
+  content: string;
+}
 
 interface DemoProps {
   metaData: {
@@ -15,7 +19,7 @@ interface DemoProps {
   header: string;
   blurb: string;
   createGame: () => Promise<Game>;
-  code: string;
+  codeFiles: CodeFile[];
 }
 
 export const Demo: FC<DemoProps> = ({
@@ -24,7 +28,7 @@ export const Demo: FC<DemoProps> = ({
   interactions,
   header,
   createGame,
-  code,
+  codeFiles,
 }) => {
   useGame(createGame);
 
@@ -39,9 +43,7 @@ export const Demo: FC<DemoProps> = ({
         {interactions}
         <div className={styles.demoContainer}>
           <div id="demo-game" className={styles.demoBox}></div>
-          <CodeBlock language="typescript" className={styles.codeBlock}>
-            {cleanCodeSnippet(code)}
-          </CodeBlock>
+          <CodeSelector codeFiles={codeFiles} />
         </div>
         <p>{blurb}</p>
       </div>
