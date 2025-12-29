@@ -21,7 +21,6 @@ export class MovementSystem extends System {
     const playerPosition = entity.getComponentRequired(PositionComponent);
 
     const movementVector = this._moveAction.value
-      .normalize()
       .multiply(speed * 10)
       .multiply(this._time.deltaTimeInSeconds);
 

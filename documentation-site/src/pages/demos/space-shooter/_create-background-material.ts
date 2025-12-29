@@ -26,7 +26,7 @@ export function createBackgroundMaterial(
 
   backgroundMaterial.setUniform(
     'u_color',
-    new Color(0.6, 1, 0.7, 0.7).toFloat32Array(),
+    new Color(0.2, 0.2, 1, 0.9).toFloat32Array(),
   );
 
   return backgroundMaterial;

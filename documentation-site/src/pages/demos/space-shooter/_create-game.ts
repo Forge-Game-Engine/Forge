@@ -34,6 +34,8 @@ import {
   ParticleEmitterSystem,
   ParticlePositionSystem,
 } from '@forge-game-engine/forge/particles';
+import { AudioComponent, AudioSystem } from '@forge-game-engine/forge/audio';
+import { getAudioUrl } from '@site/src/utils/get-audio-url';
 
 export const createSpaceShooterGame = async (): Promise<Game> => {
   const { game, world, renderContext } = createGame('demo-game');
@@ -70,7 +72,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     cameraEntity,
   );
 
-  playerSprite.tintColor = new Color(0, 0.7, 1);
+  playerSprite.tintColor = new Color(0.6, 1, 0.6);
 
   const playerEntity = world.buildAndAddEntity([
     new SpriteComponent(playerSprite),
@@ -117,11 +119,23 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   renderLayerComponent.addEntity(backgroundSprite.renderable, bgEntity);
   renderLayerComponent.addEntity(playerSprite.renderable, playerEntity);
 
+  world.buildAndAddEntity([
+    new AudioComponent(
+      {
+        src: getAudioUrl('background-space-music.mp3'),
+        loop: true,
+        volume: 0.5,
+      },
+      true,
+    ),
+  ]);
+
   world.addSystem(new RenderSystem(renderContext));
   world.addSystem(new MovementSystem(moveInput, world.time));
   world.addSystem(new BackgroundSystem(world.time));
   world.addSystem(new ParticleEmitterSystem(world));
   world.addSystem(new ParticlePositionSystem(world.time));
+  world.addSystem(new AudioSystem(world));
 
   return game;
 };
