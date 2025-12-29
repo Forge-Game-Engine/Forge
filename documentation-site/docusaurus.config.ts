@@ -66,6 +66,13 @@ const config: Config = {
     ],
   ],
 
+  scripts: [
+    {
+      src: 'https://kit.fontawesome.com/ff0f4a1036.js',
+      crossorigin: 'anonymous',
+    },
+  ],
+
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',

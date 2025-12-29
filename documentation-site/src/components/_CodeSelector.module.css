@@ -6,20 +6,22 @@
   flex-direction: column;
 }
 
-.codeSelector {
+.fileNameToolbar {
   display: flex;
-  flex-direction: row;
-  margin-bottom: 10px;
-  min-height: 50px;
-  overflow-x: hidden;
-}
-
-.codeSelector:hover {
-  overflow-x: auto;
-}
-
-.codeSelector button {
   background-color: var(--card-background-color);
+  flex-direction: row;
+  align-items: center;
+}
+
+.fileTypeIcon {
+  margin-left: 20px;
+}
+
+.fileNameToolbar button {
+  margin: 5px;
+  background-color: rgb(50, 50, 50);
+  border-radius: 5px;
+  margin-left: auto;
   border: none;
   text-align: center;
   padding: 10px;
@@ -29,11 +31,29 @@
   text-wrap: nowrap;
 }
 
-.codeSelector button:hover {
+.fileNameToolbar .folder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.fileNameToolbar .folder:hover {
+  background-color: var(--card-highlight-color);
+  cursor: pointer;
+}
+
+.fileNameToolbar .fileName {
+  color: white;
+  font-weight: 500;
+  margin-left: 20px;
+}
+
+.fileNameToolbar button:hover {
   background-color: var(--card-highlight-color);
 }
 
-.codeSelector button.selected {
+.fileNameToolbar button.selected {
   background-color: var(--card-highlight-color);
   border-bottom: 2px solid var(--ifm-color-primary);
   font-weight: bold;
@@ -43,4 +63,38 @@
   margin: 0;
   overflow-y: auto;
   border-radius: 0;
+}
+
+.codeSelector {
+  display: flex;
+  background-color: var(--card-background-color);
+  flex-direction: column;
+  height: 100%;
+}
+
+.codeSelector button {
+  width: 100%;
+  padding: 10px 0;
+  text-align: left;
+  background-color: var(--card-background-color);
+  border: none;
+  cursor: pointer;
+}
+
+.codeSelector button span {
+  margin-left: 50px;
+}
+
+.codeSelector button:hover {
+  background-color: var(--card-highlight-color);
+}
+
+.codeSelector i {
+  margin-left: 20px;
+  margin-right: 10px;
+}
+
+.fileTypeGroup {
+  border-top: 1px solid rgb(80, 80, 80);
+  padding-top: 10px;
 }
