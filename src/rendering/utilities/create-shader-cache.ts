@@ -22,16 +22,16 @@ import {
 // TODO - Move into ShaderCache class with options to add includes and shaders
 
 /**
- * Creates and initializes a ShaderStore instance with predefined shader includes and shaders.
+ * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
  *
- * The shader includes added to the ShaderStore provide reusable shader code snippets, such as
+ * The shader includes added to the ShaderCache provide reusable shader code snippets, such as
  * cubic interpolation, Perlin noise, quintic interpolation, radial gradients, random gradients,
  * signed distance functions (SDF) for circles, and oriented boxes.
  *
- * The shaders added to the ShaderStore include fragment and vertex shaders for rendering
+ * The shaders added to the ShaderCache include fragment and vertex shaders for rendering
  * radial gradients, Perlin noise, and sprites.
  *
- * @returns {ShaderCache} A ShaderStore instance populated with the predefined shader includes
+ * @returns {ShaderCache} A ShaderCache instance populated with the predefined shader includes
  * and shaders.
  */
 export function createShaderCache(): ShaderCache {

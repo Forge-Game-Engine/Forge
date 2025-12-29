@@ -307,7 +307,7 @@ export class World implements Updatable, Stoppable {
    */
   public updateSystemEntities(entity: Entity): void {
     for (const { system } of this._systems) {
-      const entities = this._systemEntities.get(system.name);
+      const entities = this._systemEntities.get(system.name); // TODO: Can't rely on name here if it is optional
 
       if (!entities) {
         throw new Error(`Unable to get entities for system ${system.name}`);

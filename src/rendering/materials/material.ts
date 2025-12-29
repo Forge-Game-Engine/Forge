@@ -1,4 +1,5 @@
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
+import { assertNever } from '../../utilities/index.js';
 import type { Color } from '../color.js';
 
 export type UniformValue =
@@ -7,6 +8,7 @@ export type UniformValue =
   | Float32Array
   | Int32Array
   | WebGLTexture
+  | Vector2
   | Matrix3x3;
 
 interface UniformSpec {
@@ -36,7 +38,9 @@ export class Material {
   /**
    * Binds the material (program, uniforms, textures).
    */
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   public bind(gl: WebGL2RenderingContext): void {
+    // TODO: reduce the cognitive complexity here with a better pattern, maybe some polymorphic dispatch or strategy pattern
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -47,28 +51,55 @@ export class Material {
       if (value === undefined) {
         // TODO- do we need default values?
         // do we specify those in the shader?
+
         continue;
       }
 
-      const loc = spec.location;
+      const { location } = spec;
 
       if (value instanceof WebGLTexture) {
-        textureUnit = this._bindTexture(gl, loc, value, textureUnit);
-      } else if (typeof value === 'number') {
-        this._setUniformNumber(gl, loc, value);
-      } else if (typeof value === 'boolean') {
-        this._setUniformBoolean(gl, loc, value);
-      } else if (value instanceof Matrix3x3) {
-        this._setUniformFloat32Array(gl, loc, value.matrix);
-      } else if (value instanceof Int32Array) {
-        this._setUniformInt32Array(gl, loc, value);
-      } else if (value instanceof Float32Array) {
-        this._setUniformFloat32Array(gl, loc, value);
-      } else {
-        throw new TypeError(
-          `Unsupported uniform type for ${name}: ${typeof value}`,
-        );
+        textureUnit = this._bindTexture(gl, location, value, textureUnit);
+
+        continue;
       }
+
+      if (typeof value === 'number') {
+        this._setUniformNumber(gl, location, value);
+
+        continue;
+      }
+
+      if (typeof value === 'boolean') {
+        this._setUniformBoolean(gl, location, value);
+
+        continue;
+      }
+
+      if (value instanceof Matrix3x3) {
+        this._setUniformFloat32Array(gl, location, value.matrix);
+
+        continue;
+      }
+
+      if (value instanceof Int32Array) {
+        this._setUniformInt32Array(gl, location, value);
+
+        continue;
+      }
+
+      if (value instanceof Float32Array) {
+        this._setUniformFloat32Array(gl, location, value);
+
+        continue;
+      }
+
+      if (value instanceof Vector2) {
+        this._setUniformFloat32Array(gl, location, value.toFloat32Array());
+
+        continue;
+      }
+
+      assertNever(value, `Unsupported uniform value type for ${name}`);
     }
   }
 
@@ -76,6 +107,12 @@ export class Material {
    * Sets a uniform value (number, vec2, matrix, texture, etc.).
    */
   public setUniform(name: string, value: UniformValue): void {
+    if (!this._uniforms.has(name)) {
+      throw new Error(
+        `Uniform "${name}" does not exist on material. Available uniforms are: ${Array.from(this._uniforms.keys()).join(', ')}.`,
+      );
+    }
+
     this._uniformValues.set(name, value);
   }
 

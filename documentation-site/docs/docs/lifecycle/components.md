@@ -29,7 +29,7 @@ Marks an entity to be removed from the world when its lifetime expires.
 
 ```typescript
 // Create an explosion effect that gets removed from the world after 2 seconds
-world.buildAndAddEntity('explosion', [
+world.buildAndAddEntity([
   new LifetimeComponent(2),
   new RemoveFromWorldStrategyComponent(),
   new SpriteComponent(explosionSprite),
@@ -46,7 +46,7 @@ Marks an entity to be returned to an object pool when its lifetime expires, enab
 ```typescript
 const pool = new ObjectPool<Entity>({
   createCallback: (): Entity =>
-    world.buildAndAddEntity('blue-circle', [
+    world.buildAndAddEntity([
       new PositionComponent(0, 0),
       new SpriteComponent(blueCircleSprite),
       new LifetimeComponent(1),
@@ -57,9 +57,7 @@ const pool = new ObjectPool<Entity>({
   },
   hydrateCallback: (entity: Entity) => {
     entity.enabled = true;
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
+    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
     lifetimeComponent.reset(1);
   },
 });

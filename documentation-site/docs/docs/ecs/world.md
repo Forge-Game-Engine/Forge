@@ -48,7 +48,7 @@ world.addSystems(movementSystem, renderSystem);
 Entities are added to the world either by building them with the helper:
 
 ```ts
-const player = world.buildAndAddEntity('player', [
+const player = world.buildAndAddEntity([
   new PositionComponent(0, 0),
   new SpriteComponent(sprite),
 ]);
@@ -57,7 +57,7 @@ const player = world.buildAndAddEntity('player', [
 Or by creating them directly and then adding:
 
 ```ts
-const enemy = new Entity('enemy', world, [new PositionComponent(10, 5)]);
+const enemy = new Entity(world, [new PositionComponent(10, 5)]);
 world.addEntity(enemy);
 ```
 
@@ -82,7 +82,7 @@ const world = new World('main-world');
 
 ...
 
-const movableEntities = world.queryEntities([PositionComponent.symbol]);
+const movableEntities = world.queryEntities([PositionComponent]);
 ```
 
 ### Querying for a single Entity
@@ -94,10 +94,10 @@ const world = new World('main-world');
 
 ...
 // returns Entity or null if no entity is found
-const inputsEntity = world.queryEntity([InputsComponent.symbol]);
+const inputsEntity = world.queryEntity([InputsComponent]);
 
 // returns Entity or throws an error no entity is found
-const cameraEntity = world.queryEntityRequired([CameraComponent.symbol]);
+const cameraEntity = world.queryEntityRequired([CameraComponent]);
 ```
 
 :::info

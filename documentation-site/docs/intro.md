@@ -99,7 +99,7 @@ import {
   createWorld,
   ImageCache,
   // diff-add-start
-  createShaderStore,
+  createShaderCache,
   createImageSprite,
   // diff-add-end
 } from '@forge-game-engine/forge';
@@ -115,9 +115,9 @@ const imageCache = new ImageCache();
 const image = await imageCache.getOrLoad('sprite.png');
 
 // diff-add-start
-const shaderStore = createShaderStore();
+const shaderCache = createShaderCache();
 
-const sprite = createImageSprite(image, renderLayers[0], shaderStore);
+const sprite = createImageSprite(image, renderLayers[0], shaderCache);
 // diff-add-end
 
 game.run();
@@ -130,7 +130,7 @@ import {
   Game,
   createWorld,
   ImageCache,
-  createShaderStore,
+  createShaderCache,
   createImageSprite,
   // diff-add-start
   PositionComponent,
@@ -147,12 +147,12 @@ const { renderLayers, world } = createWorld('world', game);
 const imageCache = new ImageCache();
 const image = await imageCache.getOrLoad('sprite.png');
 
-const shaderStore = createShaderStore();
+const shaderCache = createShaderCache();
 
-const sprite = createImageSprite(image, renderLayers[0], shaderStore);
+const sprite = createImageSprite(image, renderLayers[0], shaderCache);
 
 // diff-add-start
-world.buildAndAddEntity('sprite', [
+world.buildAndAddEntity([
   new PositionComponent(),
   new SpriteComponent(sprite),
 ]);

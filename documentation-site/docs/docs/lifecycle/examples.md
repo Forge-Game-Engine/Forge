@@ -11,7 +11,7 @@ import {
 } from '@forge-game-engine/forge';
 
 // Create an explosion effect that lasts 2 seconds
-world.buildAndAddEntity('explosion', [
+world.buildAndAddEntity([
   new LifetimeComponent(2.0),
   new RemoveFromWorldStrategyComponent(),
   new SpriteComponent(explosionSprite),
@@ -32,7 +32,7 @@ import {
 
 // Add a speed boost that lasts 10 seconds
 function activateSpeedBoost(playerEntity: Entity) {
-  world.buildAndAddEntity('speed-boost', [
+  world.buildAndAddEntity([
     new LifetimeComponent(10.0),
     new RemoveFromWorldStrategyComponent(),
     new SpeedBoostComponent(playerEntity, 2.0), // 2x speed multiplier
@@ -56,7 +56,7 @@ function fireBullet(
   directionX: number,
   directionY: number,
 ) {
-  world.buildAndAddEntity('bullet', [
+  world.buildAndAddEntity([
     new LifetimeComponent(3.0), // Bullet exists for 3 seconds
     new RemoveFromWorldStrategyComponent(),
     new SpriteComponent(bulletSprite),
@@ -83,7 +83,7 @@ const bulletPool = new ObjectPool<Entity>(
   [], // Start with empty pool
   () => {
     // Create new bullet entity
-    return world.buildEntity('bullet', [
+    return world.buildEntity(, [
       new SpriteComponent(bulletSprite),
       new PositionComponent(0, 0),
       new VelocityComponent(0, 0),
@@ -92,8 +92,8 @@ const bulletPool = new ObjectPool<Entity>(
   },
   (bullet) => {
     // Clean up when bullet returns to pool
-    bullet.removeComponent(LifetimeComponent.symbol);
-    bullet.removeComponent(ReturnToPoolStrategyComponent.symbol);
+    bullet.removeComponent(LifetimeComponent);
+    bullet.removeComponent(ReturnToPoolStrategyComponent);
   },
 );
 
@@ -102,11 +102,11 @@ function fireBullet(x: number, y: number, vx: number, vy: number) {
   const bullet = bulletPool.getOrCreate();
 
   // Reset bullet position and velocity
-  const pos = bullet.getComponent<PositionComponent>(PositionComponent.symbol)!;
+  const pos = bullet.getComponent(PositionComponent)!;
   pos.x = x;
   pos.y = y;
 
-  const vel = bullet.getComponent<VelocityComponent>(VelocityComponent.symbol)!;
+  const vel = bullet.getComponent(VelocityComponent)!;
   vel.x = vx;
   vel.y = vy;
 
@@ -129,7 +129,7 @@ import {
 } from '@forge-game-engine/forge';
 
 function spawnTemporaryWall(x: number, y: number, duration: number) {
-  world.buildAndAddEntity('temp-wall', [
+  world.buildAndAddEntity([
     new LifetimeComponent(duration),
     new RemoveFromWorldStrategyComponent(),
     new SpriteComponent(wallSprite),
