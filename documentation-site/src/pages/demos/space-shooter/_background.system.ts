@@ -1,7 +1,7 @@
 import { Entity, System } from '@forge-game-engine/forge/ecs';
 import { Time } from '@forge-game-engine/forge/common';
 import { SpriteComponent } from '@forge-game-engine/forge/rendering';
-import { BackgroundComponent } from './background.component';
+import { BackgroundComponent } from './_background.component';
 
 export class BackgroundSystem extends System {
   private readonly _time: Time;

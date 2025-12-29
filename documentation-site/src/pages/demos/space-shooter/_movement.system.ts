@@ -2,7 +2,7 @@ import { Entity, System } from '@forge-game-engine/forge/ecs';
 import { PositionComponent, Time } from '@forge-game-engine/forge/common';
 import { clamp } from '@forge-game-engine/forge/math';
 import { Axis2dAction } from '@forge-game-engine/forge/input';
-import { PlayerComponent } from './player.component';
+import { PlayerComponent } from './_player.component';
 
 export class MovementSystem extends System {
   private readonly _moveAction: Axis2dAction;

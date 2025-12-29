@@ -1,12 +1,12 @@
 import React, { JSX } from 'react';
 import { createSpaceShooterGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
-import playerComponentCode from '!!raw-loader!./player.component';
-import movementSystemCode from '!!raw-loader!./movement.system';
-import createBackgroundMaterialCode from '!!raw-loader!./create-background-material';
-import backgroundSystemCode from '!!raw-loader!./background.system';
-import backgroundComponentCode from '!!raw-loader!./background.component';
-import backgroundShaderCode from '!!raw-loader!./background.shader';
+import playerComponentCode from '!!raw-loader!./_player.component';
+import movementSystemCode from '!!raw-loader!./_movement.system';
+import createBackgroundMaterialCode from '!!raw-loader!./_create-background-material';
+import backgroundSystemCode from '!!raw-loader!./_background.system';
+import backgroundComponentCode from '!!raw-loader!./_background.component';
+import backgroundShaderCode from '!!raw-loader!./_background.shader';
 
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';

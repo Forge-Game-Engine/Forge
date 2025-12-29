@@ -3,7 +3,7 @@ import {
   Material,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
-import { backgroundShader } from './background.shader';
+import { backgroundShader } from './_background.shader';
 
 export function createBackgroundMaterial(
   renderContext: RenderContext,

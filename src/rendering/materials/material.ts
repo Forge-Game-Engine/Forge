@@ -46,12 +46,6 @@ export class Material {
     let textureUnit = 0;
 
     for (const [name, spec] of this._uniforms.entries()) {
-      if (!this._uniforms.has(name)) {
-        throw new Error(
-          `Uniform "${name}" does not exist on material. Available uniforms are: ${Array.from(this._uniforms.keys()).join(', ')}.`,
-        );
-      }
-
       const value = this._uniformValues.get(name);
 
       if (value === undefined) {
@@ -113,6 +107,12 @@ export class Material {
    * Sets a uniform value (number, vec2, matrix, texture, etc.).
    */
   public setUniform(name: string, value: UniformValue): void {
+    if (!this._uniforms.has(name)) {
+      throw new Error(
+        `Uniform "${name}" does not exist on material. Available uniforms are: ${Array.from(this._uniforms.keys()).join(', ')}.`,
+      );
+    }
+
     this._uniformValues.set(name, value);
   }
 

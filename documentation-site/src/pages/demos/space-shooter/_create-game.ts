@@ -20,15 +20,14 @@ import {
   RenderLayerComponent,
   RenderSystem,
   SpriteComponent,
-  UniformValue,
 } from '@forge-game-engine/forge/rendering';
 import { getImageUrl } from '@site/src/utils/get-image-url';
 import { createGame } from '@forge-game-engine/forge/utilities';
-import { PlayerComponent } from './player.component';
-import { MovementSystem } from './movement.system';
-import { createBackgroundMaterial } from './create-background-material';
-import { BackgroundComponent } from './background.component';
-import { BackgroundSystem } from './background.system';
+import { PlayerComponent } from './_player.component';
+import { MovementSystem } from './_movement.system';
+import { createBackgroundMaterial } from './_create-background-material';
+import { BackgroundComponent } from './_background.component';
+import { BackgroundSystem } from './_background.system';
 import {
   ParticleEmitter,
   ParticleEmitterComponent,
