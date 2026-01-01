@@ -209,12 +209,6 @@ export class World implements Updatable, Stoppable {
     system: System,
     order: number = systemRegistrationPositions.normal,
   ): this {
-    if (this._systemEntities.has(system.name)) {
-      console.warn(
-        `Adding system "${system.name}" to world "${this.name}", a system with this name already exists in the world.`,
-      );
-    }
-
     this._systems.add({ system, order });
     // Reorder the set by 'order' after adding
     const sorted = Array.from(this._systems).sort((a, b) => a.order - b.order);
@@ -300,7 +294,8 @@ export class World implements Updatable, Stoppable {
    */
   public updateSystemEntities(entity: Entity): void {
     for (const { system } of this._systems) {
-      const entities = this._systemEntities.get(system.name); // TODO: Can't rely on name here if it is optional
+      // TODO: Can't rely on name here as the name is optional. We need to add an id to systems, using a similar pattern to the one used in Components.
+      const entities = this._systemEntities.get(system.name);
 
       if (!entities) {
         throw new Error(`Unable to get entities for system ${system.name}`);
