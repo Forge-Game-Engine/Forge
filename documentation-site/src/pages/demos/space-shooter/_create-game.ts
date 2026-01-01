@@ -38,12 +38,12 @@ import { AudioComponent, AudioSystem } from '@forge-game-engine/forge/audio';
 import { getAudioUrl } from '@site/src/utils/get-audio-url';
 
 export const createSpaceShooterGame = async (): Promise<Game> => {
-  const { game, world, renderContext } = createGame('demo-game');
+  const { game, world, renderContext, time } = createGame('demo-game');
 
   const moveInput = new Axis2dAction('move', null, actionResetTypes.noReset);
   const shootInput = new HoldAction('shoot');
 
-  const { inputsManager } = registerInputs(world, {
+  const { inputsManager } = registerInputs(world, time, {
     axis2dActions: [moveInput],
     holdActions: [shootInput],
   });
@@ -64,7 +64,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     new KeyboardHoldBinding(shootInput, keyCodes.space),
   );
 
-  const cameraEntity = registerCamera(world);
+  const cameraEntity = registerCamera(world, time);
 
   const playerSprite = await createImageSprite(
     getImageUrl('space-shooter/ship_G.png'),
@@ -131,10 +131,10 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   ]);
 
   world.addSystem(new RenderSystem(renderContext));
-  world.addSystem(new MovementSystem(moveInput, world.time));
-  world.addSystem(new BackgroundSystem(world.time));
-  world.addSystem(new ParticleEmitterSystem(world));
-  world.addSystem(new ParticlePositionSystem(world.time));
+  world.addSystem(new MovementSystem(moveInput, time));
+  world.addSystem(new BackgroundSystem(time));
+  world.addSystem(new ParticleEmitterSystem(world, time));
+  world.addSystem(new ParticlePositionSystem(time));
   world.addSystem(new AudioSystem(world));
 
   return game;

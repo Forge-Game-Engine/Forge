@@ -1,4 +1,4 @@
-import { type Stoppable, Time, type Updatable } from '../common/index.js';
+import { type Stoppable, type Updatable } from '../common/index.js';
 import { isString } from '../utilities/index.js';
 import { systemRegistrationPositions } from './constants/index.js';
 import { Entity, type EntityOptions } from './entity.js';
@@ -14,11 +14,6 @@ interface SystemOrderPair {
  * The world manages entities and systems, and updates systems with the entities they operate on.
  */
 export class World implements Updatable, Stoppable {
-  /**
-   * The time instance for the world.
-   */
-  public readonly time = new Time();
-
   /**
    * The name of the world.
    */
@@ -69,9 +64,7 @@ export class World implements Updatable, Stoppable {
   /**
    * Updates all systems in the world.
    */
-  public update(rawTimeInMilliseconds: number): void {
-    this.time.update(rawTimeInMilliseconds);
-
+  public update(): void {
     for (const { system } of this._systems) {
       const entities = this._systemEntities.get(system.name);
 

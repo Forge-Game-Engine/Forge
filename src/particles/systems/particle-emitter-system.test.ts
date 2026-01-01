@@ -3,10 +3,12 @@ import { ParticleEmitterSystem } from './particle-emitter-system';
 import { Entity, World } from '../../ecs';
 import { ParticleEmitter, ParticleEmitterComponent } from '../components';
 import { RenderLayerComponent, Sprite } from '../../rendering';
+import { Time } from '../../common';
 
 describe('_startEmittingParticles', () => {
   const world: World = new World('test');
-  const system = new ParticleEmitterSystem(world);
+  const time: Time = new Time();
+  const system = new ParticleEmitterSystem(world, time);
   const mockSprite = {} as Sprite; // Mock sprite object
   const mockRenderLayer = {} as RenderLayerComponent; // Mock render layer object
 
@@ -57,12 +59,15 @@ describe('_startEmittingParticles', () => {
 
 describe('ParticleEmitterSystem', () => {
   let world: World;
+  let time: Time;
+
   beforeEach(() => {
     world = new World('test');
+    time = new Time();
   });
 
   it('should process all emitters in the entity', () => {
-    const system = new ParticleEmitterSystem(world);
+    const system = new ParticleEmitterSystem(world, time);
     const mockSprite = {} as Sprite;
     const mockRenderLayer = {} as RenderLayerComponent;
 
@@ -84,7 +89,7 @@ describe('ParticleEmitterSystem', () => {
     const entity = world.buildAndAddEntity([emitterComponent]);
 
     // Mock time delta
-    vi.spyOn(world.time, 'deltaTimeInSeconds', 'get').mockReturnValue(0.1);
+    vi.spyOn(time, 'deltaTimeInSeconds', 'get').mockReturnValue(0.1);
 
     const initialDuration1 = emitter1.currentEmitDuration;
     const initialDuration2 = emitter2.currentEmitDuration;
@@ -99,12 +104,16 @@ describe('ParticleEmitterSystem', () => {
 
 describe('_emitNewParticles', () => {
   let world: World;
+  let time: Time;
   let system: ParticleEmitterSystem;
+
   const mockSprite = {} as Sprite;
   const mockRenderLayer = {} as RenderLayerComponent;
+
   beforeEach(() => {
     world = new World('test');
-    system = new ParticleEmitterSystem(world);
+    time = new Time();
+    system = new ParticleEmitterSystem(world, time);
     world.addSystem(system);
   });
 
@@ -123,7 +132,8 @@ describe('_emitNewParticles', () => {
 
     const initialEntityCount = world.entityCount;
 
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     expect(world.entityCount).toBe(initialEntityCount);
     expect(emitter.currentlyEmitting).toBe(false);
@@ -146,7 +156,8 @@ describe('_emitNewParticles', () => {
 
     const initialEntityCount = world.entityCount;
 
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     expect(world.entityCount).toBe(initialEntityCount);
     expect(emitter.currentlyEmitting).toBe(false);
@@ -168,7 +179,8 @@ describe('_emitNewParticles', () => {
 
     const initialEntityCount = world.entityCount;
 
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     expect(world.entityCount).toBe(initialEntityCount + 3);
     expect(emitter.emitCount).toBe(3);
@@ -188,15 +200,18 @@ describe('_emitNewParticles', () => {
 
     world.buildAndAddEntity([emitterComponent]);
 
-    world.update(0 * 1000);
+    time.update(0 * 1000);
+    world.update();
 
     expect(emitter.currentlyEmitting).toBe(true);
     expect(world.entityCount).toBe(1);
-    world.update(0.5 * 1000);
+    time.update(0.5 * 1000);
+    world.update();
 
     expect(emitter.currentlyEmitting).toBe(true);
     expect(world.entityCount).toBe(11);
-    world.update(1 * 1000);
+    time.update(1 * 1000);
+    world.update();
 
     expect(emitter.currentlyEmitting).toBe(false);
     expect(world.entityCount).toBe(11);
@@ -205,12 +220,16 @@ describe('_emitNewParticles', () => {
 
 describe('_getAmountToEmitBasedOnDuration', () => {
   let world: World;
+  let time: Time;
   let system: ParticleEmitterSystem;
+
   const mockSprite = {} as Sprite;
   const mockRenderLayer = {} as RenderLayerComponent;
+
   beforeEach(() => {
     world = new World('test');
-    system = new ParticleEmitterSystem(world);
+    time = new Time();
+    system = new ParticleEmitterSystem(world, time);
   });
 
   it('should calculate correct amount based on progress', () => {
@@ -258,12 +277,16 @@ describe('_getAmountToEmitBasedOnDuration', () => {
 
 describe('_getRandomValueInRange', () => {
   let world: World;
+  let time: Time;
   let system: ParticleEmitterSystem;
+
   const mockSprite = {} as Sprite;
   const mockRenderLayer = {} as RenderLayerComponent;
+
   beforeEach(() => {
     world = new World('test');
-    system = new ParticleEmitterSystem(world);
+    time = new Time();
+    system = new ParticleEmitterSystem(world, time);
     world.addSystem(system);
   });
 
@@ -281,7 +304,7 @@ describe('_getRandomValueInRange', () => {
 
     world.buildAndAddEntity([emitterComponent]);
 
-    world.update(0);
+    world.update();
 
     expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(7);
     expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(5);
@@ -301,7 +324,7 @@ describe('_getRandomValueInRange', () => {
 
     world.buildAndAddEntity([emitterComponent]);
 
-    world.update(0);
+    world.update();
 
     expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(10);
     expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(8);
@@ -321,7 +344,7 @@ describe('_getRandomValueInRange', () => {
 
     world.buildAndAddEntity([emitterComponent]);
 
-    world.update(0);
+    world.update();
 
     expect(emitter.totalAmountToEmit).toBe(12);
   });

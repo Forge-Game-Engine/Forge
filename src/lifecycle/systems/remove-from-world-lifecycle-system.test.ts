@@ -3,12 +3,15 @@ import { RemoveFromWorldLifecycleSystem } from './remove-from-world-lifecycle-sy
 import { World } from '../../ecs';
 import { LifetimeComponent } from '../components/lifetime-component';
 import { RemoveFromWorldStrategyComponent } from '../strategies/remove-from-world-strategy-component';
+import { Time } from '../../common';
 
 describe('RemoveFromWorldLifecycleSystem', () => {
   let world: World;
+  let time: Time;
 
   beforeEach(() => {
     world = new World('test');
+    time = new Time();
   });
 
   it('should not remove entity when hasExpired is false', () => {
@@ -20,7 +23,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     world.addSystem(system);
 
     // Act
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     // Assert
     expect(world.entityCount).toBe(1);
@@ -36,7 +40,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     world.addSystem(system);
 
     // Act
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     // Assert
     expect(world.entityCount).toBe(0);
@@ -57,7 +62,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     world.addSystem(system);
 
     // Act
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     // Assert
     expect(world.entityCount).toBe(1); // Only the entity without strategy remains
@@ -84,7 +90,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     world.addSystem(system);
 
     // Act
-    world.update(0.1);
+    time.update(0.1);
+    world.update();
 
     // Assert
     expect(world.entityCount).toBe(1); // Only active entity remains

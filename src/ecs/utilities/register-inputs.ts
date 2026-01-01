@@ -1,3 +1,4 @@
+import { Time } from '../../common/index.js';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -14,6 +15,7 @@ import { World } from '../world.js';
 
 export const registerInputs = (
   world: World,
+  time: Time,
   options: {
     entityName?: string;
     triggerActions?: TriggerAction[];
@@ -46,7 +48,7 @@ export const registerInputs = (
   inputsManager.addHoldActions(...holdActions);
 
   world.addSystem(
-    new UpdateInputSystem(world),
+    new UpdateInputSystem(time),
     systemRegistrationPositions.early,
   );
   world.addSystem(new ResetInputSystem(), systemRegistrationPositions.late);

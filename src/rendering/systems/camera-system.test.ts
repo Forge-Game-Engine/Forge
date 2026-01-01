@@ -3,7 +3,7 @@ import { CameraSystem } from './camera-system';
 import { Entity, World } from '../../ecs';
 import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraComponent } from '../components';
-import { PositionComponent } from '../../common';
+import { PositionComponent, Time } from '../../common';
 
 describe('CameraSystem', () => {
   let cameraSystem: CameraSystem;
@@ -11,16 +11,18 @@ describe('CameraSystem', () => {
   let cameraComponent: CameraComponent;
   let positionComponent: PositionComponent;
   let world: World;
+  let time: Time;
   let zoomInput: Axis1dAction;
   let panInput: Axis2dAction;
 
   beforeEach(() => {
+    time = new Time();
     world = new World('test');
 
     panInput = new Axis2dAction('pan', 'default');
     zoomInput = new Axis1dAction('zoom', 'default');
 
-    cameraSystem = new CameraSystem(world.time);
+    cameraSystem = new CameraSystem(time);
 
     cameraComponent = new CameraComponent({
       panInput,
@@ -39,7 +41,8 @@ describe('CameraSystem', () => {
     cameraComponent.maxZoom = 10000;
 
     zoomInput.set(1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(0.5);
   });
@@ -49,7 +52,8 @@ describe('CameraSystem', () => {
     cameraComponent.maxZoom = 10000;
 
     zoomInput.set(-1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(2);
   });
@@ -59,10 +63,12 @@ describe('CameraSystem', () => {
     cameraComponent.maxZoom = 10000;
 
     zoomInput.set(1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     zoomInput.set(1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(0.25);
   });
@@ -72,16 +78,20 @@ describe('CameraSystem', () => {
     cameraComponent.maxZoom = 10000;
 
     zoomInput.set(-1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     zoomInput.set(-1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     zoomInput.set(1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     zoomInput.set(1);
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(1);
   });
@@ -95,7 +105,8 @@ describe('CameraSystem', () => {
 
     zoomInput.set(-5000);
 
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(cameraComponent.maxZoom);
   });
@@ -103,7 +114,8 @@ describe('CameraSystem', () => {
   it('should update the camera position based on key inputs', () => {
     panInput.set(50, -30);
 
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(positionComponent.local.x).toBeGreaterThan(0);
     expect(positionComponent.local.y).toBeLessThan(0);
@@ -114,7 +126,8 @@ describe('CameraSystem', () => {
     panInput.set(50, -30);
     zoomInput.set(-5000);
 
-    world.update(16.6666);
+    time.update(16.6666);
+    world.update();
 
     expect(cameraComponent.zoom).toBe(1);
     expect(positionComponent.local.x).toBe(0);

@@ -5,6 +5,7 @@ import { Component, System } from './types';
 
 describe('World', () => {
   let world: World;
+
   const runMock = vi.fn();
   const stopMock = vi.fn();
 
@@ -49,7 +50,7 @@ describe('World', () => {
     const entity2 = world.buildAndAddEntity([new MockComponent1()]);
     entity2.enabled = false;
 
-    world.update(16);
+    world.update();
 
     // Only enabled entities should be passed
     expect(runMock).toHaveBeenCalledWith(entity1);
@@ -64,7 +65,7 @@ describe('World', () => {
 
     world.addSystem(system);
 
-    world.update(16);
+    world.update();
 
     // Only enabled entities should be passed
     expect(runMock).toHaveBeenCalledWith(entity1);
@@ -229,14 +230,14 @@ describe('World', () => {
     const entity = world.buildAndAddEntity([new MockComponent1()]);
 
     // ensure system sees the entity initially
-    world.update(16);
+    world.update();
     expect(runMock).toHaveBeenCalledWith(entity);
 
     runMock.mockClear();
     world.removeEntity(entity);
 
     // after removal the system should no longer receive the entity
-    world.update(16);
+    world.update();
     expect(runMock).not.toHaveBeenCalled();
   });
 

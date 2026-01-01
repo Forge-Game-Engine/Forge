@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Game } from './game';
 import { createContainer } from '../utilities';
 import { World } from './world';
+import { Time } from '../common';
 
 interface GameMock {
   registerWorld: Mock;
@@ -18,9 +19,11 @@ interface GameMock {
 describe('Game', () => {
   let game: GameMock;
   let world: World;
+  let time: Time;
 
   beforeEach(() => {
-    game = new Game(createContainer('test')) as unknown as GameMock;
+    time = new Time();
+    game = new Game(time, createContainer('test')) as unknown as GameMock;
     world = new World('foo');
   });
 

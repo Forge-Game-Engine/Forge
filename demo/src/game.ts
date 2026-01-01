@@ -15,11 +15,11 @@ import {
   Vector2,
 } from '../../src';
 
-const { game, world, renderContext } = createGame('demo-container');
+const { game, world, renderContext, time } = createGame('demo-container');
 
 const zoomInput = new Axis1dAction('zoom');
 
-const { inputsManager } = registerInputs(world, {
+const { inputsManager } = registerInputs(world, time, {
   axis1dActions: [zoomInput],
 });
 
@@ -27,12 +27,12 @@ const mouseInputSource = new MouseInputSource(inputsManager, game);
 
 mouseInputSource.axis1dBindings.add(new MouseAxis1dBinding(zoomInput));
 
-const leftCameraEntity = registerCamera(world, {
+const leftCameraEntity = registerCamera(world, time, {
   zoomInput,
   scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
 });
 
-const rightCameraEntity = registerCamera(world, {
+const rightCameraEntity = registerCamera(world, time, {
   zoomInput,
   scissorRect: new Rect(new Vector2(0.5, 0), new Vector2(0.5, 1)),
 });
