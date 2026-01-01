@@ -94,3 +94,9 @@ export abstract class System implements Stoppable {
     return;
   }
 }
+
+export type SystemCtor<T extends System = System> = {
+  readonly id: symbol;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any[]): T;
+};
