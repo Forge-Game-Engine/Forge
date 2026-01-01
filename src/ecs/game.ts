@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { type Stoppable } from '../common/index.js';
+import { type Stoppable, Time } from '../common/index.js';
 import type { World } from './world.js';
 import { ForgeEvent } from '../events/index.js';
 import { createContainer } from '../utilities/index.js';
@@ -25,10 +25,16 @@ export class Game implements Stoppable {
   private readonly _worlds: Set<World>;
 
   /**
+   * The time instance for the game.
+   */
+  private readonly _time: Time;
+
+  /**
    * Creates a new Game instance.
    * @param container - The HTML element that will contain the game.
    */
-  constructor(container?: HTMLElement | string) {
+  constructor(time: Time, container?: HTMLElement | string) {
+    this._time = time;
     this._worlds = new Set<World>();
     this.container = this._determineContainer(container);
 
@@ -44,8 +50,10 @@ export class Game implements Stoppable {
    * @param time - The initial time value.
    */
   public run(time = 0): void {
+    this._time.update(time);
+
     for (const world of this._worlds) {
-      world.update(time);
+      world.update();
     }
 
     requestAnimationFrame((t) => this.run(t));

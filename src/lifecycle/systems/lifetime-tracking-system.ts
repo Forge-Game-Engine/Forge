@@ -1,4 +1,4 @@
-import { Entity, System, World } from '../../ecs/index.js';
+import { Entity, System } from '../../ecs/index.js';
 import { Time } from '../../common/index.js';
 import { LifetimeComponent } from '../components/lifetime-component.js';
 
@@ -12,11 +12,11 @@ export class LifetimeTrackingSystem extends System {
 
   /**
    * Creates an instance of LifetimeTrackingSystem.
-   * @param world - The World instance.
+   * @param time - The Time instance.
    */
-  constructor(world: World) {
+  constructor(time: Time) {
     super([LifetimeComponent], 'lifetime-tracking');
-    this._time = world.time;
+    this._time = time;
   }
 
   /**

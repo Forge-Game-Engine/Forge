@@ -1,4 +1,4 @@
-import { PositionComponent } from '../../common/index.js';
+import { PositionComponent, Time } from '../../common/index.js';
 import { Vector2 } from '../../math/index.js';
 import {
   CameraComponent,
@@ -10,6 +10,7 @@ import { World } from '../world.js';
 
 export const registerCamera = (
   world: World,
+  time: Time,
   cameraOptions: Partial<CameraComponentOptions> = {},
   entityPosition: Vector2 = Vector2.zero,
   entityName: string = 'camera',
@@ -22,7 +23,7 @@ export const registerCamera = (
     { name: entityName },
   );
 
-  world.addSystem(new CameraSystem(world.time));
+  world.addSystem(new CameraSystem(time));
 
   return cameraEntity;
 };

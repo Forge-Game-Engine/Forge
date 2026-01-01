@@ -20,6 +20,7 @@ import {
   ParticleEmitterComponent,
   Range,
 } from '../index.js';
+
 /**
  * System that emits particles based on ParticleEmitters
  */
@@ -31,10 +32,11 @@ export class ParticleEmitterSystem extends System {
   /**
    * Creates an instance of ParticleEmitterSystem.
    * @param world - The World instance.
+   * @param time - The Time instance for managing time-related operations.
    */
-  constructor(world: World) {
+  constructor(world: World, time: Time) {
     super([ParticleEmitterComponent], 'particle-emitter');
-    this._time = world.time;
+    this._time = time;
     this._world = world;
     this._random = new Random();
   }

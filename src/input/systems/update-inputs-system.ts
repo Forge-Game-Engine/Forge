@@ -1,21 +1,20 @@
-import { Entity, System, World } from '../../ecs/index.js';
+import { Entity, System } from '../../ecs/index.js';
+import { Time } from '../../index.js';
 import { InputsComponent } from '../components/index.js';
 
 /** A system that updates all input states each frame. */
 export class UpdateInputSystem extends System {
-  private readonly _world: World;
+  private readonly _time: Time;
 
   /** Constructs a new UpdateInputSystem. */
-  constructor(world: World) {
+  constructor(time: Time) {
     super([InputsComponent], 'update-input');
-    this._world = world;
+    this._time = time;
   }
 
   public run(entity: Entity): void {
     const inputsComponent = entity.getComponentRequired(InputsComponent);
 
-    inputsComponent.inputManager.update(
-      this._world.time.deltaTimeInMilliseconds,
-    );
+    inputsComponent.inputManager.update(this._time.deltaTimeInMilliseconds);
   }
 }

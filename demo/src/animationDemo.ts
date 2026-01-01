@@ -24,6 +24,7 @@ import {
   Sprite,
   SpriteAnimationComponent,
   SpriteComponent,
+  Time,
   TriggerAction,
   Vector2,
   World,
@@ -36,10 +37,11 @@ import { ControlAdventurerComponent } from './control-adventurer-component';
 export function setupAnimationsDemo(
   world: World,
   game: Game,
+  time: Time,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
 ): ReturnType<typeof setupInputs> {
-  const inputs = setupInputs(world, game);
+  const inputs = setupInputs(world, game, time);
 
   const ShipController = createShipAnimationController();
   buildShipEntities(world, shipSprite, ShipController);
@@ -56,7 +58,7 @@ export function setupAnimationsDemo(
   return inputs;
 }
 
-function setupInputs(world: World, game: Game) {
+function setupInputs(world: World, game: Game, time: Time) {
   const gameInputGroup = 'game';
 
   const attackInput = new TriggerAction('attack', gameInputGroup);
@@ -76,7 +78,7 @@ function setupInputs(world: World, game: Game) {
     actionResetTypes.noReset,
   );
 
-  const { inputsManager } = registerInputs(world, {
+  const { inputsManager } = registerInputs(world, time, {
     triggerActions: [
       attackInput,
       runRInput,
