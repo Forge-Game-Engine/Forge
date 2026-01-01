@@ -42,6 +42,7 @@ float stars(vec2 uv, float density, float rarity, float radius) {
 
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+  uv.x *= u_resolution.x / u_resolution.y;
 
   // background scroll
   vec2 uvBg = uv + vec2(0.0, u_time * 0.2);

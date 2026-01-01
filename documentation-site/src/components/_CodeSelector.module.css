@@ -1,9 +1,11 @@
 .container {
   height: 600px;
   margin-left: 20px;
-  width: 600px;
+  width: 40%;
+  min-width: 600px;
   display: flex;
   flex-direction: column;
+  color: var(--text-color);
 }
 
 .fileNameToolbar {
@@ -44,7 +46,6 @@
 }
 
 .fileNameToolbar .fileName {
-  color: white;
   font-weight: 500;
   margin-left: 20px;
 }
