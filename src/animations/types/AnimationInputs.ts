@@ -20,24 +20,24 @@ export interface AnimationInput<T> {
  */
 export class AnimationInputs implements Updatable {
   /**
-   * An array of text inputs (string) used in the animation controller
+   * A map of text inputs (string) used in the animation controller
    */
-  public textInputs: AnimationInput<string>[]; // TODO: Performance - Replace with a map
+  public textInputs: Map<string, AnimationInput<string>>;
 
   /**
-   * An array of number inputs (number) used in the animation controller
+   * A map of number inputs (number) used in the animation controller
    */
-  public numberInputs: AnimationInput<number>[]; // TODO: Performance - Replace with a map
+  public numberInputs: Map<string, AnimationInput<number>>;
 
   /**
-   * An array of toggle inputs (boolean) used in the animation controller
+   * A map of toggle inputs (boolean) used in the animation controller
    */
-  public toggleInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
+  public toggleInputs: Map<string, AnimationInput<boolean>>;
 
   /**
-   * An array of trigger inputs (boolean) used in the animation controller
+   * A map of trigger inputs (boolean) used in the animation controller
    */
-  public triggerInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
+  public triggerInputs: Map<string, AnimationInput<boolean>>;
 
   /**
    * The current playback percentage of the animation clip (0 to 1)
@@ -46,17 +46,17 @@ export class AnimationInputs implements Updatable {
 
   /**
    * Creates a new instance of AnimationInputs.
-   * Initializes empty arrays for text, number, and toggle inputs.
+   * Initializes empty maps for text, number, toggle, and trigger inputs.
    */
   constructor() {
-    this.textInputs = [];
-    this.numberInputs = [];
-    this.toggleInputs = [];
-    this.triggerInputs = [];
+    this.textInputs = new Map();
+    this.numberInputs = new Map();
+    this.toggleInputs = new Map();
+    this.triggerInputs = new Map();
   }
 
   public update(): void {
-    for (const triggerInput of this.triggerInputs) {
+    for (const triggerInput of this.triggerInputs.values()) {
       triggerInput.value = false;
     }
   }
@@ -194,29 +194,32 @@ export class AnimationInputs implements Updatable {
   /**
    * A generic method to register a new input of any type.
    * @param name - the name of the input
-   * @param animationInputArray - the array to register the input in
+   * @param animationInputMap - the map to register the input in
    * @param startingValue - the starting value for the input.
    */
   private _registerInput<T>(
     name: string,
-    animationInputArray: AnimationInput<T>[],
+    animationInputMap: Map<string, AnimationInput<T>>,
     startingValue: T,
   ) {
-    if (animationInputArray.some((input) => input.name === name)) {
+    if (animationInputMap.has(name)) {
       throw new Error(`Input with name ${name} already exists.`);
     }
 
-    animationInputArray.push({ name, value: startingValue });
+    animationInputMap.set(name, { name, value: startingValue });
   }
 
   /**
    * A generic method to get an input of any type by name.
    * @param name - the name of the input
-   * @param animationInputArray - the array to search for the input in
+   * @param animationInputMap - the map to search for the input in
    * @returns The input with the specified name
    */
-  private _getInput<T>(name: string, animationInputArray: AnimationInput<T>[]) {
-    const input = animationInputArray.find((input) => input.name === name);
+  private _getInput<T>(
+    name: string,
+    animationInputMap: Map<string, AnimationInput<T>>,
+  ) {
+    const input = animationInputMap.get(name);
 
     if (!input) {
       return null;

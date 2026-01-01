@@ -20,9 +20,9 @@ export class World implements Updatable, Stoppable {
   public readonly name: string;
 
   /**
-   * A map of system names to the entities they operate on.
+   * A map of systems to the entities they operate on.
    */
-  private readonly _systemEntities = new Map<string, Set<Entity>>();
+  private readonly _systemEntities = new Map<System, Set<Entity>>();
 
   /**
    * A temporary array to hold enabled entities for system updates.
@@ -66,7 +66,7 @@ export class World implements Updatable, Stoppable {
    */
   public update(): void {
     for (const { system } of this._systems) {
-      const entities = this._systemEntities.get(system.name);
+      const entities = this._systemEntities.get(system);
 
       if (!entities) {
         throw new Error(`Unable to get entities for system ${system.name}`);
@@ -209,10 +209,15 @@ export class World implements Updatable, Stoppable {
     system: System,
     order: number = systemRegistrationPositions.normal,
   ): this {
-    if (this._systemEntities.has(system.name)) {
-      console.warn(
-        `Adding system "${system.name}" to world "${this.name}", a system with this name already exists in the world.`,
-      );
+    // Check if the system instance is already added
+    for (const { system: existingSystem } of this._systems) {
+      if (existingSystem === system) {
+        console.warn(
+          `System instance "${system.name}" is already added to world "${this.name}". Skipping.`,
+        );
+
+        return this;
+      }
     }
 
     this._systems.add({ system, order });
@@ -224,7 +229,7 @@ export class World implements Updatable, Stoppable {
       this._systems.add(pair);
     }
 
-    this._systemEntities.set(system.name, this.queryEntities(system.query));
+    this._systemEntities.set(system, this.queryEntities(system.query));
 
     this.raiseOnSystemsChangedEvent();
 
@@ -272,7 +277,7 @@ export class World implements Updatable, Stoppable {
       if (isNameMatch || isSystemMatch) {
         this._systems.delete(systemOrderPair);
 
-        this._systemEntities.delete(system.name);
+        this._systemEntities.delete(system);
         this.raiseOnSystemsChangedEvent();
       }
     }
@@ -300,7 +305,7 @@ export class World implements Updatable, Stoppable {
    */
   public updateSystemEntities(entity: Entity): void {
     for (const { system } of this._systems) {
-      const entities = this._systemEntities.get(system.name); // TODO: Can't rely on name here if it is optional
+      const entities = this._systemEntities.get(system);
 
       if (!entities) {
         throw new Error(`Unable to get entities for system ${system.name}`);

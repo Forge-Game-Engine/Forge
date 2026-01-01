@@ -19,8 +19,6 @@ import {
   spriteVertexShader,
 } from '../shaders/index.js';
 
-// TODO - Move into ShaderCache class with options to add includes and shaders
-
 /**
  * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
  *

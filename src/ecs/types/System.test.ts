@@ -10,6 +10,12 @@ class TestSystem extends System {
   }
 }
 
+class AnotherTestSystem extends System {
+  public run(): void {
+    // Implement the abstract method for testing
+  }
+}
+
 describe('System', () => {
   let system: TestSystem;
   let entities: Entity[];
@@ -29,6 +35,20 @@ describe('System', () => {
   it('should initialize with default name', () => {
     const defaultSystem = new TestSystem([]);
     expect(defaultSystem.name).toBe('[anonymous system]');
+  });
+
+  it('should have a unique id for each system class', () => {
+    const id1 = TestSystem.id;
+    const id2 = TestSystem.id;
+    const id3 = AnotherTestSystem.id;
+
+    // Same class should return the same id
+    expect(id1).toBe(id2);
+    // Different classes should have different ids
+    expect(id1).not.toBe(id3);
+    // IDs should be symbols
+    expect(typeof id1).toBe('symbol');
+    expect(typeof id3).toBe('symbol');
   });
 
   it('should run system on enabled entities', () => {

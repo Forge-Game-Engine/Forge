@@ -2,12 +2,28 @@ import type { Stoppable } from '../../common/index.js';
 import { Entity } from '../entity.js';
 import type { Query } from './Query.js';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+const systemIds = new WeakMap<Function, symbol>();
+
 /**
  * Represents a system in the Entity-Component-System (ECS) architecture.
  * A system operates on entities that contain specific components.
  * Systems are responsible for updating the state of entities.
  */
 export abstract class System implements Stoppable {
+  /**
+   * The unique id of the system.
+   */
+  static get id(): symbol {
+    let id = systemIds.get(this);
+
+    if (!id) {
+      id = Symbol(this.name);
+      systemIds.set(this, id);
+    }
+
+    return id;
+  }
   /**
    * The name of the system.
    */
@@ -78,3 +94,9 @@ export abstract class System implements Stoppable {
     return;
   }
 }
+
+export type SystemCtor<T extends System = System> = {
+  readonly id: symbol;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any[]): T;
+};
