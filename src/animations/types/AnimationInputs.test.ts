@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationInputs } from './AnimationInputs';
 
 describe('AnimationInputs', () => {
-  // TODO: add tests for trigger inputs and add tests for default values when registering inputs
-
   let animationInputs: AnimationInputs;
 
   beforeEach(() => {
@@ -16,6 +14,12 @@ describe('AnimationInputs', () => {
       const toggle = animationInputs.getToggle('toggle1');
       expect(toggle?.name).toBe('toggle1');
       expect(toggle?.value).toBe(false);
+    });
+
+    it('should register a new toggle input with custom starting value', () => {
+      animationInputs.registerToggle('toggle2', true);
+      const toggle = animationInputs.getToggle('toggle2');
+      expect(toggle?.value).toBe(true);
     });
 
     it('should throw an error if a toggle with the same name already exists', () => {
@@ -97,6 +101,54 @@ describe('AnimationInputs', () => {
       animationInputs.setText('text1', 'world');
       const text = animationInputs.getText('text1');
       expect(text?.value).toBe('world');
+    });
+  });
+
+  describe('Trigger functions', () => {
+    it('should register a new trigger input with default value', () => {
+      animationInputs.registerTrigger('trigger1');
+      const trigger = animationInputs.getTrigger('trigger1');
+      expect(trigger?.name).toBe('trigger1');
+      expect(trigger?.value).toBe(false);
+    });
+
+    it('should throw an error if a trigger with the same name already exists', () => {
+      animationInputs.registerTrigger('trigger1');
+      expect(() => animationInputs.registerTrigger('trigger1')).toThrowError(
+        'Input with name trigger1 already exists.',
+      );
+    });
+
+    it('should set the value of a trigger input to true', () => {
+      animationInputs.registerTrigger('trigger1');
+      animationInputs.setTrigger('trigger1');
+      const trigger = animationInputs.getTrigger('trigger1');
+      expect(trigger?.value).toBe(true);
+    });
+
+    it('should reset trigger to false after update', () => {
+      animationInputs.registerTrigger('trigger1');
+      animationInputs.setTrigger('trigger1');
+
+      let trigger = animationInputs.getTrigger('trigger1');
+      expect(trigger?.value).toBe(true);
+
+      animationInputs.update();
+      trigger = animationInputs.getTrigger('trigger1');
+      expect(trigger?.value).toBe(false);
+    });
+
+    it('should handle multiple triggers independently', () => {
+      animationInputs.registerTrigger('trigger1');
+      animationInputs.registerTrigger('trigger2');
+
+      animationInputs.setTrigger('trigger1');
+
+      const trigger1 = animationInputs.getTrigger('trigger1');
+      const trigger2 = animationInputs.getTrigger('trigger2');
+
+      expect(trigger1?.value).toBe(true);
+      expect(trigger2?.value).toBe(false);
     });
   });
 
