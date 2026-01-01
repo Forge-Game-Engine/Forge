@@ -2,7 +2,7 @@ import { type Stoppable, type Updatable } from '../common/index.js';
 import { isString } from '../utilities/index.js';
 import { systemRegistrationPositions } from './constants/index.js';
 import { Entity, type EntityOptions } from './entity.js';
-import type { Component, Query, System, SystemCtor } from './types/index.js';
+import type { Component, Query, System } from './types/index.js';
 
 interface SystemOrderPair {
   system: System;
@@ -20,9 +20,9 @@ export class World implements Updatable, Stoppable {
   public readonly name: string;
 
   /**
-   * A map of system IDs to the entities they operate on.
+   * A map of systems to the entities they operate on.
    */
-  private readonly _systemEntities = new Map<symbol, Set<Entity>>();
+  private readonly _systemEntities = new Map<System, Set<Entity>>();
 
   /**
    * A temporary array to hold enabled entities for system updates.
@@ -66,13 +66,10 @@ export class World implements Updatable, Stoppable {
    */
   public update(): void {
     for (const { system } of this._systems) {
-      const systemId = (system.constructor as SystemCtor).id;
-      const entities = this._systemEntities.get(systemId);
+      const entities = this._systemEntities.get(system);
 
       if (!entities) {
-        throw new Error(
-          `Unable to get entities for system ${system.name} (${systemId.toString()})`,
-        );
+        throw new Error(`Unable to get entities for system ${system.name}`);
       }
 
       this._enabledEntities.length = 0;
@@ -232,8 +229,7 @@ export class World implements Updatable, Stoppable {
       this._systems.add(pair);
     }
 
-    const systemId = (system.constructor as SystemCtor).id;
-    this._systemEntities.set(systemId, this.queryEntities(system.query));
+    this._systemEntities.set(system, this.queryEntities(system.query));
 
     this.raiseOnSystemsChangedEvent();
 
@@ -281,8 +277,7 @@ export class World implements Updatable, Stoppable {
       if (isNameMatch || isSystemMatch) {
         this._systems.delete(systemOrderPair);
 
-        const systemId = (system.constructor as SystemCtor).id;
-        this._systemEntities.delete(systemId);
+        this._systemEntities.delete(system);
         this.raiseOnSystemsChangedEvent();
       }
     }
@@ -310,13 +305,10 @@ export class World implements Updatable, Stoppable {
    */
   public updateSystemEntities(entity: Entity): void {
     for (const { system } of this._systems) {
-      const systemId = (system.constructor as SystemCtor).id;
-      const entities = this._systemEntities.get(systemId);
+      const entities = this._systemEntities.get(system);
 
       if (!entities) {
-        throw new Error(
-          `Unable to get entities for system ${system.name} (${systemId.toString()})`,
-        );
+        throw new Error(`Unable to get entities for system ${system.name}`);
       }
 
       if (entity.containsAllComponents(system.query)) {
