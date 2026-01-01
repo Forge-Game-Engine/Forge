@@ -15,6 +15,8 @@ export interface AnimationInput<T> {
   value: T;
 }
 
+// TODO: Performance - Replace textInputs, numberInputs, toggleInputs, and triggerInputs with maps
+
 /**
  * Class to store and manage all animation inputs used in the animation controller
  */
@@ -22,22 +24,22 @@ export class AnimationInputs implements Updatable {
   /**
    * An array of text inputs (string) used in the animation controller
    */
-  public textInputs: AnimationInput<string>[]; // TODO: Performance - Replace with a map
+  public textInputs: AnimationInput<string>[];
 
   /**
    * An array of number inputs (number) used in the animation controller
    */
-  public numberInputs: AnimationInput<number>[]; // TODO: Performance - Replace with a map
+  public numberInputs: AnimationInput<number>[];
 
   /**
    * An array of toggle inputs (boolean) used in the animation controller
    */
-  public toggleInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
+  public toggleInputs: AnimationInput<boolean>[];
 
   /**
    * An array of trigger inputs (boolean) used in the animation controller
    */
-  public triggerInputs: AnimationInput<boolean>[]; // TODO: Performance - Replace with a map
+  public triggerInputs: AnimationInput<boolean>[];
 
   /**
    * The current playback percentage of the animation clip (0 to 1)
