@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimationInputs } from './AnimationInputs';
 
 describe('AnimationInputs', () => {
-  // TODO: add tests for trigger inputs
-  // TODO: add tests for default values when registering inputs
+  // TODO: add tests for trigger inputs and add tests for default values when registering inputs
 
   let animationInputs: AnimationInputs;
 
