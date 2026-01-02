@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParticleEmitterSystem } from './particle-emitter-system';
 import { Entity, World } from '../../ecs';
 import { ParticleEmitter, ParticleEmitterComponent } from '../components';
-import { RenderLayer, RenderLayerComponent, Sprite } from '../../rendering';
+import { RenderLayer, Sprite } from '../../rendering';
 import { Time } from '../../common';
 
 describe('_startEmittingParticles', () => {
