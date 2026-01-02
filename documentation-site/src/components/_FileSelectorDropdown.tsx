@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import styles from './_CodeSelector.module.css';
 import { CodeFile } from './_CodeSelector.types';
-import { FileType, fileTypeIconLookup, groupByFileType } from './_CodeSelector.utils';
+import { FILE_TYPES, fileTypeIconLookup, groupByFileType } from './_CodeSelector.utils';
 import { FileTypeGroup } from './_FileTypeGroup';
 
 interface FileSelectorDropdownProps {
@@ -19,8 +19,9 @@ export const FileSelectorDropdown: FC<FileSelectorDropdownProps> = ({
 
   return (
     <div className={styles.codeSelector}>
-      {Object.entries(groupedFiles).map(([type, files]) => {
-        const typeIcon = fileTypeIconLookup[type as FileType];
+      {FILE_TYPES.map((type) => {
+        const typeIcon = fileTypeIconLookup[type];
+        const files = groupedFiles[type];
 
         return (
           <FileTypeGroup

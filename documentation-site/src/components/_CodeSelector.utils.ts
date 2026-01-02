@@ -11,6 +11,14 @@ export const fileTypeIconLookup: Record<FileType, string> = {
   Others: 'fa-code',
 };
 
+export const FILE_TYPES: readonly FileType[] = [
+  'Game',
+  'Components',
+  'Systems',
+  'Shaders',
+  'Others',
+];
+
 export const getFileTypeIcon = (fileName: string): FileType => {
   if (fileName.includes('.component')) {
     return 'Components';
