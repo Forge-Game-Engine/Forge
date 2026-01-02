@@ -33,6 +33,8 @@ requestAnimationFrame(gameLoop);
 ## Countdown Timer
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class CountdownComponent extends Component {
   public secondsRemaining: number;
 
@@ -73,6 +75,7 @@ timerComp.addTask({
 ## Enemy Spawn System
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
 import { PositionComponent } from '@forge-game-engine/forge/common';
 
 // Example custom components (you would define these in your game)
@@ -122,6 +125,8 @@ spawnerTimer.addTask({
 ## Ability Cooldown System
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class AbilityComponent extends Component {
   public cooldownSeconds: number;
   public isReady = true;
@@ -174,6 +179,8 @@ ability.activate(player); // "Ability on cooldown!"
 ## Buff/Debuff System
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class StatsComponent extends Component {
   public baseSpeed = 100;
   public speedMultiplier = 1.0;
@@ -219,6 +226,8 @@ applySpeedBoost(player, 2.0, 10000);
 ## Blinking Effect
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class VisibilityComponent extends Component {
   public isVisible = true;
 }
@@ -258,6 +267,8 @@ startBlinking(item, 5, 200);
 ## Delayed Event Sequence
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class GameStateComponent extends Component {
   public state: 'intro' | 'countdown' | 'playing' | 'gameover' = 'intro';
 }
@@ -316,6 +327,8 @@ timer.addTask({
 ## Periodic Auto-save
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class SaveComponent extends Component {
   public saveCount = 0;
 
@@ -350,6 +363,8 @@ saveTimer.addTask({
 ## Combo Timer
 
 ```typescript
+import { Component } from '@forge-game-engine/forge/ecs';
+
 class ComboComponent extends Component {
   public comboCount = 0;
   private resetTimerId: number | null = null;
