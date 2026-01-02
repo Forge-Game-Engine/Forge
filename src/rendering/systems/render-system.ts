@@ -8,21 +8,6 @@ import { createProjectionMatrix } from '../shaders/index.js';
 
 /**
  * A system responsible for rendering entities with render layers to the screen.
- *
- * The RenderSystem processes entities that have a {@link RenderLayerComponent} and renders
- * them using WebGL2. It handles:
- * - Sorting entities by render layer order
- * - Managing instance batching for efficient rendering
- * - Setting up projection matrices for cameras
- * - Managing scissor rectangles for viewport clipping
- * - Configuring WebGL state (blending, etc.)
- *
- * @example
- * ```ts
- * const renderContext = createRenderContext(canvas);
- * const renderSystem = new RenderSystem(renderContext);
- * world.addSystem(renderSystem);
- * ```
  */
 export class RenderSystem extends System {
   private readonly _renderContext: RenderContext;
@@ -30,8 +15,7 @@ export class RenderSystem extends System {
   /**
    * Creates a new RenderSystem instance.
    *
-   * @param renderContext - The rendering context containing the WebGL context,
-   *                        canvas, and other rendering resources.
+   * @param renderContext - The rendering context.
    */
   constructor(renderContext: RenderContext) {
     super([RenderLayerComponent], 'renderer');
@@ -65,13 +49,6 @@ export class RenderSystem extends System {
 
   /**
    * Renders all renderables in the entity's render layer.
-   *
-   * For each renderable in the layer, this method:
-   * 1. Sets up the projection matrix based on the camera
-   * 2. Binds the renderable's material and geometry
-   * 3. Configures scissor testing if needed
-   * 4. Batches instance data for all entities
-   * 5. Uploads the data to the GPU and draws
    *
    * @param entity - The entity containing a {@link RenderLayerComponent}.
    */
@@ -114,15 +91,6 @@ export class RenderSystem extends System {
 
   /**
    * Renders a batch of entities using instanced rendering.
-   *
-   * This method handles the complete rendering pipeline for a batch:
-   * 1. Skips empty batches
-   * 2. Calculates projection matrix from camera position and zoom
-   * 3. Binds the renderable's material and geometry
-   * 4. Sets up scissor testing if the camera has a scissor rect
-   * 5. Allocates or grows the instance buffer as needed
-   * 6. Fills the instance buffer with entity data
-   * 7. Uploads to GPU and performs instanced draw call
    *
    * @param renderable - The renderable containing material, geometry, and camera.
    * @param batch - The instance batch containing entities to render.
