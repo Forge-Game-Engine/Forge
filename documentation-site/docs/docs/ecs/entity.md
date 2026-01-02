@@ -52,7 +52,9 @@ const child = new Entity(world, [new PositionComponent(10, 10)], {
 ```
 
 ```ts title="Using buildAndAddEntity helper"
-const parent = world.buildAndAddEntity([new PositionComponent(100, 100)]);
+const parent = world.buildAndAddEntity([
+  new PositionComponent(100, 100),
+]);
 
 // Create child with parent at construction time
 const child = world.buildAndAddEntity(
