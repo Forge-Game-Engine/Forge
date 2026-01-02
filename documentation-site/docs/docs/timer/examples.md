@@ -75,6 +75,14 @@ timerComp.addTask({
 ```typescript
 import { PositionComponent } from '@forge-game-engine/forge/common';
 
+// Example custom components (you would define these in your game)
+class EnemyComponent extends Component {}
+class SpriteComponent extends Component {
+  constructor(public imagePath: string) {
+    super();
+  }
+}
+
 class EnemySpawnerComponent extends Component {
   public enemiesSpawned = 0;
   public maxEnemies = 20;
