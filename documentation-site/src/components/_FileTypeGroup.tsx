@@ -31,9 +31,7 @@ export const FileTypeGroup: FC<FileTypeGroupProps> = ({
           <button
             key={file.name}
             className={clsx(
-              file.name === selectedFileName
-                ? styles.selectedFile
-                : undefined,
+              file.name === selectedFileName ? styles.selectedFile : undefined,
             )}
             onClick={() => onSelectFile(file)}
           >
