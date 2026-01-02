@@ -23,6 +23,10 @@ export const FileSelectorDropdown: FC<FileSelectorDropdownProps> = ({
         const typeIcon = fileTypeIconLookup[type];
         const files = groupedFiles[type];
 
+        if (files.length === 0) {
+          return null;
+        }
+
         return (
           <FileTypeGroup
             key={type}
