@@ -10,7 +10,7 @@ import { InstanceBatch } from '../render-layers/instance-batch';
 import { Renderable } from '../renderable';
 import { Material } from '../materials';
 import { Geometry } from '../geometry';
-import { Vector3 } from '../../math';
+import { Rect, Vector2 } from '../../math';
 
 describe('RenderSystem', () => {
   let renderSystem: RenderSystem;
@@ -142,7 +142,7 @@ describe('RenderSystem', () => {
     it('should process each renderable in the render layer', () => {
       const renderLayer = new RenderLayer();
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -201,7 +201,7 @@ describe('RenderSystem', () => {
   describe('_includeBatch', () => {
     it('should skip empty batches', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -240,7 +240,7 @@ describe('RenderSystem', () => {
 
     it('should set up projection matrix and bind material', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(10, 20, 0)),
+        new PositionComponent(10, 20),
         new CameraComponent(),
       ]);
 
@@ -268,7 +268,7 @@ describe('RenderSystem', () => {
 
       const batch = new InstanceBatch();
       const renderEntity = new Entity(world, [
-        new PositionComponent(new Vector3(5, 5, 0)),
+        new PositionComponent(5, 5),
       ]);
       batch.entities.add(renderEntity);
 
@@ -293,13 +293,13 @@ describe('RenderSystem', () => {
 
     it('should enable scissor test when camera has scissor rect', () => {
       const camera = new CameraComponent();
-      camera.scissorRect = {
-        origin: { x: 0.25, y: 0.25 },
-        size: { x: 0.5, y: 0.5 },
-      };
+      camera.scissorRect = new Rect(
+        new Vector2(0.25, 0.25),
+        new Vector2(0.5, 0.5),
+      );
 
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         camera,
       ]);
 
@@ -324,7 +324,7 @@ describe('RenderSystem', () => {
 
       const batch = new InstanceBatch();
       const renderEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
       ]);
       batch.entities.add(renderEntity);
 
@@ -348,7 +348,7 @@ describe('RenderSystem', () => {
 
     it('should allocate buffer if not present', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -376,7 +376,7 @@ describe('RenderSystem', () => {
 
       const batch = new InstanceBatch();
       const renderEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
       ]);
       batch.entities.add(renderEntity);
 
@@ -395,7 +395,7 @@ describe('RenderSystem', () => {
 
     it('should grow buffer if required size is larger', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -422,7 +422,7 @@ describe('RenderSystem', () => {
       batch.buffer = new Float32Array(10); // Small buffer
 
       const renderEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
       ]);
       batch.entities.add(renderEntity);
 
@@ -440,7 +440,7 @@ describe('RenderSystem', () => {
 
     it('should call bindInstanceData for each entity', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -468,10 +468,10 @@ describe('RenderSystem', () => {
 
       const batch = new InstanceBatch();
       const entity1 = new Entity(world, [
-        new PositionComponent(new Vector3(1, 1, 0)),
+        new PositionComponent(1, 1),
       ]);
       const entity2 = new Entity(world, [
-        new PositionComponent(new Vector3(2, 2, 0)),
+        new PositionComponent(2, 2),
       ]);
       batch.entities.add(entity1);
       batch.entities.add(entity2);
@@ -500,7 +500,7 @@ describe('RenderSystem', () => {
 
     it('should upload buffer data and draw instances', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -527,7 +527,7 @@ describe('RenderSystem', () => {
 
       const batch = new InstanceBatch();
       const renderEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
       ]);
       batch.entities.add(renderEntity);
 
@@ -562,7 +562,7 @@ describe('RenderSystem', () => {
   describe('integration', () => {
     it('should render multiple entities with multiple render layers in order', () => {
       const cameraEntity = new Entity(world, [
-        new PositionComponent(new Vector3(0, 0, 0)),
+        new PositionComponent(0, 0),
         new CameraComponent(),
       ]);
 
@@ -589,14 +589,14 @@ describe('RenderSystem', () => {
       const renderLayer1 = new RenderLayer();
       const batch1 = new InstanceBatch();
       batch1.entities.add(
-        new Entity(world, [new PositionComponent(new Vector3(1, 1, 0))]),
+        new Entity(world, [new PositionComponent(1, 1)]),
       );
       renderLayer1.renderables.set(renderable, batch1);
 
       const renderLayer2 = new RenderLayer();
       const batch2 = new InstanceBatch();
       batch2.entities.add(
-        new Entity(world, [new PositionComponent(new Vector3(2, 2, 0))]),
+        new Entity(world, [new PositionComponent(2, 2)]),
       );
       renderLayer2.renderables.set(renderable, batch2);
 
