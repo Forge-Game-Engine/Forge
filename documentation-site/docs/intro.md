@@ -152,10 +152,7 @@ const shaderCache = createShaderCache();
 const sprite = createImageSprite(image, renderLayers[0], shaderCache);
 
 // diff-add-start
-world.buildAndAddEntity([
-  new PositionComponent(),
-  new SpriteComponent(sprite),
-]);
+world.buildAndAddEntity([new PositionComponent(), new SpriteComponent(sprite)]);
 // diff-add-end
 
 game.run();
