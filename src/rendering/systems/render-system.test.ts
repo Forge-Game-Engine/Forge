@@ -267,9 +267,7 @@ describe('RenderSystem', () => {
       );
 
       const batch = new InstanceBatch();
-      const renderEntity = new Entity(world, [
-        new PositionComponent(5, 5),
-      ]);
+      const renderEntity = new Entity(world, [new PositionComponent(5, 5)]);
       batch.entities.add(renderEntity);
 
       const renderLayer = new RenderLayer();
@@ -323,9 +321,7 @@ describe('RenderSystem', () => {
       );
 
       const batch = new InstanceBatch();
-      const renderEntity = new Entity(world, [
-        new PositionComponent(0, 0),
-      ]);
+      const renderEntity = new Entity(world, [new PositionComponent(0, 0)]);
       batch.entities.add(renderEntity);
 
       const renderLayer = new RenderLayer();
@@ -375,9 +371,7 @@ describe('RenderSystem', () => {
       );
 
       const batch = new InstanceBatch();
-      const renderEntity = new Entity(world, [
-        new PositionComponent(0, 0),
-      ]);
+      const renderEntity = new Entity(world, [new PositionComponent(0, 0)]);
       batch.entities.add(renderEntity);
 
       const renderLayer = new RenderLayer();
@@ -421,9 +415,7 @@ describe('RenderSystem', () => {
       const batch = new InstanceBatch();
       batch.buffer = new Float32Array(10); // Small buffer
 
-      const renderEntity = new Entity(world, [
-        new PositionComponent(0, 0),
-      ]);
+      const renderEntity = new Entity(world, [new PositionComponent(0, 0)]);
       batch.entities.add(renderEntity);
 
       const renderLayer = new RenderLayer();
@@ -467,12 +459,8 @@ describe('RenderSystem', () => {
       );
 
       const batch = new InstanceBatch();
-      const entity1 = new Entity(world, [
-        new PositionComponent(1, 1),
-      ]);
-      const entity2 = new Entity(world, [
-        new PositionComponent(2, 2),
-      ]);
+      const entity1 = new Entity(world, [new PositionComponent(1, 1)]);
+      const entity2 = new Entity(world, [new PositionComponent(2, 2)]);
       batch.entities.add(entity1);
       batch.entities.add(entity2);
 
@@ -526,9 +514,7 @@ describe('RenderSystem', () => {
       );
 
       const batch = new InstanceBatch();
-      const renderEntity = new Entity(world, [
-        new PositionComponent(0, 0),
-      ]);
+      const renderEntity = new Entity(world, [new PositionComponent(0, 0)]);
       batch.entities.add(renderEntity);
 
       const renderLayer = new RenderLayer();
@@ -588,16 +574,12 @@ describe('RenderSystem', () => {
       // Create two render layers with different orders
       const renderLayer1 = new RenderLayer();
       const batch1 = new InstanceBatch();
-      batch1.entities.add(
-        new Entity(world, [new PositionComponent(1, 1)]),
-      );
+      batch1.entities.add(new Entity(world, [new PositionComponent(1, 1)]));
       renderLayer1.renderables.set(renderable, batch1);
 
       const renderLayer2 = new RenderLayer();
       const batch2 = new InstanceBatch();
-      batch2.entities.add(
-        new Entity(world, [new PositionComponent(2, 2)]),
-      );
+      batch2.entities.add(new Entity(world, [new PositionComponent(2, 2)]));
       renderLayer2.renderables.set(renderable, batch2);
 
       const entity1 = new Entity(world, [

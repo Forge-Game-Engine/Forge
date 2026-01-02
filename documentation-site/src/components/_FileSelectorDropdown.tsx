@@ -1,7 +1,11 @@
 import { FC } from 'react';
 import styles from './_CodeSelector.module.css';
 import { CodeFile } from './_CodeSelector.types';
-import { FILE_TYPES, fileTypeIconLookup, groupByFileType } from './_CodeSelector.utils';
+import {
+  FILE_TYPES,
+  fileTypeIconLookup,
+  groupByFileType,
+} from './_CodeSelector.utils';
 import { FileTypeGroup } from './_FileTypeGroup';
 
 interface FileSelectorDropdownProps {
