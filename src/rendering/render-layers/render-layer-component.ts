@@ -13,7 +13,8 @@ export class RenderLayerComponent extends Component {
 
   /**
    * Constructs a new instance of the `RenderLayerComponent` class.
-   * @param options - The options for configuring the render layer.
+   * @param renderLayer - The render layer associated with this component.
+   * @param order - The order of the render layer (lower numbers are rendered first).
    * @throws An error if the WebGL2 context is not found.
    */
   constructor(renderLayer: RenderLayer, order: number = 0) {
