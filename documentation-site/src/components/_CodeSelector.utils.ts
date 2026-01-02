@@ -44,11 +44,6 @@ export const groupByFileType = (
 
   const groups = codeFiles.reduce((acc, file) => {
     const fileType = getFileTypeIcon(file.name);
-
-    if (!acc[fileType]) {
-      acc[fileType] = [];
-    }
-
     acc[fileType].push(file);
 
     return acc;
