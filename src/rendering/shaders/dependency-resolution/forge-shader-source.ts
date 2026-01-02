@@ -1,27 +1,5 @@
 /**
- * Represents a shader source file with metadata extraction capabilities.
- *
- * This class parses shader source code to extract:
- * - Shader name (from #property name directive)
- * - Include dependencies (from #include directives)
- * - Custom properties (from #property directives)
- *
- * @example
- * ```typescript
- * const shaderSource = new ForgeShaderSource(`
- *   #property name: myShader
- *   #property version: 1.0
- *   #include <common>
- *
- *   void main() {
- *     gl_FragColor = vec4(1.0);
- *   }
- * `);
- *
- * console.log(shaderSource.name); // "myShader"
- * console.log(shaderSource.includes); // Set { "common" }
- * console.log(shaderSource.getPropertyValue('version')); // "1.0"
- * ```
+ * Represents a shader source file with metadata.
  */
 export class ForgeShaderSource {
   private readonly _rawSource: string;
