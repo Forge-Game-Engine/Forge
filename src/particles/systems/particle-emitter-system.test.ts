@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParticleEmitterSystem } from './particle-emitter-system';
 import { Entity, World } from '../../ecs';
 import { ParticleEmitter, ParticleEmitterComponent } from '../components';
-import { RenderLayerComponent, Sprite } from '../../rendering';
+import { RenderLayer, Sprite } from '../../rendering';
 import { Time } from '../../common';
 
 describe('_startEmittingParticles', () => {
@@ -10,7 +10,9 @@ describe('_startEmittingParticles', () => {
   const time: Time = new Time();
   const system = new ParticleEmitterSystem(world, time);
   const mockSprite = {} as Sprite; // Mock sprite object
-  const mockRenderLayer = {} as RenderLayerComponent; // Mock render layer object
+  const mockRenderLayer = {
+    addEntity: vi.fn(),
+  } as unknown as RenderLayer; // Mock render layer object
 
   it('should start emitting when startEmitting is true', () => {
     const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
@@ -69,7 +71,7 @@ describe('ParticleEmitterSystem', () => {
   it('should process all emitters in the entity', () => {
     const system = new ParticleEmitterSystem(world, time);
     const mockSprite = {} as Sprite;
-    const mockRenderLayer = {} as RenderLayerComponent;
+    const mockRenderLayer = {} as RenderLayer;
 
     // Create multiple emitters
     const emitter1 = new ParticleEmitter(mockSprite, mockRenderLayer, {
@@ -108,7 +110,9 @@ describe('_emitNewParticles', () => {
   let system: ParticleEmitterSystem;
 
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as RenderLayerComponent;
+  const mockRenderLayer = {
+    addEntity: vi.fn(),
+  } as unknown as RenderLayer;
 
   beforeEach(() => {
     world = new World('test');
@@ -224,7 +228,9 @@ describe('_getAmountToEmitBasedOnDuration', () => {
   let system: ParticleEmitterSystem;
 
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as RenderLayerComponent;
+  const mockRenderLayer = {
+    addEntity: vi.fn(),
+  } as unknown as RenderLayer;
 
   beforeEach(() => {
     world = new World('test');
@@ -281,7 +287,9 @@ describe('_getRandomValueInRange', () => {
   let system: ParticleEmitterSystem;
 
   const mockSprite = {} as Sprite;
-  const mockRenderLayer = {} as RenderLayerComponent;
+  const mockRenderLayer = {
+    addEntity: vi.fn(),
+  } as unknown as RenderLayer;
 
   beforeEach(() => {
     world = new World('test');

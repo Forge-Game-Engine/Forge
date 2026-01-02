@@ -130,7 +130,11 @@ export const CodeSelector: FC<CodeSelectorProps> = ({
           })}
         </div>
       )}
-      <CodeBlock language="typescript" className={styles.codeBlock}>
+      <CodeBlock
+        language="typescript"
+        className={styles.codeBlock}
+        showLineNumbers
+      >
         {cleanCodeSnippet(selectedFile.content)}
       </CodeBlock>
     </div>

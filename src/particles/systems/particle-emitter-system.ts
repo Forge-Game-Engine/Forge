@@ -128,7 +128,7 @@ export class ParticleEmitterSystem extends System {
 
     const spawnPosition = particleEmitter.spawnPosition();
 
-    this._world.buildAndAddEntity([
+    const particleEntity = this._world.buildAndAddEntity([
       new SpriteComponent(particleEmitter.sprite),
       new ParticleComponent({
         rotationSpeed,
@@ -146,6 +146,11 @@ export class ParticleEmitterSystem extends System {
       new RotationComponent(rotation),
       new SpeedComponent(speed),
     ]);
+
+    particleEmitter.renderLayer.addEntity(
+      particleEmitter.sprite.renderable,
+      particleEntity,
+    );
   }
 
   /**
