@@ -16,8 +16,8 @@ export const cleanCodeSnippet = (code: string): string => {
     '',
   );
 
-  // Replace calls like getImageUrl('file.png') with 'file.png'
-  out = out.replaceAll(/getImageUrl\s*\(\s*([^)]+?)\s*\)/g, '$1');
+  // Replace calls like getAssetUrl('file.png') with 'file.png'
+  out = out.replaceAll(/getAssetUrl\s*\(\s*([^)]+?)\s*\)/g, '$1');
 
   // Trim leading blank lines and collapse 3+ consecutive newlines to two.
   out = out.replace(/^\s*\n+/, '').replaceAll(/\n{3,}/g, '\n\n');
