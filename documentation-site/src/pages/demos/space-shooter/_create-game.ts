@@ -16,29 +16,28 @@ import {
 import {
   Color,
   createImageSprite,
-  createSprite,
+  RenderLayer,
   RenderLayerComponent,
   RenderSystem,
   SpriteComponent,
 } from '@forge-game-engine/forge/rendering';
-import { getImageUrl } from '@site/src/utils/get-image-url';
+import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createGame } from '@forge-game-engine/forge/utilities';
 import { PlayerComponent } from './_player.component';
 import { MovementSystem } from './_movement.system';
-import { createBackgroundMaterial } from './_create-background-material';
-import { BackgroundComponent } from './_background.component';
+import { createBackground } from './_create-background';
 import { BackgroundSystem } from './_background.system';
 import {
-  ParticleEmitter,
-  ParticleEmitterComponent,
   ParticleEmitterSystem,
   ParticlePositionSystem,
 } from '@forge-game-engine/forge/particles';
-import { AudioComponent, AudioSystem } from '@forge-game-engine/forge/audio';
-import { getAudioUrl } from '@site/src/utils/get-audio-url';
+import { AudioSystem } from '@forge-game-engine/forge/audio';
+import { createMusic } from './_create-music';
 
 export const createSpaceShooterGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
+
+  const renderLayer = new RenderLayer();
 
   const moveInput = new Axis2dAction('move', null, actionResetTypes.noReset);
   const shootInput = new HoldAction('shoot');
@@ -67,7 +66,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   const cameraEntity = registerCamera(world, time);
 
   const playerSprite = await createImageSprite(
-    getImageUrl('space-shooter/ship_G.png'),
+    getAssetUrl('img/space-shooter/ship_G.png'),
     renderContext,
     cameraEntity,
   );
@@ -80,55 +79,12 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     new PlayerComponent(50, -300, 300, -100, 270),
   ]);
 
-  const renderLayerComponent = new RenderLayerComponent();
-  world.buildAndAddEntity([renderLayerComponent]);
+  world.buildAndAddEntity([new RenderLayerComponent(renderLayer)]);
 
-  const backgroundMaterial = createBackgroundMaterial(renderContext);
+  await createBackground(world, cameraEntity, renderLayer, renderContext);
+  createMusic(world);
 
-  const backgroundSprite = createSprite(
-    backgroundMaterial,
-    renderContext,
-    cameraEntity,
-    renderContext.canvas.width,
-    renderContext.canvas.height,
-  );
-
-  const bgEntity = world.buildAndAddEntity([
-    new SpriteComponent(backgroundSprite),
-    new PositionComponent(0, 0),
-    new BackgroundComponent(),
-  ]);
-
-  const smallStarSprite = await createImageSprite(
-    getImageUrl('space-shooter/star_small.png'),
-    renderContext,
-    cameraEntity,
-  );
-
-  const emitter = new ParticleEmitter(smallStarSprite, renderLayerComponent, {
-    emitDurationSeconds: 10,
-    lifetimeSecondsRange: { min: 5, max: 10 },
-  });
-
-  const emitterComponent = new ParticleEmitterComponent(
-    new Map([['testEmitter', emitter]]),
-  );
-
-  world.buildAndAddEntity([emitterComponent]);
-
-  renderLayerComponent.addEntity(backgroundSprite.renderable, bgEntity);
-  renderLayerComponent.addEntity(playerSprite.renderable, playerEntity);
-
-  world.buildAndAddEntity([
-    new AudioComponent(
-      {
-        src: getAudioUrl('background-space-music.mp3'),
-        loop: true,
-        volume: 0.5,
-      },
-      true,
-    ),
-  ]);
+  renderLayer.addEntity(playerSprite.renderable, playerEntity);
 
   world.addSystem(new RenderSystem(renderContext));
   world.addSystem(new MovementSystem(moveInput, time));

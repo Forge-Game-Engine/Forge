@@ -8,6 +8,7 @@ import {
   Rect,
   registerCamera,
   registerInputs,
+  RenderLayer,
   RenderLayerComponent,
   RenderSystem,
   ScaleComponent,
@@ -49,7 +50,7 @@ const shipSprite = await createImageSprite(
   rightCameraEntity,
 );
 
-const renderLayerComponent = new RenderLayerComponent();
+const renderLayer = new RenderLayer();
 
 for (let i = 0; i < 1000; i++) {
   const planetEntity = world.buildAndAddEntity([
@@ -58,7 +59,7 @@ for (let i = 0; i < 1000; i++) {
     new ScaleComponent(0.1, 0.1),
   ]);
 
-  renderLayerComponent.addEntity(planetSprite.renderable, planetEntity);
+  renderLayer.addEntity(planetSprite.renderable, planetEntity);
 }
 
 for (let i = 0; i < 1000; i++) {
@@ -68,10 +69,10 @@ for (let i = 0; i < 1000; i++) {
     new ScaleComponent(0.1, 0.1),
   ]);
 
-  renderLayerComponent.addEntity(shipSprite.renderable, shipEntity);
+  renderLayer.addEntity(shipSprite.renderable, shipEntity);
 }
 
-world.buildAndAddEntity([renderLayerComponent]);
+world.buildAndAddEntity([new RenderLayerComponent(renderLayer)]);
 
 world.addSystem(new RenderSystem(renderContext));
 

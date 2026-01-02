@@ -3,10 +3,11 @@ import { createSpaceShooterGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
-import createBackgroundMaterialCode from '!!raw-loader!./_create-background-material';
+import createBackgroundMaterialCode from '!!raw-loader!./_create-background';
 import backgroundSystemCode from '!!raw-loader!./_background.system';
 import backgroundComponentCode from '!!raw-loader!./_background.component';
 import backgroundShaderCode from '!!raw-loader!./_background.shader';
+import createMusicCode from '!!raw-loader!./_create-music';
 
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
@@ -36,8 +37,12 @@ export default function Rendering(): JSX.Element {
           content: movementSystemCode,
         },
         {
-          name: 'create-background-material.ts',
+          name: 'create-background.ts',
           content: createBackgroundMaterialCode,
+        },
+        {
+          name: 'create-music.ts',
+          content: createMusicCode,
         },
         {
           name: 'background.system.ts',

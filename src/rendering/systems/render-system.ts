@@ -35,7 +35,7 @@ export class RenderSystem extends System {
 
     const { gl } = this._renderContext;
 
-    for (const [renderable, batch] of layerComponent.renderables) {
+    for (const [renderable, batch] of layerComponent.renderLayer.renderables) {
       this._includeBatch(renderable, batch, gl);
     }
 
