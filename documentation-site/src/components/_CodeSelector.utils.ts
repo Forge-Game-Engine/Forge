@@ -12,9 +12,9 @@ export const fileTypeIconLookup: Record<FileType, string> = {
 };
 
 export const FILE_TYPES: readonly FileType[] = [
-  'Game',
   'Components',
   'Systems',
+  'Game',
   'Shaders',
   'Others',
 ];
