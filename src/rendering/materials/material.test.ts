@@ -5,7 +5,7 @@ import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import { Color } from '../color.js';
 
 // Mock WebGLTexture constructor for instanceof checks
-// @ts-expect-error - Adding global for testing
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('Material', () => {
