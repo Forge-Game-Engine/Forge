@@ -175,14 +175,14 @@ timerComponent.addTask({
 ```typescript
 class AbilityComponent extends Component {
   private canUse = true;
-  
+
   public use(entity: Entity): void {
     if (!this.canUse) return;
-    
+
     // Use ability
     console.log('Ability used!');
     this.canUse = false;
-    
+
     // Add cooldown timer
     const timerComponent = entity.getComponentRequired(TimerComponent);
     timerComponent.addTask({

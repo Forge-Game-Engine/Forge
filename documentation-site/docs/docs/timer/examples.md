@@ -35,7 +35,7 @@ requestAnimationFrame(gameLoop);
 ```typescript
 class CountdownComponent extends Component {
   public secondsRemaining: number;
-  
+
   constructor(seconds: number) {
     super();
     this.secondsRemaining = seconds;
@@ -56,7 +56,7 @@ timerComp.addTask({
   callback: () => {
     countdown.secondsRemaining--;
     console.log(`Time remaining: ${countdown.secondsRemaining}`);
-    
+
     if (countdown.secondsRemaining <= 0) {
       console.log('Time is up!');
     }
@@ -94,14 +94,11 @@ spawnerTimer.addTask({
   callback: () => {
     // Create new enemy at random position
     const enemy = world.buildAndAddEntity([
-      new PositionComponent(
-        Math.random() * 800,
-        Math.random() * 600
-      ),
+      new PositionComponent(Math.random() * 800, Math.random() * 600),
       new EnemyComponent(),
       new SpriteComponent('enemy.png'),
     ]);
-    
+
     spawnerComp.enemiesSpawned++;
     console.log(`Spawned enemy ${spawnerComp.enemiesSpawned}`);
   },
@@ -120,22 +117,22 @@ spawnerTimer.addTask({
 class AbilityComponent extends Component {
   public cooldownSeconds: number;
   public isReady = true;
-  
+
   constructor(cooldownSeconds: number) {
     super();
     this.cooldownSeconds = cooldownSeconds;
   }
-  
+
   public activate(entity: Entity): boolean {
     if (!this.isReady) {
       console.log('Ability on cooldown!');
       return false;
     }
-    
+
     // Activate ability
     console.log('Ability activated!');
     this.isReady = false;
-    
+
     // Start cooldown
     const timerComponent = entity.getComponentRequired(TimerComponent);
     timerComponent.addTask({
@@ -146,7 +143,7 @@ class AbilityComponent extends Component {
       delay: this.cooldownSeconds * 1000,
       elapsed: 0,
     });
-    
+
     return true;
   }
 }
@@ -172,20 +169,24 @@ ability.activate(player); // "Ability on cooldown!"
 class StatsComponent extends Component {
   public baseSpeed = 100;
   public speedMultiplier = 1.0;
-  
+
   get effectiveSpeed(): number {
     return this.baseSpeed * this.speedMultiplier;
   }
 }
 
-function applySpeedBoost(entity: Entity, multiplier: number, durationMs: number): void {
+function applySpeedBoost(
+  entity: Entity,
+  multiplier: number,
+  durationMs: number,
+): void {
   const stats = entity.getComponentRequired(StatsComponent);
   const timer = entity.getComponentRequired(TimerComponent);
-  
+
   // Apply boost
   stats.speedMultiplier = multiplier;
   console.log(`Speed boost applied! Speed: ${stats.effectiveSpeed}`);
-  
+
   // Remove boost after duration
   timer.addTask({
     callback: () => {
@@ -214,10 +215,14 @@ class VisibilityComponent extends Component {
   public isVisible = true;
 }
 
-function startBlinking(entity: Entity, blinkCount: number, intervalMs: number): void {
+function startBlinking(
+  entity: Entity,
+  blinkCount: number,
+  intervalMs: number,
+): void {
   const visibility = entity.getComponentRequired(VisibilityComponent);
   const timer = entity.getComponentRequired(TimerComponent);
-  
+
   timer.addTask({
     callback: () => {
       // Toggle visibility
@@ -305,7 +310,7 @@ timer.addTask({
 ```typescript
 class SaveComponent extends Component {
   public saveCount = 0;
-  
+
   public save(): void {
     this.saveCount++;
     console.log(`Game saved! (Save #${this.saveCount})`);
@@ -340,13 +345,13 @@ saveTimer.addTask({
 class ComboComponent extends Component {
   public comboCount = 0;
   private resetTimerId: number | null = null;
-  
+
   public addCombo(entity: Entity): void {
     this.comboCount++;
     console.log(`Combo: ${this.comboCount}x`);
-    
+
     const timer = entity.getComponentRequired(TimerComponent);
-    
+
     // Reset combo after 2 seconds of no hits
     timer.addTask({
       callback: () => {
