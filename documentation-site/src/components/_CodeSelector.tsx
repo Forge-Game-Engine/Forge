@@ -38,21 +38,23 @@ export const CodeSelector: FC<CodeSelectorProps> = ({
         fileName={selectedFile.name}
         fileTypeIcon={fileTypeIcon}
         onToggleSelector={toggleSelector}
+        numberOfFiles={codeFiles.length}
       />
-      {selectingFile && (
+      {selectingFile ? (
         <FileSelectorDropdown
           codeFiles={codeFiles}
           selectedFileName={selectedFile.name}
           onSelectFile={handleSelectFile}
         />
+      ) : (
+        <CodeBlock
+          language="typescript"
+          className={styles.codeBlock}
+          showLineNumbers
+        >
+          {cleanCodeSnippet(selectedFile.content)}
+        </CodeBlock>
       )}
-      <CodeBlock
-        language="typescript"
-        className={styles.codeBlock}
-        showLineNumbers
-      >
-        {cleanCodeSnippet(selectedFile.content)}
-      </CodeBlock>
     </div>
   );
 };

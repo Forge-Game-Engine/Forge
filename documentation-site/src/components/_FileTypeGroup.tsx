@@ -27,12 +27,12 @@ export const FileTypeGroup: FC<FileTypeGroupProps> = ({
       <i className={clsx('fa-solid', typeIcon, styles.fileIcon)}></i>
       {type}
       {files.map((file) => {
+        const isSelected = file.name === selectedFileName;
+
         return (
           <button
             key={file.name}
-            className={clsx(
-              file.name === selectedFileName ? styles.selectedFile : undefined,
-            )}
+            className={clsx(isSelected ? styles.selectedFile : undefined)}
             onClick={() => onSelectFile(file)}
           >
             <span className={styles.fileButtonName}>{file.name}</span>

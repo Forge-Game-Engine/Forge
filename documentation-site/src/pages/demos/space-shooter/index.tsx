@@ -8,6 +8,13 @@ import backgroundSystemCode from '!!raw-loader!./_background.system';
 import backgroundComponentCode from '!!raw-loader!./_background.component';
 import backgroundShaderCode from '!!raw-loader!./_background.shader';
 import createMusicCode from '!!raw-loader!./_create-music';
+import createInputsCode from '!!raw-loader!./_create-inputs';
+import createPlayerCode from '!!raw-loader!./_create-player';
+import createRenderLayerCode from '!!raw-loader!./_create-render-layer';
+import bulletComponentCode from '!!raw-loader!./_bullet.component';
+import bulletSystemCode from '!!raw-loader!./_bullet.system';
+import gunComponentCode from '!!raw-loader!./_gun.component';
+import gunSystemCode from '!!raw-loader!./_gun.system';
 
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
@@ -29,32 +36,60 @@ export default function Rendering(): JSX.Element {
           content: gameCode,
         },
         {
-          name: 'player.component.ts',
-          content: playerComponentCode,
-        },
-        {
-          name: 'movement.system.ts',
-          content: movementSystemCode,
-        },
-        {
-          name: 'create-background.ts',
-          content: createBackgroundMaterialCode,
-        },
-        {
-          name: 'create-music.ts',
-          content: createMusicCode,
-        },
-        {
-          name: 'background.system.ts',
-          content: backgroundSystemCode,
-        },
-        {
           name: 'background.component.ts',
           content: backgroundComponentCode,
         },
         {
           name: 'background.shader.ts',
           content: backgroundShaderCode,
+        },
+        {
+          name: 'background.system.ts',
+          content: backgroundSystemCode,
+        },
+        {
+          name: 'bullet.component.ts',
+          content: bulletComponentCode,
+        },
+        {
+          name: 'bullet.system.ts',
+          content: bulletSystemCode,
+        },
+        {
+          name: 'create-background.ts',
+          content: createBackgroundMaterialCode,
+        },
+        {
+          name: 'create-inputs.ts',
+          content: createInputsCode,
+        },
+        {
+          name: 'create-music.ts',
+          content: createMusicCode,
+        },
+        {
+          name: 'create-player.ts',
+          content: createPlayerCode,
+        },
+        {
+          name: 'create-render-layer.ts',
+          content: createRenderLayerCode,
+        },
+        {
+          name: 'gun.component.ts',
+          content: gunComponentCode,
+        },
+        {
+          name: 'gun.system.ts',
+          content: gunSystemCode,
+        },
+        {
+          name: 'movement.system.ts',
+          content: movementSystemCode,
+        },
+        {
+          name: 'player.component.ts',
+          content: playerComponentCode,
         },
       ]}
       interactions={

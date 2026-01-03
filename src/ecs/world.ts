@@ -361,6 +361,7 @@ export class World implements Updatable, Stoppable {
     }
 
     this._entities.delete(entity.id);
+    entity.onRemovedFromWorld.raise();
 
     for (const entities of this._systemEntities.values()) {
       entities.delete(entity);

@@ -32,6 +32,10 @@ export class RenderLayer {
     }
 
     this.renderables.get(renderable)!.entities.add(entity);
+
+    entity.onRemovedFromWorld.registerListener(() => {
+      this.removeEntity(renderable, entity);
+    });
   }
 
   /**

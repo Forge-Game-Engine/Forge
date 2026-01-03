@@ -1,3 +1,4 @@
+import { ForgeEvent } from '../events/forge-event.js';
 import { Component, ComponentCtor } from './types/index.js';
 import type { Query } from './types/Query.js';
 import type { World } from './world.js';
@@ -50,6 +51,11 @@ export class Entity {
   public world: World;
 
   /**
+   * Event triggered when the entity is removed from the world.
+   */
+  public onRemovedFromWorld: ForgeEvent;
+
+  /**
    * The unique identifier of the entity.
    */
   private readonly _id: number;
@@ -98,6 +104,7 @@ export class Entity {
       ]),
     );
     this.world = world;
+    this.onRemovedFromWorld = new ForgeEvent('entityRemovedFromWorld');
     this.enabled = mergedOptions.enabled;
     this.name = mergedOptions.name ?? '[anonymous entity]';
 

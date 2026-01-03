@@ -71,6 +71,7 @@
   background-color: var(--card-background-color);
   flex-direction: column;
   height: 100%;
+  overflow-y: auto;
 }
 
 .codeSelector button {
