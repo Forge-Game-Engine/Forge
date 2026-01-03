@@ -4,17 +4,17 @@ import { CodeFile } from './_CodeSelector.types';
 export type FileType = 'Game' | 'Components' | 'Systems' | 'Shaders' | 'Others';
 
 export const fileTypeIconLookup: Record<FileType, string> = {
+  Game: 'fa-earth-africa',
   Components: 'fa-cube',
   Systems: 'fa-gears',
-  Game: 'fa-earth-africa',
   Shaders: 'fa-palette',
   Others: 'fa-code',
 };
 
 export const FILE_TYPES: readonly FileType[] = [
+  'Game',
   'Components',
   'Systems',
-  'Game',
   'Shaders',
   'Others',
 ];

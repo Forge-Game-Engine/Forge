@@ -10,11 +10,13 @@ import { Resettable, Stoppable } from '../../../common/index.js';
 import {
   MouseAxis1dBinding,
   MouseAxis2dBinding,
+  MouseHoldBinding,
   MouseTriggerBinding,
 } from '../bindings/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
+  HoldInputSource,
   TriggerInputSource,
 } from '../../input-sources/index.js';
 
@@ -22,6 +24,7 @@ import {
 export class MouseInputSource
   implements
     TriggerInputSource<MouseTriggerBinding>,
+    HoldInputSource<MouseHoldBinding>,
     Axis1dInputSource<MouseAxis1dBinding>,
     Axis2dInputSource<MouseAxis2dBinding>,
     Resettable,
@@ -35,6 +38,8 @@ export class MouseInputSource
   public readonly axis1dBindings = new Set<MouseAxis1dBinding>();
   /** The set of 2D axis bindings associated with this input source. */
   public readonly axis2dBindings = new Set<MouseAxis2dBinding>();
+  /** The set of hold bindings associated with this input source. */
+  public readonly holdBindings = new Set<MouseHoldBinding>();
 
   private readonly _inputManager: InputManager;
   private readonly _game: Game;
@@ -43,6 +48,7 @@ export class MouseInputSource
   private readonly _mouseButtonPresses = new Set<MouseButton>();
   private readonly _mouseButtonDowns = new Set<MouseButton>();
   private readonly _mouseButtonUps = new Set<MouseButton>();
+  private readonly _mouseButtonHolds = new Set<MouseButton>();
 
   private readonly _lastMousePosition = Vector2.zero;
 
@@ -63,6 +69,7 @@ export class MouseInputSource
     this._inputManager.addResettable(this);
 
     this.triggerBindings = new Set();
+    this.holdBindings = new Set();
     this.axis1dBindings = new Set();
     this.axis2dBindings = new Set();
   }
@@ -71,6 +78,7 @@ export class MouseInputSource
     this._mouseButtonDowns.clear();
     this._mouseButtonUps.clear();
     this._mouseButtonPresses.clear();
+    this._mouseButtonHolds.clear();
   }
 
   public stop(): void {
@@ -101,6 +109,13 @@ export class MouseInputSource
         binding.action.trigger();
       }
     }
+
+    for (const binding of this.holdBindings) {
+      if (binding.mouseButton === button) {
+        this._mouseButtonHolds.add(button);
+        this._inputManager.dispatchHoldStartAction(binding);
+      }
+    }
   };
 
   private readonly _onMouseUpHandler = (event: MouseEvent) => {
@@ -115,6 +130,13 @@ export class MouseInputSource
         binding.moment === buttonMoments.up
       ) {
         binding.action.trigger();
+      }
+    }
+
+    for (const binding of this.holdBindings) {
+      if (binding.mouseButton === button) {
+        this._mouseButtonHolds.delete(button);
+        this._inputManager.dispatchHoldEndAction(binding);
       }
     }
   };
