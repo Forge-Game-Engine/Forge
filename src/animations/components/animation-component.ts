@@ -1,6 +1,7 @@
 import { Component } from '../../ecs/index.js';
 import { enforceArray } from '../../utilities/index.js';
 import { linear } from '../easing-functions/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
  * Represents the properties of an animated object.
@@ -117,3 +118,13 @@ export class AnimationComponent extends Component {
     this._animations.push(mergedAnimation);
   }
 }
+
+/**
+ * ECS-style component interface for animations.
+ */
+export interface AnimationEcsComponent {
+  animations: Required<AnimatedProperty>[];
+}
+
+export const animationId =
+  createComponentId<AnimationEcsComponent>('animation');
