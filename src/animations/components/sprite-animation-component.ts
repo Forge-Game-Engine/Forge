@@ -1,6 +1,7 @@
 import { Component } from '../../ecs/index.js';
 import { AnimationClip, AnimationInputs } from '../types/index.js';
 import { FiniteStateMachine } from '../../finite-state-machine/finite-state-machine.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
  * Component to store sprite animation information for entities, such as from sprite sheets.
@@ -61,3 +62,18 @@ export class SpriteAnimationComponent extends Component {
     stateMachine.update(startingInputs);
   }
 }
+
+/**
+ * ECS-style component interface for sprite animations.
+ */
+export interface SpriteAnimationEcsComponent {
+  animationFrameIndex: number;
+  playbackSpeed: number;
+  frameDurationMilliseconds: number;
+  lastFrameChangeTimeInSeconds: number;
+  animationInputs: AnimationInputs;
+  stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>;
+}
+
+export const spriteAnimationId =
+  createComponentId<SpriteAnimationEcsComponent>('sprite-animation');
