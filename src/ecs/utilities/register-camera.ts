@@ -1,29 +1,39 @@
-import { PositionComponent, Time } from '../../common/index.js';
-import { Vector2 } from '../../math/index.js';
 import {
-  CameraComponent,
+  PositionComponentName,
+  PositionEcsComponent,
+  positionId,
+  Time,
+} from '../../common/index.js';
+import { Vector2 } from '../../math/index.js';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import {
+  CameraComponentName,
   CameraComponentOptions,
-  CameraSystem,
+  CameraEcsComponent,
+  cameraId,
+  createCameraEcsSystem,
+  defaultCameraOptions,
 } from '../../rendering/index.js';
-import type { Entity } from '../entity.js';
-import { World } from '../world.js';
 
 export const registerCamera = (
-  world: World,
+  world: EcsWorld,
   time: Time,
   cameraOptions: Partial<CameraComponentOptions> = {},
   entityPosition: Vector2 = Vector2.zero,
-  entityName: string = 'camera',
-): Entity => {
-  const cameraEntity = world.buildAndAddEntity(
-    [
-      new CameraComponent(cameraOptions),
-      new PositionComponent(entityPosition.x, entityPosition.y),
-    ],
-    { name: entityName },
-  );
+): void => {
+  const cameraEntity = world.createEntity();
 
-  world.addSystem(new CameraSystem(time));
+  const mergedCameraOptions = {
+    ...defaultCameraOptions,
+    ...cameraOptions,
+  };
 
-  return cameraEntity;
+  world.addComponent(cameraEntity, cameraId, mergedCameraOptions);
+
+  world.addComponent(cameraEntity, positionId, {
+    world: entityPosition,
+    local: Vector2.zero,
+  });
+
+  world.addSystem(createCameraEcsSystem(time));
 };

@@ -5,11 +5,18 @@ import {
 import {
   FlipComponent,
   PositionComponent,
+  PositionComponentName,
+  PositionEcsComponent,
   RotationComponent,
   ScaleComponent,
 } from '../../common/index.js';
 import { Entity } from '../../ecs/entity.js';
-import { SpriteComponent } from '../components/sprite-component.js';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import {
+  SpriteComponent,
+  SpriteComponentName,
+  SpriteEcsComponent,
+} from '../components/sprite-component.js';
 import { createQuadGeometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
@@ -39,42 +46,50 @@ import { setupInstanceAttribute } from './setup-instance-attribute.js';
 const floatsPerInstance = 17;
 
 function bindInstanceData(
-  entity: Entity,
+  entity: number,
+  world: EcsWorld,
   instanceDataBufferArray: Float32Array,
   offset: number,
 ) {
-  const position = entity.getComponentRequired(PositionComponent);
+  const position = world.getComponent<PositionEcsComponent>(
+    entity,
+    PositionComponentName,
+  )!;
 
-  const rotation = entity.getComponent(RotationComponent);
+  // const rotation = world.getComponent(entity, RotationComponentName);
 
-  const scale = entity.getComponent(ScaleComponent);
+  // const scale = world.getComponent(entity, ScaleComponentName);
 
-  const spriteComponent = entity.getComponentRequired(SpriteComponent);
-  const flipComponent = entity.getComponent(FlipComponent);
-  const spriteAnimationComponent = entity.getComponent(
-    SpriteAnimationComponent,
-  );
+  const spriteComponent = world.getComponent<SpriteEcsComponent>(
+    entity,
+    SpriteComponentName,
+  )!;
+  // const flipComponent = world.getComponent(entity, FlipComponentName);
+  // const spriteAnimationComponent = world.getComponent(
+  //   entity,
+  //   SpriteAnimationComponentName,
+  // );
 
-  let animationFrame: AnimationFrame | null = null;
+  // let animationFrame: AnimationFrame | null = null;
 
-  if (spriteAnimationComponent) {
-    const { stateMachine, animationFrameIndex } = spriteAnimationComponent;
+  // if (spriteAnimationComponent) {
+  //   const { stateMachine, animationFrameIndex } = spriteAnimationComponent;
 
-    animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
-  }
+  //   animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
+  // }
 
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
   instanceDataBufferArray[offset + POSITION_Y_OFFSET] = position.world.y;
 
   // Rotation
-  instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
+  // instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
 
   // Scale with flip consideration
-  instanceDataBufferArray[offset + SCALE_X_OFFSET] =
-    (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-  instanceDataBufferArray[offset + SCALE_Y_OFFSET] =
-    (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+  instanceDataBufferArray[offset + SCALE_X_OFFSET] = 1;
+  // (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+  instanceDataBufferArray[offset + SCALE_Y_OFFSET] = 1;
+  // (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
   // Sprite dimensions
   instanceDataBufferArray[offset + WIDTH_OFFSET] = spriteComponent.sprite.width;
@@ -88,14 +103,14 @@ function bindInstanceData(
     spriteComponent.sprite.pivot.y;
 
   // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] =
-    animationFrame?.offset.x ?? 0;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] =
-    animationFrame?.offset.y ?? 0;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] =
-    animationFrame?.dimensions.x ?? 1;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
-    animationFrame?.dimensions.y ?? 1;
+  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = 0;
+  //   animationFrame?.offset.x ?? 0;
+  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = 0;
+  //   animationFrame?.offset.y ?? 0;
+  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = 1;
+  //   animationFrame?.dimensions.x ?? 1;
+  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = 1;
+  //   animationFrame?.dimensions.y ?? 1;
 
   // Tint color
   instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] =
@@ -162,15 +177,15 @@ function setupInstanceAttributes(
 export function createSprite(
   material: Material,
   renderContext: RenderContext,
-  cameraEntity: Entity,
+  layer: number,
   width: number,
   height: number,
 ): Sprite {
   const renderable = new Renderable(
     createQuadGeometry(renderContext.gl),
     material,
-    cameraEntity,
     floatsPerInstance,
+    layer,
     bindInstanceData,
     setupInstanceAttributes,
   );

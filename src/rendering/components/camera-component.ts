@@ -1,6 +1,7 @@
 import { Component } from '../../ecs/index.js';
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
 import { Rect } from '../../math/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
  * Options for configuring the `CameraComponent`.
@@ -24,6 +25,9 @@ export type CameraComponentOptions = {
   /** Indicates if the camera is static (non-movable). */
   isStatic: boolean;
 
+  /** A bitmask representing the layers this camera renders. */
+  layerMask: number;
+
   /** Optional input action for zooming the camera. */
   zoomInput?: Axis1dAction;
 
@@ -37,12 +41,13 @@ export type CameraComponentOptions = {
 /**
  * Default options for the `CameraComponent`.
  */
-const defaultOptions: CameraComponentOptions = {
+export const defaultCameraOptions: CameraComponentOptions = {
   zoomSensitivity: 1,
   panSensitivity: 3,
   minZoom: 0.5,
   maxZoom: 3,
   isStatic: false,
+  layerMask: 0xffffffff,
   zoom: 1,
 };
 
@@ -71,6 +76,9 @@ export class CameraComponent extends Component {
   /** Indicates if the camera is static (non-movable). */
   public isStatic: boolean;
 
+  /** A bitmask representing the layers this camera renders. */
+  public layerMask: number;
+
   public scissorRect?: Rect;
 
   public zoomInput?: Axis1dAction;
@@ -81,11 +89,11 @@ export class CameraComponent extends Component {
    * Constructs a new instance of the `CameraComponent` class with the given options.
    * @param options - Partial options to configure the camera component.
    */
-  constructor(options: Partial<CameraComponentOptions> = defaultOptions) {
+  constructor(options: Partial<CameraComponentOptions> = defaultCameraOptions) {
     super();
 
     const mergedOptions: CameraComponentOptions = {
-      ...defaultOptions,
+      ...defaultCameraOptions,
       ...options,
     };
 
@@ -95,6 +103,7 @@ export class CameraComponent extends Component {
     this.minZoom = mergedOptions.minZoom;
     this.maxZoom = mergedOptions.maxZoom;
     this.isStatic = mergedOptions.isStatic;
+    this.layerMask = mergedOptions.layerMask;
     this.zoomInput = mergedOptions.zoomInput;
     this.panInput = mergedOptions.panInput;
     this.scissorRect = mergedOptions.scissorRect;
@@ -114,3 +123,18 @@ export class CameraComponent extends Component {
     return camera;
   }
 }
+
+export interface CameraEcsComponent {
+  zoom: number;
+  zoomSensitivity: number;
+  panSensitivity: number;
+  minZoom: number;
+  maxZoom: number;
+  isStatic: boolean;
+  layerMask: number;
+  scissorRect?: Rect;
+  zoomInput?: Axis1dAction;
+  panInput?: Axis2dAction;
+}
+
+export const cameraId = createComponentId<CameraEcsComponent>('camera');

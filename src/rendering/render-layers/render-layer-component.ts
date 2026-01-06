@@ -24,3 +24,10 @@ export class RenderLayerComponent extends Component {
     this.order = order;
   }
 }
+
+export const RenderLayerComponentName = Symbol('RenderLayerComponent');
+
+export interface RenderLayerEcsComponent {
+  renderLayer: RenderLayer;
+  order: number;
+}

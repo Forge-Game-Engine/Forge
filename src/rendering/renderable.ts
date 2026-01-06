@@ -1,4 +1,5 @@
 import { Entity } from '../ecs/entity.js';
+import { EcsWorld } from '../new-ecs/ecs-world.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';
 
@@ -11,7 +12,8 @@ import type { Material } from './materials/index.js';
  * @param offset - The offset within the buffer where this instance's data should start
  */
 type BindInstanceDataCallback = (
-  entity: Entity,
+  entity: number,
+  world: EcsWorld,
   instanceDataBuffer: Float32Array,
   offset: number,
 ) => void;
@@ -76,11 +78,8 @@ export class Renderable {
    */
   public readonly floatsPerInstance: number;
 
-  /**
-   * The camera entity used to view this renderable.
-   * The camera's position, zoom, and other properties affect how the renderable is displayed.
-   */
-  public readonly cameraEntity: Entity;
+  /** The rendering layer this renderable belongs to. */
+  public layer: number;
 
   /**
    * Callback function that binds instance-specific data for an entity into a buffer.
@@ -107,15 +106,15 @@ export class Renderable {
   constructor(
     geometry: Geometry,
     material: Material,
-    cameraEntity: Entity,
     floatsPerInstance: number,
+    layer: number,
     bindInstanceData: BindInstanceDataCallback,
     setupInstanceAttributes: SetupInstanceAttributes,
   ) {
     this.geometry = geometry;
     this.material = material;
-    this.cameraEntity = cameraEntity;
     this.floatsPerInstance = floatsPerInstance;
+    this.layer = layer;
     this.bindInstanceData = bindInstanceData;
     this.setupInstanceAttributes = setupInstanceAttributes;
   }

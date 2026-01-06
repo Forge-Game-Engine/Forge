@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { World } from './world';
 import { Entity } from './entity';
 import { Component, System } from './types';
+import { describe, it, expect } from 'vitest';
+import { EcsWorld } from '../new-ecs/world';
 
 describe('World', () => {
   let world: World;
@@ -269,3 +271,81 @@ describe('World', () => {
     warnSpy.mockRestore();
   });
 });
+  describe('EcsWorld', () => {
+    it('adds components and queries single component', () => {
+      const world = new EcsWorld();
+
+      world.addComponent(10, 'Position', { x: 1, y: 2 });
+      world.addComponent(20, 'Position', { x: 3, y: 4 });
+
+      const results = new Map<number, unknown>();
+      for (const buf of world.query(['Position'])) {
+        const [entity, component] = buf as [number, { x: number; y: number }];
+        results.set(entity, component);
+      }
+
+      expect(results.size).toBe(2);
+      expect(results.get(10)).toEqual({ x: 1, y: 2 });
+      expect(results.get(20)).toEqual({ x: 3, y: 4 });
+    });
+
+    it('queries multiple components and returns components in order', () => {
+      const world = new EcsWorld();
+
+      world.addComponent(1, 'Position', { x: 0 });
+      world.addComponent(1, 'Velocity', { v: 5 });
+      world.addComponent(2, 'Position', { x: 1 });
+
+      const collected: Array<[number, unknown, unknown]> = [];
+      for (const buf of world.query(['Position', 'Velocity'])) {
+        collected.push(buf as [number, unknown, unknown]);
+      }
+
+      expect(collected.length).toBe(1);
+      const [entity, pos, vel] = collected[0];
+      expect(entity).toBe(1);
+      expect(pos).toEqual({ x: 0 });
+      expect(vel).toEqual({ v: 5 });
+    });
+
+    it('returns only entities that have all queried components (driver selection)', () => {
+      const world = new EcsWorld();
+
+      // many positions
+      world.addComponent(1, 'Position', { x: 1 });
+      world.addComponent(2, 'Position', { x: 2 });
+      world.addComponent(3, 'Position', { x: 3 });
+
+      // only entity 2 has velocity
+      world.addComponent(2, 'Velocity', { v: 2 });
+
+      const entities: number[] = [];
+      for (const buf of world.query(['Position', 'Velocity'])) {
+        entities.push((buf as [number, unknown])[0]);
+      }
+
+      expect(entities).toEqual([2]);
+    });
+
+    it('throws when no components found for the given names', () => {
+      const world = new EcsWorld();
+
+      expect(() => Array.from(world.query(['NonExistent']))).toThrowError(
+        'No components found for the given names.',
+      );
+    });
+
+    it('reuses the same return buffer object for yielded results', () => {
+      const world = new EcsWorld();
+
+      world.addComponent(1, 'A', { a: 1 });
+      world.addComponent(2, 'A', { a: 2 });
+
+      const it = world.query(['A']);
+      const first = it.next().value as unknown[];
+      const second = it.next().value as unknown[];
+
+      // generator yields same buffer instance mutated between iterations
+      expect(first).toBe(second);
+    });
+  });

@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { type Stoppable, Time } from '../common/index.js';
-import type { World } from './world.js';
 import { ForgeEvent } from '../events/index.js';
 import { createContainer } from '../utilities/index.js';
+import { EcsWorld } from '../new-ecs/ecs-world.js';
 
 /**
  * A game that manages worlds and handles the game loop.
@@ -22,7 +21,7 @@ export class Game implements Stoppable {
   /**
    * The set of worlds managed by the game.
    */
-  private readonly _worlds: Set<World>;
+  private readonly _worlds: Set<EcsWorld>;
 
   /**
    * The time instance for the game.
@@ -35,7 +34,7 @@ export class Game implements Stoppable {
    */
   constructor(time: Time, container?: HTMLElement | string) {
     this._time = time;
-    this._worlds = new Set<World>();
+    this._worlds = new Set<EcsWorld>();
     this.container = this._determineContainer(container);
 
     this.onWindowResize = new ForgeEvent('window-resize');
@@ -49,21 +48,21 @@ export class Game implements Stoppable {
    * Starts the game loop.
    * @param time - The initial time value.
    */
-  public run(time = 0): void {
+  public run = (time = 0): void => {
     this._time.update(time);
 
     for (const world of this._worlds) {
       world.update();
     }
 
-    requestAnimationFrame((t) => this.run(t));
+    requestAnimationFrame(this.run);
   }
 
   /**
    * Registers a world to the game.
    * @param world - The world to register.
    */
-  public registerWorld(world: World): void {
+  public registerWorld(world: EcsWorld): void {
     this._worlds.add(world);
   }
 
@@ -71,8 +70,8 @@ export class Game implements Stoppable {
    * Deregisters a world from the game.
    * @param world - The world to deregister.
    */
-  public deregisterWorld(world: World): void {
-    world.stop();
+  public deregisterWorld(world: EcsWorld): void {
+    // world.stop();
     this._worlds.delete(world);
   }
 
@@ -81,7 +80,7 @@ export class Game implements Stoppable {
    * This deregisters all existing worlds and registers the new world.
    * @param world - The new world to switch to.
    */
-  public swapToWorld(world: World): void {
+  public swapToWorld(world: EcsWorld): void {
     for (const existingWorld of this._worlds) {
       this.deregisterWorld(existingWorld);
     }
@@ -95,9 +94,9 @@ export class Game implements Stoppable {
   public stop(): void {
     window.removeEventListener('resize', this.onWindowResize.raise);
 
-    for (const world of this._worlds) {
-      world.stop();
-    }
+    // for (const world of this._worlds) {
+    //   world.stop();
+    // }
   }
 
   private _determineContainer(container?: HTMLElement | string): HTMLElement {

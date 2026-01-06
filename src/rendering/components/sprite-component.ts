@@ -1,4 +1,5 @@
 import { Component } from '../../ecs/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 import { Sprite } from '../sprite.js';
 
 /**
@@ -24,3 +25,10 @@ export class SpriteComponent extends Component {
     this.enabled = enabled;
   }
 }
+
+export interface SpriteEcsComponent {
+  sprite: Sprite;
+  enabled: boolean;
+}
+
+export const spriteId = createComponentId<SpriteEcsComponent>('sprite');

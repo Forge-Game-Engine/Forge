@@ -1,5 +1,6 @@
 import { Component } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
  * Component to represent the position of an entity in 2D space.
@@ -27,3 +28,10 @@ export class PositionComponent extends Component {
     this.world = new Vector2(x, y);
   }
 }
+
+export interface PositionEcsComponent {
+  local: Vector2;
+  world: Vector2;
+}
+
+export const positionId = createComponentId<PositionEcsComponent>('position');

@@ -1,5 +1,5 @@
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import type { Game } from '../game.js';
-import { World } from '../world.js';
 
 /**
  * Creates a new world with the specified name and registers it with the game.
@@ -8,8 +8,8 @@ import { World } from '../world.js';
  * @param game - The game instance to register the world with.
  * @returns The new ECS world instance.
  */
-export function createWorld(game: Game, name?: string): World {
-  const world = new World(name);
+export function createWorld(game: Game): EcsWorld {
+  const world = new EcsWorld();
   game.registerWorld(world);
 
   return world;
