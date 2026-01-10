@@ -1,20 +1,10 @@
 import {
-  AnimationFrame,
-  SpriteAnimationComponent,
-} from '../../animations/index.js';
-import {
-  FlipComponent,
-  PositionComponent,
-  PositionComponentName,
+  positionId,
   PositionEcsComponent,
-  RotationComponent,
-  ScaleComponent,
 } from '../../common/index.js';
-import { Entity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import {
-  SpriteComponent,
-  SpriteComponentName,
+  spriteId,
   SpriteEcsComponent,
 } from '../components/sprite-component.js';
 import { createQuadGeometry } from '../geometry/index.js';
@@ -53,7 +43,7 @@ function bindInstanceData(
 ) {
   const position = world.getComponent<PositionEcsComponent>(
     entity,
-    PositionComponentName,
+    positionId,
   )!;
 
   // const rotation = world.getComponent(entity, RotationComponentName);
@@ -62,7 +52,7 @@ function bindInstanceData(
 
   const spriteComponent = world.getComponent<SpriteEcsComponent>(
     entity,
-    SpriteComponentName,
+    spriteId,
   )!;
   // const flipComponent = world.getComponent(entity, FlipComponentName);
   // const spriteAnimationComponent = world.getComponent(

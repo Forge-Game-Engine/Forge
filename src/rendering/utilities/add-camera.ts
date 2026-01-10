@@ -1,29 +1,64 @@
-import { PositionComponent, Time } from '../../common/index.js';
-import type { Entity, World } from '../../ecs/index.js';
+import { positionId, PositionEcsComponent, Time } from '../../common/index.js';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import { Vector2 } from '../../math/index.js';
 import {
-  CameraComponent,
-  type CameraComponentOptions,
+  cameraId,
+  CameraEcsComponent,
 } from '../components/index.js';
-import { CameraSystem } from '../systems/index.js';
+import { createCameraEcsSystem } from '../systems/index.js';
+
+/**
+ * Options for configuring a camera.
+ */
+export interface CameraOptions {
+  zoom?: number;
+  zoomSensitivity?: number;
+  panSensitivity?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  isStatic?: boolean;
+  layerMask?: number;
+  scissorRect?: any; // TODO: Import Rect type
+  zoomInput?: any; // TODO: Import Axis1dAction type
+  panInput?: any; // TODO: Import Axis2dAction type
+}
 
 /**
  * Adds a camera entity to the world with the specified options.
- * @param world - The world to which the camera will be added.
+ * @param world - The ECS world to which the camera will be added.
  * @param time - The Time instance for managing time-related operations.
  * @param cameraOptions - Options for configuring the camera.
- * @returns The entity that contains the `CameraComponent`.
+ * @returns The entity ID that contains the camera component.
  */
 export function addCamera(
-  world: World,
+  world: EcsWorld,
   time: Time,
-  cameraOptions: Partial<CameraComponentOptions>,
-): Entity {
-  const cameraEntity = world.buildAndAddEntity(
-    [new CameraComponent(cameraOptions), new PositionComponent(0, 0)],
-    { name: 'camera' },
-  );
+  cameraOptions: Partial<CameraOptions> = {},
+): number {
+  const cameraEntity = world.createEntity();
+  
+  const cameraComponent: CameraEcsComponent = {
+    zoom: cameraOptions.zoom ?? 1,
+    zoomSensitivity: cameraOptions.zoomSensitivity ?? 0.1,
+    panSensitivity: cameraOptions.panSensitivity ?? 1,
+    minZoom: cameraOptions.minZoom ?? 0.1,
+    maxZoom: cameraOptions.maxZoom ?? 10,
+    isStatic: cameraOptions.isStatic ?? false,
+    layerMask: cameraOptions.layerMask ?? 0xffffffff,
+    scissorRect: cameraOptions.scissorRect,
+    zoomInput: cameraOptions.zoomInput,
+    panInput: cameraOptions.panInput,
+  };
 
-  world.addSystem(new CameraSystem(time));
+  const positionComponent: PositionEcsComponent = {
+    local: Vector2.zero,
+    world: Vector2.zero,
+  };
+
+  world.addComponent(cameraEntity, cameraId, cameraComponent);
+  world.addComponent(cameraEntity, positionId, positionComponent);
+
+  world.addSystem(createCameraEcsSystem(time));
 
   return cameraEntity;
 }

@@ -1,4 +1,3 @@
-import { Entity } from '../../ecs/entity.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
 import { createTextureFromImage } from '../shaders/index.js';

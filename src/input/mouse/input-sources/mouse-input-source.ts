@@ -1,4 +1,4 @@
-import { Game } from '../../../ecs/index.js';
+import { Game } from '../../../utilities/game.js';
 import { Vector2 } from '../../../math/index.js';
 import {
   buttonMoments,
