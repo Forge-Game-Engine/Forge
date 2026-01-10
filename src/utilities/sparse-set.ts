@@ -2,11 +2,13 @@ export class SparseSet<T> {
   public readonly sparseArray: Array<number>;
   public readonly denseEntities: Array<number>;
   public readonly denseComponents: Array<T>;
+  public readonly isTag: boolean;
 
-  constructor() {
+  constructor(isTag: boolean = false) {
     this.sparseArray = [];
     this.denseEntities = [];
     this.denseComponents = [];
+    this.isTag = isTag;
   }
 
   public has(entity: number): boolean {

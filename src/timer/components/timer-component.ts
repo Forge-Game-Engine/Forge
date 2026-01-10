@@ -1,4 +1,4 @@
-import { Component } from '../../ecs/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
  * Represents a single timer task that can execute a callback after a delay.
@@ -41,58 +41,10 @@ export interface TimerTask {
 }
 
 /**
- * Component that holds a list of timer tasks for an entity.
- * Timer tasks can be one-shot (execute once after a delay) or repeating (execute periodically).
- *
- * @example
- * ```typescript
- * // Create entity with timer component
- * const entity = world.buildAndAddEntity([new TimerComponent()]);
- * const timer = entity.getComponentRequired(TimerComponent);
- *
- * // Add a one-shot timer (executes once after 1 second)
- * timer.addTask({
- *   callback: () => console.log('Timer fired!'),
- *   delay: 1000,
- *   elapsed: 0,
- * });
- *
- * // Add a repeating timer (executes every 500ms)
- * timer.addTask({
- *   callback: () => console.log('Tick!'),
- *   delay: 500,
- *   elapsed: 0,
- *   repeat: true,
- *   interval: 500,
- *   runsSoFar: 0,
- * });
- * ```
+ * ECS-style component interface for a timer component.
  */
-export class TimerComponent extends Component {
-  /**
-   * Array of timer tasks to be processed by the TimerSystem.
-   */
-  public tasks: TimerTask[];
-
-  /**
-   * Creates a new TimerComponent.
-   * @param tasks - Optional initial array of timer tasks.
-   */
-  constructor(tasks: TimerTask[] = []) {
-    super();
-
-    this.tasks = tasks;
-  }
-
-  /**
-   * Adds a new timer task to the component.
-   * Automatically initializes elapsed to 0 and runsSoFar to 0 if not already set.
-   * @param task - The timer task to add.
-   */
-  public addTask(task: TimerTask): void {
-    // Initialize defaults
-    task.elapsed = 0;
-    task.runsSoFar = task.runsSoFar ?? 0;
-    this.tasks.push(task);
-  }
+export interface TimerEcsComponent {
+  tasks: TimerTask[];
 }
+
+export const TimerId = createComponentId<TimerEcsComponent>('Timer');

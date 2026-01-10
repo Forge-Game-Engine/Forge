@@ -1,9 +1,10 @@
-import { RenderLayer, Sprite } from '../../rendering/index.js';
+import { Vector2 } from '../../math/vector2.js';
+import { Sprite } from '../../rendering/index.js';
 
 /**
  * Type for a function that returns a number representing the X and Y spawn position of the particle
  */
-export type ParticleSpawnPositionFunction = () => { x: number; y: number };
+export type ParticleSpawnPositionFunction = () => Vector2;
 
 /**
  * Interface for range values with a min and max value.
@@ -81,7 +82,7 @@ const defaultOptions: ParticleEmitterOptions = {
   lifetimeSecondsRange: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   emitDurationSeconds: 0,
-  spawnPosition: () => ({ x: 0, y: 0 }),
+  spawnPosition: () => Vector2.zero,
 };
 
 /**
@@ -91,7 +92,7 @@ const defaultOptions: ParticleEmitterOptions = {
  */
 export class ParticleEmitter {
   public sprite: Sprite;
-  public renderLayer: RenderLayer;
+  public renderLayer: number;
   public spawnPosition: ParticleSpawnPositionFunction;
   public numParticlesRange: Range;
   public speedRange: Range;
@@ -115,7 +116,7 @@ export class ParticleEmitter {
    */
   constructor(
     sprite: Sprite,
-    renderLayer: RenderLayer,
+    renderLayer: number,
     options: Partial<ParticleEmitterOptions> = {},
   ) {
     const {

@@ -4,11 +4,10 @@ import { EcsSystem } from '../../new-ecs/ecs-system.js';
 // TODO: needs an unload?
 
 /**
- * Creates a new ECS-style audio system.
- * @param time - The Time instance.
- * @returns An ECS system that updates animations.
+ * Creates an ECS system to handle audio playback.
+ * @returns An ECS system that manages audio playback for entities with AudioEcsComponent.
  */
-export const createAnimationEcsSystem = (): EcsSystem<[AudioEcsComponent]> => ({
+export const createAudioEcsSystem = (): EcsSystem<[AudioEcsComponent]> => ({
   query: [audioId],
   run: (result) => {
     const [audioComponent] = result.components;

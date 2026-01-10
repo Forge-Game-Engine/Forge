@@ -1,6 +1,6 @@
 import { Updatable } from '../common';
 import { SparseSet } from '../utilities/sparse-set';
-import { ComponentKey } from './ecs-component';
+import { ComponentKey, TagKey } from './ecs-component';
 import { EcsSystem } from './ecs-system';
 
 export type QueryResult<T extends unknown[]> = {
@@ -26,7 +26,7 @@ export class EcsWorld implements Updatable {
     this._systems = new Set<EcsSystem>();
   }
 
-  public addSystem(system: EcsSystem): void {
+  public addSystem<T extends unknown[], K>(system: EcsSystem<T, K>): void {
     this._systems.add(system);
   }
 
@@ -38,7 +38,7 @@ export class EcsWorld implements Updatable {
     for (const system of this._systems) {
       const beforeQueryResult = system.beforeQuery?.(this);
 
-      this.operate(system.query, system, beforeQueryResult);
+      this.operate(system, beforeQueryResult);
     }
   }
 
@@ -46,15 +46,18 @@ export class EcsWorld implements Updatable {
     entity: number,
     componentKey: ComponentKey<T>,
     componentData: T,
-  ): void {
-    let componentSet = this._componentSets.get(componentKey);
-
-    if (!componentSet) {
-      componentSet = new SparseSet<unknown>();
-      this._componentSets.set(componentKey, componentSet);
-    }
+  ): T {
+    const componentSet = this._getComponentOrCreateSetByKey(componentKey);
 
     componentSet.add(entity, componentData);
+
+    return componentData;
+  }
+
+  public addTag(entity: number, tagKey: TagKey): void {
+    const componentSet = this._getComponentOrCreateSetByKey(tagKey, true);
+
+    componentSet.add(entity, true);
   }
 
   public getComponent<T>(
@@ -86,12 +89,7 @@ export class EcsWorld implements Updatable {
   }
 
   public createEntity(): number {
-    if (this._freeEntityIds.length > 0) {
-      return this._freeEntityIds.pop() as number;
-    }
-
-    const id = this._nextEntityId;
-    this._nextEntityId += 1;
+    const id = this._generateEntityId();
 
     return id;
   }
@@ -105,11 +103,10 @@ export class EcsWorld implements Updatable {
   }
 
   public operate(
-    componentNames: symbol[],
     system: EcsSystem<unknown[], unknown>,
     beforeQueryResult?: unknown,
   ): void {
-    const driver = this._getDriverComponentSet(componentNames);
+    const driver = this._getDriverComponentSet(system.query);
 
     for (let i = 0; i < driver.size; i++) {
       const entity = driver.denseEntities[i];
@@ -117,7 +114,7 @@ export class EcsWorld implements Updatable {
 
       this._queryResultBuffer.components.length = 0;
 
-      for (const name of componentNames) {
+      for (const name of system.query) {
         const set = this._componentSets.get(name);
 
         if (!set?.has(entity)) {
@@ -126,10 +123,13 @@ export class EcsWorld implements Updatable {
           break;
         }
 
-        this._queryResultBuffer.components.push(set.get(entity));
+        if (!set.isTag) {
+          this._queryResultBuffer.components.push(set.get(entity));
+        }
       }
 
       if (hasAll) {
+        this._queryResultBuffer.entity = entity;
         system.run(this._queryResultBuffer, this, beforeQueryResult);
       }
     }
@@ -159,6 +159,31 @@ export class EcsWorld implements Updatable {
         out.push(entity);
       }
     }
+  }
+
+  private _getComponentOrCreateSetByKey<T>(
+    key: symbol,
+    isTag: boolean = false,
+  ): SparseSet<T> {
+    let componentSet = this._componentSets.get(key);
+
+    if (!componentSet) {
+      componentSet = new SparseSet<T>(isTag);
+      this._componentSets.set(key, componentSet);
+    }
+
+    return componentSet as SparseSet<T>;
+  }
+
+  private _generateEntityId(): number {
+    if (this._freeEntityIds.length > 0) {
+      return this._freeEntityIds.pop() as number;
+    }
+
+    const id = this._nextEntityId;
+    this._nextEntityId += 1;
+
+    return id;
   }
 
   private _getDriverComponentSet(componentNames: symbol[]): SparseSet<unknown> {

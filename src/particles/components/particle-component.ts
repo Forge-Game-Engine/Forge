@@ -1,31 +1,10 @@
-import { Component } from '../../ecs/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
- * Represents the properties of a particle.
+ * ECS-style component interface for a particle.
  */
-export interface ParticleOptions {
-  /**
-   * The speed at which the particle rotates.
-   */
+export interface ParticleEcsComponent {
   rotationSpeed: number;
 }
 
-/**
- * Represents a particle component.
- * This class is used to define properties and behavior for particles, such as their rotation speed.
- */
-export class ParticleComponent extends Component {
-  public rotationSpeed: number;
-
-  /**
-   * Creates an instance of ParticleComponent.
-   * @param options - The configuration options for the particle component.
-   */
-  constructor(options: ParticleOptions) {
-    super();
-
-    const { rotationSpeed } = options;
-
-    this.rotationSpeed = rotationSpeed;
-  }
-}
+export const ParticleId = createComponentId<ParticleEcsComponent>('Particle');

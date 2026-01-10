@@ -1,4 +1,3 @@
-import { Entity } from '../ecs/entity.js';
 import { EcsWorld } from '../new-ecs/ecs-world.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';

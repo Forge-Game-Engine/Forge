@@ -1,28 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { Entity, World } from '../../ecs';
-import { AgeScaleSystem } from './age-scale-system';
-import { LifetimeComponent } from '../../lifecycle/components/lifetime-component';
-import { AgeScaleComponent, ScaleComponent } from '../../common';
+import { LifetimeEcsComponent, lifetimeId } from '../../lifecycle';
+import { EcsWorld, QueryResult } from '../../new-ecs';
+import {
+  AgeScaleEcsComponent,
+  ageScaleId,
+  ScaleEcsComponent,
+  scaleId,
+} from '../components';
+import { Vector2 } from '../../math';
+import { createAgeScaleEcsSystem } from './age-scale-system';
 
 describe('AgeScaleSystem', () => {
-  const world = new World('test');
+  const world = new EcsWorld();
   it('should correctly update the scale based on lifetime ratio', () => {
     // Arrange
-    const lifetimeComponent = new LifetimeComponent(10); // elapsedSeconds = 5, durationSeconds = 10
-    lifetimeComponent.elapsedSeconds = 5;
-    const ageScaleComponent = new AgeScaleComponent(1, 1, 0.5, 0.1); // originalScale = (1,1), lifetimeScaleReduction = (0.5,0.1)
-    const scaleComponent = new ScaleComponent(1, 1);
+    const lifetimeComponent: LifetimeEcsComponent = {
+      elapsedSeconds: 5,
+      durationSeconds: 10,
+      hasExpired: false,
+    };
 
-    const entity = new Entity(world, [
-      lifetimeComponent,
-      scaleComponent,
-      ageScaleComponent,
-    ]);
+    const ageScaleComponent: AgeScaleEcsComponent = {
+      originalScaleX: 1,
+      originalScaleY: 1,
+      finalLifetimeScaleX: 0.5,
+      finalLifetimeScaleY: 0.1,
+    };
 
-    const system = new AgeScaleSystem();
+    const scaleComponent: ScaleEcsComponent = {
+      local: new Vector2(1, 1),
+      world: new Vector2(1, 1),
+    };
+
+    const entity = world.createEntity();
+
+    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    world.addComponent(entity, ageScaleId, ageScaleComponent);
+    world.addComponent(entity, scaleId, scaleComponent);
+
+    const system = createAgeScaleEcsSystem();
+
+    const queryResult: QueryResult<
+      [LifetimeEcsComponent, ScaleEcsComponent, AgeScaleEcsComponent]
+    > = {
+      entity,
+      components: [lifetimeComponent, scaleComponent, ageScaleComponent],
+    };
 
     // Act
-    system.run(entity);
+    system.run(queryResult, world);
 
     // Assert
     const expectedScaleX = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
@@ -33,23 +59,42 @@ describe('AgeScaleSystem', () => {
 
   it('should show the end scale at the end of the lifetime', () => {
     // Arrange
-    const lifetimeComponent = new LifetimeComponent(10); // elapsedSeconds = 10, durationSeconds = 10
-    lifetimeComponent.elapsedSeconds = 10;
-    const ageScaleComponent = new AgeScaleComponent(2, 3, 0, 0.3); // originalScale = (2,3), lifetimeScaleReduction = (0,0.3)
+    const lifetimeComponent: LifetimeEcsComponent = {
+      elapsedSeconds: 10,
+      durationSeconds: 10,
+      hasExpired: false,
+    };
+    const ageScaleComponent: AgeScaleEcsComponent = {
+      originalScaleX: 2,
+      originalScaleY: 3,
+      finalLifetimeScaleX: 0,
+      finalLifetimeScaleY: 0.3,
+    };
+    const scaleComponent: ScaleEcsComponent = {
+      local: new Vector2(1, 1),
+      world: new Vector2(1, 1),
+    };
+
     const expectedScaleX = 0;
     const expectedScaleY = 0.3;
-    const scaleComponent = new ScaleComponent(1, 1);
 
-    const entity = new Entity(world, [
-      lifetimeComponent,
-      scaleComponent,
-      ageScaleComponent,
-    ]);
+    const entity = world.createEntity();
 
-    const system = new AgeScaleSystem();
+    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    world.addComponent(entity, ageScaleId, ageScaleComponent);
+    world.addComponent(entity, scaleId, scaleComponent);
+
+    const system = createAgeScaleEcsSystem();
+
+    const queryResult: QueryResult<
+      [LifetimeEcsComponent, ScaleEcsComponent, AgeScaleEcsComponent]
+    > = {
+      entity,
+      components: [lifetimeComponent, scaleComponent, ageScaleComponent],
+    };
 
     // Act
-    system.run(entity);
+    system.run(queryResult, world);
 
     // Assert
     expect(scaleComponent.local.x).toBe(expectedScaleX);

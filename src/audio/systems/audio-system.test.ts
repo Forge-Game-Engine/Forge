@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createAnimationEcsSystem } from './audio-system';
+import { createAudioEcsSystem } from './audio-system';
 import { type AudioEcsComponent, audioId } from '../components';
 import { EcsWorld } from '../../new-ecs';
 
-describe('createAnimationEcsSystem (Audio)', () => {
+describe('createAudioEcsSystem (Audio)', () => {
   it('should play sound when playSound is true', () => {
     const ecsWorld = new EcsWorld();
-    const audioSystem = createAnimationEcsSystem();
+    const audioSystem = createAudioEcsSystem();
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
@@ -27,7 +27,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
 
   it('should not play sound when playSound is false', () => {
     const ecsWorld = new EcsWorld();
-    const audioSystem = createAnimationEcsSystem();
+    const audioSystem = createAudioEcsSystem();
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
@@ -48,7 +48,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
 
   it('should reset playSound to false after playing', () => {
     const ecsWorld = new EcsWorld();
-    const audioSystem = createAnimationEcsSystem();
+    const audioSystem = createAudioEcsSystem();
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
@@ -61,7 +61,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
     };
 
     ecsWorld.addComponent(entity, audioId, audioComponent);
-    
+
     // First update should play the sound
     ecsWorld.update();
     expect(mockPlay).toHaveBeenCalledTimes(1);
@@ -74,7 +74,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
 
   it('should handle multiple entities with audio components', () => {
     const ecsWorld = new EcsWorld();
-    const audioSystem = createAnimationEcsSystem();
+    const audioSystem = createAudioEcsSystem();
     ecsWorld.addSystem(audioSystem);
 
     const entity1 = ecsWorld.createEntity();
@@ -107,7 +107,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
     ecsWorld.addComponent(entity1, audioId, audioComponent1);
     ecsWorld.addComponent(entity2, audioId, audioComponent2);
     ecsWorld.addComponent(entity3, audioId, audioComponent3);
-    
+
     ecsWorld.update();
 
     expect(mockPlay1).toHaveBeenCalledTimes(1);
@@ -120,7 +120,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
 
   it('should allow re-triggering sound playback', () => {
     const ecsWorld = new EcsWorld();
-    const audioSystem = createAnimationEcsSystem();
+    const audioSystem = createAudioEcsSystem();
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
@@ -133,7 +133,7 @@ describe('createAnimationEcsSystem (Audio)', () => {
     };
 
     ecsWorld.addComponent(entity, audioId, audioComponent);
-    
+
     // First play
     ecsWorld.update();
     expect(mockPlay).toHaveBeenCalledTimes(1);

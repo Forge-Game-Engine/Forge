@@ -1,21 +1,11 @@
-import { Component } from '../../ecs/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
- * Component to flip an entity's rendering in the x or y direction
+ * ECS-style component interface for flipping sprites.
  */
-export class FlipComponent extends Component {
-  public flipX: boolean;
-  public flipY: boolean;
-
-  /**
-   * Creates an instance of FlipComponent.
-   * @param flipX - Whether to flip the entity in the x direction.
-   * @param flipY - Whether to flip the entity in the y direction.
-   */
-  constructor(flipX: boolean = false, flipY: boolean = false) {
-    super();
-
-    this.flipX = flipX;
-    this.flipY = flipY;
-  }
+export interface FlipEcsComponent {
+  flipX: boolean;
+  flipY: boolean;
 }
+
+export const flipId = createComponentId<FlipEcsComponent>('flip');

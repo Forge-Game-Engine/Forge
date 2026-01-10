@@ -1,5 +1,3 @@
-import { Entity } from '../../ecs';
-
 export interface InstanceBatchOptions {
   initialBufferSize?: number;
   bufferGrowthFactor?: number;

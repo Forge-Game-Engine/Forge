@@ -1,50 +1,48 @@
-import { Entity, System } from '../../ecs/index.js';
 import {
-  PositionComponent,
-  RotationComponent,
-  SpeedComponent,
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  SpeedEcsComponent,
+  speedId,
   Time,
 } from '../../common/index.js';
-import { ParticleComponent } from '../index.js';
-/**
- * System that manages and updates particle position.
- */
-export class ParticlePositionSystem extends System {
-  private readonly _time: Time;
-  /**
-   * Creates an instance of ParticlePositionSystem.
-   * @param time - The Time instance.
-   */
-  constructor(time: Time) {
-    super(
-      [ParticleComponent, PositionComponent, RotationComponent, SpeedComponent],
-      'particle-position',
-    );
-    this._time = time;
-  }
+import { ParticleEcsComponent, ParticleId } from '../index.js';
 
-  /**
-   * Runs the particle position system for a given entity.
-   * This method updates the rotation based on the particle's rotation speed,
-   * and updates the position based on the speed and rotation.
-   * @param entity - The entity to update particle position for.
-   */
-  public run(entity: Entity): void {
-    const particleComponent = entity.getComponentRequired(ParticleComponent);
-    const positionComponent = entity.getComponentRequired(PositionComponent);
-    const rotationComponent = entity.getComponentRequired(RotationComponent);
-    const speedComponent = entity.getComponentRequired(SpeedComponent);
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
+
+/**
+ * Creates an ECS system to handle updating particle positions.
+ */
+export const createParticlePositionEcsSystem = (
+  time: Time,
+): EcsSystem<
+  [
+    PositionEcsComponent,
+    RotationEcsComponent,
+    SpeedEcsComponent,
+    ParticleEcsComponent,
+  ]
+> => ({
+  query: [positionId, rotationId, speedId, ParticleId],
+  run: (result) => {
+    const [
+      positionComponent,
+      rotationComponent,
+      speedComponent,
+      particleComponent,
+    ] = result.components;
 
     positionComponent.local.x +=
       speedComponent.speed *
-      this._time.deltaTimeInSeconds *
+      time.deltaTimeInSeconds *
       Math.sin(rotationComponent.local);
     positionComponent.local.y -=
       speedComponent.speed *
-      this._time.deltaTimeInSeconds *
+      time.deltaTimeInSeconds *
       Math.cos(rotationComponent.local);
 
     rotationComponent.local +=
-      particleComponent.rotationSpeed * this._time.deltaTimeInSeconds;
-  }
-}
+      particleComponent.rotationSpeed * time.deltaTimeInSeconds;
+  },
+});

@@ -1,56 +1,68 @@
-import { Entity, System } from '../../ecs/index.js';
+import { EcsSystem } from '../../new-ecs/ecs-system';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import {
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
-} from '../../common/index.js';
+  PositionEcsComponent,
+  positionId,
+  rotationId,
+  scaleId,
+} from '../components';
+import { parentId } from '../components/parent-component';
 
-/**
- * System that manages the scale of entities with age
- */
-export class TransformSystem extends System {
-  /**
-   * Creates an instance of TransformSystem.
-   */
-  constructor() {
-    super([], 'transform');
+type TransformCache = {
+  computed: Set<number>;
+  visiting: Set<number>;
+};
+
+function computeWorld(
+  entity: number,
+  cache: TransformCache,
+  world: EcsWorld,
+): void {
+  if (cache.computed.has(entity)) {
+    return;
   }
 
-  /**
-   * Updates the entity's world transform based on its parent's world transform and its local transform.
-   * @param entity - The entity whose world transform will be updated.
-   */
-  public run(entity: Entity): void {
-    const positionComponent = entity.getComponent(PositionComponent);
-    const rotationComponent = entity.getComponent(RotationComponent);
-    const scaleComponent = entity.getComponent(ScaleComponent);
+  // Cycle detection: if we re-enter an entity, break the cycle by treating it as a root.
+  if (cache.visiting.has(entity)) {
+    const positionComponent = world.getComponent(entity, positionId);
 
-    const parent = entity.parent;
-
-    if (parent === null) {
-      this._applyLocalToWorld(
-        positionComponent,
-        rotationComponent,
-        scaleComponent,
-      );
-    } else {
-      this._applyParentTransform(
-        parent,
-        positionComponent,
-        rotationComponent,
-        scaleComponent,
-      );
+    if (positionComponent) {
+      positionComponent.world.x = positionComponent.local.x;
+      positionComponent.world.y = positionComponent.local.y;
     }
+
+    const rotationComponent = world.getComponent(entity, rotationId);
+
+    if (rotationComponent) {
+      rotationComponent.world = rotationComponent.local;
+    }
+
+    const scaleComponent = world.getComponent(entity, scaleId);
+
+    if (scaleComponent) {
+      scaleComponent.world = scaleComponent.local;
+    }
+
+    cache.computed.add(entity);
+
+    return;
   }
 
-  /**
-   * Copies local transform to world transform for root entities.
-   */
-  private _applyLocalToWorld(
-    positionComponent: PositionComponent | null,
-    rotationComponent: RotationComponent | null,
-    scaleComponent: ScaleComponent | null,
-  ): void {
+  cache.visiting.add(entity);
+
+  const positionComponent = world.getComponent(entity, positionId);
+  const rotationComponent = world.getComponent(entity, rotationId);
+  const scaleComponent = world.getComponent(entity, scaleId);
+
+  if (!positionComponent && !rotationComponent && !scaleComponent) {
+    cache.visiting.delete(entity);
+
+    return;
+  }
+
+  const parentComponent = world.getComponent(entity, parentId);
+
+  if (!parentComponent) {
     if (positionComponent) {
       positionComponent.world.x = positionComponent.local.x;
       positionComponent.world.y = positionComponent.local.y;
@@ -61,90 +73,72 @@ export class TransformSystem extends System {
     }
 
     if (scaleComponent) {
+      scaleComponent.world = scaleComponent.local;
+    }
+
+    cache.visiting.delete(entity);
+    cache.computed.add(entity);
+
+    return;
+  }
+
+  const parentEntity = parentComponent.parent;
+
+  computeWorld(parentEntity, cache, world);
+
+  const parentPosition = world.getComponent(parentEntity, positionId);
+  const parentRotation = world.getComponent(parentEntity, rotationId);
+  const parentScale = world.getComponent(parentEntity, scaleId);
+
+  if (positionComponent) {
+    if (parentPosition) {
+      positionComponent.world.x =
+        parentPosition.world.x + positionComponent.local.x;
+      positionComponent.world.y =
+        parentPosition.world.y + positionComponent.local.y;
+    } else {
+      positionComponent.world.x = positionComponent.local.x;
+      positionComponent.world.y = positionComponent.local.y;
+    }
+  }
+
+  if (rotationComponent) {
+    if (parentRotation) {
+      rotationComponent.world = parentRotation.world + rotationComponent.local;
+    } else {
+      rotationComponent.world = rotationComponent.local;
+    }
+  }
+
+  if (scaleComponent) {
+    if (parentScale) {
+      scaleComponent.world.x = parentScale.world.x * scaleComponent.local.x;
+      scaleComponent.world.y = parentScale.world.y * scaleComponent.local.y;
+    } else {
       scaleComponent.world.x = scaleComponent.local.x;
       scaleComponent.world.y = scaleComponent.local.y;
     }
   }
 
-  /**
-   * Applies parent's world transform to child's local transform to compute child's world transform.
-   */
-  private _applyParentTransform(
-    parent: Entity,
-    positionComponent: PositionComponent | null,
-    rotationComponent: RotationComponent | null,
-    scaleComponent: ScaleComponent | null,
-  ): void {
-    const parentPosition = parent.getComponent(PositionComponent);
-    const parentRotation = parent.getComponent(RotationComponent);
-    const parentScale = parent.getComponent(ScaleComponent);
-
-    this._applyParentRotation(rotationComponent, parentRotation);
-    this._applyParentScale(scaleComponent, parentScale);
-    this._applyParentPosition(
-      positionComponent,
-      parentPosition,
-      parentRotation,
-      parentScale,
-    );
-  }
-
-  /**
-   * Applies parent rotation to child rotation.
-   */
-  private _applyParentRotation(
-    rotationComponent: RotationComponent | null,
-    parentRotation: RotationComponent | null,
-  ): void {
-    if (rotationComponent) {
-      const parentWorldRotation = parentRotation ? parentRotation.world : 0;
-      rotationComponent.world = parentWorldRotation + rotationComponent.local;
-    }
-  }
-
-  /**
-   * Applies parent scale to child scale.
-   */
-  private _applyParentScale(
-    scaleComponent: ScaleComponent | null,
-    parentScale: ScaleComponent | null,
-  ): void {
-    if (scaleComponent) {
-      const parentWorldScaleX = parentScale ? parentScale.world.x : 1;
-      const parentWorldScaleY = parentScale ? parentScale.world.y : 1;
-      scaleComponent.world.x = parentWorldScaleX * scaleComponent.local.x;
-      scaleComponent.world.y = parentWorldScaleY * scaleComponent.local.y;
-    }
-  }
-
-  /**
-   * Applies parent transform to child position.
-   */
-  private _applyParentPosition(
-    positionComponent: PositionComponent | null,
-    parentPosition: PositionComponent | null,
-    parentRotation: RotationComponent | null,
-    parentScale: ScaleComponent | null,
-  ): void {
-    if (!positionComponent) {
-      return;
-    }
-
-    const parentWorldPosX = parentPosition ? parentPosition.world.x : 0;
-    const parentWorldPosY = parentPosition ? parentPosition.world.y : 0;
-    const parentWorldRotation = parentRotation ? parentRotation.world : 0;
-    const parentWorldScaleX = parentScale ? parentScale.world.x : 1;
-    const parentWorldScaleY = parentScale ? parentScale.world.y : 1;
-
-    const scaledLocalX = positionComponent.local.x * parentWorldScaleX;
-    const scaledLocalY = positionComponent.local.y * parentWorldScaleY;
-
-    const cos = Math.cos(parentWorldRotation);
-    const sin = Math.sin(parentWorldRotation);
-    const rotatedX = scaledLocalX * cos - scaledLocalY * sin;
-    const rotatedY = scaledLocalX * sin + scaledLocalY * cos;
-
-    positionComponent.world.x = parentWorldPosX + rotatedX;
-    positionComponent.world.y = parentWorldPosY + rotatedY;
-  }
+  cache.visiting.delete(entity);
+  cache.computed.add(entity);
 }
+
+type TransformSystem = EcsSystem<[PositionEcsComponent], TransformCache> & {
+  beforeQuery: (world: EcsWorld) => TransformCache;
+};
+
+export const createTransformEcsSystem = (): TransformSystem => ({
+  query: [positionId],
+
+  beforeQuery: () => ({
+    computed: new Set<number>(),
+    visiting: new Set<number>(),
+  }),
+
+  run: (result, world, cache) => {
+    const entity = result.entity;
+
+    computeWorld(entity, cache, world);
+  },
+});
