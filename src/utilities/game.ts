@@ -1,10 +1,10 @@
-import { Time } from '../common/index.js';
+import { Stoppable, Time } from '../common/index.js';
 import { EcsWorld } from '../new-ecs/ecs-world.js';
 
 /**
  * Manages the game loop and coordinates updates between systems.
  */
-export class Game {
+export class Game implements Stoppable {
   private _isRunning = false;
   private _animationFrameId: number | null = null;
 
