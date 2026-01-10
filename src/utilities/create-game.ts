@@ -1,5 +1,4 @@
 import { Time } from '../common/index.js';
-import { createWorld, Game } from '../ecs/index.js';
 import { EcsWorld } from '../new-ecs/ecs-world.js';
 import {
   createCanvas,
@@ -8,18 +7,18 @@ import {
 } from '../rendering/index.js';
 
 export function createGame(containerId: string): {
-  game: Game;
   world: EcsWorld;
   renderContext: RenderContext;
   time: Time;
+  container: HTMLElement;
 } {
   const time = new Time();
-  const game = new Game(time, document.getElementById(containerId)!);
-  const world = createWorld(game);
+  const container = document.getElementById(containerId)!;
+  const world = new EcsWorld();
 
-  const canvas = createCanvas(game.container);
+  const canvas = createCanvas(container);
 
   const renderContext = createRenderContext(canvas);
 
-  return { game, world, time, renderContext };
+  return { world, time, renderContext, container };
 }

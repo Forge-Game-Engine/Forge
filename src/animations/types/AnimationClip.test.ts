@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationClip } from './AnimationClip';
 import { AnimationFrame } from './AnimationFrame';
-import { ParameterizedForgeEvent } from '../../events';
+import { ForgeEvent, ParameterizedForgeEvent } from '../../events';
 
 describe('Animation', () => {
   const mockFrame1 = {} as AnimationFrame;
@@ -14,12 +14,8 @@ describe('Animation', () => {
 
       expect(animation.name).toBe('TestAnimation');
       expect(animation.frames).toEqual(mockFrames);
-      expect(animation.onAnimationStartEvent).toBeInstanceOf(
-        ParameterizedForgeEvent,
-      );
-      expect(animation.onAnimationEndEvent).toBeInstanceOf(
-        ParameterizedForgeEvent,
-      );
+      expect(animation.onAnimationStartEvent).toBeInstanceOf(ForgeEvent);
+      expect(animation.onAnimationEndEvent).toBeInstanceOf(ForgeEvent);
       expect(animation.onAnimationFrameChangeEvent).toBeInstanceOf(
         ParameterizedForgeEvent,
       );

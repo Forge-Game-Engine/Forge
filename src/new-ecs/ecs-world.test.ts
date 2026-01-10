@@ -1,94 +1,146 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EcsWorld } from './ecs-world';
 import { EcsSystem } from './ecs-system';
+import { createComponentId } from './ecs-component';
 
 describe('EcsWorld', () => {
   it('queries entities with multiple components', () => {
     const world = new EcsWorld();
-    const pos1 = { name: 'position', x: 1 };
-    const rot1 = { name: 'rotation', angle: 10 };
-    const pos2 = { name: 'position', x: 2 };
+    const positionId = createComponentId<{ x: number }>('position');
+    const rotationId = createComponentId<{ angle: number }>('rotation');
+    
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
+    
+    const pos1 = { x: 1 };
+    const rot1 = { angle: 10 };
+    const pos2 = { x: 2 };
 
-    world.addComponent(1, pos1);
-    world.addComponent(1, rot1);
-    world.addComponent(2, pos2);
-    const results = Array.from(world.query(['position', 'rotation']));
+    world.addComponent(entity1, positionId, pos1);
+    world.addComponent(entity1, rotationId, rot1);
+    world.addComponent(entity2, positionId, pos2);
+
+    const results: Array<{ entity: number; components: unknown[] }> = [];
+    const system: EcsSystem<[{ x: number }, { angle: number }]> = {
+      query: [positionId, rotationId],
+      run: (result) => {
+        results.push({ entity: result.entity, components: [...result.components] });
+      },
+    };
+
+    world.addSystem(system);
+    world.update();
 
     expect(results).toHaveLength(1);
-    expect(results[0][0]).toBe(1);
-    expect(results[0][1]).toBe(pos1);
-    expect(results[0][2]).toBe(rot1);
+    expect(results[0].entity).toBe(entity1);
+    expect(results[0].components[0]).toBe(pos1);
+    expect(results[0].components[1]).toBe(rot1);
   });
 
   it('queries single component returns all entities', () => {
     const world = new EcsWorld();
+    const tagId = createComponentId<{ value: string }>('tag');
+    
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
 
-    const tag1 = { name: 'tag', value: 'a' };
-    const tag2 = { name: 'tag', value: 'b' };
+    const tag1 = { value: 'a' };
+    const tag2 = { value: 'b' };
 
-    world.addComponent(1, tag1);
-    world.addComponent(2, tag2);
+    world.addComponent(entity1, tagId, tag1);
+    world.addComponent(entity2, tagId, tag2);
 
-    const iterator = world.query<[{ name: string; value: string }]>(['tag']);
+    const results: Array<{ entity: number; component: { value: string } }> = [];
+    const system: EcsSystem<[{ value: string }]> = {
+      query: [tagId],
+      run: (result) => {
+        results.push({
+          entity: result.entity,
+          component: result.components[0] as { value: string },
+        });
+      },
+    };
 
-    const result1 = iterator.next().value as [
-      number,
-      { name: string; value: string },
-    ];
-    expect(result1[0]).toBe(1);
-    expect(result1[1]).toBe(tag1);
+    world.addSystem(system);
+    world.update();
 
-    const result2 = iterator.next().value as [
-      number,
-      { name: string; value: string },
-    ];
-    expect(result2[0]).toBe(2);
-    expect(result2[1]).toBe(tag2);
+    expect(results).toHaveLength(2);
+    expect(results[0].entity).toBe(entity1);
+    expect(results[0].component).toBe(tag1);
+    expect(results[1].entity).toBe(entity2);
+    expect(results[1].component).toBe(tag2);
   });
 
   it('skips entities missing some components', () => {
     const world = new EcsWorld();
+    const positionId = createComponentId<{ x: number }>('position');
+    const velocityId = createComponentId<{ y: number }>('velocity');
 
-    const position1 = { name: 'position', x: 1 };
-    const position2 = { name: 'position', x: 2 };
-    const velocity2 = { name: 'velocity', y: 3 };
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
 
-    world.addComponent(1, position1);
-    world.addComponent(2, position2);
-    world.addComponent(2, velocity2);
+    const position1 = { x: 1 };
+    const position2 = { x: 2 };
+    const velocity2 = { y: 3 };
 
-    const results = Array.from(world.query(['position', 'velocity']));
+    world.addComponent(entity1, positionId, position1);
+    world.addComponent(entity2, positionId, position2);
+    world.addComponent(entity2, velocityId, velocity2);
+
+    const results: Array<{ entity: number; components: unknown[] }> = [];
+    const system: EcsSystem<[{ x: number }, { y: number }]> = {
+      query: [positionId, velocityId],
+      run: (result) => {
+        results.push({ entity: result.entity, components: [...result.components] });
+      },
+    };
+
+    world.addSystem(system);
+    world.update();
 
     expect(results).toHaveLength(1);
-    expect(results[0][0]).toBe(2);
-    expect(results[0][1]).toEqual(position2);
-    expect(results[0][2]).toEqual(velocity2);
+    expect(results[0].entity).toBe(entity2);
+    expect(results[0].components[0]).toEqual(position2);
+    expect(results[0].components[1]).toEqual(velocity2);
   });
 
   it('throws when no components found for the given names', () => {
     const world = new EcsWorld();
+    const nonexistentId = createComponentId('nonexistent');
 
-    expect(() => Array.from(world.query(['nonexistent']))).toThrow(
-      'No components found for the given name: nonexistent.',
+    const system: EcsSystem<[]> = {
+      query: [nonexistentId],
+      run: () => {},
+    };
+
+    world.addSystem(system);
+
+    expect(() => world.update()).toThrow(
+      'No components found for the given name: Symbol(nonexistent).',
     );
   });
 
   it('runs systems with query results', () => {
     const world = new EcsWorld();
-    const pos1 = { name: 'position', x: -5 };
-    const pos2 = { name: 'position', x: 5 };
+    const positionId = createComponentId<{ x: number }>('position');
+    
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
+    
+    const pos1 = { x: -5 };
+    const pos2 = { x: 5 };
 
-    world.addComponent(1, pos1);
-    world.addComponent(2, pos2);
+    world.addComponent(entity1, positionId, pos1);
+    world.addComponent(entity2, positionId, pos2);
 
-    const run = vi.fn((components: [number, { x: number }]) => {
-      const [, position] = components;
+    const run = vi.fn((result: { entity: number; components: [{ x: number }] }) => {
+      const [position] = result.components;
 
       position.x += 10;
     });
 
     const system: EcsSystem<[{ x: number }]> = {
-      query: ['position'],
+      query: [positionId],
       run,
     };
 
@@ -103,29 +155,35 @@ describe('EcsWorld', () => {
 
   it('invokes multiple systems independently', () => {
     const world = new EcsWorld();
-    const pos1 = { name: 'position', x: -5 };
-    const rot1 = { name: 'rotation', radians: 1 };
-    const pos2 = { name: 'position', x: 5 };
-    const rot2 = { name: 'rotation', radians: 2 };
+    const positionId = createComponentId<{ x: number }>('position');
+    const rotationId = createComponentId<{ radians: number }>('rotation');
+    
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
+    
+    const pos1 = { x: -5 };
+    const rot1 = { radians: 1 };
+    const pos2 = { x: 5 };
+    const rot2 = { radians: 2 };
 
-    world.addComponent(1, pos1);
-    world.addComponent(1, rot1);
-    world.addComponent(2, pos2);
-    world.addComponent(2, rot2);
+    world.addComponent(entity1, positionId, pos1);
+    world.addComponent(entity1, rotationId, rot1);
+    world.addComponent(entity2, positionId, pos2);
+    world.addComponent(entity2, rotationId, rot2);
 
     const positionSystem: EcsSystem<[{ x: number }]> = {
-      query: ['position'],
-      run: vi.fn((components: [number, { x: number }]) => {
-        const [, position] = components;
+      query: [positionId],
+      run: vi.fn((result: { entity: number; components: [{ x: number }] }) => {
+        const [position] = result.components;
 
         position.x += 10;
       }),
     };
 
     const rotationSystem: EcsSystem<[{ radians: number }]> = {
-      query: ['rotation'],
-      run: vi.fn((components: [number, { radians: number }]) => {
-        const [, rotation] = components;
+      query: [rotationId],
+      run: vi.fn((result: { entity: number; components: [{ radians: number }] }) => {
+        const [rotation] = result.components;
 
         rotation.radians *= 2;
       }),
