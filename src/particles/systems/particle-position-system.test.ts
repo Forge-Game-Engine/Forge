@@ -1,87 +1,124 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ParticlePositionSystem } from './particle-position-system';
-import { Entity, World } from '../../ecs';
-import { ParticleComponent } from '../components/particle-component';
+import { createParticlePositionEcsSystem } from './particle-position-system';
+import { EcsWorld } from '../../new-ecs';
+import { ParticleEcsComponent, ParticleId } from '../components/particle-component';
 import {
-  PositionComponent,
-  RotationComponent,
-  SpeedComponent,
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  SpeedEcsComponent,
+  speedId,
   Time,
 } from '../../common';
+import { Vector2 } from '../../math';
 
 describe('ParticlePositionSystem', () => {
-  const time = { deltaTimeInSeconds: 0.016 } as Time;
-  const system = new ParticlePositionSystem(time);
-  let entity: Entity;
+  let world: EcsWorld;
+  let time: Time;
 
   beforeEach(() => {
-    entity = new Entity({} as World, [
-      new PositionComponent(0, 0),
-      new RotationComponent(20),
-      new SpeedComponent(10),
-      new ParticleComponent({
-        rotationSpeed: Math.PI,
-      }),
-    ]);
+    world = new EcsWorld();
+    time = new Time();
+    world.addSystem(createParticlePositionEcsSystem(time));
   });
 
-  it('should update rotation based on rotation speed and delta time', () => {
-    const rotationComponent = entity.getComponentRequired(RotationComponent);
-    const initialRadians = rotationComponent.local;
+  it('should update particle position based on speed and rotation', () => {
+    const entity = world.createEntity();
 
-    system.run(entity);
+    const positionComponent: PositionEcsComponent = {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    };
 
-    expect(rotationComponent.local).toBeCloseTo(
-      initialRadians + Math.PI * time.deltaTimeInSeconds,
-    );
+    const rotationComponent: RotationEcsComponent = {
+      local: 0, // facing up
+      world: 0,
+    };
+
+    const speedComponent: SpeedEcsComponent = {
+      speed: 100,
+    };
+
+    const particleComponent: ParticleEcsComponent = {
+      rotationSpeed: 0,
+    };
+
+    world.addComponent(entity, positionId, positionComponent);
+    world.addComponent(entity, rotationId, rotationComponent);
+    world.addComponent(entity, speedId, speedComponent);
+    world.addComponent(entity, ParticleId, particleComponent);
+
+    time.update(100);
+    world.update();
+
+    expect(positionComponent.local.x).toBeCloseTo(0);
+    expect(positionComponent.local.y).toBeCloseTo(-10);
   });
 
-  it('should update position based on speed, rotation, and delta time', () => {
-    const positionComponent = entity.getComponentRequired(PositionComponent);
-    const rotationComponent = entity.getComponentRequired(RotationComponent);
-    const speedComponent = entity.getComponentRequired(SpeedComponent);
+  it('should update particle rotation based on rotation speed', () => {
+    const entity = world.createEntity();
 
-    const expectedX =
-      positionComponent.local.x +
-      speedComponent.speed *
-        time.deltaTimeInSeconds *
-        Math.sin(rotationComponent.local);
-    const expectedY =
-      positionComponent.local.y -
-      speedComponent.speed *
-        time.deltaTimeInSeconds *
-        Math.cos(rotationComponent.local);
+    const positionComponent: PositionEcsComponent = {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    };
 
-    system.run(entity);
-    expect(positionComponent.local.x).toBeCloseTo(expectedX);
-    expect(positionComponent.local.y).toBeCloseTo(expectedY);
+    const rotationComponent: RotationEcsComponent = {
+      local: 0,
+      world: 0,
+    };
+
+    const speedComponent: SpeedEcsComponent = {
+      speed: 0,
+    };
+
+    const particleComponent: ParticleEcsComponent = {
+      rotationSpeed: Math.PI,
+    };
+
+    world.addComponent(entity, positionId, positionComponent);
+    world.addComponent(entity, rotationId, rotationComponent);
+    world.addComponent(entity, speedId, speedComponent);
+    world.addComponent(entity, ParticleId, particleComponent);
+
+    time.update(500);
+    world.update();
+
+    expect(rotationComponent.local).toBeCloseTo(Math.PI / 2);
   });
 
-  it('should handle multiple runs correctly', () => {
-    const positionComponent = entity.getComponentRequired(PositionComponent);
-    const rotationComponent = entity.getComponentRequired(RotationComponent);
-    const speedComponent = entity.getComponentRequired(SpeedComponent);
+  it('should handle multiple particles independently', () => {
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
 
-    const newRotation =
-      rotationComponent.local + Math.PI * time.deltaTimeInSeconds;
-    const expectedRotation = newRotation + Math.PI * time.deltaTimeInSeconds;
+    const pos1: PositionEcsComponent = {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    };
 
-    const expectedX =
-      positionComponent.local.x +
-      speedComponent.speed *
-        time.deltaTimeInSeconds *
-        (Math.sin(rotationComponent.local) + Math.sin(newRotation));
-    const expectedY =
-      positionComponent.local.y -
-      speedComponent.speed *
-        time.deltaTimeInSeconds *
-        (Math.cos(rotationComponent.local) + Math.cos(newRotation));
+    const pos2: PositionEcsComponent = {
+      local: new Vector2(10, 10),
+      world: new Vector2(10, 10),
+    };
 
-    system.run(entity);
-    system.run(entity);
+    world.addComponent(entity1, positionId, pos1);
+    world.addComponent(entity1, rotationId, { local: 0, world: 0 });
+    world.addComponent(entity1, speedId, { speed: 50 });
+    world.addComponent(entity1, ParticleId, { rotationSpeed: 0 });
 
-    expect(rotationComponent.local).toBeCloseTo(expectedRotation);
-    expect(positionComponent.local.x).toBeCloseTo(expectedX);
-    expect(positionComponent.local.y).toBeCloseTo(expectedY);
+    world.addComponent(entity2, positionId, pos2);
+    world.addComponent(entity2, rotationId, { local: Math.PI / 2, world: Math.PI / 2 });
+    world.addComponent(entity2, speedId, { speed: 100 });
+    world.addComponent(entity2, ParticleId, { rotationSpeed: 0 });
+
+    time.update(100);
+    world.update();
+
+    expect(pos1.local.x).toBeCloseTo(0);
+    expect(pos1.local.y).toBeCloseTo(-5);
+
+    expect(pos2.local.x).toBeCloseTo(20);
+    expect(pos2.local.y).toBeCloseTo(10);
   });
 });

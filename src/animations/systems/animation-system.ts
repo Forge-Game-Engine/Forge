@@ -6,7 +6,6 @@ import {
 } from '../components/index.js';
 import { EcsSystem } from '../../new-ecs/index.js';
 
-
 /**
  * Updates a single animation.
  * @param animation - The animation to update.
