@@ -81,16 +81,10 @@ export class MouseInputSource
   }
 
   public stop(): void {
-    this._container.removeEventListener(
-      'mousedown',
-      this._onMouseDownHandler,
-    );
+    this._container.removeEventListener('mousedown', this._onMouseDownHandler);
     this._container.removeEventListener('mouseup', this._onMouseUpHandler);
     this._container.removeEventListener('wheel', this._onWheelHandler);
-    this._container.removeEventListener(
-      'mousemove',
-      this._onMouseMoveHandler,
-    );
+    this._container.removeEventListener('mousemove', this._onMouseMoveHandler);
     this._inputManager.removeResettable(this);
   }
 

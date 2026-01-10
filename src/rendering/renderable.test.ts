@@ -213,7 +213,12 @@ describe('Renderable', () => {
 
       renderable.bindInstanceData(entity, world, buffer, offset);
 
-      expect(mockBindInstanceData).toHaveBeenCalledWith(entity, world, buffer, offset);
+      expect(mockBindInstanceData).toHaveBeenCalledWith(
+        entity,
+        world,
+        buffer,
+        offset,
+      );
     });
 
     it('should allow setupInstanceAttributes callback to be called', () => {

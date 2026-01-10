@@ -8,10 +8,10 @@ describe('EcsWorld', () => {
     const world = new EcsWorld();
     const positionId = createComponentId<{ x: number }>('position');
     const rotationId = createComponentId<{ angle: number }>('rotation');
-    
+
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
-    
+
     const pos1 = { x: 1 };
     const rot1 = { angle: 10 };
     const pos2 = { x: 2 };
@@ -24,7 +24,10 @@ describe('EcsWorld', () => {
     const system: EcsSystem<[{ x: number }, { angle: number }]> = {
       query: [positionId, rotationId],
       run: (result) => {
-        results.push({ entity: result.entity, components: [...result.components] });
+        results.push({
+          entity: result.entity,
+          components: [...result.components],
+        });
       },
     };
 
@@ -40,7 +43,7 @@ describe('EcsWorld', () => {
   it('queries single component returns all entities', () => {
     const world = new EcsWorld();
     const tagId = createComponentId<{ value: string }>('tag');
-    
+
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
@@ -91,7 +94,10 @@ describe('EcsWorld', () => {
     const system: EcsSystem<[{ x: number }, { y: number }]> = {
       query: [positionId, velocityId],
       run: (result) => {
-        results.push({ entity: result.entity, components: [...result.components] });
+        results.push({
+          entity: result.entity,
+          components: [...result.components],
+        });
       },
     };
 
@@ -123,21 +129,23 @@ describe('EcsWorld', () => {
   it('runs systems with query results', () => {
     const world = new EcsWorld();
     const positionId = createComponentId<{ x: number }>('position');
-    
+
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
-    
+
     const pos1 = { x: -5 };
     const pos2 = { x: 5 };
 
     world.addComponent(entity1, positionId, pos1);
     world.addComponent(entity2, positionId, pos2);
 
-    const run = vi.fn((result: { entity: number; components: [{ x: number }] }) => {
-      const [position] = result.components;
+    const run = vi.fn(
+      (result: { entity: number; components: [{ x: number }] }) => {
+        const [position] = result.components;
 
-      position.x += 10;
-    });
+        position.x += 10;
+      },
+    );
 
     const system: EcsSystem<[{ x: number }]> = {
       query: [positionId],
@@ -157,10 +165,10 @@ describe('EcsWorld', () => {
     const world = new EcsWorld();
     const positionId = createComponentId<{ x: number }>('position');
     const rotationId = createComponentId<{ radians: number }>('rotation');
-    
+
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
-    
+
     const pos1 = { x: -5 };
     const rot1 = { radians: 1 };
     const pos2 = { x: 5 };
@@ -182,11 +190,13 @@ describe('EcsWorld', () => {
 
     const rotationSystem: EcsSystem<[{ radians: number }]> = {
       query: [rotationId],
-      run: vi.fn((result: { entity: number; components: [{ radians: number }] }) => {
-        const [rotation] = result.components;
+      run: vi.fn(
+        (result: { entity: number; components: [{ radians: number }] }) => {
+          const [rotation] = result.components;
 
-        rotation.radians *= 2;
-      }),
+          rotation.radians *= 2;
+        },
+      ),
     };
 
     world.addSystem(positionSystem);
