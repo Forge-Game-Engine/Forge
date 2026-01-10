@@ -13,6 +13,19 @@ import { systemRegistrationPositions } from '../constants/index.js';
 import type { Entity } from '../entity.js';
 import { World } from '../world.js';
 
+/**
+ * Registers an inputs entity and input systems to the world.
+ *
+ * @param world - The world to which the inputs will be registered.
+ * @param time - The Time instance for managing time-related operations.
+ * @param options - Configuration options for the inputs.
+ * @param options.entityName - The name of the inputs entity. Defaults to 'inputs'.
+ * @param options.triggerActions - Array of trigger actions to register.
+ * @param options.axis1dActions - Array of 1D axis actions to register.
+ * @param options.axis2dActions - Array of 2D axis actions to register.
+ * @param options.holdActions - Array of hold actions to register.
+ * @returns An object containing the created inputs entity and the input manager.
+ */
 export const registerInputs = (
   world: World,
   time: Time,
