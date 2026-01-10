@@ -25,20 +25,6 @@ export class Game implements Stoppable {
   }
 
   /**
-   * Gets the Time instance.
-   */
-  public get time(): Time {
-    return this._time;
-  }
-
-  /**
-   * Gets the ECS world.
-   */
-  public get world(): EcsWorld {
-    return this._world;
-  }
-
-  /**
    * Starts the game loop.
    */
   public run(): void {
@@ -66,8 +52,8 @@ export class Game implements Stoppable {
       return;
     }
 
-    this.time.update(currentTime);
-    this.world.update();
+    this._time.update(currentTime);
+    this._world.update();
 
     this._animationFrameId = requestAnimationFrame(this._gameLoop);
   };
