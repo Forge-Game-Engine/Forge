@@ -1,4 +1,6 @@
 import { positionId, PositionEcsComponent, Time } from '../../common/index.js';
+import { Axis1dAction, Axis2dAction } from '../../input/index.js';
+import { Rect } from '../../math/index.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
 import {
@@ -18,9 +20,9 @@ export interface CameraOptions {
   maxZoom?: number;
   isStatic?: boolean;
   layerMask?: number;
-  scissorRect?: any; // TODO: Import Rect type
-  zoomInput?: any; // TODO: Import Axis1dAction type
-  panInput?: any; // TODO: Import Axis2dAction type
+  scissorRect?: Rect;
+  zoomInput?: Axis1dAction;
+  panInput?: Axis2dAction;
 }
 
 /**
