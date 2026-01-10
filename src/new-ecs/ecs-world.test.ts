@@ -1,27 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EcsWorld } from './ecs-world';
 import { EcsSystem } from './ecs-system';
+import { positionId, rotationId, speedId } from '../common/index.js';
 import { createComponentId } from './ecs-component';
 
 describe('EcsWorld', () => {
   it('queries entities with multiple components', () => {
     const world = new EcsWorld();
-    const positionId = createComponentId<{ x: number }>('position');
-    const rotationId = createComponentId<{ angle: number }>('rotation');
 
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    const pos1 = { x: 1 };
-    const rot1 = { angle: 10 };
-    const pos2 = { x: 2 };
+    const pos1 = { local: { x: 1, y: 0 }, world: { x: 1, y: 0 } };
+    const rot1 = { local: 10, world: 10 };
+    const pos2 = { local: { x: 2, y: 0 }, world: { x: 2, y: 0 } };
 
     world.addComponent(entity1, positionId, pos1);
     world.addComponent(entity1, rotationId, rot1);
     world.addComponent(entity2, positionId, pos2);
 
     const results: Array<{ entity: number; components: unknown[] }> = [];
-    const system: EcsSystem<[{ x: number }, { angle: number }]> = {
+    const system: EcsSystem<
+      [
+        { local: { x: number; y: number }; world: { x: number; y: number } },
+        { local: number; world: number },
+      ]
+    > = {
       query: [positionId, rotationId],
       run: (result) => {
         results.push({
@@ -76,23 +80,26 @@ describe('EcsWorld', () => {
 
   it('skips entities missing some components', () => {
     const world = new EcsWorld();
-    const positionId = createComponentId<{ x: number }>('position');
-    const velocityId = createComponentId<{ y: number }>('velocity');
 
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    const position1 = { x: 1 };
-    const position2 = { x: 2 };
-    const velocity2 = { y: 3 };
+    const position1 = { local: { x: 1, y: 0 }, world: { x: 1, y: 0 } };
+    const position2 = { local: { x: 2, y: 0 }, world: { x: 2, y: 0 } };
+    const speed2 = { speed: 3 };
 
     world.addComponent(entity1, positionId, position1);
     world.addComponent(entity2, positionId, position2);
-    world.addComponent(entity2, velocityId, velocity2);
+    world.addComponent(entity2, speedId, speed2);
 
     const results: Array<{ entity: number; components: unknown[] }> = [];
-    const system: EcsSystem<[{ x: number }, { y: number }]> = {
-      query: [positionId, velocityId],
+    const system: EcsSystem<
+      [
+        { local: { x: number; y: number }; world: { x: number; y: number } },
+        { speed: number },
+      ]
+    > = {
+      query: [positionId, speedId],
       run: (result) => {
         results.push({
           entity: result.entity,
@@ -107,7 +114,7 @@ describe('EcsWorld', () => {
     expect(results).toHaveLength(1);
     expect(results[0].entity).toBe(entity2);
     expect(results[0].components[0]).toEqual(position2);
-    expect(results[0].components[1]).toEqual(velocity2);
+    expect(results[0].components[1]).toEqual(speed2);
   });
 
   it('throws when no components found for the given names', () => {

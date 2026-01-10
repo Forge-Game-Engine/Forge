@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Geometry } from './geometry/geometry.js';
 import { Material } from './materials/material.js';
 import { Renderable } from './renderable.js';
+import { EcsWorld } from '../new-ecs/ecs-world.js';
 
 describe('Renderable', () => {
   let mockGeometry: Geometry;
@@ -197,8 +198,8 @@ describe('Renderable', () => {
 
   describe('callbacks', () => {
     it('should allow bindInstanceData callback to be called', () => {
-      const entity = 1; // Entity is now a number
-      const world = {} as any; // Mock EcsWorld
+      const entity = 1;
+      const world = new EcsWorld();
       const buffer = new Float32Array(10);
       const offset = 5;
 
