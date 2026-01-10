@@ -8,7 +8,7 @@ import { World } from '../world.js';
  * @param game - The game instance to register the world with.
  * @returns The new ECS world instance.
  */
-export function createWorld(game: Game, name?: string): World {
+export function createWorld(name: string | undefined, game: Game): World {
   const world = new World(name);
   game.registerWorld(world);
 

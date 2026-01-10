@@ -23,7 +23,7 @@ game.registerWorld(world);
 
 // or using the utility
 
-const { world } = createWorld('my-world', game);
+const world = createWorld('my-world', game);
 ```
 
 :::tip

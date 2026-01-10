@@ -14,7 +14,7 @@ export function createGame(containerId: string): {
 } {
   const time = new Time();
   const game = new Game(time, document.getElementById(containerId)!);
-  const world = createWorld(game);
+  const world = createWorld(undefined, game);
 
   const canvas = createCanvas(game.container);
 
