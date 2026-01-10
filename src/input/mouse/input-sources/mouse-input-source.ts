@@ -1,4 +1,3 @@
-import { Game } from '../../../ecs/index.js';
 import { Vector2 } from '../../../math/index.js';
 import {
   buttonMoments,
@@ -42,7 +41,7 @@ export class MouseInputSource
   public readonly holdBindings = new Set<MouseHoldBinding>();
 
   private readonly _inputManager: InputManager;
-  private readonly _game: Game;
+  private readonly _container: HTMLElement;
   private readonly _containerBoundingClientRect: DOMRect;
 
   private readonly _mouseButtonPresses = new Set<MouseButton>();
@@ -54,17 +53,17 @@ export class MouseInputSource
 
   /** Constructs a new MouseInputSource.
    * @param inputManager - The input manager to register with.
-   * @param game - The game instance.
+   * @param container - The HTML container element to attach mouse events to.
    */
-  constructor(inputManager: InputManager, game: Game) {
+  constructor(inputManager: InputManager, container: HTMLElement) {
     this._inputManager = inputManager;
-    this._game = game;
-    this._containerBoundingClientRect = game.container.getBoundingClientRect();
+    this._container = container;
+    this._containerBoundingClientRect = container.getBoundingClientRect();
 
-    game.container.addEventListener('mousedown', this._onMouseDownHandler);
-    game.container.addEventListener('mouseup', this._onMouseUpHandler);
-    game.container.addEventListener('wheel', this._onWheelHandler);
-    game.container.addEventListener('mousemove', this._onMouseMoveHandler);
+    container.addEventListener('mousedown', this._onMouseDownHandler);
+    container.addEventListener('mouseup', this._onMouseUpHandler);
+    container.addEventListener('wheel', this._onWheelHandler);
+    container.addEventListener('mousemove', this._onMouseMoveHandler);
 
     this._inputManager.addResettable(this);
 
@@ -82,13 +81,13 @@ export class MouseInputSource
   }
 
   public stop(): void {
-    this._game.container.removeEventListener(
+    this._container.removeEventListener(
       'mousedown',
       this._onMouseDownHandler,
     );
-    this._game.container.removeEventListener('mouseup', this._onMouseUpHandler);
-    this._game.container.removeEventListener('wheel', this._onWheelHandler);
-    this._game.container.removeEventListener(
+    this._container.removeEventListener('mouseup', this._onMouseUpHandler);
+    this._container.removeEventListener('wheel', this._onWheelHandler);
+    this._container.removeEventListener(
       'mousemove',
       this._onMouseMoveHandler,
     );
