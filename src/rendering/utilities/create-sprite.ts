@@ -1,7 +1,18 @@
 import {
+  flipId,
+  FlipEcsComponent,
   positionId,
   PositionEcsComponent,
+  rotationId,
+  RotationEcsComponent,
+  scaleId,
+  ScaleEcsComponent,
 } from '../../common/index.js';
+import {
+  AnimationFrame,
+  spriteAnimationId,
+  SpriteAnimationEcsComponent,
+} from '../../animations/index.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import {
   spriteId,
@@ -46,40 +57,44 @@ function bindInstanceData(
     positionId,
   )!;
 
-  // const rotation = world.getComponent(entity, RotationComponentName);
+  const rotation = world.getComponent<RotationEcsComponent>(
+    entity,
+    rotationId,
+  );
 
-  // const scale = world.getComponent(entity, ScaleComponentName);
+  const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
 
   const spriteComponent = world.getComponent<SpriteEcsComponent>(
     entity,
     spriteId,
   )!;
-  // const flipComponent = world.getComponent(entity, FlipComponentName);
-  // const spriteAnimationComponent = world.getComponent(
-  //   entity,
-  //   SpriteAnimationComponentName,
-  // );
+  const flipComponent = world.getComponent<FlipEcsComponent>(entity, flipId);
+  const spriteAnimationComponent =
+    world.getComponent<SpriteAnimationEcsComponent>(
+      entity,
+      spriteAnimationId,
+    );
 
-  // let animationFrame: AnimationFrame | null = null;
+  let animationFrame: AnimationFrame | null = null;
 
-  // if (spriteAnimationComponent) {
-  //   const { stateMachine, animationFrameIndex } = spriteAnimationComponent;
+  if (spriteAnimationComponent) {
+    const { stateMachine, animationFrameIndex } = spriteAnimationComponent;
 
-  //   animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
-  // }
+    animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
+  }
 
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
   instanceDataBufferArray[offset + POSITION_Y_OFFSET] = position.world.y;
 
   // Rotation
-  // instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
+  instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
 
   // Scale with flip consideration
-  instanceDataBufferArray[offset + SCALE_X_OFFSET] = 1;
-  // (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-  instanceDataBufferArray[offset + SCALE_Y_OFFSET] = 1;
-  // (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+  instanceDataBufferArray[offset + SCALE_X_OFFSET] =
+    (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+  instanceDataBufferArray[offset + SCALE_Y_OFFSET] =
+    (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
   // Sprite dimensions
   instanceDataBufferArray[offset + WIDTH_OFFSET] = spriteComponent.sprite.width;
@@ -93,14 +108,14 @@ function bindInstanceData(
     spriteComponent.sprite.pivot.y;
 
   // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = 0;
-  //   animationFrame?.offset.x ?? 0;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = 0;
-  //   animationFrame?.offset.y ?? 0;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = 1;
-  //   animationFrame?.dimensions.x ?? 1;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = 1;
-  //   animationFrame?.dimensions.y ?? 1;
+  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] =
+    animationFrame?.offset.x ?? 0;
+  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] =
+    animationFrame?.offset.y ?? 0;
+  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] =
+    animationFrame?.dimensions.x ?? 1;
+  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
+    animationFrame?.dimensions.y ?? 1;
 
   // Tint color
   instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] =

@@ -8,9 +8,6 @@ import {
 
 /**
  * Adds a camera entity to the world with the specified options.
- * Note: This function only creates the camera entity and components.
- * You must separately add the camera system to the world using:
- * `world.addSystem(createCameraEcsSystem(time))`
  *
  * @param world - The ECS world to which the camera will be added.
  * @param cameraOptions - Options for configuring the camera.

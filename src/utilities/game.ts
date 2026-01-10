@@ -8,17 +8,35 @@ export class Game implements Stoppable {
   private _isRunning = false;
   private _animationFrameId: number | null = null;
 
+  private readonly _time: Time;
+  private readonly _world: EcsWorld;
+  public readonly container: HTMLElement;
+
   /**
    * Creates a new Game instance.
    * @param time - The Time instance for managing time-related operations.
    * @param world - The ECS world containing all entities and systems.
    * @param container - The HTML element that contains the game canvas.
    */
-  constructor(
-    public readonly time: Time,
-    public readonly world: EcsWorld,
-    public readonly container: HTMLElement,
-  ) {}
+  constructor(time: Time, world: EcsWorld, container: HTMLElement) {
+    this._time = time;
+    this._world = world;
+    this.container = container;
+  }
+
+  /**
+   * Gets the Time instance.
+   */
+  public get time(): Time {
+    return this._time;
+  }
+
+  /**
+   * Gets the ECS world.
+   */
+  public get world(): EcsWorld {
+    return this._world;
+  }
 
   /**
    * Starts the game loop.
