@@ -1,11 +1,11 @@
 import { Time } from '../common/index.js';
-import { createWorld, Game } from '../ecs/index.js';
 import { EcsWorld } from '../new-ecs/ecs-world.js';
 import {
   createCanvas,
   createRenderContext,
   RenderContext,
 } from '../rendering/index.js';
+import { Game } from './game.js';
 
 export function createGame(containerId: string): {
   game: Game;
@@ -14,10 +14,11 @@ export function createGame(containerId: string): {
   time: Time;
 } {
   const time = new Time();
-  const game = new Game(time, document.getElementById(containerId)!);
-  const world = createWorld(game);
+  const world = new EcsWorld();
+  const container = document.getElementById(containerId)!;
+  const game = new Game(time, world, container);
 
-  const canvas = createCanvas(game.container);
+  const canvas = createCanvas(container);
 
   const renderContext = createRenderContext(canvas);
 

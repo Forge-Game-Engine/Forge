@@ -4,6 +4,7 @@ export * from './is-number.js';
 export * from './enforce-array.js';
 export * from './chain.js';
 export * from './types/index.js';
+export * from './game.js';
 export * from './create-game.js';
 export * from './assert-never.js';
 export * from './shallow-array-equals.js';
