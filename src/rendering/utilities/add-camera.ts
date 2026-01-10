@@ -1,6 +1,4 @@
 import { positionId, PositionEcsComponent, Time } from '../../common/index.js';
-import { Axis1dAction, Axis2dAction } from '../../input/index.js';
-import { Rect } from '../../math/index.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
 import {
@@ -8,22 +6,6 @@ import {
   CameraEcsComponent,
 } from '../components/index.js';
 import { createCameraEcsSystem } from '../systems/index.js';
-
-/**
- * Options for configuring a camera.
- */
-export interface CameraOptions {
-  zoom?: number;
-  zoomSensitivity?: number;
-  panSensitivity?: number;
-  minZoom?: number;
-  maxZoom?: number;
-  isStatic?: boolean;
-  layerMask?: number;
-  scissorRect?: Rect;
-  zoomInput?: Axis1dAction;
-  panInput?: Axis2dAction;
-}
 
 /**
  * Adds a camera entity to the world with the specified options.
@@ -35,10 +17,10 @@ export interface CameraOptions {
 export function addCamera(
   world: EcsWorld,
   time: Time,
-  cameraOptions: Partial<CameraOptions> = {},
+  cameraOptions: Partial<CameraEcsComponent> = {},
 ): number {
   const cameraEntity = world.createEntity();
-  
+
   const cameraComponent: CameraEcsComponent = {
     zoom: cameraOptions.zoom ?? 1,
     zoomSensitivity: cameraOptions.zoomSensitivity ?? 0.1,
