@@ -8,6 +8,7 @@ import { createPhysicsEcsSystem } from './physics.system';
 import { EcsWorld } from '../../new-ecs';
 import { PositionEcsComponent, positionId, RotationEcsComponent, rotationId, Time } from '../../common';
 import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components';
+import { Vector2 } from '../../math';
 
 describe('PhysicsSystem', () => {
   let world: EcsWorld;
@@ -46,7 +47,6 @@ describe('PhysicsSystem', () => {
     time.update(16);
     world.update();
 
-    // For dynamic bodies, ECS components should match physics body
     expect(positionComponent.world.x).toBe(physicsBody.position.x);
     expect(positionComponent.world.y).toBe(physicsBody.position.y);
     expect(rotationComponent.world).toBe(physicsBody.angle);
@@ -77,7 +77,6 @@ describe('PhysicsSystem', () => {
     time.update(16);
     world.update();
 
-    // For static bodies, physics body should match ECS components
     expect(physicsBody.position.x).toBe(100);
     expect(physicsBody.position.y).toBe(200);
     expect(physicsBody.angle).toBe(Math.PI / 4);
@@ -123,8 +122,8 @@ describe('PhysicsSystem', () => {
     
     world.addComponent(entity, PhysicsBodyId, { physicsBody });
     world.addComponent(entity, positionId, {
-      local: { x: 0, y: 0 },
-      world: { x: 0, y: 0 },
+      local: Vector2.zero,
+      world: Vector2.zero,
     });
     world.addComponent(entity, rotationId, { local: 0, world: 0 });
 
@@ -133,7 +132,6 @@ describe('PhysicsSystem', () => {
 
     const position = world.getComponent(entity, positionId);
 
-    // For dynamic bodies, ECS position should match physics body position
     expect(position!.world.x).toBe(physicsBody.position.x);
     expect(position!.world.y).toBe(physicsBody.position.y);
   });

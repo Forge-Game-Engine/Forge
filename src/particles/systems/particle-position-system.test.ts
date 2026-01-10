@@ -49,12 +49,9 @@ describe('ParticlePositionSystem', () => {
     world.addComponent(entity, speedId, speedComponent);
     world.addComponent(entity, ParticleId, particleComponent);
 
-    time.update(100); // 0.1 seconds
+    time.update(100);
     world.update();
 
-    // Speed 100, delta 0.1s, rotation 0 (facing up)
-    // x += 100 * 0.1 * sin(0) = 0
-    // y -= 100 * 0.1 * cos(0) = -10
     expect(positionComponent.local.x).toBeCloseTo(0);
     expect(positionComponent.local.y).toBeCloseTo(-10);
   });
@@ -77,7 +74,7 @@ describe('ParticlePositionSystem', () => {
     };
 
     const particleComponent: ParticleEcsComponent = {
-      rotationSpeed: Math.PI, // 180 degrees per second
+      rotationSpeed: Math.PI,
     };
 
     world.addComponent(entity, positionId, positionComponent);
@@ -85,10 +82,9 @@ describe('ParticlePositionSystem', () => {
     world.addComponent(entity, speedId, speedComponent);
     world.addComponent(entity, ParticleId, particleComponent);
 
-    time.update(500); // 0.5 seconds
+    time.update(500);
     world.update();
 
-    // Rotation should be PI * 0.5 = PI/2
     expect(rotationComponent.local).toBeCloseTo(Math.PI / 2);
   });
 
@@ -116,16 +112,12 @@ describe('ParticlePositionSystem', () => {
     world.addComponent(entity2, speedId, { speed: 100 });
     world.addComponent(entity2, ParticleId, { rotationSpeed: 0 });
 
-    time.update(100); // 0.1 seconds
+    time.update(100);
     world.update();
 
-    // Entity 1: rotation 0, speed 50
     expect(pos1.local.x).toBeCloseTo(0);
     expect(pos1.local.y).toBeCloseTo(-5);
 
-    // Entity 2: rotation PI/2 (facing right), speed 100
-    // x += 100 * 0.1 * sin(PI/2) = 10
-    // y -= 100 * 0.1 * cos(PI/2) = 0
     expect(pos2.local.x).toBeCloseTo(20);
     expect(pos2.local.y).toBeCloseTo(10);
   });
