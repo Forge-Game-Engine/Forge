@@ -29,8 +29,8 @@
     },
     "./ecs": {
       "import": {
-        "types": "./dist/ecs/index.d.ts",
-        "default": "./dist/ecs/index.js"
+        "types": "./dist/new-ecs/index.d.ts",
+        "default": "./dist/new-ecs/index.js"
       }
     },
     "./events": {
