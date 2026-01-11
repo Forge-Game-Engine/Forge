@@ -54,10 +54,6 @@ describe('ParticleEmitterSystem', () => {
 
     time.update(100);
     world.update();
-
-    // With an empty emitter map, no particles should be created
-    // The system should run successfully without creating any particle entities
-    // We can't query for ParticleId components since none exist
   });
 
   it('should start emitting when startEmitting is true', () => {
@@ -71,7 +67,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0,
-      spawnPosition: () => new Vector2(0, 0),
+      spawnPosition: () => Vector2.zero,
     });
 
     emitter.startEmitting = true;
@@ -102,7 +98,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0,
-      spawnPosition: () => new Vector2(0, 0),
+      spawnPosition: () => Vector2.zero,
     });
 
     emitter.startEmitting = true;
@@ -136,7 +132,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0.5,
-      spawnPosition: () => new Vector2(0, 0),
+      spawnPosition: () => Vector2.zero,
     });
 
     // Manually set emitter state as if it has already emitted all particles
@@ -154,7 +150,6 @@ describe('ParticleEmitterSystem', () => {
     time.update(100);
     world.update();
 
-    // Emitter should have stopped
     expect(emitter.currentlyEmitting).toBe(false);
   });
 });
