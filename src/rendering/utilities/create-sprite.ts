@@ -1,22 +1,22 @@
 import {
-  FlipEcsComponent,
   flipId,
-  PositionEcsComponent,
+  FlipEcsComponent,
   positionId,
-  RotationEcsComponent,
+  PositionEcsComponent,
   rotationId,
-  ScaleEcsComponent,
+  RotationEcsComponent,
   scaleId,
+  ScaleEcsComponent,
 } from '../../common/index.js';
 import {
   AnimationFrame,
-  SpriteAnimationEcsComponent,
   spriteAnimationId,
+  SpriteAnimationEcsComponent,
 } from '../../animations/index.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import {
-  SpriteEcsComponent,
   spriteId,
+  SpriteEcsComponent,
 } from '../components/sprite-component.js';
 import { createQuadGeometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
@@ -57,7 +57,10 @@ function bindInstanceData(
     positionId,
   )!;
 
-  const rotation = world.getComponent<RotationEcsComponent>(entity, rotationId);
+  const rotation = world.getComponent<RotationEcsComponent>(
+    entity,
+    rotationId,
+  );
 
   const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
 
@@ -67,7 +70,10 @@ function bindInstanceData(
   )!;
   const flipComponent = world.getComponent<FlipEcsComponent>(entity, flipId);
   const spriteAnimationComponent =
-    world.getComponent<SpriteAnimationEcsComponent>(entity, spriteAnimationId);
+    world.getComponent<SpriteAnimationEcsComponent>(
+      entity,
+      spriteAnimationId,
+    );
 
   let animationFrame: AnimationFrame | null = null;
 

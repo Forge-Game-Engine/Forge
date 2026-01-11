@@ -1,7 +1,10 @@
-import { PositionEcsComponent, positionId } from '../../common/index.js';
+import { positionId, PositionEcsComponent } from '../../common/index.js';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
-import { CameraEcsComponent, cameraId } from '../components/index.js';
+import {
+  cameraId,
+  CameraEcsComponent,
+} from '../components/index.js';
 
 /**
  * Adds a camera entity to the world with the specified options.
