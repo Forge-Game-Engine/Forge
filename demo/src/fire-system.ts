@@ -1,4 +1,9 @@
-import { HoldAction, InputsEcsComponent, inputsId, TriggerAction } from '../../src';
+import {
+  HoldAction,
+  InputsEcsComponent,
+  inputsId,
+  TriggerAction,
+} from '../../src';
 import { EcsSystem } from '../../src/new-ecs';
 
 export const createFireEcsSystem = (

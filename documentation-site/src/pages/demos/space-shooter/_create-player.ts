@@ -7,7 +7,11 @@ import {
   RenderLayer,
   SpriteComponent,
 } from '@forge-game-engine/forge/rendering';
-import { PositionComponent, RotationComponent, ScaleComponent } from '@forge-game-engine/forge/common';
+import {
+  PositionComponent,
+  RotationComponent,
+  ScaleComponent,
+} from '@forge-game-engine/forge/common';
 import { PlayerComponent } from './_player.component';
 import { GunComponent } from './_gun.component';
 import { degreesToRadians } from '../../../../../dist';
