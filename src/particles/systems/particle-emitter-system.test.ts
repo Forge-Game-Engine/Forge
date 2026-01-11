@@ -54,6 +54,12 @@ describe('ParticleEmitterSystem', () => {
 
     time.update(100);
     world.update();
+
+    // Verify no particles were created - expect the component set to not exist
+    expect(() => {
+      const particles: number[] = [];
+      world.queryEntities([ParticleId], particles);
+    }).toThrow('No components found for the given name: Symbol(Particle).');
   });
 
   it('should start emitting when startEmitting is true', () => {

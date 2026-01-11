@@ -13,78 +13,41 @@ type TransformCache = {
   visiting: Set<number>;
 };
 
-function computeWorld(
+function setTransformsToLocal(
   entity: number,
+  world: EcsWorld,
   cache: TransformCache,
+): void {
+  const positionComponent = world.getComponent(entity, positionId);
+
+  if (positionComponent) {
+    positionComponent.world.x = positionComponent.local.x;
+    positionComponent.world.y = positionComponent.local.y;
+  }
+
+  const rotationComponent = world.getComponent(entity, rotationId);
+
+  if (rotationComponent) {
+    rotationComponent.world = rotationComponent.local;
+  }
+
+  const scaleComponent = world.getComponent(entity, scaleId);
+
+  if (scaleComponent) {
+    scaleComponent.world = scaleComponent.local;
+  }
+
+  cache.computed.add(entity);
+}
+
+function applyParentTransforms(
+  entity: number,
+  parentEntity: number,
   world: EcsWorld,
 ): void {
-  if (cache.computed.has(entity)) {
-    return;
-  }
-
-  // Cycle detection: if we re-enter an entity, break the cycle by treating it as a root.
-  if (cache.visiting.has(entity)) {
-    const positionComponent = world.getComponent(entity, positionId);
-
-    if (positionComponent) {
-      positionComponent.world.x = positionComponent.local.x;
-      positionComponent.world.y = positionComponent.local.y;
-    }
-
-    const rotationComponent = world.getComponent(entity, rotationId);
-
-    if (rotationComponent) {
-      rotationComponent.world = rotationComponent.local;
-    }
-
-    const scaleComponent = world.getComponent(entity, scaleId);
-
-    if (scaleComponent) {
-      scaleComponent.world = scaleComponent.local;
-    }
-
-    cache.computed.add(entity);
-
-    return;
-  }
-
-  cache.visiting.add(entity);
-
   const positionComponent = world.getComponent(entity, positionId);
   const rotationComponent = world.getComponent(entity, rotationId);
   const scaleComponent = world.getComponent(entity, scaleId);
-
-  if (!positionComponent && !rotationComponent && !scaleComponent) {
-    cache.visiting.delete(entity);
-
-    return;
-  }
-
-  const parentComponent = world.getComponent(entity, parentId);
-
-  if (!parentComponent) {
-    if (positionComponent) {
-      positionComponent.world.x = positionComponent.local.x;
-      positionComponent.world.y = positionComponent.local.y;
-    }
-
-    if (rotationComponent) {
-      rotationComponent.world = rotationComponent.local;
-    }
-
-    if (scaleComponent) {
-      scaleComponent.world = scaleComponent.local;
-    }
-
-    cache.visiting.delete(entity);
-    cache.computed.add(entity);
-
-    return;
-  }
-
-  const parentEntity = parentComponent.parent;
-
-  computeWorld(parentEntity, cache, world);
 
   const parentPosition = world.getComponent(parentEntity, positionId);
   const parentRotation = world.getComponent(parentEntity, rotationId);
@@ -119,6 +82,50 @@ function computeWorld(
       scaleComponent.world.y = scaleComponent.local.y;
     }
   }
+}
+
+function computeWorld(
+  entity: number,
+  cache: TransformCache,
+  world: EcsWorld,
+): void {
+  if (cache.computed.has(entity)) {
+    return;
+  }
+
+  // Cycle detection: if we re-enter an entity, break the cycle by treating it as a root.
+  if (cache.visiting.has(entity)) {
+    setTransformsToLocal(entity, world, cache);
+
+    return;
+  }
+
+  cache.visiting.add(entity);
+
+  const positionComponent = world.getComponent(entity, positionId);
+  const rotationComponent = world.getComponent(entity, rotationId);
+  const scaleComponent = world.getComponent(entity, scaleId);
+
+  if (!positionComponent && !rotationComponent && !scaleComponent) {
+    cache.visiting.delete(entity);
+
+    return;
+  }
+
+  const parentComponent = world.getComponent(entity, parentId);
+
+  if (!parentComponent) {
+    setTransformsToLocal(entity, world, cache);
+    cache.visiting.delete(entity);
+
+    return;
+  }
+
+  const parentEntity = parentComponent.parent;
+
+  computeWorld(parentEntity, cache, world);
+
+  applyParentTransforms(entity, parentEntity, world);
 
   cache.visiting.delete(entity);
   cache.computed.add(entity);

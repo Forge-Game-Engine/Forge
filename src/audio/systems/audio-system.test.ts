@@ -3,6 +3,10 @@ import { createAudioEcsSystem } from './audio-system';
 import { type AudioEcsComponent, audioId } from '../components';
 import { EcsWorld } from '../../new-ecs';
 
+interface MockHowl {
+  play: () => void;
+}
+
 describe('createAudioEcsSystem (Audio)', () => {
   it('should play sound when playSound is true', () => {
     const ecsWorld = new EcsWorld();
@@ -14,7 +18,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent: AudioEcsComponent = {
       sound: {
         play: mockPlay,
-      } as any,
+      } as MockHowl,
       playSound: true,
     };
 
@@ -35,7 +39,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent: AudioEcsComponent = {
       sound: {
         play: mockPlay,
-      } as any,
+      } as MockHowl,
       playSound: false,
     };
 
@@ -56,7 +60,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent: AudioEcsComponent = {
       sound: {
         play: mockPlay,
-      } as any,
+      } as MockHowl,
       playSound: true,
     };
 
@@ -82,7 +86,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent1: AudioEcsComponent = {
       sound: {
         play: mockPlay1,
-      } as any,
+      } as MockHowl,
       playSound: true,
     };
 
@@ -91,7 +95,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent2: AudioEcsComponent = {
       sound: {
         play: mockPlay2,
-      } as any,
+      } as MockHowl,
       playSound: false,
     };
 
@@ -100,7 +104,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent3: AudioEcsComponent = {
       sound: {
         play: mockPlay3,
-      } as any,
+      } as MockHowl,
       playSound: true,
     };
 
@@ -128,7 +132,7 @@ describe('createAudioEcsSystem (Audio)', () => {
     const audioComponent: AudioEcsComponent = {
       sound: {
         play: mockPlay,
-      } as any,
+      } as MockHowl,
       playSound: true,
     };
 
