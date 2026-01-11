@@ -22,7 +22,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **Rendering**: WebGL2-based rendering system
 - **Physics**: Integration with Matter.js
 - **Audio**: Sound management via Howler.js
-- **Animations**: Animation system with Rive support
+- **Animations**: Robust animation system
 - **Input**: Keyboard, mouse, and touch input handling
 - **Particles**: Particle system
 - **Asset Loading**: Resource management
@@ -100,6 +100,8 @@ The codebase follows the ECS pattern:
 - **Composition over Inheritance**: Favor components over deep class hierarchies
 - **Immutability**: Use `readonly` for fields that shouldn't change after construction
 - **Private fields**: Prefix with underscore (`_fieldName`)
+- **Initialization**: Members are initialized in the constructor body
+- **Getters/Setters**: Getters and setters have no access modifiers (always public by default)
 
 ## Coding Conventions
 
@@ -119,6 +121,7 @@ The codebase follows the ECS pattern:
 
 - Always use explicit access modifiers (`public`, `private`, `protected`)
 - Exception: Constructors don't need `public`
+- Exception: Getters and setters have no access modifiers
 - Private fields must have leading underscore
 
 **Member Ordering** (enforced by ESLint):
@@ -139,10 +142,11 @@ The codebase follows the ECS pattern:
 
 **Type Safety**:
 
-- Use strict TypeScript mode (enabled in `tsconfig.base.json`)
+- Use strict TypeScript mode (already enabled in `tsconfig.base.json`)
 - Always specify return types for functions: `public run(entity: Entity): void`
-- Use type parameters for generic classes
 - Avoid `any`; use `unknown` if necessary
+- Avoid null assertions and casting
+- Types should be narrowed and nullish values should be handled appropriately (usually by throwing an error if it makes sense to do so)
 - No unused locals or parameters (enforced)
 
 **Imports**:
@@ -160,7 +164,10 @@ The codebase follows the ECS pattern:
 - Trailing commas in multi-line structures
 - Max 7 parameters per function
 - Use curly braces for all control structures
+- Prefer early returns over nested conditionals
+- Execute/return default behavior after all special cases are handled
 - No `else` after `return` (early return pattern)
+- No switch statements - use polymorphic dispatch or strategy functions instead
 - Blank lines before and after block-like statements
 
 **JSDoc Comments**:
@@ -210,7 +217,7 @@ ESLint is configured with:
 ### Component Pattern
 
 ```typescript
-import { Component } from '../ecs/types/Component.js';
+import { Component } from '../ecs/index.js';
 
 /**
  * Description of what this component represents.
@@ -371,23 +378,33 @@ export class Example {
 
 ### Optional Parameters with Defaults
 
+Defaults should be stored in an object with the word "default" in its name. Defaults should not be added when reading the value. Types should be narrowed and nullish values should be handled appropriately.
+
 ```typescript
-export interface Options {
-  enabled: boolean;
-  name?: string;
+interface MoveOptions {
+  speed: number;
+  direction?: Vector2;
 }
 
-const defaultOptions: Options = {
-  enabled: true,
+const defaultMoveOptions = { speed: 5 };
+
+const move = (options: MoveOptions) => {
+  const { speed, direction } = { ...defaultMoveOptions, ...options };
+
+  if (!direction) {
+    throw new Error('Needs a direction');
+  }
+
+  doMoveLogic(speed, direction);
 };
+```
 
-constructor(options: Partial<Options> = {}) {
-  const merged: Options = {
-    ...defaultOptions,
-    ...options,
-  };
-  this.enabled = merged.enabled;
-}
+**Incorrect pattern** (do not use):
+
+```typescript
+const move = (options: MoveOptions) => {
+  doMoveLogic(options.speed ?? 5, options.direction ?? Vector2.Left);
+};
 ```
 
 ### Error Handling
@@ -395,22 +412,36 @@ constructor(options: Partial<Options> = {}) {
 Throw descriptive errors with context:
 
 ```typescript
-if (!this._components.has(key)) {
+if (this._components.has(key)) {
   throw new Error(
     `Unable to add component "${key.toString()}" to entity "${this.name}", it already exists on the entity.`,
   );
 }
 ```
 
-### Type Guards
+### Type Narrowing
 
-Use type guards for runtime type checking:
+Narrow types appropriately and handle nullish values:
 
 ```typescript
 public getComponent<C extends ComponentCtor>(
   componentType: C,
 ): InstanceType<C> | null {
   return (this._components.get(componentType.id) as InstanceType<C>) ?? null;
+}
+
+public getComponentRequired<C extends ComponentCtor>(
+  componentType: C,
+): InstanceType<C> {
+  const component = this.getComponent(componentType);
+
+  if (component === null) {
+    throw new Error(
+      `Required component "${componentType.id.toString()}" not found on entity "${this.name}"`,
+    );
+  }
+
+  return component;
 }
 ```
 
@@ -481,7 +512,6 @@ export class Entity {
 
 - Peer dependencies: `@rive-app/webgl2`, `howler`, `matter-js`
 - Keep dependencies minimal and well-maintained
-- Regular security updates via Dependabot
 
 ## Additional Resources
 
