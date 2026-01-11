@@ -1,11 +1,11 @@
 import {
+  cameraId,
   createGame,
   createImageSprite,
   createRenderEcsSystem,
   positionId,
   Random,
   Rect,
-  registerCamera,
   spriteId,
   Vector2,
 } from '../../src';
@@ -20,9 +20,21 @@ enum RenderLayer {
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
-registerCamera(world, time, {
-  scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
+// Create camera entity
+const cameraEntity = world.createEntity();
+world.addComponent(cameraEntity, positionId, {
+  world: Vector2.zero,
+  local: Vector2.zero,
+});
+world.addComponent(cameraEntity, cameraId, {
+  zoom: 1,
+  zoomSensitivity: 0.1,
+  panSensitivity: 1,
+  minZoom: 0.1,
+  maxZoom: 10,
+  isStatic: false,
   layerMask: RenderLayer.default | RenderLayer.foreground,
+  scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
 });
 
 const planetSprite = await createImageSprite(
