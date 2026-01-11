@@ -8,10 +8,7 @@ import {
   TriggerAction,
 } from '../../src';
 import { EcsSystem } from '../../src/new-ecs';
-import {
-  ControlAdventurerEcsComponent,
-  controlAdventurerId,
-} from './control-adventurer-component';
+import { controlAdventurerId } from './control-adventurer-component';
 
 export const createControlAdventurerEcsSystem = (
   attackTriggerInput: TriggerAction,
@@ -20,21 +17,11 @@ export const createControlAdventurerEcsSystem = (
   jumpTriggerInput: TriggerAction,
   takeDamageTriggerInput: TriggerAction,
 ): EcsSystem<
-  [
-    ControlAdventurerEcsComponent,
-    SpriteAnimationEcsComponent,
-    FlipEcsComponent,
-    PositionEcsComponent,
-  ]
+  [SpriteAnimationEcsComponent, FlipEcsComponent, PositionEcsComponent]
 > => ({
   query: [controlAdventurerId, spriteAnimationId, flipId, positionId],
   run: (result) => {
-    const [
-      _controlAdventurerComponent,
-      spriteAnimationComponent,
-      flipComponent,
-      _positionComponent,
-    ] = result.components;
+    const [spriteAnimationComponent, flipComponent] = result.components;
 
     const animationInputs = spriteAnimationComponent.animationInputs;
 

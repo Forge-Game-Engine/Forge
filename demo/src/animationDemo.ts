@@ -12,7 +12,6 @@ import {
   createResetInputsEcsSystem,
   createSpriteAnimationEcsSystem,
   createUpdateInputEcsSystem,
-  FlipEcsComponent,
   flipId,
   Game,
   InputManager,
@@ -304,7 +303,7 @@ function buildAdventurerControllableEntities(
     animationInputs,
     stateMachine,
   });
-  world.addComponent(entity, controlAdventurerId, {});
+  world.addTag(entity, controlAdventurerId);
   world.addComponent(entity, flipId, {
     flipX: false,
     flipY: false,

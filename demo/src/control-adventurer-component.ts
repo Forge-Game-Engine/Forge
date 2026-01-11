@@ -1,8 +1,3 @@
-import { createComponentId } from '../../src/new-ecs/ecs-component';
+import { createTagId } from '../../src/new-ecs/ecs-component';
 
-export interface ControlAdventurerEcsComponent {
-  // Marker component - no data needed
-}
-
-export const controlAdventurerId =
-  createComponentId<ControlAdventurerEcsComponent>('control-adventurer');
+export const controlAdventurerId = createTagId('control-adventurer');
