@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { EcsWorld } from './ecs-world';
 import { EcsSystem } from './ecs-system';
 import {
-  positionId,
-  rotationId,
-  speedId,
   PositionEcsComponent,
+  positionId,
   RotationEcsComponent,
+  rotationId,
   SpeedEcsComponent,
+  speedId,
 } from '../common/index.js';
 import { createComponentId } from './ecs-component';
 import { Vector2 } from '../math/index.js';
@@ -161,11 +161,13 @@ describe('EcsWorld', () => {
     world.addComponent(entity1, positionId, pos1);
     world.addComponent(entity2, positionId, pos2);
 
-    const run = vi.fn((result: { entity: number; components: [PositionEcsComponent] }) => {
-      const [position] = result.components;
+    const run = vi.fn(
+      (result: { entity: number; components: [PositionEcsComponent] }) => {
+        const [position] = result.components;
 
-      position.local.x += 10;
-    });
+        position.local.x += 10;
+      },
+    );
 
     const system: EcsSystem<[PositionEcsComponent]> = {
       query: [positionId],
@@ -205,20 +207,24 @@ describe('EcsWorld', () => {
 
     const positionSystem: EcsSystem<[PositionEcsComponent]> = {
       query: [positionId],
-      run: vi.fn((result: { entity: number; components: [PositionEcsComponent] }) => {
-        const [position] = result.components;
+      run: vi.fn(
+        (result: { entity: number; components: [PositionEcsComponent] }) => {
+          const [position] = result.components;
 
-        position.local.x += 10;
-      }),
+          position.local.x += 10;
+        },
+      ),
     };
 
     const rotationSystem: EcsSystem<[RotationEcsComponent]> = {
       query: [rotationId],
-      run: vi.fn((result: { entity: number; components: [RotationEcsComponent] }) => {
-        const [rotation] = result.components;
+      run: vi.fn(
+        (result: { entity: number; components: [RotationEcsComponent] }) => {
+          const [rotation] = result.components;
 
-        rotation.local *= 2;
-      }),
+          rotation.local *= 2;
+        },
+      ),
     };
 
     world.addSystem(positionSystem);
