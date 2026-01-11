@@ -1,5 +1,3 @@
-import { Entity } from '../../ecs';
-
 export interface InstanceBatchOptions {
   initialBufferSize?: number;
   bufferGrowthFactor?: number;
@@ -7,7 +5,7 @@ export interface InstanceBatchOptions {
 
 const defaultOptions: Required<InstanceBatchOptions> = {
   initialBufferSize: 1000,
-  bufferGrowthFactor: 2,
+  bufferGrowthFactor: 1.2,
 };
 
 /**
@@ -16,7 +14,7 @@ const defaultOptions: Required<InstanceBatchOptions> = {
 
 export class InstanceBatch {
   /** The set of entities in this batch. */
-  public entities: Set<Entity>;
+  public entities: number[];
   /** The buffer holding instance data. */
   public buffer: Float32Array;
   /** The initial size of the instance data array. */
@@ -30,7 +28,7 @@ export class InstanceBatch {
       ...options,
     };
 
-    this.entities = new Set<Entity>();
+    this.entities = [];
     this.buffer = new Float32Array(initialBufferSize);
     this.initialBufferSize = initialBufferSize;
     this.bufferGrowthFactor = bufferGrowthFactor;

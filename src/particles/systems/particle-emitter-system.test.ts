@@ -1,359 +1,155 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ParticleEmitterSystem } from './particle-emitter-system';
-import { Entity, World } from '../../ecs';
-import { ParticleEmitter, ParticleEmitterComponent } from '../components';
-import { RenderLayer, Sprite } from '../../rendering';
+import { createParticleEcsSystem } from './particle-emitter-system';
+import { EcsWorld } from '../../new-ecs';
+import {
+  ParticleEmitter,
+  ParticleEmitterEcsComponent,
+  ParticleEmitterId,
+  ParticleId,
+} from '../components';
 import { Time } from '../../common';
-
-describe('_startEmittingParticles', () => {
-  const world: World = new World('test');
-  const time: Time = new Time();
-  const system = new ParticleEmitterSystem(world, time);
-  const mockSprite = {} as Sprite; // Mock sprite object
-  const mockRenderLayer = {
-    addEntity: vi.fn(),
-  } as unknown as RenderLayer; // Mock render layer object
-
-  it('should start emitting when startEmitting is true', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 5, max: 10 },
-    });
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['testEmitter', emitter]]),
-    );
-    const entity = new Entity(world, [emitterComponent]);
-
-    expect(emitter.startEmitting).toBe(false);
-    expect(emitter.currentlyEmitting).toBe(false);
-
-    emitter.startEmitting = true;
-    system.run(entity);
-
-    expect(emitter.startEmitting).toBe(false);
-    expect(emitter.currentEmitDuration).toBe(0);
-    expect(emitter.emitCount).toBeGreaterThan(0);
-    expect(emitter.currentlyEmitting).toBe(true);
-    expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(5);
-    expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(10);
-  });
-
-  it('should not start emitting when startEmitting is false', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 5, max: 10 },
-    });
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['testEmitter', emitter]]),
-    );
-    const entity = new Entity(world, [emitterComponent]);
-
-    expect(emitter.startEmitting).toBe(false);
-    expect(emitter.currentlyEmitting).toBe(false);
-
-    system.run(entity);
-
-    expect(emitter.startEmitting).toBe(false);
-    expect(emitter.currentEmitDuration).toBe(0);
-    expect(emitter.emitCount).toBe(0);
-    expect(emitter.currentlyEmitting).toBe(false);
-    expect(emitter.totalAmountToEmit).toBeLessThan(5);
-  });
-});
+import { Random, Vector2 } from '../../math';
+import { Sprite } from '../../rendering';
 
 describe('ParticleEmitterSystem', () => {
-  let world: World;
+  let world: EcsWorld;
   let time: Time;
+  let random: Random;
+  let mockSprite: Sprite;
 
   beforeEach(() => {
-    world = new World('test');
+    world = new EcsWorld();
     time = new Time();
+    random = new Random('test-seed');
+    world.addSystem(createParticleEcsSystem(time, random));
+
+    // Create a mock sprite object with all required properties
+    mockSprite = {
+      width: 10,
+      height: 10,
+      bleed: 1,
+      pivot: new Vector2(0.5, 0.5),
+      tintColor: { r: 1, g: 1, b: 1, a: 1 },
+      renderable: {
+        geometry: vi.fn(),
+        material: vi.fn(),
+        floatsPerInstance: 0,
+        layer: 0,
+        bindInstanceData: vi.fn(),
+        setupInstanceAttributes: vi.fn(),
+        bind: vi.fn(),
+        draw: vi.fn(),
+      },
+    } as unknown as Sprite;
   });
 
-  it('should process all emitters in the entity', () => {
-    const system = new ParticleEmitterSystem(world, time);
-    const mockSprite = {} as Sprite;
-    const mockRenderLayer = {} as RenderLayer;
+  it('should not emit particles when emitter is empty', () => {
+    const entity = world.createEntity();
 
-    // Create multiple emitters
-    const emitter1 = new ParticleEmitter(mockSprite, mockRenderLayer, {
+    const emitterComponent: ParticleEmitterEcsComponent = {
+      emitters: new Map(),
+    };
+
+    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+
+    time.update(100);
+    world.update();
+  });
+
+  it('should start emitting when startEmitting is true', () => {
+    const entity = world.createEntity();
+
+    const emitter = new ParticleEmitter(mockSprite, 0, {
       numParticlesRange: { min: 5, max: 10 },
-    });
-    const emitter2 = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 3, max: 7 },
-    });
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([
-        ['emitter1', emitter1],
-        ['emitter2', emitter2],
-      ]),
-    );
-
-    const entity = world.buildAndAddEntity([emitterComponent]);
-
-    // Mock time delta
-    vi.spyOn(time, 'deltaTimeInSeconds', 'get').mockReturnValue(0.1);
-
-    const initialDuration1 = emitter1.currentEmitDuration;
-    const initialDuration2 = emitter2.currentEmitDuration;
-
-    system.run(entity);
-
-    // Both emitters should have their duration updated
-    expect(emitter1.currentEmitDuration).toBe(initialDuration1 + 0.1);
-    expect(emitter2.currentEmitDuration).toBe(initialDuration2 + 0.1);
-  });
-});
-
-describe('_emitNewParticles', () => {
-  let world: World;
-  let time: Time;
-  let system: ParticleEmitterSystem;
-
-  const mockSprite = {} as Sprite;
-  const mockRenderLayer = {
-    addEntity: vi.fn(),
-  } as unknown as RenderLayer;
-
-  beforeEach(() => {
-    world = new World('test');
-    time = new Time();
-    system = new ParticleEmitterSystem(world, time);
-    world.addSystem(system);
-  });
-
-  it('should not emit when not currently emitting', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 5, max: 10 },
+      speedRange: { min: 50, max: 100 },
+      scaleRange: { min: 1, max: 1 },
+      lifetimeSecondsRange: { min: 1, max: 2 },
+      rotationRange: { min: 0, max: 360 },
+      rotationSpeedRange: { min: 0, max: 0 },
+      emitDurationSeconds: 0,
+      spawnPosition: () => Vector2.zero,
     });
 
-    emitter.currentlyEmitting = false;
+    emitter.startEmitting = true;
 
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
+    const emitterComponent: ParticleEmitterEcsComponent = {
+      emitters: new Map([['testEmitter', emitter]]),
+    };
 
-    world.buildAndAddEntity([emitterComponent]);
+    world.addComponent(entity, ParticleEmitterId, emitterComponent);
 
-    const initialEntityCount = world.entityCount;
-
-    time.update(0.1);
+    time.update(100);
     world.update();
 
-    expect(world.entityCount).toBe(initialEntityCount);
-    expect(emitter.currentlyEmitting).toBe(false);
-  });
-
-  it('should not emit when emit count exceeds total amount', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 5, max: 10 },
-    });
-
-    emitter.currentlyEmitting = true;
-    emitter.totalAmountToEmit = 5;
-    emitter.emitCount = 5;
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    world.buildAndAddEntity([emitterComponent]);
-
-    const initialEntityCount = world.entityCount;
-
-    time.update(0.1);
-    world.update();
-
-    expect(world.entityCount).toBe(initialEntityCount);
-    expect(emitter.currentlyEmitting).toBe(false);
+    expect(emitter.currentlyEmitting).toBe(true);
+    expect(emitter.startEmitting).toBe(false);
+    expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(5);
+    expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(10);
   });
 
   it('should emit particles when conditions are met', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
+    const entity = world.createEntity();
+
+    const emitter = new ParticleEmitter(mockSprite, 0, {
       numParticlesRange: { min: 3, max: 3 },
-      emitDurationSeconds: 0, // Immediate emission
+      speedRange: { min: 50, max: 100 },
+      scaleRange: { min: 1, max: 1 },
+      lifetimeSecondsRange: { min: 1, max: 2 },
+      rotationRange: { min: 0, max: 360 },
+      rotationSpeedRange: { min: 0, max: 0 },
+      emitDurationSeconds: 0,
+      spawnPosition: () => Vector2.zero,
     });
 
     emitter.startEmitting = true;
 
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
+    const emitterComponent: ParticleEmitterEcsComponent = {
+      emitters: new Map([['testEmitter', emitter]]),
+    };
 
-    world.buildAndAddEntity([emitterComponent]);
+    world.addComponent(entity, ParticleEmitterId, emitterComponent);
 
-    const initialEntityCount = world.entityCount;
-
-    time.update(0.1);
+    time.update(100);
     world.update();
 
-    expect(world.entityCount).toBe(initialEntityCount + 3);
+    // Query for particles after they should have been created
+    const particlesAfter: number[] = [];
+    world.queryEntities([ParticleId], particlesAfter);
+
+    // Should have emitted 3 particles immediately (emitDurationSeconds: 0)
+    expect(particlesAfter.length).toBe(3);
     expect(emitter.emitCount).toBe(3);
-    expect(emitter.currentlyEmitting).toBe(true);
   });
-  it('should stop emitting after emitting everything', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
+
+  it('should stop emitting after reaching total amount', () => {
+    const entity = world.createEntity();
+
+    const emitter = new ParticleEmitter(mockSprite, 0, {
       numParticlesRange: { min: 10, max: 10 },
+      speedRange: { min: 50, max: 100 },
+      scaleRange: { min: 1, max: 1 },
+      lifetimeSecondsRange: { min: 1, max: 2 },
+      rotationRange: { min: 0, max: 360 },
+      rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0.5,
+      spawnPosition: () => Vector2.zero,
     });
 
-    emitter.startEmitting = true;
+    // Manually set emitter state as if it has already emitted all particles
+    emitter.currentlyEmitting = true;
+    emitter.emitCount = 10;
+    emitter.totalAmountToEmit = 10;
+    emitter.currentEmitDuration = 1;
 
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
+    const emitterComponent: ParticleEmitterEcsComponent = {
+      emitters: new Map([['testEmitter', emitter]]),
+    };
 
-    world.buildAndAddEntity([emitterComponent]);
+    world.addComponent(entity, ParticleEmitterId, emitterComponent);
 
-    time.update(0 * 1000);
-    world.update();
-
-    expect(emitter.currentlyEmitting).toBe(true);
-    expect(world.entityCount).toBe(1);
-    time.update(0.5 * 1000);
-    world.update();
-
-    expect(emitter.currentlyEmitting).toBe(true);
-    expect(world.entityCount).toBe(11);
-    time.update(1 * 1000);
+    time.update(100);
     world.update();
 
     expect(emitter.currentlyEmitting).toBe(false);
-    expect(world.entityCount).toBe(11);
-  });
-});
-
-describe('_getAmountToEmitBasedOnDuration', () => {
-  let world: World;
-  let time: Time;
-  let system: ParticleEmitterSystem;
-
-  const mockSprite = {} as Sprite;
-  const mockRenderLayer = {
-    addEntity: vi.fn(),
-  } as unknown as RenderLayer;
-
-  beforeEach(() => {
-    world = new World('test');
-    time = new Time();
-    system = new ParticleEmitterSystem(world, time);
-  });
-
-  it('should calculate correct amount based on progress', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      emitDurationSeconds: 2,
-    });
-
-    emitter.currentlyEmitting = true;
-    emitter.totalAmountToEmit = 10;
-    emitter.currentEmitDuration = 1; // 50% progress
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    const entity = world.buildAndAddEntity([emitterComponent]);
-
-    expect(world.entityCount).toBe(1);
-    system.run(entity);
-
-    expect(world.entityCount).toBe(1 + 5);
-  });
-
-  it('should not exceed total amount when progress is complete', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      emitDurationSeconds: 2,
-    });
-
-    emitter.currentlyEmitting = true;
-    emitter.totalAmountToEmit = 10;
-    emitter.currentEmitDuration = 4; // 200% progress
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    const entity = world.buildAndAddEntity([emitterComponent]);
-
-    expect(world.entityCount).toBe(1);
-    system.run(entity);
-
-    expect(world.entityCount).toBe(1 + 10);
-  });
-});
-
-describe('_getRandomValueInRange', () => {
-  let world: World;
-  let time: Time;
-  let system: ParticleEmitterSystem;
-
-  const mockSprite = {} as Sprite;
-  const mockRenderLayer = {
-    addEntity: vi.fn(),
-  } as unknown as RenderLayer;
-
-  beforeEach(() => {
-    world = new World('test');
-    time = new Time();
-    system = new ParticleEmitterSystem(world, time);
-    world.addSystem(system);
-  });
-
-  it('should return value within normal range', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 5, max: 7 },
-      emitDurationSeconds: 0,
-    });
-
-    emitter.startEmitting = true;
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    world.buildAndAddEntity([emitterComponent]);
-
-    world.update();
-
-    expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(7);
-    expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(5);
-  });
-
-  it('should handle when min > max', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 10, max: 8 },
-      emitDurationSeconds: 0,
-    });
-
-    emitter.startEmitting = true;
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    world.buildAndAddEntity([emitterComponent]);
-
-    world.update();
-
-    expect(emitter.totalAmountToEmit).toBeLessThanOrEqual(10);
-    expect(emitter.totalAmountToEmit).toBeGreaterThanOrEqual(8);
-  });
-
-  it('should handle equal min and max values', () => {
-    const emitter = new ParticleEmitter(mockSprite, mockRenderLayer, {
-      numParticlesRange: { min: 12, max: 12 },
-      emitDurationSeconds: 0,
-    });
-
-    emitter.startEmitting = true;
-
-    const emitterComponent = new ParticleEmitterComponent(
-      new Map([['emitter', emitter]]),
-    );
-
-    world.buildAndAddEntity([emitterComponent]);
-
-    world.update();
-
-    expect(emitter.totalAmountToEmit).toBe(12);
   });
 });

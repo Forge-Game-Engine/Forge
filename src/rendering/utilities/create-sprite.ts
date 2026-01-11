@@ -1,15 +1,23 @@
 import {
-  AnimationFrame,
-  SpriteAnimationComponent,
-} from '../../animations/index.js';
-import {
-  FlipComponent,
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
+  FlipEcsComponent,
+  flipId,
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  ScaleEcsComponent,
+  scaleId,
 } from '../../common/index.js';
-import { Entity } from '../../ecs/entity.js';
-import { SpriteComponent } from '../components/sprite-component.js';
+import {
+  AnimationFrame,
+  SpriteAnimationEcsComponent,
+  spriteAnimationId,
+} from '../../animations/index.js';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import {
+  SpriteEcsComponent,
+  spriteId,
+} from '../components/sprite-component.js';
 import { createQuadGeometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
@@ -39,21 +47,27 @@ import { setupInstanceAttribute } from './setup-instance-attribute.js';
 const floatsPerInstance = 17;
 
 function bindInstanceData(
-  entity: Entity,
+  entity: number,
+  world: EcsWorld,
   instanceDataBufferArray: Float32Array,
   offset: number,
 ) {
-  const position = entity.getComponentRequired(PositionComponent);
+  const position = world.getComponent<PositionEcsComponent>(
+    entity,
+    positionId,
+  )!;
 
-  const rotation = entity.getComponent(RotationComponent);
+  const rotation = world.getComponent<RotationEcsComponent>(entity, rotationId);
 
-  const scale = entity.getComponent(ScaleComponent);
+  const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
 
-  const spriteComponent = entity.getComponentRequired(SpriteComponent);
-  const flipComponent = entity.getComponent(FlipComponent);
-  const spriteAnimationComponent = entity.getComponent(
-    SpriteAnimationComponent,
-  );
+  const spriteComponent = world.getComponent<SpriteEcsComponent>(
+    entity,
+    spriteId,
+  )!;
+  const flipComponent = world.getComponent<FlipEcsComponent>(entity, flipId);
+  const spriteAnimationComponent =
+    world.getComponent<SpriteAnimationEcsComponent>(entity, spriteAnimationId);
 
   let animationFrame: AnimationFrame | null = null;
 
@@ -162,15 +176,15 @@ function setupInstanceAttributes(
 export function createSprite(
   material: Material,
   renderContext: RenderContext,
-  cameraEntity: Entity,
+  layer: number,
   width: number,
   height: number,
 ): Sprite {
   const renderable = new Renderable(
     createQuadGeometry(renderContext.gl),
     material,
-    cameraEntity,
     floatsPerInstance,
+    layer,
     bindInstanceData,
     setupInstanceAttributes,
   );

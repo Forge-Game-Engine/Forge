@@ -1,16 +1,10 @@
-import { Entity } from '../../ecs/index.js';
-import { ParameterizedForgeEvent } from '../../events/index.js';
+import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
 import { AnimationFrame } from './AnimationFrame.js';
 
-/**
- * Event type that is raised when the animation changes.
- */
-export type OnAnimationChangeEvent = ParameterizedForgeEvent<Entity>;
 /**
  * Event type that is raised when the animation frame changes.
  */
 export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<{
-  entity: Entity;
   animationFrame: AnimationFrame;
 }>;
 
@@ -31,12 +25,12 @@ export class AnimationClip {
   /**
    * Event that is raised when the animation starts.
    */
-  public readonly onAnimationStartEvent: OnAnimationChangeEvent;
+  public readonly onAnimationStartEvent: ForgeEvent;
 
   /**
    * Event that is raised when the animation ends.
    */
-  public readonly onAnimationEndEvent: OnAnimationChangeEvent;
+  public readonly onAnimationEndEvent: ForgeEvent;
 
   /**
    * Event that is raised every frame change. This includes the first and last frame change of an animation
@@ -64,14 +58,9 @@ export class AnimationClip {
     this.frames = frames;
     this.playbackSpeed = playbackSpeed;
 
-    this.onAnimationStartEvent = new ParameterizedForgeEvent<Entity>(
-      'AnimationStartEvent',
-    );
-    this.onAnimationEndEvent = new ParameterizedForgeEvent<Entity>(
-      'AnimationEndEvent',
-    );
+    this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
+    this.onAnimationEndEvent = new ForgeEvent('AnimationEndEvent');
     this.onAnimationFrameChangeEvent = new ParameterizedForgeEvent<{
-      entity: Entity;
       animationFrame: AnimationFrame;
     }>('AnimationFrameChangeEvent');
   }

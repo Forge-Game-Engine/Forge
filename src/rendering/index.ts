@@ -1,5 +1,4 @@
 export * from './components/index.js';
-export * from './render-layers/index.js';
 export * from './sprite.js';
 export * from './systems/index.js';
 export * from './shaders/index.js';

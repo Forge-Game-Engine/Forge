@@ -1,40 +1,148 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AudioSystem } from './audio-system';
-import { Entity, World } from '../../ecs';
-import { AudioComponent } from '../components';
-import { Howl } from 'howler';
+import { createAudioEcsSystem } from './audio-system';
+import { type AudioEcsComponent, audioId } from '../components';
+import { EcsWorld } from '../../new-ecs';
 
-describe('AudioSystem', () => {
-  const world = new World('test-world');
+describe('createAudioEcsSystem (Audio)', () => {
+  it('should play sound when playSound is true', () => {
+    const ecsWorld = new EcsWorld();
+    const audioSystem = createAudioEcsSystem();
+    ecsWorld.addSystem(audioSystem);
 
-  it('should play audio if playSound is true', () => {
+    const entity = ecsWorld.createEntity();
     const mockPlay = vi.fn();
-    const mockHowl = { play: mockPlay } as unknown as Howl;
-    const audioComponent = new AudioComponent({ src: ['sound.mp3'] });
-    audioComponent.sound = mockHowl;
-    audioComponent.playSound = true;
+    const audioComponent: AudioEcsComponent = {
+      sound: {
+        play: mockPlay,
+      } as any,
+      playSound: true,
+    };
 
-    const entity = new Entity(world, [audioComponent]);
-    const audioSystem = new AudioSystem(world);
+    ecsWorld.addComponent(entity, audioId, audioComponent);
+    ecsWorld.update();
 
-    audioSystem.run(entity);
-
-    expect(mockPlay).toHaveBeenCalled();
+    expect(mockPlay).toHaveBeenCalledTimes(1);
     expect(audioComponent.playSound).toBe(false);
   });
 
-  it('should not play audio if playSound is false', () => {
+  it('should not play sound when playSound is false', () => {
+    const ecsWorld = new EcsWorld();
+    const audioSystem = createAudioEcsSystem();
+    ecsWorld.addSystem(audioSystem);
+
+    const entity = ecsWorld.createEntity();
     const mockPlay = vi.fn();
-    const mockHowl = { play: mockPlay } as unknown as Howl;
-    const audioComponent = new AudioComponent({ src: ['sound.mp3'] });
-    audioComponent.sound = mockHowl;
-    audioComponent.playSound = false;
+    const audioComponent: AudioEcsComponent = {
+      sound: {
+        play: mockPlay,
+      } as any,
+      playSound: false,
+    };
 
-    const entity = new Entity(world, [audioComponent]);
-    const audioSystem = new AudioSystem(world);
-
-    audioSystem.run(entity);
+    ecsWorld.addComponent(entity, audioId, audioComponent);
+    ecsWorld.update();
 
     expect(mockPlay).not.toHaveBeenCalled();
+    expect(audioComponent.playSound).toBe(false);
+  });
+
+  it('should reset playSound to false after playing', () => {
+    const ecsWorld = new EcsWorld();
+    const audioSystem = createAudioEcsSystem();
+    ecsWorld.addSystem(audioSystem);
+
+    const entity = ecsWorld.createEntity();
+    const mockPlay = vi.fn();
+    const audioComponent: AudioEcsComponent = {
+      sound: {
+        play: mockPlay,
+      } as any,
+      playSound: true,
+    };
+
+    ecsWorld.addComponent(entity, audioId, audioComponent);
+
+    // First update should play the sound
+    ecsWorld.update();
+    expect(mockPlay).toHaveBeenCalledTimes(1);
+    expect(audioComponent.playSound).toBe(false);
+
+    // Second update should not play the sound
+    ecsWorld.update();
+    expect(mockPlay).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle multiple entities with audio components', () => {
+    const ecsWorld = new EcsWorld();
+    const audioSystem = createAudioEcsSystem();
+    ecsWorld.addSystem(audioSystem);
+
+    const entity1 = ecsWorld.createEntity();
+    const mockPlay1 = vi.fn();
+    const audioComponent1: AudioEcsComponent = {
+      sound: {
+        play: mockPlay1,
+      } as any,
+      playSound: true,
+    };
+
+    const entity2 = ecsWorld.createEntity();
+    const mockPlay2 = vi.fn();
+    const audioComponent2: AudioEcsComponent = {
+      sound: {
+        play: mockPlay2,
+      } as any,
+      playSound: false,
+    };
+
+    const entity3 = ecsWorld.createEntity();
+    const mockPlay3 = vi.fn();
+    const audioComponent3: AudioEcsComponent = {
+      sound: {
+        play: mockPlay3,
+      } as any,
+      playSound: true,
+    };
+
+    ecsWorld.addComponent(entity1, audioId, audioComponent1);
+    ecsWorld.addComponent(entity2, audioId, audioComponent2);
+    ecsWorld.addComponent(entity3, audioId, audioComponent3);
+
+    ecsWorld.update();
+
+    expect(mockPlay1).toHaveBeenCalledTimes(1);
+    expect(mockPlay2).not.toHaveBeenCalled();
+    expect(mockPlay3).toHaveBeenCalledTimes(1);
+    expect(audioComponent1.playSound).toBe(false);
+    expect(audioComponent2.playSound).toBe(false);
+    expect(audioComponent3.playSound).toBe(false);
+  });
+
+  it('should allow re-triggering sound playback', () => {
+    const ecsWorld = new EcsWorld();
+    const audioSystem = createAudioEcsSystem();
+    ecsWorld.addSystem(audioSystem);
+
+    const entity = ecsWorld.createEntity();
+    const mockPlay = vi.fn();
+    const audioComponent: AudioEcsComponent = {
+      sound: {
+        play: mockPlay,
+      } as any,
+      playSound: true,
+    };
+
+    ecsWorld.addComponent(entity, audioId, audioComponent);
+
+    // First play
+    ecsWorld.update();
+    expect(mockPlay).toHaveBeenCalledTimes(1);
+    expect(audioComponent.playSound).toBe(false);
+
+    // Re-trigger the sound
+    audioComponent.playSound = true;
+    ecsWorld.update();
+    expect(mockPlay).toHaveBeenCalledTimes(2);
+    expect(audioComponent.playSound).toBe(false);
   });
 });

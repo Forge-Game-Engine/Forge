@@ -1,4 +1,3 @@
-import { Entity } from '../../ecs/entity.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
 import { createTextureFromImage } from '../shaders/index.js';
@@ -17,7 +16,7 @@ import { createSprite } from './create-sprite.js';
 export async function createImageSprite(
   imagePath: string,
   renderContext: RenderContext,
-  cameraEntity: Entity,
+  layer: number,
   vertexShaderName: string = 'sprite.vert',
   fragmentShaderName: string = 'sprite.frag',
 ): Promise<Sprite> {
@@ -35,9 +34,9 @@ export async function createImageSprite(
   const sprite = createSprite(
     material,
     renderContext,
-    cameraEntity,
-    image.width,
-    image.height,
+    layer,
+    image.width / 256,
+    image.height / 256,
   );
 
   return sprite;
