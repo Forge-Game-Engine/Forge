@@ -13,7 +13,7 @@ import {
   SpriteAnimationEcsComponent,
   spriteAnimationId,
 } from '../../animations/index.js';
-import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   SpriteEcsComponent,
   spriteId,

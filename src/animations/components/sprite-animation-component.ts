@@ -1,6 +1,6 @@
 import { AnimationClip, AnimationInputs } from '../types/index.js';
 import { FiniteStateMachine } from '../../finite-state-machine/finite-state-machine.js';
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 
 /**
  * ECS-style component interface for sprite animations.

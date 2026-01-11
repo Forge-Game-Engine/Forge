@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Bodies, Engine } from 'matter-js';
 import { createPhysicsEcsSystem } from './physics.system';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import {
   PositionEcsComponent,
   positionId,

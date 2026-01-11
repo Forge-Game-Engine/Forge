@@ -1,4 +1,4 @@
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 import { InputManager } from '../input-manager.js';
 
 /**

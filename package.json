@@ -69,12 +69,6 @@
         "default": "./dist/physics/index.js"
       }
     },
-    "./pooling": {
-      "import": {
-        "types": "./dist/pooling/index.d.ts",
-        "default": "./dist/pooling/index.js"
-      }
-    },
     "./rendering": {
       "import": {
         "types": "./dist/rendering/index.d.ts",

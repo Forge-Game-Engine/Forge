@@ -1,4 +1,4 @@
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 import {
   InputsEcsComponent,
   inputsId,

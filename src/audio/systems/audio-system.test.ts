@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Howl } from 'howler';
 import { createAudioEcsSystem } from './audio-system';
 import { type AudioEcsComponent, audioId } from '../components';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 
 vi.mock(import('howler'), { spy: true });
 

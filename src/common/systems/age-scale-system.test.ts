@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LifetimeEcsComponent, lifetimeId } from '../../lifecycle';
-import { EcsWorld, QueryResult } from '../../new-ecs';
+import { EcsWorld, QueryResult } from '../../ecs';
 import {
   AgeScaleEcsComponent,
   ageScaleId,

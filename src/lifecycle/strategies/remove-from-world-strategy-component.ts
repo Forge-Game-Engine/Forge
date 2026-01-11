@@ -1,4 +1,4 @@
-import { createTagId } from '../../new-ecs/ecs-component.js';
+import { createTagId } from '../../ecs/ecs-component.js';
 
 export const RemoveFromWorldLifetimeStrategyId = createTagId(
   'removeFromWorldLifetimeStrategy',

@@ -4,7 +4,7 @@ import {
   type AnimationEcsComponent,
   animationId,
 } from '../components/index.js';
-import { EcsSystem } from '../../new-ecs/index.js';
+import { EcsSystem } from '../../ecs/index.js';
 
 /**
  * Updates a single animation.

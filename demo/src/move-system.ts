@@ -1,5 +1,5 @@
 import { PositionEcsComponent, positionId, Time } from '../../src';
-import { EcsSystem } from '../../src/new-ecs';
+import { EcsSystem } from '../../src/ecs';
 import { MoveEcsComponent, moveId } from './move-component';
 
 export const createMoveEcsSystem = (

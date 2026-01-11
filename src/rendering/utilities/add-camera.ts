@@ -1,5 +1,5 @@
 import { PositionEcsComponent, positionId } from '../../common/index.js';
-import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
 

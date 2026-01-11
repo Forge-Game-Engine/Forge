@@ -5,7 +5,7 @@ import {
   lifetimeId,
 } from '../components/lifetime-component';
 import { Time } from '../../common';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 
 describe('LifetimeTrackingSystem', () => {
   let world: EcsWorld;

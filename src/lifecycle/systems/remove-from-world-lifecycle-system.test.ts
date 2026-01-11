@@ -3,7 +3,7 @@ import { createRemoveFromWorldEcsSystem } from './remove-from-world-lifecycle-sy
 import { lifetimeId } from '../components/lifetime-component';
 import { RemoveFromWorldLifetimeStrategyId } from '../strategies/remove-from-world-strategy-component';
 import { Time } from '../../common';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 
 describe('RemoveFromWorldLifecycleSystem', () => {
   let world: EcsWorld;

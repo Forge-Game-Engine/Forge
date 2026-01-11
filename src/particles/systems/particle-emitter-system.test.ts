@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createParticleEcsSystem } from './particle-emitter-system';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import {
   ParticleEmitter,
   ParticleEmitterEcsComponent,

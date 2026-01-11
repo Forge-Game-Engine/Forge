@@ -3,7 +3,7 @@ import { createCameraEcsSystem } from './camera-system';
 import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraEcsComponent, cameraId } from '../components';
 import { PositionEcsComponent, positionId, Time } from '../../common';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import { Vector2 } from '../../math';
 
 describe('CameraSystem', () => {

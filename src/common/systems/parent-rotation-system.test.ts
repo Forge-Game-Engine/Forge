@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RotationEcsComponent, rotationId } from '../components';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import { ParentEcsComponent, parentId } from '../components/parent-component';
 import { createParentRotationEcsSystem } from './parent-rotation-system';
 

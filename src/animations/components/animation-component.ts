@@ -1,5 +1,5 @@
 import { linear } from '../easing-functions/index.js';
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 
 /**
  * Represents the properties of an animated object.

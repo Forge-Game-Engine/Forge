@@ -1,5 +1,5 @@
 import { AudioEcsComponent, audioId } from '../components/index.js';
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 
 // TODO: needs an unload?
 

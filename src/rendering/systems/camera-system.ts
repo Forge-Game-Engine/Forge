@@ -1,7 +1,7 @@
 import { PositionEcsComponent, positionId, Time } from '../../common/index.js';
 import * as math from '../../math/index.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates a camera system that updates camera zoom and position based on input.

@@ -1,5 +1,5 @@
 import { Stoppable, Time } from '../common/index.js';
-import { EcsWorld } from '../new-ecs/ecs-world.js';
+import { EcsWorld } from '../ecs/ecs-world.js';
 
 /**
  * Manages the game loop and coordinates updates between systems.

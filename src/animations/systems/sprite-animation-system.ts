@@ -3,7 +3,7 @@ import {
   type SpriteAnimationEcsComponent,
   spriteAnimationId,
 } from '../components/index.js';
-import { EcsSystem } from '../../new-ecs/index.js';
+import { EcsSystem } from '../../ecs/index.js';
 
 /**
  * Creates a new ECS-style sprite animation system.

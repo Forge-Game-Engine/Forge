@@ -1,6 +1,6 @@
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
 import { Rect } from '../../math/index.js';
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 
 export interface CameraEcsComponent {
   zoom: number;

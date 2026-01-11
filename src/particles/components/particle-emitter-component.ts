@@ -1,6 +1,6 @@
 import { ParticleEmitter } from './particle-emitter.js';
 
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 
 /**
  * ECS-style component interface for the particle emitter.

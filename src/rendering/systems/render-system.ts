@@ -1,7 +1,7 @@
 import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { Matrix3x3 } from '../../math/index.js';
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
-import { EcsWorld } from '../../new-ecs/index.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
+import { EcsWorld } from '../../ecs/index.js';
 import { matchesLayerMask } from '../../utilities/matches-layer-mask.js';
 import {
   CameraEcsComponent,

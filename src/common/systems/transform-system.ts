@@ -1,5 +1,5 @@
-import { EcsSystem } from '../../new-ecs/ecs-system';
-import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import { EcsSystem } from '../../ecs/ecs-system';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   PositionEcsComponent,
   positionId,

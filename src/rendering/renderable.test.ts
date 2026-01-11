@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Geometry } from './geometry/geometry.js';
 import { Material } from './materials/material.js';
 import { Renderable } from './renderable.js';
-import { EcsWorld } from '../new-ecs/ecs-world.js';
+import { EcsWorld } from '../ecs/ecs-world.js';
 
 describe('Renderable', () => {
   let mockGeometry: Geometry;

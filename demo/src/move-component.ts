@@ -1,5 +1,5 @@
 import { Vector2 } from '../../src';
-import { createComponentId } from '../../src/new-ecs/ecs-component';
+import { createComponentId } from '../../src/ecs/ecs-component';
 
 export interface MoveEcsComponent {
   center: Vector2;
