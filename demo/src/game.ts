@@ -1,5 +1,6 @@
 import {
   cameraId,
+  createCameraEcsSystem,
   createGame,
   createImageSprite,
   createRenderEcsSystem,
@@ -98,6 +99,7 @@ setInterval(() => {
 }, 1000);
 
 world.addSystem(createMoveEcsSystem(time));
+world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();
