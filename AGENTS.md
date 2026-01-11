@@ -278,7 +278,7 @@ npm run build
 npm test
 
 # Run tests with UI
-npm test:ui
+npm run test:ui
 ```
 
 ### Build Process
