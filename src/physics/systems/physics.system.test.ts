@@ -33,8 +33,8 @@ describe('PhysicsSystem', () => {
     };
 
     const positionComponent: PositionEcsComponent = {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
+      local: Vector2.zero,
+      world: Vector2.zero,
     };
 
     const rotationComponent: RotationEcsComponent = {
@@ -93,15 +93,15 @@ describe('PhysicsSystem', () => {
 
     world.addComponent(entity1, PhysicsBodyId, { physicsBody: body1 });
     world.addComponent(entity1, positionId, {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
+      local: Vector2.zero,
+      world: Vector2.zero,
     });
     world.addComponent(entity1, rotationId, { local: 0, world: 0 });
 
     world.addComponent(entity2, PhysicsBodyId, { physicsBody: body2 });
     world.addComponent(entity2, positionId, {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
+      local: Vector2.zero,
+      world: Vector2.zero,
     });
     world.addComponent(entity2, rotationId, { local: 0, world: 0 });
 
