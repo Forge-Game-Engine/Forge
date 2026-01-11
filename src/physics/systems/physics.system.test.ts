@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  Body,
-  Bodies,
-  Engine,
-} from 'matter-js';
+import { Bodies, Engine } from 'matter-js';
 import { createPhysicsEcsSystem } from './physics.system';
 import { EcsWorld } from '../../new-ecs';
-import { PositionEcsComponent, positionId, RotationEcsComponent, rotationId, Time } from '../../common';
+import {
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  Time,
+} from '../../common';
 import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components';
 import { Vector2 } from '../../math';
 
@@ -31,8 +33,8 @@ describe('PhysicsSystem', () => {
     };
 
     const positionComponent: PositionEcsComponent = {
-      local: { x: 0, y: 0 },
-      world: { x: 0, y: 0 },
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
     };
 
     const rotationComponent: RotationEcsComponent = {
@@ -61,8 +63,8 @@ describe('PhysicsSystem', () => {
     };
 
     const positionComponent: PositionEcsComponent = {
-      local: { x: 100, y: 200 },
-      world: { x: 100, y: 200 },
+      local: new Vector2(100, 200),
+      world: new Vector2(100, 200),
     };
 
     const rotationComponent: RotationEcsComponent = {
@@ -91,15 +93,15 @@ describe('PhysicsSystem', () => {
 
     world.addComponent(entity1, PhysicsBodyId, { physicsBody: body1 });
     world.addComponent(entity1, positionId, {
-      local: { x: 0, y: 0 },
-      world: { x: 0, y: 0 },
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
     });
     world.addComponent(entity1, rotationId, { local: 0, world: 0 });
 
     world.addComponent(entity2, PhysicsBodyId, { physicsBody: body2 });
     world.addComponent(entity2, positionId, {
-      local: { x: 0, y: 0 },
-      world: { x: 0, y: 0 },
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
     });
     world.addComponent(entity2, rotationId, { local: 0, world: 0 });
 
@@ -109,17 +111,22 @@ describe('PhysicsSystem', () => {
     const pos1 = world.getComponent(entity1, positionId);
     const pos2 = world.getComponent(entity2, positionId);
 
-    expect(pos1!.world.x).toBe(body1.position.x);
-    expect(pos1!.world.y).toBe(body1.position.y);
-    expect(pos2!.world.x).toBe(body2.position.x);
-    expect(pos2!.world.y).toBe(body2.position.y);
+    expect(pos1).toBeDefined();
+    expect(pos2).toBeDefined();
+
+    if (pos1 && pos2) {
+      expect(pos1.world.x).toBe(body1.position.x);
+      expect(pos1.world.y).toBe(body1.position.y);
+      expect(pos2.world.x).toBe(body2.position.x);
+      expect(pos2.world.y).toBe(body2.position.y);
+    }
   });
 
   it('should synchronize dynamic body position with ECS', () => {
     const entity = world.createEntity();
 
     const physicsBody = Bodies.rectangle(100, 200, 50, 50, { isStatic: false });
-    
+
     world.addComponent(entity, PhysicsBodyId, { physicsBody });
     world.addComponent(entity, positionId, {
       local: Vector2.zero,
@@ -132,7 +139,11 @@ describe('PhysicsSystem', () => {
 
     const position = world.getComponent(entity, positionId);
 
-    expect(position!.world.x).toBe(physicsBody.position.x);
-    expect(position!.world.y).toBe(physicsBody.position.y);
+    expect(position).toBeDefined();
+
+    if (position) {
+      expect(position.world.x).toBe(physicsBody.position.x);
+      expect(position.world.y).toBe(physicsBody.position.y);
+    }
   });
 });

@@ -41,13 +41,14 @@ export class Game implements Stoppable {
    */
   public stop(): void {
     this._isRunning = false;
+
     if (this._animationFrameId !== null) {
       cancelAnimationFrame(this._animationFrameId);
       this._animationFrameId = null;
     }
   }
 
-  private _gameLoop = (currentTime: number): void => {
+  private readonly _gameLoop = (currentTime: number): void => {
     if (!this._isRunning) {
       return;
     }

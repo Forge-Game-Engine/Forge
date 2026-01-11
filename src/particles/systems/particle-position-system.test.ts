@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createParticlePositionEcsSystem } from './particle-position-system';
 import { EcsWorld } from '../../new-ecs';
-import { ParticleEcsComponent, ParticleId } from '../components/particle-component';
+import {
+  ParticleEcsComponent,
+  ParticleId,
+} from '../components/particle-component';
 import {
   PositionEcsComponent,
   positionId,
@@ -108,7 +111,10 @@ describe('ParticlePositionSystem', () => {
     world.addComponent(entity1, ParticleId, { rotationSpeed: 0 });
 
     world.addComponent(entity2, positionId, pos2);
-    world.addComponent(entity2, rotationId, { local: Math.PI / 2, world: Math.PI / 2 });
+    world.addComponent(entity2, rotationId, {
+      local: Math.PI / 2,
+      world: Math.PI / 2,
+    });
     world.addComponent(entity2, speedId, { speed: 100 });
     world.addComponent(entity2, ParticleId, { rotationSpeed: 0 });
 
