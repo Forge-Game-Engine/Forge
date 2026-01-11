@@ -9,8 +9,13 @@ import {
   Axis2dAction,
   buttonMoments,
   createAnimation,
-  FlipComponent,
+  createResetInputsEcsSystem,
+  createSpriteAnimationEcsSystem,
+  createUpdateInputEcsSystem,
+  flipId,
   Game,
+  InputManager,
+  inputsId,
   KeyboardAxis1dBinding,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
@@ -18,30 +23,32 @@ import {
   keyCodes,
   MouseAxis2dBinding,
   MouseInputSource,
-  PositionComponent,
-  registerInputs,
-  ScaleComponent,
+  positionId,
+  scaleId,
   Sprite,
-  SpriteAnimationComponent,
-  SpriteComponent,
+  spriteAnimationId,
+  spriteId,
   Time,
   TriggerAction,
   Vector2,
-  World,
 } from '../../src';
+import { EcsWorld } from '../../src/new-ecs';
 import { FiniteStateMachine } from '../../src/finite-state-machine/finite-state-machine';
 import { Transition } from '../../src/finite-state-machine/transition';
 import { ADVENTURER_ANIMATIONS, SHIP_ANIMATIONS } from './animationEnums';
-import { ControlAdventurerComponent } from './control-adventurer-component';
+import { controlAdventurerId } from './control-adventurer-component';
 
 export function setupAnimationsDemo(
-  world: World,
+  world: EcsWorld,
   game: Game,
   time: Time,
   shipSprite: Sprite,
   adventurerSprite: Sprite,
 ): ReturnType<typeof setupInputs> {
   const inputs = setupInputs(world, game, time);
+
+  // Add animation system
+  world.addSystem(createSpriteAnimationEcsSystem(time));
 
   const ShipController = createShipAnimationController();
   buildShipEntities(world, shipSprite, ShipController);
@@ -58,7 +65,7 @@ export function setupAnimationsDemo(
   return inputs;
 }
 
-function setupInputs(world: World, game: Game, time: Time) {
+function setupInputs(world: EcsWorld, game: Game, time: Time) {
   const gameInputGroup = 'game';
 
   const attackInput = new TriggerAction('attack', gameInputGroup);
@@ -78,22 +85,28 @@ function setupInputs(world: World, game: Game, time: Time) {
     actionResetTypes.noReset,
   );
 
-  const { inputsManager } = registerInputs(world, time, {
-    triggerActions: [
-      attackInput,
-      runRInput,
-      runLInput,
-      jumpInput,
-      takeDamageInput,
-    ],
-    axis2dActions: [axis2dInput],
-    axis1dActions: [axis1dInput],
-  });
+  // Create input manager and register actions
+  const inputsManager = new InputManager(gameInputGroup);
+  inputsManager.addTriggerActions(
+    attackInput,
+    runRInput,
+    runLInput,
+    jumpInput,
+    takeDamageInput,
+  );
+  inputsManager.addAxis2dActions(axis2dInput);
+  inputsManager.addAxis1dActions(axis1dInput);
 
-  inputsManager.setActiveGroup(gameInputGroup);
+  // Create an entity with inputs component
+  const inputEntity = world.createEntity();
+  world.addComponent(inputEntity, inputsId, { inputManager: inputsManager });
+
+  // Add input systems
+  world.addSystem(createUpdateInputEcsSystem(time));
+  world.addSystem(createResetInputsEcsSystem());
 
   const keyboardInputSource = new KeyboardInputSource(inputsManager);
-  const mouseInputSource = new MouseInputSource(inputsManager, game);
+  const mouseInputSource = new MouseInputSource(inputsManager, game.container);
 
   keyboardInputSource.axis2dBindings.add(
     new KeyboardAxis2dBinding(
@@ -234,32 +247,65 @@ function createAdventurerControllableInputs() {
 }
 
 function buildShipEntities(
-  world: World,
+  world: EcsWorld,
   shipSprite: Sprite,
   stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,
 ) {
   const animationInputs = new AnimationInputs();
 
-  world.buildAndAddEntity([
-    new PositionComponent(-500, -150),
-    new SpriteComponent(shipSprite),
-    new ScaleComponent(0.5, 0.5),
-    new SpriteAnimationComponent(stateMachine, animationInputs),
-  ]);
+  const entity = world.createEntity();
+  world.addComponent(entity, positionId, {
+    local: new Vector2(-500, -150),
+    world: new Vector2(-500, -150),
+  });
+  world.addComponent(entity, spriteId, {
+    sprite: shipSprite,
+    enabled: true,
+  });
+  world.addComponent(entity, scaleId, {
+    local: new Vector2(0.5, 0.5),
+    world: new Vector2(0.5, 0.5),
+  });
+  world.addComponent(entity, spriteAnimationId, {
+    animationFrameIndex: 0,
+    playbackSpeed: 1,
+    frameDurationMilliseconds: 33.3333,
+    lastFrameChangeTimeInSeconds: 0,
+    animationInputs,
+    stateMachine,
+  });
 }
 
 function buildAdventurerControllableEntities(
-  world: World,
+  world: EcsWorld,
   adventurerSprite: Sprite,
   stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>,
   animationInputs: AnimationInputs,
 ) {
-  world.buildAndAddEntity([
-    new PositionComponent(400, 0),
-    new SpriteComponent(adventurerSprite),
-    new ScaleComponent(0.3, 0.6),
-    new SpriteAnimationComponent(stateMachine, animationInputs, 33.3333, 0.3),
-    new ControlAdventurerComponent(),
-    new FlipComponent(),
-  ]);
+  const entity = world.createEntity();
+  world.addComponent(entity, positionId, {
+    local: new Vector2(400, 0),
+    world: new Vector2(400, 0),
+  });
+  world.addComponent(entity, spriteId, {
+    sprite: adventurerSprite,
+    enabled: true,
+  });
+  world.addComponent(entity, scaleId, {
+    local: new Vector2(0.3, 0.6),
+    world: new Vector2(0.3, 0.6),
+  });
+  world.addComponent(entity, spriteAnimationId, {
+    animationFrameIndex: 0,
+    playbackSpeed: 0.3,
+    frameDurationMilliseconds: 33.3333,
+    lastFrameChangeTimeInSeconds: 0,
+    animationInputs,
+    stateMachine,
+  });
+  world.addTag(entity, controlAdventurerId);
+  world.addComponent(entity, flipId, {
+    flipX: false,
+    flipY: false,
+  });
 }
