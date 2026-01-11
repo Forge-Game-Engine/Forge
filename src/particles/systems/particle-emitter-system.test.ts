@@ -43,19 +43,6 @@ describe('ParticleEmitterSystem', () => {
     } as unknown as Sprite;
   });
 
-  it('should not emit particles when emitter is empty', () => {
-    const entity = world.createEntity();
-
-    const emitterComponent: ParticleEmitterEcsComponent = {
-      emitters: new Map(),
-    };
-
-    world.addComponent(entity, ParticleEmitterId, emitterComponent);
-
-    time.update(100);
-    world.update();
-  });
-
   it('should start emitting when startEmitting is true', () => {
     const entity = world.createEntity();
 

@@ -5,12 +5,15 @@ import { EcsWorld } from '../new-ecs/ecs-world.js';
  * Manages the game loop and coordinates updates between systems.
  */
 export class Game implements Stoppable {
+  /**
+   * The HTML element that contains the game canvas.
+   */
+  public readonly container: HTMLElement;
   private _isRunning = false;
   private _animationFrameId: number | null = null;
 
   private readonly _time: Time;
   private readonly _world: EcsWorld;
-  public readonly container: HTMLElement;
 
   /**
    * Creates a new Game instance.

@@ -48,16 +48,6 @@ const includeBatch = (
 
   renderable.bind(gl);
 
-  // if (camera.scissorRect) {
-  //   gl.enable(gl.SCISSOR_TEST);
-  //   gl.scissor(
-  //     Math.floor(camera.scissorRect.origin.x * gl.canvas.width),
-  //     Math.floor(camera.scissorRect.origin.y * gl.canvas.height),
-  //     Math.floor(camera.scissorRect.size.x * gl.canvas.width),
-  //     Math.floor(camera.scissorRect.size.y * gl.canvas.height),
-  //   );
-  // }
-
   const requiredBatchSize = entities.length * renderable.floatsPerInstance;
 
   if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
