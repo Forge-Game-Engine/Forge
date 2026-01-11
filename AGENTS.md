@@ -61,6 +61,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 ### Module Exports
 
 The package exports are modular. Each subsystem has its own export path:
+
 - `@forge-game-engine/forge/ecs`
 - `@forge-game-engine/forge/rendering`
 - `@forge-game-engine/forge/physics`
@@ -105,6 +106,7 @@ The codebase follows the ECS pattern:
 ### TypeScript Style
 
 **Naming Conventions** (enforced by ESLint):
+
 - **Classes**: `PascalCase` (e.g., `RenderSystem`, `Entity`)
 - **Interfaces**: `PascalCase` (e.g., `EntityOptions`)
 - **Types**: `PascalCase` (e.g., `ComponentCtor`)
@@ -114,11 +116,13 @@ The codebase follows the ECS pattern:
 - **Files**: `kebab-case.ts` (e.g., `render-system.ts`)
 
 **Member Visibility**:
+
 - Always use explicit access modifiers (`public`, `private`, `protected`)
 - Exception: Constructors don't need `public`
 - Private fields must have leading underscore
 
 **Member Ordering** (enforced by ESLint):
+
 1. Public instance fields
 2. Protected instance fields
 3. Private instance fields
@@ -134,6 +138,7 @@ The codebase follows the ECS pattern:
 13. Private instance methods
 
 **Type Safety**:
+
 - Use strict TypeScript mode (enabled in `tsconfig.base.json`)
 - Always specify return types for functions: `public run(entity: Entity): void`
 - Use type parameters for generic classes
@@ -141,12 +146,14 @@ The codebase follows the ECS pattern:
 - No unused locals or parameters (enforced)
 
 **Imports**:
+
 - Use ES module syntax: `import { X } from './path.js'`
 - **Important**: Always include `.js` extension in imports (even for `.ts` files)
 - Sort imports alphabetically (case-insensitive, enforced by ESLint)
 - Group imports: external libraries first, then internal modules
 
 **Code Style**:
+
 - Use single quotes for strings
 - Semicolons required
 - 2-space indentation
@@ -157,6 +164,7 @@ The codebase follows the ECS pattern:
 - Blank lines before and after block-like statements
 
 **JSDoc Comments**:
+
 - Document all public classes, methods, and properties
 - Use `@param`, `@returns`, `@throws` annotations
 - Document complex private methods
@@ -180,6 +188,7 @@ The codebase follows the ECS pattern:
 - **Spell Check**: Run `npm run cspell` to check spelling
 
 ESLint is configured with:
+
 - TypeScript ESLint with type checking
 - SonarJS for code quality
 - Prettier integration
@@ -291,6 +300,7 @@ npm run test:ui
 ### Git Workflow
 
 **Commit Messages** (Conventional Commits):
+
 - Format: `<type>(<scope>): <subject>`
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Example: `feat(ecs): add component removal event`
