@@ -1,4 +1,4 @@
-import { Game, registerInputs, World } from '@forge-game-engine/forge/ecs';
+import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Time } from '@forge-game-engine/forge/common';
 import {
   actionResetTypes,
@@ -11,10 +11,12 @@ import {
   mouseButtons,
   MouseHoldBinding,
   MouseInputSource,
+  registerInputs,
 } from '@forge-game-engine/forge/input';
+import { Game } from '@forge-game-engine/forge/utilities';
 
 export function createInputs(
-  world: World,
+  world: EcsWorld,
   time: Time,
   game: Game,
 ): {
@@ -24,13 +26,13 @@ export function createInputs(
   const moveInput = new Axis2dAction('move', null, actionResetTypes.noReset);
   const shootInput = new HoldAction('shoot');
 
-  const { inputsManager } = registerInputs(world, time, {
+  const inputManager = registerInputs(world, time, {
     axis2dActions: [moveInput],
     holdActions: [shootInput],
   });
 
-  const keyboardInputSource = new KeyboardInputSource(inputsManager);
-  const mouseInputSource = new MouseInputSource(inputsManager, game);
+  const keyboardInputSource = new KeyboardInputSource(inputManager);
+  const mouseInputSource = new MouseInputSource(inputManager, game.container);
 
   keyboardInputSource.axis2dBindings.add(
     new KeyboardAxis2dBinding(

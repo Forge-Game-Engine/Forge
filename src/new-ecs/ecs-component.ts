@@ -1,4 +1,4 @@
-import { Brand } from '../utilities';
+import { Brand } from '../utilities/index.js';
 
 export type ComponentKey<T> = Brand<symbol, T>;
 export type TagKey = ComponentKey<void>;

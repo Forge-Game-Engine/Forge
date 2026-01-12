@@ -1,6 +1,6 @@
 import { EcsSystem } from '../../new-ecs/ecs-system';
 import { EcsWorld } from '../../new-ecs/ecs-world.js';
-import { ScaleEcsComponent, scaleId } from '../components';
+import { ScaleEcsComponent, scaleId } from '../components/index.js';
 import { parentId } from '../components/parent-component';
 import { createTransformCache, resetTransformCache } from './transform-cache';
 

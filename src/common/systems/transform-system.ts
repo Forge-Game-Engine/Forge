@@ -5,8 +5,8 @@ import {
   positionId,
   rotationId,
   scaleId,
-} from '../components';
-import { parentId } from '../components/parent-component';
+} from '../components/index.js';
+import { parentId } from '../components/parent-component.js';
 
 type TransformCache = {
   computed: Set<number>;

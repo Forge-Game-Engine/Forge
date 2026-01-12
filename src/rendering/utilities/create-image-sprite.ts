@@ -35,8 +35,8 @@ export async function createImageSprite(
     material,
     renderContext,
     layer,
-    image.width / 256,
-    image.height / 256,
+    image.width,
+    image.height,
   );
 
   return sprite;

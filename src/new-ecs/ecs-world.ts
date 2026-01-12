@@ -1,7 +1,7 @@
-import { Updatable } from '../common';
-import { SparseSet } from '../utilities/sparse-set';
-import { ComponentKey, TagKey } from './ecs-component';
-import { EcsSystem } from './ecs-system';
+import { Updatable } from '../common/index.js';
+import { SortedSet, SparseSet } from '../utilities/index.js';
+import { ComponentKey, TagKey } from './ecs-component.js';
+import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
 
 export type QueryResult<T extends unknown[]> = {
   entity: number;
@@ -19,15 +19,18 @@ export class EcsWorld implements Updatable {
     components: [],
   };
 
-  private readonly _systems: Set<EcsSystem<unknown[], unknown>>;
+  private readonly _systems: SortedSet<EcsSystem<unknown[], unknown>>;
 
   constructor() {
     this._componentSets = new Map();
-    this._systems = new Set<EcsSystem>();
+    this._systems = new SortedSet();
   }
 
-  public addSystem<T extends unknown[], K>(system: EcsSystem<T, K>): void {
-    this._systems.add(system);
+  public addSystem<T extends unknown[], K>(
+    system: EcsSystem<T, K>,
+    registrationOrder: number = SystemRegistrationOrder.normal,
+  ): void {
+    this._systems.add(system, registrationOrder);
   }
 
   public removeSystem(system: EcsSystem): void {
@@ -108,6 +111,10 @@ export class EcsWorld implements Updatable {
   ): void {
     const driver = this._getDriverComponentSet(system.query);
 
+    if (!driver) {
+      return;
+    }
+
     for (let i = 0; i < driver.size; i++) {
       const entity = driver.denseEntities[i];
       let hasAll = true;
@@ -139,6 +146,10 @@ export class EcsWorld implements Updatable {
     out.length = 0;
 
     const driver = this._getDriverComponentSet(componentNames);
+
+    if (!driver) {
+      return;
+    }
 
     for (let i = 0; i < driver.size; i++) {
       const entity = driver.denseEntities[i];
@@ -186,17 +197,23 @@ export class EcsWorld implements Updatable {
     return id;
   }
 
-  private _getDriverComponentSet(componentNames: symbol[]): SparseSet<unknown> {
+  private _getDriverComponentSet(
+    componentNames: symbol[],
+  ): SparseSet<unknown> | null {
     if (componentNames.length === 0) {
-      throw new Error('No components found for the given names.');
+      return null;
     }
 
-    let driver: SparseSet<unknown> = this._getComponentSetRequired(
+    let driver: SparseSet<unknown> | null = this._getComponentSet(
       componentNames[0],
     );
 
     for (const name of componentNames) {
-      const componentSet = this._getComponentSetRequired(name);
+      const componentSet = this._getComponentSet(name);
+
+      if (!componentSet) {
+        continue;
+      }
 
       if (!driver) {
         driver = componentSet;
@@ -212,13 +229,11 @@ export class EcsWorld implements Updatable {
     return driver;
   }
 
-  private _getComponentSetRequired(componentName: symbol): SparseSet<unknown> {
+  private _getComponentSet(componentName: symbol): SparseSet<unknown> | null {
     const componentSet = this._componentSets.get(componentName);
 
     if (!componentSet) {
-      throw new Error(
-        `No components found for the given name: ${componentName.toString()}.`,
-      );
+      return null;
     }
 
     return componentSet;

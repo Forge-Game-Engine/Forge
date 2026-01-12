@@ -1,10 +1,7 @@
-import { Component } from '@forge-game-engine/forge/ecs';
+import { createComponentId } from '@forge-game-engine/forge/ecs';
 
-export class BulletComponent extends Component {
-  public speed: number;
-
-  constructor(speed: number) {
-    super();
-    this.speed = speed;
-  }
+export interface BulletEcsComponent {
+  speed: number;
 }
+
+export const bulletId = createComponentId<BulletEcsComponent>('Bullet');

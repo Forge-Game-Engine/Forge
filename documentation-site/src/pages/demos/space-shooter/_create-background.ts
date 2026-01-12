@@ -4,20 +4,19 @@ import {
   createTextureFromImage,
   Material,
   RenderContext,
-  RenderLayer,
-  SpriteComponent,
+  spriteId,
 } from '@forge-game-engine/forge/rendering';
-import { Entity, World } from '@forge-game-engine/forge/ecs';
-import { PositionComponent } from '@forge-game-engine/forge/common';
+import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import { positionId } from '@forge-game-engine/forge/common';
 import { backgroundShader } from './_background.shader';
-import { BackgroundComponent } from './_background.component';
+import { backgroundId } from './_background.component';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { Vector2 } from '../../../../../dist';
 
 export async function createBackground(
-  world: World,
-  cameraEntity: Entity,
-  renderLayer: RenderLayer,
+  world: EcsWorld,
   renderContext: RenderContext,
+  renderLayer: number,
 ): Promise<void> {
   renderContext.shaderCache.addShader(backgroundShader);
 
@@ -53,16 +52,22 @@ export async function createBackground(
   const backgroundSprite = createSprite(
     backgroundMaterial,
     renderContext,
-    cameraEntity,
+    renderLayer,
     renderContext.canvas.width,
     renderContext.canvas.height,
   );
 
-  const backgroundEntity = world.buildAndAddEntity([
-    new SpriteComponent(backgroundSprite),
-    new PositionComponent(0, 0),
-    new BackgroundComponent(),
-  ]);
+  const backgroundEntity = world.createEntity();
 
-  renderLayer.addEntity(backgroundSprite.renderable, backgroundEntity);
+  world.addComponent(backgroundEntity, spriteId, {
+    sprite: backgroundSprite,
+    enabled: true,
+  });
+
+  world.addComponent(backgroundEntity, positionId, {
+    local: Vector2.zero,
+    world: Vector2.zero,
+  });
+
+  world.addTag(backgroundEntity, backgroundId);
 }

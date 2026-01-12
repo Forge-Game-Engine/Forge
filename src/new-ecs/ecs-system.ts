@@ -5,3 +5,9 @@ export interface EcsSystem<T extends unknown[] = unknown[], K = void> {
   run(components: QueryResult<T>, world: EcsWorld, beforeQueryResult: K): void;
   beforeQuery?(world: EcsWorld): K;
 }
+
+export const SystemRegistrationOrder = {
+  early: -10_000,
+  normal: 0,
+  late: 10_000,
+};

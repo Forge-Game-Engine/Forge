@@ -1,3 +1,3 @@
-import { Component } from '@forge-game-engine/forge/ecs';
+import { createTagId } from '@forge-game-engine/forge/ecs';
 
-export class BackgroundComponent extends Component {}
+export const backgroundId = createTagId('background');

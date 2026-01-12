@@ -1,45 +1,46 @@
-import { Game, registerCamera } from '@forge-game-engine/forge/ecs';
-import { RenderSystem } from '@forge-game-engine/forge/rendering';
-import { createGame } from '@forge-game-engine/forge/utilities';
 import {
-  ParticleEmitterSystem,
-  ParticlePositionSystem,
-} from '@forge-game-engine/forge/particles';
-import { AudioSystem } from '@forge-game-engine/forge/audio';
+  addCamera,
+  createCameraEcsSystem,
+  createRenderEcsSystem,
+} from '@forge-game-engine/forge/rendering';
+import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
 import {
-  LifetimeTrackingSystem,
-  RemoveFromWorldLifecycleSystem,
+  createLifetimeTrackingEcsSystem,
+  createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
-import { MovementSystem } from './_movement.system';
+import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
-import { BackgroundSystem } from './_background.system';
+import { createBackgroundEcsSystem } from './_background.system';
 import { createMusic } from './_create-music';
 import { createInputs } from './_create-inputs';
-import { createRenderLayer } from './_create-render-layer';
 import { createPlayer } from './_create-player';
-import { BulletSystem } from './_bullet.system';
-import { GunSystem } from './_gun.system';
+import { createBulletEcsSystem } from './_bullet.system';
+import { createGunEcsSystem } from './_gun.system';
+
+const renderLayers = {
+  background: 1 << 0,
+  foreground: 1 << 1,
+};
 
 export const createSpaceShooterGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
-  const cameraEntity = registerCamera(world, time);
+  addCamera(world);
   const { moveInput, shootInput } = createInputs(world, time, game);
-  const renderLayer = createRenderLayer(world);
 
-  await createBackground(world, cameraEntity, renderLayer, renderContext);
-  await createPlayer(renderContext, cameraEntity, world, renderLayer);
+  await createBackground(world, renderContext, renderLayers.background);
+  await createPlayer(renderContext, world, renderLayers.foreground);
   createMusic(world);
 
-  world.addSystem(new RenderSystem(renderContext));
-  world.addSystem(new MovementSystem(moveInput, time));
-  world.addSystem(new BackgroundSystem(time));
-  world.addSystem(new ParticleEmitterSystem(world, time));
-  world.addSystem(new ParticlePositionSystem(time));
-  world.addSystem(new AudioSystem(world));
-  world.addSystem(new LifetimeTrackingSystem(time));
-  world.addSystem(new RemoveFromWorldLifecycleSystem(world));
-  world.addSystem(new GunSystem(time, shootInput, world));
-  world.addSystem(new BulletSystem(time));
+  world.addSystem(createCameraEcsSystem(time));
+  world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createMovementEcsSystem(moveInput, time));
+  world.addSystem(createBackgroundEcsSystem(time));
+  world.addSystem(createAudioEcsSystem());
+  world.addSystem(createLifetimeTrackingEcsSystem(time));
+  world.addSystem(createRemoveFromWorldEcsSystem());
+  world.addSystem(createGunEcsSystem(time, world, shootInput));
+  world.addSystem(createBulletEcsSystem(time));
 
   return game;
 };
