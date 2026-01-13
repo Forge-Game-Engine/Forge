@@ -48,7 +48,7 @@ describe('AgeScaleSystem', () => {
     };
 
     // Act
-    system.run(queryResult, world);
+    system.run(queryResult, world, null);
 
     // Assert
     const expectedScaleX = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
@@ -94,7 +94,7 @@ describe('AgeScaleSystem', () => {
     };
 
     // Act
-    system.run(queryResult, world);
+    system.run(queryResult, world, null);
 
     // Assert
     expect(scaleComponent.local.x).toBe(expectedScaleX);

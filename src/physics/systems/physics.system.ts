@@ -18,7 +18,8 @@ export const createPhysicsEcsSystem = (
   engine: Engine,
   time: Time,
 ): EcsSystem<
-  [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent]
+  [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent],
+  void
 > => ({
   query: [PhysicsBodyId, positionId, rotationId],
   beforeQuery: () => {

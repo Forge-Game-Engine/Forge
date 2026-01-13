@@ -1,8 +1,13 @@
+import { KeysFromComponents, TagKey } from './ecs-component';
 import { EcsWorld, QueryResult } from './ecs-world';
 
-export interface EcsSystem<T extends unknown[] = unknown[], K = void> {
-  query: symbol[];
-  run(components: QueryResult<T>, world: EcsWorld, beforeQueryResult: K): void;
+export interface EcsSystem<
+  Q extends readonly unknown[] = readonly unknown[],
+  K = null,
+> {
+  query: KeysFromComponents<Q>;
+  tags?: TagKey[];
+  run(components: QueryResult<Q>, world: EcsWorld, beforeQueryResult: K): void;
   beforeQuery?(world: EcsWorld): K;
 }
 

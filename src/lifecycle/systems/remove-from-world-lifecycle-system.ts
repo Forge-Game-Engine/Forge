@@ -12,7 +12,8 @@ import { EcsSystem } from '../../new-ecs/ecs-system.js';
 export const createRemoveFromWorldEcsSystem = (): EcsSystem<
   [LifetimeEcsComponent]
 > => ({
-  query: [lifetimeId, RemoveFromWorldLifetimeStrategyId],
+  query: [lifetimeId],
+  tags: [RemoveFromWorldLifetimeStrategyId],
   run: (result, world) => {
     const [lifetimeComponent] = result.components;
 

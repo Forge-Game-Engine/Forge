@@ -19,7 +19,8 @@ export const createControlAdventurerEcsSystem = (
 ): EcsSystem<
   [SpriteAnimationEcsComponent, FlipEcsComponent, PositionEcsComponent]
 > => ({
-  query: [controlAdventurerId, spriteAnimationId, flipId, positionId],
+  query: [spriteAnimationId, flipId, positionId],
+  tags: [controlAdventurerId],
   run: (result) => {
     const [spriteAnimationComponent, flipComponent] = result.components;
 

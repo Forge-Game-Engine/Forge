@@ -36,49 +36,69 @@ export const createGunEcsSystem = (
       return;
     }
 
-    const bullet = world.createEntity();
-
-    world.addComponent(bullet, spriteId, {
-      sprite: gunComponent.bulletSprite,
-      enabled: true,
-    });
-
-    world.addComponent(bullet, positionId, {
-      local: positionComponent.world.clone(),
-      world: positionComponent.world.clone(),
-    });
-
-    world.addComponent(bullet, rotationId, {
-      local: degreesToRadians(270),
-      world: degreesToRadians(270),
-    });
-
-    world.addComponent(bullet, scaleId, {
-      local: new Vector2(0.2, 0.2),
-      world: new Vector2(0.2, 0.2),
-    });
-
-    world.addComponent(bullet, bulletId, {
-      speed: 700,
-    });
-
-    world.addComponent(bullet, lifetimeId, {
-      durationSeconds: 2,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    });
-
-    world.addTag(bullet, RemoveFromWorldLifetimeStrategyId);
-
-    world.addComponent(bullet, audioId, {
-      playSound: true,
-      sound: new Howl({
-        src: getAssetUrl('audio/laser.mp3'),
-        volume: 0.3,
-      }),
-    });
+    createBulletWithOffset(
+      world,
+      gunComponent,
+      positionComponent,
+      new Vector2(20, -20),
+    );
+    createBulletWithOffset(
+      world,
+      gunComponent,
+      positionComponent,
+      new Vector2(-20, -20),
+    );
 
     gunComponent.nextAllowedShotTime =
       time.timeInSeconds + gunComponent.timeBetweenShots;
   },
 });
+
+function createBulletWithOffset(
+  world: EcsWorld,
+  gunComponent: GunEcsComponent,
+  positionComponent: PositionEcsComponent,
+  offset: Vector2,
+) {
+  const bullet = world.createEntity();
+
+  world.addComponent(bullet, spriteId, {
+    sprite: gunComponent.bulletSprite,
+    enabled: true,
+  });
+
+  world.addComponent(bullet, positionId, {
+    local: positionComponent.world.add(offset),
+    world: positionComponent.world.add(offset),
+  });
+
+  world.addComponent(bullet, rotationId, {
+    local: degreesToRadians(270),
+    world: degreesToRadians(270),
+  });
+
+  world.addComponent(bullet, scaleId, {
+    local: new Vector2(0.2, 0.2),
+    world: new Vector2(0.2, 0.2),
+  });
+
+  world.addComponent(bullet, bulletId, {
+    speed: 700,
+  });
+
+  world.addComponent(bullet, lifetimeId, {
+    durationSeconds: 2,
+    elapsedSeconds: 0,
+    hasExpired: false,
+  });
+
+  world.addTag(bullet, RemoveFromWorldLifetimeStrategyId);
+
+  world.addComponent(bullet, audioId, {
+    playSound: true,
+    sound: new Howl({
+      src: getAssetUrl('audio/laser.mp3'),
+      volume: 0.3,
+    }),
+  });
+}

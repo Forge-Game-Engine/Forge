@@ -49,7 +49,7 @@ describe('EcsWorld', () => {
         components: [pos1, rot1],
       }),
       world,
-      undefined,
+      null,
     );
   });
 
@@ -123,24 +123,23 @@ describe('EcsWorld', () => {
         components: [position2, speed2],
       }),
       world,
-      undefined,
+      null,
     );
   });
 
-  it('throws when no components found for the given names', () => {
+  it('does not throw when no components found for the given names', () => {
     const world = new EcsWorld();
-    const nonexistentId = createComponentId('nonexistent');
+    type TestComponent = { test: number };
+    const nonexistentId = createComponentId<TestComponent>('nonexistent');
 
-    const system: EcsSystem<[]> = {
+    const system: EcsSystem<[TestComponent]> = {
       query: [nonexistentId],
       run: () => {},
     };
 
     world.addSystem(system);
 
-    expect(() => world.update()).toThrow(
-      'No components found for the given name: Symbol(nonexistent).',
-    );
+    expect(() => world.update()).not.toThrow();
   });
 
   it('runs systems with query results', () => {

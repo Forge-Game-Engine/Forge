@@ -3,7 +3,7 @@ import { SortedSet, SparseSet } from '../utilities/index.js';
 import { ComponentKey, TagKey } from './ecs-component.js';
 import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
 
-export type QueryResult<T extends unknown[]> = {
+export type QueryResult<T extends readonly unknown[]> = {
   entity: number;
   components: T;
 };
@@ -33,13 +33,13 @@ export class EcsWorld implements Updatable {
     this._systems.add(system, registrationOrder);
   }
 
-  public removeSystem(system: EcsSystem): void {
+  public removeSystem(system: EcsSystem<unknown[], unknown>): void {
     this._systems.delete(system);
   }
 
   public update(): void {
     for (const system of this._systems) {
-      const beforeQueryResult = system.beforeQuery?.(this);
+      const beforeQueryResult = system.beforeQuery?.(this) ?? null;
 
       this.operate(system, beforeQueryResult);
     }
@@ -109,7 +109,7 @@ export class EcsWorld implements Updatable {
     system: EcsSystem<unknown[], unknown>,
     beforeQueryResult?: unknown,
   ): void {
-    const driver = this._getDriverComponentSet(system.query);
+    const driver = this._getDriverComponentSet(system.query, system.tags);
 
     if (!driver) {
       return;
@@ -198,17 +198,36 @@ export class EcsWorld implements Updatable {
   }
 
   private _getDriverComponentSet(
-    componentNames: symbol[],
+    componentKeys: ComponentKey<unknown>[],
+    tags: TagKey[] = [],
   ): SparseSet<unknown> | null {
-    if (componentNames.length === 0) {
+    if (componentKeys.length === 0) {
       return null;
     }
 
     let driver: SparseSet<unknown> | null = this._getComponentSet(
-      componentNames[0],
+      componentKeys[0],
     );
 
-    for (const name of componentNames) {
+    for (const name of componentKeys) {
+      const componentSet = this._getComponentSet(name);
+
+      if (!componentSet) {
+        continue;
+      }
+
+      if (!driver) {
+        driver = componentSet;
+
+        continue;
+      }
+
+      if (componentSet.size < driver.size) {
+        driver = componentSet;
+      }
+    }
+
+    for (const name of tags) {
       const componentSet = this._getComponentSet(name);
 
       if (!componentSet) {

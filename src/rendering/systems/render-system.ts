@@ -86,7 +86,7 @@ const renderables: Map<Renderable, InstanceBatch> = new Map();
  */
 export const createRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
+): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void> => ({
   query: [cameraId, positionId],
   beforeQuery: (world) => world.queryEntities([spriteId], spriteEntityBuffer),
   run: (result, world) => {
