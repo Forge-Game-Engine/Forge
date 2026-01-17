@@ -40,13 +40,13 @@ export const createGunEcsSystem = (
       world,
       gunComponent,
       positionComponent,
-      new Vector2(20, -20),
+      new Vector2(20, 20),
     );
     createBulletWithOffset(
       world,
       gunComponent,
       positionComponent,
-      new Vector2(-20, -20),
+      new Vector2(-20, 20),
     );
 
     gunComponent.nextAllowedShotTime =

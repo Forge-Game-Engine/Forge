@@ -29,7 +29,7 @@ export const createMovementEcsSystem = (
     );
 
     positionComponent.world.y = clamp(
-      positionComponent.world.y - movementVector.y,
+      positionComponent.world.y + movementVector.y,
       minY,
       maxY,
     );

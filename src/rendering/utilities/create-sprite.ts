@@ -79,7 +79,7 @@ function bindInstanceData(
 
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
-  instanceDataBufferArray[offset + POSITION_Y_OFFSET] = position.world.y;
+  instanceDataBufferArray[offset + POSITION_Y_OFFSET] = -position.world.y;
 
   // Rotation
   instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;

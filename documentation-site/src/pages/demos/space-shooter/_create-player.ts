@@ -38,15 +38,15 @@ export async function createPlayer(
     enabled: true,
   });
   world.addComponent(playerEntity, positionId, {
-    local: new Vector2(0, 250),
-    world: new Vector2(0, 250),
+    local: new Vector2(0, -250),
+    world: new Vector2(0, -250),
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
     minX: -300,
     maxX: 300,
-    minY: -100,
-    maxY: 270,
+    minY: -270,
+    maxY: 100,
   });
 
   world.addComponent(playerEntity, scaleId, {
