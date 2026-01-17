@@ -1,23 +1,18 @@
-import { HoldAction, InputsComponent, System, TriggerAction } from '../../src';
+import { HoldAction, InputsEcsComponent, inputsId, TriggerAction } from '../../src';
+import { EcsSystem } from '../../src/new-ecs';
 
-export class FireSystem extends System {
-  private readonly _fireAction: TriggerAction;
-  private readonly _runAction: HoldAction;
-
-  constructor(fireAction: TriggerAction, runAction: HoldAction) {
-    super([InputsComponent], 'FireSystem');
-
-    this._fireAction = fireAction;
-    this._runAction = runAction;
-  }
-
-  public run(): void {
-    if (this._fireAction.isTriggered) {
+export const createFireEcsSystem = (
+  fireAction: TriggerAction,
+  runAction: HoldAction,
+): EcsSystem<[InputsEcsComponent]> => ({
+  query: [inputsId],
+  run: () => {
+    if (fireAction.isTriggered) {
       console.log(`Fire action triggered`);
     }
 
-    if (this._runAction.isHeld) {
+    if (runAction.isHeld) {
       console.log(`Run action is being held`);
     }
-  }
-}
+  },
+});

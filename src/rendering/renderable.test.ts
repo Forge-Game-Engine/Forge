@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { Entity } from '../ecs/entity.js';
 import { Geometry } from './geometry/geometry.js';
 import { Material } from './materials/material.js';
 import { Renderable } from './renderable.js';
+import { EcsWorld } from '../new-ecs/ecs-world.js';
 
 describe('Renderable', () => {
   let mockGeometry: Geometry;
   let mockMaterial: Material;
-  let mockCameraEntity: Entity;
   let mockGl: WebGL2RenderingContext;
   let mockProgram: WebGLProgram;
 
@@ -29,9 +28,6 @@ describe('Renderable', () => {
       program: mockProgram,
     } as unknown as Material;
 
-    // Create mock camera entity
-    mockCameraEntity = {} as Entity;
-
     // Create mock WebGL context
     mockGl = {} as WebGL2RenderingContext;
 
@@ -45,8 +41,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -58,8 +54,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -68,24 +64,25 @@ describe('Renderable', () => {
     });
 
     it('should initialize with provided camera entity', () => {
+      const layer = 5;
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        layer,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
 
-      expect(renderable.cameraEntity).toBe(mockCameraEntity);
+      expect(renderable.layer).toBe(layer);
     });
 
     it('should initialize with provided floatsPerInstance', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         17,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -97,8 +94,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -110,8 +107,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -123,18 +120,19 @@ describe('Renderable', () => {
 
     it('should initialize all properties correctly', () => {
       const floatsPerInstance = 15;
+      const layer = 3;
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         floatsPerInstance,
+        layer,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
 
       expect(renderable.geometry).toBe(mockGeometry);
       expect(renderable.material).toBe(mockMaterial);
-      expect(renderable.cameraEntity).toBe(mockCameraEntity);
+      expect(renderable.layer).toBe(layer);
       expect(renderable.floatsPerInstance).toBe(floatsPerInstance);
       expect(renderable.bindInstanceData).toBe(mockBindInstanceData);
       expect(renderable.setupInstanceAttributes).toBe(
@@ -148,8 +146,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -163,8 +161,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -178,8 +176,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -200,30 +198,36 @@ describe('Renderable', () => {
 
   describe('callbacks', () => {
     it('should allow bindInstanceData callback to be called', () => {
-      const entity = {} as Entity;
+      const entity = 1;
+      const world = new EcsWorld();
       const buffer = new Float32Array(10);
       const offset = 5;
 
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
 
-      renderable.bindInstanceData(entity, buffer, offset);
+      renderable.bindInstanceData(entity, world, buffer, offset);
 
-      expect(mockBindInstanceData).toHaveBeenCalledWith(entity, buffer, offset);
+      expect(mockBindInstanceData).toHaveBeenCalledWith(
+        entity,
+        world,
+        buffer,
+        offset,
+      );
     });
 
     it('should allow setupInstanceAttributes callback to be called', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -242,8 +246,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -258,8 +262,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );
@@ -273,8 +277,8 @@ describe('Renderable', () => {
       const renderable = new Renderable(
         mockGeometry,
         mockMaterial,
-        mockCameraEntity,
         10,
+        0,
         mockBindInstanceData,
         mockSetupInstanceAttributes,
       );

@@ -6,3 +6,4 @@ export * from './input-sources/index.js';
 export * from './input-manager.js';
 export * from './mouse/index.js';
 export * from './keyboard/index.js';
+export * from './register-inputs.js';

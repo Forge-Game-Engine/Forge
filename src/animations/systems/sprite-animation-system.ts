@@ -1,31 +1,21 @@
-import { Entity, System } from '../../ecs/index.js';
 import { Time } from '../../common/index.js';
-import { SpriteAnimationComponent } from '../components/index.js';
+import {
+  type SpriteAnimationEcsComponent,
+  spriteAnimationId,
+} from '../components/index.js';
+import { EcsSystem } from '../../new-ecs/index.js';
 
 /**
- * System that manages and updates sprite animations for entities, such as from sprite sheets.
+ * Creates a new ECS-style sprite animation system.
+ * @param time - The Time instance.
+ * @returns An ECS system that updates sprite animations.
  */
-export class SpriteAnimationSystem extends System {
-  private readonly _time: Time;
-
-  /**
-   * Creates an instance of SpriteAnimationSystem.
-   * @param time - The Time instance.
-   */
-  constructor(time: Time) {
-    super([SpriteAnimationComponent], 'sprite-animation');
-
-    this._time = time;
-  }
-
-  /**
-   * Runs the animation system for a given entity.
-   * @param entity - The entity to update animations for.
-   */
-  public run(entity: Entity): void {
-    const spriteAnimationComponent = entity.getComponentRequired(
-      SpriteAnimationComponent,
-    );
+export const createSpriteAnimationEcsSystem = (
+  time: Time,
+): EcsSystem<[SpriteAnimationEcsComponent]> => ({
+  query: [spriteAnimationId],
+  run: (result) => {
+    const [spriteAnimationComponent] = result.components;
 
     const {
       lastFrameChangeTimeInSeconds,
@@ -37,7 +27,7 @@ export class SpriteAnimationSystem extends System {
     const { currentState: currentAnimationClip } = stateMachine;
 
     const secondsElapsedSinceLastFrameChange =
-      this._time.timeInSeconds - lastFrameChangeTimeInSeconds;
+      time.timeInSeconds - lastFrameChangeTimeInSeconds;
 
     const scaledFrameDurationInSeconds =
       frameDurationMilliseconds /
@@ -68,7 +58,6 @@ export class SpriteAnimationSystem extends System {
       spriteAnimationComponent.animationFrameIndex++;
     }
 
-    spriteAnimationComponent.lastFrameChangeTimeInSeconds =
-      this._time.timeInSeconds;
-  }
-}
+    spriteAnimationComponent.lastFrameChangeTimeInSeconds = time.timeInSeconds;
+  },
+});

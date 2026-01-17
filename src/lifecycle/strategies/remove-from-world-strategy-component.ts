@@ -1,7 +1,5 @@
-import { Component } from '../../ecs/index.js';
+import { createTagId } from '../../new-ecs/ecs-component.js';
 
-/**
- * Strategy component that marks an entity to be removed from the world when its lifetime expires.
- * This is a pure data component with no logic - it acts as a marker/tag.
- */
-export class RemoveFromWorldStrategyComponent extends Component {}
+export const RemoveFromWorldLifetimeStrategyId = createTagId(
+  'removeFromWorldLifetimeStrategy',
+);

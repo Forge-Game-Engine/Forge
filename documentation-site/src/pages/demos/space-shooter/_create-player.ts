@@ -1,45 +1,68 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
-import { Entity, World } from '@forge-game-engine/forge/ecs';
+import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  Color,
   createImageSprite,
   RenderContext,
-  RenderLayer,
-  SpriteComponent,
+  spriteId,
 } from '@forge-game-engine/forge/rendering';
-import { PositionComponent, RotationComponent, ScaleComponent } from '@forge-game-engine/forge/common';
-import { PlayerComponent } from './_player.component';
-import { GunComponent } from './_gun.component';
-import { degreesToRadians } from '../../../../../dist';
+import {
+  positionId,
+  rotationId,
+  scaleId,
+} from '@forge-game-engine/forge/common';
+import { Vector2 } from '@forge-game-engine/forge/math';
+import { PlayerId } from './_player.component';
+import { gunId } from './_gun.component';
 
 export async function createPlayer(
   renderContext: RenderContext,
-  cameraEntity: Entity,
-  world: World,
-  renderLayer: RenderLayer,
-): Promise<Entity> {
+  world: EcsWorld,
+  renderLayer: number,
+): Promise<void> {
   const playerSprite = await createImageSprite(
     getAssetUrl('img/space-shooter/Spaceship_6.png'),
     renderContext,
-    cameraEntity,
+    renderLayer,
   );
 
   const bulletSprite = await createImageSprite(
     getAssetUrl('img/space-shooter/bullet-yellow.png'),
     renderContext,
-    cameraEntity,
+    renderLayer,
   );
 
-  const playerEntity = world.buildAndAddEntity([
-    new SpriteComponent(playerSprite),
-    new PositionComponent(0, 250),
-    new PlayerComponent(50, -300, 300, -100, 270),
-    new ScaleComponent(0.15, 0.15),
-    new RotationComponent(degreesToRadians(180)),
-    new GunComponent(0.2, bulletSprite, renderLayer),
-  ]);
+  const playerEntity = world.createEntity();
 
-  renderLayer.addEntity(playerSprite.renderable, playerEntity);
+  world.addComponent(playerEntity, spriteId, {
+    sprite: playerSprite,
+    enabled: true,
+  });
+  world.addComponent(playerEntity, positionId, {
+    local: new Vector2(0, -250),
+    world: new Vector2(0, -250),
+  });
+  world.addComponent(playerEntity, PlayerId, {
+    speed: 50,
+    minX: -300,
+    maxX: 300,
+    minY: -270,
+    maxY: 100,
+  });
 
-  return playerEntity;
+  world.addComponent(playerEntity, scaleId, {
+    local: new Vector2(0.15, 0.15),
+    world: new Vector2(0.15, 0.15),
+  });
+
+  world.addComponent(playerEntity, rotationId, {
+    local: Math.PI,
+    world: Math.PI,
+  });
+
+  world.addComponent(playerEntity, gunId, {
+    timeBetweenShots: 0.2,
+    bulletSprite: bulletSprite,
+    renderLayer: renderLayer,
+    nextAllowedShotTime: 0,
+  });
 }

@@ -1,200 +1,193 @@
-import { Entity, System, World } from '../../ecs/index.js';
 import {
-  AgeScaleComponent,
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
-  SpeedComponent,
+  ageScaleId,
+  positionId,
+  rotationId,
+  scaleId,
+  speedId,
   Time,
 } from '../../common/index.js';
+import { spriteId } from '../../rendering/index.js';
+import { Random, Vector2 } from '../../math/index.js';
 import {
-  LifetimeComponent,
-  RemoveFromWorldStrategyComponent,
+  ParticleEmitter,
+  ParticleEmitterEcsComponent,
+  ParticleEmitterId,
+  ParticleId,
+} from '../index.js';
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import {
+  lifetimeId,
+  RemoveFromWorldLifetimeStrategyId,
 } from '../../lifecycle/index.js';
 
-import { SpriteComponent } from '../../rendering/index.js';
-import { Random } from '../../math/index.js';
-import {
-  ParticleComponent,
-  ParticleEmitter,
-  ParticleEmitterComponent,
-  Range,
-} from '../index.js';
-
-/**
- * System that emits particles based on ParticleEmitters
- */
-export class ParticleEmitterSystem extends System {
-  private readonly _time: Time;
-  private readonly _world: World;
-  private readonly _random: Random;
-
-  /**
-   * Creates an instance of ParticleEmitterSystem.
-   * @param world - The World instance.
-   * @param time - The Time instance for managing time-related operations.
-   */
-  constructor(world: World, time: Time) {
-    super([ParticleEmitterComponent], 'particle-emitter');
-    this._time = time;
-    this._world = world;
-    this._random = new Random();
-  }
-
-  /**
-   * Runs the particle emitter system for a given entity.
-   * @param entity - The entity to update particle emitters for.
-   */
-  public run(entity: Entity): void {
-    const particleEmitterComponent = entity.getComponentRequired(
-      ParticleEmitterComponent,
-    );
-
-    for (const particleEmitter of particleEmitterComponent.emitters.values()) {
-      particleEmitter.currentEmitDuration += this._time.deltaTimeInSeconds;
-
-      this._startEmittingParticles(particleEmitter);
-
-      this._emitNewParticles(particleEmitter);
-    }
-  }
-
-  /**
-   * Starts emitting particles from the emitter if `startEmitting` is set to true.
-   * This will reset the current emit duration and start the emission process,
-   * as well as choose a number of particles to emit.
-   * @param particleEmitter The particle emitter to start emitting from.
-   */
-  private _startEmittingParticles(particleEmitter: ParticleEmitter) {
-    if (particleEmitter.startEmitting) {
-      particleEmitter.currentEmitDuration = 0;
-      particleEmitter.startEmitting = false;
-      particleEmitter.emitCount = 0;
-      particleEmitter.currentlyEmitting = true;
-      particleEmitter.totalAmountToEmit = Math.round(
-        this._getRandomValueInRange(particleEmitter.numParticlesRange),
-      );
-    }
-  }
-
-  /**
-   * Emits new particles from the emitter.
-   * Emits a portion of the total amount to emit, based on emit duration.
-   * If emit duration is zero, it will immediately emit all particles.
-   * @param particleEmitter The particle emitter to emit particles from.
-   */
-  private _emitNewParticles(particleEmitter: ParticleEmitter) {
-    if (
-      !particleEmitter.currentlyEmitting ||
-      particleEmitter.emitCount >= particleEmitter.totalAmountToEmit
-    ) {
-      particleEmitter.currentlyEmitting = false;
-
-      return;
-    }
-
-    const currentAmountToEmit =
-      this._getAmountToEmitBasedOnDuration(particleEmitter);
-
-    for (let i = 0; i < currentAmountToEmit; i++) {
-      this._emitParticle(particleEmitter);
-    }
-
-    particleEmitter.emitCount += currentAmountToEmit;
-  }
-
-  /**
-   * Emits a single particle from the given particle emitter.
-   * @param particleEmitter The particle emitter to emit a particle from.
-   */
-  private _emitParticle(particleEmitter: ParticleEmitter) {
-    const speed = this._getRandomValueInRange(particleEmitter.speedRange);
-
-    const originalScale = this._getRandomValueInRange(
-      particleEmitter.scaleRange,
-    );
-
-    const lifetimeSeconds = this._getRandomValueInRange(
-      particleEmitter.lifetimeSecondsRange,
-    );
-
-    const rotation = this._getRandomValueInRangeDegrees(
-      particleEmitter.rotationRange,
-    );
-
-    const rotationSpeed = this._getRandomValueInRange(
-      particleEmitter.rotationSpeedRange,
-    );
-
-    const spawnPosition = particleEmitter.spawnPosition();
-
-    const particleEntity = this._world.buildAndAddEntity([
-      new SpriteComponent(particleEmitter.sprite),
-      new ParticleComponent({
-        rotationSpeed,
-      }),
-      new LifetimeComponent(lifetimeSeconds),
-      new RemoveFromWorldStrategyComponent(),
-      new AgeScaleComponent(
-        originalScale,
-        originalScale,
-        particleEmitter.lifetimeScaleReduction,
-        particleEmitter.lifetimeScaleReduction,
+function startEmittingParticles(
+  particleEmitter: ParticleEmitter,
+  random: Random,
+) {
+  if (particleEmitter.startEmitting) {
+    particleEmitter.currentEmitDuration = 0;
+    particleEmitter.startEmitting = false;
+    particleEmitter.emitCount = 0;
+    particleEmitter.currentlyEmitting = true;
+    particleEmitter.totalAmountToEmit = Math.round(
+      random.randomFloat(
+        particleEmitter.numParticlesRange.min,
+        particleEmitter.numParticlesRange.max,
       ),
-      new PositionComponent(spawnPosition.x, spawnPosition.y),
-      new ScaleComponent(originalScale, originalScale),
-      new RotationComponent(rotation),
-      new SpeedComponent(speed),
-    ]);
-
-    particleEmitter.renderLayer.addEntity(
-      particleEmitter.sprite.renderable,
-      particleEntity,
     );
-  }
-
-  /**
-   * Gets the amount of particles to emit based on the current emit duration.
-   * @param particleEmitter The particle emitter to get the amount from.
-   * @returns The number of particles to emit.
-   */
-  private _getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
-    if (particleEmitter.emitDurationSeconds <= 0) {
-      return particleEmitter.totalAmountToEmit - particleEmitter.emitCount;
-    }
-
-    const emitProgress = Math.min(
-      particleEmitter.currentEmitDuration / particleEmitter.emitDurationSeconds,
-      1,
-    );
-    const targetEmitCount = Math.ceil(
-      emitProgress * particleEmitter.totalAmountToEmit,
-    );
-
-    return targetEmitCount - particleEmitter.emitCount;
-  }
-
-  /**
-   * Gets a random value within the specified range.
-   * @param minMax The range to get the random value from.
-   * @returns A random value within the specified range.
-   */
-  private _getRandomValueInRange({ min, max }: Range): number {
-    return this._random.randomFloat(min, max);
-  }
-
-  /**
-   * Gets a random value within the specified range in degrees.
-   * @param minMax The range to get the random value from.
-   * @returns A random value within the specified range, from 0-360 degrees
-   */
-  private _getRandomValueInRangeDegrees({ min, max }: Range): number {
-    const range = (max - min) % 360;
-
-    if (range === 0 && max !== min) {
-      return this._random.randomFloat(0, 360);
-    }
-
-    return this._random.randomFloat(min, min + range);
   }
 }
+
+function getRandomValueInRangeDegrees(
+  min: number,
+  max: number,
+  random: Random,
+): number {
+  const range = (max - min) % 360;
+
+  if (range === 0 && max !== min) {
+    return random.randomFloat(0, 360);
+  }
+
+  return random.randomFloat(min, min + range);
+}
+
+function emitParticle(
+  particleEmitter: ParticleEmitter,
+  random: Random,
+  world: EcsWorld,
+) {
+  const speed = random.randomFloat(
+    particleEmitter.speedRange.min,
+    particleEmitter.speedRange.max,
+  );
+
+  const originalScale = random.randomFloat(
+    particleEmitter.scaleRange.min,
+    particleEmitter.scaleRange.max,
+  );
+
+  const lifetimeSeconds = random.randomFloat(
+    particleEmitter.lifetimeSecondsRange.min,
+    particleEmitter.lifetimeSecondsRange.max,
+  );
+
+  const rotation = getRandomValueInRangeDegrees(
+    particleEmitter.rotationRange.min,
+    particleEmitter.rotationRange.max,
+    random,
+  );
+
+  const rotationSpeed = random.randomFloat(
+    particleEmitter.rotationSpeedRange.min,
+    particleEmitter.rotationSpeedRange.max,
+  );
+
+  const spawnPosition = particleEmitter.spawnPosition();
+
+  const particleEntity = world.createEntity();
+
+  world.addComponent(particleEntity, spriteId, {
+    sprite: particleEmitter.sprite,
+    enabled: true,
+  });
+
+  world.addComponent(particleEntity, ParticleId, {
+    rotationSpeed,
+  });
+
+  world.addComponent(particleEntity, lifetimeId, {
+    durationSeconds: lifetimeSeconds,
+    elapsedSeconds: 0,
+    hasExpired: false,
+  });
+
+  world.addTag(particleEntity, RemoveFromWorldLifetimeStrategyId);
+
+  world.addComponent(particleEntity, ageScaleId, {
+    originalScaleX: originalScale,
+    originalScaleY: originalScale,
+    finalLifetimeScaleX: particleEmitter.lifetimeScaleReduction,
+    finalLifetimeScaleY: particleEmitter.lifetimeScaleReduction,
+  });
+
+  world.addComponent(particleEntity, positionId, {
+    world: spawnPosition.clone(),
+    local: spawnPosition.clone(),
+  });
+
+  world.addComponent(particleEntity, scaleId, {
+    world: Vector2.one,
+    local: new Vector2(originalScale, originalScale),
+  });
+
+  world.addComponent(particleEntity, rotationId, {
+    world: 0,
+    local: rotation,
+  });
+
+  world.addComponent(particleEntity, speedId, {
+    speed,
+  });
+}
+
+function getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
+  if (particleEmitter.emitDurationSeconds <= 0) {
+    return particleEmitter.totalAmountToEmit - particleEmitter.emitCount;
+  }
+
+  const emitProgress = Math.min(
+    particleEmitter.currentEmitDuration / particleEmitter.emitDurationSeconds,
+    1,
+  );
+  const targetEmitCount = Math.ceil(
+    emitProgress * particleEmitter.totalAmountToEmit,
+  );
+
+  return targetEmitCount - particleEmitter.emitCount;
+}
+
+function emitNewParticles(
+  particleEmitter: ParticleEmitter,
+  random: Random,
+  world: EcsWorld,
+) {
+  if (
+    !particleEmitter.currentlyEmitting ||
+    particleEmitter.emitCount >= particleEmitter.totalAmountToEmit
+  ) {
+    particleEmitter.currentlyEmitting = false;
+
+    return;
+  }
+
+  const currentAmountToEmit = getAmountToEmitBasedOnDuration(particleEmitter);
+
+  for (let i = 0; i < currentAmountToEmit; i++) {
+    emitParticle(particleEmitter, random, world);
+  }
+
+  particleEmitter.emitCount += currentAmountToEmit;
+}
+
+/**
+ * Creates an ECS system to handle particles.
+ */
+export const createParticleEcsSystem = (
+  time: Time,
+  random: Random,
+): EcsSystem<[ParticleEmitterEcsComponent]> => ({
+  query: [ParticleEmitterId],
+  run: (result, world) => {
+    const [particleEmitterComponent] = result.components;
+
+    for (const particleEmitter of particleEmitterComponent.emitters.values()) {
+      particleEmitter.currentEmitDuration += time.deltaTimeInSeconds;
+
+      startEmittingParticles(particleEmitter, random);
+
+      emitNewParticles(particleEmitter, random, world);
+    }
+  },
+});

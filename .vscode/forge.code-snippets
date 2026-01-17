@@ -1,0 +1,38 @@
+{
+  "Forge: New ECS Component": {
+    "prefix": "fcomp",
+    "body": [
+      "import { createComponentId } from '../../new-ecs/ecs-component.js';",
+      "",
+      "/**",
+      " * ECS-style component interface for ${1:ComponentDescription}.",
+      " */",
+      "export interface ${2:ComponentName}EcsComponent {",
+      "  ${3:field}: ${4:type};",
+      "}",
+      "",
+      "export const ${2}Id = createComponentId<${2}EcsComponent>('${5:${2}}');",
+    ],
+    "description": "Create a new ECS component.",
+    "scope": "typescript",
+  },
+  "Forge: New ECS System": {
+    "prefix": "fsys",
+    "body": [
+      "import { EcsSystem } from '../../new-ecs/ecs-system.js';",
+      "",
+      "/**",
+      " * Creates an ECS system to handle ${1:description}.",
+      " */",
+      "export const create${2:systemName}EcsSystem = (): EcsSystem<[${3:CompA}]> => ({",
+      "  query: [${4:compAId}],",
+      "  run: (result) => {",
+      "    const [${5:compA}] = result.components;",
+      "    // TODO: implement system logic",
+      "  },",
+      "});",
+    ],
+    "description": "Create a new ECS system.",
+    "scope": "typescript",
+  },
+}

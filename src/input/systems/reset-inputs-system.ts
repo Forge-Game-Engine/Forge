@@ -1,16 +1,18 @@
-import { Entity, System } from '../../ecs/index.js';
-import { InputsComponent } from '../components/index.js';
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import {
+  InputsEcsComponent,
+  inputsId,
+} from '../components/inputs-component.js';
 
-/** A system that resets all input states at the end of each frame. */
-export class ResetInputSystem extends System {
-  /** Constructs a new ResetInputSystem. */
-  constructor() {
-    super([InputsComponent], 'reset-inputs');
-  }
-
-  public run(entity: Entity): void {
-    const inputsComponent = entity.getComponentRequired(InputsComponent);
-
+/**
+ * Creates an ECS system to handle resetting inputs.
+ */
+export const createResetInputsEcsSystem = (): EcsSystem<
+  [InputsEcsComponent]
+> => ({
+  query: [inputsId],
+  run: (result) => {
+    const [inputsComponent] = result.components;
     inputsComponent.inputManager.reset();
-  }
-}
+  },
+});

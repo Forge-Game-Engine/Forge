@@ -1,3 +1,3 @@
-import { Component } from '../../src';
+import { createTagId } from '../../src/new-ecs/ecs-component';
 
-export class ControlAdventurerComponent extends Component {}
+export const controlAdventurerId = createTagId('control-adventurer');
