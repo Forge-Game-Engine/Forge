@@ -1,4 +1,4 @@
-import { Howl } from 'howler';
+import type { Howl } from 'howler';
 import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
