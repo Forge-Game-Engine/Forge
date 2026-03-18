@@ -9,17 +9,10 @@ export class ImageCache implements AssetCache<HTMLImageElement> {
   /**
    * Retrieves an image from the cache.
    * @param path - The path of the image to retrieve.
-   * @returns The cached image element.
-   * @throws Will throw an error if the image is not found in the cache.
+   * @returns The cached image element, or null if not found in the cache.
    */
-  public get(path: string): HTMLImageElement {
-    const image = this.assets.get(path);
-
-    if (!image) {
-      throw new Error(`Image with path "${path}" not found in store.`);
-    }
-
-    return image;
+  public get(path: string): HTMLImageElement | null {
+    return this.assets.get(path) ?? null;
   }
 
   /**
@@ -53,12 +46,19 @@ export class ImageCache implements AssetCache<HTMLImageElement> {
    * Retrieves an image from the cache if it exists, otherwise loads and caches it.
    * @param path - The path of the image to retrieve or load.
    * @returns A promise that resolves to the image element.
+   * @throws Will throw an error if the image fails to load.
    */
   public async getOrLoad(path: string): Promise<HTMLImageElement> {
     if (!this.assets.has(path)) {
       await this.load(path);
     }
 
-    return this.get(path);
+    const image = this.get(path);
+
+    if (image === null) {
+      throw new Error(`Image with path "${path}" not found in store.`);
+    }
+
+    return image;
   }
 }

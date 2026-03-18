@@ -12,12 +12,10 @@ describe('ImageCache', () => {
     expect(retrievedImage).toBe(mockImage);
   });
 
-  it('should throw an error if the image is not found in the cache', () => {
+  it('should return null if the image is not found in the cache', () => {
     const imageCache = new ImageCache();
 
-    expect(() => imageCache.get('path/to/nonexistent.png')).toThrow(
-      'Image with path "path/to/nonexistent.png" not found in store.',
-    );
+    expect(imageCache.get('path/to/nonexistent.png')).toBeNull();
   });
 
   it('should load and cache an image', async () => {

@@ -12,9 +12,9 @@ export interface AssetCache<T> {
   /**
    * Retrieves an asset from the cache.
    * @param key - The key of the asset to retrieve.
-   * @returns The cached asset.
+   * @returns The cached asset, or null if not found in the cache.
    */
-  get: (key: string) => T;
+  get: (key: string) => T | null;
 
   /**
    * Loads an asset from the specified key and caches it.
