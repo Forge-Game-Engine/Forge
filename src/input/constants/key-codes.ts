@@ -54,7 +54,7 @@ export const keyCodes = {
   bracketRight: 'BracketRight', // ]
   backslash: 'Backslash', // \
 
-  semicolon: 'Semicolon', // ;
+  semicolon: 'Semicolon',
   quote: 'Quote', // '
   comma: 'Comma', // ,
   period: 'Period', // .

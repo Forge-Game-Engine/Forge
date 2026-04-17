@@ -1,6 +1,6 @@
 {
   "name": "@forge-game-engine/forge",
-  "version": "0.15.0",
+  "version": "0.18.0",
   "type": "module",
   "exports": {
     "./animations": {
@@ -29,8 +29,8 @@
     },
     "./ecs": {
       "import": {
-        "types": "./dist/ecs/index.d.ts",
-        "default": "./dist/ecs/index.js"
+        "types": "./dist/new-ecs/index.d.ts",
+        "default": "./dist/new-ecs/index.js"
       }
     },
     "./events": {
@@ -69,12 +69,6 @@
         "default": "./dist/physics/index.js"
       }
     },
-    "./pooling": {
-      "import": {
-        "types": "./dist/pooling/index.d.ts",
-        "default": "./dist/pooling/index.js"
-      }
-    },
     "./rendering": {
       "import": {
         "types": "./dist/rendering/index.d.ts",
@@ -87,16 +81,16 @@
         "default": "./dist/timer/index.js"
       }
     },
-    "./ui": {
-      "import": {
-        "types": "./dist/ui/index.d.ts",
-        "default": "./dist/ui/index.js"
-      }
-    },
     "./utilities": {
       "import": {
         "types": "./dist/utilities/index.d.ts",
         "default": "./dist/utilities/index.js"
+      }
+    },
+    "./fsm": {
+      "import": {
+        "types": "./dist/finite-state-machine/index.d.ts",
+        "default": "./dist/finite-state-machine/index.js"
       }
     }
   },
@@ -147,7 +141,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vite": "^7.1.12",
+    "vite": "^7.3.2",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.0.15"
   },

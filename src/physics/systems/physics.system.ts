@@ -1,47 +1,33 @@
 import { Body, Engine } from 'matter-js';
 
 import {
-  PositionComponent,
-  RotationComponent,
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
   type Time,
 } from '../../common/index.js';
-import { Entity, System } from '../../ecs/index.js';
-import { PhysicsBodyComponent } from '../components/index.js';
+import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components/index.js';
 
-export class PhysicsSystem extends System {
-  private readonly _time: Time;
-  private readonly _engine: Engine;
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
 
-  constructor(time: Time, engine: Engine) {
-    super('physics', [
-      PositionComponent.symbol,
-      RotationComponent.symbol,
-      PhysicsBodyComponent.symbol,
-    ]);
-
-    this._time = time;
-    this._engine = engine;
-  }
-
-  public override beforeAll(entities: Entity[]): Entity[] {
-    Engine.update(this._engine, this._time.deltaTimeInMilliseconds);
-
-    return entities;
-  }
-
-  public override run(entity: Entity): void {
-    const physicsBodyComponent =
-      entity.getComponentRequired<PhysicsBodyComponent>(
-        PhysicsBodyComponent.symbol,
-      );
-
-    const positionComponent = entity.getComponentRequired<PositionComponent>(
-      PositionComponent.symbol,
-    );
-
-    const rotationComponent = entity.getComponentRequired<RotationComponent>(
-      RotationComponent.symbol,
-    );
+/**
+ * Creates an ECS system to handle physics.
+ */
+export const createPhysicsEcsSystem = (
+  engine: Engine,
+  time: Time,
+): EcsSystem<
+  [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent],
+  void
+> => ({
+  query: [PhysicsBodyId, positionId, rotationId],
+  beforeQuery: () => {
+    Engine.update(engine, time.deltaTimeInMilliseconds);
+  },
+  run: (result) => {
+    const [physicsBodyComponent, positionComponent, rotationComponent] =
+      result.components;
 
     if (physicsBodyComponent.physicsBody.isStatic) {
       Body.setPosition(physicsBodyComponent.physicsBody, {
@@ -56,5 +42,5 @@ export class PhysicsSystem extends System {
 
       rotationComponent.world = physicsBodyComponent.physicsBody.angle;
     }
-  }
-}
+  },
+});

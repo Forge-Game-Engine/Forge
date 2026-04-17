@@ -59,8 +59,8 @@ The solution is to use deltaTime (the time it took to render the last frame)
 ```ts
 ...
 public void run(entity: Entity) {
-  const positionComponent = entity.getComponentRequired<PositionComponent>(PositionComponent.symbol);
-  const playerComponent = entity.getComponentRequired<PlayerComponent>(PlayerComponent.symbol);
+  const positionComponent = entity.getComponentRequired(PositionComponent);
+  const playerComponent = entity.getComponentRequired(PlayerComponent);
 
   positionComponent.x += playerComponent.speed;
 }
@@ -72,8 +72,8 @@ public void run(entity: Entity) {
 ```ts
 ...
 public void run(entity: Entity) {
-  const positionComponent = entity.getComponentRequired<PositionComponent>(PositionComponent.symbol);
-  const playerComponent = entity.getComponentRequired<PlayerComponent>(PlayerComponent.symbol);
+  const positionComponent = entity.getComponentRequired(PositionComponent);
+  const playerComponent = entity.getComponentRequired(PlayerComponent);
 
   positionComponent.x += playerComponent.speed * time.deltaTimeInSeconds;
 }
