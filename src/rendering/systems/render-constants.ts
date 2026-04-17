@@ -2,7 +2,6 @@
  * Constants used in the rendering system for batching
  */
 export const FLOATS_PER_INSTANCE = 13;
-export const BATCH_GROWTH_FACTOR = 1.25;
 
 /**
  * Constants used to batch sprite information together
@@ -20,3 +19,7 @@ export const TEX_OFFSET_X_OFFSET = 9;
 export const TEX_OFFSET_Y_OFFSET = 10;
 export const TEX_SIZE_X_OFFSET = 11;
 export const TEX_SIZE_Y_OFFSET = 12;
+export const TINT_COLOR_R_OFFSET = 13;
+export const TINT_COLOR_G_OFFSET = 14;
+export const TINT_COLOR_B_OFFSET = 15;
+export const TINT_COLOR_A_OFFSET = 16;

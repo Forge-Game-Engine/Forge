@@ -2,43 +2,56 @@
 sidebar_position: 4
 ---
 
-# Component
+# Components
 
-A [`Component`](../../api/interfaces/Component) is a simple data container. It has no logic.
+A component is a simple data container. It has no logic.
+There are 2 types of components; standard components and tags.
 
-## Creating a component
+## Standard components
 
-To create a component, you need to define a class that implements the [`Component`](../../api/interfaces/Component) interface. The interface enforces a [`name`](../../api/interfaces/Component#name) property.
+Standard components hold data that influences how an entity might behave 
 
-:::info
-
-The name property is a [symbol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol). This ensures that even if 2 different components have the same name, they can still be uniquely identified. It is good practice to give your components unique names.
-
-:::
-
-You can then add more properties.
-
-:::info
-
-These properties represent game state and are generally expected to be [mutable](https://web.mit.edu/6.005/www/fa15/classes/09-immutability/#mutability) and [public](https://www.typescriptlang.org/docs/handbook/2/classes.html#member-visibility) as they will be accessed and updated frequently by your ECS systems.
-
-:::
-
-Here is an example of the [`RotationComponent`](../../api/classes/RotationComponent):
+To create a standard component, you will need to create an interface that describes the pieces of data you component will contain. These pieces of data ad known as properties and are generally considered to be mutable [mutable](https://web.mit.edu/6.005/www/fa15/classes/09-immutability/#mutability).
 
 ```ts
-export class RotationComponent implements Component {
-  public name: symbol;
-  public radians: number;
-
-  public static readonly symbol = Symbol('Rotation');
-
-  constructor(degrees: number) {
-    this.name = RotationComponent.symbol;
-    this.radians = (degrees * Math.PI) / 180;
-  }
+interface FireEcsComponent {
+  temperature: float;
+  color: Color;
 }
 ```
 
+Then you will need to create an ID for your component, this ID is sometimes referred to as a "component key". 
+
+```ts
+const fireId = createComponentId<FireEcsComponent>('fire');
+```
+
+The ID is used to quickly store and retrieve your components data from the ECS world. 
+
 Components are meant to be composed together to make an entity. Try to find a balance between grouping related data together that will be updated together and having too much data coupled together in one component.
 Components should be small and represent one concept.
+
+To add a component to an entity:
+
+```ts
+world.addComponent(planetEntity, positionId, {
+  world: Vector2.zero,
+  local: Vector2.zero,
+});
+```
+
+## Tags 
+
+Tags are simply components that do not have any properties and are used to distinguish 2 entities that would otherwise have the same set of standard components. This is particularly useful when you have 1 standard component that needs to be mutated differently based on some strategy. For example, you might have a game where there is a "player" entity and some amount of "enemy" entities. But some enemies are other human players and others are AI players. if you wanted a system to control AI behavior you might have an AI tag that can be attached to AI enemies. 
+
+To create a tag, you will not need an interface (as there is no data), but you will still need to create an ID.
+
+```ts
+const aiPlayerId = createTagId('ai-player');
+```
+
+To add a tag to an entity:
+
+```ts
+world.addTag(enemyEntity, aiPlayerId);
+```

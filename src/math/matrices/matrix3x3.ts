@@ -9,7 +9,7 @@
  */
 export class Matrix3x3 {
   /** The underlying matrix data stored as a flat array in column-major order */
-  private _matrix: number[];
+  private _matrix: Float32Array;
 
   /**
    * Creates a new 3x3 matrix from the given array.
@@ -20,14 +20,14 @@ export class Matrix3x3 {
       throw new Error('Matrix3x3 requires exactly 9 elements');
     }
 
-    this._matrix = matrix;
+    this._matrix = new Float32Array(matrix);
   }
 
   /**
    * Gets the underlying matrix array.
-   * @returns The matrix data as a flat array in column-major order
+   * @returns {Float32Array} The matrix data as a Float32Array in column-major order
    */
-  get matrix(): number[] {
+  get matrix(): Float32Array {
     return this._matrix;
   }
 
@@ -80,10 +80,26 @@ export class Matrix3x3 {
     return this;
   }
 
-  get data(): number[] {
-    return this._matrix;
+  /** * Resets the matrix to the identity matrix. */
+  public resetToIdentity(): this {
+    // We intentionally set each element to avoid creating a new array (gc pressure)
+    this._matrix[0] = 1;
+    this._matrix[1] = 0;
+    this._matrix[2] = 0;
+    this._matrix[3] = 0;
+    this._matrix[4] = 1;
+    this._matrix[5] = 0;
+    this._matrix[6] = 0;
+    this._matrix[7] = 0;
+    this._matrix[8] = 1;
+
+    return this;
   }
 
+  /**
+   * Creates and returns an identity matrix.
+   * @returns {Matrix3x3} A new identity matrix
+   */
   static get identity(): Matrix3x3 {
     return new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   }

@@ -1,4 +1,3 @@
-import { Game } from '../../../ecs/index.js';
 import { Vector2 } from '../../../math/index.js';
 import {
   buttonMoments,
@@ -10,11 +9,13 @@ import { Resettable, Stoppable } from '../../../common/index.js';
 import {
   MouseAxis1dBinding,
   MouseAxis2dBinding,
+  MouseHoldBinding,
   MouseTriggerBinding,
 } from '../bindings/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
+  HoldInputSource,
   TriggerInputSource,
 } from '../../input-sources/index.js';
 
@@ -22,6 +23,7 @@ import {
 export class MouseInputSource
   implements
     TriggerInputSource<MouseTriggerBinding>,
+    HoldInputSource<MouseHoldBinding>,
     Axis1dInputSource<MouseAxis1dBinding>,
     Axis2dInputSource<MouseAxis2dBinding>,
     Resettable,
@@ -35,34 +37,38 @@ export class MouseInputSource
   public readonly axis1dBindings = new Set<MouseAxis1dBinding>();
   /** The set of 2D axis bindings associated with this input source. */
   public readonly axis2dBindings = new Set<MouseAxis2dBinding>();
+  /** The set of hold bindings associated with this input source. */
+  public readonly holdBindings = new Set<MouseHoldBinding>();
 
   private readonly _inputManager: InputManager;
-  private readonly _game: Game;
+  private readonly _container: HTMLElement;
   private readonly _containerBoundingClientRect: DOMRect;
 
   private readonly _mouseButtonPresses = new Set<MouseButton>();
   private readonly _mouseButtonDowns = new Set<MouseButton>();
   private readonly _mouseButtonUps = new Set<MouseButton>();
+  private readonly _mouseButtonHolds = new Set<MouseButton>();
 
   private readonly _lastMousePosition = Vector2.zero;
 
   /** Constructs a new MouseInputSource.
    * @param inputManager - The input manager to register with.
-   * @param game - The game instance.
+   * @param container - The HTML container element to attach mouse events to.
    */
-  constructor(inputManager: InputManager, game: Game) {
+  constructor(inputManager: InputManager, container: HTMLElement) {
     this._inputManager = inputManager;
-    this._game = game;
-    this._containerBoundingClientRect = game.container.getBoundingClientRect();
+    this._container = container;
+    this._containerBoundingClientRect = container.getBoundingClientRect();
 
-    game.container.addEventListener('mousedown', this._onMouseDownHandler);
-    game.container.addEventListener('mouseup', this._onMouseUpHandler);
-    game.container.addEventListener('wheel', this._onWheelHandler);
-    game.container.addEventListener('mousemove', this._onMouseMoveHandler);
+    container.addEventListener('mousedown', this._onMouseDownHandler);
+    container.addEventListener('mouseup', this._onMouseUpHandler);
+    container.addEventListener('wheel', this._onWheelHandler);
+    container.addEventListener('mousemove', this._onMouseMoveHandler);
 
     this._inputManager.addResettable(this);
 
     this.triggerBindings = new Set();
+    this.holdBindings = new Set();
     this.axis1dBindings = new Set();
     this.axis2dBindings = new Set();
   }
@@ -71,19 +77,14 @@ export class MouseInputSource
     this._mouseButtonDowns.clear();
     this._mouseButtonUps.clear();
     this._mouseButtonPresses.clear();
+    this._mouseButtonHolds.clear();
   }
 
   public stop(): void {
-    this._game.container.removeEventListener(
-      'mousedown',
-      this._onMouseDownHandler,
-    );
-    this._game.container.removeEventListener('mouseup', this._onMouseUpHandler);
-    this._game.container.removeEventListener('wheel', this._onWheelHandler);
-    this._game.container.removeEventListener(
-      'mousemove',
-      this._onMouseMoveHandler,
-    );
+    this._container.removeEventListener('mousedown', this._onMouseDownHandler);
+    this._container.removeEventListener('mouseup', this._onMouseUpHandler);
+    this._container.removeEventListener('wheel', this._onWheelHandler);
+    this._container.removeEventListener('mousemove', this._onMouseMoveHandler);
     this._inputManager.removeResettable(this);
   }
 
@@ -101,6 +102,13 @@ export class MouseInputSource
         binding.action.trigger();
       }
     }
+
+    for (const binding of this.holdBindings) {
+      if (binding.mouseButton === button) {
+        this._mouseButtonHolds.add(button);
+        this._inputManager.dispatchHoldStartAction(binding);
+      }
+    }
   };
 
   private readonly _onMouseUpHandler = (event: MouseEvent) => {
@@ -115,6 +123,13 @@ export class MouseInputSource
         binding.moment === buttonMoments.up
       ) {
         binding.action.trigger();
+      }
+    }
+
+    for (const binding of this.holdBindings) {
+      if (binding.mouseButton === button) {
+        this._mouseButtonHolds.delete(button);
+        this._inputManager.dispatchHoldEndAction(binding);
       }
     }
   };
