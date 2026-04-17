@@ -24,8 +24,10 @@ export function screenToWorldSpace(
 ): Vector2 {
   // Shift origin to the center of the screen, flip Y to convert from
   // Y-down screen space to Y-up world space, then scale and offset.
-  const worldX = (screenPosition.x - screenWidth / 2) / cameraZoom + cameraPosition.x;
-  const worldY = (screenHeight / 2 - screenPosition.y) / cameraZoom + cameraPosition.y;
+  const worldX =
+    (screenPosition.x - screenWidth / 2) / cameraZoom + cameraPosition.x;
+  const worldY =
+    (screenHeight / 2 - screenPosition.y) / cameraZoom + cameraPosition.y;
 
   return new Vector2(worldX, worldY);
 }
