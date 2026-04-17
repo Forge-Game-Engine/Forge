@@ -29,7 +29,7 @@ export class Axis2dAction implements InputAction, Resettable {
    */
   constructor(
     name: string,
-    inputGroup: string,
+    inputGroup?: string,
     actionResetType: ActionResetType = actionResetTypes.zero,
   ) {
     this.name = name;
@@ -40,7 +40,7 @@ export class Axis2dAction implements InputAction, Resettable {
       'Axis2d Value Change Event',
     );
 
-    this.inputGroup = inputGroup;
+    this.inputGroup = inputGroup ?? 'game';
   }
 
   public reset(): void {

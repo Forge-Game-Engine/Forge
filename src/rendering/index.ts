@@ -1,6 +1,4 @@
 export * from './components/index.js';
-export * from './layer-service.js';
-export * from './render-layers/index.js';
 export * from './sprite.js';
 export * from './systems/index.js';
 export * from './shaders/index.js';
@@ -11,3 +9,4 @@ export * from './materials/index.js';
 export * from './geometry/index.js';
 export * from './renderable.js';
 export * from './color.js';
+export * from './render-context.js';

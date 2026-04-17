@@ -1,30 +1,26 @@
-import { Entity, System } from '../../ecs/index.js';
 import { Time } from '../../common/index.js';
-import { TimerComponent } from '../components/timer-component.js';
+import { TimerEcsComponent, TimerId } from '../components/timer-component.js';
 
-export class TimerSystem extends System {
-  private readonly _time: Time;
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
 
-  constructor(time: Time) {
-    super('timer', [TimerComponent.symbol]);
-    this._time = time;
-  }
-
-  public run(entity: Entity): void {
-    const timerComponent = entity.getComponentRequired<TimerComponent>(
-      TimerComponent.symbol,
-    );
+/**
+ * Creates an ECS system to handle timers.
+ */
+export const createTimerEcsSystem = (
+  time: Time,
+): EcsSystem<[TimerEcsComponent]> => ({
+  query: [TimerId],
+  run: (result) => {
+    const [timerComponent] = result.components;
 
     if (timerComponent.tasks.length === 0) {
       return;
     }
 
-    const deltaTime = this._time.deltaTimeInMilliseconds;
-
     // Iterate backwards to safely remove tasks as needed
     for (let i = timerComponent.tasks.length - 1; i >= 0; i--) {
       const task = timerComponent.tasks[i];
-      task.elapsed += deltaTime;
+      task.elapsed += time.deltaTimeInMilliseconds;
 
       if (task.elapsed >= task.delay) {
         task.callback();
@@ -49,5 +45,5 @@ export class TimerSystem extends System {
         }
       }
     }
-  }
-}
+  },
+});

@@ -21,115 +21,73 @@ describe('AnimationTextCondition', () => {
   it('should validate "equals" condition correctly', () => {
     const condition = new AnimationTextCondition(
       'input1',
-      'equals',
       'hello world',
+      'equals',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationTextCondition(
       'input1',
-      'equals',
       'wrong value',
+      'equals',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "contains" condition correctly', () => {
-    const condition = new AnimationTextCondition('input1', 'contains', 'hello');
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    const condition = new AnimationTextCondition('input1', 'hello', 'contains');
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationTextCondition(
       'input1',
-      'contains',
       'not here',
+      'contains',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "isContainedIn" condition correctly', () => {
     const condition = new AnimationTextCondition(
       'input1',
-      'isContainedIn',
       'hello world!',
+      'isContainedIn',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationTextCondition(
       'input1',
-      'isContainedIn',
       'hello',
+      'isContainedIn',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "startsWith" condition correctly', () => {
     const condition = new AnimationTextCondition(
       'input1',
-      'startsWith',
       'hello',
+      'startsWith',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationTextCondition(
       'input1',
-      'startsWith',
       'world',
+      'startsWith',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "endsWith" condition correctly', () => {
-    const condition = new AnimationTextCondition('input1', 'endsWith', 'world');
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    const condition = new AnimationTextCondition('input1', 'world', 'endsWith');
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationTextCondition(
       'input1',
-      'endsWith',
       'hello',
+      'endsWith',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
-  });
-
-  it('should respect the "invertCondition" flag', () => {
-    const condition = new AnimationTextCondition(
-      'input1',
-      'equals',
-      'hello world',
-      true,
-    );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      false,
-    );
-
-    const conditionFalse = new AnimationTextCondition(
-      'input1',
-      'equals',
-      'wrong value',
-      true,
-    );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(true);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 });
 
@@ -147,26 +105,18 @@ describe('AnimationToggleCondition', () => {
 
   it('should validate true condition correctly', () => {
     const condition = new AnimationToggleCondition('toggle1');
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationToggleCondition('toggle2');
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
-  it('should respect the "invertCondition" flag', () => {
-    const condition = new AnimationToggleCondition('toggle1', true);
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      false,
-    );
+  it('should respect the toggle value', () => {
+    const falseCondition = new AnimationToggleCondition('toggle1', true);
+    expect(falseCondition.satisfies(mockAnimationInputs)).toBe(true);
 
-    const conditionInverted = new AnimationToggleCondition('toggle2', true);
-    expect(
-      conditionInverted.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(true);
+    const trueCondition = new AnimationToggleCondition('toggle2', true);
+    expect(trueCondition.satisfies(mockAnimationInputs)).toBe(false);
   });
 });
 
@@ -184,130 +134,84 @@ describe('AnimationNumberCondition', () => {
   } as AnimationInputs;
 
   it('should validate "equals" condition correctly', () => {
-    const condition = new AnimationNumberCondition('number1', 'equals', 10);
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    const condition = new AnimationNumberCondition('number1', 10, 'equals');
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
-    const conditionFalse = new AnimationNumberCondition('number1', 'equals', 5);
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    const conditionFalse = new AnimationNumberCondition('number1', 5, 'equals');
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "lessThan" condition correctly', () => {
-    const condition = new AnimationNumberCondition('number2', 'lessThan', 10);
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    const condition = new AnimationNumberCondition('number2', 10, 'lessThan');
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationNumberCondition(
       'number1',
-      'lessThan',
       5,
+      'lessThan',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "lessThanOrEqual" condition correctly', () => {
     const condition = new AnimationNumberCondition(
       'number1',
-      'lessThanOrEqual',
       10,
+      'lessThanOrEqual',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionEqual = new AnimationNumberCondition(
       'number2',
-      'lessThanOrEqual',
       10,
+      'lessThanOrEqual',
     );
-    expect(
-      conditionEqual.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(true);
+    expect(conditionEqual.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationNumberCondition(
       'number3',
-      'lessThanOrEqual',
       10,
+      'lessThanOrEqual',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "greaterThan" condition correctly', () => {
     const condition = new AnimationNumberCondition(
       'number3',
-      'greaterThan',
       10,
+      'greaterThan',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationNumberCondition(
       'number2',
-      'greaterThan',
       10,
+      'greaterThan',
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 
   it('should validate "greaterThanOrEqual" condition correctly', () => {
     const condition = new AnimationNumberCondition(
       'number1',
-      'greaterThanOrEqual',
       10,
+      'greaterThanOrEqual',
     );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      true,
-    );
+    expect(condition.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionEqual = new AnimationNumberCondition(
       'number3',
-      'greaterThanOrEqual',
       10,
+      'greaterThanOrEqual',
     );
-    expect(
-      conditionEqual.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(true);
+    expect(conditionEqual.satisfies(mockAnimationInputs)).toBe(true);
 
     const conditionFalse = new AnimationNumberCondition(
       'number2',
+      10,
       'greaterThanOrEqual',
-      10,
     );
-    expect(
-      conditionFalse.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(false);
-  });
-
-  it('should respect the "invertCondition" flag', () => {
-    const condition = new AnimationNumberCondition(
-      'number1',
-      'equals',
-      10,
-      true,
-    );
-    expect(condition.validateConditionFromInputs(mockAnimationInputs)).toBe(
-      false,
-    );
-
-    const conditionInverted = new AnimationNumberCondition(
-      'number1',
-      'equals',
-      5,
-      true,
-    );
-    expect(
-      conditionInverted.validateConditionFromInputs(mockAnimationInputs),
-    ).toBe(true);
+    expect(conditionFalse.satisfies(mockAnimationInputs)).toBe(false);
   });
 });
