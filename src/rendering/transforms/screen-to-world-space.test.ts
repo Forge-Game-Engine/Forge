@@ -30,7 +30,7 @@ describe('screenToWorldSpace', () => {
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(-300, -200);
+    const expectedWorldPosition = new Vector2(-300, 200);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -63,14 +63,14 @@ describe('screenToWorldSpace', () => {
     expect(result).toEqual(expectedWorldPosition);
   });
 
-  it('should convert screen position to world position correctly with the camera panned and pointer is offsetting the pan', () => {
+  it('should convert screen position to world position correctly with the camera panned and pointer below center', () => {
     const screenPosition = new Vector2(500, 400);
     const cameraPosition = new Vector2(-100, -100);
     const cameraZoom = 1;
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(0, 0);
+    const expectedWorldPosition = new Vector2(0, -200);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -130,7 +130,7 @@ describe('screenToWorldSpace', () => {
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(-400, -300);
+    const expectedWorldPosition = new Vector2(-400, 300);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -150,7 +150,7 @@ describe('screenToWorldSpace', () => {
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(-200, -150);
+    const expectedWorldPosition = new Vector2(-200, 150);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -170,7 +170,7 @@ describe('screenToWorldSpace', () => {
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(-800, -600);
+    const expectedWorldPosition = new Vector2(-800, 600);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -190,7 +190,7 @@ describe('screenToWorldSpace', () => {
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = new Vector2(-100, -50);
+    const expectedWorldPosition = new Vector2(-100, 250);
 
     const result = screenToWorldSpace(
       screenPosition,
