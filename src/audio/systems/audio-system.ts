@@ -1,7 +1,7 @@
 import { AudioEcsComponent, audioId } from '../components/index.js';
 import { EcsSystem } from '../../new-ecs/ecs-system.js';
 
-// TODO: needs an unload?
+// Potential improvement: evaluate whether this system needs an unload hook.
 
 /**
  * Creates an ECS system to handle audio playback.

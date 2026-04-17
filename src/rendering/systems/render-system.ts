@@ -25,9 +25,9 @@ const setupInstanceAttributesAndDraw = (
 
   renderable.setupInstanceAttributes(gl, renderable);
 
-  gl.enable(gl.BLEND); // TODO: these might need to be material specific
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: these might need to be material specific & is already called in _setupGLState
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: still assumes a quad for sprites
+  gl.enable(gl.BLEND); // Potential improvement: move blend state to material-specific configuration.
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Potential improvement: centralize blend setup to avoid duplicate state calls.
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // Potential improvement: avoid hard-coded quad vertex count for non-quad sprites.
 };
 
 const includeBatch = (

@@ -40,7 +40,7 @@ export class Material {
    */
   // eslint-disable-next-line sonarjs/cognitive-complexity
   public bind(gl: WebGL2RenderingContext): void {
-    // TODO: reduce the cognitive complexity here with a better pattern, maybe some polymorphic dispatch or strategy pattern
+    // Potential improvement: reduce cognitive complexity with strategy-based dispatch.
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -49,8 +49,8 @@ export class Material {
       const value = this._uniformValues.get(name);
 
       if (value === undefined) {
-        // TODO- do we need default values?
-        // do we specify those in the shader?
+        // Potential improvement: evaluate whether uniform defaults should be provided.
+        // If needed, defaults may be defined by shader conventions.
 
         continue;
       }
