@@ -1,277 +1,144 @@
+import { PositionEcsComponent, positionId } from '../../common/index.js';
+import { Matrix3x3 } from '../../math/index.js';
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsWorld } from '../../new-ecs/index.js';
+import { matchesLayerMask } from '../../utilities/matches-layer-mask.js';
 import {
-  type AnimationFrame,
-  SpriteAnimationComponent,
-} from '../../animations/index.js';
-import {
-  FlipComponent,
-  PositionComponent,
-  RotationComponent,
-  ScaleComponent,
-} from '../../common/index.js';
-import { Entity, System } from '../../ecs/index.js';
-import {
-  Batch,
-  RenderableBatchComponent,
-  SpriteComponent,
+  CameraEcsComponent,
+  cameraId,
+  SpriteEcsComponent,
+  spriteId,
 } from '../components/index.js';
-import type { ForgeRenderLayer } from '../render-layers/index.js';
+import { RenderContext } from '../render-context.js';
 import { Renderable } from '../renderable.js';
-import {
-  BATCH_GROWTH_FACTOR,
-  FLOATS_PER_INSTANCE,
-  HEIGHT_OFFSET,
-  PIVOT_X_OFFSET,
-  PIVOT_Y_OFFSET,
-  POSITION_X_OFFSET,
-  POSITION_Y_OFFSET,
-  ROTATION_OFFSET,
-  SCALE_X_OFFSET,
-  SCALE_Y_OFFSET,
-  TEX_OFFSET_X_OFFSET,
-  TEX_OFFSET_Y_OFFSET,
-  TEX_SIZE_X_OFFSET,
-  TEX_SIZE_Y_OFFSET,
-  WIDTH_OFFSET,
-} from './render-constants.js';
+import { createProjectionMatrix } from '../shaders/index.js';
+import { InstanceBatch } from './instance-batch.js';
 
-export interface RenderSystemOptions {
-  layer: ForgeRenderLayer;
-}
+const setupInstanceAttributesAndDraw = (
+  renderContext: RenderContext,
+  renderable: Renderable,
+  batchLength: number,
+) => {
+  const { gl } = renderContext;
 
-export class RenderSystem extends System {
-  private readonly _layer: ForgeRenderLayer;
-  private readonly _instanceBuffer: WebGLBuffer;
+  gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
 
-  constructor(options: RenderSystemOptions) {
-    super(`${options.layer.name}-renderer`, [RenderableBatchComponent.symbol]);
+  renderable.setupInstanceAttributes(gl, renderable);
 
-    const { layer } = options;
-    this._layer = layer;
+  gl.enable(gl.BLEND); // TODO: these might need to be material specific
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: these might need to be material specific & is already called in _setupGLState
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: still assumes a quad for sprites
+};
 
-    this._instanceBuffer = layer.context.createBuffer()!;
-    this._setupGLState();
+const includeBatch = (
+  renderable: Renderable,
+  batch: InstanceBatch,
+  renderContext: RenderContext,
+  world: EcsWorld,
+  projectionMatrix: Matrix3x3,
+) => {
+  const { entities } = batch;
+  const { gl } = renderContext;
+
+  if (entities.length === 0) {
+    return;
   }
 
-  public override beforeAll(entities: Entity[]): Entity[] {
-    this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
+  renderable.material.setUniform('u_projection', projectionMatrix);
 
-    return entities;
+  renderable.bind(gl);
+
+  const requiredBatchSize = entities.length * renderable.floatsPerInstance;
+
+  if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
+    batch.buffer = new Float32Array(
+      requiredBatchSize * batch.bufferGrowthFactor,
+    );
   }
 
-  public run(entity: Entity): void {
-    const batchComponent =
-      entity.getComponentRequired<RenderableBatchComponent>(
-        RenderableBatchComponent.symbol,
-      );
+  let instanceDataOffset = 0;
 
-    if (batchComponent.renderLayer !== this._layer) {
-      return;
+  for (const entity of entities) {
+    renderable.bindInstanceData(
+      entity,
+      world,
+      batch.buffer,
+      instanceDataOffset,
+    );
+
+    instanceDataOffset += renderable.floatsPerInstance;
+  }
+
+  // Upload instance transform buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, batch.buffer, gl.DYNAMIC_DRAW);
+
+  setupInstanceAttributesAndDraw(renderContext, renderable, entities.length);
+};
+
+const spriteEntityBuffer: number[] = [];
+const renderables: Map<Renderable, InstanceBatch> = new Map();
+
+/**
+ * Creates a render system that batches and renders sprites based on the camera view.
+ * @param renderContext The rendering context
+ * @returns The render ECS system
+ */
+export const createRenderEcsSystem = (
+  renderContext: RenderContext,
+): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void> => ({
+  query: [cameraId, positionId],
+  beforeQuery: (world) => world.queryEntities([spriteId], spriteEntityBuffer),
+  run: (result, world) => {
+    const [cameraComponent, positionComponent] = result.components;
+
+    const { gl } = renderContext;
+
+    const projectionMatrix = createProjectionMatrix(
+      gl.canvas.width,
+      gl.canvas.height,
+      positionComponent.world,
+      cameraComponent.zoom,
+    );
+
+    for (const batch of renderables.values()) {
+      batch.entities.length = 0;
     }
 
-    const gl = this._layer.context;
+    for (const spriteEntity of spriteEntityBuffer) {
+      const spriteComponent = world.getComponent<SpriteEcsComponent>(
+        spriteEntity,
+        spriteId,
+      )!;
 
-    for (const [renderable, batch] of batchComponent.batches) {
-      this._includeBatch(renderable, batch, gl);
+      if (!spriteComponent.enabled) {
+        continue;
+      }
+
+      const { renderable } = spriteComponent.sprite;
+
+      const layerMaskMatches = matchesLayerMask(
+        renderable.layer,
+        cameraComponent.layerMask,
+      );
+
+      if (!layerMaskMatches) {
+        continue;
+      }
+
+      if (!renderables.has(renderable)) {
+        renderables.set(renderable, new InstanceBatch());
+      }
+
+      const batch = renderables.get(renderable)!;
+
+      batch.entities.push(spriteEntity);
+    }
+
+    for (const [renderable, batch] of renderables) {
+      includeBatch(renderable, batch, renderContext, world, projectionMatrix);
     }
 
     gl.bindVertexArray(null);
-  }
-
-  /**
-   * Called once at system stop to clear.
-   */
-  public override stop(): void {
-    this._layer.context.clear(this._layer.context.COLOR_BUFFER_BIT);
-  }
-
-  private _setupGLState(): void {
-    const gl = this._layer.context;
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  }
-
-  private _includeBatch(
-    renderable: Renderable,
-    batch: Batch,
-    gl: WebGL2RenderingContext,
-  ): void {
-    const { entities } = batch;
-
-    if (entities.length === 0) {
-      return;
-    }
-
-    renderable.bind(gl);
-
-    const requiredBatchSize = entities.length * FLOATS_PER_INSTANCE;
-
-    if (!batch.instanceData || batch.instanceData.length < requiredBatchSize) {
-      batch.instanceData = new Float32Array(
-        requiredBatchSize * BATCH_GROWTH_FACTOR,
-      );
-    }
-
-    for (let i = 0; i < entities.length; i++) {
-      const batchedEntity = entities[i];
-      const instanceDataOffset = i * FLOATS_PER_INSTANCE;
-
-      const position = batchedEntity.getComponentRequired<PositionComponent>(
-        PositionComponent.symbol,
-      );
-      const rotation = batchedEntity.getComponent<RotationComponent>(
-        RotationComponent.symbol,
-      );
-      const scale = batchedEntity.getComponent<ScaleComponent>(
-        ScaleComponent.symbol,
-      );
-      const spriteComponent =
-        batchedEntity.getComponentRequired<SpriteComponent>(
-          SpriteComponent.symbol,
-        );
-      const flipComponent = batchedEntity.getComponent<FlipComponent>(
-        FlipComponent.symbol,
-      );
-      const spriteAnimationComponent =
-        batchedEntity.getComponent<SpriteAnimationComponent>(
-          SpriteAnimationComponent.symbol,
-        );
-
-      let animationFrame: AnimationFrame | null = null;
-
-      if (spriteAnimationComponent) {
-        const { currentAnimation, animationFrameIndex } =
-          spriteAnimationComponent;
-
-        animationFrame = currentAnimation.getFrame(animationFrameIndex);
-      }
-
-      this._populateInstanceData(batch.instanceData, instanceDataOffset, {
-        position,
-        rotation,
-        scale,
-        spriteComponent,
-        flipComponent,
-        animationFrame,
-      });
-    }
-
-    // Upload instance transform buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, batch.instanceData, gl.DYNAMIC_DRAW);
-
-    this._setupInstanceAttributesAndDraw(gl, renderable, entities.length);
-  }
-
-  private _populateInstanceData(
-    instanceData: Float32Array,
-    offset: number,
-    components: {
-      position: PositionComponent;
-      rotation: RotationComponent | null;
-      scale: ScaleComponent | null;
-      spriteComponent: SpriteComponent;
-      flipComponent: FlipComponent | null;
-      animationFrame?: AnimationFrame | null;
-    },
-  ): void {
-    const {
-      position,
-      rotation,
-      scale,
-      spriteComponent,
-      flipComponent,
-      animationFrame,
-    } = components;
-
-    // Position
-    instanceData[offset + POSITION_X_OFFSET] = position.world.x;
-    instanceData[offset + POSITION_Y_OFFSET] = position.world.y;
-
-    // Rotation
-    instanceData[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
-
-    // Scale with flip consideration
-    instanceData[offset + SCALE_X_OFFSET] =
-      (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-    instanceData[offset + SCALE_Y_OFFSET] =
-      (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
-
-    // Sprite dimensions
-    instanceData[offset + WIDTH_OFFSET] = spriteComponent.sprite.width;
-    instanceData[offset + HEIGHT_OFFSET] = spriteComponent.sprite.height;
-
-    // Sprite pivot
-    instanceData[offset + PIVOT_X_OFFSET] = spriteComponent.sprite.pivot.x;
-    instanceData[offset + PIVOT_Y_OFFSET] = spriteComponent.sprite.pivot.y;
-
-    // Texture coordinates (animation frame or defaults)
-    instanceData[offset + TEX_OFFSET_X_OFFSET] = animationFrame?.offset.x ?? 0;
-    instanceData[offset + TEX_OFFSET_Y_OFFSET] = animationFrame?.offset.y ?? 0;
-    instanceData[offset + TEX_SIZE_X_OFFSET] = animationFrame?.scale.x ?? 1;
-    instanceData[offset + TEX_SIZE_Y_OFFSET] = animationFrame?.scale.y ?? 1;
-  }
-
-  private _setupInstanceAttributesAndDraw(
-    gl: WebGL2RenderingContext,
-    renderable: Renderable,
-    batchLength: number,
-  ) {
-    const program = renderable.material.program;
-    // Attribute locations
-    const posLoc = gl.getAttribLocation(program, 'a_instancePos');
-    const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
-    const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
-    const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
-    const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
-    const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
-    const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._instanceBuffer);
-
-    // a_instancePos (vec2) - offset 0
-    this._setupInstanceAttributes(posLoc, gl, 2, POSITION_X_OFFSET);
-
-    // a_instanceRot (float) - offset 2
-    this._setupInstanceAttributes(rotLoc, gl, 1, ROTATION_OFFSET);
-
-    // a_instanceScale (vec2) - offset 3
-    this._setupInstanceAttributes(scaleLoc, gl, 2, SCALE_X_OFFSET);
-
-    // a_instanceSize (vec2) - offset 5
-    this._setupInstanceAttributes(sizeLoc, gl, 2, WIDTH_OFFSET);
-
-    // a_instancePivot (vec2) - offset 7
-    this._setupInstanceAttributes(pivotLoc, gl, 2, PIVOT_X_OFFSET);
-
-    // a_instanceTexOffset (vec2) - offset 9
-    this._setupInstanceAttributes(texOffsetLoc, gl, 2, TEX_OFFSET_X_OFFSET);
-
-    // a_instanceTexSize (vec2) - offset 11
-    this._setupInstanceAttributes(texSizeLoc, gl, 2, TEX_SIZE_X_OFFSET);
-
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  }
-
-  private _setupInstanceAttributes(
-    attributeLocation: number,
-    gl: WebGL2RenderingContext,
-    numComponents: number,
-    index: number,
-  ) {
-    if (attributeLocation === -1) {
-      return;
-    }
-
-    gl.enableVertexAttribArray(attributeLocation);
-    gl.vertexAttribPointer(
-      attributeLocation,
-      numComponents,
-      gl.FLOAT,
-      false,
-      FLOATS_PER_INSTANCE * 4,
-      index * 4,
-    );
-    gl.vertexAttribDivisor(attributeLocation, 1);
-  }
-}
+  },
+});

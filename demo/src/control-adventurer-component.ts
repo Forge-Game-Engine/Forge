@@ -1,11 +1,3 @@
-import { Component } from '../../src';
+import { createTagId } from '../../src/new-ecs/ecs-component';
 
-export class ControlAdventurerComponent implements Component {
-  public name: symbol;
-
-  public static readonly symbol = Symbol('ControlAdventurer');
-
-  constructor() {
-    this.name = ControlAdventurerComponent.symbol;
-  }
-}
+export const controlAdventurerId = createTagId('control-adventurer');

@@ -20,13 +20,13 @@ export class HoldAction implements InputAction {
    * @param name - The name of the action.
    * @param inputGroup - The input group this action belongs to.
    */
-  constructor(name: string, inputGroup: string) {
+  constructor(name: string, inputGroup?: string) {
     this.name = name;
 
     this.holdStartEvent = new ForgeEvent('Hold Start Event');
     this.holdEndEvent = new ForgeEvent('Hold End Event');
 
-    this.inputGroup = inputGroup;
+    this.inputGroup = inputGroup ?? 'game';
   }
 
   /** Marks the action as being held and raises the hold start event. */

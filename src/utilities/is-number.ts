@@ -7,6 +7,6 @@
  * isNumber(5); // returns true
  * isNumber('5'); // returns false
  */
-export function isNumber<T>(value: T): boolean {
-  return typeof value === 'number' || value instanceof Number;
+export function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !Number.isNaN(value);
 }

@@ -1,20 +1,10 @@
-import type { Component } from '../../ecs/index.js';
+import { createComponentId } from '../../new-ecs/ecs-component.js';
 
 /**
- * Component to track an entities speed.
+ * ECS-style component interface for speed.
  */
-export class SpeedComponent implements Component {
-  public name: symbol;
-  public speed: number;
-
-  public static readonly symbol = Symbol('Speed');
-
-  /**
-   * Creates an instance of SpeedComponent.
-   * @param speed - the entity's speed
-   */
-  constructor(speed: number) {
-    this.name = SpeedComponent.symbol;
-    this.speed = speed;
-  }
+export interface SpeedEcsComponent {
+  speed: number;
 }
+
+export const speedId = createComponentId<SpeedEcsComponent>('speed');
