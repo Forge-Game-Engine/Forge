@@ -25,17 +25,21 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
+      - name: Install Forge dependencies
         run: npm ci
         working-directory: ./
 
-      - name: Install dependencies
+      - name: Build Forge
+        run: npm run build
+        working-directory: ./
+
+      - name: Install Docusaurus dependencies
         run: npm ci
 
-      - name: Build website
+      - name: Build Docusaurus Artifact
         run: npm run build
 
-      - name: Upload Build Artifact
+      - name: Upload Docusaurus Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: documentation-site/build

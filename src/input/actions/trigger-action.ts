@@ -16,16 +16,16 @@ export class TriggerAction implements InputAction, Resettable {
   private _triggered: boolean;
 
   /** Creates a new TriggerAction.
-   * @param name - The name of the action.
    * @param inputGroup - The input group this action belongs to.
+   * @param name - The name of the action.
    */
-  constructor(name: string, inputGroup: string) {
+  constructor(name: string, inputGroup?: string) {
     this.name = name;
 
     this.triggerEvent = new ForgeEvent('Trigger Event');
 
     this._triggered = false;
-    this.inputGroup = inputGroup;
+    this.inputGroup = inputGroup ?? 'game';
   }
 
   /** Marks the action as triggered and raises the trigger event. */
