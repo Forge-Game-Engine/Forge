@@ -22,7 +22,7 @@ describe('Animation', () => {
     });
 
     it('should throw an error if no frames are provided', () => {
-      expect(() => new AnimationClip('TestAnimation', [])).toThrowError(
+      expect(() => new AnimationClip('TestAnimation', [])).toThrow(
         'Animation must contain at least one frame.',
       );
     });
@@ -39,10 +39,10 @@ describe('Animation', () => {
     it('should throw an error if the index is out of bounds', () => {
       const animation = new AnimationClip('TestAnimation', mockFrames);
 
-      expect(() => animation.getFrame(-1)).toThrowError(
+      expect(() => animation.getFrame(-1)).toThrow(
         'Frame index is out of bounds.',
       );
-      expect(() => animation.getFrame(2)).toThrowError(
+      expect(() => animation.getFrame(2)).toThrow(
         'Frame index is out of bounds.',
       );
     });

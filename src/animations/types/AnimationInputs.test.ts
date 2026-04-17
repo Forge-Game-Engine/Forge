@@ -24,7 +24,7 @@ describe('AnimationInputs', () => {
 
     it('should throw an error if a toggle with the same name already exists', () => {
       animationInputs.registerToggle('toggle1');
-      expect(() => animationInputs.registerToggle('toggle1')).toThrowError(
+      expect(() => animationInputs.registerToggle('toggle1')).toThrow(
         'Input with name toggle1 already exists.',
       );
     });
@@ -53,7 +53,7 @@ describe('AnimationInputs', () => {
 
     it('should throw an error if a number input with the same name already exists', () => {
       animationInputs.registerNumber('number1');
-      expect(() => animationInputs.registerNumber('number1')).toThrowError(
+      expect(() => animationInputs.registerNumber('number1')).toThrow(
         'Input with name number1 already exists.',
       );
     });
@@ -61,9 +61,7 @@ describe('AnimationInputs', () => {
     it('should not throw an error if a different type input with the same name already exists', () => {
       animationInputs.registerToggle('inputName');
       animationInputs.registerText('inputName');
-      expect(() =>
-        animationInputs.registerNumber('inputName'),
-      ).not.toThrowError();
+      expect(() => animationInputs.registerNumber('inputName')).not.toThrow();
     });
 
     it('should set the value of a number input', () => {
@@ -92,7 +90,7 @@ describe('AnimationInputs', () => {
 
     it('should throw an error if a text input with the same name already exists', () => {
       animationInputs.registerText('text1');
-      expect(() => animationInputs.registerText('text1')).toThrowError(
+      expect(() => animationInputs.registerText('text1')).toThrow(
         'Input with name text1 already exists.',
       );
     });
@@ -114,7 +112,7 @@ describe('AnimationInputs', () => {
 
     it('should throw an error if a trigger with the same name already exists', () => {
       animationInputs.registerTrigger('trigger1');
-      expect(() => animationInputs.registerTrigger('trigger1')).toThrowError(
+      expect(() => animationInputs.registerTrigger('trigger1')).toThrow(
         'Input with name trigger1 already exists.',
       );
     });
@@ -183,16 +181,16 @@ describe('AnimationInputs', () => {
     });
 
     it('should throw an error when setting a non-existent input', () => {
-      expect(() => animationInputs.setToggle('nonexistent', true)).toThrowError(
+      expect(() => animationInputs.setToggle('nonexistent', true)).toThrow(
         'Input with name nonexistent does not exist.',
       );
-      expect(() => animationInputs.setNumber('nonexistent', 10)).toThrowError(
+      expect(() => animationInputs.setNumber('nonexistent', 10)).toThrow(
         'Input with name nonexistent does not exist.',
       );
-      expect(() =>
-        animationInputs.setText('nonexistent', 'value'),
-      ).toThrowError('Input with name nonexistent does not exist.');
-      expect(() => animationInputs.setTrigger('nonexistent')).toThrowError(
+      expect(() => animationInputs.setText('nonexistent', 'value')).toThrow(
+        'Input with name nonexistent does not exist.',
+      );
+      expect(() => animationInputs.setTrigger('nonexistent')).toThrow(
         'Input with name nonexistent does not exist.',
       );
     });
