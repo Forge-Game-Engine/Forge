@@ -1,38 +1,24 @@
-import { Entity, System, World } from '../../ecs/index.js';
-import { LifetimeComponent } from '../components/lifetime-component.js';
-import { RemoveFromWorldStrategyComponent } from '../strategies/remove-from-world-strategy-component.js';
+import {
+  LifetimeEcsComponent,
+  lifetimeId,
+} from '../components/lifetime-component.js';
+import { RemoveFromWorldLifetimeStrategyId } from '../strategies/remove-from-world-strategy-component.js';
+
+import { EcsSystem } from '../../new-ecs/ecs-system.js';
 
 /**
- * System that removes entities from the world when they have expired.
- * This system handles only the RemoveFromWorldStrategy - it queries for entities
- * with both LifetimeComponent and RemoveFromWorldStrategyComponent.
+ * Creates an ECS system to handle removing expired entities from the world.
  */
-export class RemoveFromWorldLifecycleSystem extends System {
-  private readonly _world: World;
-
-  /**
-   * Creates an instance of RemoveFromWorldLifecycleSystem.
-   * @param world - The World instance.
-   */
-  constructor(world: World) {
-    super('RemoveFromWorldLifecycle', [
-      LifetimeComponent.symbol,
-      RemoveFromWorldStrategyComponent.symbol,
-    ]);
-    this._world = world;
-  }
-
-  /**
-   * Removes the entity from the world if it has expired.
-   * @param entity - The entity to check and potentially remove.
-   */
-  public run(entity: Entity): void {
-    const lifetimeComponent = entity.getComponentRequired<LifetimeComponent>(
-      LifetimeComponent.symbol,
-    );
+export const createRemoveFromWorldEcsSystem = (): EcsSystem<
+  [LifetimeEcsComponent]
+> => ({
+  query: [lifetimeId],
+  tags: [RemoveFromWorldLifetimeStrategyId],
+  run: (result, world) => {
+    const [lifetimeComponent] = result.components;
 
     if (lifetimeComponent.hasExpired) {
-      this._world.removeEntity(entity);
+      world.removeEntity(result.entity);
     }
-  }
-}
+  },
+});

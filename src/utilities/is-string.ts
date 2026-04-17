@@ -7,6 +7,6 @@
  * isString('hello'); // returns true
  * isString(123); // returns false
  */
-export function isString<T>(value: T): boolean {
-  return typeof value === 'string' || value instanceof String;
+export function isString(value: unknown): value is string {
+  return typeof value === 'string';
 }

@@ -10,7 +10,7 @@ import pluginJest from 'eslint-plugin-jest';
 
 export default tseslint.config(
   {
-    ignores: ['**/*.config.js'],
+    ignores: ['**/*.config.js', '**/*.snippet.ts'],
   },
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
@@ -122,6 +122,7 @@ export default tseslint.config(
       'sonarjs/todo-tag': 'warn',
       'sonarjs/pseudo-random': 'off',
       'no-await-in-loop': 'error',
+      'no-param-reassign': 'error',
       '@typescript-eslint/explicit-module-boundary-types': 'error',
     },
   },

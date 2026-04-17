@@ -154,21 +154,22 @@ describe('createProjectionMatrix', () => {
     const tx = -cameraPosition.x * scaleX;
     const ty = -cameraPosition.y * scaleY;
 
-    const expectedMatrix = new Matrix3x3([
-      scaleX,
-      0,
-      0,
-      -0,
-      scaleY,
-      0,
-      tx,
-      ty,
-      1,
-    ]);
-
     const result = createProjectionMatrix(width, height, cameraPosition, zoom);
 
-    expect(result).toEqual(expectedMatrix);
+    // Use toBeCloseTo for floating-point comparisons to handle Float32Array precision
+    // values used in the test are of type `number` which is a double-precision floats
+    // but the matrix is stored as `Float32Array` which are single-precision floats
+    // we use single-precision floats in the implementation for performance reasons
+    // and because we send these matrices to the GPU which typically uses single-precision floats
+    expect(result.matrix[0]).toBeCloseTo(scaleX);
+    expect(result.matrix[1]).toBeCloseTo(0);
+    expect(result.matrix[2]).toBeCloseTo(0);
+    expect(result.matrix[3]).toBeCloseTo(0);
+    expect(result.matrix[4]).toBeCloseTo(scaleY);
+    expect(result.matrix[5]).toBeCloseTo(0);
+    expect(result.matrix[6]).toBeCloseTo(tx);
+    expect(result.matrix[7]).toBeCloseTo(ty);
+    expect(result.matrix[8]).toBeCloseTo(1);
   });
 
   it('should handle negative zoom (flipping)', () => {

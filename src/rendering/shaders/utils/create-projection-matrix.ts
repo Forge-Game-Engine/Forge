@@ -19,8 +19,7 @@ export function createProjectionMatrix(
   const projectionMatrix = Matrix3x3.identity;
 
   // Centered projection: (0,0) is center of screen
-  projectionMatrix.scale(2 / width, -2 / height); // Y+ is up, -h/2..h/2 maps to -1..1
-  // No translate(-1, 1)
+  projectionMatrix.scale(2 / width, -2 / height);
 
   // Apply zoom around the center
   projectionMatrix.scale(zoom, zoom);

@@ -1,6 +1,14 @@
 import { Geometry } from './geometry.js';
 
+const geometryCache = new WeakMap<WebGL2RenderingContext, Geometry>();
+
 export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
+  const cachedGeometry = geometryCache.get(gl);
+
+  if (cachedGeometry) {
+    return cachedGeometry;
+  }
+
   const geometry = new Geometry();
 
   // Vertex positions for 2 triangles (forming a quad)
@@ -38,6 +46,8 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
     buffer: texCoordBuffer,
     size: 2,
   });
+
+  geometryCache.set(gl, geometry);
 
   return geometry;
 }

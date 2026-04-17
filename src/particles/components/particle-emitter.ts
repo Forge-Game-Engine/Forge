@@ -1,15 +1,16 @@
-import { ForgeRenderLayer, Sprite } from '../../rendering/index.js';
+import { Vector2 } from '../../math/vector2.js';
+import { Sprite } from '../../rendering/index.js';
 
 /**
  * Type for a function that returns a number representing the X and Y spawn position of the particle
  */
-export type ParticleSpawnPositionFunction = () => { x: number; y: number };
+export type ParticleSpawnPositionFunction = () => Vector2;
 
 /**
  * Interface for range values with a min and max value.
  * The real value will be randomly chosen between min and max
  */
-export interface MinMaxRange {
+export interface Range {
   /**
    * The minimum value of the range.
    */
@@ -28,32 +29,32 @@ export interface ParticleEmitterOptions {
    * The range for the number of particles emitted.
    * @default { min: 5, max: 10 }
    */
-  numParticlesRange: MinMaxRange;
+  numParticlesRange: Range;
   /**
    * The range for the speed of particles.
    * @default { min: 10, max: 20 }
    */
-  speedRange: MinMaxRange;
+  speedRange: Range;
   /**
    * The range for the scale of particles.
    * @default { min: 1, max: 1 }
    */
-  scaleRange: MinMaxRange;
+  scaleRange: Range;
   /**
    * The range for the initial rotation of particles, in degrees.
    * @default { min: 0, max: 360 }
    */
-  rotationRange: MinMaxRange;
+  rotationRange: Range;
   /**
    * The range for the rotational speed of particles.
    * @default { min: 0, max: 0 }
    */
-  rotationSpeedRange: MinMaxRange;
+  rotationSpeedRange: Range;
   /**
    * The range for the lifetime of particles in seconds.
    * @default { min: 1, max: 3 }
    */
-  lifetimeSecondsRange: MinMaxRange;
+  lifetimeSecondsRange: Range;
   /**
    * The factor by which the particle scale reduces over its lifetime.
    * The particle scale at the end of its lifetime will be scale * lifetimeScaleReduction
@@ -81,7 +82,7 @@ const defaultOptions: ParticleEmitterOptions = {
   lifetimeSecondsRange: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   emitDurationSeconds: 0,
-  spawnPosition: () => ({ x: 0, y: 0 }),
+  spawnPosition: () => Vector2.zero,
 };
 
 /**
@@ -91,14 +92,14 @@ const defaultOptions: ParticleEmitterOptions = {
  */
 export class ParticleEmitter {
   public sprite: Sprite;
-  public renderLayer: ForgeRenderLayer;
+  public renderLayer: number;
   public spawnPosition: ParticleSpawnPositionFunction;
-  public numParticlesRange: MinMaxRange;
-  public speedRange: MinMaxRange;
-  public scaleRange: MinMaxRange;
-  public rotationRange: MinMaxRange;
-  public rotationSpeedRange: MinMaxRange;
-  public lifetimeSecondsRange: MinMaxRange;
+  public numParticlesRange: Range;
+  public speedRange: Range;
+  public scaleRange: Range;
+  public rotationRange: Range;
+  public rotationSpeedRange: Range;
+  public lifetimeSecondsRange: Range;
   public lifetimeScaleReduction: number;
   public emitDurationSeconds: number;
   public currentEmitDuration: number;
@@ -115,7 +116,7 @@ export class ParticleEmitter {
    */
   constructor(
     sprite: Sprite,
-    renderLayer: ForgeRenderLayer,
+    renderLayer: number,
     options: Partial<ParticleEmitterOptions> = {},
   ) {
     const {
@@ -163,7 +164,7 @@ export class ParticleEmitter {
       rotationSpeedRange,
       lifetimeSecondsRange,
       lifetimeScaleReduction,
-      emitDurationSeconds: emitDurationSeconds,
+      emitDurationSeconds,
       spawnPosition,
     } = {
       ...this,

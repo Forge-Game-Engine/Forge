@@ -1,0 +1,31 @@
+.demoContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  margin-top: 8px;
+}
+
+.demoBox {
+  height: 600px;
+  width: 60%;
+  background-color: black;
+}
+
+.demoBox canvas {
+  position: absolute;
+}
+
+.demoContainer h1 {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.container {
+  margin: 50px;
+}
+
+.wrapper {
+  justify-content: start;
+}
