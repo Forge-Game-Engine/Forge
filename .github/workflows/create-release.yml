@@ -25,7 +25,7 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-          token: ${{ github.token }}
+          token: ${{ secrets.BOT_PAT }}
 
       - name: Setup Git
         run: |
