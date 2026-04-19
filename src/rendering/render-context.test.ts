@@ -21,6 +21,7 @@ describe('RenderContext', () => {
     // Create mock WebGL2RenderingContext
     mockGl = {
       createBuffer: vi.fn().mockReturnValue(mockBuffer),
+      viewport: vi.fn(),
     } as unknown as WebGL2RenderingContext;
 
     // Mock canvas.getContext to return our mock GL context
@@ -87,6 +88,31 @@ describe('RenderContext', () => {
       );
 
       expect(contextBlank.clearStrategy).toBe(CLEAR_STRATEGY.blank);
+    });
+  });
+
+  describe('resize', () => {
+    it('should resize the canvas and update the viewport', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300);
+
+      expect(context.canvas.width).toBe(400);
+      expect(context.canvas.height).toBe(300);
+      expect(context.canvas.style.width).toBe('400px');
+      expect(context.canvas.style.height).toBe('300px');
+      expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 400, 300);
+    });
+
+    it('should throw when width or height are not positive', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(() => context.resize(0, 100)).toThrow(
+        'Render context dimensions must be positive numbers.',
+      );
+      expect(() => context.resize(100, -1)).toThrow(
+        'Render context dimensions must be positive numbers.',
+      );
     });
   });
 
