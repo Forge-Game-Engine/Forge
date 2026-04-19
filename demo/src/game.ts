@@ -21,6 +21,13 @@ enum RenderLayer {
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
+const resize = (): void => {
+  renderContext.resize(window.innerWidth, window.innerHeight);
+};
+
+resize();
+window.addEventListener('resize', resize);
+
 // Create camera entity
 const cameraEntity = world.createEntity();
 world.addComponent(cameraEntity, positionId, {
@@ -67,7 +74,7 @@ world.addComponent(planetEntity, moveId, {
 });
 
 let x = 0;
-const batch = 1000;
+const batch = 1;
 
 setInterval(() => {
   console.log(`fps: ${time.fps} - entities: ${x}`);

@@ -60,6 +60,23 @@ export class RenderContext {
     this._globalUniformValues = new Map<string, UniformValue>();
   }
 
+  /**
+   * Resizes the render context canvas and updates the WebGL viewport.
+   * @param width - The new canvas width in pixels.
+   * @param height - The new canvas height in pixels.
+   */
+  public resize(width: number, height: number): void {
+    if (width <= 0 || height <= 0) {
+      throw new Error('Render context dimensions must be positive numbers.');
+    }
+
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.gl.viewport(0, 0, width, height);
+  }
+
   public setGlobalUniformValue(name: string, value: UniformValue): void {
     this._globalUniformValues.set(name, value);
   }
