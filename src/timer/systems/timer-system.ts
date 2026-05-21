@@ -1,7 +1,7 @@
 import { Time } from '../../common/index.js';
 import { TimerEcsComponent, TimerId } from '../components/timer-component.js';
 
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle timers.

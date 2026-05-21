@@ -1,3 +1,3 @@
-import { createTagId } from '../../src/new-ecs/ecs-component';
+import { createTagId } from '../../src/ecs/ecs-component';
 
 export const controlAdventurerId = createTagId('control-adventurer');

@@ -32,7 +32,7 @@ import {
   TriggerAction,
   Vector2,
 } from '../../src';
-import { EcsWorld } from '../../src/new-ecs';
+import { EcsWorld } from '../../src/ecs';
 import { FiniteStateMachine } from '../../src/finite-state-machine/finite-state-machine';
 import { Transition } from '../../src/finite-state-machine/transition';
 import { ADVENTURER_ANIMATIONS, SHIP_ANIMATIONS } from './animationEnums';

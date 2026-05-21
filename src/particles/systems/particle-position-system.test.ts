@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createParticlePositionEcsSystem } from './particle-position-system';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import {
   ParticleEcsComponent,
   ParticleId,

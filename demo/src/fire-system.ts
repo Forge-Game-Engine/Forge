@@ -1,5 +1,5 @@
 import { HoldAction, InputsEcsComponent, inputsId, TriggerAction } from '../../src';
-import { EcsSystem } from '../../src/new-ecs';
+import { EcsSystem } from '../../src/ecs';
 
 export const createFireEcsSystem = (
   fireAction: TriggerAction,

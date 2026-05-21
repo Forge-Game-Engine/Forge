@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTimerEcsSystem } from './timer-system';
 import { TimerEcsComponent, TimerId } from '../components/timer-component';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import { Time } from '../../common';
 
 describe('TimerSystem', () => {

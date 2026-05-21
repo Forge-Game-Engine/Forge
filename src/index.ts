@@ -3,7 +3,7 @@ export * from './particles/index.js';
 export * from './asset-loading/index.js';
 export * from './audio/index.js';
 export * from './common/index.js';
-export * from './new-ecs/index.js';
+export * from './ecs/index.js';
 export * from './events/index.js';
 export * from './input/index.js';
 export * from './lifecycle/index.js';

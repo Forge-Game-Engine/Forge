@@ -7,7 +7,7 @@ import {
   spriteAnimationId,
   TriggerAction,
 } from '../../src';
-import { EcsSystem } from '../../src/new-ecs';
+import { EcsSystem } from '../../src/ecs';
 import { controlAdventurerId } from './control-adventurer-component';
 
 export const createControlAdventurerEcsSystem = (

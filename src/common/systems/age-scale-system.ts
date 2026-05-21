@@ -7,7 +7,7 @@ import {
   AgeScaleEcsComponent,
   ageScaleId,
 } from '../components/age-scale-component.js';
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle age-based scaling of entities.

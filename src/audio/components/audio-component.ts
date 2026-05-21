@@ -1,5 +1,5 @@
 import { Howl } from 'howler';
-import { createComponentId } from '../../new-ecs/ecs-component.js';
+import { createComponentId } from '../../ecs/ecs-component.js';
 
 /**
  * ECS-style component interface for audio.
