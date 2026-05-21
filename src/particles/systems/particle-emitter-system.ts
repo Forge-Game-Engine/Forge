@@ -14,8 +14,8 @@ import {
   ParticleEmitterId,
   ParticleId,
 } from '../index.js';
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
-import { EcsWorld } from '../../new-ecs/ecs-world.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   lifetimeId,
   RemoveFromWorldLifetimeStrategyId,

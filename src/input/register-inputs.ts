@@ -1,5 +1,5 @@
 import { Time } from '../common/index.js';
-import { EcsWorld, SystemRegistrationOrder } from '../new-ecs/index.js';
+import { EcsWorld, SystemRegistrationOrder } from '../ecs/index.js';
 import {
   Axis1dAction,
   Axis2dAction,

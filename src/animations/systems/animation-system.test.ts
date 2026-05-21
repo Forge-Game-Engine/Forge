@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createAnimationEcsSystem } from './animation-system';
 import { Time } from '../../common';
 import { type AnimationEcsComponent, animationId } from '../components';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 
 describe('createAnimationEcsSystem', () => {
   it('should update animations and call updateCallback', () => {

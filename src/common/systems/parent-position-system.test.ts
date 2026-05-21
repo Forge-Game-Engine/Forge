@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PositionEcsComponent, positionId } from '../components';
-import { EcsWorld } from '../../new-ecs';
+import { EcsWorld } from '../../ecs';
 import { Vector2 } from '../../math';
 import { ParentEcsComponent, parentId } from '../components/parent-component';
 import { createParentPositionEcsSystem } from './parent-position-system';

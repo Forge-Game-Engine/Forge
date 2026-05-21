@@ -9,7 +9,7 @@ import {
 } from '../../common/index.js';
 import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components/index.js';
 
-import { EcsSystem } from '../../new-ecs/ecs-system.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle physics.
