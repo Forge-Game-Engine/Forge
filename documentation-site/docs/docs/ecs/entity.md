@@ -4,17 +4,25 @@ sidebar_position: 3
 
 # Entity
 
-An entity is simply a number (an id). It represents a unique collection of components in an `EcsWorld`. The entity itself holds no data; components attached to the entity store the data.
+An entity is an opaque identifier (a number) used by `EcsWorld` to identify a
+collection of components. Entities are not objects and hold no data themselves;
+components are stored by the world and associated with the entity id.
 
-Common operations:
+:::note
+Entities are simple numeric ids (for example `0`, `1`, ...). Treat them as
+handles rather than objects you manipulate directly.
+:::
 
-- `createEntity()` — returns a new entity id.
-- `removeEntity(entity)` — removes an entity and all its components.
-- `addComponent(entity, key, data)` — attach typed data to an entity.
-- `getComponent(entity, key)` — returns component data or `null` if absent.
-- `removeComponent(entity, key)` — removes a single component from an entity.
+:::caution
+Entities may only be created or removed via `EcsWorld` APIs such as
+`createEntity()` and `removeEntity(entity)`. Do not attempt to fabricate ids
+or manage lifecycle outside the world; doing so breaks indexing and queries.
+:::
 
-Example:
+Minimal example, create an entity and attach a component.
+
+This demonstrates creating an entity, attaching a `Position` component,
+reading the component, and removing the entity.
 
 ```ts
 const world = new EcsWorld();
@@ -23,11 +31,11 @@ const entity = world.createEntity();
 const Position = createComponentId<{ x: number; y: number }>('Position');
 world.addComponent(entity, Position, { x: 5, y: 10 });
 
-const pos = world.getComponent(entity, Position);
-if (pos) {
-	console.log('Position:', pos.x, pos.y);
+const position = world.getComponent(entity, Position);
+
+if (position) {
+  console.log('Position:', position.x, position.y);
 }
 
-world.removeComponent(entity, Position);
 world.removeEntity(entity);
 ```
