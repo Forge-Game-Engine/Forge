@@ -1,6 +1,6 @@
 # Entity-Component-System (ECS)
 
-Forge provides a compact, high-performance ECS. The ECS separates data (components) from behaviour (systems) and an `EcsWorld` manages entities and component storage.
+Forge provides a compact, high-performance ECS. The ECS separates data (components) from behavior (systems) and an `EcsWorld` manages entities and component storage.
 
 For a broader conceptual background see the [Entity Component System FAQ by Sander Mertens](https://github.com/SanderMertens/ecs-faq).
 

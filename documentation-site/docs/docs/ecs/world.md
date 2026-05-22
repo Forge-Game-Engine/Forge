@@ -128,7 +128,7 @@ If you omit the `registrationOrder` the system is added with
 `SystemRegistrationOrder.normal`. Use `early`/`normal`/`late` (from `SystemRegistrationOrder`) to control ordering.
 :::
 
-:::info[Systems Sharing The Same Registraion Order]
+:::info[Systems Sharing The Same Registration Order]
 When multiple systems are registered with the same numeric order the world
 preserves insertion order. Systems added earlier will run before systems
 added later. Internally the world sorts systems by the numeric priority first
@@ -152,7 +152,7 @@ world.removeSystem(moverSystem);
 
 :::info[Removing a System During a World Tick]
 If a system is removed while the world is iterating systems during `update()`,
-it will still run as part of the current tick. The removal is only commited at the end of the update cycle.
+it will still run as part of the current tick. The removal is only committed at the end of the update cycle.
 :::
 
 ## Executing a world tick
