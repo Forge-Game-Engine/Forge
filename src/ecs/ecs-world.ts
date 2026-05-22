@@ -33,7 +33,7 @@ export class EcsWorld implements Updatable {
     this._systems.add(system, registrationOrder);
   }
 
-  public removeSystem(system: EcsSystem<unknown[], unknown>): void {
+  public removeSystem<T extends unknown[], K>(system: EcsSystem<T, K>): void {
     this._systems.delete(system);
   }
 

@@ -101,4 +101,78 @@ describe('SortedSet', () => {
     set.forEach((item) => seen.push(item.name));
     expect(seen).toEqual(['b', 'a']);
   });
+
+  it('does not reflect additions made during iteration', () => {
+    const a = { name: 'a' };
+    const b = { name: 'b' };
+    const c = { name: 'c' };
+
+    set.add(a, 2);
+    set.add(b, 1);
+
+    const seen: string[] = [];
+
+    set.forEach((item) => {
+      seen.push(item.name);
+
+      // Add `c` during iteration; it should NOT appear in the current iteration
+      if (item === b) {
+        set.add(c, 0);
+      }
+    });
+
+    expect(seen).toEqual(['b', 'a']);
+    expect(set.has(c)).toBe(true);
+    // After iteration the new item is present and orders first
+    expect(Array.from(set.values())).toEqual([c, b, a]);
+  });
+
+  it('does not reflect deletions made during iteration', () => {
+    const a = { name: 'a' };
+    const b = { name: 'b' };
+    const c = { name: 'c' };
+
+    set.add(a, 2);
+    set.add(b, 1);
+    set.add(c, 3);
+
+    const seen: string[] = [];
+
+    for (const item of set.values()) {
+      seen.push(item.name);
+
+      // Delete `c` before its turn; it should still be yielded because iteration
+      // uses a cached snapshot.
+      if (item === b) {
+        set.delete(c);
+      }
+    }
+
+    expect(seen).toEqual(['b', 'a', 'c']);
+    expect(set.has(c)).toBe(false);
+  });
+
+  it('iterator snapshot remains stable when mutated between next calls', () => {
+    const a = { name: 'a' };
+    const b = { name: 'b' };
+    const c = { name: 'c' };
+
+    set.add(a, 2);
+    set.add(b, 1);
+
+    const iter = set.values();
+
+    const first = iter.next();
+    expect(first.done).toBe(false);
+    expect(first.value).toBe(b);
+
+    // Mutate between next() calls; should not affect this iterator's snapshot
+    set.add(c, 0);
+
+    const rest = Array.from(iter);
+    expect(rest).toEqual([a]);
+
+    // New snapshot reflects the mutation
+    expect(Array.from(set.values())).toEqual([c, b, a]);
+  });
 });

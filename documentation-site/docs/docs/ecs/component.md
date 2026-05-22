@@ -4,8 +4,7 @@ sidebar_position: 4
 
 # Components
 
-A component is a simple data container. It has no logic.
-There are 2 types of components; standard components and tags.
+A component is a simple data container with no logic. There are two kinds: standard components and tags.
 
 ## Standard components
 
@@ -15,7 +14,7 @@ To create a standard component, you will need to create an interface that descri
 
 ```ts
 interface FireEcsComponent {
-  temperature: float;
+  temperature: number;
   color: Color;
 }
 ```
@@ -23,6 +22,8 @@ interface FireEcsComponent {
 Then you will need to create an ID for your component, this ID is sometimes referred to as a "component key". 
 
 ```ts
+import { createComponentId, createTagId } from '@forge-game-engine/forge/ecs/ecs-component';
+
 const fireId = createComponentId<FireEcsComponent>('fire');
 ```
 
