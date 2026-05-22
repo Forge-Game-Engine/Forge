@@ -94,7 +94,7 @@ for (const id of out) {
 Prefer using systems and `query` declarations rather than manual queries in
 application code. Manual queries have a runtime cost and often indicate that
 logic that should live in a system is being executed ad-hoc; consult the
-[Component docs](component.md) and [Query docs](query.md) for patterns.
+[Component docs](component.md) for patterns.
 
 :::caution
 Calling `queryEntities` frequently or on large component sets can be
