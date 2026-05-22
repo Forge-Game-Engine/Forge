@@ -4,54 +4,60 @@ sidebar_position: 4
 
 # Components
 
-A component is a simple data container. It has no logic.
-There are 2 types of components; standard components and tags.
+A component is a plain data container (no logic) used to store state for
+entities. Components are stored by `EcsWorld` and associated with entity ids,
+components are not attached to entity objects.
+
+There are two kinds of components:
+
+- Standard components: typed objects that hold data.
+- Tags: boolean markers with no payload, used to distinguish entities.
 
 ## Standard components
 
-Standard components hold data that influences how an entity might behave 
+Standard components should be small and represent a single concept of state.
+Define a TypeScript interface for the shape of the component, then create a
+component id (key) that you use with the world APIs.
 
-To create a standard component, you will need to create an interface that describes the pieces of data you component will contain. These pieces of data ad known as properties and are generally considered to be mutable [mutable](https://web.mit.edu/6.005/www/fa15/classes/09-immutability/#mutability).
+Example:
 
 ```ts
-interface FireEcsComponent {
-  temperature: float;
+import { createComponentId, type Color } from '@forge-game-engine/forge/ecs';
+
+interface FireComponent {
+  temperature: number;
   color: Color;
+}
+
+const Fire = createComponentId<FireComponent>('fire');
+```
+
+Add and read components via the world API:
+
+```ts
+world.addComponent(entity, Fire, { temperature: 100, color: Color.Red });
+
+const fire = world.getComponent(entity, Fire);
+
+if (fire) {
+  fire.temperature += 10; // components are plain mutable data
 }
 ```
 
-Then you will need to create an ID for your component, this ID is sometimes referred to as a "component key". 
+Keep components focused: prefer several small components over one large,
+monolithic component.
+
+## Tags
+
+Tags are marker components with no payload. Use them when you need to
+differentiate entities without adding data.
 
 ```ts
-const fireId = createComponentId<FireEcsComponent>('fire');
+import { createTagId } from '@forge-game-engine/forge/ecs';
+
+const ai = createTagId('ai');
+world.addTag(enemyEntity, ai);
 ```
 
-The ID is used to quickly store and retrieve your components data from the ECS world. 
-
-Components are meant to be composed together to make an entity. Try to find a balance between grouping related data together that will be updated together and having too much data coupled together in one component.
-Components should be small and represent one concept.
-
-To add a component to an entity:
-
-```ts
-world.addComponent(planetEntity, positionId, {
-  world: Vector2.zero,
-  local: Vector2.zero,
-});
-```
-
-## Tags 
-
-Tags are simply components that do not have any properties and are used to distinguish 2 entities that would otherwise have the same set of standard components. This is particularly useful when you have 1 standard component that needs to be mutated differently based on some strategy. For example, you might have a game where there is a "player" entity and some amount of "enemy" entities. But some enemies are other human players and others are AI players. if you wanted a system to control AI behavior you might have an AI tag that can be attached to AI enemies. 
-
-To create a tag, you will not need an interface (as there is no data), but you will still need to create an ID.
-
-```ts
-const aiPlayerId = createTagId('ai-player');
-```
-
-To add a tag to an entity:
-
-```ts
-world.addTag(enemyEntity, aiPlayerId);
-```
+Tags are commonly used in queries to select entities that should be processed
+by a particular system (for example, `AI` vs `player` entities).
