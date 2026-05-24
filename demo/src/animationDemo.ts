@@ -8,7 +8,6 @@ import {
   Axis1dAction,
   Axis2dAction,
   buttonMoments,
-  createAnimation,
   createResetInputsEcsSystem,
   createSpriteAnimationEcsSystem,
   createUpdateInputEcsSystem,
@@ -53,14 +52,14 @@ export function setupAnimationsDemo(
   const ShipController = createShipAnimationController();
   buildShipEntities(world, shipSprite, ShipController);
 
-  const controller = createAdventurerControllableController();
-  const animationInputs = createAdventurerControllableInputs();
-  buildAdventurerControllableEntities(
-    world,
-    adventurerSprite,
-    controller,
-    animationInputs,
-  );
+  // const controller = createAdventurerControllableController();
+  // const animationInputs = createAdventurerControllableInputs();
+  // buildAdventurerControllableEntities(
+  //   world,
+  //   adventurerSprite,
+  //   controller,
+  //   animationInputs,
+  // );
 
   return inputs;
 }

@@ -77,6 +77,10 @@ function bindInstanceData(
     animationFrame = stateMachine.currentState.getFrame(animationFrameIndex);
   }
 
+  // console.log('scale', scale);
+  // console.log('offset', animationFrame?.offset);
+  // console.log('dimensions', animationFrame?.dimensions);
+
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
   instanceDataBufferArray[offset + POSITION_Y_OFFSET] = -position.world.y;

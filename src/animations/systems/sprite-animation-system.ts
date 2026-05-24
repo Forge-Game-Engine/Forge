@@ -32,8 +32,15 @@ export const createSpriteAnimationEcsSystem = (
     const scaledFrameDurationInSeconds =
       frameDurationMilliseconds /
       1000 /
-      (currentAnimationClip.playbackSpeed *
-        spriteAnimationComponent.playbackSpeed);
+      (currentAnimationClip.playbackSpeed * spriteAnimationComponent.playbackSpeed);
+
+    if (scaledFrameDurationInSeconds <= 0) {
+      // Invalid or zero frame duration — do nothing to avoid division-by-zero
+      return;
+    }
+
+    const frameCount = currentAnimationClip.frames.length;
+    const denominator = Math.max(1, frameCount - 1);
 
     const frameHasFinished =
       secondsElapsedSinceLastFrameChange >= scaledFrameDurationInSeconds;
@@ -43,8 +50,7 @@ export const createSpriteAnimationEcsSystem = (
     }
 
     animationInputs.animationClipPlaybackPercentage =
-      spriteAnimationComponent.animationFrameIndex /
-      (currentAnimationClip.frames.length - 1);
+      spriteAnimationComponent.animationFrameIndex / denominator;
 
     const animationChanged = stateMachine.update(animationInputs);
     animationInputs.update();

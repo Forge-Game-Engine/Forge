@@ -76,6 +76,6 @@ export const animationDefaults = {
 export const createAnimatedProperty = (
   animatedProperty: AnimatedProperty,
 ): Required<AnimatedProperty> => ({
-  ...animatedProperty,
   ...animationDefaults,
+  ...animatedProperty,
 });

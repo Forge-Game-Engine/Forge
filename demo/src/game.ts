@@ -1,17 +1,22 @@
 import {
+  AnimationClip,
+  AnimationInputs,
   cameraId,
   createCameraEcsSystem,
   createGame,
   createImageSprite,
   createRenderEcsSystem,
+  createSpriteAnimationEcsSystem,
+  createSpriteSheet,
+  FiniteStateMachine,
   positionId,
-  Random,
   Rect,
+  scaleId,
+  selectAnimationFrames,
+  spriteAnimationId,
   spriteId,
   Vector2,
 } from '../../src';
-import { moveId } from './move-component';
-import { createMoveEcsSystem } from './move-system';
 
 enum RenderLayer {
   background = 1 << 0,
@@ -45,68 +50,59 @@ world.addComponent(cameraEntity, cameraId, {
   scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
 });
 
-const planetSprite = await createImageSprite(
-  'planet.png',
+const { imageCache } = renderContext;
+
+const image = await imageCache.getOrLoad('adventurer.png');
+
+const sprite = createImageSprite(
+  image,
   renderContext,
   RenderLayer.foreground,
+  undefined,
+  undefined,
+  new Vector2(32, 32),
 );
-const rand = new Random();
 
-const planetEntity = world.createEntity();
+const spriteEntity = world.createEntity();
 
-world.addComponent(planetEntity, positionId, {
-  world: Vector2.zero,
-  local: Vector2.zero,
+world.addComponent(spriteEntity, positionId, {
+  world: new Vector2(0, 0),
+  local: new Vector2(0, 0),
 });
 
-world.addComponent(planetEntity, spriteId, {
-  sprite: planetSprite,
+world.addComponent(spriteEntity, scaleId, {
+  world: new Vector2(5, 5),
+  local: new Vector2(1, 1),
+});
+
+world.addComponent(spriteEntity, spriteId, {
+  sprite,
   enabled: true,
 });
 
-world.addComponent(planetEntity, moveId, {
-  center: new Vector2(
-    rand.randomInt(-window.innerWidth / 2, window.innerWidth / 2),
-    rand.randomInt(-window.innerHeight / 2, window.innerHeight / 2),
-  ),
-  amount: 100,
-  offset: 0,
+const spriteSheet = createSpriteSheet(image, new Vector2(32, 32));
+
+const idleAnimation = new AnimationClip(
+  'idle',
+  selectAnimationFrames(spriteSheet, 13),
+);
+
+const animationInputs = new AnimationInputs();
+
+const stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip> =
+  new FiniteStateMachine([idleAnimation], idleAnimation);
+
+world.addComponent(spriteEntity, spriteAnimationId, {
+  animationFrameIndex: 0,
+  playbackSpeed: 1,
+  frameDurationMilliseconds: 100,
+  animationInputs,
+  stateMachine,
+  lastFrameChangeTimeInSeconds: 0,
 });
 
-let x = 0;
-const batch = 1;
-
-setInterval(() => {
-  console.log(`fps: ${time.fps} - entities: ${x}`);
-
-  for (let i = 0; i < batch; i++) {
-    const planetEntity = world.createEntity();
-
-    world.addComponent(planetEntity, positionId, {
-      world: Vector2.zero,
-      local: Vector2.zero,
-    });
-
-    world.addComponent(planetEntity, spriteId, {
-      sprite: planetSprite,
-      enabled: true,
-    });
-
-    world.addComponent(planetEntity, moveId, {
-      center: new Vector2(
-        rand.randomInt(-window.innerWidth / 2, window.innerWidth / 2),
-        rand.randomInt(-window.innerHeight / 2, window.innerHeight / 2),
-      ),
-      amount: rand.randomInt(50, 150),
-      offset: rand.randomInt(0, 360),
-    });
-  }
-
-  x += batch;
-}, 1000);
-
-world.addSystem(createMoveEcsSystem(time));
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
+world.addSystem(createSpriteAnimationEcsSystem(time));
 
 game.run();
