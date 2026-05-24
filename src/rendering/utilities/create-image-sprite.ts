@@ -28,7 +28,7 @@ export function createImageSprite(
 
   const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
 
-  material.setUniform('u_texture', createTextureFromImage(gl, image));
+  material.setUniform('u_texture', createTextureFromImage(gl, image, true));
 
   const sprite = createSprite(
     material,

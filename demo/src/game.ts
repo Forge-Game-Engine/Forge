@@ -52,7 +52,7 @@ world.addComponent(cameraEntity, cameraId, {
 
 const { imageCache } = renderContext;
 
-const image = await imageCache.getOrLoad('adventurer.png');
+const image = await imageCache.getOrLoad('Boy2_Sprite.png');
 
 const sprite = createImageSprite(
   image,
@@ -60,7 +60,7 @@ const sprite = createImageSprite(
   RenderLayer.foreground,
   undefined,
   undefined,
-  new Vector2(32, 32),
+  new Vector2(16, 32),
 );
 
 const spriteEntity = world.createEntity();
@@ -71,7 +71,7 @@ world.addComponent(spriteEntity, positionId, {
 });
 
 world.addComponent(spriteEntity, scaleId, {
-  world: new Vector2(5, 5),
+  world: new Vector2(20, 20),
   local: new Vector2(1, 1),
 });
 
@@ -80,7 +80,7 @@ world.addComponent(spriteEntity, spriteId, {
   enabled: true,
 });
 
-const spriteSheet = createSpriteSheet(image, new Vector2(32, 32));
+const spriteSheet = createSpriteSheet(image, new Vector2(16, 32));
 
 const idleAnimation = new AnimationClip(
   'idle',
