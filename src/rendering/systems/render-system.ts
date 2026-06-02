@@ -115,7 +115,7 @@ export const createRenderEcsSystem = (
         continue;
       }
 
-      const { renderable } = spriteComponent.sprite;
+      const { renderable } = spriteComponent;
 
       const layerMaskMatches = matchesLayerMask(
         renderable.layer,

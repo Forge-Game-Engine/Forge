@@ -43,7 +43,7 @@ void main() {
     vec2 world = rotated + a_instancePos;
 
     // 5. Project to screen
-    vec3 projected = u_projection * vec3(world, 1.0);
+    vec3 projected = vec3(world, 1.0) * u_projection;
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
     v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;

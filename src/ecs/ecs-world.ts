@@ -1,4 +1,4 @@
-import { Updatable } from '../common/index.js';
+import { Stoppable, Updatable } from '../common/index.js';
 import { SortedSet, SparseSet } from '../utilities/index.js';
 import { ComponentKey, TagKey } from './ecs-component.js';
 import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
@@ -8,7 +8,7 @@ export type QueryResult<T extends readonly unknown[]> = {
   components: T;
 };
 
-export class EcsWorld implements Updatable {
+export class EcsWorld implements Updatable, Stoppable {
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
 
   private readonly _freeEntityIds: number[] = [];
@@ -26,7 +26,13 @@ export class EcsWorld implements Updatable {
     this._systems = new SortedSet();
   }
 
-  public addSystem<T extends unknown[], K>(
+  public stop(): void {
+    for (const system of this._systems) {
+      this.operate(system, (buffer) => system.cleanupEntities?.(buffer, this));
+    }
+  }
+
+  public addSystem<T extends unknown[], K = null>(
     system: EcsSystem<T, K>,
     registrationOrder: number = SystemRegistrationOrder.normal,
   ): void {
@@ -41,7 +47,9 @@ export class EcsWorld implements Updatable {
     for (const system of this._systems) {
       const beforeQueryResult = system.beforeQuery?.(this) ?? null;
 
-      this.operate(system, beforeQueryResult);
+      this.operate(system, (buffer) =>
+        system.run(buffer, this, beforeQueryResult),
+      );
     }
   }
 
@@ -107,7 +115,7 @@ export class EcsWorld implements Updatable {
 
   public operate(
     system: EcsSystem<unknown[], unknown>,
-    beforeQueryResult?: unknown,
+    callback: (queryResult: QueryResult<unknown[]>) => void,
   ): void {
     const driver = this._getDriverComponentSet(system.query, system.tags);
 
@@ -137,7 +145,7 @@ export class EcsWorld implements Updatable {
 
       if (hasAll) {
         this._queryResultBuffer.entity = entity;
-        system.run(this._queryResultBuffer, this, beforeQueryResult);
+        callback(this._queryResultBuffer);
       }
     }
   }

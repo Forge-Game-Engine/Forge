@@ -19,14 +19,18 @@ export async function createPlayer(
   world: EcsWorld,
   renderLayer: number,
 ): Promise<void> {
-  const playerSprite = await createImageSprite(
-    getAssetUrl('img/space-shooter/Spaceship_6.png'),
+  const playerSprite = createImageSprite(
+    await renderContext.imageCache.getOrLoad(
+      getAssetUrl('img/space-shooter/Spaceship_6.png'),
+    ),
     renderContext,
     renderLayer,
   );
 
-  const bulletSprite = await createImageSprite(
-    getAssetUrl('img/space-shooter/bullet-yellow.png'),
+  const bulletSprite = createImageSprite(
+    await renderContext.imageCache.getOrLoad(
+      getAssetUrl('img/space-shooter/bullet-yellow.png'),
+    ),
     renderContext,
     renderLayer,
   );

@@ -54,6 +54,11 @@ export const createGunEcsSystem = (
   },
 });
 
+const sound = new Howl({
+  src: getAssetUrl('audio/laser.mp3'),
+  volume: 0.3,
+});
+
 function createBulletWithOffset(
   world: EcsWorld,
   gunComponent: GunEcsComponent,
@@ -96,9 +101,6 @@ function createBulletWithOffset(
 
   world.addComponent(bullet, audioId, {
     playSound: true,
-    sound: new Howl({
-      src: getAssetUrl('audio/laser.mp3'),
-      volume: 0.3,
-    }),
+    sound,
   });
 }

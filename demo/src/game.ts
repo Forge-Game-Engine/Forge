@@ -4,14 +4,16 @@ import {
   createGame,
   createImageSprite,
   createRenderEcsSystem,
+  createSpriteAnimationEcsSystem,
   positionId,
   Random,
   Rect,
+  scaleId,
+  spriteAnimationId,
   spriteId,
   Vector2,
 } from '../../src';
-import { moveId } from './move-component';
-import { createMoveEcsSystem } from './move-system';
+import { createAnimations } from './create-animations';
 
 enum RenderLayer {
   background = 1 << 0,
@@ -45,68 +47,54 @@ world.addComponent(cameraEntity, cameraId, {
   scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
 });
 
-const planetSprite = await createImageSprite(
-  'planet.png',
+const { imageCache } = renderContext;
+
+const image = await imageCache.getOrLoad('Ivy_Animations_Spritesheet.png');
+
+const sprite = createImageSprite(
+  image,
   renderContext,
   RenderLayer.foreground,
+  new Vector2(20, 32),
 );
-const rand = new Random();
 
-const planetEntity = world.createEntity();
+const { idleAnimationHandle, idleAnimation, animationRegistry } =
+  createAnimations(image);
 
-world.addComponent(planetEntity, positionId, {
-  world: Vector2.zero,
-  local: Vector2.zero,
-});
+sprite.uvScale = idleAnimation.getFrame(0).dimensions.clone();
 
-world.addComponent(planetEntity, spriteId, {
-  sprite: planetSprite,
-  enabled: true,
-});
+const random = new Random();
 
-world.addComponent(planetEntity, moveId, {
-  center: new Vector2(
-    rand.randomInt(-window.innerWidth / 2, window.innerWidth / 2),
-    rand.randomInt(-window.innerHeight / 2, window.innerHeight / 2),
-  ),
-  amount: 100,
-  offset: 0,
-});
+for (let i = 0; i < 25_000; i++) {
+  const spriteEntity = world.createEntity();
 
-let x = 0;
-const batch = 1;
+  world.addComponent(spriteEntity, positionId, {
+    world: new Vector2(
+      random.randomInt(-1700, 1700),
+      random.randomInt(-700, 700),
+    ),
+    local: new Vector2(0, 0),
+  });
 
-setInterval(() => {
-  console.log(`fps: ${time.fps} - entities: ${x}`);
+  world.addComponent(spriteEntity, scaleId, {
+    world: new Vector2(3, 3),
+    local: new Vector2(1, 1),
+  });
 
-  for (let i = 0; i < batch; i++) {
-    const planetEntity = world.createEntity();
+  world.addComponent(spriteEntity, spriteId, sprite);
 
-    world.addComponent(planetEntity, positionId, {
-      world: Vector2.zero,
-      local: Vector2.zero,
-    });
+  world.addComponent(spriteEntity, spriteAnimationId, {
+    animationFrameIndex: random.randomInt(0, 12),
+    playbackSpeed: 1,
+    frameDurationMilliseconds: 100,
+    lastFrameChangeTimeInSeconds: 0,
+    totalFrameCount: 13,
+    animationClipHandle: idleAnimationHandle,
+  });
+}
 
-    world.addComponent(planetEntity, spriteId, {
-      sprite: planetSprite,
-      enabled: true,
-    });
-
-    world.addComponent(planetEntity, moveId, {
-      center: new Vector2(
-        rand.randomInt(-window.innerWidth / 2, window.innerWidth / 2),
-        rand.randomInt(-window.innerHeight / 2, window.innerHeight / 2),
-      ),
-      amount: rand.randomInt(50, 150),
-      offset: rand.randomInt(0, 360),
-    });
-  }
-
-  x += batch;
-}, 1000);
-
-world.addSystem(createMoveEcsSystem(time));
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
+world.addSystem(createSpriteAnimationEcsSystem(time, animationRegistry));
 
 game.run();

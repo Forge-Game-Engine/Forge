@@ -10,6 +10,7 @@ Scroll down icons created by [Smashicons](https://www.flaticon.com/free-icons/sc
 
 - Some assets used in the demos and documentation have been provided by [Screaming Brain Studios - OpenGameArt.org](https://opengameart.org/content/seamless-space-backgrounds)
 - Some assets used in the demos and documentation have been provided by [Wenrexa - OpenGameArt.org](https://opengameart.org/content/assets-free-laser-bullets-pack-2020)
+- Some assets used in the demos and documentation have been provided by [OboroPixel - itch.io](https://oboropixel.itch.io/characters-animations-asset-pack)
 
 ## Music
 

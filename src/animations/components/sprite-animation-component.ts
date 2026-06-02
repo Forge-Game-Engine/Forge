@@ -1,5 +1,3 @@
-import { AnimationClip, AnimationInputs } from '../types/index.js';
-import { FiniteStateMachine } from '../../finite-state-machine/finite-state-machine.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 
 /**
@@ -7,11 +5,11 @@ import { createComponentId } from '../../ecs/ecs-component.js';
  */
 export interface SpriteAnimationEcsComponent {
   animationFrameIndex: number;
+  totalFrameCount: number;
   playbackSpeed: number;
   frameDurationMilliseconds: number;
   lastFrameChangeTimeInSeconds: number;
-  animationInputs: AnimationInputs;
-  stateMachine: FiniteStateMachine<AnimationInputs, AnimationClip>;
+  animationClipHandle: number;
 }
 
 export const spriteAnimationId =

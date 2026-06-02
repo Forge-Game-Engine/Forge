@@ -15,7 +15,7 @@ interface DemoProps {
     title: string;
     description: string;
   };
-  interactions: ReactNode;
+  interactions?: ReactNode;
   header: string;
   blurb: string;
   createGame: () => Promise<Game>;

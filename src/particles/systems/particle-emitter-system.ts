@@ -88,10 +88,7 @@ function emitParticle(
 
   const particleEntity = world.createEntity();
 
-  world.addComponent(particleEntity, spriteId, {
-    sprite: particleEmitter.sprite,
-    enabled: true,
-  });
+  world.addComponent(particleEntity, spriteId, particleEmitter.sprite);
 
   world.addComponent(particleEntity, ParticleId, {
     rotationSpeed,

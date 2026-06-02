@@ -7,8 +7,9 @@ export interface EcsSystem<
 > {
   query: KeysFromComponents<Q>;
   tags?: TagKey[];
-  run(components: QueryResult<Q>, world: EcsWorld, beforeQueryResult: K): void;
+  run(queryResult: QueryResult<Q>, world: EcsWorld, beforeQueryResult: K): void;
   beforeQuery?(world: EcsWorld): K;
+  cleanupEntities?(queryResult: QueryResult<Q>, world: EcsWorld): void;
 }
 
 export const SystemRegistrationOrder = {

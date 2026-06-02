@@ -49,6 +49,8 @@ export class Game implements Stoppable {
       cancelAnimationFrame(this._animationFrameId);
       this._animationFrameId = null;
     }
+
+    this._world.stop();
   }
 
   private readonly _gameLoop = (currentTime: number): void => {

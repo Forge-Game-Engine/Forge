@@ -1,25 +1,25 @@
-import { Game } from '@forge-game-engine/forge/ecs';
-import { useEffect } from 'react';
+import { Game } from '@forge-game-engine/forge/utilities';
+import { useEffect, useRef } from 'react';
 
-type UseGameHook = (createGame: () => Promise<Game>) => Game;
+type UseGameHook = (createGame: () => Promise<Game>) => Game | undefined;
 
 export const useGame: UseGameHook = (createGame) => {
-  let game: Game;
+  const gameRef = useRef<Game | undefined>(undefined);
 
   useEffect(() => {
     const startGame = async () => {
-      game = await createGame();
-      game.run();
+      gameRef.current = await createGame();
+      gameRef.current.run();
     };
 
     void startGame();
 
     return () => {
-      if (game) {
-        game.stop();
+      if (gameRef.current) {
+        gameRef.current.stop();
       }
     };
   }, [createGame]);
 
-  return game;
+  return gameRef.current;
 };

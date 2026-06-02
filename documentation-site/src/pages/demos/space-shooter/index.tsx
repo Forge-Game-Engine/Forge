@@ -10,7 +10,6 @@ import backgroundShaderCode from '!!raw-loader!./_background.shader';
 import createMusicCode from '!!raw-loader!./_create-music';
 import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
-import createRenderLayerCode from '!!raw-loader!./_create-render-layer';
 import bulletComponentCode from '!!raw-loader!./_bullet.component';
 import bulletSystemCode from '!!raw-loader!./_bullet.system';
 import gunComponentCode from '!!raw-loader!./_gun.component';
@@ -70,10 +69,6 @@ export default function Rendering(): JSX.Element {
         {
           name: 'create-player.ts',
           content: createPlayerCode,
-        },
-        {
-          name: 'create-render-layer.ts',
-          content: createRenderLayerCode,
         },
         {
           name: 'gun.component.ts',

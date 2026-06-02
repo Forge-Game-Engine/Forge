@@ -4,19 +4,13 @@ import { AnimationFrame } from './AnimationFrame.js';
 /**
  * Event type that is raised when the animation frame changes.
  */
-export type OnAnimationFrameChangeEvent = ParameterizedForgeEvent<{
-  animationFrame: AnimationFrame;
-}>;
+export type OnAnimationFrameChangeEvent =
+  ParameterizedForgeEvent<AnimationFrame>;
 
 /**
  * Interface representing a group of animation frames for a specific animation name.
  */
 export class AnimationClip {
-  /**
-   * The name of this animation.
-   */
-  public readonly name: string;
-
   /**
    * The frames of the animation.
    */
@@ -37,32 +31,21 @@ export class AnimationClip {
    */
   public readonly onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
 
-  public playbackSpeed: number;
-
   /**
    * Creates an instance of Animation.
-   * @param name - The name of the animation.
    * @param frames - The frames of the animation.
-   * @param playbackSpeed - The speed multiplier for the animation playback. Defaults to 1.
    */
-  constructor(
-    name: string,
-    frames: AnimationFrame[],
-    playbackSpeed: number = 1,
-  ) {
+  constructor(frames: AnimationFrame[]) {
     if (frames.length === 0) {
       throw new Error('Animation must contain at least one frame.');
     }
 
-    this.name = name;
     this.frames = frames;
-    this.playbackSpeed = playbackSpeed;
 
     this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
     this.onAnimationEndEvent = new ForgeEvent('AnimationEndEvent');
-    this.onAnimationFrameChangeEvent = new ParameterizedForgeEvent<{
-      animationFrame: AnimationFrame;
-    }>('AnimationFrameChangeEvent');
+    this.onAnimationFrameChangeEvent =
+      new ParameterizedForgeEvent<AnimationFrame>('AnimationFrameChangeEvent');
   }
 
   /**

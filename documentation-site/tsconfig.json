@@ -4,5 +4,6 @@
   "compilerOptions": {
     "baseUrl": "."
   },
-  "exclude": [".docusaurus", "build"]
+  "exclude": [".docusaurus", "build"],
+  "types": ["node", "webpack-env"]
 }
