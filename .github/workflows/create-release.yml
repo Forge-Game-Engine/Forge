@@ -1,0 +1,72 @@
+name: Create Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release (semver)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.BOT_PAT }}
+
+      - name: Setup Git
+        run: |
+          git config user.name "Forge[Bot]"
+          git config user.email "forgegameengine.noreply@proton.me"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: https://npm.pkg.github.com/
+          scope: '@forge-game-engine'
+
+      - name: Bump version
+        run: |
+          npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get new version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.BOT_PAT }}
+        run: npm publish
+
+      - name: Commit and push release
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$VERSION"
+
+          git tag v$VERSION
+
+          git push https://x-access-token:${{ secrets.BOT_PAT }}@github.com/${{ github.repository }} HEAD:main
+          git push https://x-access-token:${{ secrets.BOT_PAT }}@github.com/${{ github.repository }} HEAD:dev
+          git push https://x-access-token:${{ secrets.BOT_PAT }}@github.com/${{ github.repository }} v$VERSION

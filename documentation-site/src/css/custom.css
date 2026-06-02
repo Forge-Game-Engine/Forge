@@ -1,0 +1,86 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #6b4b40;
+  --ifm-color-primary-dark: #626200;
+  --ifm-color-primary-darker: #838300;
+  --ifm-color-primary-darkest: #a8a800;
+  --ifm-color-primary-light: #ffff20;
+  --ifm-color-primary-lighter: #ffff67;
+  --ifm-color-primary-lightest: #ffffba;
+  --text-color: #3b3b3b;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --hero-font-color: #d9d9d9;
+  --card-highlight-color: #ffffbb;
+  --card-background-color: #eeeeee;
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #b58f6b;
+  --ifm-color-primary-dark: #aeae1c;
+  --ifm-color-primary-darker: #7b7b14;
+  --ifm-color-primary-darkest: #52520d;
+  --ifm-color-primary-light: #ffff20;
+  --ifm-color-primary-lighter: #ffff67;
+  --ifm-color-primary-lightest: #ffffba;
+  --text-color: #d9d9d9;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --hero-font-color: #3b3b3b;
+  --card-highlight-color: #555500;
+  --card-background-color: #222222;
+}
+
+.main-wrapper {
+  align-items: stretch;
+  justify-content: center;
+}
+
+.button--primary {
+  background: #ffd900;
+  color: #3b3b3b;
+  border: none;
+}
+
+.button--primary:hover {
+  background: #ffd900;
+  color: #3b3b3b;
+  box-shadow: 0 0 20px #c6a907;
+}
+
+.button--secondary {
+  background: transparent;
+  color: var(--hero-font-color);
+  border: none;
+  transition: none;
+}
+
+.button--secondary:hover {
+  background: white;
+  color: #3b3b3b;
+  border: none;
+}
+
+.hero--primary {
+  color: var(--hero-font-color);
+}
+
+.code-block-removed-line {
+  background-color: #ff000030;
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+.code-block-added-line {
+  background-color: #00ff0030;
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}

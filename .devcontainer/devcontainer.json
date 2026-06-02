@@ -1,0 +1,56 @@
+{
+  "name": "Node.js 22 Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "remoteUser": "node",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "mounts": ["source=${localWorkspaceFolder},target=/workspace,type=bind"],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "git.enableSmartCommit": true,
+        "git.confirmSync": false,
+        "git.autofetch": true,
+        "git.replaceTagsWhenPull": true,
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "javascript.updateImportsOnFileMove.enabled": "always",
+        "editor.tabSize": 2,
+        "explorer.confirmDragAndDrop": false,
+        "diffEditor.ignoreTrimWhitespace": true,
+        "explorer.confirmPasteNative": false,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.fontFamily": "JetBrains Mono, Fira Code, Menlo, Monaco, 'Courier New', monospace",
+        "editor.fontLigatures": true,
+        "typescript.referencesCodeLens.enabled": true,
+        "typescript.implementationsCodeLens.enabled": true
+      },
+      "extensions": [
+        "rnaumovs.color-highlight",
+        "ms-azuretools.vscode-containers",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "github.copilot",
+        "github.copilot-chat",
+        "esbenp.prettier-vscode",
+        "yoavbls.pretty-ts-errors",
+        "slevesque.shader",
+        "vitest.explorer",
+        "streetsidesoftware.code-spell-checker",
+        "sonarsource.sonarlint-vscode",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install",
+  "forwardPorts": [5173],
+  "shutdownAction": "stopContainer"
+}

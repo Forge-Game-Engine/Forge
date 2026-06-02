@@ -1,0 +1,158 @@
+{
+  "name": "@forge-game-engine/forge",
+  "version": "0.19.1",
+  "type": "module",
+  "exports": {
+    "./animations": {
+      "import": {
+        "types": "./dist/animations/index.d.ts",
+        "default": "./dist/animations/index.js"
+      }
+    },
+    "./asset-loading": {
+      "import": {
+        "types": "./dist/asset-loading/index.d.ts",
+        "default": "./dist/asset-loading/index.js"
+      }
+    },
+    "./audio": {
+      "import": {
+        "types": "./dist/audio/index.d.ts",
+        "default": "./dist/audio/index.js"
+      }
+    },
+    "./common": {
+      "import": {
+        "types": "./dist/common/index.d.ts",
+        "default": "./dist/common/index.js"
+      }
+    },
+    "./ecs": {
+      "import": {
+        "types": "./dist/ecs/index.d.ts",
+        "default": "./dist/ecs/index.js"
+      }
+    },
+    "./events": {
+      "import": {
+        "types": "./dist/events/index.d.ts",
+        "default": "./dist/events/index.js"
+      }
+    },
+    "./input": {
+      "import": {
+        "types": "./dist/input/index.d.ts",
+        "default": "./dist/input/index.js"
+      }
+    },
+    "./lifecycle": {
+      "import": {
+        "types": "./dist/lifecycle/index.d.ts",
+        "default": "./dist/lifecycle/index.js"
+      }
+    },
+    "./math": {
+      "import": {
+        "types": "./dist/math/index.d.ts",
+        "default": "./dist/math/index.js"
+      }
+    },
+    "./particles": {
+      "import": {
+        "types": "./dist/particles/index.d.ts",
+        "default": "./dist/particles/index.js"
+      }
+    },
+    "./physics": {
+      "import": {
+        "types": "./dist/physics/index.d.ts",
+        "default": "./dist/physics/index.js"
+      }
+    },
+    "./rendering": {
+      "import": {
+        "types": "./dist/rendering/index.d.ts",
+        "default": "./dist/rendering/index.js"
+      }
+    },
+    "./timer": {
+      "import": {
+        "types": "./dist/timer/index.d.ts",
+        "default": "./dist/timer/index.js"
+      }
+    },
+    "./utilities": {
+      "import": {
+        "types": "./dist/utilities/index.d.ts",
+        "default": "./dist/utilities/index.js"
+      }
+    },
+    "./fsm": {
+      "import": {
+        "types": "./dist/finite-state-machine/index.d.ts",
+        "default": "./dist/finite-state-machine/index.js"
+      }
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forge-game-engine/Forge.git"
+  },
+  "scripts": {
+    "dev": "vite --config vite.config.demo.js",
+    "build": "tsc --project tsconfig.build.json && node scripts/copy-shaders.js",
+    "test:ui": "vitest --reporter=html",
+    "test": "vitest",
+    "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",
+    "check-types": "tsc --noEmit --project tsconfig.ci.json",
+    "cspell": "cspell \"**\"",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "prettier": "prettier . --check",
+    "prettier:write": "prettier . --write",
+    "prepare": "husky"
+  },
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@types/howler": "^2.2.12",
+    "@types/matter-js": "^0.20.2",
+    "@types/seedrandom": "^3.0.8",
+    "@vitest/ui": "^4.0.6",
+    "cspell": "^9.4.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jest": "^29.0.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-sonarjs": "^3.0.5",
+    "eslint-plugin-sort-exports": "^0.9.1",
+    "husky": "^9.1.7",
+    "jsdom": "^27.1.0",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2",
+    "vite": "^7.3.2",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.15"
+  },
+  "peerDependencies": {
+    "@rive-app/webgl2": "^2.30.1",
+    "howler": "^2.2.4",
+    "matter-js": "^0.20.0"
+  },
+  "dependencies": {
+    "@types/imurmurhash": "^0.1.4",
+    "imurmurhash": "^0.1.4",
+    "seedrandom": "^3.0.5"
+  }
+}
