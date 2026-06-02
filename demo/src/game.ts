@@ -32,12 +32,10 @@ window.addEventListener('resize', resize);
 
 // Create camera entity
 const cameraEntity = world.createEntity();
-
 world.addComponent(cameraEntity, positionId, {
   world: Vector2.zero,
   local: Vector2.zero,
 });
-
 world.addComponent(cameraEntity, cameraId, {
   zoom: 1,
   zoomSensitivity: 0.1,
