@@ -55,14 +55,12 @@ const defaultCreateAnimationSetParams: AnimationCreationOptions = {
 };
 
 /**
- * @param animationName - The name of the animation (e.g., 'walk', 'run').
  * @param spritesPerColumn - The number of sprites in each column of the sprite sheet.
  * @param spritesPerRow - The number of sprites in each row of the sprite sheet.
  * @param options - Optional parameters for creating the animation set.
  * @returns An Animation object containing the generated animation frames.
  */
 export function createAnimation(
-  animationName: string,
   spritesPerColumn: number,
   spritesPerRow: number,
   options?: Partial<AnimationCreationOptions>,
@@ -86,7 +84,7 @@ export function createAnimation(
     spriteUVSize,
   );
 
-  const animation = new AnimationClip(animationName, animationFrames);
+  const animation = new AnimationClip(animationFrames);
 
   return animation;
 }
