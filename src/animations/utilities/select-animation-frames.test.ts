@@ -4,12 +4,7 @@ import { createSpriteSheet } from './create-sprite-sheet';
 
 describe('selectAnimationFrames', () => {
   it('selects sequential frames across rows', () => {
-    const sheet = createSpriteSheet(
-      'test',
-      { width: 512, height: 512 },
-      16,
-      16,
-    );
+    const sheet = createSpriteSheet({ width: 512, height: 512 }, 16, 16);
 
     const selected = selectAnimationFrames(sheet, 4);
 
@@ -22,12 +17,7 @@ describe('selectAnimationFrames', () => {
   });
 
   it('respects startFrame', () => {
-    const sheet = createSpriteSheet(
-      'test',
-      { width: 512, height: 512 },
-      16,
-      16,
-    );
+    const sheet = createSpriteSheet({ width: 512, height: 512 }, 16, 16);
 
     const selected = selectAnimationFrames(sheet, 3, 2);
 
@@ -39,12 +29,7 @@ describe('selectAnimationFrames', () => {
   });
 
   it('throws when requested frames exceed sprite sheet', () => {
-    const sheet = createSpriteSheet(
-      'test',
-      { width: 512, height: 512 },
-      16,
-      16,
-    );
+    const sheet = createSpriteSheet({ width: 512, height: 512 }, 16, 16);
 
     expect(() => selectAnimationFrames(sheet, 10, 254)).toThrow(
       'Requested frame index 256 exceeds the total number of frames in the sprite sheet.',
