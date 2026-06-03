@@ -32,8 +32,9 @@ export const createSpriteAnimationEcsSystem = (
       spriteAnimationComponent.playbackSpeed;
 
     if (scaledFrameDurationInSeconds <= 0) {
-      // Invalid or zero frame duration — do nothing to avoid division-by-zero
-      return;
+      throw new Error(
+        `Invalid frame duration: ${spriteAnimationComponent.frameDurationMilliseconds} ms. Frame duration must be greater than 0.`,
+      );
     }
 
     const frameHasFinished =
