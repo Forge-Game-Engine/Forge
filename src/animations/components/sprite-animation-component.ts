@@ -5,7 +5,6 @@ import { createComponentId } from '../../ecs/ecs-component.js';
  */
 export interface SpriteAnimationEcsComponent {
   animationFrameIndex: number;
-  totalFrameCount: number;
   playbackSpeed: number;
   frameDurationMilliseconds: number;
   lastFrameChangeTimeInSeconds: number;
