@@ -43,18 +43,22 @@ export const createSpriteAnimationEcsSystem = (
       return;
     }
 
+    const animationClip = animationRegistry.getDirect(
+      spriteAnimationComponent.animationClipHandle,
+    );
+
+    const animationFrame = animationClip.getFrame(
+      spriteAnimationComponent.animationFrameIndex,
+    );
+
     if (
       spriteAnimationComponent.animationFrameIndex >=
-      spriteAnimationComponent.totalFrameCount - 1
+      animationClip.frameCount - 1
     ) {
       spriteAnimationComponent.animationFrameIndex = 0;
     } else {
       spriteAnimationComponent.animationFrameIndex++;
     }
-
-    const animationFrame = animationRegistry
-      .getDirect(spriteAnimationComponent.animationClipHandle)
-      .getFrame(spriteAnimationComponent.animationFrameIndex);
 
     spriteComponent.uvOffset.x = animationFrame.offset.x;
     spriteComponent.uvOffset.y = animationFrame.offset.y;

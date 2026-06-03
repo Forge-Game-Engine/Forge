@@ -2,12 +2,10 @@ import { Vector2 } from '../../math/index.js';
 import { AnimationFrame } from '../types';
 
 export interface SpriteSheet {
-  name: string;
   frames: AnimationFrame[][];
 }
 
 export function createSpriteSheet(
-  name: string,
   image: { width: number; height: number },
   rows: number,
   columns: number,
@@ -16,7 +14,6 @@ export function createSpriteSheet(
   const spriteHeight = image.height / rows;
 
   const spriteSheet: SpriteSheet = {
-    name,
     frames: [],
   };
 

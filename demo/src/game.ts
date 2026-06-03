@@ -88,7 +88,6 @@ for (let i = 0; i < 25_000; i++) {
     playbackSpeed: 1,
     frameDurationMilliseconds: 100,
     lastFrameChangeTimeInSeconds: 0,
-    totalFrameCount: 13,
     animationClipHandle: idleAnimationHandle,
   });
 }

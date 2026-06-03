@@ -12,12 +12,7 @@ export function createAnimations(image: HTMLImageElement): {
   walkAnimationHandle: number;
   animationRegistry: AssetRegistry<AnimationClip>;
 } {
-  const spriteSheet = createSpriteSheet(
-    'Ivy_Animations_Spritesheet',
-    image,
-    2,
-    13,
-  );
+  const spriteSheet = createSpriteSheet(image, 2, 13);
 
   const idleAnimation = new AnimationClip(
     selectAnimationFrames(spriteSheet, 13),
