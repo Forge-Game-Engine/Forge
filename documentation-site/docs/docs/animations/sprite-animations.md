@@ -74,7 +74,7 @@ world.addComponent(entity, spriteId, createImageSprite(
   image,
   renderContext,
   RenderLayer.foreground,
-  new Vector2(32, 32), // 3.1 define the dimentions of a frame
+  new Vector2(32, 32), // 3.1 define the dimensions of a frame
 ));
 
 // 4. create a sprite sheet
@@ -89,7 +89,7 @@ const idleAnimation = new AnimationClip(
 // (usually you only need a shared one for all clips in your game)
 const animationRegistry = new AssetRegistry<AnimationClip>();
 
-// 7. add the animation clip to the registry and recieve a handle
+// 7. add the animation clip to the registry and receive a handle
 const idleAnimationHandle = animationRegistry.register('idle', idleAnimation);
 
 // 8. add the a sprite animation component to you entity
