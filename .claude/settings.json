@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run test*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run check-types)",
+      "Bash(npm run prettier*)",
+      "Bash(npm run build)",
+      "Bash(npm run check-exports)",
+      "Bash(npm run cspell)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ]
+  }
+}

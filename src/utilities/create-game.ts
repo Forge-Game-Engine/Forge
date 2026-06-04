@@ -7,6 +7,11 @@ import {
 } from '../rendering/index.js';
 import { Game } from './game.js';
 
+/**
+ * Creates a new game instance with the specified container ID.
+ * @param containerId - The ID of the container element where the game will be rendered.
+ * @returns An object containing the game instance, ECS world, render context, and time.
+ */
 export function createGame(containerId: string): {
   game: Game;
   world: EcsWorld;
