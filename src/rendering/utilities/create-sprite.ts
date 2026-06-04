@@ -16,13 +16,9 @@ export type SetupInstanceAttributesCallback = (
 
 /**
  * Creates a sprite using the provided material and render context.
- * @param material - The material to use for the sprite.
- * @param renderContext - The render context to be used.
- * @param cameraEntity - The camera entity for the renderable.
  * @param width - The width of the sprite.
  * @param height - The height of the sprite.
- * @param bindInstanceData - The callback function to bind instance data for the sprite.
- * @param setupInstanceAttributes - The callback function to set up instance attributes for the sprite.
+ * @param renderable - The renderable to use for the sprite.
  * @returns The created sprite.
  */
 export function createSprite(
