@@ -37,10 +37,7 @@ export async function createPlayer(
 
   const playerEntity = world.createEntity();
 
-  world.addComponent(playerEntity, spriteId, {
-    sprite: playerSprite,
-    enabled: true,
-  });
+  world.addComponent(playerEntity, spriteId, playerSprite);
   world.addComponent(playerEntity, positionId, {
     local: new Vector2(0, -250),
     world: new Vector2(0, -250),

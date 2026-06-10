@@ -14,9 +14,9 @@ import {
   lifetimeId,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
+import { audioId } from '@forge-game-engine/forge/audio';
 import { bulletId } from './_bullet.component';
 import { GunEcsComponent, gunId } from './_gun.component';
-import { audioId } from '../../../../../dist';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const createGunEcsSystem = (
@@ -67,10 +67,7 @@ function createBulletWithOffset(
 ) {
   const bullet = world.createEntity();
 
-  world.addComponent(bullet, spriteId, {
-    sprite: gunComponent.bulletSprite,
-    enabled: true,
-  });
+  world.addComponent(bullet, spriteId, gunComponent.bulletSprite);
 
   world.addComponent(bullet, positionId, {
     local: positionComponent.world.add(offset),

@@ -6,10 +6,7 @@ import { Vector2 } from '@forge-game-engine/forge/math';
 export function createEntity(world: EcsWorld, sprite: Sprite): void {
   const starEntity = world.createEntity();
 
-  world.addComponent(starEntity, spriteId, {
-    sprite,
-    enabled: true,
-  });
+  world.addComponent(starEntity, spriteId, sprite);
 
   world.addComponent(starEntity, positionId, {
     local: new Vector2(0, 0),
