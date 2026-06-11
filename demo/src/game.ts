@@ -1,25 +1,29 @@
 import {
   cameraId,
+  CircleShape,
   createCameraEcsSystem,
   createGame,
   createImageSprite,
+  createPhysicsEcsSystem,
   createRenderEcsSystem,
-  createSpriteAnimationEcsSystem,
+  PhysicsBodyId,
+  PhysicsWorld,
+  PolygonShape,
   positionId,
   Random,
-  Rect,
+  RigidBody,
+  rotationId,
   scaleId,
-  spriteAnimationId,
+  Shape,
+  SpriteEcsComponent,
   spriteId,
   Vector2,
 } from '../../src';
-import { createAnimations } from './create-animations';
 
-enum RenderLayer {
-  background = 1 << 0,
-  default = 1 << 1,
-  foreground = 1 << 2,
-}
+const renderLayer = 1;
+const wallThickness = 40;
+const shapeCount = 400;
+const gravity = new Vector2(20, -100);
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
@@ -42,58 +46,170 @@ world.addComponent(cameraEntity, cameraId, {
   panSensitivity: 1,
   minZoom: 0.1,
   maxZoom: 10,
-  isStatic: false,
-  layerMask: RenderLayer.default | RenderLayer.foreground,
-  scissorRect: new Rect(Vector2.zero, new Vector2(0.5, 1)),
+  isStatic: true,
+  layerMask: renderLayer,
 });
 
 const { imageCache } = renderContext;
 
-const image = await imageCache.getOrLoad('Ivy_Animations_Spritesheet.png');
+const ballImage = await imageCache.getOrLoad('ball_blue_large.png');
+const squareImage = await imageCache.getOrLoad('block_square.png');
+const triangleImage = await imageCache.getOrLoad('block_corner_large.png');
+const barImage = await imageCache.getOrLoad('gradient.png');
 
-const sprite = createImageSprite(
-  image,
+const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
+const squareSprite = createImageSprite(squareImage, renderContext, renderLayer);
+const triangleSprite = createImageSprite(
+  triangleImage,
   renderContext,
-  RenderLayer.foreground,
-  new Vector2(20, 32),
+  renderLayer,
 );
+const barSprite = createImageSprite(barImage, renderContext, renderLayer);
 
-const { idleAnimationHandle, idleAnimation, animationRegistry } =
-  createAnimations(image);
+// `block_corner_large.png` is a right triangle with its right angle at the
+// bottom-left of the image. PolygonShape re-centers vertices around their
+// centroid (a third of the way across, two thirds of the way down), so the
+// sprite's pivot is moved to match - keeping the rendered triangle aligned
+// with its physics shape as it rotates.
+triangleSprite.pivot = new Vector2(1 / 3, 2 / 3);
 
-sprite.uvScale = idleAnimation.getFrame(0).dimensions.clone();
-
+const physicsWorld = new PhysicsWorld({ gravity });
 const random = new Random();
 
-for (let i = 0; i < 25_000; i++) {
-  const spriteEntity = world.createEntity();
+const halfWidth = renderContext.canvas.width / 2;
+const halfHeight = renderContext.canvas.height / 2;
 
-  world.addComponent(spriteEntity, positionId, {
-    world: new Vector2(
-      random.randomInt(-1700, 1700),
-      random.randomInt(-700, 700),
+function createBoundary(
+  position: Vector2,
+  width: number,
+  height: number,
+): void {
+  const entity = world.createEntity();
+
+  world.addComponent(entity, positionId, {
+    world: position.clone(),
+    local: position.clone(),
+  });
+
+  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+  world.addComponent(entity, scaleId, {
+    local: new Vector2(width / barSprite.width, height / barSprite.height),
+    world: new Vector2(width / barSprite.width, height / barSprite.height),
+  });
+
+  world.addComponent(entity, spriteId, barSprite);
+
+  world.addComponent(entity, PhysicsBodyId, {
+    physicsBody: new RigidBody({
+      shape: PolygonShape.rectangle(width, height),
+      position: position.clone(),
+      isStatic: true,
+    }),
+  });
+}
+
+// Floor and side walls bound the simulation area
+createBoundary(
+  new Vector2(0, -halfHeight + wallThickness / 2),
+  renderContext.canvas.width,
+  wallThickness,
+);
+createBoundary(
+  new Vector2(-halfWidth + wallThickness / 2, 0),
+  wallThickness,
+  renderContext.canvas.height,
+);
+createBoundary(
+  new Vector2(halfWidth - wallThickness / 2, 0),
+  wallThickness,
+  renderContext.canvas.height,
+);
+
+// A right triangle matching the visual shape of `block_corner_large.png`:
+// right angle at the bottom-left, hypotenuse from top-left to bottom-right.
+function createTriangleShape(width: number, height: number): PolygonShape {
+  const halfShapeWidth = width / 2;
+  const halfShapeHeight = height / 2;
+
+  return new PolygonShape([
+    new Vector2(-halfShapeWidth, halfShapeHeight),
+    new Vector2(-halfShapeWidth, -halfShapeHeight),
+    new Vector2(halfShapeWidth, -halfShapeHeight),
+  ]);
+}
+
+// One spawner per shape: pairs the sprite to render with the physics shape
+// to simulate, both sized to fit a `size x size` bounding box.
+const shapeSpawners: ((size: number) => {
+  sprite: SpriteEcsComponent;
+  shape: Shape;
+})[] = [
+  (size) => ({ sprite: ballSprite, shape: new CircleShape(size / 2) }),
+  (size) => ({
+    sprite: squareSprite,
+    shape: PolygonShape.rectangle(size, size),
+  }),
+  (size) => ({
+    sprite: triangleSprite,
+    shape: createTriangleShape(size, size),
+  }),
+];
+
+function spawnShape(
+  sprite: SpriteEcsComponent,
+  shape: Shape,
+  position: Vector2,
+  size: number,
+): void {
+  const entity = world.createEntity();
+  const scale = size / sprite.width;
+
+  world.addComponent(entity, positionId, {
+    world: position.clone(),
+    local: position.clone(),
+  });
+
+  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+  world.addComponent(entity, scaleId, {
+    local: new Vector2(scale, scale),
+    world: new Vector2(scale, scale),
+  });
+
+  world.addComponent(entity, spriteId, sprite);
+
+  world.addComponent(entity, PhysicsBodyId, {
+    physicsBody: new RigidBody({
+      shape,
+      position: position.clone(),
+      restitution: 0.6,
+      friction: 0.4,
+    }),
+  });
+}
+
+// Spawn a pile of bouncing, rolling balls, boxes, and triangles
+for (let i = 0; i < shapeCount; i++) {
+  const size = random.randomFloat(40, 90);
+  const halfSize = size / 2;
+
+  const position = new Vector2(
+    random.randomFloat(
+      -halfWidth + wallThickness + halfSize,
+      halfWidth - wallThickness - halfSize,
     ),
-    local: new Vector2(0, 0),
-  });
+    random.randomFloat(0, halfHeight * 10 - halfSize),
+  );
 
-  world.addComponent(spriteEntity, scaleId, {
-    world: new Vector2(3, 3),
-    local: new Vector2(1, 1),
-  });
+  const spawner = shapeSpawners[random.randomInt(0, shapeSpawners.length - 1)];
+  const { sprite, shape } = spawner(size);
 
-  world.addComponent(spriteEntity, spriteId, sprite);
-
-  world.addComponent(spriteEntity, spriteAnimationId, {
-    animationFrameIndex: random.randomInt(0, 12),
-    playbackSpeed: 1,
-    frameDurationMilliseconds: 100,
-    lastFrameChangeTimeInSeconds: 0,
-    animationClipHandle: idleAnimationHandle,
-  });
+  spawnShape(sprite, shape, position, size);
 }
 
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
-world.addSystem(createSpriteAnimationEcsSystem(time, animationRegistry));
+world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 
 game.run();
