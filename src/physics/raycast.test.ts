@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import Matter from 'matter-js';
-import { Ray, raycast } from './raycast';
-import { Vector2 } from '../math';
+import { Ray, raycast } from './raycast.js';
+import { RigidBody } from './rigid-body.js';
+import { CircleShape, PolygonShape } from './shapes/index.js';
+import { Vector2 } from '../math/index.js';
 
-// Helper: create a rectangle Matter.Body at (x, y) with width and height
-function createRect(x: number, y: number, w: number, h: number) {
-  return Matter.Bodies.rectangle(x, y, w, h);
+// Helper: create a rectangular RigidBody at (x, y) with width and height
+function createRect(x: number, y: number, w: number, h: number): RigidBody {
+  return new RigidBody({
+    shape: PolygonShape.rectangle(w, h),
+    position: new Vector2(x, y),
+  });
+}
+
+// Helper: create a circular RigidBody at (x, y) with the given radius
+function createCircle(x: number, y: number, radius: number): RigidBody {
+  return new RigidBody({
+    shape: new CircleShape(radius),
+    position: new Vector2(x, y),
+  });
 }
 
 describe('Ray', () => {
@@ -66,6 +78,11 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     expect(edges.length).toBe(4);
   });
 
+  it('throws when computing edges for a circle body', () => {
+    const body = createCircle(0, 0, 1);
+    expect(() => Ray.bodyEdges(body)).toThrow();
+  });
+
   it('detects collisions with a ray crossing a rectangle', () => {
     const body = createRect(0, 0, 2, 2);
     // Ray from left to right through center
@@ -78,6 +95,36 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
       expect(c.point.y).toBeCloseTo(0);
       expect(Math.abs(c.point.x)).toBeCloseTo(1);
     }
+  });
+
+  it('detects entry and exit collisions with a ray crossing a circle', () => {
+    const body = createCircle(0, 0, 1);
+    const ray = new Ray(new Vector2(-2, 0), new Vector2(2, 0));
+    const collisions = Ray.bodyCollisions(ray, body);
+
+    expect(collisions.length).toBe(2);
+
+    const sorted = [...collisions].sort((a, b) => a.point.x - b.point.x);
+
+    expect(sorted[0].point.x).toBeCloseTo(-1);
+    expect(sorted[0].point.y).toBeCloseTo(0);
+    expect(sorted[0].normal.x).toBeCloseTo(-1);
+    expect(sorted[0].normal.y).toBeCloseTo(0);
+    expect(sorted[0].vertices).toEqual([]);
+
+    expect(sorted[1].point.x).toBeCloseTo(1);
+    expect(sorted[1].point.y).toBeCloseTo(0);
+    expect(sorted[1].normal.x).toBeCloseTo(1);
+    expect(sorted[1].normal.y).toBeCloseTo(0);
+    expect(sorted[1].vertices).toEqual([]);
+  });
+
+  it('returns no collisions for a ray that misses a circle', () => {
+    const body = createCircle(0, 0, 1);
+    const ray = new Ray(new Vector2(-2, 3), new Vector2(2, 3));
+    const collisions = Ray.bodyCollisions(ray, body);
+
+    expect(collisions.length).toBe(0);
   });
 });
 
@@ -110,6 +157,21 @@ describe('raycast', () => {
       expect(c.body).toBe(body);
       expect(Array.isArray(c.vertices)).toBe(true);
       expect(c.normal).toBeInstanceOf(Vector2);
+    }
+  });
+
+  it('returns collisions for a circle body', () => {
+    const body = createCircle(0, 0, 1);
+    const start = new Vector2(-2, 0);
+    const end = new Vector2(2, 0);
+    const collisions = raycast([body], start, end);
+
+    expect(collisions.length).toBe(2);
+    expect(collisions[0].point.x).toBeLessThan(collisions[1].point.x);
+
+    for (const c of collisions) {
+      expect(c.body).toBe(body);
+      expect(c.vertices).toEqual([]);
     }
   });
 });

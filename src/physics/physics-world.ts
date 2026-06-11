@@ -1,0 +1,221 @@
+import { Vector2 } from '../math/index.js';
+import {
+  type CollisionManifold,
+  detectCollision,
+  resolveCollision,
+} from './collision/index.js';
+import type { RigidBody } from './rigid-body.js';
+
+/**
+ * Options for creating a {@link PhysicsWorld}.
+ */
+export interface PhysicsWorldOptions {
+  /**
+   * The acceleration applied to all dynamic bodies every step.
+   */
+  gravity?: Vector2;
+}
+
+const defaultPhysicsWorldOptions = {
+  gravity: Vector2.zero,
+};
+
+/**
+ * The number of times collision resolution is repeated each step over the
+ * same set of contacts. Repeating the impulse and positional correction
+ * passes lets resting contacts in stacks/piles converge towards zero
+ * penetration within a single step, without re-running broad/narrow-phase
+ * detection.
+ */
+const SOLVER_ITERATIONS = 8;
+
+/**
+ * A pair of {@link RigidBody} instances that are currently colliding.
+ */
+export interface BodyCollisionPair {
+  /**
+   * The first body in the colliding pair.
+   */
+  readonly bodyA: RigidBody;
+
+  /**
+   * The second body in the colliding pair.
+   */
+  readonly bodyB: RigidBody;
+}
+
+function pairKeyFor(bodyA: RigidBody, bodyB: RigidBody): string {
+  const [lowId, highId] =
+    bodyA.id < bodyB.id ? [bodyA.id, bodyB.id] : [bodyB.id, bodyA.id];
+
+  return `${lowId}-${highId}`;
+}
+
+/**
+ * A native 2D physics simulation containing {@link RigidBody} instances.
+ * Each {@link step} integrates motion, applies gravity, and detects and
+ * resolves collisions between bodies.
+ */
+export class PhysicsWorld {
+  public gravity: Vector2;
+
+  private readonly _bodies: Set<RigidBody>;
+
+  private _activePairs: Map<string, BodyCollisionPair>;
+
+  private _collisionStarts: BodyCollisionPair[];
+
+  private _collisionEnds: BodyCollisionPair[];
+
+  /**
+   * Creates a new PhysicsWorld instance.
+   * @param options - The options for the world.
+   */
+  constructor(options: PhysicsWorldOptions = {}) {
+    const { gravity } = { ...defaultPhysicsWorldOptions, ...options };
+
+    this.gravity = gravity.clone();
+    this._bodies = new Set();
+    this._activePairs = new Map();
+    this._collisionStarts = [];
+    this._collisionEnds = [];
+  }
+
+  /**
+   * The bodies currently registered in this world.
+   */
+  get bodies(): readonly RigidBody[] {
+    return [...this._bodies];
+  }
+
+  /**
+   * The pairs of bodies that started colliding during the most recent
+   * {@link step}.
+   */
+  get collisionStarts(): readonly BodyCollisionPair[] {
+    return this._collisionStarts;
+  }
+
+  /**
+   * The pairs of bodies that stopped colliding during the most recent
+   * {@link step}.
+   */
+  get collisionEnds(): readonly BodyCollisionPair[] {
+    return this._collisionEnds;
+  }
+
+  /**
+   * Registers a body with this world.
+   * @param body - The body to add.
+   */
+  public addBody(body: RigidBody): void {
+    this._bodies.add(body);
+  }
+
+  /**
+   * Removes a body from this world.
+   * @param body - The body to remove.
+   * @throws An error if the body is not registered in this world.
+   */
+  public removeBody(body: RigidBody): void {
+    if (!this._bodies.has(body)) {
+      throw new Error(
+        `Cannot remove RigidBody "${body.id}" that is not registered in this PhysicsWorld.`,
+      );
+    }
+
+    this._bodies.delete(body);
+  }
+
+  /**
+   * Advances the simulation by a fixed time step: integrates velocities and
+   * positions for dynamic bodies, then detects and resolves collisions.
+   * @param deltaTimeInSeconds - The amount of time to step the simulation
+   * by, in seconds.
+   */
+  public step(deltaTimeInSeconds: number): void {
+    this._integrateVelocities(deltaTimeInSeconds);
+    this._integratePositions(deltaTimeInSeconds);
+    this._detectAndResolveCollisions();
+  }
+
+  private _integrateVelocities(deltaTimeInSeconds: number): void {
+    for (const body of this._bodies) {
+      if (body.isStatic) {
+        continue;
+      }
+
+      body.velocity = body.velocity.add(
+        this.gravity.multiply(deltaTimeInSeconds),
+      );
+    }
+  }
+
+  private _integratePositions(deltaTimeInSeconds: number): void {
+    for (const body of this._bodies) {
+      if (body.isStatic) {
+        continue;
+      }
+
+      body.position = body.position.add(
+        body.velocity.multiply(deltaTimeInSeconds),
+      );
+      body.angle += body.angularVelocity * deltaTimeInSeconds;
+    }
+  }
+
+  private _detectAndResolveCollisions(): void {
+    const bodies = [...this._bodies];
+    const currentPairs = new Map<string, BodyCollisionPair>();
+    const manifolds: CollisionManifold[] = [];
+
+    for (let i = 0; i < bodies.length; i++) {
+      for (let j = i + 1; j < bodies.length; j++) {
+        this._collideBodyPair(bodies[i], bodies[j], currentPairs, manifolds);
+      }
+    }
+
+    for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+      for (const manifold of manifolds) {
+        resolveCollision(manifold);
+      }
+    }
+
+    this._collisionStarts = [...currentPairs.entries()]
+      .filter(([key]) => !this._activePairs.has(key))
+      .map(([, pair]) => pair);
+
+    this._collisionEnds = [...this._activePairs.entries()]
+      .filter(([key]) => !currentPairs.has(key))
+      .map(([, pair]) => pair);
+
+    this._activePairs = currentPairs;
+  }
+
+  private _collideBodyPair(
+    bodyA: RigidBody,
+    bodyB: RigidBody,
+    currentPairs: Map<string, BodyCollisionPair>,
+    manifolds: CollisionManifold[],
+  ): void {
+    if (bodyA.isStatic && bodyB.isStatic) {
+      return;
+    }
+
+    if (!bodyA.aabb.intersects(bodyB.aabb)) {
+      return;
+    }
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    if (manifold === null) {
+      return;
+    }
+
+    if (!bodyA.isSensor && !bodyB.isSensor) {
+      manifolds.push(manifold);
+    }
+
+    currentPairs.set(pairKeyFor(bodyA, bodyB), { bodyA, bodyB });
+  }
+}
