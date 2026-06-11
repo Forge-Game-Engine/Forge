@@ -1,5 +1,4 @@
 import { Howl } from 'howler';
-import { Bodies } from 'matter-js';
 import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   PositionEcsComponent,
@@ -16,8 +15,11 @@ import {
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
 import { audioId } from '@forge-game-engine/forge/audio';
-import { PhysicsBodyId } from '@forge-game-engine/forge/physics';
-import { collisionFilters } from './_collision-filters';
+import {
+  CircleShape,
+  PhysicsBodyId,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
 import { GunEcsComponent, gunId } from './_gun.component';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -112,16 +114,12 @@ function createBulletWithOffset(
     4;
 
   world.addComponent(bullet, PhysicsBodyId, {
-    physicsBody: Bodies.circle(
-      spawnPosition.x,
-      spawnPosition.y,
-      bulletRadius,
-      {
-        isStatic: false,
-        isSensor: true,
-        collisionFilter: collisionFilters.bullet,
-      },
-    ),
+    physicsBody: new RigidBody({
+      shape: new CircleShape(bulletRadius),
+      position: new Vector2(spawnPosition.x, spawnPosition.y),
+      isStatic: false,
+      isSensor: true,
+    }),
     isKinematic: true,
   });
 }

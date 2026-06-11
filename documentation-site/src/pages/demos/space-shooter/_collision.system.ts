@@ -11,12 +11,19 @@ export const createAsteroidCollisionEcsSystem = (
   run: (result, world) => {
     const asteroidEntity = result.entity;
 
-    for (const { entityA, entityB } of physicsWorld.collisionStarts) {
+    for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
+      const entityA = bodyA.userData;
+      const entityB = bodyB.userData;
+
       if (entityA !== asteroidEntity && entityB !== asteroidEntity) {
         continue;
       }
 
       const otherEntity = entityA === asteroidEntity ? entityB : entityA;
+
+      if (typeof otherEntity !== 'number') {
+        continue;
+      }
 
       if (world.getComponent(otherEntity, bulletId)) {
         world.removeEntity(asteroidEntity);

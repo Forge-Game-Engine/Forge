@@ -12,7 +12,7 @@ import {
 import { Random } from '@forge-game-engine/forge/math';
 import {
   createPhysicsEcsSystem,
-  createPhysicsWorld,
+  PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
@@ -43,7 +43,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   createMusic(world);
 
   const random = new Random();
-  const physicsWorld = createPhysicsWorld();
+  const physicsWorld = new PhysicsWorld();
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));

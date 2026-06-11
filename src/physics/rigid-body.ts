@@ -94,6 +94,12 @@ export class RigidBody {
 
   public readonly friction: number;
 
+  /**
+   * Arbitrary data associated with this body by the consumer (e.g. an ECS
+   * entity id). Not read or written by the physics simulation itself.
+   */
+  public userData?: unknown;
+
   private static _nextId = 0;
 
   /**

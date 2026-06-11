@@ -1,4 +1,3 @@
-import { Bodies } from 'matter-js';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
@@ -12,8 +11,11 @@ import {
   scaleId,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
-import { PhysicsBodyId } from '@forge-game-engine/forge/physics';
-import { collisionFilters } from './_collision-filters';
+import {
+  CircleShape,
+  PhysicsBodyId,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -78,10 +80,11 @@ export async function createPlayer(
     4;
 
   world.addComponent(playerEntity, PhysicsBodyId, {
-    physicsBody: Bodies.circle(playerX, playerY, playerRadius, {
+    physicsBody: new RigidBody({
+      shape: new CircleShape(playerRadius),
+      position: new Vector2(playerX, playerY),
       isStatic: false,
       isSensor: true,
-      collisionFilter: collisionFilters.player,
     }),
     isKinematic: true,
   });

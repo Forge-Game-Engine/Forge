@@ -12,7 +12,6 @@ import type { RigidBody } from '../rigid-body.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 
 const physicsEntityBuffer: number[] = [];
-const syncBuffer: { entity: number; body: Body }[] = [];
 
 /**
  * Creates an ECS system to handle physics.
@@ -26,22 +25,47 @@ export const createPhysicsEcsSystem = (
   [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent],
   void
 > => {
-  const registeredBodies = new Set<RigidBody>();
+  const registeredEntities = new Map<RigidBody, number>();
 
   return {
     query: [PhysicsBodyId, positionId, rotationId],
-    beforeQuery: () => {
+    beforeQuery: (world) => {
+      world.queryEntities(
+        [PhysicsBodyId, positionId, rotationId],
+        physicsEntityBuffer,
+      );
+
+      const queriedEntities = new Set(physicsEntityBuffer);
+
+      for (const entity of physicsEntityBuffer) {
+        const physicsBodyComponent = world.getComponent(entity, PhysicsBodyId);
+
+        if (!physicsBodyComponent) {
+          continue;
+        }
+
+        const { physicsBody } = physicsBodyComponent;
+
+        if (!registeredEntities.has(physicsBody)) {
+          physicsWorld.addBody(physicsBody);
+          registeredEntities.set(physicsBody, entity);
+          physicsBody.userData = entity;
+        }
+      }
+
+      for (const [physicsBody, entity] of registeredEntities) {
+        if (!queriedEntities.has(entity)) {
+          physicsWorld.removeBody(physicsBody);
+          registeredEntities.delete(physicsBody);
+        }
+      }
+
       physicsWorld.step(time.deltaTimeInSeconds);
     },
     run: (result) => {
       const [physicsBodyComponent, positionComponent, rotationComponent] =
         result.components;
       const { physicsBody } = physicsBodyComponent;
-
-      if (!registeredBodies.has(physicsBody)) {
-        physicsWorld.addBody(physicsBody);
-        registeredBodies.add(physicsBody);
-      }
 
       if (physicsBody.isStatic || physicsBodyComponent.isKinematic === true) {
         physicsBody.position = positionComponent.world.clone();
@@ -61,9 +85,9 @@ export const createPhysicsEcsSystem = (
       const [physicsBodyComponent] = result.components;
       const { physicsBody } = physicsBodyComponent;
 
-      if (registeredBodies.has(physicsBody)) {
+      if (registeredEntities.has(physicsBody)) {
         physicsWorld.removeBody(physicsBody);
-        registeredBodies.delete(physicsBody);
+        registeredEntities.delete(physicsBody);
       }
     },
   };

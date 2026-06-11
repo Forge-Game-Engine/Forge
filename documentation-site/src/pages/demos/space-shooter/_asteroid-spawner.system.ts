@@ -1,4 +1,3 @@
-import { Bodies } from 'matter-js';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
   positionId,
@@ -8,8 +7,11 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import { spriteId } from '@forge-game-engine/forge/rendering';
-import { PhysicsBodyId } from '@forge-game-engine/forge/physics';
-import { collisionFilters } from './_collision-filters';
+import {
+  CircleShape,
+  PhysicsBodyId,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import {
   AsteroidSpawnerEcsComponent,
   asteroidSpawnerId,
@@ -69,10 +71,11 @@ export const createAsteroidSpawnerEcsSystem = (
       (sprite.width * asteroidScale + sprite.height * asteroidScale) / 4;
 
     world.addComponent(asteroidEntity, PhysicsBodyId, {
-      physicsBody: Bodies.circle(x, spawnerComponent.spawnY, asteroidRadius, {
+      physicsBody: new RigidBody({
+        shape: new CircleShape(asteroidRadius),
+        position: new Vector2(x, spawnerComponent.spawnY),
         isStatic: false,
         isSensor: true,
-        collisionFilter: collisionFilters.asteroid,
       }),
       isKinematic: true,
     });
