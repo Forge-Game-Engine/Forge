@@ -10,7 +10,7 @@ import type { Material } from './materials/index.js';
  * @param instanceDataBuffer - The Float32Array buffer to write instance data into
  * @param offset - The offset within the buffer where this instance's data should start
  */
-type BindInstanceDataCallback = (
+export type BindInstanceDataCallback = (
   entity: number,
   world: EcsWorld,
   instanceDataBuffer: Float32Array,
@@ -24,7 +24,7 @@ type BindInstanceDataCallback = (
  * @param gl - The WebGL2 rendering context
  * @param renderable - The renderable object being configured
  */
-type SetupInstanceAttributes = (
+export type SetupInstanceAttributesCallback = (
   gl: WebGL2RenderingContext,
   renderable: Renderable,
 ) => void;
@@ -90,7 +90,7 @@ export class Renderable {
    * Callback function that sets up WebGL vertex attribute pointers for instanced rendering.
    * Called to configure how instance data should be interpreted by the shader.
    */
-  public readonly setupInstanceAttributes: SetupInstanceAttributes;
+  public readonly setupInstanceAttributes: SetupInstanceAttributesCallback;
 
   /**
    * Creates a new Renderable.
@@ -108,7 +108,7 @@ export class Renderable {
     floatsPerInstance: number,
     layer: number,
     bindInstanceData: BindInstanceDataCallback,
-    setupInstanceAttributes: SetupInstanceAttributes,
+    setupInstanceAttributes: SetupInstanceAttributesCallback,
   ) {
     this.geometry = geometry;
     this.material = material;

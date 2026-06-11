@@ -11,6 +11,11 @@ import {
   scaleId,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  CircleShape,
+  PhysicsBodyId,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -36,14 +41,14 @@ export async function createPlayer(
   );
 
   const playerEntity = world.createEntity();
+  const playerX = 0;
+  const playerY = -250;
+  const playerScale = 0.15;
 
-  world.addComponent(playerEntity, spriteId, {
-    sprite: playerSprite,
-    enabled: true,
-  });
+  world.addComponent(playerEntity, spriteId, playerSprite);
   world.addComponent(playerEntity, positionId, {
-    local: new Vector2(0, -250),
-    world: new Vector2(0, -250),
+    local: new Vector2(playerX, playerY),
+    world: new Vector2(playerX, playerY),
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
@@ -54,8 +59,8 @@ export async function createPlayer(
   });
 
   world.addComponent(playerEntity, scaleId, {
-    local: new Vector2(0.15, 0.15),
-    world: new Vector2(0.15, 0.15),
+    local: new Vector2(playerScale, playerScale),
+    world: new Vector2(playerScale, playerScale),
   });
 
   world.addComponent(playerEntity, rotationId, {
@@ -68,5 +73,19 @@ export async function createPlayer(
     bulletSprite: bulletSprite,
     renderLayer: renderLayer,
     nextAllowedShotTime: 0,
+  });
+
+  const playerRadius =
+    (playerSprite.width * playerScale + playerSprite.height * playerScale) /
+    4;
+
+  world.addComponent(playerEntity, PhysicsBodyId, {
+    physicsBody: new RigidBody({
+      shape: new CircleShape(playerRadius),
+      position: new Vector2(playerX, playerY),
+      isStatic: false,
+      isSensor: true,
+    }),
+    isKinematic: true,
   });
 }

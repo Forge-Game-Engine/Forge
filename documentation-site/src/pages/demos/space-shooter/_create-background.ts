@@ -1,17 +1,21 @@
 import {
   Color,
-  createSprite,
+  combineInstanceDataSegments,
+  createQuadGeometry,
   createTextureFromImage,
   Material,
+  Renderable,
   RenderContext,
+  SpriteEcsComponent,
   spriteId,
+  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
+import { Vector2 } from '@forge-game-engine/forge/math';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { positionId } from '@forge-game-engine/forge/common';
 import { backgroundShader } from './_background.shader';
 import { backgroundId } from './_background.component';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
-import { Vector2 } from '../../../../../dist';
 
 export async function createBackground(
   world: EcsWorld,
@@ -49,20 +53,32 @@ export async function createBackground(
     ),
   );
 
-  const backgroundSprite = createSprite(
+  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
+    combineInstanceDataSegments(spriteInstanceDataSegment);
+
+  const renderable = new Renderable(
+    createQuadGeometry(renderContext.gl),
     backgroundMaterial,
-    renderContext,
+    floatsPerInstance,
     renderLayer,
-    renderContext.canvas.width,
-    renderContext.canvas.height,
+    bindInstanceData,
+    setupInstanceAttributes,
   );
+
+  const backgroundSprite: SpriteEcsComponent = {
+    enabled: true,
+    width: renderContext.canvas.width,
+    height: renderContext.canvas.height,
+    pivot: new Vector2(0.5, 0.5),
+    tintColor: Color.white,
+    renderable,
+    uvOffset: new Vector2(0, 0),
+    uvScale: new Vector2(1, 1),
+  };
 
   const backgroundEntity = world.createEntity();
 
-  world.addComponent(backgroundEntity, spriteId, {
-    sprite: backgroundSprite,
-    enabled: true,
-  });
+  world.addComponent(backgroundEntity, spriteId, backgroundSprite);
 
   world.addComponent(backgroundEntity, positionId, {
     local: Vector2.zero,

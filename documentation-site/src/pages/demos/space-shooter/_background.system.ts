@@ -9,11 +9,12 @@ import { backgroundId } from './_background.component';
 export const createBackgroundEcsSystem = (
   time: Time,
 ): EcsSystem<[SpriteEcsComponent]> => ({
-  query: [spriteId, backgroundId],
+  query: [spriteId],
+  tags: [backgroundId],
   run: (result) => {
     const [spriteComponent] = result.components;
 
-    spriteComponent.sprite.renderable.material.setUniform(
+    spriteComponent.renderable.material.setUniform(
       'u_time',
       time.timeInSeconds,
     );

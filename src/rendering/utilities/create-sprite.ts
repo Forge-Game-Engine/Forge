@@ -1,18 +1,5 @@
-import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Renderable } from '../renderable.js';
 import { Sprite } from '../sprite.js';
-
-export type BindInstanceDataCallback = (
-  entity: number,
-  world: EcsWorld,
-  instanceDataBufferArray: Float32Array,
-  offset: number,
-) => void;
-
-export type SetupInstanceAttributesCallback = (
-  gl: WebGL2RenderingContext,
-  renderable: Renderable,
-) => void;
 
 /**
  * Creates a sprite using the provided material and render context.

@@ -1,146 +1,15 @@
 import {
   Color,
   createQuadGeometry,
-  EcsWorld,
-  FlipEcsComponent,
-  flipId,
-  PositionEcsComponent,
-  positionId,
   Renderable,
-  RotationEcsComponent,
-  rotationId,
-  ScaleEcsComponent,
-  scaleId,
-  setupInstanceAttribute,
   SpriteEcsComponent,
-  spriteId,
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
 import { createTextureFromImage } from '../shaders/index.js';
-import {
-  HEIGHT_OFFSET,
-  PIVOT_X_OFFSET,
-  PIVOT_Y_OFFSET,
-  POSITION_X_OFFSET,
-  POSITION_Y_OFFSET,
-  ROTATION_OFFSET,
-  SCALE_X_OFFSET,
-  SCALE_Y_OFFSET,
-  TEX_OFFSET_X_OFFSET,
-  TEX_OFFSET_Y_OFFSET,
-  TEX_SIZE_X_OFFSET,
-  TEX_SIZE_Y_OFFSET,
-  TINT_COLOR_A_OFFSET,
-  TINT_COLOR_B_OFFSET,
-  TINT_COLOR_G_OFFSET,
-  TINT_COLOR_R_OFFSET,
-  WIDTH_OFFSET,
-} from '../systems/render-constants.js';
-
-const floatsPerInstance = 17;
-
-function bindInstanceData(
-  entity: number,
-  world: EcsWorld,
-  instanceDataBufferArray: Float32Array,
-  offset: number,
-) {
-  const position = world.getComponent<PositionEcsComponent>(
-    entity,
-    positionId,
-  )!;
-
-  const rotation = world.getComponent<RotationEcsComponent>(entity, rotationId);
-
-  const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
-
-  const spriteComponent = world.getComponent<SpriteEcsComponent>(
-    entity,
-    spriteId,
-  )!;
-  const flipComponent = world.getComponent<FlipEcsComponent>(entity, flipId);
-
-  // Position
-  instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
-  instanceDataBufferArray[offset + POSITION_Y_OFFSET] = -position.world.y;
-
-  // Rotation
-  instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
-
-  // Scale with flip consideration
-  instanceDataBufferArray[offset + SCALE_X_OFFSET] =
-    (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-  instanceDataBufferArray[offset + SCALE_Y_OFFSET] =
-    (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
-
-  // Sprite dimensions
-  instanceDataBufferArray[offset + WIDTH_OFFSET] = spriteComponent.width;
-  instanceDataBufferArray[offset + HEIGHT_OFFSET] = spriteComponent.height;
-
-  // Sprite pivot
-  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = spriteComponent.pivot.x;
-  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = spriteComponent.pivot.y;
-
-  // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] =
-    spriteComponent.uvOffset.x ?? 0;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] =
-    spriteComponent.uvOffset.y ?? 0;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] =
-    spriteComponent.uvScale.x ?? 1;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
-    spriteComponent.uvScale.y ?? 1;
-
-  // Tint color
-  instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] =
-    spriteComponent.tintColor.r;
-  instanceDataBufferArray[offset + TINT_COLOR_G_OFFSET] =
-    spriteComponent.tintColor.g;
-  instanceDataBufferArray[offset + TINT_COLOR_B_OFFSET] =
-    spriteComponent.tintColor.b;
-  instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] =
-    spriteComponent.tintColor.a;
-}
-
-function setupInstanceAttributes(
-  gl: WebGL2RenderingContext,
-  renderable: Renderable,
-): void {
-  const program = renderable.material.program;
-  // Attribute locations
-  const posLoc = gl.getAttribLocation(program, 'a_instancePos');
-  const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
-  const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
-  const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
-  const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
-  const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
-  const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
-
-  const stride = floatsPerInstance * 4; // 17 floats per instance, 4 bytes each
-
-  // a_instancePos (vec2) - offset 0
-  setupInstanceAttribute(posLoc, gl, 2, stride, POSITION_X_OFFSET * 4);
-
-  // a_instanceRot (float) - offset 2
-  setupInstanceAttribute(rotLoc, gl, 1, stride, ROTATION_OFFSET * 4);
-
-  // a_instanceScale (vec2) - offset 3
-  setupInstanceAttribute(scaleLoc, gl, 2, stride, SCALE_X_OFFSET * 4);
-
-  // a_instanceSize (vec2) - offset 5
-  setupInstanceAttribute(sizeLoc, gl, 2, stride, WIDTH_OFFSET * 4);
-
-  // a_instancePivot (vec2) - offset 7
-  setupInstanceAttribute(pivotLoc, gl, 2, stride, PIVOT_X_OFFSET * 4);
-
-  // a_instanceTexOffset (vec2) - offset 9
-  setupInstanceAttribute(texOffsetLoc, gl, 2, stride, TEX_OFFSET_X_OFFSET * 4);
-
-  // a_instanceTexSize (vec2) - offset 11
-  setupInstanceAttribute(texSizeLoc, gl, 2, stride, TEX_SIZE_X_OFFSET * 4);
-}
+import { combineInstanceDataSegments } from './instance-data-segment.js';
+import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
 /**
  * Creates a sprite using the provided image and render layer.
@@ -164,6 +33,9 @@ export function createImageSprite(
   const material = new Material(spriteVertexShader, spriteFragmentShader, gl); // TODO: Add a material cache
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
+
+  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
+    combineInstanceDataSegments(spriteInstanceDataSegment);
 
   const renderable = new Renderable(
     createQuadGeometry(gl),

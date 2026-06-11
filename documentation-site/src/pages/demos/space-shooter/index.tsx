@@ -14,6 +14,12 @@ import bulletComponentCode from '!!raw-loader!./_bullet.component';
 import bulletSystemCode from '!!raw-loader!./_bullet.system';
 import gunComponentCode from '!!raw-loader!./_gun.component';
 import gunSystemCode from '!!raw-loader!./_gun.system';
+import asteroidComponentCode from '!!raw-loader!./_asteroid.component';
+import asteroidSystemCode from '!!raw-loader!./_asteroid.system';
+import asteroidSpawnerComponentCode from '!!raw-loader!./_asteroid-spawner.component';
+import asteroidSpawnerSystemCode from '!!raw-loader!./_asteroid-spawner.system';
+import createAsteroidsCode from '!!raw-loader!./_create-asteroids';
+import collisionSystemCode from '!!raw-loader!./_collision.system';
 
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
@@ -35,6 +41,22 @@ export default function Rendering(): JSX.Element {
           content: gameCode,
         },
         {
+          name: 'asteroid-spawner.component.ts',
+          content: asteroidSpawnerComponentCode,
+        },
+        {
+          name: 'asteroid-spawner.system.ts',
+          content: asteroidSpawnerSystemCode,
+        },
+        {
+          name: 'asteroid.component.ts',
+          content: asteroidComponentCode,
+        },
+        {
+          name: 'asteroid.system.ts',
+          content: asteroidSystemCode,
+        },
+        {
           name: 'background.component.ts',
           content: backgroundComponentCode,
         },
@@ -53,6 +75,14 @@ export default function Rendering(): JSX.Element {
         {
           name: 'bullet.system.ts',
           content: bulletSystemCode,
+        },
+        {
+          name: 'collision.system.ts',
+          content: collisionSystemCode,
+        },
+        {
+          name: 'create-asteroids.ts',
+          content: createAsteroidsCode,
         },
         {
           name: 'create-background.ts',

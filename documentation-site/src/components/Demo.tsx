@@ -2,7 +2,7 @@ import React, { FC, ReactNode } from 'react';
 import Layout from '@theme/Layout';
 import { useGame } from '@site/src/hooks/useGame';
 import styles from './_Demo.module.css';
-import { Game } from '@forge-game-engine/forge/ecs';
+import { Game } from '@forge-game-engine/forge/utilities';
 import { CodeSelector } from './_CodeSelector';
 
 interface CodeFile {

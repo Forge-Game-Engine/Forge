@@ -9,6 +9,11 @@ import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
+import { Random } from '@forge-game-engine/forge/math';
+import {
+  createPhysicsEcsSystem,
+  PhysicsWorld,
+} from '@forge-game-engine/forge/physics';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
@@ -17,6 +22,10 @@ import { createInputs } from './_create-inputs';
 import { createPlayer } from './_create-player';
 import { createBulletEcsSystem } from './_bullet.system';
 import { createGunEcsSystem } from './_gun.system';
+import { createAsteroidSpawner } from './_create-asteroids';
+import { createAsteroidEcsSystem } from './_asteroid.system';
+import { createAsteroidSpawnerEcsSystem } from './_asteroid-spawner.system';
+import { createAsteroidCollisionEcsSystem } from './_collision.system';
 
 const renderLayers = {
   background: 1 << 0,
@@ -30,7 +39,11 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
 
   await createBackground(world, renderContext, renderLayers.background);
   await createPlayer(renderContext, world, renderLayers.foreground);
+  await createAsteroidSpawner(world, renderContext, renderLayers.foreground);
   createMusic(world);
+
+  const random = new Random();
+  const physicsWorld = new PhysicsWorld();
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
@@ -41,6 +54,10 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   world.addSystem(createRemoveFromWorldEcsSystem());
   world.addSystem(createGunEcsSystem(time, world, shootInput));
   world.addSystem(createBulletEcsSystem(time));
+  world.addSystem(createAsteroidSpawnerEcsSystem(time, random));
+  world.addSystem(createAsteroidEcsSystem(time, renderContext));
+  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createAsteroidCollisionEcsSystem(physicsWorld));
 
   return game;
 };
