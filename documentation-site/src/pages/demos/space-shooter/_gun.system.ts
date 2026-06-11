@@ -1,4 +1,5 @@
 import { Howl } from 'howler';
+import { Bodies } from 'matter-js';
 import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   PositionEcsComponent,
@@ -15,6 +16,8 @@ import {
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
 import { audioId } from '@forge-game-engine/forge/audio';
+import { PhysicsBodyId } from '@forge-game-engine/forge/physics';
+import { collisionFilters } from './_collision-filters';
 import { bulletId } from './_bullet.component';
 import { GunEcsComponent, gunId } from './_gun.component';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -66,11 +69,13 @@ function createBulletWithOffset(
   offset: Vector2,
 ) {
   const bullet = world.createEntity();
+  const bulletScale = 0.2;
+  const spawnPosition = positionComponent.world.add(offset);
 
   world.addComponent(bullet, spriteId, gunComponent.bulletSprite);
 
   world.addComponent(bullet, positionId, {
-    local: positionComponent.world.add(offset),
+    local: spawnPosition,
     world: positionComponent.world.add(offset),
   });
 
@@ -80,8 +85,8 @@ function createBulletWithOffset(
   });
 
   world.addComponent(bullet, scaleId, {
-    local: new Vector2(0.2, 0.2),
-    world: new Vector2(0.2, 0.2),
+    local: new Vector2(bulletScale, bulletScale),
+    world: new Vector2(bulletScale, bulletScale),
   });
 
   world.addComponent(bullet, bulletId, {
@@ -99,5 +104,24 @@ function createBulletWithOffset(
   world.addComponent(bullet, audioId, {
     playSound: true,
     sound,
+  });
+
+  const bulletRadius =
+    (gunComponent.bulletSprite.width * bulletScale +
+      gunComponent.bulletSprite.height * bulletScale) /
+    4;
+
+  world.addComponent(bullet, PhysicsBodyId, {
+    physicsBody: Bodies.circle(
+      spawnPosition.x,
+      spawnPosition.y,
+      bulletRadius,
+      {
+        isStatic: false,
+        isSensor: true,
+        collisionFilter: collisionFilters.bullet,
+      },
+    ),
+    isKinematic: true,
   });
 }

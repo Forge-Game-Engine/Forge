@@ -10,6 +10,10 @@ import {
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
 import { Random } from '@forge-game-engine/forge/math';
+import {
+  createPhysicsEcsSystem,
+  createPhysicsWorld,
+} from '@forge-game-engine/forge/physics';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
@@ -39,6 +43,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   createMusic(world);
 
   const random = new Random();
+  const physicsWorld = createPhysicsWorld();
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
@@ -51,7 +56,8 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   world.addSystem(createBulletEcsSystem(time));
   world.addSystem(createAsteroidSpawnerEcsSystem(time, random));
   world.addSystem(createAsteroidEcsSystem(time, renderContext));
-  world.addSystem(createAsteroidCollisionEcsSystem());
+  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createAsteroidCollisionEcsSystem(physicsWorld));
 
   return game;
 };
