@@ -1,17 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Bodies, Composite } from 'matter-js';
-import { createPhysicsEcsSystem } from './physics.system';
-import { createPhysicsWorld, PhysicsWorld } from '../physics-world';
-import { EcsWorld } from '../../ecs';
+import { createPhysicsEcsSystem } from './physics.system.js';
+import { EcsWorld } from '../../ecs/index.js';
 import {
   PositionEcsComponent,
   positionId,
   RotationEcsComponent,
   rotationId,
   Time,
-} from '../../common';
-import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components';
-import { Vector2 } from '../../math';
+} from '../../common/index.js';
+import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components/index.js';
+import { PhysicsWorld } from '../physics-world.js';
+import { RigidBody } from '../rigid-body.js';
+import { PolygonShape } from '../shapes/index.js';
+import { Vector2 } from '../../math/index.js';
 
 describe('PhysicsSystem', () => {
   let world: EcsWorld;
@@ -21,14 +22,19 @@ describe('PhysicsSystem', () => {
   beforeEach(() => {
     world = new EcsWorld();
     time = new Time();
-    physicsWorld = createPhysicsWorld();
+    physicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
     world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
   });
 
   it('should update position and rotation from physics body for dynamic bodies', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(100, 200, 50, 50, { isStatic: false });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      position: new Vector2(100, 200),
+    });
+    physicsBody.velocity = new Vector2(10, 0);
+
     const physicsBodyComponent: PhysicsBodyEcsComponent = {
       physicsBody,
     };
@@ -47,18 +53,22 @@ describe('PhysicsSystem', () => {
     world.addComponent(entity, positionId, positionComponent);
     world.addComponent(entity, rotationId, rotationComponent);
 
-    time.update(16);
+    time.update(1000);
     world.update();
 
     expect(positionComponent.world.x).toBe(physicsBody.position.x);
     expect(positionComponent.world.y).toBe(physicsBody.position.y);
-    expect(rotationComponent.world).toBe(physicsBody.angle);
+    expect(rotationComponent.world).toBe(-physicsBody.angle);
   });
 
   it('should update physics body from position and rotation for static bodies', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(0, 0, 50, 50, { isStatic: true });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      isStatic: true,
+    });
+
     const physicsBodyComponent: PhysicsBodyEcsComponent = {
       physicsBody,
     };
@@ -82,15 +92,57 @@ describe('PhysicsSystem', () => {
 
     expect(physicsBody.position.x).toBe(100);
     expect(physicsBody.position.y).toBe(200);
-    expect(physicsBody.angle).toBe(Math.PI / 4);
+    expect(physicsBody.angle).toBe(-Math.PI / 4);
+  });
+
+  it('should update physics body from position and rotation for kinematic bodies', () => {
+    const entity = world.createEntity();
+
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      isStatic: false,
+    });
+    physicsBody.velocity = new Vector2(10, 0);
+
+    const physicsBodyComponent: PhysicsBodyEcsComponent = {
+      physicsBody,
+      isKinematic: true,
+    };
+
+    const positionComponent: PositionEcsComponent = {
+      local: new Vector2(100, 200),
+      world: new Vector2(100, 200),
+    };
+
+    const rotationComponent: RotationEcsComponent = {
+      local: Math.PI / 4,
+      world: Math.PI / 4,
+    };
+
+    world.addComponent(entity, PhysicsBodyId, physicsBodyComponent);
+    world.addComponent(entity, positionId, positionComponent);
+    world.addComponent(entity, rotationId, rotationComponent);
+
+    time.update(16);
+    world.update();
+
+    expect(physicsBody.position.x).toBe(100);
+    expect(physicsBody.position.y).toBe(200);
+    expect(physicsBody.angle).toBe(-Math.PI / 4);
   });
 
   it('should handle multiple physics bodies', () => {
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    const body1 = Bodies.rectangle(50, 50, 30, 30, { isStatic: false });
-    const body2 = Bodies.rectangle(150, 150, 40, 40, { isStatic: false });
+    const body1 = new RigidBody({
+      shape: PolygonShape.rectangle(30, 30),
+      position: new Vector2(50, 50),
+    });
+    const body2 = new RigidBody({
+      shape: PolygonShape.rectangle(40, 40),
+      position: new Vector2(150, 150),
+    });
 
     world.addComponent(entity1, PhysicsBodyId, { physicsBody: body1 });
     world.addComponent(entity1, positionId, {
@@ -123,10 +175,13 @@ describe('PhysicsSystem', () => {
     }
   });
 
-  it('should synchronize dynamic body position with ECS', () => {
+  it('should register a physics body on first update and remove it when the world stops', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(100, 200, 50, 50, { isStatic: false });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      position: new Vector2(100, 200),
+    });
 
     world.addComponent(entity, PhysicsBodyId, { physicsBody });
     world.addComponent(entity, positionId, {
@@ -135,17 +190,16 @@ describe('PhysicsSystem', () => {
     });
     world.addComponent(entity, rotationId, { local: 0, world: 0 });
 
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+
     time.update(16);
     world.update();
 
-    const position = world.getComponent(entity, positionId);
+    expect(physicsWorld.bodies).toContain(physicsBody);
 
-    expect(position).toBeDefined();
+    world.stop();
 
-    if (position) {
-      expect(position.world.x).toBe(physicsBody.position.x);
-      expect(position.world.y).toBe(physicsBody.position.y);
-    }
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
   });
 
   it('should add a physics body to the engine world once its entity appears in the query', () => {

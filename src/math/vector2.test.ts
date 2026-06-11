@@ -208,5 +208,51 @@ describe('Vector2', () => {
       expect(rotated.x).toBeCloseTo(0);
       expect(rotated.y).toBeCloseTo(0);
     });
+
+    it('should calculate the dot product of two vectors', () => {
+      const v1 = new Vector2(2, 3);
+      const v2 = new Vector2(4, 5);
+      expect(v1.dot(v2)).toBe(23);
+    });
+
+    it('should calculate the dot product of perpendicular vectors as zero', () => {
+      const v1 = new Vector2(1, 0);
+      const v2 = new Vector2(0, 1);
+      expect(v1.dot(v2)).toBe(0);
+    });
+
+    it('should calculate the cross product of two vectors', () => {
+      const v1 = new Vector2(2, 3);
+      const v2 = new Vector2(4, 5);
+      expect(v1.cross(v2)).toBe(2 * 5 - 3 * 4);
+    });
+
+    it('should calculate the cross product of parallel vectors as zero', () => {
+      const v1 = new Vector2(2, 4);
+      const v2 = new Vector2(1, 2);
+      expect(v1.cross(v2)).toBe(0);
+    });
+
+    it('should return a vector perpendicular to this one', () => {
+      const vector = new Vector2(1, 0);
+      const perpendicular = vector.perpendicular();
+      expect(perpendicular.equals(new Vector2(0, -1))).toBe(true);
+    });
+
+    it('should return a perpendicular vector with zero dot product', () => {
+      const vector = new Vector2(3, 4);
+      const perpendicular = vector.perpendicular();
+      expect(vector.dot(perpendicular)).toBe(0);
+    });
+
+    it('should negate a vector', () => {
+      const vector = new Vector2(3, -4);
+      expect(vector.negate().equals(new Vector2(-3, 4))).toBe(true);
+    });
+
+    it('should return zero when negating the zero vector', () => {
+      const vector = new Vector2(0, 0);
+      expect(vector.negate().equals(Vector2.zero)).toBe(true);
+    });
   });
 });

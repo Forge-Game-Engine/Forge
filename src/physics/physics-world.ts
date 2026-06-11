@@ -1,166 +1,221 @@
-import { Body, Composite, Engine, Events, type Pair } from 'matter-js';
-
-/**
- * A pair of ECS entities whose physics bodies started or stopped touching.
- */
-export interface EntityCollisionPair {
-  /**
-   * One of the two entities involved in the collision.
-   */
-  readonly entityA: number;
-
-  /**
-   * The other entity involved in the collision.
-   */
-  readonly entityB: number;
-}
+import { Vector2 } from '../math/index.js';
+import {
+  type CollisionManifold,
+  detectCollision,
+  resolveCollision,
+} from './collision/index.js';
+import type { RigidBody } from './rigid-body.js';
 
 /**
  * Options for creating a {@link PhysicsWorld}.
  */
 export interface PhysicsWorldOptions {
   /**
-   * The Matter.js engine to use. If not provided, a new engine is created
-   * with zero gravity.
+   * The acceleration applied to all dynamic bodies every step.
    */
-  engine?: Engine;
+  gravity?: Vector2;
 }
 
-const defaultPhysicsWorldOptions: PhysicsWorldOptions = {};
+const defaultPhysicsWorldOptions = {
+  gravity: Vector2.zero,
+};
 
 /**
- * Creates a new {@link PhysicsWorld}.
- * @param options - Options for configuring the physics world.
- * @returns A new physics world.
+ * The number of times collision resolution is repeated each step over the
+ * same set of contacts. Repeating the impulse and positional correction
+ * passes lets resting contacts in stacks/piles converge towards zero
+ * penetration within a single step, without re-running broad/narrow-phase
+ * detection.
  */
-export function createPhysicsWorld(
-  options: PhysicsWorldOptions = {},
-): PhysicsWorld {
-  const { engine } = { ...defaultPhysicsWorldOptions, ...options };
+const SOLVER_ITERATIONS = 8;
 
-  return new PhysicsWorld(engine ?? Engine.create({ gravity: { x: 0, y: 0 } }));
+/**
+ * A pair of {@link RigidBody} instances that are currently colliding.
+ */
+export interface BodyCollisionPair {
+  /**
+   * The first body in the colliding pair.
+   */
+  readonly bodyA: RigidBody;
+
+  /**
+   * The second body in the colliding pair.
+   */
+  readonly bodyB: RigidBody;
+}
+
+function pairKeyFor(bodyA: RigidBody, bodyB: RigidBody): string {
+  const [lowId, highId] =
+    bodyA.id < bodyB.id ? [bodyA.id, bodyB.id] : [bodyB.id, bodyA.id];
+
+  return `${lowId}-${highId}`;
 }
 
 /**
- * Owns a Matter.js engine, manages the lifecycle of physics bodies within
- * it, and resolves Matter's `collisionStart`/`collisionEnd` events into
- * pairs of ECS entities.
+ * A native 2D physics simulation containing {@link RigidBody} instances.
+ * Each {@link step} integrates motion, applies gravity, and detects and
+ * resolves collisions between bodies.
  */
 export class PhysicsWorld {
-  /**
-   * The underlying Matter.js engine.
-   */
-  public readonly engine: Engine;
+  public gravity: Vector2;
 
-  private readonly _collisionStarts: EntityCollisionPair[];
-  private readonly _collisionEnds: EntityCollisionPair[];
-  private readonly _bodyToEntity: Map<number, number>;
-  private readonly _entityToBody: Map<number, Body>;
+  private readonly _bodies: Set<RigidBody>;
+
+  private _activePairs: Map<string, BodyCollisionPair>;
+
+  private _collisionStarts: BodyCollisionPair[];
+
+  private _collisionEnds: BodyCollisionPair[];
 
   /**
    * Creates a new PhysicsWorld instance.
-   * @param engine - The Matter.js engine to manage.
+   * @param options - The options for the world.
    */
-  constructor(engine: Engine) {
-    this.engine = engine;
+  constructor(options: PhysicsWorldOptions = {}) {
+    const { gravity } = { ...defaultPhysicsWorldOptions, ...options };
+
+    this.gravity = gravity.clone();
+    this._bodies = new Set();
+    this._activePairs = new Map();
     this._collisionStarts = [];
     this._collisionEnds = [];
-    this._bodyToEntity = new Map();
-    this._entityToBody = new Map();
-
-    Events.on(this.engine, 'collisionStart', (event) => {
-      this._resolvePairs(event.pairs, this._collisionStarts);
-    });
-
-    Events.on(this.engine, 'collisionEnd', (event) => {
-      this._resolvePairs(event.pairs, this._collisionEnds);
-    });
   }
 
   /**
-   * Pairs of entities whose physics bodies started touching during the most
-   * recent call to {@link step}.
+   * The bodies currently registered in this world.
    */
-  get collisionStarts(): readonly EntityCollisionPair[] {
+  get bodies(): readonly RigidBody[] {
+    return [...this._bodies];
+  }
+
+  /**
+   * The pairs of bodies that started colliding during the most recent
+   * {@link step}.
+   */
+  get collisionStarts(): readonly BodyCollisionPair[] {
     return this._collisionStarts;
   }
 
   /**
-   * Pairs of entities whose physics bodies stopped touching during the most
-   * recent call to {@link step}.
+   * The pairs of bodies that stopped colliding during the most recent
+   * {@link step}.
    */
-  get collisionEnds(): readonly EntityCollisionPair[] {
+  get collisionEnds(): readonly BodyCollisionPair[] {
     return this._collisionEnds;
   }
 
   /**
-   * Synchronizes the bodies registered with this physics world to match
-   * `entityBodies`, adding newly seen bodies to (and removing bodies for
-   * entities no longer present from) the underlying Matter world, and
-   * refreshing the entity/body lookup tables used to resolve collision
-   * pairs.
-   * @param entityBodies - The current frame's entity/body pairs.
+   * Registers a body with this world.
+   * @param body - The body to add.
    */
-  public syncBodies(
-    entityBodies: readonly { entity: number; body: Body }[],
-  ): void {
-    const seenEntities = new Set<number>();
-
-    for (const { entity, body } of entityBodies) {
-      seenEntities.add(entity);
-
-      const existingBody = this._entityToBody.get(entity);
-
-      if (existingBody === body) {
-        continue;
-      }
-
-      if (existingBody) {
-        this._removeBody(entity, existingBody);
-      }
-
-      this._entityToBody.set(entity, body);
-      this._bodyToEntity.set(body.id, entity);
-      Composite.add(this.engine.world, body);
-    }
-
-    for (const [entity, body] of this._entityToBody) {
-      if (seenEntities.has(entity)) {
-        continue;
-      }
-
-      this._removeBody(entity, body);
-    }
+  public addBody(body: RigidBody): void {
+    this._bodies.add(body);
   }
 
   /**
-   * Steps the Matter simulation forward, refreshing {@link collisionStarts}
-   * and {@link collisionEnds} for the new frame.
-   * @param deltaTimeInMilliseconds - The time to advance the simulation by.
+   * Removes a body from this world.
+   * @param body - The body to remove.
+   * @throws An error if the body is not registered in this world.
    */
-  public step(deltaTimeInMilliseconds: number): void {
-    this._collisionStarts.length = 0;
-    this._collisionEnds.length = 0;
+  public removeBody(body: RigidBody): void {
+    if (!this._bodies.has(body)) {
+      throw new Error(
+        `Cannot remove RigidBody "${body.id}" that is not registered in this PhysicsWorld.`,
+      );
+    }
 
-    Engine.update(this.engine, deltaTimeInMilliseconds);
+    this._bodies.delete(body);
   }
 
-  private _removeBody(entity: number, body: Body): void {
-    Composite.remove(this.engine.world, body);
-    this._entityToBody.delete(entity);
-    this._bodyToEntity.delete(body.id);
+  /**
+   * Advances the simulation by a fixed time step: integrates velocities and
+   * positions for dynamic bodies, then detects and resolves collisions.
+   * @param deltaTimeInSeconds - The amount of time to step the simulation
+   * by, in seconds.
+   */
+  public step(deltaTimeInSeconds: number): void {
+    this._integrateVelocities(deltaTimeInSeconds);
+    this._integratePositions(deltaTimeInSeconds);
+    this._detectAndResolveCollisions();
   }
 
-  private _resolvePairs(pairs: Pair[], out: EntityCollisionPair[]): void {
-    for (const pair of pairs) {
-      const entityA = this._bodyToEntity.get(pair.bodyA.id);
-      const entityB = this._bodyToEntity.get(pair.bodyB.id);
-
-      if (entityA === undefined || entityB === undefined) {
+  private _integrateVelocities(deltaTimeInSeconds: number): void {
+    for (const body of this._bodies) {
+      if (body.isStatic) {
         continue;
       }
 
-      out.push({ entityA, entityB });
+      body.velocity = body.velocity.add(
+        this.gravity.multiply(deltaTimeInSeconds),
+      );
     }
+  }
+
+  private _integratePositions(deltaTimeInSeconds: number): void {
+    for (const body of this._bodies) {
+      if (body.isStatic) {
+        continue;
+      }
+
+      body.position = body.position.add(
+        body.velocity.multiply(deltaTimeInSeconds),
+      );
+      body.angle += body.angularVelocity * deltaTimeInSeconds;
+    }
+  }
+
+  private _detectAndResolveCollisions(): void {
+    const bodies = [...this._bodies];
+    const currentPairs = new Map<string, BodyCollisionPair>();
+    const manifolds: CollisionManifold[] = [];
+
+    for (let i = 0; i < bodies.length; i++) {
+      for (let j = i + 1; j < bodies.length; j++) {
+        this._collideBodyPair(bodies[i], bodies[j], currentPairs, manifolds);
+      }
+    }
+
+    for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+      for (const manifold of manifolds) {
+        resolveCollision(manifold);
+      }
+    }
+
+    this._collisionStarts = [...currentPairs.entries()]
+      .filter(([key]) => !this._activePairs.has(key))
+      .map(([, pair]) => pair);
+
+    this._collisionEnds = [...this._activePairs.entries()]
+      .filter(([key]) => !currentPairs.has(key))
+      .map(([, pair]) => pair);
+
+    this._activePairs = currentPairs;
+  }
+
+  private _collideBodyPair(
+    bodyA: RigidBody,
+    bodyB: RigidBody,
+    currentPairs: Map<string, BodyCollisionPair>,
+    manifolds: CollisionManifold[],
+  ): void {
+    if (bodyA.isStatic && bodyB.isStatic) {
+      return;
+    }
+
+    if (!bodyA.aabb.intersects(bodyB.aabb)) {
+      return;
+    }
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    if (manifold === null) {
+      return;
+    }
+
+    if (!bodyA.isSensor && !bodyB.isSensor) {
+      manifolds.push(manifold);
+    }
+
+    currentPairs.set(pairKeyFor(bodyA, bodyB), { bodyA, bodyB });
   }
 }

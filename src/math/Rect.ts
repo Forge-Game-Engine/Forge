@@ -28,4 +28,17 @@ export class Rect {
       point.y <= this.origin.y + this.size.y
     );
   }
+
+  /** Checks if this rectangle overlaps another rectangle (inclusive of edges).
+   * @param other - The other rectangle to check for overlap.
+   * @returns True if the rectangles overlap, false otherwise.
+   */
+  public intersects(other: Rect): boolean {
+    return (
+      this.origin.x <= other.origin.x + other.size.x &&
+      this.origin.x + this.size.x >= other.origin.x &&
+      this.origin.y <= other.origin.y + other.size.y &&
+      this.origin.y + this.size.y >= other.origin.y
+    );
+  }
 }

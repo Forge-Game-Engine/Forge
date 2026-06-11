@@ -1,54 +1,40 @@
-// port of the raycast code from
-// https://github.com/Technostalgic/MatterJS_Raycast.git
-// found while going through this issue:
-// https://github.com/liabru/matter-js/issues/181
-
-import Matter from 'matter-js';
-import { Vector2 } from '../math/index.js';
+import { Rect, Vector2 } from '../math/index.js';
+import type { RigidBody } from './rigid-body.js';
 
 /**
  * Raycast function that returns an array of RaycastCollision objects
  * that represent the intersections between a ray and the bodies in the world.
- * @param bodies - The array of Matter.Body objects to check for intersections
+ * @param bodies - The array of RigidBody objects to check for intersections
  * @param start - The starting point of the ray
  * @param end - The ending point of the ray
  * @param sort - Whether to sort the results by distance from the start point
  * @returns An array of RaycastCollision objects
  */
 export function raycast(
-  bodies: Matter.Body[],
+  bodies: RigidBody[],
   start: Vector2,
   end: Vector2,
   sort = true,
 ): RaycastCollision[] {
-  const query = Matter.Query.ray(bodies, start, end);
-  const raycastCollisions = new Array<RaycastCollision>();
   const ray = new Ray(start, end);
+  const rayBounds = new Rect(
+    new Vector2(Math.min(start.x, end.x), Math.min(start.y, end.y)),
+    new Vector2(Math.abs(end.x - start.x), Math.abs(end.y - start.y)),
+  );
+  const raycastCollisions = new Array<RaycastCollision>();
 
-  for (let i = query.length - 1; i >= 0; i--) {
-    const matterCollision = query[i];
-
-    if (!matterCollision) {
+  for (const body of bodies) {
+    if (!body.aabb.intersects(rayBounds)) {
       continue;
     }
 
-    const bodyCollisions = Ray.bodyCollisions(ray, matterCollision.bodyA);
-
-    for (let j = bodyCollisions.length - 1; j >= 0; j--) {
-      const bodyCollision = bodyCollisions[j];
-
-      if (!bodyCollision) {
-        continue;
-      }
-
-      raycastCollisions.push(bodyCollision);
-    }
+    raycastCollisions.push(...Ray.bodyCollisions(ray, body));
   }
 
   if (sort) {
-    raycastCollisions.sort((a, b) => {
-      return a.point.distanceTo(start) - b.point.distanceTo(start);
-    });
+    raycastCollisions.sort(
+      (a, b) => a.point.distanceTo(start) - b.point.distanceTo(start),
+    );
   }
 
   return raycastCollisions;
@@ -61,7 +47,7 @@ export interface RaycastCollision {
   /**
    * The body that was hit by the ray.
    */
-  body: Matter.Body;
+  body: RigidBody;
   /**
    * The point of intersection between the ray and the body.
    */
@@ -146,57 +132,53 @@ export class Ray {
     return intersection;
   }
 
-  public static bodyEdges(body: Matter.Body): Ray[] {
+  /**
+   * Computes the world-space edges of a polygon body as a list of rays.
+   * @param body - The body to compute edges for.
+   * @returns The world-space edges of the body, one ray per edge.
+   * @throws An error if the body's shape is not a polygon.
+   */
+  public static bodyEdges(body: RigidBody): Ray[] {
+    if (body.shape.type !== 'polygon') {
+      throw new Error(
+        `Cannot compute edges for a "${body.shape.type}" shape; only polygon shapes have edges.`,
+      );
+    }
+
+    const worldVertices = body.shape.getWorldVertices(
+      body.position,
+      body.angle,
+    );
     const edges = new Array<Ray>();
 
-    for (let i = body.parts.length - 1; i >= 0; i--) {
-      const bodyPart = body.parts[i];
+    for (let i = 0; i < worldVertices.length; i++) {
+      const start = worldVertices[i];
+      const end = worldVertices[(i + 1) % worldVertices.length];
+      const ray = new Ray(start, end);
 
-      if (!bodyPart) {
-        continue;
-      }
+      ray.vertices = [start, end];
 
-      for (let k = bodyPart.vertices.length - 1; k >= 0; k--) {
-        let k2 = k + 1;
-
-        if (k2 >= bodyPart.vertices.length) {
-          k2 = 0;
-        }
-
-        const vertex1 = bodyPart.vertices[k];
-        const vertex2 = bodyPart.vertices[k2];
-
-        if (!vertex1 || !vertex2) {
-          continue;
-        }
-
-        const start = new Vector2(vertex1.x, vertex1.y);
-        const end = new Vector2(vertex2.x, vertex2.y);
-        const ray = new Ray(start, end);
-
-        ray.vertices = [start, end];
-
-        edges.push(ray);
-      }
+      edges.push(ray);
     }
 
     return edges;
   }
 
-  public static bodyCollisions(
-    rayA: Ray,
-    body: Matter.Body,
-  ): RaycastCollision[] {
+  /**
+   * Finds every point at which a ray intersects a body.
+   * @param rayA - The ray to test.
+   * @param body - The body to test against.
+   * @returns The collisions between the ray and the body.
+   */
+  public static bodyCollisions(rayA: Ray, body: RigidBody): RaycastCollision[] {
+    if (body.shape.type === 'circle') {
+      return Ray._circleCollisions(rayA, body, body.shape.radius);
+    }
+
     const rayCollisions = new Array<RaycastCollision>();
     const edges = Ray.bodyEdges(body);
 
-    for (let i = edges.length - 1; i >= 0; i--) {
-      const edge = edges[i];
-
-      if (!edge) {
-        continue;
-      }
-
+    for (const edge of edges) {
       const point = Ray.collisionPoint(rayA, edge);
 
       //if there is no collision, then go to next edge
@@ -205,13 +187,48 @@ export class Ray {
       }
 
       const normal = edge.calculateNormal(rayA.start);
-
       const { vertices } = edge;
 
       rayCollisions.push({ body, point, normal, vertices });
     }
 
     return rayCollisions;
+  }
+
+  private static _circleCollisions(
+    rayA: Ray,
+    body: RigidBody,
+    radius: number,
+  ): RaycastCollision[] {
+    const direction = rayA.end.subtract(rayA.start);
+    const originToCenter = rayA.start.subtract(body.position);
+    const a = direction.dot(direction);
+    const b = 2 * originToCenter.dot(direction);
+    const c = originToCenter.dot(originToCenter) - radius * radius;
+    const discriminant = b * b - 4 * a * c;
+
+    if (discriminant < 0) {
+      return [];
+    }
+
+    const sqrtDiscriminant = Math.sqrt(discriminant);
+    const collisions = new Array<RaycastCollision>();
+
+    for (const t of [
+      (-b - sqrtDiscriminant) / (2 * a),
+      (-b + sqrtDiscriminant) / (2 * a),
+    ]) {
+      if (t < 0 || t > 1) {
+        continue;
+      }
+
+      const point = rayA.start.add(direction.multiply(t));
+      const normal = point.subtract(body.position).normalize();
+
+      collisions.push({ body, point, normal, vertices: [] });
+    }
+
+    return collisions;
   }
 
   /**

@@ -1,0 +1,200 @@
+import { Vector2 } from '../../math/index.js';
+import type { ShapeBase } from './shape.js';
+
+const EPSILON = 1e-9;
+
+/**
+ * A convex polygon collision shape, defined by a set of local-space
+ * vertices. Vertices are re-centered around the polygon's centroid (so
+ * `RigidBody.position` represents the center of mass) and normalized to a
+ * consistent winding order.
+ */
+export class PolygonShape implements ShapeBase {
+  public readonly type = 'polygon';
+
+  public readonly vertices: readonly Vector2[];
+
+  public readonly normals: readonly Vector2[];
+
+  /**
+   * Creates a new PolygonShape instance.
+   * @param vertices - The local-space vertices of the polygon, in order.
+   * Must describe a convex polygon with at least 3 vertices. Vertices may
+   * be supplied in either winding order.
+   * @throws An error if fewer than 3 vertices are provided, the vertices
+   * are collinear/degenerate, or the vertices do not form a convex polygon.
+   */
+  constructor(vertices: readonly Vector2[]) {
+    if (vertices.length < 3) {
+      throw new Error(
+        `PolygonShape requires at least 3 vertices, received ${vertices.length}.`,
+      );
+    }
+
+    let orderedVertices = [...vertices];
+    const signedArea = PolygonShape._signedArea(orderedVertices);
+
+    if (Math.abs(signedArea) < EPSILON) {
+      throw new Error(
+        'PolygonShape vertices must not be collinear or degenerate.',
+      );
+    }
+
+    if (signedArea < 0) {
+      orderedVertices = orderedVertices.slice().reverse();
+    }
+
+    PolygonShape._validateConvexity(orderedVertices);
+
+    const centroid = PolygonShape._calculateCentroid(orderedVertices);
+
+    this.vertices = orderedVertices.map((vertex) => vertex.subtract(centroid));
+    this.normals = PolygonShape._calculateNormals(this.vertices);
+  }
+
+  /**
+   * Creates a rectangular PolygonShape centered on its local origin.
+   * @param width - The width of the rectangle.
+   * @param height - The height of the rectangle.
+   * @returns A new PolygonShape representing the rectangle.
+   */
+  public static rectangle(width: number, height: number): PolygonShape {
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    return new PolygonShape([
+      new Vector2(-halfWidth, -halfHeight),
+      new Vector2(halfWidth, -halfHeight),
+      new Vector2(halfWidth, halfHeight),
+      new Vector2(-halfWidth, halfHeight),
+    ]);
+  }
+
+  private static _signedArea(vertices: readonly Vector2[]): number {
+    let signedArea = 0;
+
+    for (let i = 0; i < vertices.length; i++) {
+      const current = vertices[i];
+      const next = vertices[(i + 1) % vertices.length];
+
+      signedArea += current.cross(next);
+    }
+
+    return signedArea;
+  }
+
+  private static _validateConvexity(vertices: readonly Vector2[]): void {
+    const vertexCount = vertices.length;
+
+    for (let i = 0; i < vertexCount; i++) {
+      const current = vertices[i];
+      const next = vertices[(i + 1) % vertexCount];
+      const afterNext = vertices[(i + 2) % vertexCount];
+
+      const edge = next.subtract(current);
+      const nextEdge = afterNext.subtract(next);
+
+      if (edge.cross(nextEdge) < -EPSILON) {
+        throw new Error('PolygonShape vertices must form a convex polygon.');
+      }
+    }
+  }
+
+  private static _calculateCentroid(vertices: readonly Vector2[]): Vector2 {
+    let centroidX = 0;
+    let centroidY = 0;
+    let signedArea = 0;
+
+    for (let i = 0; i < vertices.length; i++) {
+      const current = vertices[i];
+      const next = vertices[(i + 1) % vertices.length];
+      const cross = current.cross(next);
+
+      signedArea += cross;
+      centroidX += (current.x + next.x) * cross;
+      centroidY += (current.y + next.y) * cross;
+    }
+
+    const factor = 1 / (3 * signedArea);
+
+    return new Vector2(centroidX * factor, centroidY * factor);
+  }
+
+  private static _calculateNormals(vertices: readonly Vector2[]): Vector2[] {
+    const normals: Vector2[] = [];
+
+    for (let i = 0; i < vertices.length; i++) {
+      const current = vertices[i];
+      const next = vertices[(i + 1) % vertices.length];
+      const edge = next.subtract(current);
+
+      normals.push(edge.perpendicular().normalize());
+    }
+
+    return normals;
+  }
+
+  /**
+   * Calculates the area of the polygon.
+   * @returns The area of the polygon.
+   */
+  public getArea(): number {
+    return Math.abs(PolygonShape._signedArea(this.vertices)) / 2;
+  }
+
+  /**
+   * Calculates the moment of inertia of the polygon for a given mass.
+   * @param mass - The mass of the body the shape belongs to.
+   * @returns The moment of inertia of the polygon.
+   */
+  public getMomentOfInertia(mass: number): number {
+    let numerator = 0;
+    let denominator = 0;
+
+    for (let i = 0; i < this.vertices.length; i++) {
+      const current = this.vertices[i];
+      const next = this.vertices[(i + 1) % this.vertices.length];
+      const cross = Math.abs(current.cross(next));
+
+      numerator +=
+        cross * (current.dot(current) + current.dot(next) + next.dot(next));
+      denominator += cross;
+    }
+
+    return (mass / 3) * (numerator / denominator);
+  }
+
+  /**
+   * Calculates the radius of the smallest circle, centered on the
+   * polygon's centroid, that fully contains the polygon.
+   * @returns The bounding radius of the polygon.
+   */
+  public getBoundingRadius(): number {
+    let maxRadiusSquared = 0;
+
+    for (const vertex of this.vertices) {
+      maxRadiusSquared = Math.max(maxRadiusSquared, vertex.magnitudeSquared());
+    }
+
+    return Math.sqrt(maxRadiusSquared);
+  }
+
+  /**
+   * Transforms the polygon's local-space vertices into world space.
+   * @param position - The world-space position of the body.
+   * @param angle - The world-space rotation of the body, in radians.
+   * @returns The world-space vertices of the polygon.
+   */
+  public getWorldVertices(position: Vector2, angle: number): Vector2[] {
+    return this.vertices.map((vertex) => vertex.rotate(angle).add(position));
+  }
+
+  /**
+   * Transforms the polygon's local-space face normals into world space.
+   * @param angle - The world-space rotation of the body, in radians.
+   * @returns The world-space face normals of the polygon.
+   */
+  public getWorldNormals(angle: number): Vector2[] {
+    return this.normals.map((normal) => normal.rotate(angle));
+  }
+}

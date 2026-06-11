@@ -1,3 +1,4 @@
+aabb
 artboard
 attw
 autofetch
@@ -6,6 +7,7 @@ Batchable
 cachable
 commitlint
 dbaeumer
+despawn
 devcontainers
 eamodio
 esbenp
@@ -45,8 +47,8 @@ spritesheet
 stoppables
 unmarks
 updatables
+uvec
 WASD
 webgl
-yoavbls
-uvec
 Wenrexa
+yoavbls
