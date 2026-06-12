@@ -14,7 +14,7 @@ export default function Physics(): JSX.Element {
         description: 'A demo showcasing the physics engine.',
       }}
       header="Physics"
-      blurb="This demo showcases the engine's built-in 2D physics: rigid bodies, gravity, collision detection and resolution. A pile of circles and squares falls into a walled area, bouncing and colliding with the floor, walls and each other until they settle."
+      blurb="This demo showcases the engine's built-in 2D physics: rigid bodies, gravity, collision detection and resolution. A pile of circles and squares falls into a walled area, bouncing and colliding with the floor, walls and each other until they settle. Click anywhere on the canvas to trigger an explosion that blasts nearby shapes away from the click point."
       createGame={createPhysicsGame}
       codeFiles={[
         {
