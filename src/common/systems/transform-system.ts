@@ -7,11 +7,11 @@ import {
   scaleId,
 } from '../components/index.js';
 import { parentId } from '../components/parent-component.js';
-
-type TransformCache = {
-  computed: Set<number>;
-  visiting: Set<number>;
-};
+import {
+  createTransformCache,
+  resetTransformCache,
+  TransformCache,
+} from './transform-cache.js';
 
 function setLocalAsWorldIfExists(entity: number, world: EcsWorld): void {
   const positionComponent = world.getComponent(entity, positionId);
@@ -81,8 +81,22 @@ function composeWithParent(
 function computeWorld(
   entity: number,
   cache: TransformCache,
+  frozen: Set<number>,
   world: EcsWorld,
 ): void {
+  // Static entities (and their static ancestors) have their world transform
+  // computed once and then skipped on every subsequent frame. Re-check
+  // `isStatic` here in case the entity's id was recycled for a new entity.
+  if (frozen.has(entity)) {
+    const positionComponent = world.getComponent(entity, positionId);
+
+    if (positionComponent?.isStatic) {
+      return;
+    }
+
+    frozen.delete(entity);
+  }
+
   if (cache.computed.has(entity)) {
     return;
   }
@@ -114,34 +128,73 @@ function computeWorld(
     cache.visiting.delete(entity);
     cache.computed.add(entity);
 
+    if (hasPosition?.isStatic) {
+      frozen.add(entity);
+    }
+
     return;
   }
 
   const parentEntity = parentComponent.parent;
 
-  computeWorld(parentEntity, cache, world);
+  computeWorld(parentEntity, cache, frozen, world);
 
   composeWithParent(entity, parentEntity, world);
 
   cache.visiting.delete(entity);
   cache.computed.add(entity);
+
+  if (hasPosition?.isStatic && frozen.has(parentEntity)) {
+    frozen.add(entity);
+  }
 }
 
-type TransformSystem = EcsSystem<[PositionEcsComponent], TransformCache> & {
-  beforeQuery: (world: EcsWorld) => TransformCache;
+/**
+ * Per-frame state for `createTransformEcsSystem`, reused across frames to
+ * avoid reallocating its sets every frame.
+ */
+interface TransformRunState {
+  /** Tracks entities visited/computed during the current frame. */
+  cache: TransformCache;
+
+  /**
+   * Entities whose world transform is static and has already been computed,
+   * so `computeWorld` can skip them entirely. Persists across frames.
+   */
+  frozen: Set<number>;
+}
+
+type TransformSystem = EcsSystem<[PositionEcsComponent], TransformRunState> & {
+  beforeQuery: (world: EcsWorld) => TransformRunState;
 };
 
-export const createTransformEcsSystem = (): TransformSystem => ({
-  query: [positionId],
+/**
+ * Creates a system that computes the world position, rotation and scale of
+ * every entity from its local transform and, if it has a `ParentEcsComponent`,
+ * its parent's world transform.
+ *
+ * Entities (and their entire parent chain) with `PositionEcsComponent.isStatic`
+ * set to `true` have their world transform computed once and then skipped on
+ * every subsequent frame.
+ * @returns The transform ECS system.
+ */
+export const createTransformEcsSystem = (): TransformSystem => {
+  const state: TransformRunState = {
+    cache: createTransformCache(),
+    frozen: new Set<number>(),
+  };
 
-  beforeQuery: () => ({
-    computed: new Set<number>(),
-    visiting: new Set<number>(),
-  }),
+  return {
+    query: [positionId],
 
-  run: (result, world, cache) => {
-    const entity = result.entity;
+    beforeQuery: () => {
+      resetTransformCache(state.cache);
 
-    computeWorld(entity, cache, world);
-  },
-});
+      return state;
+    },
+
+    run: (result, world, { cache, frozen }) => {
+      computeWorld(result.entity, cache, frozen, world);
+    },
+  };
+};

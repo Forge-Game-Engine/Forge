@@ -1,7 +1,15 @@
-import { PositionEcsComponent, positionId } from '../../common/index.js';
+import {
+  FlipEcsComponent,
+  flipId,
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  ScaleEcsComponent,
+  scaleId,
+} from '../../common/index.js';
 import { Matrix3x3 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { EcsWorld } from '../../ecs/index.js';
 import { matchesLayerMask } from '../../utilities/matches-layer-mask.js';
 import {
   CameraEcsComponent,
@@ -10,7 +18,7 @@ import {
   spriteId,
 } from '../components/index.js';
 import { RenderContext } from '../render-context.js';
-import { Renderable } from '../renderable.js';
+import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { InstanceBatch } from './instance-batch.js';
 
@@ -34,13 +42,12 @@ const includeBatch = (
   renderable: Renderable,
   batch: InstanceBatch,
   renderContext: RenderContext,
-  world: EcsWorld,
   projectionMatrix: Matrix3x3,
 ) => {
-  const { entities } = batch;
+  const { entries } = batch;
   const { gl } = renderContext;
 
-  if (entities.length === 0) {
+  if (entries.length === 0) {
     return;
   }
 
@@ -48,7 +55,7 @@ const includeBatch = (
 
   renderable.bind(gl);
 
-  const requiredBatchSize = entities.length * renderable.floatsPerInstance;
+  const requiredBatchSize = entries.length * renderable.floatsPerInstance;
 
   if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
     batch.buffer = new Float32Array(
@@ -58,13 +65,8 @@ const includeBatch = (
 
   let instanceDataOffset = 0;
 
-  for (const entity of entities) {
-    renderable.bindInstanceData(
-      entity,
-      world,
-      batch.buffer,
-      instanceDataOffset,
-    );
+  for (const components of entries) {
+    renderable.bindInstanceData(components, batch.buffer, instanceDataOffset);
 
     instanceDataOffset += renderable.floatsPerInstance;
   }
@@ -73,7 +75,7 @@ const includeBatch = (
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, batch.buffer, gl.DYNAMIC_DRAW);
 
-  setupInstanceAttributesAndDraw(renderContext, renderable, entities.length);
+  setupInstanceAttributesAndDraw(renderContext, renderable, entries.length);
 };
 
 const spriteEntityBuffer: number[] = [];
@@ -102,7 +104,7 @@ export const createRenderEcsSystem = (
     );
 
     for (const batch of renderables.values()) {
-      batch.entities.length = 0;
+      batch.entries.length = 0;
     }
 
     for (const spriteEntity of spriteEntityBuffer) {
@@ -126,17 +128,40 @@ export const createRenderEcsSystem = (
         continue;
       }
 
-      if (!renderables.has(renderable)) {
-        renderables.set(renderable, new InstanceBatch());
+      let batch = renderables.get(renderable);
+
+      if (!batch) {
+        batch = new InstanceBatch();
+        renderables.set(renderable, batch);
       }
 
-      const batch = renderables.get(renderable)!;
+      const entityPosition = world.getComponent<PositionEcsComponent>(
+        spriteEntity,
+        positionId,
+      );
 
-      batch.entities.push(spriteEntity);
+      if (!entityPosition) {
+        throw new Error(
+          `Entity "${spriteEntity}" has a sprite component but no position component.`,
+        );
+      }
+
+      const components: InstanceComponents = {
+        position: entityPosition,
+        rotation: world.getComponent<RotationEcsComponent>(
+          spriteEntity,
+          rotationId,
+        ),
+        scale: world.getComponent<ScaleEcsComponent>(spriteEntity, scaleId),
+        sprite: spriteComponent,
+        flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
+      };
+
+      batch.entries.push(components);
     }
 
     for (const [renderable, batch] of renderables) {
-      includeBatch(renderable, batch, renderContext, world, projectionMatrix);
+      includeBatch(renderable, batch, renderContext, projectionMatrix);
     }
 
     gl.bindVertexArray(null);

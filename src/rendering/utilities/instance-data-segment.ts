@@ -1,6 +1,6 @@
-import type { EcsWorld } from '../../ecs/index.js';
 import type {
   BindInstanceDataCallback,
+  InstanceComponents,
   Renderable,
   SetupInstanceAttributesCallback,
 } from '../renderable.js';
@@ -24,16 +24,14 @@ export interface InstanceDataSegment {
   readonly floatsPerInstance: number;
 
   /**
-   * Writes this segment's data for `entity` into `instanceDataBufferArray`,
+   * Writes this segment's data for an entity into `instanceDataBufferArray`,
    * starting at `offset` floats from the start of the instance.
-   * @param entity - The entity to bind data for.
-   * @param world - The world the entity belongs to.
+   * @param components - The entity's components, resolved once per entity by the render system.
    * @param instanceDataBufferArray - The buffer to write into.
    * @param offset - The offset, in floats, of this segment within the instance.
    */
   bindInstanceData(
-    entity: number,
-    world: EcsWorld,
+    components: InstanceComponents,
     instanceDataBufferArray: Float32Array,
     offset: number,
   ): void;
@@ -98,15 +96,13 @@ export function combineInstanceDataSegments(
   }
 
   const bindInstanceData: BindInstanceDataCallback = (
-    entity,
-    world,
+    components,
     instanceDataBufferArray,
     offset,
   ) => {
     segments.forEach((segment, index) => {
       segment.bindInstanceData(
-        entity,
-        world,
+        components,
         instanceDataBufferArray,
         offset + segmentOffsets[index],
       );
