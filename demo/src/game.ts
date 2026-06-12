@@ -14,6 +14,7 @@ import {
   RigidBody,
   rotationId,
   scaleId,
+  screenToWorldSpace,
   Shape,
   SpriteEcsComponent,
   spriteId,
@@ -22,8 +23,10 @@ import {
 
 const renderLayer = 1;
 const wallThickness = 40;
-const shapeCount = 400;
+const shapeCount = 680;
 const gravity = new Vector2(20, -100);
+const explosionForce = 4_000_000;
+const explosionRadius = 500;
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
@@ -211,5 +214,31 @@ for (let i = 0; i < shapeCount; i++) {
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+
+// The camera is static at the world origin with a zoom of 1 (see
+// `cameraEntity` above), so screen coordinates can be converted to world
+// coordinates directly.
+renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
+  const canvasBounds = renderContext.canvas.getBoundingClientRect();
+
+  const screenPosition = new Vector2(
+    event.clientX - canvasBounds.left,
+    event.clientY - canvasBounds.top,
+  );
+
+  const worldPosition = screenToWorldSpace(
+    screenPosition,
+    Vector2.zero,
+    1,
+    renderContext.canvas.width,
+    renderContext.canvas.height,
+  );
+
+  physicsWorld.applyExplosiveForce(
+    worldPosition,
+    explosionForce,
+    explosionRadius,
+  );
+});
 
 game.run();

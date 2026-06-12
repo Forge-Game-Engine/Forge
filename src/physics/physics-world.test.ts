@@ -166,4 +166,70 @@ describe('PhysicsWorld', () => {
       expect(world.collisionEnds).toHaveLength(0);
     });
   });
+
+  describe('applyExplosiveForce', () => {
+    it('should push a body within range away from the explosion center', () => {
+      const world = new PhysicsWorld();
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(0, 5),
+      });
+
+      world.addBody(body);
+
+      world.applyExplosiveForce(Vector2.zero, 100, 10);
+
+      expect(body.velocity.x).toBeCloseTo(0);
+      expect(body.velocity.y).toBeGreaterThan(0);
+    });
+
+    it('should apply a stronger impulse to bodies closer to the center', () => {
+      const world = new PhysicsWorld();
+      const nearBody = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(1, 0),
+      });
+      const farBody = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(5, 0),
+      });
+
+      world.addBody(nearBody);
+      world.addBody(farBody);
+
+      world.applyExplosiveForce(Vector2.zero, 100, 10);
+
+      expect(nearBody.velocity.x).toBeGreaterThan(farBody.velocity.x);
+      expect(farBody.velocity.x).toBeGreaterThan(0);
+    });
+
+    it('should not affect bodies at or beyond the radius', () => {
+      const world = new PhysicsWorld();
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(10, 0),
+      });
+
+      world.addBody(body);
+
+      world.applyExplosiveForce(Vector2.zero, 100, 10);
+
+      expect(body.velocity.equals(Vector2.zero)).toBe(true);
+    });
+
+    it('should not affect static bodies', () => {
+      const world = new PhysicsWorld();
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(1, 0),
+        isStatic: true,
+      });
+
+      world.addBody(body);
+
+      world.applyExplosiveForce(Vector2.zero, 100, 10);
+
+      expect(body.velocity.equals(Vector2.zero)).toBe(true);
+    });
+  });
 });
