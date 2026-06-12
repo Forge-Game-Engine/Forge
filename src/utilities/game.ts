@@ -36,7 +36,17 @@ export class Game implements Stoppable {
     }
 
     this._isRunning = true;
-    this._gameLoop(performance.now());
+
+    // Seed the time tracker with the current time so the first frame's
+    // delta time reflects the time since `run()` was called, rather than
+    // the time since the page loaded. Without this, navigating to a game
+    // client-side (e.g. via SPA routing) long after the page first loaded
+    // produces a huge first-frame delta time, which can cause a single,
+    // massive integration step (e.g. physics bodies tunnelling through
+    // boundaries).
+    this._time.update(performance.now());
+
+    this._animationFrameId = requestAnimationFrame(this._gameLoop);
   }
 
   /**

@@ -4,6 +4,7 @@ attw
 autofetch
 backquote
 Batchable
+Baumgarte
 cachable
 commitlint
 dbaeumer

@@ -30,6 +30,17 @@ const defaultPhysicsWorldOptions = {
 const SOLVER_ITERATIONS = 8;
 
 /**
+ * Multiplier applied to the per-step gravity-induced velocity change to
+ * derive the resting velocity threshold passed to {@link resolveCollision}.
+ * Each step, gravity adds `gravity.magnitude() * deltaTimeInSeconds` to the
+ * normal velocity of a resting contact; restitution must be suppressed below
+ * that magnitude (with margin for solver iteration) or the contact bounces
+ * back out by the same amount every step, causing resting piles to visibly
+ * vibrate indefinitely.
+ */
+const RESTING_VELOCITY_THRESHOLD_MULTIPLIER = 2;
+
+/**
  * A pair of {@link RigidBody} instances that are currently colliding.
  */
 export interface BodyCollisionPair {
@@ -136,7 +147,7 @@ export class PhysicsWorld {
   public step(deltaTimeInSeconds: number): void {
     this._integrateVelocities(deltaTimeInSeconds);
     this._integratePositions(deltaTimeInSeconds);
-    this._detectAndResolveCollisions();
+    this._detectAndResolveCollisions(deltaTimeInSeconds);
   }
 
   private _integrateVelocities(deltaTimeInSeconds: number): void {
@@ -164,7 +175,7 @@ export class PhysicsWorld {
     }
   }
 
-  private _detectAndResolveCollisions(): void {
+  private _detectAndResolveCollisions(deltaTimeInSeconds: number): void {
     const bodies = [...this._bodies];
     const currentPairs = new Map<string, BodyCollisionPair>();
     const manifolds: CollisionManifold[] = [];
@@ -175,9 +186,14 @@ export class PhysicsWorld {
       }
     }
 
+    const restingVelocityThreshold =
+      this.gravity.magnitude() *
+      deltaTimeInSeconds *
+      RESTING_VELOCITY_THRESHOLD_MULTIPLIER;
+
     for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
       for (const manifold of manifolds) {
-        resolveCollision(manifold);
+        resolveCollision(manifold, restingVelocityThreshold, iteration === 0);
       }
     }
 

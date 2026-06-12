@@ -29,7 +29,7 @@ describe('resolveCollision', () => {
       contactPoints: [new Vector2(0, 1)],
     };
 
-    resolveCollision(manifold);
+    resolveCollision(manifold, 0, true);
 
     expect(fallingBody.velocity.x).toBeCloseTo(0);
     expect(fallingBody.velocity.y).toBeCloseTo(-2.5);
@@ -62,7 +62,7 @@ describe('resolveCollision', () => {
       contactPoints: [new Vector2(1, 0)],
     };
 
-    resolveCollision(manifold);
+    resolveCollision(manifold, 0, true);
 
     expect(bodyA.velocity.x).toBeCloseTo(-5);
     expect(bodyA.velocity.y).toBeCloseTo(0);
@@ -93,7 +93,7 @@ describe('resolveCollision', () => {
       contactPoints: [new Vector2(0, 1)],
     };
 
-    resolveCollision(manifold);
+    resolveCollision(manifold, 0, true);
 
     expect(slidingBody.velocity.x).toBeCloseTo(2);
     expect(slidingBody.velocity.y).toBeCloseTo(0);
@@ -121,7 +121,7 @@ describe('resolveCollision', () => {
       contactPoints: [new Vector2(0, 1)],
     };
 
-    resolveCollision(manifold);
+    resolveCollision(manifold, 0, true);
 
     expect(bodyA.velocity.x).toBeCloseTo(0);
     expect(bodyA.velocity.y).toBeCloseTo(-5);

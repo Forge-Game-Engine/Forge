@@ -111,6 +111,10 @@ const config: Config = {
               to: 'demos/ecs',
               label: 'ECS',
             },
+            {
+              to: 'demos/physics',
+              label: 'Physics',
+            },
           ],
         },
         {
