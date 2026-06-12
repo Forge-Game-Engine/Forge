@@ -24,9 +24,9 @@ import {
 const renderLayer = 1;
 const wallThickness = 40;
 const shapeCount = 680;
-const gravity = new Vector2(20, -100);
-const explosionForce = 4_000_000;
-const explosionRadius = 500;
+const gravity = new Vector2(0, -100);
+const explosionForce = 8_000_000;
+const explosionRadius = 200;
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
@@ -101,7 +101,7 @@ function createBoundary(
     world: new Vector2(width / barSprite.width, height / barSprite.height),
   });
 
-  world.addComponent(entity, spriteId, barSprite);
+  // world.addComponent(entity, spriteId, barSprite);
 
   world.addComponent(entity, PhysicsBodyId, {
     physicsBody: new RigidBody({

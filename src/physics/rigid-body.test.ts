@@ -101,6 +101,47 @@ describe('RigidBody', () => {
       expect(body.aabb.size.x).toBeCloseTo(4);
       expect(body.aabb.size.y).toBeCloseTo(4);
     });
+
+    it('should return the cached aabb instance while the position is unchanged', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(2),
+        position: new Vector2(5, 5),
+      });
+
+      expect(body.aabb).toBe(body.aabb);
+    });
+
+    it('should recompute the aabb after the position changes', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(2),
+        position: new Vector2(5, 5),
+      });
+
+      const initialAabb = body.aabb;
+
+      body.position = new Vector2(10, 5);
+
+      const updatedAabb = body.aabb;
+
+      expect(updatedAabb).not.toBe(initialAabb);
+      expect(updatedAabb.origin.x).toBeCloseTo(8);
+    });
+
+    it('should recompute the aabb after the position is mutated in place', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(2),
+        position: new Vector2(5, 5),
+      });
+
+      const initialAabb = body.aabb;
+
+      body.position.x = 10;
+
+      const updatedAabb = body.aabb;
+
+      expect(updatedAabb).not.toBe(initialAabb);
+      expect(updatedAabb.origin.x).toBeCloseTo(8);
+    });
   });
 
   describe('applyImpulse', () => {
