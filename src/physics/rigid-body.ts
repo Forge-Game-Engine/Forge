@@ -100,6 +100,14 @@ export class RigidBody {
    */
   public userData?: unknown;
 
+  /**
+   * The most recently computed {@link aabb} and the position it was
+   * computed for. Re-used while `position` is unchanged to avoid
+   * reallocating a `Rect` on every access, since broad-phase collision
+   * detection reads `aabb` for the same body many times per step.
+   */
+  private _aabbCache: { position: Vector2; aabb: Rect } | null;
+
   private static _nextId = 0;
 
   /**
@@ -131,6 +139,7 @@ export class RigidBody {
     this.isSensor = isSensor;
     this.restitution = clamp(restitution, 0, 1);
     this.friction = clamp(friction, 0, 1);
+    this._aabbCache = null;
 
     if (isStatic) {
       this.mass = 0;
@@ -154,12 +163,21 @@ export class RigidBody {
    * broad-phase collision detection.
    */
   get aabb(): Rect {
-    const radius = this.shape.getBoundingRadius();
+    const cache = this._aabbCache;
 
-    return new Rect(
+    if (cache && cache.position.equals(this.position)) {
+      return cache.aabb;
+    }
+
+    const radius = this.shape.getBoundingRadius();
+    const aabb = new Rect(
       new Vector2(this.position.x - radius, this.position.y - radius),
       new Vector2(radius * 2, radius * 2),
     );
+
+    this._aabbCache = { position: this.position.clone(), aabb };
+
+    return aabb;
   }
 
   /**

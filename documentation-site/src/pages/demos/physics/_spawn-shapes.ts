@@ -21,7 +21,7 @@ import {
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { wallThickness } from './_create-boundaries';
 
-const shapeCount = 130;
+const shapeCount = 300;
 const minSize = 30;
 const maxSize = 60;
 

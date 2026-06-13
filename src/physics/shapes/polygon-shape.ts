@@ -17,6 +17,26 @@ export class PolygonShape implements ShapeBase {
   public readonly normals: readonly Vector2[];
 
   /**
+   * The most recently computed {@link getWorldVertices} result and the
+   * position/angle it was computed for. Re-used while both are unchanged to
+   * avoid reallocating a vertex array on every call, since narrow-phase
+   * collision detection reads world vertices for the same body many times
+   * per step.
+   */
+  private _worldVerticesCache: {
+    position: Vector2;
+    angle: number;
+    vertices: Vector2[];
+  } | null;
+
+  /**
+   * The most recently computed {@link getWorldNormals} result and the angle
+   * it was computed for. Re-used while the angle is unchanged, for the same
+   * reason as {@link _worldVerticesCache}.
+   */
+  private _worldNormalsCache: { angle: number; normals: Vector2[] } | null;
+
+  /**
    * Creates a new PolygonShape instance.
    * @param vertices - The local-space vertices of the polygon, in order.
    * Must describe a convex polygon with at least 3 vertices. Vertices may
@@ -50,6 +70,8 @@ export class PolygonShape implements ShapeBase {
 
     this.vertices = orderedVertices.map((vertex) => vertex.subtract(centroid));
     this.normals = PolygonShape._calculateNormals(this.vertices);
+    this._worldVerticesCache = null;
+    this._worldNormalsCache = null;
   }
 
   /**
@@ -186,7 +208,19 @@ export class PolygonShape implements ShapeBase {
    * @returns The world-space vertices of the polygon.
    */
   public getWorldVertices(position: Vector2, angle: number): Vector2[] {
-    return this.vertices.map((vertex) => vertex.rotate(angle).add(position));
+    const cache = this._worldVerticesCache;
+
+    if (cache && cache.angle === angle && cache.position.equals(position)) {
+      return cache.vertices;
+    }
+
+    const vertices = this.vertices.map((vertex) =>
+      vertex.rotate(angle).add(position),
+    );
+
+    this._worldVerticesCache = { position: position.clone(), angle, vertices };
+
+    return vertices;
   }
 
   /**
@@ -195,6 +229,16 @@ export class PolygonShape implements ShapeBase {
    * @returns The world-space face normals of the polygon.
    */
   public getWorldNormals(angle: number): Vector2[] {
-    return this.normals.map((normal) => normal.rotate(angle));
+    const cache = this._worldNormalsCache;
+
+    if (cache && cache.angle === angle) {
+      return cache.normals;
+    }
+
+    const normals = this.normals.map((normal) => normal.rotate(angle));
+
+    this._worldNormalsCache = { angle, normals };
+
+    return normals;
   }
 }

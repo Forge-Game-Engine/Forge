@@ -150,6 +150,42 @@ export class PhysicsWorld {
     this._detectAndResolveCollisions(deltaTimeInSeconds);
   }
 
+  /**
+   * Applies a radial impulse to every non-static body within `radius` of
+   * `center`, simulating an explosion. The impulse magnitude falls off
+   * linearly from `force` at `center` to zero at `radius`, and is applied
+   * through each body's center of mass so no torque is imparted. Static
+   * bodies and bodies at or beyond `radius` are unaffected.
+   * @param center - The world-space origin of the explosion.
+   * @param force - The impulse magnitude applied to a body located at
+   * `center`.
+   * @param radius - The distance from `center` beyond which bodies are
+   * unaffected.
+   */
+  public applyExplosiveForce(
+    center: Vector2,
+    force: number,
+    radius: number,
+  ): void {
+    for (const body of this._bodies) {
+      if (body.isStatic) {
+        continue;
+      }
+
+      const offset = body.position.subtract(center);
+      const distance = offset.magnitude();
+
+      if (distance >= radius) {
+        continue;
+      }
+
+      const falloff = 1 - distance / radius;
+      const impulse = offset.normalize().multiply(force * falloff);
+
+      body.applyImpulse(impulse, Vector2.zero);
+    }
+  }
+
   private _integrateVelocities(deltaTimeInSeconds: number): void {
     for (const body of this._bodies) {
       if (body.isStatic) {

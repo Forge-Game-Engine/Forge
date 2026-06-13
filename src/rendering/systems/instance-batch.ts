@@ -1,3 +1,5 @@
+import type { InstanceComponents } from '../renderable.js';
+
 export interface InstanceBatchOptions {
   initialBufferSize?: number;
   bufferGrowthFactor?: number;
@@ -13,8 +15,8 @@ const defaultOptions: Required<InstanceBatchOptions> = {
  */
 
 export class InstanceBatch {
-  /** The set of entities in this batch. */
-  public entities: number[];
+  /** The resolved components of each entity in this batch. */
+  public entries: InstanceComponents[];
   /** The buffer holding instance data. */
   public buffer: Float32Array;
   /** The initial size of the instance data array. */
@@ -28,7 +30,7 @@ export class InstanceBatch {
       ...options,
     };
 
-    this.entities = [];
+    this.entries = [];
     this.buffer = new Float32Array(initialBufferSize);
     this.initialBufferSize = initialBufferSize;
     this.bufferGrowthFactor = bufferGrowthFactor;

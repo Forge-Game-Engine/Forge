@@ -157,6 +157,29 @@ describe('PolygonShape', () => {
       expect(worldVertices[0].x).toBeCloseTo(6);
       expect(worldVertices[0].y).toBeCloseTo(4);
     });
+
+    it('should return the cached array while position and angle are unchanged', () => {
+      const square = PolygonShape.rectangle(2, 2);
+      const position = new Vector2(5, 5);
+
+      expect(square.getWorldVertices(position, 0)).toBe(
+        square.getWorldVertices(position, 0),
+      );
+    });
+
+    it('should return a different instance with a different value when position changes', () => {
+      const square = PolygonShape.rectangle(2, 2);
+      const first = square.getWorldVertices(new Vector2(5, 5), 0);
+      const second = square.getWorldVertices(new Vector2(5, 5), 0);
+
+      expect(first).toBe(second);
+
+      const third = square.getWorldVertices(new Vector2(10, 5), 0);
+
+      expect(third).not.toBe(first);
+      expect(third[0].x).toBeCloseTo(9);
+      expect(third[0].y).toBeCloseTo(4);
+    });
   });
 
   describe('getWorldNormals', () => {
@@ -166,6 +189,22 @@ describe('PolygonShape', () => {
 
       expect(worldNormals[0].x).toBeCloseTo(1);
       expect(worldNormals[0].y).toBeCloseTo(0);
+    });
+
+    it('should return the cached array while the angle is unchanged', () => {
+      const square = PolygonShape.rectangle(2, 2);
+
+      expect(square.getWorldNormals(0)).toBe(square.getWorldNormals(0));
+    });
+
+    it('should return a different instance with a different value when angle changes', () => {
+      const square = PolygonShape.rectangle(2, 2);
+      const first = square.getWorldNormals(0);
+      const second = square.getWorldNormals(Math.PI / 2);
+
+      expect(second).not.toBe(first);
+      expect(second[0].x).toBeCloseTo(1);
+      expect(second[0].y).toBeCloseTo(0);
     });
   });
 });

@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EcsWorld } from '../../ecs/index.js';
-import { Renderable } from '../renderable.js';
+import { InstanceComponents, Renderable } from '../renderable.js';
 import {
   combineInstanceDataSegments,
   InstanceDataSegment,
 } from './instance-data-segment.js';
 
 describe('combineInstanceDataSegments', () => {
-  const mockWorld = {} as EcsWorld;
+  const mockComponents = {} as InstanceComponents;
   const mockGl = {} as WebGL2RenderingContext;
   const mockRenderable = {} as Renderable;
 
@@ -37,17 +36,15 @@ describe('combineInstanceDataSegments', () => {
     const layout = combineInstanceDataSegments(first, second);
     const buffer = new Float32Array(20);
 
-    layout.bindInstanceData(1, mockWorld, buffer, 0);
+    layout.bindInstanceData(mockComponents, buffer, 0);
 
     expect(first.bindInstanceData).toHaveBeenCalledWith(
-      1,
-      mockWorld,
+      mockComponents,
       buffer,
       0,
     );
     expect(second.bindInstanceData).toHaveBeenCalledWith(
-      1,
-      mockWorld,
+      mockComponents,
       buffer,
       17,
     );
@@ -60,17 +57,15 @@ describe('combineInstanceDataSegments', () => {
     const layout = combineInstanceDataSegments(first, second);
     const buffer = new Float32Array(40);
 
-    layout.bindInstanceData(1, mockWorld, buffer, 20);
+    layout.bindInstanceData(mockComponents, buffer, 20);
 
     expect(first.bindInstanceData).toHaveBeenCalledWith(
-      1,
-      mockWorld,
+      mockComponents,
       buffer,
       20,
     );
     expect(second.bindInstanceData).toHaveBeenCalledWith(
-      1,
-      mockWorld,
+      mockComponents,
       buffer,
       37,
     );

@@ -1,16 +1,4 @@
-import {
-  FlipEcsComponent,
-  flipId,
-  PositionEcsComponent,
-  positionId,
-  RotationEcsComponent,
-  rotationId,
-  ScaleEcsComponent,
-  scaleId,
-} from '../../common/index.js';
-import type { EcsWorld } from '../../ecs/index.js';
-import { SpriteEcsComponent, spriteId } from '../components/index.js';
-import type { Renderable } from '../renderable.js';
+import type { InstanceComponents, Renderable } from '../renderable.js';
 import type { InstanceDataSegment } from './instance-data-segment.js';
 import { setupInstanceAttribute } from './setup-instance-attribute.js';
 
@@ -39,22 +27,11 @@ const TINT_COLOR_A_OFFSET = 16;
 export const SPRITE_INSTANCE_DATA_FLOATS_PER_INSTANCE = 17;
 
 function bindSpriteInstanceData(
-  entity: number,
-  world: EcsWorld,
+  components: InstanceComponents,
   instanceDataBufferArray: Float32Array,
   offset: number,
 ): void {
-  const position = world.getComponent<PositionEcsComponent>(
-    entity,
-    positionId,
-  )!;
-
-  const rotation = world.getComponent<RotationEcsComponent>(entity, rotationId);
-
-  const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
-
-  const sprite = world.getComponent<SpriteEcsComponent>(entity, spriteId)!;
-  const flip = world.getComponent<FlipEcsComponent>(entity, flipId);
+  const { position, rotation, scale, sprite, flip } = components;
 
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
