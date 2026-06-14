@@ -2,7 +2,6 @@
  * Interface for an asset cache that manages loading and retrieving assets.
  *
  * @template TItem - The type of asset being cached.
- * @template TLoadArgs - The type of arguments for loading assets.
  */
 export interface AssetCache<TItem> {
   /**

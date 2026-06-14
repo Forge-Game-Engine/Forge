@@ -1,0 +1,8 @@
+{
+  "label": "Asset Loading",
+  "position": 5,
+  "link": {
+    "type": "doc",
+    "id": "docs/asset-loading/index"
+  }
+}
