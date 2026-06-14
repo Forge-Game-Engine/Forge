@@ -13,6 +13,7 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle updating particle positions.
+ * @param time - The time instance used to determine how far to move and rotate particles each frame.
  */
 export const createParticlePositionEcsSystem = (
   time: Time,

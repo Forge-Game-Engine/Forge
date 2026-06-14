@@ -3,6 +3,11 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle audio playback.
+ *
+ * Each tick, entities with an {@link AudioEcsComponent} whose `playSound` is
+ * `true` have `sound.play()` called and `playSound` reset to `false`. When
+ * the world stops, any matching entity whose `sound` is still playing has it
+ * stopped and unloaded.
  * @returns An ECS system that manages audio playback for entities with AudioEcsComponent.
  */
 export const createAudioEcsSystem = (): EcsSystem<[AudioEcsComponent]> => ({

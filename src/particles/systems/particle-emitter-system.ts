@@ -170,6 +170,8 @@ function emitNewParticles(
 
 /**
  * Creates an ECS system to handle particles.
+ * @param time - The time instance used to advance emitter timers.
+ * @param random - The random instance used to pick values from emitter ranges.
  */
 export const createParticleEcsSystem = (
   time: Time,
