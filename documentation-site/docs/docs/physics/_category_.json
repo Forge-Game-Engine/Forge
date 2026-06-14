@@ -1,0 +1,8 @@
+{
+  "label": "Physics",
+  "position": 3,
+  "link": {
+    "type": "doc",
+    "id": "docs/physics/index"
+  }
+}
