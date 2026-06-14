@@ -115,7 +115,7 @@ once, as part of the component's initial data or in a constructor, and call
 
 `registerListener` keeps a strong reference to the listener function,
 including anything it captures. If an entity is removed, or a component is
-returned to a pool, without deregistering its listeners, those closures stay
+returned to a pool, without de-registering its listeners, those closures stay
 alive and keep firing for state that no longer matters. Call
 `deregisterListener` with the same function reference during cleanup, or
 `clear()` to remove every listener at once, for example when resetting a
