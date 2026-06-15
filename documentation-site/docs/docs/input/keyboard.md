@@ -92,8 +92,7 @@ pressed even though the key is still held.
 `KeyboardAxis1dBinding` and `KeyboardAxis2dBinding` work additively:
 pressing `positiveKeyCode` adds `1` to the current value, pressing
 `negativeKeyCode` subtracts `1`, and releasing a key undoes the same amount.
-This means opposite keys held at the same time cancel out to `0`, the same
-behavior as Unity's `Input.GetAxis`, rather than the more recently pressed
+This means opposite keys held at the same time cancel out to `0`, rather than the more recently pressed
 key "winning".
 
 Key repeat events are ignored (the browser's

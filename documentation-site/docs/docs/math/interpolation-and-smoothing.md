@@ -47,8 +47,7 @@ input.
 ## smoothDampVector2: easing toward a target
 
 [`smoothDampVector2`](/Forge/docs/api/functions/smoothDampVector2) moves a
-position toward a target using a critically damped spring, the same
-algorithm Unity's `Vector2.SmoothDamp` uses. Unlike `lerp`, it has momentum:
+position toward a target using a critically damped spring. Unlike `lerp`, it has momentum:
 it accelerates and decelerates smoothly and won't overshoot the target, which
 makes it well suited for camera follow and UI elements easing toward a new
 position.
