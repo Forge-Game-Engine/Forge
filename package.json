@@ -92,6 +92,12 @@
         "types": "./dist/finite-state-machine/index.d.ts",
         "default": "./dist/finite-state-machine/index.js"
       }
+    },
+    "./ui": {
+      "import": {
+        "types": "./dist/ui/index.d.ts",
+        "default": "./dist/ui/index.js"
+      }
     }
   },
   "types": "./dist/index.d.ts",
