@@ -14,9 +14,9 @@ const defaultOptions: Required<InstanceBatchOptions> = {
  * Represents a batch of instances for rendering.
  */
 
-export class InstanceBatch {
+export class InstanceBatch<TComponents = InstanceComponents> {
   /** The resolved components of each entity in this batch. */
-  public entries: InstanceComponents[];
+  public entries: TComponents[];
   /** The buffer holding instance data. */
   public buffer: Float32Array;
   /** The initial size of the instance data array. */
@@ -30,7 +30,7 @@ export class InstanceBatch {
       ...options,
     };
 
-    this.entries = [];
+    this.entries = [] as TComponents[];
     this.buffer = new Float32Array(initialBufferSize);
     this.initialBufferSize = initialBufferSize;
     this.bufferGrowthFactor = bufferGrowthFactor;

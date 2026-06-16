@@ -6,11 +6,14 @@ import {
 } from '../../common/systems/transform-cache.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { Rect } from '../../math/index.js';
 import { uiCanvasId } from '../components/ui-canvas-component.js';
+import { uiClipId } from '../components/ui-clip-component.js';
 import {
   UiTransformEcsComponent,
   uiTransformId,
 } from '../components/ui-transform-component.js';
+import { intersectRects } from '../utilities/create-ui-clip.js';
 
 /**
  * Per-frame state passed from `beforeQuery` to each `run` invocation.
@@ -32,6 +35,8 @@ interface ParentRect {
   sizeX: number;
   sizeY: number;
   entity: number | null;
+  /** Effective clip rect that children of this parent should inherit. */
+  childClipRect: Rect | null;
 }
 
 export function computeUiWorldMatrix(transform: UiTransformEcsComponent): void {
@@ -57,7 +62,14 @@ function resolveParentRect(
   const parentComp = world.getComponent(entity, parentId);
 
   if (!parentComp) {
-    return { originX: 0, originY: 0, sizeX: 0, sizeY: 0, entity: null };
+    return {
+      originX: 0,
+      originY: 0,
+      sizeX: 0,
+      sizeY: 0,
+      entity: null,
+      childClipRect: null,
+    };
   }
 
   const parentEntity = parentComp.parent;
@@ -72,6 +84,7 @@ function resolveParentRect(
       sizeX: parentTransform.resolvedRect.size.x,
       sizeY: parentTransform.resolvedRect.size.y,
       entity: parentEntity,
+      childClipRect: computeChildClipRect(parentEntity, parentTransform, world),
     };
   }
 
@@ -84,10 +97,45 @@ function resolveParentRect(
       sizeX: parentCanvas.width,
       sizeY: parentCanvas.height,
       entity: parentEntity,
+      childClipRect: null,
     };
   }
 
-  return { originX: 0, originY: 0, sizeX: 0, sizeY: 0, entity: parentEntity };
+  return {
+    originX: 0,
+    originY: 0,
+    sizeX: 0,
+    sizeY: 0,
+    entity: parentEntity,
+    childClipRect: null,
+  };
+}
+
+/**
+ * Returns the effective clip rect that children of `entity` should inherit.
+ * If `entity` has an enabled {@link UiClipEcsComponent}, children are clipped
+ * to the intersection of `entity`'s `resolvedRect` and its own inherited
+ * `clipRect`.
+ */
+function computeChildClipRect(
+  entity: number,
+  transform: UiTransformEcsComponent,
+  world: EcsWorld,
+): Rect | null {
+  const clip = world.getComponent(entity, uiClipId);
+
+  if (!clip?.enabled) {
+    return transform.clipRect ?? null;
+  }
+
+  const ownClip = transform.clipRect ?? null;
+  const resolvedRect = transform.resolvedRect;
+
+  if (ownClip === null) {
+    return resolvedRect;
+  }
+
+  return intersectRects(resolvedRect, ownClip);
 }
 
 function applyAnchorLayout(
@@ -139,6 +187,7 @@ function computeLayout(
       transform.resolvedRect.origin.y = 0;
       transform.resolvedRect.size.x = 0;
       transform.resolvedRect.size.y = 0;
+      transform.clipRect = null;
       computeUiWorldMatrix(transform);
     }
 
@@ -166,6 +215,7 @@ function computeLayout(
     transform.resolvedRect.size.x = canvas.width;
     transform.resolvedRect.size.y = canvas.height;
     canvas.isDirty = false;
+    transform.clipRect = null;
     computeUiWorldMatrix(transform);
     cache.visiting.delete(entity);
     cache.computed.add(entity);
@@ -180,6 +230,7 @@ function computeLayout(
   const parent = resolveParentRect(entity, world, cache, frozen);
 
   applyAnchorLayout(transform, parent);
+  transform.clipRect = parent.childClipRect;
   computeUiWorldMatrix(transform);
 
   cache.visiting.delete(entity);

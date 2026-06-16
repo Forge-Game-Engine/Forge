@@ -77,6 +77,14 @@ export interface UiTransformEcsComponent {
   worldMatrix: Matrix3x3;
 
   /**
+   * The effective axis-aligned clip rect in screen-space pixels, computed by
+   * the layout system as the intersection of all ancestor clip rects.
+   * `null` / `undefined` means the element is not clipped. Written by the
+   * layout system; do not set from user code.
+   */
+  clipRect?: Rect | null;
+
+  /**
    * When `true` and the entire parent chain is also static, the layout system
    * computes this element's rect once and skips it on every subsequent frame.
    * Defaults to `false` (recompute every frame). Validated as an optimisation

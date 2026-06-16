@@ -48,8 +48,8 @@ export interface InstanceComponents {
  * @param instanceDataBuffer - The Float32Array buffer to write instance data into
  * @param offset - The offset within the buffer where this instance's data should start
  */
-export type BindInstanceDataCallback = (
-  components: InstanceComponents,
+export type BindInstanceDataCallback<TComponents = InstanceComponents> = (
+  components: TComponents,
   instanceDataBuffer: Float32Array,
   offset: number,
 ) => void;
@@ -61,10 +61,8 @@ export type BindInstanceDataCallback = (
  * @param gl - The WebGL2 rendering context
  * @param renderable - The renderable object being configured
  */
-export type SetupInstanceAttributesCallback = (
-  gl: WebGL2RenderingContext,
-  renderable: Renderable,
-) => void;
+export type SetupInstanceAttributesCallback<TComponents = InstanceComponents> =
+  (gl: WebGL2RenderingContext, renderable: Renderable<TComponents>) => void;
 
 /**
  * Represents a renderable object in the rendering pipeline.
@@ -95,7 +93,7 @@ export type SetupInstanceAttributesCallback = (
  * );
  * ```
  */
-export class Renderable {
+export class Renderable<TComponents = InstanceComponents> {
   /**
    * The geometry (vertex data) to be rendered.
    * This defines the shape and structure of the mesh (e.g., a quad for sprites).
@@ -121,13 +119,13 @@ export class Renderable {
    * Callback function that binds instance-specific data for an entity into a buffer.
    * Called for each entity to prepare its data for instanced rendering.
    */
-  public readonly bindInstanceData: BindInstanceDataCallback;
+  public readonly bindInstanceData: BindInstanceDataCallback<TComponents>;
 
   /**
    * Callback function that sets up WebGL vertex attribute pointers for instanced rendering.
    * Called to configure how instance data should be interpreted by the shader.
    */
-  public readonly setupInstanceAttributes: SetupInstanceAttributesCallback;
+  public readonly setupInstanceAttributes: SetupInstanceAttributesCallback<TComponents>;
 
   /**
    * Creates a new Renderable.
@@ -144,8 +142,8 @@ export class Renderable {
     material: Material,
     floatsPerInstance: number,
     layer: number,
-    bindInstanceData: BindInstanceDataCallback,
-    setupInstanceAttributes: SetupInstanceAttributesCallback,
+    bindInstanceData: BindInstanceDataCallback<TComponents>,
+    setupInstanceAttributes: SetupInstanceAttributesCallback<TComponents>,
   ) {
     this.geometry = geometry;
     this.material = material;
