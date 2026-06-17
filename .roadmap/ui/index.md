@@ -154,7 +154,7 @@ Higher-complexity elements that depend on text, masking, and focus.
   them.
 - Ensure the generated **API reference** is complete (JSDoc coverage).
 
-> Note: Epics 9 and 10 consolidate cross-cutting concerns that are *also*
+> Note: Epics 9 and 10 consolidate cross-cutting concerns that are _also_
 > delivered incrementally within each preceding epic. They exist to guarantee a
 > holistic stress test, a unified showcase, and end-to-end guides once the full
 > surface area is in place — not to defer testing or docs to the end.
@@ -165,9 +165,10 @@ Higher-complexity elements that depend on text, masking, and focus.
 
 Phases are ordered by dependency. Within a phase, epics can largely proceed in
 parallel. Cross-cutting requirements (tests, docs, demo, exports) are delivered
-*inside* each epic, not deferred.
+_inside_ each epic, not deferred.
 
 ### Phase 1 — Foundations
+
 - **Epic 1 — UI Core & Layout Foundations**
 - **Epic 2 — UI Rendering & Default Shader/Material**
 
@@ -175,6 +176,7 @@ Rationale: nothing can be rendered or laid out without these. They are the hard
 prerequisites for every widget.
 
 ### Phase 2 — Text & Interaction Substrate
+
 - **Epic 3 — SDF Text Rendering**
 - **Epic 4 — Interaction, Focus & State Core**
 
@@ -182,6 +184,7 @@ Rationale: both build directly on Phase 1 and are prerequisites for usable
 widgets. They are independent of each other and can be built concurrently.
 
 ### Phase 3 — Primitive Widgets & Composition
+
 - **Epic 5 — Primitive Widgets**
 - **Epic 6 — Composition Utilities**
 
@@ -190,6 +193,7 @@ interaction (Phases 1–2). Composition utilities are defined alongside the firs
 composed widgets so conventions are set before the advanced widgets arrive.
 
 ### Phase 4 — Advanced Widgets
+
 - **Epic 7 — Advanced & Container Widgets**
 
 Rationale: scroll groups, input boxes, and dropdowns depend on clipping/masking,
@@ -197,6 +201,7 @@ text input, focus/keyboard navigation, and the primitive widgets/composition
 utilities from earlier phases.
 
 ### Phase 5 — Animation, Performance & Documentation
+
 - **Epic 8 — UI Animation Integration**
 - **Epic 9 — Performance, Stress Testing & Hardening**
 - **Epic 10 — Documentation Site Demo & User Guides**

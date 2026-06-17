@@ -76,8 +76,7 @@ export async function createPlayer(
   });
 
   const playerRadius =
-    (playerSprite.width * playerScale + playerSprite.height * playerScale) /
-    4;
+    (playerSprite.width * playerScale + playerSprite.height * playerScale) / 4;
 
   world.addComponent(playerEntity, PhysicsBodyId, {
     physicsBody: new RigidBody({

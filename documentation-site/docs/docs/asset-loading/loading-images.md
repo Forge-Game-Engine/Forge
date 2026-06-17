@@ -53,7 +53,7 @@ the cached image instantly with no `await` needed (its promise still
 resolves on the same tick, but no network or decode work happens).
 
 :::caution
-`getOrLoad` does not deduplicate *in-flight* loads. If you call
+`getOrLoad` does not deduplicate _in-flight_ loads. If you call
 `getOrLoad('player.png')` from two places before the first call has
 resolved, both see an empty cache and both create a new `Image()` and start
 a separate load. Awaiting a single `Promise.all` preload step (as above)

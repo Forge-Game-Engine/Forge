@@ -88,7 +88,10 @@ any other component:
 
 ```ts
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { positionId, type PositionEcsComponent } from '@forge-game-engine/forge/common';
+import {
+  positionId,
+  type PositionEcsComponent,
+} from '@forge-game-engine/forge/common';
 
 const playerMovementSystem: EcsSystem<[PositionEcsComponent]> = {
   query: [positionId],

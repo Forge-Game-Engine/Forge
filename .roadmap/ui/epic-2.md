@@ -27,7 +27,7 @@ primitive that Epic 7's scroll groups need.
   component pointing at a `Renderable` — exactly like
   [sprite-component.ts](../../src/rendering/components/sprite-component.ts).
 - `Material` auto-detects uniforms and supports `number | boolean | Float32Array
-  | Int32Array | WebGLTexture | Vector2 | Matrix3x3` and `setColorUniform`. The
+| Int32Array | WebGLTexture | Vector2 | Matrix3x3` and `setColorUniform`. The
   default UI shader's "global" knobs (not per-instance) are plain uniforms;
   per-element knobs (tint, corner radius, etc.) must travel as **per-instance
   attributes** in the instance buffer.
@@ -42,6 +42,7 @@ primitive that Epic 7's scroll groups need.
 the default UI shader.
 
 **Implementation detail:**
+
 - Add `UiRenderableEcsComponent` in
   `src/ui/components/ui-renderable-component.ts`:
   `renderable: Renderable`, `enabled: boolean`, plus the per-instance style
@@ -61,6 +62,7 @@ the default UI shader.
 custom GLSL.
 
 **Implementation detail:**
+
 - Add `src/ui/shaders/ui/ui.vert.glsl` and `ui.frag.glsl`, plus a barrel/loader
   in `src/ui/shaders/index.ts`, following the existing shader module layout
   ([src/rendering/shaders](../../src/rendering/shaders/)) and the `.glsl` copy
@@ -88,10 +90,11 @@ custom GLSL.
 styled elements still batch together.
 
 **Implementation detail:**
+
 - Decide the instance layout and set `floatsPerInstance` accordingly. Suggested
   packing per instance: `mat3 worldMatrix` (9 floats — or pass 6 for a 2D affine
   to save space), `vec2 size`, `vec4 tint`, `vec4 borderColor`, `float
-  borderWidth`, `float cornerRadius`, `float opacity`, `vec4 clipRect`.
+borderWidth`, `float cornerRadius`, `float opacity`, `vec4 clipRect`.
 - Implement `bindInstanceData(components, buffer, offset)` to write these in a
   fixed order; implement `setupInstanceAttributes(gl, renderable)` to declare
   matching `vertexAttribPointer` + `vertexAttribDivisor(…, 1)` calls. Use
@@ -108,6 +111,7 @@ styled elements still batch together.
 deterministic order.
 
 **Implementation detail:**
+
 - Add `createUiRenderEcsSystem(renderContext)` in
   `src/ui/systems/ui-render-system.ts`, structurally mirroring
   [render-system.ts](../../src/rendering/systems/render-system.ts): a module
@@ -137,6 +141,7 @@ deterministic order.
 prerequisite for Epic 7 scroll groups, and useful for any panel with overflow.
 
 **Implementation detail:**
+
 - **Phase A (rectangular scissor/analytic clip):** add `UiClipEcsComponent`
   marking an element as a clip region. The layout system already produces a
   `resolvedRect`; propagate the **intersection** of ancestor clip rects down the
@@ -156,9 +161,10 @@ prerequisite for Epic 7 scroll groups, and useful for any panel with overflow.
 effects, without leaving the batch pipeline.
 
 **Implementation detail:**
+
 - Because batching keys on the `Renderable`, a custom material is just a custom
   `Renderable`: expose `createCustomUiRenderable({ vertexSource, fragmentSource,
-  floatsPerInstance, bindInstanceData, setupInstanceAttributes, layer })` that
+floatsPerInstance, bindInstanceData, setupInstanceAttributes, layer })` that
   builds a `Material` from the user's GLSL and returns a `Renderable` the UI
   render system batches like any other.
 - Document the **contract** the custom shader must honor to coexist with the UI

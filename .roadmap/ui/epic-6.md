@@ -20,7 +20,7 @@ whole UI stack is authored.
   **entity subtree** plus a bag of component references. Composition utilities
   therefore need a consistent way to (a) create a subtree, (b) hand back typed
   handles to its parts and events, and (c) tear it down cleanly. There is no
-  retained-object graph — the entity tree *is* the widget.
+  retained-object graph — the entity tree _is_ the widget.
 
 ---
 
@@ -31,6 +31,7 @@ whole UI stack is authored.
 **Goal:** one predictable shape for every `createUiX` factory.
 
 **Implementation detail:**
+
 - Standardize the return as a typed `UiWidgetHandle<TParts, TEvents>`:
   `{ entity: number; parts: TParts; events: TEvents; destroy(): void }` where
   `parts` exposes child entity ids/handles (e.g. `{ label, knob, fill }`) and
@@ -46,8 +47,9 @@ whole UI stack is authored.
 and registering components.
 
 **Implementation detail:**
+
 - Add `createUiElement(world, { parent, transform, style?, interactable?,
-  focusable?, text? })` in `src/ui/utilities/` — a single helper that creates an
+focusable?, text? })` in `src/ui/utilities/` — a single helper that creates an
   entity, attaches `UiTransformEcsComponent`, sets `ParentComponent` to `parent`,
   and conditionally attaches renderable/interactable/focusable/text components.
   Most factories become a few `createUiElement` calls plus wiring.
@@ -61,6 +63,7 @@ and registering components.
 listeners — critical for the robustness pass in Epic 9.
 
 **Implementation detail:**
+
 - `destroyUiSubtree(world, entity)` recursively removes children (walk
   `ParentComponent` relationships) then the root, calling `removeEntity`/
   `removeComponent` on the [EcsWorld](../../src/ecs/ecs-world.ts). The factory's
@@ -78,12 +81,13 @@ listeners — critical for the robustness pass in Epic 9.
 numbers.
 
 **Implementation detail:**
+
 - Add a `UiTheme` object (colors, border widths, corner radius, font, per-state
   tints) and `defaultUiTheme`. Factories read style defaults from a theme passed
   via options (or a world-level default theme component on the UI canvas root).
 - Provide `mergeUiStyle(theme, overrides)` so per-widget overrides layer over the
   theme using the project's `{ ...defaults, ...options }` convention.
-- This makes Epic 8's animated state transitions theme-aware (animate *toward*
+- This makes Epic 8's animated state transitions theme-aware (animate _toward_
   theme-defined target styles).
 
 ### F6.5 — Composition conventions doc (the contract for later widgets)
@@ -91,6 +95,7 @@ numbers.
 **Goal:** write down the rules so Epic 7 and any future widget comply.
 
 **Implementation detail:**
+
 - A short "Authoring composed widgets" guide capturing: factory signature/return
   shape (F6.1), use of `createUiElement`/parenting helpers (F6.2), mandatory
   `destroy()` + listener cleanup (F6.3), theme usage (F6.4), and the rule that

@@ -23,12 +23,13 @@ earlier primitives plus new behavior, and each stresses a different prerequisite
 **Goal:** a clipped, scrollable container for content larger than its viewport.
 
 **Implementation detail:**
+
 - `createUiScrollGroup(world, options)`: a **viewport** panel with
   `UiClipEcsComponent` (Epic 2 clipping) and a **content** child whose
   `UiTransformEcsComponent` offset is driven by scroll position. Content can
   exceed the viewport; clipping hides the overflow.
 - `UiScrollEcsComponent { scroll: Vector2; contentSize: Vector2; viewportSize:
-  Vector2; orientation: 'vertical' | 'horizontal' | 'both'; onScroll }`.
+Vector2; orientation: 'vertical' | 'horizontal' | 'both'; onScroll }`.
 - `createUiScrollEcsSystem(inputManager)`:
   - **Wheel:** consume wheel input via the mouse source's axis binding (the
     `MouseInputSource` already handles `wheel` →
@@ -53,13 +54,14 @@ earlier primitives plus new behavior, and each stresses a different prerequisite
 input-intensive widget.
 
 **Implementation detail:**
+
 - `createUiInputBox(world, options)`: a panel (interactable + focusable + state)
   containing a `UiText` (Epic 3) for the value, a **caret** child (a thin
   panel/quad), and an optional **selection highlight** child (a panel behind the
   text). Clip the text to the panel (Epic 2) so long values don't overflow.
 - `UiInputEcsComponent { value; caretIndex; selectionAnchor; placeholder;
-  masked?: boolean; maxLength?; multiline?: boolean; onChange; onSubmit; onFocus;
-  onBlur }`.
+masked?: boolean; maxLength?; multiline?: boolean; onChange; onSubmit; onFocus;
+onBlur }`.
 - **Text input integration:** keystrokes must flow through the Forge input
   system, not a raw widget listener. Two viable paths — pick and document one:
   1. extend the keyboard source with a **text-composition input source** that
@@ -68,8 +70,8 @@ input-intensive widget.
   2. add a focused, off-screen/transparent `<input>`/`contenteditable` element
      managed by a single sanctioned utility (like the resize/blur observers) that
      captures composition/IME correctly and feeds an input action.
-   Path 2 is pragmatic for correct IME/clipboard support; keep the DOM element
-   strictly behind a utility boundary, never inside the widget logic.
+     Path 2 is pragmatic for correct IME/clipboard support; keep the DOM element
+     strictly behind a utility boundary, never inside the widget logic.
 - **Editing logic (pure, testable):** caret movement (arrows, Home/End, word
   jumps), selection (shift+arrows), insert/delete/backspace, clipboard
   cut/copy/paste, `maxLength`, masking for passwords. Implement as a pure
@@ -84,11 +86,12 @@ input-intensive widget.
 **Goal:** a button that opens a scrollable, focus-trapped list of options.
 
 **Implementation detail:**
+
 - `createUiDropdown(world, options)` composes: a **trigger button** (Epic 5
   button showing the current selection) and a **popup** = a panel + scroll group
   (F7.1) + a list of option buttons (Epic 5).
 - `UiDropdownEcsComponent { options; selectedIndex; isOpen; onChange; onOpen;
-  onClose }`.
+onClose }`.
 - **Open/close:** trigger click or `ui.activate` toggles `isOpen`; building/
   showing the popup. The popup must render **above** other UI — set a high
   z-index/late draw order (Epic 2) or parent it to an "overlay" layer on the UI

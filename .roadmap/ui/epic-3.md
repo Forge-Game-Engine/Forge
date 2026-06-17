@@ -33,11 +33,12 @@ metrics, and text options (alignment, bold, italic, color/tint, size, wrapping).
 **Goal:** a typed, loadable font asset.
 
 **Implementation detail:**
+
 - Define `FontAsset` (in `src/ui/text/types/`): `{ texture: WebGLTexture;
-  atlasSize: Vector2; lineHeight; ascent; descent; base; distanceRange;
-  glyphs: Map<number, GlyphMetrics>; kerning?: Map<number, Map<number, number>> }`.
+atlasSize: Vector2; lineHeight; ascent; descent; base; distanceRange;
+glyphs: Map<number, GlyphMetrics>; kerning?: Map<number, Map<number, number>> }`.
 - `GlyphMetrics`: `{ codepoint; uvRect (in atlas); size (px in atlas);
-  bearing (xoffset/yoffset); advance }`. This matches the well-known **BMFont /
+bearing (xoffset/yoffset); advance }`. This matches the well-known **BMFont /
   msdf-bmfont JSON** layout, so the generator (F3.2) and any third-party tool can
   interoperate.
 - Add a loader `loadFontAsset(renderContext, jsonUrl, atlasUrl)` that fetches the
@@ -53,6 +54,7 @@ is not already available" (per roadmap) — so first **evaluate** depending on t
 mature `msdf-bmfont-xml` / `msdfgen` ecosystem before building bespoke.
 
 **Implementation detail:**
+
 - Add a Node script under [scripts/](../../scripts/), e.g.
   `scripts/generate-font-atlas.mjs`, with an npm alias like
   `npm run generate:font`. Inputs: font file, charset, atlas size, SDF type
@@ -72,9 +74,10 @@ mature `msdf-bmfont-xml` / `msdfgen` ecosystem before building bespoke.
 pure, highly-testable core.
 
 **Implementation detail:**
+
 - Add `shapeText(text, font, options): ShapedText` in
   `src/ui/text/shape-text.ts`. Output: array of `{ codepoint; x; y; width;
-  height; uvRect }` in element-local pixels, plus total `bounds` and per-line
+height; uvRect }` in element-local pixels, plus total `bounds` and per-line
   info.
 - Handle: advance widths, optional kerning pairs, line height, explicit `\n`,
   and **word wrapping** within a max width (`wrap: 'none' | 'word' | 'char'`),
@@ -96,6 +99,7 @@ pure, highly-testable core.
 pipeline.
 
 **Implementation detail:**
+
 - Add `src/ui/shaders/text/text.vert.glsl` + `text.frag.glsl`. Vertex shader
   positions each glyph quad via the element `worldMatrix` (Epic 1) + UI
   projection (Epic 2) + per-instance glyph offset/size. Fragment shader samples
@@ -114,10 +118,11 @@ pipeline.
 **Goal:** the ECS surface users actually touch.
 
 **Implementation detail:**
+
 - Add `UiTextEcsComponent` (`textId`): `{ text: string; font: FontAsset;
-  fontSize: number; color: Color; align; verticalAlign; wrap; overflow;
-  bold; italic; renderable: Renderable; enabled: boolean; _shaped?: ShapedText;
-  _dirty: boolean }`. Mutating `text`/options sets `_dirty`.
+fontSize: number; color: Color; align; verticalAlign; wrap; overflow;
+bold; italic; renderable: Renderable; enabled: boolean; _shaped?: ShapedText;
+_dirty: boolean }`. Mutating `text`/options sets `_dirty`.
 - Add `createUiTextEcsSystem(renderContext)`:
   - In `beforeQuery`/`run`, re-`shapeText` only for `_dirty` entities (re-shaping
     every frame is wasteful — cache `ShapedText`).

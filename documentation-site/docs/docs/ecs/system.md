@@ -10,7 +10,6 @@ Optional `beforeQuery(world)` can return a value that will be passed to `run` as
 
 Example:
 
-
 ```ts
 const movementSystem = {
   query: [Position, Velocity] as const,
@@ -19,7 +18,10 @@ const movementSystem = {
     return null;
   },
   run(result, world, _before) {
-    const [pos, vel] = result.components as [{ x: number; y: number }, { x: number; y: number }];
+    const [pos, vel] = result.components as [
+      { x: number; y: number },
+      { x: number; y: number },
+    ];
     pos.x += vel.x;
     pos.y += vel.y;
   },

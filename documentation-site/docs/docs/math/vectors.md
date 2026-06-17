@@ -42,7 +42,7 @@ the whole API to be mutable.
 constants. Forge's y-axis points **down** the screen (matching canvas
 coordinates), so `Vector2.up` is `(0, -1)` and `Vector2.down` is `(0, 1)`.
 Keep this in mind whenever "up" means "toward the top of the screen", for
-example gravity that pulls things down the screen is a *positive* y value.
+example gravity that pulls things down the screen is a _positive_ y value.
 
 `Vector3` has the same `zero`/`one` constants plus `up`/`down`/`left`/`right`/`forward`/`backward`
 for the z-axis, but does not use the y-down convention since it isn't tied

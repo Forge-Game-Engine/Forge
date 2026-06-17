@@ -40,6 +40,7 @@ correct.
 **Goal:** make `src/ui` a real, exported module so later features have a home.
 
 **Implementation detail:**
+
 - Create `src/ui/index.ts` re-exporting `./components/index.js`,
   `./systems/index.js`, `./utilities/index.js`, and `./shaders/index.js`
   (mirroring [src/rendering/index.ts](../../src/rendering/index.ts)).
@@ -62,6 +63,7 @@ wiring is verified by `check-exports` and `check-types`.
 against.
 
 **Implementation detail:**
+
 - Add `UiCanvasEcsComponent` (`uiCanvasId = createComponentId<...>('ui-canvas')`)
   in `src/ui/components/ui-canvas-component.ts`. Fields:
   - `width: number`, `height: number` — current logical size in CSS pixels.
@@ -87,6 +89,7 @@ this epic only fixes the convention.
 **Goal:** the core box model for UI elements.
 
 **Implementation detail:**
+
 - Add `UiTransformEcsComponent` in `src/ui/components/ui-transform-component.ts`
   with:
   - `anchorMin: Vector2`, `anchorMax: Vector2` — normalized (0–1) anchor rect
@@ -116,6 +119,7 @@ already consumes `Matrix3x3` uniforms (see `Material.setUniform('u_projection',
 every frame (or only when dirty).
 
 **Implementation detail:**
+
 - Add `createUiLayoutEcsSystem()` in
   `src/ui/systems/ui-layout-system.ts` implementing `EcsSystem`.
 - It must process **parents before children**. The existing
@@ -146,6 +150,7 @@ needed.
 its place** (per the roadmap's "if it proves to carry its weight").
 
 **Implementation detail:**
+
 - Add `UiFlexEcsComponent` (`direction: 'row' | 'column'`, `gap`,
   `justify: 'start'|'center'|'end'|'space-between'`, `align`, `padding`).
 - In the layout system, when a parent has `UiFlexEcsComponent`, compute child
@@ -164,6 +169,7 @@ implemented.
 changes size.
 
 **Implementation detail:**
+
 - Add `src/ui/utilities/create-ui-resize-observer.ts` that wires a
   `ResizeObserver` on the render container (the same `HTMLElement` the
   `MouseInputSource` attaches to — see

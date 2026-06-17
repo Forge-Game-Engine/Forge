@@ -40,6 +40,7 @@ engine; they compose the substrate.
 widgets.
 
 **Implementation detail:**
+
 - `createUiPanel(world, options)` builds an entity with UI transform + UI
   renderable using the default shader (tint, border, corner radius, opacity,
   optional background texture from Epic 2).
@@ -55,6 +56,7 @@ widgets.
 **Goal:** the canonical composed, interactive widget (panel + text label).
 
 **Implementation detail:**
+
 - `createUiButton(world, options)` assembles: a panel root (interactable +
   focusable + state) and a child `UiText` (Epic 3) centered via layout. This is
   the first consumer of Epic 6's composition convention.
@@ -71,11 +73,12 @@ widgets.
 **Goal:** a binary toggle with clear state + events.
 
 **Implementation detail:**
+
 - `createUiCheckbox(world, options)`: a panel "box" (interactable + focusable +
   state) plus a "check" child (a glyph from a text/icon atlas, or a small
   renderable) whose visibility/opacity reflects `checked`.
 - Maintain `UiCheckboxEcsComponent { checked: boolean; onChange:
-  ParameterizedForgeEvent<{ entity; checked }> }`. Pointer click and
+ParameterizedForgeEvent<{ entity; checked }> }`. Pointer click and
   `ui.activate` both toggle `checked` and raise `onChange`.
 - Optional `indeterminate` tri-state and an optional adjacent label entity
   (clicking the label toggles the box — reuse the same interactable wiring).
@@ -89,11 +92,12 @@ widgets.
 primitive.
 
 **Implementation detail:**
+
 - `createUiSlider(world, options)` assembles a **track** panel, a **fill** panel
   (clipped/sized to value), and a **knob** panel (interactable + focusable +
   state). Layout positions the knob along the track from the normalized value.
 - `UiSliderEcsComponent { value; min; max; step?; orientation: 'horizontal' |
-  'vertical'; onChange; onChangeStart; onChangeEnd }`.
+'vertical'; onChange; onChangeStart; onChangeEnd }`.
 - `createUiSliderEcsSystem(inputManager)`:
   - **Drag:** on knob press (Epic 4 press state) read pointer position each
     frame, project onto the track axis using the knob/track `resolvedRect`s,

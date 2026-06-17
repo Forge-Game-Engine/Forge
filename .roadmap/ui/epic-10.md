@@ -31,6 +31,7 @@ them.
 **Goal:** one navigable demo covering every UI feature end to end.
 
 **Implementation detail:**
+
 - Build a showcase in the documentation-site demo with sections per area:
   layout/anchors/resize (Epic 1), styling & custom shaders & clipping (Epic 2),
   text & fonts (Epic 3), interaction/focus/keyboard (Epic 4), each primitive
@@ -47,6 +48,7 @@ them.
 **Goal:** a complete, navigable guide set.
 
 **Implementation detail:**
+
 - Ensure a guide exists and is cross-linked for: UI layout & anchors; default
   shader styling; custom materials; clipping/masking; text rendering & font-atlas
   generation; interaction & events; focus & keyboard navigation; defocus/blur
@@ -65,6 +67,7 @@ them.
 **Goal:** the generated reference covers the entire public UI surface.
 
 **Implementation detail:**
+
 - Audit every exported symbol in `src/ui` (components, component ids, system
   factories, utilities, factories, types, shader loaders, theme types) for JSDoc
   with `@param`/`@returns`/`@throws` and documented event payloads.
@@ -78,6 +81,7 @@ them.
 **Goal:** the docs build is correct and the showcase actually runs.
 
 **Implementation detail:**
+
 - Build the documentation site and the demo; fix broken links, dead snippets,
   and stale screenshots. Verify each guide's example compiles against the
   shipped API (snippets should come from real, tested code where possible).

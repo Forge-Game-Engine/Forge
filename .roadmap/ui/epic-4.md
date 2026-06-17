@@ -40,8 +40,9 @@ DOM handlers inside widgets**.
 z-order and clipping.
 
 **Implementation detail:**
+
 - Add `UiInteractableEcsComponent` (`interactableId`): `{ enabled: boolean;
-  blocksPointer: boolean; hitPadding?: number }`. Only entities with this
+blocksPointer: boolean; hitPadding?: number }`. Only entities with this
   component participate in hit-testing.
 - Add `createUiHitTestEcsSystem(inputManager, renderContext)`:
   - Read the current pointer position from the mouse source/axis action and
@@ -64,6 +65,7 @@ z-order and clipping.
 Forge-event transitions.
 
 **Implementation detail:**
+
 - Add `UiStateEcsComponent` (`stateId`): boolean/flags for `hovered`, `pressed`,
   `focused`, `disabled` plus the per-element event objects:
   `onHoverEnter`, `onHoverExit`, `onPressStart`, `onPressEnd`, `onClick`,
@@ -89,6 +91,7 @@ Forge-event transitions.
 input-driven focus changes.
 
 **Implementation detail:**
+
 - Track focus centrally in `UiFocusEcsComponent` on the UI canvas root:
   `{ focused: entity | null; focusRing: boolean }`.
 - Add `setFocus(world, root, entity | null)` utility that updates the central
@@ -106,6 +109,7 @@ input-driven focus changes.
 called out by the roadmap.
 
 **Implementation detail:**
+
 - Add `src/ui/utilities/create-ui-blur-observer.ts` (the one sanctioned DOM
   integration point) that listens at the **container/window/document** level for:
   - container `blur`/`focusout`, `window` `blur`, and `document`
@@ -126,6 +130,7 @@ called out by the roadmap.
 **Goal:** full keyboard operability, driven through Forge input actions.
 
 **Implementation detail:**
+
 - Define input **actions** (not raw key listeners): `ui.focusNext`,
   `ui.focusPrev`, `ui.navigateUp/Down/Left/Right`, `ui.activate` (Enter/Space),
   `ui.cancel` (Escape). Register them as `TriggerAction`s and provide default

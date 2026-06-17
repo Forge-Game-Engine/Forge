@@ -112,6 +112,7 @@
   "scripts": {
     "dev": "vite --config vite.config.demo.js",
     "build": "tsc --project tsconfig.build.json && node scripts/copy-shaders.js",
+    "generate:font": "node scripts/generate-font-atlas.mjs",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only",

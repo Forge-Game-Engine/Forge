@@ -36,8 +36,9 @@ tween engine**. Plus examples, demos, and guides for animating UI properties.
 `updateCallback`s everywhere.
 
 **Implementation detail:**
+
 - Add `animateUiProperty(world, entity, { getComponent, set, from?, to,
-  duration, easing?, loop?, onFinished? })` that builds a
+duration, easing?, loop?, onFinished? })` that builds a
   `Required<AnimatedProperty>` via `createAnimatedProperty` and pushes it onto
   the entity's `AnimationEcsComponent` (creating the component if absent). The
   `updateCallback` calls `set(value)` and flags the relevant dirty bit (UI
@@ -56,6 +57,7 @@ tween engine**. Plus examples, demos, and guides for animating UI properties.
 all widgets.
 
 **Implementation detail:**
+
 - Replace the snap in Epic 5's `applyUiStateStyle` with an animated version:
   subscribe to `UiStateEcsComponent` events (`onHoverEnter/Exit`,
   `onPressStart/End`, `onFocus/Blur`, `onDisabledChange`) and on each transition
@@ -75,6 +77,7 @@ all widgets.
 scroll.
 
 **Implementation detail:**
+
 - Provide reusable presets: `fadeIn/fadeOut` (opacity), `popIn/popOut`
   (scale + opacity with `ease-in-back`/`ease-out`), `slideIn/slideOut` (offset),
   used by Epic 7 dropdown open/close and modal panels.
@@ -90,6 +93,7 @@ scroll.
 **Goal:** the small continuous animations widgets need.
 
 **Implementation detail:**
+
 - Caret blink (Epic 7 input box) as a `pingpong`/`loop` opacity animation;
   focus-ring pulse; loading spinners (animate rotation). All via F8.1 helpers —
   zero bespoke timers.
@@ -100,6 +104,7 @@ scroll.
 animating UI properties."
 
 **Implementation detail:**
+
 - A dedicated demo scene animating opacity/scale/position/color/corner-radius,
   plus state-transition and open/close presets, with controls to tweak
   duration/easing live.

@@ -36,6 +36,7 @@ under load.
 budget.
 
 **Implementation detail:**
+
 - A demo scene spawning hundreds–thousands of UI elements: mixed panels,
   buttons, text, checkboxes, sliders, a scroll group with a long list, and active
   animations. Provide on-screen controls for element count, animation density,
@@ -50,6 +51,7 @@ budget.
 **Goal:** confirm the design batches as intended and find the real hotspots.
 
 **Implementation detail:**
+
 - Profile with the F9.1 scene (Chrome performance + `gl` draw-call counting).
   Verify: same-material/same-atlas elements share one batch; z-index sorting
   isn't fragmenting batches more than necessary (Epic 2 coarse-z guidance);
@@ -70,6 +72,7 @@ budget.
 desyncing.
 
 **Implementation detail:**
+
 - **Rapid focus changes:** spam tab/click focus; assert exactly one focused
   element, no event storms beyond transitions, and in-flight focus animations
   cancel/replace cleanly (Epic 8).
@@ -92,6 +95,7 @@ desyncing.
 **Goal:** lock in the gains so regressions are caught.
 
 **Implementation detail:**
+
 - Document a target budget (e.g. N elements at 60fps within X batches) based on
   F9.2 findings.
 - Add lightweight automated guards where feasible: unit/integration tests
