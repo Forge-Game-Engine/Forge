@@ -3,6 +3,7 @@ import {
   Axis1dAction,
   Axis2dAction,
   buttonMoments,
+  createImageSprite,
   createShaderStore,
   createWorld,
   Game,
@@ -21,8 +22,10 @@ import {
   registerRendering,
   TriggerAction,
 } from '../../src';
-import { createBatch } from './create-batch';
+import { CircleMotionSystem } from './circle-motion-system';
 import { FireSystem } from './fire-system';
+import { SoakTestComponent } from './soak-test-component';
+import { SoakTestSystem } from './soak-test-system';
 
 export const game = new Game();
 
@@ -105,28 +108,20 @@ panInput.bind(
 
 inputsManager.setActiveGroup(alternativeInputGroup);
 
-const sprites = [
-  'star_medium.png',
-  'star_small.png',
-  'star_large.png',
-  'ship.png',
-  'meteor_detailedLarge.png',
-];
-
-const batchPromises = sprites.map((sprite) =>
-  createBatch(
-    sprite,
-    imageCache,
-    world,
-    renderLayers[0],
-    shaderStore,
-    cameraEntity,
-    10_000,
-  ),
+const soakTestImage = await imageCache.getOrLoad('star_small.png');
+const soakTestSprite = createImageSprite(
+  soakTestImage,
+  renderLayers[0],
+  shaderStore,
+  cameraEntity,
 );
 
-await Promise.all(batchPromises);
+world.buildAndAddEntity('soak-test', [new SoakTestComponent()]);
 
-world.addSystems(new FireSystem());
+world.addSystems(
+  new FireSystem(),
+  new CircleMotionSystem(world),
+  new SoakTestSystem({ world, sprite: soakTestSprite }),
+);
 
 game.run();
