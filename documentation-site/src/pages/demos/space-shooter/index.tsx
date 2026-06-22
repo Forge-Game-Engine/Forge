@@ -4,6 +4,9 @@ import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
 import createBackgroundMaterialCode from '!!raw-loader!./_create-background';
+import createExplosionsCode from '!!raw-loader!./_create-explosions';
+import cameraShakeComponentCode from '!!raw-loader!./_camera-shake.component';
+import cameraShakeSystemCode from '!!raw-loader!./_camera-shake.system';
 import backgroundSystemCode from '!!raw-loader!./_background.system';
 import backgroundComponentCode from '!!raw-loader!./_background.component';
 import backgroundShaderCode from '!!raw-loader!./_background.shader';
@@ -77,6 +80,14 @@ export default function Rendering(): JSX.Element {
           content: bulletSystemCode,
         },
         {
+          name: 'camera-shake.component.ts',
+          content: cameraShakeComponentCode,
+        },
+        {
+          name: 'camera-shake.system.ts',
+          content: cameraShakeSystemCode,
+        },
+        {
           name: 'collision.system.ts',
           content: collisionSystemCode,
         },
@@ -87,6 +98,10 @@ export default function Rendering(): JSX.Element {
         {
           name: 'create-background.ts',
           content: createBackgroundMaterialCode,
+        },
+        {
+          name: 'create-explosions.ts',
+          content: createExplosionsCode,
         },
         {
           name: 'create-inputs.ts',

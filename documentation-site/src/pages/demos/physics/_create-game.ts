@@ -18,8 +18,14 @@ const renderLayers = {
 };
 
 const gravity = new Vector2(0, -300);
-const explosionForce = 8_000_000;
-const explosionRadius = 200;
+// Kept low enough that even the lightest shape (the narrow plank, ~225 mass)
+// hit dead-center stays under ~2,400px/s - the speed at which a body can
+// cross the 40px-thick boundary walls in a single physics step and tunnel
+// through them. That failure was more likely to surface in fullscreen, where
+// shapes have more open space to build up speed before reaching a wall,
+// making the explosion look far stronger than in the windowed view.
+const explosionForce = 1_000_000;
+const explosionRadius = 600;
 
 export const createPhysicsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');

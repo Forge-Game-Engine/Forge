@@ -8,7 +8,7 @@ const config: Config = {
   title: 'Forge',
   tagline:
     "Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.",
-  favicon: 'img/forge-logo.ico',
+  favicon: 'img/Logo.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -89,7 +89,7 @@ const config: Config = {
       title: 'Forge',
       logo: {
         alt: 'Forge Logo',
-        src: 'img/forge-logo.png',
+        src: 'img/Logo_Transparent.png',
       },
       items: [
         {
