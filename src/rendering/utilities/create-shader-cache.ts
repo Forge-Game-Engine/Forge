@@ -18,6 +18,12 @@ import {
   spriteFragmentShader,
   spriteVertexShader,
 } from '../shaders/index.js';
+import {
+  textFragmentShader,
+  textVertexShader,
+  uiFragmentShader,
+  uiVertexShader,
+} from '../../ui/shaders/index.js';
 
 /**
  * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
@@ -56,6 +62,10 @@ export function createShaderCache(): ShaderCache {
     perlinNoiseFragmentShader,
     spriteFragmentShader,
     spriteVertexShader,
+    uiFragmentShader,
+    uiVertexShader,
+    textFragmentShader,
+    textVertexShader,
   );
 
   return shaderCache;

@@ -49,6 +49,14 @@ export interface AnimatedProperty {
    * The callback function to call when the animation is finished.
    */
   finishedCallback?: () => void;
+
+  /**
+   * Optional identifier used to cancel or replace an in-flight animation for
+   * the same logical property. When {@link createAnimatedProperty} is called
+   * without a tag the empty string `''` is used as the default, which is
+   * treated as "no tag" by helpers such as {@link cancelUiPropertyAnimation}.
+   */
+  tag?: string;
 }
 
 /**
@@ -87,6 +95,7 @@ export const animationDefaults = {
   loop: 'none' as LoopMode,
   loopCount: -1,
   finishedCallback: (): void => undefined,
+  tag: '',
 };
 
 /**

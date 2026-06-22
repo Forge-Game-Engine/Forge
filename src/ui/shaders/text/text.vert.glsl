@@ -43,8 +43,8 @@ void main() {
     // Map the unit quad through the glyph's normalised rect, then through
     // the element's world matrix (which maps [0,1]x[0,1] -> screen pixels).
     vec2 normalizedPos = a_glyphOffset + a_texCoord * a_glyphSize;
-    vec3 screenPos = vec3(normalizedPos, 1.0) * worldMatrix;
-    vec3 clipPos = screenPos * u_projection;
+    vec3 screenPos = worldMatrix * vec3(normalizedPos, 1.0);
+    vec3 clipPos = u_projection * screenPos;
 
     gl_Position = vec4(clipPos.xy, 0.0, 1.0);
 

@@ -36,13 +36,13 @@ void main() {
         }
     }
 
-    vec4 sample = texture(u_atlas, v_atlasUV);
+    vec4 texel = texture(u_atlas, v_atlasUV);
 
     float dist;
     if (u_msdf) {
-        dist = median(sample.r, sample.g, sample.b);
+        dist = median(texel.r, texel.g, texel.b);
     } else {
-        dist = sample.r;
+        dist = texel.r;
     }
 
     // Anti-aliased coverage via screen-space derivative.

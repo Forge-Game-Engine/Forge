@@ -73,6 +73,24 @@ export class Color {
     return new Color(r, g, b, a);
   }
 
+  /**
+   * Linearly interpolates between two colors.
+   * @param a - The start color.
+   * @param b - The end color.
+   * @param t - The interpolation factor (0–1, clamped).
+   * @returns A new interpolated `Color`.
+   */
+  public static lerp(a: Color, b: Color, t: number): Color {
+    const ct = clamp(t, 0, 1);
+
+    return new Color(
+      a.r + (b.r - a.r) * ct,
+      a.g + (b.g - a.g) * ct,
+      a.b + (b.b - a.b) * ct,
+      a.a + (b.a - a.a) * ct,
+    );
+  }
+
   private static _hueToRGB(p: number, q: number, t: number): number {
     const wrappedTValue = ((t % 1) + 1) % 1;
 

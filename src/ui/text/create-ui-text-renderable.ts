@@ -1,9 +1,10 @@
 import { Material } from '../../rendering/materials/material.js';
 import { Renderable } from '../../rendering/renderable.js';
-import { createQuadGeometry } from '../../rendering/geometry/create-quad-geometry.js';
 import { RenderContext } from '../../rendering/render-context.js';
-import { UI_RENDER_LAYER } from '../utilities/create-ui-renderable.js';
-import { textFragmentShader, textVertexShader } from '../shaders/index.js';
+import {
+  getUiQuadGeometry,
+  UI_RENDER_LAYER,
+} from '../utilities/create-ui-renderable.js';
 import type { FontAsset } from './types/font-asset.js';
 import {
   bindTextGlyphInstanceData,
@@ -46,9 +47,13 @@ export function createUiTextRenderable(
     return cached;
   }
 
-  const { gl } = renderContext;
-  const geometry = createQuadGeometry(gl);
-  const material = new Material(textVertexShader, textFragmentShader, gl);
+  const { gl, shaderCache } = renderContext;
+  const geometry = getUiQuadGeometry(gl);
+  const material = new Material(
+    shaderCache.getShader('text.vert'),
+    shaderCache.getShader('text.frag'),
+    gl,
+  );
 
   material.setUniform('u_atlas', font.texture);
   material.setUniform('u_msdf', font.sdfType === 'msdf');

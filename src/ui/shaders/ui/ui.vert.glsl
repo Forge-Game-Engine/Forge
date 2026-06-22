@@ -39,10 +39,10 @@ void main() {
     mat3 worldMatrix = mat3(a_worldMat0, a_worldMat1, a_worldMat2);
 
     // Transform unit quad [0,1]x[0,1] to screen-space pixels
-    vec3 screenPos = vec3(a_texCoord, 1.0) * worldMatrix;
+    vec3 screenPos = worldMatrix * vec3(a_texCoord, 1.0);
 
     // Project to clip space
-    vec3 clipPos = screenPos * u_projection;
+    vec3 clipPos = u_projection * screenPos;
 
     gl_Position = vec4(clipPos.xy, 0.0, 1.0);
 

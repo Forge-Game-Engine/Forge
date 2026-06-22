@@ -1,0 +1,5 @@
+{
+  "label": "UI",
+  "position": 10,
+  "link": { "type": "doc", "id": "docs/ui/index" }
+}

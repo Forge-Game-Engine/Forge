@@ -28,6 +28,7 @@ describe('createAnimationEcsSystem', () => {
           loop: 'none',
           loopCount: 1,
           finishedCallback: mockFinishedCallback,
+          tag: '',
         },
       ],
     };
@@ -62,6 +63,7 @@ describe('createAnimationEcsSystem', () => {
           loop: 'loop',
           loopCount: 2,
           finishedCallback: () => void 0,
+          tag: '',
         },
       ],
     };
@@ -96,6 +98,7 @@ describe('createAnimationEcsSystem', () => {
           loop: 'pingpong',
           loopCount: 2,
           finishedCallback: () => void 0,
+          tag: '',
         },
       ],
     };
@@ -132,6 +135,7 @@ describe('createAnimationEcsSystem', () => {
           loop: 'none',
           loopCount: 1,
           finishedCallback: () => void 0,
+          tag: '',
         },
       ],
     };

@@ -10,6 +10,7 @@ Epic 1 of the Forge UI stack was fully implemented (F1.1–F1.6) on 2026-06-16.
 **Why:** Establishes the foundational ECS-native UI layer that Epics 2–10 build on.
 
 **Files added:**
+
 - `src/ui/components/` — `ui-canvas-component.ts`, `ui-transform-component.ts`, `ui-flex-component.ts`, `index.ts`
 - `src/ui/systems/` — `ui-layout-system.ts`, `ui-flex-layout-system.ts`, `index.ts`
 - `src/ui/utilities/` — `anchor-presets.ts`, `set-ui-rect.ts`, `create-ui-canvas.ts`, `create-ui-resize-observer.ts`, `index.ts`

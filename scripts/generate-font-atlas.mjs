@@ -51,6 +51,7 @@ import {
   readFile,
   writeFile,
   readdir,
+  unlink,
 } from 'node:fs/promises';
 import { join, basename, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -284,6 +285,18 @@ async function main() {
     `  size=${size}, atlas=${atlasSize}x${atlasSize}, distanceRange=${distanceRange}`,
   );
 
+  // The installed msdf-bmfont-xml CLI only accepts a charset *file* path
+  // (`--charset-file`), not the character list inline, so write the
+  // resolved charset to a scratch file in the output directory.
+  const charsetFilePath = join(outputDir, `${baseName}.charset.tmp.txt`);
+  await writeFile(charsetFilePath, charset, 'utf-8');
+
+  // The CLI's `--filename` option only renames the atlas image; the metrics
+  // JSON is always written using the font's internal face name (read from
+  // the font file's name table), which rarely matches `--name`. Snapshot the
+  // directory so the newly-written JSON can be found and renamed below.
+  const filesBefore = new Set(await readdir(outputDir));
+
   // msdf-bmfont-xml CLI args
   const cliArgs = [
     fontPath,
@@ -299,8 +312,8 @@ async function main() {
     String(distanceRange),
     '--field-type',
     type,
-    '--charset',
-    charset,
+    '--charset-file',
+    charsetFilePath,
     '--pot',
   ];
 
@@ -322,6 +335,8 @@ async function main() {
     }
 
     process.exit(1);
+  } finally {
+    await unlink(charsetFilePath).catch(() => {});
   }
 
   // msdf-bmfont-xml may name the texture file with a page suffix (e.g. _0).
@@ -333,9 +348,22 @@ async function main() {
     await rename(pagedPng, expectedPng);
   }
 
-  // Normalise the JSON so it always has the distanceField block.
+  // Find the metrics JSON the CLI just wrote (named after the font's face
+  // name, not `--name`) and rename it to `<baseName>.json`.
   const jsonPath = join(outputDir, `${baseName}.json`);
 
+  if (!existsSync(jsonPath)) {
+    const filesAfter = await readdir(outputDir);
+    const newJsonFile = filesAfter.find(
+      (f) => f.endsWith('.json') && !filesBefore.has(f),
+    );
+
+    if (newJsonFile) {
+      await rename(join(outputDir, newJsonFile), jsonPath);
+    }
+  }
+
+  // Normalise the JSON so it always has the distanceField block.
   if (existsSync(jsonPath)) {
     await normaliseJson(jsonPath, type, distanceRange);
   }

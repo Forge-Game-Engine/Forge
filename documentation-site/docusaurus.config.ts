@@ -119,6 +119,10 @@ const config: Config = {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },
+            {
+              to: 'demos/ui-showcase',
+              label: 'UI Showcase',
+            },
           ],
         },
         {

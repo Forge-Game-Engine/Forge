@@ -39,6 +39,19 @@ interface ParentRect {
   childClipRect: Rect | null;
 }
 
+/**
+ * Recomputes `transform.worldMatrix` from the already-resolved `resolvedRect`,
+ * `pivot`, `rotation`, and `scale`. Rotation and scale are applied around
+ * `pivot` (normalised 0–1 within `resolvedRect`), so the matrix translates to
+ * the pivot, rotates, scales, translates back, then scales to the rect size.
+ *
+ * Exported so other layout systems (e.g. {@link createUiFlexLayoutEcsSystem})
+ * can recompute the world matrix after they mutate `resolvedRect` directly,
+ * without duplicating this logic.
+ *
+ * @param transform - The transform whose `resolvedRect` is already up to date
+ *   and whose `worldMatrix` should be refreshed in place.
+ */
 export function computeUiWorldMatrix(transform: UiTransformEcsComponent): void {
   const { origin, size } = transform.resolvedRect;
   const pivotX = transform.pivot.x * size.x;

@@ -12,6 +12,10 @@ Scroll down icons created by [Smashicons](https://www.flaticon.com/free-icons/sc
 - Some assets used in the demos and documentation have been provided by [Wenrexa - OpenGameArt.org](https://opengameart.org/content/assets-free-laser-bullets-pack-2020)
 - Some assets used in the demos and documentation have been provided by [OboroPixel - itch.io](https://oboropixel.itch.io/characters-animations-asset-pack)
 
+## Fonts
+
+- The UI demo and the font-asset generation tooling use [Inter](https://rsms.me/inter/) by The Inter Project Authors, licensed under the [SIL Open Font License 1.1](https://scripts.sil.org/OFL).
+
 ## Music
 
 - Some music used in the demos and documentation have been provided by [GerardDEP](https://pixabay.com/users/gerarddep-48160304/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=363808) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=363808)

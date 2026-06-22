@@ -25,6 +25,32 @@ const renderables: Map<
   InstanceBatch<UiInstanceComponents>
 > = new Map();
 
+let _batchCount = 0;
+let _instanceCount = 0;
+let _lastBatchCount = 0;
+let _lastInstanceCount = 0;
+
+/**
+ * Frame render metrics from the last completed UI render pass.
+ * Read via {@link getUiRenderMetrics} — useful for stress testing and profiling.
+ */
+export interface UiRenderMetrics {
+  /** Number of instanced draw calls (batches) issued in the last frame. */
+  batchCount: number;
+  /** Total number of UI instances packed and drawn in the last frame. */
+  instanceCount: number;
+}
+
+/**
+ * Returns render metrics sampled at the end of the previous frame.
+ * Use in profiling overlays or automated perf guards.
+ *
+ * @returns A snapshot of the previous frame's batch and instance counts.
+ */
+export function getUiRenderMetrics(): UiRenderMetrics {
+  return { batchCount: _lastBatchCount, instanceCount: _lastInstanceCount };
+}
+
 /**
  * Batches all visible UI entities sharing the same `Renderable` and submits
  * them as a single instanced draw call, then clears the batch for the next
@@ -42,6 +68,9 @@ const flushBatch = (
   if (entries.length === 0) {
     return;
   }
+
+  _batchCount++;
+  _instanceCount += entries.length;
 
   renderable.material.setUniform('u_projection', projectionMatrix);
   renderable.bind(gl);
@@ -69,6 +98,23 @@ const flushBatch = (
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, entries.length);
 
   entries.length = 0;
+};
+
+const isFullyClipped = (transform: UiTransformEcsComponent): boolean => {
+  const clip = transform.clipRect;
+
+  if (clip == null) {
+    return false;
+  }
+
+  const { origin, size } = transform.resolvedRect;
+
+  return (
+    origin.x + size.x <= clip.origin.x ||
+    origin.y + size.y <= clip.origin.y ||
+    origin.x >= clip.origin.x + clip.size.x ||
+    origin.y >= clip.origin.y + clip.size.y
+  );
 };
 
 const getUiEntityZIndex = (world: EcsWorld, entityId: number): number => {
@@ -119,6 +165,11 @@ export const createUiRenderEcsSystem = (
   query: [uiCanvasId],
 
   beforeQuery: (world: EcsWorld) => {
+    _lastBatchCount = _batchCount;
+    _lastInstanceCount = _instanceCount;
+    _batchCount = 0;
+    _instanceCount = 0;
+
     world.queryEntities([uiRenderableId, uiTransformId], uiEntityBuffer);
   },
 
@@ -156,6 +207,12 @@ export const createUiRenderEcsSystem = (
       );
 
       if (!transform) {
+        continue;
+      }
+
+      // Cull entities that are fully outside their inherited clip rect so
+      // scroll lists don't pay for hidden rows.
+      if (isFullyClipped(transform)) {
         continue;
       }
 

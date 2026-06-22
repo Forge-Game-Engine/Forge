@@ -10,6 +10,24 @@ import type { UiInstanceComponents } from '../components/ui-instance-components.
 import { UI_RENDER_LAYER } from './create-ui-renderable.js';
 
 /**
+ * Removes `#property` metadata lines (used by `ShaderCache` to register
+ * shaders by name) from raw GLSL source.
+ *
+ * `uiVertexShader`/`uiFragmentShader` and the other shaders exported from
+ * `@forge-game-engine/forge/ui` keep this line so they can also be registered
+ * with a `ShaderCache`, but `#property` is not valid GLSL and a raw
+ * `Material` (used here, bypassing the cache) fails to compile if it's left
+ * in. Stripping it makes those exports safe to reuse verbatim as a starting
+ * point for a custom shader.
+ */
+function stripShaderPropertyLines(source: string): string {
+  return source
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('#property'))
+    .join('\n');
+}
+
+/**
  * Options for {@link createCustomUiRenderable}.
  *
  * ## Shader contract
@@ -87,7 +105,11 @@ export function createCustomUiRenderable(
   const { gl } = renderContext;
 
   const geometry = createQuadGeometry(gl);
-  const material = new Material(vertexSource, fragmentSource, gl);
+  const material = new Material(
+    stripShaderPropertyLines(vertexSource),
+    stripShaderPropertyLines(fragmentSource),
+    gl,
+  );
 
   return new Renderable<UiInstanceComponents>(
     geometry,
