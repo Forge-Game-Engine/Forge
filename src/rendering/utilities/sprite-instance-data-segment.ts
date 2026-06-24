@@ -130,6 +130,14 @@ function setupSpriteInstanceAttributes(
     stride,
     (offset + TEX_SIZE_X_OFFSET) * 4,
   );
+
+  setupInstanceAttribute(
+    gl.getAttribLocation(program, 'a_instanceTint'),
+    gl,
+    4,
+    stride,
+    (offset + TINT_COLOR_R_OFFSET) * 4,
+  );
 }
 
 /**
@@ -138,7 +146,8 @@ function setupSpriteInstanceAttributes(
  * Binds position, rotation, scale, size, pivot, texture coordinates and tint
  * from an entity's `SpriteEcsComponent`, and wires them up to the
  * `a_instancePos`, `a_instanceRot`, `a_instanceScale`, `a_instanceSize`,
- * `a_instancePivot`, `a_instanceTexOffset` and `a_instanceTexSize` attributes.
+ * `a_instancePivot`, `a_instanceTexOffset`, `a_instanceTexSize` and
+ * `a_instanceTint` attributes.
  *
  * Use this with `combineInstanceDataSegments` to reuse the sprite vertex
  * shader with a custom fragment shader, or to extend it with additional

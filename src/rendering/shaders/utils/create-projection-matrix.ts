@@ -24,8 +24,10 @@ export function createProjectionMatrix(
   // Apply zoom around the center
   projectionMatrix.scale(zoom, zoom);
 
-  // Center cameraPos on screen
-  projectionMatrix.translate(-cameraPosition.x, -cameraPosition.y);
+  // Center cameraPos on screen. Sprite instance data negates world.y before
+  // it reaches the shader (see bindSpriteInstanceData), so unlike x, the
+  // camera's y must be translated unnegated to land back on the same sprite.
+  projectionMatrix.translate(-cameraPosition.x, cameraPosition.y);
 
   return projectionMatrix;
 }
