@@ -15,8 +15,9 @@ Core concepts:
   `Axis2dAction`. See [Actions and Input Groups](./actions.md).
 - `InputSource`: reads raw browser events and dispatches to bound actions.
   Forge ships
-  [`KeyboardInputSource`](/Forge/docs/api/classes/KeyboardInputSource) and
-  [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource).
+  [`KeyboardInputSource`](/Forge/docs/api/classes/KeyboardInputSource),
+  [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource), and
+  [`GamepadInputSource`](/Forge/docs/api/classes/GamepadInputSource).
 - `InputBinding`: connects a specific key, button, or axis on a source to an
   action.
 - [`registerInputs`](/Forge/docs/api/functions/registerInputs): ECS
@@ -29,6 +30,7 @@ Guides in this section:
   use each, and switching the active group.
 - [Keyboard Input](./keyboard.md): `KeyboardInputSource` and its bindings.
 - [Mouse Input](./mouse.md): `MouseInputSource`, cursor position, and scroll.
+- [Gamepad Input](./gamepad.md): `GamepadInputSource`, sticks, and D-pads.
 
 ## Quick Start
 
@@ -88,7 +90,10 @@ any other component:
 
 ```ts
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { positionId, type PositionEcsComponent } from '@forge-game-engine/forge/common';
+import {
+  positionId,
+  type PositionEcsComponent,
+} from '@forge-game-engine/forge/common';
 
 const playerMovementSystem: EcsSystem<[PositionEcsComponent]> = {
   query: [positionId],

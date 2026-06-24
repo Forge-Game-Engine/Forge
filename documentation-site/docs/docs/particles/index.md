@@ -43,7 +43,10 @@ systems to expire and remove themselves, and on `createAgeScaleEcsSystem` if
 you want them to shrink (or grow) over their lifetime:
 
 ```ts
-import { createAgeScaleEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createAgeScaleEcsSystem,
+  createTransformEcsSystem,
+} from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
@@ -81,6 +84,9 @@ world.addSystem(createParticlePositionEcsSystem(time));
 world.addSystem(createLifetimeTrackingEcsSystem(time));
 world.addSystem(createAgeScaleEcsSystem());
 world.addSystem(createRemoveFromWorldEcsSystem());
+// Particles only update their local transform, so this needs to run after
+// the systems above and before the render system reads the world transform.
+world.addSystem(createTransformEcsSystem());
 
 // trigger a burst of sparks, e.g. on impact
 sparks.emitIfNotEmitting();
@@ -94,4 +100,12 @@ expires, so there's nothing to clean up yourself.
 particle actually renders on comes from `sprite.renderable.layer`. Make sure
 the sprite you pass to `ParticleEmitter` was created on the layer you want
 particles to appear on.
+:::
+
+:::caution
+`createParticlePositionEcsSystem` only updates each particle's local
+position, rotation and scale. Without `createTransformEcsSystem` in the
+world, the render system (which reads the world transform) keeps drawing
+every particle at its spawn position, unrotated and at its original scale,
+no matter how far it's actually moved.
 :::
