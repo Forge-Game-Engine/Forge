@@ -9,4 +9,5 @@ export * from './input-manager.js';
 export * from './input-source.js';
 export * from './mouse/index.js';
 export * from './keyboard/index.js';
+export * from './gamepad/index.js';
 export * from './register-inputs.js';
