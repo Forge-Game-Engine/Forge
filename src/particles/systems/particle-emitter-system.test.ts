@@ -7,8 +7,8 @@ import {
   ParticleEmitterId,
   ParticleId,
 } from '../components';
-import { Time } from '../../common';
-import { Random, Vector2 } from '../../math';
+import { rotationId, Time } from '../../common';
+import { degreesToRadians, Random, Vector2 } from '../../math';
 import { Sprite } from '../../rendering';
 
 describe('ParticleEmitterSystem', () => {
@@ -106,6 +106,40 @@ describe('ParticleEmitterSystem', () => {
     // Should have emitted 3 particles immediately (emitDurationSeconds: 0)
     expect(particlesAfter.length).toBe(3);
     expect(emitter.emitCount).toBe(3);
+  });
+
+  it('should store the spawned rotation in radians, converted from the configured degrees', () => {
+    const entity = world.createEntity();
+
+    const emitter = new ParticleEmitter(mockSprite, 0, {
+      numParticlesRange: { min: 1, max: 1 },
+      speedRange: { min: 0, max: 0 },
+      scaleRange: { min: 1, max: 1 },
+      lifetimeSecondsRange: { min: 1, max: 1 },
+      rotationRange: { min: 180, max: 180 },
+      rotationSpeedRange: { min: 0, max: 0 },
+      emitDurationSeconds: 0,
+      spawnPosition: () => Vector2.zero,
+    });
+
+    emitter.startEmitting = true;
+
+    const emitterComponent: ParticleEmitterEcsComponent = {
+      emitters: new Map([['testEmitter', emitter]]),
+    };
+
+    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+
+    time.update(100);
+    world.update();
+
+    const particlesAfter: number[] = [];
+    world.queryEntities([ParticleId], particlesAfter);
+
+    const [particleEntity] = particlesAfter;
+    const rotation = world.getComponent(particleEntity, rotationId);
+
+    expect(rotation?.local).toBeCloseTo(degreesToRadians(180));
   });
 
   it('should stop emitting after reaching total amount', () => {
