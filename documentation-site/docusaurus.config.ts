@@ -8,7 +8,7 @@ const config: Config = {
   title: 'Forge',
   tagline:
     "Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.",
-  favicon: 'img/forge-logo.ico',
+  favicon: 'img/Logo.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -89,7 +89,7 @@ const config: Config = {
       title: 'Forge',
       logo: {
         alt: 'Forge Logo',
-        src: 'img/forge-logo.png',
+        src: 'img/Logo_Transparent.png',
       },
       items: [
         {
@@ -108,6 +108,14 @@ const config: Config = {
               label: 'Space Shooter',
             },
             {
+              to: 'demos/brick-breaker',
+              label: 'Brick Breaker',
+            },
+            {
+              to: 'demos/racing',
+              label: 'Racing',
+            },
+            {
               to: 'demos/ecs',
               label: 'ECS',
             },
@@ -118,6 +126,18 @@ const config: Config = {
             {
               to: 'demos/stress-test',
               label: 'Stress Test',
+            },
+            {
+              to: 'demos/erosion-burn',
+              label: 'Erosion Burn',
+            },
+            {
+              to: 'demos/easing-functions',
+              label: 'Easing Functions',
+            },
+            {
+              to: 'demos/particles',
+              label: 'Particles',
             },
           ],
         },

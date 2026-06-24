@@ -36,7 +36,7 @@ export async function createAsteroidSpawner(
 
   const spawnerComponent: AsteroidSpawnerEcsComponent = {
     asteroidSprites,
-    timeBetweenSpawns: 2,
+    timeBetweenSpawns: 0.2,
     nextSpawnTime: 0,
     minX: -renderContext.canvas.width / 2,
     maxX: renderContext.canvas.width / 2,

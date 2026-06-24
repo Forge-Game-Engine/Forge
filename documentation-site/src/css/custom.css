@@ -6,34 +6,34 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #6b4b40;
-  --ifm-color-primary-dark: #626200;
-  --ifm-color-primary-darker: #838300;
-  --ifm-color-primary-darkest: #a8a800;
-  --ifm-color-primary-light: #ffff20;
-  --ifm-color-primary-lighter: #ffff67;
-  --ifm-color-primary-lightest: #ffffba;
+  --ifm-color-primary: #4d4d4d;
+  --ifm-color-primary-dark: #404040;
+  --ifm-color-primary-darker: #363636;
+  --ifm-color-primary-darkest: #1a1a1a;
+  --ifm-color-primary-light: #5a5a5a;
+  --ifm-color-primary-lighter: #737373;
+  --ifm-color-primary-lightest: #a6a6a6;
   --text-color: #3b3b3b;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
   --hero-font-color: #d9d9d9;
-  --card-highlight-color: #ffffbb;
+  --card-highlight-color: #dddddd;
   --card-background-color: #eeeeee;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #b58f6b;
-  --ifm-color-primary-dark: #aeae1c;
-  --ifm-color-primary-darker: #7b7b14;
-  --ifm-color-primary-darkest: #52520d;
-  --ifm-color-primary-light: #ffff20;
-  --ifm-color-primary-lighter: #ffff67;
-  --ifm-color-primary-lightest: #ffffba;
+  --ifm-color-primary: #b3b3b3;
+  --ifm-color-primary-dark: #999999;
+  --ifm-color-primary-darker: #808080;
+  --ifm-color-primary-darkest: #4d4d4d;
+  --ifm-color-primary-light: #c2c2c2;
+  --ifm-color-primary-lighter: #d9d9d9;
+  --ifm-color-primary-lightest: #f2f2f2;
   --text-color: #d9d9d9;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
   --hero-font-color: #3b3b3b;
-  --card-highlight-color: #555500;
+  --card-highlight-color: #444444;
   --card-background-color: #222222;
 }
 
@@ -43,15 +43,15 @@
 }
 
 .button--primary {
-  background: #ffd900;
-  color: #3b3b3b;
+  background: #4d4d4d;
+  color: #ffffff;
   border: none;
 }
 
 .button--primary:hover {
-  background: #ffd900;
-  color: #3b3b3b;
-  box-shadow: 0 0 20px #c6a907;
+  background: #404040;
+  color: #ffffff;
+  box-shadow: 0 0 20px #808080;
 }
 
 .button--secondary {

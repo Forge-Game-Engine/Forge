@@ -28,47 +28,55 @@ export const createGunEcsSystem = (
   time: Time,
   world: EcsWorld,
   shootAction: HoldAction,
-): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => ({
-  query: [gunId, positionId],
-  run: (result) => {
-    const [gunComponent, positionComponent] = result.components;
+): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => {
+  // Created per system instance (rather than at module scope) so each game
+  // restart gets its own Howl, since the audio system unloads any sound
+  // still playing when the world stops.
+  const sound = new Howl({
+    src: getAssetUrl('audio/laser.mp3'),
+    volume: 0.2,
+  });
 
-    if (!shootAction.isHeld) {
-      return;
-    }
+  return {
+    query: [gunId, positionId],
+    run: (result) => {
+      const [gunComponent, positionComponent] = result.components;
 
-    if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
-      return;
-    }
+      if (!shootAction.isHeld) {
+        return;
+      }
 
-    createBulletWithOffset(
-      world,
-      gunComponent,
-      positionComponent,
-      new Vector2(20, 20),
-    );
-    createBulletWithOffset(
-      world,
-      gunComponent,
-      positionComponent,
-      new Vector2(-20, 20),
-    );
+      if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
+        return;
+      }
 
-    gunComponent.nextAllowedShotTime =
-      time.timeInSeconds + gunComponent.timeBetweenShots;
-  },
-});
+      createBulletWithOffset(
+        world,
+        gunComponent,
+        positionComponent,
+        new Vector2(20, 20),
+        sound,
+      );
+      createBulletWithOffset(
+        world,
+        gunComponent,
+        positionComponent,
+        new Vector2(-20, 20),
+        sound,
+      );
 
-const sound = new Howl({
-  src: getAssetUrl('audio/laser.mp3'),
-  volume: 0.3,
-});
+      gunComponent.nextAllowedShotTime =
+        time.timeInSeconds + gunComponent.timeBetweenShots;
+    },
+  };
+};
 
 function createBulletWithOffset(
   world: EcsWorld,
   gunComponent: GunEcsComponent,
   positionComponent: PositionEcsComponent,
   offset: Vector2,
+  sound: Howl,
 ) {
   const bullet = world.createEntity();
   const bulletScale = 0.2;

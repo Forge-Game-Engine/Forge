@@ -45,6 +45,12 @@ export async function createPlayer(
   const playerY = -250;
   const playerScale = 0.15;
 
+  const playerRadius =
+    (playerSprite.width * playerScale + playerSprite.height * playerScale) / 4;
+
+  const halfCanvasWidth = renderContext.canvas.width / 2;
+  const halfCanvasHeight = renderContext.canvas.height / 2;
+
   world.addComponent(playerEntity, spriteId, playerSprite);
   world.addComponent(playerEntity, positionId, {
     local: new Vector2(playerX, playerY),
@@ -52,10 +58,10 @@ export async function createPlayer(
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
-    minX: -300,
-    maxX: 300,
-    minY: -270,
-    maxY: 100,
+    minX: -halfCanvasWidth + playerRadius,
+    maxX: halfCanvasWidth - playerRadius,
+    minY: -halfCanvasHeight + playerRadius,
+    maxY: halfCanvasHeight - playerRadius,
   });
 
   world.addComponent(playerEntity, scaleId, {
@@ -74,10 +80,6 @@ export async function createPlayer(
     renderLayer: renderLayer,
     nextAllowedShotTime: 0,
   });
-
-  const playerRadius =
-    (playerSprite.width * playerScale + playerSprite.height * playerScale) /
-    4;
 
   world.addComponent(playerEntity, PhysicsBodyId, {
     physicsBody: new RigidBody({

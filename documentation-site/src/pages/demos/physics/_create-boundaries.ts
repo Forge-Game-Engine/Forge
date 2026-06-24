@@ -11,6 +11,7 @@ import {
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  Color,
   createImageSprite,
   RenderContext,
   spriteId,
@@ -32,7 +33,7 @@ export async function createBoundaries(
   renderLayer: number,
 ): Promise<void> {
   const wallImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/gradient.png'),
+    getAssetUrl('img/White.png'),
   );
   const wallSprite = createImageSprite(wallImage, renderContext, renderLayer);
 
