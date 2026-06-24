@@ -108,6 +108,14 @@ const config: Config = {
               label: 'Space Shooter',
             },
             {
+              to: 'demos/brick-breaker',
+              label: 'Brick Breaker',
+            },
+            {
+              to: 'demos/racing',
+              label: 'Racing',
+            },
+            {
               to: 'demos/ecs',
               label: 'ECS',
             },
@@ -118,6 +126,18 @@ const config: Config = {
             {
               to: 'demos/stress-test',
               label: 'Stress Test',
+            },
+            {
+              to: 'demos/erosion-burn',
+              label: 'Erosion Burn',
+            },
+            {
+              to: 'demos/easing-functions',
+              label: 'Easing Functions',
+            },
+            {
+              to: 'demos/particles',
+              label: 'Particles',
             },
           ],
         },

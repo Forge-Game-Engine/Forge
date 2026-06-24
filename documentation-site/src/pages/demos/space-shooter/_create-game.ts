@@ -49,6 +49,8 @@ const explosionShakeDurationSeconds = 0.15;
 export const createSpaceShooterGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
+  time.timeScale = 1.2;
+
   // The background sits on its own static camera so it doesn't shake along
   // with the foreground when an explosion happens.
   addCamera(world, {
@@ -110,7 +112,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     renderLayers.foreground,
     triggerCameraShake,
   );
-  createMusic(world);
+  // createMusic(world);
 
   const random = new Random();
   const physicsWorld = new PhysicsWorld();
