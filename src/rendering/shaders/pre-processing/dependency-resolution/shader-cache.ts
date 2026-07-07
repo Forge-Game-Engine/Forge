@@ -1,31 +1,37 @@
-import { ForgeShaderSource } from './forge-shader-source.js';
-import { resolveIncludes } from './resolve-includes.js';
+import { ForgeShaderSource } from '../forge-shader-source.js';
+import { ShaderPreProcessor } from '../shader-pre-processor.js';
 
 export class ShaderCache {
   private readonly _shaders: ForgeShaderSource[];
   private readonly _includes: ForgeShaderSource[];
   private readonly _resolvedShaders: Map<string, string>;
+  private readonly _preProcessors: ShaderPreProcessor[];
 
-  constructor() {
+  constructor(preProcessors: ShaderPreProcessor[]) {
     this._shaders = [];
     this._includes = [];
     this._resolvedShaders = new Map();
+    this._preProcessors = preProcessors;
   }
 
-  public addShader(...rawShaders: string[]): void {
-    for (const rawShader of rawShaders) {
-      const shaderSource = new ForgeShaderSource(rawShader);
+  public addShader(rawShader: string, preProcess: boolean = true): this {
+    const shaderSource = new ForgeShaderSource(rawShader);
 
-      if (
-        this._shaders.some(
-          (existingShader) => existingShader.name === shaderSource.name,
-        )
-      ) {
-        continue;
-      }
-
-      this._shaders.push(shaderSource);
+    if (
+      this._shaders.some(
+        (existingShader) => existingShader.name === shaderSource.name,
+      )
+    ) {
+      return this;
     }
+
+    if (preProcess) {
+      shaderSource.applyPreProcessors(this._preProcessors);
+    }
+
+    this._shaders.push(shaderSource);
+
+    return this;
   }
 
   public addInclude(...rawIncludes: string[]): void {

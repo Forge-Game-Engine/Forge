@@ -1,4 +1,4 @@
-#property name: sdfTrapezoid
+#pragma forge name(sdfTrapezoid)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfTrapezoid( in vec2 p, in float r1, float r2, float he )

@@ -1,6 +1,6 @@
 #version 300 es
 
-#property name: sprite.vert
+#pragma forge name(sprite.vert)
 
 in vec2 a_position;      // Vertex position (e.g., quad corners)
 in vec2 a_texCoord;      // Texture coordinate

@@ -1,4 +1,4 @@
-#property name: sdfEquilateralTriangle
+#pragma forge name(sdfEquilateralTriangle)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfEquilateralTriangle( in vec2 p, in float r )

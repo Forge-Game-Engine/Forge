@@ -1,4 +1,4 @@
-#property name: radialGradient
+#pragma forge name(radialGradient)
 
 vec4 radialGradient(vec2 uv, vec2 center, sampler2D gradientTexture) {    
     float dist = distance(uv, center);

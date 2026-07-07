@@ -1,6 +1,6 @@
 #version 300 es
 
-#property name: sprite.frag
+#pragma forge name(sprite.frag)
 
 precision mediump float;
 
