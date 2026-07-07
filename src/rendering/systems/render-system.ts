@@ -35,7 +35,34 @@ const setupInstanceAttributesAndDraw = (
 
   gl.enable(gl.BLEND); // Potential improvement: move blend state to material-specific configuration.
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Potential improvement: centralize blend setup to avoid duplicate state calls.
+
+  renderContext.frameBuffer.bind(renderContext.gl);
+
+  gl.viewport(
+    0,
+    0,
+    renderContext.frameBuffer.width,
+    renderContext.frameBuffer.height,
+  );
+
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // Potential improvement: avoid hard-coded quad vertex count for non-quad sprites.
+
+  renderContext.frameBuffer.unbind(renderContext.gl);
+
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+  renderContext.blitMaterial.setUniform(
+    'u_sceneTexture',
+    renderContext.frameBuffer.texture,
+  );
+
+  renderContext.blitMaterial.bind(gl);
+  renderContext.blitGeometry.bind(gl, renderContext.blitMaterial.program);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.bindVertexArray(null);
 };
 
 const includeBatch = (

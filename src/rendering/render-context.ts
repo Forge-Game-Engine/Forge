@@ -1,8 +1,11 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
-import { UniformValue } from './materials/index.js';
+import { createQuadGeometry } from './geometry/create-quad-geometry.js';
+import { Geometry } from './geometry/geometry.js';
+import { Material, UniformValue } from './materials/index.js';
 import { ShaderCache } from './shaders/index.js';
 import { createShaderCache } from './utilities/index.js';
+import { Framebuffer } from './webgl-utils/frame-buffer.js';
 
 /**
  * The rendering context.
@@ -28,6 +31,10 @@ export class RenderContext {
   public readonly gl: WebGL2RenderingContext;
 
   public instanceBuffer: WebGLBuffer;
+
+  public frameBuffer: Framebuffer;
+  public blitMaterial: Material;
+  public blitGeometry: Geometry;
 
   private readonly _globalUniformValues: Map<string, UniformValue>;
 
@@ -57,6 +64,15 @@ export class RenderContext {
 
     this.gl = context;
     this.instanceBuffer = context.createBuffer();
+    this.frameBuffer = new Framebuffer(context, canvas.width, canvas.height);
+    this.blitMaterial = new Material(
+      shaderCache.getShader('blit.vert'),
+      shaderCache.getShader('blit.frag'),
+      context,
+    );
+
+    this.blitGeometry = createQuadGeometry(context);
+
     this._globalUniformValues = new Map<string, UniformValue>();
   }
 

@@ -1,4 +1,6 @@
 import {
+  blitFragmentShader,
+  blitVertexShader,
   cubicShaderInclude,
   perlinNoiseFragmentShader,
   perlinNoiseShaderInclude,
@@ -56,6 +58,8 @@ export function createShaderCache(): ShaderCache {
     perlinNoiseFragmentShader,
     spriteFragmentShader,
     spriteVertexShader,
+    blitFragmentShader,
+    blitVertexShader,
   );
 
   return shaderCache;
