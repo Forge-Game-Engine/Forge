@@ -41,7 +41,7 @@ export class Material {
    */
   // eslint-disable-next-line sonarjs/cognitive-complexity
   public bind(gl: WebGL2RenderingContext): void {
-    // Potential improvement: reduce cognitive complexity with strategy-based dispatch.
+    // TODO: improvement - reduce cognitive complexity with strategy-based dispatch.
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -50,7 +50,7 @@ export class Material {
       const value = this._uniformValues.get(name);
 
       if (value === undefined) {
-        // Potential improvement: evaluate whether uniform defaults should be provided.
+        // TODO: improvement - evaluate whether uniform defaults should be provided.
         // If needed, defaults may be defined by shader conventions.
 
         continue;
@@ -235,7 +235,7 @@ export class Material {
     const shader = gl.createShader(type)!;
 
     gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    gl.compileShader(shader); // TODO: Add shader cache for compiled shaders.
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       const log = gl.getShaderInfoLog(shader);
