@@ -99,20 +99,21 @@ describe('ForgeShaderSource', () => {
     expect(shader.rawSource).toBe(rawSource);
   });
 
-  it('should return empty when there are no pragmas with the forge directive', () => {
+  it('should throw when there are no pragmas with the forge directive', () => {
     const rawSource = `
         void main() {
           gl_FragColor = vec4(1.0);
         }
       `;
 
-    const shader = new ForgeShaderSource(rawSource);
-
-    expect(shader.getPragmas('name')).toHaveLength(0);
+    expect(() => new ForgeShaderSource(rawSource)).toThrow(
+      'Shader source must contain a valid "#pragma forge name(<name>)" directive.',
+    );
   });
 
   it('should return empty when there are no pragmas that match the identifier', () => {
     const rawSource = `
+        #pragma forge name(testShader)
         #pragma forge include(other)
 
         void main() {
@@ -122,7 +123,7 @@ describe('ForgeShaderSource', () => {
 
     const shader = new ForgeShaderSource(rawSource);
 
-    expect(shader.getPragmas('name')).toHaveLength(0);
+    expect(shader.getPragmas('version')).toHaveLength(0);
   });
 
   it('should handle shader with only name property and no code', () => {

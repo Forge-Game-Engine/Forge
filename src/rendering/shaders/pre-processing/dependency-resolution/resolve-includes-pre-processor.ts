@@ -65,7 +65,7 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
   }
 
   private _isIncludeLine(line: string): boolean {
-    return line.includes('#include');
+    return /#pragma\s+forge\s+include/.test(line);
   }
 
   private _processIncludeLine(
@@ -75,11 +75,15 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
     includesAlreadyResolved: string[],
     resolvedVariables: Set<string>,
   ): string {
-    const match = RegExp(/#include <(\w+)>/).exec(line);
+    const match = RegExp(/#pragma\s+forge\s+include\s*\(\s*(\w+)\s*\)/).exec(
+      line,
+    );
 
     if (!match) {
+      const column = line.search(/#pragma\s+forge\s+include/) + 1;
+
       throw new Error(
-        `Invalid shader syntax at line ${lineNumber + 1}:${line.indexOf('#include') + 1}. Expected #include <name> but got "${line.trim()}" when resolving "${source.name}"`,
+        `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected "#pragma forge include(name)" but got "${line.trim()}" when resolving "${source.name}"`,
       );
     }
 
@@ -88,7 +92,7 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
 
     if (!name) {
       throw new Error(
-        `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected #include <name> but got "${fullMatch}" when resolving "${source.name}"`,
+        `Invalid shader syntax at line ${lineNumber + 1}:${column}. Expected "#pragma forge include(name)" but got "${fullMatch}" when resolving "${source.name}"`,
       );
     }
 
@@ -114,7 +118,9 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
       resolvedVariables,
     );
 
-    return line.replace(fullMatch, resolvedContent);
+    const continuationLine = lineNumber + 2;
+
+    return `#line 1\n${resolvedContent}\n#line ${continuationLine}`;
   }
 
   private _isVariableDeclarationLine(line: string): boolean {
