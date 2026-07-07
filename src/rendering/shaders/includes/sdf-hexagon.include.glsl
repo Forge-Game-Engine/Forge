@@ -1,4 +1,4 @@
-#property name: sdfHexagon
+#pragma forge name(sdfHexagon)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfHexagon( in vec2 p, in float r )

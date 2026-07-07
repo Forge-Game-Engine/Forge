@@ -1,7 +1,7 @@
-#property name: perlinNoise
+#pragma forge name(perlinNoise)
 
-#include <randomGradient>
-#include <quintic>
+#pragma forge include(randomGradient)
+#pragma forge include(quintic)
 
 vec3 perlinNoise(vec2 uv, float size, float timeMultiplier) {
   vec3 black = vec3(0.0);

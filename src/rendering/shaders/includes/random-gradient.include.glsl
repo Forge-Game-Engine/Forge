@@ -1,4 +1,4 @@
-#property name: randomGradient
+#pragma forge name(randomGradient)
 
 uniform float u_time;
 

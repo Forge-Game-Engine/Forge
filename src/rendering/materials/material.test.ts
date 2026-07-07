@@ -3,10 +3,18 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Material } from './material';
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import { Color } from '../color.js';
+import { ForgeShaderSource } from '../index.js';
 
 // Mock WebGLTexture constructor for instanceof checks
 
 globalThis.WebGLTexture = class WebGLTexture {};
+
+let shaderNameCounter = 0;
+
+const createShaderSource = (source: string): ForgeShaderSource =>
+  new ForgeShaderSource(
+    `#pragma forge name(testShader${shaderNameCounter++})\n${source}`,
+  );
 
 describe('Material', () => {
   let gl: WebGL2RenderingContext;
@@ -59,8 +67,12 @@ describe('Material', () => {
       (gl.getProgramParameter as Mock).mockReturnValue(true);
       (gl.getActiveUniform as Mock).mockReturnValue(null);
 
-      const vertexShader = 'void main() { gl_Position = vec4(0.0); }';
-      const fragmentShader = 'void main() { gl_FragColor = vec4(1.0); }';
+      const vertexShader = createShaderSource(
+        'void main() { gl_Position = vec4(0.0); }',
+      );
+      const fragmentShader = createShaderSource(
+        'void main() { gl_FragColor = vec4(1.0); }',
+      );
 
       const material = new Material(vertexShader, fragmentShader, gl);
 
@@ -74,8 +86,10 @@ describe('Material', () => {
       (gl.getShaderParameter as Mock).mockReturnValue(false);
       (gl.getShaderInfoLog as Mock).mockReturnValue('Shader compile error');
 
-      const vertexShader = 'invalid shader';
-      const fragmentShader = 'void main() { gl_FragColor = vec4(1.0); }';
+      const vertexShader = createShaderSource('invalid shader');
+      const fragmentShader = createShaderSource(
+        'void main() { gl_FragColor = vec4(1.0); }',
+      );
 
       expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
         'Shader compile error: Shader compile error',
@@ -88,8 +102,12 @@ describe('Material', () => {
       (gl.getProgramParameter as Mock).mockReturnValue(false);
       (gl.getProgramInfoLog as Mock).mockReturnValue('Link error');
 
-      const vertexShader = 'void main() { gl_Position = vec4(0.0); }';
-      const fragmentShader = 'void main() { gl_FragColor = vec4(1.0); }';
+      const vertexShader = createShaderSource(
+        'void main() { gl_Position = vec4(0.0); }',
+      );
+      const fragmentShader = createShaderSource(
+        'void main() { gl_FragColor = vec4(1.0); }',
+      );
 
       expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
         'Failed to link program: Link error',
@@ -104,8 +122,12 @@ describe('Material', () => {
         .mockReturnValueOnce({ name: 'uTexture', type: 5126, size: 1 });
       (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = 'uniform vec4 uColor; void main() {}';
-      const fragmentShader = 'uniform sampler2D uTexture; void main() {}';
+      const vertexShader = createShaderSource(
+        'uniform vec4 uColor; void main() {}',
+      );
+      const fragmentShader = createShaderSource(
+        'uniform sampler2D uTexture; void main() {}',
+      );
 
       // Create material to test uniform detection
       const material = new Material(vertexShader, fragmentShader, gl);
@@ -133,8 +155,8 @@ describe('Material', () => {
       });
       (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = 'void main() {}';
-      const fragmentShader = 'void main() {}';
+      const vertexShader = createShaderSource('void main() {}');
+      const fragmentShader = createShaderSource('void main() {}');
       material = new Material(vertexShader, fragmentShader, gl);
     });
 
@@ -183,8 +205,8 @@ describe('Material', () => {
       });
       (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = 'void main() {}';
-      const fragmentShader = 'void main() {}';
+      const vertexShader = createShaderSource('void main() {}');
+      const fragmentShader = createShaderSource('void main() {}');
       material = new Material(vertexShader, fragmentShader, gl);
     });
 
@@ -208,8 +230,8 @@ describe('Material', () => {
       });
       (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = 'void main() {}';
-      const fragmentShader = 'void main() {}';
+      const vertexShader = createShaderSource('void main() {}');
+      const fragmentShader = createShaderSource('void main() {}');
       material = new Material(vertexShader, fragmentShader, gl);
     });
 
@@ -238,8 +260,8 @@ describe('Material', () => {
         .mockReturnValueOnce({ name: 'uTexture', type: 5126, size: 1 });
       (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = 'void main() {}';
-      const fragmentShader = 'void main() {}';
+      const vertexShader = createShaderSource('void main() {}');
+      const fragmentShader = createShaderSource('void main() {}');
       material = new Material(vertexShader, fragmentShader, gl);
     });
 
@@ -285,8 +307,8 @@ describe('Material', () => {
         .mockReturnValueOnce({ name: 'uTexture1', type: 5126, size: 1 })
         .mockReturnValueOnce({ name: 'uTexture2', type: 5126, size: 1 });
 
-      const vertexShader = 'void main() {}';
-      const fragmentShader = 'void main() {}';
+      const vertexShader = createShaderSource('void main() {}');
+      const fragmentShader = createShaderSource('void main() {}');
       const newMaterial = new Material(vertexShader, fragmentShader, gl);
 
       const mockTexture1 = new WebGLTexture();

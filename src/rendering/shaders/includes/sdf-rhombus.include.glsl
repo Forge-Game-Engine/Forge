@@ -1,4 +1,4 @@
-#property name: sdfRhombus
+#pragma forge name(sdfRhombus)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float ndot(vec2 a, vec2 b ) { return a.x*b.x - a.y*b.y; }

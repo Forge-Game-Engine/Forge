@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { ShaderCache } from './shader-cache';
+import { ForgeShaderSource } from '../forge-shader-source';
+import { ResolveIncludesPreProcessor } from './resolve-includes-pre-processor';
 
 describe('ShaderCache', () => {
   it('should add a shader to the store', () => {
-    const store = new ShaderCache();
-    const shader = `
-      #property name: testShader;
+    const store = new ShaderCache([]);
+    const shader = new ForgeShaderSource(`
+      #pragma forge name(testShader)
 
       void main() {
         gl_FragColor = vec4(1.0);
       }
-    `;
+    `);
 
     store.addShader(shader);
 
@@ -18,14 +20,14 @@ describe('ShaderCache', () => {
   });
 
   it('should not add the same shader twice', () => {
-    const store = new ShaderCache();
-    const shader = `
-      #property name: testShader;
+    const store = new ShaderCache([]);
+    const shader = new ForgeShaderSource(`
+      #pragma forge name(testShader)
 
       void main() {
         gl_FragColor = vec4(1.0);
       }
-    `;
+    `);
 
     store.addShader(shader);
     store.addShader(shader);
@@ -34,34 +36,37 @@ describe('ShaderCache', () => {
   });
 
   it('should resolve a shader with includes', () => {
-    const store = new ShaderCache();
-
-    const shader = `
-      #property name: testShader;
+    const shader = new ForgeShaderSource(`
+      #pragma forge name(testShader)
 
       void main() {
-        #include <common>
+        #pragma forge include(common)
         gl_FragColor = vec4(1.0);
       }
-    `;
+    `);
 
-    const include = `
-      #property name: common;
+    const include = new ForgeShaderSource(`
+      #pragma forge name(common)
 
       vec3 color = vec3(1.0, 0.0, 0.0);
-    `;
+    `);
+
+    const store = new ShaderCache([new ResolveIncludesPreProcessor([include])]);
 
     store.addShader(shader);
-    store.addInclude(include);
 
     const resolvedShader = store.getShader('testShader');
 
-    expect(resolvedShader).toContain('vec3 color = vec3(1.0, 0.0, 0.0);');
-    expect(resolvedShader).toContain('gl_FragColor = vec4(1.0);');
+    expect(resolvedShader.preparedSource).toContain(
+      'vec3 color = vec3(1.0, 0.0, 0.0);',
+    );
+    expect(resolvedShader.preparedSource).toContain(
+      'gl_FragColor = vec4(1.0);',
+    );
   });
 
   it('should throw an error if a shader is not found', () => {
-    const store = new ShaderCache();
+    const store = new ShaderCache([]);
 
     expect(() => store.getShader('nonExistentShader')).toThrow(
       'Shader with name nonExistentShader not found.',
@@ -69,25 +74,24 @@ describe('ShaderCache', () => {
   });
 
   it('should cache resolved shaders', () => {
-    const store = new ShaderCache();
-
-    const shader = `
-      #property name: testShader;
+    const shader = new ForgeShaderSource(`
+      #pragma forge name(testShader)
 
       void main() {
-        #include <common>
+        #pragma forge include(common)
         gl_FragColor = vec4(1.0);
       }
-    `;
+    `);
 
-    const include = `
-      #property name: common;
+    const include = new ForgeShaderSource(`
+      #pragma forge name(common)
 
       vec3 color = vec3(1.0, 0.0, 0.0);
-    `;
+    `);
+
+    const store = new ShaderCache([new ResolveIncludesPreProcessor([include])]);
 
     store.addShader(shader);
-    store.addInclude(include);
 
     const resolvedShader1 = store.getShader('testShader');
     const resolvedShader2 = store.getShader('testShader');

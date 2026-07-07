@@ -1,6 +1,7 @@
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import { assertNever } from '../../utilities/index.js';
 import type { Color } from '../color.js';
+import { ForgeShaderSource } from '../index.js';
 
 export type UniformValue =
   | number
@@ -23,14 +24,14 @@ export class Material {
   private readonly _uniformValues: Map<string, UniformValue> = new Map();
 
   constructor(
-    vertexShaderSource: string,
-    fragmentShaderSource: string,
+    vertexShaderSource: ForgeShaderSource,
+    fragmentShaderSource: ForgeShaderSource,
     gl: WebGL2RenderingContext,
   ) {
     this.program = this._createProgram(
       gl,
-      vertexShaderSource,
-      fragmentShaderSource,
+      vertexShaderSource.preparedSource,
+      fragmentShaderSource.preparedSource,
     );
     this._detectUniforms(gl);
   }

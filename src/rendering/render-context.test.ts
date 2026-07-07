@@ -28,7 +28,7 @@ describe('RenderContext', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     // Create shader and image caches
-    shaderCache = new ShaderCache();
+    shaderCache = new ShaderCache([]);
     imageCache = new ImageCache();
   });
 
@@ -232,7 +232,7 @@ describe('createRenderContext', () => {
   });
 
   it('should create a RenderContext with custom shaderCache', () => {
-    const customShaderCache = new ShaderCache();
+    const customShaderCache = new ShaderCache([]);
     const context = createRenderContext(canvas, {
       shaderCache: customShaderCache,
     });
@@ -258,7 +258,7 @@ describe('createRenderContext', () => {
   });
 
   it('should create a RenderContext with all custom options', () => {
-    const customShaderCache = new ShaderCache();
+    const customShaderCache = new ShaderCache([]);
     const customImageCache = new ImageCache();
     const context = createRenderContext(canvas, {
       shaderCache: customShaderCache,
@@ -272,7 +272,7 @@ describe('createRenderContext', () => {
   });
 
   it('should create a RenderContext with partial custom options', () => {
-    const customShaderCache = new ShaderCache();
+    const customShaderCache = new ShaderCache([]);
     const context = createRenderContext(canvas, {
       shaderCache: customShaderCache,
     });
