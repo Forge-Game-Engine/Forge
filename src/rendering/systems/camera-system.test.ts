@@ -34,7 +34,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -64,7 +64,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -94,7 +94,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -128,7 +128,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -170,7 +170,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -208,7 +208,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -240,7 +240,7 @@ describe('CameraSystem', () => {
       panSensitivity: 1,
       minZoom: 0.000001,
       maxZoom: 10000,
-      layerMask: 0xffffffff,
+      cullingMask: 0xffffffff,
     };
 
     const positionComponent: PositionEcsComponent = {

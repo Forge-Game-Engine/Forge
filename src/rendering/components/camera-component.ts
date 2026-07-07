@@ -9,7 +9,7 @@ export interface CameraEcsComponent {
   minZoom: number;
   maxZoom: number;
   isStatic: boolean;
-  layerMask: number;
+  cullingMask: number;
   scissorRect?: Rect;
   zoomInput?: Axis1dAction;
   panInput?: Axis2dAction;

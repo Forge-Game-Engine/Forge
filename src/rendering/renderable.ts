@@ -114,8 +114,8 @@ export class Renderable {
    */
   public readonly floatsPerInstance: number;
 
-  /** The rendering layer this renderable belongs to. */
-  public layer: number;
+  /** The rendering category this renderable belongs to. */
+  public category: number;
 
   /**
    * Callback function that binds instance-specific data for an entity into a buffer.
@@ -150,7 +150,7 @@ export class Renderable {
     this.geometry = geometry;
     this.material = material;
     this.floatsPerInstance = floatsPerInstance;
-    this.layer = layer;
+    this.category = layer;
     this.bindInstanceData = bindInstanceData;
     this.setupInstanceAttributes = setupInstanceAttributes;
   }

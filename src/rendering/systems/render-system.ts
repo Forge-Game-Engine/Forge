@@ -10,7 +10,7 @@ import {
 } from '../../common/index.js';
 import { Matrix3x3 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { matchesLayerMask } from '../../utilities/matches-layer-mask.js';
+import { matchesMask } from '../../utilities/matches-mask.js';
 import {
   CameraEcsComponent,
   cameraId,
@@ -33,9 +33,9 @@ const setupInstanceAttributesAndDraw = (
 
   renderable.setupInstanceAttributes(gl, renderable);
 
-  gl.enable(gl.BLEND); // Potential improvement: move blend state to material-specific configuration.
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Potential improvement: centralize blend setup to avoid duplicate state calls.
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // Potential improvement: avoid hard-coded quad vertex count for non-quad sprites.
+  gl.enable(gl.BLEND); // TODO: Potential improvement - move blend state to material-specific configuration.
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: Potential improvement - centralize blend setup to avoid duplicate state calls.
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: Potential improvement - avoid hard-coded quad vertex count for non-quad sprites.
 };
 
 const includeBatch = (
@@ -90,7 +90,8 @@ export const createRenderEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void> => ({
   query: [cameraId, positionId],
-  beforeQuery: (world) => world.queryEntities([spriteId], spriteEntityBuffer),
+  beforeQuery: (world) =>
+    world.queryEntities([spriteId, positionId], spriteEntityBuffer),
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
 
@@ -119,12 +120,12 @@ export const createRenderEcsSystem = (
 
       const { renderable } = spriteComponent;
 
-      const layerMaskMatches = matchesLayerMask(
-        renderable.layer,
-        cameraComponent.layerMask,
+      const maskMatches = matchesMask(
+        renderable.category,
+        cameraComponent.cullingMask,
       );
 
-      if (!layerMaskMatches) {
+      if (!maskMatches) {
         continue;
       }
 
@@ -138,13 +139,7 @@ export const createRenderEcsSystem = (
       const entityPosition = world.getComponent<PositionEcsComponent>(
         spriteEntity,
         positionId,
-      );
-
-      if (!entityPosition) {
-        throw new Error(
-          `Entity "${spriteEntity}" has a sprite component but no position component.`,
-        );
-      }
+      )!; // Position component is guaranteed to exist due to the query in beforeQuery.
 
       const components: InstanceComponents = {
         position: entityPosition,

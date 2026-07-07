@@ -22,7 +22,7 @@ export function addCamera(
     minZoom: cameraOptions.minZoom ?? 0.1,
     maxZoom: cameraOptions.maxZoom ?? 10,
     isStatic: cameraOptions.isStatic ?? false,
-    layerMask: cameraOptions.layerMask ?? 0xffffffff,
+    cullingMask: cameraOptions.cullingMask ?? 0xffffffff,
     scissorRect: cameraOptions.scissorRect,
     zoomInput: cameraOptions.zoomInput,
     panInput: cameraOptions.panInput,

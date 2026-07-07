@@ -73,7 +73,7 @@ describe('Renderable', () => {
         mockSetupInstanceAttributes,
       );
 
-      expect(renderable.layer).toBe(layer);
+      expect(renderable.category).toBe(layer);
     });
 
     it('should initialize with provided floatsPerInstance', () => {
@@ -131,7 +131,7 @@ describe('Renderable', () => {
 
       expect(renderable.geometry).toBe(mockGeometry);
       expect(renderable.material).toBe(mockMaterial);
-      expect(renderable.layer).toBe(layer);
+      expect(renderable.category).toBe(layer);
       expect(renderable.floatsPerInstance).toBe(floatsPerInstance);
       expect(renderable.bindInstanceData).toBe(mockBindInstanceData);
       expect(renderable.setupInstanceAttributes).toBe(
