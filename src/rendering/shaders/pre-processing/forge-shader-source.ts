@@ -11,6 +11,8 @@ export interface ForgeShaderPragma {
  * Represents a shader source file with metadata.
  */
 export class ForgeShaderSource {
+  public readonly name!: string;
+
   private readonly _rawSource: string;
   private readonly _pragmas: ForgeShaderPragma[] = [];
 
@@ -29,6 +31,21 @@ export class ForgeShaderSource {
     this._preparedSource = rawSource;
 
     this._parseRawSource(rawSource);
+
+    const namePragma = this.getPragmas('name')[0];
+
+    if (!namePragma || namePragma.values.length !== 1) {
+      const numberOfLinesToShow = 5;
+
+      throw new Error(
+        `Shader source must contain a valid "#pragma forge name(<name>)" directive.\n\nThe first ${numberOfLinesToShow} lines of the shader source are:\n${rawSource
+          .split('\n')
+          .slice(0, numberOfLinesToShow)
+          .join('\n')}`,
+      );
+    }
+
+    this.name = namePragma.values[0];
   }
 
   /**

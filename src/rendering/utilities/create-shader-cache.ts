@@ -1,11 +1,13 @@
 import {
   cubicShaderInclude,
+  ForgeShaderSource,
   perlinNoiseFragmentShader,
   perlinNoiseShaderInclude,
   quinticShaderInclude,
   radialGradientShader,
   radialGradientShaderInclude,
   randomGradientShaderInclude,
+  ResolveIncludesPreProcessor,
   sdfBoxShaderInclude,
   sdfCircleShaderInclude,
   sdfEquilateralTriangleInclude,
@@ -33,30 +35,29 @@ import {
  * and shaders.
  */
 export function createShaderCache(): ShaderCache {
-  const shaderCache = new ShaderCache();
+  const includeMap = [
+    new ForgeShaderSource(cubicShaderInclude),
+    new ForgeShaderSource(perlinNoiseShaderInclude),
+    new ForgeShaderSource(quinticShaderInclude),
+    new ForgeShaderSource(radialGradientShaderInclude),
+    new ForgeShaderSource(randomGradientShaderInclude),
+    new ForgeShaderSource(sdfBoxShaderInclude),
+    new ForgeShaderSource(sdfCircleShaderInclude),
+    new ForgeShaderSource(sdfEquilateralTriangleInclude),
+    new ForgeShaderSource(sdfHexagonInclude),
+    new ForgeShaderSource(sdfOctagonInclude),
+    new ForgeShaderSource(sdfOrientedBoxShaderInclude),
+    new ForgeShaderSource(sdfRhombusInclude),
+    new ForgeShaderSource(sdfTrapezoidInclude),
+  ];
 
-  shaderCache.addInclude(
-    cubicShaderInclude,
-    perlinNoiseShaderInclude,
-    quinticShaderInclude,
-    radialGradientShaderInclude,
-    randomGradientShaderInclude,
-    sdfBoxShaderInclude,
-    sdfCircleShaderInclude,
-    sdfEquilateralTriangleInclude,
-    sdfHexagonInclude,
-    sdfOctagonInclude,
-    sdfOrientedBoxShaderInclude,
-    sdfRhombusInclude,
-    sdfTrapezoidInclude,
-  );
+  const includesPreProcessor = new ResolveIncludesPreProcessor(includeMap);
 
-  shaderCache.addShader(
-    radialGradientShader,
-    perlinNoiseFragmentShader,
-    spriteFragmentShader,
-    spriteVertexShader,
-  );
+  const shaderCache = new ShaderCache([includesPreProcessor])
+    .addShader(new ForgeShaderSource(radialGradientShader))
+    .addShader(new ForgeShaderSource(perlinNoiseFragmentShader))
+    .addShader(new ForgeShaderSource(spriteFragmentShader))
+    .addShader(new ForgeShaderSource(spriteVertexShader));
 
   return shaderCache;
 }

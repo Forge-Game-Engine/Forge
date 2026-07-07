@@ -2,74 +2,53 @@ import { ForgeShaderSource } from '../forge-shader-source.js';
 import { ShaderPreProcessor } from '../shader-pre-processor.js';
 
 export class ShaderCache {
-  private readonly _shaders: ForgeShaderSource[];
-  private readonly _includes: ForgeShaderSource[];
-  private readonly _resolvedShaders: Map<string, string>;
+  private readonly _shaders: Map<string, ForgeShaderSource>;
+  private readonly _processedShaders: Map<string, ForgeShaderSource>;
   private readonly _preProcessors: ShaderPreProcessor[];
 
   constructor(preProcessors: ShaderPreProcessor[]) {
-    this._shaders = [];
-    this._includes = [];
-    this._resolvedShaders = new Map();
+    this._shaders = new Map();
+    this._processedShaders = new Map();
     this._preProcessors = preProcessors;
   }
 
-  public addShader(rawShader: string, preProcess: boolean = true): this {
-    const shaderSource = new ForgeShaderSource(rawShader);
-
-    if (
-      this._shaders.some(
-        (existingShader) => existingShader.name === shaderSource.name,
-      )
-    ) {
+  public addShader(
+    shaderSource: ForgeShaderSource,
+    preProcess: boolean = true,
+  ): this {
+    if (this._shaders.has(shaderSource.name)) {
       return this;
     }
 
     if (preProcess) {
       shaderSource.applyPreProcessors(this._preProcessors);
+      this._processedShaders.set(shaderSource.name, shaderSource);
     }
 
-    this._shaders.push(shaderSource);
+    this._shaders.set(shaderSource.name, shaderSource);
 
     return this;
-  }
-
-  public addInclude(...rawIncludes: string[]): void {
-    for (const rawInclude of rawIncludes) {
-      const shaderSource = new ForgeShaderSource(rawInclude);
-
-      if (
-        this._includes.some(
-          (existingInclude) => existingInclude.name === shaderSource.name,
-        )
-      ) {
-        continue;
-      }
-
-      this._includes.push(shaderSource);
-    }
   }
 
   /**
    * Retrieves and resolves a shader by name.
    * @param name - The name of the shader to retrieve.
-   * @returns The resolved shader source code.
+   * @returns The resolved shader.
    */
-  public getShader(name: string): string {
-    if (this._resolvedShaders.has(name)) {
-      return this._resolvedShaders.get(name)!;
+  public getShader(name: string): ForgeShaderSource {
+    if (this._processedShaders.has(name)) {
+      return this._processedShaders.get(name)!;
     }
 
-    const shader = this._shaders.find((shader) => shader.name === name);
+    const shader = this._shaders.get(name);
 
     if (!shader) {
       throw new Error(`Shader with name ${name} not found.`);
     }
 
-    const resolvedSource = resolveIncludes(shader, this._includes);
+    shader.applyPreProcessors(this._preProcessors);
+    this._processedShaders.set(name, shader);
 
-    this._resolvedShaders.set(name, resolvedSource);
-
-    return resolvedSource;
+    return shader;
   }
 }

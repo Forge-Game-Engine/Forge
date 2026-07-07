@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveIncludes } from './resolve-includes';
+import { resolveIncludes } from './resolve-includes-pre-processor';
 import { ForgeShaderSource } from './forge-shader-source';
 
 describe('resolveIncludes', () => {
