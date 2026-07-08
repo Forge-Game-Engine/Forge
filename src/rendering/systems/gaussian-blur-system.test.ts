@@ -2,10 +2,16 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createGaussianBlurEcsSystem } from './gaussian-blur-system';
 import { EcsWorld } from '../../ecs';
-import { CameraEcsComponent, cameraId } from '../components';
+import {
+  CameraEcsComponent,
+  cameraId,
+  GaussianBlurEcsComponent,
+  gaussianBlurId,
+} from '../components';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
+import { addGaussianBlur } from '../utilities';
 import {
   blurMixFragmentShader,
   ForgeShaderSource,
@@ -46,13 +52,23 @@ describe('createGaussianBlurEcsSystem', () => {
 
   const addCameraEntity = (
     renderTarget?: CameraEcsComponent['renderTarget'],
-  ): CameraEcsComponent => {
+  ): number => {
     const entity = world.createEntity();
-    const camera = createCamera(renderTarget);
 
-    world.addComponent(entity, cameraId, camera);
+    world.addComponent(entity, cameraId, createCamera(renderTarget));
 
-    return camera;
+    return entity;
+  };
+
+  const addBlurredCameraEntity = (
+    renderTarget?: CameraEcsComponent['renderTarget'],
+    blurOptions?: Partial<GaussianBlurEcsComponent>,
+  ): number => {
+    const entity = addCameraEntity(renderTarget);
+
+    addGaussianBlur(world, entity, blurOptions);
+
+    return entity;
   };
 
   beforeEach(() => {
@@ -188,11 +204,21 @@ describe('createGaussianBlurEcsSystem', () => {
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
     world = new EcsWorld();
+    world.addSystem(createGaussianBlurEcsSystem(renderContext));
   });
 
-  it('does nothing for a camera without a render target', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext));
-    addCameraEntity();
+  it('does nothing for a camera without a GaussianBlurEcsComponent', () => {
+    const target = new RenderTarget(mockGl, 256, 256);
+
+    addCameraEntity(target);
+
+    world.update();
+
+    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+  });
+
+  it('does nothing for a blurred camera without a render target', () => {
+    addBlurredCameraEntity();
 
     world.update();
 
@@ -200,11 +226,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('draws a horizontal and a vertical pass for a single configured pass', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const target = new RenderTarget(mockGl, 256, 256);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
 
@@ -212,11 +236,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('runs a horizontal pass followed by a vertical pass', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const target = new RenderTarget(mockGl, 256, 256);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
 
@@ -230,11 +252,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('repeats the horizontal/vertical pair once per configured pass', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 3 }));
-
     const target = new RenderTarget(mockGl, 256, 256);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 3 });
 
     world.update();
 
@@ -260,24 +280,32 @@ describe('createGaussianBlurEcsSystem', () => {
     ]);
   });
 
-  it('defaults to more than one pass', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext));
-
+  it('reads the current passes value from the component every frame', () => {
     const target = new RenderTarget(mockGl, 256, 256);
-
-    addCameraEntity(target);
+    const entity = addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(8);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+
+    (mockGl.drawArrays as Mock).mockClear();
+
+    const blur = world.getComponent<GaussianBlurEcsComponent>(
+      entity,
+      gaussianBlurId,
+    )!;
+
+    blur.passes = 3;
+
+    world.update();
+
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(6);
   });
 
   it('writes the final pass back into the camera render target', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 2 }));
-
     const target = new RenderTarget(mockGl, 256, 256);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 2 });
 
     world.update();
 
@@ -288,11 +316,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('keeps the texel size at a single texel regardless of pass count', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 3 }));
-
     const target = new RenderTarget(mockGl, 256, 128);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 3 });
 
     world.update();
 
@@ -308,13 +334,11 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('presents multiple cameras independently', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const targetA = new RenderTarget(mockGl, 128, 128);
     const targetB = new RenderTarget(mockGl, 64, 64);
 
-    addCameraEntity(targetA);
-    addCameraEntity(targetB);
+    addBlurredCameraEntity(targetA, { passes: 1 });
+    addBlurredCameraEntity(targetB, { passes: 1 });
 
     world.update();
 
@@ -322,12 +346,10 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('blurs a render target shared by multiple cameras only once', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const sharedTarget = new RenderTarget(mockGl, 128, 128);
 
-    addCameraEntity(sharedTarget);
-    addCameraEntity(sharedTarget);
+    addBlurredCameraEntity(sharedTarget, { passes: 1 });
+    addBlurredCameraEntity(sharedTarget, { passes: 1 });
 
     world.update();
 
@@ -337,11 +359,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('blurs again on the next frame', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const target = new RenderTarget(mockGl, 128, 128);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
     world.update();
@@ -350,11 +370,9 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('disables blending before drawing so each pass replaces its destination', () => {
-    world.addSystem(createGaussianBlurEcsSystem(renderContext, { passes: 1 }));
-
     const target = new RenderTarget(mockGl, 128, 128);
 
-    addCameraEntity(target);
+    addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
 
@@ -363,13 +381,9 @@ describe('createGaussianBlurEcsSystem', () => {
 
   describe('intensity', () => {
     it('draws nothing when intensity is 0', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, { passes: 2, intensity: 0 }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 2, intensity: 0 });
 
       world.update();
 
@@ -377,13 +391,9 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('skips blending and draws exactly the blur passes when intensity is 1', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, { passes: 2, intensity: 1 }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 2, intensity: 1 });
 
       world.update();
 
@@ -398,16 +408,9 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('blends the sharp and blurred scene for a fractional intensity', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, {
-          passes: 1,
-          intensity: 0.35,
-        }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 1, intensity: 0.35 });
 
       world.update();
 
@@ -423,16 +426,9 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('ends by writing back into the camera render target', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, {
-          passes: 1,
-          intensity: 0.5,
-        }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
 
       world.update();
 
@@ -443,16 +439,9 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('clamps intensity above 1 down to 1', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, {
-          passes: 2,
-          intensity: 1.5,
-        }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 2, intensity: 1.5 });
 
       world.update();
 
@@ -461,20 +450,38 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('clamps intensity below 0 down to 0', () => {
-      world.addSystem(
-        createGaussianBlurEcsSystem(renderContext, {
-          passes: 2,
-          intensity: -0.5,
-        }),
-      );
-
       const target = new RenderTarget(mockGl, 128, 128);
 
-      addCameraEntity(target);
+      addBlurredCameraEntity(target, { passes: 2, intensity: -0.5 });
 
       world.update();
 
       expect(mockGl.drawArrays).not.toHaveBeenCalled();
+    });
+
+    it('reflects a runtime change to the component on the next frame', () => {
+      const target = new RenderTarget(mockGl, 128, 128);
+      const entity = addBlurredCameraEntity(target, {
+        passes: 1,
+        intensity: 1,
+      });
+
+      world.update();
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+
+      (mockGl.drawArrays as Mock).mockClear();
+
+      const blur = world.getComponent<GaussianBlurEcsComponent>(
+        entity,
+        gaussianBlurId,
+      )!;
+
+      blur.intensity = 0.5;
+
+      world.update();
+
+      // Dropping below 1 adds the snapshot/mix/copy-back draws.
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
     });
   });
 });

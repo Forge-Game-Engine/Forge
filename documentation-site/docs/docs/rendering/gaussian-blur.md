@@ -13,13 +13,18 @@ low-health vignette, a depth-of-field-style backdrop behind UI, or as a
 starting point for your own blur-based effect (bloom's bright-pass
 downsample chain uses the same separable technique).
 
-It only affects cameras that render off-screen; a camera with no
-`renderTarget` renders straight to the canvas and this system does nothing
-to it.
+It only affects cameras that have both a `renderTarget` and a
+[`GaussianBlurEcsComponent`](/Forge/docs/api/interfaces/GaussianBlurEcsComponent)
+(attach one with `addGaussianBlur`); a camera missing either renders
+untouched.
 
 ## Wiring it up
 
-Give the camera a `renderTarget`, then register the blur system after the
+Following the rest of Forge's ECS conventions, blur settings are entity
+data, not options baked into the system: `createGaussianBlurEcsSystem` takes
+only a `RenderContext` and processes whichever cameras carry a
+`GaussianBlurEcsComponent`. Give the camera a `renderTarget`, attach the
+component with `addGaussianBlur`, then register the blur system after the
 render system and before the present system, since it reads what the render
 system just drew and the present system draws whatever the blur system
 leaves behind:
@@ -27,6 +32,7 @@ leaves behind:
 ```ts
 import {
   addCamera,
+  addGaussianBlur,
   createGaussianBlurEcsSystem,
   createPresentEcsSystem,
   createRenderEcsSystem,
@@ -42,12 +48,12 @@ const sceneTarget = createRenderTarget(
   renderContext.height,
 );
 
-addCamera(world, { renderTarget: sceneTarget });
+const camera = addCamera(world, { renderTarget: sceneTarget });
+
+addGaussianBlur(world, camera, { passes: 4, intensity: 0.5 });
 
 world.addSystem(createRenderEcsSystem(renderContext));
-world.addSystem(
-  createGaussianBlurEcsSystem(renderContext, { passes: 4, intensity: 0.5 }),
-);
+world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
@@ -60,9 +66,35 @@ contents; registering it after the present system blurs a frame too late to
 ever be shown.
 :::
 
+Because it's just component data, you can retune it (or swap it entirely
+for a different post-processing "profile") at any point after creation by
+fetching the component and writing to it, the same way the space-shooter
+demo's camera shake works:
+
+```ts
+import { gaussianBlurId } from '@forge-game-engine/forge/rendering';
+
+const blur = world.getComponent(camera, gaussianBlurId)!;
+blur.intensity = 0.1; // e.g. ease off the blur when a menu closes
+```
+
+If two cameras render into the *same* `renderTarget` (for example a static
+background camera layered under a shaking foreground camera), attach
+`GaussianBlurEcsComponent` to only one of them: the blur system already
+processes each distinct render target once per frame, so a second component
+on the other camera would just be redundant, and it blurs both cameras'
+output together, since by that point they're already composited into one
+texture.
+
+To blur only *some* of a scene (for example a background, but not the
+gameplay layer on top of it), give those cameras *separate* render targets
+instead of a shared one, and attach `GaussianBlurEcsComponent` only to the
+one that should be blurred: see [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets).
+
 ## Tuning strength: passes vs. intensity
 
-There are two, deliberately different, knobs:
+There are two, deliberately different, knobs on
+[`GaussianBlurEcsComponent`](/Forge/docs/api/interfaces/GaussianBlurEcsComponent):
 
 - **`passes`** sets how soft the underlying blur _can_ be. Each pass reads
   the previous pass's (already blurred) result back out of the camera's
@@ -76,9 +108,7 @@ There are two, deliberately different, knobs:
   alone (`intensity: 1`) reads as heavily blurred.
 
 ```ts
-world.addSystem(
-  createGaussianBlurEcsSystem(renderContext, { passes: 8, intensity: 0.4 }),
-);
+addGaussianBlur(world, camera, { passes: 8, intensity: 0.4 });
 ```
 
 `intensity: 0` skips the blur entirely (cheaper than `passes: 0`, since it

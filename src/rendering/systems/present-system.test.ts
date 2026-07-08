@@ -66,8 +66,12 @@ describe('createPresentEcsSystem', () => {
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       BLEND: 'BLEND',
+      SRC_ALPHA: 'SRC_ALPHA',
+      ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
 
       disable: vi.fn(),
+      enable: vi.fn(),
+      blendFunc: vi.fn(),
       createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
@@ -173,6 +177,78 @@ describe('createPresentEcsSystem', () => {
     world.update();
 
     expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears the canvas only once when layering multiple different render targets', () => {
+    const targetA = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+    const targetB = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 64,
+      height: 64,
+    } as RenderTarget;
+
+    addCameraEntity(targetA);
+    addCameraEntity(targetB);
+
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces the canvas for the first layer and blends subsequent layers on top', () => {
+    const targetA = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+    const targetB = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 64,
+      height: 64,
+    } as RenderTarget;
+
+    addCameraEntity(targetA);
+    addCameraEntity(targetB);
+
+    world.update();
+
+    expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
+    expect(mockGl.enable).toHaveBeenCalledWith(mockGl.BLEND);
+    expect(mockGl.blendFunc).toHaveBeenCalledWith(
+      mockGl.SRC_ALPHA,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+  });
+
+  it('clears the canvas again on the next frame', () => {
+    const targetA = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+    const targetB = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 64,
+      height: 64,
+    } as RenderTarget;
+
+    addCameraEntity(targetA);
+    addCameraEntity(targetB);
+
+    world.update();
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(2);
   });
 
   it('presents a render target shared by multiple cameras only once', () => {

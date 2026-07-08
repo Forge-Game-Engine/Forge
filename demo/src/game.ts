@@ -1,4 +1,5 @@
 import {
+  addGaussianBlur,
   cameraId,
   CircleShape,
   createCameraEcsSystem,
@@ -70,6 +71,8 @@ world.addComponent(cameraEntity, cameraId, {
   cullingMask: renderLayer,
   renderTarget: sceneRenderTarget,
 });
+
+addGaussianBlur(world, cameraEntity, { passes: 8, intensity: 0.4 });
 
 const { imageCache } = renderContext;
 
@@ -232,11 +235,10 @@ for (let i = 0; i < shapeCount; i++) {
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 // Blurs the off-screen scene render target in place (two-pass separable
-// Gaussian blur), then the present pass draws the blurred result onto the
+// Gaussian blur, tuned via the GaussianBlurEcsComponent attached to the
+// camera above), then the present pass draws the blurred result onto the
 // canvas. Must run after the render system and before the present system.
-world.addSystem(
-  createGaussianBlurEcsSystem(renderContext, { passes: 8, intensity: 0.4 }),
-);
+world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 

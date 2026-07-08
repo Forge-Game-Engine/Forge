@@ -8,11 +8,12 @@ import { CameraEcsComponent, cameraId } from '../components/index.js';
  *
  * @param world - The ECS world to which the camera will be added.
  * @param cameraOptions - Options for configuring the camera.
+ * @returns The created camera entity, for attaching further components to (for example `addGaussianBlur`).
  */
 export function addCamera(
   world: EcsWorld,
   cameraOptions: Partial<CameraEcsComponent> = {},
-): void {
+): number {
   const cameraEntity = world.createEntity();
 
   const cameraComponent: CameraEcsComponent = {
@@ -36,4 +37,6 @@ export function addCamera(
 
   world.addComponent(cameraEntity, cameraId, cameraComponent);
   world.addComponent(cameraEntity, positionId, positionComponent);
+
+  return cameraEntity;
 }

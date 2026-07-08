@@ -60,6 +60,54 @@ or the off-screen texture will stay at its old resolution while the canvas
 grows or shrinks around it.
 :::
 
+## Layering multiple render targets
+
+Cameras that render into *different* targets, and are all presented in the
+same frame, get layered onto the canvas in camera registration order: the
+first present clears the canvas and replaces it outright, and every
+later present alpha-blends on top instead of erasing what came before. This
+is how you apply an effect to only part of a scene, for example blurring a
+background layer while keeping a foreground layer sharp:
+
+```ts
+const backgroundTarget = createRenderTarget(
+  renderContext.gl,
+  renderContext.width,
+  renderContext.height,
+);
+const foregroundTarget = createRenderTarget(
+  renderContext.gl,
+  renderContext.width,
+  renderContext.height,
+);
+
+const background = addCamera(world, {
+  cullingMask: layers.background,
+  renderTarget: backgroundTarget,
+});
+addCamera(world, {
+  cullingMask: layers.foreground,
+  renderTarget: foregroundTarget,
+});
+
+addGaussianBlur(world, background, { passes: 4 });
+
+world.addSystem(createRenderEcsSystem(renderContext));
+world.addSystem(createGaussianBlurEcsSystem(renderContext));
+world.addSystem(createPresentEcsSystem(renderContext));
+```
+
+Only the background camera carries a `GaussianBlurEcsComponent`, so only
+its target gets blurred; the foreground target is presented sharp, on top
+of it. See the space-shooter demo for this pattern in a real scene.
+
+This is different from giving multiple cameras the *same* `renderTarget`
+(described above): that composites them together *before* any
+post-processing pass sees the result, so an effect applied to the shared
+target affects every camera that drew into it. Give cameras separate
+targets specifically when you want a pass to affect one layer but not
+another.
+
 ## Clearing
 
 Binding a render target now actually clears it before drawing, based on

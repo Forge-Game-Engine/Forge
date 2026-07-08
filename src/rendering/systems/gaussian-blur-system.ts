@@ -1,56 +1,36 @@
 import { Vector2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { CameraEcsComponent, cameraId } from '../components/index.js';
+import {
+  CameraEcsComponent,
+  cameraId,
+  GaussianBlurEcsComponent,
+  gaussianBlurId,
+} from '../components/index.js';
 import { createFullscreenQuadGeometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
 import { RenderContext } from '../render-context.js';
 import { createRenderTarget, RenderTarget } from '../render-target.js';
 
-export interface GaussianBlurOptions {
-  /**
-   * How many times to run the horizontal+vertical blur pair. Each pass
-   * samples adjacent texels only, so increasing `passes` (rather than the
-   * distance between samples) is what makes the blur stronger: repeated
-   * narrow passes compose into a wide, smooth blur, whereas spacing samples
-   * further apart undersamples the image and produces visible banding.
-   */
-  passes?: number;
-
-  /**
-   * How much of the blur to show, from `0` (the sharp, unblurred scene) to
-   * `1` (the scene fully blurred by `passes`). Values in between blend
-   * smoothly between the two, for finer control than `passes` alone can
-   * give: `passes` sets the underlying blur's softness, `intensity` dials
-   * how strongly it shows. Clamped to the `[0, 1]` range.
-   */
-  intensity?: number;
-}
-
-const defaultGaussianBlurOptions = { passes: 4, intensity: 1 };
-
 /**
  * Creates a two-pass separable Gaussian blur post-processing system.
  *
- * For each camera with a `renderTarget`, blurs that target's contents in
- * place: a horizontal pass renders into an internal scratch buffer, then a
- * vertical pass reads that scratch buffer and renders the result back into
- * the camera's `renderTarget`. Cameras without a `renderTarget` (rendering
- * straight to the canvas) are left untouched.
+ * For each camera with both a `renderTarget` and a `GaussianBlurEcsComponent`,
+ * blurs that target's contents in place: a horizontal pass renders into an
+ * internal scratch buffer, then a vertical pass reads that scratch buffer
+ * and renders the result back into the camera's `renderTarget`. Cameras
+ * without a `renderTarget`, or without a `GaussianBlurEcsComponent`
+ * (attach one with `addGaussianBlur`), are left untouched.
  *
  * Must be registered after the render system (so there's a scene to blur)
  * and before the present system (so the blurred result gets drawn to the
  * canvas).
  * @param renderContext The rendering context
- * @param options Options controlling the number of blur passes and how strongly the blur shows
  * @returns The Gaussian blur ECS system
  */
 export const createGaussianBlurEcsSystem = (
   renderContext: RenderContext,
-  options: GaussianBlurOptions = {},
-): EcsSystem<[CameraEcsComponent], void, void> => {
-  const { passes, intensity } = { ...defaultGaussianBlurOptions, ...options };
-  const clampedIntensity = Math.min(1, Math.max(0, intensity));
+): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent], void, void> => {
   const { gl, shaderCache } = renderContext;
 
   const horizontalMaterial = new Material(
@@ -168,17 +148,18 @@ export const createGaussianBlurEcsSystem = (
   const processedTargetsThisFrame = new Set<RenderTarget>();
 
   return {
-    query: [cameraId],
+    query: [cameraId, gaussianBlurId],
     beforeQuery: () => {
       processedTargetsThisFrame.clear();
     },
     run: (result) => {
-      const [camera] = result.components;
+      const [camera, blur] = result.components;
       const { renderTarget } = camera;
+      const intensity = Math.min(1, Math.max(0, blur.intensity));
 
       if (
         !renderTarget ||
-        clampedIntensity <= 0 ||
+        intensity <= 0 ||
         processedTargetsThisFrame.has(renderTarget)
       ) {
         return;
@@ -186,7 +167,7 @@ export const createGaussianBlurEcsSystem = (
 
       processedTargetsThisFrame.add(renderTarget);
 
-      const needsBlend = clampedIntensity < 1;
+      const needsBlend = intensity < 1;
       const sharpSnapshot = needsBlend
         ? getSharpSnapshotTarget(renderTarget)
         : null;
@@ -206,7 +187,7 @@ export const createGaussianBlurEcsSystem = (
       // rendered scene) and writes the next, more-blurred version back
       // into it, so `passes` composes into a wider blur without ever
       // widening the individual 9-tap kernel.
-      for (let i = 0; i < passes; i++) {
+      for (let i = 0; i < blur.passes; i++) {
         drawPass(
           horizontalMaterial,
           renderTarget.colorTexture,
@@ -238,7 +219,7 @@ export const createGaussianBlurEcsSystem = (
 
       mixMaterial.setUniform('u_sharpTexture', sharpSnapshot.colorTexture);
       mixMaterial.setUniform('u_blurredTexture', renderTarget.colorTexture);
-      mixMaterial.setUniform('u_intensity', clampedIntensity);
+      mixMaterial.setUniform('u_intensity', intensity);
 
       mixMaterial.bind(gl);
       geometry.bind(gl, mixMaterial.program);
