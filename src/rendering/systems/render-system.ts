@@ -18,9 +18,22 @@ import {
   spriteId,
 } from '../components/index.js';
 import { RenderContext } from '../render-context.js';
+import { RenderTarget } from '../render-target.js';
 import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
+
+/**
+ * The result of a single camera's `run` pass, consumed by `afterRun` to
+ * bind the correct draw destination before issuing the batched draw calls.
+ */
+export interface RenderPassResult {
+  /** The camera's projection matrix, applied to every draw call in this pass. */
+  projectionMatrix: Matrix3x3;
+
+  /** The render target to draw into, or `null` to draw onto the canvas. */
+  target: RenderTarget | null;
+}
 
 const setupInstanceAttributesAndDraw = (
   renderContext: RenderContext,
@@ -90,12 +103,20 @@ const renderCommands: RenderCommand[] = [];
 
 /**
  * Creates a render system that batches and renders sprites based on the camera view.
+ *
+ * Each camera draws into its own `CameraEcsComponent.renderTarget`, or
+ * directly onto the canvas if it doesn't have one, and clears that
+ * destination first according to `RenderContext.clearStrategy`.
  * @param renderContext The rendering context
  * @returns The render ECS system
  */
 export const createRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void, Matrix3x3> => ({
+): EcsSystem<
+  [CameraEcsComponent, PositionEcsComponent],
+  void,
+  RenderPassResult
+> => ({
   query: [cameraId, positionId],
   beforeQuery: (world) =>
     world.queryEntities([spriteId, positionId], spriteEntityBuffer),
@@ -156,9 +177,12 @@ export const createRenderEcsSystem = (
       });
     }
 
-    return projectionMatrix;
+    return { projectionMatrix, target: cameraComponent.renderTarget ?? null };
   },
-  afterRun: (projectionMatrix) => {
+  afterRun: ({ projectionMatrix, target }) => {
+    renderContext.bindRenderTarget(target);
+    renderContext.clear();
+
     renderCommands.sort((a, b) => {
       if (a.layer !== b.layer) {
         return a.layer - b.layer;

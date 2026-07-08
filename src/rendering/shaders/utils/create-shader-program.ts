@@ -39,3 +39,47 @@ export const createProgram = (
 
   return program;
 };
+
+const programCache = new WeakMap<
+  WebGL2RenderingContext,
+  Map<string, WebGLProgram>
+>();
+
+/**
+ * Creates and links a WebGL shader program, reusing a previously compiled
+ * program if one already exists for the same context and shader source
+ * pair. Avoids redundant shader compilation when multiple materials share
+ * identical shader source (e.g. several post-process passes reusing the
+ * same shader).
+ *
+ * @param gl - The WebGL2 rendering context.
+ * @param vertexSource - The GLSL source code for the vertex shader.
+ * @param fragmentSource - The GLSL source code for the fragment shader.
+ * @returns The linked shader program.
+ * @throws An error if the shader program creation or linking fails.
+ */
+export const createCachedProgram = (
+  gl: WebGL2RenderingContext,
+  vertexSource: string,
+  fragmentSource: string,
+): WebGLProgram => {
+  let programsByKey = programCache.get(gl);
+
+  if (!programsByKey) {
+    programsByKey = new Map();
+    programCache.set(gl, programsByKey);
+  }
+
+  const key = `${vertexSource}${fragmentSource}`;
+  const cachedProgram = programsByKey.get(key);
+
+  if (cachedProgram) {
+    return cachedProgram;
+  }
+
+  const program = createProgram(gl, vertexSource, fragmentSource);
+
+  programsByKey.set(key, program);
+
+  return program;
+};

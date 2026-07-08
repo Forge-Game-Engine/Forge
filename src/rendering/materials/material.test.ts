@@ -40,11 +40,13 @@ describe('Material', () => {
       compileShader: vi.fn(),
       getShaderParameter: vi.fn(() => true),
       getShaderInfoLog: vi.fn(() => ''),
+      deleteShader: vi.fn(),
       createProgram: vi.fn(() => mockProgram),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
       getProgramParameter: vi.fn(() => true),
       getProgramInfoLog: vi.fn(() => ''),
+      deleteProgram: vi.fn(),
       getActiveUniform: vi.fn(),
       getUniformLocation: vi.fn(),
       useProgram: vi.fn(),
@@ -110,7 +112,7 @@ describe('Material', () => {
       );
 
       expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Failed to link program: Link error',
+        'Program link error: Link error',
       );
     });
 
@@ -422,5 +424,96 @@ describe('Material', () => {
       expect(gl.uniform1f).not.toHaveBeenCalled();
       expect(gl.uniform1i).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('Material program caching', () => {
+  let gl: WebGL2RenderingContext;
+  let programCounter: number;
+
+  beforeEach(() => {
+    programCounter = 0;
+
+    gl = {
+      VERTEX_SHADER: 35633,
+      FRAGMENT_SHADER: 35632,
+      COMPILE_STATUS: 35713,
+      LINK_STATUS: 35714,
+      ACTIVE_UNIFORMS: 35718,
+      createShader: vi.fn(() => ({}) as WebGLShader),
+      shaderSource: vi.fn(),
+      compileShader: vi.fn(),
+      getShaderParameter: vi.fn(() => true),
+      getShaderInfoLog: vi.fn(() => ''),
+      deleteShader: vi.fn(),
+      createProgram: vi.fn(() => {
+        programCounter += 1;
+
+        return { id: programCounter } as unknown as WebGLProgram;
+      }),
+      attachShader: vi.fn(),
+      linkProgram: vi.fn(),
+      getProgramParameter: vi.fn(() => true),
+      getProgramInfoLog: vi.fn(() => ''),
+      deleteProgram: vi.fn(),
+      getActiveUniform: vi.fn(() => null),
+      getUniformLocation: vi.fn(),
+    } as unknown as WebGL2RenderingContext;
+  });
+
+  it('should reuse a compiled program for identical shader source', () => {
+    const vertexShader = createShaderSource(
+      'void main() { gl_Position = vec4(0.0); }',
+    );
+    const fragmentShader = createShaderSource(
+      'void main() { gl_FragColor = vec4(1.0); }',
+    );
+
+    const materialA = new Material(vertexShader, fragmentShader, gl);
+    const materialB = new Material(vertexShader, fragmentShader, gl);
+
+    expect(gl.createProgram).toHaveBeenCalledTimes(1);
+    expect(materialA.program).toBe(materialB.program);
+  });
+
+  it('should compile a new program for different shader source', () => {
+    const vertexShaderA = createShaderSource(
+      'void main() { gl_Position = vec4(0.0); }',
+    );
+    const fragmentShaderA = createShaderSource(
+      'void main() { gl_FragColor = vec4(1.0); }',
+    );
+    const vertexShaderB = createShaderSource(
+      'void main() { gl_Position = vec4(1.0); }',
+    );
+    const fragmentShaderB = createShaderSource(
+      'void main() { gl_FragColor = vec4(0.0); }',
+    );
+
+    const materialA = new Material(vertexShaderA, fragmentShaderA, gl);
+    const materialB = new Material(vertexShaderB, fragmentShaderB, gl);
+
+    expect(gl.createProgram).toHaveBeenCalledTimes(2);
+    expect(materialA.program).not.toBe(materialB.program);
+  });
+
+  it('should not share programs across different WebGL contexts', () => {
+    const vertexShader = createShaderSource(
+      'void main() { gl_Position = vec4(0.0); }',
+    );
+    const fragmentShader = createShaderSource(
+      'void main() { gl_FragColor = vec4(1.0); }',
+    );
+
+    const materialA = new Material(vertexShader, fragmentShader, gl);
+
+    const otherGl = {
+      ...gl,
+      createProgram: vi.fn(() => ({ id: 'other' }) as unknown as WebGLProgram),
+    } as unknown as WebGL2RenderingContext;
+
+    const materialB = new Material(vertexShader, fragmentShader, otherGl);
+
+    expect(materialA.program).not.toBe(materialB.program);
   });
 });

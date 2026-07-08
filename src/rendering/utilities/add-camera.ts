@@ -26,6 +26,7 @@ export function addCamera(
     scissorRect: cameraOptions.scissorRect,
     zoomInput: cameraOptions.zoomInput,
     panInput: cameraOptions.panInput,
+    renderTarget: cameraOptions.renderTarget,
   };
 
   const positionComponent: PositionEcsComponent = {

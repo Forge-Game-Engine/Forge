@@ -10,3 +10,5 @@ export * from './geometry/index.js';
 export * from './renderable.js';
 export * from './color.js';
 export * from './render-context.js';
+export * from './render-target.js';
+export * from './ping-pong-target.js';

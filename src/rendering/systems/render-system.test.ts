@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderEcsSystem } from './render-system';
 import { EcsWorld } from '../../ecs';
@@ -7,6 +8,7 @@ import { CameraEcsComponent, cameraId } from '../components';
 import { SpriteEcsComponent, spriteId } from '../components';
 import { Renderable } from '../renderable';
 import { RenderContext } from '../render-context';
+import { RenderTarget } from '../render-target';
 import { Color } from '../color';
 import { Geometry } from '../geometry/geometry';
 import { Material } from '../materials/material';
@@ -62,6 +64,7 @@ describe('createRenderEcsSystem', () => {
 
   const createCamera = (
     cullingMask: number = 0xffffffff,
+    renderTarget?: CameraEcsComponent['renderTarget'],
   ): CameraEcsComponent => ({
     zoom: 1,
     zoomSensitivity: 0.1,
@@ -70,6 +73,7 @@ describe('createRenderEcsSystem', () => {
     maxZoom: 10000,
     isStatic: true,
     cullingMask,
+    renderTarget,
   });
 
   const createSprite = (
@@ -89,9 +93,10 @@ describe('createRenderEcsSystem', () => {
 
   const addCameraEntity = (
     cullingMask: number = 0xffffffff,
+    renderTarget?: CameraEcsComponent['renderTarget'],
   ): CameraEcsComponent => {
     const entity = world.createEntity();
-    const camera = createCamera(cullingMask);
+    const camera = createCamera(cullingMask, renderTarget);
 
     world.addComponent(entity, cameraId, camera);
     world.addComponent(entity, positionId, {
@@ -132,6 +137,11 @@ describe('createRenderEcsSystem', () => {
       blendFunc: vi.fn(),
       drawArraysInstanced: vi.fn(),
       viewport: vi.fn(),
+      bindFramebuffer: vi.fn(),
+      clearColor: vi.fn(),
+      clear: vi.fn(),
+      FRAMEBUFFER: 'FRAMEBUFFER',
+      COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -306,5 +316,42 @@ describe('createRenderEcsSystem', () => {
 
     expect(bindInstanceData).toHaveBeenCalledTimes(2);
     expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(2);
+  });
+
+  it('binds the default framebuffer and clears before drawing a camera with no render target', () => {
+    addCameraEntity();
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.bindFramebuffer).toHaveBeenCalledWith(
+      mockGl.FRAMEBUFFER,
+      null,
+    );
+    expect(mockGl.clear).toHaveBeenCalledWith(mockGl.COLOR_BUFFER_BIT);
+  });
+
+  it("binds the camera's render target framebuffer and clears before drawing", () => {
+    const target = {
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as unknown as RenderTarget;
+
+    addCameraEntity(0xffffffff, target);
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.bindFramebuffer).toHaveBeenCalledWith(
+      mockGl.FRAMEBUFFER,
+      target.framebuffer,
+    );
+    expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 128, 128);
+    expect(mockGl.clear).toHaveBeenCalledWith(mockGl.COLOR_BUFFER_BIT);
   });
 });
