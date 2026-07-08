@@ -8,11 +8,13 @@ draws the sprites matching that camera's `cullingMask`, sorted and batched by
 shared [`Renderable`](/Forge/docs/api/classes/Renderable).
 
 This section is a work in progress and currently covers the multipass
-rendering foundation; a full guide to sprites, materials, and cameras is
-planned separately.
+rendering foundation and its first post-processing effect; a full guide to
+sprites, materials, and cameras is planned separately.
 
 Guides in this section:
 
 - [Multipass Rendering](./multipass-rendering.md): rendering a camera into
   an off-screen texture and presenting it, the groundwork for future
   post-processing and lighting passes.
+- [Gaussian Blur](./gaussian-blur.md): a two-pass separable blur
+  post-processing effect built on top of multipass rendering.

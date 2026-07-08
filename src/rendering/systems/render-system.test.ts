@@ -354,4 +354,69 @@ describe('createRenderEcsSystem', () => {
     expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 128, 128);
     expect(mockGl.clear).toHaveBeenCalledWith(mockGl.COLOR_BUFFER_BIT);
   });
+
+  it('clears the canvas only once when multiple cameras share it', () => {
+    addCameraEntity();
+    addCameraEntity();
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears each distinct render target once when cameras target different buffers', () => {
+    const targetA = {
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as unknown as RenderTarget;
+    const targetB = {
+      framebuffer: {} as WebGLFramebuffer,
+      width: 64,
+      height: 64,
+    } as unknown as RenderTarget;
+
+    addCameraEntity(0xffffffff, targetA);
+    addCameraEntity(0xffffffff, targetB);
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears a render target only once when multiple cameras share it', () => {
+    const sharedTarget = {
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as unknown as RenderTarget;
+
+    addCameraEntity(0xffffffff, sharedTarget);
+    addCameraEntity(0xffffffff, sharedTarget);
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears again on the next frame', () => {
+    addCameraEntity();
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+    world.update();
+
+    expect(mockGl.clear).toHaveBeenCalledTimes(2);
+  });
 });

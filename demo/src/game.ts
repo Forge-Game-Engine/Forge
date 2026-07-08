@@ -3,9 +3,12 @@ import {
   CircleShape,
   createCameraEcsSystem,
   createGame,
+  createGaussianBlurEcsSystem,
   createImageSprite,
   createPhysicsEcsSystem,
+  createPresentEcsSystem,
   createRenderEcsSystem,
+  createRenderTarget,
   PhysicsBodyId,
   PhysicsWorld,
   PolygonShape,
@@ -30,8 +33,22 @@ const explosionRadius = 200;
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
+// The scene renders into this off-screen target instead of directly onto
+// the canvas, so the blur post-process pass has a texture to read from
+// before the present pass draws the (blurred) result onto the canvas.
+const sceneRenderTarget = createRenderTarget(
+  renderContext.gl,
+  window.innerWidth,
+  window.innerHeight,
+);
+
 const resize = (): void => {
   renderContext.resize(window.innerWidth, window.innerHeight);
+  sceneRenderTarget.resize(
+    renderContext.gl,
+    window.innerWidth,
+    window.innerHeight,
+  );
 };
 
 resize();
@@ -51,6 +68,7 @@ world.addComponent(cameraEntity, cameraId, {
   maxZoom: 10,
   isStatic: true,
   cullingMask: renderLayer,
+  renderTarget: sceneRenderTarget,
 });
 
 const { imageCache } = renderContext;
@@ -213,6 +231,13 @@ for (let i = 0; i < shapeCount; i++) {
 
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
+// Blurs the off-screen scene render target in place (two-pass separable
+// Gaussian blur), then the present pass draws the blurred result onto the
+// canvas. Must run after the render system and before the present system.
+world.addSystem(
+  createGaussianBlurEcsSystem(renderContext, { passes: 8, intensity: 0.4 }),
+);
+world.addSystem(createPresentEcsSystem(renderContext));
 world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 
 // The camera is static at the world origin with a zoom of 1 (see

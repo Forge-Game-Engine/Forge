@@ -3,6 +3,7 @@ import {
   combineInstanceDataSegments,
   createQuadGeometry,
   createTextureFromImage,
+  ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
@@ -22,7 +23,7 @@ export async function createBackground(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  renderContext.shaderCache.addShader(backgroundShader);
+  renderContext.shaderCache.addShader(new ForgeShaderSource(backgroundShader));
 
   const vertexShader = renderContext.shaderCache.getShader('sprite.vert');
   const fragmentShader = renderContext.shaderCache.getShader('background.frag');

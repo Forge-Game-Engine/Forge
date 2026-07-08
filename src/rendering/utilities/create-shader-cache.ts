@@ -1,6 +1,8 @@
 import {
+  blurMixFragmentShader,
   cubicShaderInclude,
   ForgeShaderSource,
+  gaussianBlurFragmentShader,
   passthroughFragmentShader,
   passthroughVertexShader,
   perlinNoiseFragmentShader,
@@ -61,7 +63,9 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(spriteFragmentShader))
     .addShader(new ForgeShaderSource(spriteVertexShader))
     .addShader(new ForgeShaderSource(passthroughFragmentShader))
-    .addShader(new ForgeShaderSource(passthroughVertexShader));
+    .addShader(new ForgeShaderSource(passthroughVertexShader))
+    .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))
+    .addShader(new ForgeShaderSource(blurMixFragmentShader));
 
   return shaderCache;
 }

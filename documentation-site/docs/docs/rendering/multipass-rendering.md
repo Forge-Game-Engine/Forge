@@ -91,9 +91,9 @@ const pingPong = new PingPongTarget(
 // `pingPong.write`, then calls `pingPong.swap()` before the next step.
 ```
 
-There's no built-in post-processing pass that consumes a `PingPongTarget`
-yet; it exists as groundwork for effects that will be built on top of the
-render target/present pass plumbing described above.
+[Gaussian Blur](./gaussian-blur.md) is the first built-in post-processing
+effect built on `PingPongTarget`; its two-pass horizontal/vertical blur is a
+minimal example of the read/write/swap pattern above.
 
 ## Performance note: shared materials are cheap
 

@@ -65,7 +65,9 @@ describe('createPresentEcsSystem', () => {
       TRIANGLES: 'TRIANGLES',
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
+      BLEND: 'BLEND',
 
+      disable: vi.fn(),
       createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
@@ -171,5 +173,52 @@ describe('createPresentEcsSystem', () => {
     world.update();
 
     expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+  });
+
+  it('presents a render target shared by multiple cameras only once', () => {
+    const sharedTarget = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+
+    addCameraEntity(sharedTarget);
+    addCameraEntity(sharedTarget);
+
+    world.update();
+
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(1);
+  });
+
+  it('presents again on the next frame', () => {
+    const target = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+
+    addCameraEntity(target);
+
+    world.update();
+    world.update();
+
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+  });
+
+  it('disables blending before drawing so the present pass replaces the canvas', () => {
+    const target = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+
+    addCameraEntity(target);
+
+    world.update();
+
+    expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
   });
 });

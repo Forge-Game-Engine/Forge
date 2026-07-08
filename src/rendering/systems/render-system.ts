@@ -102,11 +102,24 @@ const spriteEntityBuffer: number[] = [];
 const renderCommands: RenderCommand[] = [];
 
 /**
+ * Tracks which destinations (a `RenderTarget`, or `null` for the canvas)
+ * have already been cleared this frame, so multiple cameras that share a
+ * destination (for example a static background camera and a foreground
+ * camera both drawing onto the canvas, or both into the same off-screen
+ * `RenderTarget` for later post-processing) composite onto one another
+ * instead of each camera's clear wiping out the previous camera's draw.
+ */
+const clearedDestinationsThisFrame = new Set<RenderTarget | null>();
+
+/**
  * Creates a render system that batches and renders sprites based on the camera view.
  *
  * Each camera draws into its own `CameraEcsComponent.renderTarget`, or
- * directly onto the canvas if it doesn't have one, and clears that
- * destination first according to `RenderContext.clearStrategy`.
+ * directly onto the canvas if it doesn't have one, clearing that
+ * destination first (according to `RenderContext.clearStrategy`) the first
+ * time it's used each frame. Cameras that share a destination (either the
+ * canvas or the same `RenderTarget`) draw on top of one another rather than
+ * each clearing what the last one drew.
  * @param renderContext The rendering context
  * @returns The render ECS system
  */
@@ -118,8 +131,10 @@ export const createRenderEcsSystem = (
   RenderPassResult
 > => ({
   query: [cameraId, positionId],
-  beforeQuery: (world) =>
-    world.queryEntities([spriteId, positionId], spriteEntityBuffer),
+  beforeQuery: (world) => {
+    clearedDestinationsThisFrame.clear();
+    world.queryEntities([spriteId, positionId], spriteEntityBuffer);
+  },
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
 
@@ -181,7 +196,11 @@ export const createRenderEcsSystem = (
   },
   afterRun: ({ projectionMatrix, target }) => {
     renderContext.bindRenderTarget(target);
-    renderContext.clear();
+
+    if (!clearedDestinationsThisFrame.has(target)) {
+      renderContext.clear();
+      clearedDestinationsThisFrame.add(target);
+    }
 
     renderCommands.sort((a, b) => {
       if (a.layer !== b.layer) {
