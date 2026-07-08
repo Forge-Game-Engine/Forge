@@ -29,6 +29,10 @@ export class RenderContext {
 
   public instanceBuffer: WebGLBuffer;
 
+  public width: number;
+
+  public height: number;
+
   private readonly _globalUniformValues: Map<string, UniformValue>;
 
   /**
@@ -48,6 +52,8 @@ export class RenderContext {
     this.imageCache = imageCache;
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;
+    this.width = canvas.width;
+    this.height = canvas.height;
 
     const context = canvas.getContext('webgl2', { antialias: true });
 
@@ -75,6 +81,8 @@ export class RenderContext {
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.gl.viewport(0, 0, width, height);
+    this.width = width;
+    this.height = height;
   }
 
   public setGlobalUniformValue(name: string, value: UniformValue): void {

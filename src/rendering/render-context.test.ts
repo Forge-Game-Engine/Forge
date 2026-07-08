@@ -62,6 +62,16 @@ describe('RenderContext', () => {
       expect(context.instanceBuffer).toBe(mockBuffer);
     });
 
+    it('should initialize width and height from the canvas dimensions', () => {
+      canvas.width = 640;
+      canvas.height = 480;
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.width).toBe(640);
+      expect(context.height).toBe(480);
+    });
+
     it('should throw an error when WebGL2 context is not available', () => {
       vi.spyOn(canvas, 'getContext').mockReturnValue(null);
 
@@ -102,6 +112,15 @@ describe('RenderContext', () => {
       expect(context.canvas.style.width).toBe('400px');
       expect(context.canvas.style.height).toBe('300px');
       expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 400, 300);
+    });
+
+    it('should update the width and height properties', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300);
+
+      expect(context.width).toBe(400);
+      expect(context.height).toBe(300);
     });
 
     it('should throw when width or height are not positive', () => {

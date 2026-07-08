@@ -239,4 +239,105 @@ describe('EcsWorld', () => {
     expect(rot1.local).toBe(2);
     expect(rot2.local).toBe(4);
   });
+
+  describe('afterRun', () => {
+    it('passes the return value of run to afterRun', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[PositionEcsComponent], null, string> = {
+        query: [positionId],
+        run: () => 'result-value',
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith('result-value');
+    });
+
+    it('does not throw when afterRun is not defined', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const system: EcsSystem<[PositionEcsComponent]> = {
+        query: [positionId],
+        run: () => {},
+      };
+
+      world.addSystem(system);
+
+      expect(() => world.update()).not.toThrow();
+    });
+
+    it('invokes run and afterRun once per matched entity, interleaved in order', () => {
+      const world = new EcsWorld();
+      const entity1 = world.createEntity();
+      const entity2 = world.createEntity();
+
+      world.addComponent(entity1, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+      world.addComponent(entity2, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const callOrder: string[] = [];
+      const system: EcsSystem<[PositionEcsComponent], null, number> = {
+        query: [positionId],
+        run: (result) => {
+          callOrder.push(`run:${result.entity}`);
+
+          return result.entity;
+        },
+        afterRun: (entity) => {
+          callOrder.push(`afterRun:${entity}`);
+        },
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(callOrder).toEqual([
+        `run:${entity1}`,
+        `afterRun:${entity1}`,
+        `run:${entity2}`,
+        `afterRun:${entity2}`,
+      ]);
+    });
+
+    it('does not call afterRun when no entities match the query', () => {
+      const world = new EcsWorld();
+      const nonexistentId = createComponentId<{ test: number }>(
+        'nonexistent-afterrun',
+      );
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[{ test: number }]> = {
+        query: [nonexistentId],
+        run: () => {},
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -20,7 +20,7 @@ import {
 import { RenderContext } from '../render-context.js';
 import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
-import { InstanceBatch } from './instance-batch.js';
+import { RenderCommand } from '../render-command.js';
 
 const setupInstanceAttributesAndDraw = (
   renderContext: RenderContext,
@@ -38,48 +38,55 @@ const setupInstanceAttributesAndDraw = (
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: Potential improvement - avoid hard-coded quad vertex count for non-quad sprites.
 };
 
+let instanceDataBuffer = new Float32Array(0);
+
+const ensureInstanceDataBufferCapacity = (size: number): Float32Array => {
+  if (instanceDataBuffer.length < size) {
+    instanceDataBuffer = new Float32Array(size);
+  }
+
+  return instanceDataBuffer;
+};
+
 const includeBatch = (
-  renderable: Renderable,
-  batch: InstanceBatch,
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
+  commands: RenderCommand[],
+  batchStart: number,
+  batchEnd: number,
 ) => {
-  const { entries } = batch;
   const { gl } = renderContext;
-
-  if (entries.length === 0) {
-    return;
-  }
+  const { renderable } = commands[batchStart]; // It is safe to assume all commands in the batch share the same renderable.
+  const batchLength = batchEnd - batchStart;
 
   renderable.material.setUniform('u_projection', projectionMatrix);
 
   renderable.bind(gl);
 
-  const requiredBatchSize = entries.length * renderable.floatsPerInstance;
-
-  if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
-    batch.buffer = new Float32Array(
-      requiredBatchSize * batch.bufferGrowthFactor,
-    );
-  }
+  const requiredBatchSize = batchLength * renderable.floatsPerInstance;
+  const buffer = ensureInstanceDataBufferCapacity(requiredBatchSize);
 
   let instanceDataOffset = 0;
 
-  for (const components of entries) {
-    renderable.bindInstanceData(components, batch.buffer, instanceDataOffset);
+  for (let i = batchStart; i < batchEnd; i++) {
+    renderable.bindInstanceData(
+      commands[i].components,
+      buffer,
+      instanceDataOffset,
+    );
 
     instanceDataOffset += renderable.floatsPerInstance;
   }
 
   // Upload instance transform buffer
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, batch.buffer, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW, 0, requiredBatchSize);
 
-  setupInstanceAttributesAndDraw(renderContext, renderable, entries.length);
+  setupInstanceAttributesAndDraw(renderContext, renderable, batchLength);
 };
 
 const spriteEntityBuffer: number[] = [];
-const renderables: Map<Renderable, InstanceBatch> = new Map();
+const renderCommands: RenderCommand[] = [];
 
 /**
  * Creates a render system that batches and renders sprites based on the camera view.
@@ -88,25 +95,21 @@ const renderables: Map<Renderable, InstanceBatch> = new Map();
  */
 export const createRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void> => ({
+): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void, Matrix3x3> => ({
   query: [cameraId, positionId],
   beforeQuery: (world) =>
     world.queryEntities([spriteId, positionId], spriteEntityBuffer),
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
 
-    const { gl } = renderContext;
-
     const projectionMatrix = createProjectionMatrix(
-      gl.canvas.width,
-      gl.canvas.height,
+      renderContext.width,
+      renderContext.height,
       positionComponent.world,
       cameraComponent.zoom,
     );
 
-    for (const batch of renderables.values()) {
-      batch.entries.length = 0;
-    }
+    renderCommands.length = 0;
 
     for (const spriteEntity of spriteEntityBuffer) {
       const spriteComponent = world.getComponent<SpriteEcsComponent>(
@@ -129,13 +132,6 @@ export const createRenderEcsSystem = (
         continue;
       }
 
-      let batch = renderables.get(renderable);
-
-      if (!batch) {
-        batch = new InstanceBatch();
-        renderables.set(renderable, batch);
-      }
-
       const entityPosition = world.getComponent<PositionEcsComponent>(
         spriteEntity,
         positionId,
@@ -152,13 +148,42 @@ export const createRenderEcsSystem = (
         flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
       };
 
-      batch.entries.push(components);
+      renderCommands.push({
+        layer: 0,
+        depth: entityPosition.world.y,
+        renderable,
+        components,
+      });
     }
 
-    for (const [renderable, batch] of renderables) {
-      includeBatch(renderable, batch, renderContext, projectionMatrix);
-    }
+    return projectionMatrix;
+  },
+  afterRun: (projectionMatrix) => {
+    renderCommands.sort((a, b) => {
+      if (a.layer !== b.layer) {
+        return a.layer - b.layer;
+      }
 
-    gl.bindVertexArray(null);
+      return a.depth - b.depth;
+    });
+
+    let batchStart = 0;
+
+    for (let i = 1; i <= renderCommands.length; i++) {
+      const isBatchBoundary =
+        i === renderCommands.length ||
+        renderCommands[i].renderable !== renderCommands[batchStart].renderable;
+
+      if (isBatchBoundary) {
+        includeBatch(
+          renderContext,
+          projectionMatrix,
+          renderCommands,
+          batchStart,
+          i,
+        );
+        batchStart = i;
+      }
+    }
   },
 });
