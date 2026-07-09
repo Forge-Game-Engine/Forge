@@ -36,7 +36,7 @@ export function drawFullscreenQuad(
   material: Material,
 ): void {
   const { gl } = renderContext;
-  const geometry = createQuadGeometry(gl, { extents: 1 });
+  const geometry = createQuadGeometry(gl);
 
   material.bind(gl);
   geometry.bind(gl, material.program);

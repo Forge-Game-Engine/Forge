@@ -29,7 +29,7 @@ void main() {
     vec2 pivoted = a_position - normalizedPivot;
 
     // 2. Scale quad to sprite size and scale
-    vec2 scaled = pivoted * a_instanceSize * a_instanceScale;
+    vec2 scaled = pivoted * a_instanceSize * a_instanceScale * 0.5;
 
     // 3. Rotate
     float c = cos(a_instanceRot);
