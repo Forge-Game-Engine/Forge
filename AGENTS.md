@@ -494,6 +494,38 @@ export class Entity {
 }
 ```
 
+### No Module-Level Singleton Caches
+
+Don't back a cache with module-level state (a `const cache = new WeakMap()` or
+`Map()` declared at the top of a file, closed over by every exported
+function). It's hidden shared state: two unrelated call sites can silently
+affect each other, it can't be scoped or disposed with the object that
+created the need for it, and it's harder to reason about in tests.
+
+Instead, own the cache on the object whose lifetime it should match, and pass
+it explicitly to whatever needs it. For example, `RenderContext` owns a
+`ProgramCache` (`renderContext.programCache`), and `Material`'s constructor
+takes that cache as an explicit parameter rather than reaching for a
+module-level `WeakMap<WebGL2RenderingContext, ...>` keyed by context:
+
+```typescript
+export class RenderContext {
+  public readonly programCache: ProgramCache;
+
+  constructor(/* ... */) {
+    this.programCache = new ProgramCache();
+  }
+}
+
+// Callers pass the owning object's cache explicitly:
+new Material(vertexSource, fragmentSource, gl, renderContext.programCache);
+```
+
+This keeps the cache's lifetime tied to the `RenderContext` that owns it,
+makes the dependency visible at every call site, and means two independent
+`RenderContext`s (for example in two unrelated tests) never share a cache by
+accident.
+
 ## Security Considerations
 
 ### Validation

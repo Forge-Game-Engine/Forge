@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { createCachedProgram, createProgram } from './create-shader-program';
+import { createProgram } from './create-shader-program';
 import { createShader } from './compile-shader';
 
 vi.mock('./compile-shader', () => ({
@@ -95,71 +95,5 @@ describe('createProgram', () => {
     expect(gl.deleteProgram).toHaveBeenCalledWith(program);
     expect(gl.deleteShader).toHaveBeenCalledWith(vertexShader);
     expect(gl.deleteShader).toHaveBeenCalledWith(fragmentShader);
-  });
-});
-
-describe('createCachedProgram', () => {
-  let gl: WebGL2RenderingContext;
-  let vertexShader: WebGLShader;
-  let fragmentShader: WebGLShader;
-
-  beforeEach(() => {
-    vertexShader = {} as WebGLShader;
-    fragmentShader = {} as WebGLShader;
-
-    gl = {
-      createProgram: vi.fn(() => ({}) as WebGLProgram),
-      attachShader: vi.fn(),
-      linkProgram: vi.fn(),
-      getProgramParameter: vi.fn(() => true),
-      getProgramInfoLog: vi.fn(),
-      deleteProgram: vi.fn(),
-      deleteShader: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
-
-    (createShader as Mock).mockImplementation(
-      (gl: WebGL2RenderingContext, _source, type) =>
-        type === gl.VERTEX_SHADER ? vertexShader : fragmentShader,
-    );
-  });
-
-  it('should compile a program on first use', () => {
-    const program = createCachedProgram(gl, 'vertex source', 'fragment source');
-
-    expect(gl.createProgram).toHaveBeenCalledTimes(1);
-    expect(program).toBeDefined();
-  });
-
-  it('should return the cached program for identical source on the same context', () => {
-    const first = createCachedProgram(gl, 'vertex source', 'fragment source');
-    const second = createCachedProgram(gl, 'vertex source', 'fragment source');
-
-    expect(gl.createProgram).toHaveBeenCalledTimes(1);
-    expect(second).toBe(first);
-  });
-
-  it('should compile a new program for different source', () => {
-    createCachedProgram(gl, 'vertex source', 'fragment source');
-    createCachedProgram(gl, 'other vertex source', 'fragment source');
-
-    expect(gl.createProgram).toHaveBeenCalledTimes(2);
-  });
-
-  it('should not share the cache across different WebGL contexts', () => {
-    const otherGl = {
-      createProgram: vi.fn(() => ({}) as WebGLProgram),
-      attachShader: vi.fn(),
-      linkProgram: vi.fn(),
-      getProgramParameter: vi.fn(() => true),
-      getProgramInfoLog: vi.fn(),
-      deleteProgram: vi.fn(),
-      deleteShader: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
-
-    createCachedProgram(gl, 'vertex source', 'fragment source');
-    createCachedProgram(otherGl, 'vertex source', 'fragment source');
-
-    expect(gl.createProgram).toHaveBeenCalledTimes(1);
-    expect(otherGl.createProgram).toHaveBeenCalledTimes(1);
   });
 });

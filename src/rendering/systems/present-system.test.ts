@@ -25,6 +25,7 @@ describe('createPresentEcsSystem', () => {
 
   const createCamera = (
     renderTarget?: CameraEcsComponent['renderTarget'],
+    layer: number = 0,
   ): CameraEcsComponent => ({
     zoom: 1,
     zoomSensitivity: 0.1,
@@ -34,13 +35,15 @@ describe('createPresentEcsSystem', () => {
     isStatic: true,
     cullingMask: 0xffffffff,
     renderTarget,
+    layer,
   });
 
   const addCameraEntity = (
     renderTarget?: CameraEcsComponent['renderTarget'],
+    layer: number = 0,
   ): CameraEcsComponent => {
     const entity = world.createEntity();
-    const camera = createCamera(renderTarget);
+    const camera = createCamera(renderTarget, layer);
 
     world.addComponent(entity, cameraId, camera);
 
@@ -225,6 +228,40 @@ describe('createPresentEcsSystem', () => {
     expect(mockGl.blendFunc).toHaveBeenCalledWith(
       mockGl.SRC_ALPHA,
       mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+  });
+
+  it('presents in ascending layer order regardless of camera creation order', () => {
+    const background = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+    const foreground = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {} as WebGLFramebuffer,
+      width: 64,
+      height: 64,
+    } as RenderTarget;
+
+    // The foreground camera (higher layer) is added first, but its target
+    // must still be presented second, since layer (not creation order)
+    // determines draw order.
+    addCameraEntity(foreground, 1);
+    addCameraEntity(background, 0);
+
+    world.update();
+
+    expect(mockGl.bindTexture).toHaveBeenNthCalledWith(
+      1,
+      mockGl.TEXTURE_2D,
+      background.colorTexture,
+    );
+    expect(mockGl.bindTexture).toHaveBeenNthCalledWith(
+      2,
+      mockGl.TEXTURE_2D,
+      foreground.colorTexture,
     );
   });
 

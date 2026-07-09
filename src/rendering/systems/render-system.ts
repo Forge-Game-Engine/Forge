@@ -24,8 +24,9 @@ import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
 
 /**
- * The result of a single camera's `run` pass, consumed by `afterRun` to
- * bind the correct draw destination before issuing the batched draw calls.
+ * The result of a single camera's `run` pass. `afterRun` receives one of
+ * these per camera, once every camera has run, and uses it to bind the
+ * correct draw destination before issuing that camera's batched draw calls.
  */
 export interface RenderPassResult {
   /** The camera's projection matrix, applied to every draw call in this pass. */
@@ -33,6 +34,9 @@ export interface RenderPassResult {
 
   /** The render target to draw into, or `null` to draw onto the canvas. */
   target: RenderTarget | null;
+
+  /** This camera's sprite draw commands, gathered by `run`. */
+  commands: RenderCommand[];
 }
 
 const setupInstanceAttributesAndDraw = (
@@ -99,7 +103,17 @@ const includeBatch = (
 };
 
 const spriteEntityBuffer: number[] = [];
-const renderCommands: RenderCommand[] = [];
+
+/**
+ * One `RenderCommand[]` per camera visited this tick, indexed by that
+ * camera's position in query order (reset via `cameraIndex`, not by
+ * identity), and reused across ticks so a stable number of cameras never
+ * reallocates. `run` can't share a single buffer across cameras the way a
+ * once-per-entity hook could, since every camera's commands need to survive
+ * until `afterRun` draws all of them together.
+ */
+const commandBuffersByCameraIndex: RenderCommand[][] = [];
+let cameraIndex = 0;
 
 /**
  * Tracks which destinations (a `RenderTarget`, or `null` for the canvas)
@@ -120,6 +134,11 @@ const clearedDestinationsThisFrame = new Set<RenderTarget | null>();
  * time it's used each frame. Cameras that share a destination (either the
  * canvas or the same `RenderTarget`) draw on top of one another rather than
  * each clearing what the last one drew.
+ *
+ * `run` gathers each camera's sprite commands and projection matrix without
+ * drawing anything; `afterRun` does the actual drawing, once every camera
+ * has run, so every camera's batches are issued from a single, predictable
+ * pass over the whole tick's results.
  * @param renderContext The rendering context
  * @returns The render ECS system
  */
@@ -134,6 +153,7 @@ export const createRenderEcsSystem = (
   beforeQuery: (world) => {
     clearedDestinationsThisFrame.clear();
     world.queryEntities([spriteId, positionId], spriteEntityBuffer);
+    cameraIndex = 0;
   },
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
@@ -145,7 +165,15 @@ export const createRenderEcsSystem = (
       cameraComponent.zoom,
     );
 
-    renderCommands.length = 0;
+    let commands = commandBuffersByCameraIndex[cameraIndex];
+
+    if (!commands) {
+      commands = [];
+      commandBuffersByCameraIndex[cameraIndex] = commands;
+    }
+
+    commands.length = 0;
+    cameraIndex += 1;
 
     for (const spriteEntity of spriteEntityBuffer) {
       const spriteComponent = world.getComponent<SpriteEcsComponent>(
@@ -184,49 +212,62 @@ export const createRenderEcsSystem = (
         flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
       };
 
-      renderCommands.push({
-        layer: 0,
+      commands.push({
+        layer: spriteComponent.layer,
         depth: entityPosition.world.y,
         renderable,
         components,
       });
     }
 
-    return { projectionMatrix, target: cameraComponent.renderTarget ?? null };
+    return {
+      projectionMatrix,
+      target: cameraComponent.renderTarget ?? null,
+      commands,
+    };
   },
-  afterRun: ({ projectionMatrix, target }) => {
-    renderContext.bindRenderTarget(target);
+  afterRun: (results) => {
+    for (const { projectionMatrix, target, commands } of results) {
+      renderContext.bindRenderTarget(target);
 
-    if (!clearedDestinationsThisFrame.has(target)) {
-      renderContext.clear();
-      clearedDestinationsThisFrame.add(target);
-    }
-
-    renderCommands.sort((a, b) => {
-      if (a.layer !== b.layer) {
-        return a.layer - b.layer;
+      if (!clearedDestinationsThisFrame.has(target)) {
+        renderContext.clear();
+        clearedDestinationsThisFrame.add(target);
       }
 
-      return a.depth - b.depth;
-    });
+      commands.sort((a, b) => {
+        if (a.layer !== b.layer) {
+          return a.layer - b.layer;
+        }
 
-    let batchStart = 0;
+        return a.depth - b.depth;
+      });
 
-    for (let i = 1; i <= renderCommands.length; i++) {
-      const isBatchBoundary =
-        i === renderCommands.length ||
-        renderCommands[i].renderable !== renderCommands[batchStart].renderable;
+      let batchStart = 0;
 
-      if (isBatchBoundary) {
-        includeBatch(
-          renderContext,
-          projectionMatrix,
-          renderCommands,
-          batchStart,
-          i,
-        );
-        batchStart = i;
+      for (let i = 1; i <= commands.length; i++) {
+        const isBatchBoundary =
+          i === commands.length ||
+          commands[i].renderable !== commands[batchStart].renderable;
+
+        if (isBatchBoundary) {
+          includeBatch(
+            renderContext,
+            projectionMatrix,
+            commands,
+            batchStart,
+            i,
+          );
+          batchStart = i;
+        }
       }
     }
+
+    // Sprite drawing leaves blending enabled as global GL state (see
+    // `setupInstanceAttributesAndDraw`). Reset it once every camera's
+    // batches are drawn, so later systems (post-processing, presenting)
+    // start from a known, disabled baseline instead of having to assume it
+    // was left on.
+    renderContext.gl.disable(renderContext.gl.BLEND);
   },
 });

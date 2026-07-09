@@ -4,6 +4,7 @@ import { Material } from './material';
 import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
+import { ProgramCache } from '../shaders/index.js';
 
 // Mock WebGLTexture constructor for instanceof checks
 
@@ -20,11 +21,13 @@ describe('Material', () => {
   let gl: WebGL2RenderingContext;
   let mockProgram: WebGLProgram;
   let mockVertexShader: WebGLShader;
+  let programCache: ProgramCache;
 
   beforeEach(() => {
     // Create mock shaders and program
     mockProgram = {} as WebGLProgram;
     mockVertexShader = {} as WebGLShader;
+    programCache = new ProgramCache();
 
     // Create a mock WebGL2RenderingContext with all necessary methods
     gl = {
@@ -76,7 +79,12 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      const material = new Material(vertexShader, fragmentShader, gl);
+      const material = new Material(
+        vertexShader,
+        fragmentShader,
+        gl,
+        programCache,
+      );
 
       expect(material.program).toBe(mockProgram);
       expect(gl.createProgram).toHaveBeenCalled();
@@ -93,9 +101,9 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Shader compile error: Shader compile error',
-      );
+      expect(
+        () => new Material(vertexShader, fragmentShader, gl, programCache),
+      ).toThrow('Shader compile error: Shader compile error');
     });
 
     it('should throw an error if program linking fails', () => {
@@ -111,9 +119,9 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Program link error: Link error',
-      );
+      expect(
+        () => new Material(vertexShader, fragmentShader, gl, programCache),
+      ).toThrow('Program link error: Link error');
     });
 
     it('should detect uniforms in the shader program', () => {
@@ -132,7 +140,12 @@ describe('Material', () => {
       );
 
       // Create material to test uniform detection
-      const material = new Material(vertexShader, fragmentShader, gl);
+      const material = new Material(
+        vertexShader,
+        fragmentShader,
+        gl,
+        programCache,
+      );
 
       expect(material).toBeDefined();
       expect(gl.getActiveUniform).toHaveBeenCalledTimes(2);
@@ -159,7 +172,7 @@ describe('Material', () => {
 
       const vertexShader = createShaderSource('void main() {}');
       const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
+      material = new Material(vertexShader, fragmentShader, gl, programCache);
     });
 
     it('should set a uniform value', () => {
@@ -209,7 +222,7 @@ describe('Material', () => {
 
       const vertexShader = createShaderSource('void main() {}');
       const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
+      material = new Material(vertexShader, fragmentShader, gl, programCache);
     });
 
     it('should set a color uniform', () => {
@@ -234,7 +247,7 @@ describe('Material', () => {
 
       const vertexShader = createShaderSource('void main() {}');
       const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
+      material = new Material(vertexShader, fragmentShader, gl, programCache);
     });
 
     it('should set a Vector2 uniform', () => {
@@ -264,7 +277,7 @@ describe('Material', () => {
 
       const vertexShader = createShaderSource('void main() {}');
       const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
+      material = new Material(vertexShader, fragmentShader, gl, programCache);
     });
 
     it('should use the program when binding', () => {
@@ -311,7 +324,12 @@ describe('Material', () => {
 
       const vertexShader = createShaderSource('void main() {}');
       const fragmentShader = createShaderSource('void main() {}');
-      const newMaterial = new Material(vertexShader, fragmentShader, gl);
+      const newMaterial = new Material(
+        vertexShader,
+        fragmentShader,
+        gl,
+        programCache,
+      );
 
       const mockTexture1 = new WebGLTexture();
       const mockTexture2 = new WebGLTexture();
@@ -430,9 +448,11 @@ describe('Material', () => {
 describe('Material program caching', () => {
   let gl: WebGL2RenderingContext;
   let programCounter: number;
+  let programCache: ProgramCache;
 
   beforeEach(() => {
     programCounter = 0;
+    programCache = new ProgramCache();
 
     gl = {
       VERTEX_SHADER: 35633,
@@ -469,8 +489,18 @@ describe('Material program caching', () => {
       'void main() { gl_FragColor = vec4(1.0); }',
     );
 
-    const materialA = new Material(vertexShader, fragmentShader, gl);
-    const materialB = new Material(vertexShader, fragmentShader, gl);
+    const materialA = new Material(
+      vertexShader,
+      fragmentShader,
+      gl,
+      programCache,
+    );
+    const materialB = new Material(
+      vertexShader,
+      fragmentShader,
+      gl,
+      programCache,
+    );
 
     expect(gl.createProgram).toHaveBeenCalledTimes(1);
     expect(materialA.program).toBe(materialB.program);
@@ -490,14 +520,24 @@ describe('Material program caching', () => {
       'void main() { gl_FragColor = vec4(0.0); }',
     );
 
-    const materialA = new Material(vertexShaderA, fragmentShaderA, gl);
-    const materialB = new Material(vertexShaderB, fragmentShaderB, gl);
+    const materialA = new Material(
+      vertexShaderA,
+      fragmentShaderA,
+      gl,
+      programCache,
+    );
+    const materialB = new Material(
+      vertexShaderB,
+      fragmentShaderB,
+      gl,
+      programCache,
+    );
 
     expect(gl.createProgram).toHaveBeenCalledTimes(2);
     expect(materialA.program).not.toBe(materialB.program);
   });
 
-  it('should not share programs across different WebGL contexts', () => {
+  it('should not share programs across different ProgramCache instances', () => {
     const vertexShader = createShaderSource(
       'void main() { gl_Position = vec4(0.0); }',
     );
@@ -505,15 +545,22 @@ describe('Material program caching', () => {
       'void main() { gl_FragColor = vec4(1.0); }',
     );
 
-    const materialA = new Material(vertexShader, fragmentShader, gl);
+    const materialA = new Material(
+      vertexShader,
+      fragmentShader,
+      gl,
+      programCache,
+    );
 
-    const otherGl = {
-      ...gl,
-      createProgram: vi.fn(() => ({ id: 'other' }) as unknown as WebGLProgram),
-    } as unknown as WebGL2RenderingContext;
+    const otherProgramCache = new ProgramCache();
+    const materialB = new Material(
+      vertexShader,
+      fragmentShader,
+      gl,
+      otherProgramCache,
+    );
 
-    const materialB = new Material(vertexShader, fragmentShader, otherGl);
-
+    expect(gl.createProgram).toHaveBeenCalledTimes(2);
     expect(materialA.program).not.toBe(materialB.program);
   });
 });

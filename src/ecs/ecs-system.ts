@@ -13,7 +13,16 @@ export interface EcsSystem<
     world: EcsWorld,
     beforeQueryResult: TBeforeQueryResult,
   ): TAfterRunInput;
-  afterRun?(input: TAfterRunInput): void;
+  /**
+   * Invoked once per tick, after `run` has been called for every matched
+   * entity, with an array of every one of those calls' return values (in
+   * query order; empty if nothing matched). Use it for work that needs to
+   * see the whole tick's results together rather than one entity at a time:
+   * for example the render system collects one `RenderPassResult` per
+   * camera in `run`, then `afterRun` draws every camera's batch once all of
+   * them are known.
+   */
+  afterRun?(inputs: TAfterRunInput[]): void;
   beforeQuery?(world: EcsWorld): TBeforeQueryResult;
   cleanupEntities?(queryResult: QueryResult<TQuery>, world: EcsWorld): void;
 }

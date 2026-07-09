@@ -241,7 +241,7 @@ describe('EcsWorld', () => {
   });
 
   describe('afterRun', () => {
-    it('passes the return value of run to afterRun', () => {
+    it('passes an array of every run call result to afterRun', () => {
       const world = new EcsWorld();
       const entity = world.createEntity();
 
@@ -261,7 +261,7 @@ describe('EcsWorld', () => {
       world.update();
 
       expect(afterRun).toHaveBeenCalledTimes(1);
-      expect(afterRun).toHaveBeenCalledWith('result-value');
+      expect(afterRun).toHaveBeenCalledWith(['result-value']);
     });
 
     it('does not throw when afterRun is not defined', () => {
@@ -283,7 +283,13 @@ describe('EcsWorld', () => {
       expect(() => world.update()).not.toThrow();
     });
 
-    it('invokes run and afterRun once per matched entity, interleaved in order', () => {
+    // afterRun is a once-per-tick hook: every matched entity's run() call
+    // happens first, and afterRun is called exactly once afterwards with all
+    // of their results together, not interleaved with run per entity. This
+    // is what lets the render system collect one RenderPassResult per
+    // camera in run, then draw every camera's batch from a single afterRun
+    // call once all cameras are known.
+    it('calls run for every matched entity before calling afterRun once, with all their results', () => {
       const world = new EcsWorld();
       const entity1 = world.createEntity();
       const entity2 = world.createEntity();
@@ -305,8 +311,8 @@ describe('EcsWorld', () => {
 
           return result.entity;
         },
-        afterRun: (entity) => {
-          callOrder.push(`afterRun:${entity}`);
+        afterRun: (entities) => {
+          callOrder.push(`afterRun:${entities.join(',')}`);
         },
       };
 
@@ -315,13 +321,12 @@ describe('EcsWorld', () => {
 
       expect(callOrder).toEqual([
         `run:${entity1}`,
-        `afterRun:${entity1}`,
         `run:${entity2}`,
-        `afterRun:${entity2}`,
+        `afterRun:${entity1},${entity2}`,
       ]);
     });
 
-    it('does not call afterRun when no entities match the query', () => {
+    it('calls afterRun once with an empty array when no entities match the query', () => {
       const world = new EcsWorld();
       const nonexistentId = createComponentId<{ test: number }>(
         'nonexistent-afterrun',
@@ -337,7 +342,8 @@ describe('EcsWorld', () => {
       world.addSystem(system);
       world.update();
 
-      expect(afterRun).not.toHaveBeenCalled();
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith([]);
     });
   });
 });

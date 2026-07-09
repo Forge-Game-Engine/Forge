@@ -35,6 +35,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -65,6 +66,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -95,6 +97,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -129,6 +132,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -171,6 +175,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -209,6 +214,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -241,6 +247,7 @@ describe('CameraSystem', () => {
       minZoom: 0.000001,
       maxZoom: 10000,
       cullingMask: 0xffffffff,
+      layer: 0,
     };
 
     const positionComponent: PositionEcsComponent = {

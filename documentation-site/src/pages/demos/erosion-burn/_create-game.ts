@@ -26,7 +26,7 @@ export const createErosionBurnGame = async (): Promise<Game> => {
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   const sprite = await createErosionSprite(

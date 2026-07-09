@@ -1,9 +1,16 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
-import { createFullscreenQuadGeometry } from '../geometry/index.js';
-import { Material } from '../materials/index.js';
+import {
+  beginFullscreenReplacePass,
+  drawFullscreenQuad,
+} from '../fullscreen-pass.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
+
+interface PresentCommand {
+  layer: number;
+  renderTarget: RenderTarget;
+}
 
 /**
  * Creates a system that presents each distinct off-screen render target in
@@ -16,72 +23,74 @@ import { RenderTarget } from '../render-target.js';
  *
  * Multiple *different* render targets presented in the same frame (for
  * example a blurred background target and a separate, sharp foreground
- * target) are layered onto the canvas in camera order: the first present
- * this frame clears the canvas and replaces it outright, and every
- * subsequent present alpha-blends on top instead, so later layers don't
- * erase earlier ones.
+ * target) are layered onto the canvas in ascending `CameraEcsComponent.layer`
+ * order: the lowest layer clears the canvas and replaces it outright, and
+ * every subsequent (higher) layer alpha-blends on top instead, so later
+ * layers don't erase earlier ones.
+ *
+ * `run` only gathers each camera's `renderTarget` and `layer`; `afterRun`
+ * dedupes and sorts them once every camera has run, then does the actual
+ * presenting, since the draw order depends on every camera's `layer` and
+ * can only be resolved once the whole tick's cameras are known.
  * @param renderContext The rendering context
  * @returns The present ECS system
  */
 export const createPresentEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent], void, void> => {
-  const { gl, shaderCache } = renderContext;
+): EcsSystem<[CameraEcsComponent], null, PresentCommand | null> => {
+  const { gl, shaderCache, programCache, materialCache } = renderContext;
 
-  const material = new Material(
+  const material = materialCache.getMaterial(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,
+    programCache,
   );
-
-  const geometry = createFullscreenQuadGeometry(gl);
-  const presentedTargetsThisFrame = new Set<RenderTarget>();
-  let hasPresentedToCanvasThisFrame = false;
 
   return {
     query: [cameraId],
-    beforeQuery: () => {
-      presentedTargetsThisFrame.clear();
-      hasPresentedToCanvasThisFrame = false;
-    },
     run: (result) => {
       const [camera] = result.components;
-      const { renderTarget } = camera;
+      const { renderTarget, layer } = camera;
 
-      if (!renderTarget || presentedTargetsThisFrame.has(renderTarget)) {
-        return;
+      if (!renderTarget) {
+        return null;
       }
 
-      presentedTargetsThisFrame.add(renderTarget);
+      return { layer, renderTarget };
+    },
+    afterRun: (results) => {
+      const targetsSeen = new Set<RenderTarget>();
+      const presentCommands: PresentCommand[] = [];
 
-      material.setUniform('u_texture', renderTarget.colorTexture);
+      for (const command of results) {
+        if (!command || targetsSeen.has(command.renderTarget)) {
+          continue;
+        }
 
-      renderContext.bindRenderTarget(null);
-
-      if (hasPresentedToCanvasThisFrame) {
-        // A later layer (for example a sharp foreground on top of a
-        // blurred background): don't clear what earlier layers already
-        // drew, and blend so this layer's transparent pixels let them
-        // show through instead of overwriting them with the clear color.
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      } else {
-        renderContext.clear();
-
-        // The first layer replaces every canvas pixel, so it must not
-        // blend with whatever was drawn before. Blending is left enabled
-        // as global GL state by the render system's sprite drawing;
-        // blending a partially-transparent source onto the just-cleared,
-        // transparent canvas would darken/fade it instead of showing it
-        // as-is.
-        gl.disable(gl.BLEND);
-        hasPresentedToCanvasThisFrame = true;
+        targetsSeen.add(command.renderTarget);
+        presentCommands.push(command);
       }
 
-      material.bind(gl);
-      geometry.bind(gl, material.program);
+      presentCommands.sort((a, b) => a.layer - b.layer);
 
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      presentCommands.forEach(({ renderTarget }, index) => {
+        material.setUniform('u_texture', renderTarget.colorTexture);
+
+        if (index === 0) {
+          beginFullscreenReplacePass(renderContext, null);
+        } else {
+          // A later layer (for example a sharp foreground on top of a
+          // blurred background): don't clear what earlier layers already
+          // drew, and blend so this layer's transparent pixels let them
+          // show through instead of overwriting them with the clear color.
+          renderContext.bindRenderTarget(null);
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
+
+        drawFullscreenQuad(renderContext, material);
+      });
     },
   };
 };

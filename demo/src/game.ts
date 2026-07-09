@@ -70,6 +70,7 @@ world.addComponent(cameraEntity, cameraId, {
   isStatic: true,
   cullingMask: renderLayer,
   renderTarget: sceneRenderTarget,
+  layer: 0,
 });
 
 addGaussianBlur(world, cameraEntity, { passes: 8, intensity: 0.4 });

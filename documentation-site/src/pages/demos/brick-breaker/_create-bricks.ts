@@ -16,6 +16,7 @@ import {
   combineInstanceDataSegments,
   createQuadGeometry,
   createTextureFromImage,
+  ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
@@ -91,12 +92,17 @@ function createBrickSprite(
 ): SpriteEcsComponent {
   const { shaderCache, gl } = renderContext;
 
-  shaderCache.addShader(fragmentShaderSource);
+  shaderCache.addShader(new ForgeShaderSource(fragmentShaderSource));
 
   const vertexShader = shaderCache.getShader('sprite.vert');
   const fragmentShader = shaderCache.getShader(fragmentShaderName);
 
-  const material = new Material(vertexShader, fragmentShader, gl);
+  const material = new Material(
+    vertexShader,
+    fragmentShader,
+    gl,
+    renderContext.programCache,
+  );
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
   material.setUniform('u_time', 0);
@@ -122,6 +128,7 @@ function createBrickSprite(
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer,
   };
 }
 

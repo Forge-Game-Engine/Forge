@@ -35,7 +35,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   const random = new Random();

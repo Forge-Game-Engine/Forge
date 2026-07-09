@@ -1,5 +1,6 @@
 export const erosionShader = `#version 300 es
-#property name: erosion.frag
+
+#pragma forge name(erosion.frag)
 
 precision mediump float;
 

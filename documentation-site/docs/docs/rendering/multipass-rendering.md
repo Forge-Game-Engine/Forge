@@ -63,11 +63,12 @@ grows or shrinks around it.
 ## Layering multiple render targets
 
 Cameras that render into *different* targets, and are all presented in the
-same frame, get layered onto the canvas in camera registration order: the
-first present clears the canvas and replaces it outright, and every
-later present alpha-blends on top instead of erasing what came before. This
-is how you apply an effect to only part of a scene, for example blurring a
-background layer while keeping a foreground layer sharp:
+same frame, get layered onto the canvas in ascending
+`CameraEcsComponent.layer` order: the lowest layer clears the canvas and
+replaces it outright, and every higher layer alpha-blends on top instead of
+erasing what came before. This is how you apply an effect to only part of a
+scene, for example blurring a background layer while keeping a foreground
+layer sharp:
 
 ```ts
 const backgroundTarget = createRenderTarget(
@@ -84,10 +85,12 @@ const foregroundTarget = createRenderTarget(
 const background = addCamera(world, {
   cullingMask: layers.background,
   renderTarget: backgroundTarget,
+  layer: 0,
 });
 addCamera(world, {
   cullingMask: layers.foreground,
   renderTarget: foregroundTarget,
+  layer: 1,
 });
 
 addGaussianBlur(world, background, { passes: 4 });
@@ -96,6 +99,10 @@ world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
+
+`layer` only matters between cameras with *different* render targets; it has
+no effect on cameras that share one (already composited together before any
+present pass sees them, see below) or that render straight to the canvas.
 
 Only the background camera carries a `GaussianBlurEcsComponent`, so only
 its target gets blurred; the foreground target is presented sharp, on top
@@ -143,14 +150,76 @@ const pingPong = new PingPongTarget(
 effect built on `PingPongTarget`; its two-pass horizontal/vertical blur is a
 minimal example of the read/write/swap pattern above.
 
+## Writing your own full-screen pass
+
+Every full-screen pass (a post-processing step, or presenting a render
+target) needs the same handful of steps: bind and clear the destination,
+disable blending so the pass replaces every pixel instead of blending with
+whatever was there, then draw a full-screen quad with a material. Two
+helpers cover the mechanical parts so a custom pass only has to supply the
+material and its uniforms:
+
+```ts
+import {
+  beginFullscreenReplacePass,
+  drawFullscreenQuad,
+} from '@forge-game-engine/forge/rendering';
+
+// destination is a RenderTarget, or null to draw onto the canvas
+beginFullscreenReplacePass(renderContext, destination);
+
+material.setUniform('u_texture', sourceTexture);
+drawFullscreenQuad(renderContext, material);
+```
+
+`createGaussianBlurEcsSystem` uses these for its horizontal, vertical, copy,
+and cross-fade passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
+too, but manages blending itself since layering multiple render targets onto
+the canvas needs blending enabled for every layer after the first (see
+[Layering multiple render targets](#layering-multiple-render-targets)
+above).
+
 ## Performance note: shared materials are cheap
 
 Every pass in a multipass pipeline typically needs its own
 [`Material`](/Forge/docs/api/classes/Material) instance to bind a different
 source texture, but constructing many materials from the same shader source
-no longer means recompiling that shader repeatedly: `Material` compiles and
-links a `WebGLProgram` once per distinct `(vertexSource, fragmentSource)`
-pair on a given WebGL2 context and reuses it for every subsequent `Material`
-built from identical source. Building a `Material` per post-process pass out
-of the same passthrough or blur shader is cheap; it's only genuinely new
-shader source that triggers a new compile.
+no longer means recompiling that shader repeatedly. `Material`'s constructor
+takes a [`ProgramCache`](/Forge/docs/api/classes/ProgramCache) (typically
+`renderContext.programCache`, one per `RenderContext`) and asks it to compile
+and link a `WebGLProgram` once per distinct `(vertexSource, fragmentSource)`
+pair, reusing it for every subsequent `Material` built from identical source
+through that same cache. Building a `Material` per post-process pass out of
+the same passthrough or blur shader is cheap; it's only genuinely new shader
+source that triggers a new compile.
+
+```ts
+const material = new Material(
+  vertexShader,
+  fragmentShader,
+  renderContext.gl,
+  renderContext.programCache,
+);
+```
+
+Go a step further with [`MaterialCache`](/Forge/docs/api/classes/MaterialCache)
+(`renderContext.materialCache`) and unrelated systems that each need "a
+passthrough material" don't even need their own `Material` instance:
+
+```ts
+const material = renderContext.materialCache.getMaterial(
+  vertexShader,
+  fragmentShader,
+  renderContext.gl,
+  renderContext.programCache,
+);
+```
+
+This is only safe for materials whose every uniform is set immediately
+before each draw, which every full-screen pass material is (see above). It
+is **not** safe for a material that carries persistent per-instance uniform
+state relied on across many later draws, such as a sprite's texture, which
+is set once when the sprite is created rather than before every draw: two
+sprites with different textures must never share a cached `Material`, even
+if they use the same shader pair, so sprite materials are constructed with
+`new Material(...)` directly instead of through `MaterialCache`.

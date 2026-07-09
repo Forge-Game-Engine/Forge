@@ -13,7 +13,7 @@ import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
 import { addGaussianBlur } from '../utilities';
 import {
-  blurMixFragmentShader,
+  crossFadeFragmentShader,
   ForgeShaderSource,
   gaussianBlurFragmentShader,
   passthroughFragmentShader,
@@ -33,9 +33,9 @@ describe('createGaussianBlurEcsSystem', () => {
   let directionLocation: WebGLUniformLocation;
   let texelSizeLocation: WebGLUniformLocation;
   let textureLocation: WebGLUniformLocation;
-  let sharpTextureLocation: WebGLUniformLocation;
-  let blurredTextureLocation: WebGLUniformLocation;
-  let intensityLocation: WebGLUniformLocation;
+  let fromTextureLocation: WebGLUniformLocation;
+  let toTextureLocation: WebGLUniformLocation;
+  let factorLocation: WebGLUniformLocation;
 
   const createCamera = (
     renderTarget?: CameraEcsComponent['renderTarget'],
@@ -48,6 +48,7 @@ describe('createGaussianBlurEcsSystem', () => {
     isStatic: true,
     cullingMask: 0xffffffff,
     renderTarget,
+    layer: 0,
   });
 
   const addCameraEntity = (
@@ -79,9 +80,9 @@ describe('createGaussianBlurEcsSystem', () => {
     directionLocation = {} as WebGLUniformLocation;
     texelSizeLocation = {} as WebGLUniformLocation;
     textureLocation = {} as WebGLUniformLocation;
-    sharpTextureLocation = {} as WebGLUniformLocation;
-    blurredTextureLocation = {} as WebGLUniformLocation;
-    intensityLocation = {} as WebGLUniformLocation;
+    fromTextureLocation = {} as WebGLUniformLocation;
+    toTextureLocation = {} as WebGLUniformLocation;
+    factorLocation = {} as WebGLUniformLocation;
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -136,19 +137,19 @@ describe('createGaussianBlurEcsSystem', () => {
       getProgramInfoLog: vi.fn().mockReturnValue(''),
 
       // Every material's program is reported as having the union of every
-      // uniform used across the blur/copy/mix shaders. Materials only ever
-      // set values for the uniforms their own shader actually declares, so
-      // this over-broad reporting is harmless: Material.bind() simply skips
-      // uniforms whose value was never set.
+      // uniform used across the blur/copy/cross-fade shaders. Materials
+      // only ever set values for the uniforms their own shader actually
+      // declares, so this over-broad reporting is harmless: Material.bind()
+      // simply skips uniforms whose value was never set.
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
             { name: 'u_texture', type: 0, size: 1 },
             { name: 'u_direction', type: 0, size: 1 },
             { name: 'u_texelSize', type: 0, size: 1 },
-            { name: 'u_sharpTexture', type: 0, size: 1 },
-            { name: 'u_blurredTexture', type: 0, size: 1 },
-            { name: 'u_intensity', type: 0, size: 1 },
+            { name: 'u_fromTexture', type: 0, size: 1 },
+            { name: 'u_toTexture', type: 0, size: 1 },
+            { name: 'u_factor', type: 0, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi
@@ -162,16 +163,16 @@ describe('createGaussianBlurEcsSystem', () => {
             return texelSizeLocation;
           }
 
-          if (name === 'u_sharpTexture') {
-            return sharpTextureLocation;
+          if (name === 'u_fromTexture') {
+            return fromTextureLocation;
           }
 
-          if (name === 'u_blurredTexture') {
-            return blurredTextureLocation;
+          if (name === 'u_toTexture') {
+            return toTextureLocation;
           }
 
-          if (name === 'u_intensity') {
-            return intensityLocation;
+          if (name === 'u_factor') {
+            return factorLocation;
           }
 
           return textureLocation;
@@ -200,7 +201,7 @@ describe('createGaussianBlurEcsSystem', () => {
       .addShader(new ForgeShaderSource(passthroughVertexShader))
       .addShader(new ForgeShaderSource(passthroughFragmentShader))
       .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))
-      .addShader(new ForgeShaderSource(blurMixFragmentShader));
+      .addShader(new ForgeShaderSource(crossFadeFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
     world = new EcsWorld();
@@ -379,6 +380,49 @@ describe('createGaussianBlurEcsSystem', () => {
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
   });
 
+  describe('cleanupEntities', () => {
+    it('disposes the scratch ping-pong target when the world stops', () => {
+      const target = new RenderTarget(mockGl, 128, 128);
+
+      addBlurredCameraEntity(target, { passes: 1, intensity: 1 });
+
+      world.update();
+      (mockGl.deleteFramebuffer as Mock).mockClear();
+      (mockGl.deleteTexture as Mock).mockClear();
+
+      world.stop();
+
+      // The ping-pong target owns 2 render targets, each with 1 framebuffer
+      // and 1 color texture.
+      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(2);
+      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(2);
+    });
+
+    it('also disposes the sharp snapshot target when intensity is fractional', () => {
+      const target = new RenderTarget(mockGl, 128, 128);
+
+      addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
+
+      world.update();
+      (mockGl.deleteFramebuffer as Mock).mockClear();
+      (mockGl.deleteTexture as Mock).mockClear();
+
+      world.stop();
+
+      // Ping-pong target (2 render targets) + sharp snapshot (1 render target).
+      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(3);
+      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not throw for a blurred camera that never got a render target', () => {
+      addBlurredCameraEntity();
+
+      world.update();
+
+      expect(() => world.stop()).not.toThrow();
+    });
+  });
+
   describe('intensity', () => {
     it('draws nothing when intensity is 0', () => {
       const target = new RenderTarget(mockGl, 128, 128);
@@ -401,7 +445,7 @@ describe('createGaussianBlurEcsSystem', () => {
       expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
 
       const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
-        ([location]) => location === intensityLocation,
+        ([location]) => location === factorLocation,
       );
 
       expect(intensityCalls).toHaveLength(0);
@@ -418,7 +462,7 @@ describe('createGaussianBlurEcsSystem', () => {
       expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
 
       const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
-        ([location]) => location === intensityLocation,
+        ([location]) => location === factorLocation,
       );
 
       expect(intensityCalls).toHaveLength(1);

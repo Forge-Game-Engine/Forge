@@ -23,17 +23,23 @@ describe('addCamera', () => {
       zoom: 1,
       isStatic: false,
       cullingMask: 0xffffffff,
+      layer: 0,
     });
   });
 
   it('applies the provided options', () => {
     const world = new EcsWorld();
 
-    const cameraEntity = addCamera(world, { zoom: 2, isStatic: true });
+    const cameraEntity = addCamera(world, {
+      zoom: 2,
+      isStatic: true,
+      layer: 2,
+    });
 
     expect(world.getComponent(cameraEntity, cameraId)).toMatchObject({
       zoom: 2,
       isStatic: true,
+      layer: 2,
     });
   });
 

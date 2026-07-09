@@ -51,12 +51,13 @@ export class EcsWorld implements Updatable, Stoppable {
   public update(): void {
     for (const system of this._systems) {
       const beforeQueryResult = system.beforeQuery?.(this) ?? null;
+      const runResults: unknown[] = [];
 
       this.operate(system, (buffer) => {
-        const runResult = system.run(buffer, this, beforeQueryResult);
-
-        system.afterRun?.(runResult);
+        runResults.push(system.run(buffer, this, beforeQueryResult));
       });
+
+      system.afterRun?.(runResults);
     }
   }
 

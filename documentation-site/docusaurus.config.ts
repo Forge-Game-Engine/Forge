@@ -112,10 +112,6 @@ const config: Config = {
               label: 'Brick Breaker',
             },
             {
-              to: 'demos/racing',
-              label: 'Racing',
-            },
-            {
               to: 'demos/ecs',
               label: 'ECS',
             },

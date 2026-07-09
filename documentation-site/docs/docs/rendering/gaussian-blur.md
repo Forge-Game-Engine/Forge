@@ -145,8 +145,10 @@ before blurring, one to blend it against the blurred result, and one to
 copy that blend back into the camera's `renderTarget`. There's also one
 lazily-allocated internal [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
 pair (plus, for a fractional `intensity`, one more snapshot buffer) per
-distinct render target size the first time that size is seen, reused across
-every pass and every frame. Because every pass and helper draw share
-compiled shader programs by source (see the [Multipass Rendering](./multipass-rendering.md#performance-note-shared-materials-are-cheap)
+distinct render target the first time it's blurred, resized (or recreated)
+automatically if that target's dimensions change, and disposed automatically
+when the world stops. Because every pass and helper draw share materials
+(and the compiled shader programs backing them) by source, via
+`renderContext.materialCache` (see the [Multipass Rendering](./multipass-rendering.md#performance-note-shared-materials-are-cheap)
 performance note), the only real per-pass cost is the draw calls
-themselves, not shader compilation.
+themselves, not shader compilation or extra `Material` instances.

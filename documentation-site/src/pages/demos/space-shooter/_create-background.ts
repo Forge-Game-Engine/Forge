@@ -32,6 +32,7 @@ export async function createBackground(
     vertexShader,
     fragmentShader,
     renderContext.gl,
+    renderContext.programCache,
   );
 
   backgroundMaterial.setUniform(
@@ -75,6 +76,7 @@ export async function createBackground(
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer: 0,
   };
 
   const backgroundEntity = world.createEntity();

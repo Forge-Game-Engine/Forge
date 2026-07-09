@@ -1,5 +1,5 @@
 import {
-  blurMixFragmentShader,
+  crossFadeFragmentShader,
   cubicShaderInclude,
   ForgeShaderSource,
   gaussianBlurFragmentShader,
@@ -65,7 +65,7 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(passthroughFragmentShader))
     .addShader(new ForgeShaderSource(passthroughVertexShader))
     .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))
-    .addShader(new ForgeShaderSource(blurMixFragmentShader));
+    .addShader(new ForgeShaderSource(crossFadeFragmentShader));
 
   return shaderCache;
 }

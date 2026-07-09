@@ -6,7 +6,10 @@ import {
   GaussianBlurEcsComponent,
   gaussianBlurId,
 } from '../components/index.js';
-import { createFullscreenQuadGeometry } from '../geometry/index.js';
+import {
+  beginFullscreenReplacePass,
+  drawFullscreenQuad,
+} from '../fullscreen-pass.js';
 import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
 import { RenderContext } from '../render-context.js';
@@ -31,45 +34,56 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
 export const createGaussianBlurEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent], void, void> => {
-  const { gl, shaderCache } = renderContext;
+  const { gl, shaderCache, programCache, materialCache } = renderContext;
 
-  const horizontalMaterial = new Material(
+  // Fetched through `materialCache` rather than `new Material(...)`: every
+  // uniform these materials use gets set immediately before each draw (see
+  // `drawPass`/`copyTexture` below), so it's safe for unrelated systems that
+  // need "a passthrough material" (like `createPresentEcsSystem`) to end up
+  // sharing the exact same `Material` instance instead of each constructing
+  // their own. The horizontal and vertical blur passes use identical shader
+  // source too, so they share one `blurMaterial` rather than needing
+  // separate `horizontalMaterial`/`verticalMaterial` instances.
+  const blurMaterial = materialCache.getMaterial(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('gaussian-blur.frag'),
     gl,
+    programCache,
   );
-  const verticalMaterial = new Material(
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('gaussian-blur.frag'),
-    gl,
-  );
-  const copyMaterial = new Material(
+  const copyMaterial = materialCache.getMaterial(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,
+    programCache,
   );
-  const mixMaterial = new Material(
+  const crossFadeMaterial = materialCache.getMaterial(
     shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('blur-mix.frag'),
+    shaderCache.getShader('cross-fade.frag'),
     gl,
+    programCache,
   );
 
-  const geometry = createFullscreenQuadGeometry(gl);
+  // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
+  // blurred camera, sized to match it and recreated on resize. Owned by this
+  // system (not module-level state) and disposed via `cleanupEntities` when
+  // the world stops.
   const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
   const sharpSnapshotByTarget = new WeakMap<RenderTarget, RenderTarget>();
 
   const getPingPongTarget = (target: RenderTarget): PingPongTarget => {
     const existing = pingPongByTarget.get(target);
+    const isStale =
+      existing !== undefined &&
+      (existing.read.width !== target.width ||
+        existing.read.height !== target.height);
 
-    if (
-      existing &&
-      existing.read.width === target.width &&
-      existing.read.height === target.height
-    ) {
+    if (existing && !isStale) {
       return existing;
     }
 
-    existing?.dispose(gl);
+    if (existing) {
+      existing.dispose(gl);
+    }
 
     const pingPong = new PingPongTarget(gl, target.width, target.height);
 
@@ -80,36 +94,23 @@ export const createGaussianBlurEcsSystem = (
 
   const getSharpSnapshotTarget = (target: RenderTarget): RenderTarget => {
     const existing = sharpSnapshotByTarget.get(target);
+    const isStale =
+      existing !== undefined &&
+      (existing.width !== target.width || existing.height !== target.height);
 
-    if (
-      existing &&
-      existing.width === target.width &&
-      existing.height === target.height
-    ) {
+    if (existing && !isStale) {
       return existing;
     }
 
-    existing?.dispose(gl);
+    if (existing) {
+      existing.dispose(gl);
+    }
 
     const snapshot = createRenderTarget(gl, target.width, target.height);
 
     sharpSnapshotByTarget.set(target, snapshot);
 
     return snapshot;
-  };
-
-  const bindForFullscreenDraw = (destination: RenderTarget): void => {
-    renderContext.bindRenderTarget(destination);
-    renderContext.clear();
-
-    // A full-screen pass replaces every pixel of its destination, so it
-    // must not blend with whatever was there before. Blending is left
-    // enabled as global GL state by the render system's sprite drawing, and
-    // blending a partially-transparent source (for example a background
-    // layer under 1.0 alpha) onto a freshly-cleared, fully-transparent
-    // destination multiplies its alpha down every pass, fading it toward
-    // black over repeated passes.
-    gl.disable(gl.BLEND);
   };
 
   const drawPass = (
@@ -119,30 +120,24 @@ export const createGaussianBlurEcsSystem = (
     texelSize: Vector2,
     destination: RenderTarget,
   ): void => {
-    bindForFullscreenDraw(destination);
+    beginFullscreenReplacePass(renderContext, destination);
 
     material.setUniform('u_texture', sourceTexture);
     material.setUniform('u_direction', direction);
     material.setUniform('u_texelSize', texelSize);
 
-    material.bind(gl);
-    geometry.bind(gl, material.program);
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    drawFullscreenQuad(renderContext, material);
   };
 
   const copyTexture = (
     sourceTexture: WebGLTexture,
     destination: RenderTarget,
   ): void => {
-    bindForFullscreenDraw(destination);
+    beginFullscreenReplacePass(renderContext, destination);
 
     copyMaterial.setUniform('u_texture', sourceTexture);
 
-    copyMaterial.bind(gl);
-    geometry.bind(gl, copyMaterial.program);
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    drawFullscreenQuad(renderContext, copyMaterial);
   };
 
   const processedTargetsThisFrame = new Set<RenderTarget>();
@@ -189,7 +184,7 @@ export const createGaussianBlurEcsSystem = (
       // widening the individual 9-tap kernel.
       for (let i = 0; i < blur.passes; i++) {
         drawPass(
-          horizontalMaterial,
+          blurMaterial,
           renderTarget.colorTexture,
           new Vector2(1, 0),
           texelSize,
@@ -198,7 +193,7 @@ export const createGaussianBlurEcsSystem = (
         pingPong.swap();
 
         drawPass(
-          verticalMaterial,
+          blurMaterial,
           pingPong.read.colorTexture,
           new Vector2(0, 1),
           texelSize,
@@ -210,23 +205,34 @@ export const createGaussianBlurEcsSystem = (
         return;
       }
 
-      // Blend the untouched sharp snapshot with the fully-blurred result
-      // into a scratch buffer (safe to reuse now that the loop above is
-      // done with it), then copy that blend back into `renderTarget`,
-      // since consumers (like the present system) always read the blur's
-      // output from there.
-      bindForFullscreenDraw(pingPong.write);
+      // Cross-fade the untouched sharp snapshot into the fully-blurred
+      // result, into a scratch buffer (safe to reuse now that the loop
+      // above is done with it), then copy that blend back into
+      // `renderTarget`, since consumers (like the present system) always
+      // read the blur's output from there.
+      beginFullscreenReplacePass(renderContext, pingPong.write);
 
-      mixMaterial.setUniform('u_sharpTexture', sharpSnapshot.colorTexture);
-      mixMaterial.setUniform('u_blurredTexture', renderTarget.colorTexture);
-      mixMaterial.setUniform('u_intensity', intensity);
+      crossFadeMaterial.setUniform('u_fromTexture', sharpSnapshot.colorTexture);
+      crossFadeMaterial.setUniform('u_toTexture', renderTarget.colorTexture);
+      crossFadeMaterial.setUniform('u_factor', intensity);
 
-      mixMaterial.bind(gl);
-      geometry.bind(gl, mixMaterial.program);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      drawFullscreenQuad(renderContext, crossFadeMaterial);
 
       copyTexture(pingPong.write.colorTexture, renderTarget);
+    },
+    cleanupEntities: (result) => {
+      const [camera] = result.components;
+      const { renderTarget } = camera;
+
+      if (!renderTarget) {
+        return;
+      }
+
+      pingPongByTarget.get(renderTarget)?.dispose(gl);
+      pingPongByTarget.delete(renderTarget);
+
+      sharpSnapshotByTarget.get(renderTarget)?.dispose(gl);
+      sharpSnapshotByTarget.delete(renderTarget);
     },
   };
 };

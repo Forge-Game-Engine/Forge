@@ -74,6 +74,7 @@ describe('createRenderEcsSystem', () => {
     isStatic: true,
     cullingMask,
     renderTarget,
+    layer: 0,
   });
 
   const createSprite = (
@@ -88,6 +89,7 @@ describe('createRenderEcsSystem', () => {
     uvOffset: Vector2.zero,
     uvScale: Vector2.zero,
     enabled: true,
+    layer: 0,
     ...overrides,
   });
 
@@ -134,6 +136,7 @@ describe('createRenderEcsSystem', () => {
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
       enable: vi.fn(),
+      disable: vi.fn(),
       blendFunc: vi.fn(),
       drawArraysInstanced: vi.fn(),
       viewport: vi.fn(),
@@ -142,6 +145,7 @@ describe('createRenderEcsSystem', () => {
       clear: vi.fn(),
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
+      BLEND: 'BLEND',
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -266,6 +270,37 @@ describe('createRenderEcsSystem', () => {
     );
 
     expect(drawnDepths).toEqual([-5, 2, 10]);
+  });
+
+  it("sorts render commands by the sprite's layer before depth", () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 10, { layer: 0 });
+    addSpriteEntity(renderable, -5, { layer: 1 });
+    addSpriteEntity(renderable, 2, { layer: 0 });
+
+    world.update();
+
+    const drawnDepths = bindInstanceData.mock.calls.map(
+      (call) =>
+        (call[0] as { position: PositionEcsComponent }).position.world.y,
+    );
+
+    // Layer 0 entries (depths 10 and 2) are drawn before the layer 1 entry
+    // (depth -5), even though -5 sorts lowest by depth alone.
+    expect(drawnDepths).toEqual([2, 10, -5]);
+  });
+
+  it('disables blending after drawing a camera', () => {
+    addCameraEntity();
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
   });
 
   it('splits into separate draw calls when sprites with different renderables interleave by depth', () => {
