@@ -26,4 +26,6 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
+          # THIS IS THE REQUIRED LINE TO FORCE EMISSION:
+          prompt: "Review the changes in this pull request and leave inline comments."
           claude_args: "--model claude-3-5-sonnet-latest"
