@@ -66,3 +66,31 @@ const system: EcsSystem<[Camera], null, RenderPassResult> = {
 ```
 
 If a system doesn't need this, leave off `afterRun` entirely and don't return anything from `run`; the corresponding type parameter defaults to `void`, so `run` can end without an explicit `return` statement like any other `(...): void` function.
+
+## Releasing resources when the world stops: cleanupEntities
+
+Systems may implement an optional `cleanupEntities(queryResult, world)` method. It runs once for every entity still matching the system's `query` (and `tags`) when the owning world is stopped, most commonly because a [`Game`](./game.md) was stopped. It is not called per-tick, only on shutdown, so it's the place to release resources the system itself acquired for an entity, resources that a component's own lifecycle doesn't already handle.
+
+```ts
+const audioSystem: EcsSystem<[AudioComponent]> = {
+  query: [Audio],
+  run(result) {
+    const [audio] = result.components;
+
+    if (audio.playSound) {
+      audio.sound.play();
+      audio.playSound = false;
+    }
+  },
+  cleanupEntities(result) {
+    const [audio] = result.components;
+
+    if (audio.sound.playing()) {
+      audio.sound.stop();
+      audio.sound.unload();
+    }
+  },
+};
+```
+
+Other systems use `cleanupEntities` to remove a physics body from the physics world, or to dispose scratch GPU render targets that a system allocates outside of any component (see the gaussian blur system for an example of the latter). If a system doesn't acquire any per-entity resources, leave `cleanupEntities` off.
