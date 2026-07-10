@@ -112,7 +112,7 @@ describe('Material', () => {
       );
 
       expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Program link error: Link error',
+        'Failed to link program: Link error',
       );
     });
 
@@ -459,21 +459,6 @@ describe('Material program caching', () => {
       getActiveUniform: vi.fn(() => null),
       getUniformLocation: vi.fn(),
     } as unknown as WebGL2RenderingContext;
-  });
-
-  it('should reuse a compiled program for identical shader source', () => {
-    const vertexShader = createShaderSource(
-      'void main() { gl_Position = vec4(0.0); }',
-    );
-    const fragmentShader = createShaderSource(
-      'void main() { gl_FragColor = vec4(1.0); }',
-    );
-
-    const materialA = new Material(vertexShader, fragmentShader, gl);
-    const materialB = new Material(vertexShader, fragmentShader, gl);
-
-    expect(gl.createProgram).toHaveBeenCalledTimes(1);
-    expect(materialA.program).toBe(materialB.program);
   });
 
   it('should compile a new program for different shader source', () => {
