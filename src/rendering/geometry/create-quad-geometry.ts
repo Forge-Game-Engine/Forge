@@ -1,10 +1,9 @@
 import { Geometry } from './geometry.js';
 
 /**
- * Creates (or returns the cached) geometry for a quad, cached per WebGL
+ * Creates geometry for a quad.
  * context and `1` value.
  * @param gl - The WebGL2 rendering context.
- * @param options - Options for configuring the quad's size.
  * @returns The quad geometry.
  */
 export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
