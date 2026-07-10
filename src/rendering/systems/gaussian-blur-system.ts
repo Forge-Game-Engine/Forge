@@ -34,29 +34,21 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
 export const createGaussianBlurEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent], void, void> => {
-  const { gl, shaderCache, programCache, materialCache } = renderContext;
+  const { gl, shaderCache, programCache } = renderContext;
 
-  // Fetched through `materialCache` rather than `new Material(...)`: every
-  // uniform these materials use gets set immediately before each draw (see
-  // `drawPass`/`copyTexture` below), so it's safe for unrelated systems that
-  // need "a passthrough material" (like `createPresentEcsSystem`) to end up
-  // sharing the exact same `Material` instance instead of each constructing
-  // their own. The horizontal and vertical blur passes use identical shader
-  // source too, so they share one `blurMaterial` rather than needing
-  // separate `horizontalMaterial`/`verticalMaterial` instances.
-  const blurMaterial = materialCache.getMaterial(
+  const blurMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('gaussian-blur.frag'),
     gl,
     programCache,
   );
-  const copyMaterial = materialCache.getMaterial(
+  const copyMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,
     programCache,
   );
-  const crossFadeMaterial = materialCache.getMaterial(
+  const crossFadeMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('cross-fade.frag'),
     gl,

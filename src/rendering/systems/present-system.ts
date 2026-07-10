@@ -4,6 +4,7 @@ import {
   beginFullscreenReplacePass,
   drawFullscreenQuad,
 } from '../fullscreen-pass.js';
+import { Material } from '../index.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
 
@@ -38,9 +39,9 @@ interface PresentCommand {
 export const createPresentEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent], null, PresentCommand | null> => {
-  const { gl, shaderCache, programCache, materialCache } = renderContext;
+  const { gl, shaderCache, programCache } = renderContext;
 
-  const material = materialCache.getMaterial(
+  const material = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,

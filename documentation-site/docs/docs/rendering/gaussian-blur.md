@@ -149,6 +149,3 @@ distinct render target the first time it's blurred, resized (or recreated)
 automatically if that target's dimensions change, and disposed automatically
 when the world stops. Because every pass and helper draw share materials
 (and the compiled shader programs backing them) by source, via
-`renderContext.materialCache` (see the [Multipass Rendering](./multipass-rendering.md#performance-note-shared-materials-are-cheap)
-performance note), the only real per-pass cost is the draw calls
-themselves, not shader compilation or extra `Material` instances.

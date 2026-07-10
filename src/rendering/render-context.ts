@@ -1,6 +1,6 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
-import { MaterialCache, UniformValue } from './materials/index.js';
+import { UniformValue } from './materials/index.js';
 import { RenderTarget } from './render-target.js';
 import { ProgramCache, ShaderCache } from './shaders/index.js';
 import { createShaderCache } from './utilities/index.js';
@@ -24,13 +24,6 @@ export class RenderContext {
    * instead of each compiling their own.
    */
   public readonly programCache: ProgramCache;
-
-  /**
-   * The material cache for this render context, owned by this instance (not
-   * shared globally). Reuses a single `Material` for identical shader source
-   * pairs; see `MaterialCache` for when this is (and isn't) safe to use.
-   */
-  public readonly materialCache: MaterialCache;
 
   /**
    * The image cache containing loaded images.
@@ -66,7 +59,6 @@ export class RenderContext {
   ) {
     this.shaderCache = shaderCache;
     this.programCache = new ProgramCache();
-    this.materialCache = new MaterialCache();
     this.imageCache = imageCache;
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;

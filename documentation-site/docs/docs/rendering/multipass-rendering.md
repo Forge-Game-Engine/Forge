@@ -201,25 +201,3 @@ const material = new Material(
   renderContext.programCache,
 );
 ```
-
-Go a step further with [`MaterialCache`](/Forge/docs/api/classes/MaterialCache)
-(`renderContext.materialCache`) and unrelated systems that each need "a
-passthrough material" don't even need their own `Material` instance:
-
-```ts
-const material = renderContext.materialCache.getMaterial(
-  vertexShader,
-  fragmentShader,
-  renderContext.gl,
-  renderContext.programCache,
-);
-```
-
-This is only safe for materials whose every uniform is set immediately
-before each draw, which every full-screen pass material is (see above). It
-is **not** safe for a material that carries persistent per-instance uniform
-state relied on across many later draws, such as a sprite's texture, which
-is set once when the sprite is created rather than before every draw: two
-sprites with different textures must never share a cached `Material`, even
-if they use the same shader pair, so sprite materials are constructed with
-`new Material(...)` directly instead of through `MaterialCache`.
