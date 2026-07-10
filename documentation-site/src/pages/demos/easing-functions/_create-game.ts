@@ -16,7 +16,7 @@ export const createEasingFunctionsGame = async (): Promise<Game> => {
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   await createEasingRows(world, renderContext, renderLayers.foreground);

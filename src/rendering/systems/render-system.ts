@@ -10,7 +10,7 @@ import {
 } from '../../common/index.js';
 import { Matrix3x3 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { matchesLayerMask } from '../../utilities/matches-layer-mask.js';
+import { matchesMask } from '../../utilities/matches-mask.js';
 import {
   CameraEcsComponent,
   cameraId,
@@ -18,9 +18,26 @@ import {
   spriteId,
 } from '../components/index.js';
 import { RenderContext } from '../render-context.js';
+import { RenderTarget } from '../render-target.js';
 import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
-import { InstanceBatch } from './instance-batch.js';
+import { RenderCommand } from '../render-command.js';
+
+/**
+ * The result of a single camera's `run` pass. `afterRun` receives one of
+ * these per camera, once every camera has run, and uses it to bind the
+ * correct draw destination before issuing that camera's batched draw calls.
+ */
+export interface RenderPassResult {
+  /** The camera's projection matrix, applied to every draw call in this pass. */
+  projectionMatrix: Matrix3x3;
+
+  /** The render target to draw into, or `null` to draw onto the canvas. */
+  target: RenderTarget | null;
+
+  /** This camera's sprite draw commands, gathered by `run`. */
+  commands: RenderCommand[];
+}
 
 const setupInstanceAttributesAndDraw = (
   renderContext: RenderContext,
@@ -33,79 +50,130 @@ const setupInstanceAttributesAndDraw = (
 
   renderable.setupInstanceAttributes(gl, renderable);
 
-  gl.enable(gl.BLEND); // Potential improvement: move blend state to material-specific configuration.
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Potential improvement: centralize blend setup to avoid duplicate state calls.
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // Potential improvement: avoid hard-coded quad vertex count for non-quad sprites.
+  gl.enable(gl.BLEND); // TODO: Potential improvement - move blend state to material-specific configuration.
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // TODO: Potential improvement - centralize blend setup to avoid duplicate state calls.
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength); // TODO: Potential improvement - avoid hard-coded quad vertex count for non-quad sprites.
+};
+
+let instanceDataBuffer = new Float32Array(0);
+
+const ensureInstanceDataBufferCapacity = (size: number): Float32Array => {
+  if (instanceDataBuffer.length < size) {
+    instanceDataBuffer = new Float32Array(size);
+  }
+
+  return instanceDataBuffer;
 };
 
 const includeBatch = (
-  renderable: Renderable,
-  batch: InstanceBatch,
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
+  commands: RenderCommand[],
+  batchStart: number,
+  batchEnd: number,
 ) => {
-  const { entries } = batch;
   const { gl } = renderContext;
-
-  if (entries.length === 0) {
-    return;
-  }
+  const { renderable } = commands[batchStart]; // It is safe to assume all commands in the batch share the same renderable.
+  const batchLength = batchEnd - batchStart;
 
   renderable.material.setUniform('u_projection', projectionMatrix);
 
   renderable.bind(gl);
 
-  const requiredBatchSize = entries.length * renderable.floatsPerInstance;
-
-  if (!batch.buffer || batch.buffer.length < requiredBatchSize) {
-    batch.buffer = new Float32Array(
-      requiredBatchSize * batch.bufferGrowthFactor,
-    );
-  }
+  const requiredBatchSize = batchLength * renderable.floatsPerInstance;
+  const buffer = ensureInstanceDataBufferCapacity(requiredBatchSize);
 
   let instanceDataOffset = 0;
 
-  for (const components of entries) {
-    renderable.bindInstanceData(components, batch.buffer, instanceDataOffset);
+  for (let i = batchStart; i < batchEnd; i++) {
+    renderable.bindInstanceData(
+      commands[i].components,
+      buffer,
+      instanceDataOffset,
+    );
 
     instanceDataOffset += renderable.floatsPerInstance;
   }
 
   // Upload instance transform buffer
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, batch.buffer, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW, 0, requiredBatchSize);
 
-  setupInstanceAttributesAndDraw(renderContext, renderable, entries.length);
+  setupInstanceAttributesAndDraw(renderContext, renderable, batchLength);
 };
 
 const spriteEntityBuffer: number[] = [];
-const renderables: Map<Renderable, InstanceBatch> = new Map();
+
+/**
+ * One `RenderCommand[]` per camera visited this tick, indexed by that
+ * camera's position in query order (reset via `cameraIndex`, not by
+ * identity), and reused across ticks so a stable number of cameras never
+ * reallocates. `run` can't share a single buffer across cameras the way a
+ * once-per-entity hook could, since every camera's commands need to survive
+ * until `afterRun` draws all of them together.
+ */
+const commandBuffersByCameraIndex: RenderCommand[][] = [];
+let cameraIndex = 0;
+
+/**
+ * Tracks which destinations (a `RenderTarget`, or `null` for the canvas)
+ * have already been cleared this frame, so multiple cameras that share a
+ * destination (for example a static background camera and a foreground
+ * camera both drawing onto the canvas, or both into the same off-screen
+ * `RenderTarget` for later post-processing) composite onto one another
+ * instead of each camera's clear wiping out the previous camera's draw.
+ */
+const clearedDestinationsThisFrame = new Set<RenderTarget | null>();
 
 /**
  * Creates a render system that batches and renders sprites based on the camera view.
+ *
+ * Each camera draws into its own `CameraEcsComponent.renderTarget`, or
+ * directly onto the canvas if it doesn't have one, clearing that
+ * destination first (according to `RenderContext.clearStrategy`) the first
+ * time it's used each frame. Cameras that share a destination (either the
+ * canvas or the same `RenderTarget`) draw on top of one another rather than
+ * each clearing what the last one drew.
+ *
+ * `run` gathers each camera's sprite commands and projection matrix without
+ * drawing anything; `afterRun` does the actual drawing, once every camera
+ * has run, so every camera's batches are issued from a single, predictable
+ * pass over the whole tick's results.
  * @param renderContext The rendering context
  * @returns The render ECS system
  */
 export const createRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent], void> => ({
+): EcsSystem<
+  [CameraEcsComponent, PositionEcsComponent],
+  void,
+  RenderPassResult
+> => ({
   query: [cameraId, positionId],
-  beforeQuery: (world) => world.queryEntities([spriteId], spriteEntityBuffer),
+  beforeQuery: (world) => {
+    clearedDestinationsThisFrame.clear();
+    world.queryEntities([spriteId, positionId], spriteEntityBuffer);
+    cameraIndex = 0;
+  },
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
 
-    const { gl } = renderContext;
-
     const projectionMatrix = createProjectionMatrix(
-      gl.canvas.width,
-      gl.canvas.height,
+      renderContext.width,
+      renderContext.height,
       positionComponent.world,
       cameraComponent.zoom,
     );
 
-    for (const batch of renderables.values()) {
-      batch.entries.length = 0;
+    let commands = commandBuffersByCameraIndex[cameraIndex];
+
+    if (!commands) {
+      commands = [];
+      commandBuffersByCameraIndex[cameraIndex] = commands;
     }
+
+    commands.length = 0;
+    cameraIndex += 1;
 
     for (const spriteEntity of spriteEntityBuffer) {
       const spriteComponent = world.getComponent<SpriteEcsComponent>(
@@ -119,32 +187,19 @@ export const createRenderEcsSystem = (
 
       const { renderable } = spriteComponent;
 
-      const layerMaskMatches = matchesLayerMask(
-        renderable.layer,
-        cameraComponent.layerMask,
+      const maskMatches = matchesMask(
+        renderable.category,
+        cameraComponent.cullingMask,
       );
 
-      if (!layerMaskMatches) {
+      if (!maskMatches) {
         continue;
-      }
-
-      let batch = renderables.get(renderable);
-
-      if (!batch) {
-        batch = new InstanceBatch();
-        renderables.set(renderable, batch);
       }
 
       const entityPosition = world.getComponent<PositionEcsComponent>(
         spriteEntity,
         positionId,
-      );
-
-      if (!entityPosition) {
-        throw new Error(
-          `Entity "${spriteEntity}" has a sprite component but no position component.`,
-        );
-      }
+      )!; // Position component is guaranteed to exist due to the query in beforeQuery.
 
       const components: InstanceComponents = {
         position: entityPosition,
@@ -157,13 +212,62 @@ export const createRenderEcsSystem = (
         flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
       };
 
-      batch.entries.push(components);
+      commands.push({
+        layer: spriteComponent.layer,
+        depth: entityPosition.world.y,
+        renderable,
+        components,
+      });
     }
 
-    for (const [renderable, batch] of renderables) {
-      includeBatch(renderable, batch, renderContext, projectionMatrix);
+    return {
+      projectionMatrix,
+      target: cameraComponent.renderTarget ?? null,
+      commands,
+    };
+  },
+  afterRun: (results) => {
+    for (const { projectionMatrix, target, commands } of results) {
+      renderContext.bindRenderTarget(target);
+
+      if (!clearedDestinationsThisFrame.has(target)) {
+        renderContext.clear();
+        clearedDestinationsThisFrame.add(target);
+      }
+
+      commands.sort((a, b) => {
+        if (a.layer !== b.layer) {
+          return a.layer - b.layer;
+        }
+
+        return a.depth - b.depth;
+      });
+
+      let batchStart = 0;
+
+      for (let i = 1; i <= commands.length; i++) {
+        const isBatchBoundary =
+          i === commands.length ||
+          commands[i].renderable !== commands[batchStart].renderable;
+
+        if (isBatchBoundary) {
+          includeBatch(
+            renderContext,
+            projectionMatrix,
+            commands,
+            batchStart,
+            i,
+          );
+          batchStart = i;
+        }
+      }
     }
 
-    gl.bindVertexArray(null);
+    // Sprite drawing leaves blending enabled as global GL state (see
+    // `setupInstanceAttributesAndDraw`). Reset it once every camera's
+    // batches are drawn, so later systems (post-processing, presenting)
+    // start from a known, disabled baseline instead of having to assume it
+    // was left on.
+    renderContext.gl.disable(renderContext.gl.BLEND);
   },
 });

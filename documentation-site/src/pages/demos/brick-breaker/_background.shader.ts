@@ -1,5 +1,6 @@
 export const backgroundShader = `#version 300 es
-#property name: background.frag
+
+#pragma forge name(background.frag)
 
 precision mediump float;
 

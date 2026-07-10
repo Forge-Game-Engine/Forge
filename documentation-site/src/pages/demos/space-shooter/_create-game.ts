@@ -1,10 +1,14 @@
 import { createSpriteAnimationEcsSystem } from '@forge-game-engine/forge/animations';
 import {
   addCamera,
-  CameraEcsComponent,
-  cameraId,
+  addGaussianBlur,
   createCameraEcsSystem,
+  createGaussianBlurEcsSystem,
+  createPresentEcsSystem,
   createRenderEcsSystem,
+  createRenderTarget,
+  GaussianBlurEcsComponent,
+  gaussianBlurId,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
@@ -12,7 +16,7 @@ import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { clamp, Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
   createPhysicsEcsSystem,
   PhysicsWorld,
@@ -49,30 +53,45 @@ const explosionShakeDurationSeconds = 0.15;
 export const createSpaceShooterGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  time.timeScale = 1.2;
+  // Background and foreground each get their own off-screen target, so the
+  // blur post-process pass can affect the background only: the present
+  // pass then layers the sharp foreground back on top of the blurred
+  // background when it draws both to the canvas.
+  const backgroundRenderTarget = createRenderTarget(
+    renderContext.gl,
+    renderContext.width,
+    renderContext.height,
+  );
+  const foregroundRenderTarget = createRenderTarget(
+    renderContext.gl,
+    renderContext.width,
+    renderContext.height,
+  );
 
   // The background sits on its own static camera so it doesn't shake along
   // with the foreground when an explosion happens.
-  addCamera(world, {
-    layerMask: renderLayers.background,
+  const backgroundCameraEntity = addCamera(world, {
+    cullingMask: renderLayers.background,
     isStatic: true,
+    renderTarget: backgroundRenderTarget,
   });
-  addCamera(world, { layerMask: renderLayers.foreground });
+  const foregroundCameraEntity = addCamera(world, {
+    cullingMask: renderLayers.foreground,
+    renderTarget: foregroundRenderTarget,
+  });
 
-  const cameraEntities: number[] = [];
-  world.queryEntities([cameraId], cameraEntities);
+  addGaussianBlur(world, backgroundCameraEntity, { passes: 4, intensity: 1 });
 
-  const cameraEntity = cameraEntities.find(
-    (entity) =>
-      world.getComponent<CameraEcsComponent>(entity, cameraId)?.layerMask ===
-      renderLayers.foreground,
-  );
+  world.addSystem<[GaussianBlurEcsComponent]>({
+    query: [gaussianBlurId],
+    run: ({ components }) => {
+      const [blurComponent] = components;
 
-  if (cameraEntity === undefined) {
-    throw new Error('Foreground camera entity not found.');
-  }
+      blurComponent.intensity = clamp(Math.sin(time.timeInSeconds * 4), 0.5, 1);
+    },
+  });
 
-  world.addComponent(cameraEntity, cameraShakeId, {
+  world.addComponent(foregroundCameraEntity, cameraShakeId, {
     intensity: 0,
     durationSeconds: 0,
     elapsedSeconds: 0,
@@ -82,7 +101,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
 
   const triggerCameraShake = (): void => {
     const shakeComponent = world.getComponent<CameraShakeEcsComponent>(
-      cameraEntity,
+      foregroundCameraEntity,
       cameraShakeId,
     );
 
@@ -112,7 +131,7 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     renderLayers.foreground,
     triggerCameraShake,
   );
-  // createMusic(world);
+  createMusic(world);
 
   const random = new Random();
   const physicsWorld = new PhysicsWorld();
@@ -120,6 +139,8 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
   world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createGaussianBlurEcsSystem(renderContext));
+  world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createMovementEcsSystem(moveInput, time));
   world.addSystem(createBackgroundEcsSystem(time));
   world.addSystem(createAudioEcsSystem());

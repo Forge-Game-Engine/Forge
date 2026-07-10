@@ -5,6 +5,7 @@ import {
   combineInstanceDataSegments,
   createQuadGeometry,
   createTextureFromImage,
+  ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
@@ -35,7 +36,7 @@ export async function createErosionSprite(
     imageCache.getOrLoad(getAssetUrl('img/Burn_Gradient.png')),
   ]);
 
-  shaderCache.addShader(erosionShader);
+  shaderCache.addShader(new ForgeShaderSource(erosionShader));
 
   const vertexShader = shaderCache.getShader('sprite.vert');
   const fragmentShader = shaderCache.getShader('erosion.frag');
@@ -72,5 +73,6 @@ export async function createErosionSprite(
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer,
   };
 }

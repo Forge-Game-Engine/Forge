@@ -1,10 +1,12 @@
 aabb
+afterrun
 artboard
 attw
 autofetch
 backquote
 Batchable
 Baumgarte
+blits
 cachable
 commitlint
 dbaeumer
@@ -62,7 +64,11 @@ sonarlint
 sonarsource
 spritesheet
 stoppables
+texel
+texels
 thumbstick
+unblurred
+undersamples
 unmarks
 unnegated
 unrotated

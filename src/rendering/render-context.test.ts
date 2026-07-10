@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../asset-loading/index.js';
 import { CLEAR_STRATEGY } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
+import { RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
 
 describe('RenderContext', () => {
@@ -22,6 +24,11 @@ describe('RenderContext', () => {
     mockGl = {
       createBuffer: vi.fn().mockReturnValue(mockBuffer),
       viewport: vi.fn(),
+      bindFramebuffer: vi.fn(),
+      clearColor: vi.fn(),
+      clear: vi.fn(),
+      FRAMEBUFFER: 'FRAMEBUFFER',
+      COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
     } as unknown as WebGL2RenderingContext;
 
     // Mock canvas.getContext to return our mock GL context
@@ -60,6 +67,16 @@ describe('RenderContext', () => {
 
       expect(mockGl.createBuffer).toHaveBeenCalledTimes(1);
       expect(context.instanceBuffer).toBe(mockBuffer);
+    });
+
+    it('should initialize width and height from the canvas dimensions', () => {
+      canvas.width = 640;
+      canvas.height = 480;
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.width).toBe(640);
+      expect(context.height).toBe(480);
     });
 
     it('should throw an error when WebGL2 context is not available', () => {
@@ -104,6 +121,15 @@ describe('RenderContext', () => {
       expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 400, 300);
     });
 
+    it('should update the width and height properties', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300);
+
+      expect(context.width).toBe(400);
+      expect(context.height).toBe(300);
+    });
+
     it('should throw when width or height are not positive', () => {
       const context = new RenderContext(shaderCache, imageCache, canvas);
 
@@ -113,6 +139,72 @@ describe('RenderContext', () => {
       expect(() => context.resize(100, -1)).toThrow(
         'Render context dimensions must be positive numbers.',
       );
+    });
+  });
+
+  describe('bindRenderTarget', () => {
+    it('should bind the default framebuffer and the context dimensions when passed null', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.bindRenderTarget(null);
+
+      expect(mockGl.bindFramebuffer).toHaveBeenCalledWith(
+        mockGl.FRAMEBUFFER,
+        null,
+      );
+      expect(mockGl.viewport).toHaveBeenLastCalledWith(
+        0,
+        0,
+        context.width,
+        context.height,
+      );
+    });
+
+    it("should bind the target's framebuffer and dimensions when passed a render target", () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const target = {
+        framebuffer: {} as WebGLFramebuffer,
+        width: 320,
+        height: 240,
+      } as unknown as RenderTarget;
+
+      context.bindRenderTarget(target);
+
+      expect(mockGl.bindFramebuffer).toHaveBeenCalledWith(
+        mockGl.FRAMEBUFFER,
+        target.framebuffer,
+      );
+      expect(mockGl.viewport).toHaveBeenLastCalledWith(0, 0, 320, 240);
+    });
+  });
+
+  describe('clear', () => {
+    it('should clear the color buffer when clearStrategy is blank', () => {
+      const context = new RenderContext(
+        shaderCache,
+        imageCache,
+        canvas,
+        CLEAR_STRATEGY.blank,
+      );
+
+      context.clear();
+
+      expect(mockGl.clearColor).toHaveBeenCalledWith(0, 0, 0, 0);
+      expect(mockGl.clear).toHaveBeenCalledWith(mockGl.COLOR_BUFFER_BIT);
+    });
+
+    it('should not clear when clearStrategy is none', () => {
+      const context = new RenderContext(
+        shaderCache,
+        imageCache,
+        canvas,
+        CLEAR_STRATEGY.none,
+      );
+
+      context.clear();
+
+      expect(mockGl.clearColor).not.toHaveBeenCalled();
+      expect(mockGl.clear).not.toHaveBeenCalled();
     });
   });
 

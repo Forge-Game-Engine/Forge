@@ -1,22 +1,20 @@
 import { Geometry } from './geometry.js';
 
-const geometryCache = new WeakMap<WebGL2RenderingContext, Geometry>();
-
+/**
+ * Creates geometry for a quad.
+ * context and `1` value.
+ * @param gl - The WebGL2 rendering context.
+ * @returns The quad geometry.
+ */
 export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
-  const cachedGeometry = geometryCache.get(gl);
-
-  if (cachedGeometry) {
-    return cachedGeometry;
-  }
-
   const geometry = new Geometry();
 
   // Vertex positions for 2 triangles (forming a quad)
   const positions = new Float32Array([
     // Triangle 1
-    -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
+    -1, -1, 1, -1, -1, 1,
     // Triangle 2
-    -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
+    -1, 1, 1, -1, 1, 1,
   ]);
 
   // Default full texture coordinates
@@ -46,8 +44,6 @@ export function createQuadGeometry(gl: WebGL2RenderingContext): Geometry {
     buffer: texCoordBuffer,
     size: 2,
   });
-
-  geometryCache.set(gl, geometry);
 
   return geometry;
 }

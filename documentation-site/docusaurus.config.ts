@@ -81,7 +81,7 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/forge-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
     },
@@ -110,10 +110,6 @@ const config: Config = {
             {
               to: 'demos/brick-breaker',
               label: 'Brick Breaker',
-            },
-            {
-              to: 'demos/racing',
-              label: 'Racing',
             },
             {
               to: 'demos/ecs',

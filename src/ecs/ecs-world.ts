@@ -19,7 +19,7 @@ export class EcsWorld implements Updatable, Stoppable {
     components: [],
   };
 
-  private readonly _systems: SortedSet<EcsSystem<unknown[], unknown>>;
+  private readonly _systems: SortedSet<EcsSystem<unknown[], unknown, unknown>>;
 
   constructor() {
     this._componentSets = new Map();
@@ -32,24 +32,32 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
-  public addSystem<T extends unknown[], K = null>(
-    system: EcsSystem<T, K>,
+  public addSystem<T extends unknown[], K = null, A = void>(
+    system: EcsSystem<T, K, A>,
     registrationOrder: number = SystemRegistrationOrder.normal,
   ): void {
-    this._systems.add(system, registrationOrder);
+    this._systems.add(
+      system as EcsSystem<unknown[], unknown>,
+      registrationOrder,
+    );
   }
 
-  public removeSystem<T extends unknown[], K>(system: EcsSystem<T, K>): void {
+  public removeSystem<T extends unknown[], K, A>(
+    system: EcsSystem<T, K, A>,
+  ): void {
     this._systems.delete(system);
   }
 
   public update(): void {
     for (const system of this._systems) {
       const beforeQueryResult = system.beforeQuery?.(this) ?? null;
+      const runResults: unknown[] = [];
 
-      this.operate(system, (buffer) =>
-        system.run(buffer, this, beforeQueryResult),
-      );
+      this.operate(system, (buffer) => {
+        runResults.push(system.run(buffer, this, beforeQueryResult));
+      });
+
+      system.afterRun?.(runResults);
     }
   }
 

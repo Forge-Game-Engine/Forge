@@ -30,7 +30,7 @@ export function createImageSprite(
   const spriteVertexShader = shaderCache.getShader('sprite.vert');
   const spriteFragmentShader = shaderCache.getShader('sprite.frag');
 
-  const material = new Material(spriteVertexShader, spriteFragmentShader, gl); // TODO: Add a material cache
+  const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
 
@@ -55,5 +55,6 @@ export function createImageSprite(
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer: 0,
   };
 }

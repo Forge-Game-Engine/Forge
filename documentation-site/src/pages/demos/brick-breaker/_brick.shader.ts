@@ -1,5 +1,6 @@
 export const brickShader = `#version 300 es
-#property name: brick.frag
+
+#pragma forge name(brick.frag)
 
 precision mediump float;
 

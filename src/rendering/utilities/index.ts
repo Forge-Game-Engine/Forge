@@ -1,4 +1,5 @@
 export * from './add-camera.js';
+export * from './add-gaussian-blur.js';
 export * from './create-canvas.js';
 export * from './create-image-sprite.js';
 export * from './create-shader-cache.js';

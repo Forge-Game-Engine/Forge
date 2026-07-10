@@ -2,6 +2,7 @@ import {
   Color,
   combineInstanceDataSegments,
   createQuadGeometry,
+  ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
@@ -27,7 +28,7 @@ export function createBackground(
   renderContext: RenderContext,
   renderLayer: number,
 ): void {
-  renderContext.shaderCache.addShader(backgroundShader);
+  renderContext.shaderCache.addShader(new ForgeShaderSource(backgroundShader));
 
   const vertexShader = renderContext.shaderCache.getShader('sprite.vert');
   const fragmentShader = renderContext.shaderCache.getShader('background.frag');
@@ -57,6 +58,7 @@ export function createBackground(
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer: renderLayer,
   };
 
   const backgroundEntity = world.createEntity();

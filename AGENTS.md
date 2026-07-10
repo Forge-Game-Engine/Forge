@@ -494,6 +494,11 @@ export class Entity {
 }
 ```
 
+This keeps the cache's lifetime tied to the `RenderContext` that owns it,
+makes the dependency visible at every call site, and means two independent
+`RenderContext`s (for example in two unrelated tests) never share a cache by
+accident.
+
 ## Security Considerations
 
 ### Validation

@@ -23,8 +23,8 @@ import {
 import { ballId } from './_ball.component';
 
 const ballDiameterFraction = 0.02;
-const ballSpeedFraction = 0.5;
-const launchAngleRangeInDegrees = 50;
+const ballSpeedFraction = 0.25;
+const launchAngleRangeInDegrees = 35;
 
 /**
  * Sets the ball's velocity to a launch direction that is mostly towards the

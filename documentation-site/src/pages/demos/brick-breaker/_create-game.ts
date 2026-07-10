@@ -47,12 +47,12 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   // gameplay sprites.
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.background,
+    cullingMask: renderLayers.background,
   });
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   createBackground(world, renderContext, renderLayers.background);

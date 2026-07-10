@@ -18,7 +18,7 @@ export const createStressTestGame = async (): Promise<Game> => {
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   await createSpriteSpawner(world, renderContext, renderLayers.foreground);

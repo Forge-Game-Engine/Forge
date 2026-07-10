@@ -1,6 +1,7 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { UniformValue } from './materials/index.js';
+import { RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
 import { createShaderCache } from './utilities/index.js';
 
@@ -29,6 +30,10 @@ export class RenderContext {
 
   public instanceBuffer: WebGLBuffer;
 
+  public width: number;
+
+  public height: number;
+
   private readonly _globalUniformValues: Map<string, UniformValue>;
 
   /**
@@ -48,6 +53,8 @@ export class RenderContext {
     this.imageCache = imageCache;
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;
+    this.width = canvas.width;
+    this.height = canvas.height;
 
     const context = canvas.getContext('webgl2', { antialias: true });
 
@@ -75,6 +82,36 @@ export class RenderContext {
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.gl.viewport(0, 0, width, height);
+    this.width = width;
+    this.height = height;
+  }
+
+  /**
+   * Binds a render target as the current draw destination, or the default
+   * framebuffer (the canvas) if `null` is passed. Updates the viewport to
+   * match the bound target's dimensions.
+   * @param target - The render target to bind, or `null` to bind the canvas.
+   */
+  public bindRenderTarget(target: RenderTarget | null): void {
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, target?.framebuffer ?? null);
+    this.gl.viewport(
+      0,
+      0,
+      target?.width ?? this.width,
+      target?.height ?? this.height,
+    );
+  }
+
+  /**
+   * Clears the currently bound framebuffer's color buffer, according to `clearStrategy`.
+   */
+  public clear(): void {
+    if (this.clearStrategy === CLEAR_STRATEGY.none) {
+      return;
+    }
+
+    this.gl.clearColor(0, 0, 0, 0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 
   public setGlobalUniformValue(name: string, value: UniformValue): void {

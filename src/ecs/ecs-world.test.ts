@@ -239,4 +239,111 @@ describe('EcsWorld', () => {
     expect(rot1.local).toBe(2);
     expect(rot2.local).toBe(4);
   });
+
+  describe('afterRun', () => {
+    it('passes an array of every run call result to afterRun', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[PositionEcsComponent], null, string> = {
+        query: [positionId],
+        run: () => 'result-value',
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith(['result-value']);
+    });
+
+    it('does not throw when afterRun is not defined', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const system: EcsSystem<[PositionEcsComponent]> = {
+        query: [positionId],
+        run: () => {},
+      };
+
+      world.addSystem(system);
+
+      expect(() => world.update()).not.toThrow();
+    });
+
+    // afterRun is a once-per-tick hook: every matched entity's run() call
+    // happens first, and afterRun is called exactly once afterwards with all
+    // of their results together, not interleaved with run per entity. This
+    // is what lets the render system collect one RenderPassResult per
+    // camera in run, then draw every camera's batch from a single afterRun
+    // call once all cameras are known.
+    it('calls run for every matched entity before calling afterRun once, with all their results', () => {
+      const world = new EcsWorld();
+      const entity1 = world.createEntity();
+      const entity2 = world.createEntity();
+
+      world.addComponent(entity1, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+      world.addComponent(entity2, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const callOrder: string[] = [];
+      const system: EcsSystem<[PositionEcsComponent], null, number> = {
+        query: [positionId],
+        run: (result) => {
+          callOrder.push(`run:${result.entity}`);
+
+          return result.entity;
+        },
+        afterRun: (entities) => {
+          callOrder.push(`afterRun:${entities.join(',')}`);
+        },
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(callOrder).toEqual([
+        `run:${entity1}`,
+        `run:${entity2}`,
+        `afterRun:${entity1},${entity2}`,
+      ]);
+    });
+
+    it('calls afterRun once with an empty array when no entities match the query', () => {
+      const world = new EcsWorld();
+      const nonexistentId = createComponentId<{ test: number }>(
+        'nonexistent-afterrun',
+      );
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[{ test: number }]> = {
+        query: [nonexistentId],
+        run: () => {},
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith([]);
+    });
+  });
 });

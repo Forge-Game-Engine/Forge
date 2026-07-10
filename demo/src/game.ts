@@ -1,11 +1,15 @@
 import {
+  addGaussianBlur,
   cameraId,
   CircleShape,
   createCameraEcsSystem,
   createGame,
+  createGaussianBlurEcsSystem,
   createImageSprite,
   createPhysicsEcsSystem,
+  createPresentEcsSystem,
   createRenderEcsSystem,
+  createRenderTarget,
   PhysicsBodyId,
   PhysicsWorld,
   PolygonShape,
@@ -30,8 +34,22 @@ const explosionRadius = 200;
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
+// The scene renders into this off-screen target instead of directly onto
+// the canvas, so the blur post-process pass has a texture to read from
+// before the present pass draws the (blurred) result onto the canvas.
+const sceneRenderTarget = createRenderTarget(
+  renderContext.gl,
+  window.innerWidth,
+  window.innerHeight,
+);
+
 const resize = (): void => {
   renderContext.resize(window.innerWidth, window.innerHeight);
+  sceneRenderTarget.resize(
+    renderContext.gl,
+    window.innerWidth,
+    window.innerHeight,
+  );
 };
 
 resize();
@@ -50,8 +68,12 @@ world.addComponent(cameraEntity, cameraId, {
   minZoom: 0.1,
   maxZoom: 10,
   isStatic: true,
-  layerMask: renderLayer,
+  cullingMask: renderLayer,
+  renderTarget: sceneRenderTarget,
+  layer: 0,
 });
+
+addGaussianBlur(world, cameraEntity, { passes: 8, intensity: 0.4 });
 
 const { imageCache } = renderContext;
 
@@ -213,6 +235,12 @@ for (let i = 0; i < shapeCount; i++) {
 
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
+// Blurs the off-screen scene render target in place (two-pass separable
+// Gaussian blur, tuned via the GaussianBlurEcsComponent attached to the
+// camera above), then the present pass draws the blurred result onto the
+// canvas. Must run after the render system and before the present system.
+world.addSystem(createGaussianBlurEcsSystem(renderContext));
+world.addSystem(createPresentEcsSystem(renderContext));
 world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 
 // The camera is static at the world origin with a zoom of 1 (see

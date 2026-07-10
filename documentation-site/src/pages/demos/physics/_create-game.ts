@@ -32,7 +32,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
 
   addCamera(world, {
     isStatic: true,
-    layerMask: renderLayers.foreground,
+    cullingMask: renderLayers.foreground,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });

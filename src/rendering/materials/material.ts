@@ -23,6 +23,12 @@ export class Material {
   private readonly _uniforms: Map<string, UniformSpec> = new Map();
   private readonly _uniformValues: Map<string, UniformValue> = new Map();
 
+  /**
+   * Constructs a new instance of the `Material` class.
+   * @param vertexShaderSource - The vertex shader source.
+   * @param fragmentShaderSource - The fragment shader source.
+   * @param gl - The WebGL2 rendering context.
+   */
   constructor(
     vertexShaderSource: ForgeShaderSource,
     fragmentShaderSource: ForgeShaderSource,
@@ -41,7 +47,7 @@ export class Material {
    */
   // eslint-disable-next-line sonarjs/cognitive-complexity
   public bind(gl: WebGL2RenderingContext): void {
-    // Potential improvement: reduce cognitive complexity with strategy-based dispatch.
+    // TODO: improvement - reduce cognitive complexity with strategy-based dispatch.
     gl.useProgram(this.program);
 
     let textureUnit = 0;
@@ -50,7 +56,7 @@ export class Material {
       const value = this._uniformValues.get(name);
 
       if (value === undefined) {
-        // Potential improvement: evaluate whether uniform defaults should be provided.
+        // TODO: improvement - evaluate whether uniform defaults should be provided.
         // If needed, defaults may be defined by shader conventions.
 
         continue;
@@ -235,7 +241,7 @@ export class Material {
     const shader = gl.createShader(type)!;
 
     gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    gl.compileShader(shader); // TODO: Add shader cache for compiled shaders.
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       const log = gl.getShaderInfoLog(shader);
