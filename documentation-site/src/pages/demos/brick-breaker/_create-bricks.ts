@@ -97,12 +97,7 @@ function createBrickSprite(
   const vertexShader = shaderCache.getShader('sprite.vert');
   const fragmentShader = shaderCache.getShader(fragmentShaderName);
 
-  const material = new Material(
-    vertexShader,
-    fragmentShader,
-    gl,
-    renderContext.programCache,
-  );
+  const material = new Material(vertexShader, fragmentShader, gl);
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
   material.setUniform('u_time', 0);

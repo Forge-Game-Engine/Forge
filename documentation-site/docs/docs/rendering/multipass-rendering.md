@@ -178,26 +178,3 @@ too, but manages blending itself since layering multiple render targets onto
 the canvas needs blending enabled for every layer after the first (see
 [Layering multiple render targets](#layering-multiple-render-targets)
 above).
-
-## Performance note: shared materials are cheap
-
-Every pass in a multipass pipeline typically needs its own
-[`Material`](/Forge/docs/api/classes/Material) instance to bind a different
-source texture, but constructing many materials from the same shader source
-no longer means recompiling that shader repeatedly. `Material`'s constructor
-takes a [`ProgramCache`](/Forge/docs/api/classes/ProgramCache) (typically
-`renderContext.programCache`, one per `RenderContext`) and asks it to compile
-and link a `WebGLProgram` once per distinct `(vertexSource, fragmentSource)`
-pair, reusing it for every subsequent `Material` built from identical source
-through that same cache. Building a `Material` per post-process pass out of
-the same passthrough or blur shader is cheap; it's only genuinely new shader
-source that triggers a new compile.
-
-```ts
-const material = new Material(
-  vertexShader,
-  fragmentShader,
-  renderContext.gl,
-  renderContext.programCache,
-);
-```

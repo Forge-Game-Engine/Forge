@@ -32,7 +32,6 @@ export async function createBackground(
     vertexShader,
     fragmentShader,
     renderContext.gl,
-    renderContext.programCache,
   );
 
   backgroundMaterial.setUniform(

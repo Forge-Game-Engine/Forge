@@ -28,8 +28,6 @@ export class Material {
    * @param vertexShaderSource - The vertex shader source.
    * @param fragmentShaderSource - The fragment shader source.
    * @param gl - The WebGL2 rendering context.
-   * @param programCache - The program cache to compile (or reuse a
-   * previously compiled program) through, typically `renderContext.programCache`.
    */
   constructor(
     vertexShaderSource: ForgeShaderSource,

@@ -41,12 +41,7 @@ export async function createErosionSprite(
   const vertexShader = shaderCache.getShader('sprite.vert');
   const fragmentShader = shaderCache.getShader('erosion.frag');
 
-  const material = new Material(
-    vertexShader,
-    fragmentShader,
-    gl,
-    renderContext.programCache,
-  );
+  const material = new Material(vertexShader, fragmentShader, gl);
 
   material.setUniform('u_texture', createTextureFromImage(gl, logoImage));
   material.setUniform('u_noiseTexture', createTextureFromImage(gl, noiseImage));

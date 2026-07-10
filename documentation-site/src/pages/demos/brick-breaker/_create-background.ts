@@ -33,12 +33,7 @@ export function createBackground(
   const vertexShader = renderContext.shaderCache.getShader('sprite.vert');
   const fragmentShader = renderContext.shaderCache.getShader('background.frag');
 
-  const material = new Material(
-    vertexShader,
-    fragmentShader,
-    renderContext.gl,
-    renderContext.programCache,
-  );
+  const material = new Material(vertexShader, fragmentShader, renderContext.gl);
 
   material.setUniform('u_time', 0);
 
