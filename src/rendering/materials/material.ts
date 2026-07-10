@@ -2,7 +2,6 @@ import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
 import { assertNever } from '../../utilities/index.js';
 import type { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
-import { ProgramCache } from '../shaders/index.js';
 
 export type UniformValue =
   | number
@@ -36,9 +35,8 @@ export class Material {
     vertexShaderSource: ForgeShaderSource,
     fragmentShaderSource: ForgeShaderSource,
     gl: WebGL2RenderingContext,
-    programCache: ProgramCache,
   ) {
-    this.program = programCache.getProgram(
+    this.program = this._createProgram(
       gl,
       vertexShaderSource.preparedSource,
       fragmentShaderSource.preparedSource,
@@ -205,6 +203,55 @@ export class Material {
     value: Int32Array,
   ): void {
     gl.uniform1iv(loc, value);
+  }
+
+  private _createProgram(
+    gl: WebGL2RenderingContext,
+    vertexShaderSource: string,
+    fragmentShaderSource: string,
+  ): WebGLProgram {
+    const vertexShader = this._compileShader(
+      gl,
+      vertexShaderSource,
+      gl.VERTEX_SHADER,
+    );
+    const fragmentShader = this._compileShader(
+      gl,
+      fragmentShaderSource,
+      gl.FRAGMENT_SHADER,
+    );
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(program);
+
+      throw new Error(`Failed to link program: ${log}`);
+    }
+
+    return program;
+  }
+
+  private _compileShader(
+    gl: WebGL2RenderingContext,
+    source: string,
+    type: GLenum,
+  ): WebGLShader {
+    const shader = gl.createShader(type)!;
+
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader); // TODO: Add shader cache for compiled shaders.
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(shader);
+
+      throw new Error(`Shader compile error: ${log}`);
+    }
+
+    return shader;
   }
 
   private _detectUniforms(gl: WebGL2RenderingContext): void {

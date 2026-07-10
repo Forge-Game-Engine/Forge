@@ -25,17 +25,12 @@ export function createImageSprite(
   layer: number,
   frameDimensions: Vector2 = new Vector2(image.width, image.height),
 ): SpriteEcsComponent {
-  const { shaderCache, gl, programCache } = renderContext;
+  const { shaderCache, gl } = renderContext;
 
   const spriteVertexShader = shaderCache.getShader('sprite.vert');
   const spriteFragmentShader = shaderCache.getShader('sprite.frag');
 
-  const material = new Material(
-    spriteVertexShader,
-    spriteFragmentShader,
-    gl,
-    programCache,
-  );
+  const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
 

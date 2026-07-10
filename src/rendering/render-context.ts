@@ -2,7 +2,7 @@ import { ImageCache } from '../asset-loading/index.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { UniformValue } from './materials/index.js';
 import { RenderTarget } from './render-target.js';
-import { ProgramCache, ShaderCache } from './shaders/index.js';
+import { ShaderCache } from './shaders/index.js';
 import { createShaderCache } from './utilities/index.js';
 
 /**
@@ -16,14 +16,6 @@ export class RenderContext {
    * The shader store containing compiled shaders.
    */
   public readonly shaderCache: ShaderCache;
-
-  /**
-   * The compiled WebGL program cache for this render context, owned by this
-   * instance (not shared globally). Pass it to `Material` so multiple
-   * materials that use identical shader source share one compiled program
-   * instead of each compiling their own.
-   */
-  public readonly programCache: ProgramCache;
 
   /**
    * The image cache containing loaded images.
@@ -58,7 +50,6 @@ export class RenderContext {
     clearStrategy: CLEAR_STRATEGY_KEYS = CLEAR_STRATEGY.blank,
   ) {
     this.shaderCache = shaderCache;
-    this.programCache = new ProgramCache();
     this.imageCache = imageCache;
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;

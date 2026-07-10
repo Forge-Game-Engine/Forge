@@ -34,25 +34,22 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
 export const createGaussianBlurEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent], void, void> => {
-  const { gl, shaderCache, programCache } = renderContext;
+  const { gl, shaderCache } = renderContext;
 
   const blurMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('gaussian-blur.frag'),
     gl,
-    programCache,
   );
   const copyMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,
-    programCache,
   );
   const crossFadeMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('cross-fade.frag'),
     gl,
-    programCache,
   );
 
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a

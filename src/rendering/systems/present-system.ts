@@ -39,13 +39,12 @@ interface PresentCommand {
 export const createPresentEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent], null, PresentCommand | null> => {
-  const { gl, shaderCache, programCache } = renderContext;
+  const { gl, shaderCache } = renderContext;
 
   const material = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
     gl,
-    programCache,
   );
 
   return {
