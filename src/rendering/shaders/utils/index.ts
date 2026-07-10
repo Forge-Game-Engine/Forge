@@ -4,4 +4,3 @@ export * from './create-shader-program.js';
 export * from './create-texture-from-image.js';
 export * from './create-empty-texture.js';
 export * from './create-projection-matrix.js';
-export * from './hash-string.js';
