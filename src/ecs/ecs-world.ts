@@ -42,10 +42,10 @@ export class EcsWorld implements Updatable, Stoppable {
     );
   }
 
-  public removeSystem<T extends unknown[], K, A = void>(
+  public removeSystem<T extends unknown[], K, A>(
     system: EcsSystem<T, K, A>,
   ): void {
-    this._systems.delete(system as EcsSystem<unknown[], unknown>);
+    this._systems.delete(system);
   }
 
   public update(): void {
