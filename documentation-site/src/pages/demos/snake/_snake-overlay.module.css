@@ -1,0 +1,69 @@
+.lengthBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: monospace;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.controls {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  pointer-events: auto;
+}
+
+.turnButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.turnButton:hover {
+  background-color: var(--card-highlight-color);
+}
+
+.floatingMessage {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  color: #fff8dc;
+  font-weight: bold;
+  font-size: 20px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  animation: float-up 0.9s ease-out forwards;
+}
+
+.floatingMessage.gameOver {
+  color: #ff6b6b;
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    translate: 0 -28px;
+  }
+}

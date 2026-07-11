@@ -73,33 +73,37 @@ Each module has an `index.ts` file that exports its public API.
 
 ### Entity-Component-System (ECS)
 
-The codebase follows the ECS pattern:
+The codebase follows a **data-oriented** ECS: there are no `Entity`, `Component`, or `System` base classes to extend. Entities are plain numeric ids, components are plain data objects, and systems are plain objects created by a factory function.
 
-1. **Components** (`Component`): Pure data containers extending the abstract `Component` class
-   - Each component class has a unique `id` (symbol) generated automatically
-   - Components are lightweight and contain no logic
+1. **Components**: Plain interfaces registered with `createComponentId<T>(name)` (`src/ecs/ecs-component.ts`), which returns a unique, branded `ComponentKey<T>` (a `symbol`). Data-less markers use `createTagId(name)` instead, producing a `TagKey`.
+   - Convention: define the interface and its key together, e.g. `export interface PlayerEcsComponent { speed: number }` and `export const playerId = createComponentId<PlayerEcsComponent>('player')`.
+   - Component files are typically named `*-component.ts` (or `*.component.ts` in demos) and export both the interface and the key.
 
-2. **Systems** (`System`): Logic processors extending the abstract `System` class
-   - Systems have a `query` defining which components they operate on
-   - Systems implement the `run(entity: Entity)` method
-   - Optional lifecycle methods: `beforeAll()`, `stop()`
-   - Each system has a unique `id` (symbol) generated automatically
+2. **Systems**: Plain objects implementing the `EcsSystem<TQuery, TBeforeQueryResult, TAfterRunInput>` interface (`src/ecs/ecs-system.ts`), built by a `createXEcsSystem(...)` factory function rather than instantiated with `new`.
+   - `query`: an array of `ComponentKey`s an entity must have, in the order their data is passed to `run`.
+   - `tags?`: additional `TagKey`s required; tags contribute no data to `run`.
+   - `run(queryResult, world, beforeQueryResult)`: invoked once per tick for every matching entity; `queryResult` is `{ entity: number; components: [...] }`, with `components` in `query` order.
+   - Optional `beforeQuery(world)`: computed once per tick, before any entity is processed, for state shared across every `run` call that tick.
+   - Optional `afterRun(inputs)`: invoked once per tick with every `run` call's return value, after all matching entities have been processed.
+   - Optional `cleanupEntities(queryResult, world)`: invoked per matching entity when `EcsWorld.stop()` is called.
+   - Register with `world.addSystem(system, registrationOrder?)`. `registrationOrder` (`SystemRegistrationOrder.early`/`normal`/`late`) controls run order relative to other systems; defaults to `normal`.
 
-3. **Entities** (`Entity`): Containers for components
-   - Entities are created with `new Entity(world, components, options)`
-   - Components are added/removed dynamically
-   - Entities can have parent-child relationships
+3. **Entities**: Plain `number` ids, with no wrapping object or parent/child relationships built in.
+   - Create with `world.createEntity()`; remove (and all of its components) with `world.removeEntity(entity)`.
+   - Attach data with `world.addComponent(entity, componentKey, data)`, or a tag with `world.addTag(entity, tagKey)`.
+   - Read with `world.getComponent(entity, componentKey)`, which returns `T | null` — there is no `getComponentRequired`. Inside a system whose `query` already guarantees the component exists, the idiom is a non-null assertion: `world.getComponent(entity, positionId)!`.
+   - Remove a single component with `world.removeComponent(entity, componentKey)`.
 
-4. **World** (`World`): Container for entities and systems
-   - Manages entity lifecycle
-   - Routes entities to appropriate systems based on queries
+4. **World** (`EcsWorld`, `src/ecs/ecs-world.ts`): Owns all component storage (one `SparseSet` per component/tag key) and every registered system.
+   - `world.update()` runs every registered system once, in registration order; called automatically once per frame by `Game`'s render loop — don't call it directly from game code.
+   - `world.queryEntities(componentKeys, out)` fills `out` with every entity matching a raw list of component keys, for code that needs to query entities outside of a system's own `run`.
 
 ### Key Patterns
 
-- **Dependency Injection**: Systems receive dependencies via constructor (e.g., `RenderContext`)
-- **Composition over Inheritance**: Favor components over deep class hierarchies
+- **Dependency Injection**: Systems and standalone classes (e.g. `RenderContext`) receive dependencies via their factory function or constructor, not looked up globally
+- **Composition over Inheritance**: Favor components (and, for non-ECS classes, composed objects) over deep class hierarchies
 - **Immutability**: Use `readonly` for fields that shouldn't change after construction
-- **Private fields**: Prefix with underscore (`_fieldName`)
+- **Private fields**: Prefix with underscore (`_fieldName`) — applies to the standalone classes the engine still has (e.g. `RenderContext`, `Color`, `Time`); ECS components are plain data objects with no private fields
 - **Initialization**: Members are initialized in the constructor body
 - **Getters/Setters**: Getters and setters have no access modifiers (always public by default)
 
@@ -109,9 +113,9 @@ The codebase follows the ECS pattern:
 
 **Naming Conventions** (enforced by ESLint):
 
-- **Classes**: `PascalCase` (e.g., `RenderSystem`, `Entity`)
-- **Interfaces**: `PascalCase` (e.g., `EntityOptions`)
-- **Types**: `PascalCase` (e.g., `ComponentCtor`)
+- **Classes**: `PascalCase` (e.g., `RenderContext`, `RigidBody`)
+- **Interfaces**: `PascalCase` (e.g., `PositionEcsComponent`)
+- **Types**: `PascalCase` (e.g., `ComponentKey`)
 - **Public members**: `camelCase` (e.g., `getComponent`)
 - **Private members**: `camelCase` with leading underscore (e.g., `_components`)
 - **Constants**: `camelCase` or `UPPER_SNAKE_CASE` depending on context
@@ -143,7 +147,7 @@ The codebase follows the ECS pattern:
 **Type Safety**:
 
 - Use strict TypeScript mode (already enabled in `tsconfig.base.json`)
-- Always specify return types for functions: `public run(entity: Entity): void`
+- Always specify return types for functions: `run: (result: QueryResult<[MyEcsComponent]>): void => { ... }`
 - Avoid `any`; use `unknown` if necessary
 - Avoid null assertions and casting
 - Types should be narrowed and nullish values should be handled appropriately (usually by throwing an error if it makes sense to do so)
@@ -178,11 +182,17 @@ The codebase follows the ECS pattern:
 - Example:
   ```typescript
   /**
-   * Adds components to the entity.
-   * @param components - The components to add.
-   * @throws An error if a component with the same name already exists on the entity.
+   * Adds a component to an entity.
+   * @param entity - The entity to add the component to.
+   * @param componentKey - The component's key, from `createComponentId`.
+   * @param componentData - The component data to store.
+   * @throws An error if the entity doesn't exist.
    */
-  public addComponents(...components: Component[]): void {
+  public addComponent<T>(
+    entity: number,
+    componentKey: ComponentKey<T>,
+    componentData: T,
+  ): T {
     // implementation
   }
   ```
@@ -208,8 +218,8 @@ ESLint is configured with:
 1. Create a directory under `/src/your-module`
 2. Add an `index.ts` that exports the public API
 3. Add sub-folders for organization:
-   - `/components` - Component classes
-   - `/systems` - System classes
+   - `/components` - Component interfaces and their `ComponentKey`s
+   - `/systems` - System factory functions (`createXEcsSystem`)
    - `/types` - Type definitions and interfaces
 4. Update `/src/index.ts` to export the new module
 5. Add export mapping in `package.json` if it should be separately importable
@@ -217,54 +227,40 @@ ESLint is configured with:
 ### Component Pattern
 
 ```typescript
-import { Component } from '../ecs/index.js';
+import { createComponentId } from '../ecs/index.js';
 
 /**
  * Description of what this component represents.
  */
-export class MyComponent extends Component {
+export interface MyEcsComponent {
   /**
    * Description of the field.
    */
-  public myData: string;
-
-  /**
-   * Creates a new MyComponent instance.
-   * @param myData - The data to store.
-   */
-  constructor(myData: string) {
-    super();
-    this.myData = myData;
-  }
+  myData: string;
 }
+
+export const myComponentId = createComponentId<MyEcsComponent>('myComponent');
 ```
 
 ### System Pattern
 
 ```typescript
-import { Entity, System } from '../ecs/index.js';
-import { MyComponent } from '../components/my-component.js';
+import { EcsSystem } from '../ecs/index.js';
+import { MyEcsComponent, myComponentId } from '../components/my-component.js';
 
 /**
  * Description of what this system does.
+ * @param someDependency - Any external dependency the system needs (e.g. `Time`, `RenderContext`).
  */
-export class MySystem extends System {
-  /**
-   * Creates a new MySystem instance.
-   */
-  constructor() {
-    super([MyComponent], 'mySystemName');
-  }
-
-  /**
-   * Processes a single entity.
-   * @param entity - The entity to process.
-   */
-  public run(entity: Entity): void {
-    const component = entity.getComponentRequired(MyComponent);
+export const createMyEcsSystem = (
+  someDependency: SomeDependency,
+): EcsSystem<[MyEcsComponent]> => ({
+  query: [myComponentId],
+  run: (result, world) => {
+    const [myComponent] = result.components;
     // Process component data
-  }
-}
+  },
+});
 ```
 
 ### Index Files
@@ -358,7 +354,7 @@ describe('MyClass', () => {
 - Test edge cases and error conditions
 - Mock external dependencies when needed
 - Use descriptive assertions
-- For tests involving ECS, create a minimal `World` and entities
+- For tests involving ECS, create a minimal `EcsWorld` and entities (`world.createEntity()`)
 
 ## Common Patterns
 
@@ -421,49 +417,38 @@ if (this._components.has(key)) {
 
 ### Type Narrowing
 
-Narrow types appropriately and handle nullish values:
+Narrow types appropriately and handle nullish values. `EcsWorld.getComponent` returns `T | null`, not a required value, so callers outside a system's own `run` (where the `query` doesn't already guarantee the component) must check explicitly:
 
 ```typescript
-public getComponent<C extends ComponentCtor>(
-  componentType: C,
-): InstanceType<C> | null {
-  return (this._components.get(componentType.id) as InstanceType<C>) ?? null;
+const position = world.getComponent<PositionEcsComponent>(entity, positionId);
+
+if (position === null) {
+  throw new Error(`Required component not found on entity ${entity}`);
 }
+```
 
-public getComponentRequired<C extends ComponentCtor>(
-  componentType: C,
-): InstanceType<C> {
-  const component = this.getComponent(componentType);
+Inside a system's `run`, when the component is one of its own `query` entries (so its presence is already guaranteed for every matched entity), the idiom is a non-null assertion instead of re-checking:
 
-  if (component === null) {
-    throw new Error(
-      `Required component "${componentType.id.toString()}" not found on entity "${this.name}"`,
-    );
-  }
-
-  return component;
-}
+```typescript
+const position = world.getComponent<PositionEcsComponent>(entity, positionId)!;
 ```
 
 ### Static Counters
 
-Use static fields for ID generation:
+Use static fields for ID generation (still used for non-ECS ids, e.g. `RigidBody`):
 
 ```typescript
-export class Entity {
-  private static _idCounter: number = 0;
-  private readonly _id: number;
+export class RigidBody {
+  private static _nextId: number = 0;
+  public readonly id: number;
 
-  constructor() {
-    this._id = Entity._generateId();
+  constructor(/* ... */) {
+    this.id = RigidBody._generateId();
+    // ...
   }
 
   private static _generateId(): number {
-    return Entity._idCounter++;
-  }
-
-  get id(): number {
-    return this._id;
+    return RigidBody._nextId++;
   }
 }
 ```
@@ -473,8 +458,8 @@ export class Entity {
 Use getters for computed or protected values:
 
 ```typescript
-get children(): Set<Entity> {
-  return new Set(this._children); // Return a copy
+get r(): number {
+  return this._r;
 }
 ```
 
@@ -485,19 +470,17 @@ Use the event system for decoupled communication:
 ```typescript
 import { ForgeEvent } from '../events/forge-event.js';
 
-export class Entity {
-  public onRemovedFromWorld: ForgeEvent;
+export class AnimationClip {
+  public readonly onAnimationStartEvent: ForgeEvent;
 
-  constructor() {
-    this.onRemovedFromWorld = new ForgeEvent('entityRemovedFromWorld');
+  constructor(/* ... */) {
+    this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
+    // ...
   }
 }
 ```
 
-This keeps the cache's lifetime tied to the `RenderContext` that owns it,
-makes the dependency visible at every call site, and means two independent
-`RenderContext`s (for example in two unrelated tests) never share a cache by
-accident.
+Use `ParameterizedForgeEvent<T>` instead when listeners need a payload (e.g. `raise(value)` / `registerListener((value) => ...)`).
 
 ## Security Considerations
 
@@ -550,11 +533,10 @@ Always use `.js` extension even when importing from `.ts` files.
 
 ### Key Classes to Know
 
-- `Entity` - Container for components
-- `Component` - Base class for all components
-- `System` - Base class for all systems
-- `World` - Container for entities and systems
-- `ForgeEvent` - Event system
+- `EcsWorld` - Owns all entities (plain `number` ids), component storage, and registered systems
+- `createComponentId` / `createTagId` - Register a component/tag key (a branded `symbol`) for use with `EcsWorld`
+- `EcsSystem` - Interface implemented by system factory functions (`createXEcsSystem`)
+- `ForgeEvent` / `ParameterizedForgeEvent` - Event system
 - `RenderContext` - WebGL context wrapper
 
 ---

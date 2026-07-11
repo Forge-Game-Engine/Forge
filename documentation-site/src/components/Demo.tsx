@@ -22,6 +22,12 @@ interface DemoProps {
   blurb: string;
   createGame: () => Promise<Game>;
   codeFiles: CodeFile[];
+  /**
+   * Content rendered directly on top of the game canvas, inside the same
+   * positioned container, for demos that showcase overlaying regular HTML
+   * DOM elements (buttons, HUD text, etc.) over WebGL-rendered content.
+   */
+  overlay?: ReactNode;
 }
 
 export const Demo: FC<DemoProps> = ({
@@ -31,6 +37,7 @@ export const Demo: FC<DemoProps> = ({
   header,
   createGame,
   codeFiles,
+  overlay,
 }) => {
   const demoBoxRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreen(demoBoxRef);
@@ -65,6 +72,7 @@ export const Demo: FC<DemoProps> = ({
                 )}
               ></i>
             </button>
+            {overlay && <div className={styles.overlay}>{overlay}</div>}
           </div>
           <CodeSelector codeFiles={codeFiles} />
         </div>

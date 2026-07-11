@@ -135,6 +135,10 @@ const config: Config = {
               to: 'demos/particles',
               label: 'Particles',
             },
+            {
+              to: 'demos/snake',
+              label: 'Snake',
+            },
           ],
         },
         {

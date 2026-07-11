@@ -40,6 +40,13 @@
   background-color: var(--card-highlight-color);
 }
 
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .demoContainer h1 {
   width: 100%;
   text-align: center;
