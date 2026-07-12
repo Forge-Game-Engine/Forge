@@ -10,8 +10,8 @@ render target/present pass plumbing described in
 [Multipass Rendering](./multipass-rendering.md). Use it for anything that
 calls for a softened scene: a pause menu background, a damage or
 low-health vignette, a depth-of-field-style backdrop behind UI, or as a
-starting point for your own blur-based effect (bloom's bright-pass
-downsample chain uses the same separable technique).
+starting point for your own blur-based effect ([Bloom](./bloom.md)'s
+bright-pass blur chain uses this same separable technique).
 
 It only affects cameras that have both a `renderTarget` and a
 [`GaussianBlurEcsComponent`](/Forge/docs/api/interfaces/GaussianBlurEcsComponent)
@@ -78,7 +78,7 @@ const blur = world.getComponent(camera, gaussianBlurId)!;
 blur.intensity = 0.1; // e.g. ease off the blur when a menu closes
 ```
 
-If two cameras render into the *same* `renderTarget` (for example a static
+If two cameras render into the _same_ `renderTarget` (for example a static
 background camera layered under a shaking foreground camera), attach
 `GaussianBlurEcsComponent` to only one of them: the blur system already
 processes each distinct render target once per frame, so a second component
@@ -86,8 +86,8 @@ on the other camera would just be redundant, and it blurs both cameras'
 output together, since by that point they're already composited into one
 texture.
 
-To blur only *some* of a scene (for example a background, but not the
-gameplay layer on top of it), give those cameras *separate* render targets
+To blur only _some_ of a scene (for example a background, but not the
+gameplay layer on top of it), give those cameras _separate_ render targets
 instead of a shared one, and attach `GaussianBlurEcsComponent` only to the
 one that should be blurred: see [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets).
 

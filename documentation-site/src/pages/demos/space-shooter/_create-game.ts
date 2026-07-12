@@ -1,7 +1,10 @@
 import { createSpriteAnimationEcsSystem } from '@forge-game-engine/forge/animations';
 import {
+  addBloom,
   addCamera,
   addGaussianBlur,
+  BloomEcsComponent,
+  createBloomEcsSystem,
   createCameraEcsSystem,
   createGaussianBlurEcsSystem,
   createPresentEcsSystem,
@@ -32,13 +35,15 @@ import { createCameraShakeEcsSystem } from './_camera-shake.system';
 import { createExplosionSpawner } from './_create-explosions';
 import { createMusic } from './_create-music';
 import { createInputs } from './_create-inputs';
-import { createPlayer } from './_create-player';
+import { createPlayer, spawnPlayer } from './_create-player';
 import { createBulletEcsSystem } from './_bullet.system';
 import { createGunEcsSystem } from './_gun.system';
 import { createAsteroidSpawner } from './_create-asteroids';
 import { createAsteroidEcsSystem } from './_asteroid.system';
 import { createAsteroidSpawnerEcsSystem } from './_asteroid-spawner.system';
 import { createAsteroidCollisionEcsSystem } from './_collision.system';
+import { GameOverEcsComponent, gameOverId } from './_game-over.component';
+import { createGameOverEcsSystem } from './_game-over.system';
 
 const renderLayers = {
   background: 1 << 0,
@@ -50,7 +55,15 @@ const renderLayers = {
 const explosionShakeIntensityFraction = 0.007;
 const explosionShakeDurationSeconds = 0.15;
 
-export const createSpaceShooterGame = async (): Promise<Game> => {
+export const bloomDefaults: BloomEcsComponent = {
+  threshold: 0.65,
+  passes: 3,
+  intensity: 1.5,
+};
+
+export const createSpaceShooterGame = async (
+  onBloomReady?: (bloom: BloomEcsComponent) => void,
+): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   // Background and foreground each get their own off-screen target, so the
@@ -81,6 +94,15 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   });
 
   addGaussianBlur(world, backgroundCameraEntity, { passes: 4, intensity: 1 });
+
+  // Bullets and explosion flashes are the brightest things in the
+  // foreground, so a bloom glow makes them read as glowing/energetic
+  // instead of flat sprites. The component is handed back to the caller
+  // (see the sliders on this demo's page) so it can be retuned live, the
+  // same way the blur intensity below is retuned every tick.
+  const bloomComponent = addBloom(world, foregroundCameraEntity, bloomDefaults);
+
+  onBloomReady?.(bloomComponent);
 
   world.addSystem<[GaussianBlurEcsComponent]>({
     query: [gaussianBlurId],
@@ -121,10 +143,18 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
     shakeComponent.nextOffsetChangeSeconds = 0;
   };
 
-  const { moveInput, shootInput } = createInputs(world, time, game);
+  const { moveInput, shootInput, restartInput } = createInputs(
+    world,
+    time,
+    game,
+  );
 
   await createBackground(world, renderContext, renderLayers.background);
-  await createPlayer(renderContext, world, renderLayers.foreground);
+  const playerSprites = await createPlayer(
+    renderContext,
+    world,
+    renderLayers.foreground,
+  );
   await createAsteroidSpawner(world, renderContext, renderLayers.foreground);
   const explosionSpawner = await createExplosionSpawner(
     renderContext,
@@ -133,12 +163,53 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   );
   createMusic(world);
 
+  const gameOverEntity = world.createEntity();
+  const gameOverMessageElement = document.createElement('div');
+
+  gameOverMessageElement.textContent = "Press 'R' to restart";
+  gameOverMessageElement.style.cssText = `
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: sans-serif;
+    font-size: 2rem;
+    text-shadow: 0 0 8px black;
+    pointer-events: none;
+    z-index: 1;
+  `;
+
+  game.container.appendChild(gameOverMessageElement);
+
+  world.addComponent(gameOverEntity, gameOverId, {
+    isGameOver: false,
+    messageElement: gameOverMessageElement,
+  });
+
+  const respawnPlayer = (): void => {
+    spawnPlayer(renderContext, world, renderLayers.foreground, playerSprites);
+  };
+
+  const onPlayerDeath = (): void => {
+    const gameOverComponent = world.getComponent<GameOverEcsComponent>(
+      gameOverEntity,
+      gameOverId,
+    );
+
+    if (gameOverComponent) {
+      gameOverComponent.isGameOver = true;
+    }
+  };
+
   const random = new Random();
   const physicsWorld = new PhysicsWorld();
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
   world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createMovementEcsSystem(moveInput, time));
@@ -155,8 +226,14 @@ export const createSpaceShooterGame = async (): Promise<Game> => {
   );
   world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
   world.addSystem(
-    createAsteroidCollisionEcsSystem(physicsWorld, time, explosionSpawner),
+    createAsteroidCollisionEcsSystem(
+      physicsWorld,
+      time,
+      explosionSpawner,
+      onPlayerDeath,
+    ),
   );
+  world.addSystem(createGameOverEcsSystem(restartInput, respawnPlayer));
 
   return game;
 };

@@ -20,3 +20,5 @@ Guides in this section:
   post-processing and lighting passes.
 - [Gaussian Blur](./gaussian-blur.md): a two-pass separable blur
   post-processing effect built on top of multipass rendering.
+- [Bloom](./bloom.md): an additive glow post-processing effect built on the
+  same separable blur technique.

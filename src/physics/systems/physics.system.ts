@@ -25,7 +25,15 @@ export const createPhysicsEcsSystem = (
   [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent],
   void
 > => {
-  const registeredEntities = new Map<RigidBody, number>();
+  // Keyed by entity rather than by `RigidBody` instance: `EcsWorld` recycles
+  // entity ids as soon as an entity is removed, so a `PhysicsBodyId`
+  // component removed and re-added under the same entity id within a
+  // single tick (e.g. an object pool or a "respawn" that removes a batch
+  // of entities and immediately creates a new one) would otherwise be
+  // indistinguishable from that entity never having changed bodies at
+  // all, leaving the old `RigidBody` registered in `physicsWorld` forever
+  // as an invisible, un-synced collider.
+  const registeredEntities = new Map<number, RigidBody>();
 
   return {
     query: [PhysicsBodyId, positionId, rotationId],
@@ -45,18 +53,25 @@ export const createPhysicsEcsSystem = (
         }
 
         const { physicsBody } = physicsBodyComponent;
+        const registeredBody = registeredEntities.get(entity);
 
-        if (!registeredEntities.has(physicsBody)) {
-          physicsWorld.addBody(physicsBody);
-          registeredEntities.set(physicsBody, entity);
-          physicsBody.userData = entity;
+        if (registeredBody === physicsBody) {
+          continue;
         }
+
+        if (registeredBody) {
+          physicsWorld.removeBody(registeredBody);
+        }
+
+        physicsWorld.addBody(physicsBody);
+        registeredEntities.set(entity, physicsBody);
+        physicsBody.userData = entity;
       }
 
-      for (const [physicsBody, entity] of registeredEntities) {
+      for (const [entity, physicsBody] of registeredEntities) {
         if (!queriedEntities.has(entity)) {
           physicsWorld.removeBody(physicsBody);
-          registeredEntities.delete(physicsBody);
+          registeredEntities.delete(entity);
         }
       }
 
@@ -82,12 +97,13 @@ export const createPhysicsEcsSystem = (
       }
     },
     cleanupEntities: (result) => {
-      const [physicsBodyComponent] = result.components;
+      const { entity, components } = result;
+      const [physicsBodyComponent] = components;
       const { physicsBody } = physicsBodyComponent;
 
-      if (registeredEntities.has(physicsBody)) {
+      if (registeredEntities.get(entity) === physicsBody) {
         physicsWorld.removeBody(physicsBody);
-        registeredEntities.delete(physicsBody);
+        registeredEntities.delete(entity);
       }
     },
   };

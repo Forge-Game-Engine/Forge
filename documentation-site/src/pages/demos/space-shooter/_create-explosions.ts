@@ -57,11 +57,7 @@ export async function createExplosionSpawner(
     new Vector2(image.width / explosionColumns, image.height / explosionRows),
   );
 
-  const spriteSheet = createSpriteSheet(
-    image,
-    explosionRows,
-    explosionColumns,
-  );
+  const spriteSheet = createSpriteSheet(image, explosionRows, explosionColumns);
 
   explosionSprite.uvScale = spriteSheet.frames[0][0].dimensions.clone();
 

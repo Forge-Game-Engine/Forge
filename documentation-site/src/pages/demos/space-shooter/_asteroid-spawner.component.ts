@@ -8,7 +8,8 @@ export interface AsteroidSpawnerEcsComponent {
   minX: number;
   maxX: number;
   spawnY: number;
-  speed: number;
+  minSpeed: number;
+  maxSpeed: number;
   rotationSpeed: number;
 }
 

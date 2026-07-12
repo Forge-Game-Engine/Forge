@@ -81,7 +81,7 @@ your game systems run. What that does depends on the action type:
     Correct for "delta this frame" inputs, such as mouse wheel scroll, where
     the binding only calls `set()` while the input is actively changing.
   - `noReset`: the value is left untouched. Required for any axis whose
-    binding only calls `set()` on a state *change*, such as a direction key
+    binding only calls `set()` on a state _change_, such as a direction key
     being pressed or released, or a cursor position that should persist
     between `mousemove` events.
 
@@ -95,6 +95,7 @@ held keys or by cursor position:
 ```ts
 const move = new Axis2dAction('move', 'game', actionResetTypes.noReset);
 ```
+
 :::
 
 ## Input groups

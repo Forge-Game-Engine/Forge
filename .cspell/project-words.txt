@@ -53,6 +53,7 @@ renderables
 requizits
 resettables
 respawns
+retuned
 RGBA
 rnaumovs
 skidmark
@@ -66,6 +67,7 @@ spritesheet
 stoppables
 texel
 texels
+thresholded
 thumbstick
 unblurred
 undersamples
@@ -73,6 +75,7 @@ unmarks
 unnegated
 unrotated
 updatables
+upsamples
 uvec
 Vleugels
 WASD

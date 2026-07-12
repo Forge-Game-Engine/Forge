@@ -20,12 +20,12 @@ const mouse = new MouseInputSource(inputManager, renderContext.canvas);
 Then add bindings to the matching set on the source. There is one binding
 type per action type:
 
-| Binding | Set | Action |
-| --- | --- | --- |
-| [`MouseTriggerBinding`](/Forge/docs/api/classes/MouseTriggerBinding) | `triggerBindings` | `TriggerAction` |
-| [`MouseHoldBinding`](/Forge/docs/api/classes/MouseHoldBinding) | `holdBindings` | `HoldAction` |
-| [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) | `axis1dBindings` | `Axis1dAction` (scroll wheel) |
-| [`MouseAxis2dBinding`](/Forge/docs/api/classes/MouseAxis2dBinding) | `axis2dBindings` | `Axis2dAction` (cursor position) |
+| Binding                                                              | Set               | Action                           |
+| -------------------------------------------------------------------- | ----------------- | -------------------------------- |
+| [`MouseTriggerBinding`](/Forge/docs/api/classes/MouseTriggerBinding) | `triggerBindings` | `TriggerAction`                  |
+| [`MouseHoldBinding`](/Forge/docs/api/classes/MouseHoldBinding)       | `holdBindings`    | `HoldAction`                     |
+| [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding)   | `axis1dBindings`  | `Axis1dAction` (scroll wheel)    |
+| [`MouseAxis2dBinding`](/Forge/docs/api/classes/MouseAxis2dBinding)   | `axis2dBindings`  | `Axis2dAction` (cursor position) |
 
 Mouse buttons use [`MouseButton`](/Forge/docs/api/type-aliases/MouseButton)
 values from
@@ -78,7 +78,7 @@ default `(0.5, 0.5)`, the center):
   `±0.5`.
 - [`cursorValueTypes.absolute`](/Forge/docs/api/variables/cursorValueTypes):
   `value` is the cursor's position in pixels, minus `cursorOrigin *
-  containerSize`. With the default origin, this is the pixel offset from the
+containerSize`. With the default origin, this is the pixel offset from the
   container's center, useful for a reticle or look-offset in screen pixels.
 
 ```ts
