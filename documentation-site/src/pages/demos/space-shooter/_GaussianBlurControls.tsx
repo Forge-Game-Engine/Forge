@@ -1,39 +1,31 @@
 import React, { ChangeEvent, FC } from 'react';
-import styles from './_BloomControls.module.css';
+import styles from './_GaussianBlurControls.module.css';
 
-interface BloomControlsProps {
+interface GaussianBlurControlsProps {
   enabled: boolean;
-  threshold: number;
   passes: number;
   intensity: number;
   onEnabledChange: (value: boolean) => void;
-  onThresholdChange: (value: number) => void;
   onPassesChange: (value: number) => void;
   onIntensityChange: (value: number) => void;
 }
 
 /**
- * Toggle and sliders that retune the space-shooter demo's bloom effect
- * live, by writing straight into the running `BloomEcsComponent` (see
- * `_create-game.ts`'s `onBloomReady`) the same way the demo's own blur and
- * camera shake systems retune their components at runtime.
+ * Toggle and sliders that retune the space-shooter demo's background blur
+ * effect live, by writing straight into the running
+ * `GaussianBlurEcsComponent` (see `_create-game.ts`'s `onBlurReady`) the
+ * same way the demo's bloom controls retune `BloomEcsComponent`.
  */
-export const BloomControls: FC<BloomControlsProps> = ({
+export const GaussianBlurControls: FC<GaussianBlurControlsProps> = ({
   enabled,
-  threshold,
   passes,
   intensity,
   onEnabledChange,
-  onThresholdChange,
   onPassesChange,
   onIntensityChange,
 }) => {
   const handleEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
     onEnabledChange(event.target.checked);
-  };
-
-  const handleThresholdChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onThresholdChange(Number(event.target.value));
   };
 
   const handlePassesChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -47,39 +39,23 @@ export const BloomControls: FC<BloomControlsProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.control}>
-        <label htmlFor="bloom-enabled">
-          <span>Bloom</span>
+        <label htmlFor="blur-enabled">
+          <span>Background blur</span>
         </label>
         <input
-          id="bloom-enabled"
+          id="blur-enabled"
           type="checkbox"
           checked={enabled}
           onChange={handleEnabledChange}
         />
       </div>
       <div className={styles.control}>
-        <label htmlFor="bloom-threshold">
-          <span>Bloom threshold</span>
-          <span>{threshold.toFixed(2)}</span>
-        </label>
-        <input
-          id="bloom-threshold"
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={threshold}
-          disabled={!enabled}
-          onChange={handleThresholdChange}
-        />
-      </div>
-      <div className={styles.control}>
-        <label htmlFor="bloom-passes">
-          <span>Bloom passes</span>
+        <label htmlFor="blur-passes">
+          <span>Blur passes</span>
           <span>{passes}</span>
         </label>
         <input
-          id="bloom-passes"
+          id="blur-passes"
           type="range"
           min={0}
           max={10}
@@ -90,16 +66,16 @@ export const BloomControls: FC<BloomControlsProps> = ({
         />
       </div>
       <div className={styles.control}>
-        <label htmlFor="bloom-intensity">
-          <span>Bloom intensity</span>
+        <label htmlFor="blur-intensity">
+          <span>Blur intensity</span>
           <span>{intensity.toFixed(2)}</span>
         </label>
         <input
-          id="bloom-intensity"
+          id="blur-intensity"
           type="range"
           min={0}
-          max={50}
-          step={0.1}
+          max={1}
+          step={0.01}
           value={intensity}
           disabled={!enabled}
           onChange={handleIntensityChange}

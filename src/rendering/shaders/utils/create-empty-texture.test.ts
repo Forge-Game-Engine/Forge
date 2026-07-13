@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createEmptyTexture } from './create-empty-texture';
+import { RENDER_TARGET_FORMAT } from '../../enums/index.js';
 
 describe('createEmptyTexture', () => {
   let gl: WebGL2RenderingContext;
@@ -10,10 +12,12 @@ describe('createEmptyTexture', () => {
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
+      RGBA16F: 'RGBA16F',
+      HALF_FLOAT: 'HALF_FLOAT',
     } as unknown as WebGL2RenderingContext;
   });
 
-  it('should create and configure an empty texture successfully', () => {
+  it('should create and configure an empty texture successfully, defaulting to ldr', () => {
     const texture = {} as WebGLTexture;
     (gl.createTexture as Mock).mockReturnValue(texture);
 
@@ -53,5 +57,21 @@ describe('createEmptyTexture', () => {
       null,
     );
     expect(result).toBe(texture);
+  });
+
+  it('should allocate an RGBA16F/HALF_FLOAT texture when format is hdr', () => {
+    createEmptyTexture(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+
+    expect(gl.texImage2D).toHaveBeenCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA16F,
+      256,
+      128,
+      0,
+      gl.RGBA,
+      gl.HALF_FLOAT,
+      null,
+    );
   });
 });

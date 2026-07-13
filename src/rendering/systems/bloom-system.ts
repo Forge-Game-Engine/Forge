@@ -104,7 +104,7 @@ export const createBloomEcsSystem = (
       existing.dispose(gl);
     }
 
-    const brightTarget = createRenderTarget(gl, width, height);
+    const brightTarget = createRenderTarget(gl, width, height, target.format);
 
     brightTargetByTarget.set(target, brightTarget);
 
@@ -127,7 +127,7 @@ export const createBloomEcsSystem = (
       existing.dispose(gl);
     }
 
-    const pingPong = new PingPongTarget(gl, width, height);
+    const pingPong = new PingPongTarget(gl, width, height, target.format);
 
     pingPongByTarget.set(target, pingPong);
 
@@ -148,7 +148,12 @@ export const createBloomEcsSystem = (
       existing.dispose(gl);
     }
 
-    const compositeTarget = createRenderTarget(gl, target.width, target.height);
+    const compositeTarget = createRenderTarget(
+      gl,
+      target.width,
+      target.height,
+      target.format,
+    );
 
     compositeTargetByTarget.set(target, compositeTarget);
 
@@ -209,6 +214,10 @@ export const createBloomEcsSystem = (
 
       thresholdMaterial.setUniform('u_texture', renderTarget.colorTexture);
       thresholdMaterial.setUniform('u_threshold', bloom.threshold);
+      thresholdMaterial.setUniform(
+        'u_texelSize',
+        new Float32Array([1 / renderTarget.width, 1 / renderTarget.height]),
+      );
 
       drawFullscreenQuad(renderContext, thresholdMaterial);
 

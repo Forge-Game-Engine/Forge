@@ -80,7 +80,12 @@ export const createGaussianBlurEcsSystem = (
       existing.dispose(gl);
     }
 
-    const pingPong = new PingPongTarget(gl, target.width, target.height);
+    const pingPong = new PingPongTarget(
+      gl,
+      target.width,
+      target.height,
+      target.format,
+    );
 
     pingPongByTarget.set(target, pingPong);
 
@@ -101,7 +106,12 @@ export const createGaussianBlurEcsSystem = (
       existing.dispose(gl);
     }
 
-    const snapshot = createRenderTarget(gl, target.width, target.height);
+    const snapshot = createRenderTarget(
+      gl,
+      target.width,
+      target.height,
+      target.format,
+    );
 
     sharpSnapshotByTarget.set(target, snapshot);
 

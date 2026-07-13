@@ -11,6 +11,7 @@ cachable
 commitlint
 dbaeumer
 deadzone
+desaturates
 despawn
 devcontainers
 eamodio
@@ -22,7 +23,9 @@ fract
 frontmatter
 Gamepads
 GLSL
+greyscale
 Heliagon
+highp
 hitscan
 hotspot
 Infima
@@ -40,6 +43,7 @@ Mertens
 mousedown
 mousemove
 mouseup
+Narkowicz
 ndot
 Nisbet
 Oboro
@@ -48,6 +52,7 @@ pingpong
 Pixabay
 quilez
 refac
+reinhard
 Renderable
 renderables
 requizits
@@ -55,6 +60,7 @@ resettables
 respawns
 retuned
 RGBA
+rolloff
 rnaumovs
 skidmark
 slevesque
@@ -68,6 +74,7 @@ stoppables
 texel
 texels
 thresholded
+thresholding
 thumbstick
 unblurred
 undersamples

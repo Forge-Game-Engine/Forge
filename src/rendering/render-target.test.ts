@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderTarget, RenderTarget } from './render-target';
+import { RENDER_TARGET_FORMAT } from './enums/index.js';
 
 describe('RenderTarget', () => {
   let gl: WebGL2RenderingContext;
@@ -29,11 +30,14 @@ describe('RenderTarget', () => {
       getParameter: vi.fn().mockReturnValue(null),
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
+      getExtension: vi.fn().mockReturnValue({}),
       FRAMEBUFFER: 'FRAMEBUFFER',
       FRAMEBUFFER_BINDING: 'FRAMEBUFFER_BINDING',
       FRAMEBUFFER_COMPLETE: 1,
       COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
       TEXTURE_2D: 'TEXTURE_2D',
+      RGBA16F: 'RGBA16F',
+      HALF_FLOAT: 'HALF_FLOAT',
     } as unknown as WebGL2RenderingContext;
   });
 
@@ -74,6 +78,49 @@ describe('RenderTarget', () => {
 
       expect(() => new RenderTarget(gl, 256, 128)).toThrow(
         /Render target framebuffer is incomplete/,
+      );
+    });
+  });
+
+  describe('format', () => {
+    it('defaults to ldr without calling gl.getExtension', () => {
+      const target = new RenderTarget(gl, 256, 128);
+
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
+      expect(gl.getExtension).not.toHaveBeenCalled();
+    });
+
+    it('resolves to hdr when requested and supported', () => {
+      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.hdr);
+      expect(gl.getExtension).toHaveBeenCalledWith('EXT_color_buffer_float');
+    });
+
+    it('falls back to ldr when hdr is requested but unsupported', () => {
+      (gl.getExtension as Mock).mockReturnValue(null);
+
+      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
+    });
+
+    it('preserves the resolved format across resize', () => {
+      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+
+      target.resize(gl, 512, 256);
+
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.hdr);
+      expect(gl.texImage2D).toHaveBeenLastCalledWith(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA16F,
+        512,
+        256,
+        0,
+        gl.RGBA,
+        gl.HALF_FLOAT,
+        null,
       );
     });
   });

@@ -3,6 +3,7 @@ import {
   addBloom,
   addCamera,
   addGaussianBlur,
+  addToneMapping,
   BloomEcsComponent,
   createBloomEcsSystem,
   createCameraEcsSystem,
@@ -10,8 +11,9 @@ import {
   createPresentEcsSystem,
   createRenderEcsSystem,
   createRenderTarget,
+  createToneMapEcsSystem,
   GaussianBlurEcsComponent,
-  gaussianBlurId,
+  RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
@@ -19,7 +21,7 @@ import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
-import { clamp, Random, Vector2 } from '@forge-game-engine/forge/math';
+import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
   createPhysicsEcsSystem,
   PhysicsWorld,
@@ -61,8 +63,14 @@ export const bloomDefaults: BloomEcsComponent = {
   intensity: 1.5,
 };
 
+export const blurDefaults: GaussianBlurEcsComponent = {
+  passes: 4,
+  intensity: 1,
+};
+
 export const createSpaceShooterGame = async (
   onBloomReady?: (bloom: BloomEcsComponent) => void,
+  onBlurReady?: (blur: GaussianBlurEcsComponent) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
@@ -75,10 +83,15 @@ export const createSpaceShooterGame = async (
     renderContext.width,
     renderContext.height,
   );
+  // HDR so the bullet's emissive map (see _create-player.ts) can bloom
+  // based on true brightness rather than an 8-bit white ceiling;
+  // addToneMapping compresses it back to displayable range before the
+  // present pass draws it.
   const foregroundRenderTarget = createRenderTarget(
     renderContext.gl,
     renderContext.width,
     renderContext.height,
+    RENDER_TARGET_FORMAT.hdr,
   );
 
   // The background sits on its own static camera so it doesn't shake along
@@ -93,25 +106,25 @@ export const createSpaceShooterGame = async (
     renderTarget: foregroundRenderTarget,
   });
 
-  addGaussianBlur(world, backgroundCameraEntity, { passes: 4, intensity: 1 });
+  // The component is handed back to the caller (see the sliders on this
+  // demo's page) so it can be retuned live.
+  const blurComponent = addGaussianBlur(
+    world,
+    backgroundCameraEntity,
+    blurDefaults,
+  );
+
+  onBlurReady?.(blurComponent);
 
   // Bullets and explosion flashes are the brightest things in the
   // foreground, so a bloom glow makes them read as glowing/energetic
   // instead of flat sprites. The component is handed back to the caller
-  // (see the sliders on this demo's page) so it can be retuned live, the
-  // same way the blur intensity below is retuned every tick.
+  // (see the sliders on this demo's page) so it can be retuned live.
   const bloomComponent = addBloom(world, foregroundCameraEntity, bloomDefaults);
 
   onBloomReady?.(bloomComponent);
 
-  world.addSystem<[GaussianBlurEcsComponent]>({
-    query: [gaussianBlurId],
-    run: ({ components }) => {
-      const [blurComponent] = components;
-
-      blurComponent.intensity = clamp(Math.sin(time.timeInSeconds * 4), 0.5, 1);
-    },
-  });
+  addToneMapping(world, foregroundCameraEntity);
 
   world.addComponent(foregroundCameraEntity, cameraShakeId, {
     intensity: 0,
@@ -211,6 +224,7 @@ export const createSpaceShooterGame = async (
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));
+  world.addSystem(createToneMapEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createMovementEcsSystem(moveInput, time));
   world.addSystem(createBackgroundEcsSystem(time));

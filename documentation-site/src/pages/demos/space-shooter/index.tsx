@@ -1,7 +1,15 @@
 import React, { JSX, useCallback, useRef, useState } from 'react';
-import { BloomEcsComponent } from '@forge-game-engine/forge/rendering';
-import { bloomDefaults, createSpaceShooterGame } from './_create-game';
+import {
+  BloomEcsComponent,
+  GaussianBlurEcsComponent,
+} from '@forge-game-engine/forge/rendering';
+import {
+  bloomDefaults,
+  blurDefaults,
+  createSpaceShooterGame,
+} from './_create-game';
 import { BloomControls } from './_BloomControls';
+import { GaussianBlurControls } from './_GaussianBlurControls';
 import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
@@ -39,11 +47,21 @@ export default function Rendering(): JSX.Element {
   const [intensity, setIntensity] = useState(bloomDefaults.intensity);
   const [bloomEnabled, setBloomEnabled] = useState(true);
 
+  const blurRef = useRef<GaussianBlurEcsComponent | null>(null);
+  const [blurPasses, setBlurPasses] = useState(blurDefaults.passes);
+  const [blurIntensity, setBlurIntensity] = useState(blurDefaults.intensity);
+  const [blurEnabled, setBlurEnabled] = useState(true);
+
   const createGame = useCallback(
     () =>
-      createSpaceShooterGame((bloom) => {
-        bloomRef.current = bloom;
-      }),
+      createSpaceShooterGame(
+        (bloom) => {
+          bloomRef.current = bloom;
+        },
+        (blur) => {
+          blurRef.current = blur;
+        },
+      ),
     [],
   );
 
@@ -79,6 +97,34 @@ export default function Rendering(): JSX.Element {
       // `BloomEcsComponent.intensity`), so toggling just drives it to/from
       // zero rather than needing an enabled flag on the component itself.
       bloomRef.current.intensity = enabled ? intensity : 0;
+    }
+  };
+
+  const handleBlurPassesChange = (value: number) => {
+    setBlurPasses(value);
+
+    if (blurRef.current) {
+      blurRef.current.passes = value;
+    }
+  };
+
+  const handleBlurIntensityChange = (value: number) => {
+    setBlurIntensity(value);
+
+    if (blurRef.current) {
+      blurRef.current.intensity = value;
+    }
+  };
+
+  const handleBlurEnabledChange = (enabled: boolean) => {
+    setBlurEnabled(enabled);
+
+    if (blurRef.current) {
+      // Zero intensity is the blur's own "off" switch (see
+      // `GaussianBlurEcsComponent.intensity`), so toggling just drives it
+      // to/from zero rather than needing an enabled flag on the component
+      // itself.
+      blurRef.current.intensity = enabled ? blurIntensity : 0;
     }
   };
 
@@ -223,6 +269,15 @@ export default function Rendering(): JSX.Element {
             onThresholdChange={handleThresholdChange}
             onPassesChange={handlePassesChange}
             onIntensityChange={handleIntensityChange}
+          />
+
+          <GaussianBlurControls
+            enabled={blurEnabled}
+            passes={blurPasses}
+            intensity={blurIntensity}
+            onEnabledChange={handleBlurEnabledChange}
+            onPassesChange={handleBlurPassesChange}
+            onIntensityChange={handleBlurIntensityChange}
           />
         </>
       }

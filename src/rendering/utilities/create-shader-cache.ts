@@ -25,6 +25,7 @@ import {
   ShaderCache,
   spriteFragmentShader,
   spriteVertexShader,
+  toneMappingFragmentShader,
 } from '../shaders/index.js';
 
 /**
@@ -69,7 +70,8 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))
     .addShader(new ForgeShaderSource(crossFadeFragmentShader))
     .addShader(new ForgeShaderSource(bloomThresholdFragmentShader))
-    .addShader(new ForgeShaderSource(bloomCompositeFragmentShader));
+    .addShader(new ForgeShaderSource(bloomCompositeFragmentShader))
+    .addShader(new ForgeShaderSource(toneMappingFragmentShader));
 
   return shaderCache;
 }

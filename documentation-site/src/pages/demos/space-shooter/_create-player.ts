@@ -1,6 +1,7 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
@@ -42,12 +43,30 @@ export async function loadPlayerSprites(
     renderLayer,
   );
 
+  // bullet-yellow.png is a solid, opaque comet shape (its own alpha
+  // channel no longer fades to near-zero across the visible glow, which
+  // would otherwise get crushed by normal alpha blending regardless of how
+  // bright its color is). bullet_emission.png is a plain greyscale mask of
+  // that same shape - color comes from `color` below, not the texture -
+  // so createBloomEcsSystem's blur turns it into a soft, evenly-colored
+  // glow, and raising BloomEcsComponent.threshold cleanly isolates the
+  // bullets from every other (non-emissive) sprite in the scene (see the
+  // "Emissive-driven bloom" and "Authoring an emissive map" sections of
+  // the Bloom docs).
+  const bulletImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/bullet-yellow.png'),
+  );
+
+  const bulletEmission = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/bullet_emission.png'),
+  );
+
   const bulletSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(
-      getAssetUrl('img/space-shooter/bullet-yellow.png'),
-    ),
+    bulletImage,
     renderContext,
     renderLayer,
+    undefined,
+    { image: bulletEmission, color: new Color(1, 0.65, 0.15), intensity: 2 },
   );
 
   return { playerSprite, bulletSprite };
@@ -99,7 +118,7 @@ export function spawnPlayer(
   });
 
   world.addComponent(playerEntity, gunId, {
-    timeBetweenShots: 0.2,
+    timeBetweenShots: 0.1,
     bulletSprite: bulletSprite,
     renderLayer: renderLayer,
     nextAllowedShotTime: 0,

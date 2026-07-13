@@ -22,3 +22,7 @@ Guides in this section:
   post-processing effect built on top of multipass rendering.
 - [Bloom](./bloom.md): an additive glow post-processing effect built on the
   same separable blur technique.
+- [HDR Rendering & Tone Mapping](./hdr-rendering.md): opting a camera's
+  render target into HDR storage and compressing it back to displayable
+  range, so bloom can react to true HDR brightness (including emissive
+  maps) instead of an 8-bit ceiling.

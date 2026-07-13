@@ -1,4 +1,11 @@
-import { createEmptyTexture } from './shaders/index.js';
+import {
+  RENDER_TARGET_FORMAT,
+  RENDER_TARGET_FORMAT_KEYS,
+} from './enums/index.js';
+import {
+  createEmptyTexture,
+  resolveRenderTargetFormat,
+} from './shaders/index.js';
 
 /**
  * An off-screen render destination: a framebuffer with a single color
@@ -11,6 +18,12 @@ export class RenderTarget {
    * The framebuffer this target renders into.
    */
   public readonly framebuffer: WebGLFramebuffer;
+
+  /**
+   * The color texture's storage format, resolved once at construction. See
+   * `RENDER_TARGET_FORMAT`.
+   */
+  public readonly format: RENDER_TARGET_FORMAT_KEYS;
 
   /**
    * The color texture attached to the framebuffer, readable by later passes.
@@ -32,13 +45,23 @@ export class RenderTarget {
    * @param gl - The WebGL2 rendering context.
    * @param width - The render target width in pixels.
    * @param height - The render target height in pixels.
+   * @param format - The requested color storage format. Defaults to
+   * `RENDER_TARGET_FORMAT.ldr`. `RENDER_TARGET_FORMAT.hdr` falls back to
+   * `ldr` if the context lacks `EXT_color_buffer_float` (see
+   * `resolveRenderTargetFormat`).
    * @throws An error if the framebuffer is not complete after attaching the color texture.
    */
-  constructor(gl: WebGL2RenderingContext, width: number, height: number) {
+  constructor(
+    gl: WebGL2RenderingContext,
+    width: number,
+    height: number,
+    format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
+  ) {
     this.width = width;
     this.height = height;
+    this.format = resolveRenderTargetFormat(gl, format);
     this.framebuffer = gl.createFramebuffer();
-    this.colorTexture = createEmptyTexture(gl, width, height);
+    this.colorTexture = createEmptyTexture(gl, width, height, this.format);
 
     this._attachColorTexture(gl);
   }
@@ -63,7 +86,7 @@ export class RenderTarget {
 
     this.width = width;
     this.height = height;
-    this.colorTexture = createEmptyTexture(gl, width, height);
+    this.colorTexture = createEmptyTexture(gl, width, height, this.format);
 
     this._attachColorTexture(gl);
   }
@@ -106,12 +129,15 @@ export class RenderTarget {
  * @param gl - The WebGL2 rendering context.
  * @param width - The render target width in pixels.
  * @param height - The render target height in pixels.
+ * @param format - The requested color storage format. Defaults to
+ * `RENDER_TARGET_FORMAT.ldr`.
  * @returns The created render target.
  */
 export function createRenderTarget(
   gl: WebGL2RenderingContext,
   width: number,
   height: number,
+  format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
 ): RenderTarget {
-  return new RenderTarget(gl, width, height);
+  return new RenderTarget(gl, width, height, format);
 }

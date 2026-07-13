@@ -146,16 +146,20 @@ three knobs:
 addBloom(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
 ```
 
-:::caution
-Forge's [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) uses an
-8-bit-per-channel color texture, not a floating-point (HDR) one, so scene
-colors are clamped to `[0, 1]` before bloom ever sees them. This means
-`threshold` is comparing against already-clamped brightness: there's no way
-to make one white sprite bloom more than another equally white sprite by
-giving it a brighter-than-white color, the way HDR bloom pipelines do.
-Within that constraint, `threshold` and `intensity` are still enough to make
-specific bright elements (lasers, explosions, magic effects) pop against a
-duller background.
+:::tip
+By default, [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) uses an
+8-bit-per-channel color texture, so scene colors are clamped to `[0, 1]`
+before bloom ever sees them: `threshold` is comparing against already-clamped
+brightness, and there's no way to make one white sprite bloom more than
+another equally white sprite by giving it a brighter-than-white color.
+`threshold` and `intensity` are still enough to make specific bright
+elements (lasers, explosions, magic effects) pop against a duller
+background within that constraint — but if you want a sprite to bloom
+based on true HDR brightness (for example an emissive map on an otherwise
+unlit surface, see [Emissive-driven bloom](#emissive-driven-bloom) below),
+give the camera's render target `RENDER_TARGET_FORMAT.hdr` instead and pair
+it with `addToneMapping`. See [HDR Rendering &
+Tone Mapping](./hdr-rendering.md).
 :::
 
 ## Performance note
@@ -177,4 +181,105 @@ pair for the blur, and one full-resolution buffer for the composite pass's
 output (it can't write directly into the camera's `renderTarget`, since
 that's also the texture it's reading the unblurred scene from). All three
 are resized (or recreated) automatically if the render target's dimensions
-change, and disposed automatically when the world stops.
+change, and disposed automatically when the world stops. Each of these
+scratch buffers inherits the source render target's format, so bloom on an
+`hdr` camera stays HDR end-to-end without any extra configuration — see
+[HDR Rendering & Tone Mapping](./hdr-rendering.md).
+
+## Emissive-driven bloom
+
+`createImageSprite` accepts an optional emissive map: a texture added on top
+of the sprite's tinted albedo, unaffected by lighting or tint. Passing an
+`intensity` above `1` pushes a pixel's brightness above the LDR ceiling,
+so on an `hdr`-format camera it blooms convincingly even where the sprite's
+own albedo isn't pure white — a neon sign's tube can stay a dim, believable
+color while still glowing brighter than the scene around it:
+
+```ts
+import {
+  addBloom,
+  addCamera,
+  addToneMapping,
+  createBloomEcsSystem,
+  createImageSprite,
+  createPresentEcsSystem,
+  createRenderEcsSystem,
+  createRenderTarget,
+  createToneMapEcsSystem,
+  RENDER_TARGET_FORMAT,
+} from '@forge-game-engine/forge/rendering';
+
+const sceneTarget = createRenderTarget(
+  renderContext.gl,
+  renderContext.width,
+  renderContext.height,
+  RENDER_TARGET_FORMAT.hdr,
+);
+
+const camera = addCamera(world, { renderTarget: sceneTarget });
+
+addBloom(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
+addToneMapping(world, camera);
+
+const neonSign = createImageSprite(
+  neonSignImage,
+  renderContext,
+  0,
+  undefined,
+  { image: neonSignEmissiveMap, intensity: 4 },
+);
+
+world.addSystem(createRenderEcsSystem(renderContext));
+world.addSystem(createBloomEcsSystem(renderContext));
+world.addSystem(createToneMapEcsSystem(renderContext));
+world.addSystem(createPresentEcsSystem(renderContext));
+```
+
+Without the emissive map, `threshold` is the only way to make part of a
+sprite glow more than the rest, and it can't distinguish "this part is
+meant to be a light source" from "this part happens to be pale" — both
+read as the same brightness once clamped to `[0, 1]`. The emissive map
+sidesteps that: its contribution is added *after* the albedo sample, so it
+can push specific pixels arbitrarily bright regardless of the sprite's own
+tint or texture color, without lightening the rest of the sprite. See [HDR
+Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render
+target and `addToneMapping` work together to make this look right once
+presented.
+
+### Authoring an emissive map
+
+An emissive map's color is added on top of the tinted albedo; its own
+**alpha channel is ignored**. This matches every mainstream engine's
+emissive model (glTF, Unity, Unreal, three.js all treat emissive as an
+RGB-only additive term): a sprite's opacity comes entirely from its base
+texture's alpha, and emissive can't make an otherwise-transparent pixel
+show up. If part of your emissive map sits over a region where the base
+texture's alpha is near zero, that region will still render as nearly
+invisible, no matter how bright the emissive color is there.
+
+This trips people up coming from older, pre-bloom 2D techniques, where a
+sprite's own soft glow was faked by painting a **low-alpha color gradient**
+into the sprite and letting normal alpha blending fade it into the
+background. That approach actively fights this pipeline: alpha blending
+scales a pixel's contribution by its alpha regardless of how vivid the
+color stored there is, so a wide, softly-fading, low-alpha "glow" gets
+crushed to near-nothing, while only the fully-opaque core still reads
+clearly.
+
+The fix is to stop faking the soft falloff in the source art entirely and
+let bloom's blur produce it instead:
+
+- Author both the base texture and the emissive map with **solid,
+  reasonably opaque edges** matching the shape you actually want visible
+  (a bullet's core and tail, say) — not a gradient fading to near-zero
+  alpha.
+- Pick a **moderate** `intensity` (roughly `1`–`3` for a subtle glow); very
+  high values (`5`+) push almost every colored pixel toward the same
+  blown-out white once [tone mapping](./hdr-rendering.md) compresses it
+  back down, which reads as "glowing white" rather than "glowing amber" or
+  whatever hue you intended.
+- Let `passes` (and, for an HDR camera, `RENDER_TARGET_FORMAT.hdr` +
+  `addToneMapping`) do the work of spreading that opaque shape into a soft
+  halo — that's what the blur passes are for, and unlike a hand-painted
+  gradient it composites correctly in HDR and tone-maps smoothly at the
+  edges instead of banding.

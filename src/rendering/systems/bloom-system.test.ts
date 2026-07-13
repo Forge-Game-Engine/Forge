@@ -12,6 +12,7 @@ import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
 import { addBloom } from '../utilities';
+import { RENDER_TARGET_FORMAT } from '../enums/index.js';
 import {
   bloomCompositeFragmentShader,
   bloomThresholdFragmentShader,
@@ -104,6 +105,8 @@ describe('createBloomEcsSystem', () => {
       COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       BLEND: 'BLEND',
+      RGBA16F: 'RGBA16F',
+      HALF_FLOAT: 'HALF_FLOAT',
 
       disable: vi.fn(),
       createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
@@ -115,6 +118,7 @@ describe('createBloomEcsSystem', () => {
       framebufferTexture2D: vi.fn(),
       checkFramebufferStatus: vi.fn().mockReturnValue(1),
       getParameter: vi.fn().mockReturnValue(null),
+      getExtension: vi.fn().mockReturnValue({}),
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
 
@@ -341,7 +345,7 @@ describe('createBloomEcsSystem', () => {
     );
   });
 
-  it('keeps the texel size at a single downsampled texel regardless of pass count', () => {
+  it('passes the full-resolution texel size to the threshold pass', () => {
     const target = new RenderTarget(mockGl, 256, 128);
 
     addBloomedCameraEntity(target, { passes: 3 });
@@ -352,12 +356,35 @@ describe('createBloomEcsSystem', () => {
       ([location]) => location === texelSizeLocation,
     );
 
-    expect(texelSizeCalls).toHaveLength(6);
+    // The threshold pass samples a 4x4 block of the full-resolution source
+    // per downsampled destination texel (see bloom-threshold.frag.glsl), so
+    // it needs the full-resolution texel size, not the downsampled one the
+    // blur passes use.
+    expect(Array.from(texelSizeCalls[0][1] as Float32Array)).toEqual([
+      1 / 256,
+      1 / 128,
+    ]);
+  });
+
+  it('keeps the blur texel size at a single downsampled texel regardless of pass count', () => {
+    const target = new RenderTarget(mockGl, 256, 128);
+
+    addBloomedCameraEntity(target, { passes: 3 });
+
+    world.update();
+
+    // First call is the threshold pass's full-resolution texel size (see
+    // the test above); the remaining calls are the blur passes'.
+    const [, ...blurTexelSizeCalls] = (
+      mockGl.uniform2fv as Mock
+    ).mock.calls.filter(([location]) => location === texelSizeLocation);
+
+    expect(blurTexelSizeCalls).toHaveLength(6);
 
     // The blur chain runs at a quarter of the render target's resolution
     // (see `bloomDownsampleFactor`), so a texel here is 4 render-target
     // pixels wide, not 1.
-    for (const [, value] of texelSizeCalls) {
+    for (const [, value] of blurTexelSizeCalls) {
       expect(Array.from(value as Float32Array)).toEqual([1 / 64, 1 / 32]);
     }
   });
@@ -404,6 +431,51 @@ describe('createBloomEcsSystem', () => {
     world.update();
 
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
+  });
+
+  describe('format', () => {
+    it('allocates its scratch buffers as ldr for an ldr camera render target', () => {
+      const target = new RenderTarget(mockGl, 256, 256);
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+
+      expect(mockGl.texImage2D).not.toHaveBeenCalledWith(
+        mockGl.TEXTURE_2D,
+        0,
+        mockGl.RGBA16F,
+        expect.anything(),
+        expect.anything(),
+        0,
+        mockGl.RGBA,
+        mockGl.HALF_FLOAT,
+        null,
+      );
+    });
+
+    it('allocates its scratch buffers as hdr when the camera render target is hdr', () => {
+      const target = new RenderTarget(
+        mockGl,
+        256,
+        256,
+        RENDER_TARGET_FORMAT.hdr,
+      );
+
+      (mockGl.texImage2D as Mock).mockClear();
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+
+      // brightTarget (1) + ping-pong (2) + compositeTarget (1) all inherit
+      // the source render target's hdr format.
+      const hdrTexImageCalls = (mockGl.texImage2D as Mock).mock.calls.filter(
+        ([, , internalFormat]) => internalFormat === mockGl.RGBA16F,
+      );
+
+      expect(hdrTexImageCalls).toHaveLength(4);
+    });
   });
 
   describe('cleanupEntities', () => {
