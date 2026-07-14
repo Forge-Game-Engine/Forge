@@ -94,8 +94,7 @@ export class EcsWorld implements Updatable, Stoppable {
     componentKey: ComponentKey<T>,
   ): T | null {
     const componentSet = this._componentSets.get(componentKey) as
-      | SparseSet<T>
-      | undefined;
+      SparseSet<T> | undefined;
 
     return componentSet?.get(entity) ?? null;
   }
