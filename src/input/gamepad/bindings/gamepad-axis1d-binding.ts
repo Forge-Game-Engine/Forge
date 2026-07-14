@@ -18,8 +18,7 @@ export interface GamepadButtonsAxis1dBindingArgs {
 
 /** Arguments for constructing a GamepadAxis1dBinding. */
 export type GamepadAxis1dBindingArgs =
-  | GamepadStickAxis1dBindingArgs
-  | GamepadButtonsAxis1dBindingArgs;
+  GamepadStickAxis1dBindingArgs | GamepadButtonsAxis1dBindingArgs;
 
 /** Gamepad axis-1d input binding, driven by either an analog stick or a pair of buttons. */
 export class GamepadAxis1dBinding implements InputBinding<Axis1dAction> {
