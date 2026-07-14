@@ -123,7 +123,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@types/howler": "^2.2.12",
     "@types/seedrandom": "^3.0.8",
