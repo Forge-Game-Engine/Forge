@@ -14,11 +14,7 @@ type AnimationConditionNumberComparator =
  * Comparator types for text animation conditions.
  */
 type AnimationConditionTextComparator =
-  | 'equals'
-  | 'contains'
-  | 'isContainedIn'
-  | 'startsWith'
-  | 'endsWith';
+  'equals' | 'contains' | 'isContainedIn' | 'startsWith' | 'endsWith';
 
 /**
  * Union type representing all possible animation conditions.
