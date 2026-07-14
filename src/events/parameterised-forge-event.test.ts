@@ -15,7 +15,7 @@ describe('When creating an event', () => {
 
   describe('and doing nothing else', () => {
     test('it should have no listeners by default', () => {
-      expect(event.listeners.length).toBe(0);
+      expect(event.listeners).toHaveLength(0);
     });
   });
 
@@ -23,7 +23,7 @@ describe('When creating an event', () => {
     test('it should have one listener', () => {
       event.registerListener(listener);
 
-      expect(event.listeners.length).toBe(1);
+      expect(event.listeners).toHaveLength(1);
     });
 
     describe('and raising an event', () => {
@@ -41,7 +41,7 @@ describe('When creating an event', () => {
         event.registerListener(listener);
         event.deregisterListener(listener);
 
-        expect(event.listeners.length).toBe(0);
+        expect(event.listeners).toHaveLength(0);
       });
     });
   });

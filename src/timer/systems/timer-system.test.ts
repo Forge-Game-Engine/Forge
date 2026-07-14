@@ -23,7 +23,7 @@ describe('TimerSystem', () => {
     time.update(16);
     world.update();
 
-    expect(timerComponent.tasks.length).toBe(0);
+    expect(timerComponent.tasks).toHaveLength(0);
   });
 
   it('should execute one-shot timer after delay', () => {
@@ -38,13 +38,13 @@ describe('TimerSystem', () => {
     time.update(50);
     world.update();
     expect(callback).not.toHaveBeenCalled();
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
 
     // After delay
     time.update(100);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(0);
+    expect(timerComponent.tasks).toHaveLength(0);
   });
 
   it('should track elapsed time correctly', () => {
@@ -79,7 +79,7 @@ describe('TimerSystem', () => {
     time.update(60);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
     expect(timerComponent.tasks[0].elapsed).toBe(0);
     expect(timerComponent.tasks[0].runsSoFar).toBe(1);
 
@@ -87,7 +87,7 @@ describe('TimerSystem', () => {
     time.update(110);
     world.update();
     expect(callback).toHaveBeenCalledTimes(2);
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
     expect(timerComponent.tasks[0].runsSoFar).toBe(2);
   });
 
@@ -130,19 +130,19 @@ describe('TimerSystem', () => {
     time.update(60);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
 
     // Run 2
     time.update(110);
     world.update();
     expect(callback).toHaveBeenCalledTimes(2);
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
 
     // Run 3 (final run)
     time.update(160);
     world.update();
     expect(callback).toHaveBeenCalledTimes(3);
-    expect(timerComponent.tasks.length).toBe(0); // Task removed
+    expect(timerComponent.tasks).toHaveLength(0); // Task removed
   });
 
   it('should handle multiple tasks on same entity', () => {
@@ -174,20 +174,20 @@ describe('TimerSystem', () => {
     expect(callback1).toHaveBeenCalledTimes(1);
     expect(callback2).not.toHaveBeenCalled();
     expect(callback3).not.toHaveBeenCalled();
-    expect(timerComponent.tasks.length).toBe(2);
+    expect(timerComponent.tasks).toHaveLength(2);
 
     // Execute second task
     time.update(120);
     world.update();
     expect(callback2).toHaveBeenCalledTimes(1);
     expect(callback3).not.toHaveBeenCalled();
-    expect(timerComponent.tasks.length).toBe(1);
+    expect(timerComponent.tasks).toHaveLength(1);
 
     // Execute third task
     time.update(180);
     world.update();
     expect(callback3).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(0);
+    expect(timerComponent.tasks).toHaveLength(0);
   });
 
   it('should handle task execution when elapsed equals delay exactly', () => {
@@ -201,7 +201,7 @@ describe('TimerSystem', () => {
     time.update(100);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(0);
+    expect(timerComponent.tasks).toHaveLength(0);
   });
 
   it('should accumulate elapsed time over multiple frames', () => {
@@ -228,7 +228,7 @@ describe('TimerSystem', () => {
     time.update(101);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(timerComponent.tasks.length).toBe(0);
+    expect(timerComponent.tasks).toHaveLength(0);
   });
 
   it('should handle repeating timer without maxRuns indefinitely', () => {
@@ -249,7 +249,7 @@ describe('TimerSystem', () => {
     }
 
     expect(callback).toHaveBeenCalledTimes(10);
-    expect(timerComponent.tasks.length).toBe(1); // Still has the task
+    expect(timerComponent.tasks).toHaveLength(1); // Still has the task
   });
 
   it('should properly reset elapsed time for repeating tasks', () => {

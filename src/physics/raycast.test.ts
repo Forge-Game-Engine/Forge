@@ -75,7 +75,7 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     const body = createRect(0, 0, 2, 2);
     const edges = Ray.bodyEdges(body);
     // Rectangle has 4 edges
-    expect(edges.length).toBe(4);
+    expect(edges).toHaveLength(4);
   });
 
   it('throws when computing edges for a circle body', () => {
@@ -89,7 +89,7 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     const ray = new Ray(new Vector2(-2, 0), new Vector2(2, 0));
     const collisions = Ray.bodyCollisions(ray, body);
     // Should hit two edges (left and right)
-    expect(collisions.length).toBe(2);
+    expect(collisions).toHaveLength(2);
 
     for (const c of collisions) {
       expect(c.point.y).toBeCloseTo(0);
@@ -102,7 +102,7 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     const ray = new Ray(new Vector2(-2, 0), new Vector2(2, 0));
     const collisions = Ray.bodyCollisions(ray, body);
 
-    expect(collisions.length).toBe(2);
+    expect(collisions).toHaveLength(2);
 
     const sorted = [...collisions].sort((a, b) => a.point.x - b.point.x);
 
@@ -124,7 +124,7 @@ describe('Ray.bodyEdges and bodyCollisions', () => {
     const ray = new Ray(new Vector2(-2, 3), new Vector2(2, 3));
     const collisions = Ray.bodyCollisions(ray, body);
 
-    expect(collisions.length).toBe(0);
+    expect(collisions).toHaveLength(0);
   });
 });
 
@@ -134,7 +134,7 @@ describe('raycast', () => {
     const start = new Vector2(-3, 0);
     const end = new Vector2(3, 0);
     const collisions = raycast([body], start, end, true);
-    expect(collisions.length).toBe(2);
+    expect(collisions).toHaveLength(2);
     expect(collisions[0].point.x).toBeLessThan(collisions[1].point.x);
   });
 
@@ -143,7 +143,7 @@ describe('raycast', () => {
     const start = new Vector2(0, 3);
     const end = new Vector2(2, 3);
     const collisions = raycast([body], start, end);
-    expect(collisions.length).toBe(0);
+    expect(collisions).toHaveLength(0);
   });
 
   it('returns correct collision data', () => {
@@ -151,7 +151,7 @@ describe('raycast', () => {
     const start = new Vector2(-2, 0);
     const end = new Vector2(2, 0);
     const collisions = raycast([body], start, end);
-    expect(collisions.length).toBe(2);
+    expect(collisions).toHaveLength(2);
 
     for (const c of collisions) {
       expect(c.body).toBe(body);
@@ -166,7 +166,7 @@ describe('raycast', () => {
     const end = new Vector2(2, 0);
     const collisions = raycast([body], start, end);
 
-    expect(collisions.length).toBe(2);
+    expect(collisions).toHaveLength(2);
     expect(collisions[0].point.x).toBeLessThan(collisions[1].point.x);
 
     for (const c of collisions) {

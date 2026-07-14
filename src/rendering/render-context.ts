@@ -118,7 +118,6 @@ export class RenderContext {
     this._globalUniformValues.set(name, value);
   }
 
-  // eslint-disable-next-line sonarjs/function-return-type
   public getGlobalUniformValue(name: string): UniformValue {
     if (!this._globalUniformValues.has(name)) {
       throw new Error(`Global uniform value not found: ${name}`);

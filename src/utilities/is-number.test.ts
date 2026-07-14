@@ -34,15 +34,15 @@ describe('isNumber', () => {
   });
 
   it('narrows type when used as a type guard', () => {
-    const unknownValue: unknown = 42;
+    const values: unknown[] = [42];
+    const [unknownValue] = values;
 
     if (isNumber(unknownValue)) {
       // inside this block TypeScript should treat unknownValue as number
       const doubled = unknownValue * 2;
       expect(doubled).toBe(84);
     } else {
-      // not expected for this test
-      expect(true).toBe(false);
+      throw new Error('expected isNumber to narrow unknownValue to number');
     }
   });
 });

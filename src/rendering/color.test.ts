@@ -24,7 +24,7 @@ describe('Color', () => {
 
     expect(color.toRGBAString()).toBe('rgba(0, 85, 255, 1)');
     expect(color.r).toBe(0);
-    expect(color.g).toBe(0.3333333333333328);
+    expect(color.g).toBeCloseTo(0.3333333333333328);
     expect(color.b).toBe(1);
   });
 

@@ -32,8 +32,8 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
       .join('\n');
 
     // Remove consecutive empty lines
-    // eslint-disable-next-line sonarjs/slow-regex
-    return processedLines.replaceAll(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
+
+    return processedLines.replaceAll(/^[ \t]*$(?:\r\n?|\n){2,}/gm, '\n');
   }
 
   private _processLine(

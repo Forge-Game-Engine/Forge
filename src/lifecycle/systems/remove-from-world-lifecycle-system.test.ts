@@ -37,7 +37,7 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     );
 
     // Assert
-    expect(entitiesMatchingQuery.length).toBe(1);
+    expect(entitiesMatchingQuery).toHaveLength(1);
   });
 
   it('should remove entity when hasExpired is true', () => {
@@ -62,7 +62,7 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     );
 
     // Assert
-    expect(entitiesMatchingQuery.length).toBe(0);
+    expect(entitiesMatchingQuery).toHaveLength(0);
   });
 
   it('should only process entities with both LifetimeComponent and RemoveFromWorldStrategyComponent', () => {
@@ -91,6 +91,6 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     );
 
     // Assert
-    expect(entitiesMatchingQuery.length).toBe(1);
+    expect(entitiesMatchingQuery).toHaveLength(1);
   });
 });

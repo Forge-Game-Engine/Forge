@@ -3,28 +3,38 @@ import { createProjectionMatrix } from './create-projection-matrix';
 import { Matrix3x3, Vector2 } from '../../../math';
 
 describe('createProjectionMatrix', () => {
-  it('should create a correct projection matrix for given width and height', () => {
-    const width = 800;
-    const height = 600;
-    const cameraPosition = new Vector2(0, 0);
-    const zoom = 1;
+  it.each([
+    { description: 'given width and height', width: 800, height: 600 },
+    { description: 'a very small area', width: 1, height: 1 },
+    { description: 'a very large area', width: 10000, height: 10000 },
+  ])(
+    'should create a correct projection matrix for $description',
+    ({ width, height }) => {
+      const cameraPosition = new Vector2(0, 0);
+      const zoom = 1;
 
-    const expectedMatrix = new Matrix3x3([
-      2 / width,
-      0,
-      0,
-      -0,
-      -2 / height,
-      0,
-      0,
-      0,
-      1,
-    ]);
+      const expectedMatrix = new Matrix3x3([
+        2 / width,
+        0,
+        0,
+        -0,
+        -2 / height,
+        0,
+        0,
+        0,
+        1,
+      ]);
 
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
+      const result = createProjectionMatrix(
+        width,
+        height,
+        cameraPosition,
+        zoom,
+      );
 
-    expect(result).toEqual(expectedMatrix);
-  });
+      expect(result).toEqual(expectedMatrix);
+    },
+  );
 
   it('should create a correct projection matrix for a square area', () => {
     const size = 500;
@@ -43,50 +53,6 @@ describe('createProjectionMatrix', () => {
     ]);
 
     const result = createProjectionMatrix(size, size, cameraPosition, zoom);
-
-    expect(result).toEqual(expectedMatrix);
-  });
-
-  it('should create a correct projection matrix for a very small area', () => {
-    const width = 1;
-    const height = 1;
-    const cameraPosition = new Vector2(0, 0);
-    const zoom = 1;
-    const expectedMatrix = new Matrix3x3([
-      2 / width,
-      0,
-      0,
-      -0,
-      -2 / height,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
-
-    expect(result).toEqual(expectedMatrix);
-  });
-
-  it('should create a correct projection matrix for a very large area', () => {
-    const width = 10000;
-    const height = 10000;
-    const cameraPosition = new Vector2(0, 0);
-    const zoom = 1;
-    const expectedMatrix = new Matrix3x3([
-      2 / width,
-      0,
-      0,
-      -0,
-      -2 / height,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
 
     expect(result).toEqual(expectedMatrix);
   });

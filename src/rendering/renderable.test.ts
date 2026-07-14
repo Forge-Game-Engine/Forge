@@ -239,50 +239,23 @@ describe('Renderable', () => {
   });
 
   describe('properties immutability', () => {
-    it('should have readonly geometry property', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
+    it.each<keyof Renderable>(['geometry', 'material', 'floatsPerInstance'])(
+      'should have readonly %s property',
+      (propertyName) => {
+        const renderable = new Renderable(
+          mockGeometry,
+          mockMaterial,
+          10,
+          0,
+          mockBindInstanceData,
+          mockSetupInstanceAttributes,
+        );
 
-      // TypeScript will prevent this at compile time, but we can verify the property exists
-      expect(
-        Object.getOwnPropertyDescriptor(renderable, 'geometry'),
-      ).toBeDefined();
-    });
-
-    it('should have readonly material property', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(
-        Object.getOwnPropertyDescriptor(renderable, 'material'),
-      ).toBeDefined();
-    });
-
-    it('should have readonly floatsPerInstance property', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(
-        Object.getOwnPropertyDescriptor(renderable, 'floatsPerInstance'),
-      ).toBeDefined();
-    });
+        // TypeScript will prevent this at compile time, but we can verify the property exists
+        expect(
+          Object.getOwnPropertyDescriptor(renderable, propertyName),
+        ).toBeDefined();
+      },
+    );
   });
 });
