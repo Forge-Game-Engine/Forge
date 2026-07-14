@@ -9,7 +9,7 @@ describe('RenderTarget', () => {
   let textures: WebGLTexture[];
 
   beforeEach(() => {
-    framebuffer = {} as WebGLFramebuffer;
+    framebuffer = {};
     textures = [];
 
     gl = {
@@ -165,8 +165,8 @@ describe('RenderTarget', () => {
 describe('createRenderTarget', () => {
   it('should create a RenderTarget instance', () => {
     const gl = {
-      createFramebuffer: vi.fn().mockReturnValue({} as WebGLFramebuffer),
-      createTexture: vi.fn().mockReturnValue({} as WebGLTexture),
+      createFramebuffer: vi.fn().mockReturnValue({}),
+      createTexture: vi.fn().mockReturnValue({}),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),

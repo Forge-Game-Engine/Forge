@@ -19,7 +19,7 @@ describe('Renderable', () => {
     } as unknown as Geometry;
 
     // Create mock program
-    mockProgram = {} as WebGLProgram;
+    mockProgram = {};
 
     // Create mock material with bind method and program property
     mockMaterial = {

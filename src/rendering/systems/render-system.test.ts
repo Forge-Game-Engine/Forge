@@ -132,7 +132,7 @@ describe('createRenderEcsSystem', () => {
     canvas.height = 600;
 
     mockGl = {
-      createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+      createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
       enable: vi.fn(),

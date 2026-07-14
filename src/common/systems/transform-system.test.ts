@@ -2,10 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { PositionEcsComponent, positionId } from '../components/index.js';
-import {
-  ParentEcsComponent,
-  parentId,
-} from '../components/parent-component.js';
+import { parentId } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
 describe('transform-system', () => {
@@ -48,7 +45,7 @@ describe('transform-system', () => {
 
     world.addComponent(parent, positionId, parentPosition);
     world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent } as ParentEcsComponent);
+    world.addComponent(child, parentId, { parent });
 
     world.update();
 
@@ -119,7 +116,7 @@ describe('transform-system', () => {
 
     world.addComponent(parent, positionId, parentPosition);
     world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent } as ParentEcsComponent);
+    world.addComponent(child, parentId, { parent });
 
     world.update();
 
@@ -153,7 +150,7 @@ describe('transform-system', () => {
 
     world.addComponent(parent, positionId, parentPosition);
     world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent } as ParentEcsComponent);
+    world.addComponent(child, parentId, { parent });
 
     world.update();
 

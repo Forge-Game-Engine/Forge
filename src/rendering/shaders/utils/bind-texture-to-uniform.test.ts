@@ -18,7 +18,7 @@ describe('bindTextureToUniform', () => {
       uniform1i: vi.fn(),
     } as unknown as WebGLRenderingContext;
 
-    texture = {} as WebGLTexture;
+    texture = {};
   });
 
   it('should bind the texture to the specified texture unit and uniform', () => {

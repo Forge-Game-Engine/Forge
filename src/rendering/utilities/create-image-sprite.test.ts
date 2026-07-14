@@ -12,8 +12,7 @@ import {
 } from '../shaders/index.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture =
-  class WebGLTexture {} as unknown as typeof WebGLTexture;
+globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('createImageSprite', () => {
   let canvas: HTMLCanvasElement;
@@ -32,9 +31,9 @@ describe('createImageSprite', () => {
 
     image = { width: 32, height: 32 } as HTMLImageElement;
     emissiveImage = { width: 32, height: 32 } as HTMLImageElement;
-    emissiveTextureLocation = {} as WebGLUniformLocation;
-    emissiveColorLocation = {} as WebGLUniformLocation;
-    emissiveIntensityLocation = {} as WebGLUniformLocation;
+    emissiveTextureLocation = {};
+    emissiveColorLocation = {};
+    emissiveIntensityLocation = {};
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -55,7 +54,7 @@ describe('createImageSprite', () => {
       RGBA: 'RGBA',
       UNSIGNED_BYTE: 'UNSIGNED_BYTE',
 
-      createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+      createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
@@ -64,13 +63,13 @@ describe('createImageSprite', () => {
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
-      createShader: vi.fn().mockReturnValue({} as WebGLShader),
+      createShader: vi.fn().mockReturnValue({}),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
       getShaderInfoLog: vi.fn().mockReturnValue(''),
 
-      createProgram: vi.fn().mockReturnValue({} as WebGLProgram),
+      createProgram: vi.fn().mockReturnValue({}),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
       getProgramParameter: vi

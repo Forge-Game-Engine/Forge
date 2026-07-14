@@ -14,8 +14,7 @@ import {
 } from '../shaders';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture =
-  class WebGLTexture {} as unknown as typeof WebGLTexture;
+globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('createPresentEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -75,17 +74,17 @@ describe('createPresentEcsSystem', () => {
       disable: vi.fn(),
       enable: vi.fn(),
       blendFunc: vi.fn(),
-      createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+      createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createShader: vi.fn().mockReturnValue({} as WebGLShader),
+      createShader: vi.fn().mockReturnValue({}),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
       getShaderInfoLog: vi.fn().mockReturnValue(''),
 
-      createProgram: vi.fn().mockReturnValue({} as WebGLProgram),
+      createProgram: vi.fn().mockReturnValue({}),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
       getProgramParameter: vi
@@ -98,13 +97,13 @@ describe('createPresentEcsSystem', () => {
       getActiveUniform: vi
         .fn()
         .mockReturnValue({ name: 'u_texture', type: 0, size: 1 }),
-      getUniformLocation: vi.fn().mockReturnValue({} as WebGLUniformLocation),
+      getUniformLocation: vi.fn().mockReturnValue({}),
       useProgram: vi.fn(),
       uniform1i: vi.fn(),
       activeTexture: vi.fn(),
       bindTexture: vi.fn(),
 
-      createVertexArray: vi.fn().mockReturnValue({} as WebGLVertexArrayObject),
+      createVertexArray: vi.fn().mockReturnValue({}),
       bindVertexArray: vi.fn(),
       getAttribLocation: vi.fn().mockReturnValue(0),
       enableVertexAttribArray: vi.fn(),
@@ -139,7 +138,7 @@ describe('createPresentEcsSystem', () => {
   it("draws the camera's render target texture onto the canvas", () => {
     const target = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 256,
       height: 256,
     } as RenderTarget;
@@ -163,13 +162,13 @@ describe('createPresentEcsSystem', () => {
   it('presents multiple cameras independently', () => {
     const targetA = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 64,
       height: 64,
     } as RenderTarget;
@@ -185,13 +184,13 @@ describe('createPresentEcsSystem', () => {
   it('clears the canvas only once when layering multiple different render targets', () => {
     const targetA = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 64,
       height: 64,
     } as RenderTarget;
@@ -207,13 +206,13 @@ describe('createPresentEcsSystem', () => {
   it('replaces the canvas for the first layer and blends subsequent layers on top', () => {
     const targetA = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 64,
       height: 64,
     } as RenderTarget;
@@ -234,13 +233,13 @@ describe('createPresentEcsSystem', () => {
   it('presents in ascending layer order regardless of camera creation order', () => {
     const background = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const foreground = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 64,
       height: 64,
     } as RenderTarget;
@@ -268,13 +267,13 @@ describe('createPresentEcsSystem', () => {
   it('clears the canvas again on the next frame', () => {
     const targetA = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 64,
       height: 64,
     } as RenderTarget;
@@ -291,7 +290,7 @@ describe('createPresentEcsSystem', () => {
   it('presents a render target shared by multiple cameras only once', () => {
     const sharedTarget = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
@@ -307,7 +306,7 @@ describe('createPresentEcsSystem', () => {
   it('presents again on the next frame', () => {
     const target = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
@@ -323,7 +322,7 @@ describe('createPresentEcsSystem', () => {
   it('disables blending before drawing so the present pass replaces the canvas', () => {
     const target = {
       colorTexture: new WebGLTexture(),
-      framebuffer: {} as WebGLFramebuffer,
+      framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;

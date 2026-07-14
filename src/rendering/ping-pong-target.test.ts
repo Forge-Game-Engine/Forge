@@ -8,7 +8,7 @@ describe('PingPongTarget', () => {
 
   beforeEach(() => {
     gl = {
-      createFramebuffer: vi.fn().mockReturnValue({} as WebGLFramebuffer),
+      createFramebuffer: vi.fn().mockReturnValue({}),
       createTexture: vi.fn().mockImplementation(() => ({}) as WebGLTexture),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),

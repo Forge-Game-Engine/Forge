@@ -24,8 +24,7 @@ import {
 } from '../shaders';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture =
-  class WebGLTexture {} as unknown as typeof WebGLTexture;
+globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('createBloomEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -80,13 +79,13 @@ describe('createBloomEcsSystem', () => {
     canvas.width = 800;
     canvas.height = 600;
 
-    directionLocation = {} as WebGLUniformLocation;
-    texelSizeLocation = {} as WebGLUniformLocation;
-    textureLocation = {} as WebGLUniformLocation;
-    thresholdLocation = {} as WebGLUniformLocation;
-    sceneTextureLocation = {} as WebGLUniformLocation;
-    bloomTextureLocation = {} as WebGLUniformLocation;
-    intensityLocation = {} as WebGLUniformLocation;
+    directionLocation = {};
+    texelSizeLocation = {};
+    textureLocation = {};
+    thresholdLocation = {};
+    sceneTextureLocation = {};
+    bloomTextureLocation = {};
+    intensityLocation = {};
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -109,11 +108,11 @@ describe('createBloomEcsSystem', () => {
       HALF_FLOAT: 'HALF_FLOAT',
 
       disable: vi.fn(),
-      createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+      createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createFramebuffer: vi.fn().mockReturnValue({} as WebGLFramebuffer),
+      createFramebuffer: vi.fn().mockReturnValue({}),
       bindFramebuffer: vi.fn(),
       framebufferTexture2D: vi.fn(),
       checkFramebufferStatus: vi.fn().mockReturnValue(1),
@@ -127,13 +126,13 @@ describe('createBloomEcsSystem', () => {
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
-      createShader: vi.fn().mockReturnValue({} as WebGLShader),
+      createShader: vi.fn().mockReturnValue({}),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
       getShaderInfoLog: vi.fn().mockReturnValue(''),
 
-      createProgram: vi.fn().mockReturnValue({} as WebGLProgram),
+      createProgram: vi.fn().mockReturnValue({}),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
       getProgramParameter: vi
@@ -195,7 +194,7 @@ describe('createBloomEcsSystem', () => {
       uniform2fv: vi.fn(),
       activeTexture: vi.fn(),
 
-      createVertexArray: vi.fn().mockReturnValue({} as WebGLVertexArrayObject),
+      createVertexArray: vi.fn().mockReturnValue({}),
       bindVertexArray: vi.fn(),
       getAttribLocation: vi.fn().mockReturnValue(0),
       enableVertexAttribArray: vi.fn(),
