@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.10.1",
-    "@docusaurus/tsconfig": "^3.10.1",
+    "@docusaurus/tsconfig": "^3.10.2",
     "@docusaurus/types": "^3.10.1",
     "@types/howler": "^2.2.12",
     "@types/webpack-env": "^1.18.8",
