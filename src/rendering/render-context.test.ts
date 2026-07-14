@@ -18,7 +18,7 @@ describe('RenderContext', () => {
     canvas = document.createElement('canvas');
 
     // Create mock WebGL buffer
-    mockBuffer = {} as WebGLBuffer;
+    mockBuffer = {};
 
     // Create mock WebGL2RenderingContext
     mockGl = {
@@ -303,7 +303,7 @@ describe('createRenderContext', () => {
     canvas = document.createElement('canvas');
 
     // Create mock WebGL buffer
-    mockBuffer = {} as WebGLBuffer;
+    mockBuffer = {};
 
     // Create mock WebGL2RenderingContext
     mockGl = {

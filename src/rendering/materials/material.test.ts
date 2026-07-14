@@ -23,8 +23,8 @@ describe('Material', () => {
 
   beforeEach(() => {
     // Create mock shaders and program
-    mockProgram = {} as WebGLProgram;
-    mockVertexShader = {} as WebGLShader;
+    mockProgram = {};
+    mockVertexShader = {};
 
     // Create a mock WebGL2RenderingContext with all necessary methods
     gl = {
@@ -440,7 +440,7 @@ describe('Material program caching', () => {
       COMPILE_STATUS: 35713,
       LINK_STATUS: 35714,
       ACTIVE_UNIFORMS: 35718,
-      createShader: vi.fn(() => ({}) as WebGLShader),
+      createShader: vi.fn(() => ({})),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn(() => true),
@@ -449,7 +449,7 @@ describe('Material program caching', () => {
       createProgram: vi.fn(() => {
         programCounter += 1;
 
-        return { id: programCounter } as unknown as WebGLProgram;
+        return { id: programCounter };
       }),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),

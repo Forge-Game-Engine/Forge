@@ -72,7 +72,7 @@ describe('EcsWorld', () => {
       run: (result) => {
         results.push({
           entity: result.entity,
-          component: result.components[0] as { value: string },
+          component: result.components[0],
         });
       },
     };

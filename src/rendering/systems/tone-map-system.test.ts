@@ -21,8 +21,7 @@ import {
 } from '../shaders';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture =
-  class WebGLTexture {} as unknown as typeof WebGLTexture;
+globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('createToneMapEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -73,9 +72,9 @@ describe('createToneMapEcsSystem', () => {
     canvas.width = 800;
     canvas.height = 600;
 
-    textureLocation = {} as WebGLUniformLocation;
-    exposureLocation = {} as WebGLUniformLocation;
-    useAcesLocation = {} as WebGLUniformLocation;
+    textureLocation = {};
+    exposureLocation = {};
+    useAcesLocation = {};
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -98,11 +97,11 @@ describe('createToneMapEcsSystem', () => {
       HALF_FLOAT: 'HALF_FLOAT',
 
       disable: vi.fn(),
-      createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+      createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createFramebuffer: vi.fn().mockReturnValue({} as WebGLFramebuffer),
+      createFramebuffer: vi.fn().mockReturnValue({}),
       bindFramebuffer: vi.fn(),
       framebufferTexture2D: vi.fn(),
       checkFramebufferStatus: vi.fn().mockReturnValue(1),
@@ -116,13 +115,13 @@ describe('createToneMapEcsSystem', () => {
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
-      createShader: vi.fn().mockReturnValue({} as WebGLShader),
+      createShader: vi.fn().mockReturnValue({}),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
       getShaderInfoLog: vi.fn().mockReturnValue(''),
 
-      createProgram: vi.fn().mockReturnValue({} as WebGLProgram),
+      createProgram: vi.fn().mockReturnValue({}),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
       getProgramParameter: vi
@@ -163,7 +162,7 @@ describe('createToneMapEcsSystem', () => {
       uniform1f: vi.fn(),
       activeTexture: vi.fn(),
 
-      createVertexArray: vi.fn().mockReturnValue({} as WebGLVertexArrayObject),
+      createVertexArray: vi.fn().mockReturnValue({}),
       bindVertexArray: vi.fn(),
       getAttribLocation: vi.fn().mockReturnValue(0),
       enableVertexAttribArray: vi.fn(),

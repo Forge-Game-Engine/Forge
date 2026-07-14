@@ -43,10 +43,7 @@ export class EcsWorld implements Updatable, Stoppable {
     system: EcsSystem<T, K, A>,
     registrationOrder: number = SystemRegistrationOrder.normal,
   ): void {
-    this._systems.add(
-      system as EcsSystem<unknown[], unknown>,
-      registrationOrder,
-    );
+    this._systems.add(system, registrationOrder);
 
     system.onRegister?.(this);
   }
