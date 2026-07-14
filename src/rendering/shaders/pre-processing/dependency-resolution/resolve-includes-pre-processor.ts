@@ -33,7 +33,7 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
 
     // Remove consecutive empty lines
 
-    return processedLines.replaceAll(/^\s*$(?:\r\n?|\n){2,}/gm, '\n');
+    return processedLines.replaceAll(/^[ \t]*$(?:\r\n?|\n){2,}/gm, '\n');
   }
 
   private _processLine(

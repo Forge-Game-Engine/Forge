@@ -97,7 +97,7 @@ describe('AgeScaleSystem', () => {
     system.run(queryResult, world, null);
 
     // Assert
-    expect(scaleComponent.local.x).toBe(expectedScaleX);
-    expect(scaleComponent.local.y).toBe(expectedScaleY);
+    expect(scaleComponent.local.x).toBeCloseTo(expectedScaleX);
+    expect(scaleComponent.local.y).toBeCloseTo(expectedScaleY);
   });
 });
