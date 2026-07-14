@@ -6,13 +6,13 @@ describe('Path', () => {
   it('should create an instance of Path', () => {
     const path = new Path();
     expect(path).toBeInstanceOf(Path);
-    expect(path.length).toBe(0);
+    expect(path).toHaveLength(0);
   });
 
   it('should create an instance of Path with initial points', () => {
     const points = [new Vector2(0, 0), new Vector2(1, 1)];
     const path = new Path(points);
-    expect(path.length).toBe(2);
+    expect(path).toHaveLength(2);
     expect(path.first).toEqual(points[0]);
     expect(path.last).toEqual(points[1]);
   });
@@ -28,7 +28,7 @@ describe('Path', () => {
     const path = new Path();
     const point = new Vector2(2, 2);
     path.push(point);
-    expect(path.length).toBe(1);
+    expect(path).toHaveLength(1);
     expect(path.last).toEqual(point);
   });
 

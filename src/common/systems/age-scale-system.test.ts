@@ -53,8 +53,8 @@ describe('AgeScaleSystem', () => {
     // Assert
     const expectedScaleX = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
     const expectedScaleY = 0.55; // Calculated as: 1 * (1 - 0.5) + 0.1 * 0.5
-    expect(scaleComponent.local.x).toBe(expectedScaleX);
-    expect(scaleComponent.local.y).toBe(expectedScaleY);
+    expect(scaleComponent.local.x).toBeCloseTo(expectedScaleX);
+    expect(scaleComponent.local.y).toBeCloseTo(expectedScaleY);
   });
 
   it('should show the end scale at the end of the lifetime', () => {

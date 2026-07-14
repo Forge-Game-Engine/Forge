@@ -37,7 +37,7 @@ describe('createAnimationEcsSystem', () => {
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
     expect(mockFinishedCallback).toHaveBeenCalled();
-    expect(animationComponent.animations.length).toBe(0);
+    expect(animationComponent.animations).toHaveLength(0);
   });
 
   it('should handle looping animations', () => {
@@ -70,7 +70,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
-    expect(animationComponent.animations.length).toBe(1);
+    expect(animationComponent.animations).toHaveLength(1);
     expect(animationComponent.animations[0].loopCount).toBe(1);
   });
 
@@ -104,7 +104,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
-    expect(animationComponent.animations.length).toBe(1);
+    expect(animationComponent.animations).toHaveLength(1);
     expect(animationComponent.animations[0].loopCount).toBe(1);
     expect(animationComponent.animations[0].startValue).toBe(1);
     expect(animationComponent.animations[0].endValue).toBe(0);
@@ -140,6 +140,6 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
-    expect(animationComponent.animations.length).toBe(0);
+    expect(animationComponent.animations).toHaveLength(0);
   });
 });

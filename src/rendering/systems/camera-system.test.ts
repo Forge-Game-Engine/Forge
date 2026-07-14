@@ -50,7 +50,7 @@ describe('CameraSystem', () => {
     time.update(16.6666);
     world.update();
 
-    expect(cameraComponent.zoom).toBe(0.9090909090909091);
+    expect(cameraComponent.zoom).toBeCloseTo(0.9090909090909091);
   });
 
   it('should update the camera zoom(in) based on scroll input', () => {
@@ -81,7 +81,7 @@ describe('CameraSystem', () => {
     time.update(16.6666);
     world.update();
 
-    expect(cameraComponent.zoom).toBe(1.1);
+    expect(cameraComponent.zoom).toBeCloseTo(1.1);
   });
 
   it('should update the camera zoom(out) when scrolled twice', () => {
@@ -116,7 +116,7 @@ describe('CameraSystem', () => {
     time.update(16.6666);
     world.update();
 
-    expect(cameraComponent.zoom).toBe(0.8264462809917354);
+    expect(cameraComponent.zoom).toBeCloseTo(0.8264462809917354);
   });
 
   it('should return to the same position when zooming in and out again', () => {

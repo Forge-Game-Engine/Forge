@@ -104,7 +104,7 @@ describe('ParticleEmitterSystem', () => {
     world.queryEntities([ParticleId], particlesAfter);
 
     // Should have emitted 3 particles immediately (emitDurationSeconds: 0)
-    expect(particlesAfter.length).toBe(3);
+    expect(particlesAfter).toHaveLength(3);
     expect(emitter.emitCount).toBe(3);
   });
 

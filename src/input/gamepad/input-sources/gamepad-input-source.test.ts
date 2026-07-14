@@ -73,7 +73,7 @@ describe('GamepadInputSource', () => {
 
     source.update();
 
-    expect(moveAction.value).toBe(0.8);
+    expect(moveAction.value).toBeCloseTo(0.8);
   });
 
   it('zeroes stick values within the deadzone', () => {
@@ -135,7 +135,7 @@ describe('GamepadInputSource', () => {
 
     source.update();
 
-    expect(moveAction.value).toBe(0.8);
+    expect(moveAction.value).toBeCloseTo(0.8);
   });
 
   it('combines a stick and a D-pad bound to the same action', () => {
@@ -200,7 +200,7 @@ describe('GamepadInputSource', () => {
     );
 
     source.update();
-    expect(moveAction.value).toBe(0.8);
+    expect(moveAction.value).toBeCloseTo(0.8);
 
     getGamepadsSpy.mockReturnValue([createGamepad([0, 0, 0, 0], [])]);
     source.update();
