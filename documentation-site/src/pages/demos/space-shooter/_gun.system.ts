@@ -14,66 +14,78 @@ import {
   lifetimeId,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
+import { audioId } from '@forge-game-engine/forge/audio';
+import {
+  CircleShape,
+  PhysicsBodyId,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
 import { GunEcsComponent, gunId } from './_gun.component';
-import { audioId } from '../../../../../dist';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const createGunEcsSystem = (
   time: Time,
   world: EcsWorld,
   shootAction: HoldAction,
-): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => ({
-  query: [gunId, positionId],
-  run: (result) => {
-    const [gunComponent, positionComponent] = result.components;
+): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => {
+  // Created per system instance (rather than at module scope) so each game
+  // restart gets its own Howl, since the audio system unloads any sound
+  // still playing when the world stops.
+  const sound = new Howl({
+    src: getAssetUrl('audio/laser.mp3'),
+    volume: 0.2,
+  });
 
-    if (!shootAction.isHeld) {
-      return;
-    }
+  return {
+    query: [gunId, positionId],
+    run: (result) => {
+      const [gunComponent, positionComponent] = result.components;
 
-    if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
-      return;
-    }
+      if (!shootAction.isHeld) {
+        return;
+      }
 
-    createBulletWithOffset(
-      world,
-      gunComponent,
-      positionComponent,
-      new Vector2(20, 20),
-    );
-    createBulletWithOffset(
-      world,
-      gunComponent,
-      positionComponent,
-      new Vector2(-20, 20),
-    );
+      if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
+        return;
+      }
 
-    gunComponent.nextAllowedShotTime =
-      time.timeInSeconds + gunComponent.timeBetweenShots;
-  },
-});
+      createBulletWithOffset(
+        world,
+        gunComponent,
+        positionComponent,
+        new Vector2(20, 20),
+        sound,
+      );
+      createBulletWithOffset(
+        world,
+        gunComponent,
+        positionComponent,
+        new Vector2(-20, 20),
+        sound,
+      );
 
-const sound = new Howl({
-  src: getAssetUrl('audio/laser.mp3'),
-  volume: 0.3,
-});
+      gunComponent.nextAllowedShotTime =
+        time.timeInSeconds + gunComponent.timeBetweenShots;
+    },
+  };
+};
 
 function createBulletWithOffset(
   world: EcsWorld,
   gunComponent: GunEcsComponent,
   positionComponent: PositionEcsComponent,
   offset: Vector2,
+  sound: Howl,
 ) {
   const bullet = world.createEntity();
+  const bulletScale = 0.15;
+  const spawnPosition = positionComponent.world.add(offset);
 
-  world.addComponent(bullet, spriteId, {
-    sprite: gunComponent.bulletSprite,
-    enabled: true,
-  });
+  world.addComponent(bullet, spriteId, gunComponent.bulletSprite);
 
   world.addComponent(bullet, positionId, {
-    local: positionComponent.world.add(offset),
+    local: spawnPosition,
     world: positionComponent.world.add(offset),
   });
 
@@ -83,12 +95,12 @@ function createBulletWithOffset(
   });
 
   world.addComponent(bullet, scaleId, {
-    local: new Vector2(0.2, 0.2),
-    world: new Vector2(0.2, 0.2),
+    local: new Vector2(bulletScale, bulletScale),
+    world: new Vector2(bulletScale, bulletScale),
   });
 
   world.addComponent(bullet, bulletId, {
-    speed: 700,
+    speed: 800,
   });
 
   world.addComponent(bullet, lifetimeId, {
@@ -102,5 +114,20 @@ function createBulletWithOffset(
   world.addComponent(bullet, audioId, {
     playSound: true,
     sound,
+  });
+
+  const bulletRadius =
+    (gunComponent.bulletSprite.width * bulletScale +
+      gunComponent.bulletSprite.height * bulletScale) /
+    4;
+
+  world.addComponent(bullet, PhysicsBodyId, {
+    physicsBody: new RigidBody({
+      shape: new CircleShape(bulletRadius),
+      position: new Vector2(spawnPosition.x, spawnPosition.y),
+      isStatic: false,
+      isSensor: true,
+    }),
+    isKinematic: true,
   });
 }

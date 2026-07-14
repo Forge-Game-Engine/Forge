@@ -25,6 +25,7 @@ export class MouseAxis2dBinding implements InputBinding<Axis2dAction> {
 
   /** Constructs a new MouseAxis2dBinding.
    * @param action - The action associated with this binding.
+   * @param options - Options controlling how cursor position is measured.
    */
   constructor(action: Axis2dAction, options?: MouseAxis2dBindingOptions) {
     this.action = action;

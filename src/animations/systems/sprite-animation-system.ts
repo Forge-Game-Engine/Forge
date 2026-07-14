@@ -32,8 +32,9 @@ export const createSpriteAnimationEcsSystem = (
       spriteAnimationComponent.playbackSpeed;
 
     if (scaledFrameDurationInSeconds <= 0) {
-      // Invalid or zero frame duration — do nothing to avoid division-by-zero
-      return;
+      throw new Error(
+        `Invalid frame duration: ${spriteAnimationComponent.frameDurationMilliseconds} ms. Frame duration must be greater than 0.`,
+      );
     }
 
     const frameHasFinished =
@@ -43,18 +44,22 @@ export const createSpriteAnimationEcsSystem = (
       return;
     }
 
+    const animationClip = animationRegistry.getDirect(
+      spriteAnimationComponent.animationClipHandle,
+    );
+
+    const animationFrame = animationClip.getFrame(
+      spriteAnimationComponent.animationFrameIndex,
+    );
+
     if (
       spriteAnimationComponent.animationFrameIndex >=
-      spriteAnimationComponent.totalFrameCount - 1
+      animationClip.frameCount - 1
     ) {
       spriteAnimationComponent.animationFrameIndex = 0;
     } else {
       spriteAnimationComponent.animationFrameIndex++;
     }
-
-    const animationFrame = animationRegistry
-      .getDirect(spriteAnimationComponent.animationClipHandle)
-      .getFrame(spriteAnimationComponent.animationFrameIndex);
 
     spriteComponent.uvOffset.x = animationFrame.offset.x;
     spriteComponent.uvOffset.y = animationFrame.offset.y;

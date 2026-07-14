@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Geometry } from './geometry/geometry.js';
 import { Material } from './materials/material.js';
-import { Renderable } from './renderable.js';
-import { EcsWorld } from '../ecs/ecs-world.js';
+import { InstanceComponents, Renderable } from './renderable.js';
 
 describe('Renderable', () => {
   let mockGeometry: Geometry;
@@ -74,7 +73,7 @@ describe('Renderable', () => {
         mockSetupInstanceAttributes,
       );
 
-      expect(renderable.layer).toBe(layer);
+      expect(renderable.category).toBe(layer);
     });
 
     it('should initialize with provided floatsPerInstance', () => {
@@ -132,7 +131,7 @@ describe('Renderable', () => {
 
       expect(renderable.geometry).toBe(mockGeometry);
       expect(renderable.material).toBe(mockMaterial);
-      expect(renderable.layer).toBe(layer);
+      expect(renderable.category).toBe(layer);
       expect(renderable.floatsPerInstance).toBe(floatsPerInstance);
       expect(renderable.bindInstanceData).toBe(mockBindInstanceData);
       expect(renderable.setupInstanceAttributes).toBe(
@@ -198,8 +197,7 @@ describe('Renderable', () => {
 
   describe('callbacks', () => {
     it('should allow bindInstanceData callback to be called', () => {
-      const entity = 1;
-      const world = new EcsWorld();
+      const components = {} as InstanceComponents;
       const buffer = new Float32Array(10);
       const offset = 5;
 
@@ -212,11 +210,10 @@ describe('Renderable', () => {
         mockSetupInstanceAttributes,
       );
 
-      renderable.bindInstanceData(entity, world, buffer, offset);
+      renderable.bindInstanceData(components, buffer, offset);
 
       expect(mockBindInstanceData).toHaveBeenCalledWith(
-        entity,
-        world,
+        components,
         buffer,
         offset,
       );

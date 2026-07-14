@@ -7,7 +7,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { spriteId } from '../../rendering/index.js';
-import { Random, Vector2 } from '../../math/index.js';
+import { degreesToRadians, Random, Vector2 } from '../../math/index.js';
 import {
   ParticleEmitter,
   ParticleEmitterEcsComponent,
@@ -73,10 +73,12 @@ function emitParticle(
     particleEmitter.lifetimeSecondsRange.max,
   );
 
-  const rotation = getRandomValueInRangeDegrees(
-    particleEmitter.rotationRange.min,
-    particleEmitter.rotationRange.max,
-    random,
+  const rotation = degreesToRadians(
+    getRandomValueInRangeDegrees(
+      particleEmitter.rotationRange.min,
+      particleEmitter.rotationRange.max,
+      random,
+    ),
   );
 
   const rotationSpeed = random.randomFloat(
@@ -170,6 +172,8 @@ function emitNewParticles(
 
 /**
  * Creates an ECS system to handle particles.
+ * @param time - The time instance used to advance emitter timers.
+ * @param random - The random instance used to pick values from emitter ranges.
  */
 export const createParticleEcsSystem = (
   time: Time,

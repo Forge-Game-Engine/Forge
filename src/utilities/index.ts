@@ -8,6 +8,6 @@ export * from './game.js';
 export * from './create-game.js';
 export * from './assert-never.js';
 export * from './shallow-array-equals.js';
-export * from './matches-layer-mask.js';
+export * from './matches-mask.js';
 export * from './sparse-set.js';
 export * from './sorted-set.js';

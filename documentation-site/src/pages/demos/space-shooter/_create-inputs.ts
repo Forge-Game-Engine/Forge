@@ -3,15 +3,18 @@ import { Time } from '@forge-game-engine/forge/common';
 import {
   actionResetTypes,
   Axis2dAction,
+  buttonMoments,
   HoldAction,
   KeyboardAxis2dBinding,
   KeyboardHoldBinding,
   KeyboardInputSource,
+  KeyboardTriggerBinding,
   keyCodes,
   mouseButtons,
   MouseHoldBinding,
   MouseInputSource,
   registerInputs,
+  TriggerAction,
 } from '@forge-game-engine/forge/input';
 import { Game } from '@forge-game-engine/forge/utilities';
 
@@ -22,13 +25,16 @@ export function createInputs(
 ): {
   moveInput: Axis2dAction;
   shootInput: HoldAction;
+  restartInput: TriggerAction;
 } {
   const moveInput = new Axis2dAction('move', null, actionResetTypes.noReset);
   const shootInput = new HoldAction('shoot');
+  const restartInput = new TriggerAction('restart');
 
   const inputManager = registerInputs(world, time, {
     axis2dActions: [moveInput],
     holdActions: [shootInput],
+    triggerActions: [restartInput],
   });
 
   const keyboardInputSource = new KeyboardInputSource(inputManager);
@@ -62,5 +68,9 @@ export function createInputs(
     new MouseHoldBinding(shootInput, mouseButtons.left),
   );
 
-  return { moveInput, shootInput };
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(restartInput, keyCodes.r, buttonMoments.down),
+  );
+
+  return { moveInput, shootInput, restartInput };
 }

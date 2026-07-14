@@ -1,3 +1,8 @@
+/** Compares two arrays for shallow equality.
+ * @param a - The first array to compare.
+ * @param b - The second array to compare.
+ * @returns True if the arrays are shallowly equal, false otherwise.
+ */
 export function shallowArraysEqual<T>(
   a: readonly T[],
   b: readonly T[],

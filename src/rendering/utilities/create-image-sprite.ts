@@ -1,169 +1,113 @@
 import {
   Color,
   createQuadGeometry,
-  EcsWorld,
-  FlipEcsComponent,
-  flipId,
-  PositionEcsComponent,
-  positionId,
   Renderable,
-  RotationEcsComponent,
-  rotationId,
-  ScaleEcsComponent,
-  scaleId,
-  setupInstanceAttribute,
   SpriteEcsComponent,
-  spriteId,
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
-import { createTextureFromImage } from '../shaders/index.js';
 import {
-  HEIGHT_OFFSET,
-  PIVOT_X_OFFSET,
-  PIVOT_Y_OFFSET,
-  POSITION_X_OFFSET,
-  POSITION_Y_OFFSET,
-  ROTATION_OFFSET,
-  SCALE_X_OFFSET,
-  SCALE_Y_OFFSET,
-  TEX_OFFSET_X_OFFSET,
-  TEX_OFFSET_Y_OFFSET,
-  TEX_SIZE_X_OFFSET,
-  TEX_SIZE_Y_OFFSET,
-  TINT_COLOR_A_OFFSET,
-  TINT_COLOR_B_OFFSET,
-  TINT_COLOR_G_OFFSET,
-  TINT_COLOR_R_OFFSET,
-  WIDTH_OFFSET,
-} from '../systems/render-constants.js';
+  createTextureFromImage,
+  getSharedBlackTexture,
+} from '../shaders/index.js';
+import { combineInstanceDataSegments } from './instance-data-segment.js';
+import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
-const floatsPerInstance = 17;
+/**
+ * Configures an emissive map for `createImageSprite`: a texture, sampled
+ * against the sprite's own UVs, that's added on top of the tinted albedo
+ * unaffected by lighting.
+ */
+export interface EmissiveMapOptions {
+  /**
+   * The emissive map image.
+   */
+  image: HTMLImageElement;
 
-function bindInstanceData(
-  entity: number,
-  world: EcsWorld,
-  instanceDataBufferArray: Float32Array,
-  offset: number,
-) {
-  const position = world.getComponent<PositionEcsComponent>(
-    entity,
-    positionId,
-  )!;
+  /**
+   * Tints the emissive map, so a plain greyscale mask can still glow any
+   * color. Multiplied against the emissive map's sampled RGB, before
+   * `intensity` scales the result. Defaults to `Color.white` (no tint,
+   * i.e. the mask's own greyscale value is used as-is).
+   */
+  color?: Color;
 
-  const rotation = world.getComponent<RotationEcsComponent>(entity, rotationId);
-
-  const scale = world.getComponent<ScaleEcsComponent>(entity, scaleId);
-
-  const spriteComponent = world.getComponent<SpriteEcsComponent>(
-    entity,
-    spriteId,
-  )!;
-  const flipComponent = world.getComponent<FlipEcsComponent>(entity, flipId);
-
-  // Position
-  instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
-  instanceDataBufferArray[offset + POSITION_Y_OFFSET] = -position.world.y;
-
-  // Rotation
-  instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
-
-  // Scale with flip consideration
-  instanceDataBufferArray[offset + SCALE_X_OFFSET] =
-    (scale?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
-  instanceDataBufferArray[offset + SCALE_Y_OFFSET] =
-    (scale?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
-
-  // Sprite dimensions
-  instanceDataBufferArray[offset + WIDTH_OFFSET] = spriteComponent.width;
-  instanceDataBufferArray[offset + HEIGHT_OFFSET] = spriteComponent.height;
-
-  // Sprite pivot
-  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = spriteComponent.pivot.x;
-  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = spriteComponent.pivot.y;
-
-  // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] =
-    spriteComponent.uvOffset.x ?? 0;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] =
-    spriteComponent.uvOffset.y ?? 0;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] =
-    spriteComponent.uvScale.x ?? 1;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] =
-    spriteComponent.uvScale.y ?? 1;
-
-  // Tint color
-  instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] =
-    spriteComponent.tintColor.r;
-  instanceDataBufferArray[offset + TINT_COLOR_G_OFFSET] =
-    spriteComponent.tintColor.g;
-  instanceDataBufferArray[offset + TINT_COLOR_B_OFFSET] =
-    spriteComponent.tintColor.b;
-  instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] =
-    spriteComponent.tintColor.a;
+  /**
+   * Multiplies the sampled (and tinted) emissive color before it's added on
+   * top of the tinted albedo. Values above `1` push a pixel's brightness
+   * into HDR range, for `createBloomEcsSystem` (on an HDR-format render
+   * target, see `RENDER_TARGET_FORMAT`) to bloom convincingly even where
+   * the sprite's own albedo isn't pure white. Defaults to `1`.
+   */
+  intensity?: number;
 }
 
-function setupInstanceAttributes(
-  gl: WebGL2RenderingContext,
-  renderable: Renderable,
-): void {
-  const program = renderable.material.program;
-  // Attribute locations
-  const posLoc = gl.getAttribLocation(program, 'a_instancePos');
-  const rotLoc = gl.getAttribLocation(program, 'a_instanceRot');
-  const scaleLoc = gl.getAttribLocation(program, 'a_instanceScale');
-  const sizeLoc = gl.getAttribLocation(program, 'a_instanceSize');
-  const pivotLoc = gl.getAttribLocation(program, 'a_instancePivot');
-  const texOffsetLoc = gl.getAttribLocation(program, 'a_instanceTexOffset');
-  const texSizeLoc = gl.getAttribLocation(program, 'a_instanceTexSize');
+export interface CreateImageSpriteOptions {
+  /**
+   * The dimensions of a single frame in the image, for sprite sheets. Defaults to the full image size (i.e. a single-frame sprite).
+   */
+  frameDimensions?: Vector2;
 
-  const stride = floatsPerInstance * 4; // 17 floats per instance, 4 bytes each
-
-  // a_instancePos (vec2) - offset 0
-  setupInstanceAttribute(posLoc, gl, 2, stride, POSITION_X_OFFSET * 4);
-
-  // a_instanceRot (float) - offset 2
-  setupInstanceAttribute(rotLoc, gl, 1, stride, ROTATION_OFFSET * 4);
-
-  // a_instanceScale (vec2) - offset 3
-  setupInstanceAttribute(scaleLoc, gl, 2, stride, SCALE_X_OFFSET * 4);
-
-  // a_instanceSize (vec2) - offset 5
-  setupInstanceAttribute(sizeLoc, gl, 2, stride, WIDTH_OFFSET * 4);
-
-  // a_instancePivot (vec2) - offset 7
-  setupInstanceAttribute(pivotLoc, gl, 2, stride, PIVOT_X_OFFSET * 4);
-
-  // a_instanceTexOffset (vec2) - offset 9
-  setupInstanceAttribute(texOffsetLoc, gl, 2, stride, TEX_OFFSET_X_OFFSET * 4);
-
-  // a_instanceTexSize (vec2) - offset 11
-  setupInstanceAttribute(texSizeLoc, gl, 2, stride, TEX_SIZE_X_OFFSET * 4);
+  /**
+   * The emissive map to add on top of the sprite's tinted albedo, unaffected
+   * by lighting. Omit for a sprite with no emissive contribution.
+   */
+  emissiveMap?: EmissiveMapOptions;
 }
+
+// `color` isn't included here: `Color.white` can't be read at module-init
+// time (this file sits in a circular import cycle through `../../index.js`,
+// so `Color`'s static fields aren't guaranteed to be initialized yet when
+// this module's own top-level code runs). Defaulting it inside
+// `createImageSprite`'s body instead defers that read until the function is
+// actually called, well after every module has finished loading.
+const defaultEmissiveMapOptions = { intensity: 1 };
 
 /**
  * Creates a sprite using the provided image and render layer.
  * @param image - The image to use for the sprite.
  * @param renderContext - The render context to be used.
  * @param layer - The render layer for the sprite.
- * @param frameDimensions - The dimensions of a single frame in the image (for sprite sheets).
+ * @param options - Optional parameters for creating the sprite.
  * @returns The created sprite.
  */
 export function createImageSprite(
   image: HTMLImageElement,
   renderContext: RenderContext,
   layer: number,
-  frameDimensions: Vector2 = new Vector2(image.width, image.height),
+  options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
   const { shaderCache, gl } = renderContext;
 
   const spriteVertexShader = shaderCache.getShader('sprite.vert');
   const spriteFragmentShader = shaderCache.getShader('sprite.frag');
 
-  const material = new Material(spriteVertexShader, spriteFragmentShader, gl); // TODO: Add a material cache
+  const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
+
+  const resolvedEmissive = options.emissiveMap
+    ? { ...defaultEmissiveMapOptions, ...options.emissiveMap }
+    : undefined;
+
+  material.setUniform(
+    'u_emissiveTexture',
+    resolvedEmissive
+      ? createTextureFromImage(gl, resolvedEmissive.image, true)
+      : getSharedBlackTexture(gl),
+  );
+  material.setColorUniform(
+    'u_emissiveColor',
+    resolvedEmissive?.color ?? Color.white,
+  );
+  material.setUniform(
+    'u_emissiveIntensity',
+    resolvedEmissive ? resolvedEmissive.intensity : 0,
+  );
+
+  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
+    combineInstanceDataSegments(spriteInstanceDataSegment);
 
   const renderable = new Renderable(
     createQuadGeometry(gl),
@@ -176,12 +120,13 @@ export function createImageSprite(
 
   return {
     enabled: true,
-    width: frameDimensions.x,
-    height: frameDimensions.y,
+    width: options.frameDimensions?.x ?? image.width,
+    height: options.frameDimensions?.y ?? image.height,
     pivot: new Vector2(0.5, 0.5),
     tintColor: Color.white,
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
+    layer: 0,
   };
 }

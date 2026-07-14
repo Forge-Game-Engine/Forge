@@ -1,6 +1,6 @@
 #version 300 es
 
-#property name: radialGradient.frag
+#pragma forge name(radialGradient.frag)
 
 precision mediump float;
 
@@ -8,7 +8,7 @@ uniform vec2 u_resolution;
 uniform vec2 u_center;
 uniform sampler2D u_gradientTexture;
 
-#include <radialGradient>
+#pragma forge include(radialGradient)
 
 out vec4 fragColor;
 

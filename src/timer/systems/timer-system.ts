@@ -5,6 +5,7 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle timers.
+ * @param time - The time instance used to advance each timer's elapsed time.
  */
 export const createTimerEcsSystem = (
   time: Time,

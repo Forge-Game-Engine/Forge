@@ -1,0 +1,8 @@
+{
+  "label": "Rendering",
+  "position": 10,
+  "link": {
+    "type": "doc",
+    "id": "docs/rendering/index"
+  }
+}

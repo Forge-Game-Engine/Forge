@@ -120,11 +120,13 @@ describe('createProjectionMatrix', () => {
     const cameraPosition = new Vector2(100, 50);
     const zoom = 1;
 
-    // The matrix should include translation by -cameraPosition.x and -cameraPosition.y
+    // The matrix should include translation by -cameraPosition.x and
+    // +cameraPosition.y (sprite y is pre-negated, so the camera's y must
+    // translate unnegated to land back on the same sprite).
     const scaleX = 2 / width;
     const scaleY = -2 / height;
     const tx = -cameraPosition.x * scaleX;
-    const ty = -cameraPosition.y * scaleY;
+    const ty = cameraPosition.y * scaleY;
 
     const expectedMatrix = new Matrix3x3([
       scaleX,
@@ -152,7 +154,7 @@ describe('createProjectionMatrix', () => {
     const scaleX = (2 / width) * zoom;
     const scaleY = (-2 / height) * zoom;
     const tx = -cameraPosition.x * scaleX;
-    const ty = -cameraPosition.y * scaleY;
+    const ty = cameraPosition.y * scaleY;
 
     const result = createProjectionMatrix(width, height, cameraPosition, zoom);
 

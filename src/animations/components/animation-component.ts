@@ -51,18 +51,34 @@ export interface AnimatedProperty {
   finishedCallback?: () => void;
 }
 
+/**
+ * Controls how an animated property behaves once it reaches `endValue`.
+ *
+ * - `'none'`: the animation stops and is removed.
+ * - `'loop'`: `elapsed` resets to `0` and the animation restarts from `startValue`.
+ * - `'pingpong'`: `elapsed` resets to `0` and `startValue`/`endValue` are swapped, so the animation plays in reverse on the next iteration.
+ */
 export type LoopMode = 'none' | 'loop' | 'pingpong';
 
 /**
  * ECS-style component interface for animations.
  */
 export interface AnimationEcsComponent {
+  /**
+   * The animated properties currently running on this entity.
+   */
   animations: Required<AnimatedProperty>[];
 }
 
+/**
+ * Component key for {@link AnimationEcsComponent}.
+ */
 export const animationId =
   createComponentId<AnimationEcsComponent>('animation');
 
+/**
+ * Default values applied to any {@link AnimatedProperty} field not provided to {@link createAnimatedProperty}.
+ */
 export const animationDefaults = {
   startValue: 0,
   endValue: 1,
@@ -73,6 +89,11 @@ export const animationDefaults = {
   finishedCallback: (): void => undefined,
 };
 
+/**
+ * Fills in {@link animationDefaults} for any field not provided, producing a fully populated animated property ready to push onto {@link AnimationEcsComponent.animations}.
+ * @param animatedProperty - The animated property to apply defaults to.
+ * @returns The animated property with all optional fields populated.
+ */
 export const createAnimatedProperty = (
   animatedProperty: AnimatedProperty,
 ): Required<AnimatedProperty> => ({

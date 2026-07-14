@@ -34,7 +34,7 @@ export class InputManager implements Updatable {
   }
 
   /** Adds new actions to the manager.
-   * @param action - The action(s) to add.
+   * @param actions - The action(s) to add.
    */
   public addTriggerActions(...actions: TriggerAction[]): void {
     for (const action of actions) {
@@ -45,7 +45,7 @@ export class InputManager implements Updatable {
 
   /**
    * Adds a new 1D axis action to the manager and marks it as resettable.
-   * @param action - The action to add.
+   * @param actions - The action(s) to add.
    */
   public addAxis1dActions(...actions: Axis1dAction[]): void {
     for (const action of actions) {
@@ -56,7 +56,7 @@ export class InputManager implements Updatable {
 
   /**
    * Adds a new 2D axis action to the manager and marks it as resettable.
-   * @param action - The action to add.
+   * @param actions - The action(s) to add.
    */
   public addAxis2dActions(...actions: Axis2dAction[]): void {
     for (const action of actions) {
@@ -67,7 +67,7 @@ export class InputManager implements Updatable {
 
   /**
    * Adds a new hold action to the manager.
-   * @param action - The action to add.
+   * @param actions - The action(s) to add.
    */
   public addHoldActions(...actions: HoldAction[]): void {
     for (const action of actions) {

@@ -1,11 +1,19 @@
 import {
+  bloomCompositeFragmentShader,
+  bloomThresholdFragmentShader,
+  crossFadeFragmentShader,
   cubicShaderInclude,
+  ForgeShaderSource,
+  gaussianBlurFragmentShader,
+  passthroughFragmentShader,
+  passthroughVertexShader,
   perlinNoiseFragmentShader,
   perlinNoiseShaderInclude,
   quinticShaderInclude,
   radialGradientShader,
   radialGradientShaderInclude,
   randomGradientShaderInclude,
+  ResolveIncludesPreProcessor,
   sdfBoxShaderInclude,
   sdfCircleShaderInclude,
   sdfEquilateralTriangleInclude,
@@ -17,6 +25,7 @@ import {
   ShaderCache,
   spriteFragmentShader,
   spriteVertexShader,
+  toneMappingFragmentShader,
 } from '../shaders/index.js';
 
 /**
@@ -33,30 +42,36 @@ import {
  * and shaders.
  */
 export function createShaderCache(): ShaderCache {
-  const shaderCache = new ShaderCache();
+  const includeMap = [
+    new ForgeShaderSource(cubicShaderInclude),
+    new ForgeShaderSource(perlinNoiseShaderInclude),
+    new ForgeShaderSource(quinticShaderInclude),
+    new ForgeShaderSource(radialGradientShaderInclude),
+    new ForgeShaderSource(randomGradientShaderInclude),
+    new ForgeShaderSource(sdfBoxShaderInclude),
+    new ForgeShaderSource(sdfCircleShaderInclude),
+    new ForgeShaderSource(sdfEquilateralTriangleInclude),
+    new ForgeShaderSource(sdfHexagonInclude),
+    new ForgeShaderSource(sdfOctagonInclude),
+    new ForgeShaderSource(sdfOrientedBoxShaderInclude),
+    new ForgeShaderSource(sdfRhombusInclude),
+    new ForgeShaderSource(sdfTrapezoidInclude),
+  ];
 
-  shaderCache.addInclude(
-    cubicShaderInclude,
-    perlinNoiseShaderInclude,
-    quinticShaderInclude,
-    radialGradientShaderInclude,
-    randomGradientShaderInclude,
-    sdfBoxShaderInclude,
-    sdfCircleShaderInclude,
-    sdfEquilateralTriangleInclude,
-    sdfHexagonInclude,
-    sdfOctagonInclude,
-    sdfOrientedBoxShaderInclude,
-    sdfRhombusInclude,
-    sdfTrapezoidInclude,
-  );
+  const includesPreProcessor = new ResolveIncludesPreProcessor(includeMap);
 
-  shaderCache.addShader(
-    radialGradientShader,
-    perlinNoiseFragmentShader,
-    spriteFragmentShader,
-    spriteVertexShader,
-  );
+  const shaderCache = new ShaderCache([includesPreProcessor])
+    .addShader(new ForgeShaderSource(radialGradientShader))
+    .addShader(new ForgeShaderSource(perlinNoiseFragmentShader))
+    .addShader(new ForgeShaderSource(spriteFragmentShader))
+    .addShader(new ForgeShaderSource(spriteVertexShader))
+    .addShader(new ForgeShaderSource(passthroughFragmentShader))
+    .addShader(new ForgeShaderSource(passthroughVertexShader))
+    .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))
+    .addShader(new ForgeShaderSource(crossFadeFragmentShader))
+    .addShader(new ForgeShaderSource(bloomThresholdFragmentShader))
+    .addShader(new ForgeShaderSource(bloomCompositeFragmentShader))
+    .addShader(new ForgeShaderSource(toneMappingFragmentShader));
 
   return shaderCache;
 }

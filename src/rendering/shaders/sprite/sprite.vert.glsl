@@ -1,6 +1,6 @@
 #version 300 es
 
-#property name: sprite.vert
+#pragma forge name(sprite.vert)
 
 in vec2 a_position;      // Vertex position (e.g., quad corners)
 in vec2 a_texCoord;      // Texture coordinate
@@ -29,7 +29,7 @@ void main() {
     vec2 pivoted = a_position - normalizedPivot;
 
     // 2. Scale quad to sprite size and scale
-    vec2 scaled = pivoted * a_instanceSize * a_instanceScale;
+    vec2 scaled = pivoted * a_instanceSize * a_instanceScale * 0.5;
 
     // 3. Rotate
     float c = cos(a_instanceRot);
@@ -43,7 +43,15 @@ void main() {
     vec2 world = rotated + a_instancePos;
 
     // 5. Project to screen
-    vec3 projected = vec3(world, 1.0) * u_projection;
+    //
+    // Must be matrix * vector (not vector * matrix): u_projection is built
+    // via Matrix3x3.scale()/.translate(), which compose new transforms by
+    // right-multiplying (M_new = M_old * T), the standard convention for a
+    // matrix that acts on column vectors via M*v. GLSL's `vec * mat` instead
+    // computes `transpose(M) * v`, which routes the translation terms into
+    // the (unused) z component instead of x/y - silently dropping any
+    // camera pan/translation.
+    vec3 projected = u_projection * vec3(world, 1.0);
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
     v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;

@@ -48,4 +48,40 @@ describe('Rect', () => {
     expect(rect.containsPoint(new Vector2(3, 5))).toBe(false);
     expect(rect.containsPoint(new Vector2(4, 4))).toBe(false);
   });
+
+  describe('intersects', () => {
+    it('returns true for overlapping rectangles', () => {
+      const a = new Rect(new Vector2(0, 0), new Vector2(10, 10));
+      const b = new Rect(new Vector2(5, 5), new Vector2(10, 10));
+      expect(a.intersects(b)).toBe(true);
+      expect(b.intersects(a)).toBe(true);
+    });
+
+    it('returns true for rectangles touching at an edge', () => {
+      const a = new Rect(new Vector2(0, 0), new Vector2(10, 10));
+      const b = new Rect(new Vector2(10, 0), new Vector2(10, 10));
+      expect(a.intersects(b)).toBe(true);
+      expect(b.intersects(a)).toBe(true);
+    });
+
+    it('returns true for rectangles touching at a corner', () => {
+      const a = new Rect(new Vector2(0, 0), new Vector2(10, 10));
+      const b = new Rect(new Vector2(10, 10), new Vector2(10, 10));
+      expect(a.intersects(b)).toBe(true);
+    });
+
+    it('returns false for non-overlapping rectangles', () => {
+      const a = new Rect(new Vector2(0, 0), new Vector2(10, 10));
+      const b = new Rect(new Vector2(20, 20), new Vector2(10, 10));
+      expect(a.intersects(b)).toBe(false);
+      expect(b.intersects(a)).toBe(false);
+    });
+
+    it('returns true when one rectangle is fully inside another', () => {
+      const a = new Rect(new Vector2(0, 0), new Vector2(10, 10));
+      const b = new Rect(new Vector2(2, 2), new Vector2(2, 2));
+      expect(a.intersects(b)).toBe(true);
+      expect(b.intersects(a)).toBe(true);
+    });
+  });
 });

@@ -1,18 +1,55 @@
-import { EcsWorld } from '../ecs/ecs-world.js';
+import type {
+  FlipEcsComponent,
+  PositionEcsComponent,
+  RotationEcsComponent,
+  ScaleEcsComponent,
+} from '../common/index.js';
+import type { SpriteEcsComponent } from './components/index.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';
+
+/**
+ * The components needed to bind an entity's per-instance data, resolved once
+ * per entity by the render system and passed to `BindInstanceDataCallback` so
+ * that instance data segments don't each have to look them up again.
+ */
+export interface InstanceComponents {
+  /**
+   * The entity's position.
+   */
+  position: PositionEcsComponent;
+
+  /**
+   * The entity's rotation, if it has one.
+   */
+  rotation: RotationEcsComponent | null;
+
+  /**
+   * The entity's scale, if it has one.
+   */
+  scale: ScaleEcsComponent | null;
+
+  /**
+   * The entity's sprite data.
+   */
+  sprite: SpriteEcsComponent;
+
+  /**
+   * The entity's flip flags, if it has any.
+   */
+  flip: FlipEcsComponent | null;
+}
 
 /**
  * Callback function type for binding instance data to a buffer.
  * This function is responsible for writing per-instance data (e.g., transforms, colors) into a Float32Array.
  *
- * @param entity - The entity whose data should be bound
+ * @param components - The entity's components, resolved once per entity by the render system
  * @param instanceDataBuffer - The Float32Array buffer to write instance data into
  * @param offset - The offset within the buffer where this instance's data should start
  */
-type BindInstanceDataCallback = (
-  entity: number,
-  world: EcsWorld,
+export type BindInstanceDataCallback = (
+  components: InstanceComponents,
   instanceDataBuffer: Float32Array,
   offset: number,
 ) => void;
@@ -24,7 +61,7 @@ type BindInstanceDataCallback = (
  * @param gl - The WebGL2 rendering context
  * @param renderable - The renderable object being configured
  */
-type SetupInstanceAttributes = (
+export type SetupInstanceAttributesCallback = (
   gl: WebGL2RenderingContext,
   renderable: Renderable,
 ) => void;
@@ -77,8 +114,8 @@ export class Renderable {
    */
   public readonly floatsPerInstance: number;
 
-  /** The rendering layer this renderable belongs to. */
-  public layer: number;
+  /** The rendering category this renderable belongs to. */
+  public category: number;
 
   /**
    * Callback function that binds instance-specific data for an entity into a buffer.
@@ -90,7 +127,7 @@ export class Renderable {
    * Callback function that sets up WebGL vertex attribute pointers for instanced rendering.
    * Called to configure how instance data should be interpreted by the shader.
    */
-  public readonly setupInstanceAttributes: SetupInstanceAttributes;
+  public readonly setupInstanceAttributes: SetupInstanceAttributesCallback;
 
   /**
    * Creates a new Renderable.
@@ -108,12 +145,12 @@ export class Renderable {
     floatsPerInstance: number,
     layer: number,
     bindInstanceData: BindInstanceDataCallback,
-    setupInstanceAttributes: SetupInstanceAttributes,
+    setupInstanceAttributes: SetupInstanceAttributesCallback,
   ) {
     this.geometry = geometry;
     this.material = material;
     this.floatsPerInstance = floatsPerInstance;
-    this.layer = layer;
+    this.category = layer;
     this.bindInstanceData = bindInstanceData;
     this.setupInstanceAttributes = setupInstanceAttributes;
   }

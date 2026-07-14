@@ -1,33 +1,40 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Bodies, Engine } from 'matter-js';
-import { createPhysicsEcsSystem } from './physics.system';
-import { EcsWorld } from '../../ecs';
+import { createPhysicsEcsSystem } from './physics.system.js';
+import { EcsWorld } from '../../ecs/index.js';
 import {
   PositionEcsComponent,
   positionId,
   RotationEcsComponent,
   rotationId,
   Time,
-} from '../../common';
-import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components';
-import { Vector2 } from '../../math';
+} from '../../common/index.js';
+import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components/index.js';
+import { PhysicsWorld } from '../physics-world.js';
+import { RigidBody } from '../rigid-body.js';
+import { CircleShape, PolygonShape } from '../shapes/index.js';
+import { Vector2 } from '../../math/index.js';
 
 describe('PhysicsSystem', () => {
   let world: EcsWorld;
   let time: Time;
-  let engine: Engine;
+  let physicsWorld: PhysicsWorld;
 
   beforeEach(() => {
     world = new EcsWorld();
     time = new Time();
-    engine = Engine.create({ gravity: { x: 0, y: 0 } });
-    world.addSystem(createPhysicsEcsSystem(engine, time));
+    physicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
+    world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
   });
 
   it('should update position and rotation from physics body for dynamic bodies', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(100, 200, 50, 50, { isStatic: false });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      position: new Vector2(100, 200),
+    });
+    physicsBody.velocity = new Vector2(10, 0);
+
     const physicsBodyComponent: PhysicsBodyEcsComponent = {
       physicsBody,
     };
@@ -46,18 +53,22 @@ describe('PhysicsSystem', () => {
     world.addComponent(entity, positionId, positionComponent);
     world.addComponent(entity, rotationId, rotationComponent);
 
-    time.update(16);
+    time.update(1000);
     world.update();
 
     expect(positionComponent.world.x).toBe(physicsBody.position.x);
     expect(positionComponent.world.y).toBe(physicsBody.position.y);
-    expect(rotationComponent.world).toBe(physicsBody.angle);
+    expect(rotationComponent.world).toBe(-physicsBody.angle);
   });
 
   it('should update physics body from position and rotation for static bodies', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(0, 0, 50, 50, { isStatic: true });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      isStatic: true,
+    });
+
     const physicsBodyComponent: PhysicsBodyEcsComponent = {
       physicsBody,
     };
@@ -81,15 +92,57 @@ describe('PhysicsSystem', () => {
 
     expect(physicsBody.position.x).toBe(100);
     expect(physicsBody.position.y).toBe(200);
-    expect(physicsBody.angle).toBe(Math.PI / 4);
+    expect(physicsBody.angle).toBe(-Math.PI / 4);
+  });
+
+  it('should update physics body from position and rotation for kinematic bodies', () => {
+    const entity = world.createEntity();
+
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      isStatic: false,
+    });
+    physicsBody.velocity = new Vector2(10, 0);
+
+    const physicsBodyComponent: PhysicsBodyEcsComponent = {
+      physicsBody,
+      isKinematic: true,
+    };
+
+    const positionComponent: PositionEcsComponent = {
+      local: new Vector2(100, 200),
+      world: new Vector2(100, 200),
+    };
+
+    const rotationComponent: RotationEcsComponent = {
+      local: Math.PI / 4,
+      world: Math.PI / 4,
+    };
+
+    world.addComponent(entity, PhysicsBodyId, physicsBodyComponent);
+    world.addComponent(entity, positionId, positionComponent);
+    world.addComponent(entity, rotationId, rotationComponent);
+
+    time.update(16);
+    world.update();
+
+    expect(physicsBody.position.x).toBe(100);
+    expect(physicsBody.position.y).toBe(200);
+    expect(physicsBody.angle).toBe(-Math.PI / 4);
   });
 
   it('should handle multiple physics bodies', () => {
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    const body1 = Bodies.rectangle(50, 50, 30, 30, { isStatic: false });
-    const body2 = Bodies.rectangle(150, 150, 40, 40, { isStatic: false });
+    const body1 = new RigidBody({
+      shape: PolygonShape.rectangle(30, 30),
+      position: new Vector2(50, 50),
+    });
+    const body2 = new RigidBody({
+      shape: PolygonShape.rectangle(40, 40),
+      position: new Vector2(150, 150),
+    });
 
     world.addComponent(entity1, PhysicsBodyId, { physicsBody: body1 });
     world.addComponent(entity1, positionId, {
@@ -122,10 +175,36 @@ describe('PhysicsSystem', () => {
     }
   });
 
-  it('should synchronize dynamic body position with ECS', () => {
+  it('should register a physics body on first update and remove it when the world stops', () => {
     const entity = world.createEntity();
 
-    const physicsBody = Bodies.rectangle(100, 200, 50, 50, { isStatic: false });
+    const physicsBody = new RigidBody({
+      shape: PolygonShape.rectangle(50, 50),
+      position: new Vector2(100, 200),
+    });
+
+    world.addComponent(entity, PhysicsBodyId, { physicsBody });
+    world.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(physicsBody);
+
+    world.stop();
+
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+  });
+
+  it('should remove a physics body from the engine world after its entity is removed', () => {
+    const entity = world.createEntity();
+    const physicsBody = new RigidBody({ shape: new CircleShape(10) });
 
     world.addComponent(entity, PhysicsBodyId, { physicsBody });
     world.addComponent(entity, positionId, {
@@ -137,13 +216,272 @@ describe('PhysicsSystem', () => {
     time.update(16);
     world.update();
 
-    const position = world.getComponent(entity, positionId);
+    expect(physicsWorld.bodies).toContain(physicsBody);
 
-    expect(position).toBeDefined();
+    world.removeEntity(entity);
 
-    if (position) {
-      expect(position.world.x).toBe(physicsBody.position.x);
-      expect(position.world.y).toBe(physicsBody.position.y);
-    }
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+  });
+
+  it('should not leave a ghost body registered when an entity id is reused for a new body within the same tick', () => {
+    // EcsWorld recycles entity ids as soon as an entity is removed, so a
+    // remove-then-immediately-recreate (e.g. a respawn that clears a batch
+    // of entities and spawns a new one in the same system run) can hand
+    // the freed id straight to a brand new PhysicsBodyId component before
+    // this system ever sees the entity as briefly gone.
+    const entity = world.createEntity();
+    const oldBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(entity, PhysicsBodyId, { physicsBody: oldBody });
+    world.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(oldBody);
+
+    world.removeEntity(entity);
+    const reusedEntity = world.createEntity();
+
+    expect(reusedEntity).toBe(entity);
+
+    const newBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(reusedEntity, PhysicsBodyId, { physicsBody: newBody });
+    world.addComponent(reusedEntity, positionId, {
+      local: new Vector2(500, 500),
+      world: new Vector2(500, 500),
+    });
+    world.addComponent(reusedEntity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(newBody);
+    expect(physicsWorld.bodies).not.toContain(oldBody);
+  });
+
+  it('should remove a physics body as soon as its entity is removed, without waiting for the next update', () => {
+    const entity = world.createEntity();
+    const physicsBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(entity, PhysicsBodyId, { physicsBody });
+    world.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(physicsBody);
+
+    world.removeEntity(entity);
+
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+  });
+
+  it('should stop reacting to entity removal once the system has been removed from the world', () => {
+    const isolatedWorld = new EcsWorld();
+    const isolatedPhysicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
+    const system = createPhysicsEcsSystem(isolatedPhysicsWorld, time);
+
+    isolatedWorld.addSystem(system);
+
+    const entity = isolatedWorld.createEntity();
+    const physicsBody = new RigidBody({ shape: new CircleShape(10) });
+
+    isolatedWorld.addComponent(entity, PhysicsBodyId, { physicsBody });
+    isolatedWorld.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    isolatedWorld.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    isolatedWorld.update();
+
+    expect(isolatedPhysicsWorld.bodies).toContain(physicsBody);
+
+    isolatedWorld.removeSystem(system);
+    isolatedWorld.removeEntity(entity);
+
+    expect(isolatedPhysicsWorld.bodies).toContain(physicsBody);
+  });
+
+  it('should drive a kinematic body from ECS position/rotation without the body driving ECS back', () => {
+    const entity = world.createEntity();
+    const physicsBody = new RigidBody({
+      shape: new CircleShape(10),
+      isSensor: true,
+    });
+
+    const positionComponent: PositionEcsComponent = {
+      local: new Vector2(50, 75),
+      world: new Vector2(50, 75),
+    };
+
+    const rotationComponent: RotationEcsComponent = {
+      local: 0.5,
+      world: 0.5,
+    };
+
+    world.addComponent(entity, PhysicsBodyId, {
+      physicsBody,
+      isKinematic: true,
+    });
+    world.addComponent(entity, positionId, positionComponent);
+    world.addComponent(entity, rotationId, rotationComponent);
+
+    time.update(16);
+    world.update();
+
+    expect(physicsBody.position.x).toBe(50);
+    expect(physicsBody.position.y).toBe(75);
+    expect(physicsBody.angle).toBe(-0.5);
+    expect(positionComponent.world.x).toBe(50);
+    expect(positionComponent.world.y).toBe(75);
+  });
+
+  it('should resolve collisionStart events to ECS entity pairs for overlapping kinematic bodies', () => {
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    const bodyA = new RigidBody({ shape: new CircleShape(20), isSensor: true });
+    const bodyB = new RigidBody({
+      shape: new CircleShape(20),
+      position: new Vector2(10, 0),
+      isSensor: true,
+    });
+
+    world.addComponent(entityA, PhysicsBodyId, {
+      physicsBody: bodyA,
+      isKinematic: true,
+    });
+    world.addComponent(entityA, positionId, {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    });
+    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+
+    world.addComponent(entityB, PhysicsBodyId, {
+      physicsBody: bodyB,
+      isKinematic: true,
+    });
+    world.addComponent(entityB, positionId, {
+      local: new Vector2(10, 0),
+      world: new Vector2(10, 0),
+    });
+    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.collisionStarts).toHaveLength(1);
+
+    const [pair] = physicsWorld.collisionStarts;
+    const entities = [
+      pair.bodyA.userData as number,
+      pair.bodyB.userData as number,
+    ].sort((a, b) => a - b);
+    expect(entities).toEqual([entityA, entityB].sort((a, b) => a - b));
+  });
+
+  it('should resolve collisionEnd events to ECS entity pairs once kinematic bodies separate', () => {
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    const bodyA = new RigidBody({ shape: new CircleShape(20), isSensor: true });
+    const bodyB = new RigidBody({
+      shape: new CircleShape(20),
+      position: new Vector2(10, 0),
+      isSensor: true,
+    });
+
+    world.addComponent(entityA, PhysicsBodyId, {
+      physicsBody: bodyA,
+      isKinematic: true,
+    });
+    world.addComponent(entityA, positionId, {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    });
+    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+
+    const positionComponentB: PositionEcsComponent = {
+      local: new Vector2(10, 0),
+      world: new Vector2(10, 0),
+    };
+
+    world.addComponent(entityB, PhysicsBodyId, {
+      physicsBody: bodyB,
+      isKinematic: true,
+    });
+    world.addComponent(entityB, positionId, positionComponentB);
+    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    positionComponentB.world.x = 1000;
+
+    time.update(16);
+    world.update();
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.collisionEnds).toHaveLength(1);
+
+    const [pair] = physicsWorld.collisionEnds;
+    const entities = [
+      pair.bodyA.userData as number,
+      pair.bodyB.userData as number,
+    ].sort((a, b) => a - b);
+    expect(entities).toEqual([entityA, entityB].sort((a, b) => a - b));
+  });
+
+  it('should not produce collision events between two overlapping static bodies', () => {
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    const bodyA = new RigidBody({
+      shape: new CircleShape(20),
+      isStatic: true,
+      isSensor: true,
+    });
+    const bodyB = new RigidBody({
+      shape: new CircleShape(20),
+      position: new Vector2(10, 0),
+      isStatic: true,
+      isSensor: true,
+    });
+
+    world.addComponent(entityA, PhysicsBodyId, { physicsBody: bodyA });
+    world.addComponent(entityA, positionId, {
+      local: new Vector2(0, 0),
+      world: new Vector2(0, 0),
+    });
+    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+
+    world.addComponent(entityB, PhysicsBodyId, { physicsBody: bodyB });
+    world.addComponent(entityB, positionId, {
+      local: new Vector2(10, 0),
+      world: new Vector2(10, 0),
+    });
+    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.collisionStarts).toHaveLength(0);
   });
 });

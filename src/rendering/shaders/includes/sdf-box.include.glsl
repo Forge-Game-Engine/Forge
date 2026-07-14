@@ -1,4 +1,4 @@
-#property name: sdfBox
+#pragma forge name(sdfBox)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfBox( in vec2 p, in vec2 b )

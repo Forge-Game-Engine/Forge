@@ -239,4 +239,276 @@ describe('EcsWorld', () => {
     expect(rot1.local).toBe(2);
     expect(rot2.local).toBe(4);
   });
+
+  describe('afterRun', () => {
+    it('passes an array of every run call result to afterRun', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[PositionEcsComponent], null, string> = {
+        query: [positionId],
+        run: () => 'result-value',
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith(['result-value']);
+    });
+
+    it('does not throw when afterRun is not defined', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const system: EcsSystem<[PositionEcsComponent]> = {
+        query: [positionId],
+        run: () => {},
+      };
+
+      world.addSystem(system);
+
+      expect(() => world.update()).not.toThrow();
+    });
+
+    // afterRun is a once-per-tick hook: every matched entity's run() call
+    // happens first, and afterRun is called exactly once afterwards with all
+    // of their results together, not interleaved with run per entity. This
+    // is what lets the render system collect one RenderPassResult per
+    // camera in run, then draw every camera's batch from a single afterRun
+    // call once all cameras are known.
+    it('calls run for every matched entity before calling afterRun once, with all their results', () => {
+      const world = new EcsWorld();
+      const entity1 = world.createEntity();
+      const entity2 = world.createEntity();
+
+      world.addComponent(entity1, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+      world.addComponent(entity2, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const callOrder: string[] = [];
+      const system: EcsSystem<[PositionEcsComponent], null, number> = {
+        query: [positionId],
+        run: (result) => {
+          callOrder.push(`run:${result.entity}`);
+
+          return result.entity;
+        },
+        afterRun: (entities) => {
+          callOrder.push(`afterRun:${entities.join(',')}`);
+        },
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(callOrder).toEqual([
+        `run:${entity1}`,
+        `run:${entity2}`,
+        `afterRun:${entity1},${entity2}`,
+      ]);
+    });
+
+    it('calls afterRun once with an empty array when no entities match the query', () => {
+      const world = new EcsWorld();
+      const nonexistentId = createComponentId<{ test: number }>(
+        'nonexistent-afterrun',
+      );
+
+      const afterRun = vi.fn();
+      const system: EcsSystem<[{ test: number }]> = {
+        query: [nonexistentId],
+        run: () => {},
+        afterRun,
+      };
+
+      world.addSystem(system);
+      world.update();
+
+      expect(afterRun).toHaveBeenCalledTimes(1);
+      expect(afterRun).toHaveBeenCalledWith([]);
+    });
+  });
+
+  describe('system registration lifecycle', () => {
+    it('calls onRegister with the world when a system is added', () => {
+      const world = new EcsWorld();
+      const onRegister = vi.fn();
+      const system: EcsSystem<[]> = {
+        query: [],
+        run: () => {},
+        onRegister,
+      };
+
+      world.addSystem(system);
+
+      expect(onRegister).toHaveBeenCalledTimes(1);
+      expect(onRegister).toHaveBeenCalledWith(world);
+    });
+
+    it('does not throw when adding a system without onRegister', () => {
+      const world = new EcsWorld();
+      const system: EcsSystem<[]> = {
+        query: [],
+        run: () => {},
+      };
+
+      expect(() => world.addSystem(system)).not.toThrow();
+    });
+
+    it('calls cleanupSystem with the world when a system is removed', () => {
+      const world = new EcsWorld();
+      const cleanupSystem = vi.fn();
+      const system: EcsSystem<[]> = {
+        query: [],
+        run: () => {},
+        cleanupSystem,
+      };
+
+      world.addSystem(system);
+      world.removeSystem(system);
+
+      expect(cleanupSystem).toHaveBeenCalledTimes(1);
+      expect(cleanupSystem).toHaveBeenCalledWith(world);
+    });
+
+    it('does not throw when removing a system without cleanupSystem', () => {
+      const world = new EcsWorld();
+      const system: EcsSystem<[]> = {
+        query: [],
+        run: () => {},
+      };
+
+      world.addSystem(system);
+
+      expect(() => world.removeSystem(system)).not.toThrow();
+    });
+
+    it('calls cleanupEntities then cleanupSystem for every system when the world stops', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const callOrder: string[] = [];
+      const system: EcsSystem<[PositionEcsComponent]> = {
+        query: [positionId],
+        run: () => {},
+        cleanupEntities: () => {
+          callOrder.push('cleanupEntities');
+        },
+        cleanupSystem: () => {
+          callOrder.push('cleanupSystem');
+        },
+      };
+
+      world.addSystem(system);
+      world.stop();
+
+      expect(callOrder).toEqual(['cleanupEntities', 'cleanupSystem']);
+    });
+
+    it('does not throw when stopping a world whose systems define neither cleanupEntities nor cleanupSystem', () => {
+      const world = new EcsWorld();
+      const system: EcsSystem<[]> = {
+        query: [],
+        run: () => {},
+      };
+
+      world.addSystem(system);
+
+      expect(() => world.stop()).not.toThrow();
+    });
+  });
+
+  describe('onEntityRemoved', () => {
+    it('raises onEntityRemoved with the entity id when removeEntity is called', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeEntity(entity);
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith(entity);
+    });
+
+    it('raises onEntityRemoved when removeComponent removes the last remaining component', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeComponent(entity, positionId);
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith(entity);
+    });
+
+    it('does not raise onEntityRemoved when removeComponent leaves other components on the entity', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vector2.zero,
+        world: Vector2.zero,
+      });
+      world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeComponent(entity, positionId);
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('stops notifying a listener once it has been deregistered', () => {
+      const world = new EcsWorld();
+      const entity1 = world.createEntity();
+      const entity2 = world.createEntity();
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+      world.onEntityRemoved.deregisterListener(listener);
+
+      world.removeEntity(entity1);
+      world.removeEntity(entity2);
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
 });

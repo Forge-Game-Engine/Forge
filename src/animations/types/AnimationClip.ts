@@ -17,6 +17,11 @@ export class AnimationClip {
   public readonly frames: AnimationFrame[];
 
   /**
+   * The total number of frames in the animation.
+   */
+  public readonly frameCount: number;
+
+  /**
    * Event that is raised when the animation starts.
    */
   public readonly onAnimationStartEvent: ForgeEvent;
@@ -41,6 +46,7 @@ export class AnimationClip {
     }
 
     this.frames = frames;
+    this.frameCount = frames.length;
 
     this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
     this.onAnimationEndEvent = new ForgeEvent('AnimationEndEvent');

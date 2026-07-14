@@ -228,4 +228,38 @@ export class Vector2 {
       this.x * sin + this.y * cos,
     );
   }
+
+  /**
+   * Calculates the dot product of this vector and another vector.
+   * @param other - The other vector
+   * @returns The dot product of the two vectors
+   */
+  public dot(other: Vector2): number {
+    return this.x * other.x + this.y * other.y;
+  }
+
+  /**
+   * Calculates the 2D (scalar) cross product of this vector and another vector.
+   * @param other - The other vector
+   * @returns The scalar cross product of the two vectors
+   */
+  public cross(other: Vector2): number {
+    return this.x * other.y - this.y * other.x;
+  }
+
+  /**
+   * Returns a new vector perpendicular to this one, rotated -90 degrees (y, -x).
+   * @returns A new Vector2 perpendicular to this vector
+   */
+  public perpendicular(): Vector2 {
+    return new Vector2(this.y, -this.x);
+  }
+
+  /**
+   * Returns a new vector with both components negated.
+   * @returns A new Vector2 with negated components
+   */
+  public negate(): Vector2 {
+    return new Vector2(-this.x, -this.y);
+  }
 }

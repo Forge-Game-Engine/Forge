@@ -1,9 +1,16 @@
+/**
+ * A sparse set implementation for efficient storage of components in an ECS architecture.
+ */
 export class SparseSet<T> {
   public readonly sparseArray: Array<number>;
   public readonly denseEntities: Array<number>;
   public readonly denseComponents: Array<T>;
   public readonly isTag: boolean;
 
+  /**
+   * Creates a new SparseSet instance.
+   * @param isTag - Indicates whether the set is a tag component (default: false).
+   */
   constructor(isTag: boolean = false) {
     this.sparseArray = [];
     this.denseEntities = [];
@@ -11,6 +18,11 @@ export class SparseSet<T> {
     this.isTag = isTag;
   }
 
+  /**
+   * Checks if the set contains a component for the specified entity.
+   * @param entity - The entity ID to check.
+   * @returns True if the entity has a component in the set, false otherwise.
+   */
   public has(entity: number): boolean {
     const index = this.sparseArray[entity];
 
@@ -19,12 +31,22 @@ export class SparseSet<T> {
     );
   }
 
+  /**
+   * Gets the component for the specified entity.
+   * @param entity - The entity ID to get the component for.
+   * @returns The component if the entity has one in the set, null otherwise.
+   */
   public get(entity: number): T | null {
     return this.has(entity)
       ? this.denseComponents[this.sparseArray[entity]]
       : null;
   }
 
+  /**
+   * Adds a component for the specified entity.
+   * @param entity - The entity ID to add the component for.
+   * @param component - The component to add.
+   */
   public add(entity: number, component: T): void {
     if (this.has(entity)) {
       this.denseComponents[this.sparseArray[entity]] = component;
@@ -38,6 +60,10 @@ export class SparseSet<T> {
     this.sparseArray[entity] = index;
   }
 
+  /**
+   * Removes the component for the specified entity.
+   * @param entity - The entity ID to remove the component for.
+   */
   public remove(entity: number): void {
     if (!this.has(entity)) {
       return;

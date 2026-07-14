@@ -20,7 +20,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 
 - **ECS (Entity-Component-System)**: Core architecture pattern
 - **Rendering**: WebGL2-based rendering system
-- **Physics**: Integration with Matter.js
+- **Physics**: Native 2D physics engine (rigid bodies, collision detection/resolution, gravity)
 - **Audio**: Sound management via Howler.js
 - **Animations**: Robust animation system
 - **Input**: Keyboard, mouse, and touch input handling
@@ -494,6 +494,11 @@ export class Entity {
 }
 ```
 
+This keeps the cache's lifetime tied to the `RenderContext` that owns it,
+makes the dependency visible at every call site, and means two independent
+`RenderContext`s (for example in two unrelated tests) never share a cache by
+accident.
+
 ## Security Considerations
 
 ### Validation
@@ -510,7 +515,7 @@ export class Entity {
 
 ### Dependencies
 
-- Peer dependencies: `@rive-app/webgl2`, `howler`, `matter-js`
+- Peer dependencies: `@rive-app/webgl2`, `howler`
 - Keep dependencies minimal and well-maintained
 
 ## Additional Resources

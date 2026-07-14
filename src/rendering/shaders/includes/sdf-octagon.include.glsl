@@ -1,4 +1,4 @@
-#property name: sdfOctagon
+#pragma forge name(sdfOctagon)
 
 // inigo quilez - https://iquilezles.org/articles/distfunctions2d/
 float sdfOctagon( in vec2 p, in float r )
