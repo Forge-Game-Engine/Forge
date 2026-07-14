@@ -53,7 +53,7 @@ participate in the simulation:
 - **Static** (`isStatic: true`): infinite mass, never moves. Use this for
   floors, walls, and other immovable geometry. A pair of two static bodies
   never produces collision events, since neither side can move.
-- **Sensor** (`isSensor: true`): still participates in collision *detection*
+- **Sensor** (`isSensor: true`): still participates in collision _detection_
   (and so still raises `collisionStarts`/`collisionEnds`), but produces no
   impulses or positional correction. Use this for trigger volumes, such as
   pickups, checkpoints, and damage zones, where you want to know that

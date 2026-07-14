@@ -46,7 +46,7 @@ By default a task is one-shot: it fires once and is then removed from
 seconds" or "end the round after 30 seconds".
 
 Set `repeat: true` with an `interval` to make a task fire repeatedly. `delay`
-is the wait before the *first* run; every run after that is spaced by
+is the wait before the _first_ run; every run after that is spaced by
 `interval` instead:
 
 ```ts

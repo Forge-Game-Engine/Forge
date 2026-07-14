@@ -62,7 +62,7 @@ grows or shrinks around it.
 
 ## Layering multiple render targets
 
-Cameras that render into *different* targets, and are all presented in the
+Cameras that render into _different_ targets, and are all presented in the
 same frame, get layered onto the canvas in ascending
 `CameraEcsComponent.layer` order: the lowest layer clears the canvas and
 replaces it outright, and every higher layer alpha-blends on top instead of
@@ -100,7 +100,7 @@ world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
-`layer` only matters between cameras with *different* render targets; it has
+`layer` only matters between cameras with _different_ render targets; it has
 no effect on cameras that share one (already composited together before any
 present pass sees them, see below) or that render straight to the canvas.
 
@@ -108,8 +108,8 @@ Only the background camera carries a `GaussianBlurEcsComponent`, so only
 its target gets blurred; the foreground target is presented sharp, on top
 of it. See the space-shooter demo for this pattern in a real scene.
 
-This is different from giving multiple cameras the *same* `renderTarget`
-(described above): that composites them together *before* any
+This is different from giving multiple cameras the _same_ `renderTarget`
+(described above): that composites them together _before_ any
 post-processing pass sees the result, so an effect applied to the shared
 target affects every camera that drew into it. Give cameras separate
 targets specifically when you want a pass to affect one layer but not

@@ -1,8 +1,10 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  Color,
   createImageSprite,
   RenderContext,
+  SpriteEcsComponent,
   spriteId,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -19,11 +21,20 @@ import {
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
-export async function createPlayer(
+export interface PlayerSprites {
+  playerSprite: SpriteEcsComponent;
+  bulletSprite: SpriteEcsComponent;
+}
+
+/**
+ * Loads the player's sprites once, so they can be reused every time
+ * {@link spawnPlayer} creates a new player entity (e.g. on respawn), instead
+ * of re-uploading GPU textures each time.
+ */
+export async function loadPlayerSprites(
   renderContext: RenderContext,
-  world: EcsWorld,
   renderLayer: number,
-): Promise<void> {
+): Promise<PlayerSprites> {
   const playerSprite = createImageSprite(
     await renderContext.imageCache.getOrLoad(
       getAssetUrl('img/space-shooter/Spaceship_6.png'),
@@ -32,13 +43,50 @@ export async function createPlayer(
     renderLayer,
   );
 
+  // bullet-yellow.png is a solid, opaque comet shape (its own alpha
+  // channel no longer fades to near-zero across the visible glow, which
+  // would otherwise get crushed by normal alpha blending regardless of how
+  // bright its color is). bullet_emission.png is a plain greyscale mask of
+  // that same shape - color comes from `color` below, not the texture -
+  // so createBloomEcsSystem's blur turns it into a soft, evenly-colored
+  // glow, and raising BloomEcsComponent.threshold cleanly isolates the
+  // bullets from every other (non-emissive) sprite in the scene (see the
+  // "Emissive-driven bloom" and "Authoring an emissive map" sections of
+  // the Bloom docs).
+  const bulletImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/bullet-yellow.png'),
+  );
+
+  const bulletEmission = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/bullet_emission.png'),
+  );
+
   const bulletSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(
-      getAssetUrl('img/space-shooter/bullet-yellow.png'),
-    ),
+    bulletImage,
     renderContext,
     renderLayer,
+    {
+      emissiveMap: {
+        image: bulletEmission,
+        color: new Color(1, 0.65, 0.15),
+        intensity: 2,
+      },
+    },
   );
+
+  return { playerSprite, bulletSprite };
+}
+
+/**
+ * Creates the player entity using already-loaded sprites.
+ */
+export function spawnPlayer(
+  renderContext: RenderContext,
+  world: EcsWorld,
+  renderLayer: number,
+  playerSprites: PlayerSprites,
+): void {
+  const { playerSprite, bulletSprite } = playerSprites;
 
   const playerEntity = world.createEntity();
   const playerX = 0;
@@ -75,7 +123,7 @@ export async function createPlayer(
   });
 
   world.addComponent(playerEntity, gunId, {
-    timeBetweenShots: 0.2,
+    timeBetweenShots: 0.1,
     bulletSprite: bulletSprite,
     renderLayer: renderLayer,
     nextAllowedShotTime: 0,
@@ -90,4 +138,16 @@ export async function createPlayer(
     }),
     isKinematic: true,
   });
+}
+
+export async function createPlayer(
+  renderContext: RenderContext,
+  world: EcsWorld,
+  renderLayer: number,
+): Promise<PlayerSprites> {
+  const playerSprites = await loadPlayerSprites(renderContext, renderLayer);
+
+  spawnPlayer(renderContext, world, renderLayer, playerSprites);
+
+  return playerSprites;
 }

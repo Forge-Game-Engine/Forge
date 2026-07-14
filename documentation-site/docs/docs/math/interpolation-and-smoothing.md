@@ -25,6 +25,7 @@ computed as `elapsed / duration` will keep extrapolating past `v1` once
 const t = clamp(elapsed / duration, 0, 1);
 const value = lerp(start, end, t);
 ```
+
 :::
 
 ## clamp: keeping a value in range

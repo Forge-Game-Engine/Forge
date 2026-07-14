@@ -1,0 +1,30 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 12px;
+  margin-right: 10px;
+  vertical-align: top;
+
+  background-color: var(--card-background-color);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.control label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.control input[type='range'],
+.control input[type='checkbox'] {
+  accent-color: var(--ifm-color-primary);
+}

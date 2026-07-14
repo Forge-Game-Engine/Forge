@@ -1,3 +1,7 @@
+import {
+  RENDER_TARGET_FORMAT,
+  RENDER_TARGET_FORMAT_KEYS,
+} from './enums/index.js';
 import { createRenderTarget, RenderTarget } from './render-target.js';
 
 /**
@@ -15,11 +19,18 @@ export class PingPongTarget {
    * @param gl - The WebGL2 rendering context.
    * @param width - The render target width in pixels.
    * @param height - The render target height in pixels.
+   * @param format - The requested color storage format for both underlying
+   * render targets. Defaults to `RENDER_TARGET_FORMAT.ldr`.
    */
-  constructor(gl: WebGL2RenderingContext, width: number, height: number) {
+  constructor(
+    gl: WebGL2RenderingContext,
+    width: number,
+    height: number,
+    format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
+  ) {
     this._targets = [
-      createRenderTarget(gl, width, height),
-      createRenderTarget(gl, width, height),
+      createRenderTarget(gl, width, height, format),
+      createRenderTarget(gl, width, height, format),
     ];
   }
 

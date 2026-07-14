@@ -79,7 +79,7 @@ function createBulletWithOffset(
   sound: Howl,
 ) {
   const bullet = world.createEntity();
-  const bulletScale = 0.2;
+  const bulletScale = 0.15;
   const spawnPosition = positionComponent.world.add(offset);
 
   world.addComponent(bullet, spriteId, gunComponent.bulletSprite);
@@ -100,7 +100,7 @@ function createBulletWithOffset(
   });
 
   world.addComponent(bullet, bulletId, {
-    speed: 700,
+    speed: 800,
   });
 
   world.addComponent(bullet, lifetimeId, {

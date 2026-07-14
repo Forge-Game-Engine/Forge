@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PingPongTarget } from './ping-pong-target';
+import { RENDER_TARGET_FORMAT } from './enums/index.js';
 
 describe('PingPongTarget', () => {
   let gl: WebGL2RenderingContext;
@@ -18,11 +19,14 @@ describe('PingPongTarget', () => {
       getParameter: vi.fn().mockReturnValue(null),
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
+      getExtension: vi.fn().mockReturnValue({}),
       FRAMEBUFFER: 'FRAMEBUFFER',
       FRAMEBUFFER_BINDING: 'FRAMEBUFFER_BINDING',
       FRAMEBUFFER_COMPLETE: 1,
       COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
       TEXTURE_2D: 'TEXTURE_2D',
+      RGBA16F: 'RGBA16F',
+      HALF_FLOAT: 'HALF_FLOAT',
     } as unknown as WebGL2RenderingContext;
   });
 
@@ -73,5 +77,19 @@ describe('PingPongTarget', () => {
 
     expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(2);
     expect(gl.deleteTexture).toHaveBeenCalledTimes(2);
+  });
+
+  it('defaults both underlying targets to ldr', () => {
+    const pingPong = new PingPongTarget(gl, 128, 128);
+
+    expect(pingPong.read.format).toBe(RENDER_TARGET_FORMAT.ldr);
+    expect(pingPong.write.format).toBe(RENDER_TARGET_FORMAT.ldr);
+  });
+
+  it('forwards the requested format to both underlying targets', () => {
+    const pingPong = new PingPongTarget(gl, 128, 128, RENDER_TARGET_FORMAT.hdr);
+
+    expect(pingPong.read.format).toBe(RENDER_TARGET_FORMAT.hdr);
+    expect(pingPong.write.format).toBe(RENDER_TARGET_FORMAT.hdr);
   });
 });

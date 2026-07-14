@@ -226,6 +226,97 @@ describe('PhysicsSystem', () => {
     expect(physicsWorld.bodies).not.toContain(physicsBody);
   });
 
+  it('should not leave a ghost body registered when an entity id is reused for a new body within the same tick', () => {
+    // EcsWorld recycles entity ids as soon as an entity is removed, so a
+    // remove-then-immediately-recreate (e.g. a respawn that clears a batch
+    // of entities and spawns a new one in the same system run) can hand
+    // the freed id straight to a brand new PhysicsBodyId component before
+    // this system ever sees the entity as briefly gone.
+    const entity = world.createEntity();
+    const oldBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(entity, PhysicsBodyId, { physicsBody: oldBody });
+    world.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(oldBody);
+
+    world.removeEntity(entity);
+    const reusedEntity = world.createEntity();
+
+    expect(reusedEntity).toBe(entity);
+
+    const newBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(reusedEntity, PhysicsBodyId, { physicsBody: newBody });
+    world.addComponent(reusedEntity, positionId, {
+      local: new Vector2(500, 500),
+      world: new Vector2(500, 500),
+    });
+    world.addComponent(reusedEntity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(newBody);
+    expect(physicsWorld.bodies).not.toContain(oldBody);
+  });
+
+  it('should remove a physics body as soon as its entity is removed, without waiting for the next update', () => {
+    const entity = world.createEntity();
+    const physicsBody = new RigidBody({ shape: new CircleShape(10) });
+
+    world.addComponent(entity, PhysicsBodyId, { physicsBody });
+    world.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    world.update();
+
+    expect(physicsWorld.bodies).toContain(physicsBody);
+
+    world.removeEntity(entity);
+
+    expect(physicsWorld.bodies).not.toContain(physicsBody);
+  });
+
+  it('should stop reacting to entity removal once the system has been removed from the world', () => {
+    const isolatedWorld = new EcsWorld();
+    const isolatedPhysicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
+    const system = createPhysicsEcsSystem(isolatedPhysicsWorld, time);
+
+    isolatedWorld.addSystem(system);
+
+    const entity = isolatedWorld.createEntity();
+    const physicsBody = new RigidBody({ shape: new CircleShape(10) });
+
+    isolatedWorld.addComponent(entity, PhysicsBodyId, { physicsBody });
+    isolatedWorld.addComponent(entity, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    isolatedWorld.addComponent(entity, rotationId, { local: 0, world: 0 });
+
+    time.update(16);
+    isolatedWorld.update();
+
+    expect(isolatedPhysicsWorld.bodies).toContain(physicsBody);
+
+    isolatedWorld.removeSystem(system);
+    isolatedWorld.removeEntity(entity);
+
+    expect(isolatedPhysicsWorld.bodies).toContain(physicsBody);
+  });
+
   it('should drive a kinematic body from ECS position/rotation without the body driving ECS back', () => {
     const entity = world.createEntity();
     const physicsBody = new RigidBody({

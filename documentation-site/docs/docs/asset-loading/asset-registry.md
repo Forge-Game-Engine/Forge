@@ -32,10 +32,7 @@ import {
 
 const animationRegistry = new AssetRegistry<AnimationClip>();
 
-const runHandle = animationRegistry.register(
-  'run',
-  createAnimation(1, 6),
-);
+const runHandle = animationRegistry.register('run', createAnimation(1, 6));
 
 world.addComponent(playerEntity, spriteAnimationId, {
   animationClipHandle: runHandle,

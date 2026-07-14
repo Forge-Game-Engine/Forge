@@ -20,10 +20,7 @@ export const useFullscreen: UseFullscreenHook = (elementRef) => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
     return () => {
-      document.removeEventListener(
-        'fullscreenchange',
-        handleFullscreenChange,
-      );
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, [elementRef]);
 

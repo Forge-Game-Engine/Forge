@@ -14,6 +14,7 @@ export const createAsteroidCollisionEcsSystem = (
   physicsWorld: PhysicsWorld,
   time: Time,
   explosionSpawner: ExplosionSpawner,
+  onPlayerDeath: () => void,
 ): EcsSystem<[AsteroidEcsComponent, PositionEcsComponent]> => ({
   query: [asteroidId, positionId],
   run: (result, world) => {
@@ -53,6 +54,7 @@ export const createAsteroidCollisionEcsSystem = (
           time.timeInSeconds,
         );
         world.removeEntity(otherEntity);
+        onPlayerDeath();
 
         return;
       }

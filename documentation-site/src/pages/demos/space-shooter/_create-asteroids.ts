@@ -41,7 +41,8 @@ export async function createAsteroidSpawner(
     minX: -renderContext.canvas.width / 2,
     maxX: renderContext.canvas.width / 2,
     spawnY: renderContext.canvas.height / 2 + 100,
-    speed: 100,
+    minSpeed: 70,
+    maxSpeed: 130,
     rotationSpeed: Math.PI / 6,
   };
 

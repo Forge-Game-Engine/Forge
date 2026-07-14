@@ -54,9 +54,7 @@ export const Demo: FC<DemoProps> = ({
               type="button"
               className={styles.fullscreenButton}
               onClick={toggleFullscreen}
-              aria-label={
-                isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'
-              }
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               <i
                 className={clsx(

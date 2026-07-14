@@ -114,7 +114,7 @@ const moverSystem = {
   query: [Position, Velocity] as const,
   run(result, world) {
     const [position, velocity] = result.components;
-    
+
     position.x += velocity.x;
     position.y += velocity.y;
   },
@@ -185,11 +185,11 @@ const entity = world.createEntity();
 world.addComponent(entity, Position, { x: 12, y: 10 });
 
 const logPositionSystem = {
- query: [Position],
- run(result) {
-  const [position] = result.components;
-  console.log(`position: [${position.x}, ${position.y}]`); // prints: "position: [12, 10]" every frame
- },
+  query: [Position],
+  run(result) {
+    const [position] = result.components;
+    console.log(`position: [${position.x}, ${position.y}]`); // prints: "position: [12, 10]" every frame
+  },
 };
 
 world.addSystem(logPositionSystem);

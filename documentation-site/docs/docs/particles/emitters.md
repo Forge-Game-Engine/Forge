@@ -24,7 +24,7 @@ special cases worth knowing:
 
 - If `min` and `max` are equal, every particle spawns at exactly that angle.
 - If the range spans a full 360 degrees, including the default `{ min: 0,
-  max: 360 }`, particles spawn at a fully random angle. This is the usual
+max: 360 }`, particles spawn at a fully random angle. This is the usual
   choice for an omnidirectional burst like an explosion.
 
 For anything in between, particles spawn following the convention used by

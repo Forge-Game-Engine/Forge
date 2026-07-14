@@ -1,4 +1,3 @@
-import { Vector2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import {
   CameraEcsComponent,
@@ -14,6 +13,13 @@ import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
 import { RenderContext } from '../render-context.js';
 import { createRenderTarget, RenderTarget } from '../render-target.js';
+
+// Shared, read-only direction constants for the two blur passes: passed
+// straight through as the `u_direction` uniform's `Float32Array` value, so
+// a pass never allocates a new vector (or, via `Material.bind`, a new
+// `Float32Array` conversion of one) on every one of `passes` iterations.
+const horizontalBlurDirection = new Float32Array([1, 0]);
+const verticalBlurDirection = new Float32Array([0, 1]);
 
 /**
  * Creates a two-pass separable Gaussian blur post-processing system.
@@ -74,7 +80,12 @@ export const createGaussianBlurEcsSystem = (
       existing.dispose(gl);
     }
 
-    const pingPong = new PingPongTarget(gl, target.width, target.height);
+    const pingPong = new PingPongTarget(
+      gl,
+      target.width,
+      target.height,
+      target.format,
+    );
 
     pingPongByTarget.set(target, pingPong);
 
@@ -95,7 +106,12 @@ export const createGaussianBlurEcsSystem = (
       existing.dispose(gl);
     }
 
-    const snapshot = createRenderTarget(gl, target.width, target.height);
+    const snapshot = createRenderTarget(
+      gl,
+      target.width,
+      target.height,
+      target.format,
+    );
 
     sharpSnapshotByTarget.set(target, snapshot);
 
@@ -105,8 +121,8 @@ export const createGaussianBlurEcsSystem = (
   const drawPass = (
     material: Material,
     sourceTexture: WebGLTexture,
-    direction: Vector2,
-    texelSize: Vector2,
+    direction: Float32Array,
+    texelSize: Float32Array,
     destination: RenderTarget,
   ): void => {
     beginFullscreenReplacePass(renderContext, destination);
@@ -161,10 +177,10 @@ export const createGaussianBlurEcsSystem = (
       }
 
       const pingPong = getPingPongTarget(renderTarget);
-      const texelSize = new Vector2(
+      const texelSize = new Float32Array([
         1 / renderTarget.width,
         1 / renderTarget.height,
-      );
+      ]);
 
       // Each iteration reads the previous iteration's result back out of
       // `renderTarget` (itself, for the first iteration, the freshly
@@ -175,7 +191,7 @@ export const createGaussianBlurEcsSystem = (
         drawPass(
           blurMaterial,
           renderTarget.colorTexture,
-          new Vector2(1, 0),
+          horizontalBlurDirection,
           texelSize,
           pingPong.write,
         );
@@ -184,7 +200,7 @@ export const createGaussianBlurEcsSystem = (
         drawPass(
           blurMaterial,
           pingPong.read.colorTexture,
-          new Vector2(0, 1),
+          verticalBlurDirection,
           texelSize,
           renderTarget,
         );

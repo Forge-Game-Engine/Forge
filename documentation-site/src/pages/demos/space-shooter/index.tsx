@@ -1,5 +1,15 @@
-import React, { JSX } from 'react';
-import { createSpaceShooterGame } from './_create-game';
+import React, { JSX, useCallback, useRef, useState } from 'react';
+import {
+  BloomEcsComponent,
+  GaussianBlurEcsComponent,
+} from '@forge-game-engine/forge/rendering';
+import {
+  bloomDefaults,
+  blurDefaults,
+  createSpaceShooterGame,
+} from './_create-game';
+import { BloomControls } from './_BloomControls';
+import { GaussianBlurControls } from './_GaussianBlurControls';
 import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
@@ -23,12 +33,101 @@ import asteroidSpawnerComponentCode from '!!raw-loader!./_asteroid-spawner.compo
 import asteroidSpawnerSystemCode from '!!raw-loader!./_asteroid-spawner.system';
 import createAsteroidsCode from '!!raw-loader!./_create-asteroids';
 import collisionSystemCode from '!!raw-loader!./_collision.system';
+import gameOverComponentCode from '!!raw-loader!./_game-over.component';
+import gameOverSystemCode from '!!raw-loader!./_game-over.system';
 
 import { Demo } from '@site/src/components/Demo';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
 import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 
 export default function Rendering(): JSX.Element {
+  const bloomRef = useRef<BloomEcsComponent | null>(null);
+  const [threshold, setThreshold] = useState(bloomDefaults.threshold);
+  const [passes, setPasses] = useState(bloomDefaults.passes);
+  const [intensity, setIntensity] = useState(bloomDefaults.intensity);
+  const [bloomEnabled, setBloomEnabled] = useState(true);
+
+  const blurRef = useRef<GaussianBlurEcsComponent | null>(null);
+  const [blurPasses, setBlurPasses] = useState(blurDefaults.passes);
+  const [blurIntensity, setBlurIntensity] = useState(blurDefaults.intensity);
+  const [blurEnabled, setBlurEnabled] = useState(true);
+
+  const createGame = useCallback(
+    () =>
+      createSpaceShooterGame(
+        (bloom) => {
+          bloomRef.current = bloom;
+        },
+        (blur) => {
+          blurRef.current = blur;
+        },
+      ),
+    [],
+  );
+
+  const handleThresholdChange = (value: number) => {
+    setThreshold(value);
+
+    if (bloomRef.current) {
+      bloomRef.current.threshold = value;
+    }
+  };
+
+  const handlePassesChange = (value: number) => {
+    setPasses(value);
+
+    if (bloomRef.current) {
+      bloomRef.current.passes = value;
+    }
+  };
+
+  const handleIntensityChange = (value: number) => {
+    setIntensity(value);
+
+    if (bloomRef.current) {
+      bloomRef.current.intensity = value;
+    }
+  };
+
+  const handleBloomEnabledChange = (enabled: boolean) => {
+    setBloomEnabled(enabled);
+
+    if (bloomRef.current) {
+      // Zero intensity is bloom's own "off" switch (see
+      // `BloomEcsComponent.intensity`), so toggling just drives it to/from
+      // zero rather than needing an enabled flag on the component itself.
+      bloomRef.current.intensity = enabled ? intensity : 0;
+    }
+  };
+
+  const handleBlurPassesChange = (value: number) => {
+    setBlurPasses(value);
+
+    if (blurRef.current) {
+      blurRef.current.passes = value;
+    }
+  };
+
+  const handleBlurIntensityChange = (value: number) => {
+    setBlurIntensity(value);
+
+    if (blurRef.current) {
+      blurRef.current.intensity = value;
+    }
+  };
+
+  const handleBlurEnabledChange = (enabled: boolean) => {
+    setBlurEnabled(enabled);
+
+    if (blurRef.current) {
+      // Zero intensity is the blur's own "off" switch (see
+      // `GaussianBlurEcsComponent.intensity`), so toggling just drives it
+      // to/from zero rather than needing an enabled flag on the component
+      // itself.
+      blurRef.current.intensity = enabled ? blurIntensity : 0;
+    }
+  };
+
   return (
     <Demo
       metaData={{
@@ -37,7 +136,7 @@ export default function Rendering(): JSX.Element {
       }}
       header="Space Shooter"
       blurb="This demo showcases a complete space shooter game built using the Forge Game Engine. It features player-controlled movement, shooting mechanics, enemy spawning, and collision detection. The game demonstrates how to leverage the engine's capabilities to create an engaging and interactive experience. Players can navigate their spaceship, avoid obstacles, and shoot down enemies while enjoying smooth rendering and responsive controls."
-      createGame={createSpaceShooterGame}
+      createGame={createGame}
       codeFiles={[
         {
           name: 'game.ts',
@@ -116,6 +215,14 @@ export default function Rendering(): JSX.Element {
           content: createPlayerCode,
         },
         {
+          name: 'game-over.component.ts',
+          content: gameOverComponentCode,
+        },
+        {
+          name: 'game-over.system.ts',
+          content: gameOverSystemCode,
+        },
+        {
           name: 'gun.component.ts',
           content: gunComponentCode,
         },
@@ -146,6 +253,31 @@ export default function Rendering(): JSX.Element {
           <InteractionInstruction
             displayElement={<KeyboardKey keyCode="␣" />}
             text="Shoot"
+          />
+
+          <InteractionInstruction
+            displayElement={<KeyboardKey keyCode="R" />}
+            text="Restart (after death)"
+          />
+
+          <BloomControls
+            enabled={bloomEnabled}
+            threshold={threshold}
+            passes={passes}
+            intensity={intensity}
+            onEnabledChange={handleBloomEnabledChange}
+            onThresholdChange={handleThresholdChange}
+            onPassesChange={handlePassesChange}
+            onIntensityChange={handleIntensityChange}
+          />
+
+          <GaussianBlurControls
+            enabled={blurEnabled}
+            passes={blurPasses}
+            intensity={blurIntensity}
+            onEnabledChange={handleBlurEnabledChange}
+            onPassesChange={handleBlurPassesChange}
+            onIntensityChange={handleBlurIntensityChange}
           />
         </>
       }

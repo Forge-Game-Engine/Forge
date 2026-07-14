@@ -18,12 +18,12 @@ const keyboard = new KeyboardInputSource(inputManager);
 Then add bindings to the matching set on the source. There is one binding
 type per action type:
 
-| Binding | Set | Action |
-| --- | --- | --- |
+| Binding                                                                    | Set               | Action          |
+| -------------------------------------------------------------------------- | ----------------- | --------------- |
 | [`KeyboardTriggerBinding`](/Forge/docs/api/classes/KeyboardTriggerBinding) | `triggerBindings` | `TriggerAction` |
-| [`KeyboardHoldBinding`](/Forge/docs/api/classes/KeyboardHoldBinding) | `holdBindings` | `HoldAction` |
-| [`KeyboardAxis1dBinding`](/Forge/docs/api/classes/KeyboardAxis1dBinding) | `axis1dBindings` | `Axis1dAction` |
-| [`KeyboardAxis2dBinding`](/Forge/docs/api/classes/KeyboardAxis2dBinding) | `axis2dBindings` | `Axis2dAction` |
+| [`KeyboardHoldBinding`](/Forge/docs/api/classes/KeyboardHoldBinding)       | `holdBindings`    | `HoldAction`    |
+| [`KeyboardAxis1dBinding`](/Forge/docs/api/classes/KeyboardAxis1dBinding)   | `axis1dBindings`  | `Axis1dAction`  |
+| [`KeyboardAxis2dBinding`](/Forge/docs/api/classes/KeyboardAxis2dBinding)   | `axis2dBindings`  | `Axis2dAction`  |
 
 Key codes use [`KeyCode`](/Forge/docs/api/type-aliases/KeyCode) values from
 [`keyCodes`](/Forge/docs/api/variables/keyCodes), which map readable names
@@ -73,9 +73,7 @@ keyboard.triggerBindings.add(
   new KeyboardTriggerBinding(jump, keyCodes.space, buttonMoments.down),
 );
 
-keyboard.holdBindings.add(
-  new KeyboardHoldBinding(sprint, keyCodes.shiftLeft),
-);
+keyboard.holdBindings.add(new KeyboardHoldBinding(sprint, keyCodes.shiftLeft));
 ```
 
 ## Gotchas

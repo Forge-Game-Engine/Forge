@@ -1,7 +1,32 @@
-import { createQuadGeometry } from './geometry/index.js';
+import { createQuadGeometry, Geometry } from './geometry/index.js';
 import { Material } from './materials/index.js';
 import { RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
+
+// One quad, reused by every full-screen pass (post-processing, present)
+// across every `RenderContext`: recreating it per draw would allocate a new
+// pair of GPU buffers (and, via `Geometry.bind`, a new VAO) every single
+// call, none of which are ever freed, since nothing owns a fresh `Geometry`
+// long enough to dispose it. The quad itself has no material-specific
+// state, so one instance's per-program VAO cache serves every consumer.
+const sharedQuadGeometryByContext = new WeakMap<
+  WebGL2RenderingContext,
+  Geometry
+>();
+
+function getSharedQuadGeometry(gl: WebGL2RenderingContext): Geometry {
+  const existing = sharedQuadGeometryByContext.get(gl);
+
+  if (existing) {
+    return existing;
+  }
+
+  const geometry = createQuadGeometry(gl);
+
+  sharedQuadGeometryByContext.set(gl, geometry);
+
+  return geometry;
+}
 
 /**
  * Binds `destination` (or the canvas if `null`) as the current draw target,
@@ -36,7 +61,7 @@ export function drawFullscreenQuad(
   material: Material,
 ): void {
   const { gl } = renderContext;
-  const geometry = createQuadGeometry(gl);
+  const geometry = getSharedQuadGeometry(gl);
 
   material.bind(gl);
   geometry.bind(gl, material.program);

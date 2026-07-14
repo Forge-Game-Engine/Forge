@@ -63,7 +63,10 @@ export const createAsteroidSpawnerEcsSystem = (
     });
 
     world.addComponent(asteroidEntity, asteroidId, {
-      speed: spawnerComponent.speed,
+      speed: random.randomFloat(
+        spawnerComponent.minSpeed,
+        spawnerComponent.maxSpeed,
+      ),
       rotationSpeed: spawnerComponent.rotationSpeed * rotationDirection,
     });
 

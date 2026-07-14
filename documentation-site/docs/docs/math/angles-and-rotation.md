@@ -71,6 +71,7 @@ const direction = radiansToVector(rotation.world);
 // ... later, recover the rotation from a direction vector:
 rotation.world = vectorToRadians(direction) + Math.PI / 2;
 ```
+
 :::
 
 ### Worked example: facing the movement direction
