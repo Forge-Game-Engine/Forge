@@ -50,12 +50,12 @@ export async function createExplosionSpawner(
     getAssetUrl('img/space-shooter/Effect_Explosion_1_517x517.png'),
   );
 
-  const explosionSprite = createImageSprite(
-    image,
-    renderContext,
-    renderLayer,
-    new Vector2(image.width / explosionColumns, image.height / explosionRows),
-  );
+  const explosionSprite = createImageSprite(image, renderContext, renderLayer, {
+    frameDimensions: new Vector2(
+      image.width / explosionColumns,
+      image.height / explosionRows,
+    ),
+  });
 
   const spriteSheet = createSpriteSheet(image, explosionRows, explosionColumns);
 

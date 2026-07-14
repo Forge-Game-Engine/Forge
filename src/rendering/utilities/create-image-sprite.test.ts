@@ -152,9 +152,11 @@ describe('createImageSprite', () => {
   });
 
   it('sets the configured emissive intensity when an emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext, 0, undefined, {
-      image: emissiveImage,
-      intensity: 3,
+    const sprite = createImageSprite(image, renderContext, 0, {
+      emissiveMap: {
+        image: emissiveImage,
+        intensity: 3,
+      },
     });
 
     sprite.renderable.material.bind(mockGl);
@@ -168,8 +170,10 @@ describe('createImageSprite', () => {
   });
 
   it('defaults emissive intensity to 1 when an emissive map is given without an explicit intensity', () => {
-    const sprite = createImageSprite(image, renderContext, 0, undefined, {
-      image: emissiveImage,
+    const sprite = createImageSprite(image, renderContext, 0, {
+      emissiveMap: {
+        image: emissiveImage,
+      },
     });
 
     sprite.renderable.material.bind(mockGl);
@@ -186,8 +190,10 @@ describe('createImageSprite', () => {
   });
 
   it('defaults the emissive color to white when an emissive map is given without an explicit color', () => {
-    const sprite = createImageSprite(image, renderContext, 0, undefined, {
-      image: emissiveImage,
+    const sprite = createImageSprite(image, renderContext, 0, {
+      emissiveMap: {
+        image: emissiveImage,
+      },
     });
 
     sprite.renderable.material.bind(mockGl);
@@ -201,9 +207,11 @@ describe('createImageSprite', () => {
   });
 
   it('sets the configured emissive color when given', () => {
-    const sprite = createImageSprite(image, renderContext, 0, undefined, {
-      image: emissiveImage,
-      color: new Color(1, 0.5, 0.1),
+    const sprite = createImageSprite(image, renderContext, 0, {
+      emissiveMap: {
+        image: emissiveImage,
+        color: new Color(1, 0.5, 0.1),
+      },
     });
 
     sprite.renderable.material.bind(mockGl);

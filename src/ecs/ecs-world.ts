@@ -1,4 +1,5 @@
 import { Stoppable, Updatable } from '../common/index.js';
+import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { SortedSet, SparseSet } from '../utilities/index.js';
 import { ComponentKey, TagKey } from './ecs-component.js';
 import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
@@ -9,6 +10,8 @@ export type QueryResult<T extends readonly unknown[]> = {
 };
 
 export class EcsWorld implements Updatable, Stoppable {
+  public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
+
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
 
   private readonly _freeEntityIds: number[] = [];
@@ -22,6 +25,8 @@ export class EcsWorld implements Updatable, Stoppable {
   private readonly _systems: SortedSet<EcsSystem<unknown[], unknown, unknown>>;
 
   constructor() {
+    this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
+
     this._componentSets = new Map();
     this._systems = new SortedSet();
   }
@@ -29,6 +34,8 @@ export class EcsWorld implements Updatable, Stoppable {
   public stop(): void {
     for (const system of this._systems) {
       this.operate(system, (buffer) => system.cleanupEntities?.(buffer, this));
+
+      system.cleanupSystem?.(this);
     }
   }
 
@@ -40,12 +47,15 @@ export class EcsWorld implements Updatable, Stoppable {
       system as EcsSystem<unknown[], unknown>,
       registrationOrder,
     );
+
+    system.onRegister?.(this);
   }
 
   public removeSystem<T extends unknown[], K, A>(
     system: EcsSystem<T, K, A>,
   ): void {
     this._systems.delete(system);
+    system.cleanupSystem?.(this);
   }
 
   public update(): void {
@@ -104,6 +114,7 @@ export class EcsWorld implements Updatable, Stoppable {
       }
     }
 
+    this.onEntityRemoved.raise(entity);
     this._freeEntityIds.push(entity);
   }
 
@@ -118,6 +129,7 @@ export class EcsWorld implements Updatable, Stoppable {
       componentSet.remove(entity);
     }
 
+    this.onEntityRemoved.raise(entity);
     this._freeEntityIds.push(entity);
   }
 

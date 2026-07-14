@@ -21,25 +21,7 @@ import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
  */
 export interface EmissiveMapOptions {
   /**
-   * The emissive map image. Only its RGB channels are used; alpha is
-   * ignored, matching how emissive maps work in glTF/Unity/Unreal/three.js
-   * - a sprite's opacity always comes from its base texture's alpha alone,
-   * so emissive can't make an otherwise-transparent pixel visible. Author
-   * this (and the base texture) with solid, reasonably opaque edges rather
-   * than a soft low-alpha gradient faking a glow: alpha blending crushes
-   * low-alpha pixels regardless of how bright their color is, so a
-   * hand-painted fade reads as nearly invisible, whereas an opaque shape
-   * lets `createBloomEcsSystem`'s blur produce the soft glow instead.
-   *
-   * Paint this as a plain **greyscale** intensity mask (equal R/G/B) rather
-   * than baking a color into it, and set that color separately via `color`.
-   * A greyscale mask keeps brightness uniform across the emitting shape, so
-   * raising `BloomEcsComponent.threshold` cleanly includes or excludes the
-   * whole shape as a unit - exactly what you want if, say, only this sprite
-   * (and not others without an emissive map) should ever bloom. A map with
-   * color and brightness baked together varies non-uniformly per channel,
-   * which makes threshold behave unpredictably (parts of the shape drop out
-   * before others as you raise it).
+   * The emissive map image.
    */
   image: HTMLImageElement;
 
@@ -61,6 +43,19 @@ export interface EmissiveMapOptions {
   intensity?: number;
 }
 
+export interface CreateImageSpriteOptions {
+  /**
+   * The dimensions of a single frame in the image, for sprite sheets. Defaults to the full image size (i.e. a single-frame sprite).
+   */
+  frameDimensions?: Vector2;
+
+  /**
+   * The emissive map to add on top of the sprite's tinted albedo, unaffected
+   * by lighting. Omit for a sprite with no emissive contribution.
+   */
+  emissiveMap?: EmissiveMapOptions;
+}
+
 // `color` isn't included here: `Color.white` can't be read at module-init
 // time (this file sits in a circular import cycle through `../../index.js`,
 // so `Color`'s static fields aren't guaranteed to be initialized yet when
@@ -74,16 +69,14 @@ const defaultEmissiveMapOptions = { intensity: 1 };
  * @param image - The image to use for the sprite.
  * @param renderContext - The render context to be used.
  * @param layer - The render layer for the sprite.
- * @param frameDimensions - The dimensions of a single frame in the image (for sprite sheets).
- * @param emissiveMapOptions - An emissive map to add on top of the sprite's tinted albedo, unaffected by lighting. Omit for a sprite with no emissive contribution.
+ * @param options - Optional parameters for creating the sprite.
  * @returns The created sprite.
  */
 export function createImageSprite(
   image: HTMLImageElement,
   renderContext: RenderContext,
   layer: number,
-  frameDimensions: Vector2 = new Vector2(image.width, image.height),
-  emissiveMapOptions?: EmissiveMapOptions,
+  options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
   const { shaderCache, gl } = renderContext;
 
@@ -94,8 +87,8 @@ export function createImageSprite(
 
   material.setUniform('u_texture', createTextureFromImage(gl, image, true));
 
-  const resolvedEmissive = emissiveMapOptions
-    ? { ...defaultEmissiveMapOptions, ...emissiveMapOptions }
+  const resolvedEmissive = options.emissiveMap
+    ? { ...defaultEmissiveMapOptions, ...options.emissiveMap }
     : undefined;
 
   material.setUniform(
@@ -127,8 +120,8 @@ export function createImageSprite(
 
   return {
     enabled: true,
-    width: frameDimensions.x,
-    height: frameDimensions.y,
+    width: options.frameDimensions?.x ?? image.width,
+    height: options.frameDimensions?.y ?? image.height,
     pivot: new Vector2(0.5, 0.5),
     tintColor: Color.white,
     renderable,

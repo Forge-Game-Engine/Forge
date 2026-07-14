@@ -35,44 +35,34 @@ export const createPhysicsEcsSystem = (
   // as an invisible, un-synced collider.
   const registeredEntities = new Map<number, RigidBody>();
 
+  const onEntityRemovedListener = (entity: number) => {
+    const registeredBody = registeredEntities.get(entity);
+
+    if (registeredBody) {
+      physicsWorld.removeBody(registeredBody);
+      registeredEntities.delete(entity);
+    }
+  };
+
   return {
     query: [PhysicsBodyId, positionId, rotationId],
+    onRegister: (world) => {
+      world.onEntityRemoved.registerListener(onEntityRemovedListener);
+    },
     beforeQuery: (world) => {
       world.queryEntities(
         [PhysicsBodyId, positionId, rotationId],
         physicsEntityBuffer,
       );
 
-      const queriedEntities = new Set(physicsEntityBuffer);
-
       for (const entity of physicsEntityBuffer) {
-        const physicsBodyComponent = world.getComponent(entity, PhysicsBodyId);
-
-        if (!physicsBodyComponent) {
-          continue;
-        }
+        const physicsBodyComponent = world.getComponent(entity, PhysicsBodyId)!;
 
         const { physicsBody } = physicsBodyComponent;
-        const registeredBody = registeredEntities.get(entity);
-
-        if (registeredBody === physicsBody) {
-          continue;
-        }
-
-        if (registeredBody) {
-          physicsWorld.removeBody(registeredBody);
-        }
 
         physicsWorld.addBody(physicsBody);
         registeredEntities.set(entity, physicsBody);
         physicsBody.userData = entity;
-      }
-
-      for (const [entity, physicsBody] of registeredEntities) {
-        if (!queriedEntities.has(entity)) {
-          physicsWorld.removeBody(physicsBody);
-          registeredEntities.delete(entity);
-        }
       }
 
       physicsWorld.step(time.deltaTimeInSeconds);
@@ -105,6 +95,9 @@ export const createPhysicsEcsSystem = (
         physicsWorld.removeBody(physicsBody);
         registeredEntities.delete(entity);
       }
+    },
+    cleanupSystem: (world) => {
+      world.onEntityRemoved.deregisterListener(onEntityRemovedListener);
     },
   };
 };

@@ -32,6 +32,12 @@ export interface EcsSystem<
    */
   tags?: TagKey[];
   /**
+   * Invoked once when the system is registered with an `EcsWorld`. Use it to
+   * acquire resources the system will need for its lifetime.
+   * @param world - The `EcsWorld` the system was registered with.
+   */
+  onRegister?(world: EcsWorld): void;
+  /**
    * Invoked once per tick for every entity matching `query` (and `tags`).
    * @param queryResult - The matched entity's id and its queried
    * component data, in query order.
@@ -75,6 +81,12 @@ export interface EcsSystem<
    * @param world - The `EcsWorld` that is stopping.
    */
   cleanupEntities?(queryResult: QueryResult<TQuery>, world: EcsWorld): void;
+  /**
+   * Invoked once when the system is removed from an `EcsWorld`. Use it to
+   * release resources the system acquired for its lifetime.
+   * @param world - The `EcsWorld` the system was removed from.
+   */
+  cleanupSystem?(world: EcsWorld): void;
 }
 
 /**

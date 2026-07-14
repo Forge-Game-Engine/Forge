@@ -65,8 +65,13 @@ export async function loadPlayerSprites(
     bulletImage,
     renderContext,
     renderLayer,
-    undefined,
-    { image: bulletEmission, color: new Color(1, 0.65, 0.15), intensity: 2 },
+    {
+      emissiveMap: {
+        image: bulletEmission,
+        color: new Color(1, 0.65, 0.15),
+        intensity: 2,
+      },
+    },
   );
 
   return { playerSprite, bulletSprite };
