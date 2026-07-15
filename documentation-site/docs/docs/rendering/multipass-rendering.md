@@ -26,7 +26,7 @@ draws the result:
 
 ```ts
 import {
-  addCamera,
+  createCamera,
   createPresentEcsSystem,
   createRenderEcsSystem,
   createRenderTarget,
@@ -41,7 +41,7 @@ const sceneTarget = createRenderTarget(
   renderContext.height,
 );
 
-addCamera(world, { renderTarget: sceneTarget });
+createCamera(world, { renderTarget: sceneTarget });
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
@@ -82,18 +82,18 @@ const foregroundTarget = createRenderTarget(
   renderContext.height,
 );
 
-const background = addCamera(world, {
+const background = createCamera(world, {
   cullingMask: layers.background,
   renderTarget: backgroundTarget,
   layer: 0,
 });
-addCamera(world, {
+createCamera(world, {
   cullingMask: layers.foreground,
   renderTarget: foregroundTarget,
   layer: 1,
 });
 
-addGaussianBlur(world, background, { passes: 4 });
+addGaussianBlurComponent(world, background, { passes: 4 });
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));

@@ -42,7 +42,7 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  * buffer, blurs them with the same separable technique as
  * `createGaussianBlurEcsSystem`, then adds the blurred result back onto the
  * camera's `renderTarget`. Cameras without a `renderTarget`, or without a
- * `BloomEcsComponent` (attach one with `addBloom`), are left untouched.
+ * `BloomEcsComponent` (attach one with `addBloomComponent`), are left untouched.
  *
  * Must be registered after the render system (so there's a scene to bloom)
  * and before the present system (so the result gets drawn to the canvas).

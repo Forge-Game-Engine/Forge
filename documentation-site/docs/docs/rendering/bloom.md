@@ -14,7 +14,7 @@ or emissive rather than flat.
 
 It only affects cameras that have both a `renderTarget` and a
 [`BloomEcsComponent`](/Forge/docs/api/interfaces/BloomEcsComponent) (attach
-one with `addBloom`); a camera missing either renders untouched.
+one with `addBloomComponent`); a camera missing either renders untouched.
 
 ## How it works
 
@@ -56,15 +56,15 @@ Following the rest of Forge's ECS conventions, bloom settings are entity
 data, not options baked into the system: `createBloomEcsSystem` takes only a
 `RenderContext` and processes whichever cameras carry a
 `BloomEcsComponent`. Give the camera a `renderTarget`, attach the component
-with `addBloom`, then register the bloom system after the render system and
+with `addBloomComponent`, then register the bloom system after the render system and
 before the present system, since it reads what the render system just drew
 and the present system draws whatever the bloom system leaves behind:
 
 ```ts
 import {
-  addBloom,
-  addCamera,
+  addBloomComponent,
   createBloomEcsSystem,
+  createCamera,
   createPresentEcsSystem,
   createRenderEcsSystem,
   createRenderTarget,
@@ -79,9 +79,9 @@ const sceneTarget = createRenderTarget(
   renderContext.height,
 );
 
-const camera = addCamera(world, { renderTarget: sceneTarget });
+const camera = createCamera(world, { renderTarget: sceneTarget });
 
-addBloom(world, camera, { threshold: 0.7, passes: 4, intensity: 1 });
+addBloomComponent(world, camera, { threshold: 0.7, passes: 4, intensity: 1 });
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createBloomEcsSystem(renderContext));
@@ -143,7 +143,7 @@ three knobs:
   internal scratch buffers on first use).
 
 ```ts
-addBloom(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
+addBloomComponent(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
 ```
 
 :::tip
@@ -158,7 +158,7 @@ background within that constraint — but if you want a sprite to bloom
 based on true HDR brightness (for example an emissive map on an otherwise
 unlit surface, see [Emissive-driven bloom](#emissive-driven-bloom) below),
 give the camera's render target `RENDER_TARGET_FORMAT.hdr` instead and pair
-it with `addToneMapping`. See [HDR Rendering &
+it with `addToneMappingComponent`. See [HDR Rendering &
 Tone Mapping](./hdr-rendering.md).
 :::
 
@@ -197,10 +197,10 @@ color while still glowing brighter than the scene around it:
 
 ```ts
 import {
-  addBloom,
-  addCamera,
-  addToneMapping,
+  addBloomComponent,
+  addToneMappingComponent,
   createBloomEcsSystem,
+  createCamera,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
@@ -216,10 +216,10 @@ const sceneTarget = createRenderTarget(
   RENDER_TARGET_FORMAT.hdr,
 );
 
-const camera = addCamera(world, { renderTarget: sceneTarget });
+const camera = createCamera(world, { renderTarget: sceneTarget });
 
-addBloom(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
-addToneMapping(world, camera);
+addBloomComponent(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
+addToneMappingComponent(world, camera);
 
 const neonSign = createImageSprite(
   neonSignImage,
@@ -243,7 +243,7 @@ sidesteps that: its contribution is added *after* the albedo sample, so it
 can push specific pixels arbitrarily bright regardless of the sprite's own
 tint or texture color, without lightening the rest of the sprite. See [HDR
 Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render
-target and `addToneMapping` work together to make this look right once
+target and `addToneMappingComponent` work together to make this look right once
 presented.
 
 ### Authoring an emissive map
@@ -279,7 +279,7 @@ let bloom's blur produce it instead:
   back down, which reads as "glowing white" rather than "glowing amber" or
   whatever hue you intended.
 - Let `passes` (and, for an HDR camera, `RENDER_TARGET_FORMAT.hdr` +
-  `addToneMapping`) do the work of spreading that opaque shape into a soft
+  `addToneMappingComponent`) do the work of spreading that opaque shape into a soft
   halo — that's what the blur passes are for, and unlike a hand-painted
   gradient it composites correctly in HDR and tone-maps smoothly at the
   edges instead of banding.

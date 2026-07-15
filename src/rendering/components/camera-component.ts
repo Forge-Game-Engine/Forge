@@ -1,9 +1,14 @@
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
 import { Rect } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import { RenderTarget } from '../render-target.js';
 
-export interface CameraEcsComponent {
+/**
+ * Fields of {@link CameraEcsComponent} with a sensible default; callers may
+ * omit these.
+ */
+export interface CameraDefaultedOptions {
   /**
    * The current zoom level. Higher values zoom in (the view covers less of
    * the world); lower values zoom out. Adjusted by `zoomInput` (via
@@ -46,10 +51,22 @@ export interface CameraEcsComponent {
   /**
    * A bitmask matched against each sprite's `Renderable.category`
    * (`matchesMask`) to decide whether this camera draws it. Defaults to
-   * `0xffffffff` (every category) in `addCamera`.
+   * `0xffffffff` (every category) in `addCameraComponent`.
    */
   cullingMask: number;
 
+  /**
+   * The draw-order layer for this camera's `renderTarget`, relative to other
+   * cameras presented in the same frame: lower layers are presented (and
+   * thus drawn onto the canvas) first, so higher layers appear on top. Only
+   * meaningful between cameras with *different* render targets; has no
+   * effect on cameras that share one (they're already composited together
+   * before presenting) or that render straight to the canvas.
+   */
+  layer: number;
+}
+
+export interface CameraEcsComponent extends CameraDefaultedOptions {
   /**
    * When set, restricts this camera's draw output to the given rectangular
    * region instead of its full destination.
@@ -74,16 +91,39 @@ export interface CameraEcsComponent {
    * for drawing the target's color texture onto the canvas.
    */
   renderTarget?: RenderTarget;
-
-  /**
-   * The draw-order layer for this camera's `renderTarget`, relative to other
-   * cameras presented in the same frame: lower layers are presented (and
-   * thus drawn onto the canvas) first, so higher layers appear on top. Only
-   * meaningful between cameras with *different* render targets; has no
-   * effect on cameras that share one (they're already composited together
-   * before presenting) or that render straight to the canvas.
-   */
-  layer: number;
 }
 
 export const cameraId = createComponentId<CameraEcsComponent>('camera');
+
+const defaultCameraOptions: CameraDefaultedOptions = {
+  zoom: 1,
+  zoomSensitivity: 0.1,
+  panSensitivity: 1,
+  minZoom: 0.1,
+  maxZoom: 10,
+  isStatic: false,
+  cullingMask: 0xffffffff,
+  layer: 0,
+};
+
+/**
+ * Attaches a {@link CameraEcsComponent} to `entity`. A camera also needs a
+ * `PositionEcsComponent` (see `addPositionComponent`) for `createCameraEcsSystem` to
+ * pan it; use `createCamera` to get both on a fresh entity in one call.
+ * @param world - The ECS world `entity` belongs to.
+ * @param entity - The entity to attach the component to.
+ * @param options - Options for configuring the camera.
+ * @returns The attached component, for further tuning or runtime changes.
+ */
+export function addCameraComponent(
+  world: EcsWorld,
+  entity: number,
+  options: Partial<CameraEcsComponent> = {},
+): CameraEcsComponent {
+  const component: CameraEcsComponent = {
+    ...defaultCameraOptions,
+    ...options,
+  };
+
+  return world.addComponent(entity, cameraId, component);
+}

@@ -15,7 +15,7 @@ bright-pass blur chain uses this same separable technique).
 
 It only affects cameras that have both a `renderTarget` and a
 [`GaussianBlurEcsComponent`](/Forge/docs/api/interfaces/GaussianBlurEcsComponent)
-(attach one with `addGaussianBlur`); a camera missing either renders
+(attach one with `addGaussianBlurComponent`); a camera missing either renders
 untouched.
 
 ## Wiring it up
@@ -24,15 +24,15 @@ Following the rest of Forge's ECS conventions, blur settings are entity
 data, not options baked into the system: `createGaussianBlurEcsSystem` takes
 only a `RenderContext` and processes whichever cameras carry a
 `GaussianBlurEcsComponent`. Give the camera a `renderTarget`, attach the
-component with `addGaussianBlur`, then register the blur system after the
+component with `addGaussianBlurComponent`, then register the blur system after the
 render system and before the present system, since it reads what the render
 system just drew and the present system draws whatever the blur system
 leaves behind:
 
 ```ts
 import {
-  addCamera,
-  addGaussianBlur,
+  addGaussianBlurComponent,
+  createCamera,
   createGaussianBlurEcsSystem,
   createPresentEcsSystem,
   createRenderEcsSystem,
@@ -48,9 +48,9 @@ const sceneTarget = createRenderTarget(
   renderContext.height,
 );
 
-const camera = addCamera(world, { renderTarget: sceneTarget });
+const camera = createCamera(world, { renderTarget: sceneTarget });
 
-addGaussianBlur(world, camera, { passes: 4, intensity: 0.5 });
+addGaussianBlurComponent(world, camera, { passes: 4, intensity: 0.5 });
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
@@ -108,7 +108,7 @@ There are two, deliberately different, knobs on
   alone (`intensity: 1`) reads as heavily blurred.
 
 ```ts
-addGaussianBlur(world, camera, { passes: 8, intensity: 0.4 });
+addGaussianBlurComponent(world, camera, { passes: 8, intensity: 0.4 });
 ```
 
 `intensity: 0` skips the blur entirely (cheaper than `passes: 0`, since it

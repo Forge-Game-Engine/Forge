@@ -1,9 +1,9 @@
 import { createSpriteAnimationEcsSystem } from '@forge-game-engine/forge/animations';
 import {
-  addBloom,
-  addCamera,
-  addGaussianBlur,
-  addToneMapping,
+  addBloomComponent,
+  createCamera,
+  addGaussianBlurComponent,
+  addToneMappingComponent,
   BloomEcsComponent,
   createBloomEcsSystem,
   createCameraEcsSystem,
@@ -85,7 +85,7 @@ export const createSpaceShooterGame = async (
   );
   // HDR so the bullet's emissive map (see _create-player.ts) can bloom
   // based on true brightness rather than an 8-bit white ceiling;
-  // addToneMapping compresses it back to displayable range before the
+  // addToneMappingComponent compresses it back to displayable range before the
   // present pass draws it.
   const foregroundRenderTarget = createRenderTarget(
     renderContext.gl,
@@ -96,19 +96,19 @@ export const createSpaceShooterGame = async (
 
   // The background sits on its own static camera so it doesn't shake along
   // with the foreground when an explosion happens.
-  const backgroundCameraEntity = addCamera(world, {
+  const backgroundCameraEntity = createCamera(world, {
     cullingMask: renderLayers.background,
     isStatic: true,
     renderTarget: backgroundRenderTarget,
   });
-  const foregroundCameraEntity = addCamera(world, {
+  const foregroundCameraEntity = createCamera(world, {
     cullingMask: renderLayers.foreground,
     renderTarget: foregroundRenderTarget,
   });
 
   // The component is handed back to the caller (see the sliders on this
   // demo's page) so it can be retuned live.
-  const blurComponent = addGaussianBlur(
+  const blurComponent = addGaussianBlurComponent(
     world,
     backgroundCameraEntity,
     blurDefaults,
@@ -120,11 +120,11 @@ export const createSpaceShooterGame = async (
   // foreground, so a bloom glow makes them read as glowing/energetic
   // instead of flat sprites. The component is handed back to the caller
   // (see the sliders on this demo's page) so it can be retuned live.
-  const bloomComponent = addBloom(world, foregroundCameraEntity, bloomDefaults);
+  const bloomComponent = addBloomComponent(world, foregroundCameraEntity, bloomDefaults);
 
   onBloomReady?.(bloomComponent);
 
-  addToneMapping(world, foregroundCameraEntity);
+  addToneMappingComponent(world, foregroundCameraEntity);
 
   world.addComponent(foregroundCameraEntity, cameraShakeId, {
     intensity: 0,

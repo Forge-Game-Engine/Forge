@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createToneMapEcsSystem } from './tone-map-system';
 import { EcsWorld } from '../../ecs';
 import {
+  addToneMappingComponent,
   CameraEcsComponent,
   cameraId,
   ToneMappingEcsComponent,
@@ -10,7 +11,6 @@ import {
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
-import { addToneMapping } from '../utilities';
 import { TONE_MAPPING_OPERATOR } from '../enums/index.js';
 import {
   ForgeShaderSource,
@@ -62,7 +62,7 @@ describe('createToneMapEcsSystem', () => {
   ): number => {
     const entity = addCameraEntity(renderTarget);
 
-    addToneMapping(world, entity, options);
+    addToneMappingComponent(world, entity, options);
 
     return entity;
   };

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createBloomEcsSystem } from './bloom-system';
 import { EcsWorld } from '../../ecs';
 import {
+  addBloomComponent,
   BloomEcsComponent,
   bloomId,
   CameraEcsComponent,
@@ -11,7 +12,6 @@ import {
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
-import { addBloom } from '../utilities';
 import { RENDER_TARGET_FORMAT } from '../enums/index.js';
 import {
   bloomCompositeFragmentShader,
@@ -69,7 +69,7 @@ describe('createBloomEcsSystem', () => {
   ): number => {
     const entity = addCameraEntity(renderTarget);
 
-    addBloom(world, entity, bloomOptions);
+    addBloomComponent(world, entity, bloomOptions);
 
     return entity;
   };

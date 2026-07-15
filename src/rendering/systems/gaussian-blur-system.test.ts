@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createGaussianBlurEcsSystem } from './gaussian-blur-system';
 import { EcsWorld } from '../../ecs';
 import {
+  addGaussianBlurComponent,
   CameraEcsComponent,
   cameraId,
   GaussianBlurEcsComponent,
@@ -11,7 +12,6 @@ import {
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
-import { addGaussianBlur } from '../utilities';
 import {
   crossFadeFragmentShader,
   ForgeShaderSource,
@@ -66,7 +66,7 @@ describe('createGaussianBlurEcsSystem', () => {
   ): number => {
     const entity = addCameraEntity(renderTarget);
 
-    addGaussianBlur(world, entity, blurOptions);
+    addGaussianBlurComponent(world, entity, blurOptions);
 
     return entity;
   };

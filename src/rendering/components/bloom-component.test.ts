@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { addBloom } from './add-bloom';
+import { addBloomComponent, bloomId } from './bloom-component.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { bloomId } from '../components/index.js';
 
-describe('addBloom', () => {
+describe('addBloomComponent', () => {
   it('attaches a component with default threshold, passes, and intensity', () => {
     const world = new EcsWorld();
     const cameraEntity = world.createEntity();
 
-    addBloom(world, cameraEntity);
+    addBloomComponent(world, cameraEntity);
 
     expect(world.getComponent(cameraEntity, bloomId)).toEqual({
       threshold: 0.8,
@@ -21,7 +20,7 @@ describe('addBloom', () => {
     const world = new EcsWorld();
     const cameraEntity = world.createEntity();
 
-    addBloom(world, cameraEntity, { intensity: 0.5 });
+    addBloomComponent(world, cameraEntity, { intensity: 0.5 });
 
     expect(world.getComponent(cameraEntity, bloomId)).toEqual({
       threshold: 0.8,
@@ -34,7 +33,7 @@ describe('addBloom', () => {
     const world = new EcsWorld();
     const cameraEntity = world.createEntity();
 
-    const component = addBloom(world, cameraEntity, {
+    const component = addBloomComponent(world, cameraEntity, {
       threshold: 0.6,
       passes: 8,
       intensity: 1.2,

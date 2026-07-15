@@ -29,7 +29,7 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  * internal scratch buffer, then a vertical pass reads that scratch buffer
  * and renders the result back into the camera's `renderTarget`. Cameras
  * without a `renderTarget`, or without a `GaussianBlurEcsComponent`
- * (attach one with `addGaussianBlur`), are left untouched.
+ * (attach one with `addGaussianBlurComponent`), are left untouched.
  *
  * Must be registered after the render system (so there's a scene to blur)
  * and before the present system (so the blurred result gets drawn to the

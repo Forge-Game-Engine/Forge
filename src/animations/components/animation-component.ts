@@ -1,5 +1,6 @@
 import { linear } from '../easing-functions/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * Represents the properties of an animated object.
@@ -100,3 +101,29 @@ export const createAnimatedProperty = (
   ...animationDefaults,
   ...animatedProperty,
 });
+
+/**
+ * Attaches a {@link AnimationEcsComponent} to `entity`.
+ * @param world - The ECS world `entity` belongs to.
+ * @param entity - The entity to attach the component to.
+ * @param options - Options for configuring the animation.
+ * @returns The attached component, for further tuning or runtime changes.
+ */
+export function addAnimationComponent(
+  world: EcsWorld,
+  entity: number,
+  options: Partial<AnimationEcsComponent> = {},
+): AnimationEcsComponent {
+  // `animations` defaults to a fresh array per call (rather than a shared
+  // module-level default) since it's mutated in place by callers.
+  const defaultAnimationOptions: AnimationEcsComponent = {
+    animations: [],
+  };
+
+  const component: AnimationEcsComponent = {
+    ...defaultAnimationOptions,
+    ...options,
+  };
+
+  return world.addComponent(entity, animationId, component);
+}

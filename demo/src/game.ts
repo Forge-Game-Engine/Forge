@@ -1,5 +1,5 @@
 import {
-  addGaussianBlur,
+  addGaussianBlurComponent,
   cameraId,
   CircleShape,
   createCameraEcsSystem,
@@ -73,7 +73,7 @@ world.addComponent(cameraEntity, cameraId, {
   layer: 0,
 });
 
-addGaussianBlur(world, cameraEntity, { passes: 8, intensity: 0.4 });
+addGaussianBlurComponent(world, cameraEntity, { passes: 8, intensity: 0.4 });
 
 const { imageCache } = renderContext;
 

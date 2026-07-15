@@ -1,4 +1,5 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import type { RigidBody } from '../rigid-body.js';
 
 /**
@@ -43,3 +44,19 @@ export interface PhysicsBodyEcsComponent {
 
 export const PhysicsBodyId =
   createComponentId<PhysicsBodyEcsComponent>('PhysicsBody');
+
+/**
+ * Attaches a {@link PhysicsBodyEcsComponent} to `entity`.
+ * @param world - The ECS world `entity` belongs to.
+ * @param entity - The entity to attach the component to.
+ * @param options - Options for configuring the physics body. `physicsBody`
+ * has no sensible default and must always be provided.
+ * @returns The attached component, for further tuning or runtime changes.
+ */
+export function addPhysicsBodyComponent(
+  world: EcsWorld,
+  entity: number,
+  options: PhysicsBodyEcsComponent,
+): PhysicsBodyEcsComponent {
+  return world.addComponent(entity, PhysicsBodyId, { ...options });
+}
