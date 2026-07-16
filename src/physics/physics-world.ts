@@ -4,6 +4,7 @@ import {
   detectCollision,
   resolveCollision,
 } from './collision/index.js';
+import type { Joint } from './joints/index.js';
 import type { RigidBody } from './rigid-body.js';
 
 /**
@@ -72,6 +73,17 @@ export class PhysicsWorld {
 
   private readonly _bodies: Set<RigidBody>;
 
+  private readonly _joints: Set<Joint>;
+
+  /**
+   * Reference counts, keyed by body pair, of registered joints with
+   * `collideConnected: false` between that pair. A reference count (rather
+   * than a boolean) so that removing one joint between a pair does not
+   * re-enable collision if another `collideConnected: false` joint between
+   * the same pair is still registered.
+   */
+  private readonly _nonCollidingJointedPairs: Map<string, number>;
+
   private _activePairs: Map<string, BodyCollisionPair>;
 
   private _collisionStarts: BodyCollisionPair[];
@@ -87,6 +99,8 @@ export class PhysicsWorld {
 
     this.gravity = gravity.clone();
     this._bodies = new Set();
+    this._joints = new Set();
+    this._nonCollidingJointedPairs = new Map();
     this._activePairs = new Map();
     this._collisionStarts = [];
     this._collisionEnds = [];
@@ -97,6 +111,13 @@ export class PhysicsWorld {
    */
   get bodies(): readonly RigidBody[] {
     return [...this._bodies];
+  }
+
+  /**
+   * The joints currently registered in this world.
+   */
+  get joints(): readonly Joint[] {
+    return [...this._joints];
   }
 
   /**
@@ -136,6 +157,37 @@ export class PhysicsWorld {
     }
 
     this._bodies.delete(body);
+  }
+
+  /**
+   * Registers a joint with this world.
+   * @param joint - The joint to add.
+   */
+  public addJoint(joint: Joint): void {
+    this._joints.add(joint);
+
+    if (!joint.collideConnected) {
+      this._incrementNonCollidingPair(joint);
+    }
+  }
+
+  /**
+   * Removes a joint from this world.
+   * @param joint - The joint to remove.
+   * @throws An error if the joint is not registered in this world.
+   */
+  public removeJoint(joint: Joint): void {
+    if (!this._joints.has(joint)) {
+      throw new Error(
+        `Cannot remove ${joint.type} joint that is not registered in this PhysicsWorld.`,
+      );
+    }
+
+    this._joints.delete(joint);
+
+    if (!joint.collideConnected) {
+      this._decrementNonCollidingPair(joint);
+    }
   }
 
   /**
@@ -187,6 +239,12 @@ export class PhysicsWorld {
   }
 
   private _integrateVelocities(deltaTimeInSeconds: number): void {
+    for (const joint of this._joints) {
+      if (joint.type === 'spring') {
+        joint.applyForce();
+      }
+    }
+
     for (const body of this._bodies) {
       if (body.isStatic) {
         continue;
@@ -195,6 +253,7 @@ export class PhysicsWorld {
       body.velocity = body.velocity.add(
         this.gravity.multiply(deltaTimeInSeconds),
       );
+      body.integrateForces(deltaTimeInSeconds);
     }
   }
 
@@ -228,6 +287,12 @@ export class PhysicsWorld {
       RESTING_VELOCITY_THRESHOLD_MULTIPLIER;
 
     for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+      for (const joint of this._joints) {
+        if (joint.type === 'distance') {
+          joint.solve();
+        }
+      }
+
       for (const manifold of manifolds) {
         resolveCollision(manifold, restingVelocityThreshold, iteration === 0);
       }
@@ -254,6 +319,10 @@ export class PhysicsWorld {
       return;
     }
 
+    if (this._nonCollidingJointedPairs.has(pairKeyFor(bodyA, bodyB))) {
+      return;
+    }
+
     if (!bodyA.aabb.intersects(bodyB.aabb)) {
       return;
     }
@@ -269,5 +338,25 @@ export class PhysicsWorld {
     }
 
     currentPairs.set(pairKeyFor(bodyA, bodyB), { bodyA, bodyB });
+  }
+
+  private _incrementNonCollidingPair(joint: Joint): void {
+    const key = pairKeyFor(joint.bodyA, joint.bodyB);
+    const count = this._nonCollidingJointedPairs.get(key) ?? 0;
+
+    this._nonCollidingJointedPairs.set(key, count + 1);
+  }
+
+  private _decrementNonCollidingPair(joint: Joint): void {
+    const key = pairKeyFor(joint.bodyA, joint.bodyB);
+    const count = this._nonCollidingJointedPairs.get(key) ?? 0;
+
+    if (count <= 1) {
+      this._nonCollidingJointedPairs.delete(key);
+
+      return;
+    }
+
+    this._nonCollidingJointedPairs.set(key, count - 1);
   }
 }

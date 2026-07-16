@@ -174,6 +174,76 @@ describe('RigidBody', () => {
     });
   });
 
+  describe('applyForce and integrateForces', () => {
+    it('should accumulate force and torque and apply them on integrateForces', () => {
+      const shape = new CircleShape(1);
+      const body = new RigidBody({ shape, density: 1 });
+
+      const force = new Vector2(10, 0);
+      const contactPoint = new Vector2(0, 1);
+      const deltaTimeInSeconds = 0.5;
+
+      body.applyForce(force, contactPoint);
+      body.integrateForces(deltaTimeInSeconds);
+
+      expect(body.velocity.x).toBeCloseTo(
+        force.x * body.inverseMass * deltaTimeInSeconds,
+      );
+      expect(body.velocity.y).toBeCloseTo(0);
+      expect(body.angularVelocity).toBeCloseTo(
+        contactPoint.cross(force) * body.inverseInertia * deltaTimeInSeconds,
+      );
+    });
+
+    it('should default the contact point to the center of mass, imparting no torque', () => {
+      const body = new RigidBody({ shape: new CircleShape(1), density: 1 });
+
+      body.applyForce(new Vector2(10, 0));
+      body.integrateForces(1);
+
+      expect(body.angularVelocity).toBe(0);
+    });
+
+    it('should accumulate torque directly via applyTorque', () => {
+      const body = new RigidBody({ shape: new CircleShape(1), density: 1 });
+
+      body.applyTorque(5);
+      body.integrateForces(1);
+
+      expect(body.angularVelocity).toBeCloseTo(5 * body.inverseInertia);
+    });
+
+    it('should clear accumulators after integrateForces, making the next call a no-op', () => {
+      const body = new RigidBody({ shape: new CircleShape(1), density: 1 });
+
+      body.applyForce(new Vector2(10, 0));
+      body.applyTorque(5);
+      body.integrateForces(1);
+
+      const velocityAfterFirstIntegration = body.velocity;
+      const angularVelocityAfterFirstIntegration = body.angularVelocity;
+
+      body.integrateForces(1);
+
+      expect(body.velocity.equals(velocityAfterFirstIntegration)).toBe(true);
+      expect(body.angularVelocity).toBe(angularVelocityAfterFirstIntegration);
+    });
+
+    it('should not change velocity for static bodies', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        isStatic: true,
+      });
+
+      body.applyForce(new Vector2(10, 10));
+      body.applyTorque(5);
+      body.integrateForces(1);
+
+      expect(body.velocity.equals(Vector2.zero)).toBe(true);
+      expect(body.angularVelocity).toBe(0);
+    });
+  });
+
   describe('restitution and friction clamping', () => {
     it('should clamp restitution and friction to [0, 1]', () => {
       const body = new RigidBody({

@@ -1,22 +1,28 @@
 # Physics
 
 Forge includes a native 2D physics engine: rigid bodies, convex collision
-shapes, gravity, collision detection and resolution, raycasting, and
-impulse-based forces (including explosions). It has no external
-dependencies and integrates with the ECS via `createPhysicsEcsSystem`, which
-steps a `PhysicsWorld` every frame and keeps `RigidBody` transforms in sync
-with entity position/rotation components.
+shapes, gravity, collision detection and resolution, joints, raycasting, and
+both instantaneous and continuous forces (impulses, explosions, and
+`applyForce`/`applyTorque`). It has no external dependencies and integrates
+with the ECS via `createPhysicsEcsSystem`, which steps a `PhysicsWorld` every
+frame and keeps `RigidBody` transforms in sync with entity position/rotation
+components.
 
 Core concepts:
 
 - [`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld): owns the set of
-  simulated bodies, steps the simulation, and applies world-level forces
-  (gravity, explosions).
+  simulated bodies and joints, steps the simulation, and applies
+  world-level forces (gravity, explosions).
 - [`RigidBody`](/Forge/docs/api/classes/RigidBody): a simulated body with a
   position, velocity, mass, and a collision shape.
 - [`CircleShape`](/Forge/docs/api/classes/CircleShape) and
   [`PolygonShape`](/Forge/docs/api/classes/PolygonShape): the convex shapes a
   `RigidBody` can have.
+- [`DistanceJoint`](/Forge/docs/api/classes/DistanceJoint) and
+  [`SpringJoint`](/Forge/docs/api/classes/SpringJoint): rigid and soft
+  constraints between two bodies' anchor points.
+- [`createTerrainBodies`](/Forge/docs/api/functions/createTerrainBodies):
+  approximates a curved ground outline as a chain of convex segments.
 - [`raycast`](/Forge/docs/api/functions/raycast): casts a ray against a set
   of bodies.
 
@@ -24,7 +30,13 @@ Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes, ECS
   integration, and collision events.
-- [Applying Forces](./forces.md): gravity, impulses, and explosions.
+- [Applying Forces](./forces.md): gravity, impulses, continuous forces, and
+  explosions.
+- [Joints](./joints.md): rigid and soft connections between bodies.
+- [Terrain](./terrain.md): approximating curved ground with
+  `createTerrainBodies`.
+- [Building a Vehicle](./building-a-vehicle.md): a worked example combining
+  joints, terrain, and a motorized wheel.
 - [Raycasting](./raycasting.md): casting rays against bodies.
 
 ## Quick Start

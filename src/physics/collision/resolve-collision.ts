@@ -1,5 +1,5 @@
-import { clamp, type Vector2 } from '../../math/index.js';
-import type { RigidBody } from '../rigid-body.js';
+import { clamp } from '../../math/index.js';
+import { velocityAt } from '../rigid-body-velocity-at.js';
 import type { CollisionManifold } from './collision-manifold.js';
 
 const PENETRATION_SLOP = 0.01;
@@ -24,12 +24,6 @@ const CORRECTION_PERCENT = 0.2;
  * letting deep penetrations resolve gradually over subsequent steps.
  */
 const MAX_LINEAR_CORRECTION_PER_STEP = 2;
-
-function relativeVelocityAt(body: RigidBody, contactPoint: Vector2): Vector2 {
-  return body.velocity.add(
-    contactPoint.perpendicular().multiply(-body.angularVelocity),
-  );
-}
 
 function applyPositionalCorrection(manifold: CollisionManifold): void {
   const { bodyA, bodyB, normal, depth } = manifold;
@@ -90,8 +84,8 @@ export function resolveCollision(
     const ra = contactPoint.subtract(bodyA.position);
     const rb = contactPoint.subtract(bodyB.position);
 
-    const relativeVelocity = relativeVelocityAt(bodyB, rb).subtract(
-      relativeVelocityAt(bodyA, ra),
+    const relativeVelocity = velocityAt(bodyB, rb).subtract(
+      velocityAt(bodyA, ra),
     );
     const velocityAlongNormal = relativeVelocity.dot(normal);
 
@@ -126,8 +120,8 @@ export function resolveCollision(
     bodyA.applyImpulse(normalImpulse.negate(), ra);
     bodyB.applyImpulse(normalImpulse, rb);
 
-    const tangentRelativeVelocity = relativeVelocityAt(bodyB, rb).subtract(
-      relativeVelocityAt(bodyA, ra),
+    const tangentRelativeVelocity = velocityAt(bodyB, rb).subtract(
+      velocityAt(bodyA, ra),
     );
     const tangent = tangentRelativeVelocity
       .subtract(normal.multiply(tangentRelativeVelocity.dot(normal)))

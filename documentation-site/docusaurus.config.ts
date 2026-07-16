@@ -120,6 +120,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/vehicle',
+              label: 'Vehicle',
+            },
+            {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },

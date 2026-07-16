@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DistanceJoint } from './joints/index.js';
 import { PhysicsWorld } from './physics-world.js';
 import { RigidBody } from './rigid-body.js';
 import { CircleShape, PolygonShape } from './shapes/index.js';
@@ -30,6 +31,23 @@ describe('PhysicsWorld', () => {
     });
   });
 
+  describe('applyForce and applyTorque', () => {
+    it('should integrate accumulated force and torque during step', () => {
+      const world = new PhysicsWorld();
+      const body = new RigidBody({ shape: new CircleShape(1), density: 1 });
+
+      world.addBody(body);
+
+      body.applyForce(new Vector2(10, 0));
+      body.applyTorque(5);
+
+      world.step(1);
+
+      expect(body.velocity.x).toBeCloseTo(10 * body.inverseMass);
+      expect(body.angularVelocity).toBeCloseTo(5 * body.inverseInertia);
+    });
+  });
+
   describe('addBody and removeBody', () => {
     it('should register and unregister bodies', () => {
       const world = new PhysicsWorld();
@@ -49,6 +67,38 @@ describe('PhysicsWorld', () => {
       const body = new RigidBody({ shape: new CircleShape(1) });
 
       expect(() => world.removeBody(body)).toThrow();
+    });
+  });
+
+  describe('addJoint and removeJoint', () => {
+    it('should register and unregister joints', () => {
+      const world = new PhysicsWorld();
+      const bodyA = new RigidBody({ shape: new CircleShape(1) });
+      const bodyB = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(5, 0),
+      });
+      const joint = new DistanceJoint({ bodyA, bodyB });
+
+      world.addJoint(joint);
+
+      expect(world.joints).toContain(joint);
+
+      world.removeJoint(joint);
+
+      expect(world.joints).not.toContain(joint);
+    });
+
+    it('should throw when removing a joint that is not registered', () => {
+      const world = new PhysicsWorld();
+      const bodyA = new RigidBody({ shape: new CircleShape(1) });
+      const bodyB = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(5, 0),
+      });
+      const joint = new DistanceJoint({ bodyA, bodyB });
+
+      expect(() => world.removeJoint(joint)).toThrow();
     });
   });
 

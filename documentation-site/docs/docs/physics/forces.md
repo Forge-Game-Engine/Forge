@@ -4,9 +4,12 @@ sidebar_position: 2
 
 # Applying Forces
 
-[`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) gives you three ways
-to make bodies move: a constant [`gravity`](/Forge/docs/api/classes/PhysicsWorld#gravity)
-applied to every dynamic body each step, a per-body
+[`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) and
+[`RigidBody`](/Forge/docs/api/classes/RigidBody) give you several ways to
+make bodies move: a constant [`gravity`](/Forge/docs/api/classes/PhysicsWorld#gravity)
+applied to every dynamic body each step, continuous
+[`applyForce`](/Forge/docs/api/classes/RigidBody#applyforce)/[`applyTorque`](/Forge/docs/api/classes/RigidBody#applytorque)
+for pushes and spins that build up over time, a per-body
 [`applyImpulse`](/Forge/docs/api/classes/RigidBody#applyimpulse) for
 instantaneous hits, and a world-wide
 [`applyExplosiveForce`](/Forge/docs/api/classes/PhysicsWorld#applyexplosiveforce)
@@ -43,20 +46,42 @@ feels too weak or too strong after changing a body's `density`, that's
 usually why; tune the impulse magnitude alongside density rather than in
 isolation.
 
-:::caution
-There's no continuous "apply force" on `RigidBody`, only impulses and
-`gravity`. For a continuous push like wind or thrust, scale the impulse by
-`deltaTimeInSeconds` and apply it every step, the same way gravity is
-integrated:
+## Continuous forces: applyForce and applyTorque
+
+[`applyForce(force, contactPoint?)`](/Forge/docs/api/classes/RigidBody#applyforce)
+and [`applyTorque(torque)`](/Forge/docs/api/classes/RigidBody#applytorque)
+accumulate a push or spin that's integrated into velocity and angular
+velocity on the *next* [`step`](/Forge/docs/api/classes/PhysicsWorld#step),
+scaled by `deltaTimeInSeconds`, the same way `gravity` is. Use them for
+anything that acts continuously rather than as a single event, like thrust,
+wind, drag, or a motor:
 
 ```ts
-body.applyImpulse(wind.multiply(deltaTimeInSeconds), Vector2.zero);
+// Continuous horizontal thrust, e.g. a rocket's engine while held down.
+rocket.applyForce(new Vector2(4_000, 0));
+
+// Spin a wheel up over time rather than snapping its angular velocity.
+wheel.applyTorque(1_500);
 ```
 
-Calling `applyImpulse` with the same vector every frame without scaling by
-`deltaTimeInSeconds` makes the push frame-rate dependent, the same bug
-`deltaTime` exists to avoid elsewhere.
+Unlike `applyImpulse`, which changes velocity immediately, `applyForce` and
+`applyTorque` only accumulate; nothing happens until the world's next `step`
+consumes and clears the accumulator. Call them every frame you want the push
+to continue, the same way you'd re-check input every frame; a single call
+produces one step's worth of push, not a persistent effect.
+
+:::caution
+`applyForce`'s `contactPoint` defaults to the body's center of mass, which
+imparts no torque, matching a straight thrust through the middle of the
+body. Pass an off-center `contactPoint` (relative to the center of mass) only
+if you also want the force to spin the body, for example thrust from an
+off-axis engine.
 :::
+
+If you need a force that automatically pulls two bodies toward a rest
+distance, such as a vehicle's suspension, use a
+[`SpringJoint`](./joints.md#springjoint-soft-connections) instead of
+computing the spring math yourself with `applyForce` each step.
 
 ## Explosions: area-effect impulses
 

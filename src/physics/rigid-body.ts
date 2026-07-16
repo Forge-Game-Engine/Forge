@@ -108,6 +108,10 @@ export class RigidBody {
    */
   private _aabbCache: { position: Vector2; aabb: Rect } | null;
 
+  private _forceAccumulator: Vector2;
+
+  private _torqueAccumulator: number;
+
   private static _nextId = 0;
 
   /**
@@ -140,6 +144,8 @@ export class RigidBody {
     this.restitution = clamp(restitution, 0, 1);
     this.friction = clamp(friction, 0, 1);
     this._aabbCache = null;
+    this._forceAccumulator = Vector2.zero;
+    this._torqueAccumulator = 0;
 
     if (isStatic) {
       this.mass = 0;
@@ -190,5 +196,51 @@ export class RigidBody {
   public applyImpulse(impulse: Vector2, contactPoint: Vector2): void {
     this.velocity = this.velocity.add(impulse.multiply(this.inverseMass));
     this.angularVelocity += this.inverseInertia * contactPoint.cross(impulse);
+  }
+
+  /**
+   * Accumulates a continuous force to be applied on the next
+   * {@link integrateForces} call, rather than changing velocity
+   * immediately. Use this for effects that act over time, such as thrust,
+   * wind, or a {@link https://en.wikipedia.org/wiki/Hooke%27s_law spring}.
+   * For an instantaneous change, use {@link applyImpulse} instead.
+   * @param force - The force to accumulate.
+   * @param contactPoint - The point at which to apply the force, relative
+   * to the body's center of mass. Defaults to the center of mass, which
+   * imparts no torque.
+   */
+  public applyForce(
+    force: Vector2,
+    contactPoint: Vector2 = Vector2.zero,
+  ): void {
+    this._forceAccumulator = this._forceAccumulator.add(force);
+    this._torqueAccumulator += contactPoint.cross(force);
+  }
+
+  /**
+   * Accumulates a continuous torque to be applied on the next
+   * {@link integrateForces} call.
+   * @param torque - The torque to accumulate.
+   */
+  public applyTorque(torque: number): void {
+    this._torqueAccumulator += torque;
+  }
+
+  /**
+   * Integrates the accumulated force and torque into `velocity` and
+   * `angularVelocity`, then clears both accumulators. Called once per
+   * {@link PhysicsWorld} step, alongside gravity integration.
+   * @param deltaTimeInSeconds - The amount of time to integrate over, in
+   * seconds.
+   */
+  public integrateForces(deltaTimeInSeconds: number): void {
+    this.velocity = this.velocity.add(
+      this._forceAccumulator.multiply(this.inverseMass * deltaTimeInSeconds),
+    );
+    this.angularVelocity +=
+      this._torqueAccumulator * this.inverseInertia * deltaTimeInSeconds;
+
+    this._forceAccumulator = Vector2.zero;
+    this._torqueAccumulator = 0;
   }
 }
