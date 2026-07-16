@@ -1,5 +1,5 @@
 import {
-  addCamera,
+  createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
   spriteId,
@@ -24,7 +24,7 @@ const displaySize = 480;
 export const createErosionBurnGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
   });

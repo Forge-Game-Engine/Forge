@@ -1,5 +1,5 @@
 import {
-  addCamera,
+  createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
@@ -14,7 +14,7 @@ const renderLayers = {
 export const createEasingFunctionsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
   });

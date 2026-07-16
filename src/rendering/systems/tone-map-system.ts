@@ -22,7 +22,7 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
  * `ToneMappingEcsComponent`, applies the configured exposure and operator
  * (see `TONE_MAPPING_OPERATOR`) and writes the result back into that same
  * `renderTarget`. Cameras without a `renderTarget`, or without a
- * `ToneMappingEcsComponent` (attach one with `addToneMapping`), are left
+ * `ToneMappingEcsComponent` (attach one with `addToneMappingComponent`), are left
  * untouched.
  *
  * Must be registered after any HDR-producing passes (render, bloom, blur)

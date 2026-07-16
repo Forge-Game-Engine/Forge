@@ -1,5 +1,5 @@
 import {
-  addCamera,
+  createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
   screenToWorldSpace,
@@ -30,7 +30,7 @@ const explosionRadius = 600;
 export const createPhysicsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
   });
@@ -45,7 +45,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 
   // The camera is static at the world origin with a zoom of 1 (see
-  // `addCamera` above), so screen coordinates can be converted to world
+  // `createCamera` above), so screen coordinates can be converted to world
   // coordinates directly.
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();

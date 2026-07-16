@@ -21,7 +21,7 @@ Pass `RENDER_TARGET_FORMAT.hdr` when creating the camera's render target:
 
 ```ts
 import {
-  addCamera,
+  createCamera,
   createRenderTarget,
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
@@ -33,7 +33,7 @@ const sceneTarget = createRenderTarget(
   RENDER_TARGET_FORMAT.hdr,
 );
 
-const camera = addCamera(world, { renderTarget: sceneTarget });
+const camera = createCamera(world, { renderTarget: sceneTarget });
 ```
 
 `hdr` requires the `EXT_color_buffer_float` WebGL2 extension. If the
@@ -57,17 +57,17 @@ An `hdr` render target has to be compressed back into `[0, 1]` before it's
 displayable — presenting it unmapped just hard-clips highlights exactly
 like the `ldr` default does. `createToneMapEcsSystem` does that compression,
 configured per camera with [`ToneMappingEcsComponent`](/Forge/docs/api/interfaces/ToneMappingEcsComponent)
-(attach one with `addToneMapping`):
+(attach one with `addToneMappingComponent`):
 
 ```ts
 import {
-  addToneMapping,
+  addToneMappingComponent,
   createPresentEcsSystem,
   createRenderEcsSystem,
   createToneMapEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 
-addToneMapping(world, camera, { exposure: 1 });
+addToneMappingComponent(world, camera, { exposure: 1 });
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createToneMapEcsSystem(renderContext));
@@ -91,7 +91,7 @@ world.addSystem(createPresentEcsSystem(renderContext));
 ```ts
 import { TONE_MAPPING_OPERATOR } from '@forge-game-engine/forge/rendering';
 
-addToneMapping(world, camera, {
+addToneMappingComponent(world, camera, {
   exposure: 1.2,
   operator: TONE_MAPPING_OPERATOR.reinhard,
 });

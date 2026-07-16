@@ -1,4 +1,5 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * Represents a single timer task that can execute a callback after a delay.
@@ -48,3 +49,29 @@ export interface TimerEcsComponent {
 }
 
 export const TimerId = createComponentId<TimerEcsComponent>('Timer');
+
+/**
+ * Attaches a {@link TimerEcsComponent} to `entity`.
+ * @param world - The ECS world `entity` belongs to.
+ * @param entity - The entity to attach the component to.
+ * @param options - Options for configuring the timer.
+ * @returns The attached component, for further tuning or runtime changes.
+ */
+export function addTimerComponent(
+  world: EcsWorld,
+  entity: number,
+  options: Partial<TimerEcsComponent> = {},
+): TimerEcsComponent {
+  // `tasks` defaults to a fresh array per call (rather than a shared
+  // module-level default) since it's mutated in place by callers.
+  const defaultTimerOptions: TimerEcsComponent = {
+    tasks: [],
+  };
+
+  const component: TimerEcsComponent = {
+    ...defaultTimerOptions,
+    ...options,
+  };
+
+  return world.addComponent(entity, TimerId, component);
+}

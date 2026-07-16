@@ -208,36 +208,27 @@ ESLint is configured with:
 1. Create a directory under `/src/your-module`
 2. Add an `index.ts` that exports the public API
 3. Add sub-folders for organization:
-   - `/components` - Component classes
-   - `/systems` - System classes
+   - `/components` - Component interfaces, their `createComponentId` keys, and `add<Name>Component` factories (see "Component Pattern" below)
+   - `/systems` - Systems that operate on those components
    - `/types` - Type definitions and interfaces
 4. Update `/src/index.ts` to export the new module
 5. Add export mapping in `package.json` if it should be separately importable
 
 ### Component Pattern
 
-```typescript
-import { Component } from '../ecs/index.js';
-
-/**
- * Description of what this component represents.
- */
-export class MyComponent extends Component {
-  /**
-   * Description of the field.
-   */
-  public myData: string;
-
-  /**
-   * Creates a new MyComponent instance.
-   * @param myData - The data to store.
-   */
-  constructor(myData: string) {
-    super();
-    this.myData = myData;
-  }
-}
-```
+Components are plain data interfaces, not classes. Each one gets a
+`createComponentId` key and an `add<Name>Component` factory that attaches
+it to a caller-supplied entity, all colocated in the same file. This lets a
+caller build up a composite entity by calling several `add<Name>Component`
+functions against the same entity (position + rotation + scale + sprite +
+...), which is how entities are assembled throughout this codebase.
+`add<Name>Component` never creates its own entity; a handful of components
+that are always the root of their own entity in practice (currently just
+`camera`) additionally get a `create<Name>` aggregate factory that creates
+an entity and calls the relevant `add<Name>Component` functions against it.
+See the `create-component` skill for the full pattern, including the
+default-options-object convention and `create-camera.ts` as the
+aggregate-factory example.
 
 ### System Pattern
 

@@ -1,5 +1,5 @@
 import {
-  addCamera,
+  createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
@@ -45,12 +45,12 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   // The background sits on its own static camera, added before the
   // foreground camera, so it always renders first and stays behind the
   // gameplay sprites.
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.background,
   });
 
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
   });

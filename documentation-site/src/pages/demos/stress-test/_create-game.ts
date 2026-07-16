@@ -1,6 +1,6 @@
 import { Random } from '@forge-game-engine/forge/math';
 import {
-  addCamera,
+  createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
@@ -16,7 +16,7 @@ const renderLayers = {
 export const createStressTestGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  addCamera(world, {
+  createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
   });
