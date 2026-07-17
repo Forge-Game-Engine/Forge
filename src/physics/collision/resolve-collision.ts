@@ -83,10 +83,14 @@ export function resolveCollision(
   manifold: CollisionManifold,
   restingVelocityThreshold: number,
   applyRestitution: boolean,
+  reverseContactOrder = false,
 ): void {
   const { bodyA, bodyB, normal, contactPoints } = manifold;
+  const orderedContactPoints = reverseContactOrder
+    ? [...contactPoints].reverse()
+    : contactPoints;
 
-  for (const contactPoint of contactPoints) {
+  for (const contactPoint of orderedContactPoints) {
     const ra = contactPoint.subtract(bodyA.position);
     const rb = contactPoint.subtract(bodyB.position);
 

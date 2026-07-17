@@ -28,6 +28,12 @@ const railDotCount = 6;
 const railDotSize = 6;
 const anchorSize = 14;
 
+const anchorColor = Color.fromHSLA(215, 25, 45);
+const railColor = Color.fromHSLA(215, 20, 55);
+const pistonColor = Color.fromHSLA(15, 90, 55);
+const elevatorColor = Color.fromHSLA(265, 75, 62);
+const inclineColor = Color.fromHSLA(45, 95, 58);
+
 export interface SliderScenarioOptions {
   /**
    * Where the joint's static anchor sits, and where `lowerTranslation` is
@@ -118,8 +124,6 @@ function createRailDots(
   fromPosition: Vector2,
   toPosition: Vector2,
 ): void {
-  const railColor = new Color(0.4, 0.4, 0.45);
-
   for (let i = 0; i <= railDotCount; i++) {
     const t = i / railDotCount;
     const position = new Vector2(
@@ -186,7 +190,7 @@ function createSliderScenario(
     anchorPosition,
     anchorSize,
     anchorSize,
-    new Color(0.2, 0.2, 0.25),
+    anchorColor,
   );
 
   const anchorEntity = world.createEntity();
@@ -222,8 +226,14 @@ function createSliderScenario(
   const sprite = sprites[sliderSprite];
 
   world.addComponent(sliderEntity, scaleId, {
-    local: new Vector2(sliderWidth / sprite.width, sliderHeight / sprite.height),
-    world: new Vector2(sliderWidth / sprite.width, sliderHeight / sprite.height),
+    local: new Vector2(
+      sliderWidth / sprite.width,
+      sliderHeight / sprite.height,
+    ),
+    world: new Vector2(
+      sliderWidth / sprite.width,
+      sliderHeight / sprite.height,
+    ),
   });
   world.addComponent(sliderEntity, spriteId, {
     ...sprite,
@@ -284,7 +294,7 @@ export async function createSliders(
     sliderWidth: 44,
     sliderHeight: 32,
     sliderSprite: 'block',
-    sliderColor: new Color(0.95, 0.55, 0.2),
+    sliderColor: pistonColor,
     pumpImpulse: new Vector2(200_000, 0),
     pumpIntervalSeconds: 1.4,
     pumpAlternate: true,
@@ -302,7 +312,7 @@ export async function createSliders(
     sliderWidth: 80,
     sliderHeight: 20,
     sliderSprite: 'block',
-    sliderColor: new Color(0.3, 0.75, 0.45),
+    sliderColor: elevatorColor,
     pumpImpulse: new Vector2(0, 700_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
@@ -325,7 +335,7 @@ export async function createSliders(
     sliderWidth: 36,
     sliderHeight: 36,
     sliderSprite: 'ball',
-    sliderColor: new Color(0.9, 0.85, 0.2),
+    sliderColor: inclineColor,
     pumpImpulse: inclineAxis.negate().multiply(400_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,

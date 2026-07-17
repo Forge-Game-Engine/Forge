@@ -21,6 +21,9 @@ Core concepts:
   of bodies.
 - [`PrismaticJoint`](/Forge/docs/api/classes/PrismaticJoint): a slider
   constraint locking two bodies to one linear degree of freedom.
+- [`RevoluteJoint`](/Forge/docs/api/classes/RevoluteJoint): a hinge
+  constraint locking two bodies to one rotational degree of freedom about a
+  shared anchor point.
 
 Guides in this section:
 
@@ -30,6 +33,8 @@ Guides in this section:
 - [Raycasting](./raycasting.md): casting rays against bodies.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
+- [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
+  at a point while leaving rotation free.
 
 ## Quick Start
 

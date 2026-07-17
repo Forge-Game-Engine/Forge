@@ -124,6 +124,18 @@ const config: Config = {
               label: 'Prismatic Joint (Slider)',
             },
             {
+              to: 'demos/revolute-joint',
+              label: 'Revolute Joint (Hinge)',
+            },
+            {
+              to: 'demos/newtons-cradle',
+              label: "Newton's Cradle",
+            },
+            {
+              to: 'demos/wrecking-ball',
+              label: 'Wrecking Ball',
+            },
+            {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },
