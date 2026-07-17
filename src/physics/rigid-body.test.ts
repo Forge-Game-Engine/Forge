@@ -174,6 +174,40 @@ describe('RigidBody', () => {
     });
   });
 
+  describe('applyTorque', () => {
+    it('should change angular velocity by torque * inverseInertia * deltaTimeInSeconds', () => {
+      const shape = new CircleShape(1);
+      const body = new RigidBody({ shape, density: 1 });
+
+      body.applyTorque(10, 0.5);
+
+      expect(body.angularVelocity).toBeCloseTo(10 * body.inverseInertia * 0.5);
+    });
+
+    it('should accumulate across multiple calls within the same step', () => {
+      const shape = new CircleShape(1);
+      const body = new RigidBody({ shape, density: 1 });
+
+      body.applyTorque(10, 0.5);
+      body.applyTorque(-4, 0.5);
+
+      expect(body.angularVelocity).toBeCloseTo(
+        (10 - 4) * body.inverseInertia * 0.5,
+      );
+    });
+
+    it('should not change velocity for static bodies', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        isStatic: true,
+      });
+
+      body.applyTorque(1000, 1);
+
+      expect(body.angularVelocity).toBe(0);
+    });
+  });
+
   describe('restitution and friction clamping', () => {
     it('should clamp restitution and friction to [0, 1]', () => {
       const body = new RigidBody({

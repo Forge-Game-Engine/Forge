@@ -81,13 +81,16 @@ or swing without bound, and only set it once you have real bounds to give
 it.
 :::
 
-There's no motor: `RevoluteJoint` doesn't drive rotation on its own. Spin a
-jointed body by applying an impulse to it away from the anchor (see
-[Applying Forces](./forces.md)), or by giving it an initial
-`angularVelocity`; the joint constrains the resulting motion to rotation
-about the anchor rather than producing it. A wheel given a one-time
-`angularVelocity` at creation keeps spinning indefinitely on its own, since
-nothing in the joint resists rotation unless a limit is enabled.
+There's no motor built into the joint itself: `RevoluteJoint` doesn't drive
+rotation on its own. Spin a jointed body by applying an impulse to it away
+from the anchor, by giving it an initial `angularVelocity`, or, for a
+controlled or continuous spin, by driving the body's `angularVelocity`
+directly with `RigidBody.applyTorque` or an `AngularVelocityMotorEcsComponent`
+(see [Applying Forces](./forces.md#torque-spinning-a-body)); the joint
+constrains the resulting motion to rotation about the anchor rather than
+producing it. A wheel given a one-time `angularVelocity` at creation keeps
+spinning indefinitely on its own, since nothing in the joint resists
+rotation unless a limit is enabled.
 
 ## ECS integration
 

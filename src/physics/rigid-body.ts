@@ -191,4 +191,19 @@ export class RigidBody {
     this.velocity = this.velocity.add(impulse.multiply(this.inverseMass));
     this.angularVelocity += this.inverseInertia * contactPoint.cross(impulse);
   }
+
+  /**
+   * Applies a torque to the body, changing its angular velocity by
+   * `torque * inverseInertia * deltaTimeInSeconds`. Unlike
+   * {@link applyImpulse}, which is an instantaneous change, this represents
+   * a torque acting continuously over `deltaTimeInSeconds`, so it must be
+   * called every step to sustain a continuous spin (the same way `gravity`
+   * is integrated). Has no effect on static bodies, whose `inverseInertia`
+   * is always zero.
+   * @param torque - The torque to apply, in N·m.
+   * @param deltaTimeInSeconds - The duration the torque acts over.
+   */
+  public applyTorque(torque: number, deltaTimeInSeconds: number): void {
+    this.angularVelocity += torque * this.inverseInertia * deltaTimeInSeconds;
+  }
 }

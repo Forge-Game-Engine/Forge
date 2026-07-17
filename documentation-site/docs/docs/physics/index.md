@@ -29,7 +29,8 @@ Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes, ECS
   integration, and collision events.
-- [Applying Forces](./forces.md): gravity, impulses, and explosions.
+- [Applying Forces](./forces.md): gravity, impulses, torque, and
+  explosions.
 - [Raycasting](./raycasting.md): casting rays against bodies.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
