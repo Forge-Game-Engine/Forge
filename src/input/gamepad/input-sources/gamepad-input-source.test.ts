@@ -5,8 +5,13 @@ import { gamepadAxes, gamepadButtons } from '../../constants';
 import { Axis1dAction } from '../../actions';
 import { InputManager } from '../../input-manager';
 
-const createGamepad = (axes: number[], buttonValues: number[]): Gamepad =>
+const createGamepad = (
+  axes: number[],
+  buttonValues: number[],
+  index: number = 0,
+): Gamepad =>
   ({
+    index,
     axes,
     buttons: buttonValues.map((value) => ({
       value,
@@ -23,19 +28,28 @@ describe('GamepadInputSource', () => {
   let moveAction: Axis1dAction;
   let getGamepadsSpy: ReturnType<typeof vi.fn>;
 
+  // The source resolves its gamepad from `navigator.getGamepads()` at
+  // construction time (to pick up a gamepad that was already connected
+  // before this source existed), so the mock must return the desired
+  // gamepads *before* the source is constructed.
+  const createSource = (gamepads: Gamepad[] = []): GamepadInputSource => {
+    getGamepadsSpy.mockReturnValue(gamepads);
+
+    return new GamepadInputSource(inputManager);
+  };
+
   beforeEach(() => {
-    inputManager = new InputManager();
-    inputManager.setActiveGroup(group);
-    source = new GamepadInputSource(inputManager);
-
-    moveAction = new Axis1dAction('move', group);
-    inputManager.addAxis1dActions(moveAction);
-
     getGamepadsSpy = vi.fn().mockReturnValue([]);
     Object.defineProperty(navigator, 'getGamepads', {
       value: getGamepadsSpy,
       configurable: true,
     });
+
+    inputManager = new InputManager();
+    inputManager.setActiveGroup(group);
+
+    moveAction = new Axis1dAction('move', group);
+    inputManager.addAxis1dActions(moveAction);
   });
 
   afterEach(() => {
@@ -43,6 +57,8 @@ describe('GamepadInputSource', () => {
   });
 
   it('registers itself as an updatable on the input manager', () => {
+    source = createSource();
+
     const updateSpy = vi.spyOn(source, 'update');
 
     inputManager.update(16);
@@ -51,6 +67,8 @@ describe('GamepadInputSource', () => {
   });
 
   it('does nothing when no gamepad is connected', () => {
+    source = createSource();
+
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
         axisIndex: gamepadAxes.leftStickX,
@@ -63,7 +81,7 @@ describe('GamepadInputSource', () => {
   });
 
   it('reads an analog stick axis into the bound action', () => {
-    getGamepadsSpy.mockReturnValue([createGamepad([0.8, 0, 0, 0], [])]);
+    source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -77,7 +95,7 @@ describe('GamepadInputSource', () => {
   });
 
   it('zeroes stick values within the deadzone', () => {
-    getGamepadsSpy.mockReturnValue([createGamepad([0.05, 0, 0, 0], [])]);
+    source = createSource([createGamepad([0.05, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -96,7 +114,7 @@ describe('GamepadInputSource', () => {
     buttonValues[gamepadButtons.dpadRight] = 1;
     buttonValues[gamepadButtons.dpadLeft] = 0;
 
-    getGamepadsSpy.mockReturnValue([createGamepad([], buttonValues)]);
+    source = createSource([createGamepad([], buttonValues)]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -116,9 +134,7 @@ describe('GamepadInputSource', () => {
     buttonValues[gamepadButtons.dpadRight] = 0;
     buttonValues[gamepadButtons.dpadLeft] = 0;
 
-    getGamepadsSpy.mockReturnValue([
-      createGamepad([0.8, 0, 0, 0], buttonValues),
-    ]);
+    source = createSource([createGamepad([0.8, 0, 0, 0], buttonValues)]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -144,9 +160,7 @@ describe('GamepadInputSource', () => {
     buttonValues[gamepadButtons.dpadRight] = 1;
     buttonValues[gamepadButtons.dpadLeft] = 0;
 
-    getGamepadsSpy.mockReturnValue([
-      createGamepad([0.5, 0, 0, 0], buttonValues),
-    ]);
+    source = createSource([createGamepad([0.5, 0, 0, 0], buttonValues)]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -167,7 +181,7 @@ describe('GamepadInputSource', () => {
   });
 
   it('does not re-dispatch an unchanged idle value, leaving another source in control of the action', () => {
-    getGamepadsSpy.mockReturnValue([createGamepad([0, 0, 0, 0], [])]);
+    source = createSource([createGamepad([0, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -191,7 +205,7 @@ describe('GamepadInputSource', () => {
   });
 
   it('re-dispatches once the gamepad value actually changes, taking back control', () => {
-    getGamepadsSpy.mockReturnValue([createGamepad([0.8, 0, 0, 0], [])]);
+    source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
@@ -202,13 +216,44 @@ describe('GamepadInputSource', () => {
     source.update();
     expect(moveAction.value).toBeCloseTo(0.8);
 
+    // A brand new Gamepad object (not a mutation of the one captured at
+    // construction time) simulates browsers, like Firefox, that hand back a
+    // frozen snapshot from `getGamepads()` rather than updating it in
+    // place. This must still be picked up on the very next poll rather than
+    // being stuck on the value read at construction time.
     getGamepadsSpy.mockReturnValue([createGamepad([0, 0, 0, 0], [])]);
     source.update();
 
     expect(moveAction.value).toBe(0);
   });
 
+  it('picks up a gamepad connected after construction via the gamepadconnected event', () => {
+    source = createSource();
+
+    source.axis1dBindings.add(
+      new GamepadAxis1dBinding(moveAction, {
+        axisIndex: gamepadAxes.leftStickX,
+      }),
+    );
+
+    source.update();
+    expect(moveAction.value).toBe(0);
+
+    const gamepad = createGamepad([0.8, 0, 0, 0], []);
+
+    getGamepadsSpy.mockReturnValue([gamepad]);
+    window.dispatchEvent(
+      Object.assign(new Event('gamepadconnected'), { gamepad }),
+    );
+
+    source.update();
+
+    expect(moveAction.value).toBeCloseTo(0.8);
+  });
+
   it('stops dispatching once stopped', () => {
+    source = createSource();
+
     source.axis1dBindings.add(
       new GamepadAxis1dBinding(moveAction, {
         axisIndex: gamepadAxes.leftStickX,
