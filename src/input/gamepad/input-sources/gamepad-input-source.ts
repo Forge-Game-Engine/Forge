@@ -26,23 +26,36 @@ export class GamepadInputSource
   public readonly axis1dBindings = new Set<GamepadAxis1dBinding>();
 
   private readonly _inputManager: InputManager;
-  private readonly _gamepadIndex: number;
   private readonly _lastDispatchedValues = new Map<Axis1dAction, number>();
+  private readonly _gamepadIndex: number;
+  private _gamepad: Gamepad | null = null;
 
   /** Constructs a new GamepadInputSource.
    * @param inputManager - The input manager to register with.
-   * @param gamepadIndex - The index of the gamepad to read from, as reported by `navigator.getGamepads()`. Defaults to `0`, the first connected gamepad.
+   * @param gamepadIndex - The index of the gamepad to read from, as reported by `navigator.getGamepads()`. Defaults to `0`, the first connected gamepad. -1 will select the last connected gamepad, which is useful for hot-plugging a single gamepad.
    */
   constructor(inputManager: InputManager, gamepadIndex: number = 0) {
     this._inputManager = inputManager;
-    this._gamepadIndex = gamepadIndex;
 
     this._inputManager.addUpdatable(this);
+    this._gamepadIndex = gamepadIndex;
+    this._gamepad = this._getGamepad();
+
+    window.addEventListener('gamepadconnected', this._onGamepadConnected);
   }
 
   /** Polls the gamepad's current state and dispatches any bindings that read from it. */
   public update(): void {
-    const gamepad = navigator.getGamepads()[this._gamepadIndex];
+    if (!this._gamepad) {
+      return;
+    }
+
+    // The Gamepad object cached on this instance is not updated in place in
+    // every browser (e.g. Firefox), so a live reference must be re-fetched
+    // from `navigator.getGamepads()` every frame. Reusing the cached object
+    // would poll the same frozen axes/buttons values forever, causing this
+    // source to dispatch once and then never again.
+    const gamepad = navigator.getGamepads()[this._gamepad.index];
 
     if (!gamepad) {
       return;
@@ -92,7 +105,50 @@ export class GamepadInputSource
 
   /** Unregisters this source from the `InputManager`. */
   public stop(): void {
+    window.removeEventListener('gamepadconnected', this._onGamepadConnected);
     this._inputManager.removeUpdatable(this);
+  }
+
+  private readonly _onGamepadConnected = (event: GamepadEvent): void => {
+    // TODO: Do we need a disconnect?
+    if (this._gamepad !== null) {
+      return;
+    }
+
+    if (this._gamepadIndex === -1) {
+      this._gamepad = event.gamepad;
+
+      return;
+    }
+
+    if (this._gamepadIndex === event.gamepad.index) {
+      this._gamepad = event.gamepad;
+    }
+  };
+
+  /** Gets the gamepad by index. If the id is -1, it will get the last connected gamepad */
+  private _getGamepad(): Gamepad | null {
+    if (this._gamepadIndex === -1) {
+      return this._getLastConnectedGamepad();
+    }
+
+    return navigator.getGamepads()[this._gamepadIndex] ?? null;
+  }
+
+  private _getLastConnectedGamepad(): Gamepad | null {
+    const gamepads = navigator.getGamepads();
+
+    // If the last-connected gamepad is requested, find it by iterating
+    // backwards through the list of gamepads. This is necessary because
+    // the Gamepad API doesn't provide a way to get the last-connected
+    // gamepad directly.
+    for (let i = gamepads.length - 1; i >= 0; i--) {
+      if (gamepads[i]) {
+        return gamepads[i];
+      }
+    }
+
+    return null;
   }
 
   private _readAxis1dValue(
