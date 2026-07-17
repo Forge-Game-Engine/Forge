@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PrismaticJoint } from './joints/index.js';
 import { PhysicsWorld } from './physics-world.js';
 import { RigidBody } from './rigid-body.js';
 import { CircleShape, PolygonShape } from './shapes/index.js';
@@ -230,6 +231,106 @@ describe('PhysicsWorld', () => {
       world.applyExplosiveForce(Vector2.zero, 100, 10);
 
       expect(body.velocity.equals(Vector2.zero)).toBe(true);
+    });
+  });
+
+  describe('addJoint and removeJoint', () => {
+    it('should register and unregister joints', () => {
+      const world = new PhysicsWorld();
+      const bodyA = new RigidBody({ shape: new CircleShape(1) });
+      const bodyB = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(2, 0),
+      });
+      const joint = new PrismaticJoint({ bodyA, bodyB });
+
+      world.addJoint(joint);
+
+      expect(world.joints).toContain(joint);
+
+      world.removeJoint(joint);
+
+      expect(world.joints).not.toContain(joint);
+    });
+
+    it('should throw when removing a joint that is not registered', () => {
+      const world = new PhysicsWorld();
+      const bodyA = new RigidBody({ shape: new CircleShape(1) });
+      const bodyB = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(2, 0),
+      });
+      const joint = new PrismaticJoint({ bodyA, bodyB });
+
+      expect(() => world.removeJoint(joint)).toThrow();
+    });
+  });
+
+  describe('prismatic joint solving', () => {
+    it('should keep a jointed body sliding on its axis under gravity perpendicular to it', () => {
+      const world = new PhysicsWorld({ gravity: new Vector2(0, -10) });
+      const anchor = new RigidBody({
+        shape: new CircleShape(1),
+        position: Vector2.zero,
+        isStatic: true,
+      });
+      const slider = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(3, 0),
+      });
+
+      world.addBody(anchor);
+      world.addBody(slider);
+      world.addJoint(
+        new PrismaticJoint({
+          bodyA: anchor,
+          bodyB: slider,
+          axis: Vector2.right,
+        }),
+      );
+
+      for (let i = 0; i < 60; i++) {
+        world.step(1 / 60);
+      }
+
+      // A small residual is expected: `resolvePrismaticJoint`'s `LINEAR_SLOP`
+      // dead-zone (mirroring `resolveCollision`'s `PENETRATION_SLOP`) leaves
+      // sub-slop perpendicular drift uncorrected each step.
+      expect(slider.position.y).toBeCloseTo(0, 1);
+      expect(slider.angle).toBeCloseTo(0, 2);
+    });
+
+    it('should clamp a jointed body sliding under gravity along its axis to the lower translation limit', () => {
+      const world = new PhysicsWorld({ gravity: new Vector2(-10, 0) });
+      const anchor = new RigidBody({
+        shape: new CircleShape(1),
+        position: Vector2.zero,
+        isStatic: true,
+      });
+      const slider = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(3, 0),
+      });
+
+      world.addBody(anchor);
+      world.addBody(slider);
+      world.addJoint(
+        new PrismaticJoint({
+          bodyA: anchor,
+          bodyB: slider,
+          axis: Vector2.right,
+          enableLimit: true,
+          lowerTranslation: 1,
+          upperTranslation: 3,
+        }),
+      );
+
+      for (let i = 0; i < 120; i++) {
+        world.step(1 / 60);
+      }
+
+      expect(slider.position.x).toBeGreaterThanOrEqual(0.95);
+      expect(slider.position.y).toBeCloseTo(0, 2);
     });
   });
 });

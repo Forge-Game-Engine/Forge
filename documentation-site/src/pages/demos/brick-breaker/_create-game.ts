@@ -81,7 +81,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     ),
   );
 
-  const gamepadInputSource = new GamepadInputSource(inputManager);
+  const gamepadInputSource = new GamepadInputSource(inputManager, -1);
 
   gamepadInputSource.axis1dBindings.add(
     new GamepadAxis1dBinding(moveInput, { axisIndex: gamepadAxes.leftStickX }),
