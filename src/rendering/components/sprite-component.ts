@@ -1,6 +1,11 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Color, Renderable, Vector2 } from '../../index.js';
+import {
+  NineSliceInsets,
+  SliceMode,
+  validateNineSliceInsets,
+} from '../utilities/nine-slice.js';
 
 /**
  * Fields of {@link SpriteEcsComponent} with no sensible default; callers
@@ -81,8 +86,42 @@ export interface SpriteDefaultedOptions {
   layer: number;
 }
 
+/**
+ * Fields of {@link SpriteEcsComponent} that are only meaningful for
+ * nine-sliced sprites, and are left unset for ordinary (single-quad)
+ * sprites.
+ */
+export interface SpriteSliceOptions {
+  /**
+   * The border insets, in texture pixels, that split this sprite into the
+   * classic nine-slice grid (four corners, four edges and a center). When
+   * set, the sprite is rendered as up to nine sub-quads whose corners keep
+   * their native size while the edges and center stretch to fill the
+   * sprite's `width`/`height`, so a resizable panel or frame keeps crisp
+   * borders. Leave unset for an ordinary single-quad sprite. Requires
+   * `textureDimensions` to be set, and is validated when the component is
+   * attached via `addSpriteComponent`.
+   */
+  slices?: NineSliceInsets;
+
+  /**
+   * How the stretchable regions of a nine-sliced sprite are filled. Defaults
+   * to `'stretch'`, the only value in v1; only meaningful alongside
+   * `slices`.
+   */
+  sliceMode?: SliceMode;
+
+  /**
+   * The source texture (or sampled frame) dimensions in pixels, used to turn
+   * the `slices` insets (given in texture pixels) into texture coordinates.
+   * Set automatically by `createImageSprite`; required whenever `slices` is
+   * set.
+   */
+  textureDimensions?: Vector2;
+}
+
 export interface SpriteEcsComponent
-  extends SpriteRequiredOptions, SpriteDefaultedOptions {}
+  extends SpriteRequiredOptions, SpriteDefaultedOptions, SpriteSliceOptions {}
 
 export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
 
@@ -118,6 +157,20 @@ export function addSpriteComponent(
     ...defaultSpriteOptions,
     ...options,
   };
+
+  if (component.slices) {
+    if (!component.textureDimensions) {
+      throw new Error(
+        'A nine-sliced sprite requires "textureDimensions" (the source texture size in pixels) so its insets can be resolved to texture coordinates.',
+      );
+    }
+
+    validateNineSliceInsets(
+      component.slices,
+      component.textureDimensions.x,
+      component.textureDimensions.y,
+    );
+  }
 
   return world.addComponent(entity, spriteId, component);
 }

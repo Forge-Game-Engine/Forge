@@ -7,6 +7,7 @@ import type {
 import type { SpriteEcsComponent } from './components/index.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';
+import type { NineSliceInstance } from './utilities/nine-slice.js';
 
 /**
  * The components needed to bind an entity's per-instance data, resolved once
@@ -38,6 +39,14 @@ export interface InstanceComponents {
    * The entity's flip flags, if it has any.
    */
   flip: FlipEcsComponent | null;
+
+  /**
+   * For one sub-quad of a nine-sliced sprite, the size, pivot and texture
+   * region that override the sprite's own so this instance draws just that
+   * slice. Absent for ordinary (single-quad) sprites, which draw from the
+   * sprite's own size, pivot and texture region.
+   */
+  sliceInstance?: NineSliceInstance | null;
 }
 
 /**

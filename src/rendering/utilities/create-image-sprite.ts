@@ -1,8 +1,11 @@
 import {
   Color,
   createQuadGeometry,
+  NineSliceInsets,
   Renderable,
+  SliceMode,
   SpriteEcsComponent,
+  validateNineSliceInsets,
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
@@ -54,6 +57,22 @@ export interface CreateImageSpriteOptions {
    * by lighting. Omit for a sprite with no emissive contribution.
    */
   emissiveMap?: EmissiveMapOptions;
+
+  /**
+   * The border insets, in texture pixels, that render this sprite as a
+   * nine-slice (four corners that keep their native size, four edges that
+   * stretch along one axis, and a center that stretches along both). Insets
+   * are measured against the sprite's frame size (`frameDimensions`, or the
+   * full image when omitted). Omit for an ordinary single-quad sprite.
+   */
+  slices?: NineSliceInsets;
+
+  /**
+   * How the stretchable regions of a nine-sliced sprite are filled. Defaults
+   * to `'stretch'` (the only value in v1); only meaningful alongside
+   * `slices`.
+   */
+  sliceMode?: SliceMode;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -118,15 +137,31 @@ export function createImageSprite(
     setupInstanceAttributes,
   );
 
+  const textureDimensions = new Vector2(
+    options.frameDimensions?.x ?? image.width,
+    options.frameDimensions?.y ?? image.height,
+  );
+
+  if (options.slices) {
+    validateNineSliceInsets(
+      options.slices,
+      textureDimensions.x,
+      textureDimensions.y,
+    );
+  }
+
   return {
     enabled: true,
-    width: options.frameDimensions?.x ?? image.width,
-    height: options.frameDimensions?.y ?? image.height,
+    width: textureDimensions.x,
+    height: textureDimensions.y,
     pivot: new Vector2(0.5, 0.5),
     tintColor: Color.white,
     renderable,
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
     layer: 0,
+    slices: options.slices,
+    sliceMode: options.sliceMode,
+    textureDimensions,
   };
 }

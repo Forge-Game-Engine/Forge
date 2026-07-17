@@ -4,5 +4,6 @@ export * from './create-image-sprite.js';
 export * from './create-shader-cache.js';
 export * from './create-sprite.js';
 export * from './instance-data-segment.js';
+export * from './nine-slice.js';
 export * from './setup-instance-attribute.js';
 export * from './sprite-instance-data-segment.js';

@@ -6,7 +6,7 @@ import { PositionEcsComponent, positionId } from '../../common';
 import { Vector2 } from '../../math';
 import { CameraEcsComponent, cameraId } from '../components';
 import { SpriteEcsComponent, spriteId } from '../components';
-import { Renderable } from '../renderable';
+import { InstanceComponents, Renderable } from '../renderable';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { Color } from '../color';
@@ -441,6 +441,70 @@ describe('createRenderEcsSystem', () => {
     world.update();
 
     expect(mockGl.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a nine-sliced sprite as nine instances in a single draw call', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0, {
+      width: 100,
+      height: 100,
+      pivot: new Vector2(0.5, 0.5),
+      uvOffset: Vector2.zero,
+      uvScale: Vector2.one,
+      slices: { left: 16, right: 16, top: 16, bottom: 16 },
+      textureDimensions: new Vector2(64, 64),
+    });
+
+    world.update();
+
+    expect(bindInstanceData).toHaveBeenCalledTimes(9);
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(undefined, 0, 6, 9);
+
+    // Each sub-quad carries its own slice override, distinct from the others.
+    const sliceSizes = bindInstanceData.mock.calls.map((call) =>
+      (call[0] as InstanceComponents).sliceInstance?.size.toString(),
+    );
+
+    expect(new Set(sliceSizes).size).toBeGreaterThan(1);
+  });
+
+  it('collapses a nine-sliced sprite with no horizontal insets to three instances', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0, {
+      width: 100,
+      height: 100,
+      pivot: new Vector2(0.5, 0.5),
+      uvOffset: Vector2.zero,
+      uvScale: Vector2.one,
+      slices: { left: 0, right: 0, top: 16, bottom: 16 },
+      textureDimensions: new Vector2(64, 64),
+    });
+
+    world.update();
+
+    expect(bindInstanceData).toHaveBeenCalledTimes(3);
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(undefined, 0, 6, 3);
+  });
+
+  it('treats a sprite with slices but no texture dimensions as a single quad', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0, {
+      width: 100,
+      height: 100,
+      slices: { left: 16, right: 16, top: 16, bottom: 16 },
+    });
+
+    world.update();
+
+    expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(undefined, 0, 6, 1);
   });
 
   it('clears again on the next frame', () => {

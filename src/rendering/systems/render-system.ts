@@ -22,6 +22,7 @@ import { RenderTarget } from '../render-target.js';
 import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
+import { computeNineSliceInstances } from '../utilities/nine-slice.js';
 
 /**
  * The result of a single camera's `run` pass. `afterRun` receives one of
@@ -211,6 +212,36 @@ export const createRenderEcsSystem = (
         sprite: spriteComponent,
         flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
       };
+
+      // A nine-sliced sprite renders as several sub-quads (up to nine), each
+      // pushed as its own command so it flows through the existing
+      // one-command-per-instance batching unchanged: the sub-quads share the
+      // sprite's renderable, layer and depth, so they stay batched and sorted
+      // together, and differ only in the per-slice size, pivot and texture
+      // region carried on `sliceInstance`.
+      if (spriteComponent.slices && spriteComponent.textureDimensions) {
+        const sliceInstances = computeNineSliceInstances({
+          width: spriteComponent.width,
+          height: spriteComponent.height,
+          textureWidth: spriteComponent.textureDimensions.x,
+          textureHeight: spriteComponent.textureDimensions.y,
+          insets: spriteComponent.slices,
+          pivot: spriteComponent.pivot,
+          uvOffset: spriteComponent.uvOffset,
+          uvScale: spriteComponent.uvScale,
+        });
+
+        for (const sliceInstance of sliceInstances) {
+          commands.push({
+            layer: spriteComponent.layer,
+            depth: entityPosition.world.y,
+            renderable,
+            components: { ...components, sliceInstance },
+          });
+        }
+
+        continue;
+      }
 
       commands.push({
         layer: spriteComponent.layer,

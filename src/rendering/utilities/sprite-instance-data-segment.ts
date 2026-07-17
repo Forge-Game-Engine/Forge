@@ -31,7 +31,17 @@ function bindSpriteInstanceData(
   instanceDataBufferArray: Float32Array,
   offset: number,
 ): void {
-  const { position, rotation, scale, sprite, flip } = components;
+  const { position, rotation, scale, sprite, flip, sliceInstance } = components;
+
+  // For a nine-sliced sprite, each sub-quad overrides the sprite's own size,
+  // pivot and texture region with its slice's; everything else (position,
+  // rotation, scale, tint) is shared with the parent sprite. Ordinary
+  // sprites have no `sliceInstance` and draw from the sprite directly.
+  const width = sliceInstance ? sliceInstance.size.x : sprite.width;
+  const height = sliceInstance ? sliceInstance.size.y : sprite.height;
+  const pivot = sliceInstance ? sliceInstance.pivot : sprite.pivot;
+  const uvOffset = sliceInstance ? sliceInstance.uvOffset : sprite.uvOffset;
+  const uvScale = sliceInstance ? sliceInstance.uvScale : sprite.uvScale;
 
   // Position
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
@@ -47,18 +57,18 @@ function bindSpriteInstanceData(
     (scale?.world.y ?? 1) * (flip?.flipY ? -1 : 1);
 
   // Sprite dimensions
-  instanceDataBufferArray[offset + WIDTH_OFFSET] = sprite.width;
-  instanceDataBufferArray[offset + HEIGHT_OFFSET] = sprite.height;
+  instanceDataBufferArray[offset + WIDTH_OFFSET] = width;
+  instanceDataBufferArray[offset + HEIGHT_OFFSET] = height;
 
   // Sprite pivot
-  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = sprite.pivot.x;
-  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = sprite.pivot.y;
+  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = pivot.x;
+  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = pivot.y;
 
   // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = sprite.uvOffset.x;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = sprite.uvOffset.y;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = sprite.uvScale.x;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = sprite.uvScale.y;
+  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = uvOffset.x;
+  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = uvOffset.y;
+  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = uvScale.x;
+  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = uvScale.y;
 
   // Tint color
   instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] = sprite.tintColor.r;
