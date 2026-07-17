@@ -11,6 +11,7 @@ This document provides guidance for AI coding agents working on the Forge Game E
 - [Module Organization](#module-organization)
 - [Development Workflow](#development-workflow)
 - [Testing](#testing)
+- [Documentation Site Demos](#documentation-site-demos)
 - [Common Patterns](#common-patterns)
 - [Security Considerations](#security-considerations)
 
@@ -350,6 +351,44 @@ describe('MyClass', () => {
 - Mock external dependencies when needed
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
+
+## Documentation Site Demos
+
+`documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
+demos of engine features (`physics`, `ecs`, `particles`, `rendering`, ...),
+each rendered through `documentation-site/src/components/Demo.tsx`.
+
+**Critical gotcha**: these demos import the engine as a published package
+(e.g. `import { RigidBody } from '@forge-game-engine/forge/physics'`),
+resolved via `documentation-site/node_modules/@forge-game-engine/forge`, a
+`file:..` link back to this repo, satisfied through this repo's
+`package.json` `exports`, which point at `/dist`, **not** `/src`. This means:
+
+- `npm run check-types` and `npm test` at the repo root only exercise `/src`
+  directly. They will pass even if a change breaks every demo.
+- A demo only picks up a `/src` change after `npm run build` regenerates
+  `/dist`.
+- Demos are a runtime integration surface (canvas rendering, input, the game
+  loop) with no automated test coverage. A change can be fully type-safe and
+  unit-tested and still crash or misbehave in a demo.
+
+**When a change touches a module that has a demo** (check which demos
+import it, e.g. `grep -rl "/physics" documentation-site/src/pages/demos`):
+
+1. Update the demo's source (the `_*.ts` files alongside its `index.tsx`) if
+   the change altered the API it depends on.
+2. Run `npm run build` from the repo root to refresh `/dist` with the change.
+3. From `documentation-site/`, run `npm run typecheck` and `npm run build`
+   (`docusaurus build`). This catches broken imports/exports and type
+   errors that the root-level checks never see, since they never compile
+   against the published package surface.
+4. Run `npm run start` in `documentation-site/` (or reuse an already-running
+   dev server) and open the affected demo page(s) in a browser. Confirm they
+   render and behave correctly with a full page reload, since demos are
+   stateful and fast refresh does not guarantee a clean re-initialization.
+
+See also step 9 of `CLAUDE.md`'s verification checklist, which makes this
+mandatory before marking a task complete.
 
 ## Common Patterns
 

@@ -4,7 +4,7 @@ import {
   detectCollision,
   resolveCollision,
 } from './collision/index.js';
-import { type PrismaticJoint, resolvePrismaticJoint } from './joints/index.js';
+import { type Joint, resolveJoint } from './joints/index.js';
 import type { RigidBody } from './rigid-body.js';
 
 /**
@@ -73,7 +73,7 @@ export class PhysicsWorld {
 
   private readonly _bodies: Set<RigidBody>;
 
-  private readonly _joints: Set<PrismaticJoint>;
+  private readonly _joints: Set<Joint>;
 
   private _activePairs: Map<string, BodyCollisionPair>;
 
@@ -106,7 +106,7 @@ export class PhysicsWorld {
   /**
    * The joints currently registered in this world.
    */
-  get joints(): readonly PrismaticJoint[] {
+  get joints(): readonly Joint[] {
     return [...this._joints];
   }
 
@@ -153,7 +153,7 @@ export class PhysicsWorld {
    * Registers a joint with this world.
    * @param joint - The joint to add.
    */
-  public addJoint(joint: PrismaticJoint): void {
+  public addJoint(joint: Joint): void {
     this._joints.add(joint);
   }
 
@@ -162,10 +162,10 @@ export class PhysicsWorld {
    * @param joint - The joint to remove.
    * @throws An error if the joint is not registered in this world.
    */
-  public removeJoint(joint: PrismaticJoint): void {
+  public removeJoint(joint: Joint): void {
     if (!this._joints.has(joint)) {
       throw new Error(
-        'Cannot remove PrismaticJoint that is not registered in this PhysicsWorld.',
+        'Cannot remove joint that is not registered in this PhysicsWorld.',
       );
     }
 
@@ -268,11 +268,16 @@ export class PhysicsWorld {
     // one undoing the other's correction from the previous step.
     for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
       for (const manifold of manifolds) {
-        resolveCollision(manifold, restingVelocityThreshold, iteration === 0);
+        resolveCollision(
+          manifold,
+          restingVelocityThreshold,
+          iteration === 0,
+          iteration % 2 === 1,
+        );
       }
 
       for (const joint of this._joints) {
-        resolvePrismaticJoint(joint);
+        resolveJoint(joint);
       }
     }
 

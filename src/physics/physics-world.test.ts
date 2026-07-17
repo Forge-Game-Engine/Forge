@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PrismaticJoint } from './joints/index.js';
+import { PrismaticJoint, RevoluteJoint } from './joints/index.js';
 import { PhysicsWorld } from './physics-world.js';
 import { RigidBody } from './rigid-body.js';
 import { CircleShape, PolygonShape } from './shapes/index.js';
@@ -264,6 +264,24 @@ describe('PhysicsWorld', () => {
 
       expect(() => world.removeJoint(joint)).toThrow();
     });
+
+    it('should register and unregister a RevoluteJoint alongside a PrismaticJoint', () => {
+      const world = new PhysicsWorld();
+      const bodyA = new RigidBody({ shape: new CircleShape(1) });
+      const bodyB = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(2, 0),
+      });
+      const joint = new RevoluteJoint({ bodyA, bodyB });
+
+      world.addJoint(joint);
+
+      expect(world.joints).toContain(joint);
+
+      world.removeJoint(joint);
+
+      expect(world.joints).not.toContain(joint);
+    });
   });
 
   describe('prismatic joint solving', () => {
@@ -331,6 +349,82 @@ describe('PhysicsWorld', () => {
 
       expect(slider.position.x).toBeGreaterThanOrEqual(0.95);
       expect(slider.position.y).toBeCloseTo(0, 2);
+    });
+  });
+
+  describe('revolute joint solving', () => {
+    it('should let a pendulum swing freely about its pivot under gravity', () => {
+      const world = new PhysicsWorld({ gravity: new Vector2(0, -10) });
+      const pivot = new RigidBody({
+        shape: new CircleShape(1),
+        position: Vector2.zero,
+        isStatic: true,
+      });
+      const bob = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(3, 0),
+      });
+
+      world.addBody(pivot);
+      world.addBody(bob);
+      world.addJoint(
+        new RevoluteJoint({
+          bodyA: pivot,
+          bodyB: bob,
+          anchorB: new Vector2(-3, 0),
+        }),
+      );
+
+      for (let i = 0; i < 60; i++) {
+        world.step(1 / 60);
+      }
+
+      const bobAnchor = bob.position.add(new Vector2(-3, 0).rotate(bob.angle));
+
+      // The pivot end of the bob should stay pinned to the pivot...
+      expect(bobAnchor.x).toBeCloseTo(0, 1);
+      expect(bobAnchor.y).toBeCloseTo(0, 1);
+      // ...while gravity swings the bob's center down from its initial
+      // horizontal position, demonstrating rotation is unconstrained.
+      expect(bob.position.y).toBeLessThan(-0.1);
+    });
+
+    it('should clamp a hinged arm rotating under gravity to its lower angle limit', () => {
+      const world = new PhysicsWorld({ gravity: new Vector2(0, -10) });
+      const anchor = new RigidBody({
+        shape: new CircleShape(1),
+        position: Vector2.zero,
+        isStatic: true,
+      });
+      const arm = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(3, 0),
+      });
+
+      world.addBody(anchor);
+      world.addBody(arm);
+
+      const joint = new RevoluteJoint({
+        bodyA: anchor,
+        bodyB: arm,
+        anchorB: new Vector2(-3, 0),
+        enableLimit: true,
+        lowerAngle: -0.3,
+        upperAngle: 0.3,
+      });
+
+      world.addJoint(joint);
+
+      for (let i = 0; i < 120; i++) {
+        world.step(1 / 60);
+      }
+
+      // A larger residual than the prismatic translation-limit test is
+      // expected here: the limit constraint only cancels outward angular
+      // velocity, while gravity continuously re-accelerates the arm every
+      // step, so the Baumgarte correction pass is perpetually working
+      // against a live torque rather than a one-time overshoot.
+      expect(joint.angle).toBeGreaterThanOrEqual(-0.4);
     });
   });
 });
