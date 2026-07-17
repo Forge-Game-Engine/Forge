@@ -21,6 +21,7 @@ Fira
 Flaticon
 fract
 frontmatter
+gamepadconnected
 Gamepads
 GLSL
 greyscale
@@ -60,8 +61,8 @@ resettables
 respawns
 retuned
 RGBA
-rolloff
 rnaumovs
+rolloff
 skidmark
 slevesque
 Smashicons

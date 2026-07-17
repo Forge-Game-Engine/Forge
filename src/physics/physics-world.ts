@@ -4,6 +4,7 @@ import {
   detectCollision,
   resolveCollision,
 } from './collision/index.js';
+import { type PrismaticJoint, resolvePrismaticJoint } from './joints/index.js';
 import type { RigidBody } from './rigid-body.js';
 
 /**
@@ -72,6 +73,8 @@ export class PhysicsWorld {
 
   private readonly _bodies: Set<RigidBody>;
 
+  private readonly _joints: Set<PrismaticJoint>;
+
   private _activePairs: Map<string, BodyCollisionPair>;
 
   private _collisionStarts: BodyCollisionPair[];
@@ -87,6 +90,7 @@ export class PhysicsWorld {
 
     this.gravity = gravity.clone();
     this._bodies = new Set();
+    this._joints = new Set();
     this._activePairs = new Map();
     this._collisionStarts = [];
     this._collisionEnds = [];
@@ -97,6 +101,13 @@ export class PhysicsWorld {
    */
   get bodies(): readonly RigidBody[] {
     return [...this._bodies];
+  }
+
+  /**
+   * The joints currently registered in this world.
+   */
+  get joints(): readonly PrismaticJoint[] {
+    return [...this._joints];
   }
 
   /**
@@ -136,6 +147,29 @@ export class PhysicsWorld {
     }
 
     this._bodies.delete(body);
+  }
+
+  /**
+   * Registers a joint with this world.
+   * @param joint - The joint to add.
+   */
+  public addJoint(joint: PrismaticJoint): void {
+    this._joints.add(joint);
+  }
+
+  /**
+   * Removes a joint from this world.
+   * @param joint - The joint to remove.
+   * @throws An error if the joint is not registered in this world.
+   */
+  public removeJoint(joint: PrismaticJoint): void {
+    if (!this._joints.has(joint)) {
+      throw new Error(
+        'Cannot remove PrismaticJoint that is not registered in this PhysicsWorld.',
+      );
+    }
+
+    this._joints.delete(joint);
   }
 
   /**
@@ -227,9 +261,18 @@ export class PhysicsWorld {
       deltaTimeInSeconds *
       RESTING_VELOCITY_THRESHOLD_MULTIPLIER;
 
+    // Joints are solved in the same iterative pass as contacts (rather than
+    // in a separate loop after) so a jointed body that is also touching
+    // something else - a piston pushing into a wall, a platform resting on
+    // the floor - converges against both constraints together instead of
+    // one undoing the other's correction from the previous step.
     for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
       for (const manifold of manifolds) {
         resolveCollision(manifold, restingVelocityThreshold, iteration === 0);
+      }
+
+      for (const joint of this._joints) {
+        resolvePrismaticJoint(joint);
       }
     }
 

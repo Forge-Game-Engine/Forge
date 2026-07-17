@@ -120,6 +120,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/prismatic-joint',
+              label: 'Prismatic Joint (Slider)',
+            },
+            {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },

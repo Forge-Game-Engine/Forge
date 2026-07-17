@@ -19,6 +19,8 @@ Core concepts:
   `RigidBody` can have.
 - [`raycast`](/Forge/docs/api/functions/raycast): casts a ray against a set
   of bodies.
+- [`PrismaticJoint`](/Forge/docs/api/classes/PrismaticJoint): a slider
+  constraint locking two bodies to one linear degree of freedom.
 
 Guides in this section:
 
@@ -26,6 +28,8 @@ Guides in this section:
   integration, and collision events.
 - [Applying Forces](./forces.md): gravity, impulses, and explosions.
 - [Raycasting](./raycasting.md): casting rays against bodies.
+- [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
+  along a single axis.
 
 ## Quick Start
 
