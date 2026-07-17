@@ -54,6 +54,15 @@ export interface CreateImageSpriteOptions {
    * by lighting. Omit for a sprite with no emissive contribution.
    */
   emissiveMap?: EmissiveMapOptions;
+
+  /**
+   * Samples the sprite's texture (and its emissive map, if any) with nearest-
+   * neighbor filtering for crisp, blocky scaling, appropriate for pixel-art
+   * assets. Defaults to `false`, which uses linear filtering so the sprite's
+   * own anti-aliased edges (for example a soft-edged circle) are preserved
+   * instead of being sampled into a hard, staggered stair-step.
+   */
+  pixelated?: boolean;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -63,6 +72,8 @@ export interface CreateImageSpriteOptions {
 // `createImageSprite`'s body instead defers that read until the function is
 // actually called, well after every module has finished loading.
 const defaultEmissiveMapOptions = { intensity: 1 };
+
+const defaultCreateImageSpriteOptions = { pixelated: false };
 
 /**
  * Creates a sprite using the provided image and render layer.
@@ -79,13 +90,17 @@ export function createImageSprite(
   options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
   const { shaderCache, gl } = renderContext;
+  const { pixelated } = { ...defaultCreateImageSpriteOptions, ...options };
 
   const spriteVertexShader = shaderCache.getShader('sprite.vert');
   const spriteFragmentShader = shaderCache.getShader('sprite.frag');
 
   const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
 
-  material.setUniform('u_texture', createTextureFromImage(gl, image, true));
+  material.setUniform(
+    'u_texture',
+    createTextureFromImage(gl, image, pixelated),
+  );
 
   const resolvedEmissive = options.emissiveMap
     ? { ...defaultEmissiveMapOptions, ...options.emissiveMap }
@@ -94,7 +109,7 @@ export function createImageSprite(
   material.setUniform(
     'u_emissiveTexture',
     resolvedEmissive
-      ? createTextureFromImage(gl, resolvedEmissive.image, true)
+      ? createTextureFromImage(gl, resolvedEmissive.image, pixelated)
       : getSharedBlackTexture(gl),
   );
   material.setColorUniform(
