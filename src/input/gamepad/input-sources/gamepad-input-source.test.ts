@@ -242,7 +242,9 @@ describe('GamepadInputSource', () => {
     const gamepad = createGamepad([0.8, 0, 0, 0], []);
 
     getGamepadsSpy.mockReturnValue([gamepad]);
-    window.dispatchEvent(Object.assign(new Event('gamepadconnected'), { gamepad }));
+    window.dispatchEvent(
+      Object.assign(new Event('gamepadconnected'), { gamepad }),
+    );
 
     source.update();
 
