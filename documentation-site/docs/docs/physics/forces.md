@@ -246,7 +246,11 @@ addLinearSpringComponent(world, suspensionEntity, {
   }),
 });
 addLinearDamperComponent(world, suspensionEntity, {
-  damper: new LinearDamper({ bodyA: chassis, bodyB: wheel, dampingCoefficient: 40 }),
+  damper: new LinearDamper({
+    bodyA: chassis,
+    bodyB: wheel,
+    dampingCoefficient: 40,
+  }),
 });
 
 // Registered before createPhysicsSyncEcsSystem, see the caution below.

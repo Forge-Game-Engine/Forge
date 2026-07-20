@@ -132,6 +132,10 @@ const config: Config = {
               label: 'Torque and Motors',
             },
             {
+              to: 'demos/linear-spring-damper',
+              label: 'Linear Spring and Damper',
+            },
+            {
               to: 'demos/newtons-cradle',
               label: "Newton's Cradle",
             },
