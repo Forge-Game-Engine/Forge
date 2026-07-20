@@ -12,7 +12,6 @@ import {
   LinearDamper,
   LinearSpring,
   PhysicsBodyId,
-  PolygonShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -26,17 +25,17 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addResetComponent } from './_reset.component';
 import { addSpringLineComponent } from './_spring-line.component';
 
-const anchorSize = 24;
-const chassisWidth = 90;
-const chassisHeight = 40;
-const chassisDensity = 0.6;
+const mountSize = 24;
+const wheelRadius = 30;
+const wheelDensity = 0.6;
 const lineWidth = 10;
 
-const anchorColor = Color.fromHSLA(215, 15, 45);
+const mountColor = Color.fromHSLA(215, 15, 45);
 const lineColor = Color.fromHSLA(215, 20, 65);
 
 interface SuspensionSprites {
-  block: SpriteEcsComponent;
+  mount: SpriteEcsComponent;
+  wheel: SpriteEcsComponent;
   line: SpriteEcsComponent;
 }
 
@@ -46,13 +45,15 @@ async function loadSuspensionSprites(
 ): Promise<SuspensionSprites> {
   const { imageCache } = renderContext;
 
-  const [blockImage, lineImage] = await Promise.all([
+  const [mountImage, wheelImage, lineImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
-    block: createImageSprite(blockImage, renderContext, renderLayer),
+    mount: createImageSprite(mountImage, renderContext, renderLayer),
+    wheel: createImageSprite(wheelImage, renderContext, renderLayer),
     line: createImageSprite(lineImage, renderContext, renderLayer),
   };
 }
@@ -81,18 +82,19 @@ function createVisualEntity(
 
 export interface SuspensionScenarioOptions {
   /**
-   * Where the fixed end of the spring/damper sits, representing the wheel's
-   * contact point with the road.
+   * Where the fixed end of the spring/damper sits, representing the point
+   * on the vehicle frame the suspension mounts to.
    */
-  anchorPosition: Vector2;
+  mountPosition: Vector2;
 
   /**
-   * How far above `anchorPosition` the chassis starts. Since `LinearSpring`
-   * defaults `restLength` to the anchors' distance at construction time,
-   * this also becomes the spring's `restLength`, so the chassis visibly
-   * sags under gravity to a new equilibrium as soon as the demo starts.
+   * How far below `mountPosition` the wheel hangs at rest. Since
+   * `LinearSpring` defaults `restLength` to the anchors' distance at
+   * construction time, this also becomes the spring's `restLength`, so the
+   * wheel visibly sags further under gravity to a new equilibrium as soon
+   * as the demo starts.
    */
-  chassisStartHeight: number;
+  wheelDropHeight: number;
 
   stiffness: number;
 
@@ -102,30 +104,31 @@ export interface SuspensionScenarioOptions {
    */
   dampingCoefficient?: number;
 
-  chassisColor: Color;
+  wheelColor: Color;
 
   /**
-   * The upward velocity the chassis is released with, simulating the jolt
-   * of just having hit a bump: the bump kicks the wheel (and chassis) up,
-   * then the spring pulls it back down towards `restLength`.
+   * The upward velocity the wheel is released with, simulating the jolt of
+   * just having hit a bump: the bump kicks the wheel up towards the mount
+   * (compressing the gap), then the spring pulls it back down towards
+   * `restLength`.
    */
   bumpVelocity: Vector2;
 
   /**
-   * How often the chassis is teleported back to `chassisStartHeight` with
-   * `bumpVelocity`, replaying the same disturbance on a loop (see
-   * `ResetEcsComponent` for why this is a hard reset rather than a repeated
-   * impulse).
+   * How often the wheel is teleported back to `wheelDropHeight` below the
+   * mount with `bumpVelocity`, replaying the same disturbance on a loop
+   * (see `ResetEcsComponent` for why this is a hard reset rather than a
+   * repeated impulse).
    */
   resetIntervalSeconds: number;
 }
 
 /**
- * Builds one suspension scenario: a static anchor (the wheel's road
- * contact), a dynamic chassis hanging from it via a `LinearSpring` (and
- * optionally a `LinearDamper`), a `SpringLineEcsComponent` visualizing the
- * connection, and a `ResetEcsComponent` that periodically replays the same
- * bump over and over.
+ * Builds one suspension scenario: a static mount (the attachment point on
+ * the vehicle frame), a dynamic wheel hanging below it via a `LinearSpring`
+ * (and optionally a `LinearDamper`), a `SpringLineEcsComponent` visualizing
+ * the connection, and a `ResetEcsComponent` that periodically replays the
+ * same bump over and over.
  * @param world - The ECS world to add the scenario's entities to.
  * @param sprites - The pre-loaded sprites shared across every scenario.
  * @param options - The scenario's geometry, spring/damper tuning, and reset
@@ -137,69 +140,67 @@ function createSuspensionScenario(
   options: SuspensionScenarioOptions,
 ): void {
   const {
-    anchorPosition,
-    chassisStartHeight,
+    mountPosition,
+    wheelDropHeight,
     stiffness,
     dampingCoefficient,
-    chassisColor,
+    wheelColor,
     bumpVelocity,
     resetIntervalSeconds,
   } = options;
 
   createVisualEntity(
     world,
-    sprites.block,
-    anchorPosition,
-    anchorSize,
-    anchorSize,
-    anchorColor,
+    sprites.mount,
+    mountPosition,
+    mountSize,
+    mountSize,
+    mountColor,
   );
 
-  const anchorBody = new RigidBody({
-    shape: new CircleShape(anchorSize / 2),
-    position: anchorPosition.clone(),
+  const mountBody = new RigidBody({
+    shape: new CircleShape(mountSize / 2),
+    position: mountPosition.clone(),
     isStatic: true,
     isSensor: true,
   });
 
-  const chassisPosition = anchorPosition.add(
-    new Vector2(0, chassisStartHeight),
-  );
-  const chassisBody = new RigidBody({
-    shape: PolygonShape.rectangle(chassisWidth, chassisHeight),
-    position: chassisPosition,
-    density: chassisDensity,
+  const wheelPosition = mountPosition.add(new Vector2(0, -wheelDropHeight));
+  const wheelBody = new RigidBody({
+    shape: new CircleShape(wheelRadius),
+    position: wheelPosition,
+    density: wheelDensity,
     restitution: 0,
   });
-  chassisBody.velocity = bumpVelocity.clone();
+  wheelBody.velocity = bumpVelocity.clone();
 
-  const chassisEntity = world.createEntity();
+  const wheelEntity = world.createEntity();
 
-  world.addComponent(chassisEntity, positionId, {
-    world: chassisPosition.clone(),
-    local: chassisPosition.clone(),
+  world.addComponent(wheelEntity, positionId, {
+    world: wheelPosition.clone(),
+    local: wheelPosition.clone(),
   });
-  world.addComponent(chassisEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(chassisEntity, scaleId, {
+  world.addComponent(wheelEntity, rotationId, { local: 0, world: 0 });
+  world.addComponent(wheelEntity, scaleId, {
     local: new Vector2(
-      chassisWidth / sprites.block.width,
-      chassisHeight / sprites.block.height,
+      (wheelRadius * 2) / sprites.wheel.width,
+      (wheelRadius * 2) / sprites.wheel.height,
     ),
     world: new Vector2(
-      chassisWidth / sprites.block.width,
-      chassisHeight / sprites.block.height,
+      (wheelRadius * 2) / sprites.wheel.width,
+      (wheelRadius * 2) / sprites.wheel.height,
     ),
   });
-  world.addComponent(chassisEntity, spriteId, {
-    ...sprites.block,
-    tintColor: chassisColor,
+  world.addComponent(wheelEntity, spriteId, {
+    ...sprites.wheel,
+    tintColor: wheelColor,
   });
-  world.addComponent(chassisEntity, PhysicsBodyId, {
-    physicsBody: chassisBody,
+  world.addComponent(wheelEntity, PhysicsBodyId, {
+    physicsBody: wheelBody,
   });
-  addResetComponent(world, chassisEntity, {
-    body: chassisBody,
-    initialPosition: chassisPosition.clone(),
+  addResetComponent(world, wheelEntity, {
+    body: wheelBody,
+    initialPosition: wheelPosition.clone(),
     initialVelocity: bumpVelocity.clone(),
     intervalSeconds: resetIntervalSeconds,
   });
@@ -208,8 +209,8 @@ function createSuspensionScenario(
 
   addLinearSpringComponent(world, forceEntity, {
     spring: new LinearSpring({
-      bodyA: anchorBody,
-      bodyB: chassisBody,
+      bodyA: mountBody,
+      bodyB: wheelBody,
       stiffness,
     }),
   });
@@ -217,8 +218,8 @@ function createSuspensionScenario(
   if (dampingCoefficient !== undefined) {
     addLinearDamperComponent(world, forceEntity, {
       damper: new LinearDamper({
-        bodyA: anchorBody,
-        bodyB: chassisBody,
+        bodyA: mountBody,
+        bodyB: wheelBody,
         dampingCoefficient,
       }),
     });
@@ -227,8 +228,8 @@ function createSuspensionScenario(
   const lineEntity = world.createEntity();
 
   world.addComponent(lineEntity, positionId, {
-    world: anchorPosition.clone(),
-    local: anchorPosition.clone(),
+    world: mountPosition.clone(),
+    local: mountPosition.clone(),
   });
   world.addComponent(lineEntity, rotationId, { local: 0, world: 0 });
   world.addComponent(lineEntity, scaleId, {
@@ -240,8 +241,8 @@ function createSuspensionScenario(
     tintColor: lineColor,
   });
   addSpringLineComponent(world, lineEntity, {
-    anchorPosition: anchorPosition.clone(),
-    body: chassisBody,
+    anchorPosition: mountPosition.clone(),
+    body: wheelBody,
     lineWidth,
     spriteWidth: sprites.line.width,
     spriteHeight: sprites.line.height,
@@ -264,30 +265,30 @@ export async function createSuspensions(
   const sprites = await loadSuspensionSprites(renderContext, renderLayer);
   const { width, height } = renderContext.canvas;
   const columnWidth = width / 2;
-  const anchorY = -height * 0.25;
+  const mountY = height * 0.25;
   const stiffness = 30_000;
   const bumpVelocity = new Vector2(0, 180);
   const resetIntervalSeconds = 6;
 
-  // Spring only: nothing dissipates the energy of the bump, so the chassis
+  // Spring only: nothing dissipates the energy of the bump, so the wheel
   // keeps oscillating until the next reset.
   createSuspensionScenario(world, sprites, {
-    anchorPosition: new Vector2(-columnWidth / 2, anchorY),
-    chassisStartHeight: 120,
+    mountPosition: new Vector2(-columnWidth / 2, mountY),
+    wheelDropHeight: 120,
     stiffness,
-    chassisColor: Color.fromHSLA(15, 90, 55),
+    wheelColor: Color.fromHSLA(15, 90, 55),
     bumpVelocity,
     resetIntervalSeconds,
   });
 
   // Spring and damper: the damper resists the compression/extension speed,
-  // so the chassis settles back to rest well before the next reset.
+  // so the wheel settles back to rest well before the next reset.
   createSuspensionScenario(world, sprites, {
-    anchorPosition: new Vector2(columnWidth / 2, anchorY),
-    chassisStartHeight: 120,
+    mountPosition: new Vector2(columnWidth / 2, mountY),
+    wheelDropHeight: 120,
     stiffness,
     dampingCoefficient: 15_000,
-    chassisColor: Color.fromHSLA(150, 60, 45),
+    wheelColor: Color.fromHSLA(150, 60, 45),
     bumpVelocity,
     resetIntervalSeconds,
   });
