@@ -24,10 +24,11 @@ Core concepts:
 - [`RevoluteJoint`](/Forge/docs/api/classes/RevoluteJoint): a hinge
   constraint locking two bodies to one rotational degree of freedom about a
   shared anchor point.
-- [`LinearSpring`](/Forge/docs/api/classes/LinearSpring) and
-  [`LinearDamper`](/Forge/docs/api/classes/LinearDamper): position- and
-  velocity-based forces connecting two bodies' anchor points, for soft
-  connections like vehicle suspension.
+- [`LinearSpringEcsComponent`](/Forge/docs/api/interfaces/LinearSpringEcsComponent)
+  and
+  [`LinearDamperEcsComponent`](/Forge/docs/api/interfaces/LinearDamperEcsComponent):
+  position- and velocity-based forces connecting two bodies' anchor points,
+  for soft connections like vehicle suspension.
 
 Guides in this section:
 

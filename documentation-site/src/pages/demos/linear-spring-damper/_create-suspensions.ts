@@ -9,8 +9,6 @@ import {
   addLinearDamperComponent,
   addLinearSpringComponent,
   CircleShape,
-  LinearDamper,
-  LinearSpring,
   PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
@@ -89,10 +87,10 @@ export interface SuspensionScenarioOptions {
 
   /**
    * How far below `mountPosition` the wheel hangs at rest. Since
-   * `LinearSpring` defaults `restLength` to the anchors' distance at
-   * construction time, this also becomes the spring's `restLength`, so the
-   * wheel visibly sags further under gravity to a new equilibrium as soon
-   * as the demo starts.
+   * `addLinearSpringComponent` defaults `restLength` to the anchors'
+   * distance at attach time, this also becomes the spring's `restLength`,
+   * so the wheel visibly sags further under gravity to a new equilibrium as
+   * soon as the demo starts.
    */
   wheelDropHeight: number;
 
@@ -125,10 +123,11 @@ export interface SuspensionScenarioOptions {
 
 /**
  * Builds one suspension scenario: a static mount (the attachment point on
- * the vehicle frame), a dynamic wheel hanging below it via a `LinearSpring`
- * (and optionally a `LinearDamper`), a `SpringLineEcsComponent` visualizing
- * the connection, and a `ResetEcsComponent` that periodically replays the
- * same bump over and over.
+ * the vehicle frame), a dynamic wheel hanging below it via a
+ * `LinearSpringEcsComponent` (and optionally a `LinearDamperEcsComponent`),
+ * a `SpringLineEcsComponent` visualizing the connection, and a
+ * `ResetEcsComponent` that periodically replays the same bump over and
+ * over.
  * @param world - The ECS world to add the scenario's entities to.
  * @param sprites - The pre-loaded sprites shared across every scenario.
  * @param options - The scenario's geometry, spring/damper tuning, and reset
@@ -208,20 +207,16 @@ function createSuspensionScenario(
   const forceEntity = world.createEntity();
 
   addLinearSpringComponent(world, forceEntity, {
-    spring: new LinearSpring({
-      bodyA: mountBody,
-      bodyB: wheelBody,
-      stiffness,
-    }),
+    bodyA: mountBody,
+    bodyB: wheelBody,
+    stiffness,
   });
 
   if (dampingCoefficient !== undefined) {
     addLinearDamperComponent(world, forceEntity, {
-      damper: new LinearDamper({
-        bodyA: mountBody,
-        bodyB: wheelBody,
-        dampingCoefficient,
-      }),
+      bodyA: mountBody,
+      bodyB: wheelBody,
+      dampingCoefficient,
     });
   }
 
@@ -251,8 +246,9 @@ function createSuspensionScenario(
 
 /**
  * Creates two suspension scenarios side by side, sharing the same spring
- * stiffness and reset schedule: the left has only a `LinearSpring`, the
- * right pairs it with a `LinearDamper`.
+ * stiffness and reset schedule: the left has only a
+ * `LinearSpringEcsComponent`, the right pairs it with a
+ * `LinearDamperEcsComponent`.
  * @param world - The ECS world to add the scenarios' entities to.
  * @param renderContext - The render context used to load sprites.
  * @param renderLayer - The render layer the scenarios should be drawn on.
