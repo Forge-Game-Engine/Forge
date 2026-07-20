@@ -1,26 +1,33 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { Time } from '@forge-game-engine/forge/common';
 import {
-  AppliedTorqueEcsComponent,
-  AppliedTorqueId,
+  PhysicsBodyEcsComponent,
+  PhysicsBodyId,
 } from '@forge-game-engine/forge/physics';
 import { ThrusterEcsComponent, thrusterId } from './_thruster.component';
 
 /**
- * Sets each matched entity's `AppliedTorqueEcsComponent.value` from its
- * `ThrusterEcsComponent` every tick: `torque` while `holdAction.isHeld`, `0`
- * otherwise. Must run before `createAppliedTorqueEcsSystem` in the same
- * tick so the value it sets is the one applied that tick, rather than the
- * previous tick's leftover `0`.
+ * Applies each matched entity's `ThrusterEcsComponent.torque` directly to
+ * its `PhysicsBodyEcsComponent`'s `RigidBody` while `holdAction` is held,
+ * via `RigidBody.applyTorque`. Must run before `createPhysicsEcsSystem` in
+ * the same tick so the torque applied this tick is reflected in the same
+ * tick's `physicsWorld.step` (see the Applying Forces guide's
+ * registration-order caution).
  */
-export const createThrusterEcsSystem = (): EcsSystem<
-  [ThrusterEcsComponent, AppliedTorqueEcsComponent]
-> => ({
-  query: [thrusterId, AppliedTorqueId],
+export const createThrusterEcsSystem = (
+  time: Time,
+): EcsSystem<[ThrusterEcsComponent, PhysicsBodyEcsComponent]> => ({
+  query: [thrusterId, PhysicsBodyId],
   run: (result) => {
-    const [thrusterComponent, appliedTorqueComponent] = result.components;
+    const [thrusterComponent, physicsBodyComponent] = result.components;
 
-    appliedTorqueComponent.value = thrusterComponent.holdAction.isHeld
-      ? thrusterComponent.torque
-      : 0;
+    if (!thrusterComponent.holdAction.isHeld) {
+      return;
+    }
+
+    physicsBodyComponent.physicsBody.applyTorque(
+      thrusterComponent.torque,
+      time.deltaTimeInSeconds,
+    );
   },
 });

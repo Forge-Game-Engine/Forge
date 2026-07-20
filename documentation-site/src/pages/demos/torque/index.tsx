@@ -17,10 +17,10 @@ export default function Torque(): JSX.Element {
       metaData={{
         title: 'Torque and Motors Demo',
         description:
-          "A demo showcasing the physics engine's AppliedTorqueEcsComponent and AngularVelocityMotorEcsComponent, for spinning a body with torque.",
+          "A demo showcasing RigidBody.applyTorque and the physics engine's AngularVelocityMotorEcsComponent, for spinning a body with torque.",
       }}
       header="Torque and Motors"
-      blurb="This demo showcases the two ways to spin a RigidBody with torque. On the left, a flywheel carries an AppliedTorqueEcsComponent driven by a ThrusterEcsComponent: holding Space sets its value every tick, spinning the flywheel up, and releasing lets a small angularDrag on the body gradually spin it back down, since the torque itself resets to 0 the instant it's no longer held. On the right, a flywheel carries an AngularVelocityMotorEcsComponent holding a steady target angular velocity on its own, no input needed, with no angularDrag of its own; a demo-only gust periodically knocks its speed off course, and the motor spends its limited maxTorque budget correcting back towards the target every tick afterwards."
+      blurb="This demo showcases the two ways to spin a RigidBody with torque. On the left, a flywheel carries a demo-specific ThrusterEcsComponent: while Space is held, createThrusterEcsSystem calls RigidBody.applyTorque on it directly every tick, spinning it up, and releasing lets a small angularDrag on the body gradually spin it back down, since nothing drives it once the torque stops. There's no engine-provided component for this one-shot/manual case, a game is expected to write a small system like this itself. On the right, a flywheel carries an AngularVelocityMotorEcsComponent, a built-in engine component that holds a steady target angular velocity on its own, no input needed, with no angularDrag of its own; a demo-only gust periodically knocks its speed off course, and the motor spends its limited maxTorque budget correcting back towards the target every tick afterwards."
       createGame={createTorqueGame}
       interactions={
         <InteractionInstruction

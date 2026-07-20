@@ -6,7 +6,6 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createAngularVelocityMotorEcsSystem,
-  createAppliedTorqueEcsSystem,
   createPhysicsEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
@@ -69,15 +68,14 @@ export const createTorqueGame = async (): Promise<Game> => {
     new Vector2(columnWidth / 2, height * 0.1),
   );
 
-  // `createThrusterEcsSystem` and `createGustEcsSystem` set
-  // `AppliedTorqueEcsComponent.value`/`RigidBody.angularVelocity` for this
-  // tick, so they must run before `createAppliedTorqueEcsSystem`/
-  // `createAngularVelocityMotorEcsSystem`, which in turn must run before
-  // `createPhysicsEcsSystem`, which is what steps `physicsWorld` (see the
-  // Applying Forces guide's registration-order caution).
-  world.addSystem(createThrusterEcsSystem());
+  // `createThrusterEcsSystem` and `createGustEcsSystem` change
+  // `RigidBody.angularVelocity` directly for this tick, and
+  // `createAngularVelocityMotorEcsSystem` reads/corrects it, so all three
+  // must run before `createPhysicsEcsSystem`, which is what steps
+  // `physicsWorld` (see the Applying Forces guide's registration-order
+  // caution).
+  world.addSystem(createThrusterEcsSystem(time));
   world.addSystem(createGustEcsSystem(time));
-  world.addSystem(createAppliedTorqueEcsSystem(time));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));

@@ -8,7 +8,6 @@ import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
-  addAppliedTorqueComponent,
   PhysicsBodyId,
   PolygonShape,
   RigidBody,
@@ -80,11 +79,11 @@ async function createFlywheelEntity(
 }
 
 /**
- * Builds the thruster scenario: a flywheel driven by an
- * `AppliedTorqueEcsComponent` whose value a `ThrusterEcsComponent` sets from
- * `thrustInput` every tick. Holding `thrustInput` spins it up; releasing it
- * lets `angularDrag` gradually spin it back down, since the torque itself
- * resets to `0` the instant it's no longer held and nothing else drives it.
+ * Builds the thruster scenario: a flywheel carrying a `ThrusterEcsComponent`
+ * that `createThrusterEcsSystem` applies directly to the flywheel's
+ * `RigidBody` via `applyTorque` while `thrustInput` is held. Releasing it
+ * lets `angularDrag` gradually spin the flywheel back down, since nothing
+ * else drives it once the torque stops.
  * @param world - The ECS world to add the scenario's entities to.
  * @param renderContext - The render context used to load the flywheel sprite.
  * @param renderLayer - The render layer the flywheel should be drawn on.
@@ -107,7 +106,6 @@ export async function createThrusterScenario(
     thrusterAngularDrag,
   );
 
-  addAppliedTorqueComponent(world, entity);
   addThrusterComponent(world, entity, {
     holdAction: thrustInput,
     torque: thrusterTorque,

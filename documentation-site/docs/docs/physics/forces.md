@@ -94,32 +94,31 @@ friction in its bearing:
 const wheel = new RigidBody({ shape: new CircleShape(20), angularDrag: 1.5 });
 ```
 
-### ECS integration: `AppliedTorqueEcsComponent` and `AngularVelocityMotorEcsComponent`
+### ECS integration: `AngularVelocityMotorEcsComponent`
 
-Two components wrap `applyTorque` for entities with a
-`PhysicsBodyEcsComponent`:
+For a one-shot or player-driven torque, there's no dedicated ECS component:
+write a small system for it in your own game code, querying for whatever
+component identifies the entity (a `ThrusterEcsComponent`, a tag, ...)
+alongside `PhysicsBodyEcsComponent`, and call `physicsBody.applyTorque`
+directly. This mirrors `applyImpulse`, which also has no ECS component of
+its own; see the Torque and Motors demo's `ThrusterEcsComponent`/
+`createThrusterEcsSystem` for a worked example.
 
-- [`AppliedTorqueEcsComponent`](/Forge/docs/api/interfaces/AppliedTorqueEcsComponent)
-  (keyed by [`AppliedTorqueId`](/Forge/docs/api/variables/AppliedTorqueId),
-  attached via `addAppliedTorqueComponent`) applies its `value` (N·m) to the
-  body every tick, then resets `value` back to `0`. Set `value` again each
-  tick you want the torque to keep acting; a value set once produces a
-  single kick, the same distinction as a one-time `applyImpulse` versus a
-  value re-applied every frame.
-- [`AngularVelocityMotorEcsComponent`](/Forge/docs/api/interfaces/AngularVelocityMotorEcsComponent)
-  (keyed by [`AngularVelocityMotorId`](/Forge/docs/api/variables/AngularVelocityMotorId),
-  attached via `addAngularVelocityMotorComponent`) drives the body towards a
-  `targetVelocity` (rad/s), spending no more than `maxTorque` (N·m) per tick
-  to get there. Use this instead of `AppliedTorqueEcsComponent` when you want
-  to hold a rotation speed (a fan settling at its rated RPM, a car wheel
-  matching throttle input) rather than manage the torque value yourself.
+For holding a target rotation speed, use
+[`AngularVelocityMotorEcsComponent`](/Forge/docs/api/interfaces/AngularVelocityMotorEcsComponent)
+(keyed by [`AngularVelocityMotorId`](/Forge/docs/api/variables/AngularVelocityMotorId),
+attached via `addAngularVelocityMotorComponent`) instead: it drives the
+body towards a `targetVelocity` (rad/s), spending no more than `maxTorque`
+(N·m) per tick to get there. This one _is_ a built-in engine component,
+since the torque-to-reach-target-velocity calculation is non-trivial and
+broadly reusable (a fan settling at its rated RPM, a car wheel matching
+throttle input), unlike a one-shot or manually-driven torque, which is just
+a direct `applyTorque` call away.
 
 ```ts
 import {
   addAngularVelocityMotorComponent,
-  addAppliedTorqueComponent,
   createAngularVelocityMotorEcsSystem,
-  createAppliedTorqueEcsSystem,
   createPhysicsEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
@@ -129,22 +128,19 @@ addAngularVelocityMotorComponent(world, fanEntity, {
   maxTorque: 40,
 });
 
-// A thruster the player fires by setting `value` while a key is held.
-addAppliedTorqueComponent(world, spaceshipEntity, { value: 0 });
-
 // Registered before createPhysicsEcsSystem, see the caution below.
 world.addSystem(createAngularVelocityMotorEcsSystem(time));
-world.addSystem(createAppliedTorqueEcsSystem(time));
 world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
 ```
 
 :::caution[Registration order]
-Both systems must run before `createPhysicsEcsSystem` in the same tick,
-since `createPhysicsEcsSystem` is what steps `physicsWorld`. Registering
-either after means torque applied this tick isn't reflected until the next
-one. `EcsWorld.update` runs systems in the order they were added to
-`addSystem` (ties broken by `registrationOrder`), so either add the torque
-systems first, as above, or pass them an earlier `registrationOrder`
+`createAngularVelocityMotorEcsSystem` (and any custom torque-applying
+system you write) must run before `createPhysicsEcsSystem` in the same
+tick, since `createPhysicsEcsSystem` is what steps `physicsWorld`.
+Registering it after means torque applied this tick isn't reflected until
+the next one. `EcsWorld.update` runs systems in the order they were added
+to `addSystem` (ties broken by `registrationOrder`), so either add the
+torque system first, as above, or pass it an earlier `registrationOrder`
 (`SystemRegistrationOrder.early`) if your setup order can't be changed.
 :::
 

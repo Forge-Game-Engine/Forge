@@ -2,11 +2,13 @@ import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { HoldAction } from '@forge-game-engine/forge/input';
 
 /**
- * Drives an `AppliedTorqueEcsComponent` on the same entity from a
- * `HoldAction`: `torque` while `holdAction` is held, `0` the instant it's
- * released. Demonstrates that `AppliedTorqueEcsComponent.value` has to be
- * set every tick to sustain a spin, since `createAppliedTorqueEcsSystem`
- * resets it to `0` right after applying it each tick.
+ * Marks an entity as a player-controlled thruster: `createThrusterEcsSystem`
+ * queries for this alongside the entity's `PhysicsBodyEcsComponent` and
+ * calls `RigidBody.applyTorque` directly while `holdAction` is held. There's
+ * no engine-provided "apply this torque" component for this, since real game
+ * code almost always already has its own component identifying which
+ * entities get torque and why (a thruster, a motor, a spell effect, ...) -
+ * this component plays that role for the demo.
  */
 export interface ThrusterEcsComponent {
   holdAction: HoldAction;

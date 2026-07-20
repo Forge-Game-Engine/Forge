@@ -2,13 +2,14 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
- * ECS-style component interface for a controlled rotational motor. Unlike
- * `AppliedTorqueEcsComponent`, which applies a fixed torque, this drives the
- * entity's `PhysicsBodyEcsComponent.physicsBody` towards `targetVelocity`
- * every tick, spending no more than `maxTorque` to do so. Register
- * `createAngularVelocityMotorEcsSystem` to apply it. Use this for a spinning
- * fan, a thruster-controlled spaceship, or a car wheel that should hold a
- * speed rather than receive a one-shot push.
+ * ECS-style component interface for a controlled rotational motor. Unlike a
+ * one-shot or manually-driven torque (applied directly via
+ * `RigidBody.applyTorque`, with no engine-provided component of its own),
+ * this drives the entity's `PhysicsBodyEcsComponent.physicsBody` towards
+ * `targetVelocity` every tick, spending no more than `maxTorque` to do so.
+ * Register `createAngularVelocityMotorEcsSystem` to apply it. Use this for a
+ * spinning fan, or a car wheel that should hold a speed rather than receive
+ * a one-shot push.
  */
 export interface AngularVelocityMotorEcsComponent {
   /**
