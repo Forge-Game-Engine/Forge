@@ -105,14 +105,15 @@ export interface SuspensionScenarioOptions {
   chassisColor: Color;
 
   /**
-   * The downward velocity the chassis is released with, simulating the jolt
-   * of just having hit a bump.
+   * The upward velocity the chassis is released with, simulating the jolt
+   * of just having hit a bump: the bump kicks the wheel (and chassis) up,
+   * then the spring pulls it back down towards `restLength`.
    */
-  dropVelocity: Vector2;
+  bumpVelocity: Vector2;
 
   /**
    * How often the chassis is teleported back to `chassisStartHeight` with
-   * `dropVelocity`, replaying the same disturbance on a loop (see
+   * `bumpVelocity`, replaying the same disturbance on a loop (see
    * `ResetEcsComponent` for why this is a hard reset rather than a repeated
    * impulse).
    */
@@ -124,7 +125,7 @@ export interface SuspensionScenarioOptions {
  * contact), a dynamic chassis hanging from it via a `LinearSpring` (and
  * optionally a `LinearDamper`), a `SpringLineEcsComponent` visualizing the
  * connection, and a `ResetEcsComponent` that periodically replays the same
- * drop, simulating hitting a bump over and over.
+ * bump over and over.
  * @param world - The ECS world to add the scenario's entities to.
  * @param sprites - The pre-loaded sprites shared across every scenario.
  * @param options - The scenario's geometry, spring/damper tuning, and reset
@@ -141,7 +142,7 @@ function createSuspensionScenario(
     stiffness,
     dampingCoefficient,
     chassisColor,
-    dropVelocity,
+    bumpVelocity,
     resetIntervalSeconds,
   } = options;
 
@@ -170,7 +171,7 @@ function createSuspensionScenario(
     density: chassisDensity,
     restitution: 0,
   });
-  chassisBody.velocity = dropVelocity.clone();
+  chassisBody.velocity = bumpVelocity.clone();
 
   const chassisEntity = world.createEntity();
 
@@ -199,7 +200,7 @@ function createSuspensionScenario(
   addResetComponent(world, chassisEntity, {
     body: chassisBody,
     initialPosition: chassisPosition.clone(),
-    initialVelocity: dropVelocity.clone(),
+    initialVelocity: bumpVelocity.clone(),
     intervalSeconds: resetIntervalSeconds,
   });
 
@@ -265,17 +266,17 @@ export async function createSuspensions(
   const columnWidth = width / 2;
   const anchorY = -height * 0.25;
   const stiffness = 30_000;
-  const dropVelocity = new Vector2(0, -180);
+  const bumpVelocity = new Vector2(0, 180);
   const resetIntervalSeconds = 6;
 
-  // Spring only: nothing dissipates the energy of the drop, so the chassis
+  // Spring only: nothing dissipates the energy of the bump, so the chassis
   // keeps oscillating until the next reset.
   createSuspensionScenario(world, sprites, {
     anchorPosition: new Vector2(-columnWidth / 2, anchorY),
     chassisStartHeight: 120,
     stiffness,
     chassisColor: Color.fromHSLA(15, 90, 55),
-    dropVelocity,
+    bumpVelocity,
     resetIntervalSeconds,
   });
 
@@ -287,7 +288,7 @@ export async function createSuspensions(
     stiffness,
     dampingCoefficient: 15_000,
     chassisColor: Color.fromHSLA(150, 60, 45),
-    dropVelocity,
+    bumpVelocity,
     resetIntervalSeconds,
   });
 }
