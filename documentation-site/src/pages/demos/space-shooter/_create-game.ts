@@ -23,7 +23,7 @@ import {
 } from '@forge-game-engine/forge/lifecycle';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { createMovementEcsSystem } from './_movement.system';
@@ -238,7 +238,7 @@ export const createSpaceShooterGame = async (
   world.addSystem(
     createSpriteAnimationEcsSystem(time, explosionSpawner.animationRegistry),
   );
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
   world.addSystem(
     createAsteroidCollisionEcsSystem(
       physicsWorld,

@@ -4,11 +4,14 @@ sidebar_position: 2
 
 # Applying Forces
 
-[`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) gives you three ways
-to make bodies move: a constant [`gravity`](/Forge/docs/api/classes/PhysicsWorld#gravity)
+[`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) and
+[`RigidBody`](/Forge/docs/api/classes/RigidBody) give you several ways to
+make bodies move: a constant [`gravity`](/Forge/docs/api/classes/PhysicsWorld#gravity)
 applied to every dynamic body each step, a per-body
 [`applyImpulse`](/Forge/docs/api/classes/RigidBody#applyimpulse) for
-instantaneous hits, and a world-wide
+instantaneous hits, a per-body
+[`applyTorque`](/Forge/docs/api/classes/RigidBody#applytorque) for
+continuous or one-shot spin, and a world-wide
 [`applyExplosiveForce`](/Forge/docs/api/classes/PhysicsWorld#applyexplosiveforce)
 for area-effect blasts. Picking the right one (and tuning its magnitude
 relative to body mass) is the difference between a satisfying jump/explosion
@@ -45,9 +48,9 @@ isolation.
 
 :::caution
 There's no continuous "apply force" on `RigidBody`, only impulses and
-`gravity`. For a continuous push like wind or thrust, scale the impulse by
-`deltaTimeInSeconds` and apply it every step, the same way gravity is
-integrated:
+`gravity`. For a continuous linear push like wind or thrust, scale the
+impulse by `deltaTimeInSeconds` and apply it every step, the same way gravity
+is integrated:
 
 ```ts
 body.applyImpulse(wind.multiply(deltaTimeInSeconds), Vector2.zero);
@@ -55,7 +58,90 @@ body.applyImpulse(wind.multiply(deltaTimeInSeconds), Vector2.zero);
 
 Calling `applyImpulse` with the same vector every frame without scaling by
 `deltaTimeInSeconds` makes the push frame-rate dependent, the same bug
-`deltaTime` exists to avoid elsewhere.
+`deltaTime` exists to avoid elsewhere. Rotation has a dedicated continuous
+API, `applyTorque`, covered next; you don't need this impulse-scaling
+workaround for spin.
+:::
+
+## Torque: spinning a body
+
+[`applyTorque(torque, deltaTimeInSeconds)`](/Forge/docs/api/classes/RigidBody#applytorque)
+changes a body's `angularVelocity` by `torque * inverseInertia *
+deltaTimeInSeconds`, the rotational equivalent of gravity's linear
+acceleration. Unlike `applyImpulse`, it already takes `deltaTimeInSeconds`,
+so call it every step with the same torque value for a continuous spin (a
+thruster, a fan, a car engine), or once for an instantaneous twist:
+
+```ts
+// A continuous thruster torque, called every step while held.
+spaceship.applyTorque(50, deltaTimeInSeconds);
+```
+
+The angular velocity change is `torque * body.inverseInertia`, scaled by
+time, so a body with a large moment of inertia (a big or dense shape) spins
+up more slowly than a small one under the same torque. Has no effect on
+static bodies, whose `inverseInertia` is always `0`.
+
+By default a spinning body keeps its `angularVelocity` forever once nothing
+is driving it anymore, exactly like gravity-free linear motion. Set
+[`RigidBodyOptions.angularDrag`](/Forge/docs/api/interfaces/RigidBodyOptions#angulardrag)
+(`0` by default) to have `PhysicsWorld.step` damp `angularVelocity` towards
+`0` every step instead, useful for anything that should coast to a stop
+rather than spin indefinitely, like a thruster-spun wheel with some
+friction in its bearing:
+
+```ts
+const wheel = new RigidBody({ shape: new CircleShape(20), angularDrag: 1.5 });
+```
+
+### ECS integration: `AngularVelocityMotorEcsComponent`
+
+For a one-shot or player-driven torque, there's no dedicated ECS component:
+write a small system for it in your own game code, querying for whatever
+component identifies the entity (a `ThrusterEcsComponent`, a tag, ...)
+alongside `PhysicsBodyEcsComponent`, and call `physicsBody.applyTorque`
+directly. This mirrors `applyImpulse`, which also has no ECS component of
+its own; see the Torque and Motors demo's `ThrusterEcsComponent`/
+`createThrusterEcsSystem` for a worked example.
+
+For holding a target rotation speed, use
+[`AngularVelocityMotorEcsComponent`](/Forge/docs/api/interfaces/AngularVelocityMotorEcsComponent)
+(keyed by [`AngularVelocityMotorId`](/Forge/docs/api/variables/AngularVelocityMotorId),
+attached via `addAngularVelocityMotorComponent`) instead: it drives the
+body towards a `targetVelocity` (rad/s), spending no more than `maxTorque`
+(N·m) per tick to get there. This one _is_ a built-in engine component,
+since the torque-to-reach-target-velocity calculation is non-trivial and
+broadly reusable (a fan settling at its rated RPM, a car wheel matching
+throttle input), unlike a one-shot or manually-driven torque, which is just
+a direct `applyTorque` call away.
+
+```ts
+import {
+  addAngularVelocityMotorComponent,
+  createAngularVelocityMotorEcsSystem,
+  createPhysicsSyncEcsSystem,
+} from '@forge-game-engine/forge/physics';
+
+// A fan blade that spins up to 8 rad/s, limited to 40 N·m of torque.
+addAngularVelocityMotorComponent(world, fanEntity, {
+  targetVelocity: 8,
+  maxTorque: 40,
+});
+
+// Registered before createPhysicsSyncEcsSystem, see the caution below.
+world.addSystem(createAngularVelocityMotorEcsSystem(time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+```
+
+:::caution[Registration order]
+`createAngularVelocityMotorEcsSystem` (and any custom torque-applying
+system you write) must run before `createPhysicsSyncEcsSystem` in the same
+tick, since `createPhysicsSyncEcsSystem` is what steps `physicsWorld`.
+Registering it after means torque applied this tick isn't reflected until
+the next one. `EcsWorld.update` runs systems in the order they were added
+to `addSystem` (ties broken by `registrationOrder`), so either add the
+torque system first, as above, or pass it an earlier `registrationOrder`
+(`SystemRegistrationOrder.early`) if your setup order can't be changed.
 :::
 
 ## Explosions: area-effect impulses

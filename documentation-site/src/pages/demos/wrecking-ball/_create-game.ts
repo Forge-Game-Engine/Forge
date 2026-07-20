@@ -5,7 +5,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createRevoluteJointEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
@@ -30,14 +30,14 @@ export const createWreckingBallGame = async (): Promise<Game> => {
 
   await createWreckingBall(world, renderContext, renderLayers.foreground);
 
-  // `createRevoluteJointEcsSystem` must run before `createPhysicsEcsSystem`,
-  // which is what steps `physicsWorld`: newly-added joints need to be
-  // registered before that step happens (see the Revolute Joints guide's
-  // registration-order caution).
+  // `createRevoluteJointEcsSystem` must run before
+  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
+  // newly-added joints need to be registered before that step happens (see
+  // the Revolute Joints guide's registration-order caution).
   world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 
   return game;
 };

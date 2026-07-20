@@ -3,7 +3,7 @@
 Forge includes a native 2D physics engine: rigid bodies, convex collision
 shapes, gravity, collision detection and resolution, raycasting, and
 impulse-based forces (including explosions). It has no external
-dependencies and integrates with the ECS via `createPhysicsEcsSystem`, which
+dependencies and integrates with the ECS via `createPhysicsSyncEcsSystem`, which
 steps a `PhysicsWorld` every frame and keeps `RigidBody` transforms in sync
 with entity position/rotation components.
 
@@ -29,7 +29,8 @@ Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes, ECS
   integration, and collision events.
-- [Applying Forces](./forces.md): gravity, impulses, and explosions.
+- [Applying Forces](./forces.md): gravity, impulses, torque, and
+  explosions.
 - [Raycasting](./raycasting.md): casting rays against bodies.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
@@ -40,7 +41,7 @@ Guides in this section:
 
 The simplest way to use physics is through the ECS integration: give an
 entity a `PhysicsBodyEcsComponent` alongside its position and rotation
-components, then register `createPhysicsEcsSystem`. Every `world.update()`,
+components, then register `createPhysicsSyncEcsSystem`. Every `world.update()`,
 the system steps the `PhysicsWorld` and writes each dynamic body's resulting
 position and angle back to the entity.
 
@@ -48,7 +49,7 @@ position and angle back to the entity.
 import { positionId, rotationId } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   PhysicsBodyId,
   PhysicsWorld,
   PolygonShape,
@@ -71,7 +72,7 @@ world.addComponent(box, PhysicsBodyId, {
   physicsBody: new RigidBody({ shape: PolygonShape.rectangle(32, 32) }),
 });
 
-world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 ```
 
 See [Bodies and Shapes](./rigid-bodies.md#ecs-integration) for static and

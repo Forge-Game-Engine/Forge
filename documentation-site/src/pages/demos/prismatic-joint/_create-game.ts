@@ -5,7 +5,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createPrismaticJointEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
@@ -32,7 +32,7 @@ export const createPrismaticJointGame = async (): Promise<Game> => {
   await createSliders(world, renderContext, renderLayers.foreground);
 
   // `createPrismaticJointEcsSystem` and `createPumpEcsSystem` must run
-  // before `createPhysicsEcsSystem`, which is what steps `physicsWorld`:
+  // before `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
   // newly-added joints need to be registered, and this tick's pump impulses
   // applied, before that step happens (see the Prismatic Joints guide's
   // registration-order caution).
@@ -40,7 +40,7 @@ export const createPrismaticJointGame = async (): Promise<Game> => {
   world.addSystem(createPumpEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 
   return game;
 };

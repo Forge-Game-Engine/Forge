@@ -5,7 +5,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createRevoluteJointEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
@@ -32,15 +32,15 @@ export const createRevoluteJointGame = async (): Promise<Game> => {
   await createHinges(world, renderContext, renderLayers.foreground);
 
   // `createRevoluteJointEcsSystem` and `createPushEcsSystem` must run before
-  // `createPhysicsEcsSystem`, which is what steps `physicsWorld`: newly-added
-  // joints need to be registered, and this tick's push impulses applied,
-  // before that step happens (see the Revolute Joints guide's
+  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
+  // newly-added joints need to be registered, and this tick's push impulses
+  // applied, before that step happens (see the Revolute Joints guide's
   // registration-order caution).
   world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
   world.addSystem(createPushEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 
   return game;
 };

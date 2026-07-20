@@ -13,9 +13,9 @@ const prismaticJointEntityBuffer: number[] = [];
  * `physicsWorld` while the entity carries a `PrismaticJointId` component,
  * and removes it once the entity stops matching (or is removed).
  *
- * Must be registered with the `EcsWorld` before `createPhysicsEcsSystem`
+ * Must be registered with the `EcsWorld` before `createPhysicsSyncEcsSystem`
  * (or with an earlier `registrationOrder`), so newly-added joints are
- * registered before `createPhysicsEcsSystem` steps `physicsWorld` for the
+ * registered before `createPhysicsSyncEcsSystem` steps `physicsWorld` for the
  * tick.
  * @param physicsWorld - The physics world to register joints with.
  */
@@ -23,7 +23,7 @@ export const createPrismaticJointEcsSystem = (
   physicsWorld: PhysicsWorld,
 ): EcsSystem<[PrismaticJointEcsComponent], void> => {
   // Keyed by entity rather than by `PrismaticJoint` instance for the same
-  // reason as `createPhysicsEcsSystem`'s `registeredEntities`: entity ids
+  // reason as `createPhysicsSyncEcsSystem`'s `registeredEntities`: entity ids
   // are recycled as soon as an entity is removed, so a component
   // removed-and-re-added under the same id within one tick would otherwise
   // be indistinguishable from that entity never having changed joints.

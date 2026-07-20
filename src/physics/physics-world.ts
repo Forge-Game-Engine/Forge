@@ -229,6 +229,11 @@ export class PhysicsWorld {
       body.velocity = body.velocity.add(
         this.gravity.multiply(deltaTimeInSeconds),
       );
+
+      // A multiplicative decay (rather than subtracting a fixed amount)
+      // stays stable for any `angularDrag * deltaTimeInSeconds`, and is a
+      // no-op at the default `angularDrag` of 0.
+      body.angularVelocity *= 1 / (1 + body.angularDrag * deltaTimeInSeconds);
     }
   }
 

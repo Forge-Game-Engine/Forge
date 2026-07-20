@@ -128,6 +128,10 @@ const config: Config = {
               label: 'Revolute Joint (Hinge)',
             },
             {
+              to: 'demos/torque',
+              label: 'Torque and Motors',
+            },
+            {
               to: 'demos/newtons-cradle',
               label: "Newton's Cradle",
             },

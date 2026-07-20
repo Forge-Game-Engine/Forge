@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createPhysicsEcsSystem } from './physics.system.js';
+import { createPhysicsSyncEcsSystem } from './physics-sync.system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   PositionEcsComponent,
@@ -14,7 +14,7 @@ import { RigidBody } from '../rigid-body.js';
 import { CircleShape, PolygonShape } from '../shapes/index.js';
 import { Vector2 } from '../../math/index.js';
 
-describe('PhysicsSystem', () => {
+describe('PhysicsSyncSystem', () => {
   let world: EcsWorld;
   let time: Time;
   let physicsWorld: PhysicsWorld;
@@ -23,7 +23,7 @@ describe('PhysicsSystem', () => {
     world = new EcsWorld();
     time = new Time();
     physicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
-    world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+    world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
   });
 
   it('should update position and rotation from physics body for dynamic bodies', () => {
@@ -292,7 +292,7 @@ describe('PhysicsSystem', () => {
   it('should stop reacting to entity removal once the system has been removed from the world', () => {
     const isolatedWorld = new EcsWorld();
     const isolatedPhysicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
-    const system = createPhysicsEcsSystem(isolatedPhysicsWorld, time);
+    const system = createPhysicsSyncEcsSystem(isolatedPhysicsWorld, time);
 
     isolatedWorld.addSystem(system);
 

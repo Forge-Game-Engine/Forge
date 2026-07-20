@@ -77,7 +77,7 @@ instead of `isStatic: true` if its position is externally controlled.
 Add a `PhysicsBodyEcsComponent`, keyed by
 [`PhysicsBodyId`](/Forge/docs/api/variables/PhysicsBodyId), alongside
 `PositionEcsComponent` and `RotationEcsComponent`, then register
-[`createPhysicsEcsSystem`](/Forge/docs/api/functions/createPhysicsEcsSystem)`(physicsWorld, time)`.
+[`createPhysicsSyncEcsSystem`](/Forge/docs/api/functions/createPhysicsSyncEcsSystem)`(physicsWorld, time)`.
 See [`PhysicsBodyEcsComponent`](/Forge/docs/api/interfaces/PhysicsBodyEcsComponent)
 for the full component shape.
 
@@ -117,10 +117,10 @@ the negation of the entity's render-space rotation, not the same value.
 
 ## Mapping collisions back to entities
 
-After each step (handled for you by `createPhysicsEcsSystem`),
+After each step (handled for you by `createPhysicsSyncEcsSystem`),
 [`collisionStarts`/`collisionEnds`](/Forge/docs/api/classes/PhysicsWorld#collisionstarts)
 list the body pairs that started or stopped touching. Since
-`createPhysicsEcsSystem` sets `body.userData` to the entity id, you can
+`createPhysicsSyncEcsSystem` sets `body.userData` to the entity id, you can
 recover the ECS entities involved:
 
 ```ts

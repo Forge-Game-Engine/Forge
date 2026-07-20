@@ -49,6 +49,15 @@ export interface RigidBodyOptions {
    * The friction coefficient of the body, clamped to the range [0, 1].
    */
   friction?: number;
+
+  /**
+   * The angular drag coefficient, in 1/s, applied to `angularVelocity` every
+   * `PhysicsWorld.step` as `angularVelocity *= 1 / (1 + angularDrag *
+   * deltaTimeInSeconds)`. `0` (the default) applies no damping at all, so a
+   * spinning body keeps its angular velocity indefinitely unless something
+   * else changes it (torque, a collision, ...). Clamped to be non-negative.
+   */
+  angularDrag?: number;
 }
 
 const defaultRigidBodyOptions = {
@@ -59,6 +68,7 @@ const defaultRigidBodyOptions = {
   density: 1,
   restitution: 0.2,
   friction: 0.3,
+  angularDrag: 0,
 };
 
 /**
@@ -94,6 +104,8 @@ export class RigidBody {
 
   public readonly friction: number;
 
+  public readonly angularDrag: number;
+
   /**
    * Arbitrary data associated with this body by the consumer (e.g. an ECS
    * entity id). Not read or written by the physics simulation itself.
@@ -124,6 +136,7 @@ export class RigidBody {
       density,
       restitution,
       friction,
+      angularDrag,
     } = {
       ...defaultRigidBodyOptions,
       ...options,
@@ -139,6 +152,7 @@ export class RigidBody {
     this.isSensor = isSensor;
     this.restitution = clamp(restitution, 0, 1);
     this.friction = clamp(friction, 0, 1);
+    this.angularDrag = Math.max(0, angularDrag);
     this._aabbCache = null;
 
     if (isStatic) {
@@ -190,5 +204,20 @@ export class RigidBody {
   public applyImpulse(impulse: Vector2, contactPoint: Vector2): void {
     this.velocity = this.velocity.add(impulse.multiply(this.inverseMass));
     this.angularVelocity += this.inverseInertia * contactPoint.cross(impulse);
+  }
+
+  /**
+   * Applies a torque to the body, changing its angular velocity by
+   * `torque * inverseInertia * deltaTimeInSeconds`. Unlike
+   * {@link applyImpulse}, which is an instantaneous change, this represents
+   * a torque acting continuously over `deltaTimeInSeconds`, so it must be
+   * called every step to sustain a continuous spin (the same way `gravity`
+   * is integrated). Has no effect on static bodies, whose `inverseInertia`
+   * is always zero.
+   * @param torque - The torque to apply, in N·m.
+   * @param deltaTimeInSeconds - The duration the torque acts over.
+   */
+  public applyTorque(torque: number, deltaTimeInSeconds: number): void {
+    this.angularVelocity += torque * this.inverseInertia * deltaTimeInSeconds;
   }
 }

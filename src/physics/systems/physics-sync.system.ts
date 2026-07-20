@@ -14,11 +14,18 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 const physicsEntityBuffer: number[] = [];
 
 /**
- * Creates an ECS system to handle physics.
+ * Creates an ECS system that steps `physicsWorld` and keeps it synchronized
+ * with the ECS world: registers/removes each entity's `RigidBody` as its
+ * `PhysicsBodyEcsComponent` comes and goes, and syncs its transform with the
+ * entity's `PositionEcsComponent`/`RotationEcsComponent` every tick (see
+ * `PhysicsBodyEcsComponent.isKinematic` for which side drives which). This
+ * system alone doesn't add any physics behavior beyond that sync - joints,
+ * torque, and motors are all separate systems layered on top (see the
+ * Applying Forces and Joints guides).
  * @param physicsWorld - The physics world to step and synchronize with the ECS.
  * @param time - The time instance used to determine the simulation step size.
  */
-export const createPhysicsEcsSystem = (
+export const createPhysicsSyncEcsSystem = (
   physicsWorld: PhysicsWorld,
   time: Time,
 ): EcsSystem<

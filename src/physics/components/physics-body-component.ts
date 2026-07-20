@@ -5,8 +5,8 @@ import type { RigidBody } from '../rigid-body.js';
 /**
  * ECS-style component interface for a physics body.
  *
- * The position/rotation sync behavior of `createPhysicsEcsSystem` depends on
- * `physicsBody.isStatic` and `isKinematic`:
+ * The position/rotation sync behavior of `createPhysicsSyncEcsSystem`
+ * depends on `physicsBody.isStatic` and `isKinematic`:
  *
  * - `isStatic: true`: the ECS position and rotation components drive the
  *   Matter body every frame (e.g. world boundary walls that never move).
