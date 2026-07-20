@@ -24,13 +24,17 @@ Core concepts:
 - [`RevoluteJoint`](/Forge/docs/api/classes/RevoluteJoint): a hinge
   constraint locking two bodies to one rotational degree of freedom about a
   shared anchor point.
+- [`LinearSpring`](/Forge/docs/api/classes/LinearSpring) and
+  [`LinearDamper`](/Forge/docs/api/classes/LinearDamper): position- and
+  velocity-based forces connecting two bodies' anchor points, for soft
+  connections like vehicle suspension.
 
 Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes, ECS
   integration, and collision events.
-- [Applying Forces](./forces.md): gravity, impulses, torque, and
-  explosions.
+- [Applying Forces](./forces.md): gravity, impulses, torque, springs and
+  dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against bodies.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.

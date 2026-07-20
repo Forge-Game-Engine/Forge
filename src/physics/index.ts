@@ -1,5 +1,6 @@
 export * from './collision/index.js';
 export * from './components/index.js';
+export * from './forces/index.js';
 export * from './joints/index.js';
 export * from './physics-world.js';
 export * from './raycast.js';

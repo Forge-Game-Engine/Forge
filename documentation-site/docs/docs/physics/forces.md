@@ -144,6 +144,132 @@ torque system first, as above, or pass it an earlier `registrationOrder`
 (`SystemRegistrationOrder.early`) if your setup order can't be changed.
 :::
 
+## Springs and dampers: soft connections between two bodies
+
+[`LinearSpring`](/Forge/docs/api/classes/LinearSpring) and
+[`LinearDamper`](/Forge/docs/api/classes/LinearDamper) are continuous,
+position/velocity-based forces connecting two bodies' anchor points, rather
+than a single body driven towards a target. Reach for these for anything
+that should behave like a soft connection instead of a rigid one, most
+commonly vehicle suspension: a spring supports the chassis's weight and
+pushes a wheel back down after it hits a bump, while a damper (the shock
+absorber) dissipates the spring's energy so the wheel doesn't bounce
+forever.
+
+`LinearSpring` follows Hooke's Law, `F = -k * x`: the further its two anchors
+are from `restLength` apart, the harder it pulls (if stretched) or pushes (if
+compressed) them back towards it. `stiffness` is `k`.
+
+```ts
+import { LinearSpring } from '@forge-game-engine/forge/physics';
+
+// chassis and wheel are RigidBody instances positioned 40 units apart.
+const spring = new LinearSpring({
+  bodyA: chassis,
+  bodyB: wheel,
+  restLength: 40,
+  stiffness: 800,
+});
+```
+
+`LinearDamper` follows `F = -c * v`, where `v` is the anchors' relative
+speed along the line between them (their compression/extension speed, not
+their full relative velocity), and `dampingCoefficient` is `c`. A spring
+alone oscillates indefinitely once disturbed; pair it with a damper sharing
+the same bodies (and usually the same anchors) to bleed off that energy:
+
+```ts
+import { LinearDamper } from '@forge-game-engine/forge/physics';
+
+const damper = new LinearDamper({
+  bodyA: chassis,
+  bodyB: wheel,
+  dampingCoefficient: 40,
+});
+```
+
+Both default `restLength` (spring only) to the distance between the anchors
+at construction time and `anchorA`/`anchorB` to each body's center of mass,
+the same conventions `PrismaticJoint` uses (see
+[Choosing an axis and anchors](./joints.md#choosing-an-axis-and-anchors)).
+Neither is a hard constraint solved by `PhysicsWorld` the way a `Joint` is;
+they have no `addJoint`/registration step of their own and store
+configuration only. Apply their force each step via
+[`applyLinearSpringForce(spring, deltaTimeInSeconds)`](/Forge/docs/api/functions/applyLinearSpringForce)
+and
+[`applyLinearDamperForce(damper, deltaTimeInSeconds)`](/Forge/docs/api/functions/applyLinearDamperForce),
+which internally scale the computed force by `deltaTimeInSeconds` and apply
+it via `applyImpulse`, the same continuous-force-via-scaled-impulse pattern
+used for wind above; call them once per step, before `PhysicsWorld.step`.
+
+:::caution
+A spring and damper connecting the same two bodies don't have to share
+anchors, but usually should. Mismatched anchors mean the spring's restoring
+force and the damper's resistance act along different lines, which reads as
+the suspension "fighting itself" rather than settling cleanly.
+:::
+
+### ECS integration
+
+Add a
+[`LinearSpringEcsComponent`](/Forge/docs/api/interfaces/LinearSpringEcsComponent)
+(keyed by
+[`LinearSpringId`](/Forge/docs/api/variables/LinearSpringId), attached via
+`addLinearSpringComponent`) and/or a
+[`LinearDamperEcsComponent`](/Forge/docs/api/interfaces/LinearDamperEcsComponent)
+(keyed by
+[`LinearDamperId`](/Forge/docs/api/variables/LinearDamperId), attached via
+`addLinearDamperComponent`) to an entity, then register
+`createLinearSpringEcsSystem`/`createLinearDamperEcsSystem`:
+
+```ts
+import {
+  addLinearDamperComponent,
+  addLinearSpringComponent,
+  createLinearDamperEcsSystem,
+  createLinearSpringEcsSystem,
+  createPhysicsSyncEcsSystem,
+  LinearDamper,
+  LinearSpring,
+} from '@forge-game-engine/forge/physics';
+
+const suspensionEntity = world.createEntity();
+
+// chassis and wheel are the RigidBody instances backing their own entities'
+// PhysicsBodyEcsComponent, created the same way as in Bodies and Shapes.
+addLinearSpringComponent(world, suspensionEntity, {
+  spring: new LinearSpring({
+    bodyA: chassis,
+    bodyB: wheel,
+    restLength: 40,
+    stiffness: 800,
+  }),
+});
+addLinearDamperComponent(world, suspensionEntity, {
+  damper: new LinearDamper({ bodyA: chassis, bodyB: wheel, dampingCoefficient: 40 }),
+});
+
+// Registered before createPhysicsSyncEcsSystem, see the caution below.
+world.addSystem(createLinearSpringEcsSystem(time));
+world.addSystem(createLinearDamperEcsSystem(time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+```
+
+Like a jointed entity, the spring/damper entity itself doesn't need
+position/rotation components; it only references `bodyA`/`bodyB`, which get
+their own entities.
+
+:::caution[Registration order]
+`createLinearSpringEcsSystem` and `createLinearDamperEcsSystem` must run
+before `createPhysicsSyncEcsSystem` in the same tick, since
+`createPhysicsSyncEcsSystem` is what steps `physicsWorld`. Registering them
+after means force applied this tick isn't reflected until the next one.
+`EcsWorld.update` runs systems in the order they were added to `addSystem`
+(ties broken by `registrationOrder`), so either add them first, as above, or
+pass an earlier `registrationOrder` (`SystemRegistrationOrder.early`) if your
+setup order can't be changed.
+:::
+
 ## Explosions: area-effect impulses
 
 [`applyExplosiveForce(center, force, radius)`](/Forge/docs/api/classes/PhysicsWorld#applyexplosiveforce)
