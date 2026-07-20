@@ -119,7 +119,7 @@ a direct `applyTorque` call away.
 import {
   addAngularVelocityMotorComponent,
   createAngularVelocityMotorEcsSystem,
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
 // A fan blade that spins up to 8 rad/s, limited to 40 N·m of torque.
@@ -128,15 +128,15 @@ addAngularVelocityMotorComponent(world, fanEntity, {
   maxTorque: 40,
 });
 
-// Registered before createPhysicsEcsSystem, see the caution below.
+// Registered before createPhysicsSyncEcsSystem, see the caution below.
 world.addSystem(createAngularVelocityMotorEcsSystem(time));
-world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 ```
 
 :::caution[Registration order]
 `createAngularVelocityMotorEcsSystem` (and any custom torque-applying
-system you write) must run before `createPhysicsEcsSystem` in the same
-tick, since `createPhysicsEcsSystem` is what steps `physicsWorld`.
+system you write) must run before `createPhysicsSyncEcsSystem` in the same
+tick, since `createPhysicsSyncEcsSystem` is what steps `physicsWorld`.
 Registering it after means torque applied this tick isn't reflected until
 the next one. `EcsWorld.update` runs systems in the order they were added
 to `addSystem` (ties broken by `registrationOrder`), so either add the

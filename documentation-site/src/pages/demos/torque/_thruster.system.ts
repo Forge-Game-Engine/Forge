@@ -9,7 +9,7 @@ import { ThrusterEcsComponent, thrusterId } from './_thruster.component';
 /**
  * Applies each matched entity's `ThrusterEcsComponent.torque` directly to
  * its `PhysicsBodyEcsComponent`'s `RigidBody` while `holdAction` is held,
- * via `RigidBody.applyTorque`. Must run before `createPhysicsEcsSystem` in
+ * via `RigidBody.applyTorque`. Must run before `createPhysicsSyncEcsSystem` in
  * the same tick so the torque applied this tick is reflected in the same
  * tick's `physicsWorld.step` (see the Applying Forces guide's
  * registration-order caution).

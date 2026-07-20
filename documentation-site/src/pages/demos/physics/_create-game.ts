@@ -6,7 +6,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -42,7 +42,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 
   // The camera is static at the world origin with a zoom of 1 (see
   // `createCamera` above), so screen coordinates can be converted to world

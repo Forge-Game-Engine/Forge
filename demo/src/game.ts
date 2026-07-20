@@ -6,7 +6,7 @@ import {
   createGame,
   createGaussianBlurEcsSystem,
   createImageSprite,
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createPresentEcsSystem,
   createRenderEcsSystem,
   createRenderTarget,
@@ -241,7 +241,7 @@ world.addSystem(createRenderEcsSystem(renderContext));
 // canvas. Must run after the render system and before the present system.
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
-world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 
 // The camera is static at the world origin with a zoom of 1 (see
 // `cameraEntity` above), so screen coordinates can be converted to world

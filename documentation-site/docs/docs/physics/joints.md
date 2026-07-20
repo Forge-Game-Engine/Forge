@@ -97,7 +97,7 @@ to an entity via `addPrismaticJointComponent`, then register
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addPrismaticJointComponent,
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createPrismaticJointEcsSystem,
   PrismaticJoint,
   PhysicsWorld,
@@ -112,9 +112,9 @@ addPrismaticJointComponent(world, jointEntity, {
   joint: new PrismaticJoint({ bodyA: frame, bodyB: piston, axis: Vector2.up }),
 });
 
-// Registered before createPhysicsEcsSystem, see the caution below.
+// Registered before createPhysicsSyncEcsSystem, see the caution below.
 world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
-world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 ```
 
 The joint's own entity doesn't need position/rotation components, a
@@ -124,8 +124,8 @@ The joint's own entity doesn't need position/rotation components, a
 [Bodies and Shapes](./rigid-bodies.md)).
 
 :::caution[Registration order]
-`createPrismaticJointEcsSystem` must run before `createPhysicsEcsSystem` in
-the same tick, since `createPhysicsEcsSystem` is what steps `physicsWorld`.
+`createPrismaticJointEcsSystem` must run before `createPhysicsSyncEcsSystem` in
+the same tick, since `createPhysicsSyncEcsSystem` is what steps `physicsWorld`.
 Registering it after means a joint added this tick isn't solved until the
 next one. `EcsWorld.update` runs systems in the order they were added to
 `addSystem` (ties broken by `registrationOrder`), so either add the joint

@@ -17,9 +17,9 @@ import { clamp } from '../../math/index.js';
  * and the tick's delta time, then clamped to `[-maxTorque, maxTorque]`
  * before being applied via `RigidBody.applyTorque`.
  *
- * Must be registered with the `EcsWorld` before `createPhysicsEcsSystem` (or
- * with an earlier `registrationOrder`), so the motor's torque is reflected
- * in the same tick's `physicsWorld.step`.
+ * Must be registered with the `EcsWorld` before `createPhysicsSyncEcsSystem`
+ * (or with an earlier `registrationOrder`), so the motor's torque is
+ * reflected in the same tick's `physicsWorld.step`.
  * @param time - The time instance used to scale torque by the tick's delta
  * time.
  */

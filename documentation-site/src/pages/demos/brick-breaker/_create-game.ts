@@ -5,7 +5,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
@@ -139,7 +139,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   world.addSystem(createBackgroundEcsSystem(time));
   world.addSystem(createPaddleEcsSystem(moveInput, time));
   world.addSystem(createBrickEcsSystem(time));
-  world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
   world.addSystem(createBallEcsSystem(physicsWorld, random, missY, brickField));
 
   return game;

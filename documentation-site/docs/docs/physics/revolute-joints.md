@@ -104,7 +104,7 @@ an entity via `addRevoluteJointComponent`, then register
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addRevoluteJointComponent,
-  createPhysicsEcsSystem,
+  createPhysicsSyncEcsSystem,
   createRevoluteJointEcsSystem,
   RevoluteJoint,
   PhysicsWorld,
@@ -123,9 +123,9 @@ addRevoluteJointComponent(world, jointEntity, {
   }),
 });
 
-// Registered before createPhysicsEcsSystem, see the caution below.
+// Registered before createPhysicsSyncEcsSystem, see the caution below.
 world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
-world.addSystem(createPhysicsEcsSystem(physicsWorld, time));
+world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 ```
 
 The joint's own entity doesn't need position/rotation components, a
@@ -135,8 +135,8 @@ The joint's own entity doesn't need position/rotation components, a
 [Bodies and Shapes](./rigid-bodies.md)).
 
 :::caution[Registration order]
-`createRevoluteJointEcsSystem` must run before `createPhysicsEcsSystem` in
-the same tick, since `createPhysicsEcsSystem` is what steps `physicsWorld`.
+`createRevoluteJointEcsSystem` must run before `createPhysicsSyncEcsSystem` in
+the same tick, since `createPhysicsSyncEcsSystem` is what steps `physicsWorld`.
 Registering it after means a joint added this tick isn't solved until the
 next one. `EcsWorld.update` runs systems in the order they were added to
 `addSystem` (ties broken by `registrationOrder`), so either add the joint
