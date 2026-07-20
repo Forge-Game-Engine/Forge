@@ -30,6 +30,7 @@ const thrusterColor = Color.fromHSLA(25, 95, 55);
 const motorColor = Color.fromHSLA(205, 90, 58);
 
 const thrusterTorque = 30_000_000;
+const thrusterAngularDrag = 1.5;
 const motorTargetVelocity = 6;
 const motorMaxTorque = 10_000_000;
 const gustStrength = 4;
@@ -41,6 +42,7 @@ async function createFlywheelEntity(
   renderLayer: number,
   position: Vector2,
   color: Color,
+  angularDrag: number = 0,
 ): Promise<number> {
   const { imageCache } = renderContext;
   const image = await imageCache.getOrLoad(
@@ -70,6 +72,7 @@ async function createFlywheelEntity(
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(flywheelWidth, flywheelHeight),
       position: position.clone(),
+      angularDrag,
     }),
   });
 
@@ -80,8 +83,8 @@ async function createFlywheelEntity(
  * Builds the thruster scenario: a flywheel driven by an
  * `AppliedTorqueEcsComponent` whose value a `ThrusterEcsComponent` sets from
  * `thrustInput` every tick. Holding `thrustInput` spins it up; releasing it
- * lets it coast at whatever speed it reached, since nothing opposes rotation
- * and the torque itself resets to `0` the instant it's no longer held.
+ * lets `angularDrag` gradually spin it back down, since the torque itself
+ * resets to `0` the instant it's no longer held and nothing else drives it.
  * @param world - The ECS world to add the scenario's entities to.
  * @param renderContext - The render context used to load the flywheel sprite.
  * @param renderLayer - The render layer the flywheel should be drawn on.
@@ -101,6 +104,7 @@ export async function createThrusterScenario(
     renderLayer,
     position,
     thrusterColor,
+    thrusterAngularDrag,
   );
 
   addAppliedTorqueComponent(world, entity);

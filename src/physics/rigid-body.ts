@@ -49,6 +49,15 @@ export interface RigidBodyOptions {
    * The friction coefficient of the body, clamped to the range [0, 1].
    */
   friction?: number;
+
+  /**
+   * The angular drag coefficient, in 1/s, applied to `angularVelocity` every
+   * `PhysicsWorld.step` as `angularVelocity *= 1 / (1 + angularDrag *
+   * deltaTimeInSeconds)`. `0` (the default) applies no damping at all, so a
+   * spinning body keeps its angular velocity indefinitely unless something
+   * else changes it (torque, a collision, ...). Clamped to be non-negative.
+   */
+  angularDrag?: number;
 }
 
 const defaultRigidBodyOptions = {
@@ -59,6 +68,7 @@ const defaultRigidBodyOptions = {
   density: 1,
   restitution: 0.2,
   friction: 0.3,
+  angularDrag: 0,
 };
 
 /**
@@ -94,6 +104,8 @@ export class RigidBody {
 
   public readonly friction: number;
 
+  public readonly angularDrag: number;
+
   /**
    * Arbitrary data associated with this body by the consumer (e.g. an ECS
    * entity id). Not read or written by the physics simulation itself.
@@ -124,6 +136,7 @@ export class RigidBody {
       density,
       restitution,
       friction,
+      angularDrag,
     } = {
       ...defaultRigidBodyOptions,
       ...options,
@@ -139,6 +152,7 @@ export class RigidBody {
     this.isSensor = isSensor;
     this.restitution = clamp(restitution, 0, 1);
     this.friction = clamp(friction, 0, 1);
+    this.angularDrag = Math.max(0, angularDrag);
     this._aabbCache = null;
 
     if (isStatic) {

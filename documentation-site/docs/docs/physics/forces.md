@@ -82,6 +82,18 @@ time, so a body with a large moment of inertia (a big or dense shape) spins
 up more slowly than a small one under the same torque. Has no effect on
 static bodies, whose `inverseInertia` is always `0`.
 
+By default a spinning body keeps its `angularVelocity` forever once nothing
+is driving it anymore, exactly like gravity-free linear motion. Set
+[`RigidBodyOptions.angularDrag`](/Forge/docs/api/interfaces/RigidBodyOptions#angulardrag)
+(`0` by default) to have `PhysicsWorld.step` damp `angularVelocity` towards
+`0` every step instead, useful for anything that should coast to a stop
+rather than spin indefinitely, like a thruster-spun wheel with some
+friction in its bearing:
+
+```ts
+const wheel = new RigidBody({ shape: new CircleShape(20), angularDrag: 1.5 });
+```
+
 ### ECS integration: `AppliedTorqueEcsComponent` and `AngularVelocityMotorEcsComponent`
 
 Two components wrap `applyTorque` for entities with a

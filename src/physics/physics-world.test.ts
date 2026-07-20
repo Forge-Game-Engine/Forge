@@ -31,6 +31,48 @@ describe('PhysicsWorld', () => {
     });
   });
 
+  describe('angularDrag', () => {
+    it('should decay angular velocity for a body with angularDrag', () => {
+      const world = new PhysicsWorld({ gravity: Vector2.zero });
+      const body = new RigidBody({ shape: new CircleShape(1), angularDrag: 2 });
+
+      body.angularVelocity = 10;
+
+      world.addBody(body);
+      world.step(1);
+
+      expect(body.angularVelocity).toBeCloseTo(10 / (1 + 2 * 1));
+    });
+
+    it('should not decay angular velocity when angularDrag is 0', () => {
+      const world = new PhysicsWorld({ gravity: Vector2.zero });
+      const body = new RigidBody({ shape: new CircleShape(1) });
+
+      body.angularVelocity = 10;
+
+      world.addBody(body);
+      world.step(1);
+
+      expect(body.angularVelocity).toBeCloseTo(10);
+    });
+
+    it('should not decay angular velocity for static bodies', () => {
+      const world = new PhysicsWorld({ gravity: Vector2.zero });
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        isStatic: true,
+        angularDrag: 5,
+      });
+
+      body.angularVelocity = 10;
+
+      world.addBody(body);
+      world.step(1);
+
+      expect(body.angularVelocity).toBe(10);
+    });
+  });
+
   describe('addBody and removeBody', () => {
     it('should register and unregister bodies', () => {
       const world = new PhysicsWorld();

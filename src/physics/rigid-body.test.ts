@@ -16,6 +16,7 @@ describe('RigidBody', () => {
       expect(body.isSensor).toBe(false);
       expect(body.restitution).toBeCloseTo(0.2);
       expect(body.friction).toBeCloseTo(0.3);
+      expect(body.angularDrag).toBe(0);
     });
 
     it('should not share a position instance between bodies using default options', () => {
@@ -218,6 +219,26 @@ describe('RigidBody', () => {
 
       expect(body.restitution).toBe(1);
       expect(body.friction).toBe(0);
+    });
+  });
+
+  describe('angularDrag', () => {
+    it('should apply the provided angularDrag', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        angularDrag: 2.5,
+      });
+
+      expect(body.angularDrag).toBe(2.5);
+    });
+
+    it('should clamp a negative angularDrag to 0', () => {
+      const body = new RigidBody({
+        shape: new CircleShape(1),
+        angularDrag: -1,
+      });
+
+      expect(body.angularDrag).toBe(0);
     });
   });
 });
