@@ -73,9 +73,12 @@ const wheelColor = Color.fromHSLA(220, 15, 20);
 // wheel-ground collision impulse through a light body sandwiched between
 // two much heavier ones (the wheel at one joint, the chassis at the other)
 // blows up within a couple of iterations. Keeping the upright's mass close
-// to the wheel's keeps both joints' effective mass ratios reasonable.
+// to the wheel's (`wheelRadius * wheelRadius * Math.PI * wheelDensity`,
+// currently ~15,700) keeps both joints' effective mass ratios reasonable -
+// `uprightDensity` has to scale with `wheelRadius`/`wheelDensity` to hold
+// that, since the upright's own radius stays small and unnoticeable.
 const uprightRadius = 8;
-const uprightDensity = 6;
+const uprightDensity = 80;
 
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
@@ -118,9 +121,24 @@ const wheelDropHeight = 65;
 // the vertical travel every solver iteration, so a stiffer spring on top of
 // that mostly ends up fighting the joints instead of damping out - a wheel
 // slamming into the ground can end up launching the whole car into the air
-// instead of just compressing the suspension.
-const suspensionStiffness = 120_000;
-const suspensionDamping = 20_000;
+// instead of just compressing the suspension. Scaled up from what a
+// spring-only mount for the *original*, much smaller/lighter car would have
+// used: the chassis and wheels are roughly an order of magnitude heavier now
+// (see `chassisWidth`/`wheelRadius`), and `frontSuspensionAxis`/
+// `rearSuspensionAxis` are tilted rather than vertical, so only part of the
+// spring's force actually supports the car's weight - both leave the
+// suspension sagging far more than intended, with the wheels dangling
+// visibly far from the body, unless stiffness/damping scale up to match.
+// This is close to as stiff as this rig tolerates: past roughly 2,700,000
+// (with damping scaled the same ~6:1 ratio), the spring impulse each tick
+// outpaces what the collision solver's fixed iteration count can correct
+// for, and the wheel sinks through the ground column entirely instead of
+// settling - a quieter, slower failure than the instantaneous "launch"
+// bug an over-stiff spring caused earlier in this rig's history, but just
+// as fatal. Verify empirically (rest for several seconds, then drive and
+// brake hard) before raising this further.
+const suspensionStiffness = 2_000_000;
+const suspensionDamping = 330_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
