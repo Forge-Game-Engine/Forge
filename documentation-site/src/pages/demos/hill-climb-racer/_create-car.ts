@@ -110,8 +110,8 @@ const suspensionDamping = 20_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
-const motorMaxTorque = 60_000_000;
-const maxWheelSpeed = 16;
+const motorMaxTorque = 100_000_000;
+const maxWheelSpeed = 25;
 
 // See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
 // pull the chassis back to (roughly) level within a second or two of
