@@ -5,7 +5,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
   addLinearDamperComponent,
@@ -31,12 +31,12 @@ import { addCarResetComponent, CarResetBody } from './_car-reset.component';
 import { addChassisStabilizerComponent } from './_chassis-stabilizer.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
-const chassisWidth = 170;
-const chassisHeight = 36;
+const chassisWidth = 450;
+const chassisHeight = 150;
 const chassisDensity = 0.35;
 const chassisColor = Color.fromHSLA(8, 85, 55);
 
-const wheelRadius = 28;
+const wheelRadius = 100;
 const wheelDensity = 0.5;
 const wheelColor = Color.fromHSLA(220, 15, 20);
 
@@ -74,12 +74,11 @@ const wheelColor = Color.fromHSLA(220, 15, 20);
 // to the wheel's keeps both joints' effective mass ratios reasonable.
 const uprightRadius = 8;
 const uprightDensity = 6;
-const suspensionAxis = Vector2.up;
 
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
-const frontAnchor = new Vector2(chassisWidth / 2 - 25, -chassisHeight / 2);
-const rearAnchor = new Vector2(-(chassisWidth / 2 - 25), -chassisHeight / 2);
+const frontAnchor = new Vector2(chassisWidth / 2 - 115, -chassisHeight / 2);
+const rearAnchor = new Vector2(-(chassisWidth / 2 - 115), -chassisHeight / 2);
 
 // How far below each anchor a wheel starts, on top of the anchor's own
 // offset. Since `addLinearSpringComponent` defaults `restLength` to the
@@ -94,7 +93,7 @@ const rearAnchor = new Vector2(-(chassisWidth / 2 - 25), -chassisHeight / 2);
 // to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
 // direction normalization becomes unstable as the anchor-to-wheel distance
 // approaches zero.
-const wheelDropHeight = 56;
+const wheelDropHeight = 65;
 
 // Chosen so the car's weight compresses each suspension by a small fraction
 // of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
@@ -110,8 +109,8 @@ const suspensionDamping = 20_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
-const motorMaxTorque = 100_000_000;
-const maxWheelSpeed = 25;
+const motorMaxTorque = 170_000_000_0 * 2;
+const maxWheelSpeed = 350;
 
 // See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
 // pull the chassis back to (roughly) level within a second or two of
@@ -133,8 +132,8 @@ async function loadCarSprites(
   const { imageCache } = renderContext;
 
   const [chassisImage, wheelImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    imageCache.getOrLoad(getAssetUrl('img/car/car-body.png')),
+    imageCache.getOrLoad(getAssetUrl('img/car/car-wheel.png')),
   ]);
 
   return {
@@ -208,6 +207,7 @@ function createWheelMount(
   wheelBody: RigidBody,
   chassisAnchor: Vector2,
   uprightPosition: Vector2,
+  suspensionAxis: Vector2 = Vector2.up,
 ): RigidBody {
   const uprightBody = new RigidBody({
     shape: new CircleShape(uprightRadius),
@@ -372,6 +372,7 @@ export async function createCar(
     frontWheelBody,
     frontAnchor,
     frontWheelPosition,
+    Vector2.up.rotate(degreesToRadians(35)),
   );
   const rearUprightBody = createWheelMount(
     world,
@@ -379,6 +380,7 @@ export async function createCar(
     rearWheelBody,
     rearAnchor,
     rearWheelPosition,
+    Vector2.up.rotate(degreesToRadians(-35)),
   );
 
   const stabilizerEntity = world.createEntity();
