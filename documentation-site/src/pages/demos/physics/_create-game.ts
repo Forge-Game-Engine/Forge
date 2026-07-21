@@ -11,6 +11,7 @@ import {
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { createBoundaries } from './_create-boundaries';
+import { createTerrain } from './_create-terrain';
 import { spawnShapes } from './_spawn-shapes';
 
 const renderLayers = {
@@ -38,6 +39,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   const physicsWorld = new PhysicsWorld({ gravity });
 
   await createBoundaries(world, renderContext, renderLayers.foreground);
+  createTerrain(world, renderContext, renderLayers.foreground);
   await spawnShapes(world, renderContext, renderLayers.foreground);
 
   world.addSystem(createCameraEcsSystem(time));

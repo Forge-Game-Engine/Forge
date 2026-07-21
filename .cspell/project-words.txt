@@ -25,6 +25,7 @@ gamepadconnected
 Gamepads
 GLSL
 greyscale
+heightmap
 Heliagon
 highp
 hitscan
@@ -77,11 +78,13 @@ texels
 thresholded
 thresholding
 thumbstick
+tintable
 unblurred
 undersamples
 unmarks
 unnegated
 unrotated
+untextured
 updatables
 upsamples
 uvec
