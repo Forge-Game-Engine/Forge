@@ -141,16 +141,30 @@ const suspensionStiffness = 2_000_000;
 const suspensionDamping = 330_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
-// through bumps and keep climbing rather than stalling on them. Scaled up
-// to match the car's current total mass: raising `uprightDensity` to fix
-// the wheel-mount mass ratio (see its comment above) added a lot of mass
-// that wasn't here when this was last tuned - each upright went from
-// ~1,200 to ~16,000, roughly a 50% increase in the whole car's mass - and
-// without a matching torque increase the drivetrain no longer had enough
-// force to meaningfully accelerate it, leaving the car crawling along at a
-// small fraction of `maxWheelSpeed` no matter how long the throttle was held.
+// through bumps and keep climbing rather than stalling on them.
+// `motorMaxTorque` is scaled up to match the car's current total mass:
+// raising `uprightDensity` to fix the wheel-mount mass ratio (see its
+// comment above) added a lot of mass that wasn't here when this was last
+// tuned - each upright went from ~1,200 to ~16,000, roughly a 50% increase
+// in the whole car's mass - and without a matching torque increase the
+// drivetrain no longer had enough force to meaningfully accelerate it.
+//
+// `maxWheelSpeed` is kept far lower than the wheel could otherwise reach:
+// the chassis pitches (leans) under throttle by design (see
+// `ChassisStabilizerEcsComponent`), which continuously, briefly unloads one
+// wheel or the other rather than keeping both evenly weighted. An unloaded
+// wheel has essentially nothing but its own rotational inertia to resist
+// the motor, so at this much torque it accelerates towards `maxWheelSpeed`
+// almost instantly - if that cap is left near the wheel's fastest plausible
+// *rolling* speed (as it was, 350 rad/s - a 35,000 units/s peripheral
+// speed no realistic drive over this course ever approaches), the unloaded
+// wheel just burns torque spinning uselessly fast instead of quickly
+// regaining grip, which both wastes power (only the still-loaded wheel is doing
+// useful work) and reads as sticky, inconsistent acceleration. Capping it
+// close to the car's actual achievable speeds bounds how much a wheel can
+// run away before it matters again once it regains contact.
 const motorMaxTorque = 6_120_000_000;
-const maxWheelSpeed = 350;
+const maxWheelSpeed = 30;
 
 // See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
 // pull the chassis back to (roughly) level within a second or two of
