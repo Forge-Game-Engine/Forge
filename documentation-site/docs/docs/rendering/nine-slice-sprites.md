@@ -46,7 +46,7 @@ layer/depth sorting all work exactly as they do for a normal sprite).
 
 `left`/`right`/`top`/`bottom` are measured in the same world units as the
 sprite's `width`/`height` (which, for `createImageSprite`, default to the
-source image's pixel size — so for an unstretched sprite, an inset of `12`
+source image's pixel size — so for a not-yet-resized sprite, an inset of `12`
 matches 12 pixels of border art in the source texture). Pick insets that
 cover exactly the rounded corner/border artwork in your source image and no
 more: too small and the stretched center creeps into the border art; too
