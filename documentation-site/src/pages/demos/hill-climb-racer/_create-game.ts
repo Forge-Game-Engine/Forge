@@ -9,6 +9,8 @@ import {
   createLinearDamperEcsSystem,
   createLinearSpringEcsSystem,
   createPhysicsSyncEcsSystem,
+  createPrismaticJointEcsSystem,
+  createRevoluteJointEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
@@ -69,17 +71,21 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
 
   // `createWheelDriveEcsSystem` sets each wheel's motor target from
   // `throttleInput`, `createCarResetEcsSystem` may teleport every body back
-  // to its spawn transform, and `createAngularVelocityMotorEcsSystem` /
-  // `createLinearSpringEcsSystem` / `createLinearDamperEcsSystem` /
-  // `createChassisStabilizerEcsSystem` compute this tick's torque/forces
-  // from the (possibly just-changed) state above - all six must run before
-  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld` (see
-  // the Applying Forces guide's registration-order caution).
-  // `createCameraFollowEcsSystem` only needs to run before
-  // `createRenderEcsSystem`, so this tick's camera position is reflected in
-  // this tick's render.
+  // to its spawn transform, `createPrismaticJointEcsSystem` /
+  // `createRevoluteJointEcsSystem` register each wheel mount's joints (see
+  // `createWheelMount`) with `physicsWorld`, and
+  // `createAngularVelocityMotorEcsSystem` / `createLinearSpringEcsSystem` /
+  // `createLinearDamperEcsSystem` / `createChassisStabilizerEcsSystem`
+  // compute this tick's torque/forces from the (possibly just-changed)
+  // state above - all eight must run before `createPhysicsSyncEcsSystem`,
+  // which is what steps `physicsWorld` (see the Applying Forces guide's
+  // registration-order caution). `createCameraFollowEcsSystem` only needs
+  // to run before `createRenderEcsSystem`, so this tick's camera position
+  // is reflected in this tick's render.
   world.addSystem(createWheelDriveEcsSystem());
   world.addSystem(createCarResetEcsSystem());
+  world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
+  world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));

@@ -10,9 +10,13 @@ import {
   addAngularVelocityMotorComponent,
   addLinearDamperComponent,
   addLinearSpringComponent,
+  addPrismaticJointComponent,
+  addRevoluteJointComponent,
   CircleShape,
   PhysicsBodyId,
   PolygonShape,
+  PrismaticJoint,
+  RevoluteJoint,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -36,46 +40,73 @@ const wheelRadius = 28;
 const wheelDensity = 0.5;
 const wheelColor = Color.fromHSLA(220, 15, 20);
 
-// Each wheel mounts to *two* chassis anchors, not one: a single anchor only
-// constrains the wheel's distance from that point, leaving it free to swing
-// around it like a pendulum (see `createSuspension`). Spreading a wheel's
-// pair of anchors fore-and-aft (like a wishbone's two pivots) triangulates
-// its position instead, so the only freedom left is the springs' own give.
+// The wheel doesn't mount to the chassis directly. A single LinearSpring
+// only constrains a wheel's *distance* from its anchor, leaving it free to
+// swing around that anchor like a pendulum - and a plain RevoluteJoint or
+// PrismaticJoint wired straight to the wheel isn't right either: a
+// RevoluteJoint would pin the wheel rigidly in place (no suspension travel
+// at all), and a PrismaticJoint locks the two bodies' *relative rotation*
+// (it captures a referenceAngle and holds it), which would lock the
+// wheel's spin to the chassis and make driving impossible.
+//
+// Instead each wheel gets a small intermediate "upright" body (a real car's
+// wheel hub/knuckle) invisible and non-colliding (`isSensor: true`),
+// connected two different ways:
+//  - A PrismaticJoint pins the upright to the chassis, free to slide only
+//    along `suspensionAxis` (in the chassis's local space) - this is the
+//    suspension's travel, and it's fine that the joint locks the upright's
+//    rotation to the chassis's, since the upright itself never needs to
+//    spin.
+//  - A RevoluteJoint pins the wheel's position to the upright (coincident
+//    centers) while leaving rotation completely free, so the wheel can
+//    still spin for driving.
+// A LinearSpring/LinearDamper pair along the same axis, between the
+// chassis and the upright, then provides the suspension's actual force.
+// Unlike a spring alone, both joints are hard, iteratively-solved
+// constraints (solved every physics solver iteration, the same as collision
+// contacts) with no lateral give of their own - so the wheel only ever
+// moves along `suspensionAxis` relative to the chassis, no swinging.
+// A tiny, near-massless upright (relative to the wheel and chassis it sits
+// between) makes both joint solvers badly ill-conditioned: resolving a
+// wheel-ground collision impulse through a light body sandwiched between
+// two much heavier ones (the wheel at one joint, the chassis at the other)
+// blows up within a couple of iterations. Keeping the upright's mass close
+// to the wheel's keeps both joints' effective mass ratios reasonable.
+const uprightRadius = 8;
+const uprightDensity = 6;
+const suspensionAxis = Vector2.up;
+
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
-const anchorSpread = 24;
-const frontAnchors: [Vector2, Vector2] = [
-  new Vector2(chassisWidth / 2 - 25 + anchorSpread / 2, -chassisHeight / 2),
-  new Vector2(chassisWidth / 2 - 25 - anchorSpread / 2, -chassisHeight / 2),
-];
-const rearAnchors: [Vector2, Vector2] = [
-  new Vector2(-(chassisWidth / 2 - 25) + anchorSpread / 2, -chassisHeight / 2),
-  new Vector2(-(chassisWidth / 2 - 25) - anchorSpread / 2, -chassisHeight / 2),
-];
+const frontAnchor = new Vector2(chassisWidth / 2 - 25, -chassisHeight / 2);
+const rearAnchor = new Vector2(-(chassisWidth / 2 - 25), -chassisHeight / 2);
 
-// How far below each anchor *pair*'s midpoint a wheel starts. Since
-// `addLinearSpringComponent` defaults each spring's `restLength` to its own
-// anchor's distance at attach time, this (plus `anchorSpread`) sets the
-// suspension's rest length, and starting the wheel slightly higher than
-// that (see `wheelSpawnDrop` in `createCar`) lets the car visibly settle
-// onto its suspension as soon as the demo starts, the same way the Linear
-// Spring and Damper demo's wheels do. Kept just large enough that the
-// wheels tuck in close under the chassis (rather than dangling below it
-// with an unrealistic gap) while still leaving several times the
-// equilibrium sag of margin, so the wheel never has to cross (or come
-// numerically close to) a chassis anchor itself, where
-// `createLinearSpringEcsSystem`'s direction normalization becomes unstable
-// as the anchor-to-wheel distance approaches zero.
+// How far below each anchor a wheel starts, on top of the anchor's own
+// offset. Since `addLinearSpringComponent` defaults `restLength` to the
+// anchors' distance at attach time, this becomes the suspension's rest
+// length, and starting the wheel slightly higher than that (see
+// `wheelSpawnDrop` in `createCar`) lets the car visibly settle onto its
+// suspension as soon as the demo starts, the same way the Linear Spring and
+// Damper demo's wheels do. Kept just large enough that the wheels tuck in
+// close under the chassis (rather than dangling below it with an
+// unrealistic gap) while still leaving several times the equilibrium sag
+// of margin, so the wheel never has to cross (or come numerically close
+// to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
+// direction normalization becomes unstable as the anchor-to-wheel distance
+// approaches zero.
 const wheelDropHeight = 56;
 
-// Per-spring values: each wheel is held by *two* of these (see
-// `frontAnchors`/`rearAnchors`), so these are half of what a single-spring
-// mount would need for the same total vertical support. Chosen so the
-// car's weight compresses each suspension by a small fraction of
-// `wheelDropHeight` at rest (leaving visible, but bounded, suspension
+// Chosen so the car's weight compresses each suspension by a small fraction
+// of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
 // travel) rather than anywhere close to all the way to the chassis anchor.
-const suspensionStiffness = 150_000;
-const suspensionDamping = 17_500;
+// Kept well below the stiffness a spring-only mount would want: the
+// PrismaticJoint/RevoluteJoint pair already hard-constrains everything but
+// the vertical travel every solver iteration, so a stiffer spring on top of
+// that mostly ends up fighting the joints instead of damping out - a wheel
+// slamming into the ground can end up launching the whole car into the air
+// instead of just compressing the suspension.
+const suspensionStiffness = 120_000;
+const suspensionDamping = 20_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
@@ -93,10 +124,6 @@ const chassisLevelingDamping = 40_000_000;
 interface CarSprites {
   chassis: SpriteEcsComponent;
   wheel: SpriteEcsComponent;
-}
-
-function anchorMidpoint([a, b]: readonly [Vector2, Vector2]): Vector2 {
-  return a.add(b).multiply(0.5);
 }
 
 async function loadCarSprites(
@@ -158,46 +185,97 @@ function createWheel(
   return body;
 }
 
-// Mounts `wheelBody` to `chassisBody` at *both* of `chassisAnchors` (see
-// `frontAnchors`/`rearAnchors` for why a wheel needs two, not one): a
-// LinearSpring/LinearDamper pair per anchor, all pulling the same wheel
-// center. Together they triangulate the wheel's position relative to the
-// chassis, leaving only the springs' own give as suspension travel, rather
-// than a single anchor's unconstrained swing around it.
-function createSuspension(
+/**
+ * Mounts `wheelBody` to `chassisBody` at `chassisAnchor` through an
+ * intermediate "upright" body (see the module doc comment above for why:
+ * a PrismaticJoint constrains the upright to slide only along
+ * `suspensionAxis` relative to the chassis, a RevoluteJoint pins the wheel
+ * to that upright with its rotation left free, and a LinearSpring/
+ * LinearDamper pair along the same axis supplies the suspension force).
+ * @param world - The ECS world to add the mount's entities to.
+ * @param chassisBody - The chassis the wheel mounts to.
+ * @param wheelBody - The wheel being mounted.
+ * @param chassisAnchor - Where on the chassis (in its local space) the
+ * upright's PrismaticJoint and the spring/damper attach.
+ * @param uprightPosition - The upright's initial world-space position,
+ * directly below `chassisAnchor` by the suspension's rest length.
+ * @returns The upright's `RigidBody`, so it can be included alongside the
+ * chassis and wheel in `CarResetEcsComponent.bodies`.
+ */
+function createWheelMount(
   world: EcsWorld,
   chassisBody: RigidBody,
   wheelBody: RigidBody,
-  chassisAnchors: readonly [Vector2, Vector2],
-): void {
-  for (const chassisAnchor of chassisAnchors) {
-    const entity = world.createEntity();
+  chassisAnchor: Vector2,
+  uprightPosition: Vector2,
+): RigidBody {
+  const uprightBody = new RigidBody({
+    shape: new CircleShape(uprightRadius),
+    position: uprightPosition,
+    density: uprightDensity,
+    isSensor: true,
+  });
 
-    addLinearSpringComponent(world, entity, {
-      bodyA: chassisBody,
-      bodyB: wheelBody,
-      anchorA: chassisAnchor,
-      stiffness: suspensionStiffness,
-    });
-    addLinearDamperComponent(world, entity, {
-      bodyA: chassisBody,
-      bodyB: wheelBody,
-      anchorA: chassisAnchor,
-      dampingCoefficient: suspensionDamping,
-    });
-  }
+  const uprightEntity = world.createEntity();
+
+  world.addComponent(uprightEntity, positionId, {
+    world: uprightPosition.clone(),
+    local: uprightPosition.clone(),
+  });
+  world.addComponent(uprightEntity, rotationId, { local: 0, world: 0 });
+  world.addComponent(uprightEntity, PhysicsBodyId, {
+    physicsBody: uprightBody,
+  });
+
+  const prismaticJoint = new PrismaticJoint({
+    bodyA: chassisBody,
+    bodyB: uprightBody,
+    anchorA: chassisAnchor,
+    axis: suspensionAxis,
+  });
+
+  const prismaticEntity = world.createEntity();
+
+  addPrismaticJointComponent(world, prismaticEntity, {
+    joint: prismaticJoint,
+  });
+
+  const revoluteJoint = new RevoluteJoint({
+    bodyA: uprightBody,
+    bodyB: wheelBody,
+  });
+
+  const revoluteEntity = world.createEntity();
+
+  addRevoluteJointComponent(world, revoluteEntity, { joint: revoluteJoint });
+
+  const springEntity = world.createEntity();
+
+  addLinearSpringComponent(world, springEntity, {
+    bodyA: chassisBody,
+    bodyB: uprightBody,
+    anchorA: chassisAnchor,
+    stiffness: suspensionStiffness,
+  });
+  addLinearDamperComponent(world, springEntity, {
+    bodyA: chassisBody,
+    bodyB: uprightBody,
+    anchorA: chassisAnchor,
+    dampingCoefficient: suspensionDamping,
+  });
+
+  return uprightBody;
 }
 
 /**
- * Builds a hill-climb-racer-style car: a chassis with two wheels hung
- * beneath it by `LinearSpring`/`LinearDamper` suspension (see the Linear
- * Spring and Damper demo, and `createSuspension` for why each wheel mounts
- * to *two* anchors rather than one), each wheel driven by an
+ * Builds a hill-climb-racer-style car: a chassis with two wheels mounted
+ * beneath it (see `createWheelMount`), each driven by an
  * `AngularVelocityMotorEcsComponent` whose target speed tracks
- * `throttleInput`. There's no rigid connection between the chassis and the
- * wheels beyond the springs, so the chassis is free to pitch under
- * acceleration and braking, the same "leaning" feel the genre is named for -
- * a light `ChassisStabilizerEcsComponent` only pulls it back level once
+ * `throttleInput`. The mount constrains a wheel to only slide vertically
+ * relative to the chassis - it's the LinearSpring/LinearDamper providing
+ * that mount's force (not a rigid frame) that lets the chassis pitch under
+ * acceleration and braking, the same "leaning" feel the genre is named for
+ * - a light `ChassisStabilizerEcsComponent` only pulls it back level once
  * nothing else is actively tipping it.
  * @param world - The ECS world to add the car's entities to.
  * @param renderContext - The render context used to load sprites.
@@ -234,13 +312,12 @@ export async function createCar(
     density: chassisDensity,
     friction: 0.4,
     restitution: 0.1,
-    // The chassis is only ever connected to the ground through two
-    // independently-solved springs (see the class doc), which converges
-    // towards - but doesn't exactly enforce - a level chassis. Without any
-    // angular drag, a small pitch imparted while settling onto the
-    // suspension (or while landing after a jump) has nothing to bleed it
-    // off and can persist indefinitely; a light drag lets the chassis
-    // settle level again once nothing is actively pitching it.
+    // Each wheel mount's PrismaticJoint hard-constrains it against
+    // swinging (see the module doc comment above), so this isn't
+    // compensating for that the way it originally was - it's just a
+    // small amount of drag so any pitch imparted while settling onto the
+    // suspension (or while landing after a jump) damps out over time
+    // instead of persisting indefinitely.
     angularDrag: 1.5,
   });
 
@@ -270,10 +347,10 @@ export async function createCar(
   });
 
   const frontWheelPosition = chassisPosition
-    .add(anchorMidpoint(frontAnchors))
+    .add(frontAnchor)
     .add(new Vector2(0, -wheelSpawnDrop));
   const rearWheelPosition = chassisPosition
-    .add(anchorMidpoint(rearAnchors))
+    .add(rearAnchor)
     .add(new Vector2(0, -wheelSpawnDrop));
 
   const frontWheelBody = createWheel(
@@ -289,8 +366,20 @@ export async function createCar(
     throttleInput,
   );
 
-  createSuspension(world, chassisBody, frontWheelBody, frontAnchors);
-  createSuspension(world, chassisBody, rearWheelBody, rearAnchors);
+  const frontUprightBody = createWheelMount(
+    world,
+    chassisBody,
+    frontWheelBody,
+    frontAnchor,
+    frontWheelPosition,
+  );
+  const rearUprightBody = createWheelMount(
+    world,
+    chassisBody,
+    rearWheelBody,
+    rearAnchor,
+    rearWheelPosition,
+  );
 
   const stabilizerEntity = world.createEntity();
 
@@ -313,6 +402,16 @@ export async function createCar(
     },
     {
       body: rearWheelBody,
+      initialPosition: rearWheelPosition.clone(),
+      initialAngle: 0,
+    },
+    {
+      body: frontUprightBody,
+      initialPosition: frontWheelPosition.clone(),
+      initialAngle: 0,
+    },
+    {
+      body: rearUprightBody,
       initialPosition: rearWheelPosition.clone(),
       initialAngle: 0,
     },
