@@ -30,7 +30,10 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addAirControlComponent } from './_air-control.component';
 import { addCarResetComponent, CarResetBody } from './_car-reset.component';
 import { addChassisStabilizerComponent } from './_chassis-stabilizer.component';
-import { addGroundContactComponent } from './_ground-contact.component';
+import {
+  addGroundContactComponent,
+  GroundContactEcsComponent,
+} from './_ground-contact.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
 const chassisWidth = 450;
@@ -121,24 +124,27 @@ const wheelDropHeight = 65;
 // the vertical travel every solver iteration, so a stiffer spring on top of
 // that mostly ends up fighting the joints instead of damping out - a wheel
 // slamming into the ground can end up launching the whole car into the air
-// instead of just compressing the suspension. Scaled up from what a
-// spring-only mount for the *original*, much smaller/lighter car would have
-// used: the chassis and wheels are roughly an order of magnitude heavier now
-// (see `chassisWidth`/`wheelRadius`), and `frontSuspensionAxis`/
-// `rearSuspensionAxis` are tilted rather than vertical, so only part of the
-// spring's force actually supports the car's weight - both leave the
-// suspension sagging far more than intended, with the wheels dangling
-// visibly far from the body, unless stiffness/damping scale up to match.
-// This is close to as stiff as this rig tolerates: past roughly 2,700,000
-// (with damping scaled the same ~6:1 ratio), the spring impulse each tick
-// outpaces what the collision solver's fixed iteration count can correct
-// for, and the wheel sinks through the ground column entirely instead of
-// settling - a quieter, slower failure than the instantaneous "launch"
-// bug an over-stiff spring caused earlier in this rig's history, but just
-// as fatal. Verify empirically (rest for several seconds, then drive and
-// brake hard) before raising this further.
-const suspensionStiffness = 2_000_000;
-const suspensionDamping = 330_000;
+// instead of just compressing the suspension.
+//
+// Being stable *at rest* isn't enough to verify this against: with
+// `frontSuspensionAxis`/`rearSuspensionAxis` tilted rather than vertical,
+// each wheel's ground-friction reaction force has a component along that
+// wheel's own axis, so accelerating or braking couples horizontal force
+// into each suspension corner's loading, not just vertical weight. The two
+// corners have no shared geometry (no anti-roll bar, no rigid axle) tying
+// their loading together, only independent springs - so under hard
+// driving torque this coupling is enough for one corner to unload faster
+// than the other can compensate, letting that wheel lift off entirely and
+// the chassis pitch hard, without player input, while still grounded. Raising
+// stiffness to shrink the *resting* sag (as this was previously tuned to
+// do) only pushes that dynamic imbalance further out of the range this
+// rig's independent-spring, no-shared-axle suspension can absorb - the
+// resting sag it leaves is a real trade-off, not a leftover to tune away.
+// Verify empirically against *driving* stability (accelerate from a stop,
+// sustain it, brake hard), not just resting stability, before changing
+// this.
+const suspensionStiffness = 1_000_000;
+const suspensionDamping = 165_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
@@ -194,6 +200,20 @@ interface CarSprites {
   wheel: SpriteEcsComponent;
 }
 
+/**
+ * A driven wheel's `RigidBody` alongside the `GroundContactEcsComponent`
+ * tracking its own grounded state - `createWheel` attaches the latter
+ * directly to the wheel's entity (so `WheelDriveEcsSystem` can query it
+ * jointly), and returns it too so `createCar` can hand the same object by
+ * reference to `AirControlEcsComponent`/`ChassisStabilizerEcsComponent`,
+ * which live on the chassis's entity and need to read both wheels' grounded
+ * state.
+ */
+interface Wheel {
+  body: RigidBody;
+  groundContact: GroundContactEcsComponent;
+}
+
 async function loadCarSprites(
   renderContext: RenderContext,
   renderLayer: number,
@@ -217,7 +237,7 @@ function createWheel(
   position: Vector2,
   throttleInput: Axis1dAction,
   chassisBody: RigidBody,
-): RigidBody {
+): Wheel {
   const body = new RigidBody({
     shape: new CircleShape(wheelRadius),
     position,
@@ -258,7 +278,9 @@ function createWheel(
     maxTorque: motorMaxTorque,
   });
 
-  return body;
+  const groundContact = addGroundContactComponent(world, entity, { body });
+
+  return { body, groundContact };
 }
 
 /**
@@ -434,20 +456,22 @@ export async function createCar(
     .add(rearAnchor)
     .add(rearSuspensionAxis.multiply(-wheelSpawnDrop));
 
-  const frontWheelBody = createWheel(
+  const frontWheel = createWheel(
     world,
     sprites.wheel,
     frontWheelPosition,
     throttleInput,
     chassisBody,
   );
-  const rearWheelBody = createWheel(
+  const rearWheel = createWheel(
     world,
     sprites.wheel,
     rearWheelPosition,
     throttleInput,
     chassisBody,
   );
+  const frontWheelBody = frontWheel.body;
+  const rearWheelBody = rearWheel.body;
 
   const frontUprightBody = createWheelMount(
     world,
@@ -466,21 +490,20 @@ export async function createCar(
     rearSuspensionAxis,
   );
 
-  // One entity carries ground-contact state alongside both systems that
-  // react to it (`ChassisStabilizerEcsComponent` and `AirControlEcsComponent`
-  // each query for `GroundContactEcsComponent` on the same entity - see
-  // `createChassisStabilizerEcsSystem`/`createAirControlEcsSystem`), so both
-  // stay in sync with the same grounded state instead of each tracking
-  // their own.
+  // Both live on this one entity so they're easy to find alongside each
+  // other, though neither is queried jointly with the other - each just
+  // holds direct references to `frontWheel.groundContact`/
+  // `rearWheel.groundContact` (see `AirControlEcsComponent`/
+  // `ChassisStabilizerEcsComponent`'s doc comments for why: those
+  // components live on the chassis's entity, not either wheel's, so an ECS
+  // query can't join them the way `WheelDriveEcsSystem` joins a wheel with
+  // its own `GroundContactEcsComponent`).
   const chassisControlEntity = world.createEntity();
-
-  addGroundContactComponent(world, chassisControlEntity, {
-    frontWheelBody,
-    rearWheelBody,
-  });
 
   addChassisStabilizerComponent(world, chassisControlEntity, {
     body: chassisBody,
+    frontWheelGroundContact: frontWheel.groundContact,
+    rearWheelGroundContact: rearWheel.groundContact,
     levelingStiffness: chassisLevelingStiffness,
     levelingDamping: chassisLevelingDamping,
   });
@@ -488,6 +511,8 @@ export async function createCar(
   addAirControlComponent(world, chassisControlEntity, {
     chassisBody,
     throttleInput,
+    frontWheelGroundContact: frontWheel.groundContact,
+    rearWheelGroundContact: rearWheel.groundContact,
     maxAngularSpeed: airControlMaxAngularSpeed,
     maxTorque: airControlMaxTorque,
   });

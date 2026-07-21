@@ -71,31 +71,32 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
     maxSpeed: 3000,
   });
 
-  // `createWheelDriveEcsSystem` sets each wheel's motor target from
-  // `throttleInput`, `createCarResetEcsSystem` may teleport every body back
-  // to its spawn transform, `createPrismaticJointEcsSystem` /
-  // `createRevoluteJointEcsSystem` register each wheel mount's joints (see
-  // `createWheelMount`) with `physicsWorld`, `createGroundContactEcsSystem`
-  // refreshes each wheel's grounded state from `physicsWorld.collisionStarts`/
+  // `createCarResetEcsSystem` may teleport every body back to its spawn
+  // transform, `createPrismaticJointEcsSystem` / `createRevoluteJointEcsSystem`
+  // register each wheel mount's joints (see `createWheelMount`) with
+  // `physicsWorld`, and `createGroundContactEcsSystem` refreshes each
+  // wheel's grounded state from `physicsWorld.collisionStarts`/
   // `collisionEnds` (one tick stale, the same lag any contact-based "am I
-  // grounded" check in a fixed-step engine has), and
+  // grounded" check in a fixed-step engine has). `createWheelDriveEcsSystem`
+  // (sets each wheel's motor target from `throttleInput`, but only requests
+  // full speed while that wheel's own ground contact says it's grounded) /
   // `createAngularVelocityMotorEcsSystem` / `createLinearSpringEcsSystem` /
   // `createLinearDamperEcsSystem` / `createChassisStabilizerEcsSystem` /
   // `createAirControlEcsSystem` compute this tick's torque/forces from the
   // (possibly just-changed) state above - all ten must run before
   // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld` (see
   // the Applying Forces guide's registration-order caution).
-  // `createChassisStabilizerEcsSystem`/`createAirControlEcsSystem` must also
-  // run after `createGroundContactEcsSystem` in this same list, so they see
-  // this tick's grounded state rather than last tick's.
-  // `createCameraFollowEcsSystem` only needs to run before
-  // `createRenderEcsSystem`, so this tick's camera position is reflected in
-  // this tick's render.
-  world.addSystem(createWheelDriveEcsSystem());
+  // `createWheelDriveEcsSystem`/`createChassisStabilizerEcsSystem`/
+  // `createAirControlEcsSystem` must also run after
+  // `createGroundContactEcsSystem` in this same list, so they see this
+  // tick's grounded state rather than last tick's. `createCameraFollowEcsSystem`
+  // only needs to run before `createRenderEcsSystem`, so this tick's camera
+  // position is reflected in this tick's render.
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
   world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
   world.addSystem(createGroundContactEcsSystem(physicsWorld));
+  world.addSystem(createWheelDriveEcsSystem());
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));

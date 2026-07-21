@@ -4,6 +4,11 @@ import {
   AngularVelocityMotorEcsComponent,
   AngularVelocityMotorId,
 } from '@forge-game-engine/forge/physics';
+import {
+  GroundContactEcsComponent,
+  groundContactId,
+  isGrounded,
+} from './_ground-contact.component';
 import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
 
 /**
@@ -19,11 +24,14 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  * traces backwards, i.e. clockwise). So driving the car forward (positive
  * throttle, positive x) needs a *negative* target angular velocity.
  *
- * The throttle-desired target is clamped to within `maxSlipAngularSpeed` of
- * the wheel's current rolling speed (`-chassisBody.velocity.x / wheelRadius`)
- * rather than being used directly - see `WheelDriveEcsComponent.maxSlipAngularSpeed`
- * for why an unclamped target lets a briefly-unloaded wheel run away towards
- * `maxWheelSpeed` regardless of whether the car can actually use that speed.
+ * While the wheel's `GroundContactEcsComponent` reports it touching the
+ * ground, the throttle-desired target is used directly - the engine's own
+ * friction model (see `resolveCollision`) is what correctly limits how much
+ * of that becomes real acceleration versus slip, the same way it would for
+ * a real tire. Only while airborne is the target clamped to within
+ * `maxSlipAngularSpeed` of the wheel's current rolling speed - see
+ * `WheelDriveEcsComponent.maxSlipAngularSpeed` for why an unclamped target
+ * would let an airborne wheel run away regardless of `maxWheelSpeed`.
  *
  * `maxTorque` is dropped to `0` whenever `throttleInput.value` is exactly
  * `0`, rather than leaving it at `wheelDrive.maxTorque` and letting
@@ -35,16 +43,21 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  * with nothing to push with, so the wheel spins freely at whatever rate
  * rolling contact and gravity give it.
  *
- * Must be registered before `createAngularVelocityMotorEcsSystem` in the
- * same tick, which itself must run before `createPhysicsSyncEcsSystem` (see
- * the Applying Forces guide's registration-order caution).
+ * Must run after `createGroundContactEcsSystem` in the same tick (so it sees
+ * this tick's grounded state) and before `createAngularVelocityMotorEcsSystem`,
+ * which itself must run before `createPhysicsSyncEcsSystem` (see the
+ * Applying Forces guide's registration-order caution).
  */
 export const createWheelDriveEcsSystem = (): EcsSystem<
-  [WheelDriveEcsComponent, AngularVelocityMotorEcsComponent]
+  [
+    WheelDriveEcsComponent,
+    AngularVelocityMotorEcsComponent,
+    GroundContactEcsComponent,
+  ]
 > => ({
-  query: [wheelDriveId, AngularVelocityMotorId],
+  query: [wheelDriveId, AngularVelocityMotorId, groundContactId],
   run: (result) => {
-    const [wheelDrive, motor] = result.components;
+    const [wheelDrive, motor, groundContact] = result.components;
     const {
       throttleInput,
       chassisBody,
@@ -54,14 +67,20 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
       maxTorque,
     } = wheelDrive;
 
-    const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
     const desiredAngularVelocity = -throttleInput.value * maxWheelSpeed;
 
-    motor.targetVelocity = clamp(
-      desiredAngularVelocity,
-      rollingAngularVelocity - maxSlipAngularSpeed,
-      rollingAngularVelocity + maxSlipAngularSpeed,
-    );
+    if (isGrounded(groundContact)) {
+      motor.targetVelocity = desiredAngularVelocity;
+    } else {
+      const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
+
+      motor.targetVelocity = clamp(
+        desiredAngularVelocity,
+        rollingAngularVelocity - maxSlipAngularSpeed,
+        rollingAngularVelocity + maxSlipAngularSpeed,
+      );
+    }
+
     motor.maxTorque = throttleInput.value === 0 ? 0 : maxTorque;
   },
 });

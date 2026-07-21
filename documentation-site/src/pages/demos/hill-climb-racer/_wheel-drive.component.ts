@@ -4,11 +4,12 @@ import { RigidBody } from '@forge-game-engine/forge/physics';
 
 /**
  * Marks an entity as a driven wheel: `createWheelDriveEcsSystem` queries for
- * this alongside the entity's `AngularVelocityMotorEcsComponent` and sets
- * the motor's `targetVelocity` and `maxTorque` from `throttleInput` every
- * tick. There's no engine-provided "steer this motor from an input action"
- * component, since what an axis should drive (a wheel, a turret, a slider)
- * is always game-specific - this component plays that role for the demo.
+ * this alongside the entity's `AngularVelocityMotorEcsComponent` and
+ * `GroundContactEcsComponent`, and sets the motor's `targetVelocity` and
+ * `maxTorque` from `throttleInput` every tick. There's no engine-provided
+ * "steer this motor from an input action" component, since what an axis
+ * should drive (a wheel, a turret, a slider) is always game-specific - this
+ * component plays that role for the demo.
  */
 export interface WheelDriveEcsComponent {
   throttleInput: Axis1dAction;
@@ -16,7 +17,8 @@ export interface WheelDriveEcsComponent {
   /**
    * The chassis this wheel belongs to, used to compute the wheel's rolling
    * angular speed (`-chassisBody.velocity.x / wheelRadius`) that
-   * `targetVelocity` is clamped around via `maxSlipAngularSpeed`.
+   * `targetVelocity` is clamped around via `maxSlipAngularSpeed` while the
+   * wheel is airborne.
    */
   chassisBody: RigidBody;
 
@@ -27,28 +29,27 @@ export interface WheelDriveEcsComponent {
   wheelRadius: number;
 
   /**
-   * The wheel's angular speed, in rad/s, at full throttle (`throttleInput.value`
-   * of `1` or `-1`), before `maxSlipAngularSpeed` clamps it. Deliberately
-   * much higher than the car could realistically ever roll at - it acts as
-   * an "as fast as grip allows" request rather than a speed the wheel is
-   * expected to actually reach unassisted.
+   * The wheel's angular speed, in rad/s, at full throttle
+   * (`throttleInput.value` of `1` or `-1`) while grounded. The engine's own
+   * Coulomb friction model (see `resolveCollision`) is what actually caps
+   * how much of this the wheel can turn into real acceleration without
+   * slipping - this is deliberately far higher than the car could ever
+   * really roll at, an "as fast as grip allows" request rather than a speed
+   * the wheel is expected to reach unassisted.
    */
   maxWheelSpeed: number;
 
   /**
-   * How far past the wheel's current rolling speed (see `chassisBody`)
-   * `targetVelocity` is allowed to stray, in rad/s. Without this, a wheel
-   * that's ever briefly unloaded - which happens continuously and briefly
-   * as the chassis pitches under throttle, see `ChassisStabilizerEcsComponent`
-   * - has nothing but its own rotational inertia to resist the motor, and
-   * accelerates towards `maxWheelSpeed` almost instantly regardless of
-   * whether that speed is at all useful; by the time it regains contact it's
-   * spinning far faster than the car is actually moving, wasting torque on
-   * pure wheel spin instead of quickly regaining grip. Clamping the target to
-   * a bounded slip band around the wheel's actual rolling speed - which
-   * tracks the chassis's real velocity every tick - keeps an unloaded wheel
-   * from running away, while still leaving enough headroom for the
-   * wheel spin a hard launch from a stop should have.
+   * How far past the wheel's current rolling speed `targetVelocity` is
+   * allowed to stray *while airborne*, in rad/s. A grounded wheel's slip is
+   * already correctly limited by ground friction, the same way a real
+   * tire's is - but an airborne wheel has no friction at all, nothing but
+   * its own rotational inertia to resist the motor, so left unclamped it
+   * would accelerate towards `maxWheelSpeed` almost instantly regardless of
+   * whether that speed is at all useful, and be spinning far faster than
+   * the car is actually moving by the time it lands. This bounds that
+   * runaway without limiting how hard a *grounded* wheel can actually
+   * accelerate the car.
    */
   maxSlipAngularSpeed: number;
 

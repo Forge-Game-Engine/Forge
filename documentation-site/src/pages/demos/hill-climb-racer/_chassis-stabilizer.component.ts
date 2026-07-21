@@ -1,14 +1,21 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { RigidBody } from '@forge-game-engine/forge/physics';
+import { GroundContactEcsComponent } from './_ground-contact.component';
 
 /**
  * Applies a restoring torque pulling `body`'s `angle` back towards zero
  * (`-angle * levelingStiffness`) and resisting its `angularVelocity`
  * (`-angularVelocity * levelingDamping`), via `RigidBody.applyTorque`.
- * `createChassisStabilizerEcsSystem` applies this only while the entity's
- * `GroundContactEcsComponent` reports at least one wheel touching the
- * ground - never while airborne, so it doesn't fight
+ * `createChassisStabilizerEcsSystem` applies this only while
+ * `frontWheelGroundContact` or `rearWheelGroundContact` reports its wheel
+ * touching the ground - never while airborne, so it doesn't fight
  * `AirControlEcsComponent`'s deliberate tilt input.
+ *
+ * `frontWheelGroundContact`/`rearWheelGroundContact` are each the same
+ * `GroundContactEcsComponent` object attached to that wheel's own entity
+ * (see `createWheel`) - held here by direct reference rather than joined
+ * via an ECS query, since this component lives on the chassis's entity, not
+ * either wheel's.
  *
  * A real car's suspension keeps the chassis roughly level through its
  * control-arm geometry, not just spring force; the chassis here hangs from
@@ -23,6 +30,8 @@ import { RigidBody } from '@forge-game-engine/forge/physics';
  */
 export interface ChassisStabilizerEcsComponent {
   body: RigidBody;
+  frontWheelGroundContact: GroundContactEcsComponent;
+  rearWheelGroundContact: GroundContactEcsComponent;
   levelingStiffness: number;
   levelingDamping: number;
 }

@@ -4,18 +4,14 @@ import {
   ChassisStabilizerEcsComponent,
   chassisStabilizerId,
 } from './_chassis-stabilizer.component';
-import {
-  GroundContactEcsComponent,
-  groundContactId,
-  isAirborne,
-} from './_ground-contact.component';
+import { isGrounded } from './_ground-contact.component';
 
 /**
- * While a matched entity's `GroundContactEcsComponent` reports at least one
- * wheel touching the ground, applies its `ChassisStabilizerEcsComponent`
- * restoring torque to `body` every tick, via `RigidBody.applyTorque`. Does
- * nothing while airborne, leaving the chassis entirely to
- * `AirControlEcsComponent`'s deliberate tilt input.
+ * While a matched entity's `ChassisStabilizerEcsComponent.frontWheelGroundContact`
+ * or `rearWheelGroundContact` reports its wheel touching the ground, applies
+ * the restoring torque to `body` every tick, via `RigidBody.applyTorque`.
+ * Does nothing while both wheels are airborne, leaving the chassis entirely
+ * to `AirControlEcsComponent`'s deliberate tilt input.
  *
  * Must run after `createGroundContactEcsSystem` in the same tick (so it
  * sees this tick's grounded state) and before `createPhysicsSyncEcsSystem`
@@ -25,12 +21,16 @@ import {
  */
 export const createChassisStabilizerEcsSystem = (
   time: Time,
-): EcsSystem<[ChassisStabilizerEcsComponent, GroundContactEcsComponent]> => ({
-  query: [chassisStabilizerId, groundContactId],
+): EcsSystem<[ChassisStabilizerEcsComponent]> => ({
+  query: [chassisStabilizerId],
   run: (result) => {
-    const [stabilizer, groundContact] = result.components;
+    const [stabilizer] = result.components;
+    const { frontWheelGroundContact, rearWheelGroundContact } = stabilizer;
 
-    if (isAirborne(groundContact)) {
+    if (
+      !isGrounded(frontWheelGroundContact) &&
+      !isGrounded(rearWheelGroundContact)
+    ) {
       return;
     }
 

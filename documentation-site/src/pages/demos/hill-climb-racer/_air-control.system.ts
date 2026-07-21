@@ -2,17 +2,14 @@ import { Time } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { clamp } from '@forge-game-engine/forge/math';
 import { AirControlEcsComponent, airControlId } from './_air-control.component';
-import {
-  GroundContactEcsComponent,
-  groundContactId,
-  isAirborne,
-} from './_ground-contact.component';
+import { isGrounded } from './_ground-contact.component';
 
 /**
- * While a matched entity's `GroundContactEcsComponent` reports neither wheel
- * touching the ground, drives `AirControlEcsComponent.chassisBody`'s angular
- * velocity towards `throttleInput.value * maxAngularSpeed`, spending no more
- * than `maxTorque` to do so - the same targetVelocity/maxTorque approach
+ * While a matched entity's `AirControlEcsComponent.frontWheelGroundContact`
+ * and `rearWheelGroundContact` both report their wheel touching no ground,
+ * drives `chassisBody`'s angular velocity towards
+ * `throttleInput.value * maxAngularSpeed`, spending no more than `maxTorque`
+ * to do so - the same targetVelocity/maxTorque approach
  * `createAngularVelocityMotorEcsSystem` uses for the wheels, applied
  * directly here (rather than via `AngularVelocityMotorEcsComponent`) so it
  * only ever acts while airborne; wired onto the wheels' motors instead, a
@@ -28,12 +25,16 @@ import {
  */
 export const createAirControlEcsSystem = (
   time: Time,
-): EcsSystem<[AirControlEcsComponent, GroundContactEcsComponent]> => ({
-  query: [airControlId, groundContactId],
+): EcsSystem<[AirControlEcsComponent]> => ({
+  query: [airControlId],
   run: (result) => {
-    const [airControl, groundContact] = result.components;
+    const [airControl] = result.components;
+    const { frontWheelGroundContact, rearWheelGroundContact } = airControl;
 
-    if (!isAirborne(groundContact)) {
+    if (
+      isGrounded(frontWheelGroundContact) ||
+      isGrounded(rearWheelGroundContact)
+    ) {
       return;
     }
 
