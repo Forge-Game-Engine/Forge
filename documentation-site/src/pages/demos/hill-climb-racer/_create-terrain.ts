@@ -19,15 +19,16 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
-// Kept comfortably larger than the wheels (`wheelRadius * 2` in
-// `_create-car.ts`) so a wheel is normally in contact with just one ground
-// column at a time rather than straddling a seam between two, which is
-// prone to catching on the small step where two independently-solved
-// static bodies meet. `columnDepth` just needs to be deep enough that a
+// Deliberately thinner than the wheels (`wheelRadius * 2` in
+// `_create-car.ts`), so a wheel usually rests on two or three columns at
+// once rather than one - that's fine functionally (see
+// `AirControlEcsComponent`'s ground-contact *count*, not a single flag, for
+// exactly this reason), and reads visually as finer-grained terrain instead
+// of a coarse staircase. `columnDepth` just needs to be deep enough that a
 // column's bottom edge is always well below any neighboring column's top
 // (see `heightAt` for how small those height differences are kept), so
 // there's no gap for a wheel to catch on at a step.
-const columnWidth = 150;
+const columnWidth = 60;
 const columnDepth = 500;
 const groundColor = Color.fromHSLA(95, 45, 30);
 
@@ -41,7 +42,7 @@ const flatStartLength = 400;
  * Total horizontal distance the generated course covers, including the
  * flat launch pad.
  */
-const courseLength = 6000;
+const courseLength = 20000;
 
 /**
  * How far past `flatStartLength` the hills take to ramp up to full
@@ -78,9 +79,9 @@ function heightAt(x: number, random: Random): number {
   const distanceIntoHills = x - flatStartLength;
 
   const rollingHills =
-    Math.sin(distanceIntoHills * 0.0012) * 45 +
-    Math.sin(distanceIntoHills * 0.0035 + 1.7) * 18;
-  const climb = distanceIntoHills * 0.025;
+    Math.sin(distanceIntoHills * 0.0012) * 90 +
+    Math.sin(distanceIntoHills * 0.0035 + 1.7) * 40;
+  const climb = distanceIntoHills * 0.04;
   const noise = random.randomFloat(-3, 3);
 
   const rampT = Math.min(distanceIntoHills / hillRampLength, 1);
