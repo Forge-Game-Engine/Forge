@@ -21,13 +21,14 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 // Kept comfortably larger than the wheels (`wheelRadius * 2` in
 // `_create-car.ts`) so a wheel is normally in contact with just one ground
-// segment at a time rather than straddling a seam between two, which is
+// column at a time rather than straddling a seam between two, which is
 // prone to catching on the small step where two independently-solved
-// static bodies meet at even a slight angle. `segmentThickness` is
-// similarly generous, so a fast-moving wheel has plenty of solid ground to
-// push into rather than skimming close to a segment's edge.
-const segmentSpacing = 150;
-const segmentThickness = 250;
+// static bodies meet. `columnDepth` just needs to be deep enough that a
+// column's bottom edge is always well below any neighboring column's top
+// (see `heightAt` for how small those height differences are kept), so
+// there's no gap for a wheel to catch on at a step.
+const columnWidth = 150;
+const columnDepth = 500;
 const groundColor = Color.fromHSLA(95, 45, 30);
 
 /**
@@ -46,11 +47,11 @@ const courseLength = 6000;
  * How far past `flatStartLength` the hills take to ramp up to full
  * amplitude. Without this, `rollingHills`/`climb`/`noise` would switch on
  * abruptly at `flatStartLength`, and since their slope there is nonzero,
- * that would make the very first hill segment a near-vertical wall (a car
- * arriving at speed slams into it rather than climbing it). Smoothstep
- * ramps `rollingHills`/`climb`/`noise` in with a slope of zero at
- * `flatStartLength`, so the ground bends smoothly out of the flat pad
- * instead of kinking.
+ * that would make the very first column a tall step (a car arriving at
+ * speed slams into it rather than climbing it). Smoothstep ramps
+ * `rollingHills`/`climb`/`noise` in with a slope of zero at
+ * `flatStartLength`, so the ground eases out of the flat pad instead of
+ * kinking.
  */
 const hillRampLength = 400;
 
@@ -58,11 +59,16 @@ const hillRampLength = 400;
  * Computes the ground height at `x`: flat for `flatStartLength`, then a mix
  * of two sine waves at different frequencies (rolling hills), a slow upward
  * trend (so the course is a net "climb" rather than just undulating), and
- * small per-point noise so it doesn't read as perfectly periodic - all
+ * small per-column noise so it doesn't read as perfectly periodic - all
  * ramped in smoothly over `hillRampLength` so the transition out of the
- * flat pad has no sudden change in slope.
+ * flat pad has no sudden change in slope. The amplitudes here are
+ * deliberately gentle relative to `columnWidth`: since the terrain is built
+ * from flat, unrotated columns (see `createGroundColumn`), a large height
+ * change between adjacent columns reads as a hard step to drive over
+ * rather than a slope, so keeping consecutive columns close in height
+ * keeps the course feeling like rolling hills rather than a staircase.
  * @param x - The world-space x coordinate to sample.
- * @param random - The seeded random source used for per-point noise.
+ * @param random - The seeded random source used for per-column noise.
  */
 function heightAt(x: number, random: Random): number {
   if (x <= flatStartLength) {
@@ -72,10 +78,10 @@ function heightAt(x: number, random: Random): number {
   const distanceIntoHills = x - flatStartLength;
 
   const rollingHills =
-    Math.sin(distanceIntoHills * 0.0022) * 140 +
-    Math.sin(distanceIntoHills * 0.006 + 1.7) * 60;
-  const climb = distanceIntoHills * 0.12;
-  const noise = random.randomFloat(-12, 12);
+    Math.sin(distanceIntoHills * 0.0012) * 45 +
+    Math.sin(distanceIntoHills * 0.0035 + 1.7) * 18;
+  const climb = distanceIntoHills * 0.025;
+  const noise = random.randomFloat(-3, 3);
 
   const rampT = Math.min(distanceIntoHills / hillRampLength, 1);
   const ramp = rampT * rampT * (3 - 2 * rampT);
@@ -84,37 +90,32 @@ function heightAt(x: number, random: Random): number {
 }
 
 /**
- * Creates one static ground segment spanning `from` to `to`: a rectangle
- * long enough to cover the distance between them, rotated to match the
- * slope, and shifted down along its own "up" normal by half its thickness.
- * That shift places the rectangle's *top* edge exactly on the line from
- * `from` to `to`, so consecutive segments (each anchored the same way to
- * their own shared endpoint) meet with no gap or step, however sharply the
- * slope changes from one segment to the next.
- * @param world - The ECS world to add the segment entity to.
+ * Creates one static ground column spanning `left` to `right`: a flat,
+ * unrotated rectangle topped at `height` and extending `columnDepth` below
+ * it, so consecutive columns (each independently topped at their own
+ * sampled height) form a gently stepped profile rather than a smoothly
+ * angled one.
+ * @param world - The ECS world to add the column entity to.
  * @param groundSprite - The pre-loaded, unscaled ground sprite shared by
- * every segment.
- * @param from - The world-space top-left point of this segment.
- * @param to - The world-space top-right point of this segment.
+ * every column.
+ * @param left - The world-space x coordinate of the column's left edge.
+ * @param right - The world-space x coordinate of the column's right edge.
+ * @param height - The world-space y coordinate of the column's top edge.
  */
-function createGroundSegment(
+function createGroundColumn(
   world: EcsWorld,
   groundSprite: SpriteEcsComponent,
-  from: Vector2,
-  to: Vector2,
+  left: number,
+  right: number,
+  height: number,
 ): void {
-  const delta = to.subtract(from);
-  const length = delta.magnitude();
+  const width = right - left;
 
-  if (length === 0) {
+  if (width <= 0) {
     return;
   }
 
-  const direction = delta.multiply(1 / length);
-  const angle = Math.atan2(direction.y, direction.x);
-  const up = direction.rotate(Math.PI / 2);
-  const midpoint = from.add(to).multiply(0.5);
-  const position = midpoint.subtract(up.multiply(segmentThickness / 2));
+  const position = new Vector2(left + width / 2, height - columnDepth / 2);
 
   const entity = world.createEntity();
 
@@ -122,15 +123,15 @@ function createGroundSegment(
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: angle, world: angle });
+  world.addComponent(entity, rotationId, { local: 0, world: 0 });
   world.addComponent(entity, scaleId, {
     local: new Vector2(
-      length / groundSprite.width,
-      segmentThickness / groundSprite.height,
+      width / groundSprite.width,
+      columnDepth / groundSprite.height,
     ),
     world: new Vector2(
-      length / groundSprite.width,
-      segmentThickness / groundSprite.height,
+      width / groundSprite.width,
+      columnDepth / groundSprite.height,
     ),
   });
   world.addComponent(entity, spriteId, {
@@ -139,9 +140,8 @@ function createGroundSegment(
   });
   world.addComponent(entity, PhysicsBodyId, {
     physicsBody: new RigidBody({
-      shape: PolygonShape.rectangle(length, segmentThickness),
+      shape: PolygonShape.rectangle(width, columnDepth),
       position,
-      angle,
       isStatic: true,
       friction: 1,
     }),
@@ -149,9 +149,9 @@ function createGroundSegment(
 }
 
 /**
- * Builds the course's terrain: a chain of static ground segments following
- * a procedurally generated height profile, starting with a flat launch pad
- * and climbing into rolling hills.
+ * Builds the course's terrain: a row of static, unrotated ground columns
+ * following a procedurally generated height profile, starting with a flat
+ * launch pad and climbing into gently rolling hills.
  * @param world - The ECS world to add the terrain entities to.
  * @param renderContext - The render context used to load the ground sprite.
  * @param renderLayer - The render layer the terrain should be drawn on.
@@ -174,15 +174,25 @@ export async function createTerrain(
     renderLayer,
   );
 
-  const points: Vector2[] = [];
+  // Phased so a column boundary lands exactly on `carSpawnX`: the car's two
+  // wheels straddle that point (see `_create-car.ts`'s `frontAnchor`/
+  // `rearAnchor`), and starting a column boundary any closer to one wheel
+  // than the other would have that wheel spawn straddling the seam between
+  // two columns instead of resting near the middle of one - which, even
+  // though both columns are level with each other here, is still prone to
+  // the narrow-phase collision detector picking the shared vertex as the
+  // contact feature and returning a slightly asymmetric normal right at
+  // the moment the car first settles.
+  const carSpawnX = 150;
+  const gridStart =
+    carSpawnX - columnWidth * Math.ceil((carSpawnX + 200) / columnWidth);
 
-  for (let x = -200; x <= courseLength; x += segmentSpacing) {
-    points.push(new Vector2(x, heightAt(x, random)));
+  for (let left = gridStart; left < courseLength; left += columnWidth) {
+    const right = left + columnWidth;
+    const height = heightAt(left + columnWidth / 2, random);
+
+    createGroundColumn(world, groundSprite, left, right, height);
   }
 
-  for (let i = 0; i < points.length - 1; i++) {
-    createGroundSegment(world, groundSprite, points[i], points[i + 1]);
-  }
-
-  return new Vector2(150, heightAt(150, random));
+  return new Vector2(carSpawnX, heightAt(carSpawnX, random));
 }
