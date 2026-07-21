@@ -149,22 +149,23 @@ const suspensionDamping = 330_000;
 // in the whole car's mass - and without a matching torque increase the
 // drivetrain no longer had enough force to meaningfully accelerate it.
 //
-// `maxWheelSpeed` is kept far lower than the wheel could otherwise reach:
-// the chassis pitches (leans) under throttle by design (see
-// `ChassisStabilizerEcsComponent`), which continuously, briefly unloads one
-// wheel or the other rather than keeping both evenly weighted. An unloaded
-// wheel has essentially nothing but its own rotational inertia to resist
-// the motor, so at this much torque it accelerates towards `maxWheelSpeed`
-// almost instantly - if that cap is left near the wheel's fastest plausible
-// *rolling* speed (as it was, 350 rad/s - a 35,000 units/s peripheral
-// speed no realistic drive over this course ever approaches), the unloaded
-// wheel just burns torque spinning uselessly fast instead of quickly
-// regaining grip, which both wastes power (only the still-loaded wheel is doing
-// useful work) and reads as sticky, inconsistent acceleration. Capping it
-// close to the car's actual achievable speeds bounds how much a wheel can
-// run away before it matters again once it regains contact.
+// `maxWheelSpeed` is deliberately far higher than the car could ever
+// actually roll at - `WheelDriveEcsComponent.maxSlipAngularSpeed` is what
+// actually keeps a wheel grounded in reality (see its comment), by
+// clamping the target this produces to a bounded slip band around the
+// wheel's *current* rolling speed. That clamp is what matters; this is
+// just "go as fast as grip allows", not a speed the wheel is meant to
+// reach unassisted.
 const motorMaxTorque = 6_120_000_000;
-const maxWheelSpeed = 30;
+const maxWheelSpeed = 350;
+
+// How far past a wheel's current rolling speed its target is allowed to
+// stray (see `WheelDriveEcsComponent.maxSlipAngularSpeed`) - generous
+// enough for a deliberate wheel spin launch from a stop, bounded enough that
+// a wheel briefly unloaded by the chassis's throttle-lean can't run away to
+// `maxWheelSpeed` and waste torque spinning uselessly fast instead of
+// quickly regaining grip once it lands.
+const maxSlipAngularSpeed = 6;
 
 // See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
 // pull the chassis back to (roughly) level within a second or two of
@@ -215,6 +216,7 @@ function createWheel(
   sprite: SpriteEcsComponent,
   position: Vector2,
   throttleInput: Axis1dAction,
+  chassisBody: RigidBody,
 ): RigidBody {
   const body = new RigidBody({
     shape: new CircleShape(wheelRadius),
@@ -249,7 +251,10 @@ function createWheel(
   });
   addWheelDriveComponent(world, entity, {
     throttleInput,
+    chassisBody,
+    wheelRadius,
     maxWheelSpeed,
+    maxSlipAngularSpeed,
     maxTorque: motorMaxTorque,
   });
 
@@ -434,12 +439,14 @@ export async function createCar(
     sprites.wheel,
     frontWheelPosition,
     throttleInput,
+    chassisBody,
   );
   const rearWheelBody = createWheel(
     world,
     sprites.wheel,
     rearWheelPosition,
     throttleInput,
+    chassisBody,
   );
 
   const frontUprightBody = createWheelMount(

@@ -1,5 +1,6 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction } from '@forge-game-engine/forge/input';
+import { RigidBody } from '@forge-game-engine/forge/physics';
 
 /**
  * Marks an entity as a driven wheel: `createWheelDriveEcsSystem` queries for
@@ -13,10 +14,43 @@ export interface WheelDriveEcsComponent {
   throttleInput: Axis1dAction;
 
   /**
+   * The chassis this wheel belongs to, used to compute the wheel's rolling
+   * angular speed (`-chassisBody.velocity.x / wheelRadius`) that
+   * `targetVelocity` is clamped around via `maxSlipAngularSpeed`.
+   */
+  chassisBody: RigidBody;
+
+  /**
+   * This wheel's radius, used for the same rolling-speed conversion as
+   * `chassisBody`.
+   */
+  wheelRadius: number;
+
+  /**
    * The wheel's angular speed, in rad/s, at full throttle (`throttleInput.value`
-   * of `1` or `-1`).
+   * of `1` or `-1`), before `maxSlipAngularSpeed` clamps it. Deliberately
+   * much higher than the car could realistically ever roll at - it acts as
+   * an "as fast as grip allows" request rather than a speed the wheel is
+   * expected to actually reach unassisted.
    */
   maxWheelSpeed: number;
+
+  /**
+   * How far past the wheel's current rolling speed (see `chassisBody`)
+   * `targetVelocity` is allowed to stray, in rad/s. Without this, a wheel
+   * that's ever briefly unloaded - which happens continuously and briefly
+   * as the chassis pitches under throttle, see `ChassisStabilizerEcsComponent`
+   * - has nothing but its own rotational inertia to resist the motor, and
+   * accelerates towards `maxWheelSpeed` almost instantly regardless of
+   * whether that speed is at all useful; by the time it regains contact it's
+   * spinning far faster than the car is actually moving, wasting torque on
+   * pure wheel spin instead of quickly regaining grip. Clamping the target to
+   * a bounded slip band around the wheel's actual rolling speed - which
+   * tracks the chassis's real velocity every tick - keeps an unloaded wheel
+   * from running away, while still leaving enough headroom for the
+   * wheel spin a hard launch from a stop should have.
+   */
+  maxSlipAngularSpeed: number;
 
   /**
    * The motor's torque budget, in N·m, while `throttleInput` is nonzero.

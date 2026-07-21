@@ -1,4 +1,5 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { clamp } from '@forge-game-engine/forge/math';
 import {
   AngularVelocityMotorEcsComponent,
   AngularVelocityMotorId,
@@ -17,6 +18,12 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  * counter-clockwise, and the bottom contact point of a wheel moving right
  * traces backwards, i.e. clockwise). So driving the car forward (positive
  * throttle, positive x) needs a *negative* target angular velocity.
+ *
+ * The throttle-desired target is clamped to within `maxSlipAngularSpeed` of
+ * the wheel's current rolling speed (`-chassisBody.velocity.x / wheelRadius`)
+ * rather than being used directly - see `WheelDriveEcsComponent.maxSlipAngularSpeed`
+ * for why an unclamped target lets a briefly-unloaded wheel run away towards
+ * `maxWheelSpeed` regardless of whether the car can actually use that speed.
  *
  * `maxTorque` is dropped to `0` whenever `throttleInput.value` is exactly
  * `0`, rather than leaving it at `wheelDrive.maxTorque` and letting
@@ -38,9 +45,23 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
   query: [wheelDriveId, AngularVelocityMotorId],
   run: (result) => {
     const [wheelDrive, motor] = result.components;
-    const { throttleInput, maxWheelSpeed, maxTorque } = wheelDrive;
+    const {
+      throttleInput,
+      chassisBody,
+      wheelRadius,
+      maxWheelSpeed,
+      maxSlipAngularSpeed,
+      maxTorque,
+    } = wheelDrive;
 
-    motor.targetVelocity = -throttleInput.value * maxWheelSpeed;
+    const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
+    const desiredAngularVelocity = -throttleInput.value * maxWheelSpeed;
+
+    motor.targetVelocity = clamp(
+      desiredAngularVelocity,
+      rollingAngularVelocity - maxSlipAngularSpeed,
+      rollingAngularVelocity + maxSlipAngularSpeed,
+    );
     motor.maxTorque = throttleInput.value === 0 ? 0 : maxTorque;
   },
 });
