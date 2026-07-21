@@ -141,8 +141,15 @@ const suspensionStiffness = 2_000_000;
 const suspensionDamping = 330_000;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
-// through bumps and keep climbing rather than stalling on them.
-const motorMaxTorque = 170_000_000_0 * 2;
+// through bumps and keep climbing rather than stalling on them. Scaled up
+// to match the car's current total mass: raising `uprightDensity` to fix
+// the wheel-mount mass ratio (see its comment above) added a lot of mass
+// that wasn't here when this was last tuned - each upright went from
+// ~1,200 to ~16,000, roughly a 50% increase in the whole car's mass - and
+// without a matching torque increase the drivetrain no longer had enough
+// force to meaningfully accelerate it, leaving the car crawling along at a
+// small fraction of `maxWheelSpeed` no matter how long the throttle was held.
+const motorMaxTorque = 6_120_000_000;
 const maxWheelSpeed = 350;
 
 // See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
