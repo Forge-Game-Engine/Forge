@@ -47,12 +47,14 @@ const rearAnchor = new Vector2(-(chassisWidth / 2 - 25), -chassisHeight / 2);
 // length, and starting the wheel slightly higher than that (see
 // `wheelSpawnDrop` in `createCar`) lets the car visibly settle onto its
 // suspension as soon as the demo starts, the same way the Linear Spring and
-// Damper demo's wheels do. Kept generously larger than the equilibrium sag
-// below so the wheel never has to cross (or come numerically close to) the
-// chassis anchor itself, where `createLinearSpringEcsSystem`'s direction
-// normalization becomes unstable as the anchor-to-wheel distance
+// Damper demo's wheels do. Kept just large enough that the wheels tuck in
+// close under the chassis (rather than dangling below it with an
+// unrealistic gap) while still leaving several times the equilibrium sag
+// of margin, so the wheel never has to cross (or come numerically close
+// to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
+// direction normalization becomes unstable as the anchor-to-wheel distance
 // approaches zero.
-const wheelDropHeight = 70;
+const wheelDropHeight = 56;
 
 // Chosen so the car's weight compresses each suspension by a small fraction
 // of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
