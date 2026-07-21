@@ -4,22 +4,36 @@ import {
   ChassisStabilizerEcsComponent,
   chassisStabilizerId,
 } from './_chassis-stabilizer.component';
+import {
+  GroundContactEcsComponent,
+  groundContactId,
+  isAirborne,
+} from './_ground-contact.component';
 
 /**
- * Applies each matched entity's `ChassisStabilizerEcsComponent` restoring
- * torque to `body` every tick, via `RigidBody.applyTorque`. Must run before
- * `createPhysicsSyncEcsSystem` in the same tick, so the torque applied this
- * tick is reflected in the same tick's `physicsWorld.step` (see the
- * Applying Forces guide's registration-order caution).
+ * While a matched entity's `GroundContactEcsComponent` reports at least one
+ * wheel touching the ground, applies its `ChassisStabilizerEcsComponent`
+ * restoring torque to `body` every tick, via `RigidBody.applyTorque`. Does
+ * nothing while airborne, leaving the chassis entirely to
+ * `AirControlEcsComponent`'s deliberate tilt input.
+ *
+ * Must run after `createGroundContactEcsSystem` in the same tick (so it
+ * sees this tick's grounded state) and before `createPhysicsSyncEcsSystem`
+ * (see the Applying Forces guide's registration-order caution).
  * @param time - The time instance used to scale the torque by the tick's
  * delta time.
  */
 export const createChassisStabilizerEcsSystem = (
   time: Time,
-): EcsSystem<[ChassisStabilizerEcsComponent]> => ({
-  query: [chassisStabilizerId],
+): EcsSystem<[ChassisStabilizerEcsComponent, GroundContactEcsComponent]> => ({
+  query: [chassisStabilizerId, groundContactId],
   run: (result) => {
-    const [stabilizer] = result.components;
+    const [stabilizer, groundContact] = result.components;
+
+    if (isAirborne(groundContact)) {
+      return;
+    }
+
     const { body, levelingStiffness, levelingDamping } = stabilizer;
     const { deltaTimeInSeconds } = time;
 

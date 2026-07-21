@@ -5,7 +5,10 @@ import { RigidBody } from '@forge-game-engine/forge/physics';
  * Applies a restoring torque pulling `body`'s `angle` back towards zero
  * (`-angle * levelingStiffness`) and resisting its `angularVelocity`
  * (`-angularVelocity * levelingDamping`), via `RigidBody.applyTorque`.
- * `createChassisStabilizerEcsSystem` applies this every tick.
+ * `createChassisStabilizerEcsSystem` applies this only while the entity's
+ * `GroundContactEcsComponent` reports at least one wheel touching the
+ * ground - never while airborne, so it doesn't fight
+ * `AirControlEcsComponent`'s deliberate tilt input.
  *
  * A real car's suspension keeps the chassis roughly level through its
  * control-arm geometry, not just spring force; the chassis here hangs from

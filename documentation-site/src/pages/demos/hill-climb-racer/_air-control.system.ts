@@ -1,88 +1,59 @@
 import { Time } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { PhysicsWorld, RigidBody } from '@forge-game-engine/forge/physics';
+import { clamp } from '@forge-game-engine/forge/math';
 import { AirControlEcsComponent, airControlId } from './_air-control.component';
+import {
+  GroundContactEcsComponent,
+  groundContactId,
+  isAirborne,
+} from './_ground-contact.component';
 
 /**
- * Returns whether `bodyA`/`bodyB` is a contact between `wheel` and a static
- * (ground) body, in either order.
- * @param bodyA - The first body in a `BodyCollisionPair`.
- * @param bodyB - The second body in a `BodyCollisionPair`.
- * @param wheel - The wheel body to check the pair against.
- */
-function isWheelGroundContact(
-  bodyA: RigidBody,
-  bodyB: RigidBody,
-  wheel: RigidBody,
-): boolean {
-  if (bodyA === wheel) {
-    return bodyB.isStatic;
-  }
-
-  if (bodyB === wheel) {
-    return bodyA.isStatic;
-  }
-
-  return false;
-}
-
-/**
- * Updates each matched entity's `AirControlEcsComponent` ground-contact
- * counts from `physicsWorld.collisionStarts`/`collisionEnds`, then, while
- * neither wheel has an active ground contact, applies a pitch torque to
- * `chassisBody` from `throttleInput` via `RigidBody.applyTorque` - positive
- * throttle (gas) pitches the nose up and back, negative throttle (brake)
- * pitches it down and forward. Must run after `createPhysicsSyncEcsSystem`'s
- * *previous* tick (i.e. anywhere before this tick's `createPhysicsSyncEcsSystem`)
- * so it reacts to last step's contacts, and before this tick's
- * `createPhysicsSyncEcsSystem` so the torque is reflected in this tick's
- * `physicsWorld.step` (see the Applying Forces guide's registration-order
- * caution).
- * @param physicsWorld - The physics world whose `collisionStarts`/
- * `collisionEnds` drive each wheel's grounded state.
- * @param time - The time instance used to scale the torque by the tick's
- * delta time.
+ * While a matched entity's `GroundContactEcsComponent` reports neither wheel
+ * touching the ground, drives `AirControlEcsComponent.chassisBody`'s angular
+ * velocity towards `throttleInput.value * maxAngularSpeed`, spending no more
+ * than `maxTorque` to do so - the same targetVelocity/maxTorque approach
+ * `createAngularVelocityMotorEcsSystem` uses for the wheels, applied
+ * directly here (rather than via `AngularVelocityMotorEcsComponent`) so it
+ * only ever acts while airborne; wired onto the wheels' motors instead, a
+ * target of `0` at neutral throttle would fight the chassis's ground-level
+ * suspension lean too. Does nothing while grounded, leaving the chassis
+ * entirely to the suspension and `ChassisStabilizerEcsComponent`.
+ *
+ * Must run after `createGroundContactEcsSystem` in the same tick (so it
+ * sees this tick's grounded state) and before `createPhysicsSyncEcsSystem`
+ * (see the Applying Forces guide's registration-order caution).
+ * @param time - The time instance used to scale torque by the tick's delta
+ * time.
  */
 export const createAirControlEcsSystem = (
-  physicsWorld: PhysicsWorld,
   time: Time,
-): EcsSystem<[AirControlEcsComponent]> => ({
-  query: [airControlId],
+): EcsSystem<[AirControlEcsComponent, GroundContactEcsComponent]> => ({
+  query: [airControlId, groundContactId],
   run: (result) => {
-    const [airControl] = result.components;
-    const { chassisBody, frontWheelBody, rearWheelBody, throttleInput } =
-      airControl;
+    const [airControl, groundContact] = result.components;
 
-    for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
-      if (isWheelGroundContact(bodyA, bodyB, frontWheelBody)) {
-        airControl.frontWheelGroundContacts++;
-      }
-
-      if (isWheelGroundContact(bodyA, bodyB, rearWheelBody)) {
-        airControl.rearWheelGroundContacts++;
-      }
-    }
-
-    for (const { bodyA, bodyB } of physicsWorld.collisionEnds) {
-      if (isWheelGroundContact(bodyA, bodyB, frontWheelBody)) {
-        airControl.frontWheelGroundContacts--;
-      }
-
-      if (isWheelGroundContact(bodyA, bodyB, rearWheelBody)) {
-        airControl.rearWheelGroundContacts--;
-      }
-    }
-
-    const isAirborne =
-      airControl.frontWheelGroundContacts === 0 &&
-      airControl.rearWheelGroundContacts === 0;
-
-    if (!isAirborne) {
+    if (!isAirborne(groundContact)) {
       return;
     }
 
-    const torque = throttleInput.value * airControl.torqueStrength;
+    const { chassisBody, throttleInput, maxAngularSpeed, maxTorque } =
+      airControl;
+    const { deltaTimeInSeconds } = time;
 
-    chassisBody.applyTorque(torque, time.deltaTimeInSeconds);
+    const responsiveness = chassisBody.inverseInertia * deltaTimeInSeconds;
+
+    if (responsiveness <= 0) {
+      return;
+    }
+
+    const targetAngularVelocity = throttleInput.value * maxAngularSpeed;
+
+    const desiredTorque =
+      (targetAngularVelocity - chassisBody.angularVelocity) / responsiveness;
+
+    const torque = clamp(desiredTorque, -maxTorque, maxTorque);
+
+    chassisBody.applyTorque(torque, deltaTimeInSeconds);
   },
 });

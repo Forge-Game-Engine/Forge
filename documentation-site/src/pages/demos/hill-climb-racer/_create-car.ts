@@ -30,6 +30,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addAirControlComponent } from './_air-control.component';
 import { addCarResetComponent, CarResetBody } from './_car-reset.component';
 import { addChassisStabilizerComponent } from './_chassis-stabilizer.component';
+import { addGroundContactComponent } from './_ground-contact.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
 const chassisWidth = 450;
@@ -134,14 +135,19 @@ const maxWheelSpeed = 350;
 const chassisLevelingStiffness = 300_000_000;
 const chassisLevelingDamping = 40_000_000;
 
-// The torque `AirControlEcsComponent` applies to the chassis at full
-// throttle while airborne - the classic Hill Climb Racer "tilt in mid-air"
-// control, gas pitching the nose up and back, brake pitching it down and
-// forward. Strong enough to visibly rotate the chassis within well under a
-// second of holding the input (matching the chassis's `chassisDensity`-driven
-// moment of inertia), so it reads as a deliberate player action rather than
-// the same gentle lean throttle/braking already produces on the ground.
-const airControlTorqueStrength = 1_500_000_000;
+// The chassis's target angular speed at full throttle while airborne, and
+// the torque budget `AirControlEcsComponent` spends chasing it - the
+// classic Hill Climb Racer "tilt in mid-air" control, gas pitching the nose
+// up and back, brake pitching it down and forward. Targeting a speed
+// (rather than just applying a constant torque) gives the player direct,
+// bounded control: releasing the input targets zero rotation and actively
+// cancels existing spin instead of coasting on whatever momentum was built
+// up. `airControlMaxTorque` is high enough (matching the chassis's
+// `chassisDensity`-driven moment of inertia) to reach `airControlMaxAngularSpeed`
+// within a few tenths of a second, so input reads as immediate rather than
+// a slow wind-up.
+const airControlMaxAngularSpeed = 3.5;
+const airControlMaxTorque = 8_000_000_000;
 
 interface CarSprites {
   chassis: SpriteEcsComponent;
@@ -202,7 +208,11 @@ function createWheel(
     targetVelocity: 0,
     maxTorque: motorMaxTorque,
   });
-  addWheelDriveComponent(world, entity, { throttleInput, maxWheelSpeed });
+  addWheelDriveComponent(world, entity, {
+    throttleInput,
+    maxWheelSpeed,
+    maxTorque: motorMaxTorque,
+  });
 
   return body;
 }
@@ -410,22 +420,30 @@ export async function createCar(
     rearSuspensionAxis,
   );
 
-  const stabilizerEntity = world.createEntity();
+  // One entity carries ground-contact state alongside both systems that
+  // react to it (`ChassisStabilizerEcsComponent` and `AirControlEcsComponent`
+  // each query for `GroundContactEcsComponent` on the same entity - see
+  // `createChassisStabilizerEcsSystem`/`createAirControlEcsSystem`), so both
+  // stay in sync with the same grounded state instead of each tracking
+  // their own.
+  const chassisControlEntity = world.createEntity();
 
-  addChassisStabilizerComponent(world, stabilizerEntity, {
+  addGroundContactComponent(world, chassisControlEntity, {
+    frontWheelBody,
+    rearWheelBody,
+  });
+
+  addChassisStabilizerComponent(world, chassisControlEntity, {
     body: chassisBody,
     levelingStiffness: chassisLevelingStiffness,
     levelingDamping: chassisLevelingDamping,
   });
 
-  const airControlEntity = world.createEntity();
-
-  addAirControlComponent(world, airControlEntity, {
+  addAirControlComponent(world, chassisControlEntity, {
     chassisBody,
-    frontWheelBody,
-    rearWheelBody,
     throttleInput,
-    torqueStrength: airControlTorqueStrength,
+    maxAngularSpeed: airControlMaxAngularSpeed,
+    maxTorque: airControlMaxTorque,
   });
 
   const resetBodies: CarResetBody[] = [

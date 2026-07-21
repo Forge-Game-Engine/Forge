@@ -4,33 +4,34 @@ import { RigidBody } from '@forge-game-engine/forge/physics';
 
 /**
  * Marks the chassis for Hill-Climb-Racer-style mid-air pitch control:
- * `createAirControlEcsSystem` applies a torque to `chassisBody` from
- * `throttleInput` whenever neither wheel is touching the ground - gas pitches
- * the nose up and back (a counter-clockwise torque), brake pitches it down
- * and forward (a clockwise torque), the same "tilt in the air" control the
- * genre is named for.
- *
- * `frontWheelGroundContacts`/`rearWheelGroundContacts` are maintained by the
- * system itself from `PhysicsWorld.collisionStarts`/`collisionEnds` and
- * shouldn't be set directly; a count rather than a boolean, since a wheel can
- * (and, given how wide the wheels are relative to a ground column, often
- * does) touch two neighboring ground columns at once, and a boolean would
- * flicker "airborne" as one of those two contacts ends while the wheel is
- * still resting on the other.
+ * `createAirControlEcsSystem` drives `chassisBody`'s angular velocity
+ * towards a target proportional to `throttleInput` (the same
+ * targetVelocity/maxTorque approach `AngularVelocityMotorEcsComponent` uses
+ * for the wheels) whenever the entity's `GroundContactEcsComponent` reports
+ * neither wheel touching the ground - gas pitches the nose up and back,
+ * brake pitches it down and forward, the same "tilt in the air" control the
+ * genre is named for. Driving towards a target angular *velocity*, rather
+ * than just applying a constant torque, gives the player direct, bounded
+ * control of the rotation rate: releasing the input targets zero rotation
+ * and actively cancels existing spin (within `maxTorque`) instead of only
+ * bleeding off via the chassis's own angular drag, so a bad rotation can be
+ * caught and corrected mid-air rather than fought against.
  */
 export interface AirControlEcsComponent {
   chassisBody: RigidBody;
-  frontWheelBody: RigidBody;
-  rearWheelBody: RigidBody;
   throttleInput: Axis1dAction;
 
   /**
-   * The torque, in N·m, applied to `chassisBody` at full throttle
+   * The chassis's target angular speed, in rad/s, at full throttle
    * (`throttleInput.value` of `1` or `-1`) while airborne.
    */
-  torqueStrength: number;
-  frontWheelGroundContacts: number;
-  rearWheelGroundContacts: number;
+  maxAngularSpeed: number;
+
+  /**
+   * The maximum torque, in N·m, spent reaching `maxAngularSpeed` in a
+   * single tick.
+   */
+  maxTorque: number;
 }
 
 export const airControlId =
@@ -41,23 +42,13 @@ export const airControlId =
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring air control.
- * `frontWheelGroundContacts`/`rearWheelGroundContacts` are initialized to
- * `0` (grounded) rather than taken from the caller, since they're
- * system-managed state, not configuration.
  * @returns The attached component, for runtime changes (e.g. tuning
- * `torqueStrength`).
+ * `maxAngularSpeed`).
  */
 export function addAirControlComponent(
   world: EcsWorld,
   entity: number,
-  options: Omit<
-    AirControlEcsComponent,
-    'frontWheelGroundContacts' | 'rearWheelGroundContacts'
-  >,
+  options: AirControlEcsComponent,
 ): AirControlEcsComponent {
-  return world.addComponent(entity, airControlId, {
-    ...options,
-    frontWheelGroundContacts: 0,
-    rearWheelGroundContacts: 0,
-  });
+  return world.addComponent(entity, airControlId, { ...options });
 }

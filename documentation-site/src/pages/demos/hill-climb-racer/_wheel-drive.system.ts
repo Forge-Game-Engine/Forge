@@ -7,8 +7,8 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
 
 /**
  * Sets each matched entity's `AngularVelocityMotorEcsComponent.targetVelocity`
- * from its `WheelDriveEcsComponent.throttleInput` every tick, so
- * `createAngularVelocityMotorEcsSystem` (registered afterwards) drives the
+ * and `maxTorque` from its `WheelDriveEcsComponent.throttleInput` every tick,
+ * so `createAngularVelocityMotorEcsSystem` (registered afterwards) drives the
  * wheel towards it.
  *
  * The sign is flipped: with this engine's Y-up convention, a wheel rolling
@@ -17,6 +17,16 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  * counter-clockwise, and the bottom contact point of a wheel moving right
  * traces backwards, i.e. clockwise). So driving the car forward (positive
  * throttle, positive x) needs a *negative* target angular velocity.
+ *
+ * `maxTorque` is dropped to `0` whenever `throttleInput.value` is exactly
+ * `0`, rather than leaving it at `wheelDrive.maxTorque` and letting
+ * `targetVelocity` fall to `0` - at `wheelDrive.maxTorque` (large enough to
+ * punch through bumps), driving `targetVelocity` to `0` would brake the
+ * wheel to a dead stop the instant the player releases the controls, acting
+ * as a permanent parking brake and preventing the car from coasting downhill
+ * under gravity. Dropping the torque budget to `0` instead leaves the motor
+ * with nothing to push with, so the wheel spins freely at whatever rate
+ * rolling contact and gravity give it.
  *
  * Must be registered before `createAngularVelocityMotorEcsSystem` in the
  * same tick, which itself must run before `createPhysicsSyncEcsSystem` (see
@@ -28,8 +38,9 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
   query: [wheelDriveId, AngularVelocityMotorId],
   run: (result) => {
     const [wheelDrive, motor] = result.components;
+    const { throttleInput, maxWheelSpeed, maxTorque } = wheelDrive;
 
-    motor.targetVelocity =
-      -wheelDrive.throttleInput.value * wheelDrive.maxWheelSpeed;
+    motor.targetVelocity = -throttleInput.value * maxWheelSpeed;
+    motor.maxTorque = throttleInput.value === 0 ? 0 : maxTorque;
   },
 });
