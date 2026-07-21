@@ -14,6 +14,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { createAirControlEcsSystem } from './_air-control.system';
 import { addCameraFollowComponent } from './_camera-follow.component';
 import { createCameraFollowEcsSystem } from './_camera-follow.system';
 import { createCarResetEcsSystem } from './_car-reset.system';
@@ -75,13 +76,18 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   // `createRevoluteJointEcsSystem` register each wheel mount's joints (see
   // `createWheelMount`) with `physicsWorld`, and
   // `createAngularVelocityMotorEcsSystem` / `createLinearSpringEcsSystem` /
-  // `createLinearDamperEcsSystem` / `createChassisStabilizerEcsSystem`
-  // compute this tick's torque/forces from the (possibly just-changed)
-  // state above - all eight must run before `createPhysicsSyncEcsSystem`,
-  // which is what steps `physicsWorld` (see the Applying Forces guide's
-  // registration-order caution). `createCameraFollowEcsSystem` only needs
-  // to run before `createRenderEcsSystem`, so this tick's camera position
-  // is reflected in this tick's render.
+  // `createLinearDamperEcsSystem` / `createChassisStabilizerEcsSystem` /
+  // `createAirControlEcsSystem` compute this tick's torque/forces from the
+  // (possibly just-changed) state above - all nine must run before
+  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld` (see
+  // the Applying Forces guide's registration-order caution).
+  // `createAirControlEcsSystem` also reads `physicsWorld.collisionStarts`/
+  // `collisionEnds`, which `createPhysicsSyncEcsSystem` only refreshes once
+  // it steps - so it's reacting to last tick's contacts, one tick stale,
+  // the same lag any contact-based "am I grounded" check in a fixed-step
+  // engine has. `createCameraFollowEcsSystem` only needs to run before
+  // `createRenderEcsSystem`, so this tick's camera position is reflected in
+  // this tick's render.
   world.addSystem(createWheelDriveEcsSystem());
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
@@ -90,6 +96,7 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));
   world.addSystem(createChassisStabilizerEcsSystem(time));
+  world.addSystem(createAirControlEcsSystem(physicsWorld, time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));

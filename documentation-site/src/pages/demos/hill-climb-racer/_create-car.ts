@@ -27,6 +27,7 @@ import {
   spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addAirControlComponent } from './_air-control.component';
 import { addCarResetComponent, CarResetBody } from './_car-reset.component';
 import { addChassisStabilizerComponent } from './_chassis-stabilizer.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
@@ -80,6 +81,19 @@ const uprightDensity = 6;
 const frontAnchor = new Vector2(chassisWidth / 2 - 115, -chassisHeight / 2);
 const rearAnchor = new Vector2(-(chassisWidth / 2 - 115), -chassisHeight / 2);
 
+// Each wheel is constrained (via its mount's PrismaticJoint - see
+// `createWheelMount`) to slide only along this axis relative to its
+// anchor, so tilting it away from straight-up/down carries the wheel
+// itself further out from the chassis than its anchor: the line connecting
+// each anchor to its wheel splays outward into a trapezoid rather than a
+// rectangle, like a monster truck's lifted suspension. This also means an
+// impact that's perpendicular to the chassis (hitting a wall or ledge
+// face-on) now has a component along the suspension axis for the spring to
+// absorb, instead of landing entirely on the joint's hard, unsprung
+// constraint.
+const frontSuspensionAxis = Vector2.up.rotate(degreesToRadians(35));
+const rearSuspensionAxis = Vector2.up.rotate(degreesToRadians(-35));
+
 // How far below each anchor a wheel starts, on top of the anchor's own
 // offset. Since `addLinearSpringComponent` defaults `restLength` to the
 // anchors' distance at attach time, this becomes the suspension's rest
@@ -119,6 +133,15 @@ const maxWheelSpeed = 350;
 // throttle.
 const chassisLevelingStiffness = 300_000_000;
 const chassisLevelingDamping = 40_000_000;
+
+// The torque `AirControlEcsComponent` applies to the chassis at full
+// throttle while airborne - the classic Hill Climb Racer "tilt in mid-air"
+// control, gas pitching the nose up and back, brake pitching it down and
+// forward. Strong enough to visibly rotate the chassis within well under a
+// second of holding the input (matching the chassis's `chassisDensity`-driven
+// moment of inertia), so it reads as a deliberate player action rather than
+// the same gentle lean throttle/braking already produces on the ground.
+const airControlTorqueStrength = 1_500_000_000;
 
 interface CarSprites {
   chassis: SpriteEcsComponent;
@@ -346,12 +369,16 @@ export async function createCar(
     physicsBody: chassisBody,
   });
 
+  // Offset along the same tilted axis each wheel's mount constrains it to
+  // (see `frontSuspensionAxis`/`rearSuspensionAxis`), not straight down, so
+  // the wheel spawns already on its PrismaticJoint's constraint line
+  // instead of being yanked sideways onto it over the first few frames.
   const frontWheelPosition = chassisPosition
     .add(frontAnchor)
-    .add(new Vector2(0, -wheelSpawnDrop));
+    .add(frontSuspensionAxis.multiply(-wheelSpawnDrop));
   const rearWheelPosition = chassisPosition
     .add(rearAnchor)
-    .add(new Vector2(0, -wheelSpawnDrop));
+    .add(rearSuspensionAxis.multiply(-wheelSpawnDrop));
 
   const frontWheelBody = createWheel(
     world,
@@ -372,7 +399,7 @@ export async function createCar(
     frontWheelBody,
     frontAnchor,
     frontWheelPosition,
-    Vector2.up.rotate(degreesToRadians(35)),
+    frontSuspensionAxis,
   );
   const rearUprightBody = createWheelMount(
     world,
@@ -380,7 +407,7 @@ export async function createCar(
     rearWheelBody,
     rearAnchor,
     rearWheelPosition,
-    Vector2.up.rotate(degreesToRadians(-35)),
+    rearSuspensionAxis,
   );
 
   const stabilizerEntity = world.createEntity();
@@ -389,6 +416,16 @@ export async function createCar(
     body: chassisBody,
     levelingStiffness: chassisLevelingStiffness,
     levelingDamping: chassisLevelingDamping,
+  });
+
+  const airControlEntity = world.createEntity();
+
+  addAirControlComponent(world, airControlEntity, {
+    chassisBody,
+    frontWheelBody,
+    rearWheelBody,
+    throttleInput,
+    torqueStrength: airControlTorqueStrength,
   });
 
   const resetBodies: CarResetBody[] = [
