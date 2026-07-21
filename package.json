@@ -132,7 +132,7 @@
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^29.15.4",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-prettier": "^5.5.6",
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-sort-exports": "^0.9.1",
     "globals": "^17.7.0",
