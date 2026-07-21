@@ -144,6 +144,10 @@ const config: Config = {
               label: 'Wrecking Ball',
             },
             {
+              to: 'demos/hill-climb-racer',
+              label: 'Hill Climb Racer',
+            },
+            {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },

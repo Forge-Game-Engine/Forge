@@ -1,0 +1,35 @@
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import {
+  AngularVelocityMotorEcsComponent,
+  AngularVelocityMotorId,
+} from '@forge-game-engine/forge/physics';
+import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
+
+/**
+ * Sets each matched entity's `AngularVelocityMotorEcsComponent.targetVelocity`
+ * from its `WheelDriveEcsComponent.throttleInput` every tick, so
+ * `createAngularVelocityMotorEcsSystem` (registered afterwards) drives the
+ * wheel towards it.
+ *
+ * The sign is flipped: with this engine's Y-up convention, a wheel rolling
+ * without slipping to the right (positive world-space x velocity `V`) spins
+ * with angular velocity `-V / radius` (positive angular velocity is
+ * counter-clockwise, and the bottom contact point of a wheel moving right
+ * traces backwards, i.e. clockwise). So driving the car forward (positive
+ * throttle, positive x) needs a *negative* target angular velocity.
+ *
+ * Must be registered before `createAngularVelocityMotorEcsSystem` in the
+ * same tick, which itself must run before `createPhysicsSyncEcsSystem` (see
+ * the Applying Forces guide's registration-order caution).
+ */
+export const createWheelDriveEcsSystem = (): EcsSystem<
+  [WheelDriveEcsComponent, AngularVelocityMotorEcsComponent]
+> => ({
+  query: [wheelDriveId, AngularVelocityMotorId],
+  run: (result) => {
+    const [wheelDrive, motor] = result.components;
+
+    motor.targetVelocity =
+      -wheelDrive.throttleInput.value * wheelDrive.maxWheelSpeed;
+  },
+});
