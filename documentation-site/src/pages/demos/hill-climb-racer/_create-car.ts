@@ -36,31 +36,46 @@ const wheelRadius = 28;
 const wheelDensity = 0.5;
 const wheelColor = Color.fromHSLA(220, 15, 20);
 
+// Each wheel mounts to *two* chassis anchors, not one: a single anchor only
+// constrains the wheel's distance from that point, leaving it free to swing
+// around it like a pendulum (see `createSuspension`). Spreading a wheel's
+// pair of anchors fore-and-aft (like a wishbone's two pivots) triangulates
+// its position instead, so the only freedom left is the springs' own give.
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
-const frontAnchor = new Vector2(chassisWidth / 2 - 25, -chassisHeight / 2);
-const rearAnchor = new Vector2(-(chassisWidth / 2 - 25), -chassisHeight / 2);
+const anchorSpread = 24;
+const frontAnchors: [Vector2, Vector2] = [
+  new Vector2(chassisWidth / 2 - 25 + anchorSpread / 2, -chassisHeight / 2),
+  new Vector2(chassisWidth / 2 - 25 - anchorSpread / 2, -chassisHeight / 2),
+];
+const rearAnchors: [Vector2, Vector2] = [
+  new Vector2(-(chassisWidth / 2 - 25) + anchorSpread / 2, -chassisHeight / 2),
+  new Vector2(-(chassisWidth / 2 - 25) - anchorSpread / 2, -chassisHeight / 2),
+];
 
-// How far below each anchor a wheel starts, on top of the anchor's own
-// offset. Since `addLinearSpringComponent` defaults `restLength` to the
-// anchors' distance at attach time, this becomes the suspension's rest
-// length, and starting the wheel slightly higher than that (see
-// `wheelSpawnDrop` in `createCar`) lets the car visibly settle onto its
-// suspension as soon as the demo starts, the same way the Linear Spring and
-// Damper demo's wheels do. Kept just large enough that the wheels tuck in
-// close under the chassis (rather than dangling below it with an
-// unrealistic gap) while still leaving several times the equilibrium sag
-// of margin, so the wheel never has to cross (or come numerically close
-// to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
-// direction normalization becomes unstable as the anchor-to-wheel distance
-// approaches zero.
+// How far below each anchor *pair*'s midpoint a wheel starts. Since
+// `addLinearSpringComponent` defaults each spring's `restLength` to its own
+// anchor's distance at attach time, this (plus `anchorSpread`) sets the
+// suspension's rest length, and starting the wheel slightly higher than
+// that (see `wheelSpawnDrop` in `createCar`) lets the car visibly settle
+// onto its suspension as soon as the demo starts, the same way the Linear
+// Spring and Damper demo's wheels do. Kept just large enough that the
+// wheels tuck in close under the chassis (rather than dangling below it
+// with an unrealistic gap) while still leaving several times the
+// equilibrium sag of margin, so the wheel never has to cross (or come
+// numerically close to) a chassis anchor itself, where
+// `createLinearSpringEcsSystem`'s direction normalization becomes unstable
+// as the anchor-to-wheel distance approaches zero.
 const wheelDropHeight = 56;
 
-// Chosen so the car's weight compresses each suspension by a small fraction
-// of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
+// Per-spring values: each wheel is held by *two* of these (see
+// `frontAnchors`/`rearAnchors`), so these are half of what a single-spring
+// mount would need for the same total vertical support. Chosen so the
+// car's weight compresses each suspension by a small fraction of
+// `wheelDropHeight` at rest (leaving visible, but bounded, suspension
 // travel) rather than anywhere close to all the way to the chassis anchor.
-const suspensionStiffness = 300_000;
-const suspensionDamping = 35_000;
+const suspensionStiffness = 150_000;
+const suspensionDamping = 17_500;
 
 // A hill-climb-racer engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
@@ -78,6 +93,10 @@ const chassisLevelingDamping = 40_000_000;
 interface CarSprites {
   chassis: SpriteEcsComponent;
   wheel: SpriteEcsComponent;
+}
+
+function anchorMidpoint([a, b]: readonly [Vector2, Vector2]): Vector2 {
+  return a.add(b).multiply(0.5);
 }
 
 async function loadCarSprites(
@@ -139,32 +158,41 @@ function createWheel(
   return body;
 }
 
+// Mounts `wheelBody` to `chassisBody` at *both* of `chassisAnchors` (see
+// `frontAnchors`/`rearAnchors` for why a wheel needs two, not one): a
+// LinearSpring/LinearDamper pair per anchor, all pulling the same wheel
+// center. Together they triangulate the wheel's position relative to the
+// chassis, leaving only the springs' own give as suspension travel, rather
+// than a single anchor's unconstrained swing around it.
 function createSuspension(
   world: EcsWorld,
   chassisBody: RigidBody,
   wheelBody: RigidBody,
-  chassisAnchor: Vector2,
+  chassisAnchors: readonly [Vector2, Vector2],
 ): void {
-  const entity = world.createEntity();
+  for (const chassisAnchor of chassisAnchors) {
+    const entity = world.createEntity();
 
-  addLinearSpringComponent(world, entity, {
-    bodyA: chassisBody,
-    bodyB: wheelBody,
-    anchorA: chassisAnchor,
-    stiffness: suspensionStiffness,
-  });
-  addLinearDamperComponent(world, entity, {
-    bodyA: chassisBody,
-    bodyB: wheelBody,
-    anchorA: chassisAnchor,
-    dampingCoefficient: suspensionDamping,
-  });
+    addLinearSpringComponent(world, entity, {
+      bodyA: chassisBody,
+      bodyB: wheelBody,
+      anchorA: chassisAnchor,
+      stiffness: suspensionStiffness,
+    });
+    addLinearDamperComponent(world, entity, {
+      bodyA: chassisBody,
+      bodyB: wheelBody,
+      anchorA: chassisAnchor,
+      dampingCoefficient: suspensionDamping,
+    });
+  }
 }
 
 /**
  * Builds a hill-climb-racer-style car: a chassis with two wheels hung
  * beneath it by `LinearSpring`/`LinearDamper` suspension (see the Linear
- * Spring and Damper demo), each wheel driven by an
+ * Spring and Damper demo, and `createSuspension` for why each wheel mounts
+ * to *two* anchors rather than one), each wheel driven by an
  * `AngularVelocityMotorEcsComponent` whose target speed tracks
  * `throttleInput`. There's no rigid connection between the chassis and the
  * wheels beyond the springs, so the chassis is free to pitch under
@@ -242,10 +270,10 @@ export async function createCar(
   });
 
   const frontWheelPosition = chassisPosition
-    .add(frontAnchor)
+    .add(anchorMidpoint(frontAnchors))
     .add(new Vector2(0, -wheelSpawnDrop));
   const rearWheelPosition = chassisPosition
-    .add(rearAnchor)
+    .add(anchorMidpoint(rearAnchors))
     .add(new Vector2(0, -wheelSpawnDrop));
 
   const frontWheelBody = createWheel(
@@ -261,8 +289,8 @@ export async function createCar(
     throttleInput,
   );
 
-  createSuspension(world, chassisBody, frontWheelBody, frontAnchor);
-  createSuspension(world, chassisBody, rearWheelBody, rearAnchor);
+  createSuspension(world, chassisBody, frontWheelBody, frontAnchors);
+  createSuspension(world, chassisBody, rearWheelBody, rearAnchors);
 
   const stabilizerEntity = world.createEntity();
 
