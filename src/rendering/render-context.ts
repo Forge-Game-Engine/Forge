@@ -106,7 +106,7 @@ export class RenderContext {
   /**
    * Clears the currently bound framebuffer's color buffer, according to `clearStrategy`.
    */
-  public clear(color: Color = Color.black): void {
+  public clear(color: Color = Color.transparent): void {
     if (this.clearStrategy === CLEAR_STRATEGY.none) {
       return;
     }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addCameraComponent, cameraId } from './camera-component.js';
 import { EcsWorld } from '../../ecs/index.js';
+import { Color } from '../color.js';
 
 describe('addCameraComponent', () => {
   it('attaches a component with default values for unspecified options', () => {
@@ -18,6 +19,7 @@ describe('addCameraComponent', () => {
       isStatic: false,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: new Color(0.6, 0.6, 0.8),
     });
   });
 

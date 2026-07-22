@@ -110,7 +110,7 @@ const defaultCameraOptions: CameraDefaultedOptions = {
   isStatic: false,
   cullingMask: 0xffffffff,
   layer: 0,
-  clearColor: Color.black,
+  clearColor: new Color(0.6, 0.6, 0.8),
 };
 
 /**
