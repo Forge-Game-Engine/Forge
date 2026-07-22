@@ -3,6 +3,7 @@ import { Rect } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { RenderTarget } from '../render-target.js';
+import { Color } from '../color.js';
 
 /**
  * Fields of {@link CameraEcsComponent} with a sensible default; callers may
@@ -64,6 +65,11 @@ export interface CameraDefaultedOptions {
    * before presenting) or that render straight to the canvas.
    */
   layer: number;
+
+  /**
+   * The clear color
+   */
+  clearColor: Color;
 }
 
 export interface CameraEcsComponent extends CameraDefaultedOptions {
@@ -104,6 +110,7 @@ const defaultCameraOptions: CameraDefaultedOptions = {
   isStatic: false,
   cullingMask: 0xffffffff,
   layer: 0,
+  clearColor: Color.black,
 };
 
 /**

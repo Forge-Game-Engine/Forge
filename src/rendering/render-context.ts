@@ -1,4 +1,5 @@
 import { ImageCache } from '../asset-loading/index.js';
+import { Color } from './color.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { UniformValue } from './materials/index.js';
 import { RenderTarget } from './render-target.js';
@@ -105,12 +106,12 @@ export class RenderContext {
   /**
    * Clears the currently bound framebuffer's color buffer, according to `clearStrategy`.
    */
-  public clear(): void {
+  public clear(color: Color = Color.black): void {
     if (this.clearStrategy === CLEAR_STRATEGY.none) {
       return;
     }
 
-    this.gl.clearColor(0, 0, 0, 0);
+    this.gl.clearColor(color.r, color.g, color.b, color.a);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 

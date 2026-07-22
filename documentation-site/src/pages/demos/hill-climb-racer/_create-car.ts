@@ -58,11 +58,11 @@ const chassisHeight = 150;
 // unwanted forward pitch while still leaving the deliberately weaker
 // stoppie-under-hard-braking-at-speed rotation clearly intact, and barely
 // changes resting suspension sag.
-const chassisDensity = 1.2;
-const chassisColor = Color.fromHSLA(8, 85, 55);
+const chassisDensity = 0.5;
+const chassisColor = Color.white;
 
 const wheelRadius = 100;
-const wheelDensity = 0.5;
+const wheelDensity = 0.2;
 
 // Slightly below the wheel-ground friction a bare tire/asphalt pairing
 // would use (`1`, still the historical default here) - the peak transient
@@ -74,8 +74,8 @@ const wheelDensity = 0.5;
 // combined with the heavier chassis above, was enough (empirically) to
 // keep that transient from reaching the chassis at all, without making the
 // car noticeably harder to accelerate or climb with once rolling.
-const wheelFriction = 0.8;
-const wheelColor = Color.fromHSLA(220, 15, 20);
+const wheelFriction = 1;
+const wheelColor = Color.white;
 
 // The wheel doesn't mount to the chassis directly. A single LinearSpring
 // only constrains a wheel's *distance* from its anchor, leaving it free to
@@ -210,7 +210,7 @@ const suspensionDamping = 165_000;
 // wheel's *current* rolling speed. That clamp is what matters; this is
 // just "go as fast as grip allows", not a speed the wheel is meant to
 // reach unassisted.
-const motorMaxTorque = 20_300_000_000;
+const motorMaxTorque = 25_500_000_000;
 const maxWheelSpeed = 350;
 
 // How far past a wheel's current rolling speed its target is allowed to
@@ -285,6 +285,7 @@ function createWheel(
   position: Vector2,
   throttleInput: Axis1dAction,
   chassisBody: RigidBody,
+  maxTorqueMultiplier: number = 1,
 ): Wheel {
   const body = new RigidBody({
     shape: new CircleShape(wheelRadius),
@@ -315,7 +316,7 @@ function createWheel(
   world.addComponent(entity, PhysicsBodyId, { physicsBody: body });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
-    maxTorque: motorMaxTorque,
+    maxTorque: motorMaxTorque * maxTorqueMultiplier,
   });
   addWheelDriveComponent(world, entity, {
     throttleInput,
@@ -323,7 +324,7 @@ function createWheel(
     wheelRadius,
     maxWheelSpeed,
     maxSlipAngularSpeed,
-    maxTorque: motorMaxTorque,
+    maxTorque: motorMaxTorque * maxTorqueMultiplier,
   });
 
   const groundContact = addGroundContactComponent(world, entity, { body });
@@ -450,14 +451,14 @@ export async function createCar(
   // the springs.
   const wheelSpawnDrop = wheelDropHeight - 8;
   const chassisPosition = groundPosition.add(
-    new Vector2(0, wheelRadius + wheelDropHeight + chassisHeight / 2 + 10),
+    new Vector2(0, wheelRadius + wheelDropHeight + chassisHeight / 2 + 100),
   );
 
   const chassisBody = new RigidBody({
     shape: PolygonShape.rectangle(chassisWidth, chassisHeight),
     position: chassisPosition,
     density: chassisDensity,
-    friction: 0.4,
+    friction: 0,
     restitution: 0.1,
     // Each wheel mount's PrismaticJoint hard-constrains it against
     // swinging (see the module doc comment above), so this isn't
@@ -465,7 +466,7 @@ export async function createCar(
     // small amount of drag so any pitch imparted while settling onto the
     // suspension (or while landing after a jump) damps out over time
     // instead of persisting indefinitely.
-    angularDrag: 1.5,
+    angularDrag: 0.5,
   });
 
   const chassisEntity = world.createEntity();
@@ -499,10 +500,12 @@ export async function createCar(
   // instead of being yanked sideways onto it over the first few frames.
   const frontWheelPosition = chassisPosition
     .add(frontAnchor)
-    .add(frontSuspensionAxis.multiply(-wheelSpawnDrop));
+    .add(frontSuspensionAxis.multiply(-wheelSpawnDrop))
+    .add(new Vector2(0, -wheelRadius));
   const rearWheelPosition = chassisPosition
     .add(rearAnchor)
-    .add(rearSuspensionAxis.multiply(-wheelSpawnDrop));
+    .add(rearSuspensionAxis.multiply(-wheelSpawnDrop))
+    .add(new Vector2(0, -wheelRadius));
 
   const frontWheel = createWheel(
     world,
@@ -510,6 +513,7 @@ export async function createCar(
     frontWheelPosition,
     throttleInput,
     chassisBody,
+    0.5,
   );
   const rearWheel = createWheel(
     world,
@@ -517,6 +521,7 @@ export async function createCar(
     rearWheelPosition,
     throttleInput,
     chassisBody,
+    1,
   );
   const frontWheelBody = frontWheel.body;
   const rearWheelBody = rearWheel.body;
