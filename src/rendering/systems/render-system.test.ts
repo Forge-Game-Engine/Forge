@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderEcsSystem } from './render-system';
 import { EcsWorld } from '../../ecs';
-import { PositionEcsComponent, positionId } from '../../common';
+import { PositionEcsComponent, positionId, rotationId } from '../../common';
 import { Vector2 } from '../../math';
 import { CameraEcsComponent, cameraId } from '../components';
 import { SpriteEcsComponent, spriteId } from '../components';
@@ -453,5 +453,82 @@ describe('createRenderEcsSystem', () => {
     world.update();
 
     expect(mockGl.clear).toHaveBeenCalledTimes(2);
+  });
+
+  describe('nine-slice sprites', () => {
+    it('draws a sliced sprite as nine batched instances of the same renderable', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteEntity(renderable, 0, {
+        width: 100,
+        height: 100,
+        pivot: new Vector2(0.5, 0.5),
+        slices: { left: 10, right: 10, top: 10, bottom: 10 },
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(9);
+      // All nine regions share the same renderable, so they still batch
+      // into a single draw call.
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(
+        undefined,
+        0,
+        6,
+        9,
+      );
+    });
+
+    it('positions each region around the entity, accounting for rotation', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: new Vector2(50, 0),
+        world: new Vector2(50, 0),
+      });
+      world.addComponent(entity, rotationId, { local: 0, world: Math.PI });
+      world.addComponent(
+        entity,
+        spriteId,
+        createSprite(renderable, {
+          width: 100,
+          height: 100,
+          pivot: new Vector2(0.5, 0.5),
+          slices: { left: 10, right: 10, top: 10, bottom: 10 },
+        }),
+      );
+
+      world.update();
+
+      const positions = bindInstanceData.mock.calls.map(
+        (call) => (call[0] as { position: PositionEcsComponent }).position,
+      );
+
+      // The top-left corner (offset (-45, -45) before rotation) rotates 180
+      // degrees around the entity, landing on the opposite side.
+      const rotatedCorner = positions.find(
+        (position) =>
+          Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
+          Math.abs(position.world.y - 45) < 1e-9,
+      );
+
+      expect(rotatedCorner).toBeDefined();
+    });
+
+    it('does not slice a sprite with no `slices` configured', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteEntity(renderable, 0, { width: 100, height: 100 });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    });
   });
 });

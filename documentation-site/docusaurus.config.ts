@@ -163,6 +163,10 @@ const config: Config = {
               to: 'demos/particles',
               label: 'Particles',
             },
+            {
+              to: 'demos/nine-slice',
+              label: 'Nine-Slice Sprites',
+            },
           ],
         },
         {
