@@ -38,11 +38,43 @@ import { addWheelDriveComponent } from './_wheel-drive.component';
 
 const chassisWidth = 450;
 const chassisHeight = 150;
-const chassisDensity = 0.35;
+
+// With the wheel/upright mass this rig needs for stable joints (see
+// `uprightDensity` below), a chassis this light ends up the *lightest*
+// individual body in the car - `chassisWidth * chassisHeight *
+// chassisDensity` is only ~23,600 against ~15,700 per wheel and ~16,100 per
+// upright, i.e. under a third of the car's total mass, when in a real car
+// the body (chassis + engine) dwarfs the wheels. A chassis that light has
+// little rotational inertia to resist the torque the drive wheels'
+// ground-friction reaction transmits back through the suspension anchors
+// (see `createWheelMount`'s comment on that coupling) - accelerating hard,
+// especially uphill, could tip it into an uncontrolled forward pitch
+// (front digging in, the opposite of the intended throttle-lean) that then
+// only compounded once it went airborne. Raising `chassisDensity` so the
+// chassis is comfortably the heaviest single body (now ~56% of total mass)
+// gives it enough of its own rotational inertia to absorb that reaction
+// smoothly instead of snapping into it - confirmed empirically (accelerate
+// from a stop, sustain it uphill, brake hard) that this removes the
+// unwanted forward pitch while still leaving the deliberately weaker
+// stoppie-under-hard-braking-at-speed rotation clearly intact, and barely
+// changes resting suspension sag.
+const chassisDensity = 1.2;
 const chassisColor = Color.fromHSLA(8, 85, 55);
 
 const wheelRadius = 100;
 const wheelDensity = 0.5;
+
+// Slightly below the wheel-ground friction a bare tire/asphalt pairing
+// would use (`1`, still the historical default here) - the peak transient
+// slip right as full throttle is first requested (before the wheel's spin
+// catches up to the car's speed) briefly demands close to this much
+// friction force at the contact patch, and with `chassisDensity` this low
+// used to translate a chunk of that force into unwanted chassis rotation
+// via the tilted suspension anchors. A little less peak grip there,
+// combined with the heavier chassis above, was enough (empirically) to
+// keep that transient from reaching the chassis at all, without making the
+// car noticeably harder to accelerate or climb with once rolling.
+const wheelFriction = 0.8;
 const wheelColor = Color.fromHSLA(220, 15, 20);
 
 // The wheel doesn't mount to the chassis directly. A single LinearSpring
@@ -165,6 +197,12 @@ const suspensionDamping = 165_000;
 // past which more torque stops being "more power" and starts being "less
 // control."
 //
+// Raising `chassisDensity` (see its comment above, fixing an unwanted
+// forward-pitch-under-throttle bug) added roughly another 66% to the car's
+// total mass on top of that - scaled up again by the same ratio to keep
+// the previously-tuned acceleration feel rather than let the extra weight
+// quietly turn "overpowered" back into "sluggish."
+//
 // `maxWheelSpeed` is deliberately far higher than the car could ever
 // actually roll at - `WheelDriveEcsComponent.maxSlipAngularSpeed` is what
 // actually keeps a wheel grounded in reality (see its comment), by
@@ -172,7 +210,7 @@ const suspensionDamping = 165_000;
 // wheel's *current* rolling speed. That clamp is what matters; this is
 // just "go as fast as grip allows", not a speed the wheel is meant to
 // reach unassisted.
-const motorMaxTorque = 12_240_000_000;
+const motorMaxTorque = 20_300_000_000;
 const maxWheelSpeed = 350;
 
 // How far past a wheel's current rolling speed its target is allowed to
@@ -252,7 +290,7 @@ function createWheel(
     shape: new CircleShape(wheelRadius),
     position,
     density: wheelDensity,
-    friction: 1,
+    friction: wheelFriction,
     restitution: 0.1,
   });
 
