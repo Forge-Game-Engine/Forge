@@ -154,6 +154,16 @@ const suspensionDamping = 165_000;
 // tuned - each upright went from ~1,200 to ~16,000, roughly a 50% increase
 // in the whole car's mass - and without a matching torque increase the
 // drivetrain no longer had enough force to meaningfully accelerate it.
+// Confirmed empirically that the car was still torque-limited (not just
+// grip-limited) at that scaled-up value - doubling it again visibly sped up
+// both the wheels' own spin-up and the chassis's acceleration, rather than
+// just wasting the extra torque as more wheel spin, so it was raised
+// further. Tested up to 3x this value too: that made launches snappier
+// still, but also made hard braking's chassis dive noticeably harder
+// (pushing back towards the exaggerated flip a previous fix addressed) for
+// only a marginal further gain in sustained speed - this is the point
+// past which more torque stops being "more power" and starts being "less
+// control."
 //
 // `maxWheelSpeed` is deliberately far higher than the car could ever
 // actually roll at - `WheelDriveEcsComponent.maxSlipAngularSpeed` is what
@@ -162,7 +172,7 @@ const suspensionDamping = 165_000;
 // wheel's *current* rolling speed. That clamp is what matters; this is
 // just "go as fast as grip allows", not a speed the wheel is meant to
 // reach unassisted.
-const motorMaxTorque = 6_120_000_000;
+const motorMaxTorque = 12_240_000_000;
 const maxWheelSpeed = 350;
 
 // How far past a wheel's current rolling speed its target is allowed to
