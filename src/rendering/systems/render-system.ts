@@ -22,6 +22,7 @@ import { RenderTarget } from '../render-target.js';
 import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
+import { Color } from '../color.js';
 
 /**
  * The result of a single camera's `run` pass. `afterRun` receives one of
@@ -37,6 +38,9 @@ export interface RenderPassResult {
 
   /** This camera's sprite draw commands, gathered by `run`. */
   commands: RenderCommand[];
+
+  /** The clear color */
+  clearColor: Color;
 }
 
 const setupInstanceAttributesAndDraw = (
@@ -224,14 +228,15 @@ export const createRenderEcsSystem = (
       projectionMatrix,
       target: cameraComponent.renderTarget ?? null,
       commands,
+      clearColor: cameraComponent.clearColor,
     };
   },
   afterRun: (results) => {
-    for (const { projectionMatrix, target, commands } of results) {
+    for (const { projectionMatrix, target, commands, clearColor } of results) {
       renderContext.bindRenderTarget(target);
 
       if (!clearedDestinationsThisFrame.has(target)) {
-        renderContext.clear();
+        renderContext.clear(clearColor);
         clearedDestinationsThisFrame.add(target);
       }
 

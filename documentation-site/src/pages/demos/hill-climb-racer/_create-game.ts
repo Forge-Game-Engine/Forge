@@ -1,4 +1,5 @@
 import {
+  Color,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
@@ -41,6 +42,7 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
     isStatic: true,
     zoom: 0.8,
     cullingMask: renderLayers.foreground,
+    clearColor: new Color(0.6, 0.6, 0.8),
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });
