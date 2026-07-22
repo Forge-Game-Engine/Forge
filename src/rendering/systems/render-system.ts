@@ -8,7 +8,7 @@ import {
   ScaleEcsComponent,
   scaleId,
 } from '../../common/index.js';
-import { Matrix3x3 } from '../../math/index.js';
+import { Matrix3x3, Vector2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
@@ -19,9 +19,10 @@ import {
 } from '../components/index.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
-import { InstanceComponents, Renderable } from '../renderable.js';
+import { Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
+import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
 
 /**
  * The result of a single camera's `run` pass. `afterRun` receives one of
@@ -103,6 +104,101 @@ const includeBatch = (
 };
 
 const spriteEntityBuffer: number[] = [];
+
+/**
+ * The pivot every nine-slice region is drawn with: each region is its own
+ * quad, so it's always centered on its own computed offset rather than
+ * inheriting the parent sprite's pivot (which `computeNineSliceRegions`
+ * already folds into that offset).
+ */
+const centeredPivot = new Vector2(0.5, 0.5);
+
+/**
+ * Pushes one `RenderCommand` for a normal sprite, or - when `spriteComponent`
+ * has `slices` set - one `RenderCommand` per nine-slice region, each a
+ * separate quad positioned and sized to reproduce the sliced layout. Every
+ * region shares the entity's own rotation, scale and flip components; only
+ * their position (offset around the entity, then rotated and scaled the
+ * same way the shader would rotate/scale a single quad) and their
+ * sprite-shaped size/pivot/UV rect differ per region.
+ */
+const pushSpriteRenderCommands = (
+  commands: RenderCommand[],
+  spriteComponent: SpriteEcsComponent,
+  entityPosition: PositionEcsComponent,
+  rotationComponent: RotationEcsComponent | null,
+  scaleComponent: ScaleEcsComponent | null,
+  flipComponent: FlipEcsComponent | null,
+): void => {
+  const { renderable, layer, slices } = spriteComponent;
+  const depth = entityPosition.world.y;
+
+  if (!slices) {
+    commands.push({
+      layer,
+      depth,
+      renderable,
+      components: {
+        position: entityPosition,
+        rotation: rotationComponent,
+        scale: scaleComponent,
+        sprite: spriteComponent,
+        flip: flipComponent,
+      },
+    });
+
+    return;
+  }
+
+  const regions = computeNineSliceRegions(
+    spriteComponent.width,
+    spriteComponent.height,
+    spriteComponent.pivot,
+    spriteComponent.uvOffset,
+    spriteComponent.uvScale,
+    slices,
+  );
+
+  const rotationRadians = rotationComponent?.world ?? 0;
+  const scaleX =
+    (scaleComponent?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+  const scaleY =
+    (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+
+  for (const region of regions) {
+    const regionOffset = new Vector2(
+      region.offset.x * scaleX,
+      region.offset.y * scaleY,
+    ).rotate(rotationRadians);
+
+    const regionPosition: PositionEcsComponent = {
+      local: entityPosition.local,
+      world: entityPosition.world.add(regionOffset),
+    };
+
+    const regionSprite: SpriteEcsComponent = {
+      ...spriteComponent,
+      width: region.size.x,
+      height: region.size.y,
+      pivot: centeredPivot,
+      uvOffset: region.uvOffset,
+      uvScale: region.uvScale,
+    };
+
+    commands.push({
+      layer,
+      depth,
+      renderable,
+      components: {
+        position: regionPosition,
+        rotation: rotationComponent,
+        scale: scaleComponent,
+        sprite: regionSprite,
+        flip: flipComponent,
+      },
+    });
+  }
+};
 
 /**
  * One `RenderCommand[]` per camera visited this tick, indexed by that
@@ -201,23 +297,14 @@ export const createRenderEcsSystem = (
         positionId,
       )!; // Position component is guaranteed to exist due to the query in beforeQuery.
 
-      const components: InstanceComponents = {
-        position: entityPosition,
-        rotation: world.getComponent<RotationEcsComponent>(
-          spriteEntity,
-          rotationId,
-        ),
-        scale: world.getComponent<ScaleEcsComponent>(spriteEntity, scaleId),
-        sprite: spriteComponent,
-        flip: world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
-      };
-
-      commands.push({
-        layer: spriteComponent.layer,
-        depth: entityPosition.world.y,
-        renderable,
-        components,
-      });
+      pushSpriteRenderCommands(
+        commands,
+        spriteComponent,
+        entityPosition,
+        world.getComponent<RotationEcsComponent>(spriteEntity, rotationId),
+        world.getComponent<ScaleEcsComponent>(spriteEntity, scaleId),
+        world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
+      );
     }
 
     return {
