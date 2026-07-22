@@ -85,3 +85,10 @@ unmodified). See the [physics demo](/Forge/demos/physics)'s
 `create-terrain.ts` for a complete example, including computing each
 segment's position, rotation, and width from the same `points`/`depth`
 passed to `TerrainShape`.
+
+For a longer, more elaborate course - and a player-controlled body actually
+rolling over it - see the [Rolling Ball demo](/Forge/demos/rolling-ball): a
+much longer `TerrainShape` with varied, seeded-random hills, and a ball
+whose `AngularVelocityMotorEcsComponent` spin turns into rolling motion
+purely through friction against the terrain, no special-cased "rolling"
+logic of its own.
