@@ -1,14 +1,14 @@
 import {
+  addSpriteComponent,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { createErosionSprite } from './_create-sprite';
@@ -38,19 +38,16 @@ export const createErosionBurnGame = async (): Promise<Game> => {
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
-    local: Vector2.zero,
-    world: Vector2.zero,
-  });
+  addPositionComponent(world, entity);
 
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+  addRotationComponent(world, entity);
 
-  world.addComponent(entity, scaleId, {
+  addScaleComponent(world, entity, {
     local: new Vector2(scale, scale),
     world: new Vector2(scale, scale),
   });
 
-  world.addComponent(entity, spriteId, sprite);
+  addSpriteComponent(world, entity, sprite);
 
   world.addTag(entity, erosionId);
 

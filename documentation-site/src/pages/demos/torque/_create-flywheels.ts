@@ -1,22 +1,22 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
-  PhysicsBodyId,
+  addPhysicsBodyComponent,
   PolygonShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addThrusterComponent } from './_thruster.component';
@@ -51,12 +51,12 @@ async function createFlywheelEntity(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity, {
     local: new Vector2(
       flywheelWidth / sprite.width,
       flywheelHeight / sprite.height,
@@ -66,8 +66,8 @@ async function createFlywheelEntity(
       flywheelHeight / sprite.height,
     ),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
-  world.addComponent(entity, PhysicsBodyId, {
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(flywheelWidth, flywheelHeight),
       position: position.clone(),

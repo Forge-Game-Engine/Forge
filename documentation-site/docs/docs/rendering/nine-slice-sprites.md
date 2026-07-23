@@ -18,8 +18,8 @@ drawn at their original, fixed size. Configure it with
 import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addSpriteComponent,
   createImageSprite,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 
 const panelSprite = createImageSprite(panelImage, renderContext, 0, {
@@ -28,7 +28,7 @@ const panelSprite = createImageSprite(panelImage, renderContext, 0, {
 
 const panel = world.createEntity();
 addPositionComponent(world, panel, { world: new Vector2(400, 300) });
-world.addComponent(panel, spriteId, panelSprite);
+addSpriteComponent(world, panel, panelSprite);
 
 // Resize the panel later (e.g. to fit dynamic text) - the 12px corners
 // stay crisp no matter how large the panel grows.

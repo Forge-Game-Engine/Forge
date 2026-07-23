@@ -4,79 +4,48 @@ sidebar_position: 2
 
 # Systems
 
-## LifetimeTrackingSystem
+## createLifetimeTrackingEcsSystem
 
-Updates elapsed time for all entities with a `LifetimeComponent` and sets the `hasExpired` flag when the lifetime duration is reached.
+Updates elapsed time for all entities with a `LifetimeEcsComponent` and sets
+the `hasExpired` flag when the lifetime duration is reached.
 
-### Constructor
+### Signature
 
-```typescript
-new LifetimeTrackingSystem(world: World)
+```ts
+createLifetimeTrackingEcsSystem(time: Time): EcsSystem<[LifetimeEcsComponent]>
 ```
 
 ### Usage
 
 Add this system to your world before any disposal systems:
 
-```typescript
-world.addSystem(new LifetimeTrackingSystem(world));
+```ts
+world.addSystem(createLifetimeTrackingEcsSystem(time));
 ```
 
 ### Behavior
 
-- Increments `elapsedSeconds` on each frame based on delta time
+- Increments `elapsedSeconds` on each frame based on `time.deltaTimeInSeconds`
 - Sets `hasExpired` to `true` when `elapsedSeconds >= durationSeconds`
 - Does not remove or modify entities (only tracks time)
 
-## RemoveFromWorldLifecycleSystem
+## createRemoveFromWorldEcsSystem
 
-Removes expired entities from the world. Only processes entities that have both:
+Removes expired entities from the world. Only processes entities that have
+both:
 
-- `LifetimeComponent` (with `hasExpired` set to `true`)
-- `RemoveFromWorldStrategyComponent`
+- `LifetimeEcsComponent` (with `hasExpired` set to `true`)
+- the `RemoveFromWorldLifetimeStrategyId` tag
 
-### Constructor
+### Signature
 
-```typescript
-new RemoveFromWorldLifecycleSystem(world: World)
+```ts
+createRemoveFromWorldEcsSystem(): EcsSystem<[LifetimeEcsComponent]>
 ```
 
 ### Usage
 
-```typescript
-world.addSystems(
-  new LifetimeTrackingSystem(world),
-  new RemoveFromWorldLifecycleSystem(world),
-);
+```ts
+world.addSystem(createLifetimeTrackingEcsSystem(time));
+world.addSystem(createRemoveFromWorldEcsSystem());
 ```
-
-## ReturnToPoolLifecycleSystem
-
-Returns expired entities to their object pool and removes them from the world. Only processes entities that have both:
-
-- `LifetimeComponent` (with `hasExpired` set to `true`)
-- `ReturnToPoolStrategyComponent`
-
-### Constructor
-
-```typescript
-new ReturnToPoolLifecycleSystem(world: World)
-```
-
-### Usage
-
-```typescript
-world.addSystems(
-  new LifetimeTrackingSystem(world),
-  new ReturnToPoolLifecycleSystem(world),
-);
-```
-
-### Behavior
-
-When an entity expires:
-
-1. Calls the pool's `release()` method with the entity
-2. Removes the entity from the world
-
-The pool's dispose callback is called during `release()`, allowing you to clean up the entity state before it's returned to the pool.

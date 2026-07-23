@@ -7,8 +7,8 @@ import {
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
+  addParticleEmitterComponent,
   ParticleEmitter,
-  ParticleEmitterId,
 } from '@forge-game-engine/forge/particles';
 
 const sparkColor = new Color(1, 0.85, 0.3);
@@ -99,7 +99,7 @@ export async function createCursorEffects(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, ParticleEmitterId, {
+  addParticleEmitterComponent(world, entity, {
     emitters: new Map([
       ['spark', sparkEmitter],
       ['smoke', smokeEmitter],

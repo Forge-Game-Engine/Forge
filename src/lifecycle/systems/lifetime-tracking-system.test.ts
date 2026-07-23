@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createLifetimeTrackingEcsSystem } from './lifetime-tracking-system';
-import {
-  LifetimeEcsComponent,
-  lifetimeId,
-} from '../components/lifetime-component';
+import { addLifetimeComponent } from '../components/lifetime-component';
 import { Time } from '../../common';
 import { EcsWorld } from '../../ecs';
 
@@ -19,15 +16,11 @@ describe('LifetimeTrackingSystem', () => {
 
   it('should update elapsed time each frame', () => {
     // Arrange
-    const lifetimeComponent: LifetimeEcsComponent = {
-      durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    };
-
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    const lifetimeComponent = addLifetimeComponent(world, entity, {
+      durationSeconds: 5,
+    });
 
     // Act
     time.update(0.1);
@@ -40,15 +33,11 @@ describe('LifetimeTrackingSystem', () => {
 
   it('should handle entities with elapsed time within duration', () => {
     // Arrange
-    const lifetimeComponent: LifetimeEcsComponent = {
-      durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    };
-
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    const lifetimeComponent = addLifetimeComponent(world, entity, {
+      durationSeconds: 5,
+    });
 
     // Act
     lifetimeComponent.elapsedSeconds = 3; // Set elapsed to less than duration
@@ -62,15 +51,11 @@ describe('LifetimeTrackingSystem', () => {
 
   it('should set hasExpired to true when elapsed time equals duration', () => {
     // Arrange
-    const lifetimeComponent: LifetimeEcsComponent = {
-      durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    };
-
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    const lifetimeComponent = addLifetimeComponent(world, entity, {
+      durationSeconds: 5,
+    });
 
     // Act
     lifetimeComponent.elapsedSeconds = 5;
@@ -84,15 +69,11 @@ describe('LifetimeTrackingSystem', () => {
 
   it('should set hasExpired to true when elapsed time exceeds duration', () => {
     // Arrange
-    const lifetimeComponent: LifetimeEcsComponent = {
-      durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    };
-
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    const lifetimeComponent = addLifetimeComponent(world, entity, {
+      durationSeconds: 5,
+    });
 
     // Act
     lifetimeComponent.elapsedSeconds = 5.1;
@@ -106,15 +87,12 @@ describe('LifetimeTrackingSystem', () => {
 
   it('should not remove entity from world - only track lifetime', () => {
     // Arrange
-    const lifetimeComponent: LifetimeEcsComponent = {
-      durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
-    };
-
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, lifetimeComponent);
+    const lifetimeComponent = addLifetimeComponent(world, entity, {
+      durationSeconds: 5,
+    });
+
     // Act
     lifetimeComponent.elapsedSeconds = 5;
     time.update(0.1);

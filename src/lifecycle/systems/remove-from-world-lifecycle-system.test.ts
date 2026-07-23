@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createRemoveFromWorldEcsSystem } from './remove-from-world-lifecycle-system';
-import { lifetimeId } from '../components/lifetime-component';
+import {
+  addLifetimeComponent,
+  lifetimeId,
+} from '../components/lifetime-component';
 import { RemoveFromWorldLifetimeStrategyId } from '../strategies/remove-from-world-strategy-component';
 import { Time } from '../../common';
 import { EcsWorld } from '../../ecs';
@@ -19,10 +22,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     // Arrange
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, {
+    addLifetimeComponent(world, entity, {
       durationSeconds: 5,
-      elapsedSeconds: 0,
-      hasExpired: false,
     });
 
     world.addTag(entity, RemoveFromWorldLifetimeStrategyId);
@@ -44,9 +45,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     // Arrange
     const entity = world.createEntity();
 
-    world.addComponent(entity, lifetimeId, {
+    addLifetimeComponent(world, entity, {
       durationSeconds: 5,
-      elapsedSeconds: 0,
       hasExpired: true,
     });
 
@@ -70,9 +70,8 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    world.addComponent(entity1, lifetimeId, {
+    addLifetimeComponent(world, entity1, {
       durationSeconds: 5,
-      elapsedSeconds: 0,
       hasExpired: true,
     });
 

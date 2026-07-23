@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { RotationEcsComponent, rotationId } from '../components';
+import { addRotationComponent } from '../components';
 import { EcsWorld } from '../../ecs';
-import { ParentEcsComponent, parentId } from '../components/parent-component';
+import { addParentComponent } from '../components/parent-component';
 import { createParentRotationEcsSystem } from './parent-rotation-system';
 
 describe('parent-rotation-system', () => {
@@ -15,12 +15,9 @@ describe('parent-rotation-system', () => {
   it('root rotations should have the same world and local values', () => {
     const entity = world.createEntity();
 
-    const rotationComponent: RotationEcsComponent = {
+    const rotationComponent = addRotationComponent(world, entity, {
       local: 10,
-      world: 0,
-    };
-
-    world.addComponent(entity, rotationId, rotationComponent);
+    });
 
     world.update();
 
@@ -32,21 +29,15 @@ describe('parent-rotation-system', () => {
     const parent = world.createEntity();
     const child = world.createEntity();
 
-    const parentRotation: RotationEcsComponent = {
+    const parentRotation = addRotationComponent(world, parent, {
       local: 10,
-      world: 0,
-    };
+    });
 
-    const childRotation: RotationEcsComponent = {
+    const childRotation = addRotationComponent(world, child, {
       local: 5,
-      world: 0,
-    };
+    });
 
-    const parentComponent: ParentEcsComponent = { parent };
-
-    world.addComponent(parent, rotationId, parentRotation);
-    world.addComponent(child, rotationId, childRotation);
-    world.addComponent(child, parentId, parentComponent);
+    addParentComponent(world, child, { parent });
     world.update();
 
     expect(parentRotation.world).toBe(10);
@@ -61,27 +52,20 @@ describe('parent-rotation-system', () => {
     const child = world.createEntity();
     const grandchild = world.createEntity();
 
-    const parentRotation: RotationEcsComponent = {
+    const parentRotation = addRotationComponent(world, parent, {
       local: 10,
-      world: 0,
-    };
+    });
 
-    const childRotation: RotationEcsComponent = {
+    const childRotation = addRotationComponent(world, child, {
       local: 5,
-      world: 0,
-    };
+    });
 
-    const grandchildRotation: RotationEcsComponent = {
+    const grandchildRotation = addRotationComponent(world, grandchild, {
       local: 2,
-      world: 0,
-    };
+    });
 
-    world.addComponent(parent, rotationId, parentRotation);
-    world.addComponent(child, rotationId, childRotation);
-    world.addComponent(grandchild, rotationId, grandchildRotation);
-
-    world.addComponent(child, parentId, { parent });
-    world.addComponent(grandchild, parentId, { parent: child });
+    addParentComponent(world, child, { parent });
+    addParentComponent(world, grandchild, { parent: child });
 
     world.update();
 
@@ -100,27 +84,20 @@ describe('parent-rotation-system', () => {
     const grandchild = world.createEntity();
     const child = world.createEntity();
 
-    const parentRotation: RotationEcsComponent = {
-      local: 10,
-      world: 0,
-    };
-
-    const childRotation: RotationEcsComponent = {
-      local: 5,
-      world: 0,
-    };
-
-    const grandchildRotation: RotationEcsComponent = {
+    const grandchildRotation = addRotationComponent(world, grandchild, {
       local: 2,
-      world: 0,
-    };
+    });
 
-    world.addComponent(grandchild, rotationId, grandchildRotation);
-    world.addComponent(parent, rotationId, parentRotation);
-    world.addComponent(child, rotationId, childRotation);
+    const parentRotation = addRotationComponent(world, parent, {
+      local: 10,
+    });
 
-    world.addComponent(grandchild, parentId, { parent: child });
-    world.addComponent(child, parentId, { parent });
+    const childRotation = addRotationComponent(world, child, {
+      local: 5,
+    });
+
+    addParentComponent(world, grandchild, { parent: child });
+    addParentComponent(world, child, { parent });
 
     world.update();
 
@@ -139,27 +116,20 @@ describe('parent-rotation-system', () => {
     const child = world.createEntity();
     const grandchild = world.createEntity();
 
-    const parentRotation: RotationEcsComponent = {
+    const parentRotation = addRotationComponent(world, parent, {
       local: 10,
-      world: 0,
-    };
+    });
 
-    const childRotation: RotationEcsComponent = {
+    const childRotation = addRotationComponent(world, child, {
       local: 5,
-      world: 0,
-    };
+    });
 
-    const grandchildRotation: RotationEcsComponent = {
+    const grandchildRotation = addRotationComponent(world, grandchild, {
       local: 2,
-      world: 0,
-    };
+    });
 
-    world.addComponent(parent, rotationId, parentRotation);
-    world.addComponent(child, rotationId, childRotation);
-    world.addComponent(grandchild, rotationId, grandchildRotation);
-
-    world.addComponent(child, parentId, { parent });
-    world.addComponent(grandchild, parentId, { parent: child });
+    addParentComponent(world, child, { parent });
+    addParentComponent(world, grandchild, { parent: child });
 
     world.update();
 

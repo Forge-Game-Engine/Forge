@@ -45,20 +45,23 @@ const game = new Game();
 game.run();
 ```
 
-Although this won't do anything just yet, we need to add a world to our game.
+Although this won't do anything just yet, we need to add a world and a
+render context to our game. [`createGame`](./api/functions/createGame.md)
+sets both up for you from a container element's ID, along with a
+[`Time`](./api/classes/Time.md) instance for the game loop.
 
 ### Creating a world
 
 ```ts
-import {
-  Game,
-  // diff-add
-  createWorld,
-} from '@forge-game-engine/forge';
+// diff-remove
+import { Game } from '@forge-game-engine/forge';
+// diff-add
+import { createGame } from '@forge-game-engine/forge';
 
+// diff-remove
 const game = new Game();
 // diff-add
-createWorld('world', game);
+const { game, world, renderContext } = createGame('game-container');
 
 game.run();
 ```
@@ -68,91 +71,67 @@ game.run();
 #### Load an image
 
 We need to fetch an image for our sprite. Any [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement) will do.
-The easiest way to load and cache images is to use the [ImageCache](./api/classes/ImageCache.md).
+`renderContext` already carries an [`ImageCache`](./api/classes/ImageCache.md) for loading and caching images.
+
+```ts
+import { createGame } from '@forge-game-engine/forge';
+
+const { game, world, renderContext } = createGame('game-container');
+
+// diff-add-start
+const { imageCache } = renderContext;
+const image = await imageCache.getOrLoad('sprite.png');
+// diff-add-end
+
+game.run();
+```
+
+#### Create a sprite
+
+We then need to create a sprite from that image, on render layer `0`:
 
 ```ts
 import {
-  Game,
-  createWorld,
+  createGame,
   // diff-add
-  ImageCache,
+  createImageSprite,
 } from '@forge-game-engine/forge';
 
-const game = new Game();
-createWorld('world', game);
+const { game, world, renderContext } = createGame('game-container');
 
-// diff-add-start
-const imageCache = new ImageCache();
+const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
-// diff-add-end
+
+// diff-add
+const sprite = createImageSprite(image, renderContext, 0);
 
 game.run();
 ```
 
-#### Add a sprite to the world
-
-We then need to create a sprite.
-
-```ts
-import {
-  Game,
-  createWorld,
-  ImageCache,
-  // diff-add-start
-  createShaderCache,
-  createImageSprite,
-  // diff-add-end
-} from '@forge-game-engine/forge';
-
-const game = new Game();
-
-// diff-remove
-createWorld('world', game);
-// diff-add
-const { renderLayers } = createWorld('world', game);
-
-const imageCache = new ImageCache();
-const image = await imageCache.getOrLoad('sprite.png');
-
-// diff-add-start
-const shaderCache = createShaderCache();
-
-const sprite = createImageSprite(image, renderLayers[0], shaderCache);
-// diff-add-end
-
-game.run();
-```
-
-Finally we need to add an entity to our world
+Finally we need to add an entity to our world with a position and that
+sprite:
 
 ```ts
 import {
-  Game,
-  createWorld,
-  ImageCache,
-  createShaderCache,
+  createGame,
   createImageSprite,
   // diff-add-start
-  PositionComponent,
-  SpriteComponent,
+  addPositionComponent,
+  addSpriteComponent,
   // diff-add-end
 } from '@forge-game-engine/forge';
 
-const game = new Game();
-// diff-remove
-const { renderLayers } = createWorld('world', game);
-// diff-add
-const { renderLayers, world } = createWorld('world', game);
+const { game, world, renderContext } = createGame('game-container');
 
-const imageCache = new ImageCache();
+const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
 
-const shaderCache = createShaderCache();
-
-const sprite = createImageSprite(image, renderLayers[0], shaderCache);
+const sprite = createImageSprite(image, renderContext, 0);
 
 // diff-add-start
-world.buildAndAddEntity([new PositionComponent(), new SpriteComponent(sprite)]);
+const entity = world.createEntity();
+addPositionComponent(world, entity);
+addSpriteComponent(world, entity, sprite);
 // diff-add-end
 
 game.run();

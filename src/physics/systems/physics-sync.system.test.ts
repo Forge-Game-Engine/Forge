@@ -2,13 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createPhysicsSyncEcsSystem } from './physics-sync.system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
-  PositionEcsComponent,
+  addPositionComponent,
+  addRotationComponent,
   positionId,
-  RotationEcsComponent,
-  rotationId,
   Time,
 } from '../../common/index.js';
-import { PhysicsBodyEcsComponent, PhysicsBodyId } from '../components/index.js';
+import { addPhysicsBodyComponent } from '../components/index.js';
 import { PhysicsWorld } from '../physics-world.js';
 import { RigidBody } from '../rigid-body.js';
 import { CircleShape, PolygonShape } from '../shapes/index.js';
@@ -35,23 +34,10 @@ describe('PhysicsSyncSystem', () => {
     });
     physicsBody.velocity = new Vector2(10, 0);
 
-    const physicsBodyComponent: PhysicsBodyEcsComponent = {
-      physicsBody,
-    };
+    addPhysicsBodyComponent(world, entity, { physicsBody });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    const rotationComponent: RotationEcsComponent = {
-      local: 0,
-      world: 0,
-    };
-
-    world.addComponent(entity, PhysicsBodyId, physicsBodyComponent);
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
+    const positionComponent = addPositionComponent(world, entity);
+    const rotationComponent = addRotationComponent(world, entity);
 
     time.update(1000);
     world.update();
@@ -69,23 +55,15 @@ describe('PhysicsSyncSystem', () => {
       isStatic: true,
     });
 
-    const physicsBodyComponent: PhysicsBodyEcsComponent = {
-      physicsBody,
-    };
-
-    const positionComponent: PositionEcsComponent = {
+    addPhysicsBodyComponent(world, entity, { physicsBody });
+    addPositionComponent(world, entity, {
       local: new Vector2(100, 200),
       world: new Vector2(100, 200),
-    };
-
-    const rotationComponent: RotationEcsComponent = {
+    });
+    addRotationComponent(world, entity, {
       local: Math.PI / 4,
       world: Math.PI / 4,
-    };
-
-    world.addComponent(entity, PhysicsBodyId, physicsBodyComponent);
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
+    });
 
     time.update(16);
     world.update();
@@ -104,24 +82,15 @@ describe('PhysicsSyncSystem', () => {
     });
     physicsBody.velocity = new Vector2(10, 0);
 
-    const physicsBodyComponent: PhysicsBodyEcsComponent = {
-      physicsBody,
-      isKinematic: true,
-    };
-
-    const positionComponent: PositionEcsComponent = {
+    addPhysicsBodyComponent(world, entity, { physicsBody, isKinematic: true });
+    addPositionComponent(world, entity, {
       local: new Vector2(100, 200),
       world: new Vector2(100, 200),
-    };
-
-    const rotationComponent: RotationEcsComponent = {
+    });
+    addRotationComponent(world, entity, {
       local: Math.PI / 4,
       world: Math.PI / 4,
-    };
-
-    world.addComponent(entity, PhysicsBodyId, physicsBodyComponent);
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
+    });
 
     time.update(16);
     world.update();
@@ -144,19 +113,13 @@ describe('PhysicsSyncSystem', () => {
       position: new Vector2(150, 150),
     });
 
-    world.addComponent(entity1, PhysicsBodyId, { physicsBody: body1 });
-    world.addComponent(entity1, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity1, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity1, { physicsBody: body1 });
+    addPositionComponent(world, entity1);
+    addRotationComponent(world, entity1);
 
-    world.addComponent(entity2, PhysicsBodyId, { physicsBody: body2 });
-    world.addComponent(entity2, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity2, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity2, { physicsBody: body2 });
+    addPositionComponent(world, entity2);
+    addRotationComponent(world, entity2);
 
     time.update(16);
     world.update();
@@ -183,12 +146,9 @@ describe('PhysicsSyncSystem', () => {
       position: new Vector2(100, 200),
     });
 
-    world.addComponent(entity, PhysicsBodyId, { physicsBody });
-    world.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity, { physicsBody });
+    addPositionComponent(world, entity);
+    addRotationComponent(world, entity);
 
     expect(physicsWorld.bodies).not.toContain(physicsBody);
 
@@ -206,12 +166,9 @@ describe('PhysicsSyncSystem', () => {
     const entity = world.createEntity();
     const physicsBody = new RigidBody({ shape: new CircleShape(10) });
 
-    world.addComponent(entity, PhysicsBodyId, { physicsBody });
-    world.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity, { physicsBody });
+    addPositionComponent(world, entity);
+    addRotationComponent(world, entity);
 
     time.update(16);
     world.update();
@@ -235,12 +192,9 @@ describe('PhysicsSyncSystem', () => {
     const entity = world.createEntity();
     const oldBody = new RigidBody({ shape: new CircleShape(10) });
 
-    world.addComponent(entity, PhysicsBodyId, { physicsBody: oldBody });
-    world.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity, { physicsBody: oldBody });
+    addPositionComponent(world, entity);
+    addRotationComponent(world, entity);
 
     time.update(16);
     world.update();
@@ -254,12 +208,12 @@ describe('PhysicsSyncSystem', () => {
 
     const newBody = new RigidBody({ shape: new CircleShape(10) });
 
-    world.addComponent(reusedEntity, PhysicsBodyId, { physicsBody: newBody });
-    world.addComponent(reusedEntity, positionId, {
+    addPhysicsBodyComponent(world, reusedEntity, { physicsBody: newBody });
+    addPositionComponent(world, reusedEntity, {
       local: new Vector2(500, 500),
       world: new Vector2(500, 500),
     });
-    world.addComponent(reusedEntity, rotationId, { local: 0, world: 0 });
+    addRotationComponent(world, reusedEntity);
 
     time.update(16);
     world.update();
@@ -272,12 +226,9 @@ describe('PhysicsSyncSystem', () => {
     const entity = world.createEntity();
     const physicsBody = new RigidBody({ shape: new CircleShape(10) });
 
-    world.addComponent(entity, PhysicsBodyId, { physicsBody });
-    world.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entity, { physicsBody });
+    addPositionComponent(world, entity);
+    addRotationComponent(world, entity);
 
     time.update(16);
     world.update();
@@ -299,12 +250,9 @@ describe('PhysicsSyncSystem', () => {
     const entity = isolatedWorld.createEntity();
     const physicsBody = new RigidBody({ shape: new CircleShape(10) });
 
-    isolatedWorld.addComponent(entity, PhysicsBodyId, { physicsBody });
-    isolatedWorld.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    });
-    isolatedWorld.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(isolatedWorld, entity, { physicsBody });
+    addPositionComponent(isolatedWorld, entity);
+    addRotationComponent(isolatedWorld, entity);
 
     time.update(16);
     isolatedWorld.update();
@@ -324,22 +272,17 @@ describe('PhysicsSyncSystem', () => {
       isSensor: true,
     });
 
-    const positionComponent: PositionEcsComponent = {
-      local: new Vector2(50, 75),
-      world: new Vector2(50, 75),
-    };
-
-    const rotationComponent: RotationEcsComponent = {
-      local: 0.5,
-      world: 0.5,
-    };
-
-    world.addComponent(entity, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entity, {
       physicsBody,
       isKinematic: true,
     });
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
+
+    const positionComponent = addPositionComponent(world, entity, {
+      local: new Vector2(50, 75),
+      world: new Vector2(50, 75),
+    });
+
+    addRotationComponent(world, entity, { local: 0.5, world: 0.5 });
 
     time.update(16);
     world.update();
@@ -362,25 +305,22 @@ describe('PhysicsSyncSystem', () => {
       isSensor: true,
     });
 
-    world.addComponent(entityA, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entityA, {
       physicsBody: bodyA,
       isKinematic: true,
     });
-    world.addComponent(entityA, positionId, {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    });
-    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+    addPositionComponent(world, entityA);
+    addRotationComponent(world, entityA);
 
-    world.addComponent(entityB, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entityB, {
       physicsBody: bodyB,
       isKinematic: true,
     });
-    world.addComponent(entityB, positionId, {
+    addPositionComponent(world, entityB, {
       local: new Vector2(10, 0),
       world: new Vector2(10, 0),
     });
-    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+    addRotationComponent(world, entityB);
 
     time.update(16);
     world.update();
@@ -406,27 +346,24 @@ describe('PhysicsSyncSystem', () => {
       isSensor: true,
     });
 
-    world.addComponent(entityA, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entityA, {
       physicsBody: bodyA,
       isKinematic: true,
     });
-    world.addComponent(entityA, positionId, {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    });
-    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+    addPositionComponent(world, entityA);
+    addRotationComponent(world, entityA);
 
-    const positionComponentB: PositionEcsComponent = {
-      local: new Vector2(10, 0),
-      world: new Vector2(10, 0),
-    };
-
-    world.addComponent(entityB, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entityB, {
       physicsBody: bodyB,
       isKinematic: true,
     });
-    world.addComponent(entityB, positionId, positionComponentB);
-    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+
+    const positionComponentB = addPositionComponent(world, entityB, {
+      local: new Vector2(10, 0),
+      world: new Vector2(10, 0),
+    });
+
+    addRotationComponent(world, entityB);
 
     time.update(16);
     world.update();
@@ -465,19 +402,16 @@ describe('PhysicsSyncSystem', () => {
       isSensor: true,
     });
 
-    world.addComponent(entityA, PhysicsBodyId, { physicsBody: bodyA });
-    world.addComponent(entityA, positionId, {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    });
-    world.addComponent(entityA, rotationId, { local: 0, world: 0 });
+    addPhysicsBodyComponent(world, entityA, { physicsBody: bodyA });
+    addPositionComponent(world, entityA);
+    addRotationComponent(world, entityA);
 
-    world.addComponent(entityB, PhysicsBodyId, { physicsBody: bodyB });
-    world.addComponent(entityB, positionId, {
+    addPhysicsBodyComponent(world, entityB, { physicsBody: bodyB });
+    addPositionComponent(world, entityB, {
       local: new Vector2(10, 0),
       world: new Vector2(10, 0),
     });
-    world.addComponent(entityB, rotationId, { local: 0, world: 0 });
+    addRotationComponent(world, entityB);
 
     time.update(16);
     world.update();

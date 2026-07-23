@@ -53,10 +53,10 @@ import {
 } from '@forge-game-engine/forge/lifecycle';
 import { Random } from '@forge-game-engine/forge/math';
 import {
+  addParticleEmitterComponent,
   createParticleEcsSystem,
   createParticlePositionEcsSystem,
   ParticleEmitter,
-  ParticleEmitterId,
 } from '@forge-game-engine/forge/particles';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
@@ -75,7 +75,7 @@ const sparks = new ParticleEmitter(sparkSprite, 0, {
 
 const emitterEntity = world.createEntity();
 
-world.addComponent(emitterEntity, ParticleEmitterId, {
+addParticleEmitterComponent(world, emitterEntity, {
   emitters: new Map([['sparks', sparks]]),
 });
 

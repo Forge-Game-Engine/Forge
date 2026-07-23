@@ -1,24 +1,24 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   addRevoluteJointComponent,
   CircleShape,
-  PhysicsBodyId,
   PolygonShape,
   RevoluteJoint,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -102,18 +102,18 @@ function createPhysicsSpriteEntity(
   const entity = world.createEntity();
   const { position, angle } = physicsBody;
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: angle, world: angle });
+  addRotationComponent(world, entity, { local: angle, world: angle });
 
   if (scale) {
-    world.addComponent(entity, scaleId, { local: scale, world: scale });
+    addScaleComponent(world, entity, { local: scale, world: scale });
   }
 
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
-  world.addComponent(entity, PhysicsBodyId, { physicsBody });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addPhysicsBodyComponent(world, entity, { physicsBody });
 }
 
 function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {

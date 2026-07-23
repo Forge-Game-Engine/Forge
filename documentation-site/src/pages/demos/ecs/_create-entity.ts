@@ -1,19 +1,18 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Sprite, spriteId } from '@forge-game-engine/forge/rendering';
-import { positionId, rotationId } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { addSpriteComponent, Sprite } from '@forge-game-engine/forge/rendering';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 
 export function createEntity(world: EcsWorld, sprite: Sprite): void {
   const starEntity = world.createEntity();
 
-  world.addComponent(starEntity, spriteId, sprite);
+  addSpriteComponent(world, starEntity, sprite);
 
-  world.addComponent(starEntity, positionId, {
-    local: new Vector2(0, 0),
-    world: new Vector2(0, 0),
-  });
+  addPositionComponent(world, starEntity);
 
-  world.addComponent(starEntity, rotationId, {
+  addRotationComponent(world, starEntity, {
     local: Math.PI,
     world: Math.PI,
   });
