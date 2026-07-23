@@ -1,6 +1,9 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { positionId, scaleId } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addScaleComponent,
+} from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   easeInBack,
@@ -11,10 +14,10 @@ import {
   linear,
 } from '@forge-game-engine/forge/animations';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
-  spriteId,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { easingRowId } from './_easing-row.component';
@@ -77,17 +80,17 @@ function placeSprite(
 ): number {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     local: position.clone(),
     world: position.clone(),
   });
 
-  world.addComponent(entity, scaleId, {
+  addScaleComponent(world, entity, {
     local: scale.clone(),
     world: scale.clone(),
   });
 
-  world.addComponent(entity, spriteId, sprite);
+  addSpriteComponent(world, entity, sprite);
 
   return entity;
 }

@@ -1,8 +1,11 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { positionId, rotationId } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import { clamp, Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  PhysicsBodyId,
+  addPhysicsBodyComponent,
   RigidBody,
   TerrainShape,
 } from '@forge-game-engine/forge/physics';
@@ -169,7 +172,7 @@ export async function createTerrain(
 
   const terrainEntity = world.createEntity();
 
-  world.addComponent(terrainEntity, positionId, {
+  addPositionComponent(world, terrainEntity, {
     world: position.clone(),
     local: position.clone(),
   });
@@ -178,12 +181,12 @@ export async function createTerrain(
   // (see the "Coordinate spaces" note in the Bodies and Shapes guide), the
   // same convention `createPhysicsSyncEcsSystem` uses for every other
   // static body.
-  world.addComponent(terrainEntity, rotationId, {
+  addRotationComponent(world, terrainEntity, {
     local: -angle,
     world: -angle,
   });
 
-  world.addComponent(terrainEntity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, terrainEntity, {
     physicsBody: terrainBody,
   });
 

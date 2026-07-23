@@ -1,23 +1,23 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   addRevoluteJointComponent,
   CircleShape,
-  PhysicsBodyId,
   RevoluteJoint,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -64,16 +64,16 @@ function createVisualEntity(
 ): void {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: angle, world: angle });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity, { local: angle, world: angle });
+  addScaleComponent(world, entity, {
     local: new Vector2(1, 1),
     world: new Vector2(0.5, 0.5),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
 }
 
 /**
@@ -127,12 +127,12 @@ export async function createCradle(
       isSensor: true,
     });
 
-    world.addComponent(pivotEntity, positionId, {
+    addPositionComponent(world, pivotEntity, {
       world: pivotPosition.clone(),
       local: pivotPosition.clone(),
     });
-    world.addComponent(pivotEntity, rotationId, { local: 0, world: 0 });
-    world.addComponent(pivotEntity, PhysicsBodyId, {
+    addRotationComponent(world, pivotEntity);
+    addPhysicsBodyComponent(world, pivotEntity, {
       physicsBody: pivotBody,
     });
 
@@ -147,12 +147,12 @@ export async function createCradle(
       friction: 0.05,
     });
 
-    world.addComponent(ballEntity, positionId, {
+    addPositionComponent(world, ballEntity, {
       world: ballPosition.clone(),
       local: ballPosition.clone(),
     });
-    world.addComponent(ballEntity, rotationId, { local: angle, world: angle });
-    world.addComponent(ballEntity, scaleId, {
+    addRotationComponent(world, ballEntity, { local: angle, world: angle });
+    addScaleComponent(world, ballEntity, {
       local: new Vector2(
         (ballRadius * 2) / sprites.ball.width,
         (ballRadius * 2) / sprites.ball.height,
@@ -162,11 +162,11 @@ export async function createCradle(
         (ballRadius * 2) / sprites.ball.height,
       ),
     });
-    world.addComponent(ballEntity, spriteId, {
+    addSpriteComponent(world, ballEntity, {
       ...sprites.ball,
       tintColor: ballColor,
     });
-    world.addComponent(ballEntity, PhysicsBodyId, { physicsBody: ballBody });
+    addPhysicsBodyComponent(world, ballEntity, { physicsBody: ballBody });
 
     const joint = new RevoluteJoint({
       bodyA: pivotBody,

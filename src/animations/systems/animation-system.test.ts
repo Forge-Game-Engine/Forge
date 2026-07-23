@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createAnimationEcsSystem } from './animation-system';
 import { Time } from '../../common';
-import { type AnimationEcsComponent, animationId } from '../components';
+import { addAnimationComponent } from '../components';
 import { EcsWorld } from '../../ecs';
 
 describe('createAnimationEcsSystem', () => {
@@ -16,7 +16,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.addSystem(animationSystem);
 
     const entity = ecsWorld.createEntity();
-    const animationComponent: AnimationEcsComponent = {
+    const animationComponent = addAnimationComponent(ecsWorld, entity, {
       animations: [
         {
           startValue: 0,
@@ -30,9 +30,8 @@ describe('createAnimationEcsSystem', () => {
           finishedCallback: mockFinishedCallback,
         },
       ],
-    };
+    });
 
-    ecsWorld.addComponent(entity, animationId, animationComponent);
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
@@ -50,7 +49,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.addSystem(animationSystem);
 
     const entity = ecsWorld.createEntity();
-    const animationComponent: AnimationEcsComponent = {
+    const animationComponent = addAnimationComponent(ecsWorld, entity, {
       animations: [
         {
           startValue: 0,
@@ -64,9 +63,8 @@ describe('createAnimationEcsSystem', () => {
           finishedCallback: () => void 0,
         },
       ],
-    };
+    });
 
-    ecsWorld.addComponent(entity, animationId, animationComponent);
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
@@ -84,7 +82,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.addSystem(animationSystem);
 
     const entity = ecsWorld.createEntity();
-    const animationComponent: AnimationEcsComponent = {
+    const animationComponent = addAnimationComponent(ecsWorld, entity, {
       animations: [
         {
           startValue: 0,
@@ -98,9 +96,8 @@ describe('createAnimationEcsSystem', () => {
           finishedCallback: () => void 0,
         },
       ],
-    };
+    });
 
-    ecsWorld.addComponent(entity, animationId, animationComponent);
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);
@@ -120,7 +117,7 @@ describe('createAnimationEcsSystem', () => {
     ecsWorld.addSystem(animationSystem);
 
     const entity = ecsWorld.createEntity();
-    const animationComponent: AnimationEcsComponent = {
+    const animationComponent = addAnimationComponent(ecsWorld, entity, {
       animations: [
         {
           startValue: 0,
@@ -134,9 +131,8 @@ describe('createAnimationEcsSystem', () => {
           finishedCallback: () => void 0,
         },
       ],
-    };
+    });
 
-    ecsWorld.addComponent(entity, animationId, animationComponent);
     ecsWorld.update();
 
     expect(mockUpdateCallback).toHaveBeenCalledWith(1);

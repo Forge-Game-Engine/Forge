@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTimerEcsSystem } from './timer-system';
-import { TimerEcsComponent, TimerId } from '../components/timer-component';
+import {
+  addTimerComponent,
+  TimerEcsComponent,
+} from '../components/timer-component';
 import { EcsWorld } from '../../ecs';
 import { Time } from '../../common';
 
@@ -14,8 +17,7 @@ describe('TimerSystem', () => {
     time = new Time();
     world = new EcsWorld();
     entity = world.createEntity();
-    timerComponent = { tasks: [] };
-    world.addComponent(entity, TimerId, timerComponent);
+    timerComponent = addTimerComponent(world, entity);
     world.addSystem(createTimerEcsSystem(time));
   });
 

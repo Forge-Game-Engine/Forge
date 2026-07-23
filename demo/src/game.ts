@@ -1,8 +1,8 @@
 import {
   addGaussianBlurComponent,
-  cameraId,
   CircleShape,
   Color,
+  createCamera,
   createCameraEcsSystem,
   createGame,
   createGaussianBlurEcsSystem,
@@ -57,13 +57,7 @@ resize();
 window.addEventListener('resize', resize);
 
 // Create camera entity
-const cameraEntity = world.createEntity();
-world.addComponent(cameraEntity, positionId, {
-  world: Vector2.zero,
-  local: Vector2.zero,
-});
-world.addComponent(cameraEntity, cameraId, {
-  zoom: 1,
+const cameraEntity = createCamera(world, {
   zoomSensitivity: 0.1,
   panSensitivity: 1,
   minZoom: 0.1,
@@ -71,7 +65,6 @@ world.addComponent(cameraEntity, cameraId, {
   isStatic: true,
   cullingMask: renderLayer,
   renderTarget: sceneRenderTarget,
-  layer: 0,
   clearColor: Color.transparent,
 });
 

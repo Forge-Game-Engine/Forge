@@ -4,12 +4,11 @@ import { createBloomEcsSystem } from './bloom-system';
 import { EcsWorld } from '../../ecs';
 import {
   addBloomComponent,
+  addCameraComponent,
   BloomEcsComponent,
   bloomId,
   CameraEcsComponent,
-  cameraId,
 } from '../components';
-import { Color } from '../color';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
@@ -40,27 +39,17 @@ describe('createBloomEcsSystem', () => {
   let bloomTextureLocation: WebGLUniformLocation;
   let intensityLocation: WebGLUniformLocation;
 
-  const createCamera = (
-    renderTarget?: CameraEcsComponent['renderTarget'],
-  ): CameraEcsComponent => ({
-    zoom: 1,
-    zoomSensitivity: 0.1,
-    panSensitivity: 1,
-    minZoom: 0.0001,
-    maxZoom: 10000,
-    isStatic: true,
-    cullingMask: 0xffffffff,
-    renderTarget,
-    layer: 0,
-    clearColor: Color.transparent,
-  });
-
   const addCameraEntity = (
     renderTarget?: CameraEcsComponent['renderTarget'],
   ): number => {
     const entity = world.createEntity();
 
-    world.addComponent(entity, cameraId, createCamera(renderTarget));
+    addCameraComponent(world, entity, {
+      minZoom: 0.0001,
+      maxZoom: 10000,
+      isStatic: true,
+      renderTarget,
+    });
 
     return entity;
   };

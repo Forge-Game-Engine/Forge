@@ -1,18 +1,15 @@
 import {
-  Color,
+  addSpriteComponent,
   combineInstanceDataSegments,
   createQuadGeometry,
   ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
-  SpriteEcsComponent,
-  spriteId,
   spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
-import { Vector2 } from '@forge-game-engine/forge/math';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { positionId } from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { backgroundShader } from './_background.shader';
 import { backgroundId } from './_background.component';
 
@@ -49,26 +46,16 @@ export function createBackground(
     setupInstanceAttributes,
   );
 
-  const backgroundSprite: SpriteEcsComponent = {
-    enabled: true,
-    width: renderContext.canvas.width,
-    height: renderContext.canvas.height,
-    pivot: new Vector2(0.5, 0.5),
-    tintColor: Color.white,
-    renderable,
-    uvOffset: new Vector2(0, 0),
-    uvScale: new Vector2(1, 1),
-    layer: renderLayer,
-  };
-
   const backgroundEntity = world.createEntity();
 
-  world.addComponent(backgroundEntity, spriteId, backgroundSprite);
-
-  world.addComponent(backgroundEntity, positionId, {
-    local: Vector2.zero,
-    world: Vector2.zero,
+  addSpriteComponent(world, backgroundEntity, {
+    width: renderContext.canvas.width,
+    height: renderContext.canvas.height,
+    renderable,
+    layer: renderLayer,
   });
+
+  addPositionComponent(world, backgroundEntity);
 
   world.addTag(backgroundEntity, backgroundId);
 }

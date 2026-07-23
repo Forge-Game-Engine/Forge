@@ -15,13 +15,17 @@ Add a `TimerEcsComponent` to an entity with one or more
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
-import { createTimerEcsSystem, TimerId } from '@forge-game-engine/forge/timer';
+import {
+  addTimerComponent,
+  createTimerEcsSystem,
+  TimerId,
+} from '@forge-game-engine/forge/timer';
 
 const { world, time } = createGame('game-container');
 
 const spawner = world.createEntity();
 
-world.addComponent(spawner, TimerId, {
+addTimerComponent(world, spawner, {
   tasks: [
     {
       callback: () => spawnEnemy(),
@@ -50,7 +54,7 @@ is the wait before the _first_ run; every run after that is spaced by
 `interval` instead:
 
 ```ts
-world.addComponent(spawner, TimerId, {
+addTimerComponent(world, spawner, {
   tasks: [
     {
       callback: () => spawnWave(),

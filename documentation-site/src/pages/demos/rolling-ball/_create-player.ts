@@ -1,16 +1,19 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { positionId, rotationId } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -63,20 +66,20 @@ export async function createPlayer(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: spawnPosition.clone(),
     local: spawnPosition.clone(),
   });
 
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+  addRotationComponent(world, entity);
 
-  world.addComponent(entity, spriteId, {
+  addSpriteComponent(world, entity, {
     ...ballSprite,
     width: ballRadius * 2,
     height: ballRadius * 2,
   });
 
-  world.addComponent(entity, PhysicsBodyId, { physicsBody: ballBody });
+  addPhysicsBodyComponent(world, entity, { physicsBody: ballBody });
 
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,

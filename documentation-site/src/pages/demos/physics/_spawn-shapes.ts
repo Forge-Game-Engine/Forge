@@ -1,22 +1,22 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   PolygonShape,
   RigidBody,
   Shape,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { wallThickness } from './_create-boundaries';
@@ -130,21 +130,21 @@ export async function spawnShapes(
     const entity = world.createEntity();
     const scale = size / sprite.height;
 
-    world.addComponent(entity, positionId, {
+    addPositionComponent(world, entity, {
       world: position.clone(),
       local: position.clone(),
     });
 
-    world.addComponent(entity, rotationId, { local: 0, world: 0 });
+    addRotationComponent(world, entity);
 
-    world.addComponent(entity, scaleId, {
+    addScaleComponent(world, entity, {
       local: new Vector2(scale, scale),
       world: new Vector2(scale, scale),
     });
 
-    world.addComponent(entity, spriteId, sprite);
+    addSpriteComponent(world, entity, sprite);
 
-    world.addComponent(entity, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, entity, {
       physicsBody: new RigidBody({
         shape,
         position: position.clone(),

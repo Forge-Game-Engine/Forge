@@ -2,10 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createRevoluteJointEcsSystem } from './revolute-joint.system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
-import {
-  RevoluteJointEcsComponent,
-  RevoluteJointId,
-} from '../components/index.js';
+import { addRevoluteJointComponent } from '../components/index.js';
 import { RevoluteJoint } from '../joints/index.js';
 import { PhysicsWorld } from '../physics-world.js';
 import { RigidBody } from '../rigid-body.js';
@@ -34,7 +31,7 @@ describe('RevoluteJointSystem', () => {
     const entity = world.createEntity();
     const joint = createJoint();
 
-    world.addComponent(entity, RevoluteJointId, { joint });
+    addRevoluteJointComponent(world, entity, { joint });
 
     expect(physicsWorld.joints).not.toContain(joint);
 
@@ -51,7 +48,7 @@ describe('RevoluteJointSystem', () => {
     const entity = world.createEntity();
     const joint = createJoint();
 
-    world.addComponent(entity, RevoluteJointId, { joint });
+    addRevoluteJointComponent(world, entity, { joint });
 
     world.update();
 
@@ -66,7 +63,7 @@ describe('RevoluteJointSystem', () => {
     const entity = world.createEntity();
     const oldJoint = createJoint();
 
-    world.addComponent(entity, RevoluteJointId, { joint: oldJoint });
+    addRevoluteJointComponent(world, entity, { joint: oldJoint });
 
     world.update();
 
@@ -79,7 +76,7 @@ describe('RevoluteJointSystem', () => {
 
     const newJoint = createJoint();
 
-    world.addComponent(reusedEntity, RevoluteJointId, { joint: newJoint });
+    addRevoluteJointComponent(world, reusedEntity, { joint: newJoint });
 
     world.update();
 
@@ -93,12 +90,8 @@ describe('RevoluteJointSystem', () => {
     const joint1 = createJoint();
     const joint2 = createJoint();
 
-    world.addComponent<RevoluteJointEcsComponent>(entity1, RevoluteJointId, {
-      joint: joint1,
-    });
-    world.addComponent<RevoluteJointEcsComponent>(entity2, RevoluteJointId, {
-      joint: joint2,
-    });
+    addRevoluteJointComponent(world, entity1, { joint: joint1 });
+    addRevoluteJointComponent(world, entity2, { joint: joint2 });
 
     world.update();
 
@@ -116,7 +109,7 @@ describe('RevoluteJointSystem', () => {
     const entity = isolatedWorld.createEntity();
     const joint = createJoint();
 
-    isolatedWorld.addComponent(entity, RevoluteJointId, { joint });
+    addRevoluteJointComponent(isolatedWorld, entity, { joint });
 
     isolatedWorld.update();
 

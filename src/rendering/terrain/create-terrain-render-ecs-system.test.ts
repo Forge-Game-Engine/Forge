@@ -3,15 +3,14 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createTerrainRenderEcsSystem } from './create-terrain-render-ecs-system';
 import type { TerrainMesh } from './create-terrain-mesh';
 import { EcsWorld } from '../../ecs/index.js';
-import { PositionEcsComponent, positionId } from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { Vector2 } from '../../math/index.js';
-import { CameraEcsComponent, cameraId } from '../components/index.js';
+import { addCameraComponent, CameraEcsComponent } from '../components/index.js';
 import { ImageCache } from '../../asset-loading/index.js';
 import { RenderContext } from '../render-context.js';
 import { ShaderCache } from '../shaders/index.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
-import { Color } from '../color.js';
 
 describe('createTerrainRenderEcsSystem', () => {
   let world: EcsWorld;
@@ -21,21 +20,6 @@ describe('createTerrainRenderEcsSystem', () => {
   let terrainMesh: TerrainMesh;
   let material: Material;
   let geometry: Geometry;
-
-  const createCameraComponent = (
-    overrides: Partial<CameraEcsComponent> = {},
-  ): CameraEcsComponent => ({
-    zoom: 1,
-    zoomSensitivity: 0.1,
-    panSensitivity: 1,
-    minZoom: 0.0001,
-    maxZoom: 10000,
-    isStatic: true,
-    cullingMask: 0xffffffff,
-    layer: 0,
-    clearColor: Color.transparent,
-    ...overrides,
-  });
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
@@ -80,13 +64,14 @@ describe('createTerrainRenderEcsSystem', () => {
 
   const addCamera = (overrides: Partial<CameraEcsComponent> = {}): void => {
     const entity = world.createEntity();
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: new Vector2(10, 20),
-    };
 
-    world.addComponent(entity, cameraId, createCameraComponent(overrides));
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity, { world: new Vector2(10, 20) });
+    addCameraComponent(world, entity, {
+      minZoom: 0.0001,
+      maxZoom: 10000,
+      isStatic: true,
+      ...overrides,
+    });
   };
 
   it('does not draw anything when there is no camera entity', () => {

@@ -1,25 +1,25 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { lerp, Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   addPrismaticJointComponent,
   CircleShape,
-  PhysicsBodyId,
   PolygonShape,
   PrismaticJoint,
   RigidBody,
   Shape,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPumpComponent } from './_pump.component';
@@ -106,16 +106,16 @@ function createVisualEntity(
 ): void {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity, {
     local: new Vector2(width / sprite.width, height / sprite.height),
     world: new Vector2(width / sprite.width, height / sprite.height),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
 }
 
 function createRailDots(
@@ -201,12 +201,12 @@ function createSliderScenario(
     isSensor: true,
   });
 
-  world.addComponent(anchorEntity, positionId, {
+  addPositionComponent(world, anchorEntity, {
     world: anchorPosition.clone(),
     local: anchorPosition.clone(),
   });
-  world.addComponent(anchorEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(anchorEntity, PhysicsBodyId, {
+  addRotationComponent(world, anchorEntity);
+  addPhysicsBodyComponent(world, anchorEntity, {
     physicsBody: anchorBody,
   });
 
@@ -217,15 +217,15 @@ function createSliderScenario(
     restitution: 0,
   });
 
-  world.addComponent(sliderEntity, positionId, {
+  addPositionComponent(world, sliderEntity, {
     world: startPosition.clone(),
     local: startPosition.clone(),
   });
-  world.addComponent(sliderEntity, rotationId, { local: 0, world: 0 });
+  addRotationComponent(world, sliderEntity);
 
   const sprite = sprites[sliderSprite];
 
-  world.addComponent(sliderEntity, scaleId, {
+  addScaleComponent(world, sliderEntity, {
     local: new Vector2(
       sliderWidth / sprite.width,
       sliderHeight / sprite.height,
@@ -235,11 +235,11 @@ function createSliderScenario(
       sliderHeight / sprite.height,
     ),
   });
-  world.addComponent(sliderEntity, spriteId, {
+  addSpriteComponent(world, sliderEntity, {
     ...sprite,
     tintColor: sliderColor,
   });
-  world.addComponent(sliderEntity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, sliderEntity, {
     physicsBody: sliderBody,
   });
 

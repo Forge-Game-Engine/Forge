@@ -1,34 +1,33 @@
 # Entity Lifetime Management
 
-Forge provides components and systems for managing entity lifetimes in your game. You can automatically remove entities after a certain duration or return them to an object pool for reuse.
+Forge provides a component and systems for expiring entities after a set
+duration. Give an entity a `LifetimeEcsComponent`, tag it with a disposal
+strategy, and register the two systems below to track and act on expiration.
 
 ## Quick Start
 
 To use lifetime management, you need to:
 
-1. Add the tracking system to your world
-2. Add a disposal system (removal or pooling)
-3. Add components to entities that should expire
+1. Add `createLifetimeTrackingEcsSystem` to your world to track elapsed time.
+2. Add a disposal system, such as `createRemoveFromWorldEcsSystem`, to act on
+   expired entities.
+3. Give entities that should expire a `LifetimeEcsComponent` and the
+   matching disposal tag.
 
-```typescript
-import { Entity } from '@forge-game-engine/forge';
+```ts
 import {
-  RemoveFromWorldStrategyComponent,
-  LifetimeComponent
-  LifetimeTrackingSystem,
-  RemoveFromWorldLifecycleSystem,
+  addLifetimeComponent,
+  createLifetimeTrackingEcsSystem,
+  createRemoveFromWorldEcsSystem,
+  RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
 
-const entity = world.buildAndAddEntity(
-  'short-lived-entity', [
-    new LifetimeComponent(3), // will expire in 3 seconds
-    new RemoveFromWorldStrategyComponent() // when it expires, it will be removed from the world
-  ]
-);
+const entity = world.createEntity();
+
+addLifetimeComponent(world, entity, { durationSeconds: 3 }); // expires in 3 seconds
+world.addTag(entity, RemoveFromWorldLifetimeStrategyId); // remove it from the world once it expires
 
 // Add systems to your world
-world.addSystems(
-  new LifetimeTrackingSystem(world),
-  new RemoveFromWorldLifecycleSystem(world),
-);
+world.addSystem(createLifetimeTrackingEcsSystem(time));
+world.addSystem(createRemoveFromWorldEcsSystem());
 ```

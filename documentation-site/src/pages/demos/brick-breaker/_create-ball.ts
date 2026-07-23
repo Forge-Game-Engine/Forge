@@ -1,9 +1,9 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import {
   degreesToRadians,
@@ -11,14 +11,14 @@ import {
   Vector2,
 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { ballId } from './_ball.component';
 
@@ -84,19 +84,19 @@ export async function createBall(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     local: startPosition.clone(),
     world: startPosition.clone(),
   });
 
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+  addRotationComponent(world, entity);
 
-  world.addComponent(entity, scaleId, {
+  addScaleComponent(world, entity, {
     local: new Vector2(ballScale, ballScale),
     world: new Vector2(ballScale, ballScale),
   });
 
-  world.addComponent(entity, spriteId, ballSprite);
+  addSpriteComponent(world, entity, ballSprite);
 
   world.addComponent(entity, ballId, {
     speed,
@@ -112,5 +112,5 @@ export async function createBall(
 
   launchBall(physicsBody, speed, random);
 
-  world.addComponent(entity, PhysicsBodyId, { physicsBody });
+  addPhysicsBodyComponent(world, entity, { physicsBody });
 }

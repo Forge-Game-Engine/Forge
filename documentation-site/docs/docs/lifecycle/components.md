@@ -4,71 +4,48 @@ sidebar_position: 1
 
 # Components
 
-## LifetimeComponent
+## LifetimeEcsComponent
 
-Tracks an entity's lifetime and expiration status.
+Tracks an entity's lifetime and expiration status. Attach it with
+`addLifetimeComponent`.
 
 ### Properties
 
-- `elapsedSeconds: number` - Current elapsed time since creation
-- `durationSeconds: number` - Total lifetime duration
-- `hasExpired: boolean` - Set to `true` when elapsed time reaches duration by the [LifetimeTrackingSystem](./systems.md#lifetimetrackingsystem)
+- `durationSeconds: number` - Total lifetime duration. Has no default and
+  must always be provided.
+- `elapsedSeconds: number` - Current elapsed time since creation. Defaults
+  to `0`.
+- `hasExpired: boolean` - Set to `true` when elapsed time reaches duration by
+  [`createLifetimeTrackingEcsSystem`](./systems.md#createlifetimetrackingecssystem).
+  Defaults to `false`.
 
 ### Example
 
-```typescript
+```ts
+import { addLifetimeComponent } from '@forge-game-engine/forge/lifecycle';
+
 // Entity that expires after 5 seconds
-const lifetime = new LifetimeComponent(5);
+addLifetimeComponent(world, entity, { durationSeconds: 5 });
 ```
 
-## RemoveFromWorldStrategyComponent
+## RemoveFromWorldLifetimeStrategyId
 
-Marks an entity to be removed from the world when its lifetime expires.
+A tag (no data) that marks an entity to be removed from the world once its
+`LifetimeEcsComponent` expires, once
+[`createRemoveFromWorldEcsSystem`](./systems.md#createremovefromworldecssystem)
+is registered.
 
 ### Example
 
-```typescript
+```ts
+import {
+  addLifetimeComponent,
+  RemoveFromWorldLifetimeStrategyId,
+} from '@forge-game-engine/forge/lifecycle';
+
 // Create an explosion effect that gets removed from the world after 2 seconds
-world.buildAndAddEntity([
-  new LifetimeComponent(2),
-  new RemoveFromWorldStrategyComponent(),
-  new SpriteComponent(explosionSprite),
-  new PositionComponent(x, y),
-]);
-```
+const explosion = world.createEntity();
 
-## ReturnToPoolStrategyComponent
-
-Marks an entity to be returned to an object pool when its lifetime expires, enabling entity reuse for better performance.
-
-### Example
-
-```typescript
-const pool = new ObjectPool<Entity>({
-  createCallback: (): Entity =>
-    world.buildAndAddEntity([
-      new PositionComponent(0, 0),
-      new SpriteComponent(blueCircleSprite),
-      new LifetimeComponent(1),
-      new ReturnToPoolStrategyComponent(pool),
-    ]),
-  disposeCallback: (entity: Entity) => {
-    entity.enabled = false;
-  },
-  hydrateCallback: (entity: Entity) => {
-    entity.enabled = true;
-    const lifetimeComponent = entity.getComponentRequired(LifetimeComponent);
-    lifetimeComponent.reset(1);
-  },
-});
-
-setInterval(() => {
-  pool.getOrCreate();
-}, 500);
-
-world.addSystems(
-  new LifetimeTrackingSystem(world),
-  new RemoveFromWorldLifecycleSystem(world),
-  new ReturnToPoolLifecycleSystem(),
-);
+addLifetimeComponent(world, explosion, { durationSeconds: 2 });
+world.addTag(explosion, RemoveFromWorldLifetimeStrategyId);
 ```

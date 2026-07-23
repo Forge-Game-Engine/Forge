@@ -1,21 +1,21 @@
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  PhysicsBodyId,
+  addPhysicsBodyComponent,
   PolygonShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -120,12 +120,12 @@ function createGroundColumn(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity, {
     local: new Vector2(
       width / groundSprite.width,
       columnDepth / groundSprite.height,
@@ -135,11 +135,11 @@ function createGroundColumn(
       columnDepth / groundSprite.height,
     ),
   });
-  world.addComponent(entity, spriteId, {
+  addSpriteComponent(world, entity, {
     ...groundSprite,
     tintColor: groundColor,
   });
-  world.addComponent(entity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(width, columnDepth),
       position,

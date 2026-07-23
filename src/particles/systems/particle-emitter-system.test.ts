@@ -2,9 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createParticleEcsSystem } from './particle-emitter-system';
 import { EcsWorld } from '../../ecs';
 import {
+  addParticleEmitterComponent,
   ParticleEmitter,
-  ParticleEmitterEcsComponent,
-  ParticleEmitterId,
   ParticleId,
 } from '../components';
 import { rotationId, Time } from '../../common';
@@ -59,11 +58,9 @@ describe('ParticleEmitterSystem', () => {
 
     emitter.startEmitting = true;
 
-    const emitterComponent: ParticleEmitterEcsComponent = {
+    addParticleEmitterComponent(world, entity, {
       emitters: new Map([['testEmitter', emitter]]),
-    };
-
-    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+    });
 
     time.update(100);
     world.update();
@@ -90,11 +87,9 @@ describe('ParticleEmitterSystem', () => {
 
     emitter.startEmitting = true;
 
-    const emitterComponent: ParticleEmitterEcsComponent = {
+    addParticleEmitterComponent(world, entity, {
       emitters: new Map([['testEmitter', emitter]]),
-    };
-
-    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+    });
 
     time.update(100);
     world.update();
@@ -124,11 +119,9 @@ describe('ParticleEmitterSystem', () => {
 
     emitter.startEmitting = true;
 
-    const emitterComponent: ParticleEmitterEcsComponent = {
+    addParticleEmitterComponent(world, entity, {
       emitters: new Map([['testEmitter', emitter]]),
-    };
-
-    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+    });
 
     time.update(100);
     world.update();
@@ -162,11 +155,9 @@ describe('ParticleEmitterSystem', () => {
     emitter.totalAmountToEmit = 10;
     emitter.currentEmitDuration = 1;
 
-    const emitterComponent: ParticleEmitterEcsComponent = {
+    addParticleEmitterComponent(world, entity, {
       emitters: new Map([['testEmitter', emitter]]),
-    };
-
-    world.addComponent(entity, ParticleEmitterId, emitterComponent);
+    });
 
     time.update(100);
     world.update();

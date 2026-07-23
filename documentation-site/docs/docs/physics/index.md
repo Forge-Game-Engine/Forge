@@ -55,11 +55,11 @@ the system steps the `PhysicsWorld` and writes each dynamic body's resulting
 position and angle back to the entity.
 
 ```ts
-import { positionId, rotationId } from '@forge-game-engine/forge/common';
+import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   createPhysicsSyncEcsSystem,
-  PhysicsBodyId,
   PhysicsWorld,
   PolygonShape,
   RigidBody,
@@ -72,12 +72,9 @@ const physicsWorld = new PhysicsWorld({ gravity: new Vector2(0, -300) });
 
 const box = world.createEntity();
 
-world.addComponent(box, positionId, {
-  world: Vector2.zero,
-  local: Vector2.zero,
-});
-world.addComponent(box, rotationId, { world: 0, local: 0 });
-world.addComponent(box, PhysicsBodyId, {
+addPositionComponent(world, box);
+addRotationComponent(world, box);
+addPhysicsBodyComponent(world, box, {
   physicsBody: new RigidBody({ shape: PolygonShape.rectangle(32, 32) }),
 });
 

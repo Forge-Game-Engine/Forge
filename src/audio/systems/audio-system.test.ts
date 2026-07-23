@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Howl } from 'howler';
 import { createAudioEcsSystem } from './audio-system';
-import { type AudioEcsComponent, audioId } from '../components';
+import { addAudioComponent } from '../components';
 import { EcsWorld } from '../../ecs';
 
 vi.mock(import('howler'), { spy: true });
@@ -13,14 +13,13 @@ describe('createAudioEcsSystem (Audio)', () => {
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
-    const audioComponent: AudioEcsComponent = {
+    const audioComponent = addAudioComponent(ecsWorld, entity, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
       playSound: true,
-    };
+    });
 
-    ecsWorld.addComponent(entity, audioId, audioComponent);
     ecsWorld.update();
 
     expect(audioComponent.sound.play).toHaveBeenCalledTimes(1);
@@ -33,14 +32,12 @@ describe('createAudioEcsSystem (Audio)', () => {
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
-    const audioComponent: AudioEcsComponent = {
+    const audioComponent = addAudioComponent(ecsWorld, entity, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
-      playSound: false,
-    };
+    });
 
-    ecsWorld.addComponent(entity, audioId, audioComponent);
     ecsWorld.update();
 
     expect(audioComponent.sound.play).not.toHaveBeenCalled();
@@ -53,14 +50,12 @@ describe('createAudioEcsSystem (Audio)', () => {
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
-    const audioComponent: AudioEcsComponent = {
+    const audioComponent = addAudioComponent(ecsWorld, entity, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
       playSound: true,
-    };
-
-    ecsWorld.addComponent(entity, audioId, audioComponent);
+    });
 
     // First update should play the sound
     ecsWorld.update();
@@ -78,32 +73,27 @@ describe('createAudioEcsSystem (Audio)', () => {
     ecsWorld.addSystem(audioSystem);
 
     const entity1 = ecsWorld.createEntity();
-    const audioComponent1: AudioEcsComponent = {
+    const audioComponent1 = addAudioComponent(ecsWorld, entity1, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
       playSound: true,
-    };
+    });
 
     const entity2 = ecsWorld.createEntity();
-    const audioComponent2: AudioEcsComponent = {
+    const audioComponent2 = addAudioComponent(ecsWorld, entity2, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
-      playSound: false,
-    };
+    });
 
     const entity3 = ecsWorld.createEntity();
-    const audioComponent3: AudioEcsComponent = {
+    const audioComponent3 = addAudioComponent(ecsWorld, entity3, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
       playSound: true,
-    };
-
-    ecsWorld.addComponent(entity1, audioId, audioComponent1);
-    ecsWorld.addComponent(entity2, audioId, audioComponent2);
-    ecsWorld.addComponent(entity3, audioId, audioComponent3);
+    });
 
     ecsWorld.update();
 
@@ -121,14 +111,12 @@ describe('createAudioEcsSystem (Audio)', () => {
     ecsWorld.addSystem(audioSystem);
 
     const entity = ecsWorld.createEntity();
-    const audioComponent: AudioEcsComponent = {
+    const audioComponent = addAudioComponent(ecsWorld, entity, {
       sound: new Howl({
         src: ['test-sound.mp3'],
       }),
       playSound: true,
-    };
-
-    ecsWorld.addComponent(entity, audioId, audioComponent);
+    });
 
     // First play
     ecsWorld.update();

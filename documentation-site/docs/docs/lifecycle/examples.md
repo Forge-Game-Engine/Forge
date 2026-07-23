@@ -4,51 +4,69 @@
 
 Create visual effects that automatically disappear after a set duration.
 
-```typescript
+```ts
 import {
-  LifetimeComponent,
-  RemoveFromWorldStrategyComponent,
-} from '@forge-game-engine/forge';
+  addLifetimeComponent,
+  RemoveFromWorldLifetimeStrategyId,
+} from '@forge-game-engine/forge/lifecycle';
+import { addPositionComponent, addScaleComponent } from '@forge-game-engine/forge/common';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 
 // Create an explosion effect that lasts 2 seconds
-world.buildAndAddEntity([
-  new LifetimeComponent(2.0),
-  new RemoveFromWorldStrategyComponent(),
-  new SpriteComponent(explosionSprite),
-  new PositionComponent(x, y),
-  new ScaleComponent(1, 1),
-]);
+function spawnExplosion(x: number, y: number) {
+  const explosion = world.createEntity();
+
+  addPositionComponent(world, explosion, { local: new Vector2(x, y) });
+  addScaleComponent(world, explosion);
+  addSpriteComponent(world, explosion, explosionSprite);
+  addLifetimeComponent(world, explosion, { durationSeconds: 2.0 });
+  world.addTag(explosion, RemoveFromWorldLifetimeStrategyId);
+}
 ```
 
 ## Timed Power-ups
 
-Create power-ups or buffs that expire after a duration.
+Give an existing entity a temporary buff that expires after a duration, by
+attaching the lifetime component (and disposal tag) directly to it instead of
+a separate effect entity:
 
-```typescript
+```ts
 import {
-  LifetimeComponent,
-  RemoveFromWorldStrategyComponent,
-} from '@forge-game-engine/forge';
+  addLifetimeComponent,
+  RemoveFromWorldLifetimeStrategyId,
+} from '@forge-game-engine/forge/lifecycle';
+import { addSpeedComponent } from '@forge-game-engine/forge/common';
 
 // Add a speed boost that lasts 10 seconds
-function activateSpeedBoost(playerEntity: Entity) {
-  world.buildAndAddEntity([
-    new LifetimeComponent(10.0),
-    new RemoveFromWorldStrategyComponent(),
-    new SpeedBoostComponent(playerEntity, 2.0), // 2x speed multiplier
-  ]);
+function activateSpeedBoost(playerEntity: number, boostedSpeed: number) {
+  addSpeedComponent(world, playerEntity, { speed: boostedSpeed });
+  addLifetimeComponent(world, playerEntity, { durationSeconds: 10.0 });
+  world.addTag(playerEntity, RemoveFromWorldLifetimeStrategyId);
 }
 ```
 
+:::caution
+Only tag the buffed entity with `RemoveFromWorldLifetimeStrategyId` if it's
+truly disposable once the buff ends (for example a temporary pickup clone).
+For a persistent entity like a player, remove the `LifetimeEcsComponent`
+itself (and reset `speed` back to normal) instead of letting
+`createRemoveFromWorldEcsSystem` remove the entity from the world.
+:::
+
 ## Projectiles with Lifetime
 
-Create bullets or projectiles that disappear after traveling for a certain time.
+Create bullets or projectiles that disappear after traveling for a certain
+time, moved by a physics body's velocity:
 
-```typescript
+```ts
 import {
-  LifetimeComponent,
-  RemoveFromWorldStrategyComponent,
-} from '@forge-game-engine/forge';
+  addLifetimeComponent,
+  RemoveFromWorldLifetimeStrategyId,
+} from '@forge-game-engine/forge/lifecycle';
+import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
+import { addPhysicsBodyComponent, CircleShape, RigidBody } from '@forge-game-engine/forge/physics';
+import { Vector2 } from '@forge-game-engine/forge/math';
 
 function fireBullet(
   x: number,
@@ -56,86 +74,58 @@ function fireBullet(
   directionX: number,
   directionY: number,
 ) {
-  world.buildAndAddEntity([
-    new LifetimeComponent(3.0), // Bullet exists for 3 seconds
-    new RemoveFromWorldStrategyComponent(),
-    new SpriteComponent(bulletSprite),
-    new PositionComponent(x, y),
-    new VelocityComponent(directionX * 500, directionY * 500),
-    new CollisionComponent(),
-  ]);
+  const bullet = world.createEntity();
+  const position = new Vector2(x, y);
+
+  addPositionComponent(world, bullet, { local: position, world: position });
+  addRotationComponent(world, bullet);
+  addSpriteComponent(world, bullet, bulletSprite);
+  addPhysicsBodyComponent(world, bullet, {
+    physicsBody: new RigidBody({
+      shape: new CircleShape(4),
+      position,
+      velocity: new Vector2(directionX * 500, directionY * 500),
+    }),
+  });
+  addLifetimeComponent(world, bullet, { durationSeconds: 3.0 }); // Bullet exists for 3 seconds
+  world.addTag(bullet, RemoveFromWorldLifetimeStrategyId);
 }
 ```
 
-## Pooled Entities (Advanced)
-
-For high-performance scenarios where you frequently create and destroy entities, use object pooling to reuse entities instead of creating new ones.
-
-```typescript
-import {
-  LifetimeComponent,
-  ReturnToPoolStrategyComponent,
-  ObjectPool,
-} from '@forge-game-engine/forge';
-
-// Create a pool for bullet entities
-const bulletPool = new ObjectPool<Entity>(
-  [], // Start with empty pool
-  () => {
-    // Create new bullet entity
-    return world.buildEntity(, [
-      new SpriteComponent(bulletSprite),
-      new PositionComponent(0, 0),
-      new VelocityComponent(0, 0),
-      new CollisionComponent(),
-    ]);
-  },
-  (bullet) => {
-    // Clean up when bullet returns to pool
-    bullet.removeComponent(LifetimeComponent);
-    bullet.removeComponent(ReturnToPoolStrategyComponent);
-  },
-);
-
-// Fire a bullet using the pool
-function fireBullet(x: number, y: number, vx: number, vy: number) {
-  const bullet = bulletPool.getOrCreate();
-
-  // Reset bullet position and velocity
-  const pos = bullet.getComponent(PositionComponent)!;
-  pos.x = x;
-  pos.y = y;
-
-  const vel = bullet.getComponent(VelocityComponent)!;
-  vel.x = vx;
-  vel.y = vy;
-
-  // Add lifetime components
-  bullet.addComponent(new LifetimeComponent(5.0));
-  bullet.addComponent(new ReturnToPoolStrategyComponent(bulletPool));
-
-  world.addEntity(bullet);
-}
-```
+`createPhysicsSyncEcsSystem` keeps the entity's `PositionEcsComponent` in
+sync with the `RigidBody`'s simulated position every frame — see
+[Bodies and Shapes](../physics/rigid-bodies.md).
 
 ## Temporary Obstacles
 
 Create obstacles or hazards that appear and disappear on a timer.
 
-```typescript
+```ts
 import {
-  LifetimeComponent,
-  RemoveFromWorldStrategyComponent,
-} from '@forge-game-engine/forge';
+  addLifetimeComponent,
+  RemoveFromWorldLifetimeStrategyId,
+} from '@forge-game-engine/forge/lifecycle';
+import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
+import { addPhysicsBodyComponent, PolygonShape, RigidBody } from '@forge-game-engine/forge/physics';
+import { Vector2 } from '@forge-game-engine/forge/math';
 
 function spawnTemporaryWall(x: number, y: number, duration: number) {
-  world.buildAndAddEntity([
-    new LifetimeComponent(duration),
-    new RemoveFromWorldStrategyComponent(),
-    new SpriteComponent(wallSprite),
-    new PositionComponent(x, y),
-    new CollisionComponent(),
-  ]);
+  const wall = world.createEntity();
+  const position = new Vector2(x, y);
+
+  addPositionComponent(world, wall, { local: position, world: position });
+  addRotationComponent(world, wall);
+  addSpriteComponent(world, wall, wallSprite);
+  addPhysicsBodyComponent(world, wall, {
+    physicsBody: new RigidBody({
+      shape: PolygonShape.rectangle(wallSprite.width, wallSprite.height),
+      position,
+      isStatic: true,
+    }),
+  });
+  addLifetimeComponent(world, wall, { durationSeconds: duration });
+  world.addTag(wall, RemoveFromWorldLifetimeStrategyId);
 }
 
 // Wall that exists for 5 seconds
