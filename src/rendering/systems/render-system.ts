@@ -170,10 +170,19 @@ const pushSpriteRenderCommands = (
     (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
   for (const region of regions) {
+    // Negated relative to a_instanceRot's own rotation of the region's local
+    // quad in the shader (see sprite.vert.glsl): that rotation acts on
+    // unnegated local geometry, so it picks up exactly one Y flip from the
+    // projection matrix, while this offset gets added into world position
+    // and then flows through bindSpriteInstanceData's world.y negation *and*
+    // the projection matrix's - two flips, i.e. none overall. Rotating this
+    // offset by the same (unnegated) angle would orbit each region around
+    // the entity in the opposite screen direction from how the shader spins
+    // that region's own quad, tearing the sliced sprite apart as it rotates.
     const regionOffset = new Vector2(
       region.offset.x * scaleX,
       region.offset.y * scaleY,
-    ).rotate(rotationRadians);
+    ).rotate(-rotationRadians);
 
     const regionPosition: PositionEcsComponent = {
       local: entityPosition.local,

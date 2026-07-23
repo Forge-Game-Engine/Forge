@@ -180,7 +180,16 @@ function createCellRegions(
       regions.push({
         offset: new Vector2(
           xSegment.start + xSegment.size / 2 - pivot.x * width,
-          ySegment.start + ySegment.size / 2 - pivot.y * height,
+          // Negated relative to x (written as a subtraction, not unary `-`,
+          // so a zero result stays +0 rather than -0): sprite instance data
+          // negates world.y again before it reaches the shader (see
+          // bindSpriteInstanceData), to convert this sprite-space, Y-down
+          // offset (near/top bands start at 0, far/bottom bands end at
+          // `height`) into the engine's Y-up world space. Without this, a
+          // region's own offset and its parent entity's position would be
+          // negated a different number of times, landing near/top bands at
+          // the far/bottom edge and vice versa.
+          pivot.y * height - (ySegment.start + ySegment.size / 2),
         ),
         size: new Vector2(xSegment.size, ySegment.size),
         uvOffset: new Vector2(xBand.uvStart, yBand.uvStart),

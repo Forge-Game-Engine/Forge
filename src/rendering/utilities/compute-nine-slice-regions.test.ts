@@ -57,12 +57,15 @@ describe('computeNineSliceRegions', () => {
     expect(bottomRight).toBeDefined();
 
     // Top-left corner center offset from the sprite's own center anchor.
+    // Y is negated relative to X: sprite-space Y grows downward (top band
+    // first), but world space is Y-up, so a top-left corner ends up with a
+    // positive Y offset (up) alongside its negative X offset (left).
     expect(topLeft!.offset.x).toBeCloseTo(-200 / 2 + 8 / 2, 5);
-    expect(topLeft!.offset.y).toBeCloseTo(-120 / 2 + 4 / 2, 5);
+    expect(topLeft!.offset.y).toBeCloseTo(120 / 2 - 4 / 2, 5);
 
     // Bottom-right corner center offset.
     expect(bottomRight!.offset.x).toBeCloseTo(200 / 2 - 12 / 2, 5);
-    expect(bottomRight!.offset.y).toBeCloseTo(120 / 2 - 6 / 2, 5);
+    expect(bottomRight!.offset.y).toBeCloseTo(-120 / 2 + 6 / 2, 5);
   });
 
   it('places the top-left corner exactly at the anchor when the pivot is (0, 0)', () => {
@@ -78,7 +81,7 @@ describe('computeNineSliceRegions', () => {
     const topLeft = regions.find((r) => r.size.x === 10 && r.size.y === 10);
 
     expect(topLeft).toBeDefined();
-    expect(topLeft!.offset).toEqual(new Vector2(5, 5));
+    expect(topLeft!.offset).toEqual(new Vector2(5, -5));
   });
 
   it('proportionally clamps insets that would otherwise overlap', () => {

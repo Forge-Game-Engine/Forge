@@ -29,7 +29,7 @@ export default function NineSlice(): JSX.Element {
           'A demo comparing a naively-stretched sprite against nine-sliced sprites with stretch and tile edge/center modes.',
       }}
       header="Nine-Slice Sprites"
-      blurb="The same 64x64 panel artwork (a 12px border with gold corner accents around a tiled grid) drives all three panels, which all breathe between the same minimum and maximum size together. The left panel is a plain, unsliced sprite: as it grows, its border and corner accents stretch right along with it, turning soft and blurry. The middle panel is nine-sliced with the default 'stretch' mode: its corners stay a crisp, fixed size no matter how large the panel gets, while its edges and center stretch to fill the rest. The right panel uses 'tile' mode instead: its corners are just as fixed, but the edges and center repeat the grid pattern at its native size rather than stretching it, so the grid squares stay square."
+      blurb="The same 96x96 panel artwork (a flat white fill with a thin inset frame line and cross-shaped corner notches, from Kenney's Fantasy UI Borders pack) drives all three panels, which all breathe between the same minimum and maximum size together. The left panel is a plain, unsliced sprite: as it grows, its corner notches and frame line stretch right along with it, smearing out of shape. The middle and right panels are nine-sliced with 'stretch' and 'tile' edge/center modes respectively: both keep their corner notches a crisp, fixed size no matter how large the panel gets. Because this artwork's edges and center are a flat, untextured fill rather than a repeating pattern, 'stretch' and 'tile' render identically here - the difference between those two modes only becomes visible with source art that has repeating detail (a brick or wood-grain edge, for example) for tiling to preserve."
       createGame={createNineSliceGame}
       interactions={
         <>
@@ -43,7 +43,7 @@ export default function NineSlice(): JSX.Element {
           />
           <InteractionInstruction
             displayElement={<div style={badgeStyle}>3</div>}
-            text="Nine-slice: tile"
+            text="Nine-slice: tile (looks identical to #2 with this flat-fill artwork)"
           />
         </>
       }

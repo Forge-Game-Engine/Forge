@@ -499,8 +499,54 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, -45) before rotation) rotates 180
+      // The top-left corner (offset (-45, 45) before rotation) rotates 180
       // degrees around the entity, landing on the opposite side.
+      const rotatedCorner = positions.find(
+        (position) =>
+          Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
+          Math.abs(position.world.y - -45) < 1e-9,
+      );
+
+      expect(rotatedCorner).toBeDefined();
+    });
+
+    it('orbits regions around the entity in the same screen direction the shader spins their own quad', () => {
+      // A 180 degree rotation can't tell an orbit direction bug apart from
+      // correct behavior (rotating by +90 or -90 degrees lands in the same
+      // place), so this uses a 90 degree rotation, whose two possible
+      // landing spots are distinct.
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, {
+        local: new Vector2(50, 0),
+        world: new Vector2(50, 0),
+      });
+      addRotationComponent(world, entity, { world: Math.PI / 2 });
+      addSpriteComponent(
+        world,
+        entity,
+        createSprite(renderable, {
+          width: 100,
+          height: 100,
+          pivot: new Vector2(0.5, 0.5),
+          slices: { left: 10, right: 10, top: 10, bottom: 10 },
+        }),
+      );
+
+      world.update();
+
+      const positions = bindInstanceData.mock.calls.map(
+        (call) => (call[0] as { position: PositionEcsComponent }).position,
+      );
+
+      // The top-left corner (offset (-45, 45) before rotation) orbits to
+      // (45, 45): the same screen-space rotation direction a_instanceRot
+      // spins the region's own quad in the shader. Orbiting it the other
+      // way around the entity (a sign bug) would instead land it at
+      // (-45, -45), tearing the sliced sprite's regions apart on rotation.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
