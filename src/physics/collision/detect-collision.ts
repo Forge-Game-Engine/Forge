@@ -2,7 +2,9 @@ import type { RigidBody } from '../rigid-body.js';
 import type { CollisionManifold } from './collision-manifold.js';
 import { detectCircleCircleCollision } from './detect-circle-circle-collision.js';
 import { detectCirclePolygonCollision } from './detect-circle-polygon-collision.js';
+import { detectCircleTerrainCollision } from './detect-circle-terrain-collision.js';
 import { detectPolygonPolygonCollision } from './detect-polygon-polygon-collision.js';
+import { detectPolygonTerrainCollision } from './detect-polygon-terrain-collision.js';
 
 function flipManifold(
   manifold: CollisionManifold | null,
@@ -31,6 +33,16 @@ const collisionDetectors = new Map<
     (bodyA, bodyB) => flipManifold(detectCirclePolygonCollision(bodyB, bodyA)),
   ],
   ['polygon-polygon', detectPolygonPolygonCollision],
+  ['circle-terrain', detectCircleTerrainCollision],
+  [
+    'terrain-circle',
+    (bodyA, bodyB) => flipManifold(detectCircleTerrainCollision(bodyB, bodyA)),
+  ],
+  ['polygon-terrain', detectPolygonTerrainCollision],
+  [
+    'terrain-polygon',
+    (bodyA, bodyB) => flipManifold(detectPolygonTerrainCollision(bodyB, bodyA)),
+  ],
 ]);
 
 /**

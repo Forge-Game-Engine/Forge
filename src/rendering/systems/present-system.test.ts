@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPresentEcsSystem } from './present-system';
 import { EcsWorld } from '../../ecs';
+import { Color } from '../color';
 import { CameraEcsComponent, cameraId } from '../components';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
@@ -35,6 +36,7 @@ describe('createPresentEcsSystem', () => {
     cullingMask: 0xffffffff,
     renderTarget,
     layer,
+    clearColor: Color.transparent,
   });
 
   const addCameraEntity = (

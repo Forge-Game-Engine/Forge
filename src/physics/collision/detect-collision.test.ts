@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { detectCollision } from './detect-collision.js';
 import { RigidBody } from '../rigid-body.js';
-import { CircleShape, PolygonShape } from '../shapes/index.js';
+import { CircleShape, PolygonShape, TerrainShape } from '../shapes/index.js';
 import { Vector2 } from '../../math/index.js';
 
 describe('detectCollision', () => {
@@ -78,6 +78,86 @@ describe('detectCollision', () => {
     expect(manifold?.bodyB).toBe(bodyB);
     expect(manifold?.normal.x).toBeCloseTo(1);
     expect(manifold?.normal.y).toBeCloseTo(0);
+  });
+
+  it('should dispatch circle-terrain collisions', () => {
+    const bodyA = new RigidBody({
+      shape: new CircleShape(1),
+      position: new Vector2(0, -0.5),
+    });
+    const bodyB = new RigidBody({
+      shape: new TerrainShape([new Vector2(-5, 0), new Vector2(5, 0)], 2),
+      position: Vector2.zero,
+      isStatic: true,
+    });
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.bodyA).toBe(bodyA);
+    expect(manifold?.bodyB).toBe(bodyB);
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(1);
+  });
+
+  it('should dispatch terrain-circle collisions, preserving body order', () => {
+    const bodyA = new RigidBody({
+      shape: new TerrainShape([new Vector2(-5, 0), new Vector2(5, 0)], 2),
+      position: Vector2.zero,
+      isStatic: true,
+    });
+    const bodyB = new RigidBody({
+      shape: new CircleShape(1),
+      position: new Vector2(0, -0.5),
+    });
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.bodyA).toBe(bodyA);
+    expect(manifold?.bodyB).toBe(bodyB);
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(-1);
+  });
+
+  it('should dispatch polygon-terrain collisions', () => {
+    const bodyA = new RigidBody({
+      shape: PolygonShape.rectangle(2, 2),
+      position: new Vector2(0, -0.5),
+    });
+    const bodyB = new RigidBody({
+      shape: new TerrainShape([new Vector2(-5, 0), new Vector2(5, 0)], 2),
+      position: Vector2.zero,
+      isStatic: true,
+    });
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.bodyA).toBe(bodyA);
+    expect(manifold?.bodyB).toBe(bodyB);
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(1);
+  });
+
+  it('should dispatch terrain-polygon collisions, preserving body order', () => {
+    const bodyA = new RigidBody({
+      shape: new TerrainShape([new Vector2(-5, 0), new Vector2(5, 0)], 2),
+      position: Vector2.zero,
+      isStatic: true,
+    });
+    const bodyB = new RigidBody({
+      shape: PolygonShape.rectangle(2, 2),
+      position: new Vector2(0, -0.5),
+    });
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.bodyA).toBe(bodyA);
+    expect(manifold?.bodyB).toBe(bodyB);
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(-1);
   });
 
   it('should throw an error for an unregistered shape pair', () => {

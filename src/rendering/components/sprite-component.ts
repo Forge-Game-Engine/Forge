@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Color, Renderable, Vector2 } from '../../index.js';
+import { NineSliceOptions } from '../nine-slice-options.js';
 
 /**
  * Fields of {@link SpriteEcsComponent} with no sensible default; callers
@@ -79,6 +80,15 @@ export interface SpriteDefaultedOptions {
    * position).
    */
   layer: number;
+
+  /**
+   * Nine-slice ("9-patch") configuration. When set, the render system draws
+   * this sprite as up to nine regions (four fixed-size corners, four
+   * stretched/tiled edges, and a stretched/tiled center) instead of a single
+   * stretched quad, so corner artwork keeps its size as `width`/`height`
+   * change. Omit for a normal, single-quad sprite.
+   */
+  slices?: NineSliceOptions;
 }
 
 export interface SpriteEcsComponent

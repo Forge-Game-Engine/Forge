@@ -1,4 +1,5 @@
 export * from './components/index.js';
+export * from './nine-slice-options.js';
 export * from './sprite.js';
 export * from './systems/index.js';
 export * from './shaders/index.js';
@@ -13,3 +14,4 @@ export * from './render-context.js';
 export * from './render-target.js';
 export * from './ping-pong-target.js';
 export * from './fullscreen-pass.js';
+export * from './terrain/index.js';

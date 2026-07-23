@@ -6,6 +6,7 @@ import {
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
+import { NineSliceOptions } from '../nine-slice-options.js';
 import { RenderContext } from '../render-context.js';
 import {
   createTextureFromImage,
@@ -63,6 +64,13 @@ export interface CreateImageSpriteOptions {
    * instead of being sampled into a hard, staggered stair-step.
    */
   pixelated?: boolean;
+
+  /**
+   * Nine-slice configuration, for a sprite whose corners should stay a
+   * fixed size while its edges/center stretch or tile. Omit for a normal,
+   * single-quad sprite.
+   */
+  slices?: NineSliceOptions;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -143,5 +151,6 @@ export function createImageSprite(
     uvOffset: new Vector2(0, 0),
     uvScale: new Vector2(1, 1),
     layer: 0,
+    slices: options.slices,
   };
 }

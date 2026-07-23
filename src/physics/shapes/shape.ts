@@ -1,10 +1,11 @@
 import type { CircleShape } from './circle-shape.js';
 import type { PolygonShape } from './polygon-shape.js';
+import type { TerrainShape } from './terrain-shape.js';
 
 /**
  * The kind of geometry a {@link Shape} represents.
  */
-export type ShapeType = 'circle' | 'polygon';
+export type ShapeType = 'circle' | 'polygon' | 'terrain';
 
 /**
  * Common contract implemented by all collision shapes.
@@ -38,6 +39,7 @@ export interface ShapeBase {
 }
 
 /**
- * A collision shape, either a {@link CircleShape} or a {@link PolygonShape}.
+ * A collision shape: a {@link CircleShape}, a {@link PolygonShape}, or a
+ * {@link TerrainShape}.
  */
-export type Shape = CircleShape | PolygonShape;
+export type Shape = CircleShape | PolygonShape | TerrainShape;

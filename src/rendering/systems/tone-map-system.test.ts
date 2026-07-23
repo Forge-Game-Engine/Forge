@@ -8,6 +8,7 @@ import {
   cameraId,
   ToneMappingEcsComponent,
 } from '../components';
+import { Color } from '../color';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { ImageCache } from '../../asset-loading';
@@ -44,6 +45,7 @@ describe('createToneMapEcsSystem', () => {
     cullingMask: 0xffffffff,
     renderTarget,
     layer: 0,
+    clearColor: Color.transparent,
   });
 
   const addCameraEntity = (
