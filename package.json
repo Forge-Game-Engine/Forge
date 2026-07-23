@@ -125,7 +125,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
-    "@types/howler": "^2.2.12",
+    "@types/howler": "^2.2.13",
     "@types/seedrandom": "^3.0.8",
     "@vitest/ui": "^4.0.6",
     "cspell": "^10.0.1",
