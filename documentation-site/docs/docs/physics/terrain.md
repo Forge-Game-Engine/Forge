@@ -75,20 +75,69 @@ the narrow phase - for very large worlds, prefer several shorter
 
 The engine's sprite renderer draws rotated/scaled quads and has no built-in
 terrain mesh renderer, so visualizing a `TerrainShape` is left to your game
-code, the same way the [physics demo](/Forge/demos/physics) hand-builds its
-boundary walls out of `PolygonShape` and a sprite. A common approach is to
-draw one sprite per segment: a thin rectangle spanning each pair of surface
-points, rotated to match the slope and tinted a solid ground color via
+code. Two approaches, from simplest to most capable, both demonstrated in
+this repo:
+
+### Quick and simple: one sprite bar per point
+
+The [physics demo](/Forge/demos/physics) hand-builds its rolling-hill floor
+out of ordinary sprites, the same way it builds its `PolygonShape` walls:
+one thin, axis-aligned vertical bar per surface point, reaching from that
+point down to the shared bottom edge, tinted a solid ground color via
 [`getSharedWhiteTexture`](/Forge/docs/api/functions/getSharedWhiteTexture)
 (a 1x1 white texture, so the sprite shader's tint multiplies through
-unmodified). See the [physics demo](/Forge/demos/physics)'s
-`create-terrain.ts` for a complete example, including computing each
-segment's position, rotation, and width from the same `points`/`depth`
-passed to `TerrainShape`.
+unmodified). See its `create-terrain.ts` for the complete example,
+including computing each bar's position and width from the same
+`points`/`depth` passed to `TerrainShape`.
 
-For a longer, more elaborate course - and a player-controlled body actually
-rolling over it - see the [Rolling Ball demo](/Forge/demos/rolling-ball): a
-much longer `TerrainShape` with varied, seeded-random hills, and a ball
-whose `AngularVelocityMotorEcsComponent` spin turns into rolling motion
-purely through friction against the terrain, no special-cased "rolling"
-logic of its own.
+:::caution
+Render one rotated rectangle **per segment** instead (each one's top edge
+matching that segment's slope) and you'll get thin gaps of background
+showing through at some of the joints: two neighboring segments only share
+their exact top corners, so wherever the slope changes from one segment to
+the next, their side edges diverge below that shared corner. Axis-aligned
+bars, each a little wider than its point spacing so neighbors overlap,
+avoid this regardless of how steeply the terrain slopes - see the
+`barOverlap` in the demo's `create-terrain.ts`.
+:::
+
+This approach is quick to write and reuses the ordinary sprite pipeline
+entirely, but it can't render a perfectly smooth diagonal edge (the bars are
+always vertical) or independently-tiled textures along the slope.
+
+### A real textured mesh: the Rolling Ball demo
+
+The [Rolling Ball demo](/Forge/demos/rolling-ball) goes further: a much
+longer course whose smooth silhouette comes from a Catmull-Rom spline
+through sparse, randomly-placed control points (see its
+`terrain-curve.ts`), densely sampled into both `TerrainShape`'s collision
+points _and_ a triangulated render mesh - the same points drive both, so
+what's drawn always matches exactly what the ball touches.
+
+That mesh is textured with a custom shader (`terrain.vert`/`terrain.frag`)
+rather than the sprite pipeline: two independently-tileable layers, a
+"border" texture near the surface blending into a "fill" texture below it
+over a configurable depth and blend width, each with its own tile size and
+tint (see `CreateTerrainOptions` in its `create-terrain.ts`). Since this
+mesh has an arbitrary vertex count - not the fixed six-vertices-per-quad the
+sprite pipeline batches - it's drawn with its own direct, non-instanced
+`gl.drawArrays` call (see `terrain-render.system.ts`) instead of going
+through `createRenderEcsSystem`.
+
+:::caution[Coexisting with the sprite pipeline]
+A custom draw call like this runs as an ordinary `EcsSystem`, registered
+_before_ `createRenderEcsSystem` so sprites (the ball) draw on top of the
+terrain mesh underneath them. But `createRenderEcsSystem` clears its
+destination the first time it's used each frame (see
+`RenderContext.clearStrategy`), which would wipe out the terrain mesh drawn
+just before it. The Rolling Ball demo sets `renderContext.clearStrategy =
+CLEAR_STRATEGY.none` so neither system's automatic clear fires, and instead
+does the frame's one real clear itself, first, in its own system - see the
+comment on `renderContext.clearStrategy` in its `create-game.ts`.
+:::
+
+Textures meant to tile also need `REPEAT` wrapping, unlike the engine's
+`createTextureFromImage` (which hardcodes `CLAMP_TO_EDGE`, correct for a
+sprite frame that must never bleed into a neighboring frame in the same
+atlas). The demo's `load-tiled-texture.ts` loads a texture with `REPEAT` on
+both axes instead.

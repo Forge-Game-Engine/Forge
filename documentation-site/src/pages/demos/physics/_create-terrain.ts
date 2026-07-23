@@ -1,8 +1,5 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import {
-  positionId,
-  rotationId,
-} from '@forge-game-engine/forge/common';
+import { positionId, rotationId } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   PhysicsBodyId,
@@ -26,7 +23,7 @@ import { wallThickness } from './_create-boundaries';
 const groundColor = new Color(0.36, 0.62, 0.32, 1);
 const hillAmplitude = 60;
 const terrainDepth = 400;
-const pointCount = 9;
+const pointCount = 40;
 
 /**
  * Builds a shared `Renderable` for terrain segment sprites: the standard
@@ -69,9 +66,9 @@ function createTerrainRenderable(
 
 /**
  * Creates a rolling-hill `TerrainShape` body spanning the play area,
- * replacing a flat floor, plus one sprite entity per terrain segment (a
- * thin rotated rectangle following the slope) to render it. Demonstrates
- * `TerrainShape` as described in the Terrain physics guide.
+ * replacing a flat floor, plus one sprite entity per surface point (a thin
+ * vertical bar) to render it. Demonstrates `TerrainShape` as described in
+ * the Terrain physics guide.
  * @param world - The ECS world to add the terrain entities to.
  * @param renderContext - The render context used to build the terrain sprite material.
  * @param renderLayer - The render layer the terrain should be drawn on.
@@ -135,39 +132,50 @@ export function createTerrain(
     physicsBody: terrainBody,
   });
 
-  for (let i = 0; i < points.length - 1; i++) {
-    const surfaceLeft = points[i];
-    const surfaceRight = points[i + 1];
-    const edge = surfaceRight.subtract(surfaceLeft);
-    const segmentWidth = edge.magnitude();
+  // Rendered as one axis-aligned bar per surface point, not one strip per
+  // segment rotated to match its own slope: a rotated strip only shares its
+  // exact top corners with its neighbors, so wherever the slope changes
+  // from one segment to the next, their side edges diverge below that
+  // shared corner and open a sliver of black background between them. Bars
+  // stay axis-aligned (in the terrain's own local space) and a little wider
+  // than their point spacing so neighbors overlap, which closes that gap
+  // regardless of how steeply the terrain slopes, at the cost of a subtle
+  // staircase instead of a perfectly smooth diagonal edge - invisible at
+  // this point spacing.
+  const barOverlap = 1.2;
 
-    // The outward normal (away from the solid slab) in the terrain's local
-    // space; the segment sprite is centered `terrainDepth / 2` units in the
-    // opposite direction so it spans from the surface down into the ground.
-    const outwardNormal = edge.perpendicular().normalize();
-    const localMidpoint = surfaceLeft
-      .add(surfaceRight)
-      .multiply(0.5)
-      .subtract(outwardNormal.multiply(terrainDepth / 2));
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    const leftGap =
+      i > 0 ? point.x - points[i - 1].x : points[i + 1].x - point.x;
+    const rightGap =
+      i < points.length - 1
+        ? points[i + 1].x - point.x
+        : point.x - points[i - 1].x;
+    const barWidth = ((leftGap + rightGap) / 2) * barOverlap;
+    const barHeight = terrainShape.bottomY - point.y;
 
-    const segmentPosition = localMidpoint.rotate(angle).add(position);
-    const segmentAngle = Math.atan2(edge.y, edge.x) + angle;
+    const localCenter = new Vector2(
+      point.x,
+      (point.y + terrainShape.bottomY) / 2,
+    );
+    const barPosition = localCenter.rotate(angle).add(position);
 
-    const segmentEntity = world.createEntity();
+    const barEntity = world.createEntity();
 
-    world.addComponent(segmentEntity, positionId, {
-      world: segmentPosition,
-      local: segmentPosition.clone(),
+    world.addComponent(barEntity, positionId, {
+      world: barPosition,
+      local: barPosition.clone(),
     });
 
-    world.addComponent(segmentEntity, rotationId, {
-      local: -segmentAngle,
-      world: -segmentAngle,
+    world.addComponent(barEntity, rotationId, {
+      local: -angle,
+      world: -angle,
     });
 
-    world.addComponent(segmentEntity, spriteId, {
-      width: segmentWidth,
-      height: terrainDepth,
+    world.addComponent(barEntity, spriteId, {
+      width: barWidth,
+      height: barHeight,
       pivot: new Vector2(0.5, 0.5),
       tintColor: groundColor,
       renderable,

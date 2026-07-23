@@ -1,4 +1,6 @@
 import {
+  CLEAR_STRATEGY,
+  Color,
   createCamera,
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
@@ -13,8 +15,10 @@ import {
   positionId,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createInputs } from './_create-inputs';
 import { createTerrain } from './_create-terrain';
+import { createTerrainRenderEcsSystem } from './_terrain-render.system';
 import { createPlayer } from './_create-player';
 import { createRollEcsSystem } from './_roll.system';
 import { createJumpEcsSystem } from './_jump.system';
@@ -30,6 +34,12 @@ const terrainWidth = 8000;
 export const createRollingBallGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
+  // The terrain render system draws directly, outside the sprite pipeline
+  // (see createTerrainRenderEcsSystem), and owns the frame's one real
+  // clear; without `none` here, createRenderEcsSystem's own clear would
+  // wipe the terrain right before drawing the sprites on top of it.
+  renderContext.clearStrategy = CLEAR_STRATEGY.none;
+
   const cameraEntity = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
@@ -39,12 +49,25 @@ export const createRollingBallGame = async (): Promise<Game> => {
 
   const { rollInput, jumpInput } = createInputs(world, time);
 
-  const terrain = createTerrain(
-    world,
-    renderContext,
-    renderLayers.foreground,
-    terrainWidth,
-  );
+  const terrain = await createTerrain(world, renderContext, {
+    totalWidth: terrainWidth,
+    border: {
+      textureUrl: getAssetUrl(
+        'img/kenney_pattern-pack/PNG/Default/pattern_25.png',
+      ),
+      tileSize: new Vector2(160, 70),
+      tint: new Color(0.42, 0.68, 0.35, 1),
+    },
+    fill: {
+      textureUrl: getAssetUrl(
+        'img/kenney_pattern-pack/PNG/Default/pattern_39.png',
+      ),
+      tileSize: new Vector2(90, 90),
+      tint: new Color(0.4, 0.29, 0.18, 1),
+    },
+    borderWidth: 40,
+    borderBlend: 14,
+  });
 
   const spawnPosition = new Vector2(
     terrain.spawnX,
@@ -77,7 +100,9 @@ export const createRollingBallGame = async (): Promise<Game> => {
   // run before createPhysicsSyncEcsSystem, so this tick's input reaches
   // this tick's physics step - see the Applying Forces guide's registration
   // order caution. The jump/respawn and camera-follow systems read the
-  // physics step's results, so they run after it instead.
+  // physics step's results, so they run after it instead. The terrain
+  // render system must run before createRenderEcsSystem so the ball's
+  // sprite draws on top of the terrain mesh, not underneath it.
   world.addSystem(createRollEcsSystem(rollInput));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
@@ -91,6 +116,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
     ),
   );
   world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
+  world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

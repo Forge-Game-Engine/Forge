@@ -8,91 +8,86 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   Color,
-  combineInstanceDataSegments,
-  createQuadGeometry,
-  getSharedBlackTexture,
-  getSharedWhiteTexture,
+  ForgeShaderSource,
+  Geometry,
   Material,
-  Renderable,
   RenderContext,
-  spriteId,
-  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
+import terrainVertexShaderSource from '!!raw-loader!./_terrain.vert.glsl';
+import terrainFragmentShaderSource from '!!raw-loader!./_terrain.frag.glsl';
+import { buildTerrainCurve, heightAtLocalX } from './_terrain-curve';
+import { loadTiledTexture } from './_load-tiled-texture';
 
-const groundColor = new Color(0.36, 0.62, 0.32, 1);
+// How far apart (in local x) the sparse control points the terrain curve is
+// built from are. Small enough that a smooth curve through them still reads
+// as "rolling hills" rather than a handful of disconnected bumps.
+const anchorSpacing = 400;
+
+// How many curve points to sample per anchor-to-anchor segment. Both the
+// TerrainShape collision points and the render mesh use this same dense
+// sampling, so what the ball touches always matches what's drawn.
+const samplesPerSegment = 20;
+
 const terrainDepth = 500;
-const pointSpacing = 35;
+const maxStepHeight = 50;
+const minHeight = -180;
+const maxHeight = 180;
 
-// The width (in local x) of the flat platform centered on local x = 0 -
-// where the ball spawns - before the terrain fades into its full
-// rolling-hill height variation. Landing on a flat platform first, rather
-// than a slope, makes the starting point read clearly as "home base", and
-// centering it (rather than putting it at one end) means both roll
-// directions lead into the same amount of varied terrain.
-const flatStartZone = 700;
+// The number of anchors, centered on x = 0, held flat at height 0 so the
+// ball spawns on a predictable platform instead of partway up a slope.
+const flatAnchorRadius = 1;
 
 /**
- * A few sine waves at different amplitudes/frequencies/phases, summed
- * together, produce smooth, varied "rolling hills" terrain rather than
- * either a single uniform wave or jagged point-to-point noise (which would
- * create slopes too steep for the ball to roll over predictably). Fixed via
- * a seeded `Random`, so the terrain is identical on every page load - handy
- * for a demo where players compare notes on the same course.
+ * Texture and tiling options for one of the terrain's two texture layers
+ * (see {@link CreateTerrainOptions}).
  */
-const hillLayers = (() => {
-  const random = new Random('rolling-ball-terrain');
+export interface TerrainLayerOptions {
+  /** URL of the image to tile across this layer. */
+  textureUrl: string;
 
-  return [1, 2, 3].map((octave) => ({
-    amplitude: random.randomFloat(25, 70) / octave,
-    frequency: random.randomFloat(0.0006, 0.0016) * octave,
-    phase: random.randomFloat(0, Math.PI * 2),
-  }));
-})();
+  /**
+   * The world-space size of one tile of the texture: x tiles along the
+   * curve's arc length, y tiles into the ground. Smaller values repeat the
+   * texture more often over the same span of terrain.
+   */
+  tileSize: Vector2;
 
-function heightAt(localX: number, halfWidth: number): number {
-  const rawHeight = hillLayers.reduce(
-    (sum, layer) =>
-      sum + layer.amplitude * Math.sin(layer.frequency * localX + layer.phase),
-    0,
-  );
-
-  const fade = clamp(
-    (Math.abs(localX) - flatStartZone / 2) / flatStartZone,
-    0,
-    1,
-  );
-
-  return rawHeight * fade;
+  /** Tint multiplied against the sampled texture. */
+  tint: Color;
 }
 
-function createTerrainRenderable(
-  renderContext: RenderContext,
-  layer: number,
-): Renderable {
-  const { shaderCache, gl } = renderContext;
+export interface CreateTerrainOptions {
+  /** The total width of the terrain, in world units. */
+  totalWidth: number;
 
-  const material = new Material(
-    shaderCache.getShader('sprite.vert'),
-    shaderCache.getShader('sprite.frag'),
-    gl,
-  );
+  /** The texture tiled across the terrain's surface, from the surface down to `borderWidth`. */
+  border: TerrainLayerOptions;
 
-  material.setUniform('u_texture', getSharedWhiteTexture(gl));
-  material.setUniform('u_emissiveTexture', getSharedBlackTexture(gl));
-  material.setColorUniform('u_emissiveColor', Color.white);
-  material.setUniform('u_emissiveIntensity', 0);
+  /** The texture tiled across the terrain's interior, below `borderWidth`. */
+  fill: TerrainLayerOptions;
 
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
+  /**
+   * How deep (in world units) the border layer extends below the surface
+   * before blending into the fill layer.
+   */
+  borderWidth: number;
 
-  return new Renderable(
-    createQuadGeometry(gl),
-    material,
-    floatsPerInstance,
-    layer,
-    bindInstanceData,
-    setupInstanceAttributes,
-  );
+  /**
+   * How wide (in world units) the blend between the border and fill layers
+   * is, centered on `borderWidth`.
+   */
+  borderBlend: number;
+}
+
+const defaultCreateTerrainOptions = {
+  borderBlend: 12,
+};
+
+/** The static terrain mesh built by {@link createTerrain}, ready to draw with `createTerrainRenderEcsSystem`. */
+export interface TerrainMesh {
+  readonly geometry: Geometry;
+  readonly material: Material;
+  readonly vertexCount: number;
 }
 
 export interface RollingBallTerrain {
@@ -111,32 +106,183 @@ export interface RollingBallTerrain {
    * on the ground, accounting for the terrain body's rotation (see below).
    */
   worldSurfaceYAt: (worldX: number) => number;
+
+  /** The terrain's render mesh, for `createTerrainRenderEcsSystem`. */
+  mesh: TerrainMesh;
+}
+
+function buildControlPoints(totalWidth: number): Vector2[] {
+  const halfWidth = totalWidth / 2;
+  const anchorCount = Math.round(totalWidth / anchorSpacing) + 1;
+  const random = new Random('rolling-ball-terrain');
+
+  const controlPoints: Vector2[] = [];
+  let previousHeight = 0;
+
+  for (let i = 0; i < anchorCount; i++) {
+    const x =
+      i === anchorCount - 1 ? halfWidth : -halfWidth + i * anchorSpacing;
+    const isFlatZone = Math.abs(x) <= anchorSpacing * flatAnchorRadius + 1;
+
+    let height: number;
+
+    if (isFlatZone) {
+      height = 0;
+    } else {
+      const step = random.randomFloat(-maxStepHeight, maxStepHeight);
+
+      height = clamp(previousHeight + step, minHeight, maxHeight);
+    }
+
+    previousHeight = height;
+    controlPoints.push(new Vector2(x, height));
+  }
+
+  return controlPoints;
+}
+
+interface TerrainMeshData {
+  positions: Float32Array;
+  distances: Float32Array;
+  depths: Float32Array;
+  vertexCount: number;
+}
+
+function buildTerrainMeshData(
+  curvePoints: { position: Vector2; distance: number }[],
+  bottomY: number,
+  angle: number,
+  position: Vector2,
+): TerrainMeshData {
+  const positions: number[] = [];
+  const distances: number[] = [];
+  const depths: number[] = [];
+
+  const pushVertex = (
+    localPoint: Vector2,
+    distance: number,
+    depth: number,
+  ): void => {
+    const world = localPoint.rotate(angle).add(position);
+
+    // Y is negated here to match the sprite pipeline's world-to-render
+    // convention (see sprite-instance-data-segment.ts's
+    // bindSpriteInstanceData, which negates position.world.y the same way
+    // before it reaches the GPU).
+    positions.push(world.x, -world.y);
+    distances.push(distance);
+    depths.push(depth);
+  };
+
+  for (let i = 0; i < curvePoints.length - 1; i++) {
+    const left = curvePoints[i];
+    const right = curvePoints[i + 1];
+
+    const bottomLeft = new Vector2(left.position.x, bottomY);
+    const bottomRight = new Vector2(right.position.x, bottomY);
+    const depthLeft = bottomY - left.position.y;
+    const depthRight = bottomY - right.position.y;
+
+    pushVertex(left.position, left.distance, 0);
+    pushVertex(right.position, right.distance, 0);
+    pushVertex(bottomLeft, left.distance, depthLeft);
+
+    pushVertex(right.position, right.distance, 0);
+    pushVertex(bottomRight, right.distance, depthRight);
+    pushVertex(bottomLeft, left.distance, depthLeft);
+  }
+
+  return {
+    positions: new Float32Array(positions),
+    distances: new Float32Array(distances),
+    depths: new Float32Array(depths),
+    vertexCount: positions.length / 2,
+  };
+}
+
+function createTerrainGeometry(
+  gl: WebGL2RenderingContext,
+  meshData: TerrainMeshData,
+): Geometry {
+  const geometry = new Geometry();
+
+  const positionBuffer = gl.createBuffer();
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, meshData.positions, gl.STATIC_DRAW);
+  geometry.addAttribute(gl, 'a_position', { buffer: positionBuffer, size: 2 });
+
+  const distanceBuffer = gl.createBuffer();
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, distanceBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, meshData.distances, gl.STATIC_DRAW);
+  geometry.addAttribute(gl, 'a_distance', {
+    buffer: distanceBuffer,
+    size: 1,
+  });
+
+  const depthBuffer = gl.createBuffer();
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, depthBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, meshData.depths, gl.STATIC_DRAW);
+  geometry.addAttribute(gl, 'a_depth', { buffer: depthBuffer, size: 1 });
+
+  return geometry;
+}
+
+async function createTerrainMaterial(
+  renderContext: RenderContext,
+  options: CreateTerrainOptions,
+): Promise<Material> {
+  const { gl, imageCache } = renderContext;
+
+  const [fillImage, borderImage] = await Promise.all([
+    imageCache.getOrLoad(options.fill.textureUrl),
+    imageCache.getOrLoad(options.border.textureUrl),
+  ]);
+
+  const material = new Material(
+    new ForgeShaderSource(terrainVertexShaderSource),
+    new ForgeShaderSource(terrainFragmentShaderSource),
+    gl,
+  );
+
+  material.setUniform('u_fillTexture', loadTiledTexture(gl, fillImage));
+  material.setUniform('u_borderTexture', loadTiledTexture(gl, borderImage));
+  material.setVectorUniform('u_fillTileSize', options.fill.tileSize);
+  material.setVectorUniform('u_borderTileSize', options.border.tileSize);
+  material.setColorUniform('u_fillTint', options.fill.tint);
+  material.setColorUniform('u_borderTint', options.border.tint);
+  material.setUniform('u_borderWidth', options.borderWidth);
+  material.setUniform(
+    'u_borderBlend',
+    options.borderBlend ?? defaultCreateTerrainOptions.borderBlend,
+  );
+
+  return material;
 }
 
 /**
- * Creates a long, varied-height `TerrainShape` ground body spanning
- * `totalWidth`, plus one sprite entity per terrain segment to render it.
- * @param world - The ECS world to add the terrain entities to.
- * @param renderContext - The render context used to build the terrain sprite material.
- * @param renderLayer - The render layer the terrain should be drawn on.
- * @param totalWidth - The total width of the terrain, in world units.
+ * Creates a long, varied-height `TerrainShape` ground body - a smooth curve
+ * through sparse, randomly-placed control points (see `_terrain-curve.ts`),
+ * rather than a jagged polyline - plus a single triangulated mesh to render
+ * it, textured with a tileable border layer near the surface blending into
+ * a tileable fill layer below (see `CreateTerrainOptions`). Pair with
+ * `createTerrainRenderEcsSystem` to draw the returned `mesh`.
+ * @param world - The ECS world to add the terrain entity to.
+ * @param renderContext - The render context used to build the terrain mesh's textures and material.
+ * @param options - Sizing and texturing options for the terrain.
  */
-export function createTerrain(
+export async function createTerrain(
   world: EcsWorld,
   renderContext: RenderContext,
-  renderLayer: number,
-  totalWidth: number,
-): RollingBallTerrain {
-  const renderable = createTerrainRenderable(renderContext, renderLayer);
-  const halfWidth = totalWidth / 2;
+  options: CreateTerrainOptions,
+): Promise<RollingBallTerrain> {
+  const { totalWidth } = options;
 
-  const points: Vector2[] = [];
-
-  for (let localX = -halfWidth; localX < halfWidth; localX += pointSpacing) {
-    points.push(new Vector2(localX, heightAt(localX, halfWidth)));
-  }
-
-  points.push(new Vector2(halfWidth, heightAt(halfWidth, halfWidth)));
+  const controlPoints = buildControlPoints(totalWidth);
+  const curvePoints = buildTerrainCurve(controlPoints, samplesPerSegment);
+  const points = curvePoints.map((curvePoint) => curvePoint.position);
 
   const terrainShape = new TerrainShape(points, terrainDepth);
 
@@ -175,60 +321,30 @@ export function createTerrain(
     physicsBody: terrainBody,
   });
 
-  for (let i = 0; i < points.length - 1; i++) {
-    const surfaceLeft = points[i];
-    const surfaceRight = points[i + 1];
-    const edge = surfaceRight.subtract(surfaceLeft);
-    const segmentWidth = edge.magnitude();
+  const meshData = buildTerrainMeshData(
+    curvePoints,
+    terrainShape.bottomY,
+    angle,
+    position,
+  );
 
-    // The outward normal (away from the solid slab) in the terrain's local
-    // space; the segment sprite is centered `terrainDepth / 2` units in the
-    // opposite direction so it spans from the surface down into the ground.
-    const outwardNormal = edge.perpendicular().normalize();
-    const localMidpoint = surfaceLeft
-      .add(surfaceRight)
-      .multiply(0.5)
-      .subtract(outwardNormal.multiply(terrainDepth / 2));
+  const [material, geometry] = await Promise.all([
+    createTerrainMaterial(renderContext, options),
+    Promise.resolve(createTerrainGeometry(renderContext.gl, meshData)),
+  ]);
 
-    const segmentPosition = localMidpoint.rotate(angle).add(position);
-    const segmentAngle = Math.atan2(edge.y, edge.x) + angle;
-
-    const segmentEntity = world.createEntity();
-
-    world.addComponent(segmentEntity, positionId, {
-      world: segmentPosition,
-      local: segmentPosition.clone(),
-    });
-
-    world.addComponent(segmentEntity, rotationId, {
-      local: -segmentAngle,
-      world: -segmentAngle,
-    });
-
-    world.addComponent(segmentEntity, spriteId, {
-      width: segmentWidth,
-      height: terrainDepth,
-      pivot: new Vector2(0.5, 0.5),
-      tintColor: groundColor,
-      renderable,
-      uvOffset: Vector2.zero,
-      uvScale: Vector2.one,
-      enabled: true,
-      layer: renderLayer,
-    });
-  }
-
-  // The flat platform is centered on local x = 0, which - since the 180
-  // degree rotation maps worldX = position.x - localX - is also world x = 0
-  // (position.x is Vector2.zero), so both roll directions lead into equal
-  // amounts of hilly terrain.
   const spawnX = position.x;
 
   const worldSurfaceYAt = (worldX: number): number => {
     const localX = position.x - worldX;
 
-    return position.y - heightAt(localX, halfWidth);
+    return position.y - heightAtLocalX(curvePoints, localX);
   };
 
-  return { body: terrainBody, spawnX, worldSurfaceYAt };
+  return {
+    body: terrainBody,
+    spawnX,
+    worldSurfaceYAt,
+    mesh: { geometry, material, vertexCount: meshData.vertexCount },
+  };
 }

@@ -6,8 +6,10 @@ autofetch
 backquote
 Batchable
 Baumgarte
+Beziers
 blits
 cachable
+Catmull
 commitlint
 dbaeumer
 deadzone
@@ -78,6 +80,7 @@ texels
 thresholded
 thresholding
 thumbstick
+tileable
 tintable
 unblurred
 undersamples
