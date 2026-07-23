@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createCameraEcsSystem } from './camera-system';
 import { Axis1dAction, Axis2dAction } from '../../input';
-import { CameraEcsComponent, cameraId } from '../components';
-import { Color } from '../color';
-import { PositionEcsComponent, positionId, Time } from '../../common';
+import { addCameraComponent } from '../components';
+import { addPositionComponent, Time } from '../../common';
 import { EcsWorld } from '../../ecs';
-import { Vector2 } from '../../math';
 
 describe('CameraSystem', () => {
   let world: EcsWorld;
@@ -26,27 +24,14 @@ describe('CameraSystem', () => {
   it('should update the camera zoom(out) based on scroll input', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity);
 
     zoomInput.set(1);
     time.update(16.6666);
@@ -58,27 +43,14 @@ describe('CameraSystem', () => {
   it('should update the camera zoom(in) based on scroll input', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity);
 
     zoomInput.set(-1);
     time.update(16.6666);
@@ -90,27 +62,14 @@ describe('CameraSystem', () => {
   it('should update the camera zoom(out) when scrolled twice', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity);
 
     zoomInput.set(1);
     time.update(16.6666);
@@ -126,27 +85,14 @@ describe('CameraSystem', () => {
   it('should return to the same position when zooming in and out again', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity);
 
     zoomInput.set(-1);
     time.update(16.6666);
@@ -170,27 +116,14 @@ describe('CameraSystem', () => {
   it('should clamp the camera zoom to the min and max zoom levels', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    addPositionComponent(world, entity);
 
     zoomInput.set(2000);
 
@@ -210,27 +143,14 @@ describe('CameraSystem', () => {
   it('should update the camera position based on key inputs', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
-      isStatic: false,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+    addCameraComponent(world, entity, {
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    const positionComponent = addPositionComponent(world, entity);
 
     panInput.set(50, -30);
 
@@ -244,27 +164,15 @@ describe('CameraSystem', () => {
   it('should not update the camera if it is static', () => {
     const entity = world.createEntity();
 
-    const cameraComponent: CameraEcsComponent = {
-      zoom: 1,
+    const cameraComponent = addCameraComponent(world, entity, {
       isStatic: true,
-      zoomInput: zoomInput,
-      panInput: panInput,
-      zoomSensitivity: 0.1,
-      panSensitivity: 1,
+      zoomInput,
+      panInput,
       minZoom: 0.000001,
       maxZoom: 10000,
-      cullingMask: 0xffffffff,
-      layer: 0,
-      clearColor: Color.transparent,
-    };
+    });
 
-    const positionComponent: PositionEcsComponent = {
-      local: Vector2.zero,
-      world: Vector2.zero,
-    };
-
-    world.addComponent(entity, cameraId, cameraComponent);
-    world.addComponent(entity, positionId, positionComponent);
+    const positionComponent = addPositionComponent(world, entity);
 
     panInput.set(50, -30);
     zoomInput.set(-5000);

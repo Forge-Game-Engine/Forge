@@ -25,6 +25,7 @@ numeric handle to store on the component:
 ```ts
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
+  addSpriteAnimationComponent,
   AnimationClip,
   createAnimation,
   createSpriteAnimationEcsSystem,
@@ -34,12 +35,8 @@ const animationRegistry = new AssetRegistry<AnimationClip>();
 
 const runHandle = animationRegistry.register('run', createAnimation(1, 6));
 
-world.addComponent(playerEntity, spriteAnimationId, {
+addSpriteAnimationComponent(world, playerEntity, {
   animationClipHandle: runHandle,
-  animationFrameIndex: 0,
-  playbackSpeed: 1,
-  frameDurationMilliseconds: 100,
-  lastFrameChangeTimeInSeconds: 0,
 });
 
 world.addSystem(createSpriteAnimationEcsSystem(world.time, animationRegistry));

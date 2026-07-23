@@ -1,23 +1,23 @@
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addLinearDamperComponent,
   addLinearSpringComponent,
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addResetComponent } from './_reset.component';
@@ -66,16 +66,16 @@ function createVisualEntity(
 ): void {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity, {
     local: new Vector2(width / sprite.width, height / sprite.height),
     world: new Vector2(width / sprite.width, height / sprite.height),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
 }
 
 export interface SuspensionScenarioOptions {
@@ -175,12 +175,12 @@ function createSuspensionScenario(
 
   const wheelEntity = world.createEntity();
 
-  world.addComponent(wheelEntity, positionId, {
+  addPositionComponent(world, wheelEntity, {
     world: wheelPosition.clone(),
     local: wheelPosition.clone(),
   });
-  world.addComponent(wheelEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(wheelEntity, scaleId, {
+  addRotationComponent(world, wheelEntity);
+  addScaleComponent(world, wheelEntity, {
     local: new Vector2(
       (wheelRadius * 2) / sprites.wheel.width,
       (wheelRadius * 2) / sprites.wheel.height,
@@ -190,11 +190,11 @@ function createSuspensionScenario(
       (wheelRadius * 2) / sprites.wheel.height,
     ),
   });
-  world.addComponent(wheelEntity, spriteId, {
+  addSpriteComponent(world, wheelEntity, {
     ...sprites.wheel,
     tintColor: wheelColor,
   });
-  world.addComponent(wheelEntity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, wheelEntity, {
     physicsBody: wheelBody,
   });
   addResetComponent(world, wheelEntity, {
@@ -222,16 +222,13 @@ function createSuspensionScenario(
 
   const lineEntity = world.createEntity();
 
-  world.addComponent(lineEntity, positionId, {
+  addPositionComponent(world, lineEntity, {
     world: mountPosition.clone(),
     local: mountPosition.clone(),
   });
-  world.addComponent(lineEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(lineEntity, scaleId, {
-    local: Vector2.one,
-    world: Vector2.one,
-  });
-  world.addComponent(lineEntity, spriteId, {
+  addRotationComponent(world, lineEntity);
+  addScaleComponent(world, lineEntity);
+  addSpriteComponent(world, lineEntity, {
     ...sprites.line,
     tintColor: lineColor,
   });

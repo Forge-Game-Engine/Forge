@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
-import { PositionEcsComponent, positionId } from '../components/index.js';
-import { parentId } from '../components/parent-component.js';
+import { addPositionComponent } from '../components/index.js';
+import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
 describe('transform-system', () => {
@@ -16,12 +16,9 @@ describe('transform-system', () => {
   it('should set world position to local position for a root entity', () => {
     const entity = world.createEntity();
 
-    const position: PositionEcsComponent = {
+    const position = addPositionComponent(world, entity, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
-    };
-
-    world.addComponent(entity, positionId, position);
+    });
 
     world.update();
 
@@ -33,19 +30,15 @@ describe('transform-system', () => {
     const parent = world.createEntity();
     const child = world.createEntity();
 
-    const parentPosition: PositionEcsComponent = {
+    addPositionComponent(world, parent, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
-    };
+    });
 
-    const childPosition: PositionEcsComponent = {
+    const childPosition = addPositionComponent(world, child, {
       local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
-    };
+    });
 
-    world.addComponent(parent, positionId, parentPosition);
-    world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent });
+    addParentComponent(world, child, { parent });
 
     world.update();
 
@@ -56,12 +49,9 @@ describe('transform-system', () => {
   it('should keep recomputing world position for non-static entities after local changes', () => {
     const entity = world.createEntity();
 
-    const position: PositionEcsComponent = {
+    const position = addPositionComponent(world, entity, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
-    };
-
-    world.addComponent(entity, positionId, position);
+    });
 
     world.update();
 
@@ -77,13 +67,10 @@ describe('transform-system', () => {
   it('should freeze a root static entity after its first computation', () => {
     const entity = world.createEntity();
 
-    const position: PositionEcsComponent = {
+    const position = addPositionComponent(world, entity, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
       isStatic: true,
-    };
-
-    world.addComponent(entity, positionId, position);
+    });
 
     world.update();
 
@@ -103,20 +90,16 @@ describe('transform-system', () => {
     const parent = world.createEntity();
     const child = world.createEntity();
 
-    const parentPosition: PositionEcsComponent = {
+    const parentPosition = addPositionComponent(world, parent, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
-    };
+    });
 
-    const childPosition: PositionEcsComponent = {
+    const childPosition = addPositionComponent(world, child, {
       local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
       isStatic: true,
-    };
+    });
 
-    world.addComponent(parent, positionId, parentPosition);
-    world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent });
+    addParentComponent(world, child, { parent });
 
     world.update();
 
@@ -136,21 +119,17 @@ describe('transform-system', () => {
     const parent = world.createEntity();
     const child = world.createEntity();
 
-    const parentPosition: PositionEcsComponent = {
+    const parentPosition = addPositionComponent(world, parent, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
       isStatic: true,
-    };
+    });
 
-    const childPosition: PositionEcsComponent = {
+    const childPosition = addPositionComponent(world, child, {
       local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
       isStatic: true,
-    };
+    });
 
-    world.addComponent(parent, positionId, parentPosition);
-    world.addComponent(child, positionId, childPosition);
-    world.addComponent(child, parentId, { parent });
+    addParentComponent(world, child, { parent });
 
     world.update();
 
@@ -169,13 +148,10 @@ describe('transform-system', () => {
   it('should not skip a recycled entity id that is no longer static', () => {
     const staticEntity = world.createEntity();
 
-    const staticPosition: PositionEcsComponent = {
+    addPositionComponent(world, staticEntity, {
       local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
       isStatic: true,
-    };
-
-    world.addComponent(staticEntity, positionId, staticPosition);
+    });
 
     world.update();
 
@@ -183,12 +159,9 @@ describe('transform-system', () => {
 
     const recycledEntity = world.createEntity();
 
-    const recycledPosition: PositionEcsComponent = {
+    const recycledPosition = addPositionComponent(world, recycledEntity, {
       local: new Vector2(50, 60),
-      world: new Vector2(0, 0),
-    };
-
-    world.addComponent(recycledEntity, positionId, recycledPosition);
+    });
 
     world.update();
 

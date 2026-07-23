@@ -68,18 +68,18 @@ To include an animated sprite in your game, your entity must include both a spri
 ```ts
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
+  addSpriteAnimationComponent,
   AnimationClip,
   createSpriteAnimationEcsSystem,
   createSpriteSheet,
   selectAnimationFrames,
-  spriteAnimationId,
 } from '@forge-game-engine/forge/animations';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addSpriteComponent,
   createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 
 const { imageCache } = renderContext;
@@ -91,9 +91,9 @@ const spriteEntity = world.createEntity();
 const image = await imageCache.getOrLoad('character_sprite_sheet_32_32.png');
 
 // 3. create a sprite and add it to the entity
-world.addComponent(
+addSpriteComponent(
+  world,
   spriteEntity,
-  spriteId,
   createImageSprite(
     image,
     renderContext,
@@ -118,11 +118,7 @@ const animationRegistry = new AssetRegistry<AnimationClip>();
 const idleAnimationHandle = animationRegistry.register('idle', idleAnimation);
 
 // 8. add a sprite animation component to your entity
-world.addComponent(spriteEntity, spriteAnimationId, {
-  animationFrameIndex: 0, // start playing the animation clip at the first frame
-  playbackSpeed: 1,
-  frameDurationMilliseconds: 100,
-  lastFrameChangeTimeInSeconds: 0,
+addSpriteAnimationComponent(world, spriteEntity, {
   animationClipHandle: idleAnimationHandle,
 });
 

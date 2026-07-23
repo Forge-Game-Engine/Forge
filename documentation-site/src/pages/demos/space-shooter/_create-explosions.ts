@@ -2,23 +2,26 @@ import { Howl } from 'howler';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  addSpriteAnimationComponent,
   AnimationClip,
   createSpriteSheet,
   selectAnimationFrames,
-  spriteAnimationId,
 } from '@forge-game-engine/forge/animations';
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
-import { audioId } from '@forge-game-engine/forge/audio';
-import { positionId, scaleId } from '@forge-game-engine/forge/common';
+import { addAudioComponent } from '@forge-game-engine/forge/audio';
 import {
-  lifetimeId,
+  addPositionComponent,
+  addScaleComponent,
+} from '@forge-game-engine/forge/common';
+import {
+  addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 
 const explosionRows = 5;
@@ -82,41 +85,37 @@ export async function createExplosionSpawner(
 
       const explosionEntity = world.createEntity();
 
-      world.addComponent(explosionEntity, spriteId, {
+      addSpriteComponent(world, explosionEntity, {
         ...explosionSprite,
         uvOffset: new Vector2(0, 0),
       });
 
-      world.addComponent(explosionEntity, positionId, {
+      addPositionComponent(world, explosionEntity, {
         local: position.clone(),
         world: position.clone(),
       });
 
-      world.addComponent(explosionEntity, scaleId, {
+      addScaleComponent(world, explosionEntity, {
         local: new Vector2(explosionScale, explosionScale),
         world: new Vector2(explosionScale, explosionScale),
       });
 
-      world.addComponent(explosionEntity, spriteAnimationId, {
-        animationFrameIndex: 0,
-        playbackSpeed: 1,
+      addSpriteAnimationComponent(world, explosionEntity, {
         frameDurationMilliseconds: explosionFrameDurationMilliseconds,
         lastFrameChangeTimeInSeconds: currentTimeInSeconds,
         animationClipHandle,
       });
 
-      world.addComponent(explosionEntity, lifetimeId, {
+      addLifetimeComponent(world, explosionEntity, {
         durationSeconds:
           (explosionFrameCount * explosionFrameDurationMilliseconds) / 1000,
-        elapsedSeconds: 0,
-        hasExpired: false,
       });
 
       world.addTag(explosionEntity, RemoveFromWorldLifetimeStrategyId);
 
       const explosionSoundEntity = world.createEntity();
 
-      world.addComponent(explosionSoundEntity, audioId, {
+      addAudioComponent(world, explosionSoundEntity, {
         sound: new Howl({
           src: getAssetUrl('audio/explosion.mp3'),
           volume: 0.6,
@@ -124,10 +123,8 @@ export async function createExplosionSpawner(
         playSound: true,
       });
 
-      world.addComponent(explosionSoundEntity, lifetimeId, {
+      addLifetimeComponent(world, explosionSoundEntity, {
         durationSeconds: explosionSoundDurationSeconds,
-        elapsedSeconds: 0,
-        hasExpired: false,
       });
 
       world.addTag(explosionSoundEntity, RemoveFromWorldLifetimeStrategyId);

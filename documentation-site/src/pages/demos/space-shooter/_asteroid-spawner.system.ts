@@ -1,15 +1,15 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
   Time,
 } from '@forge-game-engine/forge/common';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
-import { spriteId } from '@forge-game-engine/forge/rendering';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -45,19 +45,16 @@ export const createAsteroidSpawnerEcsSystem = (
 
     const asteroidEntity = world.createEntity();
 
-    world.addComponent(asteroidEntity, spriteId, sprite);
+    addSpriteComponent(world, asteroidEntity, sprite);
 
-    world.addComponent(asteroidEntity, positionId, {
+    addPositionComponent(world, asteroidEntity, {
       local: new Vector2(x, spawnerComponent.spawnY),
       world: new Vector2(x, spawnerComponent.spawnY),
     });
 
-    world.addComponent(asteroidEntity, rotationId, {
-      local: 0,
-      world: 0,
-    });
+    addRotationComponent(world, asteroidEntity);
 
-    world.addComponent(asteroidEntity, scaleId, {
+    addScaleComponent(world, asteroidEntity, {
       local: new Vector2(asteroidScale, asteroidScale),
       world: new Vector2(asteroidScale, asteroidScale),
     });
@@ -73,7 +70,7 @@ export const createAsteroidSpawnerEcsSystem = (
     const asteroidRadius =
       (sprite.width * asteroidScale + sprite.height * asteroidScale) / 4;
 
-    world.addComponent(asteroidEntity, PhysicsBodyId, {
+    addPhysicsBodyComponent(world, asteroidEntity, {
       physicsBody: new RigidBody({
         shape: new CircleShape(asteroidRadius),
         position: new Vector2(x, spawnerComponent.spawnY),

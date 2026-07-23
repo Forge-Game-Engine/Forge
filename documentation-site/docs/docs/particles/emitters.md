@@ -96,7 +96,7 @@ so one entity can own several independent effects, for example an attack
 swoosh and a footstep puff on the same character:
 
 ```ts
-world.addComponent(character, ParticleEmitterId, {
+addParticleEmitterComponent(world, character, {
   emitters: new Map([
     ['attack', attackEmitter],
     ['footstep', footstepEmitter],

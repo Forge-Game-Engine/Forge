@@ -1,12 +1,12 @@
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
-import { spriteId } from '@forge-game-engine/forge/rendering';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
   SpriteSpawnerEcsComponent,
   spriteSpawnerId,
@@ -40,19 +40,19 @@ export const createSpriteSpawnerEcsSystem = (
 
       const entity = world.createEntity();
 
-      world.addComponent(entity, positionId, {
+      addPositionComponent(world, entity, {
         local: position.clone(),
         world: position.clone(),
       });
 
-      world.addComponent(entity, rotationId, { local: 0, world: 0 });
+      addRotationComponent(world, entity);
 
-      world.addComponent(entity, scaleId, {
+      addScaleComponent(world, entity, {
         local: new Vector2(spawner.spriteScale, spawner.spriteScale),
         world: new Vector2(spawner.spriteScale, spawner.spriteScale),
       });
 
-      world.addComponent(entity, spriteId, spawner.sprite);
+      addSpriteComponent(world, entity, spawner.sprite);
 
       spawner.spawnedCount += 1;
     }

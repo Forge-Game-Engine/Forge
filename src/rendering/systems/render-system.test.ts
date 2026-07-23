@@ -2,10 +2,14 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderEcsSystem } from './render-system';
 import { EcsWorld } from '../../ecs';
-import { PositionEcsComponent, positionId, rotationId } from '../../common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+  PositionEcsComponent,
+} from '../../common';
 import { Vector2 } from '../../math';
-import { CameraEcsComponent, cameraId } from '../components';
-import { SpriteEcsComponent, spriteId } from '../components';
+import { addCameraComponent, CameraEcsComponent } from '../components';
+import { addSpriteComponent, SpriteEcsComponent } from '../components';
 import { Renderable } from '../renderable';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
@@ -62,22 +66,6 @@ describe('createRenderEcsSystem', () => {
     };
   };
 
-  const createCamera = (
-    cullingMask: number = 0xffffffff,
-    renderTarget?: CameraEcsComponent['renderTarget'],
-  ): CameraEcsComponent => ({
-    zoom: 1,
-    zoomSensitivity: 0.1,
-    panSensitivity: 1,
-    minZoom: 0.0001,
-    maxZoom: 10000,
-    isStatic: true,
-    cullingMask,
-    renderTarget,
-    layer: 0,
-    clearColor: Color.transparent,
-  });
-
   const createSprite = (
     renderable: Renderable,
     overrides: Partial<SpriteEcsComponent> = {},
@@ -99,13 +87,15 @@ describe('createRenderEcsSystem', () => {
     renderTarget?: CameraEcsComponent['renderTarget'],
   ): CameraEcsComponent => {
     const entity = world.createEntity();
-    const camera = createCamera(cullingMask, renderTarget);
-
-    world.addComponent(entity, cameraId, camera);
-    world.addComponent(entity, positionId, {
-      local: Vector2.zero,
-      world: Vector2.zero,
+    const camera = addCameraComponent(world, entity, {
+      minZoom: 0.0001,
+      maxZoom: 10000,
+      isStatic: true,
+      cullingMask,
+      renderTarget,
     });
+
+    addPositionComponent(world, entity);
 
     return camera;
   };
@@ -116,13 +106,12 @@ describe('createRenderEcsSystem', () => {
     overrides: Partial<SpriteEcsComponent> = {},
   ): number => {
     const entity = world.createEntity();
-    const position: PositionEcsComponent = {
+
+    addPositionComponent(world, entity, {
       local: new Vector2(0, worldY),
       world: new Vector2(0, worldY),
-    };
-
-    world.addComponent(entity, positionId, position);
-    world.addComponent(entity, spriteId, createSprite(renderable, overrides));
+    });
+    addSpriteComponent(world, entity, createSprite(renderable, overrides));
 
     return entity;
   };
@@ -488,14 +477,14 @@ describe('createRenderEcsSystem', () => {
 
       const entity = world.createEntity();
 
-      world.addComponent(entity, positionId, {
+      addPositionComponent(world, entity, {
         local: new Vector2(50, 0),
         world: new Vector2(50, 0),
       });
-      world.addComponent(entity, rotationId, { local: 0, world: Math.PI });
-      world.addComponent(
+      addRotationComponent(world, entity, { world: Math.PI });
+      addSpriteComponent(
+        world,
         entity,
-        spriteId,
         createSprite(renderable, {
           width: 100,
           height: 100,

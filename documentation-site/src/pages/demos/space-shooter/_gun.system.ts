@@ -1,23 +1,24 @@
 import { Howl } from 'howler';
 import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
   PositionEcsComponent,
   positionId,
-  rotationId,
-  scaleId,
   Time,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
-import { spriteId } from '@forge-game-engine/forge/rendering';
+import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
-  lifetimeId,
+  addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import { audioId } from '@forge-game-engine/forge/audio';
+import { addAudioComponent } from '@forge-game-engine/forge/audio';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
@@ -82,19 +83,19 @@ function createBulletWithOffset(
   const bulletScale = 0.15;
   const spawnPosition = positionComponent.world.add(offset);
 
-  world.addComponent(bullet, spriteId, gunComponent.bulletSprite);
+  addSpriteComponent(world, bullet, gunComponent.bulletSprite);
 
-  world.addComponent(bullet, positionId, {
+  addPositionComponent(world, bullet, {
     local: spawnPosition,
     world: positionComponent.world.add(offset),
   });
 
-  world.addComponent(bullet, rotationId, {
+  addRotationComponent(world, bullet, {
     local: degreesToRadians(270),
     world: degreesToRadians(270),
   });
 
-  world.addComponent(bullet, scaleId, {
+  addScaleComponent(world, bullet, {
     local: new Vector2(bulletScale, bulletScale),
     world: new Vector2(bulletScale, bulletScale),
   });
@@ -103,15 +104,13 @@ function createBulletWithOffset(
     speed: 800,
   });
 
-  world.addComponent(bullet, lifetimeId, {
+  addLifetimeComponent(world, bullet, {
     durationSeconds: 2,
-    elapsedSeconds: 0,
-    hasExpired: false,
   });
 
   world.addTag(bullet, RemoveFromWorldLifetimeStrategyId);
 
-  world.addComponent(bullet, audioId, {
+  addAudioComponent(world, bullet, {
     playSound: true,
     sound,
   });
@@ -121,7 +120,7 @@ function createBulletWithOffset(
       gunComponent.bulletSprite.height * bulletScale) /
     4;
 
-  world.addComponent(bullet, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, bullet, {
     physicsBody: new RigidBody({
       shape: new CircleShape(bulletRadius),
       position: new Vector2(spawnPosition.x, spawnPosition.y),

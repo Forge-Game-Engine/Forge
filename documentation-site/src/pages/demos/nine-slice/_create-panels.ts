@@ -1,11 +1,11 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { positionId } from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
-  spriteId,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { panelId } from './_panel.component';
@@ -27,12 +27,12 @@ function placePanel(
 ): void {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     local: new Vector2(x, 0),
     world: new Vector2(x, 0),
   });
 
-  world.addComponent(entity, spriteId, sprite);
+  addSpriteComponent(world, entity, sprite);
   world.addComponent(entity, panelId, { minSize, maxSize });
 }
 

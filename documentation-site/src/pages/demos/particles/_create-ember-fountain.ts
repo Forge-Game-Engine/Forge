@@ -7,8 +7,8 @@ import {
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
+  addParticleEmitterComponent,
   ParticleEmitter,
-  ParticleEmitterId,
 } from '@forge-game-engine/forge/particles';
 import { ambientEmitterId } from './_ambient-emitter.component';
 
@@ -56,7 +56,7 @@ export async function createEmberFountain(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, ParticleEmitterId, {
+  addParticleEmitterComponent(world, entity, {
     emitters: new Map([['embers', emberEmitter]]),
   });
 

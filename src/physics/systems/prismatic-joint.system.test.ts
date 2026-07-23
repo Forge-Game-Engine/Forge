@@ -2,10 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createPrismaticJointEcsSystem } from './prismatic-joint.system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
-import {
-  PrismaticJointEcsComponent,
-  PrismaticJointId,
-} from '../components/index.js';
+import { addPrismaticJointComponent } from '../components/index.js';
 import { PrismaticJoint } from '../joints/index.js';
 import { PhysicsWorld } from '../physics-world.js';
 import { RigidBody } from '../rigid-body.js';
@@ -34,7 +31,7 @@ describe('PrismaticJointSystem', () => {
     const entity = world.createEntity();
     const joint = createJoint();
 
-    world.addComponent(entity, PrismaticJointId, { joint });
+    addPrismaticJointComponent(world, entity, { joint });
 
     expect(physicsWorld.joints).not.toContain(joint);
 
@@ -51,7 +48,7 @@ describe('PrismaticJointSystem', () => {
     const entity = world.createEntity();
     const joint = createJoint();
 
-    world.addComponent(entity, PrismaticJointId, { joint });
+    addPrismaticJointComponent(world, entity, { joint });
 
     world.update();
 
@@ -66,7 +63,7 @@ describe('PrismaticJointSystem', () => {
     const entity = world.createEntity();
     const oldJoint = createJoint();
 
-    world.addComponent(entity, PrismaticJointId, { joint: oldJoint });
+    addPrismaticJointComponent(world, entity, { joint: oldJoint });
 
     world.update();
 
@@ -79,7 +76,7 @@ describe('PrismaticJointSystem', () => {
 
     const newJoint = createJoint();
 
-    world.addComponent(reusedEntity, PrismaticJointId, { joint: newJoint });
+    addPrismaticJointComponent(world, reusedEntity, { joint: newJoint });
 
     world.update();
 
@@ -93,12 +90,8 @@ describe('PrismaticJointSystem', () => {
     const joint1 = createJoint();
     const joint2 = createJoint();
 
-    world.addComponent<PrismaticJointEcsComponent>(entity1, PrismaticJointId, {
-      joint: joint1,
-    });
-    world.addComponent<PrismaticJointEcsComponent>(entity2, PrismaticJointId, {
-      joint: joint2,
-    });
+    addPrismaticJointComponent(world, entity1, { joint: joint1 });
+    addPrismaticJointComponent(world, entity2, { joint: joint2 });
 
     world.update();
 
@@ -116,7 +109,7 @@ describe('PrismaticJointSystem', () => {
     const entity = isolatedWorld.createEntity();
     const joint = createJoint();
 
-    isolatedWorld.addComponent(entity, PrismaticJointId, { joint });
+    addPrismaticJointComponent(isolatedWorld, entity, { joint });
 
     isolatedWorld.update();
 

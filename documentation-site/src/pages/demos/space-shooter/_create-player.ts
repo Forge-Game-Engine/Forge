@@ -1,21 +1,21 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import { PlayerId } from './_player.component';
@@ -99,8 +99,8 @@ export function spawnPlayer(
   const halfCanvasWidth = renderContext.canvas.width / 2;
   const halfCanvasHeight = renderContext.canvas.height / 2;
 
-  world.addComponent(playerEntity, spriteId, playerSprite);
-  world.addComponent(playerEntity, positionId, {
+  addSpriteComponent(world, playerEntity, playerSprite);
+  addPositionComponent(world, playerEntity, {
     local: new Vector2(playerX, playerY),
     world: new Vector2(playerX, playerY),
   });
@@ -112,12 +112,12 @@ export function spawnPlayer(
     maxY: halfCanvasHeight - playerRadius,
   });
 
-  world.addComponent(playerEntity, scaleId, {
+  addScaleComponent(world, playerEntity, {
     local: new Vector2(playerScale, playerScale),
     world: new Vector2(playerScale, playerScale),
   });
 
-  world.addComponent(playerEntity, rotationId, {
+  addRotationComponent(world, playerEntity, {
     local: Math.PI,
     world: Math.PI,
   });
@@ -129,7 +129,7 @@ export function spawnPlayer(
     nextAllowedShotTime: 0,
   });
 
-  world.addComponent(playerEntity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, playerEntity, {
     physicsBody: new RigidBody({
       shape: new CircleShape(playerRadius),
       position: new Vector2(playerX, playerY),

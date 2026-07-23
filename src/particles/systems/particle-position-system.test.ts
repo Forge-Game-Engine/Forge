@@ -1,17 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createParticlePositionEcsSystem } from './particle-position-system';
 import { EcsWorld } from '../../ecs';
+import { addParticleComponent } from '../components/particle-component';
 import {
-  ParticleEcsComponent,
-  ParticleId,
-} from '../components/particle-component';
-import {
-  PositionEcsComponent,
-  positionId,
-  RotationEcsComponent,
-  rotationId,
-  SpeedEcsComponent,
-  speedId,
+  addPositionComponent,
+  addRotationComponent,
+  addSpeedComponent,
   Time,
 } from '../../common';
 import { Vector2 } from '../../math';
@@ -29,28 +23,13 @@ describe('ParticlePositionSystem', () => {
   it('should update particle position based on speed and rotation', () => {
     const entity = world.createEntity();
 
-    const positionComponent: PositionEcsComponent = {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    };
+    const positionComponent = addPositionComponent(world, entity);
 
-    const rotationComponent: RotationEcsComponent = {
-      local: 0, // facing up
-      world: 0,
-    };
+    addRotationComponent(world, entity); // facing up
 
-    const speedComponent: SpeedEcsComponent = {
-      speed: 100,
-    };
+    addSpeedComponent(world, entity, { speed: 100 });
 
-    const particleComponent: ParticleEcsComponent = {
-      rotationSpeed: 0,
-    };
-
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
-    world.addComponent(entity, speedId, speedComponent);
-    world.addComponent(entity, ParticleId, particleComponent);
+    addParticleComponent(world, entity);
 
     time.update(100);
     world.update();
@@ -62,28 +41,13 @@ describe('ParticlePositionSystem', () => {
   it('should update particle rotation based on rotation speed', () => {
     const entity = world.createEntity();
 
-    const positionComponent: PositionEcsComponent = {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    };
+    addPositionComponent(world, entity);
 
-    const rotationComponent: RotationEcsComponent = {
-      local: 0,
-      world: 0,
-    };
+    const rotationComponent = addRotationComponent(world, entity);
 
-    const speedComponent: SpeedEcsComponent = {
-      speed: 0,
-    };
+    addSpeedComponent(world, entity);
 
-    const particleComponent: ParticleEcsComponent = {
-      rotationSpeed: Math.PI,
-    };
-
-    world.addComponent(entity, positionId, positionComponent);
-    world.addComponent(entity, rotationId, rotationComponent);
-    world.addComponent(entity, speedId, speedComponent);
-    world.addComponent(entity, ParticleId, particleComponent);
+    addParticleComponent(world, entity, { rotationSpeed: Math.PI });
 
     time.update(500);
     world.update();
@@ -95,28 +59,23 @@ describe('ParticlePositionSystem', () => {
     const entity1 = world.createEntity();
     const entity2 = world.createEntity();
 
-    const pos1: PositionEcsComponent = {
-      local: new Vector2(0, 0),
-      world: new Vector2(0, 0),
-    };
+    const pos1 = addPositionComponent(world, entity1);
 
-    const pos2: PositionEcsComponent = {
+    addRotationComponent(world, entity1);
+    addSpeedComponent(world, entity1, { speed: 50 });
+    addParticleComponent(world, entity1);
+
+    const pos2 = addPositionComponent(world, entity2, {
       local: new Vector2(10, 10),
       world: new Vector2(10, 10),
-    };
+    });
 
-    world.addComponent(entity1, positionId, pos1);
-    world.addComponent(entity1, rotationId, { local: 0, world: 0 });
-    world.addComponent(entity1, speedId, { speed: 50 });
-    world.addComponent(entity1, ParticleId, { rotationSpeed: 0 });
-
-    world.addComponent(entity2, positionId, pos2);
-    world.addComponent(entity2, rotationId, {
+    addRotationComponent(world, entity2, {
       local: Math.PI / 2,
       world: Math.PI / 2,
     });
-    world.addComponent(entity2, speedId, { speed: 100 });
-    world.addComponent(entity2, ParticleId, { rotationSpeed: 0 });
+    addSpeedComponent(world, entity2, { speed: 100 });
+    addParticleComponent(world, entity2);
 
     time.update(100);
     world.update();

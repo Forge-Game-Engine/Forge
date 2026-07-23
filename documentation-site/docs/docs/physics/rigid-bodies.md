@@ -82,22 +82,22 @@ See [`PhysicsBodyEcsComponent`](/Forge/docs/api/interfaces/PhysicsBodyEcsCompone
 for the full component shape.
 
 ```ts
-import { positionId, rotationId } from '@forge-game-engine/forge/common';
+import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
 import {
+  addPhysicsBodyComponent,
   CircleShape,
-  PhysicsBodyId,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
 
 const entity = world.createEntity();
 
-world.addComponent(entity, positionId, {
+addPositionComponent(world, entity, {
   world: new Vector2(0, 100),
   local: new Vector2(0, 100),
 });
-world.addComponent(entity, rotationId, { world: 0, local: 0 });
-world.addComponent(entity, PhysicsBodyId, {
+addRotationComponent(world, entity);
+addPhysicsBodyComponent(world, entity, {
   physicsBody: new RigidBody({ shape: new CircleShape(16) }),
 });
 ```

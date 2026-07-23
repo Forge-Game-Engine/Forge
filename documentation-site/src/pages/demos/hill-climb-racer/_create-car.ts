@@ -1,7 +1,7 @@
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
@@ -10,21 +10,21 @@ import {
   addAngularVelocityMotorComponent,
   addLinearDamperComponent,
   addLinearSpringComponent,
+  addPhysicsBodyComponent,
   addPrismaticJointComponent,
   addRevoluteJointComponent,
   CircleShape,
-  PhysicsBodyId,
   PolygonShape,
   PrismaticJoint,
   RevoluteJoint,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addAirControlComponent } from './_air-control.component';
@@ -297,12 +297,12 @@ function createWheel(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity, {
     local: new Vector2(
       (wheelRadius * 2) / sprite.width,
       (wheelRadius * 2) / sprite.height,
@@ -312,8 +312,8 @@ function createWheel(
       (wheelRadius * 2) / sprite.height,
     ),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: wheelColor });
-  world.addComponent(entity, PhysicsBodyId, { physicsBody: body });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: wheelColor });
+  addPhysicsBodyComponent(world, entity, { physicsBody: body });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
     maxTorque: motorMaxTorque * maxTorqueMultiplier,
@@ -366,12 +366,12 @@ function createWheelMount(
 
   const uprightEntity = world.createEntity();
 
-  world.addComponent(uprightEntity, positionId, {
+  addPositionComponent(world, uprightEntity, {
     world: uprightPosition.clone(),
     local: uprightPosition.clone(),
   });
-  world.addComponent(uprightEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(uprightEntity, PhysicsBodyId, {
+  addRotationComponent(world, uprightEntity);
+  addPhysicsBodyComponent(world, uprightEntity, {
     physicsBody: uprightBody,
   });
 
@@ -471,12 +471,12 @@ export async function createCar(
 
   const chassisEntity = world.createEntity();
 
-  world.addComponent(chassisEntity, positionId, {
+  addPositionComponent(world, chassisEntity, {
     world: chassisPosition.clone(),
     local: chassisPosition.clone(),
   });
-  world.addComponent(chassisEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(chassisEntity, scaleId, {
+  addRotationComponent(world, chassisEntity);
+  addScaleComponent(world, chassisEntity, {
     local: new Vector2(
       chassisWidth / sprites.chassis.width,
       chassisHeight / sprites.chassis.height,
@@ -486,11 +486,11 @@ export async function createCar(
       chassisHeight / sprites.chassis.height,
     ),
   });
-  world.addComponent(chassisEntity, spriteId, {
+  addSpriteComponent(world, chassisEntity, {
     ...sprites.chassis,
     tintColor: chassisColor,
   });
-  world.addComponent(chassisEntity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, chassisEntity, {
     physicsBody: chassisBody,
   });
 

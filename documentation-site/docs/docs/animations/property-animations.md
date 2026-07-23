@@ -24,9 +24,9 @@ don't specify, then register
 to advance them every tick:
 
 ```ts
-import { positionId } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { addPositionComponent, positionId } from '@forge-game-engine/forge/common';
 import {
+  addAnimationComponent,
   animationId,
   createAnimatedProperty,
   createAnimationEcsSystem,
@@ -35,12 +35,9 @@ import {
 
 const entity = world.createEntity();
 
-world.addComponent(entity, positionId, {
-  local: Vector2.zero,
-  world: Vector2.zero,
-});
+addPositionComponent(world, entity);
 
-world.addComponent(entity, animationId, {
+addAnimationComponent(world, entity, {
   animations: [
     createAnimatedProperty({
       startValue: 0,

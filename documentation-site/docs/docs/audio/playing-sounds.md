@@ -16,7 +16,11 @@ resets `playSound` back to `false`.
 Create the `Howl` once, store it in the component, and register the system:
 
 ```ts
-import { audioId, createAudioEcsSystem } from '@forge-game-engine/forge/audio';
+import {
+  addAudioComponent,
+  audioId,
+  createAudioEcsSystem,
+} from '@forge-game-engine/forge/audio';
 import { createGame } from '@forge-game-engine/forge/utilities';
 import { Howl } from 'howler';
 
@@ -26,9 +30,8 @@ world.addSystem(createAudioEcsSystem());
 
 const player = world.createEntity();
 
-world.addComponent(player, audioId, {
+addAudioComponent(world, player, {
   sound: new Howl({ src: ['jump.mp3'] }),
-  playSound: false,
 });
 ```
 
@@ -64,7 +67,7 @@ playback once:
 ```ts
 const music = world.createEntity();
 
-world.addComponent(music, audioId, {
+addAudioComponent(world, music, {
   sound: new Howl({ src: ['theme.mp3'], loop: true, volume: 0.4 }),
   playSound: true,
 });

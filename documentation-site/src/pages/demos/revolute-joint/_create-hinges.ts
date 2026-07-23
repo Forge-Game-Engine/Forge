@@ -1,24 +1,24 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addPhysicsBodyComponent,
   addRevoluteJointComponent,
   CircleShape,
-  PhysicsBodyId,
   PolygonShape,
   RevoluteJoint,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
@@ -66,16 +66,16 @@ function createVisualEntity(
 ): void {
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(entity, rotationId, { local: angle, world: angle });
-  world.addComponent(entity, scaleId, {
+  addRotationComponent(world, entity, { local: angle, world: angle });
+  addScaleComponent(world, entity, {
     local: new Vector2(width / sprite.width, height / sprite.height),
     world: new Vector2(width / sprite.width, height / sprite.height),
   });
-  world.addComponent(entity, spriteId, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
 }
 
 function createPivotMarker(
@@ -101,12 +101,12 @@ function createPivotMarker(
     isSensor: true,
   });
 
-  world.addComponent(pivotEntity, positionId, {
+  addPositionComponent(world, pivotEntity, {
     world: position.clone(),
     local: position.clone(),
   });
-  world.addComponent(pivotEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(pivotEntity, PhysicsBodyId, { physicsBody: pivotBody });
+  addRotationComponent(world, pivotEntity);
+  addPhysicsBodyComponent(world, pivotEntity, { physicsBody: pivotBody });
 
   return pivotBody;
 }
@@ -144,15 +144,15 @@ function createDoorScenario(
     restitution: 0,
   });
 
-  world.addComponent(doorEntity, positionId, {
+  addPositionComponent(world, doorEntity, {
     world: doorPosition.clone(),
     local: doorPosition.clone(),
   });
-  world.addComponent(doorEntity, rotationId, {
+  addRotationComponent(world, doorEntity, {
     local: doorAngle,
     world: doorAngle,
   });
-  world.addComponent(doorEntity, scaleId, {
+  addScaleComponent(world, doorEntity, {
     local: new Vector2(
       doorWidth / sprites.door.width,
       doorHeight / sprites.door.height,
@@ -162,11 +162,11 @@ function createDoorScenario(
       doorHeight / sprites.door.height,
     ),
   });
-  world.addComponent(doorEntity, spriteId, {
+  addSpriteComponent(world, doorEntity, {
     ...sprites.door,
     tintColor: doorColor,
   });
-  world.addComponent(doorEntity, PhysicsBodyId, { physicsBody: doorBody });
+  addPhysicsBodyComponent(world, doorEntity, { physicsBody: doorBody });
 
   // referenceAngle is captured as doorAngle here, so the joint's own
   // `angle` starts at 0 (closed) and 90 degrees is fully open.
@@ -221,15 +221,15 @@ function createPendulumScenario(
     restitution: 0,
   });
 
-  world.addComponent(bobEntity, positionId, {
+  addPositionComponent(world, bobEntity, {
     world: bobPosition.clone(),
     local: bobPosition.clone(),
   });
-  world.addComponent(bobEntity, rotationId, {
+  addRotationComponent(world, bobEntity, {
     local: startAngle,
     world: startAngle,
   });
-  world.addComponent(bobEntity, scaleId, {
+  addScaleComponent(world, bobEntity, {
     local: new Vector2(
       (bobRadius * 2) / sprites.ball.width,
       (bobRadius * 2) / sprites.ball.height,
@@ -239,11 +239,11 @@ function createPendulumScenario(
       (bobRadius * 2) / sprites.ball.height,
     ),
   });
-  world.addComponent(bobEntity, spriteId, {
+  addSpriteComponent(world, bobEntity, {
     ...sprites.ball,
     tintColor: pendulumColor,
   });
-  world.addComponent(bobEntity, PhysicsBodyId, { physicsBody: bobBody });
+  addPhysicsBodyComponent(world, bobEntity, { physicsBody: bobBody });
 
   const joint = new RevoluteJoint({
     bodyA: pivotBody,
@@ -284,12 +284,12 @@ function createWheelScenario(
 
   wheelBody.angularVelocity = 5;
 
-  world.addComponent(wheelEntity, positionId, {
+  addPositionComponent(world, wheelEntity, {
     world: hubPosition.clone(),
     local: hubPosition.clone(),
   });
-  world.addComponent(wheelEntity, rotationId, { local: 0, world: 0 });
-  world.addComponent(wheelEntity, scaleId, {
+  addRotationComponent(world, wheelEntity);
+  addScaleComponent(world, wheelEntity, {
     local: new Vector2(
       (wheelRadius * 2) / sprites.ball.width,
       (wheelRadius * 2) / sprites.ball.height,
@@ -299,11 +299,11 @@ function createWheelScenario(
       (wheelRadius * 2) / sprites.ball.height,
     ),
   });
-  world.addComponent(wheelEntity, spriteId, {
+  addSpriteComponent(world, wheelEntity, {
     ...sprites.ball,
     tintColor: wheelColor,
   });
-  world.addComponent(wheelEntity, PhysicsBodyId, { physicsBody: wheelBody });
+  addPhysicsBodyComponent(world, wheelEntity, { physicsBody: wheelBody });
 
   const joint = new RevoluteJoint({ bodyA: hubBody, bodyB: wheelBody });
 

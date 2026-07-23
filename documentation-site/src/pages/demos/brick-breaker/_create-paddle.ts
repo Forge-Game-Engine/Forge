@@ -1,20 +1,20 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  positionId,
-  rotationId,
-  scaleId,
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  PhysicsBodyId,
+  addPhysicsBodyComponent,
   PolygonShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
 import {
+  addSpriteComponent,
   createImageSprite,
   RenderContext,
-  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { PlayArea } from './_create-boundaries';
 import { paddleId } from './_paddle.component';
@@ -60,19 +60,19 @@ export async function createPaddle(
 
   const entity = world.createEntity();
 
-  world.addComponent(entity, positionId, {
+  addPositionComponent(world, entity, {
     local: position.clone(),
     world: position.clone(),
   });
 
-  world.addComponent(entity, rotationId, { local: 0, world: 0 });
+  addRotationComponent(world, entity);
 
-  world.addComponent(entity, scaleId, {
+  addScaleComponent(world, entity, {
     local: new Vector2(paddleScaleX, paddleScaleY),
     world: new Vector2(paddleScaleX, paddleScaleY),
   });
 
-  world.addComponent(entity, spriteId, paddleSprite);
+  addSpriteComponent(world, entity, paddleSprite);
 
   world.addComponent(entity, paddleId, {
     speed: paddleSpeed,
@@ -80,7 +80,7 @@ export async function createPaddle(
     maxX: playArea.maxX - paddleWidth / 2,
   });
 
-  world.addComponent(entity, PhysicsBodyId, {
+  addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(paddleWidth, paddleHeight),
       position: position.clone(),
