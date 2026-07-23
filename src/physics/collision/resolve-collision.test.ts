@@ -34,7 +34,7 @@ describe('resolveCollision', () => {
     expect(fallingBody.velocity.x).toBeCloseTo(0);
     expect(fallingBody.velocity.y).toBeCloseTo(-2.5);
     expect(fallingBody.angularVelocity).toBeCloseTo(0);
-    expect(fallingBody.position.y).toBeCloseTo(-0.058);
+    expect(fallingBody.position.y).toBeCloseTo(-0.145);
     expect(groundBody.velocity.equals(Vector2.zero)).toBe(true);
     expect(groundBody.position.equals(new Vector2(0, 1.5))).toBe(true);
   });
@@ -98,6 +98,80 @@ describe('resolveCollision', () => {
     expect(slidingBody.velocity.x).toBeCloseTo(2);
     expect(slidingBody.velocity.y).toBeCloseTo(0);
     expect(slidingBody.angularVelocity).toBeCloseTo(2);
+  });
+
+  it('should fully cancel approach velocity across multiple contact points in a single call', () => {
+    const fallingBody = new RigidBody({
+      shape: new CircleShape(1),
+      position: new Vector2(0, 0),
+      restitution: 0,
+    });
+    fallingBody.velocity = new Vector2(0, 5);
+
+    const groundBody = new RigidBody({
+      shape: PolygonShape.rectangle(10, 2),
+      position: new Vector2(0, 1.5),
+      isStatic: true,
+      restitution: 0,
+    });
+
+    const manifold: CollisionManifold = {
+      bodyA: fallingBody,
+      bodyB: groundBody,
+      normal: Vector2.down,
+      depth: 0.3,
+      contactPoints: [new Vector2(0, 1), new Vector2(0, 1)],
+    };
+
+    resolveCollision(manifold, 0, true);
+
+    expect(fallingBody.velocity.y).toBeCloseTo(0);
+  });
+
+  it('should cap the per-step positional correction to the smaller body bounding radius', () => {
+    const largeBody = new RigidBody({
+      shape: new CircleShape(50),
+      position: new Vector2(0, 0),
+    });
+    const largeStaticBody = new RigidBody({
+      shape: new CircleShape(50),
+      position: new Vector2(0, 10),
+      isStatic: true,
+    });
+
+    const largeManifold: CollisionManifold = {
+      bodyA: largeBody,
+      bodyB: largeStaticBody,
+      normal: Vector2.down,
+      depth: 1000,
+      contactPoints: [new Vector2(0, 5)],
+    };
+
+    resolveCollision(largeManifold, 0, false);
+
+    expect(largeBody.position.y).toBeCloseTo(-50);
+
+    const smallBody = new RigidBody({
+      shape: new CircleShape(1),
+      position: new Vector2(0, 0),
+    });
+    const smallStaticBody = new RigidBody({
+      shape: new CircleShape(1),
+      position: new Vector2(0, 0.2),
+      isStatic: true,
+    });
+
+    const smallManifold: CollisionManifold = {
+      bodyA: smallBody,
+      bodyB: smallStaticBody,
+      normal: Vector2.down,
+      depth: 20,
+      contactPoints: [new Vector2(0, 0.1)],
+    };
+
+    resolveCollision(smallManifold, 0, false);
+
+    expect(smallBody.position.y).toBeCloseTo(-1);
   });
 
   it('should not apply an impulse when bodies are already separating', () => {

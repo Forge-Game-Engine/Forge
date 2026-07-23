@@ -37,9 +37,10 @@ export interface CollisionManifold {
    * The total positional-correction distance already applied to this
    * manifold during the current step's resolution passes. Mutated by
    * {@link resolveCollision} to cap the combined correction across
-   * `PhysicsWorld`'s solver iterations at `MAX_LINEAR_CORRECTION_PER_STEP`,
-   * regardless of how that total is distributed across iterations. Starts
-   * `undefined` (treated as zero) for a freshly-detected manifold.
+   * `PhysicsWorld`'s solver iterations at a distance proportional to the
+   * smaller body's bounding radius, regardless of how that total is
+   * distributed across iterations. Starts `undefined` (treated as zero) for
+   * a freshly-detected manifold.
    */
   correctionApplied?: number;
 }
