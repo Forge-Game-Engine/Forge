@@ -327,8 +327,6 @@ a restatement of the commit message. This is enforced by CI
 
 - Released version sections (`## [x.y.z] - date`) — these are historical record. Fix a
   factual error if you find one, but don't add new entries to a past release.
-- The reference-style compare links at the bottom of the file (`[x.y.z]: https://...`) —
-  maintained by tooling, not hand-written.
 - `documentation-site/docs/changelog.md` — generated from the root `CHANGELOG.md` by
   `documentation-site/scripts/sync-changelog.mjs` on `prestart`/`prebuild`, and gitignored.
   Never edit or commit it directly; edit `/CHANGELOG.md` instead and the docs site picks it
