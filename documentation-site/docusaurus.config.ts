@@ -120,6 +120,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/rolling-ball',
+              label: 'Rolling Ball',
+            },
+            {
               to: 'demos/prismatic-joint',
               label: 'Prismatic Joint (Slider)',
             },
@@ -144,6 +148,10 @@ const config: Config = {
               label: 'Wrecking Ball',
             },
             {
+              to: 'demos/hill-climb-racer',
+              label: 'Hill Climb Racer',
+            },
+            {
               to: 'demos/stress-test',
               label: 'Stress Test',
             },
@@ -158,6 +166,10 @@ const config: Config = {
             {
               to: 'demos/particles',
               label: 'Particles',
+            },
+            {
+              to: 'demos/nine-slice',
+              label: 'Nine-Slice Sprites',
             },
           ],
         },

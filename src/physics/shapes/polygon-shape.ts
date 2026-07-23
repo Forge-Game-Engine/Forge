@@ -1,4 +1,10 @@
 import { Vector2 } from '../../math/index.js';
+import {
+  calculateCentroid,
+  calculateNormals,
+  calculatePolygonMomentOfInertia,
+  calculateSignedArea,
+} from './polygon-math.js';
 import type { ShapeBase } from './shape.js';
 
 const EPSILON = 1e-9;
@@ -52,7 +58,7 @@ export class PolygonShape implements ShapeBase {
     }
 
     let orderedVertices = [...vertices];
-    const signedArea = PolygonShape._signedArea(orderedVertices);
+    const signedArea = calculateSignedArea(orderedVertices);
 
     if (Math.abs(signedArea) < EPSILON) {
       throw new Error(
@@ -66,10 +72,10 @@ export class PolygonShape implements ShapeBase {
 
     PolygonShape._validateConvexity(orderedVertices);
 
-    const centroid = PolygonShape._calculateCentroid(orderedVertices);
+    const centroid = calculateCentroid(orderedVertices);
 
     this.vertices = orderedVertices.map((vertex) => vertex.subtract(centroid));
-    this.normals = PolygonShape._calculateNormals(this.vertices);
+    this.normals = calculateNormals(this.vertices);
     this._worldVerticesCache = null;
     this._worldNormalsCache = null;
   }
@@ -92,19 +98,6 @@ export class PolygonShape implements ShapeBase {
     ]);
   }
 
-  private static _signedArea(vertices: readonly Vector2[]): number {
-    let signedArea = 0;
-
-    for (let i = 0; i < vertices.length; i++) {
-      const current = vertices[i];
-      const next = vertices[(i + 1) % vertices.length];
-
-      signedArea += current.cross(next);
-    }
-
-    return signedArea;
-  }
-
   private static _validateConvexity(vertices: readonly Vector2[]): void {
     const vertexCount = vertices.length;
 
@@ -122,46 +115,12 @@ export class PolygonShape implements ShapeBase {
     }
   }
 
-  private static _calculateCentroid(vertices: readonly Vector2[]): Vector2 {
-    let centroidX = 0;
-    let centroidY = 0;
-    let signedArea = 0;
-
-    for (let i = 0; i < vertices.length; i++) {
-      const current = vertices[i];
-      const next = vertices[(i + 1) % vertices.length];
-      const cross = current.cross(next);
-
-      signedArea += cross;
-      centroidX += (current.x + next.x) * cross;
-      centroidY += (current.y + next.y) * cross;
-    }
-
-    const factor = 1 / (3 * signedArea);
-
-    return new Vector2(centroidX * factor, centroidY * factor);
-  }
-
-  private static _calculateNormals(vertices: readonly Vector2[]): Vector2[] {
-    const normals: Vector2[] = [];
-
-    for (let i = 0; i < vertices.length; i++) {
-      const current = vertices[i];
-      const next = vertices[(i + 1) % vertices.length];
-      const edge = next.subtract(current);
-
-      normals.push(edge.perpendicular().normalize());
-    }
-
-    return normals;
-  }
-
   /**
    * Calculates the area of the polygon.
    * @returns The area of the polygon.
    */
   public getArea(): number {
-    return Math.abs(PolygonShape._signedArea(this.vertices)) / 2;
+    return Math.abs(calculateSignedArea(this.vertices)) / 2;
   }
 
   /**
@@ -170,20 +129,7 @@ export class PolygonShape implements ShapeBase {
    * @returns The moment of inertia of the polygon.
    */
   public getMomentOfInertia(mass: number): number {
-    let numerator = 0;
-    let denominator = 0;
-
-    for (let i = 0; i < this.vertices.length; i++) {
-      const current = this.vertices[i];
-      const next = this.vertices[(i + 1) % this.vertices.length];
-      const cross = Math.abs(current.cross(next));
-
-      numerator +=
-        cross * (current.dot(current) + current.dot(next) + next.dot(next));
-      denominator += cross;
-    }
-
-    return (mass / 3) * (numerator / denominator);
+    return calculatePolygonMomentOfInertia(mass, this.vertices);
   }
 
   /**

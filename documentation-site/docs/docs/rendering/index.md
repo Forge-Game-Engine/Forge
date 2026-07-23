@@ -26,3 +26,6 @@ Guides in this section:
   render target into HDR storage and compressing it back to displayable
   range, so bloom can react to true HDR brightness (including emissive
   maps) instead of an 8-bit ceiling.
+- [Nine-Slice Sprites](./nine-slice-sprites.md): slicing a sprite into a 3x3
+  grid so its corners keep their size while its edges/center stretch or
+  tile, for UI panels and buttons that resize without distorting.
