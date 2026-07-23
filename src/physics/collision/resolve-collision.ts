@@ -5,35 +5,25 @@ import type { CollisionManifold } from './collision-manifold.js';
 const PENETRATION_SLOP = 0.01;
 
 /**
- * The fraction of penetration depth corrected by each resolution pass
- * (Baumgarte stabilization).
+ * The fraction of penetration depth corrected by {@link applyPositionalCorrection}
+ * (Baumgarte stabilization). Applied once per step - see `correctPosition` on
+ * {@link resolveCollision} - so this is the actual fraction of a step's
+ * penetration that gets corrected, not a per-iteration rate that compounds.
  */
-const CORRECTION_PERCENT = 0.2;
+const CORRECTION_PERCENT = 0.5;
 
 /**
- * The maximum total positional-correction distance a single manifold may
- * apply across all of `PhysicsWorld`'s solver iterations within one step, as
- * a fraction of the smaller body's bounding radius (see
- * {@link maxLinearCorrectionPerStep}). Without this cap, `CORRECTION_PERCENT`
- * compounds over `SOLVER_ITERATIONS` passes (e.g. ~83% of depth per step at
- * 0.2/8 iterations), which is aggressive enough that correcting a body out of
- * one overlapping neighbor can push it straight into another, with the next
- * step correcting it back - a stable, non-decaying back-and-forth that reads
- * as constant vibration in dense piles. Capping the per-step total prevents
- * any single step from overshooting into a different overlap configuration,
- * while still letting deep penetrations resolve gradually over subsequent
- * steps. Expressing the cap as a fraction of body size (rather than a fixed
- * distance) keeps it meaningful regardless of how large or small a game's
- * shapes are: a fixed cap sized for small shapes stalls indefinitely against
- * the much deeper penetrations that large, fast-falling shapes in a dense
- * pile can produce in a single step, leaving them visibly embedded in each
- * other instead of separating over the next few steps. A full bounding
- * radius still bounds a single step's correction to "no further than the
- * smaller body's own size", which avoids a runaway teleport for a
- * pathological manifold, but is generous enough to let a dense pile's worst
- * overlaps (built up over several chaotic steps before the pile settles)
- * shrink back out within a handful of steps instead of stalling indefinitely
- * against a distance far smaller than the bodies involved.
+ * The maximum positional-correction distance a single manifold may apply in
+ * one step, as a fraction of the smaller body's bounding radius (see
+ * {@link maxLinearCorrectionPerStep}). This is a safety bound for
+ * pathological cases - e.g. a fast-falling body that tunneled deep into a
+ * neighbor before contact was detected - rather than the primary defense
+ * against overshoot: since positional correction only runs once per step
+ * (not on every velocity iteration), `CORRECTION_PERCENT` alone already keeps
+ * a typical correction well-behaved. Expressing the cap as a fraction of
+ * body size (rather than a fixed distance) keeps it meaningful regardless of
+ * how large or small a game's shapes are, and bounding it to a full radius
+ * still prevents a single step from moving a body further than its own size.
  */
 const MAX_LINEAR_CORRECTION_FRACTION = 1.0;
 
@@ -81,11 +71,12 @@ function applyPositionalCorrection(manifold: CollisionManifold): void {
   );
   bodyB.position = bodyB.position.add(correction.multiply(bodyB.inverseMass));
 
-  // Shrink the manifold's recorded depth by the amount just corrected, so
-  // repeated resolution passes within the same step (see
-  // `PhysicsWorld._detectAndResolveCollisions`) converge geometrically
-  // towards `PENETRATION_SLOP` instead of repeatedly over-correcting based
-  // on the original (now stale) depth.
+  // Record how much of the depth this call already corrected. Positional
+  // correction only runs once per manifold per step (see `correctPosition`
+  // on `resolveCollision`), so in practice this simply reflects the amount
+  // applied above; it guards against a caller invoking this more than once
+  // for the same manifold (e.g. directly, outside `PhysicsWorld`) by capping
+  // the combined correction at `maxLinearCorrectionPerStep`.
   manifold.depth -= separationGain;
   manifold.correctionApplied = correctionApplied + separationGain;
 }
@@ -106,12 +97,23 @@ function applyPositionalCorrection(manifold: CollisionManifold): void {
  * every iteration lets contacts repeatedly "bounce" off each other within a
  * single step, injecting energy that shows up as persistent jitter in
  * resting piles.
+ * @param reverseContactOrder - Whether to resolve this manifold's contact
+ * points in reverse order, alternating pass-to-pass to avoid biasing
+ * correction toward whichever point happens to be first.
+ * @param correctPosition - Whether to run positional correction this call.
+ * Should be `true` for only one of {@link PhysicsWorld}'s solver iterations
+ * (by convention, the last). `CORRECTION_PERCENT` assumes a single correction
+ * per step; running it on every velocity iteration would compound it into a
+ * much larger single-step movement, large enough to overshoot a body out of
+ * one overlapping neighbor and straight into another, which reads as
+ * vibration in dense piles.
  */
 export function resolveCollision(
   manifold: CollisionManifold,
   restingVelocityThreshold: number,
   applyRestitution: boolean,
   reverseContactOrder = false,
+  correctPosition = true,
 ): void {
   const { bodyA, bodyB, normal, contactPoints } = manifold;
   const orderedContactPoints = reverseContactOrder
@@ -190,5 +192,7 @@ export function resolveCollision(
     bodyB.applyImpulse(frictionImpulse, rb);
   }
 
-  applyPositionalCorrection(manifold);
+  if (correctPosition) {
+    applyPositionalCorrection(manifold);
+  }
 }

@@ -22,11 +22,12 @@ const defaultPhysicsWorldOptions = {
 };
 
 /**
- * The number of times collision resolution is repeated each step over the
- * same set of contacts. Repeating the impulse and positional correction
- * passes lets resting contacts in stacks/piles converge towards zero
- * penetration within a single step, without re-running broad/narrow-phase
- * detection.
+ * The number of times impulse resolution is repeated each step over the same
+ * set of contacts. Repeating the impulse pass lets resting contacts in
+ * stacks/piles converge towards a stable velocity within a single step,
+ * without re-running broad/narrow-phase detection. Positional correction
+ * (see `resolveCollision`'s `correctPosition` parameter) only runs on the
+ * last of these iterations, once velocity has had a chance to settle.
  */
 const SOLVER_ITERATIONS = 8;
 
@@ -272,12 +273,21 @@ export class PhysicsWorld {
     // the floor - converges against both constraints together instead of
     // one undoing the other's correction from the previous step.
     for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+      // Positional correction only runs on the last iteration: `resolveCollision`
+      // sizes a single correction assuming it runs once per step, so applying
+      // it on every velocity iteration would compound it (see
+      // `resolveCollision`'s `correctPosition` parameter) into a large enough
+      // single-step movement to overshoot a body out of one overlapping
+      // neighbor and into another, reading as vibration in dense piles.
+      const isLastIteration = iteration === SOLVER_ITERATIONS - 1;
+
       for (const manifold of manifolds) {
         resolveCollision(
           manifold,
           restingVelocityThreshold,
           iteration === 0,
           iteration % 2 === 1,
+          isLastIteration,
         );
       }
 

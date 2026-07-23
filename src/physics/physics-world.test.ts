@@ -113,13 +113,13 @@ describe('PhysicsWorld', () => {
 
       world.step(0);
 
-      // A single step now runs the resolution pass `SOLVER_ITERATIONS` times
-      // over the same manifold, with each pass shrinking the recorded depth
-      // (see `applyPositionalCorrection`). This converges most of the way
-      // towards full separation (3.2 - 1) in one step rather than the ~20%
-      // a single pass would correct.
+      // Positional correction runs once per step (on the last of
+      // `SOLVER_ITERATIONS` velocity iterations - see `resolveCollision`'s
+      // `correctPosition` parameter), correcting `CORRECTION_PERCENT` of the
+      // 0.2-deep penetration rather than the ~83% that running it on every
+      // iteration used to compound to.
       expect(circleBody.position.x).toBeCloseTo(0);
-      expect(circleBody.position.y).toBeCloseTo(3.0419, 3);
+      expect(circleBody.position.y).toBeCloseTo(3.105, 3);
       expect(circleBody.velocity.equals(Vector2.zero)).toBe(true);
     });
 

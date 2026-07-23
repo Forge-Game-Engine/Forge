@@ -34,7 +34,7 @@ describe('resolveCollision', () => {
     expect(fallingBody.velocity.x).toBeCloseTo(0);
     expect(fallingBody.velocity.y).toBeCloseTo(-2.5);
     expect(fallingBody.angularVelocity).toBeCloseTo(0);
-    expect(fallingBody.position.y).toBeCloseTo(-0.058);
+    expect(fallingBody.position.y).toBeCloseTo(-0.145);
     expect(groundBody.velocity.equals(Vector2.zero)).toBe(true);
     expect(groundBody.position.equals(new Vector2(0, 1.5))).toBe(true);
   });
