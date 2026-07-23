@@ -1,5 +1,6 @@
 aabb
 afterrun
+Aoboshi
 artboard
 attw
 autofetch
@@ -24,6 +25,7 @@ Fira
 Flaticon
 fract
 frontmatter
+gamedev
 gamepadconnected
 Gamepads
 GLSL

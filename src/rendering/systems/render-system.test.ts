@@ -499,12 +499,12 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, -45) before rotation) rotates 180
+      // The top-left corner (offset (-45, 45) before rotation) rotates 180
       // degrees around the entity, landing on the opposite side.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
-          Math.abs(position.world.y - 45) < 1e-9,
+          Math.abs(position.world.y - -45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();
