@@ -2,6 +2,7 @@ import {
   addGaussianBlurComponent,
   cameraId,
   CircleShape,
+  Color,
   createCameraEcsSystem,
   createGame,
   createGaussianBlurEcsSystem,
@@ -71,6 +72,7 @@ world.addComponent(cameraEntity, cameraId, {
   cullingMask: renderLayer,
   renderTarget: sceneRenderTarget,
   layer: 0,
+  clearColor: Color.transparent,
 });
 
 addGaussianBlurComponent(world, cameraEntity, { passes: 8, intensity: 0.4 });

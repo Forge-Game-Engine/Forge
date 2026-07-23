@@ -75,6 +75,7 @@ describe('createRenderEcsSystem', () => {
     cullingMask,
     renderTarget,
     layer: 0,
+    clearColor: Color.transparent,
   });
 
   const createSprite = (
