@@ -52,6 +52,9 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Update CHANGELOG.md
+        run: npm run changelog:promote -- --version=$VERSION
+
       - name: Build package
         run: npm run build
 
@@ -62,7 +65,7 @@ jobs:
 
       - name: Commit and push release
         run: |
-          git add package.json package-lock.json
+          git add package.json package-lock.json CHANGELOG.md
           git commit -m "chore(release): v$VERSION"
 
           git tag v$VERSION

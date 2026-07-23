@@ -13,6 +13,7 @@ Catmull
 commitlint
 dbaeumer
 deadzone
+deregistering
 desaturates
 despawn
 devcontainers
@@ -32,6 +33,7 @@ Heliagon
 highp
 hitscan
 hotspot
+hoverable
 Infima
 inigo
 Kenney
@@ -50,10 +52,13 @@ mouseup
 Narkowicz
 ndot
 Nisbet
+normalise
 Oboro
 perlin
 pingpong
 Pixabay
+prebuild
+prestart
 quilez
 refac
 reinhard
@@ -66,6 +71,7 @@ retuned
 RGBA
 rnaumovs
 rolloff
+shaderstore
 skidmark
 slevesque
 Smashicons
@@ -73,6 +79,7 @@ smoothstep
 sonarjs
 sonarlint
 sonarsource
+spaceshooter
 spritesheet
 stoppables
 stoppie

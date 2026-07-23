@@ -115,6 +115,7 @@
     "lint:fix": "eslint src --fix",
     "prettier": "prettier . --check",
     "prettier:write": "prettier . --write",
+    "changelog:promote": "node scripts/changelog/promote-unreleased.mjs",
     "prepare": "husky"
   },
   "author": "",
