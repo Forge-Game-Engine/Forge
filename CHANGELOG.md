@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **physics:** Fix rigid bodies settling deeply embedded in each other in dense piles/stacks, caused by an under-strength collision impulse at multi-contact-point manifolds and a positional-correction cap that was too small relative to typical shape sizes
+
 ## [0.23.0] - 2026-07-23
 
 #### Added
