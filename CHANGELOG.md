@@ -34,23 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhance `GamepadInputSource` to support hot-plugging and last-connected gamepad selection
 - Add Wrecking Ball demo and implement RevoluteJoint functionality
 
-#### Fixed
-
-- Fix Docusaurus dependency versions
-
 ## [0.22.0] - 2026-07-14
-
-#### Added
-
-- Add Claude PR Review workflow
 
 #### Changed
 
 - Replace the custom shader include syntax with a `#pragma`-based shader pre-processing pipeline
-
-#### Fixed
-
-- Fix Claude PR Review workflow configuration and permissions
 
 ## [0.21.1] - 2026-06-24
 
@@ -71,9 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.20.1] - 2026-06-09
 
-#### Added
-
-- Enhance documentation with detailed parameter descriptions and add CLAUDE verification guidelines
+_No user-facing changes._
 
 ## [0.20.0] - 2026-06-02
 
@@ -96,28 +82,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 
 - **rendering:** Flip Y axis in screenToWorldSpace
-- **ci:** Use github.token for checkout in create-release workflow
-- Revert "fix(ci): use github.token for checkout in create-release workflow (#445)"
 
 ## [0.18.0] - 2026-01-17
 
 #### Added
 
-- Add AGENTS.md guide for coding agents
 - **BREAKING:** Replace the ECS implementation with a new architecture, and migrate all built-in components and systems to it
 
 ## [0.17.7] - 2026-01-03
 
 #### Added
 
-- Add tests and documentation for RenderLayer class
-- Add tests and documentation for RenderSystem
-- Add tests and JSDoc documentation for TimerSystem
 - Add shooting to spaceshooter demo
-
-#### Changed
-
-- Document and test ForgeShaderSource class
 
 ## [0.17.6] - 2026-01-01
 
@@ -295,7 +271,7 @@ _No user-facing changes._
 
 #### Added
 
-- Add common module to package exports and Vite configuration
+- Add the `common` module to package exports
 
 ## [0.14.0] - 2025-10-15
 
@@ -424,21 +400,17 @@ _No user-facing changes._
 
 ## [0.5.3] - 2025-06-08
 
-#### Fixed
-
-- Update baseUrl in Docusaurus config for GitHub Pages deployment
+_No user-facing changes._
 
 ## [0.5.2] - 2025-06-08
 
-#### Fixed
-
-- Correct path for uploading build artifact in GitHub Actions workflow
+_No user-facing changes._
 
 ## [0.5.1] - 2025-06-08
 
 #### Added
 
-- Add Docusaurus documentation site with GitHub Actions deployment workflows
+- Add a Docusaurus documentation site
 
 ## [0.5.0] - 2025-06-08
 
@@ -468,9 +440,7 @@ _No user-facing changes._
 
 ## [0.4.8] - 2025-05-24
 
-#### Fixed
-
-- Update ESLint configuration to streamline rule definitions
+_No user-facing changes._
 
 ## [0.4.7] - 2025-05-24
 
@@ -657,7 +627,6 @@ _No user-facing changes._
 - Enhance resolveIncludes to support resolved variables and prevent duplicate declarations
 - Add Perlin noise scene and material with shader includes for rendering
 - Implement Perlin noise rendering with shader includes and update random gradient function
-- Add new words to project dictionary for improved spell checking
 - Import Perlin noise scene in game module and update scene exports
 
 ## [0.2.1] - 2025-04-05
@@ -700,8 +669,6 @@ Initial public release. This release establishes the foundation of the engine, a
 - `PolygonCollider` and `Matrix3x3` as initial physics/math primitives
 - `ImageCache` for asset loading, later migrated into the asset-loading module
 - Ship and starfield entities/components for the initial demo scene
-- Dev Container configuration for a consistent Node.js 22 development environment
-- CI workflow for automated build, lint, type-check, and test runs
 
 #### Fixed
 
