@@ -32,7 +32,10 @@ export const createTerrainRenderEcsSystem = (
     const { geometry, material, vertexCount } = terrainMesh;
 
     renderContext.bindRenderTarget(cameraComponent.renderTarget ?? null);
-    gl.clearColor(0, 0, 0, 1);
+
+    const { clearColor } = cameraComponent;
+
+    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     const projectionMatrix = createProjectionMatrix(

@@ -11,6 +11,7 @@ import { RenderContext } from '../render-context.js';
 import { ShaderCache } from '../shaders/index.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
+import { Color } from '../color.js';
 
 describe('createTerrainRenderEcsSystem', () => {
   let world: EcsWorld;
@@ -32,6 +33,7 @@ describe('createTerrainRenderEcsSystem', () => {
     isStatic: true,
     cullingMask: 0xffffffff,
     layer: 0,
+    clearColor: Color.transparent,
     ...overrides,
   });
 
