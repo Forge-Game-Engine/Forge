@@ -5,7 +5,6 @@ import { CLEAR_STRATEGY } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
-import { Color } from './color.js';
 
 describe('RenderContext', () => {
   let canvas: HTMLCanvasElement;
