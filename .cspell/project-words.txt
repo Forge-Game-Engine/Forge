@@ -75,6 +75,7 @@ sonarlint
 sonarsource
 spritesheet
 stoppables
+stoppie
 texel
 texels
 thresholded

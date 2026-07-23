@@ -1,4 +1,5 @@
 export * from './components/index.js';
+export * from './nine-slice-options.js';
 export * from './sprite.js';
 export * from './systems/index.js';
 export * from './shaders/index.js';
