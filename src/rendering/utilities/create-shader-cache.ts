@@ -27,6 +27,10 @@ import {
   spriteVertexShader,
   toneMappingFragmentShader,
 } from '../shaders/index.js';
+import {
+  terrainFragmentShader,
+  terrainVertexShader,
+} from '../terrain/shaders/index.js';
 
 /**
  * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
@@ -71,7 +75,9 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(crossFadeFragmentShader))
     .addShader(new ForgeShaderSource(bloomThresholdFragmentShader))
     .addShader(new ForgeShaderSource(bloomCompositeFragmentShader))
-    .addShader(new ForgeShaderSource(toneMappingFragmentShader));
+    .addShader(new ForgeShaderSource(toneMappingFragmentShader))
+    .addShader(new ForgeShaderSource(terrainVertexShader))
+    .addShader(new ForgeShaderSource(terrainFragmentShader));
 
   return shaderCache;
 }

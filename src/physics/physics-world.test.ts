@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PrismaticJoint, RevoluteJoint } from './joints/index.js';
 import { PhysicsWorld } from './physics-world.js';
 import { RigidBody } from './rigid-body.js';
-import { CircleShape, PolygonShape } from './shapes/index.js';
+import { CircleShape, PolygonShape, TerrainShape } from './shapes/index.js';
 import { Vector2 } from '../math/index.js';
 
 describe('PhysicsWorld', () => {
@@ -121,6 +121,33 @@ describe('PhysicsWorld', () => {
       expect(circleBody.position.x).toBeCloseTo(0);
       expect(circleBody.position.y).toBeCloseTo(3.0419, 3);
       expect(circleBody.velocity.equals(Vector2.zero)).toBe(true);
+    });
+
+    it('should settle a dynamic circle falling onto a static terrain body', () => {
+      const world = new PhysicsWorld({ gravity: new Vector2(0, 10) });
+      const terrainBody = new RigidBody({
+        shape: new TerrainShape(
+          [new Vector2(-10, 0), new Vector2(0, 0), new Vector2(10, 0)],
+          5,
+        ),
+        position: Vector2.zero,
+        isStatic: true,
+      });
+      const circleBody = new RigidBody({
+        shape: new CircleShape(1),
+        position: new Vector2(0, -3),
+        restitution: 0,
+      });
+
+      world.addBody(circleBody);
+      world.addBody(terrainBody);
+
+      for (let i = 0; i < 120; i++) {
+        world.step(1 / 60);
+      }
+
+      expect(circleBody.position.y).toBeCloseTo(-1, 1);
+      expect(circleBody.velocity.magnitude()).toBeLessThan(0.1);
     });
   });
 

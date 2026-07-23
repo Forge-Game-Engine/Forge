@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createCameraEcsSystem } from './camera-system';
 import { Axis1dAction, Axis2dAction } from '../../input';
 import { CameraEcsComponent, cameraId } from '../components';
+import { Color } from '../color';
 import { PositionEcsComponent, positionId, Time } from '../../common';
 import { EcsWorld } from '../../ecs';
 import { Vector2 } from '../../math';
@@ -36,6 +37,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -67,6 +69,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -98,6 +101,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -133,6 +137,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -176,6 +181,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -215,6 +221,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
@@ -248,6 +255,7 @@ describe('CameraSystem', () => {
       maxZoom: 10000,
       cullingMask: 0xffffffff,
       layer: 0,
+      clearColor: Color.transparent,
     };
 
     const positionComponent: PositionEcsComponent = {
