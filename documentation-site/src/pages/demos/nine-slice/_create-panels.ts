@@ -18,7 +18,7 @@ import { panelId } from './_panel.component';
  * a thin inset frame line and cross-shaped corner notches, on a 96x96 image.
  * The corner ornament occupies a 24px-deep region on each side.
  */
-const borderInset = 24;
+const borderInset = 26;
 const nativeSize = 96;
 
 const minSize = 64;
@@ -28,14 +28,15 @@ function placePanel(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
   x: number,
+  y: number,
   panelMinSize: number,
   panelMaxSize: number,
 ): void {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: new Vector2(x, 0),
-    world: new Vector2(x, 0),
+    local: new Vector2(x, y),
+    world: new Vector2(x, y),
   });
 
   addRotationComponent(world, entity, {
@@ -45,8 +46,8 @@ function placePanel(
 
   addSpriteComponent(world, entity, sprite);
   world.addComponent(entity, panelId, {
-    minSize: panelMinSize,
-    maxSize: panelMaxSize,
+    minSize: 100,
+    maxSize: 800,
   });
 }
 
@@ -86,21 +87,8 @@ export async function createPanels(
     },
   );
 
-  const tileSprite = createImageSprite(panelImage, renderContext, renderLayer, {
-    slices: {
-      left: borderInset,
-      right: borderInset,
-      top: borderInset,
-      bottom: borderInset,
-      edgeMode: 'tile',
-      centerMode: 'tile',
-      nativeWidth: nativeSize,
-      nativeHeight: nativeSize,
-    },
-  });
-
-  const { width, height } = renderContext.canvas;
-  const spacing = Math.min(width / 3, 260);
+  const { height } = renderContext.canvas;
+  const spacing = Math.min(height / 2, 160);
 
   // Clamp the breathing range to whatever space is actually available, so
   // panels never overlap each other or overflow the canvas on a narrow
@@ -109,7 +97,6 @@ export async function createPanels(
   const clampedMaxSize = Math.min(maxSize, availableSize);
   const clampedMinSize = Math.min(minSize, clampedMaxSize);
 
-  placePanel(world, naiveSprite, -spacing, clampedMinSize, clampedMaxSize);
-  placePanel(world, stretchSprite, 0, clampedMinSize, clampedMaxSize);
-  placePanel(world, tileSprite, spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, naiveSprite, 0, spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, stretchSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
 }

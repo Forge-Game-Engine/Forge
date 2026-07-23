@@ -1,5 +1,9 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { RotationEcsComponent, rotationId, Time } from '@forge-game-engine/forge/common';
+import {
+  RotationEcsComponent,
+  rotationId,
+  Time,
+} from '@forge-game-engine/forge/common';
 import { lerp } from '@forge-game-engine/forge/math';
 import {
   SpriteEcsComponent,
@@ -19,20 +23,17 @@ const cycleSeconds = 4;
  */
 export const createPanelEcsSystem = (
   time: Time,
-): EcsSystem<
-  [SpriteEcsComponent, PanelEcsComponent, RotationEcsComponent]
-> => ({
-  query: [spriteId, panelId, rotationId],
+): EcsSystem<[SpriteEcsComponent, PanelEcsComponent]> => ({
+  query: [spriteId, panelId],
   run: (result) => {
-    const [sprite, panel, rotation] = result.components;
+    const [sprite, panel] = result.components;
     const { minSize, maxSize } = panel;
 
     const phase =
       (Math.sin((time.timeInSeconds * Math.PI * 2) / cycleSeconds) + 1) / 2;
     const size = lerp(minSize, maxSize, phase);
-    rotation.world += phase * time.deltaTimeInSeconds;
 
     sprite.width = size;
-    sprite.height = size;
+    // sprite.height = size;
   },
 });
