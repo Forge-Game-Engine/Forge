@@ -17,6 +17,8 @@ Core concepts:
 - [`CircleShape`](/Forge/docs/api/classes/CircleShape) and
   [`PolygonShape`](/Forge/docs/api/classes/PolygonShape): the convex shapes a
   `RigidBody` can have.
+- [`TerrainShape`](/Forge/docs/api/classes/TerrainShape): a static heightmap
+  ground shape for non-convex 2D terrain.
 - [`raycast`](/Forge/docs/api/functions/raycast): casts a ray against a set
   of bodies.
 - [`PrismaticJoint`](/Forge/docs/api/classes/PrismaticJoint): a slider
@@ -41,6 +43,8 @@ Guides in this section:
   along a single axis.
 - [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
   at a point while leaving rotation free.
+- [Terrain](./terrain.md): building non-convex 2D ground out of a
+  heightmap.
 
 ## Quick Start
 

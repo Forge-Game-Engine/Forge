@@ -120,6 +120,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/rolling-ball',
+              label: 'Rolling Ball',
+            },
+            {
               to: 'demos/prismatic-joint',
               label: 'Prismatic Joint (Slider)',
             },
