@@ -21,3 +21,6 @@ yarn-error.log*
 
 # generated api docs
 /docs/api
+
+# generated from the root CHANGELOG.md by scripts/sync-changelog.mjs
+/docs/changelog.md

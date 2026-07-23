@@ -10,6 +10,7 @@ This document provides guidance for AI coding agents working on the Forge Game E
 - [Coding Conventions](#coding-conventions)
 - [Module Organization](#module-organization)
 - [Development Workflow](#development-workflow)
+- [Changelog](#changelog)
 - [Testing](#testing)
 - [Documentation Site Demos](#documentation-site-demos)
 - [Common Patterns](#common-patterns)
@@ -301,10 +302,43 @@ npm run test:ui
 **Commit Messages** (Conventional Commits):
 
 - Format: `<type>(<scope>): <subject>`
-- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Types: `feat`, `fix`, `perf`, `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore`
 - Example: `feat(ecs): add component removal event`
 - Max length: 200 characters
 - Enforced by commitlint with husky pre-commit hooks
+
+## Changelog
+
+`/CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
+[Semantic Versioning](https://semver.org/). Feature branches merge into `dev` via squash
+merge, so a PR's title becomes its permanent commit message and changelog source.
+
+**When you must add an entry**: if a change's Conventional Commits type is anything other
+than `chore`, `style`, `refactor`, `test`, `ci`, `docs`, or `build` (i.e. it's a `feat`,
+`fix`, `perf`, or similar release-note-worthy type), add one bullet under the
+`## [Unreleased]` heading, in the matching Keep a Changelog category (`#### Added`,
+`#### Changed`, `#### Deprecated`, `#### Removed`, `#### Fixed`, `#### Security` — only
+include the categories that have entries). Write it for the consumer of the package, not as
+a restatement of the commit message. This is enforced by CI
+(`.github/workflows/changelog.yml`): a PR whose title isn't an excluded type fails the
+`check-changelog` job unless `CHANGELOG.md` gained a new bullet under `[Unreleased]`.
+
+**What agents should never hand-edit**:
+
+- Released version sections (`## [x.y.z] - date`) — these are historical record. Fix a
+  factual error if you find one, but don't add new entries to a past release.
+- The reference-style compare links at the bottom of the file (`[x.y.z]: https://...`) —
+  maintained by tooling, not hand-written.
+- `documentation-site/docs/changelog.md` — generated from the root `CHANGELOG.md` by
+  `documentation-site/scripts/sync-changelog.mjs` on `prestart`/`prebuild`, and gitignored.
+  Never edit or commit it directly; edit `/CHANGELOG.md` instead and the docs site picks it
+  up on the next build.
+
+**What's automated**: `scripts/changelog/promote-unreleased.mjs`, run by
+`.github/workflows/create-release.yml` during the "Create Release" workflow, moves
+everything under `[Unreleased]` into a new `## [x.y.z] - date` section and leaves a fresh
+empty `[Unreleased]` behind. Don't run this manually or preemptively rename `[Unreleased]`
+yourself — the release workflow owns that step.
 
 ## Testing
 

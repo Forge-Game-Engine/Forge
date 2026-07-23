@@ -98,6 +98,7 @@ const config: Config = {
           position: 'left',
         },
         { to: '/docs/api', label: 'API', position: 'left' },
+        { to: '/docs/changelog', label: 'Changelog', position: 'left' },
         {
           type: 'dropdown',
           label: 'Demos',
@@ -189,6 +190,10 @@ const config: Config = {
             {
               label: 'Tutorial',
               to: '/docs/intro',
+            },
+            {
+              label: 'Changelog',
+              to: '/docs/changelog',
             },
           ],
         },
