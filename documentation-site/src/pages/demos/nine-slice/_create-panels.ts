@@ -1,6 +1,9 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
@@ -11,11 +14,12 @@ import {
 import { panelId } from './_panel.component';
 
 /**
- * The panel artwork's own border, in texture pixels: a 12px frame (with gold
- * corner accents) around a 40x40 tiled grid interior, on a 64x64 image.
+ * The panel artwork's own border, in texture pixels: a flat white fill with
+ * a thin inset frame line and cross-shaped corner notches, on a 96x96 image.
+ * The corner ornament occupies a 24px-deep region on each side.
  */
-const borderInset = 12;
-const nativeSize = 64;
+const borderInset = 26;
+const nativeSize = 96;
 
 const minSize = 64;
 const maxSize = 180;
@@ -24,16 +28,27 @@ function placePanel(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
   x: number,
+  y: number,
+  panelMinSize: number,
+  panelMaxSize: number,
 ): void {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: new Vector2(x, 0),
-    world: new Vector2(x, 0),
+    local: new Vector2(x, y),
+    world: new Vector2(x, y),
+  });
+
+  addRotationComponent(world, entity, {
+    local: 0,
+    world: 0,
   });
 
   addSpriteComponent(world, entity, sprite);
-  world.addComponent(entity, panelId, { minSize, maxSize });
+  world.addComponent(entity, panelId, {
+    minSize: 100,
+    maxSize: 800,
+  });
 }
 
 /**
@@ -51,39 +66,37 @@ export async function createPanels(
   renderLayer: number,
 ): Promise<void> {
   const panelImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/nine-slice/panel.png'),
+    getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
 
   const naiveSprite = createImageSprite(panelImage, renderContext, renderLayer);
 
-  const stretchSprite = createImageSprite(panelImage, renderContext, renderLayer, {
-    slices: {
-      left: borderInset,
-      right: borderInset,
-      top: borderInset,
-      bottom: borderInset,
-      nativeWidth: nativeSize,
-      nativeHeight: nativeSize,
+  const stretchSprite = createImageSprite(
+    panelImage,
+    renderContext,
+    renderLayer,
+    {
+      slices: {
+        left: borderInset,
+        right: borderInset,
+        top: borderInset,
+        bottom: borderInset,
+        nativeWidth: nativeSize,
+        nativeHeight: nativeSize,
+      },
     },
-  });
+  );
 
-  const tileSprite = createImageSprite(panelImage, renderContext, renderLayer, {
-    slices: {
-      left: borderInset,
-      right: borderInset,
-      top: borderInset,
-      bottom: borderInset,
-      edgeMode: 'tile',
-      centerMode: 'tile',
-      nativeWidth: nativeSize,
-      nativeHeight: nativeSize,
-    },
-  });
+  const { height } = renderContext.canvas;
+  const spacing = Math.min(height / 2, 160);
 
-  const { width } = renderContext.canvas;
-  const spacing = Math.min(width / 3, 260);
+  // Clamp the breathing range to whatever space is actually available, so
+  // panels never overlap each other or overflow the canvas on a narrow
+  // container (e.g. the docs site's demo box squeezed by its code panel).
+  const availableSize = Math.min(spacing, height);
+  const clampedMaxSize = Math.min(maxSize, availableSize);
+  const clampedMinSize = Math.min(minSize, clampedMaxSize);
 
-  placePanel(world, naiveSprite, -spacing);
-  placePanel(world, stretchSprite, 0);
-  placePanel(world, tileSprite, spacing);
+  placePanel(world, naiveSprite, 0, spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, stretchSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
 }

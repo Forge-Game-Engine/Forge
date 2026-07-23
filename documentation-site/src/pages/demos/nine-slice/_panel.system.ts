@@ -1,7 +1,14 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { Time } from '@forge-game-engine/forge/common';
+import {
+  RotationEcsComponent,
+  rotationId,
+  Time,
+} from '@forge-game-engine/forge/common';
 import { lerp } from '@forge-game-engine/forge/math';
-import { SpriteEcsComponent, spriteId } from '@forge-game-engine/forge/rendering';
+import {
+  SpriteEcsComponent,
+  spriteId,
+} from '@forge-game-engine/forge/rendering';
 import { PanelEcsComponent, panelId } from './_panel.component';
 
 const cycleSeconds = 4;
@@ -22,10 +29,11 @@ export const createPanelEcsSystem = (
     const [sprite, panel] = result.components;
     const { minSize, maxSize } = panel;
 
-    const phase = (Math.sin((time.timeInSeconds * Math.PI * 2) / cycleSeconds) + 1) / 2;
+    const phase =
+      (Math.sin((time.timeInSeconds * Math.PI * 2) / cycleSeconds) + 1) / 2;
     const size = lerp(minSize, maxSize, phase);
 
     sprite.width = size;
-    sprite.height = size;
+    // sprite.height = size;
   },
 });
