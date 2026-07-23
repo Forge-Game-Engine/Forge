@@ -2,11 +2,6 @@ import React, { JSX } from 'react';
 import { createRollingBallGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createTerrainCode from '!!raw-loader!./_create-terrain';
-import terrainCurveCode from '!!raw-loader!./_terrain-curve';
-import terrainRenderSystemCode from '!!raw-loader!./_terrain-render.system';
-import loadTiledTextureCode from '!!raw-loader!./_load-tiled-texture';
-import terrainVertCode from '!!raw-loader!./_terrain.vert.glsl';
-import terrainFragCode from '!!raw-loader!./_terrain.frag.glsl';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import createInputsCode from '!!raw-loader!./_create-inputs';
 import rollSystemCode from '!!raw-loader!./_roll.system';
@@ -52,26 +47,6 @@ export default function RollingBall(): JSX.Element {
         {
           name: 'create-terrain.ts',
           content: createTerrainCode,
-        },
-        {
-          name: 'terrain-curve.ts',
-          content: terrainCurveCode,
-        },
-        {
-          name: 'terrain-render.system.ts',
-          content: terrainRenderSystemCode,
-        },
-        {
-          name: 'load-tiled-texture.ts',
-          content: loadTiledTextureCode,
-        },
-        {
-          name: 'terrain.vert.glsl',
-          content: terrainVertCode,
-        },
-        {
-          name: 'terrain.frag.glsl',
-          content: terrainFragCode,
         },
         {
           name: 'create-player.ts',

@@ -7,16 +7,13 @@ import {
   TerrainShape,
 } from '@forge-game-engine/forge/physics';
 import {
+  buildTerrainCurve,
   Color,
-  ForgeShaderSource,
-  Geometry,
-  Material,
+  createTerrainMesh,
+  heightAtLocalX,
   RenderContext,
+  TerrainMesh,
 } from '@forge-game-engine/forge/rendering';
-import terrainVertexShaderSource from '!!raw-loader!./_terrain.vert.glsl';
-import terrainFragmentShaderSource from '!!raw-loader!./_terrain.frag.glsl';
-import { buildTerrainCurve, heightAtLocalX } from './_terrain-curve';
-import { loadTiledTexture } from './_load-tiled-texture';
 
 // How far apart (in local x) the sparse control points the terrain curve is
 // built from are. Small enough that a smooth curve through them still reads
@@ -79,17 +76,6 @@ export interface CreateTerrainOptions {
   borderBlend: number;
 }
 
-const defaultCreateTerrainOptions = {
-  borderBlend: 12,
-};
-
-/** The static terrain mesh built by {@link createTerrain}, ready to draw with `createTerrainRenderEcsSystem`. */
-export interface TerrainMesh {
-  readonly geometry: Geometry;
-  readonly material: Material;
-  readonly vertexCount: number;
-}
-
 export interface RollingBallTerrain {
   /** The terrain's static `RigidBody`, for reference (e.g. grounded checks). */
   body: RigidBody;
@@ -141,136 +127,16 @@ function buildControlPoints(totalWidth: number): Vector2[] {
   return controlPoints;
 }
 
-interface TerrainMeshData {
-  positions: Float32Array;
-  distances: Float32Array;
-  depths: Float32Array;
-  vertexCount: number;
-}
-
-function buildTerrainMeshData(
-  curvePoints: { position: Vector2; distance: number }[],
-  bottomY: number,
-  angle: number,
-  position: Vector2,
-): TerrainMeshData {
-  const positions: number[] = [];
-  const distances: number[] = [];
-  const depths: number[] = [];
-
-  const pushVertex = (
-    localPoint: Vector2,
-    distance: number,
-    depth: number,
-  ): void => {
-    const world = localPoint.rotate(angle).add(position);
-
-    // Y is negated here to match the sprite pipeline's world-to-render
-    // convention (see sprite-instance-data-segment.ts's
-    // bindSpriteInstanceData, which negates position.world.y the same way
-    // before it reaches the GPU).
-    positions.push(world.x, -world.y);
-    distances.push(distance);
-    depths.push(depth);
-  };
-
-  for (let i = 0; i < curvePoints.length - 1; i++) {
-    const left = curvePoints[i];
-    const right = curvePoints[i + 1];
-
-    const bottomLeft = new Vector2(left.position.x, bottomY);
-    const bottomRight = new Vector2(right.position.x, bottomY);
-    const depthLeft = bottomY - left.position.y;
-    const depthRight = bottomY - right.position.y;
-
-    pushVertex(left.position, left.distance, 0);
-    pushVertex(right.position, right.distance, 0);
-    pushVertex(bottomLeft, left.distance, depthLeft);
-
-    pushVertex(right.position, right.distance, 0);
-    pushVertex(bottomRight, right.distance, depthRight);
-    pushVertex(bottomLeft, left.distance, depthLeft);
-  }
-
-  return {
-    positions: new Float32Array(positions),
-    distances: new Float32Array(distances),
-    depths: new Float32Array(depths),
-    vertexCount: positions.length / 2,
-  };
-}
-
-function createTerrainGeometry(
-  gl: WebGL2RenderingContext,
-  meshData: TerrainMeshData,
-): Geometry {
-  const geometry = new Geometry();
-
-  const positionBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.positions, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_position', { buffer: positionBuffer, size: 2 });
-
-  const distanceBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, distanceBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.distances, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_distance', {
-    buffer: distanceBuffer,
-    size: 1,
-  });
-
-  const depthBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, depthBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.depths, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_depth', { buffer: depthBuffer, size: 1 });
-
-  return geometry;
-}
-
-async function createTerrainMaterial(
-  renderContext: RenderContext,
-  options: CreateTerrainOptions,
-): Promise<Material> {
-  const { gl, imageCache } = renderContext;
-
-  const [fillImage, borderImage] = await Promise.all([
-    imageCache.getOrLoad(options.fill.textureUrl),
-    imageCache.getOrLoad(options.border.textureUrl),
-  ]);
-
-  const material = new Material(
-    new ForgeShaderSource(terrainVertexShaderSource),
-    new ForgeShaderSource(terrainFragmentShaderSource),
-    gl,
-  );
-
-  material.setUniform('u_fillTexture', loadTiledTexture(gl, fillImage));
-  material.setUniform('u_borderTexture', loadTiledTexture(gl, borderImage));
-  material.setVectorUniform('u_fillTileSize', options.fill.tileSize);
-  material.setVectorUniform('u_borderTileSize', options.border.tileSize);
-  material.setColorUniform('u_fillTint', options.fill.tint);
-  material.setColorUniform('u_borderTint', options.border.tint);
-  material.setUniform('u_borderWidth', options.borderWidth);
-  material.setUniform(
-    'u_borderBlend',
-    options.borderBlend ?? defaultCreateTerrainOptions.borderBlend,
-  );
-
-  return material;
-}
-
 /**
  * Creates a long, varied-height `TerrainShape` ground body - a smooth curve
- * through sparse, randomly-placed control points (see `_terrain-curve.ts`),
- * rather than a jagged polyline - plus a single triangulated mesh to render
- * it, textured with a tileable border layer near the surface blending into
- * a tileable fill layer below (see `CreateTerrainOptions`). Pair with
+ * through sparse, randomly-placed control points (see
+ * `buildTerrainCurve`), rather than a jagged polyline - plus a single
+ * triangulated mesh to render it (see `createTerrainMesh`), textured with a
+ * tileable border layer near the surface blending into a tileable fill
+ * layer below (see `CreateTerrainOptions`). Pair with
  * `createTerrainRenderEcsSystem` to draw the returned `mesh`.
  * @param world - The ECS world to add the terrain entity to.
- * @param renderContext - The render context used to build the terrain mesh's textures and material.
+ * @param renderContext - The render context used to load the terrain's textures and build its mesh.
  * @param options - Sizing and texturing options for the terrain.
  */
 export async function createTerrain(
@@ -278,7 +144,7 @@ export async function createTerrain(
   renderContext: RenderContext,
   options: CreateTerrainOptions,
 ): Promise<RollingBallTerrain> {
-  const { totalWidth } = options;
+  const { totalWidth, border, fill, borderWidth, borderBlend } = options;
 
   const controlPoints = buildControlPoints(totalWidth);
   const curvePoints = buildTerrainCurve(controlPoints, samplesPerSegment);
@@ -321,17 +187,29 @@ export async function createTerrain(
     physicsBody: terrainBody,
   });
 
-  const meshData = buildTerrainMeshData(
-    curvePoints,
-    terrainShape.bottomY,
-    angle,
-    position,
-  );
-
-  const [material, geometry] = await Promise.all([
-    createTerrainMaterial(renderContext, options),
-    Promise.resolve(createTerrainGeometry(renderContext.gl, meshData)),
+  const [borderImage, fillImage] = await Promise.all([
+    renderContext.imageCache.getOrLoad(border.textureUrl),
+    renderContext.imageCache.getOrLoad(fill.textureUrl),
   ]);
+
+  const mesh = createTerrainMesh(renderContext, {
+    curvePoints,
+    depth: terrainDepth,
+    position,
+    angle,
+    border: {
+      image: borderImage,
+      tileSize: border.tileSize,
+      tint: border.tint,
+    },
+    fill: {
+      image: fillImage,
+      tileSize: fill.tileSize,
+      tint: fill.tint,
+    },
+    borderWidth,
+    borderBlend,
+  });
 
   const spawnX = position.x;
 
@@ -345,6 +223,6 @@ export async function createTerrain(
     body: terrainBody,
     spawnX,
     worldSurfaceYAt,
-    mesh: { geometry, material, vertexCount: meshData.vertexCount },
+    mesh,
   };
 }

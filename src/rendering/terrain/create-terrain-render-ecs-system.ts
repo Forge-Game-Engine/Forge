@@ -1,15 +1,9 @@
-import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import {
-  PositionEcsComponent,
-  positionId,
-} from '@forge-game-engine/forge/common';
-import {
-  CameraEcsComponent,
-  cameraId,
-  createProjectionMatrix,
-  RenderContext,
-} from '@forge-game-engine/forge/rendering';
-import type { TerrainMesh } from './_create-terrain';
+import { EcsSystem } from '../../ecs/index.js';
+import { PositionEcsComponent, positionId } from '../../common/index.js';
+import { CameraEcsComponent, cameraId } from '../components/index.js';
+import { RenderContext } from '../render-context.js';
+import { createProjectionMatrix } from '../shaders/index.js';
+import type { TerrainMesh } from './create-terrain-mesh.js';
 
 /**
  * Creates an ECS system that draws `terrainMesh` directly - a single,
@@ -17,16 +11,15 @@ import type { TerrainMesh } from './_create-terrain';
  * - rather than going through the sprite pipeline `createRenderEcsSystem`
  * batches (which only knows how to draw quads). Register it *before*
  * `createRenderEcsSystem`, with `renderContext.clearStrategy` set to
- * `CLEAR_STRATEGY.none` (see `_create-game.ts`), so this system's own clear
- * is the only one each frame - `createRenderEcsSystem`'s would otherwise
- * wipe the terrain right before drawing the sprites on top of it.
+ * `CLEAR_STRATEGY.none`, so this system's own clear is the only one each
+ * frame - `createRenderEcsSystem`'s would otherwise wipe the terrain right
+ * before drawing sprites on top of it.
  *
- * Assumes a single camera rendering straight to the canvas, which is all
- * this demo needs; a multi-camera setup would need to track which
- * destinations have already been cleared this frame, the way
- * `createRenderEcsSystem` does internally.
+ * Assumes a single camera rendering straight to the canvas; a multi-camera
+ * setup would need to track which destinations have already been cleared
+ * this frame, the way `createRenderEcsSystem` does internally.
  * @param renderContext - The render context to draw into.
- * @param terrainMesh - The terrain mesh built by `createTerrain`.
+ * @param terrainMesh - The terrain mesh built by `createTerrainMesh`.
  */
 export const createTerrainRenderEcsSystem = (
   renderContext: RenderContext,

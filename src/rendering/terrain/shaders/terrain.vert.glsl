@@ -1,6 +1,6 @@
 #version 300 es
 
-#pragma forge name(rollingBallTerrain.vert)
+#pragma forge name(terrain.vert)
 
 in vec2 a_position;
 in float a_distance;

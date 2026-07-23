@@ -73,71 +73,112 @@ the narrow phase - for very large worlds, prefer several shorter
 
 ## Rendering
 
-The engine's sprite renderer draws rotated/scaled quads and has no built-in
-terrain mesh renderer, so visualizing a `TerrainShape` is left to your game
-code. Two approaches, from simplest to most capable, both demonstrated in
-this repo:
+The engine's sprite renderer draws rotated/scaled quads and can't render a
+heightmap's silhouette, so `@forge-game-engine/forge/rendering` ships a
+small terrain-specific pipeline alongside `TerrainShape`: a smooth curve
+builder, a mesh builder, and a draw system. All three are demonstrated end
+to end in the [Rolling Ball demo](/Forge/demos/rolling-ball).
 
-### Quick and simple: one sprite bar per point
+### Building a smooth curve
 
-The [physics demo](/Forge/demos/physics) hand-builds its rolling-hill floor
-out of ordinary sprites, the same way it builds its `PolygonShape` walls:
-one thin, axis-aligned vertical bar per surface point, reaching from that
-point down to the shared bottom edge, tinted a solid ground color via
-[`getSharedWhiteTexture`](/Forge/docs/api/functions/getSharedWhiteTexture)
-(a 1x1 white texture, so the sprite shader's tint multiplies through
-unmodified). See its `create-terrain.ts` for the complete example,
-including computing each bar's position and width from the same
-`points`/`depth` passed to `TerrainShape`.
+[`buildTerrainCurve`](/Forge/docs/api/functions/buildTerrainCurve) turns a
+handful of sparse control points into a long, natural-looking silhouette: a
+Catmull-Rom spline through the control points (converted to an equivalent
+sequence of cubic Beziers under the hood), densely sampled into a polyline.
 
-:::caution
-Render one rotated rectangle **per segment** instead (each one's top edge
-matching that segment's slope) and you'll get thin gaps of background
-showing through at some of the joints: two neighboring segments only share
-their exact top corners, so wherever the slope changes from one segment to
-the next, their side edges diverge below that shared corner. Axis-aligned
-bars, each a little wider than its point spacing so neighbors overlap,
-avoid this regardless of how steeply the terrain slopes - see the
-`barOverlap` in the demo's `create-terrain.ts`.
-:::
+```ts
+import { Vector2 } from '@forge-game-engine/forge/math';
+import { buildTerrainCurve } from '@forge-game-engine/forge/rendering';
 
-This approach is quick to write and reuses the ordinary sprite pipeline
-entirely, but it can't render a perfectly smooth diagonal edge (the bars are
-always vertical) or independently-tiled textures along the slope.
+const curvePoints = buildTerrainCurve(
+  [
+    new Vector2(-400, 40),
+    new Vector2(-200, -20),
+    new Vector2(0, 0),
+    new Vector2(200, -60),
+    new Vector2(400, 20),
+  ],
+  20, // samplesPerSegment: how many points to sample between each pair of control points
+);
+```
 
-### A real textured mesh: the Rolling Ball demo
+Feed the same `curvePoints` into both `TerrainShape` (mapping each point's
+`.position` into the `Vector2[]` it expects) and the render mesh below, so
+what's drawn always matches exactly what the body collides with:
 
-The [Rolling Ball demo](/Forge/demos/rolling-ball) goes further: a much
-longer course whose smooth silhouette comes from a Catmull-Rom spline
-through sparse, randomly-placed control points (see its
-`terrain-curve.ts`), densely sampled into both `TerrainShape`'s collision
-points _and_ a triangulated render mesh - the same points drive both, so
-what's drawn always matches exactly what the ball touches.
+```ts
+const points = curvePoints.map((curvePoint) => curvePoint.position);
+const terrainShape = new TerrainShape(points, 200);
+```
 
-That mesh is textured with a custom shader (`terrain.vert`/`terrain.frag`)
-rather than the sprite pipeline: two independently-tileable layers, a
-"border" texture near the surface blending into a "fill" texture below it
-over a configurable depth and blend width, each with its own tile size and
-tint (see `CreateTerrainOptions` in its `create-terrain.ts`). Since this
-mesh has an arbitrary vertex count - not the fixed six-vertices-per-quad the
-sprite pipeline batches - it's drawn with its own direct, non-instanced
-`gl.drawArrays` call (see `terrain-render.system.ts`) instead of going
-through `createRenderEcsSystem`.
+[`heightAtLocalX`](/Forge/docs/api/functions/heightAtLocalX) looks up a
+curve's interpolated surface height at a given local-space `x` - handy for
+placing anything (a player's spawn point, a patrolling enemy) exactly on
+the terrain's surface.
+
+### Building the mesh
+
+[`createTerrainMesh`](/Forge/docs/api/functions/createTerrainMesh)
+triangulates `curvePoints` into a single mesh and textures it with two
+independently-tileable layers: a "border" texture near the surface blending
+into a "fill" texture below it, over a configurable depth and blend width,
+each with its own tile size and tint.
+
+```ts
+import { Color, createTerrainMesh } from '@forge-game-engine/forge/rendering';
+
+const borderImage = await renderContext.imageCache.getOrLoad('grass.png');
+const fillImage = await renderContext.imageCache.getOrLoad('dirt.png');
+
+const mesh = createTerrainMesh(renderContext, {
+  curvePoints,
+  depth: 200, // must match the TerrainShape's depth
+  position: Vector2.zero, // must match the RigidBody's position
+  angle: 0, // must match the RigidBody's angle
+  border: {
+    image: borderImage,
+    tileSize: new Vector2(160, 70),
+    tint: Color.white,
+  },
+  fill: {
+    image: fillImage,
+    tileSize: new Vector2(90, 90),
+    tint: Color.white,
+  },
+  borderWidth: 40,
+  borderBlend: 14, // optional, defaults to 12
+});
+```
+
+`createTerrainMesh` loads each layer's texture with `REPEAT` wrapping on
+both axes (rather than the `CLAMP_TO_EDGE` `createTextureFromImage` uses by
+default for ordinary sprite frames, which must never bleed into a
+neighboring frame in the same atlas) - pass `tile: true` to
+`createTextureFromImage` directly if you ever need a tiled texture outside
+this pipeline.
+
+### Drawing the mesh
+
+Since the mesh has an arbitrary vertex count - not the fixed
+six-vertices-per-quad the sprite pipeline batches -
+[`createTerrainRenderEcsSystem`](/Forge/docs/api/functions/createTerrainRenderEcsSystem)
+draws it with its own direct, non-instanced `gl.drawArrays` call instead of
+going through `createRenderEcsSystem`.
+
+```ts
+import { createTerrainRenderEcsSystem } from '@forge-game-engine/forge/rendering';
+
+world.addSystem(createTerrainRenderEcsSystem(renderContext, mesh));
+world.addSystem(createRenderEcsSystem(renderContext));
+```
 
 :::caution[Coexisting with the sprite pipeline]
-A custom draw call like this runs as an ordinary `EcsSystem`, registered
-_before_ `createRenderEcsSystem` so sprites (the ball) draw on top of the
-terrain mesh underneath them. But `createRenderEcsSystem` clears its
-destination the first time it's used each frame (see
+Register the terrain system _before_ `createRenderEcsSystem` so sprites
+draw on top of the terrain mesh underneath them. But `createRenderEcsSystem`
+clears its destination the first time it's used each frame (see
 `RenderContext.clearStrategy`), which would wipe out the terrain mesh drawn
-just before it. The Rolling Ball demo sets `renderContext.clearStrategy =
-CLEAR_STRATEGY.none` so neither system's automatic clear fires, and instead
-does the frame's one real clear itself, first, in its own system - see the
-comment on `renderContext.clearStrategy` in its `create-game.ts`.
+just before it. Set `renderContext.clearStrategy = CLEAR_STRATEGY.none` so
+neither system's automatic clear fires - `createTerrainRenderEcsSystem`
+does the frame's one real clear itself, first. See the Rolling Ball demo's
+`create-game.ts` for the complete setup.
 :::
-
-Textures meant to tile also need `REPEAT` wrapping, unlike the engine's
-`createTextureFromImage` (which hardcodes `CLAMP_TO_EDGE`, correct for a
-sprite frame that must never bleed into a neighboring frame in the same
-atlas). The demo's `load-tiled-texture.ts` loads a texture with `REPEAT` on
-both axes instead.

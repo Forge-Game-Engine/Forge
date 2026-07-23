@@ -1,11 +1,17 @@
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vector2 } from '../../math/index.js';
 
-/** A point on a curve built by {@link buildTerrainCurve}. */
+/**
+ * A point on a curve built by {@link buildTerrainCurve}.
+ */
 export interface TerrainCurvePoint {
-  /** The point's local-space position. */
+  /**
+   * The point's local-space position.
+   */
   position: Vector2;
 
-  /** The cumulative arc length from the start of the curve to this point. */
+  /**
+   * The cumulative arc length from the start of the curve to this point.
+   */
   distance: number;
 }
 
@@ -35,15 +41,17 @@ function sampleCubicBezier(
  * via the standard `Bn = Pn +/- (Pn+1 - Pn-1) / 6` tangent construction) so
  * the curve passes exactly through every control point with a continuous
  * tangent, rather than a straight-line polyline between them. Densely
- * sampling that curve is what turns a handful of sparse, randomly-placed
- * control points into the long, natural-looking rolling terrain silhouette,
- * both for {@link TerrainShape}'s collision points and for the render mesh.
+ * sampling that curve turns a handful of sparse control points into a long,
+ * natural-looking silhouette suitable for both a `TerrainShape`'s collision
+ * points and a matching render mesh (see `createTerrainMesh`) - the same
+ * points can drive both, so what's drawn always matches what's touched.
  * @param controlPoints - The sparse anchor points the curve passes through,
  * ordered by strictly increasing x. Must contain at least 2 points.
  * @param samplesPerSegment - How many points to sample along each segment
  * between two consecutive control points.
  * @returns A dense polyline approximating the smooth curve, with each
  * point's cumulative arc length from the start.
+ * @throws An error if fewer than 2 control points are provided.
  */
 export function buildTerrainCurve(
   controlPoints: readonly Vector2[],
@@ -85,18 +93,23 @@ export function buildTerrainCurve(
 }
 
 /**
- * Finds the curve's surface height (local-space y) at a given local-space
- * x, linearly interpolating between the two bracketing sampled points.
+ * Finds a curve's surface height (local-space y) at a given local-space x,
+ * linearly interpolating between the two bracketing sampled points.
  * `curvePoints` must be ordered by strictly increasing x (as returned by
  * {@link buildTerrainCurve}).
- * @param curvePoints - The dense curve to search.
+ * @param curvePoints - The dense curve to search. Must contain at least 1 point.
  * @param localX - The local-space x to find the height at.
  * @returns The interpolated local-space y at `localX`.
+ * @throws An error if `curvePoints` is empty.
  */
 export function heightAtLocalX(
   curvePoints: readonly TerrainCurvePoint[],
   localX: number,
 ): number {
+  if (curvePoints.length === 0) {
+    throw new Error('heightAtLocalX requires at least 1 curve point.');
+  }
+
   const first = curvePoints[0];
   const last = curvePoints[curvePoints.length - 1];
 

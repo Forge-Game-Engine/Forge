@@ -3,6 +3,7 @@ import {
   Color,
   createCamera,
   createRenderEcsSystem,
+  createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
@@ -18,7 +19,6 @@ import { Vector2 } from '@forge-game-engine/forge/math';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createInputs } from './_create-inputs';
 import { createTerrain } from './_create-terrain';
-import { createTerrainRenderEcsSystem } from './_terrain-render.system';
 import { createPlayer } from './_create-player';
 import { createRollEcsSystem } from './_roll.system';
 import { createJumpEcsSystem } from './_jump.system';

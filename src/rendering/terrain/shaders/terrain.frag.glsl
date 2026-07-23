@@ -1,6 +1,6 @@
 #version 300 es
 
-#pragma forge name(rollingBallTerrain.frag)
+#pragma forge name(terrain.frag)
 
 precision mediump float;
 

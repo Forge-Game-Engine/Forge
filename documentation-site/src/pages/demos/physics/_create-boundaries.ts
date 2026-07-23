@@ -21,9 +21,8 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 export const wallThickness = 40;
 
 /**
- * Creates static rigid bodies for the side walls, bounding the area in
- * which shapes can fall and collide. The floor is a `TerrainShape` instead
- * (see `createTerrain`), rather than a third flat wall.
+ * Creates static rigid bodies for the floor and side walls, bounding the
+ * area in which shapes can fall and collide.
  * @param world - The ECS world to add the boundary entities to.
  * @param renderContext - The render context used to load the wall sprite.
  * @param renderLayer - The render layer the boundaries should be drawn on.
@@ -40,6 +39,7 @@ export async function createBoundaries(
 
   const { width, height } = renderContext.canvas;
   const halfWidth = width / 2;
+  const halfHeight = height / 2;
 
   const createWall = (
     position: Vector2,
@@ -76,6 +76,12 @@ export async function createBoundaries(
       }),
     });
   };
+
+  createWall(
+    new Vector2(0, -halfHeight + wallThickness / 2),
+    width,
+    wallThickness,
+  );
 
   createWall(
     new Vector2(-halfWidth + wallThickness / 2, 0),
