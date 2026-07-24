@@ -33,8 +33,13 @@ const anchorSize = 14;
 // piston/elevator sliders (whose width and height are set independently,
 // far from the artwork's own square aspect ratio) keep every corner a
 // crisp, fixed-size rounded square instead of the ellipse-shaped smear a
-// naive non-uniform stretch would leave.
-const blockCornerInset = 16;
+// naive non-uniform stretch would leave. Sized well under half of the
+// elevator slider's 20-unit height - the tightest of the three block
+// sprite uses below (44x32 piston, 80x20 elevator, 14x14 anchor) - since
+// nine-slice insets are measured in the sprite's *current* size, not
+// native pixels, and a larger inset would consume the elevator's entire
+// height and force its corners to stretch to fill it anyway.
+const blockCornerInset = 8;
 const blockNativeSize = 64;
 
 const anchorColor = Color.fromHSLA(215, 25, 45);

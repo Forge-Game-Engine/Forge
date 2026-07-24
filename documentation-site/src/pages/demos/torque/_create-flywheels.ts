@@ -28,8 +28,13 @@ const flywheelHeight = 22;
 // near each corner. Nine-sliced with a corner inset around that rivet, it
 // keeps every corner a crisp, fixed-size rounded square at any bar
 // width/height rather than the ellipse-shaped smear a naive non-uniform
-// stretch would leave (this bar's aspect ratio is far from square).
-const cornerInset = 16;
+// stretch would leave (this bar's aspect ratio is far from square). Sized
+// well under half of `flywheelHeight` (the bar's constraining dimension,
+// far smaller than the native 64x64 texture) so the top/bottom insets
+// don't consume the whole bar and force every corner to stretch to fill
+// it anyway - nine-slice insets are measured in the sprite's *current*
+// size, not native pixels.
+const cornerInset = 8;
 const nativeSize = 64;
 
 const thrusterColor = Color.fromHSLA(25, 95, 55);

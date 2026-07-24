@@ -27,8 +27,15 @@ const paddleHeightAboveBottom = 60;
 // inset around each rounded end, the caps stay a fixed size instead of the
 // flattened smear a naive non-uniform stretch leaves once the paddle's
 // on-screen aspect ratio (driven by two independent play-area fractions)
-// diverges from the artwork's own.
-const paddleCapInset = 66;
+// diverges from the artwork's own. The inset has to be sized against the
+// paddle's actual rendered height (computed below), not a native-pixel
+// guess: nine-slice insets are measured in the sprite's *current* size, and
+// this paddle renders far smaller than its native 520x140 texture, so a
+// native-scale inset would consume the entire width and squash both caps
+// into one flat blob instead of two round ends either side of a flat
+// center. A capsule's cap radius is half its thickness, so half the
+// paddle's rendered height is exactly the inset that keeps the caps
+// circular.
 const paddleNativeWidth = 520;
 const paddleNativeHeight = 140;
 
@@ -51,14 +58,21 @@ export async function createPaddle(
   const paddleImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/brick-breaker/paddle.png'),
   );
+
+  const playAreaWidth = playArea.maxX - playArea.minX;
+  const paddleWidth = playAreaWidth * paddleWidthFraction;
+  const paddleHeight =
+    (paddleNativeHeight / paddleNativeWidth) *
+    (playAreaWidth * paddleHeightFraction);
+
   const paddleSprite = createImageSprite(
     paddleImage,
     renderContext,
     renderLayer,
     {
       slices: {
-        left: paddleCapInset,
-        right: paddleCapInset,
+        left: paddleHeight / 2,
+        right: paddleHeight / 2,
         top: 0,
         bottom: 0,
         nativeWidth: paddleNativeWidth,
@@ -66,12 +80,6 @@ export async function createPaddle(
       },
     },
   );
-
-  const playAreaWidth = playArea.maxX - playArea.minX;
-  const paddleWidth = playAreaWidth * paddleWidthFraction;
-  const paddleHeight =
-    (paddleSprite.height / paddleSprite.width) *
-    (playAreaWidth * paddleHeightFraction);
 
   const position = new Vector2(0, playArea.bottomY + paddleHeightAboveBottom);
 

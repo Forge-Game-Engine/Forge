@@ -32,11 +32,20 @@ const frameColor = Color.white;
 const ballColor = Color.white;
 const armColor = Color.fromHSLA(0, 0, 60);
 
+const frameHeight = 18;
+
 // `paddle_10.png` is a native 640x141 capsule; nine-sliced with a left/right
 // inset around each rounded end, the frame keeps those caps a fixed size at
 // its actual computed width instead of the fixed-regardless-of-ballCount
-// half-scale the frame used to be hardcoded to.
-const frameCapInset = 66;
+// half-scale the frame used to be hardcoded to. The inset is sized against
+// `frameHeight` (the frame's actual rendered thickness), not a native-pixel
+// guess: nine-slice insets are measured in the sprite's *current* size, and
+// this frame renders far thinner than its native 640x141 texture, so a
+// native-scale inset would flatten each rounded cap into a wide oval
+// instead of keeping it circular. A capsule's cap radius is half its
+// thickness, so half of `frameHeight` is exactly the inset that keeps the
+// caps round.
+const frameCapInset = frameHeight / 2;
 const frameNativeWidth = 640;
 const frameNativeHeight = 141;
 
@@ -118,7 +127,6 @@ export async function createCradle(
   const sprites = await loadCradleSprites(renderContext, renderLayer);
   const spacing = ballRadius * 2;
   const frameWidth = spacing * (ballCount - 1) + ballRadius * 3;
-  const frameHeight = 18;
 
   const frameEntity = world.createEntity();
 

@@ -29,8 +29,12 @@ const pivotSize = 14;
 // near each corner. Nine-sliced with a corner inset around that rivet, the
 // door keeps every corner a crisp, fixed-size rounded square rather than the
 // ellipse-shaped smear a naive non-uniform stretch would leave on a bar this
-// far from square.
-const doorCornerInset = 16;
+// far from square. Sized well under half of `doorHeight` (22, far smaller
+// than the native 64x64 texture) so the top/bottom insets don't consume the
+// whole door and force every corner to stretch to fill it anyway -
+// nine-slice insets are measured in the sprite's *current* size, not
+// native pixels.
+const doorCornerInset = 8;
 const doorNativeSize = 64;
 
 const pivotColor = Color.fromHSLA(215, 25, 45);
