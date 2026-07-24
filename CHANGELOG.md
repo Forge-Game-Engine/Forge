@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-07-24
+
 #### Fixed
 
 - **rendering:** Fix nine-slice sprites rendering their top/bottom border and corner regions vertically flipped relative to their left/right regions, causing distorted or misaligned edges
