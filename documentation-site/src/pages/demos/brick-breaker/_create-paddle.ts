@@ -3,7 +3,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -23,6 +22,15 @@ const paddleWidthFraction = 0.12;
 const paddleHeightFraction = 0.07;
 const paddleSpeed = 1_000;
 const paddleHeightAboveBottom = 60;
+
+// `paddle.png` is a native 520x140 capsule; nine-sliced with a left/right
+// inset around each rounded end, the caps stay a fixed size instead of the
+// flattened smear a naive non-uniform stretch leaves once the paddle's
+// on-screen aspect ratio (driven by two independent play-area fractions)
+// diverges from the artwork's own.
+const paddleCapInset = 66;
+const paddleNativeWidth = 520;
+const paddleNativeHeight = 140;
 
 /**
  * Creates the player-controlled paddle as a static rigid body - immovable
@@ -47,14 +55,23 @@ export async function createPaddle(
     paddleImage,
     renderContext,
     renderLayer,
+    {
+      slices: {
+        left: paddleCapInset,
+        right: paddleCapInset,
+        top: 0,
+        bottom: 0,
+        nativeWidth: paddleNativeWidth,
+        nativeHeight: paddleNativeHeight,
+      },
+    },
   );
 
   const playAreaWidth = playArea.maxX - playArea.minX;
   const paddleWidth = playAreaWidth * paddleWidthFraction;
-  const paddleScaleX = paddleWidth / paddleSprite.width;
-  const paddleScaleY =
-    (playAreaWidth * paddleHeightFraction) / paddleSprite.width;
-  const paddleHeight = paddleSprite.height * paddleScaleY;
+  const paddleHeight =
+    (paddleSprite.height / paddleSprite.width) *
+    (playAreaWidth * paddleHeightFraction);
 
   const position = new Vector2(0, playArea.bottomY + paddleHeightAboveBottom);
 
@@ -67,12 +84,11 @@ export async function createPaddle(
 
   addRotationComponent(world, entity);
 
-  addScaleComponent(world, entity, {
-    local: new Vector2(paddleScaleX, paddleScaleY),
-    world: new Vector2(paddleScaleX, paddleScaleY),
+  addSpriteComponent(world, entity, {
+    ...paddleSprite,
+    width: paddleWidth,
+    height: paddleHeight,
   });
-
-  addSpriteComponent(world, entity, paddleSprite);
 
   world.addComponent(entity, paddleId, {
     speed: paddleSpeed,

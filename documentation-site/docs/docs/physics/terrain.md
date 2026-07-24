@@ -77,7 +77,23 @@ The engine's sprite renderer draws rotated/scaled quads and can't render a
 heightmap's silhouette, so `@forge-game-engine/forge/rendering` ships a
 small terrain-specific pipeline alongside `TerrainShape`: a smooth curve
 builder, a mesh builder, and a draw system. All three are demonstrated end
-to end in the [Rolling Ball demo](/Forge/demos/rolling-ball).
+to end in the [Rolling Ball demo](/Forge/demos/rolling-ball) and the
+[Hill Climb Racer demo](/Forge/demos/hill-climb-racer).
+
+:::caution[The required 180 degree rotation flips both axes]
+Since the body's required 180 degree rotation (below) negates both x and y,
+authoring control points straight from world-space coordinates - e.g.
+`Vector2(x, height)` at increasing `x` - lands each point at `(-x, -height)`
+in world space once rotated. For a bounded course (Rolling Ball) this only
+matters if you rely on a specific x sign; for a course that runs in one
+direction from a spawn point (Hill Climb Racer), it means the course climbs
+towards *decreasing* world x, and a spawn point authored as a plain
+`Vector2(x, height)` sits at `(-x, -height)`, not `(x, height)`. Negate both
+coordinates when building control points (and reverse the array afterwards,
+since negating `x` reverses its ordering) to keep world space matching
+straightforward `heightAt`-style coordinates - see Hill Climb Racer's
+`_create-terrain.ts` for a worked example.
+:::
 
 ### Building a smooth curve
 

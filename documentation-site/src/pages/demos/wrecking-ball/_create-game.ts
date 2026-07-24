@@ -10,6 +10,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { createArmLineEcsSystem } from './_arm-line.system';
 import { createWreckingBall } from './_create-wrecking-ball';
 
 const renderLayers = {
@@ -34,8 +35,11 @@ export const createWreckingBallGame = async (): Promise<Game> => {
   // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
   // newly-added joints need to be registered before that step happens (see
   // the Revolute Joints guide's registration-order caution).
+  // `createArmLineEcsSystem` only needs to run before `createRenderEcsSystem`
+  // so this tick's arm position is reflected in this tick's render.
   world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
   world.addSystem(createCameraEcsSystem(time));
+  world.addSystem(createArmLineEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 

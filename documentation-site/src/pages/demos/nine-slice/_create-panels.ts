@@ -87,8 +87,21 @@ export async function createPanels(
     },
   );
 
+  const tileSprite = createImageSprite(panelImage, renderContext, renderLayer, {
+    slices: {
+      left: borderInset,
+      right: borderInset,
+      top: borderInset,
+      bottom: borderInset,
+      nativeWidth: nativeSize,
+      nativeHeight: nativeSize,
+      edgeMode: 'tile',
+      centerMode: 'tile',
+    },
+  });
+
   const { height } = renderContext.canvas;
-  const spacing = Math.min(height / 2, 160);
+  const spacing = Math.min(height / 3, 160);
 
   // Clamp the breathing range to whatever space is actually available, so
   // panels never overlap each other or overflow the canvas on a narrow
@@ -98,5 +111,6 @@ export async function createPanels(
   const clampedMinSize = Math.min(minSize, clampedMaxSize);
 
   placePanel(world, naiveSprite, 0, spacing, clampedMinSize, clampedMaxSize);
-  placePanel(world, stretchSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, stretchSprite, 0, 0, clampedMinSize, clampedMaxSize);
+  placePanel(world, tileSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
 }

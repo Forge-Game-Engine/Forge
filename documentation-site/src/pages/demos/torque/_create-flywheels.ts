@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -25,6 +24,14 @@ import { addGustComponent } from './_gust.component';
 const flywheelWidth = 160;
 const flywheelHeight = 22;
 
+// `block_square.png` is a native 64x64 rounded square with a corner rivet
+// near each corner. Nine-sliced with a corner inset around that rivet, it
+// keeps every corner a crisp, fixed-size rounded square at any bar
+// width/height rather than the ellipse-shaped smear a naive non-uniform
+// stretch would leave (this bar's aspect ratio is far from square).
+const cornerInset = 16;
+const nativeSize = 64;
+
 const thrusterColor = Color.fromHSLA(25, 95, 55);
 const motorColor = Color.fromHSLA(205, 90, 58);
 
@@ -45,9 +52,18 @@ async function createFlywheelEntity(
 ): Promise<number> {
   const { imageCache } = renderContext;
   const image = await imageCache.getOrLoad(
-    getAssetUrl('img/physics/block_narrow.png'),
+    getAssetUrl('img/physics/block_square.png'),
   );
-  const sprite = createImageSprite(image, renderContext, renderLayer);
+  const sprite = createImageSprite(image, renderContext, renderLayer, {
+    slices: {
+      left: cornerInset,
+      right: cornerInset,
+      top: cornerInset,
+      bottom: cornerInset,
+      nativeWidth: nativeSize,
+      nativeHeight: nativeSize,
+    },
+  });
 
   const entity = world.createEntity();
 
@@ -56,17 +72,12 @@ async function createFlywheelEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(
-      flywheelWidth / sprite.width,
-      flywheelHeight / sprite.height,
-    ),
-    world: new Vector2(
-      flywheelWidth / sprite.width,
-      flywheelHeight / sprite.height,
-    ),
+  addSpriteComponent(world, entity, {
+    ...sprite,
+    width: flywheelWidth,
+    height: flywheelHeight,
+    tintColor: color,
   });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
   addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(flywheelWidth, flywheelHeight),

@@ -21,6 +21,7 @@ import {
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addArmLineComponent } from './_arm-line.component';
 
 // `ball_blue_large.png` and `block_square.png` are both native 64x64
 // images. Sprites are never scaled here (the pivot marker, floor tiles, and
@@ -56,10 +57,21 @@ const craneColor = Color.fromHSLA(215, 25, 45);
 const ballColor = Color.white;
 const floorColor = Color.fromHSLA(30, 30, 32);
 const brickColors = [Color.white, Color.green];
+const armColor = Color.fromHSLA(0, 0, 55);
+const armWidth = 8;
+
+// `block_narrow.png` is a native 32x128 vertical capsule; the arm is drawn
+// unrotated with its length along local y, then rotated to point from the
+// crane's pivot to the ball, so nine-slicing its top/bottom insets keeps the
+// rounded caps a fixed size as the arm's length changes tick to tick.
+const armCapInset = 16;
+const armNativeWidth = 32;
+const armNativeHeight = 128;
 
 interface WreckingBallSprites {
   ball: SpriteEcsComponent;
   brick: SpriteEcsComponent;
+  arm: SpriteEcsComponent;
 }
 
 async function loadWreckingBallSprites(
@@ -68,14 +80,25 @@ async function loadWreckingBallSprites(
 ): Promise<WreckingBallSprites> {
   const { imageCache } = renderContext;
 
-  const [ballImage, brickImage] = await Promise.all([
+  const [ballImage, brickImage, armImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
     brick: createImageSprite(brickImage, renderContext, renderLayer),
+    arm: createImageSprite(armImage, renderContext, renderLayer, {
+      slices: {
+        left: 0,
+        right: 0,
+        top: armCapInset,
+        bottom: armCapInset,
+        nativeWidth: armNativeWidth,
+        nativeHeight: armNativeHeight,
+      },
+    }),
   };
 }
 
@@ -217,4 +240,24 @@ export async function createWreckingBall(
   const jointEntity = world.createEntity();
 
   addRevoluteJointComponent(world, jointEntity, { joint });
+
+  // `RevoluteJoint` itself has no visual representation, only the physical
+  // constraint - this entity draws the arm it models, kept in sync every
+  // tick by `createArmLineEcsSystem`.
+  const armEntity = world.createEntity();
+
+  addPositionComponent(world, armEntity, {
+    world: pivotPosition.clone(),
+    local: pivotPosition.clone(),
+  });
+  addRotationComponent(world, armEntity);
+  addSpriteComponent(world, armEntity, {
+    ...sprites.arm,
+    tintColor: armColor,
+  });
+  addArmLineComponent(world, armEntity, {
+    pivotPosition: pivotPosition.clone(),
+    body: ballBody,
+    lineWidth: armWidth,
+  });
 }

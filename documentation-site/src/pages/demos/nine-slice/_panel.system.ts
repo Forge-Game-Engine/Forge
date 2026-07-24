@@ -34,6 +34,6 @@ export const createPanelEcsSystem = (
     const size = lerp(minSize, maxSize, phase);
 
     sprite.width = size;
-    // sprite.height = size;
+    sprite.height = size;
   },
 });

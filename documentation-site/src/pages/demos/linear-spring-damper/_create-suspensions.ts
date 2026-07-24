@@ -28,6 +28,15 @@ const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
 
+// `block_narrow.png` is a native 32x128 vertical capsule; the line is always
+// vertical here (the mount and wheel share an x), so its native cap axis
+// already matches the line's stretch axis - no rotation needed. Nine-sliced
+// with a top/bottom inset around each rounded cap, the caps stay a fixed
+// size as the line resizes every tick instead of smearing into a sliver.
+const lineCapInset = 16;
+const lineNativeWidth = 32;
+const lineNativeHeight = 128;
+
 const mountColor = Color.fromHSLA(215, 15, 45);
 const lineColor = Color.fromHSLA(215, 20, 65);
 
@@ -52,7 +61,16 @@ async function loadSuspensionSprites(
   return {
     mount: createImageSprite(mountImage, renderContext, renderLayer),
     wheel: createImageSprite(wheelImage, renderContext, renderLayer),
-    line: createImageSprite(lineImage, renderContext, renderLayer),
+    line: createImageSprite(lineImage, renderContext, renderLayer, {
+      slices: {
+        left: 0,
+        right: 0,
+        top: lineCapInset,
+        bottom: lineCapInset,
+        nativeWidth: lineNativeWidth,
+        nativeHeight: lineNativeHeight,
+      },
+    }),
   };
 }
 
@@ -227,7 +245,6 @@ function createSuspensionScenario(
     local: mountPosition.clone(),
   });
   addRotationComponent(world, lineEntity);
-  addScaleComponent(world, lineEntity);
   addSpriteComponent(world, lineEntity, {
     ...sprites.line,
     tintColor: lineColor,
@@ -236,8 +253,6 @@ function createSuspensionScenario(
     anchorPosition: mountPosition.clone(),
     body: wheelBody,
     lineWidth,
-    spriteWidth: sprites.line.width,
-    spriteHeight: sprites.line.height,
   });
 }
 

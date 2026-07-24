@@ -1,8 +1,10 @@
 import {
+  CLEAR_STRATEGY,
   Color,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
+  createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
@@ -35,6 +37,12 @@ const gravity = new Vector2(0, -600);
 export const createHillClimbRacerGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
+  // The terrain render system draws directly, outside the sprite pipeline
+  // (see createTerrainRenderEcsSystem), and owns the frame's one real
+  // clear; without `none` here, createRenderEcsSystem's own clear would
+  // wipe the terrain right before drawing the sprites on top of it.
+  renderContext.clearStrategy = CLEAR_STRATEGY.none;
+
   // `isStatic: true` since this camera's position is driven by
   // `createCameraFollowEcsSystem` rather than `createCameraEcsSystem`'s
   // input-driven pan/zoom.
@@ -50,18 +58,13 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
 
   const { throttleInput, restartInput } = createInputs(world, time);
 
-  const groundPosition = await createTerrain(
-    world,
-    renderContext,
-    renderLayers.foreground,
-    random,
-  );
+  const terrain = await createTerrain(world, renderContext, random);
 
   const chassisBody = await createCar(
     world,
     renderContext,
     renderLayers.foreground,
-    groundPosition,
+    terrain.spawnPosition,
     throttleInput,
     restartInput,
   );
@@ -93,7 +96,9 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   // `createGroundContactEcsSystem` in this same list, so they see this
   // tick's grounded state rather than last tick's. `createCameraFollowEcsSystem`
   // only needs to run before `createRenderEcsSystem`, so this tick's camera
-  // position is reflected in this tick's render.
+  // position is reflected in this tick's render. `createTerrainRenderEcsSystem`
+  // must run before `createRenderEcsSystem` so the car's sprites draw on top
+  // of the terrain mesh, not underneath it.
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
   world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
@@ -106,6 +111,7 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   world.addSystem(createAirControlEcsSystem(time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
+  world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
 

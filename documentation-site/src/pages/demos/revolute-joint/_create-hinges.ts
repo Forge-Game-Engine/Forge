@@ -25,6 +25,14 @@ import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
 
+// `block_square.png` is a native 64x64 rounded square with a corner rivet
+// near each corner. Nine-sliced with a corner inset around that rivet, the
+// door keeps every corner a crisp, fixed-size rounded square rather than the
+// ellipse-shaped smear a naive non-uniform stretch would leave on a bar this
+// far from square.
+const doorCornerInset = 16;
+const doorNativeSize = 64;
+
 const pivotColor = Color.fromHSLA(215, 25, 45);
 const doorColor = Color.fromHSLA(25, 95, 55);
 const pendulumColor = Color.fromHSLA(205, 90, 58);
@@ -44,13 +52,22 @@ async function loadHingeSprites(
 
   const [ballImage, doorImage, pivotImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
-    door: createImageSprite(doorImage, renderContext, renderLayer),
+    door: createImageSprite(doorImage, renderContext, renderLayer, {
+      slices: {
+        left: doorCornerInset,
+        right: doorCornerInset,
+        top: doorCornerInset,
+        bottom: doorCornerInset,
+        nativeWidth: doorNativeSize,
+        nativeHeight: doorNativeSize,
+      },
+    }),
     pivot: createImageSprite(pivotImage, renderContext, renderLayer),
   };
 }
@@ -152,18 +169,10 @@ function createDoorScenario(
     local: doorAngle,
     world: doorAngle,
   });
-  addScaleComponent(world, doorEntity, {
-    local: new Vector2(
-      doorWidth / sprites.door.width,
-      doorHeight / sprites.door.height,
-    ),
-    world: new Vector2(
-      doorWidth / sprites.door.width,
-      doorHeight / sprites.door.height,
-    ),
-  });
   addSpriteComponent(world, doorEntity, {
     ...sprites.door,
+    width: doorWidth,
+    height: doorHeight,
     tintColor: doorColor,
   });
   addPhysicsBodyComponent(world, doorEntity, { physicsBody: doorBody });

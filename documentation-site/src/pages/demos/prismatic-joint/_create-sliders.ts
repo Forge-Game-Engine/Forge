@@ -28,6 +28,15 @@ const railDotCount = 6;
 const railDotSize = 6;
 const anchorSize = 14;
 
+// `block_square.png` is a native 64x64 rounded square with a corner rivet
+// near each corner. Nine-sliced with a corner inset around that rivet, the
+// piston/elevator sliders (whose width and height are set independently,
+// far from the artwork's own square aspect ratio) keep every corner a
+// crisp, fixed-size rounded square instead of the ellipse-shaped smear a
+// naive non-uniform stretch would leave.
+const blockCornerInset = 16;
+const blockNativeSize = 64;
+
 const anchorColor = Color.fromHSLA(215, 25, 45);
 const railColor = Color.fromHSLA(215, 20, 55);
 const pistonColor = Color.fromHSLA(15, 90, 55);
@@ -91,7 +100,16 @@ async function loadSliderSprites(
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
-    block: createImageSprite(blockImage, renderContext, renderLayer),
+    block: createImageSprite(blockImage, renderContext, renderLayer, {
+      slices: {
+        left: blockCornerInset,
+        right: blockCornerInset,
+        top: blockCornerInset,
+        bottom: blockCornerInset,
+        nativeWidth: blockNativeSize,
+        nativeHeight: blockNativeSize,
+      },
+    }),
     dot: createImageSprite(dotImage, renderContext, renderLayer),
   };
 }
@@ -225,18 +243,16 @@ function createSliderScenario(
 
   const sprite = sprites[sliderSprite];
 
-  addScaleComponent(world, sliderEntity, {
-    local: new Vector2(
-      sliderWidth / sprite.width,
-      sliderHeight / sprite.height,
-    ),
-    world: new Vector2(
-      sliderWidth / sprite.width,
-      sliderHeight / sprite.height,
-    ),
-  });
+  // Sized directly via SpriteEcsComponent.width/height, not a non-uniform
+  // ScaleEcsComponent: computeNineSliceRegions measures the block sprite's
+  // corner insets against SpriteEcsComponent.width/height, so a scale
+  // factor applied on top would still stretch those corners non-uniformly
+  // (the same distortion nine-slicing is meant to avoid) instead of
+  // resizing the sprite in a space where the corners can stay fixed.
   addSpriteComponent(world, sliderEntity, {
     ...sprite,
+    width: sliderWidth,
+    height: sliderHeight,
     tintColor: sliderColor,
   });
   addPhysicsBodyComponent(world, sliderEntity, {

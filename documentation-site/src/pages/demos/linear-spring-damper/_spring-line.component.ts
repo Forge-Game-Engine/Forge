@@ -12,8 +12,6 @@ export interface SpringLineEcsComponent {
   anchorPosition: Vector2;
   body: RigidBody;
   lineWidth: number;
-  spriteWidth: number;
-  spriteHeight: number;
 }
 
 export const springLineId =

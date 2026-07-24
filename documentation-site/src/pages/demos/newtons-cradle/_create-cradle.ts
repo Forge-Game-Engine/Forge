@@ -20,18 +20,38 @@ import {
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addArmLineComponent } from './_arm-line.component';
 
 const ballCount = 5;
 const ballRadius = 35;
 const armLength = 220;
+const armWidth = 8;
 const startAngle = 0.9;
 
 const frameColor = Color.white;
 const ballColor = Color.white;
+const armColor = Color.fromHSLA(0, 0, 60);
+
+// `paddle_10.png` is a native 640x141 capsule; nine-sliced with a left/right
+// inset around each rounded end, the frame keeps those caps a fixed size at
+// its actual computed width instead of the fixed-regardless-of-ballCount
+// half-scale the frame used to be hardcoded to.
+const frameCapInset = 66;
+const frameNativeWidth = 640;
+const frameNativeHeight = 141;
+
+// `block_narrow.png` is a native 32x128 vertical capsule; each arm is drawn
+// unrotated with its length along local y, then rotated to point from its
+// pivot to its ball, so nine-slicing its top/bottom insets keeps the
+// rounded caps a fixed size as the arm's length changes tick to tick.
+const armCapInset = 16;
+const armNativeWidth = 32;
+const armNativeHeight = 128;
 
 interface CradleSprites {
   ball: SpriteEcsComponent;
   frame: SpriteEcsComponent;
+  arm: SpriteEcsComponent;
 }
 
 async function loadCradleSprites(
@@ -40,49 +60,50 @@ async function loadCradleSprites(
 ): Promise<CradleSprites> {
   const { imageCache } = renderContext;
 
-  const [ballImage, frameImage] = await Promise.all([
+  const [ballImage, frameImage, armImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(
       getAssetUrl('img/kenney_puzzle-pack-2/PNG/Paddles/paddle_10.png'),
     ),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
-    frame: createImageSprite(frameImage, renderContext, renderLayer),
+    frame: createImageSprite(frameImage, renderContext, renderLayer, {
+      slices: {
+        left: frameCapInset,
+        right: frameCapInset,
+        top: 0,
+        bottom: 0,
+        nativeWidth: frameNativeWidth,
+        nativeHeight: frameNativeHeight,
+      },
+    }),
+    arm: createImageSprite(armImage, renderContext, renderLayer, {
+      slices: {
+        left: 0,
+        right: 0,
+        top: armCapInset,
+        bottom: armCapInset,
+        nativeWidth: armNativeWidth,
+        nativeHeight: armNativeHeight,
+      },
+    }),
   };
-}
-
-function createVisualEntity(
-  world: EcsWorld,
-  sprite: SpriteEcsComponent,
-  position: Vector2,
-  angle: number,
-  width: number,
-  height: number,
-  color: Color,
-): void {
-  const entity = world.createEntity();
-
-  addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
-  });
-  addRotationComponent(world, entity, { local: angle, world: angle });
-  addScaleComponent(world, entity, {
-    local: new Vector2(1, 1),
-    world: new Vector2(0.5, 0.5),
-  });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
 }
 
 /**
  * Builds a Newton's cradle: `ballCount` balls, each hinged to its own pivot
  * on a shared frame by an arm, spaced so adjacent balls just touch at rest.
- * The leftmost ball starts pulled back and is released exactly once, when
- * the scene is built; from there, ordinary collision resolution between the
- * balls (not the joints) carries the momentum down the row and pops the
- * rightmost ball out, the classic cradle effect.
+ * Each arm is also given a visible rod sprite (see `ArmLineEcsComponent`)
+ * spanning its pivot to its ball, kept in sync every tick by
+ * `createArmLineEcsSystem` - `RevoluteJoint` itself has no visual
+ * representation, only the physical constraint. The leftmost ball starts
+ * pulled back and is released exactly once, when the scene is built; from
+ * there, ordinary collision resolution between the balls (not the joints)
+ * carries the momentum down the row and pops the rightmost ball out, the
+ * classic cradle effect.
  * @param world - The ECS world to add the cradle's entities to.
  * @param renderContext - The render context used to load sprites.
  * @param renderLayer - The render layer the cradle should be drawn on.
@@ -99,15 +120,22 @@ export async function createCradle(
   const frameWidth = spacing * (ballCount - 1) + ballRadius * 3;
   const frameHeight = 18;
 
-  createVisualEntity(
-    world,
-    sprites.frame,
-    center,
-    degreesToRadians(0),
-    frameWidth,
-    frameHeight,
-    frameColor,
-  );
+  const frameEntity = world.createEntity();
+
+  addPositionComponent(world, frameEntity, {
+    world: center.clone(),
+    local: center.clone(),
+  });
+  addRotationComponent(world, frameEntity, {
+    local: degreesToRadians(0),
+    world: degreesToRadians(0),
+  });
+  addSpriteComponent(world, frameEntity, {
+    ...sprites.frame,
+    width: frameWidth,
+    height: frameHeight,
+    tintColor: frameColor,
+  });
 
   const firstPivotX = center.x - (spacing * (ballCount - 1)) / 2;
 
@@ -177,5 +205,22 @@ export async function createCradle(
     const jointEntity = world.createEntity();
 
     addRevoluteJointComponent(world, jointEntity, { joint });
+
+    const armEntity = world.createEntity();
+
+    addPositionComponent(world, armEntity, {
+      world: pivotPosition.clone(),
+      local: pivotPosition.clone(),
+    });
+    addRotationComponent(world, armEntity);
+    addSpriteComponent(world, armEntity, {
+      ...sprites.arm,
+      tintColor: armColor,
+    });
+    addArmLineComponent(world, armEntity, {
+      pivotPosition: pivotPosition.clone(),
+      body: ballBody,
+      lineWidth: armWidth,
+    });
   }
 }
