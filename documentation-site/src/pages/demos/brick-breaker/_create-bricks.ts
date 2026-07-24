@@ -51,8 +51,8 @@ const brickRows = Array.from({ length: rows }, (_, row) => ({
 }));
 
 const columns = 24;
-const columnGapFraction = 0.15;
-const rowGapFraction = 0.2;
+const columnGap = 4;
+const rowGap = 4;
 
 /**
  * Tracks the bricks currently alive in the play area, and respawns a fresh
@@ -196,14 +196,11 @@ export async function createBrickField(
 
   const spawnGrid = (): void => {
     const playAreaWidth = playArea.maxX - playArea.minX;
-    const brickWidth =
-      playAreaWidth / (columns + (columns - 1) * columnGapFraction);
-    const columnGap = brickWidth * columnGapFraction;
+    const brickWidth = (playAreaWidth - (columns - 1) * columnGap) / columns;
     const startX = playArea.minX + brickWidth / 2;
 
     for (const [row, sprite] of sprites.entries()) {
       const brickHeight = brickWidth * (sprite.height / sprite.width);
-      const rowGap = brickHeight * rowGapFraction;
       const y = playArea.topY - rowGap - row * (brickHeight + rowGap);
 
       for (let column = 0; column < columns; column++) {

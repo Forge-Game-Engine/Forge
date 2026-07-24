@@ -108,7 +108,6 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   );
 
   const random = new Random();
-  const playAreaWidth = playArea.maxX - playArea.minX;
 
   const ballStartPosition = new Vector2(
     paddlePosition.x,
@@ -120,7 +119,6 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     renderContext,
     renderLayers.foreground,
     ballStartPosition,
-    playAreaWidth,
     random,
   );
 

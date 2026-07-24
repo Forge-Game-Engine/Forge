@@ -22,8 +22,8 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { ballId } from './_ball.component';
 
-const ballDiameterFraction = 0.02;
-const ballSpeedFraction = 0.25;
+const ballDiameter = 12;
+const ballSpeed = 260;
 const launchAngleRangeInDegrees = 35;
 
 /**
@@ -60,8 +60,6 @@ export function launchBall(
  * @param renderLayer - The render layer the ball should be drawn on.
  * @param startPosition - The position the ball starts at, and resets to
  * whenever it falls out of play.
- * @param playAreaWidth - The width of the play area, used to size and pace
- * the ball relative to it.
  * @param random - The random source used to vary the launch angle.
  */
 export async function createBall(
@@ -69,7 +67,6 @@ export async function createBall(
   renderContext: RenderContext,
   renderLayer: number,
   startPosition: Vector2,
-  playAreaWidth: number,
   random: Random,
 ): Promise<void> {
   const ballImage = await renderContext.imageCache.getOrLoad(
@@ -77,10 +74,8 @@ export async function createBall(
   );
   const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
 
-  const ballDiameter = playAreaWidth * ballDiameterFraction;
   const ballScale = ballDiameter / ballSprite.width;
   const ballRadius = ballDiameter / 2;
-  const speed = playAreaWidth * ballSpeedFraction;
 
   const entity = world.createEntity();
 
@@ -99,7 +94,7 @@ export async function createBall(
   addSpriteComponent(world, entity, ballSprite);
 
   world.addComponent(entity, ballId, {
-    speed,
+    speed: ballSpeed,
     startPosition: startPosition.clone(),
   });
 
@@ -110,7 +105,7 @@ export async function createBall(
     friction: 0,
   });
 
-  launchBall(physicsBody, speed, random);
+  launchBall(physicsBody, ballSpeed, random);
 
   addPhysicsBodyComponent(world, entity, { physicsBody });
 }

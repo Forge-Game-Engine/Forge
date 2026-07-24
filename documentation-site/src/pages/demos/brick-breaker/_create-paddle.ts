@@ -18,24 +18,22 @@ import {
 import { PlayArea } from './_create-boundaries';
 import { paddleId } from './_paddle.component';
 
-const paddleWidthFraction = 0.12;
-const paddleHeightFraction = 0.07;
+const paddleWidth = 70;
+const paddleHeight = 12;
 const paddleSpeed = 1_000;
 const paddleHeightAboveBottom = 60;
 
 // `paddle.png` is a native 520x140 capsule; nine-sliced with a left/right
 // inset around each rounded end, the caps stay a fixed size instead of the
 // flattened smear a naive non-uniform stretch leaves once the paddle's
-// on-screen aspect ratio (driven by two independent play-area fractions)
-// diverges from the artwork's own. The inset has to be sized against the
-// paddle's actual rendered height (computed below), not a native-pixel
-// guess: nine-slice insets are measured in the sprite's *current* size, and
-// this paddle renders far smaller than its native 520x140 texture, so a
-// native-scale inset would consume the entire width and squash both caps
-// into one flat blob instead of two round ends either side of a flat
-// center. A capsule's cap radius is half its thickness, so half the
-// paddle's rendered height is exactly the inset that keeps the caps
-// circular.
+// on-screen aspect ratio diverges from the artwork's own. The inset is
+// sized against `paddleHeight`, not a native-pixel guess: nine-slice
+// insets are measured in the sprite's *current* size, and this paddle
+// renders far smaller than its native 520x140 texture, so a native-scale
+// inset would consume the entire width and squash both caps into one flat
+// blob instead of two round ends either side of a flat center. A
+// capsule's cap radius is half its thickness, so half of `paddleHeight` is
+// exactly the inset that keeps the caps circular.
 const paddleNativeWidth = 520;
 const paddleNativeHeight = 140;
 
@@ -58,12 +56,6 @@ export async function createPaddle(
   const paddleImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/brick-breaker/paddle.png'),
   );
-
-  const playAreaWidth = playArea.maxX - playArea.minX;
-  const paddleWidth = playAreaWidth * paddleWidthFraction;
-  const paddleHeight =
-    (paddleNativeHeight / paddleNativeWidth) *
-    (playAreaWidth * paddleHeightFraction);
 
   const paddleSprite = createImageSprite(
     paddleImage,
