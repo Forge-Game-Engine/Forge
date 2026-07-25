@@ -384,6 +384,85 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 
+## Integration & E2E Testing
+
+`/e2e` holds real-browser tests (Playwright) for cross-system behavior that
+unit tests can't see: a real WebGL2 canvas, real DOM input events run through
+the actual input pipeline, and a real (but manually stepped, not
+`requestAnimationFrame`-driven) game loop. Unlike `/src`'s unit tests - which
+mock the WebGL context and drive systems directly - these exercise the real
+rendering and input code paths end-to-end.
+
+**These tests depend only on `/src`, never on `/demo` or
+`/documentation-site`.** Each scenario gets its own minimal, purpose-built
+scene under `e2e/fixtures/scenes/`, built directly against the engine's
+public API, so e2e stays unaffected by unrelated changes to the demo app or
+docs site (and vice versa).
+
+### Layout
+
+```
+e2e/
+  fixtures/
+    index.html           # single HTML shell (a sized #app container + harness.ts)
+    harness.ts            # reads `?scene=`, loads the matching scene, exposes window.__forgeTestHooks
+    scenes/
+      scene.ts             # the SceneHandle/CreateScene contract every scene implements
+      camera-pan-zoom.ts   # imports straight from '../../../src/index.js'
+  specs/
+    camera-pan-zoom.spec.ts
+  playwright.config.ts
+  tsconfig.json
+vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.demo.js is for /demo
+```
+
+### Adding a new scenario
+
+1. Add `e2e/fixtures/scenes/<name>.ts` exporting a `createScene: CreateScene`
+   that builds a minimal world/camera/systems from `/src` and returns a
+   handle (implementing `SceneHandle`, extended with whatever fields the spec
+   needs to assert against - see `CameraSceneHandle` in
+   `camera-pan-zoom.ts`). `harness.ts` picks it up automatically via
+   `import.meta.glob('./scenes/*.ts')` - nothing else to register.
+2. Drive real browser input against it in `e2e/specs/<name>.spec.ts`
+   (`page.locator('canvas').dispatchEvent('wheel', ...)`,
+   `page.keyboard.down/up(...)`, etc.) and assert through
+   `window.__forgeTestHooks`.
+3. Call `handle.step(deltaMilliseconds?)` to advance exactly one frame
+   deterministically (it drives `Time.update`/`EcsWorld.update` directly,
+   not `Game.run()`'s `requestAnimationFrame` loop), instead of waiting on
+   real time. This is what keeps the suite flake-free.
+
+**Node vs. browser split**: `e2e/specs/*.spec.ts` files run under Node
+(Playwright's own TS loader), not through Vite - they can `import type` from
+a scene module freely (erased at compile time), but a *value* import that
+transitively pulls in `/src` (e.g. anything importing shader `.glsl?raw`
+sources) will crash Node's loader, which can't parse those. If a spec needs
+a plain constant a scene also uses (see `clearColorRgb` in
+`camera-pan-zoom-clear-color.ts`), give it its own tiny module with zero
+`/src` imports, and have both the scene and the spec import from that.
+
+**WebGL readback gotcha**: the fixture's canvas isn't created with
+`preserveDrawingBuffer`, so the browser may clear it as soon as control
+returns to it after a frame is presented. Do a `step()` and any
+`gl.readPixels`-based assertion in the *same* `page.evaluate` call (see
+`readCenterPixel()`), never across two separate round-trips.
+
+### Running
+
+- `npm run test:e2e` / `npm run test:e2e:ui` - runs the suite (the
+  `webServer` config starts `npm run dev:e2e` against `vite.config.e2e.js`
+  automatically).
+- `npm run check-types:e2e` - type-checks `/e2e` on its own
+  (`npm run check-types` only covers `/src` and `/demo`).
+- `@playwright/test` is pinned to an exact version (not `^`), matched to
+  whatever Chromium revision is available in this repo's dev/CI
+  environments, since the browser binary and the library version are
+  tightly coupled - bumping it means also fetching the matching browser
+  build (`npx playwright install chromium`), not just a version bump.
+- Not yet wired into CI (`.github/workflows/ci.yml`) - that's a deliberate
+  follow-up once the suite's proven stable, per the rollout plan.
+
 ## Documentation Site Demos
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
