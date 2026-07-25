@@ -25,9 +25,14 @@ if (!sceneName) {
   );
 }
 
-const loadScene = sceneLoaders[`./scenes/${sceneName}.ts`];
+// `sceneName` comes from the URL, so it's validated against the glob's own
+// (build-time, not user-controlled) keys before it's used to select which
+// loader to invoke, rather than only checking the looked-up value
+// afterwards - the latter is indistinguishable from an unvalidated dynamic
+// dispatch to static analysis, even though the outcome is the same.
+const sceneKey = `./scenes/${sceneName}.ts`;
 
-if (!loadScene) {
+if (!Object.hasOwn(sceneLoaders, sceneKey)) {
   throw new Error(`Unknown scene "${sceneName}"`);
 }
 
@@ -37,6 +42,6 @@ if (!container) {
   throw new Error('Missing #app container element');
 }
 
-const { createScene } = await loadScene();
+const { createScene } = await sceneLoaders[sceneKey]();
 
 window.__forgeTestHooks = createScene(container);
