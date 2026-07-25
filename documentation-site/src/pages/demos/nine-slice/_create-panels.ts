@@ -87,16 +87,9 @@ export async function createPanels(
     },
   );
 
-  const { height } = renderContext.canvas;
-  const spacing = Math.min(height / 2, 160);
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const spacing = 160;
 
-  // Clamp the breathing range to whatever space is actually available, so
-  // panels never overlap each other or overflow the canvas on a narrow
-  // container (e.g. the docs site's demo box squeezed by its code panel).
-  const availableSize = Math.min(spacing, height);
-  const clampedMaxSize = Math.min(maxSize, availableSize);
-  const clampedMinSize = Math.min(minSize, clampedMaxSize);
-
-  placePanel(world, naiveSprite, 0, spacing, clampedMinSize, clampedMaxSize);
-  placePanel(world, stretchSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, naiveSprite, 0, spacing, minSize, maxSize);
+  placePanel(world, stretchSprite, 0, -spacing, minSize, maxSize);
 }

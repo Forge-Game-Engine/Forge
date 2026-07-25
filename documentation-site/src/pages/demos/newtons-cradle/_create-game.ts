@@ -27,7 +27,9 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });
-  const { height } = renderContext.canvas;
+
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const height = 1080;
 
   await createCradle(
     world,

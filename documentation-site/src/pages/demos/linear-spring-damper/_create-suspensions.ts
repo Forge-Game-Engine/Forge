@@ -256,7 +256,10 @@ export async function createSuspensions(
   renderLayer: number,
 ): Promise<void> {
   const sprites = await loadSuspensionSprites(renderContext, renderLayer);
-  const { width, height } = renderContext.canvas;
+
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const width = 1920;
+  const height = 1080;
   const columnWidth = width / 2;
   const mountY = height * 0.25;
   const stiffness = 30_000;

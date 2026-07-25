@@ -50,7 +50,9 @@ export const createTorqueGame = async (): Promise<Game> => {
     new KeyboardHoldBinding(thrustInput, keyCodes.space),
   );
 
-  const { width, height } = renderContext.canvas;
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const width = 1920;
+  const height = 1080;
   const columnWidth = width / 2;
 
   await createThrusterScenario(

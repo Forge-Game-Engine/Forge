@@ -32,9 +32,13 @@ export async function createBackground(
     renderContext.gl,
   );
 
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const canvasWidth = 1920;
+  const canvasHeight = 1080;
+
   backgroundMaterial.setUniform(
     'u_resolution',
-    new Float32Array([renderContext.canvas.width, renderContext.canvas.height]),
+    new Float32Array([canvasWidth, canvasHeight]),
   );
 
   backgroundMaterial.setUniform(
@@ -67,8 +71,8 @@ export async function createBackground(
   const backgroundEntity = world.createEntity();
 
   addSpriteComponent(world, backgroundEntity, {
-    width: renderContext.canvas.width,
-    height: renderContext.canvas.height,
+    width: canvasWidth,
+    height: canvasHeight,
     renderable,
   });
 

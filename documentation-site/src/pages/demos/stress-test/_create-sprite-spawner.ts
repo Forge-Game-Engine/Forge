@@ -30,7 +30,9 @@ export async function createSpriteSpawner(
 
   const sprite = createImageSprite(image, renderContext, renderLayer);
 
-  const { width, height } = renderContext.canvas;
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const width = 1920;
+  const height = 1080;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

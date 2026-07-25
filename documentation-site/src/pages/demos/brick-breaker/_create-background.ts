@@ -48,9 +48,10 @@ export function createBackground(
 
   const backgroundEntity = world.createEntity();
 
+  // The demo is designed for a fixed 1920x1080 canvas.
   addSpriteComponent(world, backgroundEntity, {
-    width: renderContext.canvas.width,
-    height: renderContext.canvas.height,
+    width: 1920,
+    height: 1080,
     renderable,
     layer: renderLayer,
   });

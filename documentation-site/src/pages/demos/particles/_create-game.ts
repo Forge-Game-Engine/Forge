@@ -26,8 +26,11 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
+// The demo is designed for a fixed 1920x1080 canvas.
+const canvasHeight = 1080;
+
 // Fraction of the canvas height up from the bottom edge that the ember
-// fountain sits at, so it stays in view regardless of canvas size.
+// fountain sits at.
 const fountainHeightFraction = 0.12;
 
 export const createParticlesGame = async (): Promise<Game> => {
@@ -48,8 +51,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
   const fountainPosition = new Vector2(
     0,
-    -renderContext.canvas.height / 2 +
-      renderContext.canvas.height * fountainHeightFraction,
+    -canvasHeight / 2 + canvasHeight * fountainHeightFraction,
   );
 
   await createEmberFountain(

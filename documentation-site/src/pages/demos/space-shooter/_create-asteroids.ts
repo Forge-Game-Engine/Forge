@@ -34,13 +34,17 @@ export async function createAsteroidSpawner(
 
   const spawnerEntity = world.createEntity();
 
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const canvasWidth = 1920;
+  const canvasHeight = 1080;
+
   const spawnerComponent: AsteroidSpawnerEcsComponent = {
     asteroidSprites,
     timeBetweenSpawns: 0.2,
     nextSpawnTime: 0,
-    minX: -renderContext.canvas.width / 2,
-    maxX: renderContext.canvas.width / 2,
-    spawnY: renderContext.canvas.height / 2 + 100,
+    minX: -canvasWidth / 2,
+    maxX: canvasWidth / 2,
+    spawnY: canvasHeight / 2 + 100,
     minSpeed: 70,
     maxSpeed: 130,
     rotationSpeed: Math.PI / 6,

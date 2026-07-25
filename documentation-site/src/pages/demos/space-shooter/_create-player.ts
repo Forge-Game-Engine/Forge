@@ -81,7 +81,6 @@ export async function loadPlayerSprites(
  * Creates the player entity using already-loaded sprites.
  */
 export function spawnPlayer(
-  renderContext: RenderContext,
   world: EcsWorld,
   renderLayer: number,
   playerSprites: PlayerSprites,
@@ -96,8 +95,9 @@ export function spawnPlayer(
   const playerRadius =
     (playerSprite.width * playerScale + playerSprite.height * playerScale) / 4;
 
-  const halfCanvasWidth = renderContext.canvas.width / 2;
-  const halfCanvasHeight = renderContext.canvas.height / 2;
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const halfCanvasWidth = 1920 / 2;
+  const halfCanvasHeight = 1080 / 2;
 
   addSpriteComponent(world, playerEntity, playerSprite);
   addPositionComponent(world, playerEntity, {
@@ -147,7 +147,7 @@ export async function createPlayer(
 ): Promise<PlayerSprites> {
   const playerSprites = await loadPlayerSprites(renderContext, renderLayer);
 
-  spawnPlayer(renderContext, world, renderLayer, playerSprites);
+  spawnPlayer(world, renderLayer, playerSprites);
 
   return playerSprites;
 }

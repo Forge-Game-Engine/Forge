@@ -422,6 +422,20 @@ import it, e.g. `grep -rl "/physics" documentation-site/src/pages/demos`):
 See also step 9 of `CLAUDE.md`'s verification checklist, which makes this
 mandatory before marking a task complete.
 
+**Demos assume a fixed 1920x1080 canvas.** Entity positions, spawn bounds,
+and layout math in demo code (e.g. `_create-boundaries.ts`,
+`_create-asteroids.ts`) use absolute pixel values authored against a
+1920x1080 world, not ratios derived from `renderContext.canvas.width` /
+`renderContext.canvas.height` or the live container size. Demos are not
+expected to look correct at any other canvas size. The canvas itself is
+still sized dynamically from its container (`createCanvas` /
+`RenderContext` are unchanged); only the entities placed inside it assume
+1920x1080. The exceptions are: mouse/pointer-to-world coordinate conversion
+(via `screenToWorldSpace`), which must keep using the live
+`renderContext.canvas` dimensions to map real cursor positions correctly,
+and GPU render target sizing (e.g. bloom/blur off-screen buffers), which
+must match the actual canvas resolution to composite correctly.
+
 ## Common Patterns
 
 ### Readonly Fields

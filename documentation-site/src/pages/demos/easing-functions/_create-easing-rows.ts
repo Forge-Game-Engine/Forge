@@ -118,7 +118,9 @@ export async function createEasingRows(
     renderLayer,
   );
 
-  const { width, height } = renderContext.canvas;
+  // The demo is designed for a fixed 1920x1080 canvas.
+  const width = 1920;
+  const height = 1080;
   const trackHalfWidth = width / 2 - horizontalMarginPixels;
   const minX = -trackHalfWidth * (1 - overshootMarginFraction);
   const maxX = trackHalfWidth * (1 - overshootMarginFraction);
