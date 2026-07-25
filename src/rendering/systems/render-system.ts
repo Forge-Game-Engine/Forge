@@ -23,6 +23,7 @@ import { Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
 import { Color } from '../color.js';
+import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
 
 /**
@@ -267,11 +268,17 @@ export const createRenderEcsSystem = (
   run: (result, world) => {
     const [cameraComponent, positionComponent] = result.components;
 
+    const pixelsPerUnit = calculatePixelsPerUnit(
+      renderContext.height,
+      cameraComponent.verticalWorldUnits,
+    );
+
     const projectionMatrix = createProjectionMatrix(
       renderContext.width,
       renderContext.height,
       positionComponent.world,
       cameraComponent.zoom,
+      pixelsPerUnit,
     );
 
     let commands = commandBuffersByCameraIndex[cameraIndex];

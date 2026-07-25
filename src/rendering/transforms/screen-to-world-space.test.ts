@@ -149,4 +149,26 @@ describe('screenToWorldSpace', () => {
 
     expect(result).toEqual(expectedWorldPosition);
   });
+
+  it('should scale by pixelsPerUnit in addition to zoom', () => {
+    const screenPosition = new Vector2(500, 400);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 1;
+    const screenWidth = 800;
+    const screenHeight = 600;
+    const pixelsPerUnit = 10;
+
+    const expectedWorldPosition = new Vector2(10, -10);
+
+    const result = screenToWorldSpace(
+      screenPosition,
+      cameraPosition,
+      cameraZoom,
+      screenWidth,
+      screenHeight,
+      pixelsPerUnit,
+    );
+
+    expect(result).toEqual(expectedWorldPosition);
+  });
 });

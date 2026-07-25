@@ -13,6 +13,8 @@ import { Vector2 } from '../../math/index.js';
  * @param cameraZoom - The zoom level of the camera.
  * @param screenWidth - The width of the screen in pixels.
  * @param screenHeight - The height of the screen in pixels.
+ * @param pixelsPerUnit - The number of pixels one world unit occupies (see
+ * `calculatePixelsPerUnit`). Defaults to `1`.
  * @returns The position in world space.
  */
 export function screenToWorldSpace(
@@ -21,13 +23,15 @@ export function screenToWorldSpace(
   cameraZoom: number,
   screenWidth: number,
   screenHeight: number,
+  pixelsPerUnit: number = 1,
 ): Vector2 {
   // Shift origin to the center of the screen, flip Y to convert from
   // Y-down screen space to Y-up world space, then scale and offset.
+  const scale = cameraZoom * pixelsPerUnit;
   const worldX =
-    (screenPosition.x - screenWidth / 2) / cameraZoom + cameraPosition.x;
+    (screenPosition.x - screenWidth / 2) / scale + cameraPosition.x;
   const worldY =
-    (screenHeight / 2 - screenPosition.y) / cameraZoom + cameraPosition.y;
+    (screenHeight / 2 - screenPosition.y) / scale + cameraPosition.y;
 
   return new Vector2(worldX, worldY);
 }

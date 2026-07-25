@@ -3,6 +3,7 @@ import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
 import { RenderContext } from '../render-context.js';
 import { createProjectionMatrix } from '../shaders/index.js';
+import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import type { TerrainMesh } from './create-terrain-mesh.js';
 
 /**
@@ -38,11 +39,17 @@ export const createTerrainRenderEcsSystem = (
     gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    const pixelsPerUnit = calculatePixelsPerUnit(
+      renderContext.height,
+      cameraComponent.verticalWorldUnits,
+    );
+
     const projectionMatrix = createProjectionMatrix(
       renderContext.width,
       renderContext.height,
       positionComponent.world,
       cameraComponent.zoom,
+      pixelsPerUnit,
     );
 
     material.setUniform('u_projection', projectionMatrix);

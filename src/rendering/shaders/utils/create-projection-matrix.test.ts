@@ -140,6 +140,85 @@ describe('createProjectionMatrix', () => {
     expect(result.matrix[8]).toBeCloseTo(1);
   });
 
+  it('should apply pixelsPerUnit as an additional scale factor', () => {
+    const width = 800;
+    const height = 600;
+    const cameraPosition = new Vector2(0, 0);
+    const zoom = 1;
+    const pixelsPerUnit = 100;
+
+    const expectedMatrix = new Matrix3x3([
+      (2 / width) * pixelsPerUnit,
+      0,
+      0,
+      -0,
+      (-2 / height) * pixelsPerUnit,
+      0,
+      0,
+      0,
+      1,
+    ]);
+
+    const result = createProjectionMatrix(
+      width,
+      height,
+      cameraPosition,
+      zoom,
+      pixelsPerUnit,
+    );
+
+    expect(result).toEqual(expectedMatrix);
+  });
+
+  it('should combine pixelsPerUnit with zoom and camera translation', () => {
+    const width = 400;
+    const height = 200;
+    const cameraPosition = new Vector2(10, -20);
+    const zoom = 0.5;
+    const pixelsPerUnit = 20;
+
+    const scaleX = (2 / width) * pixelsPerUnit * zoom;
+    const scaleY = (-2 / height) * pixelsPerUnit * zoom;
+    const tx = -cameraPosition.x * scaleX;
+    const ty = cameraPosition.y * scaleY;
+
+    const result = createProjectionMatrix(
+      width,
+      height,
+      cameraPosition,
+      zoom,
+      pixelsPerUnit,
+    );
+
+    expect(result.matrix[0]).toBeCloseTo(scaleX);
+    expect(result.matrix[4]).toBeCloseTo(scaleY);
+    expect(result.matrix[6]).toBeCloseTo(tx);
+    expect(result.matrix[7]).toBeCloseTo(ty);
+  });
+
+  it('should default pixelsPerUnit to 1 when omitted', () => {
+    const width = 800;
+    const height = 600;
+    const cameraPosition = new Vector2(0, 0);
+    const zoom = 1;
+
+    const withDefault = createProjectionMatrix(
+      width,
+      height,
+      cameraPosition,
+      zoom,
+    );
+    const withExplicitOne = createProjectionMatrix(
+      width,
+      height,
+      cameraPosition,
+      zoom,
+      1,
+    );
+
+    expect(withDefault).toEqual(withExplicitOne);
+  });
+
   it('should handle negative zoom (flipping)', () => {
     const width = 100;
     const height = 100;
