@@ -14,11 +14,13 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addResetComponent } from './_reset.component';
 import { addSpringLineComponent } from './_spring-line.component';
@@ -256,7 +258,11 @@ export async function createSuspensions(
   renderLayer: number,
 ): Promise<void> {
   const sprites = await loadSuspensionSprites(renderContext, renderLayer);
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const columnWidth = width / 2;
   const mountY = height * 0.25;
   const stiffness = 30_000;

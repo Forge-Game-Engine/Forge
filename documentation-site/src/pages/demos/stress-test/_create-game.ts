@@ -8,6 +8,7 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createSpriteSpawner } from './_create-sprite-spawner';
 import { createFpsMonitorEcsSystem } from './_fps-monitor.system';
 import { createSpriteSpawnerEcsSystem } from './_sprite-spawner.system';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 
 const renderLayers = {
   foreground: 1 << 0,
@@ -19,6 +20,7 @@ export const createStressTestGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   await createSpriteSpawner(world, renderContext, renderLayers.foreground);

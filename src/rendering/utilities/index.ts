@@ -1,4 +1,5 @@
 export * from './calculate-pixels-per-unit.js';
+export * from './calculate-visible-world-size.js';
 export * from './compute-nine-slice-regions.js';
 export * from './create-camera.js';
 export * from './create-canvas.js';

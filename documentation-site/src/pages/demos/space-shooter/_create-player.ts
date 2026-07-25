@@ -2,6 +2,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   createImageSprite,
   RenderContext,
@@ -18,6 +19,7 @@ import {
   CircleShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -96,8 +98,13 @@ export function spawnPlayer(
   const playerRadius =
     (playerSprite.width * playerScale + playerSprite.height * playerScale) / 4;
 
-  const halfCanvasWidth = renderContext.canvas.width / 2;
-  const halfCanvasHeight = renderContext.canvas.height / 2;
+  const visibleWorldSize = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
+  const halfVisibleWidth = visibleWorldSize.x / 2;
+  const halfVisibleHeight = visibleWorldSize.y / 2;
 
   addSpriteComponent(world, playerEntity, playerSprite);
   addPositionComponent(world, playerEntity, {
@@ -106,10 +113,10 @@ export function spawnPlayer(
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
-    minX: -halfCanvasWidth + playerRadius,
-    maxX: halfCanvasWidth - playerRadius,
-    minY: -halfCanvasHeight + playerRadius,
-    maxY: halfCanvasHeight - playerRadius,
+    minX: -halfVisibleWidth + playerRadius,
+    maxX: halfVisibleWidth - playerRadius,
+    minY: -halfVisibleHeight + playerRadius,
+    maxY: halfVisibleHeight - playerRadius,
   });
 
   addScaleComponent(world, playerEntity, {

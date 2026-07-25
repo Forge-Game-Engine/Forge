@@ -6,12 +6,13 @@ import {
   rotationId,
   Time,
 } from '@forge-game-engine/forge/common';
-import { RenderContext } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { AsteroidEcsComponent, asteroidId } from './_asteroid.component';
+
+const despawnY = -(DEMO_VERTICAL_WORLD_UNITS / 2 + 100);
 
 export const createAsteroidEcsSystem = (
   time: Time,
-  renderContext: RenderContext,
 ): EcsSystem<
   [AsteroidEcsComponent, PositionEcsComponent, RotationEcsComponent]
 > => ({
@@ -25,8 +26,6 @@ export const createAsteroidEcsSystem = (
 
     rotationComponent.world +=
       asteroidComponent.rotationSpeed * time.deltaTimeInSeconds;
-
-    const despawnY = -(renderContext.canvas.height / 2 + 100);
 
     if (positionComponent.world.y < despawnY) {
       world.removeEntity(result.entity);

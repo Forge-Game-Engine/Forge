@@ -1,4 +1,5 @@
 import {
+  calculatePixelsPerUnit,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
@@ -10,6 +11,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createBoundaries } from './_create-boundaries';
 import { spawnShapes } from './_spawn-shapes';
 
@@ -33,6 +35,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });
@@ -46,7 +49,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
 
   // The camera is static at the world origin with a zoom of 1 (see
   // `createCamera` above), so screen coordinates can be converted to world
-  // coordinates directly.
+  // coordinates directly, once scaled by the camera's pixels-per-unit.
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
@@ -55,12 +58,18 @@ export const createPhysicsGame = async (): Promise<Game> => {
       event.clientY - canvasBounds.top,
     );
 
+    const pixelsPerUnit = calculatePixelsPerUnit(
+      renderContext.height,
+      DEMO_VERTICAL_WORLD_UNITS,
+    );
+
     const worldPosition = screenToWorldSpace(
       screenPosition,
       Vector2.zero,
       1,
-      renderContext.canvas.width,
-      renderContext.canvas.height,
+      renderContext.width,
+      renderContext.height,
+      pixelsPerUnit,
     );
 
     physicsWorld.applyExplosiveForce(

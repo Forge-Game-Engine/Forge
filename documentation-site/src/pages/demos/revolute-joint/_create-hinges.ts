@@ -15,11 +15,13 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
 
@@ -327,7 +329,11 @@ export async function createHinges(
   renderLayer: number,
 ): Promise<void> {
   const sprites = await loadHingeSprites(renderContext, renderLayer);
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const columnWidth = width / 3;
   const columnLeft = -width / 2 + columnWidth / 2;
 

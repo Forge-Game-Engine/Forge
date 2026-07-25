@@ -10,6 +10,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createWreckingBall } from './_create-wrecking-ball';
 
 const renderLayers = {
@@ -24,6 +25,7 @@ export const createWreckingBallGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });

@@ -1,4 +1,5 @@
 import {
+  calculatePixelsPerUnit,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
@@ -18,6 +19,7 @@ import {
   createParticleEcsSystem,
   createParticlePositionEcsSystem,
 } from '@forge-game-engine/forge/particles';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createAmbientEmitterEcsSystem } from './_ambient-emitter.system';
 import { createCursorEffects } from './_create-cursor-effects';
 import { createEmberFountain } from './_create-ember-fountain';
@@ -26,9 +28,10 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-// Fraction of the canvas height up from the bottom edge that the ember
-// fountain sits at, so it stays in view regardless of canvas size.
-const fountainHeightFraction = 0.12;
+// Height, in world units, up from the bottom edge of the camera's fixed
+// vertical world units that the ember fountain sits at, so it stays in view
+// regardless of resolution or aspect ratio.
+const fountainHeightFromBottom = DEMO_VERTICAL_WORLD_UNITS * 0.12;
 
 export const createParticlesGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -36,6 +39,7 @@ export const createParticlesGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const random = new Random();
@@ -48,8 +52,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
   const fountainPosition = new Vector2(
     0,
-    -renderContext.canvas.height / 2 +
-      renderContext.canvas.height * fountainHeightFraction,
+    -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom,
   );
 
   await createEmberFountain(
@@ -74,7 +77,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
   // The camera is static at the world origin with a zoom of 1 (see
   // `createCamera` above), so screen coordinates can be converted to world
-  // coordinates directly.
+  // coordinates directly, once scaled by the camera's pixels-per-unit.
   const toWorldPosition = (event: MouseEvent): Vector2 => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
@@ -83,12 +86,18 @@ export const createParticlesGame = async (): Promise<Game> => {
       event.clientY - canvasBounds.top,
     );
 
+    const pixelsPerUnit = calculatePixelsPerUnit(
+      renderContext.height,
+      DEMO_VERTICAL_WORLD_UNITS,
+    );
+
     return screenToWorldSpace(
       screenPosition,
       Vector2.zero,
       1,
-      renderContext.canvas.width,
-      renderContext.canvas.height,
+      renderContext.width,
+      renderContext.height,
+      pixelsPerUnit,
     );
   };
 

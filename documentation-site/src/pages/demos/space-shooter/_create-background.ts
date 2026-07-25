@@ -1,5 +1,6 @@
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   combineInstanceDataSegments,
   createQuadGeometry,
@@ -12,6 +13,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { addPositionComponent } from '@forge-game-engine/forge/common';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { backgroundShader } from './_background.shader';
 import { backgroundId } from './_background.component';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -66,9 +68,15 @@ export async function createBackground(
 
   const backgroundEntity = world.createEntity();
 
+  const visibleWorldSize = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
+
   addSpriteComponent(world, backgroundEntity, {
-    width: renderContext.canvas.width,
-    height: renderContext.canvas.height,
+    width: visibleWorldSize.x,
+    height: visibleWorldSize.y,
     renderable,
   });
 

@@ -17,6 +17,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createInputs } from './_create-inputs';
 import { createTerrain } from './_create-terrain';
 import { createPlayer } from './_create-player';
@@ -43,6 +44,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   const cameraEntity = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });

@@ -11,6 +11,7 @@ import {
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { panelId } from './_panel.component';
 
 /**
@@ -87,12 +88,13 @@ export async function createPanels(
     },
   );
 
-  const { height } = renderContext.canvas;
+  const height = DEMO_VERTICAL_WORLD_UNITS;
   const spacing = Math.min(height / 2, 160);
 
   // Clamp the breathing range to whatever space is actually available, so
-  // panels never overlap each other or overflow the canvas on a narrow
-  // container (e.g. the docs site's demo box squeezed by its code panel).
+  // panels never overlap each other or overflow the fixed vertical world
+  // units the camera shows (e.g. the docs site's demo box squeezed by its
+  // code panel, which narrows the aspect ratio but not the vertical extent).
   const availableSize = Math.min(spacing, height);
   const clampedMaxSize = Math.min(maxSize, availableSize);
   const clampedMinSize = Math.min(minSize, clampedMaxSize);

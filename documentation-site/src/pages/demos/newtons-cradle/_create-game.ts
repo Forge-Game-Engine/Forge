@@ -10,6 +10,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createCradle } from './_create-cradle';
 
 const renderLayers = {
@@ -24,16 +25,16 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });
-  const { height } = renderContext.canvas;
 
   await createCradle(
     world,
     renderContext,
     renderLayers.foreground,
-    new Vector2(0, height * 0.3),
+    new Vector2(0, DEMO_VERTICAL_WORLD_UNITS * 0.3),
   );
 
   // `createRevoluteJointEcsSystem` must run before

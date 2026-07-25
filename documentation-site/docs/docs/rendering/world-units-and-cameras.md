@@ -71,6 +71,32 @@ and physics shape sizes are authored in world units, not pixels; they don't
 need to know about PPU at all, only the projection step (and the coordinate
 conversions below) do.
 
+## Sizing and positioning things relative to what's visible
+
+Game logic that needs to know how much world is on screen right now, to
+keep a background covering the full view, spawn things across the visible
+width, or clamp movement to the screen's edges, should use
+[`calculateVisibleWorldSize`](/Forge/docs/api/functions/calculateVisibleWorldSize)
+instead of reading `RenderContext.width`/`height` (raw pixels) directly:
+
+```ts
+import { calculateVisibleWorldSize } from '@forge-game-engine/forge/rendering';
+
+const visibleSize = calculateVisibleWorldSize(
+  renderContext.width,
+  renderContext.height,
+  camera.verticalWorldUnits,
+);
+
+const halfVisibleWidth = visibleSize.x / 2;
+```
+
+`visibleSize.y` always equals `verticalWorldUnits`; `visibleSize.x` follows
+the destination's current aspect ratio, so a spawn range or background quad
+sized from it always exactly matches the edges of the screen, on any
+resolution or aspect ratio, without needing to re-derive the calculation by
+hand each time.
+
 ## Converting screen and world positions manually
 
 Mouse input and other screen-space coordinates need to go through the same

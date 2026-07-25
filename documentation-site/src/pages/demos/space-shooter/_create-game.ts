@@ -26,6 +26,7 @@ import {
   createPhysicsSyncEcsSystem,
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
@@ -52,9 +53,9 @@ const renderLayers = {
   foreground: 1 << 1,
 };
 
-// A fraction of the canvas's smaller dimension, so the shake reads as the
-// same proportional jolt regardless of the canvas's actual resolution.
-const explosionShakeIntensityFraction = 0.007;
+// A fraction of the camera's vertical world units, so the shake reads as
+// the same proportional jolt regardless of resolution/aspect ratio.
+const explosionShakeIntensity = DEMO_VERTICAL_WORLD_UNITS * 0.007;
 const explosionShakeDurationSeconds = 0.15;
 
 export const bloomDefaults: BloomEcsComponent = {
@@ -100,10 +101,12 @@ export const createSpaceShooterGame = async (
     cullingMask: renderLayers.background,
     isStatic: true,
     renderTarget: backgroundRenderTarget,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
   const foregroundCameraEntity = createCamera(world, {
     cullingMask: renderLayers.foreground,
     renderTarget: foregroundRenderTarget,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   // The component is handed back to the caller (see the sliders on this
@@ -144,13 +147,7 @@ export const createSpaceShooterGame = async (
       return;
     }
 
-    const canvasMinDimension = Math.min(
-      renderContext.canvas.width,
-      renderContext.canvas.height,
-    );
-
-    shakeComponent.intensity =
-      explosionShakeIntensityFraction * canvasMinDimension;
+    shakeComponent.intensity = explosionShakeIntensity;
     shakeComponent.durationSeconds = explosionShakeDurationSeconds;
     shakeComponent.elapsedSeconds = 0;
     shakeComponent.nextOffsetChangeSeconds = 0;
@@ -234,7 +231,7 @@ export const createSpaceShooterGame = async (
   world.addSystem(createGunEcsSystem(time, world, shootInput));
   world.addSystem(createBulletEcsSystem(time));
   world.addSystem(createAsteroidSpawnerEcsSystem(time, random));
-  world.addSystem(createAsteroidEcsSystem(time, renderContext));
+  world.addSystem(createAsteroidEcsSystem(time));
   world.addSystem(
     createSpriteAnimationEcsSystem(time, explosionSpawner.animationRegistry),
   );
