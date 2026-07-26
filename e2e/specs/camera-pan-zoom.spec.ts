@@ -11,11 +11,27 @@ import type { CameraSceneHandle } from '../fixtures/scenes/camera-pan-zoom.js';
 type Hooks = CameraSceneHandle;
 type Page = import('@playwright/test').Page;
 
-const readZoom = (page: Page) =>
-  page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).zoom);
+/**
+ * Advances the scene by one frame and captures the camera's logic state
+ * (`zoom`, `position`) *and* what's actually rendered (the green origin
+ * square's on-screen bounds) in a single `page.evaluate` call. Pairing them
+ * is what lets a test assert the two agree with each other, not just that
+ * the logic state changed - see AGENTS.md's "Be wary of pixel-level
+ * rendering assertions" for why `step()` and any pixel read must happen in
+ * the same task.
+ */
+const captureState = (page: Page) =>
+  page.evaluate(() => {
+    const scene = window.__forgeTestHooks as unknown as Hooks;
 
-const readPosition = (page: Page) =>
-  page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).position);
+    scene.step();
+
+    return {
+      zoom: scene.zoom,
+      position: scene.position,
+      bounds: scene.measureGreenSquareBounds(),
+    };
+  });
 
 const step = (page: Page) =>
   page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).step());
@@ -76,65 +92,119 @@ test.describe('camera pan/zoom', () => {
   });
 
   test('zooms in when scrolling the mouse wheel up', async ({ page }) => {
-    const zoomBefore = await test.step('read starting zoom', () =>
-      readZoom(page));
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
 
     await test.step('scroll wheel-up over several frames', () =>
       animateFrames(page, 6, () =>
         page.locator('canvas').dispatchEvent('wheel', { deltaY: -100 }),
       ));
 
-    const zoomAfter = await test.step('read zoom after scrolling', () =>
-      readZoom(page));
+    const after = await test.step('capture the state after scrolling', () =>
+      captureState(page));
 
-    expect(zoomAfter).toBeGreaterThan(zoomBefore);
+    expect(after.zoom).toBeGreaterThan(before.zoom);
+
+    await test.step('assert the green square grew on screen by the same ratio as the zoom change', () => {
+      expect(before.bounds).not.toBeNull();
+      expect(after.bounds).not.toBeNull();
+
+      const widthBefore = before.bounds!.right - before.bounds!.left;
+      const widthAfter = after.bounds!.right - after.bounds!.left;
+      const expectedWidthAfter = widthBefore * (after.zoom / before.zoom);
+
+      // Generous tolerance: pixel quantization and antialiased edges mean
+      // an exact match isn't realistic - this only needs to confirm the
+      // on-screen size actually tracks the zoom change, not match it to
+      // the pixel.
+      expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.8);
+      expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.2);
+    });
   });
 
   test('zooms out when scrolling the mouse wheel down', async ({ page }) => {
-    const zoomBefore = await test.step('read starting zoom', () =>
-      readZoom(page));
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
 
     await test.step('scroll wheel-down over several frames', () =>
       animateFrames(page, 6, () =>
         page.locator('canvas').dispatchEvent('wheel', { deltaY: 100 }),
       ));
 
-    const zoomAfter = await test.step('read zoom after scrolling', () =>
-      readZoom(page));
+    const after = await test.step('capture the state after scrolling', () =>
+      captureState(page));
 
-    expect(zoomAfter).toBeLessThan(zoomBefore);
+    expect(after.zoom).toBeLessThan(before.zoom);
+
+    await test.step('assert the green square shrank on screen by the same ratio as the zoom change', () => {
+      expect(before.bounds).not.toBeNull();
+      expect(after.bounds).not.toBeNull();
+
+      const widthBefore = before.bounds!.right - before.bounds!.left;
+      const widthAfter = after.bounds!.right - after.bounds!.left;
+      const expectedWidthAfter = widthBefore * (after.zoom / before.zoom);
+
+      expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.8);
+      expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.2);
+    });
   });
 
   test('pans while an arrow key is held, and stops once released', async ({
     page,
   }) => {
-    const positionBefore = await test.step('read starting position', () =>
-      readPosition(page));
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
 
     await test.step('hold ArrowRight over several frames', async () => {
       await page.keyboard.down('ArrowRight');
       await animateFrames(page, 10);
     });
 
-    const positionWhileHeld = await test.step('read position while held', () =>
-      readPosition(page));
+    const whileHeld = await test.step('capture the state while held', () =>
+      captureState(page));
 
-    expect(positionWhileHeld.x).toBeGreaterThan(positionBefore.x);
+    expect(whileHeld.position.x).toBeGreaterThan(before.position.x);
+
+    await test.step('assert the green square visibly shifted left on screen by the expected amount', () => {
+      expect(before.bounds).not.toBeNull();
+      expect(whileHeld.bounds).not.toBeNull();
+
+      const centerBefore = (before.bounds!.left + before.bounds!.right) / 2;
+      const centerWhileHeld =
+        (whileHeld.bounds!.left + whileHeld.bounds!.right) / 2;
+      const actualShift = centerWhileHeld - centerBefore;
+
+      // Panning the camera right moves world content left on screen (see
+      // createProjectionMatrix's `translate(-cameraPosition.x, ...)`); world
+      // units map 1:1 to pixels at zoom 1, scaling with zoom otherwise.
+      const expectedShift =
+        -(whileHeld.position.x - before.position.x) * whileHeld.zoom;
+
+      expect(actualShift).toBeLessThan(0);
+      expect(Math.abs(actualShift - expectedShift)).toBeLessThan(
+        Math.abs(expectedShift) * 0.3 + 5,
+      );
+    });
 
     await test.step('release ArrowRight and advance one frame', async () => {
       await page.keyboard.up('ArrowRight');
       await animateFrames(page, 1);
     });
 
-    const positionAfterRelease =
-      await test.step('read position after release', () => readPosition(page));
+    const afterRelease =
+      await test.step('capture the state after release', () =>
+        captureState(page));
 
-    await test.step('advance one more frame', () => animateFrames(page, 1));
+    const oneMoreStepLater =
+      await test.step('capture the state one more frame later', () =>
+        captureState(page));
 
-    const positionOneMoreStepLater =
-      await test.step('read position one more frame later', () =>
-        readPosition(page));
+    expect(oneMoreStepLater.position.x).toBe(afterRelease.position.x);
 
-    expect(positionOneMoreStepLater.x).toBe(positionAfterRelease.x);
+    await test.step('assert the green square visibly stopped moving too', () => {
+      expect(afterRelease.bounds).not.toBeNull();
+      expect(oneMoreStepLater.bounds).not.toBeNull();
+      expect(oneMoreStepLater.bounds).toEqual(afterRelease.bounds);
+    });
   });
 });
