@@ -43,12 +43,14 @@ export class RenderContext {
    * @param imageCache - The image cache.
    * @param canvas - The canvas element.
    * @param clearStrategy - The strategy for clearing the render context (default: CLEAR_STRATEGY.blank).
+   * @param preserveDrawingBuffer - Whether to retain the drawing buffer after presentation instead of letting the browser clear it, required for reading back the canvas's pixels (e.g. `toDataURL`, `drawImage`) after a frame has already been presented (default: false, since most consumers never read the canvas back and the retained buffer costs GPU memory bandwidth).
    */
   constructor(
     shaderCache: ShaderCache,
     imageCache: ImageCache,
     canvas: HTMLCanvasElement,
     clearStrategy: CLEAR_STRATEGY_KEYS = CLEAR_STRATEGY.blank,
+    preserveDrawingBuffer: boolean = false,
   ) {
     this.shaderCache = shaderCache;
     this.imageCache = imageCache;
@@ -57,7 +59,10 @@ export class RenderContext {
     this.width = canvas.width;
     this.height = canvas.height;
 
-    const context = canvas.getContext('webgl2', { antialias: true });
+    const context = canvas.getContext('webgl2', {
+      antialias: true,
+      preserveDrawingBuffer,
+    });
 
     if (!context) {
       throw new Error('Context not found');
@@ -132,18 +137,21 @@ export interface RenderContextOptions {
   shaderCache?: ShaderCache;
   imageCache?: ImageCache;
   clearStrategy?: CLEAR_STRATEGY_KEYS;
+  preserveDrawingBuffer?: boolean;
 }
 
 export function createRenderContext(
   canvas: HTMLCanvasElement,
   options: RenderContextOptions = {},
 ): RenderContext {
-  const { shaderCache, imageCache, clearStrategy } = options;
+  const { shaderCache, imageCache, clearStrategy, preserveDrawingBuffer } =
+    options;
 
   return new RenderContext(
     shaderCache ?? createShaderCache(),
     imageCache ?? new ImageCache(),
     canvas,
     clearStrategy,
+    preserveDrawingBuffer,
   );
 }

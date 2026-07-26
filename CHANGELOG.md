@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
+- **rendering:** Add `preserveDrawingBuffer` option to `createRenderContext`/`RenderContext`, for consumers that need to read the canvas's pixels back (e.g. `toDataURL`, `drawImage`) after a frame has already been presented
 - **rendering:** Add `calculateVisibleWorldSize` to compute the width/height, in world units, a camera's view spans at given destination dimensions, so game logic can size and position things relative to what's actually visible instead of reading canvas pixel dimensions directly
 
 #### Changed

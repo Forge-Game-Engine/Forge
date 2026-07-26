@@ -62,6 +62,8 @@ Pixabay
 prebuild
 prestart
 quilez
+rasterizer
+readback
 refac
 reinhard
 Renderable
@@ -85,6 +87,7 @@ spaceshooter
 spritesheet
 stoppables
 stoppie
+swiftshader
 texel
 texels
 thresholded
@@ -98,6 +101,7 @@ unmarks
 unnegated
 unrotated
 untextured
+unvalidated
 updatables
 upsamples
 uvec

@@ -384,6 +384,133 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 
+## Integration & E2E Testing
+
+`/e2e` holds real-browser tests (Playwright) for cross-system behavior that
+unit tests can't see: a real WebGL2 canvas, real DOM input events run through
+the actual input pipeline, and a real (but manually stepped, not
+`requestAnimationFrame`-driven) game loop. Unlike `/src`'s unit tests - which
+mock the WebGL context and drive systems directly - these exercise the real
+rendering and input code paths end-to-end.
+
+**These tests depend only on `/src`, never on `/demo` or
+`/documentation-site`.** Each scenario gets its own minimal, purpose-built
+scene under `e2e/fixtures/scenes/`, built directly against the engine's
+public API, so e2e stays unaffected by unrelated changes to the demo app or
+docs site (and vice versa).
+
+### Layout
+
+```
+e2e/
+  fixtures/
+    index.html           # single HTML shell (a sized #app container + harness.ts)
+    harness.ts            # reads `?scene=`, loads the matching scene, exposes window.__forgeTestHooks
+    scenes/
+      scene.ts             # the SceneHandle/CreateScene contract every scene implements
+      camera-pan-zoom.ts   # imports straight from '../../../src/index.js'
+  specs/
+    camera-pan-zoom.spec.ts
+  playwright.config.ts
+  tsconfig.json
+vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.demo.js is for /demo
+```
+
+### Adding a new scenario
+
+1. Add `e2e/fixtures/scenes/<name>.ts` exporting a `createScene: CreateScene`
+   that builds a minimal world/camera/systems from `/src` and returns a
+   handle (implementing `SceneHandle`, extended with whatever fields the spec
+   needs to assert against - see `CameraSceneHandle` in
+   `camera-pan-zoom.ts`). `harness.ts` picks it up automatically via
+   `import.meta.glob('./scenes/*.ts')` - nothing else to register.
+2. Drive real browser input against it in `e2e/specs/<name>.spec.ts`
+   (`page.locator('canvas').dispatchEvent('wheel', ...)`,
+   `page.keyboard.down/up(...)`, etc.) and assert through
+   `window.__forgeTestHooks`.
+3. Call `handle.step(deltaMilliseconds?)` to advance exactly one frame
+   deterministically (it drives `Time.update`/`EcsWorld.update` directly,
+   not `Game.run()`'s `requestAnimationFrame` loop), instead of waiting on
+   real time. This is what keeps the suite flake-free.
+
+**Node vs. browser split**: `e2e/specs/*.spec.ts` files run under Node
+(Playwright's own TS loader), not through Vite - they can `import type` from
+a scene module freely (erased at compile time), but a _value_ import that
+transitively pulls in `/src` (e.g. anything importing shader `.glsl?raw`
+sources) will crash Node's loader, which can't parse those. If a spec needs
+a plain constant a scene also uses (see `clearColorRgb` in
+`camera-pan-zoom-clear-color.ts`), give it its own tiny module with zero
+`/src` imports, and have both the scene and the spec import from that.
+
+**Be wary of pixel-level rendering assertions.** `camera-pan-zoom.spec.ts`
+originally included a test that read back the canvas's clear color to prove
+a frame actually rendered. It was removed: the read was correct and
+reproducible locally (verified via `gl.readPixels`, then again via a
+`context2d.drawImage(canvas, 0, 0)` + `getImageData` readback - a
+completely different code path, to rule out a readback-API bug), but
+deterministically returned a wrong, uniform color for the _entire_ canvas
+in one CI environment's specific SwiftShader build, on every attempt,
+regardless of worker concurrency. That points at a genuine SwiftShader/GL
+instancing compatibility issue in that environment, not a bug in the test.
+If you add a pixel-reading assertion:
+
+- Do the `step()` and the read in the _same_ `page.evaluate` call - the
+  canvas isn't created with `preserveDrawingBuffer`, so the browser may
+  clear it as soon as control returns after a frame is presented.
+- Don't assume `gl.readPixels` and a `drawImage`/`getImageData` readback
+  disagreeing means the bug is in the readback method - both can (and did)
+  agree while still being wrong, if the actual rendered frame is wrong.
+- Avoid **absolute** pixel assertions (an exact coordinate, an exact color
+  byte value) - they're the kind of assertion the SwiftShader discrepancy
+  above breaks for reasons unrelated to your feature. But don't swing to
+  asserting ECS/logic state alone either: `camera-pan-zoom.spec.ts` did
+  exactly that for its pan test and it passed even though
+  `createTransformEcsSystem` was missing from the scene, so the camera's
+  `position.local` updated correctly while the camera never visibly moved
+  (`render-system.ts`'s projection matrix reads `position.world`, which
+  nothing was writing). Numeric-only assertions can't catch a bug like
+  that. The pattern that catches it without reintroducing the SwiftShader
+  problem is a **relative, same-run** measurement: read the actual
+  rendered canvas for a landmark's on-screen bounds before and after the
+  action under test, and assert the *change* matches what the logic state
+  predicts (e.g. the landmark's on-screen width scaled by the zoom ratio).
+  See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
+  `camera-pan-zoom.ts` for the full pattern and rationale.
+
+### Running
+
+- `npm run test:e2e` / `npm run test:e2e:ui` - runs the suite (the
+  `webServer` config starts `npm run dev:e2e` against `vite.config.e2e.js`
+  automatically).
+- `npm run check-types:e2e` - type-checks `/e2e` on its own
+  (`npm run check-types` only covers `/src` and `/demo`).
+- `@playwright/test` is pinned to an exact version (not `^`), matched to
+  whatever Chromium revision is available in this repo's dev/CI
+  environments, since the browser binary and the library version are
+  tightly coupled - bumping it means also fetching the matching browser
+  build (`npx playwright install chromium`), not just a version bump.
+- Runs as the `test-e2e` job in `.github/workflows/ci.yml` on every PR into
+  `dev`, alongside `lint`/`check-types`/`check-spelling`. Add `test-e2e` to
+  the repository's required status checks (Settings → Branches) if it isn't
+  already, so a PR can't merge with a red e2e suite.
+- Locally, `trace` and `video` are `'on'` for every run (not just failures)
+  so a run can always be replayed: `npx playwright show-report
+e2e/playwright-report` opens the HTML report, which links each test's
+  trace (full DOM/network/console timeline) and video recording. CI only
+  keeps these for failures (`'retain-on-failure'`), uploaded as the
+  `playwright-report` workflow artifact, to avoid uploading a trace/video
+  per test on every green run.
+- Two things print an immediate, unambiguous timestamp the moment
+  `test:e2e`/`test:e2e:ui` runs: the `pretest:e2e` npm script (fires before
+  Node even starts loading Playwright) and the top of
+  `playwright.config.ts` itself (fires once Playwright's own startup has
+  finished). A run that looks "stuck" with a large gap between those two
+  lines and nothing else is Playwright/Node startup itself being slow
+  (common on Windows/WSL - antivirus real-time-scanning newly-touched files
+  the first time, or generally slower process-spawn/filesystem overhead
+  through the WSL2 VM boundary), not a bug in the suite; excluding the
+  WSL distro's filesystem from real-time AV scanning is the usual fix.
+
 ## Documentation Site Demos
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
