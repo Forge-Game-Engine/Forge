@@ -78,6 +78,9 @@ export interface CameraSceneHandle extends SceneHandle {
    * buffer as soon as control returns to it after a frame is presented.
    */
   readBackgroundPixel(): [number, number, number, number];
+
+  // TEMPORARY - see the implementation.
+  readDiagnosticPixels(): Record<string, [number, number, number, number]>;
 }
 
 /**
@@ -198,6 +201,32 @@ export const createScene: CreateScene = async (
       gl.readPixels(corner, corner, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
 
       return [rgba[0], rgba[1], rgba[2], rgba[3]];
+    },
+
+    // TEMPORARY: reads several known points to empirically calibrate
+    // gl.readPixels' coordinate system against what CI actually renders,
+    // instead of guessing further. Remove once root-caused.
+    readDiagnosticPixels(): Record<string, [number, number, number, number]> {
+      const { gl } = renderContext;
+
+      const read = (x: number, y: number): [number, number, number, number] => {
+        const rgba = new Uint8Array(4);
+
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+
+        return [rgba[0], rgba[1], rgba[2], rgba[3]];
+      };
+
+      return {
+        topLeft: read(5, 5),
+        topRight: read(canvas.width - 6, 5),
+        bottomLeft: read(5, canvas.height - 6),
+        bottomRight: read(canvas.width - 6, canvas.height - 6),
+        center: read(
+          Math.floor(canvas.width / 2),
+          Math.floor(canvas.height / 2),
+        ),
+      };
     },
   };
 };

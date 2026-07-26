@@ -153,9 +153,11 @@ test.describe('camera pan/zoom', () => {
 
           const canvas = document.querySelector('canvas');
           const pixel = scene.readBackgroundPixel();
+          const points = scene.readDiagnosticPixels();
 
           return {
             pixel,
+            points,
             canvasWidth: canvas?.width,
             canvasHeight: canvas?.height,
             devicePixelRatio: window.devicePixelRatio,
