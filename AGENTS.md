@@ -435,7 +435,7 @@ vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.
 
 **Node vs. browser split**: `e2e/specs/*.spec.ts` files run under Node
 (Playwright's own TS loader), not through Vite - they can `import type` from
-a scene module freely (erased at compile time), but a *value* import that
+a scene module freely (erased at compile time), but a _value_ import that
 transitively pulls in `/src` (e.g. anything importing shader `.glsl?raw`
 sources) will crash Node's loader, which can't parse those. If a spec needs
 a plain constant a scene also uses (see `clearColorRgb` in
@@ -445,7 +445,7 @@ a plain constant a scene also uses (see `clearColorRgb` in
 **WebGL readback gotcha**: the fixture's canvas isn't created with
 `preserveDrawingBuffer`, so the browser may clear it as soon as control
 returns to it after a frame is presented. Do a `step()` and any
-`gl.readPixels`-based assertion in the *same* `page.evaluate` call (see
+`gl.readPixels`-based assertion in the _same_ `page.evaluate` call (see
 `readCenterPixel()`), never across two separate round-trips.
 
 ### Running
@@ -460,8 +460,27 @@ returns to it after a frame is presented. Do a `step()` and any
   environments, since the browser binary and the library version are
   tightly coupled - bumping it means also fetching the matching browser
   build (`npx playwright install chromium`), not just a version bump.
-- Not yet wired into CI (`.github/workflows/ci.yml`) - that's a deliberate
-  follow-up once the suite's proven stable, per the rollout plan.
+- Runs as the `test-e2e` job in `.github/workflows/ci.yml` on every PR into
+  `dev`, alongside `lint`/`check-types`/`check-spelling`. Add `test-e2e` to
+  the repository's required status checks (Settings → Branches) if it isn't
+  already, so a PR can't merge with a red e2e suite.
+- Locally, `trace` and `video` are `'on'` for every run (not just failures)
+  so a run can always be replayed: `npx playwright show-report
+e2e/playwright-report` opens the HTML report, which links each test's
+  trace (full DOM/network/console timeline) and video recording. CI only
+  keeps these for failures (`'retain-on-failure'`), uploaded as the
+  `playwright-report` workflow artifact, to avoid uploading a trace/video
+  per test on every green run.
+- Two things print an immediate, unambiguous timestamp the moment
+  `test:e2e`/`test:e2e:ui` runs: the `pretest:e2e` npm script (fires before
+  Node even starts loading Playwright) and the top of
+  `playwright.config.ts` itself (fires once Playwright's own startup has
+  finished). A run that looks "stuck" with a large gap between those two
+  lines and nothing else is Playwright/Node startup itself being slow
+  (common on Windows/WSL - antivirus real-time-scanning newly-touched files
+  the first time, or generally slower process-spawn/filesystem overhead
+  through the WSL2 VM boundary), not a bug in the suite; excluding the
+  WSL distro's filesystem from real-time AV scanning is the usual fix.
 
 ## Documentation Site Demos
 

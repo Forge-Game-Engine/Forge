@@ -9,5 +9,13 @@
     }
   ],
   "dictionaries": ["project-words"],
-  "ignorePaths": ["node_modules", "dist", ".cspell", "**/*.svg", "build"]
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    ".cspell",
+    "**/*.svg",
+    "build",
+    "e2e/playwright-report",
+    "e2e/test-results"
+  ]
 }

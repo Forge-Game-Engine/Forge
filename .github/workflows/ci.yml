@@ -161,3 +161,48 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  test-e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [lint, check-types, check-spelling]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Restore node_modules from cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+
+      # `--with-deps` also installs OS-level libraries Chromium needs
+      # (fonts, libnss3, etc.), which aren't preserved by the browser
+      # binary cache above and must be reinstalled on every fresh runner
+      # regardless of cache-hit.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
