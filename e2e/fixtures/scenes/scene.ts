@@ -18,5 +18,11 @@ export interface SceneHandle {
   step(deltaMilliseconds?: number): void;
 }
 
-/** A scene module's required export, dynamically loaded by `harness.ts`. */
-export type CreateScene = (container: HTMLElement) => SceneHandle;
+/**
+ * A scene module's required export, dynamically loaded by `harness.ts`.
+ * May be async (for example to wait on a generated texture) - `harness.ts`
+ * awaits the result either way.
+ */
+export type CreateScene = (
+  container: HTMLElement,
+) => SceneHandle | Promise<SceneHandle>;

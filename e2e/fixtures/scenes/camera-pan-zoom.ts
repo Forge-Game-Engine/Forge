@@ -8,6 +8,7 @@ import {
   createCamera,
   createCameraEcsSystem,
   createCanvas,
+  createImageSprite,
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
@@ -20,9 +21,12 @@ import {
   PositionEcsComponent,
   positionId,
   registerInputs,
+  spriteId,
   Time,
+  Vector2,
 } from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
+import { createWhiteSquareImage } from './create-white-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -37,6 +41,26 @@ const clearColor = new Color(
   1,
 );
 
+// A checkerboard of tinted squares (see `createWhiteSquareImage`), spanning
+// world coordinates [-300, 300] on both axes, with a distinct green marker
+// at the origin. This is what makes a recording of the suite (`video: 'on'`
+// in playwright.config.ts) actually show the camera panning/zooming,
+// instead of a flat clear color that looks identical whether the camera
+// moved or not. Sized well within the fixture's 800x600 canvas at the
+// default zoom, so every canvas corner stays outside the grid - see
+// `readBackgroundPixel`.
+const gridExtentInCells = 3;
+const cellSpacing = 100;
+const cellSize = 80;
+
+function cellTintColor(gridX: number, gridY: number): Color {
+  if (gridX === 0 && gridY === 0) {
+    return Color.green;
+  }
+
+  return (gridX + gridY) % 2 === 0 ? Color.red : Color.blue;
+}
+
 /** The handle `camera-pan-zoom.spec.ts` drives and asserts against. */
 export interface CameraSceneHandle extends SceneHandle {
   /** The camera's current zoom level (see `CameraEcsComponent.zoom`). */
@@ -45,26 +69,29 @@ export interface CameraSceneHandle extends SceneHandle {
   readonly position: { x: number; y: number };
 
   /**
-   * Reads back the canvas's center pixel via `gl.readPixels`, as
+   * Reads back a pixel from a canvas corner - always outside the grid (see
+   * the module-level comment above `gridExtentInCells`), so it reflects the
+   * camera's clear color regardless of pan/zoom - via `gl.readPixels`, as
    * `[r, g, b, a]` bytes. Must be called in the same task as `step()` (a
    * single `page.evaluate`) - the WebGL2 context isn't created with
    * `preserveDrawingBuffer`, so the browser is free to clear the drawing
    * buffer as soon as control returns to it after a frame is presented.
    */
-  readCenterPixel(): [number, number, number, number];
+  readBackgroundPixel(): [number, number, number, number];
 }
 
 /**
  * Builds a minimal scene with a single, non-static camera whose zoom and pan
  * are wired to real input: mouse wheel for zoom (`MouseAxis1dBinding`) and
  * arrow keys for pan (`KeyboardAxis2dBinding`) - the same bindings a real
- * game would register via `registerInputs`.
+ * game would register via `registerInputs`. A checkerboard grid of tinted
+ * squares gives pan/zoom something visible to move against.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = (
+export const createScene: CreateScene = async (
   container: HTMLElement,
-): CameraSceneHandle => {
+): Promise<CameraSceneHandle> => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -107,6 +134,35 @@ export const createScene: CreateScene = (
     clearColor,
   });
 
+  // `1`, not `0`: this is a culling-mask *category* bit (matched against the
+  // camera's `cullingMask` via bitwise AND), not a draw-order layer - a
+  // category of `0` can never match any mask and would silently render
+  // nothing.
+  const squareImage = await createWhiteSquareImage();
+  const squareSprite = createImageSprite(squareImage, renderContext, 1);
+
+  for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
+    for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {
+      const cellEntity = world.createEntity();
+      const cellPosition = new Vector2(
+        gridX * cellSpacing,
+        gridY * cellSpacing,
+      );
+
+      world.addComponent(cellEntity, positionId, {
+        world: cellPosition.clone(),
+        local: cellPosition.clone(),
+      });
+
+      world.addComponent(cellEntity, spriteId, {
+        ...squareSprite,
+        width: cellSize,
+        height: cellSize,
+        tintColor: cellTintColor(gridX, gridY),
+      });
+    }
+  }
+
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
@@ -134,19 +190,12 @@ export const createScene: CreateScene = (
       return { x: position.local.x, y: position.local.y };
     },
 
-    readCenterPixel(): [number, number, number, number] {
+    readBackgroundPixel(): [number, number, number, number] {
       const { gl } = renderContext;
       const rgba = new Uint8Array(4);
+      const corner = 5;
 
-      gl.readPixels(
-        Math.floor(canvas.width / 2),
-        Math.floor(canvas.height / 2),
-        1,
-        1,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        rgba,
-      );
+      gl.readPixels(corner, corner, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
 
       return [rgba[0], rgba[1], rgba[2], rgba[3]];
     },

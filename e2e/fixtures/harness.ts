@@ -66,7 +66,7 @@ try {
 
   const { createScene } = await sceneLoaders[sceneKey]();
 
-  window.__forgeTestHooks = createScene(container);
+  window.__forgeTestHooks = await createScene(container);
 } catch (error) {
   const message =
     error instanceof Error ? (error.stack ?? error.message) : String(error);
