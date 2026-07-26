@@ -704,7 +704,7 @@ accident.
 
 ### Dependencies
 
-- Peer dependencies: `@rive-app/webgl2`, `howler`
+- Peer dependencies: `howler`
 - Keep dependencies minimal and well-maintained
 
 ## Additional Resources
