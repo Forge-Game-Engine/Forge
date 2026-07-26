@@ -12,7 +12,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [
-    ['list'],
+    // printSteps surfaces each test.step() as it starts/finishes, instead
+    // of only a pass/fail line once the whole test completes - useful here
+    // since a run spends most of its time waiting on the dev server to
+    // boot and the browser to launch, with nothing else printed otherwise.
+    ['list', { printSteps: true }],
     ['html', { outputFolder: './playwright-report', open: 'never' }],
   ],
 
@@ -46,5 +50,12 @@ export default defineConfig({
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     cwd: '..',
+    // Playwright silences the dev server's own output by default, which is
+    // exactly the window where a run looks stuck: nothing prints until the
+    // server responds or the (2-minute default) startup timeout gives up.
+    // Piping it through shows Vite's own "ready in Xms" line, and any
+    // startup error, live.
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });

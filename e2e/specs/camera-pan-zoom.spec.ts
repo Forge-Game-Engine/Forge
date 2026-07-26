@@ -11,42 +11,47 @@ import { clearColorRgb } from '../fixtures/scenes/camera-pan-zoom-clear-color.js
 // inside a callback that Playwright re-executes in the browser.
 type Hooks = CameraSceneHandle;
 
+const readZoom = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).zoom);
+
+const readPosition = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).position);
+
+const step = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => (window.__forgeTestHooks as unknown as Hooks).step());
+
 test.describe('camera pan/zoom', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?scene=camera-pan-zoom');
-    await page.waitForFunction(() => Boolean(window.__forgeTestHooks));
+    await test.step('load the camera-pan-zoom scene', async () => {
+      await page.goto('/?scene=camera-pan-zoom');
+      await page.waitForFunction(() => Boolean(window.__forgeTestHooks));
+    });
   });
 
   test('zooms in when scrolling the mouse wheel up', async ({ page }) => {
-    const zoomBefore = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).zoom,
-    );
+    const zoomBefore = await test.step('read starting zoom', () =>
+      readZoom(page));
 
-    await page.locator('canvas').dispatchEvent('wheel', { deltaY: -100 });
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
+    await test.step('dispatch wheel-up on the canvas', () =>
+      page.locator('canvas').dispatchEvent('wheel', { deltaY: -100 }));
+    await test.step('advance one frame', () => step(page));
 
-    const zoomAfter = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).zoom,
-    );
+    const zoomAfter = await test.step('read zoom after the frame', () =>
+      readZoom(page));
 
     expect(zoomAfter).toBeGreaterThan(zoomBefore);
   });
 
   test('zooms out when scrolling the mouse wheel down', async ({ page }) => {
-    const zoomBefore = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).zoom,
-    );
+    const zoomBefore = await test.step('read starting zoom', () =>
+      readZoom(page));
 
-    await page.locator('canvas').dispatchEvent('wheel', { deltaY: 100 });
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
+    await test.step('dispatch wheel-down on the canvas', () =>
+      page.locator('canvas').dispatchEvent('wheel', { deltaY: 100 }));
+    await test.step('advance one frame', () => step(page));
 
-    const zoomAfter = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).zoom,
-    );
+    const zoomAfter = await test.step('read zoom after the frame', () =>
+      readZoom(page));
 
     expect(zoomAfter).toBeLessThan(zoomBefore);
   });
@@ -54,40 +59,33 @@ test.describe('camera pan/zoom', () => {
   test('pans while an arrow key is held, and stops once released', async ({
     page,
   }) => {
-    const positionBefore = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).position,
-    );
+    const positionBefore = await test.step('read starting position', () =>
+      readPosition(page));
 
-    await page.keyboard.down('ArrowRight');
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
+    await test.step('hold ArrowRight and advance two frames', async () => {
+      await page.keyboard.down('ArrowRight');
+      await step(page);
+      await step(page);
+    });
 
-    const positionWhileHeld = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).position,
-    );
+    const positionWhileHeld = await test.step('read position while held', () =>
+      readPosition(page));
 
     expect(positionWhileHeld.x).toBeGreaterThan(positionBefore.x);
 
-    await page.keyboard.up('ArrowRight');
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
+    await test.step('release ArrowRight and advance one frame', async () => {
+      await page.keyboard.up('ArrowRight');
+      await step(page);
+    });
 
-    const positionAfterRelease = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).position,
-    );
+    const positionAfterRelease =
+      await test.step('read position after release', () => readPosition(page));
 
-    await page.evaluate(() =>
-      (window.__forgeTestHooks as unknown as Hooks).step(),
-    );
+    await test.step('advance one more frame', () => step(page));
 
-    const positionOneMoreStepLater = await page.evaluate(
-      () => (window.__forgeTestHooks as unknown as Hooks).position,
-    );
+    const positionOneMoreStepLater =
+      await test.step('read position one more frame later', () =>
+        readPosition(page));
 
     expect(positionOneMoreStepLater.x).toBe(positionAfterRelease.x);
   });
@@ -97,19 +95,23 @@ test.describe('camera pan/zoom', () => {
     // the canvas isn't created with `preserveDrawingBuffer`, so the browser
     // is free to clear it as soon as control returns after the frame is
     // presented (i.e. between two separate `page.evaluate` round-trips).
-    const pixel = await page.evaluate(() => {
-      const scene = window.__forgeTestHooks as unknown as Hooks;
+    const pixel =
+      await test.step('advance a frame and read the center pixel', () =>
+        page.evaluate(() => {
+          const scene = window.__forgeTestHooks as unknown as Hooks;
 
-      scene.step();
+          scene.step();
 
-      return scene.readCenterPixel();
+          return scene.readCenterPixel();
+        }));
+
+    await test.step('assert the pixel matches the clear color', () => {
+      // Loose tolerance: sRGB/blending rounding differs slightly across
+      // SwiftShader vs. hardware GL, this only needs to confirm the real
+      // clear color made it to the canvas, not exact byte equality.
+      expect(pixel[0]).toBeCloseTo(clearColorRgb.r * 255, -1);
+      expect(pixel[1]).toBeCloseTo(clearColorRgb.g * 255, -1);
+      expect(pixel[2]).toBeCloseTo(clearColorRgb.b * 255, -1);
     });
-
-    // Loose tolerance: sRGB/blending rounding differs slightly across
-    // SwiftShader vs. hardware GL, this only needs to confirm the real
-    // clear color made it to the canvas, not exact byte equality.
-    expect(pixel[0]).toBeCloseTo(clearColorRgb.r * 255, -1);
-    expect(pixel[1]).toBeCloseTo(clearColorRgb.g * 255, -1);
-    expect(pixel[2]).toBeCloseTo(clearColorRgb.b * 255, -1);
   });
 });
