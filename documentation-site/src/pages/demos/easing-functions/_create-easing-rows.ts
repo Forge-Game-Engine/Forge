@@ -15,11 +15,13 @@ import {
 } from '@forge-game-engine/forge/animations';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { easingRowId } from './_easing-row.component';
 
 interface EasingRowConfig {
@@ -118,7 +120,11 @@ export async function createEasingRows(
     renderLayer,
   );
 
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const trackHalfWidth = width / 2 - horizontalMarginPixels;
   const minX = -trackHalfWidth * (1 - overshootMarginFraction);
   const maxX = trackHalfWidth * (1 - overshootMarginFraction);

@@ -70,6 +70,15 @@ export interface CameraDefaultedOptions {
    * The clear color
    */
   clearColor: Color;
+
+  /**
+   * The total height, in world units, this camera's view spans vertically.
+   * Horizontal extent follows automatically from the destination's aspect
+   * ratio, so the same `verticalWorldUnits` shows the same amount of the
+   * world vertically regardless of window size/shape (see
+   * `calculatePixelsPerUnit`). Defaults to `10`.
+   */
+  verticalWorldUnits: number;
 }
 
 export interface CameraEcsComponent extends CameraDefaultedOptions {
@@ -111,6 +120,7 @@ const defaultCameraOptions: CameraDefaultedOptions = {
   cullingMask: 0xffffffff,
   layer: 0,
   clearColor: Color.transparent,
+  verticalWorldUnits: 10,
 };
 
 /**

@@ -1,9 +1,11 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  calculateVisibleWorldSize,
   createImageSprite,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import {
   AsteroidSpawnerEcsComponent,
   asteroidSpawnerId,
@@ -34,13 +36,19 @@ export async function createAsteroidSpawner(
 
   const spawnerEntity = world.createEntity();
 
+  const visibleWorldWidth = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  ).x;
+
   const spawnerComponent: AsteroidSpawnerEcsComponent = {
     asteroidSprites,
     timeBetweenSpawns: 0.2,
     nextSpawnTime: 0,
-    minX: -renderContext.canvas.width / 2,
-    maxX: renderContext.canvas.width / 2,
-    spawnY: renderContext.canvas.height / 2 + 100,
+    minX: -visibleWorldWidth / 2,
+    maxX: visibleWorldWidth / 2,
+    spawnY: DEMO_VERTICAL_WORLD_UNITS / 2 + 100,
     minSpeed: 70,
     maxSpeed: 130,
     rotationSpeed: Math.PI / 6,

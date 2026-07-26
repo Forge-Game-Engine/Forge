@@ -11,6 +11,7 @@ import {
   PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createSuspensions } from './_create-suspensions';
 import { createResetEcsSystem } from './_reset.system';
 import { createSpringLineEcsSystem } from './_spring-line.system';
@@ -27,6 +28,7 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });

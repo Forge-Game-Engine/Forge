@@ -121,4 +121,23 @@ describe('worldToScreenSpace', () => {
 
     expect(result).toEqual(expectedScreenPosition);
   });
+
+  it('should scale by pixelsPerUnit in addition to zoom', () => {
+    const worldPosition = new Vector2(10, 20);
+    const cameraPosition = new Vector2(0, 0);
+    const cameraZoom = 1;
+    const canvasCenter = new Vector2(400, 300);
+    const pixelsPerUnit = 10;
+    const expectedScreenPosition = new Vector2(500, 500);
+
+    const result = worldToScreenSpace(
+      worldPosition,
+      cameraPosition,
+      cameraZoom,
+      canvasCenter,
+      pixelsPerUnit,
+    );
+
+    expect(result).toEqual(expectedScreenPosition);
+  });
 });

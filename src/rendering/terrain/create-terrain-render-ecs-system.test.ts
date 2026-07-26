@@ -11,6 +11,8 @@ import { RenderContext } from '../render-context.js';
 import { ShaderCache } from '../shaders/index.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
+import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
+import { createProjectionMatrix } from '../shaders/index.js';
 
 describe('createTerrainRenderEcsSystem', () => {
   let world: EcsWorld;
@@ -114,6 +116,26 @@ describe('createTerrainRenderEcsSystem', () => {
     world.update();
 
     expect(mockGl.bindFramebuffer).toHaveBeenCalledWith('FRAMEBUFFER', null);
+  });
+
+  it('scales the projection matrix by the camera-derived pixels-per-unit', () => {
+    addCamera({ verticalWorldUnits: 20 });
+
+    world.update();
+
+    const expectedPixelsPerUnit = calculatePixelsPerUnit(600, 20);
+    const expectedMatrix = createProjectionMatrix(
+      800,
+      600,
+      new Vector2(10, 20),
+      1,
+      expectedPixelsPerUnit,
+    );
+
+    expect(material.setUniform).toHaveBeenCalledWith(
+      'u_projection',
+      expectedMatrix,
+    );
   });
 
   it('draws once per camera when multiple cameras are present', () => {
