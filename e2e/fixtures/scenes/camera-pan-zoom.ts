@@ -114,11 +114,11 @@ export const createScene: CreateScene = async (
   // `measureGreenSquareBounds` below reads the canvas back well after the
   // frame that drew it has been presented (real animation frames spaced
   // over wall-clock time in the spec's `animateFrames`), not just
-  // synchronously after drawing it - without `preserveDrawingBuffer`, the
-  // browser is allowed to clear the drawing buffer as soon as the frame is
-  // presented, and a headless CI SwiftShader build was observed doing
-  // exactly that (see AGENTS.md's "Be wary of pixel-level rendering
-  // assertions").
+  // synchronously after drawing it. Without `preserveDrawingBuffer`, a
+  // browser is permitted (though not required) to clear the drawing
+  // buffer once a frame is presented, which would make that readback
+  // unreliable - see AGENTS.md's "Be wary of pixel-level rendering
+  // assertions" for the class of readback problem this defends against.
   const renderContext = createRenderContext(canvas, {
     preserveDrawingBuffer: true,
   });
@@ -158,6 +158,16 @@ export const createScene: CreateScene = async (
     minZoom: 0.1,
     maxZoom: 10,
     clearColor,
+    // Pinned to the canvas height so pixelsPerUnit (canvasHeight /
+    // verticalWorldUnits) works out to exactly 1 - i.e. one world unit is
+    // one screen pixel at zoom 1, matching this scene's grid layout
+    // (cellSpacing/cellSize below) and the spec's expected-pixel-shift
+    // math. Without this, the default verticalWorldUnits (10) would scale
+    // every world unit to canvas.height / 10 pixels, blowing the grid so
+    // far past the canvas that only the origin square's texture would
+    // ever be visible, filling the entire viewport regardless of camera
+    // state.
+    verticalWorldUnits: canvas.height,
   });
 
   // `1`, not `0`: this is a culling-mask *category* bit (matched against the
