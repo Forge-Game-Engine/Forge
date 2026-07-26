@@ -83,9 +83,6 @@ export interface CameraSceneHandle extends SceneHandle {
    * buffer as soon as control returns to it after a frame is presented.
    */
   readBackgroundPixel(): [number, number, number, number];
-
-  // TEMPORARY - see the implementation.
-  readColorHistogram(): Record<string, number>;
 }
 
 /**
@@ -215,71 +212,6 @@ export const createScene: CreateScene = async (
       const { data } = context2d.getImageData(5, 5, 1, 1);
 
       return [data[0], data[1], data[2], data[3]];
-    },
-
-    // TEMPORARY: fingerprints what's actually rendered across the whole
-    // canvas (both readback methods have returned the same wrong single
-    // color for every coordinate tried so far, in CI only) without needing
-    // to download a binary video/screenshot artifact. Remove once
-    // root-caused.
-    readColorHistogram(): Record<string, number> {
-      const sampleCanvas = document.createElement('canvas');
-
-      sampleCanvas.width = canvas.width;
-      sampleCanvas.height = canvas.height;
-
-      const context2d = sampleCanvas.getContext('2d');
-
-      if (!context2d) {
-        throw new Error('2D canvas context not available');
-      }
-
-      context2d.drawImage(canvas, 0, 0);
-
-      const { data } = context2d.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-
-      const bucketFor = (r: number, g: number, b: number): string => {
-        if (r > 200 && g < 50 && b < 50) {
-          return 'red';
-        }
-
-        if (r < 50 && g < 50 && b > 200) {
-          return 'blue';
-        }
-
-        if (r < 50 && g > 200 && b < 50) {
-          return 'green';
-        }
-
-        if (r < 80 && g < 130 && g > 70 && b > 180) {
-          return 'clearColor';
-        }
-
-        return `other(${r},${g},${b})`;
-      };
-
-      const histogram: Record<string, number> = {};
-      const sampleStride = 10;
-
-      for (let y = 0; y < canvas.height; y += sampleStride) {
-        for (let x = 0; x < canvas.width; x += sampleStride) {
-          const index = (y * canvas.width + x) * 4;
-          const bucket = bucketFor(
-            data[index],
-            data[index + 1],
-            data[index + 2],
-          );
-
-          histogram[bucket] = (histogram[bucket] ?? 0) + 1;
-        }
-      }
-
-      return histogram;
     },
   };
 };
