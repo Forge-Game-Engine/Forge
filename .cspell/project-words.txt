@@ -62,6 +62,7 @@ Pixabay
 prebuild
 prestart
 quilez
+rasterizer
 readback
 refac
 reinhard

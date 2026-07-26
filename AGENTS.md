@@ -460,10 +460,22 @@ If you add a pixel-reading assertion:
 - Don't assume `gl.readPixels` and a `drawImage`/`getImageData` readback
   disagreeing means the bug is in the readback method - both can (and did)
   agree while still being wrong, if the actual rendered frame is wrong.
-- Prefer asserting on ECS/logic state (`camera.zoom`, `camera.position`,
-  etc.) over exact rendered pixels wherever the two would catch the same
-  regression - it's what the rest of this suite does, and it's immune to
-  this class of GPU-driver-specific flake entirely.
+- Avoid **absolute** pixel assertions (an exact coordinate, an exact color
+  byte value) - they're the kind of assertion the SwiftShader discrepancy
+  above breaks for reasons unrelated to your feature. But don't swing to
+  asserting ECS/logic state alone either: `camera-pan-zoom.spec.ts` did
+  exactly that for its pan test and it passed even though
+  `createTransformEcsSystem` was missing from the scene, so the camera's
+  `position.local` updated correctly while the camera never visibly moved
+  (`render-system.ts`'s projection matrix reads `position.world`, which
+  nothing was writing). Numeric-only assertions can't catch a bug like
+  that. The pattern that catches it without reintroducing the SwiftShader
+  problem is a **relative, same-run** measurement: read the actual
+  rendered canvas for a landmark's on-screen bounds before and after the
+  action under test, and assert the *change* matches what the logic state
+  predicts (e.g. the landmark's on-screen width scaled by the zoom ratio).
+  See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
+  `camera-pan-zoom.ts` for the full pattern and rationale.
 
 ### Running
 
