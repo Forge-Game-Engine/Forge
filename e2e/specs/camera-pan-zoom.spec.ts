@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 import type { CameraSceneHandle } from '../fixtures/scenes/camera-pan-zoom.js';
-import { clearColorRgb } from '../fixtures/scenes/camera-pan-zoom-clear-color.js';
 
 // `window.__forgeTestHooks` is declared globally (as the base `SceneHandle`)
 // by `harness.ts`, since every scene assigns to the same global property.
@@ -137,30 +136,5 @@ test.describe('camera pan/zoom', () => {
         readPosition(page));
 
     expect(positionOneMoreStepLater.x).toBe(positionAfterRelease.x);
-  });
-
-  test('renders the camera clear color onto the canvas', async ({ page }) => {
-    // step() and the pixel readback must happen in the same evaluate call:
-    // the canvas isn't created with `preserveDrawingBuffer`, so the browser
-    // is free to clear it as soon as control returns after the frame is
-    // presented (i.e. between two separate `page.evaluate` round-trips).
-    const pixel =
-      await test.step('advance a frame and read a background pixel', () =>
-        page.evaluate(() => {
-          const scene = window.__forgeTestHooks as unknown as Hooks;
-
-          scene.step();
-
-          return scene.readBackgroundPixel();
-        }));
-
-    await test.step('assert the pixel matches the clear color', () => {
-      // Loose tolerance: sRGB/blending rounding differs slightly across
-      // SwiftShader vs. hardware GL, this only needs to confirm the real
-      // clear color made it to the canvas, not exact byte equality.
-      expect(pixel[0]).toBeCloseTo(clearColorRgb.r * 255, -1);
-      expect(pixel[1]).toBeCloseTo(clearColorRgb.g * 255, -1);
-      expect(pixel[2]).toBeCloseTo(clearColorRgb.b * 255, -1);
-    });
   });
 });

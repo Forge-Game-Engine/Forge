@@ -21,13 +21,6 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // CI runners have far fewer CPU cores than a dev machine, and SwiftShader
-  // (the software GL rasterizer forced below, since there's no real GPU in
-  // CI) is CPU-bound - two workers rendering concurrently there reproduced
-  // a deterministic, whole-canvas-wrong-color rendering failure that never
-  // happened locally with the same 2 workers. Serialize on CI to rule out
-  // that contention; local keeps Playwright's own default parallelism.
-  workers: process.env.CI ? 1 : undefined,
   reporter: [
     // printSteps surfaces each test.step() as it starts/finishes, instead
     // of only a pass/fail line once the whole test completes - useful here

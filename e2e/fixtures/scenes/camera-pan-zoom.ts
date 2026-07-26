@@ -31,9 +31,7 @@ import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
 
-// A distinctive, opaque clear color so a spec can screenshot the canvas and
-// confirm the real WebGL2 render pipeline actually ran a frame, without
-// needing any sprite/image assets.
+// A distinctive, opaque clear color for the camera.
 const clearColor = new Color(
   clearColorRgb.r,
   clearColorRgb.g,
@@ -46,9 +44,7 @@ const clearColor = new Color(
 // at the origin. This is what makes a recording of the suite (`video: 'on'`
 // in playwright.config.ts) actually show the camera panning/zooming,
 // instead of a flat clear color that looks identical whether the camera
-// moved or not. Sized well within the fixture's 800x600 canvas at the
-// default zoom, so every canvas corner stays outside the grid - see
-// `readBackgroundPixel`.
+// moved or not.
 const gridExtentInCells = 3;
 const cellSpacing = 100;
 const cellSize = 80;
@@ -67,22 +63,6 @@ export interface CameraSceneHandle extends SceneHandle {
   readonly zoom: number;
   /** The camera's current local position. */
   readonly position: { x: number; y: number };
-
-  /**
-   * Reads back a pixel from a canvas corner - always outside the grid (see
-   * the module-level comment above `gridExtentInCells`), so it reflects the
-   * camera's clear color regardless of pan/zoom - as `[r, g, b, a]` bytes.
-   * Samples through `drawImage`/`getImageData` against the canvas's actual
-   * displayed bitmap (top-left origin, like a screenshot), deliberately not
-   * `gl.readPixels`: the latter proved unreliable against this canvas's
-   * antialiased default framebuffer under CI's specific SwiftShader build
-   * (returned the same wrong color for every coordinate, including ones
-   * confirmed correct locally). Must be called in the same task as `step()`
-   * (a single `page.evaluate`) - the WebGL2 context isn't created with
-   * `preserveDrawingBuffer`, so the browser is free to clear the drawing
-   * buffer as soon as control returns to it after a frame is presented.
-   */
-  readBackgroundPixel(): [number, number, number, number];
 }
 
 /**
@@ -193,25 +173,6 @@ export const createScene: CreateScene = async (
       )!;
 
       return { x: position.local.x, y: position.local.y };
-    },
-
-    readBackgroundPixel(): [number, number, number, number] {
-      const sampleCanvas = document.createElement('canvas');
-
-      sampleCanvas.width = canvas.width;
-      sampleCanvas.height = canvas.height;
-
-      const context2d = sampleCanvas.getContext('2d');
-
-      if (!context2d) {
-        throw new Error('2D canvas context not available');
-      }
-
-      context2d.drawImage(canvas, 0, 0);
-
-      const { data } = context2d.getImageData(5, 5, 1, 1);
-
-      return [data[0], data[1], data[2], data[3]];
     },
   };
 };

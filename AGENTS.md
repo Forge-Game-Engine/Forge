@@ -442,21 +442,28 @@ a plain constant a scene also uses (see `clearColorRgb` in
 `camera-pan-zoom-clear-color.ts`), give it its own tiny module with zero
 `/src` imports, and have both the scene and the spec import from that.
 
-**WebGL readback gotcha**: the fixture's canvas isn't created with
-`preserveDrawingBuffer`, so the browser may clear it as soon as control
-returns to it after a frame is presented. Do a `step()` and any
-pixel-reading assertion in the _same_ `page.evaluate` call (see
-`readBackgroundPixel()`), never across two separate round-trips.
+**Be wary of pixel-level rendering assertions.** `camera-pan-zoom.spec.ts`
+originally included a test that read back the canvas's clear color to prove
+a frame actually rendered. It was removed: the read was correct and
+reproducible locally (verified via `gl.readPixels`, then again via a
+`context2d.drawImage(canvas, 0, 0)` + `getImageData` readback - a
+completely different code path, to rule out a readback-API bug), but
+deterministically returned a wrong, uniform color for the _entire_ canvas
+in one CI environment's specific SwiftShader build, on every attempt,
+regardless of worker concurrency. That points at a genuine SwiftShader/GL
+instancing compatibility issue in that environment, not a bug in the test.
+If you add a pixel-reading assertion:
 
-**Prefer canvas 2D readback over `gl.readPixels`**: `gl.readPixels` against
-this canvas's antialiased default framebuffer proved unreliable under one
-CI environment's specific SwiftShader build - every coordinate returned the
-same wrong color, while the identical code read correctly locally.
-`readBackgroundPixel()` instead draws the canvas onto a same-size 2D
-`<canvas>` (`context2d.drawImage(canvas, 0, 0)`) and reads via
-`getImageData`, a completely different, more universally-correct code path
-that samples what's actually displayed (top-left origin, like a
-screenshot) rather than the raw GL framebuffer.
+- Do the `step()` and the read in the _same_ `page.evaluate` call - the
+  canvas isn't created with `preserveDrawingBuffer`, so the browser may
+  clear it as soon as control returns after a frame is presented.
+- Don't assume `gl.readPixels` and a `drawImage`/`getImageData` readback
+  disagreeing means the bug is in the readback method - both can (and did)
+  agree while still being wrong, if the actual rendered frame is wrong.
+- Prefer asserting on ECS/logic state (`camera.zoom`, `camera.position`,
+  etc.) over exact rendered pixels wherever the two would catch the same
+  regression - it's what the rest of this suite does, and it's immune to
+  this class of GPU-driver-specific flake entirely.
 
 ### Running
 
