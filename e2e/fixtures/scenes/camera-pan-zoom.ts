@@ -12,6 +12,7 @@ import {
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
+  createTransformEcsSystem,
   EcsWorld,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
@@ -149,6 +150,13 @@ export const createScene: CreateScene = async (
   }
 
   world.addSystem(createCameraEcsSystem(time));
+  // createCameraEcsSystem only updates the camera's local position/zoom;
+  // createRenderEcsSystem reads its *world* position for the projection
+  // matrix. Without this, panning changes `position.local` (which is what
+  // camera.position below reads) but the camera visibly never moves -
+  // exactly the kind of bug a numeric-only assertion can't catch. Must run
+  // after the system above and before the one below.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 
