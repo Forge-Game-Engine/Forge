@@ -23,8 +23,23 @@ const step = (page: import('@playwright/test').Page) =>
 test.describe('camera pan/zoom', () => {
   test.beforeEach(async ({ page }) => {
     await test.step('load the camera-pan-zoom scene', async () => {
+      // If the scene throws (e.g. WebGL2 context creation fails),
+      // harness.ts rethrows after rendering the error into the page - catch
+      // it here too so a scene-load failure reports its actual cause
+      // instead of a bare "waitForFunction timed out".
+      let pageError: Error | undefined;
+
+      page.once('pageerror', (error) => {
+        pageError = error;
+      });
+
       await page.goto('/?scene=camera-pan-zoom');
-      await page.waitForFunction(() => Boolean(window.__forgeTestHooks));
+
+      try {
+        await page.waitForFunction(() => Boolean(window.__forgeTestHooks));
+      } catch (timeoutError) {
+        throw pageError ?? timeoutError;
+      }
     });
   });
 
