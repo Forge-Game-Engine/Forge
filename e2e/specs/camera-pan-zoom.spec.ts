@@ -144,32 +144,15 @@ test.describe('camera pan/zoom', () => {
     // the canvas isn't created with `preserveDrawingBuffer`, so the browser
     // is free to clear it as soon as control returns after the frame is
     // presented (i.e. between two separate `page.evaluate` round-trips).
-    const diagnostics =
-      await test.step('advance a frame and read diagnostic pixels', () =>
+    const pixel =
+      await test.step('advance a frame and read a background pixel', () =>
         page.evaluate(() => {
           const scene = window.__forgeTestHooks as unknown as Hooks;
 
           scene.step();
 
-          const canvas = document.querySelector('canvas');
-          const pixel = scene.readBackgroundPixel();
-          const points = scene.readDiagnosticPixels();
-
-          return {
-            pixel,
-            points,
-            canvasWidth: canvas?.width,
-            canvasHeight: canvas?.height,
-            devicePixelRatio: window.devicePixelRatio,
-          };
+          return scene.readBackgroundPixel();
         }));
-
-    // TEMPORARY diagnostics for the CI-only "renders the camera clear
-    // color" failure (passes locally, fails in real CI) - remove once
-    // root-caused.
-    console.log('[e2e diagnostics]', JSON.stringify(diagnostics));
-
-    const { pixel } = diagnostics;
 
     await test.step('assert the pixel matches the clear color', () => {
       // Loose tolerance: sRGB/blending rounding differs slightly across

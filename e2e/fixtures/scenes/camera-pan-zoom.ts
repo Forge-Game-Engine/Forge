@@ -71,16 +71,18 @@ export interface CameraSceneHandle extends SceneHandle {
   /**
    * Reads back a pixel from a canvas corner - always outside the grid (see
    * the module-level comment above `gridExtentInCells`), so it reflects the
-   * camera's clear color regardless of pan/zoom - via `gl.readPixels`, as
-   * `[r, g, b, a]` bytes. Must be called in the same task as `step()` (a
-   * single `page.evaluate`) - the WebGL2 context isn't created with
+   * camera's clear color regardless of pan/zoom - as `[r, g, b, a]` bytes.
+   * Samples through `drawImage`/`getImageData` against the canvas's actual
+   * displayed bitmap (top-left origin, like a screenshot), deliberately not
+   * `gl.readPixels`: the latter proved unreliable against this canvas's
+   * antialiased default framebuffer under CI's specific SwiftShader build
+   * (returned the same wrong color for every coordinate, including ones
+   * confirmed correct locally). Must be called in the same task as `step()`
+   * (a single `page.evaluate`) - the WebGL2 context isn't created with
    * `preserveDrawingBuffer`, so the browser is free to clear the drawing
    * buffer as soon as control returns to it after a frame is presented.
    */
   readBackgroundPixel(): [number, number, number, number];
-
-  // TEMPORARY - see the implementation.
-  readDiagnosticPixels(): Record<string, [number, number, number, number]>;
 }
 
 /**
@@ -194,39 +196,22 @@ export const createScene: CreateScene = async (
     },
 
     readBackgroundPixel(): [number, number, number, number] {
-      const { gl } = renderContext;
-      const rgba = new Uint8Array(4);
-      const corner = 5;
+      const sampleCanvas = document.createElement('canvas');
 
-      gl.readPixels(corner, corner, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+      sampleCanvas.width = canvas.width;
+      sampleCanvas.height = canvas.height;
 
-      return [rgba[0], rgba[1], rgba[2], rgba[3]];
-    },
+      const context2d = sampleCanvas.getContext('2d');
 
-    // TEMPORARY: reads several known points to empirically calibrate
-    // gl.readPixels' coordinate system against what CI actually renders,
-    // instead of guessing further. Remove once root-caused.
-    readDiagnosticPixels(): Record<string, [number, number, number, number]> {
-      const { gl } = renderContext;
+      if (!context2d) {
+        throw new Error('2D canvas context not available');
+      }
 
-      const read = (x: number, y: number): [number, number, number, number] => {
-        const rgba = new Uint8Array(4);
+      context2d.drawImage(canvas, 0, 0);
 
-        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+      const { data } = context2d.getImageData(5, 5, 1, 1);
 
-        return [rgba[0], rgba[1], rgba[2], rgba[3]];
-      };
-
-      return {
-        topLeft: read(5, 5),
-        topRight: read(canvas.width - 6, 5),
-        bottomLeft: read(5, canvas.height - 6),
-        bottomRight: read(canvas.width - 6, canvas.height - 6),
-        center: read(
-          Math.floor(canvas.width / 2),
-          Math.floor(canvas.height / 2),
-        ),
-      };
+      return [data[0], data[1], data[2], data[3]];
     },
   };
 };
