@@ -111,7 +111,17 @@ export const createScene: CreateScene = async (
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
-  const renderContext = createRenderContext(canvas);
+  // `measureGreenSquareBounds` below reads the canvas back well after the
+  // frame that drew it has been presented (real animation frames spaced
+  // over wall-clock time in the spec's `animateFrames`), not just
+  // synchronously after drawing it - without `preserveDrawingBuffer`, the
+  // browser is allowed to clear the drawing buffer as soon as the frame is
+  // presented, and a headless CI SwiftShader build was observed doing
+  // exactly that (see AGENTS.md's "Be wary of pixel-level rendering
+  // assertions").
+  const renderContext = createRenderContext(canvas, {
+    preserveDrawingBuffer: true,
+  });
 
   const zoomInput = new Axis1dAction('zoom');
   // Arrow keys are held down for the duration of a pan, so the action must
