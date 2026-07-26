@@ -20,6 +20,7 @@ describe('addCameraComponent', () => {
       cullingMask: 0xffffffff,
       layer: 0,
       clearColor: Color.transparent,
+      verticalWorldUnits: 10,
     });
   });
 

@@ -15,9 +15,23 @@ import {
   createImageSprite,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const wallThickness = 16;
+
+// The play area is a fixed size in world units, not derived from the
+// viewport: deriving brick/paddle sizes from a viewport-tracking width (as
+// this used to) let brick height - tied to brick width via the sprite's own
+// aspect ratio - drift with the window's aspect ratio, which visibly changed
+// the gap between the last brick row and the paddle depending on resolution
+// (e.g. windowed vs. fullscreen). A fixed play area removes that coupling
+// entirely: content size is always the same, regardless of screen shape. The
+// background (see `createBackground`) still fills the actual viewport, so on
+// aspect ratios wider than this play area's, extra backdrop is simply
+// visible on either side rather than the walls stretching to meet the edges.
+const playAreaWidth = 800;
+const playAreaHeight = DEMO_VERTICAL_WORLD_UNITS;
 
 /**
  * The world-space bounds of the area the ball is free to move in.
@@ -48,7 +62,8 @@ export async function createBoundaries(
   );
   const wallSprite = createImageSprite(wallImage, renderContext, renderLayer);
 
-  const { width, height } = renderContext.canvas;
+  const width = playAreaWidth;
+  const height = playAreaHeight;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

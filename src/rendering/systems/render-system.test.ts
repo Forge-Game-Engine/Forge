@@ -19,6 +19,7 @@ import { Material } from '../materials/material';
 import { ShaderCache } from '../shaders';
 import { ImageCache } from '../../asset-loading';
 import { createProjectionMatrix } from '../shaders';
+import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit';
 
 describe('createRenderEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -218,7 +219,44 @@ describe('createRenderEcsSystem', () => {
 
     world.update();
 
-    const expected = createProjectionMatrix(400, 200, Vector2.zero, 1);
+    const expectedPixelsPerUnit = calculatePixelsPerUnit(200, 10);
+    const expected = createProjectionMatrix(
+      400,
+      200,
+      Vector2.zero,
+      1,
+      expectedPixelsPerUnit,
+    );
+
+    expect(material.setUniform).toHaveBeenCalledWith('u_projection', expected);
+  });
+
+  it('scales the projection matrix by the camera-derived pixels-per-unit', () => {
+    const entity = world.createEntity();
+
+    addCameraComponent(world, entity, {
+      minZoom: 0.0001,
+      maxZoom: 10000,
+      isStatic: true,
+      verticalWorldUnits: 20,
+    });
+    addPositionComponent(world, entity);
+
+    const { renderable, material } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    renderContext.resize(400, 200);
+    world.update();
+
+    const expectedPixelsPerUnit = calculatePixelsPerUnit(200, 20);
+    const expected = createProjectionMatrix(
+      400,
+      200,
+      Vector2.zero,
+      1,
+      expectedPixelsPerUnit,
+    );
 
     expect(material.setUniform).toHaveBeenCalledWith('u_projection', expected);
   });

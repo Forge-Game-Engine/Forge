@@ -11,6 +11,7 @@ import {
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createErosionSprite } from './_create-sprite';
 import { erosionId } from './_erosion.component';
 import { createErosionEcsSystem } from './_erosion.system';
@@ -27,6 +28,7 @@ export const createErosionBurnGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const sprite = await createErosionSprite(

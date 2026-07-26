@@ -1,8 +1,10 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  calculateVisibleWorldSize,
   createImageSprite,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import {
   SpriteSpawnerEcsComponent,
@@ -30,7 +32,11 @@ export async function createSpriteSpawner(
 
   const sprite = createImageSprite(image, renderContext, renderLayer);
 
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

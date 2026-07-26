@@ -30,6 +30,7 @@ import { createBrickField } from './_create-bricks';
 import { createBrickEcsSystem } from './_brick.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 
 const renderLayers = {
   background: 1 << 0,
@@ -48,11 +49,13 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.background,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   createBackground(world, renderContext, renderLayers.background);

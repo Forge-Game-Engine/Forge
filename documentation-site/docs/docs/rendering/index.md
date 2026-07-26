@@ -15,6 +15,10 @@ sprites, materials, and cameras is planned separately.
 
 Guides in this section:
 
+- [World Units and Cameras](./world-units-and-cameras.md): fixing a camera's
+  vertical world units so rendering stays consistent across screen
+  resolutions and aspect ratios, instead of hand-computing canvas-pixel
+  fractions in game logic.
 - [Multipass Rendering](./multipass-rendering.md): rendering a camera into
   an off-screen texture and presenting it, the groundwork for future
   post-processing and lighting passes.

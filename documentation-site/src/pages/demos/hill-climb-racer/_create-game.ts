@@ -25,6 +25,7 @@ import { createInputs } from './_create-inputs';
 import { createTerrain } from './_create-terrain';
 import { createGroundContactEcsSystem } from './_ground-contact.system';
 import { createWheelDriveEcsSystem } from './_wheel-drive.system';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 
 const renderLayers = {
   foreground: 1 << 0,
@@ -40,9 +41,10 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   // input-driven pan/zoom.
   const cameraEntity = createCamera(world, {
     isStatic: true,
-    zoom: 0.8,
+    zoom: 0.5,
     cullingMask: renderLayers.foreground,
     clearColor: new Color(0.6, 0.6, 0.8),
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });

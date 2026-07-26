@@ -14,10 +14,12 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { wallThickness } from './_create-boundaries';
 
@@ -117,7 +119,11 @@ export async function spawnShapes(
 
   const random = new Random();
 
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

@@ -16,11 +16,13 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
+  calculateVisibleWorldSize,
   Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPumpComponent } from './_pump.component';
 
@@ -278,17 +280,25 @@ export async function createSliders(
   renderLayer: number,
 ): Promise<void> {
   const sprites = await loadSliderSprites(renderContext, renderLayer);
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const columnWidth = width / 3;
   const columnLeft = -width / 2 + columnWidth / 2;
 
   // Piston: alternates direction every trigger, bouncing between the ends
-  // of a level rail.
+  // of a level rail. The rail length is a fixed world-unit constant, not
+  // derived from columnWidth (which tracks the viewport's aspect ratio) -
+  // otherwise the piston's travel distance would grow or shrink with the
+  // window's aspect ratio while the other two scenarios' travel distances
+  // (tied to the camera's fixed vertical world units) stayed constant.
   createSliderScenario(world, sprites, {
     anchorPosition: new Vector2(columnLeft - columnWidth * 0.3, 0),
     axis: Vector2.right,
     lowerTranslation: 0,
-    upperTranslation: columnWidth * 0.6,
+    upperTranslation: 180,
     startTranslation: 0,
     sliderShape: PolygonShape.rectangle(44, 32),
     sliderWidth: 44,

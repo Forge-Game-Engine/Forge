@@ -1,4 +1,5 @@
 import {
+  calculateVisibleWorldSize,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
@@ -23,6 +24,7 @@ import {
 } from './_create-flywheels';
 import { createThrusterEcsSystem } from './_thruster.system';
 import { createGustEcsSystem } from './_gust.system';
+import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 
 const renderLayers = {
   foreground: 1 << 0,
@@ -34,6 +36,7 @@ export const createTorqueGame = async (): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
+    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   // No gravity: these flywheels only ever spin in place, so nothing needs
@@ -50,7 +53,11 @@ export const createTorqueGame = async (): Promise<Game> => {
     new KeyboardHoldBinding(thrustInput, keyCodes.space),
   );
 
-  const { width, height } = renderContext.canvas;
+  const { x: width, y: height } = calculateVisibleWorldSize(
+    renderContext.width,
+    renderContext.height,
+    DEMO_VERTICAL_WORLD_UNITS,
+  );
   const columnWidth = width / 2;
 
   await createThrusterScenario(
