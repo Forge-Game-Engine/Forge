@@ -445,8 +445,18 @@ a plain constant a scene also uses (see `clearColorRgb` in
 **WebGL readback gotcha**: the fixture's canvas isn't created with
 `preserveDrawingBuffer`, so the browser may clear it as soon as control
 returns to it after a frame is presented. Do a `step()` and any
-`gl.readPixels`-based assertion in the _same_ `page.evaluate` call (see
-`readCenterPixel()`), never across two separate round-trips.
+pixel-reading assertion in the _same_ `page.evaluate` call (see
+`readBackgroundPixel()`), never across two separate round-trips.
+
+**Prefer canvas 2D readback over `gl.readPixels`**: `gl.readPixels` against
+this canvas's antialiased default framebuffer proved unreliable under one
+CI environment's specific SwiftShader build - every coordinate returned the
+same wrong color, while the identical code read correctly locally.
+`readBackgroundPixel()` instead draws the canvas onto a same-size 2D
+`<canvas>` (`context2d.drawImage(canvas, 0, 0)`) and reads via
+`getImageData`, a completely different, more universally-correct code path
+that samples what's actually displayed (top-left origin, like a
+screenshot) rather than the raw GL framebuffer.
 
 ### Running
 
