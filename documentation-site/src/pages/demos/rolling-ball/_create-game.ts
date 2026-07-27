@@ -58,7 +58,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
         'img/kenney_pattern-pack/PNG/Default/pattern_19.png',
       ),
       tileSize: new Vector2(160, 150),
-      tint: new Color(1, 1, 1, 1),
+      tint: new Color(0.6, 0.6, 0.6, 1),
     },
     fill: {
       textureUrl: getAssetUrl(
@@ -68,7 +68,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
       tint: new Color(0.4, 0.29, 0.18, 1),
     },
     borderWidth: 30,
-    borderBlend: 10,
+    borderBlend: 5,
   });
 
   const spawnPosition = new Vector2(
