@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -14,24 +13,48 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addArmComponent } from './_arm.component';
 
 const ballCount = 5;
 const ballRadius = 35;
 const armLength = 220;
+const armWidth = 10;
 const startAngle = 0.9;
 
-const frameColor = Color.white;
-const ballColor = Color.white;
+// `paddle_10.png` is a 640x141 horizontal capsule (rounded caps with a
+// flat center); these insets keep its caps at a fixed size while the
+// center stretches, instead of smearing them across the frame's width.
+const frameSlices: NineSliceOptions = {
+  left: 90,
+  right: 90,
+  top: 0,
+  bottom: 0,
+  nativeWidth: 640,
+  nativeHeight: 141,
+};
+
+// `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
+// its rounded corners and bolt-head detail at a fixed size while the center
+// stretches, instead of smearing them across each arm's length as it swings.
+const armSlices: NineSliceOptions = {
+  left: 8,
+  right: 8,
+  top: 28,
+  bottom: 28,
+  nativeWidth: 32,
+  nativeHeight: 128,
+};
 
 interface CradleSprites {
   ball: SpriteEcsComponent;
   frame: SpriteEcsComponent;
+  arm: SpriteEcsComponent;
 }
 
 async function loadCradleSprites(
@@ -40,16 +63,18 @@ async function loadCradleSprites(
 ): Promise<CradleSprites> {
   const { imageCache } = renderContext;
 
-  const [ballImage, frameImage] = await Promise.all([
+  const [ballImage, frameImage, armImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(
       getAssetUrl('img/kenney_puzzle-pack-2/PNG/Paddles/paddle_10.png'),
     ),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
     frame: createImageSprite(frameImage, renderContext, renderLayer),
+    arm: createImageSprite(armImage, renderContext, renderLayer),
   };
 }
 
@@ -60,7 +85,7 @@ function createVisualEntity(
   angle: number,
   width: number,
   height: number,
-  color: Color,
+  slices: NineSliceOptions,
 ): void {
   const entity = world.createEntity();
 
@@ -69,11 +94,7 @@ function createVisualEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
-  addScaleComponent(world, entity, {
-    local: new Vector2(1, 1),
-    world: new Vector2(0.5, 0.5),
-  });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
 /**
@@ -106,7 +127,7 @@ export async function createCradle(
     degreesToRadians(0),
     frameWidth,
     frameHeight,
-    frameColor,
+    frameSlices,
   );
 
   const firstPivotX = center.x - (spacing * (ballCount - 1)) / 2;
@@ -152,19 +173,10 @@ export async function createCradle(
       local: ballPosition.clone(),
     });
     addRotationComponent(world, ballEntity, { local: angle, world: angle });
-    addScaleComponent(world, ballEntity, {
-      local: new Vector2(
-        (ballRadius * 2) / sprites.ball.width,
-        (ballRadius * 2) / sprites.ball.height,
-      ),
-      world: new Vector2(
-        (ballRadius * 2) / sprites.ball.width,
-        (ballRadius * 2) / sprites.ball.height,
-      ),
-    });
     addSpriteComponent(world, ballEntity, {
       ...sprites.ball,
-      tintColor: ballColor,
+      width: ballRadius * 2,
+      height: ballRadius * 2,
     });
     addPhysicsBodyComponent(world, ballEntity, { physicsBody: ballBody });
 
@@ -177,5 +189,26 @@ export async function createCradle(
     const jointEntity = world.createEntity();
 
     addRevoluteJointComponent(world, jointEntity, { joint });
+
+    // A nine-sliced sprite, resized and rotated every tick by
+    // `createArmEcsSystem` to visualize this ball's otherwise-invisible
+    // RevoluteJoint arm back to its pivot.
+    const armEntity = world.createEntity();
+
+    addPositionComponent(world, armEntity, {
+      world: pivotPosition.clone(),
+      local: pivotPosition.clone(),
+    });
+    addRotationComponent(world, armEntity);
+    addSpriteComponent(world, armEntity, {
+      ...sprites.arm,
+      width: armWidth,
+      slices: armSlices,
+    });
+    addArmComponent(world, armEntity, {
+      pivotPosition: pivotPosition.clone(),
+      body: ballBody,
+      armWidth,
+    });
   }
 }

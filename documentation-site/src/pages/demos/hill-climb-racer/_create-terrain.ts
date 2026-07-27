@@ -1,7 +1,6 @@
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
@@ -12,8 +11,8 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -30,7 +29,19 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 // there's no gap for a wheel to catch on at a step.
 const columnWidth = 60;
 const columnDepth = 500;
-const groundColor = Color.fromHSLA(95, 45, 30);
+
+// `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
+// rounded corners and bolt-head detail at a fixed size while the center
+// stretches, instead of smearing them across each column's tall, narrow
+// shape.
+const groundSlices: NineSliceOptions = {
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
+};
 
 /**
  * How far the flat launch pad the car spawns on extends before the terrain
@@ -125,19 +136,11 @@ function createGroundColumn(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(
-      width / groundSprite.width,
-      columnDepth / groundSprite.height,
-    ),
-    world: new Vector2(
-      width / groundSprite.width,
-      columnDepth / groundSprite.height,
-    ),
-  });
   addSpriteComponent(world, entity, {
     ...groundSprite,
-    tintColor: groundColor,
+    width,
+    height: columnDepth,
+    slices: groundSlices,
   });
   addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({

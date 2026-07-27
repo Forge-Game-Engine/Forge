@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -16,8 +15,8 @@ import {
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -27,10 +26,18 @@ import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
 
-const pivotColor = Color.fromHSLA(215, 25, 45);
-const doorColor = Color.fromHSLA(25, 95, 55);
-const pendulumColor = Color.fromHSLA(205, 90, 58);
-const wheelColor = Color.fromHSLA(325, 85, 58);
+// `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
+// panels; these insets keep their rounded corners and bolt-head detail at a
+// fixed size while the center stretches, instead of smearing them across
+// whatever size the pivot/door ends up at.
+const squareSlices: NineSliceOptions = {
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
+};
 
 interface HingeSprites {
   ball: SpriteEcsComponent;
@@ -46,13 +53,15 @@ async function loadHingeSprites(
 
   const [ballImage, doorImage, pivotImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
-    door: createImageSprite(doorImage, renderContext, renderLayer),
+    door: createImageSprite(doorImage, renderContext, renderLayer, {
+      slices: squareSlices,
+    }),
     pivot: createImageSprite(pivotImage, renderContext, renderLayer),
   };
 }
@@ -64,7 +73,7 @@ function createVisualEntity(
   angle: number,
   width: number,
   height: number,
-  color: Color,
+  slices: NineSliceOptions,
 ): void {
   const entity = world.createEntity();
 
@@ -73,11 +82,7 @@ function createVisualEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
-  addScaleComponent(world, entity, {
-    local: new Vector2(width / sprite.width, height / sprite.height),
-    world: new Vector2(width / sprite.width, height / sprite.height),
-  });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
 function createPivotMarker(
@@ -92,7 +97,7 @@ function createPivotMarker(
     0,
     pivotSize,
     pivotSize,
-    pivotColor,
+    squareSlices,
   );
 
   const pivotEntity = world.createEntity();
@@ -154,19 +159,11 @@ function createDoorScenario(
     local: doorAngle,
     world: doorAngle,
   });
-  addScaleComponent(world, doorEntity, {
-    local: new Vector2(
-      doorWidth / sprites.door.width,
-      doorHeight / sprites.door.height,
-    ),
-    world: new Vector2(
-      doorWidth / sprites.door.width,
-      doorHeight / sprites.door.height,
-    ),
-  });
   addSpriteComponent(world, doorEntity, {
     ...sprites.door,
-    tintColor: doorColor,
+    width: doorWidth,
+    height: doorHeight,
+    slices: squareSlices,
   });
   addPhysicsBodyComponent(world, doorEntity, { physicsBody: doorBody });
 
@@ -231,19 +228,10 @@ function createPendulumScenario(
     local: startAngle,
     world: startAngle,
   });
-  addScaleComponent(world, bobEntity, {
-    local: new Vector2(
-      (bobRadius * 2) / sprites.ball.width,
-      (bobRadius * 2) / sprites.ball.height,
-    ),
-    world: new Vector2(
-      (bobRadius * 2) / sprites.ball.width,
-      (bobRadius * 2) / sprites.ball.height,
-    ),
-  });
   addSpriteComponent(world, bobEntity, {
     ...sprites.ball,
-    tintColor: pendulumColor,
+    width: bobRadius * 2,
+    height: bobRadius * 2,
   });
   addPhysicsBodyComponent(world, bobEntity, { physicsBody: bobBody });
 
@@ -291,19 +279,10 @@ function createWheelScenario(
     local: hubPosition.clone(),
   });
   addRotationComponent(world, wheelEntity);
-  addScaleComponent(world, wheelEntity, {
-    local: new Vector2(
-      (wheelRadius * 2) / sprites.ball.width,
-      (wheelRadius * 2) / sprites.ball.height,
-    ),
-    world: new Vector2(
-      (wheelRadius * 2) / sprites.ball.width,
-      (wheelRadius * 2) / sprites.ball.height,
-    ),
-  });
   addSpriteComponent(world, wheelEntity, {
     ...sprites.ball,
-    tintColor: wheelColor,
+    width: wheelRadius * 2,
+    height: wheelRadius * 2,
   });
   addPhysicsBodyComponent(world, wheelEntity, { physicsBody: wheelBody });
 

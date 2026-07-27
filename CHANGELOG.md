@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 
 - **input:** Fix `MouseInputSource` triggering `TriggerAction` bindings regardless of the active input group, ignoring `InputManager`'s active-group gating that `KeyboardInputSource` and every other action type already respect
+- **demos:** Fix the linear-spring-damper, revolute-joint, torque, physics, prismatic-joint, hill-climb-racer, wrecking-ball, and Newton's cradle demos naively non-uniformly stretching bordered sprites (ropes, doors, flywheels, walls, cradle frame) instead of nine-slicing them, and tinting already-colored artwork; the wrecking-ball and Newton's cradle demos also now render each ball's crane/pendulum arm, rotating correctly as it swings
 
 ## [0.23.1] - 2026-07-24
 

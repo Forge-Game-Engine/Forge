@@ -1,7 +1,6 @@
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
@@ -21,7 +20,6 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
   createImageSprite,
   RenderContext,
   SpriteEcsComponent,
@@ -59,7 +57,6 @@ const chassisHeight = 150;
 // stoppie-under-hard-braking-at-speed rotation clearly intact, and barely
 // changes resting suspension sag.
 const chassisDensity = 0.5;
-const chassisColor = Color.white;
 
 const wheelRadius = 100;
 const wheelDensity = 0.2;
@@ -75,7 +72,6 @@ const wheelDensity = 0.2;
 // keep that transient from reaching the chassis at all, without making the
 // car noticeably harder to accelerate or climb with once rolling.
 const wheelFriction = 1;
-const wheelColor = Color.white;
 
 // The wheel doesn't mount to the chassis directly. A single LinearSpring
 // only constrains a wheel's *distance* from its anchor, leaving it free to
@@ -302,17 +298,11 @@ function createWheel(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(
-      (wheelRadius * 2) / sprite.width,
-      (wheelRadius * 2) / sprite.height,
-    ),
-    world: new Vector2(
-      (wheelRadius * 2) / sprite.width,
-      (wheelRadius * 2) / sprite.height,
-    ),
+  addSpriteComponent(world, entity, {
+    ...sprite,
+    width: wheelRadius * 2,
+    height: wheelRadius * 2,
   });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: wheelColor });
   addPhysicsBodyComponent(world, entity, { physicsBody: body });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
@@ -476,19 +466,10 @@ export async function createCar(
     local: chassisPosition.clone(),
   });
   addRotationComponent(world, chassisEntity);
-  addScaleComponent(world, chassisEntity, {
-    local: new Vector2(
-      chassisWidth / sprites.chassis.width,
-      chassisHeight / sprites.chassis.height,
-    ),
-    world: new Vector2(
-      chassisWidth / sprites.chassis.width,
-      chassisHeight / sprites.chassis.height,
-    ),
-  });
   addSpriteComponent(world, chassisEntity, {
     ...sprites.chassis,
-    tintColor: chassisColor,
+    width: chassisWidth,
+    height: chassisHeight,
   });
   addPhysicsBodyComponent(world, chassisEntity, {
     physicsBody: chassisBody,

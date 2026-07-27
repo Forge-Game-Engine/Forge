@@ -15,12 +15,13 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addArmComponent } from './_arm.component';
 
 // `ball_blue_large.png` and `block_square.png` are both native 64x64
 // images. Sprites are never scaled here (the pivot marker, floor tiles, and
@@ -37,6 +38,20 @@ const brickSize = floorTileSize;
 const brickCount = 5;
 const towerColumns = 3;
 
+const armWidth = 14;
+
+// `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
+// its rounded corners and bolt-head detail at a fixed size while the center
+// stretches, instead of smearing them across the arm's length as it swings.
+const armSlices: NineSliceOptions = {
+  left: 8,
+  right: 8,
+  top: 28,
+  bottom: 28,
+  nativeWidth: 32,
+  nativeHeight: 128,
+};
+
 // Every entity's spawn position below is an absolute world-space
 // coordinate, authored directly rather than computed from another
 // entity's position (e.g. the floor is not derived from the ball's rest
@@ -52,14 +67,10 @@ const ballStartPosition = new Vector2(-480, 150);
 // `createWreckingBall`.
 const floorPosition = new Vector2(-100, -107);
 
-const craneColor = Color.fromHSLA(215, 25, 45);
-const ballColor = Color.white;
-const floorColor = Color.fromHSLA(30, 30, 32);
-const brickColors = [Color.white, Color.green];
-
 interface WreckingBallSprites {
   ball: SpriteEcsComponent;
   brick: SpriteEcsComponent;
+  arm: SpriteEcsComponent;
 }
 
 async function loadWreckingBallSprites(
@@ -68,14 +79,16 @@ async function loadWreckingBallSprites(
 ): Promise<WreckingBallSprites> {
   const { imageCache } = renderContext;
 
-  const [ballImage, brickImage] = await Promise.all([
+  const [ballImage, brickImage, armImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
     brick: createImageSprite(brickImage, renderContext, renderLayer),
+    arm: createImageSprite(armImage, renderContext, renderLayer),
   };
 }
 
@@ -86,7 +99,6 @@ async function loadWreckingBallSprites(
  * a separate physics entity.
  * @param world - The ECS world to add the entity to.
  * @param sprite - The sprite to render.
- * @param color - The tint applied to `sprite`.
  * @param physicsBody - The body backing this entity, already positioned.
  * @param scale - The sprite's scale. Omit to render `sprite` at its native
  * pixel size (the default for every object in this scene except the wall
@@ -95,7 +107,6 @@ async function loadWreckingBallSprites(
 function createPhysicsSpriteEntity(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
-  color: Color,
   physicsBody: RigidBody,
   scale?: Vector2,
 ): void {
@@ -112,7 +123,7 @@ function createPhysicsSpriteEntity(
     addScaleComponent(world, entity, { local: scale, world: scale });
   }
 
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, sprite);
   addPhysicsBodyComponent(world, entity, { physicsBody });
 }
 
@@ -131,7 +142,7 @@ function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
       isStatic: true,
     });
 
-    createPhysicsSpriteEntity(world, sprite, floorColor, floorBody);
+    createPhysicsSpriteEntity(world, sprite, floorBody);
   }
 }
 
@@ -148,7 +159,6 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
 
   for (let row = 0; row < brickCount; row++) {
     const y = towerBottomY + brickSize / 2 + row * brickSize;
-    const color = brickColors[row % brickColors.length];
 
     for (let column = 0; column < towerColumns; column++) {
       const position = new Vector2(firstColumnX + column * brickSize, y);
@@ -159,7 +169,7 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
         density: 0.01,
       });
 
-      createPhysicsSpriteEntity(world, sprite, color, brickBody, brickScale);
+      createPhysicsSpriteEntity(world, sprite, brickBody, brickScale);
     }
   }
 }
@@ -191,7 +201,7 @@ export async function createWreckingBall(
     isSensor: true,
   });
 
-  createPhysicsSpriteEntity(world, sprites.brick, craneColor, pivotBody);
+  createPhysicsSpriteEntity(world, sprites.brick, pivotBody);
   createFloor(world, sprites.brick);
   createBrickTower(world, sprites.brick);
 
@@ -202,7 +212,7 @@ export async function createWreckingBall(
     restitution: 0.1,
   });
 
-  createPhysicsSpriteEntity(world, sprites.ball, ballColor, ballBody);
+  createPhysicsSpriteEntity(world, sprites.ball, ballBody);
 
   // `anchorB` is a local-space offset, not a world position: the ball
   // starts unrotated (angle 0), so its local frame matches world space at
@@ -217,4 +227,25 @@ export async function createWreckingBall(
   const jointEntity = world.createEntity();
 
   addRevoluteJointComponent(world, jointEntity, { joint });
+
+  // A nine-sliced sprite, resized and rotated every tick by
+  // `createArmEcsSystem` to visualize the otherwise-invisible RevoluteJoint
+  // connecting the pivot and the ball.
+  const armEntity = world.createEntity();
+
+  addPositionComponent(world, armEntity, {
+    world: pivotPosition.clone(),
+    local: pivotPosition.clone(),
+  });
+  addRotationComponent(world, armEntity);
+  addSpriteComponent(world, armEntity, {
+    ...sprites.arm,
+    width: armWidth,
+    slices: armSlices,
+  });
+  addArmComponent(world, armEntity, {
+    pivotPosition: pivotPosition.clone(),
+    body: ballBody,
+    armWidth,
+  });
 }

@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -14,8 +13,8 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -25,13 +24,22 @@ import { addGustComponent } from './_gust.component';
 const flywheelWidth = 160;
 const flywheelHeight = 22;
 
-const thrusterColor = Color.fromHSLA(25, 95, 55);
-const motorColor = Color.fromHSLA(205, 90, 58);
+// `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
+// its rounded corners and bolt-head detail at a fixed size while the center
+// stretches, instead of smearing them across the flywheel's bar shape.
+const narrowSlices: NineSliceOptions = {
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
+};
 
-const thrusterTorque = 30_000_000;
-const thrusterAngularDrag = 1.5;
-const motorTargetVelocity = 6;
-const motorMaxTorque = 10_000_000;
+const thrusterTorque = 60_000_000;
+const thrusterAngularDrag = 1.2;
+const motorTargetVelocity = 8;
+const motorMaxTorque = 20_000_000;
 const gustStrength = 4;
 const gustIntervalSeconds = 3;
 
@@ -40,12 +48,11 @@ async function createFlywheelEntity(
   renderContext: RenderContext,
   renderLayer: number,
   position: Vector2,
-  color: Color,
   angularDrag: number = 0,
 ): Promise<number> {
   const { imageCache } = renderContext;
   const image = await imageCache.getOrLoad(
-    getAssetUrl('img/physics/block_narrow.png'),
+    getAssetUrl('img/physics/block_square.png'),
   );
   const sprite = createImageSprite(image, renderContext, renderLayer);
 
@@ -56,17 +63,12 @@ async function createFlywheelEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(
-      flywheelWidth / sprite.width,
-      flywheelHeight / sprite.height,
-    ),
-    world: new Vector2(
-      flywheelWidth / sprite.width,
-      flywheelHeight / sprite.height,
-    ),
+  addSpriteComponent(world, entity, {
+    ...sprite,
+    width: flywheelWidth,
+    height: flywheelHeight,
+    slices: narrowSlices,
   });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
   addPhysicsBodyComponent(world, entity, {
     physicsBody: new RigidBody({
       shape: PolygonShape.rectangle(flywheelWidth, flywheelHeight),
@@ -102,7 +104,6 @@ export async function createThrusterScenario(
     renderContext,
     renderLayer,
     position,
-    thrusterColor,
     thrusterAngularDrag,
   );
 
@@ -135,7 +136,6 @@ export async function createMotorScenario(
     renderContext,
     renderLayer,
     position,
-    motorColor,
   );
 
   addAngularVelocityMotorComponent(world, entity, {

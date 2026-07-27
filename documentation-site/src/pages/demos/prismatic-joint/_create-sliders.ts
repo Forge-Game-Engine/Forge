@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { lerp, Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -17,8 +16,8 @@ import {
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -26,15 +25,21 @@ import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPumpComponent } from './_pump.component';
 
-const railDotCount = 6;
-const railDotSize = 6;
+const railDotCount = 15;
+const railDotSize = 10;
 const anchorSize = 14;
 
-const anchorColor = Color.fromHSLA(215, 25, 45);
-const railColor = Color.fromHSLA(215, 20, 55);
-const pistonColor = Color.fromHSLA(15, 90, 55);
-const elevatorColor = Color.fromHSLA(265, 75, 62);
-const inclineColor = Color.fromHSLA(45, 95, 58);
+// `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
+// rounded corners and bolt-head detail at a fixed size while the center
+// stretches, instead of smearing them across the anchor/slider's shape.
+const squareSlices: NineSliceOptions = {
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
+};
 
 export interface SliderScenarioOptions {
   /**
@@ -63,7 +68,6 @@ export interface SliderScenarioOptions {
   sliderWidth: number;
   sliderHeight: number;
   sliderSprite: 'ball' | 'block';
-  sliderColor: Color;
 
   /**
    * The impulse periodically applied to the slider (see `_pump.system.ts`).
@@ -88,7 +92,7 @@ async function loadSliderSprites(
   const [ballImage, blockImage, dotImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/White.png')),
+    imageCache.getOrLoad(getAssetUrl('img/space-shooter/meteor_small.png')),
   ]);
 
   return {
@@ -104,7 +108,7 @@ function createVisualEntity(
   position: Vector2,
   width: number,
   height: number,
-  color: Color,
+  slices?: NineSliceOptions,
 ): void {
   const entity = world.createEntity();
 
@@ -113,11 +117,7 @@ function createVisualEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(width / sprite.width, height / sprite.height),
-    world: new Vector2(width / sprite.width, height / sprite.height),
-  });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
 function createRailDots(
@@ -133,14 +133,7 @@ function createRailDots(
       lerp(fromPosition.y, toPosition.y, t),
     );
 
-    createVisualEntity(
-      world,
-      dotSprite,
-      position,
-      railDotSize,
-      railDotSize,
-      railColor,
-    );
+    createVisualEntity(world, dotSprite, position, railDotSize, railDotSize);
   }
 }
 
@@ -168,7 +161,6 @@ function createSliderScenario(
     sliderWidth,
     sliderHeight,
     sliderSprite,
-    sliderColor,
     pumpImpulse,
     pumpIntervalSeconds,
     pumpAlternate,
@@ -192,7 +184,7 @@ function createSliderScenario(
     anchorPosition,
     anchorSize,
     anchorSize,
-    anchorColor,
+    squareSlices,
   );
 
   const anchorEntity = world.createEntity();
@@ -227,19 +219,11 @@ function createSliderScenario(
 
   const sprite = sprites[sliderSprite];
 
-  addScaleComponent(world, sliderEntity, {
-    local: new Vector2(
-      sliderWidth / sprite.width,
-      sliderHeight / sprite.height,
-    ),
-    world: new Vector2(
-      sliderWidth / sprite.width,
-      sliderHeight / sprite.height,
-    ),
-  });
   addSpriteComponent(world, sliderEntity, {
     ...sprite,
-    tintColor: sliderColor,
+    width: sliderWidth,
+    height: sliderHeight,
+    slices: sliderSprite === 'block' ? squareSlices : undefined,
   });
   addPhysicsBodyComponent(world, sliderEntity, {
     physicsBody: sliderBody,
@@ -301,10 +285,9 @@ export async function createSliders(
     upperTranslation: 180,
     startTranslation: 0,
     sliderShape: PolygonShape.rectangle(44, 32),
-    sliderWidth: 44,
+    sliderWidth: 32,
     sliderHeight: 32,
-    sliderSprite: 'block',
-    sliderColor: pistonColor,
+    sliderSprite: 'ball',
     pumpImpulse: new Vector2(200_000, 0),
     pumpIntervalSeconds: 1.4,
     pumpAlternate: true,
@@ -319,11 +302,10 @@ export async function createSliders(
     upperTranslation: height * 0.55,
     startTranslation: 0,
     sliderShape: PolygonShape.rectangle(80, 20),
-    sliderWidth: 80,
-    sliderHeight: 20,
-    sliderSprite: 'block',
-    sliderColor: elevatorColor,
-    pumpImpulse: new Vector2(0, 700_000),
+    sliderWidth: 32,
+    sliderHeight: 32,
+    sliderSprite: 'ball',
+    pumpImpulse: new Vector2(0, 950_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
@@ -342,10 +324,9 @@ export async function createSliders(
     upperTranslation: height * 0.5,
     startTranslation: 0,
     sliderShape: new CircleShape(18),
-    sliderWidth: 36,
-    sliderHeight: 36,
+    sliderWidth: 32,
+    sliderHeight: 32,
     sliderSprite: 'ball',
-    sliderColor: inclineColor,
     pumpImpulse: inclineAxis.negate().multiply(400_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,

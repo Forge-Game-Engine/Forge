@@ -1,7 +1,6 @@
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -15,8 +14,8 @@ import {
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
-  Color,
   createImageSprite,
+  NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -30,8 +29,26 @@ const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
 
-const mountColor = Color.fromHSLA(215, 15, 45);
-const lineColor = Color.fromHSLA(215, 20, 65);
+// `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
+// panels; these insets keep their rounded corners and bolt-head detail at a
+// fixed size while the center stretches, instead of smearing them across
+// whatever size the mount/line ends up at.
+const squareSlices: NineSliceOptions = {
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
+};
+const narrowSlices: NineSliceOptions = {
+  left: 8,
+  right: 8,
+  top: 28,
+  bottom: 28,
+  nativeWidth: 32,
+  nativeHeight: 128,
+};
 
 interface SuspensionSprites {
   mount: SpriteEcsComponent;
@@ -64,7 +81,7 @@ function createVisualEntity(
   position: Vector2,
   width: number,
   height: number,
-  color: Color,
+  slices: NineSliceOptions,
 ): void {
   const entity = world.createEntity();
 
@@ -73,11 +90,7 @@ function createVisualEntity(
     local: position.clone(),
   });
   addRotationComponent(world, entity);
-  addScaleComponent(world, entity, {
-    local: new Vector2(width / sprite.width, height / sprite.height),
-    world: new Vector2(width / sprite.width, height / sprite.height),
-  });
-  addSpriteComponent(world, entity, { ...sprite, tintColor: color });
+  addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
 export interface SuspensionScenarioOptions {
@@ -103,8 +116,6 @@ export interface SuspensionScenarioOptions {
    * oscillating long after being disturbed.
    */
   dampingCoefficient?: number;
-
-  wheelColor: Color;
 
   /**
    * The upward velocity the wheel is released with, simulating the jolt of
@@ -145,7 +156,6 @@ function createSuspensionScenario(
     wheelDropHeight,
     stiffness,
     dampingCoefficient,
-    wheelColor,
     bumpVelocity,
     resetIntervalSeconds,
   } = options;
@@ -156,7 +166,7 @@ function createSuspensionScenario(
     mountPosition,
     mountSize,
     mountSize,
-    mountColor,
+    squareSlices,
   );
 
   const mountBody = new RigidBody({
@@ -182,19 +192,10 @@ function createSuspensionScenario(
     local: wheelPosition.clone(),
   });
   addRotationComponent(world, wheelEntity);
-  addScaleComponent(world, wheelEntity, {
-    local: new Vector2(
-      (wheelRadius * 2) / sprites.wheel.width,
-      (wheelRadius * 2) / sprites.wheel.height,
-    ),
-    world: new Vector2(
-      (wheelRadius * 2) / sprites.wheel.width,
-      (wheelRadius * 2) / sprites.wheel.height,
-    ),
-  });
   addSpriteComponent(world, wheelEntity, {
     ...sprites.wheel,
-    tintColor: wheelColor,
+    width: wheelRadius * 2,
+    height: wheelRadius * 2,
   });
   addPhysicsBodyComponent(world, wheelEntity, {
     physicsBody: wheelBody,
@@ -229,17 +230,15 @@ function createSuspensionScenario(
     local: mountPosition.clone(),
   });
   addRotationComponent(world, lineEntity);
-  addScaleComponent(world, lineEntity);
   addSpriteComponent(world, lineEntity, {
     ...sprites.line,
-    tintColor: lineColor,
+    width: lineWidth,
+    slices: narrowSlices,
   });
   addSpringLineComponent(world, lineEntity, {
     anchorPosition: mountPosition.clone(),
     body: wheelBody,
     lineWidth,
-    spriteWidth: sprites.line.width,
-    spriteHeight: sprites.line.height,
   });
 }
 
@@ -275,7 +274,6 @@ export async function createSuspensions(
     mountPosition: new Vector2(-columnWidth / 2, mountY),
     wheelDropHeight: 120,
     stiffness,
-    wheelColor: Color.fromHSLA(15, 90, 55),
     bumpVelocity,
     resetIntervalSeconds,
   });
@@ -287,7 +285,6 @@ export async function createSuspensions(
     wheelDropHeight: 120,
     stiffness,
     dampingCoefficient: 15_000,
-    wheelColor: Color.fromHSLA(150, 60, 45),
     bumpVelocity,
     resetIntervalSeconds,
   });
