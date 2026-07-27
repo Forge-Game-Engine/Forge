@@ -2,7 +2,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
   addRotationComponent,
-  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -13,7 +12,6 @@ import {
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
-  Color,
   createImageSprite,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -61,18 +59,11 @@ export async function createBoundaries(
 
     addRotationComponent(world, entity);
 
-    addScaleComponent(world, entity, {
-      local: new Vector2(
-        wallWidth / wallSprite.width,
-        wallHeight / wallSprite.height,
-      ),
-      world: new Vector2(
-        wallWidth / wallSprite.width,
-        wallHeight / wallSprite.height,
-      ),
+    addSpriteComponent(world, entity, {
+      ...wallSprite,
+      width: wallWidth,
+      height: wallHeight,
     });
-
-    addSpriteComponent(world, entity, wallSprite);
 
     addPhysicsBodyComponent(world, entity, {
       physicsBody: new RigidBody({

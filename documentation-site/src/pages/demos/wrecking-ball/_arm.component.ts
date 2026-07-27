@@ -1,0 +1,25 @@
+import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
+import { Vector2 } from '@forge-game-engine/forge/math';
+import { RigidBody } from '@forge-game-engine/forge/physics';
+
+/**
+ * Repositions, resizes, and rotates this entity's (nine-sliced) sprite
+ * every tick to span the rigid rod between a fixed pivot point and `body`'s
+ * current position, visualizing a RevoluteJoint's otherwise-invisible arm.
+ * Demo-only: the engine has no built-in "line between two points" primitive.
+ */
+export interface ArmEcsComponent {
+  pivotPosition: Vector2;
+  body: RigidBody;
+  armWidth: number;
+}
+
+export const armId = createComponentId<ArmEcsComponent>('arm');
+
+export function addArmComponent(
+  world: EcsWorld,
+  entity: number,
+  options: ArmEcsComponent,
+): ArmEcsComponent {
+  return world.addComponent(entity, armId, { ...options });
+}
