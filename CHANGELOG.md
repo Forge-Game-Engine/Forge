@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **rendering:** Cameras now show a fixed number of vertical world units (`verticalWorldUnits`, default `10`) regardless of screen resolution or aspect ratio, replacing the old implicit 1-world-unit-equals-1-pixel behavior. This is a behavior change: existing sprite and physics sizes will render at a different scale until re-tuned to the new default
 
+#### Fixed
+
+- **input:** Fix `MouseInputSource` triggering `TriggerAction` bindings regardless of the active input group, ignoring `InputManager`'s active-group gating that `KeyboardInputSource` and every other action type already respect
+
 ## [0.23.1] - 2026-07-24
 
 #### Fixed

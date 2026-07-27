@@ -99,7 +99,7 @@ export class MouseInputSource
         binding.mouseButton === button &&
         binding.moment === buttonMoments.down
       ) {
-        binding.action.trigger();
+        this._inputManager.dispatchTriggerAction(binding);
       }
     }
 
@@ -122,7 +122,7 @@ export class MouseInputSource
         binding.mouseButton === button &&
         binding.moment === buttonMoments.up
       ) {
-        binding.action.trigger();
+        this._inputManager.dispatchTriggerAction(binding);
       }
     }
 
