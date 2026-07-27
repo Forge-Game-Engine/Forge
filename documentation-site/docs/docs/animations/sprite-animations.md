@@ -90,20 +90,24 @@ const spriteEntity = world.createEntity();
 // 2. load the sprite sheet
 const image = await imageCache.getOrLoad('character_sprite_sheet_32_32.png');
 
-// 3. create a sprite and add it to the entity
-addSpriteComponent(
-  world,
-  spriteEntity,
-  createImageSprite(
-    image,
-    renderContext,
-    1, // 3.1 render layer
-    new Vector2(32, 32), // 3.2 define the dimensions of a frame
-  ),
-);
+// 3. create a sprite sheet
+const spriteSheet = createSpriteSheet(image, 2, 5); // 3.1 define the rows and columns (2x5 = 10 frames in total)
 
-// 4. create a sprite sheet
-const spriteSheet = createSpriteSheet(image, 2, 5); // 4.1 define the rows and columns (2x5 = 10 frames in total)
+// 4. create a sprite and add it to the entity
+const sprite = createImageSprite(image, renderContext, 1, {
+  // 4.1 render layer is the 3rd argument; frame dimensions and other
+  // per-sprite options are passed in this options object
+  frameDimensions: new Vector2(32, 32), // 4.2 define the dimensions of a frame
+});
+
+// 4.3 `frameDimensions` above only sizes the sprite's on-screen quad;
+// `createImageSprite` always leaves `uvScale` at its (1, 1) default (the
+// whole texture), so it must be set from the sheet's own per-frame UV size,
+// or every frame will sample (and squash) the entire sheet instead of a
+// single frame.
+sprite.uvScale = spriteSheet.frames[0][0].dimensions.clone();
+
+addSpriteComponent(world, spriteEntity, sprite);
 
 // 5. create an animation clip
 const idleAnimation = new AnimationClip(
@@ -137,6 +141,15 @@ clip ends.
 
 ## Notes and troubleshooting
 
+- [`createImageSprite`](/Forge/docs/api/functions/createImageSprite)'s
+  `frameDimensions` option only sizes the sprite's on-screen quad; it never
+  sets [`SpriteEcsComponent.uvScale`](/Forge/docs/api/interfaces/SpriteEcsComponent),
+  which always defaults to `(1, 1)` (the whole texture). For a sprite sheet,
+  set `uvScale` yourself from the sheet's own per-frame UV size (any frame
+  works, since every frame in a `SpriteSheet` is the same size):
+  `sprite.uvScale = spriteSheet.frames[0][0].dimensions.clone();`. Without
+  this, every frame samples (and squashes) the entire sheet into the
+  sprite's quad instead of a single frame.
 - `frameDurationMilliseconds` and `playbackSpeed` must both be greater than
   `0`. If `frameDurationMilliseconds / playbackSpeed` is `0` or negative, the
   system throws rather than dividing by zero or running the animation
@@ -153,3 +166,9 @@ clip ends.
   `time.timeInSeconds` is already greater than `0`). If you need the first
   frame to hold for a full `frameDurationMilliseconds`, initialize it to
   `time.timeInSeconds` instead.
+
+See the [Sprite Animation demo](/Forge/demos/sprite-animation) for a full,
+runnable example that ties this together with keyboard input: switching
+between an idle clip and a run clip as the character moves, and flipping the
+sprite with a [`FlipEcsComponent`](/Forge/docs/api/interfaces/FlipEcsComponent)
+to face its direction of travel.
