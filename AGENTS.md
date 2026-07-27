@@ -477,33 +477,6 @@ If you add a pixel-reading assertion:
   See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
   `camera-pan-zoom.ts` for the full pattern and rationale.
 
-**Testing a polled input source (`GamepadInputSource`) needs a fake
-device, and careful step accounting.** Playwright/CDP has no gamepad
-emulation and CI has no real controller, so `gamepad-input.ts` overrides
-`navigator.getGamepads` (via `Object.defineProperty`, before constructing
-`GamepadInputSource`) to return a fake `Gamepad` whose `axes` array a test
-hook mutates directly - this models Chrome's real behavior of updating the
-`Gamepad` object in place, which is what lets `GamepadInputSource.update()`
-see new values on its next poll. Unlike `KeyboardInputSource`/
-`MouseInputSource`, which only dispatch on a real DOM event,
-`GamepadInputSource` polls every frame and only re-dispatches when *its
-own* reading changed since the previous poll (see its class doc comment) -
-so an extra, unaccounted-for `step()` changes which frame a
-value-dependent assertion lands on. `camera-pan-zoom.spec.ts`'s
-`captureState` pattern (steps once *and* reads in the same helper) is safe
-for event-driven sources but wrong for a polled one: `gamepad-input.spec.ts`
-splits it into a `step()` and a separate no-step `readState()`, called 1:1
-by every test, so it's always explicit how many polls have happened. This
-is also what makes `actionResetTypes.zero` on a gamepad-driven action
-actively wrong (not just imprecise, like it is for a held key): the
-default reset zeroes the value every frame, but the source won't re-notice
-and re-dispatch until the stick's *raw* reading itself changes, so the
-action reads correctly for exactly one frame and then stays stuck at `0`
-even while the stick stays deflected - `actionResetTypes.noReset` is
-required, per `gamepad.md`'s "Gotchas". `gamepad-input.spec.ts` asserts
-this "stuck" behavior directly, alongside a correctly-configured
-`noReset` binding, as a regression test for the documented pitfall.
-
 ### Running
 
 - `npm run test:e2e` / `npm run test:e2e:ui` - runs the suite (the
