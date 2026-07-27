@@ -183,6 +183,10 @@ const config: Config = {
               to: 'demos/nine-slice',
               label: 'Nine-Slice Sprites',
             },
+            {
+              to: 'demos/texture-filtering',
+              label: 'Texture Filtering',
+            },
           ],
         },
         {

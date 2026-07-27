@@ -16,6 +16,8 @@ since then.
 
 ## A native 2D physics engine
 
+![Physics](./Physics.gif)
+
 As we move further towards our goal of being a zero-dependency game engine
 for the web, we decided to replace
 <a href="https://www.brm.io/matter-js/" target="_blank" rel="noopener noreferrer">matter-js</a>,
@@ -35,6 +37,8 @@ see bodies falling, colliding, and settling in real time.
 
 ## Joints, springs, and motors for every kind of motion
 
+![Car](./Car.gif)
+
 A physics engine is only as fun as what you can build with it, so the last
 few releases have been almost entirely about connecting bodies together:
 
@@ -49,11 +53,13 @@ few releases have been almost entirely about connecting bodies together:
   a body.
 
 Put them all together and you get things like the
-<a href="/Forge/demos/hill-climb-racer" target="_blank" rel="noopener noreferrer">Hill Climb Racer demo</a>: a car with motorized
+<a href="/Forge/demos/car" target="_blank" rel="noopener noreferrer">Car demo</a>: a car with motorized
 wheels, suspension, and a body all held together with joints, driving over
 procedurally generated terrain.
 
 ## Terrain to build worlds on
+
+![Terrain](./Terrain.gif)
 
 Speaking of terrain - `TerrainShape` gives you 2D heightmap collision that
 matches a smooth, curved render mesh point-for-point, so what the player sees
@@ -66,11 +72,12 @@ shows a ball rolling over rolling hills built entirely from this new shape.
 
 ## Crisp borders at any size with nine-slice sprites
 
+![nine-slice](./9-slice.gif)
+
 Sprites no longer have to choose between stretching blurrily or being locked
 to one size. Nine-slice sprites split an image into a 3x3 grid and scale only
 the stretchable middle regions, keeping corners and edges pixel-perfect at
-any dimension - see it in the doors, flywheels, walls, and the wrecking
-ball's crane arm throughout the physics demos above, or in the dedicated
+any dimension - see it in the dedicated
 <a href="/Forge/demos/nine-slice" target="_blank" rel="noopener noreferrer">Nine-Slice Sprites demo</a>.
 
 A full UI system is still a ways off for Forge, but nine-slicing is one of
@@ -78,6 +85,8 @@ the foundational building blocks it'll need - scalable buttons and panels
 being the most obvious use case once that lands.
 
 ## Multi-pass rendering, bloom, and blur
+
+![post-processing](./post-processing.gif)
 
 Cameras can now render into an off-screen texture instead of straight to the
 canvas, via a <a href="/Forge/docs/docs/rendering/multipass-rendering" target="_blank" rel="noopener noreferrer">render target</a> and a present pass that blits it back - the
@@ -108,7 +117,7 @@ many world units are visible at any destination size, so game logic can
 position things relative to what's actually on screen instead of reaching
 for canvas pixel dimensions or hand-rolling its own ratio math.
 
-## Smaller improvements you'll still feel
+## Many more smaller improvements
 
 - `GamepadInputSource` now supports hot-plugging - plug in a controller
   mid-game and it's picked up automatically, with the most recently
@@ -117,6 +126,7 @@ for canvas pixel dimensions or hand-rolling its own ratio math.
 - `createImageSprite` takes a `pixelated` option: nearest-neighbor filtering
   for crisp, blocky pixel-art scaling, versus the default linear filtering
   suited to rasterized/hand-drawn art.
+  ![Texture Filtering](./texture-filtering.png)
 - Demos can now go fullscreen.
 - A new `preserveDrawingBuffer` option on `createRenderContext`/`RenderContext`
   lets you read the canvas back after a frame has been presented - handy for
@@ -126,13 +136,11 @@ for canvas pixel dimensions or hand-rolling its own ratio math.
 
 ## Try it out
 
-All of this is available today - the physics, joint, rendering, and gamepad
-work landed in `0.21.0` through `0.23.1`, with the camera and input group
-fix currently in `dev` ahead of the next release. Grab the
+All of this is available today - the work landed in `0.21.0` through `0.24.0` Grab the
 <a href="/Forge/docs/intro" target="_blank" rel="noopener noreferrer">Getting Started guide</a> to add Forge to your project, or
-jump straight into the <a href="/Forge/demos/physics" target="_blank" rel="noopener noreferrer">demos</a> to see it all in motion.
+jump straight into the <a href="/Forge/demos/car" target="_blank" rel="noopener noreferrer">demos</a> to see it all in motion.
 For the full list of changes, release by release, see the
 <a href="/Forge/docs/changelog" target="_blank" rel="noopener noreferrer">changelog</a>.
 
 We're excited about where the physics engine is headed next - if you build
-something with it, <a href="https://github.com/Forge-Game-Engine/Forge" target="_blank" rel="noopener noreferrer">let us know on GitHub</a>.
+something with it, we'd love to know!

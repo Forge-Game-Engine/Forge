@@ -4,7 +4,7 @@ import { RigidBody } from '@forge-game-engine/forge/physics';
 import { GroundContactEcsComponent } from './_ground-contact.component';
 
 /**
- * Marks the chassis for Hill-Climb-Racer-style mid-air pitch control:
+ * Marks the chassis for mid-air pitch control:
  * `createAirControlEcsSystem` drives `chassisBody`'s angular velocity
  * towards a target proportional to `throttleInput` (the same
  * targetVelocity/maxTorque approach `AngularVelocityMotorEcsComponent` uses
