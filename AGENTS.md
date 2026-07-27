@@ -13,6 +13,7 @@ This document provides guidance for AI coding agents working on the Forge Game E
 - [Changelog](#changelog)
 - [Testing](#testing)
 - [Documentation Site Demos](#documentation-site-demos)
+- [Documentation Site Blog](#documentation-site-blog)
 - [Common Patterns](#common-patterns)
 - [Security Considerations](#security-considerations)
 
@@ -472,7 +473,7 @@ If you add a pixel-reading assertion:
   that. The pattern that catches it without reintroducing the SwiftShader
   problem is a **relative, same-run** measurement: read the actual
   rendered canvas for a landmark's on-screen bounds before and after the
-  action under test, and assert the *change* matches what the logic state
+  action under test, and assert the _change_ matches what the logic state
   predicts (e.g. the landmark's on-screen width scaled by the zoom ratio).
   See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
   `camera-pan-zoom.ts` for the full pattern and rationale.
@@ -548,6 +549,33 @@ import it, e.g. `grep -rl "/physics" documentation-site/src/pages/demos`):
 
 See also step 9 of `CLAUDE.md`'s verification checklist, which makes this
 mandatory before marking a task complete.
+
+## Documentation Site Blog
+
+`documentation-site/blog/` is a Docusaurus blog used for marketing/announcement
+content (release roundups, feature spotlights) aimed at consumers of the
+engine - distinct from `docs/docs`, which is reference/conceptual
+documentation. Enabled via the `blog` key in the `classic` preset options in
+`docusaurus.config.ts`, with a `Blog` navbar/footer link pointing at `/blog`.
+
+Conventions:
+
+- One file per post: `blog/YYYY-MM-DD-slug.md`, with `slug`, `title`,
+  `authors`, and `tags` in frontmatter. Authors are defined once in
+  `blog/authors.yml`; tags in `blog/tags.yml`.
+- Internal links (to docs, the API reference, or demos) must include the
+  `/Forge` `baseUrl` prefix (e.g. `/Forge/demos/physics`,
+  `/Forge/docs/changelog`), matching the convention already used in
+  `docs/docs/**` - `onBrokenLinks: 'throw'` in `docusaurus.config.ts` fails
+  the build on a mismatch.
+- **Gotcha**: this site opts into `future.v4: true`, which defaults
+  `markdown.mdx1Compat.comments` to `false`, so the classic HTML-comment
+  truncate marker (`<!-- truncate -->`) fails MDX compilation with an
+  "Unexpected character `!`" error. Use the MDX-native marker instead:
+  `{/* truncate */}`.
+- A new post should be verified with `npm run build` (from
+  `documentation-site/`) to catch broken links/MDX errors, the same way a
+  demo change is per the "Documentation Site Demos" section above.
 
 ## Common Patterns
 

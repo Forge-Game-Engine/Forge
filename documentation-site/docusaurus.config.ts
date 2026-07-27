@@ -46,6 +46,16 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
         },
+        blog: {
+          showReadingTime: true,
+          feedOptions: {
+            type: ['rss', 'atom'],
+            xslt: true,
+          },
+          onInlineTags: 'warn',
+          onInlineAuthors: 'warn',
+          onUntruncatedBlogPosts: 'warn',
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -97,8 +107,9 @@ const config: Config = {
           label: 'Documentation',
           position: 'left',
         },
-        { to: '/docs/api', label: 'API', position: 'left' },
-        { to: '/docs/changelog', label: 'Changelog', position: 'left' },
+        { to: '/docs/api', label: 'API', position: 'right' },
+        { to: '/docs/changelog', label: 'Changelog', position: 'right' },
+        { to: '/blog', label: 'Blog', position: 'right' },
         {
           type: 'dropdown',
           label: 'Demos',
@@ -172,6 +183,10 @@ const config: Config = {
               to: 'demos/nine-slice',
               label: 'Nine-Slice Sprites',
             },
+            {
+              to: 'demos/texture-filtering',
+              label: 'Texture Filtering',
+            },
           ],
         },
         {
@@ -194,6 +209,10 @@ const config: Config = {
             {
               label: 'Changelog',
               to: '/docs/changelog',
+            },
+            {
+              label: 'Blog',
+              to: '/blog',
             },
           ],
         },

@@ -1,0 +1,9 @@
+stormmuller:
+  name: Storm Muller
+  title: Forge Maintainer
+  url: https://github.com/stormmuller
+  image_url: https://github.com/stormmuller.png
+  socials:
+    github: stormmuller
+    linkedin: storm-muller
+  page: false

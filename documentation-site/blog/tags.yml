@@ -1,0 +1,12 @@
+release:
+  label: Release
+  description: Roundups of what shipped in Forge over a period of time
+physics:
+  label: Physics
+  description: The native 2D physics engine - rigid bodies, joints, and collision
+rendering:
+  label: Rendering
+  description: The WebGL2-based rendering pipeline
+demos:
+  label: Demos
+  description: New and updated interactive demos
