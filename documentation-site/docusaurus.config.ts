@@ -160,8 +160,8 @@ const config: Config = {
               label: 'Wrecking Ball',
             },
             {
-              to: 'demos/hill-climb-racer',
-              label: 'Hill Climb Racer',
+              to: 'demos/car',
+              label: 'Car',
             },
             {
               to: 'demos/stress-test',

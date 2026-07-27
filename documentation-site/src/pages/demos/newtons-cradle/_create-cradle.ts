@@ -31,8 +31,8 @@ const startAngle = 0.9;
 // flat center); these insets keep its caps at a fixed size while the
 // center stretches, instead of smearing them across the frame's width.
 const frameSlices: NineSliceOptions = {
-  left: 90,
-  right: 90,
+  left: 0,
+  right: 0,
   top: 0,
   bottom: 0,
   nativeWidth: 640,
@@ -118,7 +118,7 @@ export async function createCradle(
   const sprites = await loadCradleSprites(renderContext, renderLayer);
   const spacing = ballRadius * 2;
   const frameWidth = spacing * (ballCount - 1) + ballRadius * 3;
-  const frameHeight = 18;
+  const frameHeight = 100;
 
   createVisualEntity(
     world,

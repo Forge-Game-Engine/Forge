@@ -12,7 +12,7 @@ out vec4 fragColor;
 void main() {
   vec2 uv = v_texCoord;
 
-  vec3 topColor = vec3(0.05, 0.25, 0.85);
+  vec3 topColor = vec3(0.05, 0.15, 0.45);
   vec3 bottomColor = vec3(0.0, 0.0, 0.0);
 
   // The blend's midpoint drifts slowly up and down, so the gradient breathes
