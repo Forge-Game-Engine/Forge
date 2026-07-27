@@ -107,9 +107,9 @@ const config: Config = {
           label: 'Documentation',
           position: 'left',
         },
-        { to: '/docs/api', label: 'API', position: 'left' },
-        { to: '/docs/changelog', label: 'Changelog', position: 'left' },
-        { to: '/blog', label: 'Blog', position: 'left' },
+        { to: '/docs/api', label: 'API', position: 'right' },
+        { to: '/docs/changelog', label: 'Changelog', position: 'right' },
+        { to: '/blog', label: 'Blog', position: 'right' },
         {
           type: 'dropdown',
           label: 'Demos',

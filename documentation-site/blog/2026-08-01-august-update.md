@@ -1,22 +1,23 @@
 ---
 slug: august-2026-update
-title: 'August Update: A Real 2D Physics Engine, New Joints, and Crisp UI'
-authors: [forgeTeam]
+title: 'August Update: Native 2D Physics Engine, Terrain, 9-slice sprites, multi-pass rendering and more...'
+authors: [stormmuller]
 tags: [release, physics, rendering, demos]
 ---
 
 Since `0.21.0`, Forge has gone from "renders sprites and moves them around" to
-"simulates a physical world." This post rounds up everything that's shipped
-since then, including what's currently sitting in `dev` ahead of the next
-release.
+"simulates a physical world" This post rounds up everything that's shipped
+since then.
 
 {/* truncate */}
 
-## A real 2D physics engine
+## A native 2D physics engine
 
-`0.21.0` introduced Forge's native physics engine: [`RigidBody`](/Forge/docs/api/classes/RigidBody)
-and [`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) give you gravity,
-convex collision shapes, collision detection and resolution, raycasting, and
+As we move further towards our goal of being a zero-dependency game engine for the web, we decided to replace [matter-js](https://www.brm.io/matter-js/), that we used for initial design, with a native 2D physics implementation in version `0.21.0` of Forge.
+
+The Forge physics engine bring a lot of the tools you would come to expect; [`RigidBody`](/Forge/docs/api/classes/RigidBody)
+and [`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld) gives you gravity,
+convex collision shapes, collision detection, raycasting, and
 an impulse-based force API - all with zero external dependencies, wired
 straight into the ECS. Check out the [Physics demo](/Forge/demos/physics) to
 see bodies falling, colliding, and settling in real time.

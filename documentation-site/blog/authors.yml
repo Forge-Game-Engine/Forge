@@ -1,6 +1,9 @@
-forgeTeam:
-  name: The Forge Team
-  title: Maintainers of Forge
-  url: https://github.com/Forge-Game-Engine
-  image_url: https://github.com/Forge-Game-Engine.png
+stormmuller:
+  name: Storm Muller
+  title: Forge Maintainer
+  url: https://github.com/stormmuller
+  image_url: https://github.com/stormmuller.png
+  socials:
+      github: stormmuller
+      linkedin: storm-muller
   page: false
