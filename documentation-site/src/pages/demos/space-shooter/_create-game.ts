@@ -59,14 +59,14 @@ const explosionShakeIntensity = DEMO_VERTICAL_WORLD_UNITS * 0.007;
 const explosionShakeDurationSeconds = 0.15;
 
 export const bloomDefaults: BloomEcsComponent = {
-  threshold: 0.65,
-  passes: 3,
-  intensity: 1.5,
+  threshold: 0.95,
+  passes: 6,
+  intensity: 3,
 };
 
 export const blurDefaults: GaussianBlurEcsComponent = {
-  passes: 4,
-  intensity: 1,
+  passes: 6,
+  intensity: 0.6,
 };
 
 export const createSpaceShooterGame = async (
