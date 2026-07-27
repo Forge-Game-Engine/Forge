@@ -28,18 +28,18 @@ const flywheelHeight = 22;
 // its rounded corners and bolt-head detail at a fixed size while the center
 // stretches, instead of smearing them across the flywheel's bar shape.
 const narrowSlices: NineSliceOptions = {
-  left: 8,
-  right: 8,
-  top: 28,
-  bottom: 28,
-  nativeWidth: 32,
-  nativeHeight: 128,
+  left: 16,
+  right: 16,
+  top: 16,
+  bottom: 16,
+  nativeWidth: 64,
+  nativeHeight: 64,
 };
 
-const thrusterTorque = 30_000_000;
-const thrusterAngularDrag = 1.5;
-const motorTargetVelocity = 6;
-const motorMaxTorque = 10_000_000;
+const thrusterTorque = 60_000_000;
+const thrusterAngularDrag = 1.2;
+const motorTargetVelocity = 8;
+const motorMaxTorque = 20_000_000;
 const gustStrength = 4;
 const gustIntervalSeconds = 3;
 
@@ -52,7 +52,7 @@ async function createFlywheelEntity(
 ): Promise<number> {
   const { imageCache } = renderContext;
   const image = await imageCache.getOrLoad(
-    getAssetUrl('img/physics/block_narrow.png'),
+    getAssetUrl('img/physics/block_square.png'),
   );
   const sprite = createImageSprite(image, renderContext, renderLayer);
 

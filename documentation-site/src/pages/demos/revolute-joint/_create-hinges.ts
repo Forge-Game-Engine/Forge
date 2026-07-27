@@ -38,14 +38,6 @@ const squareSlices: NineSliceOptions = {
   nativeWidth: 64,
   nativeHeight: 64,
 };
-const narrowSlices: NineSliceOptions = {
-  left: 8,
-  right: 8,
-  top: 28,
-  bottom: 28,
-  nativeWidth: 32,
-  nativeHeight: 128,
-};
 
 interface HingeSprites {
   ball: SpriteEcsComponent;
@@ -61,13 +53,15 @@ async function loadHingeSprites(
 
   const [ballImage, doorImage, pivotImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
   return {
     ball: createImageSprite(ballImage, renderContext, renderLayer),
-    door: createImageSprite(doorImage, renderContext, renderLayer),
+    door: createImageSprite(doorImage, renderContext, renderLayer, {
+      slices: squareSlices,
+    }),
     pivot: createImageSprite(pivotImage, renderContext, renderLayer),
   };
 }
@@ -169,7 +163,7 @@ function createDoorScenario(
     ...sprites.door,
     width: doorWidth,
     height: doorHeight,
-    slices: narrowSlices,
+    slices: squareSlices,
   });
   addPhysicsBodyComponent(world, doorEntity, { physicsBody: doorBody });
 

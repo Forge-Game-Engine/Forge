@@ -25,8 +25,8 @@ import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPumpComponent } from './_pump.component';
 
-const railDotCount = 6;
-const railDotSize = 6;
+const railDotCount = 15;
+const railDotSize = 10;
 const anchorSize = 14;
 
 // `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
@@ -92,7 +92,7 @@ async function loadSliderSprites(
   const [ballImage, blockImage, dotImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/White.png')),
+    imageCache.getOrLoad(getAssetUrl('img/space-shooter/meteor_small.png')),
   ]);
 
   return {
@@ -285,9 +285,9 @@ export async function createSliders(
     upperTranslation: 180,
     startTranslation: 0,
     sliderShape: PolygonShape.rectangle(44, 32),
-    sliderWidth: 44,
+    sliderWidth: 32,
     sliderHeight: 32,
-    sliderSprite: 'block',
+    sliderSprite: 'ball',
     pumpImpulse: new Vector2(200_000, 0),
     pumpIntervalSeconds: 1.4,
     pumpAlternate: true,
@@ -302,10 +302,10 @@ export async function createSliders(
     upperTranslation: height * 0.55,
     startTranslation: 0,
     sliderShape: PolygonShape.rectangle(80, 20),
-    sliderWidth: 80,
-    sliderHeight: 20,
-    sliderSprite: 'block',
-    pumpImpulse: new Vector2(0, 700_000),
+    sliderWidth: 32,
+    sliderHeight: 32,
+    sliderSprite: 'ball',
+    pumpImpulse: new Vector2(0, 950_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
@@ -324,8 +324,8 @@ export async function createSliders(
     upperTranslation: height * 0.5,
     startTranslation: 0,
     sliderShape: new CircleShape(18),
-    sliderWidth: 36,
-    sliderHeight: 36,
+    sliderWidth: 32,
+    sliderHeight: 32,
     sliderSprite: 'ball',
     pumpImpulse: inclineAxis.negate().multiply(400_000),
     pumpIntervalSeconds: 2.5,
