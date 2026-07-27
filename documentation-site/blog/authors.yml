@@ -4,6 +4,6 @@ stormmuller:
   url: https://github.com/stormmuller
   image_url: https://github.com/stormmuller.png
   socials:
-      github: stormmuller
-      linkedin: storm-muller
+    github: stormmuller
+    linkedin: storm-muller
   page: false
