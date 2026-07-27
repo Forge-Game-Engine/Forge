@@ -174,7 +174,7 @@ const wheelDropHeight = 65;
 const suspensionStiffness = 1_000_000;
 const suspensionDamping = 165_000;
 
-// A hill-climb-racer engine is meant to feel overpowered enough to punch
+// An engine is meant to feel overpowered enough to punch
 // through bumps and keep climbing rather than stalling on them.
 // `motorMaxTorque` is scaled up to match the car's current total mass:
 // raising `uprightDensity` to fix the wheel-mount mass ratio (see its
@@ -227,7 +227,7 @@ const chassisLevelingDamping = 40_000_000;
 
 // The chassis's target angular speed at full throttle while airborne, and
 // the torque budget `AirControlEcsComponent` spends chasing it - the
-// classic Hill Climb Racer "tilt in mid-air" control, gas pitching the nose
+// classic "tilt in mid-air" control, gas pitching the nose
 // up and back, brake pitching it down and forward. Targeting a speed
 // (rather than just applying a constant torque) gives the player direct,
 // bounded control: releasing the input targets zero rotation and actively
@@ -406,7 +406,7 @@ function createWheelMount(
 }
 
 /**
- * Builds a hill-climb-racer-style car: a chassis with two wheels mounted
+ * Builds a car: a chassis with two wheels mounted
  * beneath it (see `createWheelMount`), each driven by an
  * `AngularVelocityMotorEcsComponent` whose target speed tracks
  * `throttleInput`. The mount constrains a wheel to only slide vertically
