@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-07-27
+
 #### Added
 
 - **rendering:** Add `preserveDrawingBuffer` option to `createRenderContext`/`RenderContext`, for consumers that need to read the canvas's pixels back (e.g. `toDataURL`, `drawImage`) after a frame has already been presented
