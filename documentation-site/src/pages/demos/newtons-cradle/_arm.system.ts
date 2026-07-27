@@ -16,9 +16,13 @@ import { ArmEcsComponent, armId } from './_arm.component';
  * sprite to span the rod between its `ArmEcsComponent.pivotPosition` and
  * `body`'s current position every tick, so each arm visibly swings with its
  * ball instead of only the (otherwise invisible) RevoluteJoint moving it.
- * The rotation this computes from the pivot/ball positions matches the
- * angle a RevoluteJoint's own `anchorB` convention would give a body rigidly
- * fixed to the far end of the rod, so the arm and ball swing in lockstep
+ * The rotation this computes from the pivot/ball positions, via `Vector2`'s
+ * world-space (Y-up) convention, matches the angle a RevoluteJoint's own
+ * `anchorB` convention would give a body rigidly fixed to the far end of the
+ * rod - but negated before being assigned, since `RotationEcsComponent.world`
+ * is in render space (Y-down), mirrored from world space (see
+ * `createPhysicsSyncEcsSystem`'s same negation when it copies a
+ * `RigidBody.angle`). This lets the arm swing in lockstep with the ball
  * without needing to read the ball's own (potentially independently
  * spinning) rotation. Must run before `createRenderEcsSystem` so the render
  * pass sees this tick's updated arms.
@@ -40,7 +44,7 @@ export const createArmEcsSystem = (): EcsSystem<
     const delta = body.position.subtract(pivotPosition);
     const length = delta.magnitude();
     const midpoint = pivotPosition.add(body.position).multiply(0.5);
-    const angle = Math.atan2(delta.x, -delta.y);
+    const angle = -Math.atan2(delta.x, -delta.y);
 
     positionComponent.world.x = midpoint.x;
     positionComponent.world.y = midpoint.y;
