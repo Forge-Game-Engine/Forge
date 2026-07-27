@@ -33,7 +33,7 @@ const renderLayers = {
 
 const gravity = new Vector2(0, -600);
 
-export const createHillClimbRacerGame = async (): Promise<Game> => {
+export const createCarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   // `isStatic: true` since this camera's position is driven by
@@ -48,7 +48,7 @@ export const createHillClimbRacerGame = async (): Promise<Game> => {
   });
 
   const physicsWorld = new PhysicsWorld({ gravity });
-  const random = new Random('hill-climb-racer');
+  const random = new Random('car');
 
   const { throttleInput, restartInput } = createInputs(world, time);
 
