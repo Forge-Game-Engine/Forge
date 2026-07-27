@@ -19,7 +19,7 @@ for the web, we decided to replace
 that we used for initial design, with a native 2D physics implementation in
 version `0.21.0` of Forge. Matter.js is a powerful, mature engine, and
 reaching the same feature parity and stability will take some time - but
-every release since `0.21.0` has closed the gap, and we're confident we're
+every release will help close that gap, and we're confident we're
 headed in the right direction.
 
 The Forge physics engine brings a lot of the tools you would come to expect;
