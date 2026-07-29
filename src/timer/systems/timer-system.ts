@@ -1,6 +1,5 @@
 import { Time } from '../../common/index.js';
 import { TimerEcsComponent, TimerId } from '../components/timer-component.js';
-
 import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
@@ -11,38 +10,36 @@ export const createTimerEcsSystem = (
   time: Time,
 ): EcsSystem<[TimerEcsComponent]> => ({
   query: [TimerId],
-  run: (result) => {
-    const [timerComponent] = result.components;
+  update: (_world, { components: [timerComponents] }) => {
+    const deltaTime = time.deltaTimeInMilliseconds;
 
-    if (timerComponent.tasks.length === 0) {
-      return;
-    }
+    for (let c = 0; c < timerComponents.length; c++) {
+      const timerComponent = timerComponents[c];
+      const tasks = timerComponent.tasks;
 
-    // Iterate backwards to safely remove tasks as needed
-    for (let i = timerComponent.tasks.length - 1; i >= 0; i--) {
-      const task = timerComponent.tasks[i];
-      task.elapsed += time.deltaTimeInMilliseconds;
+      if (tasks.length === 0) {
+        continue;
+      }
 
-      if (task.elapsed >= task.delay) {
-        task.callback();
+      for (let i = tasks.length - 1; i >= 0; i--) {
+        const task = tasks[i];
+        task.elapsed += deltaTime;
 
-        if (task.repeat && task.interval !== undefined) {
-          // Periodic task
-          task.runsSoFar!++;
+        if (task.elapsed >= task.delay) {
+          task.callback();
 
-          if (task.maxRuns !== undefined && task.runsSoFar! >= task.maxRuns) {
-            // Remove if we have run it the max times
-            timerComponent.tasks.splice(i, 1);
+          if (task.repeat && task.interval !== undefined) {
+            task.runsSoFar = (task.runsSoFar ?? 0) + 1;
+
+            if (task.maxRuns !== undefined && task.runsSoFar >= task.maxRuns) {
+              tasks.splice(i, 1);
+            } else {
+              task.elapsed = 0;
+              task.delay = task.interval;
+            }
           } else {
-            // Reset elapsed for the next interval
-            task.elapsed = 0;
-            // Now that the first run is done, subsequent intervals
-            // are determined by 'interval' rather than 'delay'.
-            task.delay = task.interval;
+            tasks.splice(i, 1);
           }
-        } else {
-          // One-shot task, remove after execution
-          timerComponent.tasks.splice(i, 1);
         }
       }
     }
