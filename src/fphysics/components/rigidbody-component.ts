@@ -11,10 +11,16 @@ export interface RigidBodyDefaultedOptions {
   angularVelocity: number;
 }
 
+export interface RigidBodyRequiredOptions {
+  mass: number;
+  momentOfInertia: number;
+}
+
 /**
  * ECS-style component interface for a rigid body.
  */
-export interface RigidBodyEcsComponent extends RigidBodyDefaultedOptions {}
+export interface RigidBodyEcsComponent
+  extends RigidBodyDefaultedOptions, RigidBodyRequiredOptions {}
 
 export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
@@ -29,7 +35,7 @@ export const rigidBodyId =
 export function addRigidBodyComponent(
   world: EcsWorld,
   entity: number,
-  options: Partial<RigidBodyEcsComponent> = {},
+  options: RigidBodyRequiredOptions & Partial<RigidBodyEcsComponent>,
 ): RigidBodyEcsComponent {
   const defaultRigidBodyOptions: RigidBodyDefaultedOptions = {
     velocity: Vector2.zero,

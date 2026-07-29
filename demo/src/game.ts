@@ -35,12 +35,13 @@ import {
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
 } from '../../src/fphysics';
+import { applyImpulse } from '../../src/fphysics/apply-impluse';
+import { createCircle } from '../../src/fphysics/colliders/circle-collider';
 
 const renderLayer = 1;
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
-// Create camera entity
 createCamera(world);
 
 const { imageCache } = renderContext;
@@ -57,7 +58,7 @@ addSpriteComponent(world, ballEntity, ballSprite);
 addPositionComponent(world, ballEntity);
 addRotationComponent(world, ballEntity);
 addGravityComponent(world, ballEntity);
-addRigidBodyComponent(world, ballEntity);
+addRigidBodyComponent(world, ballEntity, createCircle(1));
 
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createEulerIntegrationEcsSystem(time));
