@@ -17,19 +17,21 @@ export const createAgeScaleEcsSystem = (): EcsSystem<
   [LifetimeEcsComponent, ScaleEcsComponent, AgeScaleEcsComponent]
 > => ({
   query: [lifetimeId, scaleId, ageScaleId],
-  run: (result) => {
-    const [lifetimeComponent, scaleComponent, ageScaleComponent] =
-      result.components;
+  update: (_world, { components: [lifetimes, scales, ageScales] }) => {
+    for (let i = 0; i < lifetimes.length; i++) {
+      const lifetime = lifetimes[i];
+      const scale = scales[i];
+      const ageScale = ageScales[i];
 
-    const lifetimeRatio =
-      lifetimeComponent.elapsedSeconds / lifetimeComponent.durationSeconds;
-    const newScaleX =
-      ageScaleComponent.originalScaleX * (1 - lifetimeRatio) +
-      ageScaleComponent.finalLifetimeScaleX * lifetimeRatio;
-    const newScaleY =
-      ageScaleComponent.originalScaleY * (1 - lifetimeRatio) +
-      ageScaleComponent.finalLifetimeScaleY * lifetimeRatio;
-    scaleComponent.local.x = newScaleX;
-    scaleComponent.local.y = newScaleY;
+      const lifetimeRatio = lifetime.elapsedSeconds / lifetime.durationSeconds;
+      const invertedRatio = 1 - lifetimeRatio;
+
+      scale.local.x =
+        ageScale.originalScaleX * invertedRatio +
+        ageScale.finalLifetimeScaleX * lifetimeRatio;
+      scale.local.y =
+        ageScale.originalScaleY * invertedRatio +
+        ageScale.finalLifetimeScaleY * lifetimeRatio;
+    }
   },
 });
