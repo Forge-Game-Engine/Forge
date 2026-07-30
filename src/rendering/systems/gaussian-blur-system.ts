@@ -39,7 +39,7 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  */
 export const createGaussianBlurEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent], void, void> => {
+): EcsSystem<[CameraEcsComponent, GaussianBlurEcsComponent]> => {
   const { gl, shaderCache } = renderContext;
 
   const blurMaterial = new Material(
@@ -60,7 +60,7 @@ export const createGaussianBlurEcsSystem = (
 
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
   // blurred camera, sized to match it and recreated on resize. Owned by this
-  // system (not module-level state) and disposed via `cleanupEntities` when
+  // system (not module-level state) and disposed via `cleanup` when
   // the world stops.
   const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
   const sharpSnapshotByTarget = new WeakMap<RenderTarget, RenderTarget>();
@@ -149,95 +149,105 @@ export const createGaussianBlurEcsSystem = (
 
   return {
     query: [cameraId, gaussianBlurId],
-    beforeQuery: () => {
+    update: (_world, { components: [cameras, blurs] }) => {
       processedTargetsThisFrame.clear();
-    },
-    run: (result) => {
-      const [camera, blur] = result.components;
-      const { renderTarget } = camera;
-      const intensity = Math.min(1, Math.max(0, blur.intensity));
 
-      if (
-        !renderTarget ||
-        intensity <= 0 ||
-        processedTargetsThisFrame.has(renderTarget)
-      ) {
-        return;
-      }
+      for (let i = 0; i < cameras.length; i++) {
+        const camera = cameras[i];
+        const blur = blurs[i];
+        const { renderTarget } = camera;
+        const intensity = Math.min(1, Math.max(0, blur.intensity));
 
-      processedTargetsThisFrame.add(renderTarget);
+        if (
+          !renderTarget ||
+          intensity <= 0 ||
+          processedTargetsThisFrame.has(renderTarget)
+        ) {
+          continue;
+        }
 
-      const needsBlend = intensity < 1;
-      const sharpSnapshot = needsBlend
-        ? getSharpSnapshotTarget(renderTarget)
-        : null;
+        processedTargetsThisFrame.add(renderTarget);
 
-      if (sharpSnapshot) {
-        copyTexture(renderTarget.colorTexture, sharpSnapshot);
-      }
+        const needsBlend = intensity < 1;
+        const sharpSnapshot = needsBlend
+          ? getSharpSnapshotTarget(renderTarget)
+          : null;
 
-      const pingPong = getPingPongTarget(renderTarget);
-      const texelSize = new Float32Array([
-        1 / renderTarget.width,
-        1 / renderTarget.height,
-      ]);
+        if (sharpSnapshot) {
+          copyTexture(renderTarget.colorTexture, sharpSnapshot);
+        }
 
-      // Each iteration reads the previous iteration's result back out of
-      // `renderTarget` (itself, for the first iteration, the freshly
-      // rendered scene) and writes the next, more-blurred version back
-      // into it, so `passes` composes into a wider blur without ever
-      // widening the individual 9-tap kernel.
-      for (let i = 0; i < blur.passes; i++) {
-        drawPass(
-          blurMaterial,
-          renderTarget.colorTexture,
-          horizontalBlurDirection,
-          texelSize,
-          pingPong.write,
+        const pingPong = getPingPongTarget(renderTarget);
+        const texelSize = new Float32Array([
+          1 / renderTarget.width,
+          1 / renderTarget.height,
+        ]);
+
+        // Each iteration reads the previous iteration's result back out of
+        // `renderTarget` (itself, for the first iteration, the freshly
+        // rendered scene) and writes the next, more-blurred version back
+        // into it, so `passes` composes into a wider blur without ever
+        // widening the individual 9-tap kernel.
+        for (let p = 0; p < blur.passes; p++) {
+          drawPass(
+            blurMaterial,
+            renderTarget.colorTexture,
+            horizontalBlurDirection,
+            texelSize,
+            pingPong.write,
+          );
+          pingPong.swap();
+
+          drawPass(
+            blurMaterial,
+            pingPong.read.colorTexture,
+            verticalBlurDirection,
+            texelSize,
+            renderTarget,
+          );
+        }
+
+        if (!sharpSnapshot) {
+          continue;
+        }
+
+        // Cross-fade the untouched sharp snapshot into the fully-blurred
+        // result, into a scratch buffer (safe to reuse now that the loop
+        // above is done with it), then copy that blend back into
+        // `renderTarget`, since consumers (like the present system) always
+        // read the blur's output from there.
+        beginFullscreenReplacePass(renderContext, pingPong.write);
+
+        crossFadeMaterial.setUniform(
+          'u_fromTexture',
+          sharpSnapshot.colorTexture,
         );
-        pingPong.swap();
+        crossFadeMaterial.setUniform('u_toTexture', renderTarget.colorTexture);
+        crossFadeMaterial.setUniform('u_factor', intensity);
 
-        drawPass(
-          blurMaterial,
-          pingPong.read.colorTexture,
-          verticalBlurDirection,
-          texelSize,
-          renderTarget,
-        );
+        drawFullscreenQuad(renderContext, crossFadeMaterial);
+
+        copyTexture(pingPong.write.colorTexture, renderTarget);
       }
-
-      if (!sharpSnapshot) {
-        return;
-      }
-
-      // Cross-fade the untouched sharp snapshot into the fully-blurred
-      // result, into a scratch buffer (safe to reuse now that the loop
-      // above is done with it), then copy that blend back into
-      // `renderTarget`, since consumers (like the present system) always
-      // read the blur's output from there.
-      beginFullscreenReplacePass(renderContext, pingPong.write);
-
-      crossFadeMaterial.setUniform('u_fromTexture', sharpSnapshot.colorTexture);
-      crossFadeMaterial.setUniform('u_toTexture', renderTarget.colorTexture);
-      crossFadeMaterial.setUniform('u_factor', intensity);
-
-      drawFullscreenQuad(renderContext, crossFadeMaterial);
-
-      copyTexture(pingPong.write.colorTexture, renderTarget);
     },
-    cleanupEntities: (result) => {
-      const [camera] = result.components;
-      const { renderTarget } = camera;
+    cleanup: (world) => {
+      const {
+        components: [cameras],
+      } = world.query<[CameraEcsComponent]>([cameraId, gaussianBlurId]);
 
-      if (!renderTarget) {
-        return;
+      for (const camera of cameras) {
+        const { renderTarget } = camera;
+
+        if (!renderTarget) {
+          continue;
+        }
+
+        pingPongByTarget.get(renderTarget)?.dispose(gl);
+        pingPongByTarget.delete(renderTarget);
+
+        sharpSnapshotByTarget.get(renderTarget)?.dispose(gl);
+        sharpSnapshotByTarget.delete(renderTarget);
       }
-
-      pingPongByTarget.get(renderTarget)?.dispose(gl);
-      pingPongByTarget.delete(renderTarget);
-
-      sharpSnapshotByTarget.get(renderTarget)?.dispose(gl);
-      sharpSnapshotByTarget.delete(renderTarget);
     },
   };
 };

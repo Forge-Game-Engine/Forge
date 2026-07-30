@@ -14,18 +14,18 @@ export const createCarResetEcsSystem = (): EcsSystem<
   [CarResetEcsComponent]
 > => ({
   query: [carResetId],
-  run: (result) => {
-    const [carReset] = result.components;
+  update: (_world, { components: [carResets] }) => {
+    for (const carReset of carResets) {
+      if (!carReset.restartInput.isTriggered) {
+        continue;
+      }
 
-    if (!carReset.restartInput.isTriggered) {
-      return;
-    }
-
-    for (const { body, initialPosition, initialAngle } of carReset.bodies) {
-      body.position = initialPosition.clone();
-      body.angle = initialAngle;
-      body.velocity = Vector2.zero;
-      body.angularVelocity = 0;
+      for (const { body, initialPosition, initialAngle } of carReset.bodies) {
+        body.position = initialPosition.clone();
+        body.angle = initialAngle;
+        body.velocity = Vector2.zero;
+        body.angularVelocity = 0;
+      }
     }
   },
 });

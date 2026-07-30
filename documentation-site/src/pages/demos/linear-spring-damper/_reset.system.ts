@@ -14,17 +14,17 @@ export const createResetEcsSystem = (
   time: Time,
 ): EcsSystem<[ResetEcsComponent]> => ({
   query: [resetId],
-  run: (result) => {
-    const [reset] = result.components;
+  update: (_world, { components: [resets] }) => {
+    for (const reset of resets) {
+      reset.elapsedSeconds += time.deltaTimeInSeconds;
 
-    reset.elapsedSeconds += time.deltaTimeInSeconds;
+      if (reset.elapsedSeconds < reset.intervalSeconds) {
+        continue;
+      }
 
-    if (reset.elapsedSeconds < reset.intervalSeconds) {
-      return;
+      reset.elapsedSeconds = 0;
+      reset.body.position = reset.initialPosition.clone();
+      reset.body.velocity = reset.initialVelocity.clone();
     }
-
-    reset.elapsedSeconds = 0;
-    reset.body.position = reset.initialPosition.clone();
-    reset.body.velocity = reset.initialVelocity.clone();
   },
 });

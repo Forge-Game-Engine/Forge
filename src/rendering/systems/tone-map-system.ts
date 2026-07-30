@@ -34,7 +34,7 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
  */
 export const createToneMapEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, ToneMappingEcsComponent], void, void> => {
+): EcsSystem<[CameraEcsComponent, ToneMappingEcsComponent]> => {
   const { gl, shaderCache } = renderContext;
 
   const toneMapMaterial = new Material(
@@ -53,7 +53,7 @@ export const createToneMapEcsSystem = (
   // and write the same texture in one draw, so the tone-mapped result is
   // written here first, then copied back into `renderTarget` (the same
   // technique `createBloomEcsSystem` uses for its composite pass). Owned by
-  // this system (not module-level state) and disposed via `cleanupEntities`
+  // this system (not module-level state) and disposed via `cleanup`
   // when the world stops.
   const scratchTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
 
@@ -98,44 +98,51 @@ export const createToneMapEcsSystem = (
 
   return {
     query: [cameraId, toneMappingId],
-    beforeQuery: () => {
+    update: (_world, { components: [cameras, toneMappings] }) => {
       processedTargetsThisFrame.clear();
-    },
-    run: (result) => {
-      const [camera, toneMapping] = result.components;
-      const { renderTarget } = camera;
 
-      if (!renderTarget || processedTargetsThisFrame.has(renderTarget)) {
-        return;
+      for (let i = 0; i < cameras.length; i++) {
+        const camera = cameras[i];
+        const toneMapping = toneMappings[i];
+        const { renderTarget } = camera;
+
+        if (!renderTarget || processedTargetsThisFrame.has(renderTarget)) {
+          continue;
+        }
+
+        processedTargetsThisFrame.add(renderTarget);
+
+        const scratchTarget = getScratchTarget(renderTarget);
+
+        beginFullscreenReplacePass(renderContext, scratchTarget);
+
+        toneMapMaterial.setUniform('u_texture', renderTarget.colorTexture);
+        toneMapMaterial.setUniform('u_exposure', toneMapping.exposure);
+        toneMapMaterial.setUniform(
+          'u_useAces',
+          toneMapping.operator === TONE_MAPPING_OPERATOR.aces,
+        );
+
+        drawFullscreenQuad(renderContext, toneMapMaterial);
+
+        copyTexture(scratchTarget.colorTexture, renderTarget);
       }
-
-      processedTargetsThisFrame.add(renderTarget);
-
-      const scratchTarget = getScratchTarget(renderTarget);
-
-      beginFullscreenReplacePass(renderContext, scratchTarget);
-
-      toneMapMaterial.setUniform('u_texture', renderTarget.colorTexture);
-      toneMapMaterial.setUniform('u_exposure', toneMapping.exposure);
-      toneMapMaterial.setUniform(
-        'u_useAces',
-        toneMapping.operator === TONE_MAPPING_OPERATOR.aces,
-      );
-
-      drawFullscreenQuad(renderContext, toneMapMaterial);
-
-      copyTexture(scratchTarget.colorTexture, renderTarget);
     },
-    cleanupEntities: (result) => {
-      const [camera] = result.components;
-      const { renderTarget } = camera;
+    cleanup: (world) => {
+      const {
+        components: [cameras],
+      } = world.query<[CameraEcsComponent]>([cameraId, toneMappingId]);
 
-      if (!renderTarget) {
-        return;
+      for (const camera of cameras) {
+        const { renderTarget } = camera;
+
+        if (!renderTarget) {
+          continue;
+        }
+
+        scratchTargetByTarget.get(renderTarget)?.dispose(gl);
+        scratchTargetByTarget.delete(renderTarget);
       }
-
-      scratchTargetByTarget.get(renderTarget)?.dispose(gl);
-      scratchTargetByTarget.delete(renderTarget);
     },
   };
 };

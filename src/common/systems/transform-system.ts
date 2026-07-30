@@ -1,4 +1,4 @@
-import { EcsSystem } from '../../ecs/ecs-system';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   PositionEcsComponent,
@@ -150,25 +150,6 @@ function computeWorld(
 }
 
 /**
- * Per-frame state for `createTransformEcsSystem`, reused across frames to
- * avoid reallocating its sets every frame.
- */
-interface TransformRunState {
-  /** Tracks entities visited/computed during the current frame. */
-  cache: TransformCache;
-
-  /**
-   * Entities whose world transform is static and has already been computed,
-   * so `computeWorld` can skip them entirely. Persists across frames.
-   */
-  frozen: Set<number>;
-}
-
-type TransformSystem = EcsSystem<[PositionEcsComponent], TransformRunState> & {
-  beforeQuery: (world: EcsWorld) => TransformRunState;
-};
-
-/**
  * Creates a system that computes the world position, rotation and scale of
  * every entity from its local transform and, if it has a `ParentEcsComponent`,
  * its parent's world transform.
@@ -178,23 +159,24 @@ type TransformSystem = EcsSystem<[PositionEcsComponent], TransformRunState> & {
  * every subsequent frame.
  * @returns The transform ECS system.
  */
-export const createTransformEcsSystem = (): TransformSystem => {
-  const state: TransformRunState = {
-    cache: createTransformCache(),
-    frozen: new Set<number>(),
-  };
+export const createTransformEcsSystem = (): EcsSystem<
+  [PositionEcsComponent]
+> => {
+  const cache = createTransformCache();
+
+  // Entities whose world transform is static and has already been computed,
+  // so `computeWorld` can skip them entirely. Persists across frames.
+  const frozen = new Set<number>();
 
   return {
     query: [positionId],
 
-    beforeQuery: () => {
-      resetTransformCache(state.cache);
+    update: (world, { entities }) => {
+      resetTransformCache(cache);
 
-      return state;
-    },
-
-    run: (result, world, { cache, frozen }) => {
-      computeWorld(result.entity, cache, frozen, world);
+      for (const entity of entities) {
+        computeWorld(entity, cache, frozen, world);
+      }
     },
   };
 };

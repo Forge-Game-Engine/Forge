@@ -13,15 +13,18 @@ export const createPaddleEcsSystem = (
   time: Time,
 ): EcsSystem<[PaddleEcsComponent, PositionEcsComponent]> => ({
   query: [paddleId, positionId],
-  run: (result) => {
-    const [paddleComponent, positionComponent] = result.components;
-    const { speed, minX, maxX } = paddleComponent;
+  update: (_world, { components: [paddleComponents, positionComponents] }) => {
+    for (let i = 0; i < paddleComponents.length; i++) {
+      const paddleComponent = paddleComponents[i];
+      const positionComponent = positionComponents[i];
+      const { speed, minX, maxX } = paddleComponent;
 
-    positionComponent.world.x = clamp(
-      positionComponent.world.x +
-        moveAction.value * speed * time.deltaTimeInSeconds,
-      minX,
-      maxX,
-    );
+      positionComponent.world.x = clamp(
+        positionComponent.world.x +
+          moveAction.value * speed * time.deltaTimeInSeconds,
+        minX,
+        maxX,
+      );
+    }
   },
 });

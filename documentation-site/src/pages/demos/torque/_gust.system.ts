@@ -10,20 +10,23 @@ export const createGustEcsSystem = (
   time: Time,
 ): EcsSystem<[GustEcsComponent, PhysicsBodyEcsComponent]> => ({
   query: [gustId, PhysicsBodyId],
-  run: (result) => {
-    const [gustComponent, physicsBodyComponent] = result.components;
+  update: (_world, { components: [gustComponents, physicsBodyComponents] }) => {
+    for (let i = 0; i < gustComponents.length; i++) {
+      const gustComponent = gustComponents[i];
+      const physicsBodyComponent = physicsBodyComponents[i];
 
-    gustComponent.elapsedSeconds += time.deltaTimeInSeconds;
+      gustComponent.elapsedSeconds += time.deltaTimeInSeconds;
 
-    if (gustComponent.elapsedSeconds < gustComponent.intervalSeconds) {
-      return;
+      if (gustComponent.elapsedSeconds < gustComponent.intervalSeconds) {
+        continue;
+      }
+
+      gustComponent.elapsedSeconds = 0;
+
+      physicsBodyComponent.physicsBody.angularVelocity +=
+        gustComponent.strength * gustComponent.nextSign;
+
+      gustComponent.nextSign *= -1;
     }
-
-    gustComponent.elapsedSeconds = 0;
-
-    physicsBodyComponent.physicsBody.angularVelocity +=
-      gustComponent.strength * gustComponent.nextSign;
-
-    gustComponent.nextSign *= -1;
   },
 });

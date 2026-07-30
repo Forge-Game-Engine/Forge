@@ -1,71 +1,105 @@
-import { Stoppable, Updatable } from '../common/index.js';
-import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
-import { SortedSet, SparseSet } from '../utilities/index.js';
 import { ComponentKey, TagKey } from './ecs-component.js';
+import { Stoppable, Updatable } from '../common/index.js';
+import { SortedSet, SparseSet } from '../utilities/index.js';
+import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
 
-export type QueryResult<T extends readonly unknown[]> = {
-  entity: number;
-  components: T;
-};
+export interface QueryResult<T extends readonly unknown[]> {
+  entities: readonly number[];
+  components: { [K in keyof T]: T[K][] };
+}
 
 export class EcsWorld implements Updatable, Stoppable {
   public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
 
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
-
   private readonly _freeEntityIds: number[] = [];
   private _nextEntityId = 0;
-
-  private readonly _queryResultBuffer: QueryResult<unknown[]> = {
-    entity: -1,
-    components: [],
-  };
-
-  private readonly _systems: SortedSet<EcsSystem<unknown[], unknown, unknown>>;
+  private readonly _systems: SortedSet<EcsSystem<readonly unknown[]>>;
 
   constructor() {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
-
     this._componentSets = new Map();
     this._systems = new SortedSet();
   }
 
   public stop(): void {
     for (const system of this._systems) {
-      this.operate(system, (buffer) => system.cleanupEntities?.(buffer, this));
-
-      system.cleanupSystem?.(this);
+      system.cleanup?.(this);
     }
   }
 
-  public addSystem<T extends unknown[], K = null, A = void>(
-    system: EcsSystem<T, K, A>,
+  public addSystem<T extends readonly unknown[]>(
+    system: EcsSystem<T>,
     registrationOrder: number = SystemRegistrationOrder.normal,
   ): void {
     this._systems.add(system, registrationOrder);
-
     system.onRegister?.(this);
   }
 
-  public removeSystem<T extends unknown[], K, A>(
-    system: EcsSystem<T, K, A>,
+  public removeSystem<T extends readonly unknown[]>(
+    system: EcsSystem<T>,
   ): void {
     this._systems.delete(system);
-    system.cleanupSystem?.(this);
+    system.cleanup?.(this);
   }
 
   public update(): void {
     for (const system of this._systems) {
-      const beforeQueryResult = system.beforeQuery?.(this) ?? null;
-      const runResults: unknown[] = [];
-
-      this.operate(system, (buffer) => {
-        runResults.push(system.run(buffer, this, beforeQueryResult));
-      });
-
-      system.afterRun?.(runResults);
+      const results = this.query(system.query, system.tags);
+      system.update(this, results);
     }
+  }
+
+  public query<T extends readonly unknown[]>(
+    componentKeys: readonly ComponentKey<unknown>[],
+    tags: readonly TagKey[] = [],
+  ): QueryResult<T> {
+    const driver = this._getDriverComponentSet(componentKeys, tags);
+
+    if (!driver) {
+      return {
+        entities: [],
+        components: componentKeys.map(() => []) as unknown as {
+          [K in keyof T]: T[K][];
+        },
+      };
+    }
+
+    const matchedEntities: number[] = [];
+    const allKeys: readonly symbol[] = [...componentKeys, ...tags];
+
+    for (let i = 0; i < driver.size; i++) {
+      const entity = driver.denseEntities[i];
+
+      if (this._entityHasAllKeys(entity, allKeys)) {
+        matchedEntities.push(entity);
+      }
+    }
+
+    const componentArrays = componentKeys.map((key) => {
+      const set = this._componentSets.get(key)!;
+
+      return matchedEntities.map((entity) => set.get(entity));
+    });
+
+    return {
+      entities: matchedEntities,
+      components: componentArrays as unknown as { [K in keyof T]: T[K][] },
+    };
+  }
+
+  public createEntity(): number {
+    return this._generateEntityId();
+  }
+
+  public removeEntity(entity: number): void {
+    for (const componentSet of this._componentSets.values()) {
+      componentSet.remove(entity);
+    }
+
+    this.onEntityRemoved.raise(entity);
+    this._freeEntityIds.push(entity);
   }
 
   public addComponent<T>(
@@ -74,7 +108,6 @@ export class EcsWorld implements Updatable, Stoppable {
     componentData: T,
   ): T {
     const componentSet = this._getComponentOrCreateSetByKey(componentKey);
-
     componentSet.add(entity, componentData);
 
     return componentData;
@@ -82,7 +115,6 @@ export class EcsWorld implements Updatable, Stoppable {
 
   public addTag(entity: number, tagKey: TagKey): void {
     const componentSet = this._getComponentOrCreateSetByKey(tagKey, true);
-
     componentSet.add(entity, true);
   }
 
@@ -101,11 +133,10 @@ export class EcsWorld implements Updatable, Stoppable {
     componentKey: ComponentKey<T>,
   ): void {
     const componentSet = this._componentSets.get(componentKey);
-
     componentSet?.remove(entity);
 
-    for (const componentSet of this._componentSets.values()) {
-      if (componentSet.has(entity)) {
+    for (const set of this._componentSets.values()) {
+      if (set.has(entity)) {
         return;
       }
     }
@@ -114,86 +145,55 @@ export class EcsWorld implements Updatable, Stoppable {
     this._freeEntityIds.push(entity);
   }
 
-  public createEntity(): number {
-    const id = this._generateEntityId();
+  private _entityHasAllKeys(entity: number, keys: readonly symbol[]): boolean {
+    for (const key of keys) {
+      if (!this._componentSets.get(key)?.has(entity)) {
+        return false;
+      }
+    }
 
-    return id;
+    return true;
   }
 
-  public removeEntity(entity: number): void {
-    for (const componentSet of this._componentSets.values()) {
-      componentSet.remove(entity);
+  private _getDriverComponentSet(
+    componentKeys: readonly ComponentKey<unknown>[],
+    tags: readonly TagKey[] = [],
+  ): SparseSet<unknown> | null {
+    if (componentKeys.length === 0 && tags.length === 0) {
+      return null;
     }
 
-    this.onEntityRemoved.raise(entity);
-    this._freeEntityIds.push(entity);
+    let driver: SparseSet<unknown> | null = null;
+
+    for (const key of componentKeys) {
+      const componentSet = this._getComponentSet(key);
+
+      if (!componentSet) {
+        return null;
+      }
+
+      if (!driver || componentSet.size < driver.size) {
+        driver = componentSet;
+      }
+    }
+
+    for (const tagKey of tags) {
+      const componentSet = this._getComponentSet(tagKey);
+
+      if (!componentSet) {
+        return null;
+      }
+
+      if (!driver || componentSet.size < driver.size) {
+        driver = componentSet;
+      }
+    }
+
+    return driver;
   }
 
-  public operate(
-    system: EcsSystem<unknown[], unknown>,
-    callback: (queryResult: QueryResult<unknown[]>) => void,
-  ): void {
-    const driver = this._getDriverComponentSet(system.query, system.tags);
-
-    if (!driver) {
-      return;
-    }
-
-    for (let i = 0; i < driver.size; i++) {
-      const entity = driver.denseEntities[i];
-      let hasAll = true;
-
-      this._queryResultBuffer.components.length = 0;
-
-      for (const name of system.query) {
-        const set = this._componentSets.get(name);
-
-        if (!set?.has(entity)) {
-          hasAll = false;
-
-          break;
-        }
-
-        if (!set.isTag) {
-          this._queryResultBuffer.components.push(set.get(entity));
-        }
-      }
-
-      if (hasAll) {
-        this._queryResultBuffer.entity = entity;
-        callback(this._queryResultBuffer);
-      }
-    }
-  }
-
-  public queryEntities(componentNames: symbol[], out: number[]): void {
-    out.length = 0;
-
-    const driver = this._getDriverComponentSet(componentNames);
-
-    if (!driver) {
-      return;
-    }
-
-    for (let i = 0; i < driver.size; i++) {
-      const entity = driver.denseEntities[i];
-
-      let hasAllComponents = true;
-
-      for (const name of componentNames) {
-        const componentSet = this._componentSets.get(name);
-
-        if (!componentSet?.has(entity)) {
-          hasAllComponents = false;
-
-          break;
-        }
-      }
-
-      if (hasAllComponents) {
-        out.push(entity);
-      }
-    }
+  private _getComponentSet(componentName: symbol): SparseSet<unknown> | null {
+    return this._componentSets.get(componentName) ?? null;
   }
 
   private _getComponentOrCreateSetByKey<T>(
@@ -212,73 +212,12 @@ export class EcsWorld implements Updatable, Stoppable {
 
   private _generateEntityId(): number {
     if (this._freeEntityIds.length > 0) {
-      return this._freeEntityIds.pop() as number;
+      return this._freeEntityIds.pop()!;
     }
 
     const id = this._nextEntityId;
     this._nextEntityId += 1;
 
     return id;
-  }
-
-  private _getDriverComponentSet(
-    componentKeys: ComponentKey<unknown>[],
-    tags: TagKey[] = [],
-  ): SparseSet<unknown> | null {
-    if (componentKeys.length === 0) {
-      return null;
-    }
-
-    let driver: SparseSet<unknown> | null = this._getComponentSet(
-      componentKeys[0],
-    );
-
-    for (const name of componentKeys) {
-      const componentSet = this._getComponentSet(name);
-
-      if (!componentSet) {
-        continue;
-      }
-
-      if (!driver) {
-        driver = componentSet;
-
-        continue;
-      }
-
-      if (componentSet.size < driver.size) {
-        driver = componentSet;
-      }
-    }
-
-    for (const name of tags) {
-      const componentSet = this._getComponentSet(name);
-
-      if (!componentSet) {
-        continue;
-      }
-
-      if (!driver) {
-        driver = componentSet;
-
-        continue;
-      }
-
-      if (componentSet.size < driver.size) {
-        driver = componentSet;
-      }
-    }
-
-    return driver;
-  }
-
-  private _getComponentSet(componentName: symbol): SparseSet<unknown> | null {
-    const componentSet = this._componentSets.get(componentName);
-
-    if (!componentSet) {
-      return null;
-    }
-
-    return componentSet;
   }
 }

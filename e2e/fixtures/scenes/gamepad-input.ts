@@ -175,7 +175,7 @@ export const createScene: CreateScene = async (
     }),
   );
 
-  const cameraEntity = createCamera(world, {
+  createCamera(world, {
     isStatic: true,
     clearColor: toColor(inputSceneColors.clear),
     // 1 world unit == 1 screen pixel, see camera-pan-zoom.ts's identical use.
@@ -227,10 +227,11 @@ export const createScene: CreateScene = async (
     toColor(inputSceneColors.cyan),
   );
 
-  // A single system, anchored on the camera entity (query: [positionId]
-  // matches it too) so it runs exactly once per tick regardless of how many
-  // squares exist. Registered at the default `normal` priority, it runs
-  // after `registerInputs`'s early input-update system - which polls
+  // `update` is a single batched call per tick regardless of how many
+  // entities match `query`, so this system's body runs exactly once per
+  // tick without needing to anchor itself on a particular entity.
+  // Registered at the default `normal` priority, it runs after
+  // `registerInputs`'s early input-update system - which polls
   // `GamepadInputSource.update()` - and before its late reset-inputs
   // system, the same ordering `createCameraEcsSystem` relies on for
   // pan/zoom input.
@@ -243,11 +244,7 @@ export const createScene: CreateScene = async (
   // once group-gated (see `menuStickAction`), instead of drifting.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
-    run: (result) => {
-      if (result.entity !== cameraEntity) {
-        return;
-      }
-
+    update: () => {
       stick.position.local.x =
         stickBase.x + stickAction.value * stickRangeInWorldUnits;
       broken.position.local.x =

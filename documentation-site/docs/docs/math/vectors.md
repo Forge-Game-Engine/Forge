@@ -137,19 +137,24 @@ const seekSpeed = 120; // pixels per second
 
 const seekSystem = {
   query: [positionId, targetId] as const,
-  run(result) {
-    const [position, target] = result.components;
+  update(world, { components: [positions, targets] }) {
+    for (let i = 0; i < positions.length; i++) {
+      const position = positions[i];
+      const target = targets[i];
 
-    const toTarget = target.value.subtract(position.world);
-    const distance = toTarget.magnitude();
+      const toTarget = target.value.subtract(position.world);
+      const distance = toTarget.magnitude();
 
-    if (distance < 1) {
-      return;
+      if (distance < 1) {
+        continue;
+      }
+
+      const step = toTarget
+        .normalize()
+        .multiply(seekSpeed * deltaTimeInSeconds);
+
+      position.world = position.world.add(step);
     }
-
-    const step = toTarget.normalize().multiply(seekSpeed * deltaTimeInSeconds);
-
-    position.world = position.world.add(step);
   },
 };
 ```

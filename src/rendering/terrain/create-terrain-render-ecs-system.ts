@@ -27,35 +27,39 @@ export const createTerrainRenderEcsSystem = (
   terrainMesh: TerrainMesh,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
   query: [cameraId, positionId],
-  run: (result) => {
-    const [cameraComponent, positionComponent] = result.components;
+  update: (_world, { components: [cameraComponents, positionComponents] }) => {
     const { gl } = renderContext;
     const { geometry, material, vertexCount } = terrainMesh;
 
-    renderContext.bindRenderTarget(cameraComponent.renderTarget ?? null);
+    for (let i = 0; i < cameraComponents.length; i++) {
+      const cameraComponent = cameraComponents[i];
+      const positionComponent = positionComponents[i];
 
-    const { clearColor } = cameraComponent;
+      renderContext.bindRenderTarget(cameraComponent.renderTarget ?? null);
 
-    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+      const { clearColor } = cameraComponent;
 
-    const pixelsPerUnit = calculatePixelsPerUnit(
-      renderContext.height,
-      cameraComponent.verticalWorldUnits,
-    );
+      gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const projectionMatrix = createProjectionMatrix(
-      renderContext.width,
-      renderContext.height,
-      positionComponent.world,
-      cameraComponent.zoom,
-      pixelsPerUnit,
-    );
+      const pixelsPerUnit = calculatePixelsPerUnit(
+        renderContext.height,
+        cameraComponent.verticalWorldUnits,
+      );
 
-    material.setUniform('u_projection', projectionMatrix);
-    material.bind(gl);
-    geometry.bind(gl, material.program);
+      const projectionMatrix = createProjectionMatrix(
+        renderContext.width,
+        renderContext.height,
+        positionComponent.world,
+        cameraComponent.zoom,
+        pixelsPerUnit,
+      );
 
-    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+      material.setUniform('u_projection', projectionMatrix);
+      material.bind(gl);
+      geometry.bind(gl, material.program);
+
+      gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+    }
   },
 });

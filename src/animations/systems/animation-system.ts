@@ -76,26 +76,26 @@ export const createAnimationEcsSystem = (
   time: Time,
 ): EcsSystem<[AnimationEcsComponent]> => ({
   query: [animationId],
-  run: (result) => {
-    const [animationComponent] = result.components;
+  update: (_world, { components: [animationComponents] }) => {
+    for (const animationComponent of animationComponents) {
+      if (animationComponent.animations.length === 0) {
+        continue;
+      }
 
-    if (animationComponent.animations.length === 0) {
-      return;
-    }
+      // Iterate backwards so we can safely remove animations
+      for (let i = animationComponent.animations.length - 1; i >= 0; i--) {
+        const animation = animationComponent.animations[i];
+        const animationComplete = updateAnimation(animation, time);
 
-    // Iterate backwards so we can safely remove animations
-    for (let i = animationComponent.animations.length - 1; i >= 0; i--) {
-      const animation = animationComponent.animations[i];
-      const animationComplete = updateAnimation(animation, time);
+        if (animationComplete) {
+          animation.updateCallback(animation.endValue);
 
-      if (animationComplete) {
-        animation.updateCallback(animation.endValue);
+          const shouldRemove = !handleLooping(animation);
 
-        const shouldRemove = !handleLooping(animation);
-
-        if (shouldRemove) {
-          animation.finishedCallback?.();
-          animationComponent.animations.splice(i, 1);
+          if (shouldRemove) {
+            animation.finishedCallback?.();
+            animationComponent.animations.splice(i, 1);
+          }
         }
       }
     }

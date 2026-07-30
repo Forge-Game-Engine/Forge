@@ -76,26 +76,38 @@ Each module has an `index.ts` file that exports its public API.
 
 ### Entity-Component-System (ECS)
 
-The codebase follows the ECS pattern:
+The codebase follows a data-oriented ECS pattern built from plain objects and
+factory functions, not classes:
 
-1. **Components** (`Component`): Pure data containers extending the abstract `Component` class
-   - Each component class has a unique `id` (symbol) generated automatically
-   - Components are lightweight and contain no logic
+1. **Components**: Plain data interfaces, not classes. Each one gets a
+   `createComponentId` key (a symbol) and an `add<Name>Component` factory
+   that attaches it to a caller-supplied entity (see "Component Pattern"
+   below). Components carry no logic.
 
-2. **Systems** (`System`): Logic processors extending the abstract `System` class
-   - Systems have a `query` defining which components they operate on
-   - Systems implement the `run(entity: Entity)` method
-   - Optional lifecycle methods: `beforeAll()`, `stop()`
-   - Each system has a unique `id` (symbol) generated automatically
+2. **Systems** (`EcsSystem<TQuery>`): Plain objects, produced by
+   `create<Name>EcsSystem` factory functions, not classes. A system declares
+   a `query` (the component keys it reads, in order) and an optional set of
+   `tags`, and implements `update(world, queryResult)`. `queryResult` is a
+   batch for the whole tick - `entities: readonly number[]` and a
+   `components` array (one array per queried component type, in query
+   order) - so `update` runs exactly once per tick regardless of how many
+   entities matched (including zero), and the system iterates the batch
+   itself. An optional `cleanup(world)` hook runs once when the system is
+   removed from an `EcsWorld` or the world is stopped. See "System Pattern"
+   below and `/documentation-site/docs/docs/ecs/system.md`.
 
-3. **Entities** (`Entity`): Containers for components
-   - Entities are created with `new Entity(world, components, options)`
-   - Components are added/removed dynamically
-   - Entities can have parent-child relationships
+3. **Entities**: Just numeric ids (`number`), created with
+   `EcsWorld.createEntity()`. Components are attached/detached by id via the
+   world (`addComponent`/`removeComponent`/`addTag`); there is no `Entity`
+   object. Parent-child relationships are expressed via a
+   `ParentEcsComponent` referencing another entity's id, not object
+   containment.
 
-4. **World** (`World`): Container for entities and systems
-   - Manages entity lifecycle
-   - Routes entities to appropriate systems based on queries
+4. **World** (`EcsWorld`): Container for component data and registered
+   systems. Stores component data grouped by component key, runs each
+   registered system's `update` once per `EcsWorld.update()` tick (in
+   registration-order), and exposes `query(componentKeys, tags?)` for
+   ad-hoc lookups outside of a system's own `query`.
 
 ### Key Patterns
 
@@ -146,7 +158,7 @@ The codebase follows the ECS pattern:
 **Type Safety**:
 
 - Use strict TypeScript mode (already enabled in `tsconfig.base.json`)
-- Always specify return types for functions: `public run(entity: Entity): void`
+- Always specify return types for functions: `update(world: EcsWorld, queryResult: QueryResult<T>): void`
 - Avoid `any`; use `unknown` if necessary
 - Avoid null assertions and casting
 - Types should be narrowed and nullish values should be handled appropriately (usually by throwing an error if it makes sense to do so)
@@ -235,31 +247,31 @@ aggregate-factory example.
 
 ### System Pattern
 
+Systems are plain objects produced by a `create<Name>EcsSystem` factory, not
+classes. `update` receives the whole tick's batch of matches at once
+(`entities` plus one `components` array per queried component type, in query
+order) and iterates it itself:
+
 ```typescript
-import { Entity, System } from '../ecs/index.js';
-import { MyComponent } from '../components/my-component.js';
+import { EcsSystem } from '../../ecs/index.js';
+import { MyComponent, myComponentId } from '../components/my-component.js';
 
 /**
- * Description of what this system does.
+ * Creates a system that processes every entity with a `MyComponent`.
+ * @returns The ECS system.
  */
-export class MySystem extends System {
-  /**
-   * Creates a new MySystem instance.
-   */
-  constructor() {
-    super([MyComponent], 'mySystemName');
-  }
-
-  /**
-   * Processes a single entity.
-   * @param entity - The entity to process.
-   */
-  public run(entity: Entity): void {
-    const component = entity.getComponentRequired(MyComponent);
-    // Process component data
-  }
-}
+export const createMyEcsSystem = (): EcsSystem<[MyComponent]> => ({
+  query: [myComponentId],
+  update: (world, { components: [myComponents] }) => {
+    for (const myComponent of myComponents) {
+      // Process component data
+    }
+  },
+});
 ```
+
+See `/documentation-site/docs/docs/ecs/system.md` for the full contract,
+including the optional `tags` and `cleanup` fields.
 
 ### Index Files
 

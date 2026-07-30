@@ -20,39 +20,42 @@ export const createCameraShakeEcsSystem = (
   random: Random,
 ): EcsSystem<[CameraShakeEcsComponent, PositionEcsComponent]> => ({
   query: [cameraShakeId, positionId],
-  run: (result) => {
-    const [shakeComponent, positionComponent] = result.components;
+  update: (_world, { components: [shakeComponents, positionComponents] }) => {
+    for (let i = 0; i < shakeComponents.length; i++) {
+      const shakeComponent = shakeComponents[i];
+      const positionComponent = positionComponents[i];
 
-    if (shakeComponent.elapsedSeconds >= shakeComponent.durationSeconds) {
-      positionComponent.world.x = positionComponent.local.x;
-      positionComponent.world.y = positionComponent.local.y;
+      if (shakeComponent.elapsedSeconds >= shakeComponent.durationSeconds) {
+        positionComponent.world.x = positionComponent.local.x;
+        positionComponent.world.y = positionComponent.local.y;
 
-      return;
+        continue;
+      }
+
+      shakeComponent.elapsedSeconds += time.deltaTimeInSeconds;
+
+      if (
+        shakeComponent.elapsedSeconds >= shakeComponent.nextOffsetChangeSeconds
+      ) {
+        const remainingFraction = Math.max(
+          0,
+          1 - shakeComponent.elapsedSeconds / shakeComponent.durationSeconds,
+        );
+        const stepIntensity = shakeComponent.intensity * remainingFraction;
+
+        shakeComponent.currentOffset.x =
+          random.randomFloat(-1, 1) * stepIntensity;
+        shakeComponent.currentOffset.y =
+          random.randomFloat(-1, 1) * stepIntensity;
+
+        shakeComponent.nextOffsetChangeSeconds =
+          shakeComponent.elapsedSeconds + offsetHoldSeconds;
+      }
+
+      positionComponent.world.x =
+        positionComponent.local.x + shakeComponent.currentOffset.x;
+      positionComponent.world.y =
+        positionComponent.local.y + shakeComponent.currentOffset.y;
     }
-
-    shakeComponent.elapsedSeconds += time.deltaTimeInSeconds;
-
-    if (
-      shakeComponent.elapsedSeconds >= shakeComponent.nextOffsetChangeSeconds
-    ) {
-      const remainingFraction = Math.max(
-        0,
-        1 - shakeComponent.elapsedSeconds / shakeComponent.durationSeconds,
-      );
-      const stepIntensity = shakeComponent.intensity * remainingFraction;
-
-      shakeComponent.currentOffset.x =
-        random.randomFloat(-1, 1) * stepIntensity;
-      shakeComponent.currentOffset.y =
-        random.randomFloat(-1, 1) * stepIntensity;
-
-      shakeComponent.nextOffsetChangeSeconds =
-        shakeComponent.elapsedSeconds + offsetHoldSeconds;
-    }
-
-    positionComponent.world.x =
-      positionComponent.local.x + shakeComponent.currentOffset.x;
-    positionComponent.world.y =
-      positionComponent.local.y + shakeComponent.currentOffset.y;
   },
 });

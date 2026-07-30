@@ -17,11 +17,11 @@ export const createAmbientEmitterEcsSystem = (): EcsSystem<
 > => ({
   query: [ParticleEmitterId],
   tags: [ambientEmitterId],
-  run: (result) => {
-    const [particleEmitterComponent] = result.components;
-
-    for (const emitter of particleEmitterComponent.emitters.values()) {
-      emitter.emitIfNotEmitting();
+  update: (_world, { components: [particleEmitterComponents] }) => {
+    for (const particleEmitterComponent of particleEmitterComponents) {
+      for (const emitter of particleEmitterComponent.emitters.values()) {
+        emitter.emitIfNotEmitting();
+      }
     }
   },
 });

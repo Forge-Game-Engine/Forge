@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EcsWorld } from './ecs-world';
-import { EcsSystem } from './ecs-system';
+import { EcsWorld } from './ecs-world.js';
+import { EcsSystem } from './ecs-system.js';
 import {
   PositionEcsComponent,
   positionId,
@@ -9,7 +9,7 @@ import {
   SpeedEcsComponent,
   speedId,
 } from '../common/index.js';
-import { createComponentId } from './ecs-component';
+import { createComponentId } from './ecs-component.js';
 import { Vector2 } from '../math/index.js';
 
 describe('EcsWorld', () => {
@@ -33,23 +33,22 @@ describe('EcsWorld', () => {
     world.addComponent(entity1, rotationId, rot1);
     world.addComponent(entity2, positionId, pos2);
 
-    const run = vi.fn();
+    const update = vi.fn();
     const system: EcsSystem<[PositionEcsComponent, RotationEcsComponent]> = {
       query: [positionId, rotationId],
-      run,
+      update,
     };
 
     world.addSystem(system);
     world.update();
 
-    expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entity: entity1,
-        components: [pos1, rot1],
-      }),
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
       world,
-      null,
+      expect.objectContaining({
+        entities: [entity1],
+        components: [[pos1], [rot1]],
+      }),
     );
   });
 
@@ -69,11 +68,10 @@ describe('EcsWorld', () => {
     const results: Array<{ entity: number; component: { value: string } }> = [];
     const system: EcsSystem<[{ value: string }]> = {
       query: [tagId],
-      run: (result) => {
-        results.push({
-          entity: result.entity,
-          component: result.components[0],
-        });
+      update: (_world, { entities, components: [values] }) => {
+        for (let i = 0; i < entities.length; i++) {
+          results.push({ entity: entities[i], component: values[i] });
+        }
       },
     };
 
@@ -107,23 +105,22 @@ describe('EcsWorld', () => {
     world.addComponent(entity2, positionId, position2);
     world.addComponent(entity2, speedId, speed2);
 
-    const run = vi.fn();
+    const update = vi.fn();
     const system: EcsSystem<[PositionEcsComponent, SpeedEcsComponent]> = {
       query: [positionId, speedId],
-      run,
+      update,
     };
 
     world.addSystem(system);
     world.update();
 
-    expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entity: entity2,
-        components: [position2, speed2],
-      }),
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
       world,
-      null,
+      expect.objectContaining({
+        entities: [entity2],
+        components: [[position2], [speed2]],
+      }),
     );
   });
 
@@ -134,12 +131,64 @@ describe('EcsWorld', () => {
 
     const system: EcsSystem<[TestComponent]> = {
       query: [nonexistentId],
-      run: () => {},
+      update: () => {},
     };
 
     world.addSystem(system);
 
     expect(() => world.update()).not.toThrow();
+  });
+
+  it('calls update once per tick with every matched entity and component together', () => {
+    const world = new EcsWorld();
+    const entity1 = world.createEntity();
+    const entity2 = world.createEntity();
+
+    world.addComponent(entity1, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+    world.addComponent(entity2, positionId, {
+      local: Vector2.zero,
+      world: Vector2.zero,
+    });
+
+    const update = vi.fn();
+    const system: EcsSystem<[PositionEcsComponent]> = {
+      query: [positionId],
+      update,
+    };
+
+    world.addSystem(system);
+    world.update();
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
+      world,
+      expect.objectContaining({ entities: [entity1, entity2] }),
+    );
+  });
+
+  it('calls update once with empty arrays when no entities match the query', () => {
+    const world = new EcsWorld();
+    const nonexistentId = createComponentId<{ test: number }>(
+      'nonexistent-update',
+    );
+
+    const update = vi.fn();
+    const system: EcsSystem<[{ test: number }]> = {
+      query: [nonexistentId],
+      update,
+    };
+
+    world.addSystem(system);
+    world.update();
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
+      world,
+      expect.objectContaining({ entities: [], components: [[]] }),
+    );
   });
 
   it('runs systems with query results', () => {
@@ -160,24 +209,27 @@ describe('EcsWorld', () => {
     world.addComponent(entity1, positionId, pos1);
     world.addComponent(entity2, positionId, pos2);
 
-    const run = vi.fn(
-      (result: { entity: number; components: [PositionEcsComponent] }) => {
-        const [position] = result.components;
-
-        position.local.x += 10;
+    const update = vi.fn(
+      (
+        _world: EcsWorld,
+        { components: [positions] }: { components: [PositionEcsComponent[]] },
+      ) => {
+        for (const position of positions) {
+          position.local.x += 10;
+        }
       },
     );
 
     const system: EcsSystem<[PositionEcsComponent]> = {
       query: [positionId],
-      run,
+      update,
     };
 
     world.addSystem(system);
 
     world.update();
 
-    expect(run).toHaveBeenCalledTimes(2);
+    expect(update).toHaveBeenCalledTimes(1);
     expect(pos1.local.x).toBe(5);
     expect(pos2.local.x).toBe(15);
   });
@@ -206,22 +258,28 @@ describe('EcsWorld', () => {
 
     const positionSystem: EcsSystem<[PositionEcsComponent]> = {
       query: [positionId],
-      run: vi.fn(
-        (result: { entity: number; components: [PositionEcsComponent] }) => {
-          const [position] = result.components;
-
-          position.local.x += 10;
+      update: vi.fn(
+        (
+          _world: EcsWorld,
+          { components: [positions] }: { components: [PositionEcsComponent[]] },
+        ) => {
+          for (const position of positions) {
+            position.local.x += 10;
+          }
         },
       ),
     };
 
     const rotationSystem: EcsSystem<[RotationEcsComponent]> = {
       query: [rotationId],
-      run: vi.fn(
-        (result: { entity: number; components: [RotationEcsComponent] }) => {
-          const [rotation] = result.components;
-
-          rotation.local *= 2;
+      update: vi.fn(
+        (
+          _world: EcsWorld,
+          { components: [rotations] }: { components: [RotationEcsComponent[]] },
+        ) => {
+          for (const rotation of rotations) {
+            rotation.local *= 2;
+          }
         },
       ),
     };
@@ -231,120 +289,13 @@ describe('EcsWorld', () => {
 
     world.update();
 
-    expect(positionSystem.run).toHaveBeenCalledTimes(2);
+    expect(positionSystem.update).toHaveBeenCalledTimes(1);
     expect(pos1.local.x).toBe(5);
     expect(pos2.local.x).toBe(15);
 
-    expect(rotationSystem.run).toHaveBeenCalledTimes(2);
+    expect(rotationSystem.update).toHaveBeenCalledTimes(1);
     expect(rot1.local).toBe(2);
     expect(rot2.local).toBe(4);
-  });
-
-  describe('afterRun', () => {
-    it('passes an array of every run call result to afterRun', () => {
-      const world = new EcsWorld();
-      const entity = world.createEntity();
-
-      world.addComponent(entity, positionId, {
-        local: Vector2.zero,
-        world: Vector2.zero,
-      });
-
-      const afterRun = vi.fn();
-      const system: EcsSystem<[PositionEcsComponent], null, string> = {
-        query: [positionId],
-        run: () => 'result-value',
-        afterRun,
-      };
-
-      world.addSystem(system);
-      world.update();
-
-      expect(afterRun).toHaveBeenCalledTimes(1);
-      expect(afterRun).toHaveBeenCalledWith(['result-value']);
-    });
-
-    it('does not throw when afterRun is not defined', () => {
-      const world = new EcsWorld();
-      const entity = world.createEntity();
-
-      world.addComponent(entity, positionId, {
-        local: Vector2.zero,
-        world: Vector2.zero,
-      });
-
-      const system: EcsSystem<[PositionEcsComponent]> = {
-        query: [positionId],
-        run: () => {},
-      };
-
-      world.addSystem(system);
-
-      expect(() => world.update()).not.toThrow();
-    });
-
-    // afterRun is a once-per-tick hook: every matched entity's run() call
-    // happens first, and afterRun is called exactly once afterwards with all
-    // of their results together, not interleaved with run per entity. This
-    // is what lets the render system collect one RenderPassResult per
-    // camera in run, then draw every camera's batch from a single afterRun
-    // call once all cameras are known.
-    it('calls run for every matched entity before calling afterRun once, with all their results', () => {
-      const world = new EcsWorld();
-      const entity1 = world.createEntity();
-      const entity2 = world.createEntity();
-
-      world.addComponent(entity1, positionId, {
-        local: Vector2.zero,
-        world: Vector2.zero,
-      });
-      world.addComponent(entity2, positionId, {
-        local: Vector2.zero,
-        world: Vector2.zero,
-      });
-
-      const callOrder: string[] = [];
-      const system: EcsSystem<[PositionEcsComponent], null, number> = {
-        query: [positionId],
-        run: (result) => {
-          callOrder.push(`run:${result.entity}`);
-
-          return result.entity;
-        },
-        afterRun: (entities) => {
-          callOrder.push(`afterRun:${entities.join(',')}`);
-        },
-      };
-
-      world.addSystem(system);
-      world.update();
-
-      expect(callOrder).toEqual([
-        `run:${entity1}`,
-        `run:${entity2}`,
-        `afterRun:${entity1},${entity2}`,
-      ]);
-    });
-
-    it('calls afterRun once with an empty array when no entities match the query', () => {
-      const world = new EcsWorld();
-      const nonexistentId = createComponentId<{ test: number }>(
-        'nonexistent-afterrun',
-      );
-
-      const afterRun = vi.fn();
-      const system: EcsSystem<[{ test: number }]> = {
-        query: [nonexistentId],
-        run: () => {},
-        afterRun,
-      };
-
-      world.addSystem(system);
-      world.update();
-
-      expect(afterRun).toHaveBeenCalledTimes(1);
-      expect(afterRun).toHaveBeenCalledWith([]);
-    });
   });
 
   describe('system registration lifecycle', () => {
@@ -353,7 +304,7 @@ describe('EcsWorld', () => {
       const onRegister = vi.fn();
       const system: EcsSystem<[]> = {
         query: [],
-        run: () => {},
+        update: () => {},
         onRegister,
       };
 
@@ -367,33 +318,33 @@ describe('EcsWorld', () => {
       const world = new EcsWorld();
       const system: EcsSystem<[]> = {
         query: [],
-        run: () => {},
+        update: () => {},
       };
 
       expect(() => world.addSystem(system)).not.toThrow();
     });
 
-    it('calls cleanupSystem with the world when a system is removed', () => {
+    it('calls cleanup with the world when a system is removed', () => {
       const world = new EcsWorld();
-      const cleanupSystem = vi.fn();
+      const cleanup = vi.fn();
       const system: EcsSystem<[]> = {
         query: [],
-        run: () => {},
-        cleanupSystem,
+        update: () => {},
+        cleanup,
       };
 
       world.addSystem(system);
       world.removeSystem(system);
 
-      expect(cleanupSystem).toHaveBeenCalledTimes(1);
-      expect(cleanupSystem).toHaveBeenCalledWith(world);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledWith(world);
     });
 
-    it('does not throw when removing a system without cleanupSystem', () => {
+    it('does not throw when removing a system without cleanup', () => {
       const world = new EcsWorld();
       const system: EcsSystem<[]> = {
         query: [],
-        run: () => {},
+        update: () => {},
       };
 
       world.addSystem(system);
@@ -401,38 +352,27 @@ describe('EcsWorld', () => {
       expect(() => world.removeSystem(system)).not.toThrow();
     });
 
-    it('calls cleanupEntities then cleanupSystem for every system when the world stops', () => {
+    it('calls cleanup with the world when it stops', () => {
       const world = new EcsWorld();
-      const entity = world.createEntity();
-
-      world.addComponent(entity, positionId, {
-        local: Vector2.zero,
-        world: Vector2.zero,
-      });
-
-      const callOrder: string[] = [];
-      const system: EcsSystem<[PositionEcsComponent]> = {
-        query: [positionId],
-        run: () => {},
-        cleanupEntities: () => {
-          callOrder.push('cleanupEntities');
-        },
-        cleanupSystem: () => {
-          callOrder.push('cleanupSystem');
-        },
+      const cleanup = vi.fn();
+      const system: EcsSystem<[]> = {
+        query: [],
+        update: () => {},
+        cleanup,
       };
 
       world.addSystem(system);
       world.stop();
 
-      expect(callOrder).toEqual(['cleanupEntities', 'cleanupSystem']);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledWith(world);
     });
 
-    it('does not throw when stopping a world whose systems define neither cleanupEntities nor cleanupSystem', () => {
+    it('does not throw when stopping a world whose systems define no cleanup', () => {
       const world = new EcsWorld();
       const system: EcsSystem<[]> = {
         query: [],
-        run: () => {},
+        update: () => {},
       };
 
       world.addSystem(system);

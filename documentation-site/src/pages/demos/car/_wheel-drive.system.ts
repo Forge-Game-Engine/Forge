@@ -56,31 +56,35 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
   ]
 > => ({
   query: [wheelDriveId, AngularVelocityMotorId, groundContactId],
-  run: (result) => {
-    const [wheelDrive, motor, groundContact] = result.components;
-    const {
-      throttleInput,
-      chassisBody,
-      wheelRadius,
-      maxWheelSpeed,
-      maxSlipAngularSpeed,
-      maxTorque,
-    } = wheelDrive;
+  update: (_world, { components: [wheelDrives, motors, groundContacts] }) => {
+    for (let i = 0; i < wheelDrives.length; i++) {
+      const wheelDrive = wheelDrives[i];
+      const motor = motors[i];
+      const groundContact = groundContacts[i];
+      const {
+        throttleInput,
+        chassisBody,
+        wheelRadius,
+        maxWheelSpeed,
+        maxSlipAngularSpeed,
+        maxTorque,
+      } = wheelDrive;
 
-    const desiredAngularVelocity = -throttleInput.value * maxWheelSpeed;
+      const desiredAngularVelocity = -throttleInput.value * maxWheelSpeed;
 
-    if (isGrounded(groundContact)) {
-      motor.targetVelocity = desiredAngularVelocity;
-    } else {
-      const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
+      if (isGrounded(groundContact)) {
+        motor.targetVelocity = desiredAngularVelocity;
+      } else {
+        const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
 
-      motor.targetVelocity = clamp(
-        desiredAngularVelocity,
-        rollingAngularVelocity - maxSlipAngularSpeed,
-        rollingAngularVelocity + maxSlipAngularSpeed,
-      );
+        motor.targetVelocity = clamp(
+          desiredAngularVelocity,
+          rollingAngularVelocity - maxSlipAngularSpeed,
+          rollingAngularVelocity + maxSlipAngularSpeed,
+        );
+      }
+
+      motor.maxTorque = throttleInput.value === 0 ? 0 : maxTorque;
     }
-
-    motor.maxTorque = throttleInput.value === 0 ? 0 : maxTorque;
   },
 });

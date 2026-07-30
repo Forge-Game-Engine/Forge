@@ -30,12 +30,10 @@ describe('RemoveFromWorldLifecycleSystem', () => {
 
     world.update();
 
-    const entitiesMatchingQuery: number[] = [];
-
-    world.queryEntities(
-      [lifetimeId, RemoveFromWorldLifetimeStrategyId],
-      entitiesMatchingQuery,
-    );
+    const { entities: entitiesMatchingQuery } = world.query([
+      lifetimeId,
+      RemoveFromWorldLifetimeStrategyId,
+    ]);
 
     // Assert
     expect(entitiesMatchingQuery).toHaveLength(1);
@@ -54,12 +52,10 @@ describe('RemoveFromWorldLifecycleSystem', () => {
 
     world.update();
 
-    const entitiesMatchingQuery: number[] = [];
-
-    world.queryEntities(
-      [lifetimeId, RemoveFromWorldLifetimeStrategyId],
-      entitiesMatchingQuery,
-    );
+    const { entities: entitiesMatchingQuery } = world.query([
+      lifetimeId,
+      RemoveFromWorldLifetimeStrategyId,
+    ]);
 
     // Assert
     expect(entitiesMatchingQuery).toHaveLength(0);
@@ -82,12 +78,9 @@ describe('RemoveFromWorldLifecycleSystem', () => {
     time.update(0.1);
     world.update();
 
-    const entitiesMatchingQuery: number[] = [];
-
-    world.queryEntities(
-      [RemoveFromWorldLifetimeStrategyId],
-      entitiesMatchingQuery,
-    );
+    const { entities: entitiesMatchingQuery } = world.query([
+      RemoveFromWorldLifetimeStrategyId,
+    ]);
 
     // Assert
     expect(entitiesMatchingQuery).toHaveLength(1);

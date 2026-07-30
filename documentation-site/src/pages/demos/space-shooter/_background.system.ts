@@ -11,12 +11,12 @@ export const createBackgroundEcsSystem = (
 ): EcsSystem<[SpriteEcsComponent]> => ({
   query: [spriteId],
   tags: [backgroundId],
-  run: (result) => {
-    const [spriteComponent] = result.components;
-
-    spriteComponent.renderable.material.setUniform(
-      'u_time',
-      time.timeInSeconds,
-    );
+  update: (_world, { components: [spriteComponents] }) => {
+    for (const spriteComponent of spriteComponents) {
+      spriteComponent.renderable.material.setUniform(
+        'u_time',
+        time.timeInSeconds,
+      );
+    }
   },
 });

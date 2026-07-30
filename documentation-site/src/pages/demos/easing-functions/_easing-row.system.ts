@@ -31,12 +31,15 @@ export const createEasingRowEcsSystem = (
   time: Time,
 ): EcsSystem<[PositionEcsComponent, EasingRowEcsComponent]> => ({
   query: [positionId, easingRowId],
-  run: (result) => {
-    const [position, easingRow] = result.components;
-    const { easingFunction, minX, maxX } = easingRow;
+  update: (_world, { components: [positions, easingRows] }) => {
+    for (let i = 0; i < positions.length; i++) {
+      const position = positions[i];
+      const easingRow = easingRows[i];
+      const { easingFunction, minX, maxX } = easingRow;
 
-    const phase = pingPong(time.timeInSeconds);
+      const phase = pingPong(time.timeInSeconds);
 
-    position.world.x = lerp(minX, maxX, easingFunction(phase));
+      position.world.x = lerp(minX, maxX, easingFunction(phase));
+    }
   },
 });

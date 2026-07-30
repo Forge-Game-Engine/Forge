@@ -9,39 +9,37 @@ export const createGameOverEcsSystem = (
   respawnPlayer: () => void,
 ): EcsSystem<[GameOverEcsComponent]> => ({
   query: [gameOverId],
-  run: (result, world) => {
-    const [gameOverComponent] = result.components;
+  update: (world, { components: [gameOverComponents] }) => {
+    for (const gameOverComponent of gameOverComponents) {
+      if (gameOverComponent.isGameOver && restartInput.isTriggered) {
+        gameOverComponent.isGameOver = false;
 
-    if (gameOverComponent.isGameOver && restartInput.isTriggered) {
-      gameOverComponent.isGameOver = false;
+        for (const entity of world.query([asteroidId]).entities) {
+          world.removeEntity(entity);
+        }
 
-      const entitiesToRemove: number[] = [];
+        for (const entity of world.query([bulletId]).entities) {
+          world.removeEntity(entity);
+        }
 
-      world.queryEntities([asteroidId], entitiesToRemove);
-
-      for (const entity of entitiesToRemove) {
-        world.removeEntity(entity);
+        respawnPlayer();
       }
 
-      world.queryEntities([bulletId], entitiesToRemove);
-
-      for (const entity of entitiesToRemove) {
-        world.removeEntity(entity);
-      }
-
-      respawnPlayer();
+      // Read after the restart branch (rather than at the top of the loop),
+      // so the message reflects this frame's *resolved* state instead of
+      // flashing visible for one frame on the exact tick a restart is
+      // processed.
+      gameOverComponent.messageElement.style.display =
+        gameOverComponent.isGameOver ? 'flex' : 'none';
     }
-
-    // Read after the restart branch (rather than at the top of `run`), so
-    // the message reflects this frame's *resolved* state instead of
-    // flashing visible for one frame on the exact tick a restart is
-    // processed.
-    gameOverComponent.messageElement.style.display =
-      gameOverComponent.isGameOver ? 'flex' : 'none';
   },
-  cleanupEntities: (result) => {
-    const [gameOverComponent] = result.components;
+  cleanup: (world) => {
+    const {
+      components: [gameOverComponents],
+    } = world.query<[GameOverEcsComponent]>([gameOverId]);
 
-    gameOverComponent.messageElement.remove();
+    for (const gameOverComponent of gameOverComponents) {
+      gameOverComponent.messageElement.remove();
+    }
   },
 });

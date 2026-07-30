@@ -26,24 +26,34 @@ export const createParticlePositionEcsSystem = (
   ]
 > => ({
   query: [positionId, rotationId, speedId, ParticleId],
-  run: (result) => {
-    const [
-      positionComponent,
-      rotationComponent,
-      speedComponent,
-      particleComponent,
-    ] = result.components;
+  update: (
+    _world,
+    {
+      components: [
+        positionComponents,
+        rotationComponents,
+        speedComponents,
+        particleComponents,
+      ],
+    },
+  ) => {
+    for (let i = 0; i < positionComponents.length; i++) {
+      const positionComponent = positionComponents[i];
+      const rotationComponent = rotationComponents[i];
+      const speedComponent = speedComponents[i];
+      const particleComponent = particleComponents[i];
 
-    positionComponent.local.x +=
-      speedComponent.speed *
-      time.deltaTimeInSeconds *
-      Math.sin(rotationComponent.local);
-    positionComponent.local.y -=
-      speedComponent.speed *
-      time.deltaTimeInSeconds *
-      Math.cos(rotationComponent.local);
+      positionComponent.local.x +=
+        speedComponent.speed *
+        time.deltaTimeInSeconds *
+        Math.sin(rotationComponent.local);
+      positionComponent.local.y -=
+        speedComponent.speed *
+        time.deltaTimeInSeconds *
+        Math.cos(rotationComponent.local);
 
-    rotationComponent.local +=
-      particleComponent.rotationSpeed * time.deltaTimeInSeconds;
+      rotationComponent.local +=
+        particleComponent.rotationSpeed * time.deltaTimeInSeconds;
+    }
   },
 });

@@ -26,38 +26,38 @@ export const createFpsMonitorEcsSystem = (
 
   return {
     query: [spriteSpawnerId],
-    run: (result) => {
-      const [spawner] = result.components;
+    update: (_world, { components: [spawners] }) => {
+      for (const spawner of spawners) {
+        if (nextThresholdIndex >= fpsThresholds.length) {
+          continue;
+        }
 
-      if (nextThresholdIndex >= fpsThresholds.length) {
-        return;
-      }
+        startTimeInMilliseconds ??= time.rawTimeInMilliseconds;
 
-      startTimeInMilliseconds ??= time.rawTimeInMilliseconds;
+        // `time.fps` is a count of frames over the last second, so it only
+        // becomes meaningful once a full second of frames has been sampled.
+        // `time.timeInSeconds` can't be used for this: `Game.run` seeds it
+        // with `performance.now()`, so it can already be well past 1 second
+        // on the very first frame.
+        if (time.rawTimeInMilliseconds - startTimeInMilliseconds < 1000) {
+          continue;
+        }
 
-      // `time.fps` is a count of frames over the last second, so it only
-      // becomes meaningful once a full second of frames has been sampled.
-      // `time.timeInSeconds` can't be used for this: `Game.run` seeds it
-      // with `performance.now()`, so it can already be well past 1 second
-      // on the very first frame.
-      if (time.rawTimeInMilliseconds - startTimeInMilliseconds < 1000) {
-        return;
-      }
+        const threshold = fpsThresholds[nextThresholdIndex];
 
-      const threshold = fpsThresholds[nextThresholdIndex];
+        if (time.fps >= threshold) {
+          continue;
+        }
 
-      if (time.fps >= threshold) {
-        return;
-      }
+        console.log(
+          `FPS dropped below ${threshold}: ${spawner.spawnedCount} sprites were on screen.`,
+        );
 
-      console.log(
-        `FPS dropped below ${threshold}: ${spawner.spawnedCount} sprites were on screen.`,
-      );
+        nextThresholdIndex += 1;
 
-      nextThresholdIndex += 1;
-
-      if (nextThresholdIndex >= fpsThresholds.length) {
-        spawner.isSpawning = false;
+        if (nextThresholdIndex >= fpsThresholds.length) {
+          spawner.isSpawning = false;
+        }
       }
     },
   };

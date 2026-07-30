@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { addLifetimeComponent, LifetimeEcsComponent } from '../../lifecycle';
-import { EcsWorld, QueryResult } from '../../ecs';
+import {
+  addLifetimeComponent,
+  LifetimeEcsComponent,
+} from '../../lifecycle/index.js';
+import { EcsWorld, QueryResult } from '../../ecs/index.js';
 import {
   addAgeScaleComponent,
   addScaleComponent,
   AgeScaleEcsComponent,
   ScaleEcsComponent,
-} from '../components';
-import { createAgeScaleEcsSystem } from './age-scale-system';
+} from '../components/index.js';
+import { createAgeScaleEcsSystem } from './age-scale-system.js';
 
 describe('AgeScaleSystem', () => {
   const world = new EcsWorld();
@@ -32,12 +35,12 @@ describe('AgeScaleSystem', () => {
     const queryResult: QueryResult<
       [LifetimeEcsComponent, ScaleEcsComponent, AgeScaleEcsComponent]
     > = {
-      entity,
-      components: [lifetimeComponent, scaleComponent, ageScaleComponent],
+      entities: [entity],
+      components: [[lifetimeComponent], [scaleComponent], [ageScaleComponent]],
     };
 
     // Act
-    system.run(queryResult, world, null);
+    system.update(world, queryResult);
 
     // Assert
     const expectedScaleX = 0.75; // Calculated as: 1 * (1 - 0.5) + 0.5 * 0.5
@@ -72,12 +75,12 @@ describe('AgeScaleSystem', () => {
     const queryResult: QueryResult<
       [LifetimeEcsComponent, ScaleEcsComponent, AgeScaleEcsComponent]
     > = {
-      entity,
-      components: [lifetimeComponent, scaleComponent, ageScaleComponent],
+      entities: [entity],
+      components: [[lifetimeComponent], [scaleComponent], [ageScaleComponent]],
     };
 
     // Act
-    system.run(queryResult, world, null);
+    system.update(world, queryResult);
 
     // Assert
     expect(scaleComponent.local.x).toBeCloseTo(expectedScaleX);

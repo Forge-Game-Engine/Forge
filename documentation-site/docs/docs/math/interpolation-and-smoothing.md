@@ -64,20 +64,23 @@ import { smoothDampVector2 } from '@forge-game-engine/forge/math';
 
 const cameraFollowSystem = {
   query: [cameraId, positionId] as const,
-  run(result, _world, _before) {
-    const [camera, position] = result.components;
+  update(world, { components: [cameras, positions] }) {
+    for (let i = 0; i < cameras.length; i++) {
+      const camera = cameras[i];
+      const position = positions[i];
 
-    const { positionOutput, velocityOutput } = smoothDampVector2(
-      camera.position,
-      position.world,
-      camera.velocity,
-      camera.maxFollowSpeed,
-      camera.followSmoothTime,
-      deltaTimeInSeconds,
-    );
+      const { positionOutput, velocityOutput } = smoothDampVector2(
+        camera.position,
+        position.world,
+        camera.velocity,
+        camera.maxFollowSpeed,
+        camera.followSmoothTime,
+        deltaTimeInSeconds,
+      );
 
-    camera.position = positionOutput;
-    camera.velocity = velocityOutput;
+      camera.position = positionOutput;
+      camera.velocity = velocityOutput;
+    }
   },
 };
 ```

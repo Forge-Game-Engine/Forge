@@ -86,14 +86,17 @@ import { vectorToRadians } from '@forge-game-engine/forge/math';
 
 const faceVelocitySystem = {
   query: [velocityId, rotationId] as const,
-  run(result) {
-    const [velocity, rotation] = result.components;
+  update(world, { components: [velocities, rotations] }) {
+    for (let i = 0; i < velocities.length; i++) {
+      const velocity = velocities[i];
+      const rotation = rotations[i];
 
-    if (velocity.value.magnitudeSquared() < 0.0001) {
-      return;
+      if (velocity.value.magnitudeSquared() < 0.0001) {
+        continue;
+      }
+
+      rotation.local = vectorToRadians(velocity.value) + Math.PI / 2;
     }
-
-    rotation.local = vectorToRadians(velocity.value) + Math.PI / 2;
   },
 };
 ```

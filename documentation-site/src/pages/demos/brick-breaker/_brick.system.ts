@@ -11,12 +11,12 @@ export const createBrickEcsSystem = (
 ): EcsSystem<[SpriteEcsComponent]> => ({
   query: [spriteId],
   tags: [brickId],
-  run: (result) => {
-    const [spriteComponent] = result.components;
-
-    spriteComponent.renderable.material.setUniform(
-      'u_time',
-      time.timeInSeconds,
-    );
+  update: (_world, { components: [spriteComponents] }) => {
+    for (const spriteComponent of spriteComponents) {
+      spriteComponent.renderable.material.setUniform(
+        'u_time',
+        time.timeInSeconds,
+      );
+    }
   },
 });

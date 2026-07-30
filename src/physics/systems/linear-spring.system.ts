@@ -23,29 +23,31 @@ import {
  */
 export const createLinearSpringEcsSystem = (
   time: Time,
-): EcsSystem<[LinearSpringEcsComponent], void> => ({
+): EcsSystem<[LinearSpringEcsComponent]> => ({
   query: [LinearSpringId],
-  run: (result) => {
-    const [spring] = result.components;
-    const { bodyA, bodyB, anchorA, anchorB, restLength, stiffness } = spring;
+  update: (_world, { components: [springs] }) => {
     const { deltaTimeInSeconds } = time;
 
-    const rA = anchorA.rotate(bodyA.angle);
-    const rB = anchorB.rotate(bodyB.angle);
-    const delta = bodyB.position.add(rB).subtract(bodyA.position.add(rA));
-    const length = delta.magnitude();
+    for (const spring of springs) {
+      const { bodyA, bodyB, anchorA, anchorB, restLength, stiffness } = spring;
 
-    if (length === 0) {
-      return;
+      const rA = anchorA.rotate(bodyA.angle);
+      const rB = anchorB.rotate(bodyB.angle);
+      const delta = bodyB.position.add(rB).subtract(bodyA.position.add(rA));
+      const length = delta.magnitude();
+
+      if (length === 0) {
+        continue;
+      }
+
+      const direction = delta.multiply(1 / length);
+      const displacement = length - restLength;
+      const impulse = direction.multiply(
+        -stiffness * displacement * deltaTimeInSeconds,
+      );
+
+      bodyA.applyImpulse(impulse.multiply(-1), rA);
+      bodyB.applyImpulse(impulse, rB);
     }
-
-    const direction = delta.multiply(1 / length);
-    const displacement = length - restLength;
-    const impulse = direction.multiply(
-      -stiffness * displacement * deltaTimeInSeconds,
-    );
-
-    bodyA.applyImpulse(impulse.multiply(-1), rA);
-    bodyB.applyImpulse(impulse, rB);
   },
 });
