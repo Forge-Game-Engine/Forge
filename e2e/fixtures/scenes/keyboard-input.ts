@@ -158,7 +158,7 @@ export const createScene: CreateScene = async (
     new KeyboardHoldBinding(crouchAction, keyCodes.c),
   );
 
-  const cameraEntity = createCamera(world, {
+  createCamera(world, {
     isStatic: true,
     clearColor: toColor(inputSceneColors.clear),
     // 1 world unit == 1 screen pixel, see camera-pan-zoom.ts's identical use.
@@ -201,20 +201,17 @@ export const createScene: CreateScene = async (
   let gameTriggerCount = 0;
   let menuTriggerCount = 0;
 
-  // A single system, anchored on the camera entity (query: [positionId]
-  // matches it too) so it runs exactly once per tick regardless of how many
-  // squares exist. Registered at the default `normal` priority, it runs
-  // after `registerInputs`'s early input-update system (so this frame's
+  // `update` is a single batched call per tick regardless of how many
+  // entities match `query`, so this system's body runs exactly once per
+  // tick without needing to anchor itself on a particular entity.
+  // Registered at the default `normal` priority, it runs after
+  // `registerInputs`'s early input-update system (so this frame's
   // key events have already been dispatched) and before its late
   // reset-inputs system (so `isTriggered`/axis values are still valid) -
   // the same ordering `createCameraEcsSystem` relies on for pan/zoom input.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
-    run: (result) => {
-      if (result.entity !== cameraEntity) {
-        return;
-      }
-
+    update: () => {
       const deltaSeconds = time.deltaTimeInMilliseconds / 1000;
 
       mover.position.local.x +=

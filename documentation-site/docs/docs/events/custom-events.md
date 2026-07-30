@@ -57,19 +57,20 @@ changes:
 ```ts
 const damageSystem = {
   query: [Health] as const,
-  run(result, world) {
-    const [health] = result.components as [HealthComponent];
-    const damage = getIncomingDamage(); // however this is determined
+  update(world, { components: [healthComponents] }) {
+    for (const health of healthComponents as HealthComponent[]) {
+      const damage = getIncomingDamage(); // however this is determined
 
-    if (damage <= 0) {
-      return;
-    }
+      if (damage <= 0) {
+        continue;
+      }
 
-    health.current = Math.max(0, health.current - damage);
-    health.onDamaged.raise(damage);
+      health.current = Math.max(0, health.current - damage);
+      health.onDamaged.raise(damage);
 
-    if (health.current === 0) {
-      health.onDied.raise();
+      if (health.current === 0) {
+        health.onDied.raise();
+      }
     }
   },
 };
@@ -106,7 +107,7 @@ run for that `raise()` call, and the error propagates to whoever called
 ### Create events once, not every frame
 
 `ForgeEvent` and `ParameterizedForgeEvent` instances hold their listeners
-internally. Creating a new instance inside `run()` or another per-frame path
+internally. Creating a new instance inside `update()` or another per-frame path
 discards every listener that was previously registered. Create the event
 once, as part of the component's initial data or in a constructor, and call
 `raise()` on that same instance repeatedly.
@@ -132,12 +133,12 @@ inspection, for example in tests, but make changes through
 ❌ Recreating the event loses every previously registered listener:
 
 ```ts
-run(result, world) {
-  const [health] = result.components as [HealthComponent];
-
-  // a fresh event every tick, nobody is listening to this one
-  health.onDamaged = new ParameterizedForgeEvent<number>('player-damaged');
-  health.onDamaged.raise(damage);
+update(world, { components: [healthComponents] }) {
+  for (const health of healthComponents as HealthComponent[]) {
+    // a fresh event every tick, nobody is listening to this one
+    health.onDamaged = new ParameterizedForgeEvent<number>('player-damaged');
+    health.onDamaged.raise(damage);
+  }
 }
 ```
 

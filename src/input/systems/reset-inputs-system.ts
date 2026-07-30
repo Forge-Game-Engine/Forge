@@ -11,8 +11,9 @@ export const createResetInputsEcsSystem = (): EcsSystem<
   [InputsEcsComponent]
 > => ({
   query: [inputsId],
-  run: (result) => {
-    const [inputsComponent] = result.components;
-    inputsComponent.inputManager.reset();
+  update: (_world, { components: [inputsComponents] }) => {
+    for (const inputsComponent of inputsComponents) {
+      inputsComponent.inputManager.reset();
+    }
   },
 });

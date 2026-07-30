@@ -11,8 +11,6 @@ import type { RigidBody } from '../rigid-body.js';
 
 import { EcsSystem } from '../../ecs/ecs-system.js';
 
-const physicsEntityBuffer: number[] = [];
-
 /**
  * Creates an ECS system that steps `physicsWorld` and keeps it synchronized
  * with the ECS world: registers/removes each entity's `RigidBody` as its
@@ -29,8 +27,7 @@ export const createPhysicsSyncEcsSystem = (
   physicsWorld: PhysicsWorld,
   time: Time,
 ): EcsSystem<
-  [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent],
-  void
+  [PhysicsBodyEcsComponent, PositionEcsComponent, RotationEcsComponent]
 > => {
   // Keyed by entity rather than by `RigidBody` instance: `EcsWorld` recycles
   // entity ids as soon as an entity is removed, so a `PhysicsBodyId`
@@ -56,16 +53,13 @@ export const createPhysicsSyncEcsSystem = (
     onRegister: (world) => {
       world.onEntityRemoved.registerListener(onEntityRemovedListener);
     },
-    beforeQuery: (world) => {
-      world.queryEntities(
-        [PhysicsBodyId, positionId, rotationId],
-        physicsEntityBuffer,
-      );
-
-      for (const entity of physicsEntityBuffer) {
-        const physicsBodyComponent = world.getComponent(entity, PhysicsBodyId)!;
-
-        const { physicsBody } = physicsBodyComponent;
+    update: (
+      _world,
+      { entities, components: [physicsBodyComponents, positions, rotations] },
+    ) => {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        const { physicsBody } = physicsBodyComponents[i];
 
         physicsWorld.addBody(physicsBody);
         registeredEntities.set(entity, physicsBody);
@@ -73,37 +67,34 @@ export const createPhysicsSyncEcsSystem = (
       }
 
       physicsWorld.step(time.deltaTimeInSeconds);
-    },
-    run: (result) => {
-      const [physicsBodyComponent, positionComponent, rotationComponent] =
-        result.components;
-      const { physicsBody } = physicsBodyComponent;
 
-      if (physicsBody.isStatic || physicsBodyComponent.isKinematic === true) {
-        physicsBody.position = positionComponent.world.clone();
+      for (let i = 0; i < entities.length; i++) {
+        const physicsBodyComponent = physicsBodyComponents[i];
+        const positionComponent = positions[i];
+        const rotationComponent = rotations[i];
+        const { physicsBody } = physicsBodyComponent;
 
-        // `rotationComponent.world` is in render space (Y-down), while
-        // `physicsBody.angle` is in world space (Y-up); these are mirrored,
-        // so the angle is negated when crossing this boundary.
-        physicsBody.angle = -rotationComponent.world;
-      } else {
-        positionComponent.world.x = physicsBody.position.x;
-        positionComponent.world.y = physicsBody.position.y;
+        if (physicsBody.isStatic || physicsBodyComponent.isKinematic === true) {
+          physicsBody.position = positionComponent.world.clone();
 
-        rotationComponent.world = -physicsBody.angle;
+          // `rotationComponent.world` is in render space (Y-down), while
+          // `physicsBody.angle` is in world space (Y-up); these are mirrored,
+          // so the angle is negated when crossing this boundary.
+          physicsBody.angle = -rotationComponent.world;
+        } else {
+          positionComponent.world.x = physicsBody.position.x;
+          positionComponent.world.y = physicsBody.position.y;
+
+          rotationComponent.world = -physicsBody.angle;
+        }
       }
     },
-    cleanupEntities: (result) => {
-      const { entity, components } = result;
-      const [physicsBodyComponent] = components;
-      const { physicsBody } = physicsBodyComponent;
-
-      if (registeredEntities.get(entity) === physicsBody) {
+    cleanup: (world) => {
+      for (const physicsBody of registeredEntities.values()) {
         physicsWorld.removeBody(physicsBody);
-        registeredEntities.delete(entity);
       }
-    },
-    cleanupSystem: (world) => {
+
+      registeredEntities.clear();
       world.onEntityRemoved.deregisterListener(onEntityRemovedListener);
     },
   };

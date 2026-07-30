@@ -14,11 +14,11 @@ export const createRemoveFromWorldEcsSystem = (): EcsSystem<
 > => ({
   query: [lifetimeId],
   tags: [RemoveFromWorldLifetimeStrategyId],
-  run: (result, world) => {
-    const [lifetimeComponent] = result.components;
-
-    if (lifetimeComponent.hasExpired) {
-      world.removeEntity(result.entity);
+  update: (world, { entities, components: [lifetimeComponents] }) => {
+    for (let i = 0; i < entities.length; i++) {
+      if (lifetimeComponents[i].hasExpired) {
+        world.removeEntity(entities[i]);
+      }
     }
   },
 });

@@ -1,8 +1,11 @@
-import { EcsSystem } from '../../ecs/ecs-system';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { RotationEcsComponent, rotationId } from '../components/index.js';
-import { parentId } from '../components/parent-component';
-import { createTransformCache, resetTransformCache } from './transform-cache';
+import { parentId } from '../components/parent-component.js';
+import {
+  createTransformCache,
+  resetTransformCache,
+} from './transform-cache.js';
 
 const cache = createTransformCache();
 
@@ -65,16 +68,15 @@ function computeWorld(entity: number, world: EcsWorld): void {
   cache.computed.add(entity);
 }
 
-type TransformSystem = EcsSystem<[RotationEcsComponent], void> & {
-  beforeQuery: (world: EcsWorld) => void;
-};
-
-export const createParentRotationEcsSystem = (): TransformSystem => ({
+export const createParentRotationEcsSystem = (): EcsSystem<
+  [RotationEcsComponent]
+> => ({
   query: [rotationId],
-  beforeQuery: () => resetTransformCache(cache),
-  run: (result, world) => {
-    const entity = result.entity;
+  update: (world, { entities }) => {
+    resetTransformCache(cache);
 
-    computeWorld(entity, world);
+    for (const entity of entities) {
+      computeWorld(entity, world);
+    }
   },
 });

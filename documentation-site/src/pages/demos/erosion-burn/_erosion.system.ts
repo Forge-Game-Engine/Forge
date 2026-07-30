@@ -20,14 +20,14 @@ export const createErosionEcsSystem = (
 ): EcsSystem<[SpriteEcsComponent]> => ({
   query: [spriteId],
   tags: [erosionId],
-  run: (result) => {
-    const [sprite] = result.components;
+  update: (_world, { components: [sprites] }) => {
+    for (const sprite of sprites) {
+      const wave = (Math.sin(time.timeInSeconds * cycleSpeed) + 1) / 2;
 
-    const wave = (Math.sin(time.timeInSeconds * cycleSpeed) + 1) / 2;
-
-    sprite.renderable.material.setUniform(
-      'u_burnProgress',
-      wave * burnRange + burnOffset,
-    );
+      sprite.renderable.material.setUniform(
+        'u_burnProgress',
+        wave * burnRange + burnOffset,
+      );
+    }
   },
 });

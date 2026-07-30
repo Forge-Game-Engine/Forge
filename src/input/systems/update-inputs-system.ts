@@ -1,4 +1,4 @@
-import { Time } from '../../common';
+import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import {
   InputsEcsComponent,
@@ -12,8 +12,9 @@ export const createUpdateInputEcsSystem = (
   time: Time,
 ): EcsSystem<[InputsEcsComponent]> => ({
   query: [inputsId],
-  run: (result) => {
-    const [inputsComponent] = result.components;
-    inputsComponent.inputManager.update(time.deltaTimeInMilliseconds);
+  update: (_world, { components: [inputsComponents] }) => {
+    for (const inputsComponent of inputsComponents) {
+      inputsComponent.inputManager.update(time.deltaTimeInMilliseconds);
+    }
   },
 });

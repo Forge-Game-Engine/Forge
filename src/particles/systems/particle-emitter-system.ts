@@ -180,15 +180,15 @@ export const createParticleEcsSystem = (
   random: Random,
 ): EcsSystem<[ParticleEmitterEcsComponent]> => ({
   query: [ParticleEmitterId],
-  run: (result, world) => {
-    const [particleEmitterComponent] = result.components;
+  update: (world, { components: [particleEmitterComponents] }) => {
+    for (const particleEmitterComponent of particleEmitterComponents) {
+      for (const particleEmitter of particleEmitterComponent.emitters.values()) {
+        particleEmitter.currentEmitDuration += time.deltaTimeInSeconds;
 
-    for (const particleEmitter of particleEmitterComponent.emitters.values()) {
-      particleEmitter.currentEmitDuration += time.deltaTimeInSeconds;
+        startEmittingParticles(particleEmitter, random);
 
-      startEmittingParticles(particleEmitter, random);
-
-      emitNewParticles(particleEmitter, random, world);
+        emitNewParticles(particleEmitter, random, world);
+      }
     }
   },
 });

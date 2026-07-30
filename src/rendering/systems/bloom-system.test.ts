@@ -468,7 +468,7 @@ describe('createBloomEcsSystem', () => {
     });
   });
 
-  describe('cleanupEntities', () => {
+  describe('cleanup', () => {
     it('disposes the scratch bright, ping-pong, and composite targets when the world stops', () => {
       const target = new RenderTarget(mockGl, 128, 128);
 

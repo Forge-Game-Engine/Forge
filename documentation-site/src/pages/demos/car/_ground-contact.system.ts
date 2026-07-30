@@ -43,19 +43,20 @@ export const createGroundContactEcsSystem = (
   physicsWorld: PhysicsWorld,
 ): EcsSystem<[GroundContactEcsComponent]> => ({
   query: [groundContactId],
-  run: (result) => {
-    const [groundContact] = result.components;
-    const { body } = groundContact;
+  update: (_world, { components: [groundContacts] }) => {
+    for (const groundContact of groundContacts) {
+      const { body } = groundContact;
 
-    for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
-      if (isBodyGroundContact(bodyA, bodyB, body)) {
-        groundContact.groundContacts++;
+      for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
+        if (isBodyGroundContact(bodyA, bodyB, body)) {
+          groundContact.groundContacts++;
+        }
       }
-    }
 
-    for (const { bodyA, bodyB } of physicsWorld.collisionEnds) {
-      if (isBodyGroundContact(bodyA, bodyB, body)) {
-        groundContact.groundContacts--;
+      for (const { bodyA, bodyB } of physicsWorld.collisionEnds) {
+        if (isBodyGroundContact(bodyA, bodyB, body)) {
+          groundContact.groundContacts--;
+        }
       }
     }
   },

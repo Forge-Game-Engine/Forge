@@ -6,8 +6,6 @@ import {
 import type { PrismaticJoint } from '../joints/index.js';
 import type { PhysicsWorld } from '../physics-world.js';
 
-const prismaticJointEntityBuffer: number[] = [];
-
 /**
  * Creates an ECS system that registers each entity's `PrismaticJoint` with
  * `physicsWorld` while the entity carries a `PrismaticJointId` component,
@@ -21,7 +19,7 @@ const prismaticJointEntityBuffer: number[] = [];
  */
 export const createPrismaticJointEcsSystem = (
   physicsWorld: PhysicsWorld,
-): EcsSystem<[PrismaticJointEcsComponent], void> => {
+): EcsSystem<[PrismaticJointEcsComponent]> => {
   // Keyed by entity rather than by `PrismaticJoint` instance for the same
   // reason as `createPhysicsSyncEcsSystem`'s `registeredEntities`: entity ids
   // are recycled as soon as an entity is removed, so a component
@@ -43,30 +41,21 @@ export const createPrismaticJointEcsSystem = (
     onRegister: (world) => {
       world.onEntityRemoved.registerListener(onEntityRemovedListener);
     },
-    beforeQuery: (world) => {
-      world.queryEntities([PrismaticJointId], prismaticJointEntityBuffer);
+    update: (_world, { entities, components: [jointComponents] }) => {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        const { joint } = jointComponents[i];
 
-      for (const entity of prismaticJointEntityBuffer) {
-        const jointComponent = world.getComponent(entity, PrismaticJointId)!;
-
-        physicsWorld.addJoint(jointComponent.joint);
-        registeredEntities.set(entity, jointComponent.joint);
+        physicsWorld.addJoint(joint);
+        registeredEntities.set(entity, joint);
       }
     },
-    run: () => {
-      // Registration is handled in `beforeQuery`; a `PrismaticJoint` has no
-      // per-frame ECS-side state to sync.
-    },
-    cleanupEntities: (result) => {
-      const { entity, components } = result;
-      const [jointComponent] = components;
-
-      if (registeredEntities.get(entity) === jointComponent.joint) {
-        physicsWorld.removeJoint(jointComponent.joint);
-        registeredEntities.delete(entity);
+    cleanup: (world) => {
+      for (const joint of registeredEntities.values()) {
+        physicsWorld.removeJoint(joint);
       }
-    },
-    cleanupSystem: (world) => {
+
+      registeredEntities.clear();
       world.onEntityRemoved.deregisterListener(onEntityRemovedListener);
     },
   };

@@ -38,9 +38,9 @@ function involvesBoth(
  * impulse when `jumpInput` triggers while grounded, and resets the ball back
  * to `spawnPosition` if it ever falls `respawnFallDistance` below it (for
  * example off the end of the terrain). All the work happens once per tick in
- * `beforeQuery`, rather than per matched entity, the same way
- * `createPhysicsSyncEcsSystem` steps `physicsWorld` once in its own
- * `beforeQuery`.
+ * `update`, since `update` is already a single batched call rather than one
+ * invoked per matched entity, the same way `createPhysicsSyncEcsSystem` steps
+ * `physicsWorld` once in its own `update`.
  *
  * Must run after `createPhysicsSyncEcsSystem`, so this tick's collision
  * events are available before this system checks them.
@@ -61,7 +61,7 @@ export const createJumpEcsSystem = (
 
   return {
     query: [PhysicsBodyId],
-    beforeQuery: () => {
+    update: () => {
       if (
         physicsWorld.collisionStarts.some((pair) =>
           involvesBoth(pair, playerBody, terrainBody),
@@ -91,12 +91,6 @@ export const createJumpEcsSystem = (
         playerBody.angularVelocity = 0;
         isGrounded = false;
       }
-
-      return null;
-    },
-    run: () => {
-      // All the work happens once per tick in `beforeQuery` above; nothing
-      // needed per matched entity.
     },
   };
 };

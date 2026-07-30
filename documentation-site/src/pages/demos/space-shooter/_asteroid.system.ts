@@ -17,18 +17,28 @@ export const createAsteroidEcsSystem = (
   [AsteroidEcsComponent, PositionEcsComponent, RotationEcsComponent]
 > => ({
   query: [asteroidId, positionId, rotationId],
-  run: (result, world) => {
-    const [asteroidComponent, positionComponent, rotationComponent] =
-      result.components;
+  update: (
+    world,
+    {
+      entities,
+      components: [asteroidComponents, positionComponents, rotationComponents],
+    },
+  ) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      const asteroidComponent = asteroidComponents[i];
+      const positionComponent = positionComponents[i];
+      const rotationComponent = rotationComponents[i];
 
-    positionComponent.world.y -=
-      asteroidComponent.speed * time.deltaTimeInSeconds;
+      positionComponent.world.y -=
+        asteroidComponent.speed * time.deltaTimeInSeconds;
 
-    rotationComponent.world +=
-      asteroidComponent.rotationSpeed * time.deltaTimeInSeconds;
+      rotationComponent.world +=
+        asteroidComponent.rotationSpeed * time.deltaTimeInSeconds;
 
-    if (positionComponent.world.y < despawnY) {
-      world.removeEntity(result.entity);
+      if (positionComponent.world.y < despawnY) {
+        world.removeEntity(entity);
+      }
     }
   },
 });

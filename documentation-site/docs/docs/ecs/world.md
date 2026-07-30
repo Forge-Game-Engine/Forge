@@ -73,21 +73,22 @@ world.addTag(entity, Enemy);
 
 Tags differ from normal components in that they carry no payload (they are stored
 internally as a boolean) and are not returned as part of the `components` array
-passed to a system's `run` method. They are similar in that they are indexed by
+passed to a system's `update` method. They are similar in that they are indexed by
 the world and can be used in queries. See the [Component docs](component.md)
 for details on component keys and tag creation.
 
 ## Querying for entities
 
-You can query the world directly for entity ids that have a set of component keys
-using `queryEntities(componentKeys, outArray)`. Pass an array to collect results.
+You can query the world directly for entity ids (and their component data) that
+have a set of component keys using `query(componentKeys, tags?)`. It returns an
+object with an `entities` array and a `components` array (one array per queried
+component key, in query order).
 
 ```ts
-const out: number[] = [];
-world.queryEntities([Position], out);
-for (const id of out) {
-  const position = world.getComponent(id, Position);
-  // do something with position
+const { entities, components: [positions] } = world.query([Position]);
+
+for (let i = 0; i < entities.length; i++) {
+  // do something with positions[i]
 }
 ```
 
@@ -97,26 +98,26 @@ logic that should live in a system is being executed ad-hoc; consult the
 [Component docs](component.md) for patterns.
 
 :::caution
-Calling `queryEntities` frequently or on large component sets can be
+Calling `query` frequently or on large component sets can be
 expensive. Use systems with declared `query` arrays for per-frame processing.
 :::
 
 ## Add a system
 
 Create a system object that declares a `query` (component keys), optional `tags`,
-an optional `beforeQuery(world)` and a `run(result, world, beforeQueryResult)`
-method. Register it with `addSystem(system, registrationOrder)`.
+and an `update(world, queryResult)` method. Register it with
+`addSystem(system, registrationOrder)`.
 
 ```ts
 import { SystemRegistrationOrder } from '@forge-game-engine/forge/ecs';
 
 const moverSystem = {
   query: [Position, Velocity] as const,
-  run(result, world) {
-    const [position, velocity] = result.components;
-
-    position.x += velocity.x;
-    position.y += velocity.y;
+  update(world, { entities, components: [positions, velocities] }) {
+    for (let i = 0; i < entities.length; i++) {
+      positions[i].x += velocities[i].x;
+      positions[i].y += velocities[i].y;
+    }
   },
 };
 
@@ -157,9 +158,10 @@ it will still run as part of the current tick. The removal is only committed at 
 
 ## Executing a world tick
 
-Call `world.update()` to run the registered systems for a single frame. The
-world calls each system's `beforeQuery` (if present) and then iterates matching
-entities, invoking the system's `run` for each match.
+Call `world.update()` to run the registered systems for a single frame. For
+each registered system, the world queries `query` (and `tags`) and invokes the
+system's `update` exactly once with the batch of matches, regardless of how
+many entities matched (including zero).
 
 In normal usage you don't call `update()` manually. The main loop in `Game` calls it for you every frame. Calling `update()` directly is useful for unit tests.
 
@@ -186,9 +188,10 @@ world.addComponent(entity, Position, { x: 12, y: 10 });
 
 const logPositionSystem = {
   query: [Position],
-  run(result) {
-    const [position] = result.components;
-    console.log(`position: [${position.x}, ${position.y}]`); // prints: "position: [12, 10]" every frame
+  update(world, { components: [positions] }) {
+    for (const position of positions) {
+      console.log(`position: [${position.x}, ${position.y}]`); // prints: "position: [12, 10]" every frame
+    }
   },
 };
 

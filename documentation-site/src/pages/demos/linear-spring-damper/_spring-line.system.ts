@@ -21,19 +21,23 @@ export const createSpringLineEcsSystem = (): EcsSystem<
   [SpringLineEcsComponent, PositionEcsComponent, SpriteEcsComponent]
 > => ({
   query: [springLineId, positionId, spriteId],
-  run: (result) => {
-    const [springLine, positionComponent, spriteComponent] = result.components;
-    const { anchorPosition, body, lineWidth } = springLine;
+  update: (_world, { components: [springLines, positions, sprites] }) => {
+    for (let i = 0; i < springLines.length; i++) {
+      const springLine = springLines[i];
+      const positionComponent = positions[i];
+      const spriteComponent = sprites[i];
+      const { anchorPosition, body, lineWidth } = springLine;
 
-    const midpoint = anchorPosition.add(body.position).multiply(0.5);
-    const length = body.position.subtract(anchorPosition).magnitude();
+      const midpoint = anchorPosition.add(body.position).multiply(0.5);
+      const length = body.position.subtract(anchorPosition).magnitude();
 
-    positionComponent.world.x = midpoint.x;
-    positionComponent.world.y = midpoint.y;
-    positionComponent.local.x = midpoint.x;
-    positionComponent.local.y = midpoint.y;
+      positionComponent.world.x = midpoint.x;
+      positionComponent.world.y = midpoint.y;
+      positionComponent.local.x = midpoint.x;
+      positionComponent.local.y = midpoint.y;
 
-    spriteComponent.width = lineWidth;
-    spriteComponent.height = length;
+      spriteComponent.width = lineWidth;
+      spriteComponent.height = length;
+    }
   },
 });

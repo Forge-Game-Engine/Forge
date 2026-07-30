@@ -99,7 +99,7 @@ describe('PrismaticJointSystem', () => {
     expect(physicsWorld.joints).toContain(joint2);
   });
 
-  it('should stop reacting to entity removal once the system has been removed from the world', () => {
+  it('releases every registered joint and stops reacting to entity removal once the system is removed from the world', () => {
     const isolatedWorld = new EcsWorld();
     const isolatedPhysicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
     const system = createPrismaticJointEcsSystem(isolatedPhysicsWorld);
@@ -116,8 +116,11 @@ describe('PrismaticJointSystem', () => {
     expect(isolatedPhysicsWorld.joints).toContain(joint);
 
     isolatedWorld.removeSystem(system);
-    isolatedWorld.removeEntity(entity);
 
-    expect(isolatedPhysicsWorld.joints).toContain(joint);
+    expect(isolatedPhysicsWorld.joints).not.toContain(joint);
+
+    // The system's onEntityRemoved listener was deregistered as part of
+    // removal, so this must not throw or try to remove the joint again.
+    expect(() => isolatedWorld.removeEntity(entity)).not.toThrow();
   });
 });

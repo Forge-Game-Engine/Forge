@@ -11,13 +11,18 @@ export const createDemoEcsSystem = (
   time: Time,
 ): EcsSystem<[PositionEcsComponent, RotationEcsComponent]> => ({
   query: [positionId, rotationId],
-  run: (queryResult) => {
+  update: (_world, queryResult) => {
     const { components } = queryResult;
 
-    const [position, rotation] = components;
+    const [positions, rotations] = components;
 
-    position.world.x = Math.sin(time.timeInSeconds) * 100;
-    position.world.y = Math.cos(time.timeInSeconds) * 100;
-    rotation.world = time.timeInSeconds;
+    for (let i = 0; i < positions.length; i++) {
+      const position = positions[i];
+      const rotation = rotations[i];
+
+      position.world.x = Math.sin(time.timeInSeconds) * 100;
+      position.world.y = Math.cos(time.timeInSeconds) * 100;
+      rotation.world = time.timeInSeconds;
+    }
   },
 });

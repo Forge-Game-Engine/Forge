@@ -12,39 +12,42 @@ export const createCameraEcsSystem = (
   time: Time,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
   query: [cameraId, positionId],
-  run: (result) => {
-    const [cameraComponent, position] = result.components;
+  update: (_world, { components: [cameraComponents, positions] }) => {
+    for (let i = 0; i < cameraComponents.length; i++) {
+      const cameraComponent = cameraComponents[i];
+      const position = positions[i];
 
-    const {
-      isStatic,
-      zoomInput,
-      zoom,
-      minZoom,
-      maxZoom,
-      zoomSensitivity,
-      panInput,
-    } = cameraComponent;
+      const {
+        isStatic,
+        zoomInput,
+        zoom,
+        minZoom,
+        maxZoom,
+        zoomSensitivity,
+        panInput,
+      } = cameraComponent;
 
-    if (isStatic) {
-      return;
-    }
+      if (isStatic) {
+        continue;
+      }
 
-    if (zoomInput) {
-      // Use multiplicative (exponential) scaling so scrolling has consistent effect
-      // regardless of current zoom level. Positive zoomInput.value will reduce zoom,
-      // negative will increase it.
-      const scaleFactor = Math.pow(1 + zoomSensitivity, -zoomInput.value);
-      cameraComponent.zoom = math.clamp(zoom * scaleFactor, minZoom, maxZoom);
-    }
+      if (zoomInput) {
+        // Use multiplicative (exponential) scaling so scrolling has consistent effect
+        // regardless of current zoom level. Positive zoomInput.value will reduce zoom,
+        // negative will increase it.
+        const scaleFactor = Math.pow(1 + zoomSensitivity, -zoomInput.value);
+        cameraComponent.zoom = math.clamp(zoom * scaleFactor, minZoom, maxZoom);
+      }
 
-    if (panInput) {
-      const zoomPanMultiplier =
-        cameraComponent.panSensitivity *
-        (1 / cameraComponent.zoom) *
-        time.rawDeltaTimeInMilliseconds;
+      if (panInput) {
+        const zoomPanMultiplier =
+          cameraComponent.panSensitivity *
+          (1 / cameraComponent.zoom) *
+          time.rawDeltaTimeInMilliseconds;
 
-      position.local.y += panInput.value.y * zoomPanMultiplier;
-      position.local.x += panInput.value.x * zoomPanMultiplier;
+        position.local.y += panInput.value.y * zoomPanMultiplier;
+        position.local.x += panInput.value.x * zoomPanMultiplier;
+      }
     }
   },
 });

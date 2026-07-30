@@ -29,16 +29,16 @@ interface PresentCommand {
  * every subsequent (higher) layer alpha-blends on top instead, so later
  * layers don't erase earlier ones.
  *
- * `run` only gathers each camera's `renderTarget` and `layer`; `afterRun`
- * dedupes and sorts them once every camera has run, then does the actual
- * presenting, since the draw order depends on every camera's `layer` and
- * can only be resolved once the whole tick's cameras are known.
+ * `update` first gathers each camera's `renderTarget` and `layer`, then
+ * dedupes and sorts them, then does the actual presenting, since the draw
+ * order depends on every camera's `layer` and can only be resolved once the
+ * whole tick's cameras are known.
  * @param renderContext The rendering context
  * @returns The present ECS system
  */
 export const createPresentEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent], null, PresentCommand | null> => {
+): EcsSystem<[CameraEcsComponent]> => {
   const { gl, shaderCache } = renderContext;
 
   const material = new Material(
@@ -49,27 +49,19 @@ export const createPresentEcsSystem = (
 
   return {
     query: [cameraId],
-    run: (result) => {
-      const [camera] = result.components;
-      const { renderTarget, layer } = camera;
-
-      if (!renderTarget) {
-        return null;
-      }
-
-      return { layer, renderTarget };
-    },
-    afterRun: (results) => {
+    update: (_world, { components: [cameras] }) => {
       const targetsSeen = new Set<RenderTarget>();
       const presentCommands: PresentCommand[] = [];
 
-      for (const command of results) {
-        if (!command || targetsSeen.has(command.renderTarget)) {
+      for (const camera of cameras) {
+        const { renderTarget, layer } = camera;
+
+        if (!renderTarget || targetsSeen.has(renderTarget)) {
           continue;
         }
 
-        targetsSeen.add(command.renderTarget);
-        presentCommands.push(command);
+        targetsSeen.add(renderTarget);
+        presentCommands.push({ layer, renderTarget });
       }
 
       presentCommands.sort((a, b) => a.layer - b.layer);

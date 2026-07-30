@@ -18,16 +18,22 @@ export const createThrusterEcsSystem = (
   time: Time,
 ): EcsSystem<[ThrusterEcsComponent, PhysicsBodyEcsComponent]> => ({
   query: [thrusterId, PhysicsBodyId],
-  run: (result) => {
-    const [thrusterComponent, physicsBodyComponent] = result.components;
+  update: (
+    _world,
+    { components: [thrusterComponents, physicsBodyComponents] },
+  ) => {
+    for (let i = 0; i < thrusterComponents.length; i++) {
+      const thrusterComponent = thrusterComponents[i];
+      const physicsBodyComponent = physicsBodyComponents[i];
 
-    if (!thrusterComponent.holdAction.isHeld) {
-      return;
+      if (!thrusterComponent.holdAction.isHeld) {
+        continue;
+      }
+
+      physicsBodyComponent.physicsBody.applyTorque(
+        thrusterComponent.torque,
+        time.deltaTimeInSeconds,
+      );
     }
-
-    physicsBodyComponent.physicsBody.applyTorque(
-      thrusterComponent.torque,
-      time.deltaTimeInSeconds,
-    );
   },
 });
