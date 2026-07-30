@@ -97,14 +97,14 @@ import {
 
 const playerMovementSystem: EcsSystem<[PositionEcsComponent]> = {
   query: [positionId],
-  run: (result) => {
-    const [position] = result.components;
+  update: (world, { components: [positions] }) => {
+    for (const position of positions) {
+      position.local.x += move.value.x * 100 * time.deltaTimeInSeconds;
+      position.local.y += move.value.y * 100 * time.deltaTimeInSeconds;
 
-    position.local.x += move.value.x * 100 * time.deltaTimeInSeconds;
-    position.local.y += move.value.y * 100 * time.deltaTimeInSeconds;
-
-    if (jump.isTriggered) {
-      // apply a jump impulse, play a sound, etc.
+      if (jump.isTriggered) {
+        // apply a jump impulse, play a sound, etc.
+      }
     }
   },
 };
