@@ -1,0 +1,77 @@
+import { describe, expect, it } from 'vitest';
+import { detectCollision } from './detect-collision.js';
+import { CircleCollider } from '../colliders/circle-collider.js';
+import { Collider } from '../colliders/collider.js';
+import { PolygonCollider } from '../colliders/polygon-collider.js';
+import { CollisionBody } from '../types/collision-body.js';
+import { Vector2 } from '../../math/index.js';
+
+function rectangle(width: number, height: number): PolygonCollider {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return new PolygonCollider([
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ]);
+}
+
+function body(position: Vector2, collider: Collider): CollisionBody {
+  return { position, rotation: 0, collider };
+}
+
+describe('detectCollision', () => {
+  it('should dispatch circle-circle collisions', () => {
+    const bodyA = body(new Vector2(0, 0), new CircleCollider(1));
+    const bodyB = body(new Vector2(1.5, 0), new CircleCollider(1));
+
+    expect(detectCollision(bodyA, bodyB)).not.toBeNull();
+  });
+
+  it('should dispatch circle-polygon collisions', () => {
+    const bodyA = body(new Vector2(0, -1.5), new CircleCollider(1));
+    const bodyB = body(new Vector2(0, 0), rectangle(2, 2));
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(1);
+  });
+
+  it('should dispatch polygon-circle collisions, flipping the normal', () => {
+    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
+    const bodyB = body(new Vector2(0, -1.5), new CircleCollider(1));
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.x).toBeCloseTo(0);
+    expect(manifold?.normal.y).toBeCloseTo(-1);
+    expect(manifold?.depth).toBeCloseTo(0.5);
+  });
+
+  it('should dispatch polygon-polygon collisions', () => {
+    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
+    const bodyB = body(new Vector2(1.5, 0), rectangle(2, 2));
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.x).toBeCloseTo(1);
+    expect(manifold?.normal.y).toBeCloseTo(0);
+  });
+
+  it('should throw an error for an unregistered collider pair', () => {
+    const bodyA = body(new Vector2(0, 0), new CircleCollider(1));
+    const fakeBody = {
+      position: Vector2.zero,
+      rotation: 0,
+      collider: { type: 'unknown' } as unknown as Collider,
+    };
+
+    expect(() => detectCollision(bodyA, fakeBody)).toThrow();
+  });
+});

@@ -2,14 +2,11 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Collider } from '../colliders/collider.js';
 
-export interface ColliderDefaultedOptions {}
-
 export interface ColliderRequiredOptions {
   collider: Collider;
 }
 
-export interface ColliderEcsComponent
-  extends ColliderDefaultedOptions, ColliderRequiredOptions {}
+export type ColliderEcsComponent = ColliderRequiredOptions;
 
 export const colliderId = createComponentId<ColliderEcsComponent>('collider');
 

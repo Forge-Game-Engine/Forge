@@ -13,7 +13,7 @@ export interface GravityDefaultedOptions {
 /**
  * ECS-style component interface for a gravity.
  */
-export interface GravityEcsComponent extends GravityDefaultedOptions {}
+export type GravityEcsComponent = GravityDefaultedOptions;
 
 export const gravityId = createComponentId<GravityEcsComponent>('gravity');
 

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **fphysics:** Add AABB broad-phase and SAT narrow-phase collision detection for `CircleCollider` and the new `PolygonCollider`, via `createBroadPhaseEcsSystem` and `createNarrowPhaseEcsSystem`
+
 ## [0.24.0] - 2026-07-27
 
 #### Added

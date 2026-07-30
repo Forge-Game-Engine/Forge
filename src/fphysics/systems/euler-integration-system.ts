@@ -22,15 +22,18 @@ export const createEulerIntegrationEcsSystem = (
   [PositionEcsComponent, RotationEcsComponent, RigidBodyEcsComponent]
 > => ({
   query: [positionId, rotationId, rigidBodyId],
-  run: ({ components }) => {
-    const [positionComponent, rotationComponent, rigidBodyComponent] =
-      components;
+  update: (_world, { components: [positions, rotations, rigidBodies] }) => {
+    for (let i = 0; i < positions.length; i++) {
+      const positionComponent = positions[i];
+      const rotationComponent = rotations[i];
+      const rigidBodyComponent = rigidBodies[i];
 
-    rotationComponent.local +=
-      rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;
+      rotationComponent.local +=
+        rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;
 
-    positionComponent.local = positionComponent.local.add(
-      rigidBodyComponent.velocity.multiply(time.deltaTimeInSeconds),
-    );
+      positionComponent.local = positionComponent.local.add(
+        rigidBodyComponent.velocity.multiply(time.deltaTimeInSeconds),
+      );
+    }
   },
 });

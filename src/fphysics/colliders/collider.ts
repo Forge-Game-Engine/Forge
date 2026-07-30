@@ -2,6 +2,7 @@ import { Vector2 } from '../../math';
 import { Aabb } from '../types/aabb';
 
 export abstract class Collider {
+  public abstract readonly type: 'circle' | 'polygon';
   public offset: Vector2 = Vector2.zero;
   public momentOfInertia: number;
   public mass: number;
@@ -11,5 +12,5 @@ export abstract class Collider {
     this.mass = mass;
   }
 
-  public abstract computeAabb(position: Vector2): Aabb;
+  public abstract computeAabb(position: Vector2, rotation: number): Aabb;
 }

@@ -7,7 +7,7 @@ export interface AabbDefaultedOptions {
   max: Vector2;
 }
 
-export interface AabbEcsComponent extends AabbDefaultedOptions {}
+export type AabbEcsComponent = AabbDefaultedOptions;
 
 export const aabbId = createComponentId<AabbEcsComponent>('aabb');
 

@@ -17,11 +17,14 @@ export const createGravityEcsSystem = (
   time: Time,
 ): EcsSystem<[RigidBodyEcsComponent, GravityEcsComponent]> => ({
   query: [rigidBodyId, gravityId],
-  run: ({ components }) => {
-    const [rigidBodyComponent, gravityComponent] = components;
+  update: (_world, { components: [rigidBodies, gravities] }) => {
+    for (let i = 0; i < rigidBodies.length; i++) {
+      const rigidBodyComponent = rigidBodies[i];
+      const gravityComponent = gravities[i];
 
-    rigidBodyComponent.velocity = rigidBodyComponent.velocity.add(
-      gravityComponent.amount.multiply(time.deltaTimeInSeconds),
-    );
+      rigidBodyComponent.velocity = rigidBodyComponent.velocity.add(
+        gravityComponent.amount.multiply(time.deltaTimeInSeconds),
+      );
+    }
   },
 });
