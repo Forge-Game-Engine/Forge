@@ -36,25 +36,29 @@ export const createArmEcsSystem = (): EcsSystem<
   ]
 > => ({
   query: [armId, positionId, rotationId, spriteId],
-  run: (result) => {
-    const [arm, positionComponent, rotationComponent, spriteComponent] =
-      result.components;
-    const { pivotPosition, body, armWidth } = arm;
+  update: (_world, { components: [arms, positions, rotations, sprites] }) => {
+    for (let i = 0; i < arms.length; i++) {
+      const arm = arms[i];
+      const positionComponent = positions[i];
+      const rotationComponent = rotations[i];
+      const spriteComponent = sprites[i];
+      const { pivotPosition, body, armWidth } = arm;
 
-    const delta = body.position.subtract(pivotPosition);
-    const length = delta.magnitude();
-    const midpoint = pivotPosition.add(body.position).multiply(0.5);
-    const angle = -Math.atan2(delta.x, -delta.y);
+      const delta = body.position.subtract(pivotPosition);
+      const length = delta.magnitude();
+      const midpoint = pivotPosition.add(body.position).multiply(0.5);
+      const angle = -Math.atan2(delta.x, -delta.y);
 
-    positionComponent.world.x = midpoint.x;
-    positionComponent.world.y = midpoint.y;
-    positionComponent.local.x = midpoint.x;
-    positionComponent.local.y = midpoint.y;
+      positionComponent.world.x = midpoint.x;
+      positionComponent.world.y = midpoint.y;
+      positionComponent.local.x = midpoint.x;
+      positionComponent.local.y = midpoint.y;
 
-    rotationComponent.world = angle;
-    rotationComponent.local = angle;
+      rotationComponent.world = angle;
+      rotationComponent.local = angle;
 
-    spriteComponent.width = armWidth;
-    spriteComponent.height = length;
+      spriteComponent.width = armWidth;
+      spriteComponent.height = length;
+    }
   },
 });

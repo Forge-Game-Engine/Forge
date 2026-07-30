@@ -6,19 +6,19 @@ export const createPushEcsSystem = (
   time: Time,
 ): EcsSystem<[PushEcsComponent]> => ({
   query: [pushId],
-  run: (result) => {
-    const [push] = result.components;
+  update: (_world, { components: [pushes] }) => {
+    for (const push of pushes) {
+      push.elapsedSeconds += time.deltaTimeInSeconds;
 
-    push.elapsedSeconds += time.deltaTimeInSeconds;
+      if (push.elapsedSeconds < push.intervalSeconds) {
+        continue;
+      }
 
-    if (push.elapsedSeconds < push.intervalSeconds) {
-      return;
+      push.elapsedSeconds = 0;
+
+      const worldContactPoint = push.localContactPoint.rotate(push.body.angle);
+
+      push.body.applyImpulse(push.impulse, worldContactPoint);
     }
-
-    push.elapsedSeconds = 0;
-
-    const worldContactPoint = push.localContactPoint.rotate(push.body.angle);
-
-    push.body.applyImpulse(push.impulse, worldContactPoint);
   },
 });

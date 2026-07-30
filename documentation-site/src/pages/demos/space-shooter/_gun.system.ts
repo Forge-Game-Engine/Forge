@@ -40,34 +40,37 @@ export const createGunEcsSystem = (
 
   return {
     query: [gunId, positionId],
-    run: (result) => {
-      const [gunComponent, positionComponent] = result.components;
+    update: (_world, { components: [gunComponents, positionComponents] }) => {
+      for (let i = 0; i < gunComponents.length; i++) {
+        const gunComponent = gunComponents[i];
+        const positionComponent = positionComponents[i];
 
-      if (!shootAction.isHeld) {
-        return;
+        if (!shootAction.isHeld) {
+          continue;
+        }
+
+        if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
+          continue;
+        }
+
+        createBulletWithOffset(
+          world,
+          gunComponent,
+          positionComponent,
+          new Vector2(20, 20),
+          sound,
+        );
+        createBulletWithOffset(
+          world,
+          gunComponent,
+          positionComponent,
+          new Vector2(-20, 20),
+          sound,
+        );
+
+        gunComponent.nextAllowedShotTime =
+          time.timeInSeconds + gunComponent.timeBetweenShots;
       }
-
-      if (gunComponent.nextAllowedShotTime > time.timeInSeconds) {
-        return;
-      }
-
-      createBulletWithOffset(
-        world,
-        gunComponent,
-        positionComponent,
-        new Vector2(20, 20),
-        sound,
-      );
-      createBulletWithOffset(
-        world,
-        gunComponent,
-        positionComponent,
-        new Vector2(-20, 20),
-        sound,
-      );
-
-      gunComponent.nextAllowedShotTime =
-        time.timeInSeconds + gunComponent.timeBetweenShots;
     },
   };
 };

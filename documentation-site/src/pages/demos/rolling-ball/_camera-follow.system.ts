@@ -30,15 +30,16 @@ export const createCameraFollowEcsSystem = (
   time: Time,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
   query: [cameraId, positionId],
-  run: (result) => {
-    const [, cameraPosition] = result.components;
-    const t = 1 - Math.exp(-followSpeed * time.deltaTimeInSeconds);
+  update: (_world, { components: [, cameraPositions] }) => {
+    for (const cameraPosition of cameraPositions) {
+      const t = 1 - Math.exp(-followSpeed * time.deltaTimeInSeconds);
 
-    cameraPosition.world.x +=
-      (targetPosition.world.x - cameraPosition.world.x) * t;
-    cameraPosition.world.y +=
-      (targetPosition.world.y - cameraPosition.world.y) * t;
-    cameraPosition.local.x = cameraPosition.world.x;
-    cameraPosition.local.y = cameraPosition.world.y;
+      cameraPosition.world.x +=
+        (targetPosition.world.x - cameraPosition.world.x) * t;
+      cameraPosition.world.y +=
+        (targetPosition.world.y - cameraPosition.world.y) * t;
+      cameraPosition.local.x = cameraPosition.world.x;
+      cameraPosition.local.y = cameraPosition.world.y;
+    }
   },
 });

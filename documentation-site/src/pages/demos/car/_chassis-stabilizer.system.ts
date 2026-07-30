@@ -23,23 +23,25 @@ export const createChassisStabilizerEcsSystem = (
   time: Time,
 ): EcsSystem<[ChassisStabilizerEcsComponent]> => ({
   query: [chassisStabilizerId],
-  run: (result) => {
-    const [stabilizer] = result.components;
-    const { frontWheelGroundContact, rearWheelGroundContact } = stabilizer;
+  update: (_world, { components: [stabilizers] }) => {
+    for (const stabilizer of stabilizers) {
+      const { frontWheelGroundContact, rearWheelGroundContact } = stabilizer;
 
-    if (
-      !isGrounded(frontWheelGroundContact) &&
-      !isGrounded(rearWheelGroundContact)
-    ) {
-      return;
+      if (
+        !isGrounded(frontWheelGroundContact) &&
+        !isGrounded(rearWheelGroundContact)
+      ) {
+        continue;
+      }
+
+      const { body, levelingStiffness, levelingDamping } = stabilizer;
+      const { deltaTimeInSeconds } = time;
+
+      const torque =
+        -body.angle * levelingStiffness -
+        body.angularVelocity * levelingDamping;
+
+      body.applyTorque(torque, deltaTimeInSeconds);
     }
-
-    const { body, levelingStiffness, levelingDamping } = stabilizer;
-    const { deltaTimeInSeconds } = time;
-
-    const torque =
-      -body.angle * levelingStiffness - body.angularVelocity * levelingDamping;
-
-    body.applyTorque(torque, deltaTimeInSeconds);
   },
 });

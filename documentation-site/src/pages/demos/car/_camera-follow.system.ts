@@ -22,24 +22,30 @@ export const createCameraFollowEcsSystem = (
   time: Time,
 ): EcsSystem<[CameraFollowEcsComponent, PositionEcsComponent]> => ({
   query: [cameraFollowId, positionId],
-  run: (result) => {
-    const [cameraFollow, positionComponent] = result.components;
-    const { target, offset, smoothTime, maxSpeed, velocity } = cameraFollow;
+  update: (
+    _world,
+    { components: [cameraFollowComponents, positionComponents] },
+  ) => {
+    for (let i = 0; i < cameraFollowComponents.length; i++) {
+      const cameraFollow = cameraFollowComponents[i];
+      const positionComponent = positionComponents[i];
+      const { target, offset, smoothTime, maxSpeed, velocity } = cameraFollow;
 
-    const { positionOutput, velocityOutput } = smoothDampVector2(
-      positionComponent.local,
-      target.position.add(offset),
-      velocity,
-      maxSpeed,
-      smoothTime,
-      time.deltaTimeInSeconds,
-    );
+      const { positionOutput, velocityOutput } = smoothDampVector2(
+        positionComponent.local,
+        target.position.add(offset),
+        velocity,
+        maxSpeed,
+        smoothTime,
+        time.deltaTimeInSeconds,
+      );
 
-    cameraFollow.velocity = velocityOutput;
+      cameraFollow.velocity = velocityOutput;
 
-    positionComponent.local.x = positionOutput.x;
-    positionComponent.local.y = positionOutput.y;
-    positionComponent.world.x = positionOutput.x;
-    positionComponent.world.y = positionOutput.y;
+      positionComponent.local.x = positionOutput.x;
+      positionComponent.local.y = positionOutput.y;
+      positionComponent.world.x = positionOutput.x;
+      positionComponent.world.y = positionOutput.y;
+    }
   },
 });

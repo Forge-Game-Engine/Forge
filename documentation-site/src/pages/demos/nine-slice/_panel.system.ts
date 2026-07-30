@@ -25,15 +25,18 @@ export const createPanelEcsSystem = (
   time: Time,
 ): EcsSystem<[SpriteEcsComponent, PanelEcsComponent]> => ({
   query: [spriteId, panelId],
-  run: (result) => {
-    const [sprite, panel] = result.components;
-    const { minSize, maxSize } = panel;
+  update: (_world, { components: [sprites, panels] }) => {
+    for (let i = 0; i < sprites.length; i++) {
+      const sprite = sprites[i];
+      const panel = panels[i];
+      const { minSize, maxSize } = panel;
 
-    const phase =
-      (Math.sin((time.timeInSeconds * Math.PI * 2) / cycleSeconds) + 1) / 2;
-    const size = lerp(minSize, maxSize, phase);
+      const phase =
+        (Math.sin((time.timeInSeconds * Math.PI * 2) / cycleSeconds) + 1) / 2;
+      const size = lerp(minSize, maxSize, phase);
 
-    sprite.width = size;
-    // sprite.height = size;
+      sprite.width = size;
+      // sprite.height = size;
+    }
   },
 });

@@ -10,10 +10,13 @@ export const createBulletEcsSystem = (
   time: Time,
 ): EcsSystem<[BulletEcsComponent, PositionEcsComponent]> => ({
   query: [bulletId, positionId],
-  run: (result) => {
-    const [bulletComponent, positionComponent] = result.components;
+  update: (_world, { components: [bulletComponents, positionComponents] }) => {
+    for (let i = 0; i < bulletComponents.length; i++) {
+      const bulletComponent = bulletComponents[i];
+      const positionComponent = positionComponents[i];
 
-    positionComponent.world.y +=
-      bulletComponent.speed * time.deltaTimeInSeconds;
+      positionComponent.world.y +=
+        bulletComponent.speed * time.deltaTimeInSeconds;
+    }
   },
 });

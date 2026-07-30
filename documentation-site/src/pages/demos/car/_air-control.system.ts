@@ -27,34 +27,35 @@ export const createAirControlEcsSystem = (
   time: Time,
 ): EcsSystem<[AirControlEcsComponent]> => ({
   query: [airControlId],
-  run: (result) => {
-    const [airControl] = result.components;
-    const { frontWheelGroundContact, rearWheelGroundContact } = airControl;
+  update: (_world, { components: [airControls] }) => {
+    for (const airControl of airControls) {
+      const { frontWheelGroundContact, rearWheelGroundContact } = airControl;
 
-    if (
-      isGrounded(frontWheelGroundContact) ||
-      isGrounded(rearWheelGroundContact)
-    ) {
-      return;
+      if (
+        isGrounded(frontWheelGroundContact) ||
+        isGrounded(rearWheelGroundContact)
+      ) {
+        continue;
+      }
+
+      const { chassisBody, throttleInput, maxAngularSpeed, maxTorque } =
+        airControl;
+      const { deltaTimeInSeconds } = time;
+
+      const responsiveness = chassisBody.inverseInertia * deltaTimeInSeconds;
+
+      if (responsiveness <= 0) {
+        continue;
+      }
+
+      const targetAngularVelocity = throttleInput.value * maxAngularSpeed;
+
+      const desiredTorque =
+        (targetAngularVelocity - chassisBody.angularVelocity) / responsiveness;
+
+      const torque = clamp(desiredTorque, -maxTorque, maxTorque);
+
+      chassisBody.applyTorque(torque, deltaTimeInSeconds);
     }
-
-    const { chassisBody, throttleInput, maxAngularSpeed, maxTorque } =
-      airControl;
-    const { deltaTimeInSeconds } = time;
-
-    const responsiveness = chassisBody.inverseInertia * deltaTimeInSeconds;
-
-    if (responsiveness <= 0) {
-      return;
-    }
-
-    const targetAngularVelocity = throttleInput.value * maxAngularSpeed;
-
-    const desiredTorque =
-      (targetAngularVelocity - chassisBody.angularVelocity) / responsiveness;
-
-    const torque = clamp(desiredTorque, -maxTorque, maxTorque);
-
-    chassisBody.applyTorque(torque, deltaTimeInSeconds);
   },
 });
