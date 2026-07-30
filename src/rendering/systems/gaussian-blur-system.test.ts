@@ -370,7 +370,7 @@ describe('createGaussianBlurEcsSystem', () => {
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
   });
 
-  describe('cleanupEntities', () => {
+  describe('cleanup', () => {
     it('disposes the scratch ping-pong target when the world stops', () => {
       const target = new RenderTarget(mockGl, 128, 128);
 

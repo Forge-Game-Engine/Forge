@@ -19,51 +19,58 @@ export const createSpriteAnimationEcsSystem = (
   animationRegistry: AssetRegistry<AnimationClip>,
 ): EcsSystem<[SpriteAnimationEcsComponent, SpriteEcsComponent]> => ({
   query: [spriteAnimationId, spriteId],
-  run: (result) => {
-    const [spriteAnimationComponent, spriteComponent] = result.components;
+  update: (
+    _world,
+    { components: [spriteAnimationComponents, spriteComponents] },
+  ) => {
+    for (let i = 0; i < spriteAnimationComponents.length; i++) {
+      const spriteAnimationComponent = spriteAnimationComponents[i];
+      const spriteComponent = spriteComponents[i];
 
-    const secondsElapsedSinceLastFrameChange =
-      time.timeInSeconds -
-      spriteAnimationComponent.lastFrameChangeTimeInSeconds;
+      const secondsElapsedSinceLastFrameChange =
+        time.timeInSeconds -
+        spriteAnimationComponent.lastFrameChangeTimeInSeconds;
 
-    const scaledFrameDurationInSeconds =
-      spriteAnimationComponent.frameDurationMilliseconds /
-      1000 /
-      spriteAnimationComponent.playbackSpeed;
+      const scaledFrameDurationInSeconds =
+        spriteAnimationComponent.frameDurationMilliseconds /
+        1000 /
+        spriteAnimationComponent.playbackSpeed;
 
-    if (scaledFrameDurationInSeconds <= 0) {
-      throw new Error(
-        `Invalid frame duration: ${spriteAnimationComponent.frameDurationMilliseconds} ms. Frame duration must be greater than 0.`,
+      if (scaledFrameDurationInSeconds <= 0) {
+        throw new Error(
+          `Invalid frame duration: ${spriteAnimationComponent.frameDurationMilliseconds} ms. Frame duration must be greater than 0.`,
+        );
+      }
+
+      const frameHasFinished =
+        secondsElapsedSinceLastFrameChange >= scaledFrameDurationInSeconds;
+
+      if (!frameHasFinished) {
+        continue;
+      }
+
+      const animationClip = animationRegistry.getDirect(
+        spriteAnimationComponent.animationClipHandle,
       );
+
+      const animationFrame = animationClip.getFrame(
+        spriteAnimationComponent.animationFrameIndex,
+      );
+
+      if (
+        spriteAnimationComponent.animationFrameIndex >=
+        animationClip.frameCount - 1
+      ) {
+        spriteAnimationComponent.animationFrameIndex = 0;
+      } else {
+        spriteAnimationComponent.animationFrameIndex++;
+      }
+
+      spriteComponent.uvOffset.x = animationFrame.offset.x;
+      spriteComponent.uvOffset.y = animationFrame.offset.y;
+
+      spriteAnimationComponent.lastFrameChangeTimeInSeconds =
+        time.timeInSeconds;
     }
-
-    const frameHasFinished =
-      secondsElapsedSinceLastFrameChange >= scaledFrameDurationInSeconds;
-
-    if (!frameHasFinished) {
-      return;
-    }
-
-    const animationClip = animationRegistry.getDirect(
-      spriteAnimationComponent.animationClipHandle,
-    );
-
-    const animationFrame = animationClip.getFrame(
-      spriteAnimationComponent.animationFrameIndex,
-    );
-
-    if (
-      spriteAnimationComponent.animationFrameIndex >=
-      animationClip.frameCount - 1
-    ) {
-      spriteAnimationComponent.animationFrameIndex = 0;
-    } else {
-      spriteAnimationComponent.animationFrameIndex++;
-    }
-
-    spriteComponent.uvOffset.x = animationFrame.offset.x;
-    spriteComponent.uvOffset.y = animationFrame.offset.y;
-
-    spriteAnimationComponent.lastFrameChangeTimeInSeconds = time.timeInSeconds;
   },
 });

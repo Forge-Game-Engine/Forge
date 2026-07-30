@@ -54,7 +54,7 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  */
 export const createBloomEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, BloomEcsComponent], void, void> => {
+): EcsSystem<[CameraEcsComponent, BloomEcsComponent]> => {
   const { gl, shaderCache } = renderContext;
 
   const thresholdMaterial = new Material(
@@ -83,7 +83,7 @@ export const createBloomEcsSystem = (
   // downsampled (see `bloomDownsampleFactor`); `compositeTarget` matches the
   // camera's `renderTarget` resolution, since the composite pass's output
   // replaces that target's contents. Owned by this system (not module-level
-  // state) and disposed via `cleanupEntities` when the world stops.
+  // state) and disposed via `cleanup` when the world stops.
   const brightTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
   const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
   const compositeTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
@@ -190,100 +190,113 @@ export const createBloomEcsSystem = (
 
   return {
     query: [cameraId, bloomId],
-    beforeQuery: () => {
+    update: (_world, { components: [cameras, blooms] }) => {
       processedTargetsThisFrame.clear();
-    },
-    run: (result) => {
-      const [camera, bloom] = result.components;
-      const { renderTarget } = camera;
-      const intensity = Math.max(0, bloom.intensity);
 
-      if (
-        !renderTarget ||
-        intensity <= 0 ||
-        processedTargetsThisFrame.has(renderTarget)
-      ) {
-        return;
-      }
+      for (let i = 0; i < cameras.length; i++) {
+        const camera = cameras[i];
+        const bloom = blooms[i];
+        const { renderTarget } = camera;
+        const intensity = Math.max(0, bloom.intensity);
 
-      processedTargetsThisFrame.add(renderTarget);
+        if (
+          !renderTarget ||
+          intensity <= 0 ||
+          processedTargetsThisFrame.has(renderTarget)
+        ) {
+          continue;
+        }
 
-      const brightTarget = getBrightTarget(renderTarget);
+        processedTargetsThisFrame.add(renderTarget);
 
-      beginFullscreenReplacePass(renderContext, brightTarget);
+        const brightTarget = getBrightTarget(renderTarget);
 
-      thresholdMaterial.setUniform('u_texture', renderTarget.colorTexture);
-      thresholdMaterial.setUniform('u_threshold', bloom.threshold);
-      thresholdMaterial.setUniform(
-        'u_texelSize',
-        new Float32Array([1 / renderTarget.width, 1 / renderTarget.height]),
-      );
+        beginFullscreenReplacePass(renderContext, brightTarget);
 
-      drawFullscreenQuad(renderContext, thresholdMaterial);
+        thresholdMaterial.setUniform('u_texture', renderTarget.colorTexture);
+        thresholdMaterial.setUniform('u_threshold', bloom.threshold);
+        thresholdMaterial.setUniform(
+          'u_texelSize',
+          new Float32Array([1 / renderTarget.width, 1 / renderTarget.height]),
+        );
 
-      const pingPong = getPingPongTarget(renderTarget);
-      const texelSize = new Float32Array([
-        1 / brightTarget.width,
-        1 / brightTarget.height,
-      ]);
+        drawFullscreenQuad(renderContext, thresholdMaterial);
 
-      // Same two-pass separable technique as createGaussianBlurEcsSystem:
-      // each iteration reads the previous iteration's result back out of
-      // `brightTarget` and writes the next, more-blurred version back into
-      // it, so `passes` composes into a wider glow. Running at the
-      // downsampled resolution (see `bloomDownsampleFactor`) is what makes
-      // that glow actually reach past a sprite's edges instead of staying
-      // pinned to its source pixels.
-      for (let i = 0; i < bloom.passes; i++) {
-        drawBlurPass(
+        const pingPong = getPingPongTarget(renderTarget);
+        const texelSize = new Float32Array([
+          1 / brightTarget.width,
+          1 / brightTarget.height,
+        ]);
+
+        // Same two-pass separable technique as createGaussianBlurEcsSystem:
+        // each iteration reads the previous iteration's result back out of
+        // `brightTarget` and writes the next, more-blurred version back into
+        // it, so `passes` composes into a wider glow. Running at the
+        // downsampled resolution (see `bloomDownsampleFactor`) is what makes
+        // that glow actually reach past a sprite's edges instead of staying
+        // pinned to its source pixels.
+        for (let p = 0; p < bloom.passes; p++) {
+          drawBlurPass(
+            brightTarget.colorTexture,
+            horizontalBlurDirection,
+            texelSize,
+            pingPong.write,
+          );
+          pingPong.swap();
+
+          drawBlurPass(
+            pingPong.read.colorTexture,
+            verticalBlurDirection,
+            texelSize,
+            brightTarget,
+          );
+        }
+
+        // The composite pass upsamples `brightTarget` back to full resolution
+        // implicitly, via the bloom texture's own linear-filtered sampling.
+        // It writes into its own full-resolution scratch buffer rather than
+        // `pingPong` (now downsampled) or `renderTarget` (the scene texture
+        // it's reading from, which can't also be this draw's destination).
+        const compositeTarget = getCompositeTarget(renderTarget);
+
+        beginFullscreenReplacePass(renderContext, compositeTarget);
+
+        compositeMaterial.setUniform(
+          'u_sceneTexture',
+          renderTarget.colorTexture,
+        );
+        compositeMaterial.setUniform(
+          'u_bloomTexture',
           brightTarget.colorTexture,
-          horizontalBlurDirection,
-          texelSize,
-          pingPong.write,
         );
-        pingPong.swap();
+        compositeMaterial.setUniform('u_intensity', intensity);
 
-        drawBlurPass(
-          pingPong.read.colorTexture,
-          verticalBlurDirection,
-          texelSize,
-          brightTarget,
-        );
+        drawFullscreenQuad(renderContext, compositeMaterial);
+
+        copyTexture(compositeTarget.colorTexture, renderTarget);
       }
-
-      // The composite pass upsamples `brightTarget` back to full resolution
-      // implicitly, via the bloom texture's own linear-filtered sampling.
-      // It writes into its own full-resolution scratch buffer rather than
-      // `pingPong` (now downsampled) or `renderTarget` (the scene texture
-      // it's reading from, which can't also be this draw's destination).
-      const compositeTarget = getCompositeTarget(renderTarget);
-
-      beginFullscreenReplacePass(renderContext, compositeTarget);
-
-      compositeMaterial.setUniform('u_sceneTexture', renderTarget.colorTexture);
-      compositeMaterial.setUniform('u_bloomTexture', brightTarget.colorTexture);
-      compositeMaterial.setUniform('u_intensity', intensity);
-
-      drawFullscreenQuad(renderContext, compositeMaterial);
-
-      copyTexture(compositeTarget.colorTexture, renderTarget);
     },
-    cleanupEntities: (result) => {
-      const [camera] = result.components;
-      const { renderTarget } = camera;
+    cleanup: (world) => {
+      const {
+        components: [cameras],
+      } = world.query<[CameraEcsComponent]>([cameraId, bloomId]);
 
-      if (!renderTarget) {
-        return;
+      for (const camera of cameras) {
+        const { renderTarget } = camera;
+
+        if (!renderTarget) {
+          continue;
+        }
+
+        brightTargetByTarget.get(renderTarget)?.dispose(gl);
+        brightTargetByTarget.delete(renderTarget);
+
+        pingPongByTarget.get(renderTarget)?.dispose(gl);
+        pingPongByTarget.delete(renderTarget);
+
+        compositeTargetByTarget.get(renderTarget)?.dispose(gl);
+        compositeTargetByTarget.delete(renderTarget);
       }
-
-      brightTargetByTarget.get(renderTarget)?.dispose(gl);
-      brightTargetByTarget.delete(renderTarget);
-
-      pingPongByTarget.get(renderTarget)?.dispose(gl);
-      pingPongByTarget.delete(renderTarget);
-
-      compositeTargetByTarget.get(renderTarget)?.dispose(gl);
-      compositeTargetByTarget.delete(renderTarget);
     },
   };
 };

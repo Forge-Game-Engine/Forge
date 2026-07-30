@@ -25,32 +25,35 @@ import { clamp } from '../../math/index.js';
  */
 export const createAngularVelocityMotorEcsSystem = (
   time: Time,
-): EcsSystem<
-  [AngularVelocityMotorEcsComponent, PhysicsBodyEcsComponent],
-  void
-> => ({
+): EcsSystem<[AngularVelocityMotorEcsComponent, PhysicsBodyEcsComponent]> => ({
   query: [AngularVelocityMotorId, PhysicsBodyId],
-  run: (result) => {
-    const [motorComponent, physicsBodyComponent] = result.components;
-    const { physicsBody } = physicsBodyComponent;
+  update: (
+    _world,
+    { components: [motorComponents, physicsBodyComponents] },
+  ) => {
     const { deltaTimeInSeconds } = time;
 
-    const responsiveness = physicsBody.inverseInertia * deltaTimeInSeconds;
+    for (let i = 0; i < motorComponents.length; i++) {
+      const motorComponent = motorComponents[i];
+      const { physicsBody } = physicsBodyComponents[i];
 
-    if (responsiveness <= 0) {
-      return;
+      const responsiveness = physicsBody.inverseInertia * deltaTimeInSeconds;
+
+      if (responsiveness <= 0) {
+        continue;
+      }
+
+      const desiredTorque =
+        (motorComponent.targetVelocity - physicsBody.angularVelocity) /
+        responsiveness;
+
+      const torque = clamp(
+        desiredTorque,
+        -motorComponent.maxTorque,
+        motorComponent.maxTorque,
+      );
+
+      physicsBody.applyTorque(torque, deltaTimeInSeconds);
     }
-
-    const desiredTorque =
-      (motorComponent.targetVelocity - physicsBody.angularVelocity) /
-      responsiveness;
-
-    const torque = clamp(
-      desiredTorque,
-      -motorComponent.maxTorque,
-      motorComponent.maxTorque,
-    );
-
-    physicsBody.applyTorque(torque, deltaTimeInSeconds);
   },
 });

@@ -95,8 +95,7 @@ describe('ParticleEmitterSystem', () => {
     world.update();
 
     // Query for particles after they should have been created
-    const particlesAfter: number[] = [];
-    world.queryEntities([ParticleId], particlesAfter);
+    const { entities: particlesAfter } = world.query([ParticleId]);
 
     // Should have emitted 3 particles immediately (emitDurationSeconds: 0)
     expect(particlesAfter).toHaveLength(3);
@@ -126,8 +125,7 @@ describe('ParticleEmitterSystem', () => {
     time.update(100);
     world.update();
 
-    const particlesAfter: number[] = [];
-    world.queryEntities([ParticleId], particlesAfter);
+    const { entities: particlesAfter } = world.query([ParticleId]);
 
     const [particleEntity] = particlesAfter;
     const rotation = world.getComponent(particleEntity, rotationId);

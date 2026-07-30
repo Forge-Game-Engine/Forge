@@ -12,20 +12,24 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
  */
 export const createAudioEcsSystem = (): EcsSystem<[AudioEcsComponent]> => ({
   query: [audioId],
-  run: (result) => {
-    const [audioComponent] = result.components;
-
-    if (audioComponent.playSound) {
-      audioComponent.sound.play();
-      audioComponent.playSound = false;
+  update: (_world, { components: [audioComponents] }) => {
+    for (const audioComponent of audioComponents) {
+      if (audioComponent.playSound) {
+        audioComponent.sound.play();
+        audioComponent.playSound = false;
+      }
     }
   },
-  cleanupEntities(queryResult) {
-    const [audioComponent] = queryResult.components;
+  cleanup(world) {
+    const {
+      components: [audioComponents],
+    } = world.query<[AudioEcsComponent]>([audioId]);
 
-    if (audioComponent.sound.playing()) {
-      audioComponent.sound.stop();
-      audioComponent.sound.unload();
+    for (const audioComponent of audioComponents) {
+      if (audioComponent.sound.playing()) {
+        audioComponent.sound.stop();
+        audioComponent.sound.unload();
+      }
     }
   },
 });

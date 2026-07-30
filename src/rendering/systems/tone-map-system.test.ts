@@ -286,7 +286,7 @@ describe('createToneMapEcsSystem', () => {
     expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
   });
 
-  describe('cleanupEntities', () => {
+  describe('cleanup', () => {
     it('disposes the scratch target when the world stops', () => {
       const target = new RenderTarget(mockGl, 128, 128);
 

@@ -1,4 +1,4 @@
-import { Time } from '../../common';
+import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import {
   LifetimeEcsComponent,
@@ -12,13 +12,15 @@ export const createLifetimeTrackingEcsSystem = (
   time: Time,
 ): EcsSystem<[LifetimeEcsComponent]> => ({
   query: [lifetimeId],
-  run: (result) => {
-    const [lifetimeComponent] = result.components;
+  update: (_world, { components: [lifetimeComponents] }) => {
+    for (const lifetimeComponent of lifetimeComponents) {
+      lifetimeComponent.elapsedSeconds += time.deltaTimeInSeconds;
 
-    lifetimeComponent.elapsedSeconds += time.deltaTimeInSeconds;
-
-    if (lifetimeComponent.elapsedSeconds >= lifetimeComponent.durationSeconds) {
-      lifetimeComponent.hasExpired = true;
+      if (
+        lifetimeComponent.elapsedSeconds >= lifetimeComponent.durationSeconds
+      ) {
+        lifetimeComponent.hasExpired = true;
+      }
     }
   },
 });
