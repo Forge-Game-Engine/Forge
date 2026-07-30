@@ -1,6 +1,6 @@
-import { ComponentKey, TagKey } from '.';
-import { Stoppable, Updatable } from '../common';
-import { SortedSet, SparseSet } from '../utilities';
+import { ComponentKey, TagKey } from './ecs-component.js';
+import { Stoppable, Updatable } from '../common/index.js';
+import { SortedSet, SparseSet } from '../utilities/index.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
 
