@@ -128,6 +128,10 @@ const config: Config = {
               label: 'ECS',
             },
             {
+              to: 'demos/sprite-animation',
+              label: 'Sprite Animation',
+            },
+            {
               to: 'demos/physics',
               label: 'Physics',
             },

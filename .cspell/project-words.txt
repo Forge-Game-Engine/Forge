@@ -15,6 +15,7 @@ commitlint
 dbaeumer
 deadzone
 deregistering
+desaturated
 desaturates
 despawn
 devcontainers
@@ -64,6 +65,8 @@ prestart
 quilez
 rasterizer
 readback
+readbacks
+recentering
 refac
 reinhard
 Renderable
