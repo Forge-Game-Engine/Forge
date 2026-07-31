@@ -32,6 +32,13 @@ export interface PolygonFacesContact {
    * The world-space contact points (one or two points).
    */
   contactPoints: Vector2[];
+
+  /**
+   * Identifiers for each entry in `contactPoints` (same length, same order),
+   * stable across ticks for the same reference/incident edge pairing. See
+   * {@link CollisionManifold.featureIds}.
+   */
+  featureIds: number[];
 }
 
 interface Axis {
@@ -223,25 +230,54 @@ function clipIncidentEdge(
 /**
  * Discards clipped points that are not penetrating the reference face and
  * computes the penetration depth of the remaining contact points.
+ * @param featureIdForIndex - Derives a stable feature id for a clipped
+ * point from its index within `clippedPoints` (always 0 or 1, since
+ * `clipIncidentEdge` always clips down to the incident edge's two
+ * endpoints).
  */
 function findContactPoints(
   clippedPoints: Vector2[],
   referenceNormal: Vector2,
   referenceV1: Vector2,
-): { contactPoints: Vector2[]; depth: number } {
+  featureIdForIndex: (pointIndex: number) => number,
+): { contactPoints: Vector2[]; featureIds: number[]; depth: number } {
   const contactPoints: Vector2[] = [];
+  const featureIds: number[] = [];
   let depth = 0;
 
-  for (const point of clippedPoints) {
+  for (let i = 0; i < clippedPoints.length; i++) {
+    const point = clippedPoints[i];
     const separation = referenceNormal.dot(point.subtract(referenceV1));
 
     if (separation <= 0) {
       contactPoints.push(point);
+      featureIds.push(featureIdForIndex(i));
       depth = Math.max(depth, -separation);
     }
   }
 
-  return { contactPoints, depth };
+  return { contactPoints, featureIds, depth };
+}
+
+/**
+ * Derives a feature id for a polygon-polygon contact point that stays
+ * stable across ticks for the same reference/incident edge pairing, by
+ * packing which polygon is the reference face, the reference and incident
+ * face indices, and the point's position within the (always
+ * length-2) clipped incident edge.
+ */
+function computeFeatureId(
+  flip: boolean,
+  referenceFaceIndex: number,
+  incidentFaceIndex: number,
+  pointIndex: number,
+): number {
+  return (
+    ((flip ? 1 : 0) << 20) |
+    ((referenceFaceIndex & 0xff) << 12) |
+    ((incidentFaceIndex & 0xff) << 4) |
+    (pointIndex & 0xf)
+  );
 }
 
 /**
@@ -309,10 +345,12 @@ export function detectPolygonFacesCollision(
     return null;
   }
 
-  const { contactPoints, depth } = findContactPoints(
+  const { contactPoints, featureIds, depth } = findContactPoints(
     clippedPoints,
     referenceNormal,
     referenceV1,
+    (pointIndex) =>
+      computeFeatureId(flip, faceIndex, incidentFaceIndex, pointIndex),
   );
 
   if (contactPoints.length === 0) {
@@ -325,5 +363,6 @@ export function detectPolygonFacesCollision(
     normal,
     depth,
     contactPoints,
+    featureIds,
   };
 }

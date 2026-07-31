@@ -82,6 +82,7 @@ rolloff
 shaderstore
 skidmark
 slevesque
+Seidel
 Smashicons
 smoothstep
 sonarjs

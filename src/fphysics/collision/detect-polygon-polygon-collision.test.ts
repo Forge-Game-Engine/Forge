@@ -47,6 +47,19 @@ describe('detectPolygonPolygonCollision', () => {
     for (const contactPoint of manifold?.contactPoints ?? []) {
       expect(contactPoint.x).toBeCloseTo(0.5);
     }
+
+    expect(manifold?.featureIds).toHaveLength(2);
+    expect(manifold?.featureIds[0]).not.toBe(manifold?.featureIds[1]);
+  });
+
+  it('should produce the same feature ids across ticks for an unchanged contact', () => {
+    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
+    const bodyB = body(new Vector2(1.5, 0), rectangle(2, 2));
+
+    const first = detectPolygonPolygonCollision(bodyA, bodyB);
+    const second = detectPolygonPolygonCollision(bodyA, bodyB);
+
+    expect(first?.featureIds).toEqual(second?.featureIds);
   });
 
   it('should account for body rotation', () => {

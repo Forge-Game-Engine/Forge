@@ -39,6 +39,7 @@ describe('detectCircleCircleCollision', () => {
     expect(manifold?.contactPoints).toHaveLength(1);
     expect(manifold?.contactPoints[0].x).toBeCloseTo(1);
     expect(manifold?.contactPoints[0].y).toBeCloseTo(0);
+    expect(manifold?.featureIds).toEqual([0]);
   });
 
   it('should fall back to a default normal when the circles are concentric', () => {

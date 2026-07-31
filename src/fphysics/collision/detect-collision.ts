@@ -17,6 +17,7 @@ function flipManifold(
     normal: manifold.normal.negate(),
     depth: manifold.depth,
     contactPoints: manifold.contactPoints,
+    featureIds: manifold.featureIds,
   };
 }
 

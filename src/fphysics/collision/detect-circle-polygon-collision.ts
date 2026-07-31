@@ -58,5 +58,6 @@ export function detectCirclePolygonCollision(
     normal,
     depth: contact.depth,
     contactPoints: [contactPoint],
+    featureIds: [0],
   };
 }

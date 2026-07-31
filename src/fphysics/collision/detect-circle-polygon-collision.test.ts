@@ -46,6 +46,7 @@ describe('detectCirclePolygonCollision', () => {
     expect(manifold?.contactPoints).toHaveLength(1);
     expect(manifold?.contactPoints[0].x).toBeCloseTo(0);
     expect(manifold?.contactPoints[0].y).toBeCloseTo(-1);
+    expect(manifold?.featureIds).toEqual([0]);
   });
 
   it('should detect a vertex-region collision', () => {

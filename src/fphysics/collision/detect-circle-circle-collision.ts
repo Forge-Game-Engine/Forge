@@ -36,5 +36,6 @@ export function detectCircleCircleCollision(
     normal,
     depth,
     contactPoints: [contactPoint],
+    featureIds: [0],
   };
 }

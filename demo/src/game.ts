@@ -28,7 +28,9 @@ import {
   Collider,
   CollisionManifold,
   CollisionPair,
+  ContactConstraint,
   createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -43,12 +45,12 @@ const groundThickness = 1;
 const shapeSize = 0.2;
 const fountainMarginFromEdge = 1.5;
 const fountainSpeed = 15;
-const fountainAngleDegrees = 80;
+const fountainAngleDegrees = 50;
 const fountainAngleJitterDegrees = 10;
 const fountainSpeedJitter = 0.15;
-const fountainSpawnInterval = 0.00001;
-const shapesSpawnedPerInterval = 10;
-const maxShapes = 5_000;
+const fountainSpawnInterval = 0.01;
+const shapesSpawnedPerInterval = 2;
+const maxShapes = 500;
 const despawnMarginBelowGround = 3;
 const polygonAngularVelocitySpread = 4;
 
@@ -268,16 +270,16 @@ const triangleSprite = createImageSprite(
 triangleSprite.pivot = trianglePivot.clone();
 
 const shapeTemplates: ShapeTemplate[] = [
-  {
-    sprite: ballSprite,
-    createCollider: () => new CircleCollider(shapeSize / 2),
-    angularVelocitySpread: 0,
-  },
-  {
-    sprite: squareSprite,
-    createCollider: createSquareCollider,
-    angularVelocitySpread: polygonAngularVelocitySpread,
-  },
+  // {
+  //   sprite: ballSprite,
+  //   createCollider: () => new CircleCollider(shapeSize / 2),
+  //   angularVelocitySpread: 0,
+  // },
+  // {
+  //   sprite: squareSprite,
+  //   createCollider: createSquareCollider,
+  //   angularVelocitySpread: polygonAngularVelocitySpread,
+  // },
   {
     sprite: triangleSprite,
     createCollider: createTriangleCollider,
@@ -325,6 +327,7 @@ const fountainY = groundTopY + shapeSize / 2;
 
 const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
+const contactConstraints: ContactConstraint[] = [];
 
 world.addSystem(
   createFountainSpawnEcsSystem(
@@ -338,6 +341,15 @@ world.addSystem(
   ),
 );
 world.addSystem(createGravityEcsSystem(time));
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
+world.addSystem(
+  createCollisionResolutionEcsSystem(
+    collisionManifolds,
+    contactConstraints,
+    time,
+  ),
+);
 world.addSystem(createEulerIntegrationEcsSystem(time));
 world.addSystem(createTransformEcsSystem());
 world.addSystem(
@@ -346,8 +358,6 @@ world.addSystem(
     -halfHeight - despawnMarginBelowGround,
   ),
 );
-world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(
   createCollisionTintEcsSystem(collisionManifolds, spritesByEntity),
 );
