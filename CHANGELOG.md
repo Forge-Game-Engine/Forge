@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 
 - **rendering:** Fix sprites rotating in the opposite direction (mirrored) from their entity's actual `RotationEcsComponent.world`/physics rotation. `position.world.y` is negated when uploaded to the sprite shader (to convert the engine's Y-up world space to the shader's Y-down space), but rotation wasn't given the same treatment, so a positive rotation visually spun the sprite the wrong way relative to its (correctly rotating) collider. This only became visible once colliders had a distinguishable, non-symmetric shape (e.g. a rotating `PolygonCollider` triangle) to reveal the mismatch
+- **rendering:** Fix `SpriteEcsComponent.pivot` applying only half of its intended offset (e.g. `pivot: (0, 0)` landed 25% in from the sprite's edge instead of at the edge, and a pivot matching a rotated collider's centroid left the sprite visibly adrift from its own collider - gapping off the ground on one side, sinking into it on another - as the entity rotated). A rendering-pipeline change had widened the vertex quad's coordinate range without widening the pivot term to match; nine-slice sprites were unaffected since they always render their regions with a centered pivot
 
 ## [0.24.0] - 2026-07-27
 
