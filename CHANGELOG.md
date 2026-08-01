@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **fphysics:** Add AABB broad-phase and SAT narrow-phase collision detection for `CircleCollider` and the new `PolygonCollider`, via `createBroadPhaseEcsSystem` and `createNarrowPhaseEcsSystem`
 - **fphysics:** Add `createCollisionResolutionEcsSystem`, a sequential-impulse collision resolver with soft-constraint penetration correction, Coulomb friction, restitution, and warm-starting of accumulated impulses across ticks; `ColliderEcsComponent` gains `friction`/`restitution` properties
 
+#### Fixed
+
+- **rendering:** Fix sprites rotating in the opposite direction (mirrored) from their entity's actual `RotationEcsComponent.world`/physics rotation. `position.world.y` is negated when uploaded to the sprite shader (to convert the engine's Y-up world space to the shader's Y-down space), but rotation wasn't given the same treatment, so a positive rotation visually spun the sprite the wrong way relative to its (correctly rotating) collider. This only became visible once colliders had a distinguishable, non-symmetric shape (e.g. a rotating `PolygonCollider` triangle) to reveal the mismatch
+
 ## [0.24.0] - 2026-07-27
 
 #### Added

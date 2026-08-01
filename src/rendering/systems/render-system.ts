@@ -135,7 +135,7 @@ const pushSpriteRenderCommands = (
     const regionOffset = new Vector2(
       region.offset.x * scaleX,
       region.offset.y * scaleY,
-    ).rotate(-rotationRadians);
+    ).rotate(rotationRadians);
 
     const regionPosition: PositionEcsComponent = {
       local: entityPosition.local,

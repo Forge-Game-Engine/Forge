@@ -581,14 +581,15 @@ describe('createRenderEcsSystem', () => {
       );
 
       // The top-left corner (offset (-45, 45) before rotation) orbits to
-      // (45, 45): the same screen-space rotation direction a_instanceRot
-      // spins the region's own quad in the shader. Orbiting it the other
-      // way around the entity (a sign bug) would instead land it at
-      // (-45, -45), tearing the sliced sprite's regions apart on rotation.
+      // (-45, -45): the same direction `Vector2.rotate` (and the shader's
+      // own rotation of the region's quad) turns the entity's true world
+      // rotation. Orbiting it the other way around the entity (a sign bug)
+      // would instead land it at (45, 45), tearing the sliced sprite's
+      // regions apart on rotation.
       const rotatedCorner = positions.find(
         (position) =>
-          Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
-          Math.abs(position.world.y - 45) < 1e-9,
+          Math.abs(position.world.x - (50 - 45)) < 1e-9 &&
+          Math.abs(position.world.y - -45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();

@@ -15,6 +15,7 @@ import {
   PositionEcsComponent,
   positionId,
   Random,
+  Sprite,
   SpriteEcsComponent,
   Time,
   Vector2,
@@ -42,118 +43,17 @@ import {
 const renderLayer = 1;
 const verticalWorldUnits = 10;
 const groundThickness = 1;
-const shapeSize = 0.2;
+const shapeSize = 0.5;
 const fountainMarginFromEdge = 1.5;
 const fountainSpeed = 15;
 const fountainAngleDegrees = 50;
 const fountainAngleJitterDegrees = 10;
 const fountainSpeedJitter = 0.15;
-const fountainSpawnInterval = 0.01;
-const shapesSpawnedPerInterval = 2;
-const maxShapes = 500;
+const fountainSpawnInterval = 0.1;
+const shapesSpawnedPerInterval = 4;
+const maxShapes = 4;
 const despawnMarginBelowGround = 3;
 const polygonAngularVelocitySpread = 4;
-
-type FountainSide = 'left' | 'right';
-
-/**
- * A spawnable shape kind: pairs the sprite to render with a factory for the
- * matching collider, both sized off `shapeSize`, plus how much initial spin
- * to give the entity (circles look the same at any rotation, so they get
- * none).
- */
-interface ShapeTemplate {
-  sprite: SpriteEcsComponent;
-  createCollider: () => Collider;
-  angularVelocitySpread: number;
-}
-
-/**
- * Creates a system that spawns a new randomly-chosen shape, alternating
- * between a fountain at the left and right edges of the visible area,
- * launched up and toward the center at `fountainAngleDegrees` (with some
- * random jitter in angle and speed so shapes collide at different points
- * instead of moving in lockstep). Stops spawning once `maxShapes` are
- * alive.
- */
-function createFountainSpawnEcsSystem(
-  time: Time,
-  random: Random,
-  shapeTemplates: ShapeTemplate[],
-  spritesByEntity: Map<number, SpriteEcsComponent>,
-  leftX: number,
-  rightX: number,
-  fountainY: number,
-): EcsSystem<[]> {
-  let elapsedSinceSpawn = 0;
-  let nextSide: FountainSide = 'left';
-
-  const spawnShape = (world: EcsWorld, side: FountainSide): void => {
-    const entity = world.createEntity();
-    const template =
-      shapeTemplates[random.randomInt(0, shapeTemplates.length - 1)];
-    const collider = template.createCollider();
-
-    const angle = degreesToRadians(
-      fountainAngleDegrees +
-        random.randomFloat(
-          -fountainAngleJitterDegrees,
-          fountainAngleJitterDegrees,
-        ),
-    );
-    const speed =
-      fountainSpeed *
-      random.randomFloat(1 - fountainSpeedJitter, 1 + fountainSpeedJitter);
-    const horizontalDirection = side === 'left' ? 1 : -1;
-
-    const velocity = new Vector2(
-      Math.cos(angle) * speed * horizontalDirection,
-      Math.sin(angle) * speed,
-    );
-    const angularVelocity = random.randomFloat(
-      -template.angularVelocitySpread,
-      template.angularVelocitySpread,
-    );
-    const position = new Vector2(side === 'left' ? leftX : rightX, fountainY);
-
-    const sprite = addSpriteComponent(world, entity, template.sprite);
-    spritesByEntity.set(entity, sprite);
-
-    addPositionComponent(world, entity, { local: position });
-    addRotationComponent(world, entity);
-    addGravityComponent(world, entity);
-    addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
-      velocity,
-      angularVelocity,
-    });
-    addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
-  };
-
-  return {
-    query: [],
-    update: (world) => {
-      elapsedSinceSpawn += time.deltaTimeInSeconds;
-
-      if (elapsedSinceSpawn < fountainSpawnInterval) {
-        return;
-      }
-
-      elapsedSinceSpawn -= fountainSpawnInterval;
-
-      if (spritesByEntity.size >= maxShapes) {
-        return;
-      }
-
-      for (let i = 0; i < shapesSpawnedPerInterval; i++) {
-        spawnShape(world, nextSide);
-        nextSide = nextSide === 'left' ? 'right' : 'left';
-      }
-    },
-  };
-}
 
 /**
  * Creates a system that removes shape entities once they've fallen well
@@ -209,15 +109,26 @@ function createCollisionTintEcsSystem(
   };
 }
 
-function createSquareCollider(): PolygonCollider {
-  const half = shapeSize / 2;
+function spawnTriangle(
+  world: EcsWorld,
+  position: Vector2,
+  rotation: number,
+  sprite: Sprite,
+) {
+  const entity = world.createEntity();
 
-  return new PolygonCollider([
-    new Vector2(-half, -half),
-    new Vector2(half, -half),
-    new Vector2(half, half),
-    new Vector2(-half, half),
-  ]);
+  const collider = createTriangleCollider();
+
+  addPositionComponent(world, entity, { world: position });
+  addRotationComponent(world, entity, { world: rotation });
+  addSpriteComponent(world, entity, sprite);
+  addRigidBodyComponent(world, entity, {
+    mass: collider.mass,
+    momentOfInertia: collider.momentOfInertia,
+  });
+  addColliderComponent(world, entity, { collider });
+  addGravityComponent(world, entity);
+  addAabbComponent(world, entity);
 }
 
 /**
@@ -245,15 +156,11 @@ createCamera(world, { verticalWorldUnits });
 
 const { imageCache } = renderContext;
 
-const [ballImage, squareImage, triangleImage] = await Promise.all([
-  imageCache.getOrLoad('ball_blue_large.png'),
+const [squareImage, triangleImage] = await Promise.all([
   imageCache.getOrLoad('block_square.png'),
-  imageCache.getOrLoad('block_corner_large.png'),
+  imageCache.getOrLoad('Triangle.png'),
 ]);
 
-const ballSprite = createImageSprite(ballImage, renderContext, renderLayer, {
-  frameDimensions: new Vector2(shapeSize, shapeSize),
-});
 const squareSprite = createImageSprite(
   squareImage,
   renderContext,
@@ -267,25 +174,9 @@ const triangleSprite = createImageSprite(
   { frameDimensions: new Vector2(shapeSize, shapeSize) },
 );
 
-triangleSprite.pivot = trianglePivot.clone();
+triangleSprite.tintColor = Color.blue;
 
-const shapeTemplates: ShapeTemplate[] = [
-  // {
-  //   sprite: ballSprite,
-  //   createCollider: () => new CircleCollider(shapeSize / 2),
-  //   angularVelocitySpread: 0,
-  // },
-  // {
-  //   sprite: squareSprite,
-  //   createCollider: createSquareCollider,
-  //   angularVelocitySpread: polygonAngularVelocitySpread,
-  // },
-  {
-    sprite: triangleSprite,
-    createCollider: createTriangleCollider,
-    angularVelocitySpread: polygonAngularVelocitySpread,
-  },
-];
+triangleSprite.pivot = trianglePivot.clone();
 
 const { x: visibleWidth, y: visibleHeight } = calculateVisibleWorldSize(
   renderContext.width,
@@ -303,7 +194,7 @@ const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
 const groundTopY = groundPosition.y + groundHalfHeight;
 
-addPositionComponent(world, groundEntity, { local: groundPosition });
+addPositionComponent(world, groundEntity, { world: groundPosition });
 addRotationComponent(world, groundEntity);
 addSpriteComponent(world, groundEntity, {
   ...squareSprite,
@@ -320,26 +211,12 @@ addColliderComponent(world, groundEntity, {
 });
 addAabbComponent(world, groundEntity);
 
-const random = new Random();
-const fountainLeftX = -halfWidth + fountainMarginFromEdge;
-const fountainRightX = halfWidth - fountainMarginFromEdge;
-const fountainY = groundTopY + shapeSize / 2;
+spawnTriangle(world, new Vector2(0, 1), degreesToRadians(270), triangleSprite);
 
 const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
-world.addSystem(
-  createFountainSpawnEcsSystem(
-    time,
-    random,
-    shapeTemplates,
-    spritesByEntity,
-    fountainLeftX,
-    fountainRightX,
-    fountainY,
-  ),
-);
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
@@ -351,7 +228,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
-world.addSystem(createTransformEcsSystem());
+// world.addSystem(createTransformEcsSystem());
 world.addSystem(
   createDespawnFallenShapesEcsSystem(
     spritesByEntity,

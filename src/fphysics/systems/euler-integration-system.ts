@@ -28,10 +28,10 @@ export const createEulerIntegrationEcsSystem = (
       const rotationComponent = rotations[i];
       const rigidBodyComponent = rigidBodies[i];
 
-      rotationComponent.local +=
+      rotationComponent.world +=
         rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;
 
-      positionComponent.local = positionComponent.local.add(
+      positionComponent.world = positionComponent.world.add(
         rigidBodyComponent.velocity.multiply(time.deltaTimeInSeconds),
       );
     }

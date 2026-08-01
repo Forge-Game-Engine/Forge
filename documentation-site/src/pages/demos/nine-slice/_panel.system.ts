@@ -23,12 +23,15 @@ const cycleSeconds = 4;
  */
 export const createPanelEcsSystem = (
   time: Time,
-): EcsSystem<[SpriteEcsComponent, PanelEcsComponent]> => ({
-  query: [spriteId, panelId],
-  update: (_world, { components: [sprites, panels] }) => {
+): EcsSystem<
+  [SpriteEcsComponent, PanelEcsComponent, RotationEcsComponent]
+> => ({
+  query: [spriteId, panelId, rotationId],
+  update: (_world, { components: [sprites, panels, rotations] }) => {
     for (let i = 0; i < sprites.length; i++) {
       const sprite = sprites[i];
       const panel = panels[i];
+      const rotation = rotations[i];
       const { minSize, maxSize } = panel;
 
       const phase =
@@ -37,6 +40,8 @@ export const createPanelEcsSystem = (
 
       sprite.width = size;
       // sprite.height = size;
+
+      rotation.world += 0.5 * time.deltaTimeInSeconds;
     }
   },
 });
