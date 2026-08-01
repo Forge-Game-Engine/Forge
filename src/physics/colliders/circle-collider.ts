@@ -1,6 +1,6 @@
-import { Vector2 } from '../../math';
-import { Aabb } from '../types/aabb';
-import { Collider } from './collider';
+import { Vector2 } from '../../math/index.js';
+import { Aabb } from '../types/aabb.js';
+import { Collider } from './collider.js';
 
 function calculateCircleMass(radius: number, density: number = 1): number {
   return density * Math.PI * radius * radius;

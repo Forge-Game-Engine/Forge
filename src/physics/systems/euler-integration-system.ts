@@ -34,6 +34,9 @@ export const createEulerIntegrationEcsSystem = (
       positionComponent.world = positionComponent.world.add(
         rigidBodyComponent.velocity.multiply(time.deltaTimeInSeconds),
       );
+
+      rigidBodyComponent.angularVelocity *=
+        1 / (1 + rigidBodyComponent.angularDrag * time.deltaTimeInSeconds);
     }
   },
 });

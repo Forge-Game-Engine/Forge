@@ -1,15 +1,14 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
-import { PrismaticJoint } from '@forge-game-engine/forge/physics';
 
 /**
  * Drives a jointed slider that would otherwise just sit at rest: since
- * PrismaticJoint has no built-in motor, this periodically applies an
- * impulse to the joint's `bodyB` instead, the same "scale an impulse and
+ * prismatic joints have no built-in motor, this periodically applies an
+ * impulse to the slider entity directly, the same "scale an impulse and
  * apply it every so often" approach described in the Applying Forces guide.
  */
 export interface PumpEcsComponent {
-  joint: PrismaticJoint;
+  entity: number;
   impulse: Vector2;
   intervalSeconds: number;
   /**
@@ -26,7 +25,7 @@ export interface PumpEcsComponent {
 export const pumpId = createComponentId<PumpEcsComponent>('pump');
 
 export interface PumpOptions {
-  joint: PrismaticJoint;
+  entity: number;
   impulse: Vector2;
   intervalSeconds: number;
   alternate: boolean;

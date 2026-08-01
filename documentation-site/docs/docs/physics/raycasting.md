@@ -4,10 +4,10 @@ sidebar_position: 3
 
 # Raycasting
 
-[`raycast(bodies, start, end, sort?)`](/Forge/docs/api/functions/raycast)
+`raycast(bodies, start, end, sort?)`
 casts a line segment against a set of `RigidBody` instances and returns
 every point where it intersects one, as
-[`RaycastCollision`](/Forge/docs/api/interfaces/RaycastCollision). Use it for
+`RaycastCollision`. Use it for
 hitscan weapons, line-of-sight checks, and ground/wall detection, anything
 that needs to ask "what's between these two points?" without running a full
 simulation step.
@@ -42,7 +42,7 @@ edge) needs a separate code path for circle hits.
 ## Performance
 
 Before testing a body's exact shape, `raycast` skips any body whose
-[`aabb`](/Forge/docs/api/classes/RigidBody#aabb) doesn't overlap the ray's
+`aabb` doesn't overlap the ray's
 bounding box. A long raycast across a wide world still checks every body's
 AABB once, but the expensive per-shape intersection test only runs for
 bodies the ray could plausibly hit, so casting against

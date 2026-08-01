@@ -12,7 +12,7 @@ import {
 
 /**
  * Smoothly moves each matched entity's `PositionEcsComponent` towards its
- * `CameraFollowEcsComponent.target` position every tick, via
+ * `CameraFollowEcsComponent.targetEntity` position every tick, via
  * `smoothDampVector2`. Must run before `createRenderEcsSystem` so the render
  * pass sees this tick's updated camera position.
  * @param time - The time instance used to advance `smoothDampVector2` by
@@ -23,17 +23,24 @@ export const createCameraFollowEcsSystem = (
 ): EcsSystem<[CameraFollowEcsComponent, PositionEcsComponent]> => ({
   query: [cameraFollowId, positionId],
   update: (
-    _world,
+    world,
     { components: [cameraFollowComponents, positionComponents] },
   ) => {
     for (let i = 0; i < cameraFollowComponents.length; i++) {
       const cameraFollow = cameraFollowComponents[i];
       const positionComponent = positionComponents[i];
-      const { target, offset, smoothTime, maxSpeed, velocity } = cameraFollow;
+      const { targetEntity, offset, smoothTime, maxSpeed, velocity } =
+        cameraFollow;
+
+      const targetPosition = world.getComponent(targetEntity, positionId);
+
+      if (targetPosition === null) {
+        continue;
+      }
 
       const { positionOutput, velocityOutput } = smoothDampVector2(
         positionComponent.local,
-        target.position.add(offset),
+        targetPosition.world.add(offset),
         velocity,
         maxSpeed,
         smoothTime,

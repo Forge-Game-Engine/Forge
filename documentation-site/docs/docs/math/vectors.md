@@ -116,7 +116,7 @@ surprising for UI hit-testing where you might expect adjacent elements to be
 mutually exclusive.
 :::
 
-`RigidBody` uses `Rect` as its [`aabb`](/Forge/docs/api/classes/RigidBody#aabb)
+`RigidBody` uses `Rect` as its `aabb`
 for broad-phase collision, and caches it, recomputing only when `position`
 changes, since broad-phase collision checks read `aabb` for every body pair,
 every step. See [Bodies and Shapes](../physics/rigid-bodies.md) and

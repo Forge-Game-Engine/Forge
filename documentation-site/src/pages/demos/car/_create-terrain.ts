@@ -5,9 +5,9 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -42,6 +42,18 @@ const groundSlices: NineSliceOptions = {
   nativeWidth: 64,
   nativeHeight: 64,
 };
+
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
 
 /**
  * How far the flat launch pad the car spawns on extends before the terrain
@@ -142,14 +154,11 @@ function createGroundColumn(
     height: columnDepth,
     slices: groundSlices,
   });
-  addPhysicsBodyComponent(world, entity, {
-    physicsBody: new RigidBody({
-      shape: PolygonShape.rectangle(width, columnDepth),
-      position,
-      isStatic: true,
-      friction: 1,
-    }),
+  addColliderComponent(world, entity, {
+    collider: new PolygonCollider(rectangleVertices(width, columnDepth)),
+    friction: 1,
   });
+  addAabbComponent(world, entity);
 }
 
 /**

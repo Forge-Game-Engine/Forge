@@ -1,5 +1,5 @@
-import { Vector2 } from '../math';
-import { RigidBodyEcsComponent } from './components';
+import { Vector2 } from '../math/index.js';
+import { RigidBodyEcsComponent } from './components/index.js';
 
 export function applyImpulse(
   impulse: Vector2,

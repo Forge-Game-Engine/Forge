@@ -5,12 +5,13 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
   addRevoluteJointComponent,
-  CircleShape,
-  PolygonShape,
-  RevoluteJoint,
-  RigidBody,
+  addRigidBodyComponent,
+  CircleCollider,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -25,6 +26,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
+const gravity = new Vector2(0, -600);
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -66,6 +68,18 @@ async function loadHingeSprites(
   };
 }
 
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
+
 function createVisualEntity(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
@@ -85,11 +99,22 @@ function createVisualEntity(
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
+/**
+ * Creates a static, non-colliding pivot marker entity: since it has no
+ * `ColliderEcsComponent`, it never participates in collision detection
+ * (matching the old engine's `isStatic + isSensor` pivot bodies), and since
+ * it has no `RigidBodyEcsComponent`, every joint system treats it as
+ * infinite-mass/static.
+ * @param world - The ECS world to add the pivot entity to.
+ * @param sprite - The pivot marker's sprite.
+ * @param position - Where the pivot sits.
+ * @returns The pivot entity.
+ */
 function createPivotMarker(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
   position: Vector2,
-): RigidBody {
+): number {
   createVisualEntity(
     world,
     sprite,
@@ -101,21 +126,14 @@ function createPivotMarker(
   );
 
   const pivotEntity = world.createEntity();
-  const pivotBody = new RigidBody({
-    shape: new CircleShape(pivotSize / 2),
-    position: position.clone(),
-    isStatic: true,
-    isSensor: true,
-  });
 
   addPositionComponent(world, pivotEntity, {
     world: position.clone(),
     local: position.clone(),
   });
   addRotationComponent(world, pivotEntity);
-  addPhysicsBodyComponent(world, pivotEntity, { physicsBody: pivotBody });
 
-  return pivotBody;
+  return pivotEntity;
 }
 
 /**
@@ -123,7 +141,7 @@ function createPivotMarker(
  * to swing between closed (hanging straight down, `angle` 0) and open
  * (horizontal, `angle` 90 degrees). Gravity swings it closed; a
  * `PushEcsComponent` periodically shoves it back open near its far edge
- * (since `RevoluteJoint` has no built-in motor).
+ * (revolute joints have no built-in motor).
  * @param world - The ECS world to add the scenario's entities to.
  * @param sprites - The pre-loaded sprites shared across every scenario.
  * @param pivotPosition - Where the door is hinged.
@@ -141,15 +159,12 @@ function createDoorScenario(
   const localAnchorB = new Vector2(-doorWidth / 2, 0);
   const doorPosition = pivotPosition.subtract(localAnchorB.rotate(doorAngle));
 
-  const pivotBody = createPivotMarker(world, sprites.pivot, pivotPosition);
+  const pivotEntity = createPivotMarker(world, sprites.pivot, pivotPosition);
 
   const doorEntity = world.createEntity();
-  const doorBody = new RigidBody({
-    shape: PolygonShape.rectangle(doorWidth, doorHeight),
-    position: doorPosition,
-    angle: doorAngle,
-    restitution: 0,
-  });
+  const doorCollider = new PolygonCollider(
+    rectangleVertices(doorWidth, doorHeight),
+  );
 
   addPositionComponent(world, doorEntity, {
     world: doorPosition.clone(),
@@ -165,24 +180,31 @@ function createDoorScenario(
     height: doorHeight,
     slices: squareSlices,
   });
-  addPhysicsBodyComponent(world, doorEntity, { physicsBody: doorBody });
+  addColliderComponent(world, doorEntity, {
+    collider: doorCollider,
+    restitution: 0,
+  });
+  addRigidBodyComponent(world, doorEntity, {
+    mass: doorCollider.mass,
+    momentOfInertia: doorCollider.momentOfInertia,
+  });
+  addAabbComponent(world, doorEntity);
+  addGravityComponent(world, doorEntity, { amount: gravity });
 
   // referenceAngle is captured as doorAngle here, so the joint's own
-  // `angle` starts at 0 (closed) and 90 degrees is fully open.
-  const joint = new RevoluteJoint({
-    bodyA: pivotBody,
-    bodyB: doorBody,
-    anchorB: localAnchorB,
+  // relative angle starts at 0 (closed) and 90 degrees is fully open.
+  const jointEntity = world.createEntity();
+
+  addRevoluteJointComponent(world, jointEntity, {
+    entityA: pivotEntity,
+    entityB: doorEntity,
+    localAnchorB,
     enableLimit: true,
     lowerAngle: 0,
     upperAngle: Math.PI / 2,
   });
-
-  const jointEntity = world.createEntity();
-
-  addRevoluteJointComponent(world, jointEntity, { joint });
   addPushComponent(world, jointEntity, {
-    body: doorBody,
+    entity: doorEntity,
     impulse: new Vector2(260_000, 0),
     localContactPoint: new Vector2(doorWidth / 2, 0),
     intervalSeconds: 2,
@@ -210,15 +232,10 @@ function createPendulumScenario(
   const localAnchorB = new Vector2(0, armLength);
   const bobPosition = pivotPosition.subtract(localAnchorB.rotate(startAngle));
 
-  const pivotBody = createPivotMarker(world, sprites.pivot, pivotPosition);
+  const pivotEntity = createPivotMarker(world, sprites.pivot, pivotPosition);
 
   const bobEntity = world.createEntity();
-  const bobBody = new RigidBody({
-    shape: new CircleShape(bobRadius),
-    position: bobPosition,
-    angle: startAngle,
-    restitution: 0,
-  });
+  const bobCollider = new CircleCollider(bobRadius);
 
   addPositionComponent(world, bobEntity, {
     world: bobPosition.clone(),
@@ -233,17 +250,24 @@ function createPendulumScenario(
     width: bobRadius * 2,
     height: bobRadius * 2,
   });
-  addPhysicsBodyComponent(world, bobEntity, { physicsBody: bobBody });
-
-  const joint = new RevoluteJoint({
-    bodyA: pivotBody,
-    bodyB: bobBody,
-    anchorB: localAnchorB,
+  addColliderComponent(world, bobEntity, {
+    collider: bobCollider,
+    restitution: 0,
   });
+  addRigidBodyComponent(world, bobEntity, {
+    mass: bobCollider.mass,
+    momentOfInertia: bobCollider.momentOfInertia,
+  });
+  addAabbComponent(world, bobEntity);
+  addGravityComponent(world, bobEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();
 
-  addRevoluteJointComponent(world, jointEntity, { joint });
+  addRevoluteJointComponent(world, jointEntity, {
+    entityA: pivotEntity,
+    entityB: bobEntity,
+    localAnchorB,
+  });
 }
 
 /**
@@ -263,16 +287,10 @@ function createWheelScenario(
 ): void {
   const wheelRadius = 48;
 
-  const hubBody = createPivotMarker(world, sprites.pivot, hubPosition);
+  const hubEntity = createPivotMarker(world, sprites.pivot, hubPosition);
 
   const wheelEntity = world.createEntity();
-  const wheelBody = new RigidBody({
-    shape: new CircleShape(wheelRadius),
-    position: hubPosition.clone(),
-    restitution: 0,
-  });
-
-  wheelBody.angularVelocity = 5;
+  const wheelCollider = new CircleCollider(wheelRadius);
 
   addPositionComponent(world, wheelEntity, {
     world: hubPosition.clone(),
@@ -284,13 +302,24 @@ function createWheelScenario(
     width: wheelRadius * 2,
     height: wheelRadius * 2,
   });
-  addPhysicsBodyComponent(world, wheelEntity, { physicsBody: wheelBody });
-
-  const joint = new RevoluteJoint({ bodyA: hubBody, bodyB: wheelBody });
+  addColliderComponent(world, wheelEntity, {
+    collider: wheelCollider,
+    restitution: 0,
+  });
+  addRigidBodyComponent(world, wheelEntity, {
+    mass: wheelCollider.mass,
+    momentOfInertia: wheelCollider.momentOfInertia,
+    angularVelocity: 5,
+  });
+  addAabbComponent(world, wheelEntity);
+  addGravityComponent(world, wheelEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();
 
-  addRevoluteJointComponent(world, jointEntity, { joint });
+  addRevoluteJointComponent(world, jointEntity, {
+    entityA: hubEntity,
+    entityB: wheelEntity,
+  });
 }
 
 /**

@@ -14,11 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
+- **physics:** Add revolute (hinge) and prismatic (slider) joints, via `addRevoluteJointComponent`/`createRevoluteJointEcsSystem` and `addPrismaticJointComponent`/`createPrismaticJointEcsSystem`, constraining two entities together with a warm-started, soft-constraint velocity solve, with optional angle/translation limits
+- **physics:** Add `AngularVelocityMotorEcsComponent`/`createAngularVelocityMotorEcsSystem`, driving a single entity's angular velocity towards a target speed within a per-tick torque budget
+- **physics:** Add `LinearSpringEcsComponent`/`createLinearSpringEcsSystem` and `LinearDamperEcsComponent`/`createLinearDamperEcsSystem`, Hooke's-law and velocity-damping force generators connecting two entities' anchor points, for soft connections like vehicle suspension
+- **physics:** Add `applyTorque`, a one-shot torque helper mirroring `applyImpulse` for angular-only forces (a thruster, a scripted nudge)
+- **physics:** Add `applyExplosiveForce`, applying a radial impulse (falling off linearly with distance) to every dynamic body within a radius of a point, for area-effect blasts
+- **physics:** Add `angularDrag` to `RigidBodyEcsComponent`, damping `angularVelocity` towards `0` every tick (applied by `createEulerIntegrationEcsSystem`); defaults to `0`, so existing bodies are unaffected
 - **fphysics:** Add AABB broad-phase and SAT narrow-phase collision detection for `CircleCollider` and the new `PolygonCollider`, via `createBroadPhaseEcsSystem` and `createNarrowPhaseEcsSystem`
 - **fphysics:** Add `createCollisionResolutionEcsSystem`, a sequential-impulse collision resolver with soft-constraint penetration correction, Coulomb friction, restitution, and warm-starting of accumulated impulses across ticks; `ColliderEcsComponent` gains `friction`/`restitution` properties
 
+#### Changed
+
+- **physics:** Renamed the physics module's source directory from `fphysics` back to `physics` now that the old physics engine it temporarily coexisted with has been removed; the published `@forge-game-engine/forge/physics` subpath is unchanged, but was previously unresolvable (it pointed at a `dist/physics` output that no longer existed) and is now fixed
+
 #### Fixed
 
+- **physics:** Fix `createCollisionResolutionEcsSystem`'s normal-impulse solve dividing its soft-constraint `impulseScale` correction term by effective mass a second time, making that correction scale with mass² instead of staying mass-invariant. This was unnoticeable for the small test-scale bodies covered by unit tests, but caused massive, growing interpenetration ("sinking"/tunneling through other bodies) for real-world-scale masses, most visibly as balls passing through each other in the Newton's Cradle demo, bricks sinking into each other in the wrecking-ball demo, and the car falling through terrain
 - **rendering:** Fix sprites rotating in the opposite direction (mirrored) from their entity's actual `RotationEcsComponent.world`/physics rotation. `position.world.y` is negated when uploaded to the sprite shader (to convert the engine's Y-up world space to the shader's Y-down space), but rotation wasn't given the same treatment, so a positive rotation visually spun the sprite the wrong way relative to its (correctly rotating) collider. This only became visible once colliders had a distinguishable, non-symmetric shape (e.g. a rotating `PolygonCollider` triangle) to reveal the mismatch
 - **rendering:** Fix `SpriteEcsComponent.pivot` applying only half of its intended offset (e.g. `pivot: (0, 0)` landed 25% in from the sprite's edge instead of at the edge, and a pivot matching a rotated collider's centroid left the sprite visibly adrift from its own collider - gapping off the ground on one side, sinking into it on another - as the entity rotated). A rendering-pipeline change had widened the vertex quad's coordinate range without widening the pivot term to match; nine-slice sprites were unaffected since they always render their regions with a centered pivot
 

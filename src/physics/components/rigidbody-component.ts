@@ -9,6 +9,11 @@ import { Vector2 } from '../../math/index.js';
 export interface RigidBodyDefaultedOptions {
   velocity: Vector2;
   angularVelocity: number;
+  /**
+   * Damps `angularVelocity` each tick, proportional to itself; `0` disables
+   * damping. Applied by {@link createEulerIntegrationEcsSystem}.
+   */
+  angularDrag: number;
 }
 
 export interface RigidBodyRequiredOptions {
@@ -40,6 +45,7 @@ export function addRigidBodyComponent(
   const defaultRigidBodyOptions: RigidBodyDefaultedOptions = {
     velocity: Vector2.zero,
     angularVelocity: 0,
+    angularDrag: 0,
   };
 
   const component: RigidBodyEcsComponent = {

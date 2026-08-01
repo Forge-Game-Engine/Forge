@@ -36,7 +36,7 @@ import {
   PolygonCollider,
   RigidBodyEcsComponent,
   rigidBodyId,
-} from '../../src/fphysics';
+} from '../../src/physics';
 
 const renderLayer = 1;
 const verticalWorldUnits = 10;

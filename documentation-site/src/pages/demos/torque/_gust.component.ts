@@ -1,9 +1,9 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 
 /**
- * Periodically knocks the entity's `PhysicsBodyEcsComponent`'s
- * `RigidBody.angularVelocity` off course by `strength` (alternating
- * direction each time), to demonstrate an `AngularVelocityMotorEcsComponent`
+ * Periodically knocks the entity's `RigidBodyEcsComponent.angularVelocity`
+ * off course by `strength` (alternating direction each time), to
+ * demonstrate an `AngularVelocityMotorEcsComponent`
  * correcting back towards its `targetVelocity` afterwards. Modeled as a
  * direct angular velocity change (a pure couple, in physics terms) rather
  * than an off-center impulse, so it disturbs rotation only, without also

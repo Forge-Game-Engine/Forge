@@ -6,13 +6,19 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
   createLinearDamperEcsSystem,
   createLinearSpringEcsSystem,
-  createPhysicsSyncEcsSystem,
+  createNarrowPhaseEcsSystem,
   createPrismaticJointEcsSystem,
   createRevoluteJointEcsSystem,
-  PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import { createAirControlEcsSystem } from './_air-control.system';
@@ -31,8 +37,6 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = new Vector2(0, -600);
-
 export const createCarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
@@ -47,7 +51,6 @@ export const createCarGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const physicsWorld = new PhysicsWorld({ gravity });
   const random = new Random('car');
 
   const { throttleInput, restartInput } = createInputs(world, time);
@@ -59,7 +62,7 @@ export const createCarGame = async (): Promise<Game> => {
     random,
   );
 
-  const chassisBody = await createCar(
+  const chassisEntity = await createCar(
     world,
     renderContext,
     renderLayers.foreground,
@@ -69,47 +72,66 @@ export const createCarGame = async (): Promise<Game> => {
   );
 
   addCameraFollowComponent(world, cameraEntity, {
-    target: chassisBody,
+    targetEntity: chassisEntity,
     offset: new Vector2(140, 70),
     smoothTime: 0.25,
     maxSpeed: 3000,
   });
 
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
+
+  // Each wheel mount chains two joints through its upright (chassis <->
+  // upright via the prismatic joint, upright <-> wheel via the revolute
+  // joint), and both mounts share the chassis body - the single-iteration
+  // default is enough for an isolated joint, but this shared-body chain
+  // needs several more per tick to stay stable at this rig's mass/torque
+  // scale (confirmed empirically: with the default of 1, the chassis
+  // tumbles and the car flies apart within the first second).
+  const jointIterations = { iterations: 8 };
+
   // `createCarResetEcsSystem` may teleport every body back to its spawn
-  // transform, `createPrismaticJointEcsSystem` / `createRevoluteJointEcsSystem`
-  // register each wheel mount's joints (see `createWheelMount`) with
-  // `physicsWorld`, and `createGroundContactEcsSystem` refreshes each
-  // wheel's grounded state from `physicsWorld.collisionStarts`/
-  // `collisionEnds` (one tick stale, the same lag any contact-based "am I
-  // grounded" check in a fixed-step engine has). `createWheelDriveEcsSystem`
-  // (sets each wheel's motor target from `throttleInput`, but only requests
-  // full speed while that wheel's own ground contact says it's grounded) /
-  // `createAngularVelocityMotorEcsSystem` / `createLinearSpringEcsSystem` /
-  // `createLinearDamperEcsSystem` / `createChassisStabilizerEcsSystem` /
-  // `createAirControlEcsSystem` compute this tick's torque/forces from the
-  // (possibly just-changed) state above - all ten must run before
-  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld` (see
-  // the Applying Forces guide's registration-order caution).
-  // `createWheelDriveEcsSystem`/`createChassisStabilizerEcsSystem`/
-  // `createAirControlEcsSystem` must also run after
-  // `createGroundContactEcsSystem` in this same list, so they see this
-  // tick's grounded state rather than last tick's. `createCameraFollowEcsSystem`
-  // only needs to run before `createRenderEcsSystem`, so this tick's camera
-  // position is reflected in this tick's render.
+  // transform, so it runs first. `createGroundContactEcsSystem` recomputes
+  // each wheel's grounded state from this tick's `collisionManifolds`
+  // (populated by narrow-phase, just before it), and
+  // `createWheelDriveEcsSystem` (sets each wheel's motor target from
+  // `throttleInput`, but only requests full speed while that wheel's own
+  // ground contact says it's grounded) / `createChassisStabilizerEcsSystem`
+  // / `createAirControlEcsSystem` must run after it in this same list, so
+  // they see this tick's grounded state rather than last tick's. The
+  // suspension's spring/damper forces run before collision resolution (like
+  // gravity), and the prismatic/revolute joints that hard-constrain each
+  // wheel mount run after it, so they get the "last word" on velocity each
+  // tick. `createCameraFollowEcsSystem` only needs to run before
+  // `createRenderEcsSystem`, so this tick's camera position is reflected in
+  // this tick's render.
   world.addSystem(createCarResetEcsSystem());
-  world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
-  world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
-  world.addSystem(createGroundContactEcsSystem(physicsWorld));
+  world.addSystem(createGravityEcsSystem(time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(createGroundContactEcsSystem(collisionManifolds));
   world.addSystem(createWheelDriveEcsSystem());
-  world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
+  world.addSystem(createPrismaticJointEcsSystem(time, jointIterations));
+  world.addSystem(createRevoluteJointEcsSystem(time, jointIterations));
+  world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createChassisStabilizerEcsSystem(time));
   world.addSystem(createAirControlEcsSystem(time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

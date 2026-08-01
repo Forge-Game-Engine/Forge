@@ -1,6 +1,5 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction } from '@forge-game-engine/forge/input';
-import { RigidBody } from '@forge-game-engine/forge/physics';
 
 /**
  * Marks an entity as a driven wheel: `createWheelDriveEcsSystem` queries for
@@ -16,11 +15,11 @@ export interface WheelDriveEcsComponent {
 
   /**
    * The chassis this wheel belongs to, used to compute the wheel's rolling
-   * angular speed (`-chassisBody.velocity.x / wheelRadius`) that
+   * angular speed (`-chassisVelocity.x / wheelRadius`) that
    * `targetVelocity` is clamped around via `maxSlipAngularSpeed` while the
    * wheel is airborne.
    */
-  chassisBody: RigidBody;
+  chassisEntity: number;
 
   /**
    * This wheel's radius, used for the same rolling-speed conversion as

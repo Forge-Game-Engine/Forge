@@ -5,13 +5,14 @@ import {
 } from '@forge-game-engine/forge/common';
 import { lerp, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
   addPrismaticJointComponent,
-  CircleShape,
-  PolygonShape,
-  PrismaticJoint,
-  RigidBody,
-  Shape,
+  addRigidBodyComponent,
+  CircleCollider,
+  Collider,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -28,6 +29,7 @@ import { addPumpComponent } from './_pump.component';
 const railDotCount = 15;
 const railDotSize = 10;
 const anchorSize = 14;
+const gravity = new Vector2(0, -600);
 
 // `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
 // rounded corners and bolt-head detail at a fixed size while the center
@@ -59,12 +61,12 @@ export interface SliderScenarioOptions {
   upperTranslation: number;
 
   /**
-   * `joint.translation` the slider starts at, between `lowerTranslation` and
-   * `upperTranslation`.
+   * The translation along `axis` the slider starts at, between
+   * `lowerTranslation` and `upperTranslation`.
    */
   startTranslation: number;
 
-  sliderShape: Shape;
+  sliderCollider: Collider;
   sliderWidth: number;
   sliderHeight: number;
   sliderSprite: 'ball' | 'block';
@@ -81,6 +83,18 @@ interface SliderSprites {
   ball: SpriteEcsComponent;
   block: SpriteEcsComponent;
   dot: SpriteEcsComponent;
+}
+
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
 }
 
 async function loadSliderSprites(
@@ -141,7 +155,7 @@ function createRailDots(
  * Builds one prismatic-joint scenario: a static anchor, a dotted rail
  * spanning `lowerTranslation` to `upperTranslation`, a dynamic slider
  * jointed to the anchor, and a `PumpEcsComponent` that periodically nudges
- * the slider (since `PrismaticJoint` has no built-in motor).
+ * the slider (prismatic joints have no built-in motor).
  * @param world - The ECS world to add the scenario's entities to.
  * @param sprites - The pre-loaded sprites shared across every scenario.
  * @param options - The scenario's geometry, appearance, and pump behavior.
@@ -157,7 +171,7 @@ function createSliderScenario(
     lowerTranslation,
     upperTranslation,
     startTranslation,
-    sliderShape,
+    sliderCollider,
     sliderWidth,
     sliderHeight,
     sliderSprite,
@@ -188,28 +202,14 @@ function createSliderScenario(
   );
 
   const anchorEntity = world.createEntity();
-  const anchorBody = new RigidBody({
-    shape: new CircleShape(anchorSize / 2),
-    position: anchorPosition.clone(),
-    isStatic: true,
-    isSensor: true,
-  });
 
   addPositionComponent(world, anchorEntity, {
     world: anchorPosition.clone(),
     local: anchorPosition.clone(),
   });
   addRotationComponent(world, anchorEntity);
-  addPhysicsBodyComponent(world, anchorEntity, {
-    physicsBody: anchorBody,
-  });
 
   const sliderEntity = world.createEntity();
-  const sliderBody = new RigidBody({
-    shape: sliderShape,
-    position: startPosition.clone(),
-    restitution: 0,
-  });
 
   addPositionComponent(world, sliderEntity, {
     world: startPosition.clone(),
@@ -225,24 +225,29 @@ function createSliderScenario(
     height: sliderHeight,
     slices: sliderSprite === 'block' ? squareSlices : undefined,
   });
-  addPhysicsBodyComponent(world, sliderEntity, {
-    physicsBody: sliderBody,
+  addColliderComponent(world, sliderEntity, {
+    collider: sliderCollider,
+    restitution: 0,
   });
+  addRigidBodyComponent(world, sliderEntity, {
+    mass: sliderCollider.mass,
+    momentOfInertia: sliderCollider.momentOfInertia,
+  });
+  addAabbComponent(world, sliderEntity);
+  addGravityComponent(world, sliderEntity, { amount: gravity });
 
-  const joint = new PrismaticJoint({
-    bodyA: anchorBody,
-    bodyB: sliderBody,
+  const jointEntity = world.createEntity();
+
+  addPrismaticJointComponent(world, jointEntity, {
+    entityA: anchorEntity,
+    entityB: sliderEntity,
     axis: normalizedAxis,
     enableLimit: true,
     lowerTranslation,
     upperTranslation,
   });
-
-  const jointEntity = world.createEntity();
-
-  addPrismaticJointComponent(world, jointEntity, { joint });
   addPumpComponent(world, jointEntity, {
-    joint,
+    entity: sliderEntity,
     impulse: pumpImpulse,
     intervalSeconds: pumpIntervalSeconds,
     alternate: pumpAlternate,
@@ -284,7 +289,7 @@ export async function createSliders(
     lowerTranslation: 0,
     upperTranslation: 180,
     startTranslation: 0,
-    sliderShape: PolygonShape.rectangle(44, 32),
+    sliderCollider: new PolygonCollider(rectangleVertices(44, 32)),
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
@@ -301,7 +306,7 @@ export async function createSliders(
     lowerTranslation: 0,
     upperTranslation: height * 0.55,
     startTranslation: 0,
-    sliderShape: PolygonShape.rectangle(80, 20),
+    sliderCollider: new PolygonCollider(rectangleVertices(80, 20)),
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
@@ -323,7 +328,7 @@ export async function createSliders(
     lowerTranslation: 0,
     upperTranslation: height * 0.5,
     startTranslation: 0,
-    sliderShape: new CircleShape(18),
+    sliderCollider: new CircleCollider(18),
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',

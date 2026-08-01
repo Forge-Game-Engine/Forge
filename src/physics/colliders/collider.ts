@@ -1,5 +1,5 @@
-import { Vector2 } from '../../math';
-import { Aabb } from '../types/aabb';
+import { Vector2 } from '../../math/index.js';
+import { Aabb } from '../types/aabb.js';
 
 export abstract class Collider {
   public abstract readonly type: 'circle' | 'polygon';

@@ -1,30 +1,45 @@
+import { positionId, rotationId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { rigidBodyId } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { CarResetEcsComponent, carResetId } from './_car-reset.component';
 
 /**
  * Teleports every body in each matched entity's `CarResetEcsComponent.bodies`
  * back to its recorded spawn transform, with zero velocity, on the tick
- * `restartInput` fires. Must run before `createPhysicsSyncEcsSystem` in the
- * same tick, so a restart applied this tick is reflected in the same tick's
- * `physicsWorld.step` (see the Applying Forces guide's registration-order
- * caution).
+ * `restartInput` fires. Must run before whatever system integrates velocity
+ * into position (`createEulerIntegrationEcsSystem`), so a restart applied
+ * this tick is reflected in this same tick's integration.
  */
 export const createCarResetEcsSystem = (): EcsSystem<
   [CarResetEcsComponent]
 > => ({
   query: [carResetId],
-  update: (_world, { components: [carResets] }) => {
+  update: (world, { components: [carResets] }) => {
     for (const carReset of carResets) {
       if (!carReset.restartInput.isTriggered) {
         continue;
       }
 
-      for (const { body, initialPosition, initialAngle } of carReset.bodies) {
-        body.position = initialPosition.clone();
-        body.angle = initialAngle;
-        body.velocity = Vector2.zero;
-        body.angularVelocity = 0;
+      for (const { entity, initialPosition, initialAngle } of carReset.bodies) {
+        const position = world.getComponent(entity, positionId);
+        const rotation = world.getComponent(entity, rotationId);
+        const rigidBody = world.getComponent(entity, rigidBodyId);
+
+        if (position !== null) {
+          position.world = initialPosition.clone();
+          position.local = initialPosition.clone();
+        }
+
+        if (rotation !== null) {
+          rotation.world = initialAngle;
+          rotation.local = initialAngle;
+        }
+
+        if (rigidBody !== null) {
+          rigidBody.velocity = Vector2.zero;
+          rigidBody.angularVelocity = 0;
+        }
       }
     }
   },

@@ -531,7 +531,7 @@ demos of engine features (`physics`, `ecs`, `particles`, `rendering`, ...),
 each rendered through `documentation-site/src/components/Demo.tsx`.
 
 **Critical gotcha**: these demos import the engine as a published package
-(e.g. `import { RigidBody } from '@forge-game-engine/forge/physics'`),
+(e.g. `import { addRigidBodyComponent } from '@forge-game-engine/forge/physics'`),
 resolved via `documentation-site/node_modules/@forge-game-engine/forge`, a
 `file:..` link back to this repo, satisfied through this repo's
 `package.json` `exports`, which point at `/dist`, **not** `/src`. This means:

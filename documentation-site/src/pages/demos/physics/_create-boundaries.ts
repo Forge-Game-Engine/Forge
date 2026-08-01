@@ -5,9 +5,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -20,9 +20,21 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const wallThickness = 40;
 
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
+
 /**
- * Creates static rigid bodies for the floor and side walls, bounding the
- * area in which shapes can fall and collide.
+ * Creates static, non-rigid-body entities for the floor and side walls,
+ * bounding the area in which shapes can fall and collide.
  * @param world - The ECS world to add the boundary entities to.
  * @param renderContext - The render context used to load the wall sprite.
  * @param renderLayer - The render layer the boundaries should be drawn on.
@@ -65,13 +77,10 @@ export async function createBoundaries(
       height: wallHeight,
     });
 
-    addPhysicsBodyComponent(world, entity, {
-      physicsBody: new RigidBody({
-        shape: PolygonShape.rectangle(wallWidth, wallHeight),
-        position: position.clone(),
-        isStatic: true,
-      }),
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider(rectangleVertices(wallWidth, wallHeight)),
     });
+    addAabbComponent(world, entity);
   };
 
   createWall(

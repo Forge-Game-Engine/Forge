@@ -14,18 +14,13 @@ import { ArmEcsComponent, armId } from './_arm.component';
 /**
  * Repositions, resizes, and rotates each matched entity's (nine-sliced)
  * sprite to span the rod between its `ArmEcsComponent.pivotPosition` and
- * `body`'s current position every tick, so each arm visibly swings with its
- * ball instead of only the (otherwise invisible) RevoluteJoint moving it.
- * The rotation this computes from the pivot/ball positions, via `Vector2`'s
- * world-space (Y-up) convention, matches the angle a RevoluteJoint's own
- * `anchorB` convention would give a body rigidly fixed to the far end of the
- * rod - but negated before being assigned, since `RotationEcsComponent.world`
- * is in render space (Y-down), mirrored from world space (see
- * `createPhysicsSyncEcsSystem`'s same negation when it copies a
- * `RigidBody.angle`). This lets the arm swing in lockstep with the ball
- * without needing to read the ball's own (potentially independently
- * spinning) rotation. Must run before `createRenderEcsSystem` so the render
- * pass sees this tick's updated arms.
+ * `entity`'s current position every tick, so the arm visibly swings with the
+ * ball instead of only the (otherwise invisible) revolute joint moving it.
+ * The angle is derived so that a vertical (pointing down) sprite at
+ * rotation 0 aligns with the pivot-to-ball direction, matching this
+ * engine's `Vector2.rotate` convention (counter-clockwise-positive,
+ * `atan2(y, x)`). Must run before `createRenderEcsSystem` so the render
+ * pass sees this tick's updated arm.
  */
 export const createArmEcsSystem = (): EcsSystem<
   [
@@ -36,18 +31,25 @@ export const createArmEcsSystem = (): EcsSystem<
   ]
 > => ({
   query: [armId, positionId, rotationId, spriteId],
-  update: (_world, { components: [arms, positions, rotations, sprites] }) => {
+  update: (world, { components: [arms, positions, rotations, sprites] }) => {
     for (let i = 0; i < arms.length; i++) {
       const arm = arms[i];
       const positionComponent = positions[i];
       const rotationComponent = rotations[i];
       const spriteComponent = sprites[i];
-      const { pivotPosition, body, armWidth } = arm;
+      const { pivotPosition, entity, armWidth } = arm;
 
-      const delta = body.position.subtract(pivotPosition);
+      const targetPosition = world.getComponent(entity, positionId);
+
+      if (targetPosition === null) {
+        continue;
+      }
+
+      const bodyPosition = targetPosition.world;
+      const delta = bodyPosition.subtract(pivotPosition);
       const length = delta.magnitude();
-      const midpoint = pivotPosition.add(body.position).multiply(0.5);
-      const angle = -Math.atan2(delta.x, -delta.y);
+      const midpoint = pivotPosition.add(bodyPosition).multiply(0.5);
+      const angle = Math.atan2(delta.x, -delta.y);
 
       positionComponent.world.x = midpoint.x;
       positionComponent.world.y = midpoint.y;

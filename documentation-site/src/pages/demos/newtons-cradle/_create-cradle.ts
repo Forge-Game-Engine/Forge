@@ -5,11 +5,12 @@ import {
 } from '@forge-game-engine/forge/common';
 import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
   addRevoluteJointComponent,
-  CircleShape,
-  RevoluteJoint,
-  RigidBody,
+  addRigidBodyComponent,
+  CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -26,6 +27,7 @@ const ballRadius = 35;
 const armLength = 220;
 const armWidth = 10;
 const startAngle = 0.9;
+const gravity = new Vector2(0, -600);
 
 // `paddle_10.png` is a 640x141 horizontal capsule (rounded caps with a
 // flat center); these insets keep its caps at a fixed size while the
@@ -140,33 +142,19 @@ export async function createCradle(
     const localAnchorB = new Vector2(0, armLength);
     const ballPosition = pivotPosition.subtract(localAnchorB.rotate(angle));
 
+    // A static, non-colliding pivot marker: no ColliderEcsComponent (so it
+    // never participates in collision detection) and no
+    // RigidBodyEcsComponent (so every joint system treats it as static).
     const pivotEntity = world.createEntity();
-    const pivotBody = new RigidBody({
-      shape: new CircleShape(4),
-      position: pivotPosition.clone(),
-      isStatic: true,
-      isSensor: true,
-    });
 
     addPositionComponent(world, pivotEntity, {
       world: pivotPosition.clone(),
       local: pivotPosition.clone(),
     });
     addRotationComponent(world, pivotEntity);
-    addPhysicsBodyComponent(world, pivotEntity, {
-      physicsBody: pivotBody,
-    });
 
     const ballEntity = world.createEntity();
-    const ballBody = new RigidBody({
-      shape: new CircleShape(ballRadius),
-      position: ballPosition,
-      angle,
-      // A high restitution is what makes the cradle effect read clearly:
-      // momentum has to transfer through the row with minimal loss.
-      restitution: 0.92,
-      friction: 0.05,
-    });
+    const ballCollider = new CircleCollider(ballRadius);
 
     addPositionComponent(world, ballEntity, {
       world: ballPosition.clone(),
@@ -178,21 +166,31 @@ export async function createCradle(
       width: ballRadius * 2,
       height: ballRadius * 2,
     });
-    addPhysicsBodyComponent(world, ballEntity, { physicsBody: ballBody });
-
-    const joint = new RevoluteJoint({
-      bodyA: pivotBody,
-      bodyB: ballBody,
-      anchorB: localAnchorB,
+    addColliderComponent(world, ballEntity, {
+      collider: ballCollider,
+      // A high restitution is what makes the cradle effect read clearly:
+      // momentum has to transfer through the row with minimal loss.
+      restitution: 0.92,
+      friction: 0.05,
     });
+    addRigidBodyComponent(world, ballEntity, {
+      mass: ballCollider.mass,
+      momentOfInertia: ballCollider.momentOfInertia,
+    });
+    addAabbComponent(world, ballEntity);
+    addGravityComponent(world, ballEntity, { amount: gravity });
 
     const jointEntity = world.createEntity();
 
-    addRevoluteJointComponent(world, jointEntity, { joint });
+    addRevoluteJointComponent(world, jointEntity, {
+      entityA: pivotEntity,
+      entityB: ballEntity,
+      localAnchorB,
+    });
 
     // A nine-sliced sprite, resized and rotated every tick by
     // `createArmEcsSystem` to visualize this ball's otherwise-invisible
-    // RevoluteJoint arm back to its pivot.
+    // revolute joint arm back to its pivot.
     const armEntity = world.createEntity();
 
     addPositionComponent(world, armEntity, {
@@ -207,7 +205,7 @@ export async function createCradle(
     });
     addArmComponent(world, armEntity, {
       pivotPosition: pivotPosition.clone(),
-      body: ballBody,
+      entity: ballEntity,
       armWidth,
     });
   }

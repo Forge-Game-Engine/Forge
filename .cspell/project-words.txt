@@ -13,6 +13,7 @@ blits
 cachable
 Catmull
 commitlint
+Cramer
 dbaeumer
 deadzone
 deregistering

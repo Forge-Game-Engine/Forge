@@ -7,9 +7,8 @@ import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addRigidBodyComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -43,6 +42,18 @@ const motorMaxTorque = 20_000_000;
 const gustStrength = 4;
 const gustIntervalSeconds = 3;
 
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
+
 async function createFlywheelEntity(
   world: EcsWorld,
   renderContext: RenderContext,
@@ -57,6 +68,9 @@ async function createFlywheelEntity(
   const sprite = createImageSprite(image, renderContext, renderLayer);
 
   const entity = world.createEntity();
+  const flywheelCollider = new PolygonCollider(
+    rectangleVertices(flywheelWidth, flywheelHeight),
+  );
 
   addPositionComponent(world, entity, {
     world: position.clone(),
@@ -69,12 +83,10 @@ async function createFlywheelEntity(
     height: flywheelHeight,
     slices: narrowSlices,
   });
-  addPhysicsBodyComponent(world, entity, {
-    physicsBody: new RigidBody({
-      shape: PolygonShape.rectangle(flywheelWidth, flywheelHeight),
-      position: position.clone(),
-      angularDrag,
-    }),
+  addRigidBodyComponent(world, entity, {
+    mass: flywheelCollider.mass,
+    momentOfInertia: flywheelCollider.momentOfInertia,
+    angularDrag,
   });
 
   return entity;
@@ -83,9 +95,9 @@ async function createFlywheelEntity(
 /**
  * Builds the thruster scenario: a flywheel carrying a `ThrusterEcsComponent`
  * that `createThrusterEcsSystem` applies directly to the flywheel's
- * `RigidBody` via `applyTorque` while `thrustInput` is held. Releasing it
- * lets `angularDrag` gradually spin the flywheel back down, since nothing
- * else drives it once the torque stops.
+ * `RigidBodyEcsComponent` via `applyTorque` while `thrustInput` is held.
+ * Releasing it lets `angularDrag` gradually spin the flywheel back down,
+ * since nothing else drives it once the torque stops.
  * @param world - The ECS world to add the scenario's entities to.
  * @param renderContext - The render context used to load the flywheel sprite.
  * @param renderLayer - The render layer the flywheel should be drawn on.

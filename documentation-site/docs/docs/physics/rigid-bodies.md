@@ -4,11 +4,11 @@ sidebar_position: 1
 
 # Bodies and Shapes
 
-A [`RigidBody`](/Forge/docs/api/classes/RigidBody) pairs a transform
+A `RigidBody` pairs a transform
 (position, angle, velocity) with a collision shape. For the full set of
 constructor options and properties, see
-[`RigidBody`](/Forge/docs/api/classes/RigidBody) and
-[`RigidBodyOptions`](/Forge/docs/api/interfaces/RigidBodyOptions) in the API
+`RigidBody` and
+`RigidBodyOptions` in the API
 reference. This page covers the choices that aren't obvious from the options
 list: which shape to use, what `isStatic`/`isSensor`/`isKinematic` actually
 do, and how to get back from a collision to the ECS entity that caused it.
@@ -27,12 +27,12 @@ const ball = new RigidBody({
 
 ## Choosing a shape
 
-Use [`CircleShape`](/Forge/docs/api/classes/CircleShape) for anything round.
+Use `CircleShape` for anything round.
 Its area, bounding radius, and moment of inertia are all closed-form, and
 circle-circle/circle-polygon collision checks are the cheapest narrow-phase
 tests in the engine.
 
-Use [`PolygonShape`](/Forge/docs/api/classes/PolygonShape) for everything
+Use `PolygonShape` for everything
 else, including the `rectangle(width, height)` static helper for boxes.
 
 :::caution
@@ -75,10 +75,10 @@ instead of `isStatic: true` if its position is externally controlled.
 ## ECS Integration
 
 Add a `PhysicsBodyEcsComponent`, keyed by
-[`PhysicsBodyId`](/Forge/docs/api/variables/PhysicsBodyId), alongside
+`PhysicsBodyId`, alongside
 `PositionEcsComponent` and `RotationEcsComponent`, then register
-[`createPhysicsSyncEcsSystem`](/Forge/docs/api/functions/createPhysicsSyncEcsSystem)`(physicsWorld, time)`.
-See [`PhysicsBodyEcsComponent`](/Forge/docs/api/interfaces/PhysicsBodyEcsComponent)
+`createPhysicsSyncEcsSystem``(physicsWorld, time)`.
+See `PhysicsBodyEcsComponent`
 for the full component shape.
 
 ```ts
@@ -118,7 +118,7 @@ the negation of the entity's render-space rotation, not the same value.
 ## Mapping collisions back to entities
 
 After each step (handled for you by `createPhysicsSyncEcsSystem`),
-[`collisionStarts`/`collisionEnds`](/Forge/docs/api/classes/PhysicsWorld#collisionstarts)
+`collisionStarts`/`collisionEnds`
 list the body pairs that started or stopped touching. Since
 `createPhysicsSyncEcsSystem` sets `body.userData` to the entity id, you can
 recover the ECS entities involved:

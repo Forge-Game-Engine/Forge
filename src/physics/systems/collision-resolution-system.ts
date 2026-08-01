@@ -10,6 +10,8 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { applyPointImpulse } from '../joints/apply-point-impulse.js';
+import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
@@ -283,42 +285,6 @@ function prepareContact(
 }
 
 /**
- * The velocity of the point `r` (relative to `rigidBody`'s position) on a
- * rotating, translating body: `velocity + angularVelocity × r`. Bodies with
- * no rigid body (static geometry) have no velocity anywhere.
- */
-function velocityAtPoint(
-  rigidBody: RigidBodyEcsComponent | null,
-  r: Vector2,
-): Vector2 {
-  if (rigidBody === null) {
-    return Vector2.zero;
-  }
-
-  return rigidBody.velocity.add(
-    new Vector2(
-      -rigidBody.angularVelocity * r.y,
-      rigidBody.angularVelocity * r.x,
-    ),
-  );
-}
-
-function applyContactImpulse(
-  rigidBody: RigidBodyEcsComponent | null,
-  r: Vector2,
-  invMass: number,
-  invInertia: number,
-  impulse: Vector2,
-): void {
-  if (rigidBody === null) {
-    return;
-  }
-
-  rigidBody.velocity = rigidBody.velocity.add(impulse.multiply(invMass));
-  rigidBody.angularVelocity += invInertia * r.cross(impulse);
-}
-
-/**
  * Re-applies a contact's accumulated impulses from the previous tick before
  * this tick's iterative solve begins, so the solver starts close to its
  * previous solution instead of from zero.
@@ -340,8 +306,8 @@ function warmStart(contact: ActiveContact): void {
     .multiply(constraint.accumulatedNormalImpulse)
     .add(constraint.tangent.multiply(constraint.accumulatedTangentImpulse));
 
-  applyContactImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
-  applyContactImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
+  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
 function solveNormal(
@@ -386,8 +352,7 @@ function solveNormal(
   const bias = Math.max(soft.biasRate * separation, -options.maxBiasSpeed);
 
   let lambda = -(soft.massScale * normalVelocity + bias) / effectiveMass;
-  lambda -=
-    (soft.impulseScale * constraint.accumulatedNormalImpulse) / effectiveMass;
+  lambda -= soft.impulseScale * constraint.accumulatedNormalImpulse;
 
   const newAccumulatedImpulse = Math.max(
     constraint.accumulatedNormalImpulse + lambda,
@@ -398,8 +363,8 @@ function solveNormal(
 
   const impulse = constraint.normal.multiply(lambda);
 
-  applyContactImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
-  applyContactImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
+  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
 function solveFriction(contact: ActiveContact): void {
@@ -445,8 +410,8 @@ function solveFriction(contact: ActiveContact): void {
 
   const impulse = constraint.tangent.multiply(lambda);
 
-  applyContactImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
-  applyContactImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
+  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
 /**
@@ -503,6 +468,6 @@ function applyRestitution(
 
   const impulse = constraint.normal.multiply(lambda);
 
-  applyContactImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
-  applyContactImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
+  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
