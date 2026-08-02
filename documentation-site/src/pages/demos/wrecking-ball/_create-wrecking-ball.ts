@@ -36,9 +36,9 @@ const floorTileSize = 64;
 const pivotRadius = floorTileSize / 2;
 const floorTileCount = 3;
 
-const brickSize = floorTileSize;
-const brickCount = 5;
-const towerColumns = 3;
+const brickSize = floorTileSize / 2;
+const brickCount = 10;
+const towerColumns = 6;
 
 const armWidth = 14;
 const gravity = new Vector2(0, -600);

@@ -118,7 +118,18 @@ export async function createCradle(
   center: Vector2,
 ): Promise<void> {
   const sprites = await loadCradleSprites(renderContext, renderLayer);
-  const spacing = ballRadius * 2;
+  // Balls resting exactly `ballRadius * 2` apart would touch with zero gap,
+  // putting all four neighbor contacts in permanent, simultaneous contact.
+  // Simultaneous rigid-body contact between a row of equal masses is
+  // genuinely indeterminate (real cradles work via an elastic stress wave
+  // through the steel, not simultaneous rigid contact) - a sequential-impulse
+  // solver resolves it as the whole row moving together rather than ejecting
+  // only the last ball. A gap this small (under 1% of `ballRadius`, visually
+  // imperceptible) is enough to make each collision a genuinely separate
+  // event in time, which is what the classic cradle effect actually depends
+  // on.
+  const restingGap = 0.3;
+  const spacing = ballRadius * 2 + restingGap;
   const frameWidth = spacing * (ballCount - 1) + ballRadius * 3;
   const frameHeight = 100;
 
