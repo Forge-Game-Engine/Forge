@@ -178,16 +178,26 @@ export class Time {
    * @param time - The current time.
    */
   public update(time: number): void {
+    // The very first call has no real previous frame to delta from
+    // (`_rawTimeInMilliseconds` starts at 0), so its "delta" is really the
+    // timestamp's arbitrary offset from whatever epoch the caller's clock
+    // uses (e.g. a `requestAnimationFrame` timestamp measured from page
+    // navigation start) - clamping it would permanently offset every
+    // accumulated time value behind the real elapsed time.
+    const isFirstUpdate = this._frames === 0;
+
     this._frames++;
 
     this._previousTimeInMilliseconds = this._rawTimeInMilliseconds;
     this._rawTimeInMilliseconds = time;
     this._rawDeltaTimeInMilliseconds = time - this._previousTimeInMilliseconds;
-    this._deltaTimeInMilliseconds = clamp(
-      this._rawDeltaTimeInMilliseconds * this._timeScale,
-      0,
-      Time._maxDeltaTimeInMilliseconds,
-    );
+    this._deltaTimeInMilliseconds = isFirstUpdate
+      ? this._rawDeltaTimeInMilliseconds * this._timeScale
+      : clamp(
+          this._rawDeltaTimeInMilliseconds * this._timeScale,
+          0,
+          Time._maxDeltaTimeInMilliseconds,
+        );
     this._timeInMilliseconds =
       this._timeInMilliseconds + this._deltaTimeInMilliseconds;
 

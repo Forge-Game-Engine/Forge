@@ -226,7 +226,14 @@ describe('TimerSystem', () => {
     expect(callback).not.toHaveBeenCalled();
     expect(timerComponent.tasks[0].elapsed).toBe(33);
 
-    // Frame 3: 101ms total (exceeds delay)
+    // Frame 3: 70ms total
+    time.update(70);
+    world.update();
+    expect(callback).not.toHaveBeenCalled();
+    expect(timerComponent.tasks[0].elapsed).toBe(70);
+
+    // Frame 4: 101ms total (exceeds delay). Split from frame 3 by less than
+    // Time's max delta clamp (1000/15ms) so this step isn't clamped down.
     time.update(101);
     world.update();
     expect(callback).toHaveBeenCalledTimes(1);
