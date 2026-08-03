@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **utilities:** Fix `Game`'s render loop occasionally producing a negative `deltaTime` for one frame (e.g. right after constructing hundreds of entities in a single tick), by reading `performance.now()` at the point the frame callback runs instead of trusting `requestAnimationFrame`'s supplied timestamp, which is not guaranteed to be monotonic relative to the previous frame
+
 ## [0.24.2] - 2026-08-03
 
 #### Added
