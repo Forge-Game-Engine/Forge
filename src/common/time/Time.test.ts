@@ -26,7 +26,7 @@ describe('Time', () => {
   });
 
   it('should update time-related information', () => {
-    const currentTime = 1000;
+    const currentTime = 16;
     time.update(currentTime);
 
     expect(time.frames).toBe(1);
@@ -37,10 +37,10 @@ describe('Time', () => {
     expect(time.previousTimeInMilliseconds).toBe(0);
     expect(time.times).toEqual([currentTime]);
 
-    expect(time.rawTimeInSeconds).toBeCloseTo(1);
-    expect(time.rawDeltaTimeInSeconds).toBeCloseTo(1);
-    expect(time.deltaTimeInSeconds).toBeCloseTo(1);
-    expect(time.timeInSeconds).toBeCloseTo(1);
+    expect(time.rawTimeInSeconds).toBeCloseTo(currentTime / 1000);
+    expect(time.rawDeltaTimeInSeconds).toBeCloseTo(currentTime / 1000);
+    expect(time.deltaTimeInSeconds).toBeCloseTo(currentTime / 1000);
+    expect(time.timeInSeconds).toBeCloseTo(currentTime / 1000);
     expect(time.previousTimeInSeconds).toBe(0);
   });
 
@@ -99,5 +99,31 @@ describe('Time', () => {
     expect(time.deltaTimeInSeconds).toBeCloseTo(8 / 1000); // 50% of rawDeltaTimeInSeconds
     expect(time.timeInSeconds).toBeCloseTo(1 + 8 / 1000); // 1 (initial) + 8/1000 (scaled deltaTimeInSeconds)
     expect(time.previousTimeInSeconds).toBeCloseTo(currentTime / 1000);
+  });
+
+  it('should clamp an oversized delta time to the maximum, without clamping the raw delta', () => {
+    const currentTime = 1000;
+    const hitchTime = currentTime + 5000; // a 5 second stall/hitch
+
+    time.update(currentTime);
+    time.update(hitchTime);
+
+    expect(time.rawDeltaTimeInMilliseconds).toBe(5000);
+    expect(time.deltaTimeInMilliseconds).toBeCloseTo(1000 / 15);
+    expect(time.deltaTimeInSeconds).toBeCloseTo(1 / 15);
+    expect(time.timeInMilliseconds).toBeCloseTo(currentTime + 1000 / 15);
+  });
+
+  it('should clamp a negative delta time to zero, without clamping the raw delta', () => {
+    const currentTime = 1000;
+    const earlierTime = currentTime - 200; // an out-of-order timestamp
+
+    time.update(currentTime);
+    time.update(earlierTime);
+
+    expect(time.rawDeltaTimeInMilliseconds).toBe(-200);
+    expect(time.deltaTimeInMilliseconds).toBe(0);
+    expect(time.deltaTimeInSeconds).toBe(0);
+    expect(time.timeInMilliseconds).toBe(currentTime);
   });
 });

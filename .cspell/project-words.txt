@@ -1,4 +1,5 @@
 aabb
+aabbs
 afterrun
 Aoboshi
 artboard
@@ -12,6 +13,7 @@ blits
 cachable
 Catmull
 commitlint
+Cramer
 dbaeumer
 deadzone
 deregistering
@@ -23,6 +25,7 @@ Erdokovy
 esbenp
 Fira
 Flaticon
+fphysics
 fract
 frontmatter
 gamedev
@@ -36,6 +39,7 @@ highp
 hitscan
 hotspot
 hoverable
+impluse
 Infima
 inigo
 Kenney
@@ -73,17 +77,20 @@ resettables
 respawns
 retuned
 RGBA
+rigidbody
 rnaumovs
 rolloff
 shaderstore
 skidmark
 slevesque
+Seidel
 Smashicons
 smoothstep
 sonarjs
 sonarlint
 sonarsource
 spaceshooter
+spawnable
 spritesheet
 stoppables
 stoppie

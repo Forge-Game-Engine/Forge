@@ -37,8 +37,12 @@ function bindSpriteInstanceData(
   instanceDataBufferArray[offset + POSITION_X_OFFSET] = position.world.x;
   instanceDataBufferArray[offset + POSITION_Y_OFFSET] = -position.world.y;
 
-  // Rotation
-  instanceDataBufferArray[offset + ROTATION_OFFSET] = rotation?.world ?? 0;
+  // Rotation. Negated to match `position.world.y` above: since positive
+  // rotation is defined in the engine's Y-up world space (matching
+  // Vector2.rotate/the physics system), but this Y axis is flipped before
+  // reaching the shader, a rotation angle needs the same flip (equivalent
+  // to negating the angle) to still visually rotate the same physical way.
+  instanceDataBufferArray[offset + ROTATION_OFFSET] = -(rotation?.world ?? 0);
 
   // Scale with flip consideration
   instanceDataBufferArray[offset + SCALE_X_OFFSET] =

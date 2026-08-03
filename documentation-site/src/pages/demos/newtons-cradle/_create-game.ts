@@ -5,9 +5,15 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsSyncEcsSystem,
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
   createRevoluteJointEcsSystem,
-  PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -18,8 +24,6 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = new Vector2(0, -600);
-
 export const createNewtonsCradleGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
@@ -29,8 +33,6 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const physicsWorld = new PhysicsWorld({ gravity });
-
   await createCradle(
     world,
     renderContext,
@@ -38,17 +40,31 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
     new Vector2(0, DEMO_VERTICAL_WORLD_UNITS * 0.3),
   );
 
-  // `createRevoluteJointEcsSystem` must run before
-  // `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
-  // newly-added joints need to be registered before that step happens (see
-  // the Revolute Joints guide's registration-order caution).
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
+
+  // The revolute joint solver must run after collision resolution so each
+  // ball's hinge gets the "last word" on velocity each tick;
   // `createArmEcsSystem` only needs to run before `createRenderEcsSystem`,
   // so its updated arms are reflected in this tick's render.
-  world.addSystem(createRevoluteJointEcsSystem(physicsWorld));
+  world.addSystem(createGravityEcsSystem(time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
+  world.addSystem(createRevoluteJointEcsSystem(time));
   world.addSystem(createArmEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

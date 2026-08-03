@@ -1,104 +1,66 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
-import type { RigidBody } from '../rigid-body.js';
 
 /**
- * ECS-style component interface for a velocity-based force connecting two
- * bodies' anchor points, resisting the speed at which they move towards or
- * away from each other along the line between them, per `F = -c * v`.
- * Register `createLinearDamperEcsSystem` to have the force applied to
- * `bodyA`/`bodyB` every tick while this component's entity exists. Used
- * alongside a {@link LinearSpringEcsComponent} sharing the same anchors (a
- * shock absorber pairs with a suspension spring) to dissipate the energy the
- * spring stores and prevent endless bouncing.
+ * Fields of {@link LinearDamperEcsComponent} with a sensible default;
+ * callers may omit these.
  */
-export interface LinearDamperEcsComponent {
-  bodyA: RigidBody;
+export interface LinearDamperDefaultedOptions {
+  /** Anchor point, in `entityA`'s local space. */
+  localAnchorA: Vector2;
+  /** Anchor point, in `entityB`'s local space. */
+  localAnchorB: Vector2;
+}
 
-  bodyB: RigidBody;
-
-  /**
-   * The anchor point, relative to `bodyA`'s center of mass and unrotated by
-   * `bodyA`'s angle (i.e. in `bodyA`'s local space).
-   */
-  anchorA: Vector2;
-
-  /**
-   * The anchor point, relative to `bodyB`'s center of mass and unrotated by
-   * `bodyB`'s angle (i.e. in `bodyB`'s local space).
-   */
-  anchorB: Vector2;
-
-  /**
-   * The damping constant (`c` in `F = -c * v`), in N·s/m. Higher values
-   * dissipate the anchors' relative compression/extension speed more
-   * strongly.
-   */
+export interface LinearDamperRequiredOptions {
+  entityA: number;
+  entityB: number;
+  /** The damper's coefficient, in newton-seconds/unit. */
   dampingCoefficient: number;
 }
 
-export const LinearDamperId =
-  createComponentId<LinearDamperEcsComponent>('LinearDamper');
-
 /**
- * Options for {@link addLinearDamperComponent}.
+ * ECS-style component interface for a linear damper, opposing the closing
+ * velocity between two entities' anchor points along the line connecting
+ * them. A pure force generator, not a hard constraint - typically paired
+ * with a `LinearSpringEcsComponent` sharing the same anchors. An entity
+ * referenced by `entityA`/`entityB` with no `RigidBodyEcsComponent` is
+ * treated as static.
  */
-export interface LinearDamperOptions {
-  bodyA: RigidBody;
-  bodyB: RigidBody;
+export interface LinearDamperEcsComponent
+  extends LinearDamperRequiredOptions, LinearDamperDefaultedOptions {}
 
-  /**
-   * Defaults to each body's center of mass.
-   */
-  anchorA?: Vector2;
-
-  /**
-   * Defaults to each body's center of mass.
-   */
-  anchorB?: Vector2;
-
-  dampingCoefficient: number;
-}
-
-const defaultLinearDamperOptions = {
-  anchorA: Vector2.zero,
-  anchorB: Vector2.zero,
-};
+export const linearDamperId =
+  createComponentId<LinearDamperEcsComponent>('linear-damper');
 
 /**
  * Attaches a {@link LinearDamperEcsComponent} to `entity`.
  * @param world - The ECS world `entity` belongs to.
- * @param entity - The entity to attach the component to.
- * @param options - Options for configuring the damper. Neither `bodyA`,
- * `bodyB`, nor `dampingCoefficient` has a sensible default and all three
- * must always be provided.
+ * @param entity - The (dedicated) entity to attach the damper component to.
+ * @param options - Options for configuring the damper.
  * @returns The attached component, for further tuning or runtime changes.
- * @throws An error if `dampingCoefficient` is negative.
  */
 export function addLinearDamperComponent(
   world: EcsWorld,
   entity: number,
-  options: LinearDamperOptions,
+  options: LinearDamperRequiredOptions & Partial<LinearDamperDefaultedOptions>,
 ): LinearDamperEcsComponent {
-  const { bodyA, bodyB, anchorA, anchorB, dampingCoefficient } = {
-    ...defaultLinearDamperOptions,
-    ...options,
-  };
-
-  if (dampingCoefficient < 0) {
+  if (options.dampingCoefficient < 0) {
     throw new Error(
-      `Unable to add LinearDamperEcsComponent, "dampingCoefficient" (${dampingCoefficient}) must not be negative.`,
+      `Unable to add linear damper to entity "${entity}": dampingCoefficient must be >= 0.`,
     );
   }
 
-  const component: LinearDamperEcsComponent = {
-    bodyA,
-    bodyB,
-    anchorA: anchorA.clone(),
-    anchorB: anchorB.clone(),
-    dampingCoefficient,
+  const defaultOptions: LinearDamperDefaultedOptions = {
+    localAnchorA: Vector2.zero,
+    localAnchorB: Vector2.zero,
   };
 
-  return world.addComponent(entity, LinearDamperId, component);
+  const component: LinearDamperEcsComponent = {
+    ...defaultOptions,
+    ...options,
+  };
+
+  return world.addComponent(entity, linearDamperId, component);
 }

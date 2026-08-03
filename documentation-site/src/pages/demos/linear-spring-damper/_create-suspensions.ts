@@ -5,11 +5,13 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
   addLinearDamperComponent,
   addLinearSpringComponent,
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
+  addRigidBodyComponent,
+  CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -28,6 +30,7 @@ const mountSize = 24;
 const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
+const gravity = new Vector2(0, -600);
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -82,7 +85,7 @@ function createVisualEntity(
   width: number,
   height: number,
   slices: NineSliceOptions,
-): void {
+): number {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
@@ -91,6 +94,8 @@ function createVisualEntity(
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
+
+  return entity;
 }
 
 export interface SuspensionScenarioOptions {
@@ -160,7 +165,7 @@ function createSuspensionScenario(
     resetIntervalSeconds,
   } = options;
 
-  createVisualEntity(
+  const mountEntity = createVisualEntity(
     world,
     sprites.mount,
     mountPosition,
@@ -169,21 +174,8 @@ function createSuspensionScenario(
     squareSlices,
   );
 
-  const mountBody = new RigidBody({
-    shape: new CircleShape(mountSize / 2),
-    position: mountPosition.clone(),
-    isStatic: true,
-    isSensor: true,
-  });
-
   const wheelPosition = mountPosition.add(new Vector2(0, -wheelDropHeight));
-  const wheelBody = new RigidBody({
-    shape: new CircleShape(wheelRadius),
-    position: wheelPosition,
-    density: wheelDensity,
-    restitution: 0,
-  });
-  wheelBody.velocity = bumpVelocity.clone();
+  const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
   const wheelEntity = world.createEntity();
 
@@ -197,11 +189,19 @@ function createSuspensionScenario(
     width: wheelRadius * 2,
     height: wheelRadius * 2,
   });
-  addPhysicsBodyComponent(world, wheelEntity, {
-    physicsBody: wheelBody,
+  addColliderComponent(world, wheelEntity, {
+    collider: wheelCollider,
+    restitution: 0,
   });
+  addRigidBodyComponent(world, wheelEntity, {
+    mass: wheelCollider.mass,
+    momentOfInertia: wheelCollider.momentOfInertia,
+    velocity: bumpVelocity.clone(),
+  });
+  addAabbComponent(world, wheelEntity);
+  addGravityComponent(world, wheelEntity, { amount: gravity });
   addResetComponent(world, wheelEntity, {
-    body: wheelBody,
+    entity: wheelEntity,
     initialPosition: wheelPosition.clone(),
     initialVelocity: bumpVelocity.clone(),
     intervalSeconds: resetIntervalSeconds,
@@ -210,15 +210,15 @@ function createSuspensionScenario(
   const forceEntity = world.createEntity();
 
   addLinearSpringComponent(world, forceEntity, {
-    bodyA: mountBody,
-    bodyB: wheelBody,
+    entityA: mountEntity,
+    entityB: wheelEntity,
     stiffness,
   });
 
   if (dampingCoefficient !== undefined) {
     addLinearDamperComponent(world, forceEntity, {
-      bodyA: mountBody,
-      bodyB: wheelBody,
+      entityA: mountEntity,
+      entityB: wheelEntity,
       dampingCoefficient,
     });
   }
@@ -237,7 +237,7 @@ function createSuspensionScenario(
   });
   addSpringLineComponent(world, lineEntity, {
     anchorPosition: mountPosition.clone(),
-    body: wheelBody,
+    entity: wheelEntity,
     lineWidth,
   });
 }

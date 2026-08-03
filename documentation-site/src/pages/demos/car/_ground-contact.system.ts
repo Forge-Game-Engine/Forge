@@ -1,63 +1,50 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { PhysicsWorld, RigidBody } from '@forge-game-engine/forge/physics';
+import {
+  CollisionManifold,
+  rigidBodyId,
+} from '@forge-game-engine/forge/physics';
 import {
   GroundContactEcsComponent,
   groundContactId,
 } from './_ground-contact.component';
 
 /**
- * Returns whether `bodyA`/`bodyB` is a contact between `body` and a static
- * (ground) body, in either order.
- * @param bodyA - The first body in a `BodyCollisionPair`.
- * @param bodyB - The second body in a `BodyCollisionPair`.
- * @param body - The body to check the pair against.
- */
-function isBodyGroundContact(
-  bodyA: RigidBody,
-  bodyB: RigidBody,
-  body: RigidBody,
-): boolean {
-  if (bodyA === body) {
-    return bodyB.isStatic;
-  }
-
-  if (bodyB === body) {
-    return bodyA.isStatic;
-  }
-
-  return false;
-}
-
-/**
- * Updates each matched entity's `GroundContactEcsComponent.groundContacts`
- * from `physicsWorld.collisionStarts`/`collisionEnds`. Reacts to last step's
- * contacts one tick stale, the same lag any contact-based "am I grounded"
- * check in a fixed-step engine has - must run anywhere before this tick's
- * `createPhysicsSyncEcsSystem`, and before any system that reads a
+ * Recomputes each matched entity's `GroundContactEcsComponent.groundContacts`
+ * from this tick's `collisionManifolds`, counting how many of the entity's
+ * current contacts are against a static (no `RigidBodyEcsComponent`) body.
+ * Must run after whatever system populates `collisionManifolds`
+ * (`createNarrowPhaseEcsSystem`), and before any system that reads a
  * `GroundContactEcsComponent` this same tick (`createWheelDriveEcsSystem`,
  * `createChassisStabilizerEcsSystem`, `createAirControlEcsSystem`).
- * @param physicsWorld - The physics world whose `collisionStarts`/
- * `collisionEnds` drive each body's grounded state.
+ * @param collisionManifolds - The narrow-phase system's output: this tick's
+ * confirmed collisions.
  */
 export const createGroundContactEcsSystem = (
-  physicsWorld: PhysicsWorld,
+  collisionManifolds: CollisionManifold[],
 ): EcsSystem<[GroundContactEcsComponent]> => ({
   query: [groundContactId],
-  update: (_world, { components: [groundContacts] }) => {
-    for (const groundContact of groundContacts) {
-      const { body } = groundContact;
+  update: (world, { entities, components: [groundContacts] }) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      let count = 0;
 
-      for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
-        if (isBodyGroundContact(bodyA, bodyB, body)) {
-          groundContact.groundContacts++;
+      for (const manifold of collisionManifolds) {
+        let other: number;
+
+        if (manifold.entityA === entity) {
+          other = manifold.entityB;
+        } else if (manifold.entityB === entity) {
+          other = manifold.entityA;
+        } else {
+          continue;
+        }
+
+        if (world.getComponent(other, rigidBodyId) === null) {
+          count++;
         }
       }
 
-      for (const { bodyA, bodyB } of physicsWorld.collisionEnds) {
-        if (isBodyGroundContact(bodyA, bodyB, body)) {
-          groundContact.groundContacts--;
-        }
-      }
+      groundContacts[i].groundContacts = count;
     }
   },
 });

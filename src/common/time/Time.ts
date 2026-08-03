@@ -1,3 +1,5 @@
+import { clamp } from '../../math/index.js';
+
 /**
  * Class to manage and track time-related information.
  */
@@ -19,6 +21,23 @@ export class Time {
   private _timeScale: number;
 
   private readonly _times: number[];
+
+  // `requestAnimationFrame` callback timestamps aren't guaranteed to be
+  // monotonic relative to a `performance.now()` call made just before
+  // scheduling them (the callback's timestamp can reflect when the frame
+  // *started*, which can land slightly before that call) - occasionally
+  // producing a negative raw delta on the frame right after a heavy
+  // synchronous setup (e.g. constructing hundreds of entities), followed by
+  // an oversized delta on the next frame once the browser catches up. Left
+  // unclamped, a negative delta integrates bodies backwards for a tick, and
+  // the following oversized delta then integrates a single, huge step from
+  // that corrupted state - both can otherwise fling every unstable body
+  // (e.g. a freshly-spawned stack of contacts with no warm-start data yet)
+  // across the world in one frame. Clamping keeps every consumer of
+  // `deltaTimeInMilliseconds`/`deltaTimeInSeconds` safe without requiring
+  // each one (gravity, Euler integration, ...) to defend against this
+  // individually.
+  private static readonly _maxDeltaTimeInMilliseconds = 1000 / 15;
 
   /**
    * Creates an instance of Time.
@@ -159,20 +178,33 @@ export class Time {
    * @param time - The current time.
    */
   public update(time: number): void {
+    // The very first call has no real previous frame to delta from
+    // (`_rawTimeInMilliseconds` starts at 0), so its "delta" is really the
+    // timestamp's arbitrary offset from whatever epoch the caller's clock
+    // uses (e.g. a `requestAnimationFrame` timestamp measured from page
+    // navigation start) - clamping it would permanently offset every
+    // accumulated time value behind the real elapsed time.
+    const isFirstUpdate = this._frames === 0;
+
     this._frames++;
 
     this._previousTimeInMilliseconds = this._rawTimeInMilliseconds;
     this._rawTimeInMilliseconds = time;
     this._rawDeltaTimeInMilliseconds = time - this._previousTimeInMilliseconds;
-    this._deltaTimeInMilliseconds =
-      this._rawDeltaTimeInMilliseconds * this._timeScale;
+    this._deltaTimeInMilliseconds = isFirstUpdate
+      ? this._rawDeltaTimeInMilliseconds * this._timeScale
+      : clamp(
+          this._rawDeltaTimeInMilliseconds * this._timeScale,
+          0,
+          Time._maxDeltaTimeInMilliseconds,
+        );
     this._timeInMilliseconds =
       this._timeInMilliseconds + this._deltaTimeInMilliseconds;
 
     this._previousTimeInSeconds = this._rawTimeInSeconds;
     this._rawTimeInSeconds = time / 1000;
     this._rawDeltaTimeInSeconds = time / 1000 - this._previousTimeInSeconds;
-    this._deltaTimeInSeconds = this._rawDeltaTimeInSeconds * this._timeScale;
+    this._deltaTimeInSeconds = this._deltaTimeInMilliseconds / 1000;
     this._timeInSeconds = this._timeInSeconds + this._deltaTimeInSeconds;
 
     while (this._times.length > 0 && this._times[0] <= time - 1000) {

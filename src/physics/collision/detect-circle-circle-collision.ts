@@ -1,25 +1,28 @@
 import { Vector2 } from '../../math/index.js';
-import type { RigidBody } from '../rigid-body.js';
-import type { CircleShape } from '../shapes/index.js';
-import type { CollisionManifold } from './collision-manifold.js';
+import { CircleCollider } from '../colliders/circle-collider.js';
+import { CollisionBody } from '../types/collision-body.js';
+import { CollisionManifold } from '../types/collision-manifold.js';
 
 /**
- * Detects a collision between two circle-shaped bodies.
- * @param bodyA - The first body, with a {@link CircleShape}.
- * @param bodyB - The second body, with a {@link CircleShape}.
- * @returns A {@link CollisionManifold} if the circles overlap, otherwise
- * `null`.
+ * Detects a collision between two circle-collider bodies.
+ * @param bodyA - The first body, with a {@link CircleCollider}.
+ * @param bodyB - The second body, with a {@link CircleCollider}.
+ * @returns A collision manifold (entity ids not yet populated) if the
+ * circles overlap, otherwise `null`.
  */
 export function detectCircleCircleCollision(
-  bodyA: RigidBody,
-  bodyB: RigidBody,
-): CollisionManifold | null {
-  const shapeA = bodyA.shape as CircleShape;
-  const shapeB = bodyB.shape as CircleShape;
+  bodyA: CollisionBody,
+  bodyB: CollisionBody,
+): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+  const colliderA = bodyA.collider as CircleCollider;
+  const colliderB = bodyB.collider as CircleCollider;
 
-  const delta = bodyB.position.subtract(bodyA.position);
+  const centerA = bodyA.position.add(colliderA.offset);
+  const centerB = bodyB.position.add(colliderB.offset);
+
+  const delta = centerB.subtract(centerA);
   const distance = delta.magnitude();
-  const radiusSum = shapeA.radius + shapeB.radius;
+  const radiusSum = colliderA.radius + colliderB.radius;
 
   if (distance > radiusSum) {
     return null;
@@ -27,13 +30,12 @@ export function detectCircleCircleCollision(
 
   const normal = distance === 0 ? Vector2.up : delta.divide(distance);
   const depth = radiusSum - distance;
-  const contactPoint = bodyA.position.add(normal.multiply(shapeA.radius));
+  const contactPoint = centerA.add(normal.multiply(colliderA.radius));
 
   return {
-    bodyA,
-    bodyB,
     normal,
     depth,
     contactPoints: [contactPoint],
+    featureIds: [0],
   };
 }

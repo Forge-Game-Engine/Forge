@@ -1,11 +1,10 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction } from '@forge-game-engine/forge/input';
-import { RigidBody } from '@forge-game-engine/forge/physics';
 import { GroundContactEcsComponent } from './_ground-contact.component';
 
 /**
  * Marks the chassis for mid-air pitch control:
- * `createAirControlEcsSystem` drives `chassisBody`'s angular velocity
+ * `createAirControlEcsSystem` drives the chassis's angular velocity
  * towards a target proportional to `throttleInput` (the same
  * targetVelocity/maxTorque approach `AngularVelocityMotorEcsComponent` uses
  * for the wheels) whenever both `frontWheelGroundContact` and
@@ -26,7 +25,7 @@ import { GroundContactEcsComponent } from './_ground-contact.component';
  * either wheel's.
  */
 export interface AirControlEcsComponent {
-  chassisBody: RigidBody;
+  chassisEntity: number;
   throttleInput: Axis1dAction;
   frontWheelGroundContact: GroundContactEcsComponent;
   rearWheelGroundContact: GroundContactEcsComponent;

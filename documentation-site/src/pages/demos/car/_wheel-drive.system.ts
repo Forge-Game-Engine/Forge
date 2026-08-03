@@ -2,7 +2,8 @@ import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { clamp } from '@forge-game-engine/forge/math';
 import {
   AngularVelocityMotorEcsComponent,
-  AngularVelocityMotorId,
+  angularVelocityMotorId,
+  rigidBodyId,
 } from '@forge-game-engine/forge/physics';
 import {
   GroundContactEcsComponent,
@@ -26,12 +27,13 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  *
  * While the wheel's `GroundContactEcsComponent` reports it touching the
  * ground, the throttle-desired target is used directly - the engine's own
- * friction model (see `resolveCollision`) is what correctly limits how much
- * of that becomes real acceleration versus slip, the same way it would for
- * a real tire. Only while airborne is the target clamped to within
- * `maxSlipAngularSpeed` of the wheel's current rolling speed - see
- * `WheelDriveEcsComponent.maxSlipAngularSpeed` for why an unclamped target
- * would let an airborne wheel run away regardless of `maxWheelSpeed`.
+ * friction model (see `createCollisionResolutionEcsSystem`) is what
+ * correctly limits how much of that becomes real acceleration versus slip,
+ * the same way it would for a real tire. Only while airborne is the target
+ * clamped to within `maxSlipAngularSpeed` of the wheel's current rolling
+ * speed - see `WheelDriveEcsComponent.maxSlipAngularSpeed` for why an
+ * unclamped target would let an airborne wheel run away regardless of
+ * `maxWheelSpeed`.
  *
  * `maxTorque` is dropped to `0` whenever `throttleInput.value` is exactly
  * `0`, rather than leaving it at `wheelDrive.maxTorque` and letting
@@ -45,8 +47,8 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
  *
  * Must run after `createGroundContactEcsSystem` in the same tick (so it sees
  * this tick's grounded state) and before `createAngularVelocityMotorEcsSystem`,
- * which itself must run before `createPhysicsSyncEcsSystem` (see the
- * Applying Forces guide's registration-order caution).
+ * which itself must run before whatever system integrates velocity into
+ * position (`createEulerIntegrationEcsSystem`).
  */
 export const createWheelDriveEcsSystem = (): EcsSystem<
   [
@@ -55,15 +57,15 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
     GroundContactEcsComponent,
   ]
 > => ({
-  query: [wheelDriveId, AngularVelocityMotorId, groundContactId],
-  update: (_world, { components: [wheelDrives, motors, groundContacts] }) => {
+  query: [wheelDriveId, angularVelocityMotorId, groundContactId],
+  update: (world, { components: [wheelDrives, motors, groundContacts] }) => {
     for (let i = 0; i < wheelDrives.length; i++) {
       const wheelDrive = wheelDrives[i];
       const motor = motors[i];
       const groundContact = groundContacts[i];
       const {
         throttleInput,
-        chassisBody,
+        chassisEntity,
         wheelRadius,
         maxWheelSpeed,
         maxSlipAngularSpeed,
@@ -75,7 +77,9 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
       if (isGrounded(groundContact)) {
         motor.targetVelocity = desiredAngularVelocity;
       } else {
-        const rollingAngularVelocity = -chassisBody.velocity.x / wheelRadius;
+        const chassisRigidBody = world.getComponent(chassisEntity, rigidBodyId);
+        const chassisVelocityX = chassisRigidBody?.velocity.x ?? 0;
+        const rollingAngularVelocity = -chassisVelocityX / wheelRadius;
 
         motor.targetVelocity = clamp(
           desiredAngularVelocity,

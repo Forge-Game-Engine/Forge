@@ -1,13 +1,14 @@
 import { Time } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { clamp } from '@forge-game-engine/forge/math';
+import { applyTorque, rigidBodyId } from '@forge-game-engine/forge/physics';
 import { AirControlEcsComponent, airControlId } from './_air-control.component';
 import { isGrounded } from './_ground-contact.component';
 
 /**
  * While a matched entity's `AirControlEcsComponent.frontWheelGroundContact`
  * and `rearWheelGroundContact` both report their wheel touching no ground,
- * drives `chassisBody`'s angular velocity towards
+ * drives the chassis's angular velocity towards
  * `throttleInput.value * maxAngularSpeed`, spending no more than `maxTorque`
  * to do so - the same targetVelocity/maxTorque approach
  * `createAngularVelocityMotorEcsSystem` uses for the wheels, applied
@@ -18,8 +19,8 @@ import { isGrounded } from './_ground-contact.component';
  * entirely to the suspension and `ChassisStabilizerEcsComponent`.
  *
  * Must run after `createGroundContactEcsSystem` in the same tick (so it
- * sees this tick's grounded state) and before `createPhysicsSyncEcsSystem`
- * (see the Applying Forces guide's registration-order caution).
+ * sees this tick's grounded state) and before whatever system integrates
+ * velocity into position (`createEulerIntegrationEcsSystem`).
  * @param time - The time instance used to scale torque by the tick's delta
  * time.
  */
@@ -27,7 +28,7 @@ export const createAirControlEcsSystem = (
   time: Time,
 ): EcsSystem<[AirControlEcsComponent]> => ({
   query: [airControlId],
-  update: (_world, { components: [airControls] }) => {
+  update: (world, { components: [airControls] }) => {
     for (const airControl of airControls) {
       const { frontWheelGroundContact, rearWheelGroundContact } = airControl;
 
@@ -38,11 +39,19 @@ export const createAirControlEcsSystem = (
         continue;
       }
 
-      const { chassisBody, throttleInput, maxAngularSpeed, maxTorque } =
+      const { chassisEntity, throttleInput, maxAngularSpeed, maxTorque } =
         airControl;
+
+      const chassisRigidBody = world.getComponent(chassisEntity, rigidBodyId);
+
+      if (chassisRigidBody === null) {
+        continue;
+      }
+
       const { deltaTimeInSeconds } = time;
 
-      const responsiveness = chassisBody.inverseInertia * deltaTimeInSeconds;
+      const responsiveness =
+        (1 / chassisRigidBody.momentOfInertia) * deltaTimeInSeconds;
 
       if (responsiveness <= 0) {
         continue;
@@ -51,11 +60,12 @@ export const createAirControlEcsSystem = (
       const targetAngularVelocity = throttleInput.value * maxAngularSpeed;
 
       const desiredTorque =
-        (targetAngularVelocity - chassisBody.angularVelocity) / responsiveness;
+        (targetAngularVelocity - chassisRigidBody.angularVelocity) /
+        responsiveness;
 
       const torque = clamp(desiredTorque, -maxTorque, maxTorque);
 
-      chassisBody.applyTorque(torque, deltaTimeInSeconds);
+      applyTorque(torque, deltaTimeInSeconds, chassisRigidBody);
     }
   },
 });

@@ -2,40 +2,29 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
- * ECS-style component interface for a controlled rotational motor. Unlike a
- * one-shot or manually-driven torque (applied directly via
- * `RigidBody.applyTorque`, with no engine-provided component of its own),
- * this drives the entity's `PhysicsBodyEcsComponent.physicsBody` towards
- * `targetVelocity` every tick, spending no more than `maxTorque` to do so.
- * Register `createAngularVelocityMotorEcsSystem` to apply it. Use this for a
- * spinning fan, or a car wheel that should hold a speed rather than receive
- * a one-shot push.
+ * ECS-style component interface for a standalone angular velocity motor,
+ * driving a single entity's `RigidBodyEcsComponent.angularVelocity` toward
+ * `targetVelocity` each tick, clamped by `maxTorque`. Unlike a joint, this
+ * has no warm-start state: it's recomputed fresh from the body's current
+ * angular velocity every tick, so it recovers automatically after an
+ * external velocity change (e.g. a collision).
  */
 export interface AngularVelocityMotorEcsComponent {
-  /**
-   * The angular velocity this motor drives the body towards, in rad/s.
-   */
+  /** The angular velocity, in radians/second, the motor drives the entity toward. */
   targetVelocity: number;
-
-  /**
-   * The maximum torque, in N·m, the motor may apply in a single tick while
-   * driving towards `targetVelocity`. Limits how quickly angular velocity
-   * can change; a body with high inertia relative to `maxTorque` approaches
-   * `targetVelocity` gradually rather than snapping to it.
-   */
+  /** The maximum torque, in newton-meters, the motor may apply in a single tick. */
   maxTorque: number;
 }
 
-export const AngularVelocityMotorId =
-  createComponentId<AngularVelocityMotorEcsComponent>('AngularVelocityMotor');
+export const angularVelocityMotorId =
+  createComponentId<AngularVelocityMotorEcsComponent>('angular-velocity-motor');
 
 /**
  * Attaches an {@link AngularVelocityMotorEcsComponent} to `entity`.
  * @param world - The ECS world `entity` belongs to.
- * @param entity - The entity to attach the component to.
- * @param options - Options for configuring the motor. Neither
- * `targetVelocity` nor `maxTorque` has a sensible default and both must
- * always be provided.
+ * @param entity - The entity to attach the component to; must already have
+ * a `RigidBodyEcsComponent`.
+ * @param options - Options for configuring the motor.
  * @returns The attached component, for further tuning or runtime changes.
  */
 export function addAngularVelocityMotorComponent(
@@ -43,5 +32,7 @@ export function addAngularVelocityMotorComponent(
   entity: number,
   options: AngularVelocityMotorEcsComponent,
 ): AngularVelocityMotorEcsComponent {
-  return world.addComponent(entity, AngularVelocityMotorId, { ...options });
+  const component: AngularVelocityMotorEcsComponent = { ...options };
+
+  return world.addComponent(entity, angularVelocityMotorId, component);
 }

@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Terrain
 
-[`TerrainShape`](/Forge/docs/api/classes/TerrainShape) is a collision shape
+`TerrainShape` is a collision shape
 for static 2D ground: a heightmap made of surface points, ordered left to
 right, closed off into a solid slab by a flat bottom edge. Use it instead of
 a `PolygonShape` when your ground isn't a single convex box - rolling hills,

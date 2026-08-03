@@ -5,11 +5,16 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsSyncEcsSystem,
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
   createPrismaticJointEcsSystem,
-  PhysicsWorld,
 } from '@forge-game-engine/forge/physics';
-import { Vector2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createSliders } from './_create-sliders';
 import { createPumpEcsSystem } from './_pump.system';
@@ -17,8 +22,6 @@ import { createPumpEcsSystem } from './_pump.system';
 const renderLayers = {
   foreground: 1 << 0,
 };
-
-const gravity = new Vector2(0, -600);
 
 export const createPrismaticJointGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -29,20 +32,33 @@ export const createPrismaticJointGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const physicsWorld = new PhysicsWorld({ gravity });
-
   await createSliders(world, renderContext, renderLayers.foreground);
 
-  // `createPrismaticJointEcsSystem` and `createPumpEcsSystem` must run
-  // before `createPhysicsSyncEcsSystem`, which is what steps `physicsWorld`:
-  // newly-added joints need to be registered, and this tick's pump impulses
-  // applied, before that step happens (see the Prismatic Joints guide's
-  // registration-order caution).
-  world.addSystem(createPrismaticJointEcsSystem(physicsWorld));
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
+
+  // Gravity and pumps must run before collision/joint resolution, so this
+  // tick's forces are reflected in the velocities those solvers see; the
+  // prismatic joint solver must run after collision resolution so each
+  // slider's rail constraint gets the "last word" on velocity each tick.
+  world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createPumpEcsSystem(time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
+  world.addSystem(createPrismaticJointEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

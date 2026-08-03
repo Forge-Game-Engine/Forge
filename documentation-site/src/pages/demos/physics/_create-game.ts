@@ -7,8 +7,15 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
+  applyExplosiveForce,
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -19,7 +26,6 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = new Vector2(0, -300);
 // Kept low enough that even the lightest shape (the narrow plank, ~225 mass)
 // hit dead-center stays under ~2,400px/s - the speed at which a body can
 // cross the 40px-thick boundary walls in a single physics step and tunnel
@@ -38,14 +44,28 @@ export const createPhysicsGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const physicsWorld = new PhysicsWorld({ gravity });
-
   await createBoundaries(world, renderContext, renderLayers.foreground);
   await spawnShapes(world, renderContext, renderLayers.foreground);
 
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
+
+  world.addSystem(createGravityEcsSystem(time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   // The camera is static at the world origin with a zoom of 1 (see
   // `createCamera` above), so screen coordinates can be converted to world
@@ -72,7 +92,8 @@ export const createPhysicsGame = async (): Promise<Game> => {
       pixelsPerUnit,
     );
 
-    physicsWorld.applyExplosiveForce(
+    applyExplosiveForce(
+      world,
       worldPosition,
       explosionForce,
       explosionRadius,

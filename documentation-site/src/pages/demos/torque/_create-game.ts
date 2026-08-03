@@ -7,14 +7,13 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createAngularVelocityMotorEcsSystem,
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
+  createEulerIntegrationEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
   HoldAction,
-  keyCodes,
   KeyboardHoldBinding,
   KeyboardInputSource,
+  keyCodes,
   registerInputs,
 } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -39,10 +38,8 @@ export const createTorqueGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  // No gravity: these flywheels only ever spin in place, so nothing needs
-  // to pull them downward.
-  const physicsWorld = new PhysicsWorld({ gravity: Vector2.zero });
-
+  // No gravity system is registered: these flywheels only ever spin in
+  // place, so nothing needs to pull them downward.
   const thrustInput = new HoldAction('thrust');
   const inputManager = registerInputs(world, time, {
     holdActions: [thrustInput],
@@ -76,17 +73,16 @@ export const createTorqueGame = async (): Promise<Game> => {
   );
 
   // `createThrusterEcsSystem` and `createGustEcsSystem` change
-  // `RigidBody.angularVelocity` directly for this tick, and
+  // `RigidBodyEcsComponent.angularVelocity` directly for this tick, and
   // `createAngularVelocityMotorEcsSystem` reads/corrects it, so all three
-  // must run before `createPhysicsSyncEcsSystem`, which is what steps
-  // `physicsWorld` (see the Applying Forces guide's registration-order
-  // caution).
+  // must run before whatever system integrates velocity into position
+  // (`createEulerIntegrationEcsSystem`).
   world.addSystem(createThrusterEcsSystem(time));
   world.addSystem(createGustEcsSystem(time));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

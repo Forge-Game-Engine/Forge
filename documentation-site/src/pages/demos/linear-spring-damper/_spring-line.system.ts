@@ -11,25 +11,32 @@ import { SpringLineEcsComponent, springLineId } from './_spring-line.component';
 
 /**
  * Repositions and resizes each matched entity's (nine-sliced) sprite to span
- * the line between its `SpringLineEcsComponent.anchorPosition` and `body`'s
- * current position every tick, purely a visual aid for the demo (the anchor
- * and body are always vertically aligned here, so no rotation is needed).
- * Must run before `createRenderEcsSystem` so the render pass sees this
- * tick's updated line.
+ * the line between its `SpringLineEcsComponent.anchorPosition` and the
+ * target entity's current position every tick, purely a visual aid for the
+ * demo (the anchor and body are always vertically aligned here, so no
+ * rotation is needed). Must run before `createRenderEcsSystem` so the
+ * render pass sees this tick's updated line.
  */
 export const createSpringLineEcsSystem = (): EcsSystem<
   [SpringLineEcsComponent, PositionEcsComponent, SpriteEcsComponent]
 > => ({
   query: [springLineId, positionId, spriteId],
-  update: (_world, { components: [springLines, positions, sprites] }) => {
+  update: (world, { components: [springLines, positions, sprites] }) => {
     for (let i = 0; i < springLines.length; i++) {
       const springLine = springLines[i];
       const positionComponent = positions[i];
       const spriteComponent = sprites[i];
-      const { anchorPosition, body, lineWidth } = springLine;
+      const { anchorPosition, entity, lineWidth } = springLine;
 
-      const midpoint = anchorPosition.add(body.position).multiply(0.5);
-      const length = body.position.subtract(anchorPosition).magnitude();
+      const targetPosition = world.getComponent(entity, positionId);
+
+      if (targetPosition === null) {
+        continue;
+      }
+
+      const bodyPosition = targetPosition.world;
+      const midpoint = anchorPosition.add(bodyPosition).multiply(0.5);
+      const length = bodyPosition.subtract(anchorPosition).magnitude();
 
       positionComponent.world.x = midpoint.x;
       positionComponent.world.y = midpoint.y;

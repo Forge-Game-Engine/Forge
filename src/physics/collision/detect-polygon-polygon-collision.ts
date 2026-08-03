@@ -1,44 +1,32 @@
-import type { RigidBody } from '../rigid-body.js';
-import type { PolygonShape } from '../shapes/index.js';
-import type { CollisionManifold } from './collision-manifold.js';
-import {
-  detectPolygonFacesCollision,
-  type PolygonFaces,
-} from './polygon-faces-collision.js';
+import { PolygonCollider } from '../colliders/polygon-collider.js';
+import { CollisionBody } from '../types/collision-body.js';
+import { CollisionManifold } from '../types/collision-manifold.js';
+import { detectPolygonFacesCollision } from './polygon-faces-collision.js';
 
 /**
- * Detects a collision between two convex polygon-shaped bodies using the
+ * Detects a collision between two polygon-collider bodies, using the
  * separating axis theorem with reference/incident face clipping.
- * @param bodyA - The first body, with a {@link PolygonShape}.
- * @param bodyB - The second body, with a {@link PolygonShape}.
- * @returns A {@link CollisionManifold} if the polygons overlap, otherwise
+ * @param bodyA - The first body, with a {@link PolygonCollider}.
+ * @param bodyB - The second body, with a {@link PolygonCollider}.
+ * @returns A collision manifold (entity ids not yet populated, normal
+ * pointing from `bodyA` toward `bodyB`) if the polygons overlap, otherwise
  * `null`.
  */
 export function detectPolygonPolygonCollision(
-  bodyA: RigidBody,
-  bodyB: RigidBody,
-): CollisionManifold | null {
-  const shapeA = bodyA.shape as PolygonShape;
-  const shapeB = bodyB.shape as PolygonShape;
+  bodyA: CollisionBody,
+  bodyB: CollisionBody,
+): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+  const colliderA = bodyA.collider as PolygonCollider;
+  const colliderB = bodyB.collider as PolygonCollider;
 
-  const facesA: PolygonFaces = {
-    vertices: shapeA.getWorldVertices(bodyA.position, bodyA.angle),
-    normals: shapeA.getWorldNormals(bodyA.angle),
+  const facesA = {
+    vertices: colliderA.getWorldVertices(bodyA.position, bodyA.rotation),
+    normals: colliderA.getWorldNormals(bodyA.rotation),
   };
-  const facesB: PolygonFaces = {
-    vertices: shapeB.getWorldVertices(bodyB.position, bodyB.angle),
-    normals: shapeB.getWorldNormals(bodyB.angle),
+  const facesB = {
+    vertices: colliderB.getWorldVertices(bodyB.position, bodyB.rotation),
+    normals: colliderB.getWorldNormals(bodyB.rotation),
   };
 
-  const contact = detectPolygonFacesCollision(facesA, facesB);
-
-  if (contact === null) {
-    return null;
-  }
-
-  return {
-    bodyA,
-    bodyB,
-    ...contact,
-  };
+  return detectPolygonFacesCollision(facesA, facesB);
 }

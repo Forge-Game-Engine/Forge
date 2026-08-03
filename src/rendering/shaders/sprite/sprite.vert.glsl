@@ -22,8 +22,16 @@ out vec2 v_texCoord;
 out vec4 v_tint;
 
 void main() {
-    // Convert pivot from [0,1] to [-0.5,0.5] coordinate space
-    vec2 normalizedPivot = a_instancePivot - 0.5;
+    // Convert pivot from [0,1] to [-1,1] coordinate space, matching
+    // a_position's own [-1,1] range so the pivot fully offsets the origin
+    // to the requested edge instead of only halfway there. Without this
+    // doubling, a_position (widened to [-1,1] to make its own `* 0.5` below
+    // correct) and a_instancePivot's contribution stay on mismatched
+    // scales, so pivot only ever applies half its intended offset - e.g.
+    // pivot (0,0) lands 25% in from the sprite's edge instead of at the
+    // edge, and every non-center pivot value needs a compensating
+    // adjustment to land where it visually should.
+    vec2 normalizedPivot = (a_instancePivot - 0.5) * 2.0;
     
     // 1. Apply pivot (move origin)
     vec2 pivoted = a_position - normalizedPivot;

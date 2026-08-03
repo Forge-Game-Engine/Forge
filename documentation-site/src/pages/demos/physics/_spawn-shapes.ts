@@ -6,11 +6,13 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  CircleShape,
-  PolygonShape,
-  RigidBody,
-  Shape,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
+  addRigidBodyComponent,
+  CircleCollider,
+  Collider,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -26,29 +28,42 @@ import { wallThickness } from './_create-boundaries';
 const shapeCount = 300;
 const minSize = 30;
 const maxSize = 60;
+const gravity = new Vector2(0, -300);
 
 /**
  * `block_corner_large.png` is a right triangle with its right angle at the
- * bottom-left of the image. PolygonShape re-centers vertices around their
- * centroid (a third of the way across, two thirds of the way down), so the
- * sprite's pivot is moved to match - keeping the rendered triangle aligned
- * with its physics shape as it rotates.
+ * bottom-left of the image. `PolygonCollider` re-centers vertices around
+ * their centroid (a third of the way across, two thirds of the way down), so
+ * the sprite's pivot is moved to match - keeping the rendered triangle
+ * aligned with its physics shape as it rotates.
  */
 const trianglePivot = new Vector2(1 / 3, 2 / 3);
 
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
+
 /**
- * Creates a right-triangle shape matching the visual shape of
+ * Creates a right-triangle collider matching the visual shape of
  * `block_corner_large.png`: right angle at the bottom-left, hypotenuse from
  * top-left to bottom-right.
  * @param width - The width of the triangle's bounding box.
  * @param height - The height of the triangle's bounding box.
- * @returns A new PolygonShape representing the triangle.
+ * @returns A new PolygonCollider representing the triangle.
  */
-function createTriangleShape(width: number, height: number): PolygonShape {
+function createTriangleCollider(width: number, height: number): Collider {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
-  return new PolygonShape([
+  return new PolygonCollider([
     new Vector2(-halfWidth, halfHeight),
     new Vector2(-halfWidth, -halfHeight),
     new Vector2(halfWidth, -halfHeight),
@@ -96,24 +111,24 @@ export async function spawnShapes(
 
   triangleSprite.pivot = trianglePivot.clone();
 
-  // One spawner per shape: pairs the sprite to render with the physics shape
-  // to simulate, both sized relative to the sprite's height.
+  // One spawner per shape: pairs the sprite to render with the physics
+  // collider to simulate, both sized relative to the sprite's height.
   const shapeSpawners: ((size: number) => {
     sprite: SpriteEcsComponent;
-    shape: Shape;
+    collider: Collider;
   })[] = [
-    (size) => ({ sprite: ballSprite, shape: new CircleShape(size / 2) }),
+    (size) => ({ sprite: ballSprite, collider: new CircleCollider(size / 2) }),
     (size) => ({
       sprite: squareSprite,
-      shape: PolygonShape.rectangle(size, size),
+      collider: new PolygonCollider(rectangleVertices(size, size)),
     }),
     (size) => ({
       sprite: triangleSprite,
-      shape: createTriangleShape(size, size),
+      collider: createTriangleCollider(size, size),
     }),
     (size) => ({
       sprite: narrowSprite,
-      shape: PolygonShape.rectangle(size / 4, size),
+      collider: new PolygonCollider(rectangleVertices(size / 4, size)),
     }),
   ];
 
@@ -129,7 +144,7 @@ export async function spawnShapes(
 
   const spawnShape = (
     sprite: SpriteEcsComponent,
-    shape: Shape,
+    collider: Collider,
     position: Vector2,
     size: number,
   ): void => {
@@ -150,14 +165,17 @@ export async function spawnShapes(
 
     addSpriteComponent(world, entity, sprite);
 
-    addPhysicsBodyComponent(world, entity, {
-      physicsBody: new RigidBody({
-        shape,
-        position: position.clone(),
-        restitution: 0.6,
-        friction: 0.4,
-      }),
+    addColliderComponent(world, entity, {
+      collider,
+      restitution: 0.6,
+      friction: 0.4,
     });
+    addAabbComponent(world, entity);
+    addRigidBodyComponent(world, entity, {
+      mass: collider.mass,
+      momentOfInertia: collider.momentOfInertia,
+    });
+    addGravityComponent(world, entity, { amount: gravity });
   };
 
   for (let i = 0; i < shapeCount; i++) {
@@ -174,8 +192,8 @@ export async function spawnShapes(
 
     const spawner =
       shapeSpawners[random.randomInt(0, shapeSpawners.length - 1)];
-    const { sprite, shape } = spawner(size);
+    const { sprite, collider } = spawner(size);
 
-    spawnShape(sprite, shape, position, size);
+    spawnShape(sprite, collider, position, size);
   }
 }

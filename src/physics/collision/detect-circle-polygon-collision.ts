@@ -1,33 +1,34 @@
-import type { RigidBody } from '../rigid-body.js';
-import type { CircleShape, PolygonShape } from '../shapes/index.js';
+import { CircleCollider } from '../colliders/circle-collider.js';
+import { PolygonCollider } from '../colliders/polygon-collider.js';
+import { CollisionBody } from '../types/collision-body.js';
+import { CollisionManifold } from '../types/collision-manifold.js';
 import {
   findCircleContact,
   findClosestFace,
 } from './circle-polygon-contact.js';
-import type { CollisionManifold } from './collision-manifold.js';
 
 /**
- * Detects a collision between a circle-shaped body and a polygon-shaped
- * body.
- * @param circleBody - The body with a {@link CircleShape}. Becomes
- * `bodyA` of the returned manifold.
- * @param polygonBody - The body with a {@link PolygonShape}. Becomes
- * `bodyB` of the returned manifold.
- * @returns A {@link CollisionManifold} if the shapes overlap, otherwise
- * `null`.
+ * Detects a collision between a circle-collider body and a
+ * polygon-collider body.
+ * @param circleBody - The body with a {@link CircleCollider}.
+ * @param polygonBody - The body with a {@link PolygonCollider}.
+ * @returns A collision manifold (entity ids not yet populated, normal
+ * pointing from `circleBody` toward `polygonBody`) if the shapes overlap,
+ * otherwise `null`.
  */
 export function detectCirclePolygonCollision(
-  circleBody: RigidBody,
-  polygonBody: RigidBody,
-): CollisionManifold | null {
-  const circleShape = circleBody.shape as CircleShape;
-  const polygonShape = polygonBody.shape as PolygonShape;
-  const { radius } = circleShape;
-  const { vertices, normals } = polygonShape;
+  circleBody: CollisionBody,
+  polygonBody: CollisionBody,
+): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+  const circleCollider = circleBody.collider as CircleCollider;
+  const polygonCollider = polygonBody.collider as PolygonCollider;
+  const { radius } = circleCollider;
+  const { vertices, normals } = polygonCollider;
 
   const localCenter = circleBody.position
+    .add(circleCollider.offset)
     .subtract(polygonBody.position)
-    .rotate(-polygonBody.angle);
+    .rotate(-polygonBody.rotation);
 
   const closestFace = findClosestFace(vertices, normals, localCenter, radius);
 
@@ -48,16 +49,15 @@ export function detectCirclePolygonCollision(
     return null;
   }
 
-  const normal = contact.localNormal.rotate(polygonBody.angle).negate();
+  const normal = contact.localNormal.rotate(polygonBody.rotation).negate();
   const contactPoint = contact.localContactPoint
-    .rotate(polygonBody.angle)
+    .rotate(polygonBody.rotation)
     .add(polygonBody.position);
 
   return {
-    bodyA: circleBody,
-    bodyB: polygonBody,
     normal,
     depth: contact.depth,
     contactPoints: [contactPoint],
+    featureIds: [0],
   };
 }

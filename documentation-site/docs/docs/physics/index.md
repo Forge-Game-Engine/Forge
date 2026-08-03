@@ -9,26 +9,26 @@ with entity position/rotation components.
 
 Core concepts:
 
-- [`PhysicsWorld`](/Forge/docs/api/classes/PhysicsWorld): owns the set of
+- `PhysicsWorld`: owns the set of
   simulated bodies, steps the simulation, and applies world-level forces
   (gravity, explosions).
-- [`RigidBody`](/Forge/docs/api/classes/RigidBody): a simulated body with a
+- `RigidBody`: a simulated body with a
   position, velocity, mass, and a collision shape.
-- [`CircleShape`](/Forge/docs/api/classes/CircleShape) and
-  [`PolygonShape`](/Forge/docs/api/classes/PolygonShape): the convex shapes a
+- `CircleShape` and
+  `PolygonShape`: the convex shapes a
   `RigidBody` can have.
-- [`TerrainShape`](/Forge/docs/api/classes/TerrainShape): a static heightmap
+- `TerrainShape`: a static heightmap
   ground shape for non-convex 2D terrain.
-- [`raycast`](/Forge/docs/api/functions/raycast): casts a ray against a set
+- `raycast`: casts a ray against a set
   of bodies.
-- [`PrismaticJoint`](/Forge/docs/api/classes/PrismaticJoint): a slider
+- `PrismaticJoint`: a slider
   constraint locking two bodies to one linear degree of freedom.
-- [`RevoluteJoint`](/Forge/docs/api/classes/RevoluteJoint): a hinge
+- `RevoluteJoint`: a hinge
   constraint locking two bodies to one rotational degree of freedom about a
   shared anchor point.
-- [`LinearSpringEcsComponent`](/Forge/docs/api/interfaces/LinearSpringEcsComponent)
+- `LinearSpringEcsComponent`
   and
-  [`LinearDamperEcsComponent`](/Forge/docs/api/interfaces/LinearDamperEcsComponent):
+  `LinearDamperEcsComponent`:
   position- and velocity-based forces connecting two bodies' anchor points,
   for soft connections like vehicle suspension.
 

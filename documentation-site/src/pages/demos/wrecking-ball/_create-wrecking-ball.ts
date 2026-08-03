@@ -6,12 +6,14 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
   addRevoluteJointComponent,
-  CircleShape,
-  PolygonShape,
-  RevoluteJoint,
-  RigidBody,
+  addRigidBodyComponent,
+  CircleCollider,
+  Collider,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -34,11 +36,12 @@ const floorTileSize = 64;
 const pivotRadius = floorTileSize / 2;
 const floorTileCount = 3;
 
-const brickSize = floorTileSize;
-const brickCount = 5;
-const towerColumns = 3;
+const brickSize = floorTileSize / 2;
+const brickCount = 10;
+const towerColumns = 6;
 
 const armWidth = 14;
+const gravity = new Vector2(0, -600);
 
 // `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
 // its rounded corners and bolt-head detail at a fixed size while the center
@@ -55,8 +58,8 @@ const armSlices: NineSliceOptions = {
 // Every entity's spawn position below is an absolute world-space
 // coordinate, authored directly rather than computed from another
 // entity's position (e.g. the floor is not derived from the ball's rest
-// position). The one exception is the joint's `anchorB`, which the
-// RevoluteJoint API requires as an offset local to the ball, computed once
+// position). The one exception is the joint's `localAnchorB`, which the
+// revolute joint API requires as an offset local to the ball, computed once
 // from `pivotPosition` and `ballStartPosition` (see `createWreckingBall`).
 const pivotPosition = new Vector2(-260, 260);
 const ballStartPosition = new Vector2(-480, 150);
@@ -92,26 +95,47 @@ async function loadWreckingBallSprites(
   };
 }
 
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
+
 /**
- * Creates a single entity carrying both the sprite and the `RigidBody`
- * that represents it, positioned wherever `physicsBody` was constructed at.
- * Every object in this scene is one entity, not a visual entity paired with
- * a separate physics entity.
+ * Creates a single entity carrying both a sprite and the collider/rigid
+ * body that represents it, positioned at `position`. Every object in this
+ * scene is one entity, not a visual entity paired with a separate physics
+ * entity.
  * @param world - The ECS world to add the entity to.
  * @param sprite - The sprite to render.
- * @param physicsBody - The body backing this entity, already positioned.
- * @param scale - The sprite's scale. Omit to render `sprite` at its native
- * pixel size (the default for every object in this scene except the wall
- * bricks, which are deliberately smaller than their sprite's native size).
+ * @param position - Where the entity starts.
+ * @param angle - The entity's starting rotation, in radians.
+ * @param collider - The entity's collider.
+ * @param options - `isStatic` omits a `RigidBodyEcsComponent`/gravity
+ * (default `false`); `restitution`/`friction` tune the collider; `scale`
+ * renders `sprite` at other than its native pixel size.
+ * @returns The created entity.
  */
 function createPhysicsSpriteEntity(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
-  physicsBody: RigidBody,
-  scale?: Vector2,
-): void {
+  position: Vector2,
+  angle: number,
+  collider: Collider,
+  options: {
+    isStatic?: boolean;
+    restitution?: number;
+    friction?: number;
+    scale?: Vector2;
+  } = {},
+): number {
   const entity = world.createEntity();
-  const { position, angle } = physicsBody;
 
   addPositionComponent(world, entity, {
     world: position.clone(),
@@ -119,12 +143,32 @@ function createPhysicsSpriteEntity(
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
 
-  if (scale) {
-    addScaleComponent(world, entity, { local: scale, world: scale });
+  if (options.scale) {
+    addScaleComponent(world, entity, {
+      local: options.scale,
+      world: options.scale,
+    });
   }
 
   addSpriteComponent(world, entity, sprite);
-  addPhysicsBodyComponent(world, entity, { physicsBody });
+  addColliderComponent(world, entity, {
+    collider,
+    ...(options.restitution !== undefined && {
+      restitution: options.restitution,
+    }),
+    ...(options.friction !== undefined && { friction: options.friction }),
+  });
+  addAabbComponent(world, entity);
+
+  if (!options.isStatic) {
+    addRigidBodyComponent(world, entity, {
+      mass: collider.mass,
+      momentOfInertia: collider.momentOfInertia,
+    });
+    addGravityComponent(world, entity, { amount: gravity });
+  }
+
+  return entity;
 }
 
 function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
@@ -136,13 +180,13 @@ function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
       firstTileX + i * floorTileSize,
       floorPosition.y,
     );
-    const floorBody = new RigidBody({
-      shape: PolygonShape.rectangle(floorTileSize, floorTileSize),
-      position,
+    const floorCollider = new PolygonCollider(
+      rectangleVertices(floorTileSize, floorTileSize),
+    );
+
+    createPhysicsSpriteEntity(world, sprite, position, 0, floorCollider, {
       isStatic: true,
     });
-
-    createPhysicsSpriteEntity(world, sprite, floorBody);
   }
 }
 
@@ -162,14 +206,15 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
 
     for (let column = 0; column < towerColumns; column++) {
       const position = new Vector2(firstColumnX + column * brickSize, y);
-      const brickBody = new RigidBody({
-        shape: PolygonShape.rectangle(brickSize, brickSize),
-        position,
-        friction: 0.6,
-        density: 0.01,
-      });
+      const brickCollider = new PolygonCollider(
+        rectangleVertices(brickSize, brickSize),
+        0.01,
+      );
 
-      createPhysicsSpriteEntity(world, sprite, brickBody, brickScale);
+      createPhysicsSpriteEntity(world, sprite, position, 0, brickCollider, {
+        friction: 0.6,
+        scale: brickScale,
+      });
     }
   }
 }
@@ -194,43 +239,50 @@ export async function createWreckingBall(
 ): Promise<void> {
   const sprites = await loadWreckingBallSprites(renderContext, renderLayer);
 
-  const pivotBody = new RigidBody({
-    shape: new CircleShape(pivotRadius),
-    position: pivotPosition.clone(),
-    isStatic: true,
-    isSensor: true,
+  // A static, non-colliding pivot marker: no ColliderEcsComponent (so it
+  // never participates in collision detection) and no
+  // RigidBodyEcsComponent (so every joint system treats it as static).
+  const pivotEntity = world.createEntity();
+
+  addPositionComponent(world, pivotEntity, {
+    world: pivotPosition.clone(),
+    local: pivotPosition.clone(),
+  });
+  addRotationComponent(world, pivotEntity);
+  addSpriteComponent(world, pivotEntity, {
+    ...sprites.brick,
+    width: pivotRadius * 2,
+    height: pivotRadius * 2,
   });
 
-  createPhysicsSpriteEntity(world, sprites.brick, pivotBody);
   createFloor(world, sprites.brick);
   createBrickTower(world, sprites.brick);
 
-  const ballBody = new RigidBody({
-    shape: new CircleShape(ballRadius),
-    position: ballStartPosition.clone(),
-    density: 4,
-    restitution: 0.1,
-  });
+  const ballCollider = new CircleCollider(ballRadius, 4);
+  const ballEntity = createPhysicsSpriteEntity(
+    world,
+    sprites.ball,
+    ballStartPosition,
+    0,
+    ballCollider,
+    { restitution: 0.1 },
+  );
 
-  createPhysicsSpriteEntity(world, sprites.ball, ballBody);
-
-  // `anchorB` is a local-space offset, not a world position: the ball
+  // `localAnchorB` is a local-space offset, not a world position: the ball
   // starts unrotated (angle 0), so its local frame matches world space at
   // construction, and the offset from the ball's center to the pivot is
   // just their absolute positions subtracted.
-  const joint = new RevoluteJoint({
-    bodyA: pivotBody,
-    bodyB: ballBody,
-    anchorB: pivotPosition.subtract(ballStartPosition),
-  });
-
   const jointEntity = world.createEntity();
 
-  addRevoluteJointComponent(world, jointEntity, { joint });
+  addRevoluteJointComponent(world, jointEntity, {
+    entityA: pivotEntity,
+    entityB: ballEntity,
+    localAnchorB: pivotPosition.subtract(ballStartPosition),
+  });
 
   // A nine-sliced sprite, resized and rotated every tick by
-  // `createArmEcsSystem` to visualize the otherwise-invisible RevoluteJoint
-  // connecting the pivot and the ball.
+  // `createArmEcsSystem` to visualize the otherwise-invisible revolute
+  // joint connecting the pivot and the ball.
   const armEntity = world.createEntity();
 
   addPositionComponent(world, armEntity, {
@@ -245,7 +297,7 @@ export async function createWreckingBall(
   });
   addArmComponent(world, armEntity, {
     pivotPosition: pivotPosition.clone(),
-    body: ballBody,
+    entity: ballEntity,
     armWidth,
   });
 }

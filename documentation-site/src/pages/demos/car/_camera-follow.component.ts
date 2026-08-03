@@ -1,17 +1,16 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
-import { RigidBody } from '@forge-game-engine/forge/physics';
 
 /**
- * Smoothly moves this entity's `PositionEcsComponent` towards `target`'s
+ * Smoothly moves this entity's `PositionEcsComponent` towards `targetEntity`'s
  * current position (plus `offset`), via `smoothDampVector2`.
  * `createCameraFollowEcsSystem` applies this every tick; demo-only, since
  * the engine's `CameraEcsComponent` only supports input-driven pan/zoom, not
- * following an arbitrary body. Used here to keep the car on screen as it
+ * following an arbitrary entity. Used here to keep the car on screen as it
  * drives across a course much wider than the canvas.
  */
 export interface CameraFollowEcsComponent {
-  target: RigidBody;
+  targetEntity: number;
 
   /**
    * A fixed world-space offset added to `target.position`, e.g. to frame
@@ -43,7 +42,7 @@ export const cameraFollowId =
   createComponentId<CameraFollowEcsComponent>('cameraFollow');
 
 export interface CameraFollowOptions {
-  target: RigidBody;
+  targetEntity: number;
   offset?: Vector2;
   smoothTime: number;
   maxSpeed: number;
@@ -58,13 +57,13 @@ export function addCameraFollowComponent(
   entity: number,
   options: CameraFollowOptions,
 ): CameraFollowEcsComponent {
-  const { target, offset, smoothTime, maxSpeed } = {
+  const { targetEntity, offset, smoothTime, maxSpeed } = {
     ...defaultCameraFollowOptions,
     ...options,
   };
 
   const component: CameraFollowEcsComponent = {
-    target,
+    targetEntity,
     offset: offset.clone(),
     smoothTime,
     maxSpeed,

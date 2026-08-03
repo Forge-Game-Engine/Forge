@@ -1,0 +1,27 @@
+import { Vector2 } from '../../math/index.js';
+import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
+
+/**
+ * The velocity of the point `r` (relative to `rigidBody`'s position) on a
+ * rotating, translating body: `velocity + angularVelocity × r`. Bodies with
+ * no rigid body (static geometry) have no velocity anywhere.
+ * @param rigidBody - The rigid body, or `null` for static geometry.
+ * @param r - The point to sample velocity at, relative to `rigidBody`'s
+ * position.
+ * @returns The velocity of the point `r`.
+ */
+export function velocityAtPoint(
+  rigidBody: RigidBodyEcsComponent | null,
+  r: Vector2,
+): Vector2 {
+  if (rigidBody === null) {
+    return Vector2.zero;
+  }
+
+  return rigidBody.velocity.add(
+    new Vector2(
+      -rigidBody.angularVelocity * r.y,
+      rigidBody.angularVelocity * r.x,
+    ),
+  );
+}
