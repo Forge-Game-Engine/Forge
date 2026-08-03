@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-08-03
+
 #### Added
 
 - **physics:** Add revolute (hinge) and prismatic (slider) joints, via `addRevoluteJointComponent`/`createRevoluteJointEcsSystem` and `addPrismaticJointComponent`/`createPrismaticJointEcsSystem`, constraining two entities together with a warm-started, soft-constraint velocity solve, with optional angle/translation limits
