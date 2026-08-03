@@ -6,9 +6,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -19,6 +19,18 @@ import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const wallThickness = 16;
+
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
 
 // The play area is a fixed size in world units, not derived from the
 // viewport: deriving brick/paddle sizes from a viewport-tracking width (as
@@ -94,15 +106,12 @@ export async function createBoundaries(
 
     addSpriteComponent(world, entity, wallSprite);
 
-    addPhysicsBodyComponent(world, entity, {
-      physicsBody: new RigidBody({
-        shape: PolygonShape.rectangle(wallWidth, wallHeight),
-        position: position.clone(),
-        isStatic: true,
-        restitution: 1,
-        friction: 0,
-      }),
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider(rectangleVertices(wallWidth, wallHeight)),
+      restitution: 1,
+      friction: 0,
     });
+    addAabbComponent(world, entity);
   };
 
   createWall(

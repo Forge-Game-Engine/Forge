@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **physics:** Add `TerrainCollider`, a static, non-convex 2D ground collider defined by a heightmap of surface points (rolling hills, a canyon profile, any left-to-right surface with more than one slope), resolved via `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem` against `CircleCollider`/`PolygonCollider` bodies exactly like other colliders
+
 ## [0.24.1] - 2026-08-03
 
 #### Added

@@ -1,12 +1,11 @@
+import { positionId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import { TriggerAction } from '@forge-game-engine/forge/input';
 import {
-  BodyCollisionPair,
-  PhysicsBodyEcsComponent,
-  PhysicsBodyId,
-  PhysicsWorld,
-  RigidBody,
+  applyImpulse,
+  CollisionManifold,
+  rigidBodyId,
 } from '@forge-game-engine/forge/physics';
 
 /** The upward impulse applied on jump. */
@@ -21,76 +20,71 @@ const jumpImpulse = 500_000;
 const respawnFallDistance = 2000;
 
 function involvesBoth(
-  pair: BodyCollisionPair,
-  bodyA: RigidBody,
-  bodyB: RigidBody,
+  manifold: CollisionManifold,
+  entityA: number,
+  entityB: number,
 ): boolean {
   return (
-    (pair.bodyA === bodyA && pair.bodyB === bodyB) ||
-    (pair.bodyA === bodyB && pair.bodyB === bodyA)
+    (manifold.entityA === entityA && manifold.entityB === entityB) ||
+    (manifold.entityA === entityB && manifold.entityB === entityA)
   );
 }
 
 /**
  * Creates an ECS system that tracks whether the ball is currently touching
- * the terrain (via `physicsWorld.collisionStarts`/`collisionEnds`, which
- * `createPhysicsSyncEcsSystem` populates every tick), applies an upward
- * impulse when `jumpInput` triggers while grounded, and resets the ball back
- * to `spawnPosition` if it ever falls `respawnFallDistance` below it (for
- * example off the end of the terrain). All the work happens once per tick in
- * `update`, since `update` is already a single batched call rather than one
- * invoked per matched entity, the same way `createPhysicsSyncEcsSystem` steps
- * `physicsWorld` once in its own `update`.
+ * the terrain (via `collisionManifolds`, which `createNarrowPhaseEcsSystem`
+ * populates every tick), applies an upward impulse when `jumpInput` triggers
+ * while grounded, and resets the ball back to `spawnPosition` if it ever
+ * falls `respawnFallDistance` below it (for example off the end of the
+ * terrain).
  *
- * Must run after `createPhysicsSyncEcsSystem`, so this tick's collision
- * events are available before this system checks them.
- * @param physicsWorld - The physics world the ball and terrain are simulated in.
- * @param playerBody - The ball's `RigidBody`.
- * @param terrainBody - The terrain's `RigidBody`.
+ * Must run after `createNarrowPhaseEcsSystem`, so this tick's collisions are
+ * available before this system checks them, and before
+ * `createEulerIntegrationEcsSystem`, so a jump/respawn applied this tick is
+ * reflected in this same tick's integration.
+ * @param collisionManifolds - The narrow-phase system's output: this tick's
+ * confirmed collisions.
+ * @param playerEntity - The ball's entity id.
+ * @param terrainEntity - The terrain's entity id.
  * @param jumpInput - The jump trigger action.
  * @param spawnPosition - The world-space position to reset the ball to if it falls too far.
  */
 export const createJumpEcsSystem = (
-  physicsWorld: PhysicsWorld,
-  playerBody: RigidBody,
-  terrainBody: RigidBody,
+  collisionManifolds: CollisionManifold[],
+  playerEntity: number,
+  terrainEntity: number,
   jumpInput: TriggerAction,
   spawnPosition: Vector2,
-): EcsSystem<[PhysicsBodyEcsComponent]> => {
-  let isGrounded = false;
+): EcsSystem<[]> => ({
+  query: [],
+  update: (world) => {
+    const position = world.getComponent(playerEntity, positionId);
+    const rigidBody = world.getComponent(playerEntity, rigidBodyId);
 
-  return {
-    query: [PhysicsBodyId],
-    update: () => {
-      if (
-        physicsWorld.collisionStarts.some((pair) =>
-          involvesBoth(pair, playerBody, terrainBody),
-        )
-      ) {
-        isGrounded = true;
-      }
+    if (position === null || rigidBody === null) {
+      return;
+    }
 
-      if (
-        physicsWorld.collisionEnds.some((pair) =>
-          involvesBoth(pair, playerBody, terrainBody),
-        )
-      ) {
-        isGrounded = false;
-      }
+    const isGrounded = collisionManifolds.some((manifold) =>
+      involvesBoth(manifold, playerEntity, terrainEntity),
+    );
 
-      if (jumpInput.isTriggered && isGrounded) {
-        playerBody.applyImpulse(new Vector2(0, jumpImpulse), Vector2.zero);
-        isGrounded = false;
-      }
+    if (jumpInput.isTriggered && isGrounded) {
+      applyImpulse(
+        new Vector2(0, jumpImpulse),
+        position.world,
+        position.world,
+        rigidBody,
+      );
+    }
 
-      // Gravity pulls toward -y in this demo (see `_create-game.ts`), so
-      // "fallen too far" means the ball's y has dropped well below spawn.
-      if (playerBody.position.y < spawnPosition.y - respawnFallDistance) {
-        playerBody.position = spawnPosition.clone();
-        playerBody.velocity = Vector2.zero;
-        playerBody.angularVelocity = 0;
-        isGrounded = false;
-      }
-    },
-  };
-};
+    // Gravity pulls toward -y in this demo (see `_create-game.ts`), so
+    // "fallen too far" means the ball's y has dropped well below spawn.
+    if (position.world.y < spawnPosition.y - respawnFallDistance) {
+      position.world = spawnPosition.clone();
+      position.local = spawnPosition.clone();
+      rigidBody.velocity = Vector2.zero;
+      rigidBody.angularVelocity = 0;
+    }
+  },
+});

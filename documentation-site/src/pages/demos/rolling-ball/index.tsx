@@ -18,10 +18,10 @@ export default function RollingBall(): JSX.Element {
       metaData={{
         title: 'Rolling Ball Demo',
         description:
-          'A demo showcasing TerrainShape with a smooth, textured, curve-generated course and a player-controlled ball that rolls via friction from an AngularVelocityMotorEcsComponent.',
+          'A demo showcasing TerrainCollider with a smooth, textured, curve-generated course and a player-controlled ball that rolls via friction from an AngularVelocityMotorEcsComponent.',
       }}
       header="Rolling Ball"
-      blurb="A standalone showcase of TerrainShape: a long course whose smooth silhouette comes from a Catmull-Rom curve through sparse, randomly-placed control points, triangulated into a single mesh and textured with a tileable grass-like border blending into a tileable dirt-like fill. TerrainShape's own collision points are sampled from that exact same curve, so what's drawn always matches what the ball touches. Roll input drives the ball's AngularVelocityMotorEcsComponent, and friction against the terrain - ordinary collision resolution, nothing special-cased - turns that spin into rolling motion up and down the hills. A small camera-follow system keeps the ball in view as it travels, and a jump impulse fires while grounded (tracked via PhysicsWorld.collisionStarts/collisionEnds against the terrain body)."
+      blurb="A standalone showcase of TerrainCollider: a long course whose smooth silhouette comes from a Catmull-Rom curve through sparse, randomly-placed control points, triangulated into a single mesh and textured with a tileable grass-like border blending into a tileable dirt-like fill. TerrainCollider's own collision points are sampled from that exact same curve, so what's drawn always matches what the ball touches. Roll input drives the ball's AngularVelocityMotorEcsComponent, and friction against the terrain - ordinary collision resolution, nothing special-cased - turns that spin into rolling motion up and down the hills. A small camera-follow system keeps the ball in view as it travels, and a jump impulse fires while grounded (tracked via this tick's collisionManifolds against the terrain entity)."
       createGame={createRollingBallGame}
       interactions={
         <>

@@ -5,9 +5,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { clamp, Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  RigidBody,
-  TerrainShape,
+  addAabbComponent,
+  addColliderComponent,
+  TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   buildTerrainCurve,
@@ -24,7 +24,7 @@ import {
 const anchorSpacing = 400;
 
 // How many curve points to sample per anchor-to-anchor segment. Both the
-// TerrainShape collision points and the render mesh use this same dense
+// TerrainCollider collision points and the render mesh use this same dense
 // sampling, so what the ball touches always matches what's drawn.
 const samplesPerSegment = 20;
 
@@ -80,8 +80,8 @@ export interface CreateTerrainOptions {
 }
 
 export interface RollingBallTerrain {
-  /** The terrain's static `RigidBody`, for reference (e.g. grounded checks). */
-  body: RigidBody;
+  /** The terrain's static entity id, for reference (e.g. grounded checks). */
+  entity: number;
 
   /**
    * The world-space x coordinate of the flat platform the ball spawns on,
@@ -131,8 +131,8 @@ function buildControlPoints(totalWidth: number): Vector2[] {
 }
 
 /**
- * Creates a long, varied-height `TerrainShape` ground body - a smooth curve
- * through sparse, randomly-placed control points (see
+ * Creates a long, varied-height `TerrainCollider` ground body - a smooth
+ * curve through sparse, randomly-placed control points (see
  * `buildTerrainCurve`), rather than a jagged polyline - plus a single
  * triangulated mesh to render it (see `createTerrainMesh`), textured with a
  * tileable border layer near the surface blending into a tileable fill
@@ -153,22 +153,14 @@ export async function createTerrain(
   const curvePoints = buildTerrainCurve(controlPoints, samplesPerSegment);
   const points = curvePoints.map((curvePoint) => curvePoint.position);
 
-  const terrainShape = new TerrainShape(points, terrainDepth);
+  const terrainCollider = new TerrainCollider(points, terrainDepth);
 
-  // Rotated 180 degrees, same as the Physics demo's terrain: `TerrainShape`
+  // Rotated 180 degrees, same as the Physics demo's terrain: `TerrainCollider`
   // always extends its solid slab `depth` units in the +y direction from
   // its surface points (in its own local space), but this demo's gravity
   // pulls bodies toward -y, so the body is flipped to face the right way.
   const angle = Math.PI;
   const position = Vector2.zero;
-
-  const terrainBody = new RigidBody({
-    shape: terrainShape,
-    position,
-    angle,
-    isStatic: true,
-    friction: 0.9,
-  });
 
   const terrainEntity = world.createEntity();
 
@@ -177,18 +169,16 @@ export async function createTerrain(
     local: position.clone(),
   });
 
-  // `RotationEcsComponent.world` is negated relative to `RigidBody.angle`
-  // (see the "Coordinate spaces" note in the Bodies and Shapes guide), the
-  // same convention `createPhysicsSyncEcsSystem` uses for every other
-  // static body.
   addRotationComponent(world, terrainEntity, {
-    local: -angle,
-    world: -angle,
+    local: angle,
+    world: angle,
   });
 
-  addPhysicsBodyComponent(world, terrainEntity, {
-    physicsBody: terrainBody,
+  addColliderComponent(world, terrainEntity, {
+    collider: terrainCollider,
+    friction: 0.9,
   });
+  addAabbComponent(world, terrainEntity);
 
   const [borderImage, fillImage] = await Promise.all([
     renderContext.imageCache.getOrLoad(border.textureUrl),
@@ -223,7 +213,7 @@ export async function createTerrain(
   };
 
   return {
-    body: terrainBody,
+    entity: terrainEntity,
     spawnX,
     worldSurfaceYAt,
     mesh,

@@ -5,8 +5,13 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -134,16 +139,32 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     playArea,
   );
 
-  const physicsWorld = new PhysicsWorld();
   const missY = playArea.bottomY - missMargin;
+
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBackgroundEcsSystem(time));
   world.addSystem(createPaddleEcsSystem(moveInput, time));
   world.addSystem(createBrickEcsSystem(time));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
-  world.addSystem(createBallEcsSystem(physicsWorld, random, missY, brickField));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
+  world.addSystem(
+    createBallEcsSystem(collisionManifolds, random, missY, brickField),
+  );
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

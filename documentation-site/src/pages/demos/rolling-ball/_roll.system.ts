@@ -2,7 +2,7 @@ import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction } from '@forge-game-engine/forge/input';
 import {
   AngularVelocityMotorEcsComponent,
-  AngularVelocityMotorId,
+  angularVelocityMotorId,
 } from '@forge-game-engine/forge/physics';
 
 /** How fast the ball's motor spins it up to, in rad/s, at full roll input. */
@@ -16,15 +16,15 @@ const maxRollSpeed = 22;
  * against the terrain turns that spin into rolling motion.
  *
  * Must run before `createAngularVelocityMotorEcsSystem` (and, transitively,
- * before `createPhysicsSyncEcsSystem`), so this tick's input is reflected in
- * this tick's physics step - see the Applying Forces guide's registration
- * order caution.
+ * before the broad/narrow-phase and resolution systems), so this tick's
+ * input is reflected in this tick's physics step - see the Applying Forces
+ * guide's registration order caution.
  * @param rollInput - The roll axis action, positive for rightward roll.
  */
 export const createRollEcsSystem = (
   rollInput: Axis1dAction,
 ): EcsSystem<[AngularVelocityMotorEcsComponent]> => ({
-  query: [AngularVelocityMotorId],
+  query: [angularVelocityMotorId],
   update: (_world, { components: [motorComponents] }) => {
     for (const motorComponent of motorComponents) {
       // A positive angular velocity here spins the ball counter-clockwise on

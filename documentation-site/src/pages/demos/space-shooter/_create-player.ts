@@ -15,9 +15,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { PlayerId } from './_player.component';
@@ -136,15 +136,10 @@ export function spawnPlayer(
     nextAllowedShotTime: 0,
   });
 
-  addPhysicsBodyComponent(world, playerEntity, {
-    physicsBody: new RigidBody({
-      shape: new CircleShape(playerRadius),
-      position: new Vector2(playerX, playerY),
-      isStatic: false,
-      isSensor: true,
-    }),
-    isKinematic: true,
+  addColliderComponent(world, playerEntity, {
+    collider: new CircleCollider(playerRadius),
   });
+  addAabbComponent(world, playerEntity);
 }
 
 export async function createPlayer(

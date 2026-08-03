@@ -7,9 +7,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -23,6 +23,18 @@ const paddleWidthFraction = 0.12;
 const paddleHeightFraction = 0.07;
 const paddleSpeed = 1_000;
 const paddleHeightAboveBottom = 60;
+
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
 
 /**
  * Creates the player-controlled paddle as a static rigid body - immovable
@@ -80,15 +92,14 @@ export async function createPaddle(
     maxX: playArea.maxX - paddleWidth / 2,
   });
 
-  addPhysicsBodyComponent(world, entity, {
-    physicsBody: new RigidBody({
-      shape: PolygonShape.rectangle(paddleWidth, paddleHeight),
-      position: position.clone(),
-      isStatic: true,
-      restitution: 1,
-      friction: 0,
-    }),
+  addColliderComponent(world, entity, {
+    collider: new PolygonCollider(
+      rectangleVertices(paddleWidth, paddleHeight),
+    ),
+    restitution: 1,
+    friction: 0,
   });
+  addAabbComponent(world, entity);
 
   return position;
 }

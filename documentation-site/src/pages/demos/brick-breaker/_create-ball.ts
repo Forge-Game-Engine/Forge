@@ -11,9 +11,11 @@ import {
   Vector2,
 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  addRigidBodyComponent,
+  CircleCollider,
+  RigidBodyEcsComponent,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -34,12 +36,12 @@ const launchAngleRangeInDegrees = 35;
  * Positive Y is towards the top of the play area (where the bricks are),
  * matching the world-space convention used by `PositionEcsComponent`, which
  * is the opposite of `Vector2.up`'s screen-space convention.
- * @param physicsBody - The ball's rigid body.
+ * @param rigidBody - The ball's rigid body component.
  * @param speed - The launch speed, in pixels per second.
  * @param random - The random source used to vary the launch angle.
  */
 export function launchBall(
-  physicsBody: RigidBody,
+  rigidBody: RigidBodyEcsComponent,
   speed: number,
   random: Random,
 ): void {
@@ -47,9 +49,10 @@ export function launchBall(
     random.randomFloat(-launchAngleRangeInDegrees, launchAngleRangeInDegrees),
   );
 
-  physicsBody.velocity = new Vector2(Math.sin(angle), Math.cos(angle)).multiply(
-    speed,
-  );
+  rigidBody.velocity = new Vector2(
+    Math.sin(angle),
+    Math.cos(angle),
+  ).multiply(speed);
 }
 
 /**
@@ -103,14 +106,19 @@ export async function createBall(
     startPosition: startPosition.clone(),
   });
 
-  const physicsBody = new RigidBody({
-    shape: new CircleShape(ballRadius),
-    position: startPosition.clone(),
+  const collider = new CircleCollider(ballRadius);
+
+  addColliderComponent(world, entity, {
+    collider,
     restitution: 1,
     friction: 0,
   });
+  addAabbComponent(world, entity);
 
-  launchBall(physicsBody, speed, random);
+  const rigidBody = addRigidBodyComponent(world, entity, {
+    mass: collider.mass,
+    momentOfInertia: collider.momentOfInertia,
+  });
 
-  addPhysicsBodyComponent(world, entity, { physicsBody });
+  launchBall(rigidBody, speed, random);
 }
