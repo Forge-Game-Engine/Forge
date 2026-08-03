@@ -1,4 +1,9 @@
-import { Vector2 } from '../../math/index.js';
+import {
+  createVector2,
+  Vector2,
+  vector2One,
+  vector2Zero,
+} from '../../math/index.js';
 import { AnimationClip, AnimationFrame } from '../types/index.js';
 
 /**
@@ -22,7 +27,7 @@ function generateAnimationFrames(
     const col = i % spritesPerRow;
 
     animationFrames.push({
-      offset: new Vector2(
+      offset: createVector2(
         startPositionPercentage.x + col * spriteUVSize.x,
         startPositionPercentage.y + row * spriteUVSize.y,
       ),
@@ -50,8 +55,8 @@ export interface AnimationCreationOptions {
 }
 
 const defaultCreateAnimationSetParams: AnimationCreationOptions = {
-  startPositionPercentage: Vector2.zero,
-  endPositionPercentage: Vector2.one,
+  startPositionPercentage: vector2Zero(),
+  endPositionPercentage: vector2One(),
 };
 
 /**
@@ -72,7 +77,7 @@ export function createAnimation(
 
   const numFrames = spritesPerColumn * spritesPerRow;
 
-  const spriteUVSize = new Vector2(
+  const spriteUVSize = createVector2(
     (endPositionPercentage.x - startPositionPercentage.x) / spritesPerRow,
     (endPositionPercentage.y - startPositionPercentage.y) / spritesPerColumn,
   );

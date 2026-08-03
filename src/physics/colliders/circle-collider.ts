@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { createVector2, Vector2, vector2Zero } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 import { Collider } from './collider.js';
 
@@ -21,7 +21,7 @@ export class CircleCollider extends Collider {
 
     super(momentOfInertia, mass);
 
-    this.offset = Vector2.zero;
+    this.offset = vector2Zero();
     this.radius = radius;
   }
 
@@ -30,8 +30,8 @@ export class CircleCollider extends Collider {
     const cy = position.y + this.offset.y;
 
     return {
-      min: new Vector2(cx - this.radius, cy - this.radius),
-      max: new Vector2(cx + this.radius, cy + this.radius),
+      min: createVector2(cx - this.radius, cy - this.radius),
+      max: createVector2(cx + this.radius, cy + this.radius),
     };
   }
 }

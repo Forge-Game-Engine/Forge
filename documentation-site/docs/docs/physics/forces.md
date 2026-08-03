@@ -25,9 +25,9 @@ import {
   createGravityEcsSystem,
   gravityId,
 } from '@forge-game-engine/forge/physics';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2, vector2Negate } from '@forge-game-engine/forge/math';
 
-addGravityComponent(world, playerEntity, { amount: new Vector2(0, -600) });
+addGravityComponent(world, playerEntity, { amount: createVector2(0, -600) });
 
 // Must run before whatever system resolves collisions
 // (createCollisionResolutionEcsSystem), so this tick's gravity is reflected
@@ -38,7 +38,7 @@ world.addSystem(createGravityEcsSystem(time));
 const gravity = world.getComponent(playerEntity, gravityId);
 
 if (gravity !== null) {
-  gravity.amount = gravity.amount.negate();
+  vector2Negate(gravity.amount);
 }
 ```
 
@@ -52,14 +52,14 @@ reactions to a single event:
 ```ts
 import { applyImpulse, rigidBodyId } from '@forge-game-engine/forge/physics';
 import { positionId } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 
 const position = world.getComponent(playerEntity, positionId);
 const rigidBody = world.getComponent(playerEntity, rigidBodyId);
 
 if (position !== null && rigidBody !== null) {
   // A straight-up jump through the center of mass: no spin.
-  applyImpulse(new Vector2(0, 500), position.world, position.world, rigidBody);
+  applyImpulse(createVector2(0, 500), position.world, position.world, rigidBody);
 }
 ```
 
@@ -294,7 +294,7 @@ demo converts the screen-space mouse position to world space and calls
 `applyExplosiveForce` on click:
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2, vector2Zero } from '@forge-game-engine/forge/math';
 import {
   calculatePixelsPerUnit,
   screenToWorldSpace,
@@ -306,7 +306,7 @@ import { applyExplosiveForce } from '@forge-game-engine/forge/physics';
 renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-  const screenPosition = new Vector2(
+  const screenPosition = createVector2(
     event.clientX - canvasBounds.left,
     event.clientY - canvasBounds.top,
   );
@@ -318,7 +318,7 @@ renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
 
   const worldPosition = screenToWorldSpace(
     screenPosition,
-    Vector2.zero,
+    vector2Zero(),
     1,
     renderContext.width,
     renderContext.height,

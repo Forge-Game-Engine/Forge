@@ -77,7 +77,7 @@ your game systems run. What that does depends on the action type:
   [`ActionResetType`](/Forge/docs/api/type-aliases/ActionResetType), set as
   the last constructor argument (default
   [`actionResetTypes.zero`](/Forge/docs/api/variables/actionResetTypes)):
-  - `zero`: the value is set back to `0` (or `Vector2.zero`) every frame.
+  - `zero`: the value is set back to `0` (or `vector2Zero()`) every frame.
     Correct for "delta this frame" inputs, such as mouse wheel scroll, where
     the binding only calls `set()` while the input is actively changing.
   - `noReset`: the value is left untouched. Required for any axis whose

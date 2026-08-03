@@ -16,7 +16,7 @@ import {
   keyCodes,
   registerInputs,
 } from '@forge-game-engine/forge/input';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import {
   createMotorScenario,
   createThrusterScenario,
@@ -61,7 +61,7 @@ export const createTorqueGame = async (): Promise<Game> => {
     world,
     renderContext,
     renderLayers.foreground,
-    new Vector2(-columnWidth / 2, height * 0.1),
+    createVector2(-columnWidth / 2, height * 0.1),
     thrustInput,
   );
 
@@ -69,7 +69,7 @@ export const createTorqueGame = async (): Promise<Game> => {
     world,
     renderContext,
     renderLayers.foreground,
-    new Vector2(columnWidth / 2, height * 0.1),
+    createVector2(columnWidth / 2, height * 0.1),
   );
 
   // `createThrusterEcsSystem` and `createGustEcsSystem` change

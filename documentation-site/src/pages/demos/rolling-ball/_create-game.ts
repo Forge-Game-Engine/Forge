@@ -21,7 +21,7 @@ import {
   PositionEcsComponent,
   positionId,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2, vector2Clone } from '@forge-game-engine/forge/math';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createInputs } from './_create-inputs';
@@ -35,7 +35,7 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = new Vector2(0, -700);
+const gravity = createVector2(0, -700);
 const terrainWidth = 8000;
 
 export const createRollingBallGame = async (): Promise<Game> => {
@@ -61,21 +61,21 @@ export const createRollingBallGame = async (): Promise<Game> => {
       textureUrl: getAssetUrl(
         'img/kenney_pattern-pack/PNG/Default/pattern_19.png',
       ),
-      tileSize: new Vector2(160, 150),
+      tileSize: createVector2(160, 150),
       tint: new Color(0.6, 0.6, 0.6, 1),
     },
     fill: {
       textureUrl: getAssetUrl(
         'img/kenney_pattern-pack/PNG/Default/pattern_37.png',
       ),
-      tileSize: new Vector2(30, 30),
+      tileSize: createVector2(30, 30),
       tint: new Color(0.4, 0.29, 0.18, 1),
     },
     borderWidth: 30,
     borderBlend: 5,
   });
 
-  const spawnPosition = new Vector2(
+  const spawnPosition = createVector2(
     terrain.spawnX,
     terrain.worldSurfaceYAt(terrain.spawnX) + 60,
   );
@@ -100,8 +100,8 @@ export const createRollingBallGame = async (): Promise<Game> => {
     positionId,
   )!;
 
-  cameraPosition.world = spawnPosition.clone();
-  cameraPosition.local = spawnPosition.clone();
+  cameraPosition.world = vector2Clone(spawnPosition);
+  cameraPosition.local = vector2Clone(spawnPosition);
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

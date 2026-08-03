@@ -1,6 +1,6 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vector2, vector2Zero } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
@@ -51,7 +51,7 @@ export async function createCursorEffects(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<CursorEffects> {
-  let cursorPosition = Vector2.zero;
+  let cursorPosition = vector2Zero();
 
   const [sparkImage, smokeImage] = await Promise.all([
     renderContext.imageCache.getOrLoad(

@@ -9,6 +9,7 @@ import {
   createRenderContext,
   createRenderEcsSystem,
   createTransformEcsSystem,
+  createVector2,
   EcsSystem,
   EcsWorld,
   gamepadAxes,
@@ -20,7 +21,6 @@ import {
   SpriteEcsComponent,
   spriteId,
   Time,
-  Vector2,
 } from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
@@ -193,8 +193,8 @@ export const createScene: CreateScene = async (
     const entity = world.createEntity();
 
     const position = world.addComponent(entity, positionId, {
-      local: new Vector2(x, y),
-      world: new Vector2(x, y),
+      local: createVector2(x, y),
+      world: createVector2(x, y),
     });
 
     const sprite = world.addComponent(entity, spriteId, {

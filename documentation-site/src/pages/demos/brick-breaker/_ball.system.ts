@@ -3,7 +3,7 @@ import {
   PositionEcsComponent,
   positionId,
 } from '@forge-game-engine/forge/common';
-import { Random } from '@forge-game-engine/forge/math';
+import { Random, vector2Clone } from '@forge-game-engine/forge/math';
 import {
   CollisionManifold,
   RigidBodyEcsComponent,
@@ -49,8 +49,8 @@ export const createBallEcsSystem = (
       destroyCollidedBricks(collisionManifolds, ballEntity, brickField);
 
       if (positionComponent.world.y < missY) {
-        positionComponent.world = ballComponent.startPosition.clone();
-        positionComponent.local = ballComponent.startPosition.clone();
+        positionComponent.world = vector2Clone(ballComponent.startPosition);
+        positionComponent.local = vector2Clone(ballComponent.startPosition);
         launchBall(rigidBody, ballComponent.speed, random);
       }
     }

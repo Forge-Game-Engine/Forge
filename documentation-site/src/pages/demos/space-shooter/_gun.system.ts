@@ -9,7 +9,13 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
-import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  degreesToRadians,
+  Vector2,
+  vector2Add,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
   addLifetimeComponent,
@@ -57,14 +63,14 @@ export const createGunEcsSystem = (
           world,
           gunComponent,
           positionComponent,
-          new Vector2(20, 20),
+          createVector2(20, 20),
           sound,
         );
         createBulletWithOffset(
           world,
           gunComponent,
           positionComponent,
-          new Vector2(-20, 20),
+          createVector2(-20, 20),
           sound,
         );
 
@@ -84,13 +90,15 @@ function createBulletWithOffset(
 ) {
   const bullet = world.createEntity();
   const bulletScale = 0.15;
-  const spawnPosition = positionComponent.world.add(offset);
+  // clone: positionComponent.world is the gun owner's own live position
+  // field, must not be mutated by adding the muzzle offset into it.
+  const spawnPosition = vector2Add(vector2Clone(positionComponent.world), offset);
 
   addSpriteComponent(world, bullet, gunComponent.bulletSprite);
 
   addPositionComponent(world, bullet, {
     local: spawnPosition,
-    world: positionComponent.world.add(offset),
+    world: vector2Clone(spawnPosition),
   });
 
   addRotationComponent(world, bullet, {
@@ -99,8 +107,8 @@ function createBulletWithOffset(
   });
 
   addScaleComponent(world, bullet, {
-    local: new Vector2(bulletScale, bulletScale),
-    world: new Vector2(bulletScale, bulletScale),
+    local: createVector2(bulletScale, bulletScale),
+    world: createVector2(bulletScale, bulletScale),
   });
 
   world.addComponent(bullet, bulletId, {

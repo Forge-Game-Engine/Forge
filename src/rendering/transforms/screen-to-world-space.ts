@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { createVector2, Vector2 } from '../../math/index.js';
 
 /**
  * Converts a position from screen space to world space.
@@ -33,5 +33,5 @@ export function screenToWorldSpace(
   const worldY =
     (screenHeight / 2 - screenPosition.y) / scale + cameraPosition.y;
 
-  return new Vector2(worldX, worldY);
+  return createVector2(worldX, worldY);
 }

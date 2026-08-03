@@ -4,7 +4,12 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+  vector2Subtract,
+} from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -41,7 +46,7 @@ const brickCount = 10;
 const towerColumns = 6;
 
 const armWidth = 14;
-const gravity = new Vector2(0, -600);
+const gravity = createVector2(0, -600);
 
 // `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
 // its rounded corners and bolt-head detail at a fixed size while the center
@@ -61,14 +66,14 @@ const armSlices: NineSliceOptions = {
 // position). The one exception is the joint's `localAnchorB`, which the
 // revolute joint API requires as an offset local to the ball, computed once
 // from `pivotPosition` and `ballStartPosition` (see `createWreckingBall`).
-const pivotPosition = new Vector2(-260, 260);
-const ballStartPosition = new Vector2(-480, 150);
+const pivotPosition = createVector2(-260, 260);
+const ballStartPosition = createVector2(-480, 150);
 // The center of the floor's middle tile. Its height was chosen so the
 // floor's top surface stays below the ball's swing everywhere the floor
 // spans, while the brick tower standing on it rises back up into the
 // ball's path, see the comment on `floorTileCount` uses in
 // `createWreckingBall`.
-const floorPosition = new Vector2(-100, -107);
+const floorPosition = createVector2(-100, -107);
 
 interface WreckingBallSprites {
   ball: SpriteEcsComponent;
@@ -100,10 +105,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    createVector2(-halfWidth, -halfHeight),
+    createVector2(halfWidth, -halfHeight),
+    createVector2(halfWidth, halfHeight),
+    createVector2(-halfWidth, halfHeight),
   ];
 }
 
@@ -138,8 +143,8 @@ function createPhysicsSpriteEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: vector2Clone(position),
+    local: vector2Clone(position),
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
 
@@ -176,7 +181,7 @@ function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
     floorPosition.x - (floorTileSize * (floorTileCount - 1)) / 2;
 
   for (let i = 0; i < floorTileCount; i++) {
-    const position = new Vector2(
+    const position = createVector2(
       firstTileX + i * floorTileSize,
       floorPosition.y,
     );
@@ -196,7 +201,7 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
   // The bricks are explicitly half the size of their sprite's native 64x64
   // pixels, so (unlike every other object in this scene) they need a scale
   // to match their physics shape rather than rendering at native size.
-  const brickScale = new Vector2(
+  const brickScale = createVector2(
     brickSize / sprite.width,
     brickSize / sprite.height,
   );
@@ -205,7 +210,7 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
     const y = towerBottomY + brickSize / 2 + row * brickSize;
 
     for (let column = 0; column < towerColumns; column++) {
-      const position = new Vector2(firstColumnX + column * brickSize, y);
+      const position = createVector2(firstColumnX + column * brickSize, y);
       const brickCollider = new PolygonCollider(
         rectangleVertices(brickSize, brickSize),
         0.01,
@@ -245,8 +250,8 @@ export async function createWreckingBall(
   const pivotEntity = world.createEntity();
 
   addPositionComponent(world, pivotEntity, {
-    world: pivotPosition.clone(),
-    local: pivotPosition.clone(),
+    world: vector2Clone(pivotPosition),
+    local: vector2Clone(pivotPosition),
   });
   addRotationComponent(world, pivotEntity);
   addSpriteComponent(world, pivotEntity, {
@@ -277,7 +282,11 @@ export async function createWreckingBall(
   addRevoluteJointComponent(world, jointEntity, {
     entityA: pivotEntity,
     entityB: ballEntity,
-    localAnchorB: pivotPosition.subtract(ballStartPosition),
+    // clone: pivotPosition is a module-level constant reused below for the arm.
+    localAnchorB: vector2Subtract(
+      vector2Clone(pivotPosition),
+      ballStartPosition,
+    ),
   });
 
   // A nine-sliced sprite, resized and rotated every tick by
@@ -286,8 +295,8 @@ export async function createWreckingBall(
   const armEntity = world.createEntity();
 
   addPositionComponent(world, armEntity, {
-    world: pivotPosition.clone(),
-    local: pivotPosition.clone(),
+    world: vector2Clone(pivotPosition),
+    local: vector2Clone(pivotPosition),
   });
   addRotationComponent(world, armEntity);
   addSpriteComponent(world, armEntity, {
@@ -296,7 +305,7 @@ export async function createWreckingBall(
     slices: armSlices,
   });
   addArmComponent(world, armEntity, {
-    pivotPosition: pivotPosition.clone(),
+    pivotPosition: vector2Clone(pivotPosition),
     entity: ballEntity,
     armWidth,
   });

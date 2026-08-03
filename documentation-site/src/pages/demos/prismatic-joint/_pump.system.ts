@@ -1,6 +1,10 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { positionId, Time } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  Vector2,
+  vector2Clone,
+  vector2Negate,
+} from '@forge-game-engine/forge/math';
 import { applyImpulse, rigidBodyId } from '@forge-game-engine/forge/physics';
 import { PumpEcsComponent, pumpId } from './_pump.component';
 
@@ -18,8 +22,12 @@ export const createPumpEcsSystem = (
 
       pump.elapsedSeconds = 0;
 
+      // clone: pump.impulse is a persistent PumpEcsComponent field, reused
+      // every trigger.
       const impulse: Vector2 =
-        pump.direction === 1 ? pump.impulse : pump.impulse.negate();
+        pump.direction === 1
+          ? pump.impulse
+          : vector2Negate(vector2Clone(pump.impulse));
 
       const position = world.getComponent(pump.entity, positionId);
       const rigidBody = world.getComponent(pump.entity, rigidBodyId);

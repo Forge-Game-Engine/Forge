@@ -7,7 +7,13 @@ import {
   Time,
 } from '../../common/index.js';
 import { spriteId } from '../../rendering/index.js';
-import { degreesToRadians, Random, Vector2 } from '../../math/index.js';
+import {
+  createVector2,
+  degreesToRadians,
+  Random,
+  vector2Clone,
+  vector2One,
+} from '../../math/index.js';
 import {
   ParticleEmitter,
   ParticleEmitterEcsComponent,
@@ -112,13 +118,13 @@ function emitParticle(
   });
 
   world.addComponent(particleEntity, positionId, {
-    world: spawnPosition.clone(),
-    local: spawnPosition.clone(),
+    world: vector2Clone(spawnPosition),
+    local: vector2Clone(spawnPosition),
   });
 
   world.addComponent(particleEntity, scaleId, {
-    world: Vector2.one,
-    local: new Vector2(originalScale, originalScale),
+    world: vector2One(),
+    local: createVector2(originalScale, originalScale),
   });
 
   world.addComponent(particleEntity, rotationId, {

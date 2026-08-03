@@ -1,7 +1,7 @@
 import { rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import { Vector2, vector2Zero } from '../../math/index.js';
 
 /**
  * Fields of {@link RevoluteJointEcsComponent} with a sensible default;
@@ -68,8 +68,8 @@ export function addRevoluteJointComponent(
     Partial<RevoluteJointDefaultedOptions>,
 ): RevoluteJointEcsComponent {
   const defaultOptions: RevoluteJointDefaultedOptions = {
-    localAnchorA: Vector2.zero,
-    localAnchorB: Vector2.zero,
+    localAnchorA: vector2Zero(),
+    localAnchorB: vector2Zero(),
     enableLimit: false,
     lowerAngle: 0,
     upperAngle: 0,
@@ -97,7 +97,7 @@ export function addRevoluteJointComponent(
   const component: RevoluteJointEcsComponent = {
     ...merged,
     referenceAngle: rotationB.world - rotationA.world,
-    accumulatedPointImpulse: Vector2.zero,
+    accumulatedPointImpulse: vector2Zero(),
   };
 
   return world.addComponent(entity, revoluteJointId, component);

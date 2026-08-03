@@ -1,4 +1,13 @@
-import { Vector2 } from '../../math/index.js';
+import {
+  createVector2,
+  Vector2,
+  vector2Add,
+  vector2Clone,
+  vector2Cross,
+  vector2Rotate,
+  vector2Subtract,
+  vector2Zero,
+} from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 import { Collider } from './collider.js';
 import {
@@ -19,10 +28,12 @@ function validateConvexity(vertices: readonly Vector2[]): void {
     const next = vertices[(i + 1) % vertexCount];
     const afterNext = vertices[(i + 2) % vertexCount];
 
-    const edge = next.subtract(current);
-    const nextEdge = afterNext.subtract(next);
+    // Clone before subtracting: `current`/`next`/`afterNext` are the
+    // caller's actual vertex objects, so validation must not mutate them.
+    const edge = vector2Subtract(vector2Clone(next), current);
+    const nextEdge = vector2Subtract(vector2Clone(afterNext), next);
 
-    if (edge.cross(nextEdge) < -EPSILON) {
+    if (vector2Cross(edge, nextEdge) < -EPSILON) {
       throw new Error('PolygonCollider vertices must form a convex polygon.');
     }
   }
@@ -36,7 +47,7 @@ function validateConvexity(vertices: readonly Vector2[]): void {
  */
 export class PolygonCollider extends Collider {
   public readonly type = 'polygon';
-  public offset: Vector2 = Vector2.zero;
+  public offset: Vector2 = vector2Zero();
   public readonly vertices: readonly Vector2[];
   public readonly normals: readonly Vector2[];
 
@@ -73,8 +84,10 @@ export class PolygonCollider extends Collider {
     validateConvexity(orderedVertices);
 
     const centroid = calculateCentroid(orderedVertices);
+    // Clone before subtracting: `orderedVertices` holds the same vertex
+    // objects the caller passed in, so this must not mutate them.
     const centeredVertices = orderedVertices.map((vertex) =>
-      vertex.subtract(centroid),
+      vector2Subtract(vector2Clone(vertex), centroid),
     );
 
     const mass = density * calculateArea(centeredVertices);
@@ -96,8 +109,13 @@ export class PolygonCollider extends Collider {
    * @returns The world-space vertices of the polygon.
    */
   public getWorldVertices(position: Vector2, rotation: number): Vector2[] {
+    // Clone before transforming: `this.vertices` is reused every call, so
+    // this must not mutate the collider's own stored vertices.
     return this.vertices.map((vertex) =>
-      vertex.add(this.offset).rotate(rotation).add(position),
+      vector2Add(
+        vector2Rotate(vector2Add(vector2Clone(vertex), this.offset), rotation),
+        position,
+      ),
     );
   }
 
@@ -107,7 +125,11 @@ export class PolygonCollider extends Collider {
    * @returns The world-space face normals of the polygon.
    */
   public getWorldNormals(rotation: number): Vector2[] {
-    return this.normals.map((normal) => normal.rotate(rotation));
+    // Clone before rotating: `this.normals` is reused every call, so this
+    // must not mutate the collider's own stored normals.
+    return this.normals.map((normal) =>
+      vector2Rotate(vector2Clone(normal), rotation),
+    );
   }
 
   public computeAabb(position: Vector2, rotation: number): Aabb {
@@ -126,8 +148,8 @@ export class PolygonCollider extends Collider {
     }
 
     return {
-      min: new Vector2(minX, minY),
-      max: new Vector2(maxX, maxY),
+      min: createVector2(minX, minY),
+      max: createVector2(maxX, maxY),
     };
   }
 }

@@ -1,4 +1,12 @@
-import type { Vector2 } from '../../math/index.js';
+import {
+  type Vector2,
+  vector2Clone,
+  vector2DistanceTo,
+  vector2Dot,
+  vector2Multiply,
+  vector2Normalize,
+  vector2Subtract,
+} from '../../math/index.js';
 
 const EPSILON = 1e-9;
 
@@ -65,7 +73,12 @@ export function findClosestFace(
   let faceIndex = 0;
 
   for (let i = 0; i < vertices.length; i++) {
-    const faceSeparation = normals[i].dot(localCenter.subtract(vertices[i]));
+    // Clone before subtracting: `localCenter` is reused on every iteration,
+    // and `vertices[i]` is the polygon's own stored local vertex.
+    const faceSeparation = vector2Dot(
+      normals[i],
+      vector2Subtract(vector2Clone(localCenter), vertices[i]),
+    );
 
     if (faceSeparation > radius) {
       return null;
@@ -86,9 +99,15 @@ function faceContact(
   separation: number,
   radius: number,
 ): CircleContact {
+  // `normal` is the polygon's own stored local normal, and the caller
+  // further rotates/negates the returned `localNormal` - both must be
+  // independent clones, not the collider's stored vector.
   return {
-    localNormal: normal,
-    localContactPoint: localCenter.subtract(normal.multiply(separation)),
+    localNormal: vector2Clone(normal),
+    localContactPoint: vector2Subtract(
+      vector2Clone(localCenter),
+      vector2Multiply(vector2Clone(normal), separation),
+    ),
     depth: radius - separation,
   };
 }
@@ -98,15 +117,20 @@ function vertexContact(
   vertex: Vector2,
   radius: number,
 ): CircleContact | null {
-  const distance = localCenter.distanceTo(vertex);
+  const distance = vector2DistanceTo(localCenter, vertex);
 
   if (distance > radius) {
     return null;
   }
 
+  // `vertex` is the polygon's own stored local vertex, and the caller
+  // further rotates/translates the returned `localContactPoint` - it must
+  // be an independent clone, not the collider's stored vector.
   return {
-    localNormal: localCenter.subtract(vertex).normalize(),
-    localContactPoint: vertex,
+    localNormal: vector2Normalize(
+      vector2Subtract(vector2Clone(localCenter), vertex),
+    ),
+    localContactPoint: vector2Clone(vertex),
     depth: radius - distance,
   };
 }
@@ -140,13 +164,22 @@ export function findCircleContact(
 
   const v1 = vertices[faceIndex];
   const v2 = vertices[(faceIndex + 1) % vertices.length];
-  const u1 = localCenter.subtract(v1).dot(v2.subtract(v1));
+
+  // Clone before subtracting throughout: `localCenter` is reused below, and
+  // `v1`/`v2` are the polygon's own stored local vertices.
+  const u1 = vector2Dot(
+    vector2Subtract(vector2Clone(localCenter), v1),
+    vector2Subtract(vector2Clone(v2), v1),
+  );
 
   if (u1 <= 0) {
     return vertexContact(localCenter, v1, radius);
   }
 
-  const u2 = localCenter.subtract(v2).dot(v1.subtract(v2));
+  const u2 = vector2Dot(
+    vector2Subtract(vector2Clone(localCenter), v2),
+    vector2Subtract(vector2Clone(v1), v2),
+  );
 
   if (u2 <= 0) {
     return vertexContact(localCenter, v2, radius);

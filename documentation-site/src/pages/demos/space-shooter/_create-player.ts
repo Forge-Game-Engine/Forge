@@ -13,7 +13,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -108,8 +108,8 @@ export function spawnPlayer(
 
   addSpriteComponent(world, playerEntity, playerSprite);
   addPositionComponent(world, playerEntity, {
-    local: new Vector2(playerX, playerY),
-    world: new Vector2(playerX, playerY),
+    local: createVector2(playerX, playerY),
+    world: createVector2(playerX, playerY),
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
@@ -120,8 +120,8 @@ export function spawnPlayer(
   });
 
   addScaleComponent(world, playerEntity, {
-    local: new Vector2(playerScale, playerScale),
-    world: new Vector2(playerScale, playerScale),
+    local: createVector2(playerScale, playerScale),
+    world: createVector2(playerScale, playerScale),
   });
 
   addRotationComponent(world, playerEntity, {

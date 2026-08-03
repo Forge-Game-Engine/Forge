@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { addSpriteComponent, spriteId } from './sprite-component.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vector2 } from '../../math/index.js';
+import { createVector2, vector2One, vector2Zero } from '../../math/index.js';
 import { Color } from '../color.js';
 import { Geometry } from '../geometry/geometry.js';
 import { Material } from '../materials/material.js';
@@ -29,10 +29,10 @@ describe('addSpriteComponent', () => {
       width: 32,
       height: 32,
       renderable,
-      pivot: new Vector2(0.5, 0.5),
+      pivot: createVector2(0.5, 0.5),
       tintColor: Color.white,
-      uvOffset: Vector2.zero,
-      uvScale: Vector2.one,
+      uvOffset: vector2Zero(),
+      uvScale: vector2One(),
       enabled: true,
       layer: 0,
     });

@@ -8,7 +8,13 @@ import {
   ScaleEcsComponent,
   scaleId,
 } from '../../common/index.js';
-import { Matrix3x3, Vector2 } from '../../math/index.js';
+import {
+  createVector2,
+  Matrix3x3,
+  vector2Add,
+  vector2Clone,
+  vector2Rotate,
+} from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
@@ -86,8 +92,6 @@ const includeBatch = (
   setupInstanceAttributesAndDraw(renderContext, renderable, batchLength);
 };
 
-const centeredPivot = new Vector2(0.5, 0.5);
-
 const pushSpriteRenderCommands = (
   commands: RenderCommand[],
   spriteComponent: SpriteEcsComponent,
@@ -132,21 +136,27 @@ const pushSpriteRenderCommands = (
     (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
   for (const region of regions) {
-    const regionOffset = new Vector2(
-      region.offset.x * scaleX,
-      region.offset.y * scaleY,
-    ).rotate(rotationRadians);
+    const regionOffset = vector2Rotate(
+      createVector2(region.offset.x * scaleX, region.offset.y * scaleY),
+      rotationRadians,
+    );
 
     const regionPosition: PositionEcsComponent = {
       local: entityPosition.local,
-      world: entityPosition.world.add(regionOffset),
+      // Clone before adding: `entityPosition.world` is the entity's live
+      // world position, so building a region's offset position must not
+      // mutate it.
+      world: vector2Add(vector2Clone(entityPosition.world), regionOffset),
     };
 
     const regionSprite: SpriteEcsComponent = {
       ...spriteComponent,
       width: region.size.x,
       height: region.size.y,
-      pivot: centeredPivot,
+      // A fresh vector per region, not a shared constant: `pivot` may be
+      // mutated in place downstream (e.g. by the sprite animation system),
+      // and this object is unique to `regionSprite`.
+      pivot: createVector2(0.5, 0.5),
       uvOffset: region.uvOffset,
       uvScale: region.uvScale,
     };

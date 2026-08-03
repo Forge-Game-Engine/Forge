@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { applyTorque } from './apply-torque.js';
 import { RigidBodyEcsComponent } from './components/index.js';
-import { Vector2 } from '../math/index.js';
+import { vector2Zero } from '../math/index.js';
 
 describe('applyTorque', () => {
   it('should change angularVelocity by torque * deltaTime / momentOfInertia', () => {
     const rigidBody: RigidBodyEcsComponent = {
       mass: 1,
       momentOfInertia: 2,
-      velocity: Vector2.zero,
+      velocity: vector2Zero(),
       angularVelocity: 0,
       angularDrag: 0,
     };
@@ -22,7 +22,7 @@ describe('applyTorque', () => {
     const rigidBody: RigidBodyEcsComponent = {
       mass: 1,
       momentOfInertia: 1,
-      velocity: Vector2.zero,
+      velocity: vector2Zero(),
       angularVelocity: 2,
       angularDrag: 0,
     };

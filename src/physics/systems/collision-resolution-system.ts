@@ -1,7 +1,17 @@
 import { positionId, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import {
+  Vector2,
+  vector2Add,
+  vector2Clone,
+  vector2Cross,
+  vector2Dot,
+  vector2Multiply,
+  vector2Negate,
+  vector2Perpendicular,
+  vector2Subtract,
+} from '../../math/index.js';
 import {
   ColliderEcsComponent,
   colliderId,
@@ -187,7 +197,9 @@ function buildContactConstraints(
   const nextConstraints: ContactConstraint[] = [];
 
   for (const manifold of manifolds) {
-    const tangent = manifold.normal.perpendicular();
+    // Clone before computing the perpendicular: `manifold.normal` is stored
+    // (aliased) onto the constraint below, so this must not mutate it.
+    const tangent = vector2Perpendicular(vector2Clone(manifold.normal));
 
     for (let i = 0; i < manifold.contactPoints.length; i++) {
       const point = manifold.contactPoints[i];
@@ -263,13 +275,17 @@ function prepareContact(
   const invInertiaA = rigidBodyA ? 1 / rigidBodyA.momentOfInertia : 0;
   const invInertiaB = rigidBodyB ? 1 / rigidBodyB.momentOfInertia : 0;
 
-  const rA = constraint.point.subtract(positionA.world);
-  const rB = constraint.point.subtract(positionB.world);
+  // Clone before subtracting: `constraint.point` is used for both `rA` and
+  // `rB` here, and `positionA.world`/`positionB.world` are the entities'
+  // live world position.
+  const rA = vector2Subtract(vector2Clone(constraint.point), positionA.world);
+  const rB = vector2Subtract(vector2Clone(constraint.point), positionB.world);
 
-  const relativeVelocity = velocityAtPoint(rigidBodyB, rB).subtract(
+  const relativeVelocity = vector2Subtract(
+    velocityAtPoint(rigidBodyB, rB),
     velocityAtPoint(rigidBodyA, rA),
   );
-  constraint.relativeVelocity = constraint.normal.dot(relativeVelocity);
+  constraint.relativeVelocity = vector2Dot(constraint.normal, relativeVelocity);
 
   return {
     constraint,
@@ -302,11 +318,26 @@ function warmStart(contact: ActiveContact): void {
     rB,
   } = contact;
 
-  const impulse = constraint.normal
-    .multiply(constraint.accumulatedNormalImpulse)
-    .add(constraint.tangent.multiply(constraint.accumulatedTangentImpulse));
+  // Clone before scaling: `constraint.normal`/`constraint.tangent` persist
+  // across the whole tick (read again by every solve iteration below).
+  const impulse = vector2Add(
+    vector2Multiply(
+      vector2Clone(constraint.normal),
+      constraint.accumulatedNormalImpulse,
+    ),
+    vector2Multiply(
+      vector2Clone(constraint.tangent),
+      constraint.accumulatedTangentImpulse,
+    ),
+  );
 
-  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(
+    rigidBodyA,
+    rA,
+    invMassA,
+    invInertiaA,
+    vector2Negate(vector2Clone(impulse)),
+  );
   applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
@@ -327,8 +358,8 @@ function solveNormal(
     rB,
   } = contact;
 
-  const rnA = rA.cross(constraint.normal);
-  const rnB = rB.cross(constraint.normal);
+  const rnA = vector2Cross(rA, constraint.normal);
+  const rnB = vector2Cross(rB, constraint.normal);
   const effectiveMass =
     invMassA + invMassB + rnA * rnA * invInertiaA + rnB * rnB * invInertiaB;
 
@@ -336,10 +367,11 @@ function solveNormal(
     return;
   }
 
-  const relativeVelocity = velocityAtPoint(rigidBodyB, rB).subtract(
+  const relativeVelocity = vector2Subtract(
+    velocityAtPoint(rigidBodyB, rB),
     velocityAtPoint(rigidBodyA, rA),
   );
-  const normalVelocity = constraint.normal.dot(relativeVelocity);
+  const normalVelocity = vector2Dot(constraint.normal, relativeVelocity);
 
   const maxHertz = 0.25 / dt;
   const soft = getSoftConstraintParams(
@@ -361,9 +393,17 @@ function solveNormal(
   lambda = newAccumulatedImpulse - constraint.accumulatedNormalImpulse;
   constraint.accumulatedNormalImpulse = newAccumulatedImpulse;
 
-  const impulse = constraint.normal.multiply(lambda);
+  // Clone before scaling: `constraint.normal` persists across the whole
+  // tick, read again by every remaining solve iteration.
+  const impulse = vector2Multiply(vector2Clone(constraint.normal), lambda);
 
-  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(
+    rigidBodyA,
+    rA,
+    invMassA,
+    invInertiaA,
+    vector2Negate(vector2Clone(impulse)),
+  );
   applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
@@ -384,8 +424,8 @@ function solveFriction(contact: ActiveContact): void {
     return;
   }
 
-  const rtA = rA.cross(constraint.tangent);
-  const rtB = rB.cross(constraint.tangent);
+  const rtA = vector2Cross(rA, constraint.tangent);
+  const rtB = vector2Cross(rB, constraint.tangent);
   const effectiveMass =
     invMassA + invMassB + rtA * rtA * invInertiaA + rtB * rtB * invInertiaB;
 
@@ -393,10 +433,11 @@ function solveFriction(contact: ActiveContact): void {
     return;
   }
 
-  const relativeVelocity = velocityAtPoint(rigidBodyB, rB).subtract(
+  const relativeVelocity = vector2Subtract(
+    velocityAtPoint(rigidBodyB, rB),
     velocityAtPoint(rigidBodyA, rA),
   );
-  const tangentVelocity = constraint.tangent.dot(relativeVelocity);
+  const tangentVelocity = vector2Dot(constraint.tangent, relativeVelocity);
 
   let lambda = -tangentVelocity / effectiveMass;
 
@@ -408,9 +449,17 @@ function solveFriction(contact: ActiveContact): void {
   lambda = newAccumulatedImpulse - constraint.accumulatedTangentImpulse;
   constraint.accumulatedTangentImpulse = newAccumulatedImpulse;
 
-  const impulse = constraint.tangent.multiply(lambda);
+  // Clone before scaling: `constraint.tangent` persists across the whole
+  // tick, read again by every remaining solve iteration.
+  const impulse = vector2Multiply(vector2Clone(constraint.tangent), lambda);
 
-  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(
+    rigidBodyA,
+    rA,
+    invMassA,
+    invInertiaA,
+    vector2Negate(vector2Clone(impulse)),
+  );
   applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }
 
@@ -444,8 +493,8 @@ function applyRestitution(
     return;
   }
 
-  const rnA = rA.cross(constraint.normal);
-  const rnB = rB.cross(constraint.normal);
+  const rnA = vector2Cross(rA, constraint.normal);
+  const rnB = vector2Cross(rB, constraint.normal);
   const effectiveMass =
     invMassA + invMassB + rnA * rnA * invInertiaA + rnB * rnB * invInertiaB;
 
@@ -453,10 +502,11 @@ function applyRestitution(
     return;
   }
 
-  const relativeVelocity = velocityAtPoint(rigidBodyB, rB).subtract(
+  const relativeVelocity = vector2Subtract(
+    velocityAtPoint(rigidBodyB, rB),
     velocityAtPoint(rigidBodyA, rA),
   );
-  const normalVelocity = constraint.normal.dot(relativeVelocity);
+  const normalVelocity = vector2Dot(constraint.normal, relativeVelocity);
 
   const lambda =
     -(normalVelocity + constraint.restitution * constraint.relativeVelocity) /
@@ -466,8 +516,16 @@ function applyRestitution(
     return;
   }
 
-  const impulse = constraint.normal.multiply(lambda);
+  // Clone before scaling: `constraint.normal` persists across the whole
+  // tick.
+  const impulse = vector2Multiply(vector2Clone(constraint.normal), lambda);
 
-  applyPointImpulse(rigidBodyA, rA, invMassA, invInertiaA, impulse.negate());
+  applyPointImpulse(
+    rigidBodyA,
+    rA,
+    invMassA,
+    invInertiaA,
+    vector2Negate(vector2Clone(impulse)),
+  );
   applyPointImpulse(rigidBodyB, rB, invMassB, invInertiaB, impulse);
 }

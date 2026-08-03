@@ -13,6 +13,7 @@ import {
   createRenderContext,
   createRenderEcsSystem,
   createTransformEcsSystem,
+  createVector2,
   EcsWorld,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
@@ -24,7 +25,7 @@ import {
   registerInputs,
   spriteId,
   Time,
-  Vector2,
+  vector2Clone,
 } from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
@@ -180,14 +181,14 @@ export const createScene: CreateScene = async (
   for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
     for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {
       const cellEntity = world.createEntity();
-      const cellPosition = new Vector2(
+      const cellPosition = createVector2(
         gridX * cellSpacing,
         gridY * cellSpacing,
       );
 
       world.addComponent(cellEntity, positionId, {
-        world: cellPosition.clone(),
-        local: cellPosition.clone(),
+        world: vector2Clone(cellPosition),
+        local: vector2Clone(cellPosition),
       });
 
       world.addComponent(cellEntity, spriteId, {

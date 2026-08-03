@@ -1,4 +1,4 @@
-import { Vector2 } from '../math/index.js';
+import { createVector2, Vector2, vector2Clone } from '../math/index.js';
 import { Color } from './color.js';
 import { Renderable } from './renderable.js';
 
@@ -26,7 +26,7 @@ export type SpriteOptions = {
  * Default options for creating a `Sprite`.
  */
 const defaultOptions = {
-  pivot: new Vector2(0.5, 0.5),
+  pivot: createVector2(0.5, 0.5),
   tintColor: Color.white,
 };
 
@@ -59,7 +59,7 @@ export class Sprite {
       ...options,
     };
 
-    this.pivot = pivot.clone();
+    this.pivot = vector2Clone(pivot);
 
     this.tintColor = tintColor;
     this.width = width;

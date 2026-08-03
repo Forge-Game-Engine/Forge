@@ -12,7 +12,7 @@ hills, a canyon profile, or any left-to-right surface with more than one
 slope.
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -24,11 +24,11 @@ const groundEntity = world.createEntity();
 addColliderComponent(world, groundEntity, {
   collider: new TerrainCollider(
     [
-      new Vector2(-400, 40),
-      new Vector2(-200, -20),
-      new Vector2(0, 0),
-      new Vector2(200, -60),
-      new Vector2(400, 20),
+      createVector2(-400, 40),
+      createVector2(-200, -20),
+      createVector2(0, 0),
+      createVector2(200, -60),
+      createVector2(400, 20),
     ],
     200, // depth: how far the solid slab extends below the lowest point
   ),
@@ -50,7 +50,7 @@ for that static-vs-dynamic distinction.
 **not** re-center vertices around their centroid: `points` are used exactly
 as authored, in the collider's own local space, so the easiest way to work
 with terrain is to author points directly in world coordinates and leave the
-owning entity's `PositionEcsComponent` at `Vector2.zero`.
+owning entity's `PositionEcsComponent` at `vector2Zero()`.
 
 `depth` sets how far the solid slab extends below the lowest of `points`,
 closing the heightmap into a shape with well-defined area/collision volume.
@@ -104,16 +104,16 @@ Catmull-Rom spline through the control points (converted to an equivalent
 sequence of cubic Beziers under the hood), densely sampled into a polyline.
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import { buildTerrainCurve } from '@forge-game-engine/forge/rendering';
 
 const curvePoints = buildTerrainCurve(
   [
-    new Vector2(-400, 40),
-    new Vector2(-200, -20),
-    new Vector2(0, 0),
-    new Vector2(200, -60),
-    new Vector2(400, 20),
+    createVector2(-400, 40),
+    createVector2(-200, -20),
+    createVector2(0, 0),
+    createVector2(200, -60),
+    createVector2(400, 20),
   ],
   20, // samplesPerSegment: how many points to sample between each pair of control points
 );
@@ -142,6 +142,7 @@ into a "fill" texture below it, over a configurable depth and blend width,
 each with its own tile size and tint.
 
 ```ts
+import { createVector2, vector2Zero } from '@forge-game-engine/forge/math';
 import { Color, createTerrainMesh } from '@forge-game-engine/forge/rendering';
 
 const borderImage = await renderContext.imageCache.getOrLoad('grass.png');
@@ -150,16 +151,16 @@ const fillImage = await renderContext.imageCache.getOrLoad('dirt.png');
 const mesh = createTerrainMesh(renderContext, {
   curvePoints,
   depth: 200, // must match the TerrainCollider's depth
-  position: Vector2.zero, // must match the entity's PositionEcsComponent
+  position: vector2Zero(), // must match the entity's PositionEcsComponent
   angle: 0, // must match the entity's RotationEcsComponent
   border: {
     image: borderImage,
-    tileSize: new Vector2(160, 70),
+    tileSize: createVector2(160, 70),
     tint: Color.white,
   },
   fill: {
     image: fillImage,
-    tileSize: new Vector2(90, 90),
+    tileSize: createVector2(90, 90),
     tint: Color.white,
   },
   borderWidth: 40,

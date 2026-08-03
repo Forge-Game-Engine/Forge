@@ -4,7 +4,11 @@ import {
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
   addRigidBodyComponent,
@@ -47,10 +51,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    createVector2(-halfWidth, -halfHeight),
+    createVector2(halfWidth, -halfHeight),
+    createVector2(halfWidth, halfHeight),
+    createVector2(-halfWidth, halfHeight),
   ];
 }
 
@@ -73,8 +77,8 @@ async function createFlywheelEntity(
   );
 
   addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: vector2Clone(position),
+    local: vector2Clone(position),
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, {

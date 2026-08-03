@@ -1,6 +1,16 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import {
+  vector2Add,
+  vector2Clone,
+  vector2Divide,
+  vector2Magnitude,
+  vector2Multiply,
+  vector2Negate,
+  vector2Rotate,
+  vector2Subtract,
+} from '../../math/index.js';
+import {
   LinearSpringEcsComponent,
   linearSpringId,
 } from '../components/linear-spring-component.js';
@@ -38,29 +48,41 @@ export const createLinearSpringEcsSystem = (
         continue;
       }
 
-      const rA = spring.localAnchorA.rotate(bodyA.rotation);
-      const rB = spring.localAnchorB.rotate(bodyB.rotation);
+      // Clone before rotating: `spring.localAnchorA`/`localAnchorB` are
+      // persistent component fields reused every tick.
+      const rA = vector2Rotate(
+        vector2Clone(spring.localAnchorA),
+        bodyA.rotation,
+      );
+      const rB = vector2Rotate(
+        vector2Clone(spring.localAnchorB),
+        bodyB.rotation,
+      );
 
-      const worldAnchorA = bodyA.position.add(rA);
-      const worldAnchorB = bodyB.position.add(rB);
+      // Clone before adding: `bodyA.position`/`bodyB.position` are the
+      // entities' live world position.
+      const worldAnchorA = vector2Add(vector2Clone(bodyA.position), rA);
+      const worldAnchorB = vector2Add(vector2Clone(bodyB.position), rB);
 
-      const delta = worldAnchorB.subtract(worldAnchorA);
-      const length = delta.magnitude();
+      const delta = vector2Subtract(worldAnchorB, worldAnchorA);
+      const length = vector2Magnitude(delta);
 
       if (length < minAnchorDistance) {
         continue;
       }
 
-      const direction = delta.divide(length);
+      const direction = vector2Divide(delta, length);
       const forceMagnitude = -spring.stiffness * (length - spring.restLength);
-      const impulse = direction.multiply(forceMagnitude * dt);
+      const impulse = vector2Multiply(direction, forceMagnitude * dt);
 
+      // Negate a clone for bodyA: `impulse` is still needed unmodified for
+      // bodyB's (opposite-signed) impulse right after.
       applyPointImpulse(
         bodyA.rigidBody,
         rA,
         bodyA.invMass,
         bodyA.invInertia,
-        impulse.negate(),
+        vector2Negate(vector2Clone(impulse)),
       );
       applyPointImpulse(
         bodyB.rigidBody,

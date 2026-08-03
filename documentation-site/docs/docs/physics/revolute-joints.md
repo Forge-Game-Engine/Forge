@@ -11,7 +11,7 @@ relative to each other. Use it for anything that swings around a fixed
 pivot: doors, pendulums, wheels, and other hinging mechanisms.
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import { addRevoluteJointComponent } from '@forge-game-engine/forge/physics';
 
 // hinge and door are entities with their own PositionEcsComponent and
@@ -23,7 +23,7 @@ const jointEntity = world.createEntity();
 addRevoluteJointComponent(world, jointEntity, {
   entityA: hinge,
   entityB: door,
-  localAnchorB: new Vector2(-60, 0),
+  localAnchorB: createVector2(-60, 0),
   enableLimit: true,
   lowerAngle: 0,
   upperAngle: Math.PI / 2,
@@ -96,7 +96,7 @@ Add a `RevoluteJointEcsComponent` to a dedicated joint entity (not
 register `createRevoluteJointEcsSystem(time)`:
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import {
   addRevoluteJointComponent,
   createRevoluteJointEcsSystem,
@@ -107,7 +107,7 @@ const jointEntity = world.createEntity();
 addRevoluteJointComponent(world, jointEntity, {
   entityA: hinge,
   entityB: door,
-  localAnchorB: new Vector2(-60, 0),
+  localAnchorB: createVector2(-60, 0),
 });
 
 // Must run after whatever system resolves collisions

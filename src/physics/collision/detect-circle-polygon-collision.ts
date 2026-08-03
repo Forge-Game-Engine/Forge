@@ -1,3 +1,10 @@
+import {
+  vector2Add,
+  vector2Clone,
+  vector2Negate,
+  vector2Rotate,
+  vector2Subtract,
+} from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
@@ -25,10 +32,15 @@ export function detectCirclePolygonCollision(
   const { radius } = circleCollider;
   const { vertices, normals } = polygonCollider;
 
-  const localCenter = circleBody.position
-    .add(circleCollider.offset)
-    .subtract(polygonBody.position)
-    .rotate(-polygonBody.rotation);
+  // Clone before adding: `circleBody.position` is the entity's live world
+  // position, so this must not mutate it.
+  const localCenter = vector2Rotate(
+    vector2Subtract(
+      vector2Add(vector2Clone(circleBody.position), circleCollider.offset),
+      polygonBody.position,
+    ),
+    -polygonBody.rotation,
+  );
 
   const closestFace = findClosestFace(vertices, normals, localCenter, radius);
 
@@ -49,10 +61,16 @@ export function detectCirclePolygonCollision(
     return null;
   }
 
-  const normal = contact.localNormal.rotate(polygonBody.rotation).negate();
-  const contactPoint = contact.localContactPoint
-    .rotate(polygonBody.rotation)
-    .add(polygonBody.position);
+  // `contact.localNormal`/`contact.localContactPoint` are always fresh
+  // clones (see circle-polygon-contact.ts), so mutating them in place here
+  // is safe.
+  const normal = vector2Negate(
+    vector2Rotate(contact.localNormal, polygonBody.rotation),
+  );
+  const contactPoint = vector2Add(
+    vector2Rotate(contact.localContactPoint, polygonBody.rotation),
+    polygonBody.position,
+  );
 
   return {
     normal,

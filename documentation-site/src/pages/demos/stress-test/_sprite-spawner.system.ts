@@ -5,7 +5,11 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Random,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
   SpriteSpawnerEcsComponent,
@@ -32,7 +36,7 @@ export const createSpriteSpawnerEcsSystem = (
       spawner.nextSpawnTime = time.timeInSeconds + spawner.timeBetweenBatches;
 
       for (let i = 0; i < spawner.batchSize; i++) {
-        const position = new Vector2(
+        const position = createVector2(
           random.randomFloat(spawner.minX, spawner.maxX),
           random.randomFloat(spawner.minY, spawner.maxY),
         );
@@ -40,15 +44,15 @@ export const createSpriteSpawnerEcsSystem = (
         const entity = world.createEntity();
 
         addPositionComponent(world, entity, {
-          local: position.clone(),
-          world: position.clone(),
+          local: vector2Clone(position),
+          world: vector2Clone(position),
         });
 
         addRotationComponent(world, entity);
 
         addScaleComponent(world, entity, {
-          local: new Vector2(spawner.spriteScale, spawner.spriteScale),
-          world: new Vector2(spawner.spriteScale, spawner.spriteScale),
+          local: createVector2(spawner.spriteScale, spawner.spriteScale),
+          world: createVector2(spawner.spriteScale, spawner.spriteScale),
         });
 
         addSpriteComponent(world, entity, spawner.sprite);

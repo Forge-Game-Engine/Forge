@@ -1,4 +1,10 @@
-import { Vector2 } from '../../math/index.js';
+import {
+  Vector2,
+  vector2Add,
+  vector2Clone,
+  vector2Multiply,
+  vector2Subtract,
+} from '../../math/index.js';
 
 /**
  * Converts a position from world space to screen space.
@@ -18,9 +24,17 @@ export const worldToScreenSpace = (
   canvasCenter: Vector2,
   pixelsPerUnit: number = 1,
 ): Vector2 => {
-  const relativePosition = worldPosition.subtract(cameraPosition);
-  const zoomedPosition = relativePosition.multiply(cameraZoom * pixelsPerUnit);
-  const screenPosition = zoomedPosition.add(canvasCenter);
+  // Clone before subtracting: `worldPosition` is a caller-supplied vector
+  // (e.g. an entity's live world position), so this must not mutate it.
+  const relativePosition = vector2Subtract(
+    vector2Clone(worldPosition),
+    cameraPosition,
+  );
+  const zoomedPosition = vector2Multiply(
+    relativePosition,
+    cameraZoom * pixelsPerUnit,
+  );
+  const screenPosition = vector2Add(zoomedPosition, canvasCenter);
 
   return screenPosition;
 };

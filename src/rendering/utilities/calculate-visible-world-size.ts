@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { createVector2, Vector2 } from '../../math/index.js';
 
 /**
  * Computes the full width/height, in world units, a camera's view spans at
@@ -26,5 +26,5 @@ export function calculateVisibleWorldSize(
 
   const aspectRatio = canvasWidth / canvasHeight;
 
-  return new Vector2(verticalWorldUnits * aspectRatio, verticalWorldUnits);
+  return createVector2(verticalWorldUnits * aspectRatio, verticalWorldUnits);
 }

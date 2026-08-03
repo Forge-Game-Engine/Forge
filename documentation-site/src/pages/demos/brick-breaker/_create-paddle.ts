@@ -5,7 +5,11 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -29,10 +33,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    createVector2(-halfWidth, -halfHeight),
+    createVector2(halfWidth, -halfHeight),
+    createVector2(halfWidth, halfHeight),
+    createVector2(-halfWidth, halfHeight),
   ];
 }
 
@@ -68,20 +72,20 @@ export async function createPaddle(
     (playAreaWidth * paddleHeightFraction) / paddleSprite.width;
   const paddleHeight = paddleSprite.height * paddleScaleY;
 
-  const position = new Vector2(0, playArea.bottomY + paddleHeightAboveBottom);
+  const position = createVector2(0, playArea.bottomY + paddleHeightAboveBottom);
 
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: position.clone(),
-    world: position.clone(),
+    local: vector2Clone(position),
+    world: vector2Clone(position),
   });
 
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: new Vector2(paddleScaleX, paddleScaleY),
-    world: new Vector2(paddleScaleX, paddleScaleY),
+    local: createVector2(paddleScaleX, paddleScaleY),
+    world: createVector2(paddleScaleX, paddleScaleY),
   });
 
   addSpriteComponent(world, entity, paddleSprite);
@@ -93,9 +97,7 @@ export async function createPaddle(
   });
 
   addColliderComponent(world, entity, {
-    collider: new PolygonCollider(
-      rectangleVertices(paddleWidth, paddleHeight),
-    ),
+    collider: new PolygonCollider(rectangleVertices(paddleWidth, paddleHeight)),
     restitution: 1,
     friction: 0,
   });

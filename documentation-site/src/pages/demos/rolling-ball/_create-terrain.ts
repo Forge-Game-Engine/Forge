@@ -3,7 +3,14 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import { clamp, Random, Vector2 } from '@forge-game-engine/forge/math';
+import {
+  clamp,
+  createVector2,
+  Random,
+  Vector2,
+  vector2Clone,
+  vector2Zero,
+} from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -124,7 +131,7 @@ function buildControlPoints(totalWidth: number): Vector2[] {
     }
 
     previousHeight = height;
-    controlPoints.push(new Vector2(x, height));
+    controlPoints.push(createVector2(x, height));
   }
 
   return controlPoints;
@@ -160,13 +167,13 @@ export async function createTerrain(
   // its surface points (in its own local space), but this demo's gravity
   // pulls bodies toward -y, so the body is flipped to face the right way.
   const angle = Math.PI;
-  const position = Vector2.zero;
+  const position = vector2Zero();
 
   const terrainEntity = world.createEntity();
 
   addPositionComponent(world, terrainEntity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: vector2Clone(position),
+    local: vector2Clone(position),
   });
 
   addRotationComponent(world, terrainEntity, {

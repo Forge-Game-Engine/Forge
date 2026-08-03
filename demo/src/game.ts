@@ -8,6 +8,7 @@ import {
   createGame,
   createImageSprite,
   createRenderEcsSystem,
+  createVector2,
   degreesToRadians,
   EcsSystem,
   EcsWorld,
@@ -16,7 +17,7 @@ import {
   Random,
   SpriteEcsComponent,
   Time,
-  Vector2,
+  vector2Clone,
 } from '../../src';
 import {
   addAabbComponent,
@@ -105,7 +106,7 @@ function createFountainSpawnEcsSystem(
       random.randomFloat(1 - fountainSpeedJitter, 1 + fountainSpeedJitter);
     const horizontalDirection = side === 'left' ? 1 : -1;
 
-    const velocity = new Vector2(
+    const velocity = createVector2(
       Math.cos(angle) * speed * horizontalDirection,
       Math.sin(angle) * speed,
     );
@@ -113,7 +114,7 @@ function createFountainSpawnEcsSystem(
       -template.angularVelocitySpread,
       template.angularVelocitySpread,
     );
-    const position = new Vector2(side === 'left' ? leftX : rightX, fountainY);
+    const position = createVector2(side === 'left' ? leftX : rightX, fountainY);
 
     const sprite = addSpriteComponent(world, entity, template.sprite);
     spritesByEntity.set(entity, sprite);
@@ -212,10 +213,10 @@ function createSquareCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    new Vector2(-half, -half),
-    new Vector2(half, -half),
-    new Vector2(half, half),
-    new Vector2(-half, half),
+    createVector2(-half, -half),
+    createVector2(half, -half),
+    createVector2(half, half),
+    createVector2(-half, half),
   ]);
 }
 
@@ -226,15 +227,15 @@ function createSquareCollider(): PolygonCollider {
  * so the sprite's pivot is moved to match in `trianglePivot`, keeping the
  * rendered triangle aligned with its collider as it rotates.
  */
-const trianglePivot = new Vector2(1 / 3, 2 / 3);
+const trianglePivot = createVector2(1 / 3, 2 / 3);
 
 function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    new Vector2(-half, half),
-    new Vector2(-half, -half),
-    new Vector2(half, -half),
+    createVector2(-half, half),
+    createVector2(-half, -half),
+    createVector2(half, -half),
   ]);
 }
 
@@ -251,22 +252,22 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
 ]);
 
 const ballSprite = createImageSprite(ballImage, renderContext, renderLayer, {
-  frameDimensions: new Vector2(shapeSize, shapeSize),
+  frameDimensions: createVector2(shapeSize, shapeSize),
 });
 const squareSprite = createImageSprite(
   squareImage,
   renderContext,
   renderLayer,
-  { frameDimensions: new Vector2(shapeSize, shapeSize) },
+  { frameDimensions: createVector2(shapeSize, shapeSize) },
 );
 const triangleSprite = createImageSprite(
   triangleImage,
   renderContext,
   renderLayer,
-  { frameDimensions: new Vector2(shapeSize, shapeSize) },
+  { frameDimensions: createVector2(shapeSize, shapeSize) },
 );
 
-triangleSprite.pivot = trianglePivot.clone();
+triangleSprite.pivot = vector2Clone(trianglePivot);
 
 const shapeTemplates: ShapeTemplate[] = [
   {
@@ -297,7 +298,7 @@ const halfHeight = visibleHeight / 2;
 const spritesByEntity = new Map<number, SpriteEcsComponent>();
 
 const groundEntity = world.createEntity();
-const groundPosition = new Vector2(0, -halfHeight + groundThickness / 2);
+const groundPosition = createVector2(0, -halfHeight + groundThickness / 2);
 const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
 const groundTopY = groundPosition.y + groundHalfHeight;
@@ -311,10 +312,10 @@ addSpriteComponent(world, groundEntity, {
 });
 addColliderComponent(world, groundEntity, {
   collider: new PolygonCollider([
-    new Vector2(-groundHalfWidth, -groundHalfHeight),
-    new Vector2(groundHalfWidth, -groundHalfHeight),
-    new Vector2(groundHalfWidth, groundHalfHeight),
-    new Vector2(-groundHalfWidth, groundHalfHeight),
+    createVector2(-groundHalfWidth, -groundHalfHeight),
+    createVector2(groundHalfWidth, -groundHalfHeight),
+    createVector2(groundHalfWidth, groundHalfHeight),
+    createVector2(-groundHalfWidth, groundHalfHeight),
   ]),
 });
 addAabbComponent(world, groundEntity);

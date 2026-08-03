@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vector2, vector2Add, vector2Clone } from '../../math/index.js';
 
 /**
  * Converts a position from canvas space to world space.
@@ -10,4 +10,4 @@ import { Vector2 } from '../../math/index.js';
 export const canvasToWorldSpace = (
   canvasPosition: Vector2,
   worldCenter: Vector2,
-): Vector2 => canvasPosition.add(worldCenter);
+): Vector2 => vector2Add(vector2Clone(canvasPosition), worldCenter);

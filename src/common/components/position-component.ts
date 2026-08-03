@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vector2, vector2Zero } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
@@ -44,8 +44,8 @@ export function addPositionComponent(
   // `local`/`world` default to fresh Vector2 instances per call (rather
   // than a shared module-level default) since systems mutate them in place.
   const defaultPositionOptions: PositionDefaultedOptions = {
-    local: Vector2.zero,
-    world: Vector2.zero,
+    local: vector2Zero(),
+    world: vector2Zero(),
   };
 
   const component: PositionEcsComponent = {

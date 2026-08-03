@@ -1,6 +1,11 @@
 import { positionId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+  vector2Zero,
+} from '@forge-game-engine/forge/math';
 import { TriggerAction } from '@forge-game-engine/forge/input';
 import {
   applyImpulse,
@@ -71,7 +76,7 @@ export const createJumpEcsSystem = (
 
     if (jumpInput.isTriggered && isGrounded) {
       applyImpulse(
-        new Vector2(0, jumpImpulse),
+        createVector2(0, jumpImpulse),
         position.world,
         position.world,
         rigidBody,
@@ -81,9 +86,9 @@ export const createJumpEcsSystem = (
     // Gravity pulls toward -y in this demo (see `_create-game.ts`), so
     // "fallen too far" means the ball's y has dropped well below spawn.
     if (position.world.y < spawnPosition.y - respawnFallDistance) {
-      position.world = spawnPosition.clone();
-      position.local = spawnPosition.clone();
-      rigidBody.velocity = Vector2.zero;
+      position.world = vector2Clone(spawnPosition);
+      position.local = vector2Clone(spawnPosition);
+      rigidBody.velocity = vector2Zero();
       rigidBody.angularVelocity = 0;
     }
   },

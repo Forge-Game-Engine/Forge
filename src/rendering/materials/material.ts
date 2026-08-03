@@ -1,7 +1,27 @@
-import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
+import {
+  Matrix3x3,
+  Vector2,
+  vector2ToFloat32Array,
+  Vector3,
+  vector3ToFloat32Array,
+} from '../../math/index.js';
 import { assertNever } from '../../utilities/index.js';
 import type { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
+
+/**
+ * Distinguishes a `Vector2` uniform value from the rest of `UniformValue`'s
+ * members. `Vector2` is a plain `{ x, y }` object rather than a class, so it
+ * can't be told apart with `instanceof` the way `Matrix3x3` can.
+ */
+function isVector2(value: UniformValue): value is Vector2 {
+  return (
+    typeof value === 'object' &&
+    !(value instanceof Matrix3x3) &&
+    'x' in value &&
+    'y' in value
+  );
+}
 
 export type UniformValue =
   | number
@@ -100,8 +120,12 @@ export class Material {
         continue;
       }
 
-      if (value instanceof Vector2) {
-        this._setUniformFloat32Array(gl, location, value.toFloat32Array());
+      if (isVector2(value)) {
+        this._setUniformFloat32Array(
+          gl,
+          location,
+          vector2ToFloat32Array(value),
+        );
 
         continue;
       }
@@ -134,7 +158,12 @@ export class Material {
    * Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
    */
   public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
-    this.setUniform(name, vector.toFloat32Array());
+    this.setUniform(
+      name,
+      'z' in vector
+        ? vector3ToFloat32Array(vector)
+        : vector2ToFloat32Array(vector),
+    );
   }
 
   private _bindTexture(

@@ -1,6 +1,13 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Color, Renderable, Vector2 } from '../../index.js';
+import {
+  Color,
+  createVector2,
+  Renderable,
+  Vector2,
+  vector2One,
+  vector2Zero,
+} from '../../index.js';
 import { NineSliceOptions } from '../nine-slice-options.js';
 
 /**
@@ -116,10 +123,10 @@ export function addSpriteComponent(
   // module-init time (this file sits in a circular import cycle through
   // `../../index.js`).
   const defaultSpriteOptions: SpriteDefaultedOptions = {
-    pivot: new Vector2(0.5, 0.5),
+    pivot: createVector2(0.5, 0.5),
     tintColor: Color.white,
-    uvOffset: Vector2.zero,
-    uvScale: Vector2.one,
+    uvOffset: vector2Zero(),
+    uvScale: vector2One(),
     enabled: true,
     layer: 0,
   };

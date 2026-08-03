@@ -1,5 +1,10 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { positionId, rotationId, Time } from '@forge-game-engine/forge/common';
+import {
+  vector2Add,
+  vector2Clone,
+  vector2Rotate,
+} from '@forge-game-engine/forge/math';
 import { applyImpulse, rigidBodyId } from '@forge-game-engine/forge/physics';
 import { PushEcsComponent, pushId } from './_push.component';
 
@@ -25,8 +30,13 @@ export const createPushEcsSystem = (
         continue;
       }
 
-      const worldContactPoint = position.world.add(
-        push.localContactPoint.rotate(rotation.world),
+      // Clone before rotating/adding: `push.localContactPoint` is a
+      // persistent component field reused every push, and `position.world`
+      // is the entity's live position, still needed unchanged for
+      // `applyImpulse`'s `entityPosition` argument below.
+      const worldContactPoint = vector2Add(
+        vector2Clone(position.world),
+        vector2Rotate(vector2Clone(push.localContactPoint), rotation.world),
       );
 
       applyImpulse(push.impulse, worldContactPoint, position.world, rigidBody);

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Material } from './material';
-import { Matrix3x3, Vector2, Vector3 } from '../../math/index.js';
+import { createVector2, createVector3, Matrix3x3 } from '../../math/index.js';
 import { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
 
@@ -178,7 +178,7 @@ describe('Material', () => {
     it('should allow setting different types of uniform values', () => {
       const float32Array = new Float32Array([1, 2, 3]);
       const int32Array = new Int32Array([1, 2, 3]);
-      const vector2 = new Vector2(1, 2);
+      const vector2 = createVector2(1, 2);
       const matrix = new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       expect(() => material.setUniform('uTestUniform', 42)).not.toThrow();
@@ -238,13 +238,13 @@ describe('Material', () => {
     });
 
     it('should set a Vector2 uniform', () => {
-      const vector2 = new Vector2(1, 2);
+      const vector2 = createVector2(1, 2);
 
       expect(() => material.setVectorUniform('uVector', vector2)).not.toThrow();
     });
 
     it('should set a Vector3 uniform', () => {
-      const vector3 = new Vector3(1, 2, 3);
+      const vector3 = createVector3(1, 2, 3);
 
       expect(() => material.setVectorUniform('uVector', vector3)).not.toThrow();
     });
@@ -393,7 +393,7 @@ describe('Material', () => {
     });
 
     it('should bind a Vector2 uniform', () => {
-      const vector2 = new Vector2(1, 2);
+      const vector2 = createVector2(1, 2);
       material.setUniform('uNumber', vector2);
       material.bind(gl);
 

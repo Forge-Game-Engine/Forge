@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { createVector2, Vector2 } from '../../math/index.js';
 import { NineSliceOptions, SliceScaleMode } from '../nine-slice-options.js';
 
 /**
@@ -178,7 +178,7 @@ function createCellRegions(
   for (const xSegment of xSegments) {
     for (const ySegment of ySegments) {
       regions.push({
-        offset: new Vector2(
+        offset: createVector2(
           xSegment.start + xSegment.size / 2 - pivot.x * width,
           // Negated relative to x (written as a subtraction, not unary `-`,
           // so a zero result stays +0 rather than -0): sprite instance data
@@ -191,9 +191,9 @@ function createCellRegions(
           // the far/bottom edge and vice versa.
           pivot.y * height - (ySegment.start + ySegment.size / 2),
         ),
-        size: new Vector2(xSegment.size, ySegment.size),
-        uvOffset: new Vector2(xBand.uvStart, yBand.uvStart),
-        uvScale: new Vector2(xBand.uvSize, yBand.uvSize),
+        size: createVector2(xSegment.size, ySegment.size),
+        uvOffset: createVector2(xBand.uvStart, yBand.uvStart),
+        uvScale: createVector2(xBand.uvSize, yBand.uvSize),
       });
     }
   }

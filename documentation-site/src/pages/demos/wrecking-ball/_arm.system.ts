@@ -6,6 +6,13 @@ import {
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
+  vector2Add,
+  vector2Clone,
+  vector2Magnitude,
+  vector2Multiply,
+  vector2Subtract,
+} from '@forge-game-engine/forge/math';
+import {
   SpriteEcsComponent,
   spriteId,
 } from '@forge-game-engine/forge/rendering';
@@ -46,9 +53,14 @@ export const createArmEcsSystem = (): EcsSystem<
       }
 
       const bodyPosition = targetPosition.world;
-      const delta = bodyPosition.subtract(pivotPosition);
-      const length = delta.magnitude();
-      const midpoint = pivotPosition.add(bodyPosition).multiply(0.5);
+      // clone: bodyPosition is targetPosition.world, live state, must not mutate.
+      const delta = vector2Subtract(vector2Clone(bodyPosition), pivotPosition);
+      const length = vector2Magnitude(delta);
+      // clone: pivotPosition is a persistent ArmEcsComponent field, reused every tick.
+      const midpoint = vector2Multiply(
+        vector2Add(vector2Clone(pivotPosition), bodyPosition),
+        0.5,
+      );
       const angle = Math.atan2(delta.x, -delta.y);
 
       positionComponent.world.x = midpoint.x;

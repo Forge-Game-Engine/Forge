@@ -1,5 +1,9 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  Vector2,
+  vector2Clone,
+  vector2Zero,
+} from '@forge-game-engine/forge/math';
 
 /**
  * Smoothly moves this entity's `PositionEcsComponent` towards `targetEntity`'s
@@ -49,7 +53,7 @@ export interface CameraFollowOptions {
 }
 
 const defaultCameraFollowOptions = {
-  offset: Vector2.zero,
+  offset: vector2Zero(),
 };
 
 export function addCameraFollowComponent(
@@ -64,10 +68,12 @@ export function addCameraFollowComponent(
 
   const component: CameraFollowEcsComponent = {
     targetEntity,
-    offset: offset.clone(),
+    // clone: `offset` may be `defaultCameraFollowOptions.offset`, a single
+    // shared instance reused across every entity that omits its own offset.
+    offset: vector2Clone(offset),
     smoothTime,
     maxSpeed,
-    velocity: Vector2.zero,
+    velocity: vector2Zero(),
   };
 
   return world.addComponent(entity, cameraFollowId, component);

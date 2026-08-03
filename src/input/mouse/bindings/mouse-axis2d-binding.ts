@@ -1,4 +1,4 @@
-import { Vector2 } from '../../../math/index.js';
+import { createVector2, Vector2 } from '../../../math/index.js';
 import { Axis2dAction } from '../../actions/index.js';
 import { CursorValueType, cursorValueTypes } from '../../constants/index.js';
 import { InputBinding } from '../../input-binding.js';
@@ -13,7 +13,7 @@ interface MouseAxis2dBindingOptions {
 
 const defaultMouseAxis2dBindingOptions = {
   cursorValueType: cursorValueTypes.ratio,
-  cursorOrigin: new Vector2(0.5, 0.5),
+  cursorOrigin: createVector2(0.5, 0.5),
 };
 
 /** Mouse axis 2D input binding. */

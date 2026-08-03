@@ -15,7 +15,7 @@ import {
   createNarrowPhaseEcsSystem,
   createRevoluteJointEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { createVector2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createArmEcsSystem } from './_arm.system';
 import { createCradle } from './_create-cradle';
@@ -37,7 +37,7 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
     world,
     renderContext,
     renderLayers.foreground,
-    new Vector2(0, DEMO_VERTICAL_WORLD_UNITS * 0.3),
+    createVector2(0, DEMO_VERTICAL_WORLD_UNITS * 0.3),
   );
 
   const collisionPairs: CollisionPair[] = [];

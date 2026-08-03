@@ -1,4 +1,10 @@
-import { Vector2 } from '../../math/index.js';
+import {
+  createVector2,
+  Vector2,
+  vector2Add,
+  vector2Clone,
+  vector2Rotate,
+} from '../../math/index.js';
 import { Color } from '../color.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
@@ -117,7 +123,13 @@ function buildTerrainMeshData(
     distance: number,
     depth: number,
   ): void => {
-    const world = localPoint.rotate(angle).add(position);
+    // Clone before rotating: `localPoint` may be reused for multiple
+    // vertices (e.g. a curve point shared between adjacent triangles, or a
+    // shared bottom corner within the same quad).
+    const world = vector2Add(
+      vector2Rotate(vector2Clone(localPoint), angle),
+      position,
+    );
 
     // Y is negated here to match the sprite pipeline's world-to-render
     // convention (see sprite-instance-data-segment.ts's
@@ -132,8 +144,8 @@ function buildTerrainMeshData(
     const left = curvePoints[i];
     const right = curvePoints[i + 1];
 
-    const bottomLeft = new Vector2(left.position.x, bottomY);
-    const bottomRight = new Vector2(right.position.x, bottomY);
+    const bottomLeft = createVector2(left.position.x, bottomY);
+    const bottomRight = createVector2(right.position.x, bottomY);
     const depthLeft = bottomY - left.position.y;
     const depthRight = bottomY - right.position.y;
 

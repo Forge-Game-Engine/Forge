@@ -4,7 +4,11 @@ import {
   addPositionComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import {
   easeInBack,
   easeInOutBack,
@@ -83,13 +87,13 @@ function placeSprite(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: position.clone(),
-    world: position.clone(),
+    local: vector2Clone(position),
+    world: vector2Clone(position),
   });
 
   addScaleComponent(world, entity, {
-    local: scale.clone(),
-    world: scale.clone(),
+    local: vector2Clone(scale),
+    world: vector2Clone(scale),
   });
 
   addSpriteComponent(world, entity, sprite);
@@ -145,8 +149,8 @@ export async function createEasingRows(
     placeSprite(
       world,
       laneSprite,
-      new Vector2(0, y),
-      new Vector2(
+      createVector2(0, y),
+      createVector2(
         (trackHalfWidth * 2) / spriteTemplate.width,
         laneHeightPixels / spriteTemplate.height,
       ),
@@ -160,8 +164,8 @@ export async function createEasingRows(
     const ballEntity = placeSprite(
       world,
       ballSprite,
-      new Vector2(minX, y),
-      new Vector2(
+      createVector2(minX, y),
+      createVector2(
         ballSizePixels / spriteTemplate.width,
         ballSizePixels / spriteTemplate.height,
       ),

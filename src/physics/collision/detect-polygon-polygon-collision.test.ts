@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { detectPolygonPolygonCollision } from './detect-polygon-polygon-collision.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { Vector2 } from '../../math/index.js';
+import { createVector2, Vector2, vector2Rotate } from '../../math/index.js';
 
 function rectangle(width: number, height: number): PolygonCollider {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    createVector2(-halfWidth, -halfHeight),
+    createVector2(halfWidth, -halfHeight),
+    createVector2(halfWidth, halfHeight),
+    createVector2(-halfWidth, halfHeight),
   ]);
 }
 
@@ -26,15 +26,15 @@ function body(
 
 describe('detectPolygonPolygonCollision', () => {
   it('should return null when the polygons do not overlap', () => {
-    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
-    const bodyB = body(new Vector2(5, 0), rectangle(2, 2));
+    const bodyA = body(createVector2(0, 0), rectangle(2, 2));
+    const bodyB = body(createVector2(5, 0), rectangle(2, 2));
 
     expect(detectPolygonPolygonCollision(bodyA, bodyB)).toBeNull();
   });
 
   it('should detect an overlap between two axis-aligned boxes', () => {
-    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
-    const bodyB = body(new Vector2(1.5, 0), rectangle(2, 2));
+    const bodyA = body(createVector2(0, 0), rectangle(2, 2));
+    const bodyB = body(createVector2(1.5, 0), rectangle(2, 2));
 
     const manifold = detectPolygonPolygonCollision(bodyA, bodyB);
 
@@ -53,8 +53,8 @@ describe('detectPolygonPolygonCollision', () => {
   });
 
   it('should produce the same feature ids across ticks for an unchanged contact', () => {
-    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
-    const bodyB = body(new Vector2(1.5, 0), rectangle(2, 2));
+    const bodyA = body(createVector2(0, 0), rectangle(2, 2));
+    const bodyB = body(createVector2(1.5, 0), rectangle(2, 2));
 
     const first = detectPolygonPolygonCollision(bodyA, bodyB);
     const second = detectPolygonPolygonCollision(bodyA, bodyB);
@@ -64,9 +64,9 @@ describe('detectPolygonPolygonCollision', () => {
 
   it('should account for body rotation', () => {
     const angle = Math.PI / 4;
-    const bodyA = body(new Vector2(0, 0), rectangle(2, 2), angle);
+    const bodyA = body(createVector2(0, 0), rectangle(2, 2), angle);
     const bodyB = body(
-      new Vector2(1.5, 0).rotate(angle),
+      vector2Rotate(createVector2(1.5, 0), angle),
       rectangle(2, 2),
       angle,
     );
@@ -81,9 +81,9 @@ describe('detectPolygonPolygonCollision', () => {
   });
 
   it('should return a single contact point for a corner-only overlap', () => {
-    const bodyA = body(new Vector2(0, 0), rectangle(2, 2));
+    const bodyA = body(createVector2(0, 0), rectangle(2, 2));
     const bodyB = body(
-      new Vector2(0, 1 + Math.sqrt(2) - 0.2),
+      createVector2(0, 1 + Math.sqrt(2) - 0.2),
       rectangle(2, 2),
       Math.PI / 4,
     );
@@ -100,13 +100,13 @@ describe('detectPolygonPolygonCollision', () => {
   });
 
   it('should detect an overlap between an arbitrary convex polygon and a box', () => {
-    const bodyA = body(new Vector2(0, 0), rectangle(4, 4));
+    const bodyA = body(createVector2(0, 0), rectangle(4, 4));
     const bodyB = body(
-      new Vector2(2, 0),
+      createVector2(2, 0),
       new PolygonCollider([
-        new Vector2(0, 0),
-        new Vector2(2, 0),
-        new Vector2(0, 2),
+        createVector2(0, 0),
+        createVector2(2, 0),
+        createVector2(0, 2),
       ]),
     );
 

@@ -4,7 +4,11 @@ import {
   positionId,
   Time,
 } from '@forge-game-engine/forge/common';
-import { clamp } from '@forge-game-engine/forge/math';
+import {
+  clamp,
+  vector2Clone,
+  vector2Multiply,
+} from '@forge-game-engine/forge/math';
 import { Axis2dAction } from '@forge-game-engine/forge/input';
 import { PlayerEcsComponent, PlayerId } from './_player.component';
 
@@ -20,9 +24,12 @@ export const createMovementEcsSystem = (
 
       const { speed, minX, maxX, minY, maxY } = playerComponent;
 
-      const movementVector = moveAction.value
-        .multiply(speed * 10)
-        .multiply(time.deltaTimeInSeconds);
+      // Clone before scaling: `moveAction.value` is the action's live,
+      // persistent input state, not a disposable value.
+      const movementVector = vector2Multiply(
+        vector2Multiply(vector2Clone(moveAction.value), speed * 10),
+        time.deltaTimeInSeconds,
+      );
 
       positionComponent.world.x = clamp(
         positionComponent.world.x + movementVector.x,

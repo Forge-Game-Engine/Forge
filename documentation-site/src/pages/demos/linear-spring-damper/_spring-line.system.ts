@@ -4,6 +4,13 @@ import {
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
+  vector2Add,
+  vector2Clone,
+  vector2Magnitude,
+  vector2Multiply,
+  vector2Subtract,
+} from '@forge-game-engine/forge/math';
+import {
   SpriteEcsComponent,
   spriteId,
 } from '@forge-game-engine/forge/rendering';
@@ -35,8 +42,16 @@ export const createSpringLineEcsSystem = (): EcsSystem<
       }
 
       const bodyPosition = targetPosition.world;
-      const midpoint = anchorPosition.add(bodyPosition).multiply(0.5);
-      const length = bodyPosition.subtract(anchorPosition).magnitude();
+      // Clone before adding/subtracting: `anchorPosition` is a persistent
+      // component field reused every tick, and `bodyPosition` is the target
+      // entity's live world position.
+      const midpoint = vector2Multiply(
+        vector2Add(vector2Clone(anchorPosition), bodyPosition),
+        0.5,
+      );
+      const length = vector2Magnitude(
+        vector2Subtract(vector2Clone(bodyPosition), anchorPosition),
+      );
 
       positionComponent.world.x = midpoint.x;
       positionComponent.world.y = midpoint.y;

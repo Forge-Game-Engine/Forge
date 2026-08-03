@@ -4,7 +4,11 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import {
+  createVector2,
+  Vector2,
+  vector2Clone,
+} from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -25,10 +29,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    createVector2(-halfWidth, -halfHeight),
+    createVector2(halfWidth, -halfHeight),
+    createVector2(halfWidth, halfHeight),
+    createVector2(-halfWidth, halfHeight),
   ];
 }
 
@@ -87,18 +91,18 @@ export async function createBoundaries(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: position.clone(),
-      local: position.clone(),
+      world: vector2Clone(position),
+      local: vector2Clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: new Vector2(
+      local: createVector2(
         wallWidth / wallSprite.width,
         wallHeight / wallSprite.height,
       ),
-      world: new Vector2(
+      world: createVector2(
         wallWidth / wallSprite.width,
         wallHeight / wallSprite.height,
       ),
@@ -115,19 +119,19 @@ export async function createBoundaries(
   };
 
   createWall(
-    new Vector2(0, halfHeight - wallThickness / 2),
+    createVector2(0, halfHeight - wallThickness / 2),
     width,
     wallThickness,
   );
 
   createWall(
-    new Vector2(-halfWidth + wallThickness / 2, 0),
+    createVector2(-halfWidth + wallThickness / 2, 0),
     wallThickness,
     height,
   );
 
   createWall(
-    new Vector2(halfWidth - wallThickness / 2, 0),
+    createVector2(halfWidth - wallThickness / 2, 0),
     wallThickness,
     height,
   );
