@@ -144,7 +144,7 @@ const rearSuspensionAxis = Vector2.up.rotate(degreesToRadians(-35));
 // to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
 // direction normalization becomes unstable as the anchor-to-wheel distance
 // approaches zero.
-const wheelDropHeight = 65;
+const wheelDropHeight = 25;
 
 // Chosen so the car's weight compresses each suspension by a small fraction
 // of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
@@ -309,6 +309,7 @@ function createWheel(
     ...sprite,
     width: wheelRadius * 2,
     height: wheelRadius * 2,
+    layer: 1,
   });
   addColliderComponent(world, entity, {
     collider: wheelCollider,

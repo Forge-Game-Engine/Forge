@@ -4,14 +4,28 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { PhysicsWorld } from '@forge-game-engine/forge/physics';
+import { CollisionManifold } from '@forge-game-engine/forge/physics';
 import { AsteroidEcsComponent, asteroidId } from './_asteroid.component';
 import { bulletId } from './_bullet.component';
 import { ExplosionSpawner } from './_create-explosions';
 import { PlayerId } from './_player.component';
 
+/**
+ * Creates an ECS system that scans `collisionManifolds` (populated by
+ * `createNarrowPhaseEcsSystem`) each tick for any asteroid touching a
+ * bullet or the player, spawning an explosion and removing the involved
+ * entities. Must run after `createNarrowPhaseEcsSystem`, so this tick's
+ * collisions are available before this system checks them.
+ * @param collisionManifolds - The narrow-phase system's output: this tick's
+ * confirmed collisions.
+ * @param time - The time instance used to seed the spawned explosion's
+ * animation start time.
+ * @param explosionSpawner - Spawns an explosion effect at a world position.
+ * @param onPlayerDeath - Called when the player is destroyed by an
+ * asteroid.
+ */
 export const createAsteroidCollisionEcsSystem = (
-  physicsWorld: PhysicsWorld,
+  collisionManifolds: CollisionManifold[],
   time: Time,
   explosionSpawner: ExplosionSpawner,
   onPlayerDeath: () => void,
@@ -22,19 +36,12 @@ export const createAsteroidCollisionEcsSystem = (
       const asteroidEntity = entities[i];
       const positionComponent = positionComponents[i];
 
-      for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
-        const entityA = bodyA.userData;
-        const entityB = bodyB.userData;
-
+      for (const { entityA, entityB } of collisionManifolds) {
         if (entityA !== asteroidEntity && entityB !== asteroidEntity) {
           continue;
         }
 
         const otherEntity = entityA === asteroidEntity ? entityB : entityA;
-
-        if (typeof otherEntity !== 'number') {
-          continue;
-        }
 
         if (world.getComponent(otherEntity, bulletId)) {
           explosionSpawner.spawn(

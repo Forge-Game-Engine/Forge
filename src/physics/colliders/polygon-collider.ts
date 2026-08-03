@@ -1,79 +1,15 @@
 import { Vector2 } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 import { Collider } from './collider.js';
+import {
+  calculateArea,
+  calculateCentroid,
+  calculateNormals,
+  calculatePolygonMomentOfInertia,
+  calculateSignedArea,
+} from './polygon-math.js';
 
 const EPSILON = 1e-9;
-
-function calculateSignedArea(vertices: readonly Vector2[]): number {
-  let signedArea = 0;
-
-  for (let i = 0; i < vertices.length; i++) {
-    const current = vertices[i];
-    const next = vertices[(i + 1) % vertices.length];
-
-    signedArea += current.cross(next);
-  }
-
-  return signedArea;
-}
-
-function calculateCentroid(vertices: readonly Vector2[]): Vector2 {
-  let centroidX = 0;
-  let centroidY = 0;
-  let signedArea = 0;
-
-  for (let i = 0; i < vertices.length; i++) {
-    const current = vertices[i];
-    const next = vertices[(i + 1) % vertices.length];
-    const cross = current.cross(next);
-
-    signedArea += cross;
-    centroidX += (current.x + next.x) * cross;
-    centroidY += (current.y + next.y) * cross;
-  }
-
-  const factor = 1 / (3 * signedArea);
-
-  return new Vector2(centroidX * factor, centroidY * factor);
-}
-
-function calculateNormals(vertices: readonly Vector2[]): Vector2[] {
-  const normals: Vector2[] = [];
-
-  for (let i = 0; i < vertices.length; i++) {
-    const current = vertices[i];
-    const next = vertices[(i + 1) % vertices.length];
-    const edge = next.subtract(current);
-
-    normals.push(edge.perpendicular().normalize());
-  }
-
-  return normals;
-}
-
-function calculatePolygonMomentOfInertia(
-  mass: number,
-  verticesAboutCentroid: readonly Vector2[],
-): number {
-  let numerator = 0;
-  let denominator = 0;
-
-  for (let i = 0; i < verticesAboutCentroid.length; i++) {
-    const current = verticesAboutCentroid[i];
-    const next = verticesAboutCentroid[(i + 1) % verticesAboutCentroid.length];
-    const cross = Math.abs(current.cross(next));
-
-    numerator +=
-      cross * (current.dot(current) + current.dot(next) + next.dot(next));
-    denominator += cross;
-  }
-
-  return (mass / 3) * (numerator / denominator);
-}
-
-function calculateArea(vertices: readonly Vector2[]): number {
-  return Math.abs(calculateSignedArea(vertices)) / 2;
-}
 
 function validateConvexity(vertices: readonly Vector2[]): void {
   const vertexCount = vertices.length;

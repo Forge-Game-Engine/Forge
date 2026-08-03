@@ -7,9 +7,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -53,6 +53,18 @@ const brickRows = Array.from({ length: rows }, (_, row) => ({
 const columns = 24;
 const columnGapFraction = 0.15;
 const rowGapFraction = 0.2;
+
+function rectangleVertices(width: number, height: number): Vector2[] {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  return [
+    new Vector2(-halfWidth, -halfHeight),
+    new Vector2(halfWidth, -halfHeight),
+    new Vector2(halfWidth, halfHeight),
+    new Vector2(-halfWidth, halfHeight),
+  ];
+}
 
 /**
  * Tracks the bricks currently alive in the play area, and respawns a fresh
@@ -181,15 +193,12 @@ export async function createBrickField(
 
     world.addTag(entity, brickId);
 
-    addPhysicsBodyComponent(world, entity, {
-      physicsBody: new RigidBody({
-        shape: PolygonShape.rectangle(width, height),
-        position: position.clone(),
-        isStatic: true,
-        restitution: 1,
-        friction: 0,
-      }),
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider(rectangleVertices(width, height)),
+      restitution: 1,
+      friction: 0,
     });
+    addAabbComponent(world, entity);
 
     liveBricks.add(entity);
   };

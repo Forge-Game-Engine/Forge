@@ -17,9 +17,9 @@ import {
 } from '@forge-game-engine/forge/lifecycle';
 import { addAudioComponent } from '@forge-game-engine/forge/audio';
 import {
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
 import { GunEcsComponent, gunId } from './_gun.component';
@@ -123,13 +123,8 @@ function createBulletWithOffset(
       gunComponent.bulletSprite.height * bulletScale) /
     4;
 
-  addPhysicsBodyComponent(world, bullet, {
-    physicsBody: new RigidBody({
-      shape: new CircleShape(bulletRadius),
-      position: new Vector2(spawnPosition.x, spawnPosition.y),
-      isStatic: false,
-      isSensor: true,
-    }),
-    isKinematic: true,
+  addColliderComponent(world, bullet, {
+    collider: new CircleCollider(bulletRadius),
   });
+  addAabbComponent(world, bullet);
 }

@@ -7,9 +7,15 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
   createAngularVelocityMotorEcsSystem,
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
   PositionEcsComponent,
@@ -47,8 +53,6 @@ export const createRollingBallGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const physicsWorld = new PhysicsWorld({ gravity });
-
   const { rollInput, jumpInput } = createInputs(world, time);
 
   const terrain = await createTerrain(world, renderContext, {
@@ -81,6 +85,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
     renderContext,
     renderLayers.foreground,
     spawnPosition,
+    gravity,
   );
 
   const playerPosition = world.getComponent<PositionEcsComponent>(
@@ -98,21 +103,37 @@ export const createRollingBallGame = async (): Promise<Game> => {
   cameraPosition.world = spawnPosition.clone();
   cameraPosition.local = spawnPosition.clone();
 
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
+  const contactConstraints: ContactConstraint[] = [];
+
   // Roll input must be applied before the motor system, which must in turn
-  // run before createPhysicsSyncEcsSystem, so this tick's input reaches
-  // this tick's physics step - see the Applying Forces guide's registration
-  // order caution. The jump/respawn and camera-follow systems read the
-  // physics step's results, so they run after it instead. The terrain
-  // render system must run before createRenderEcsSystem so the ball's
-  // sprite draws on top of the terrain mesh, not underneath it.
+  // run before the broad/narrow-phase and resolution systems, so this
+  // tick's input reaches this tick's physics step - see the Applying
+  // Forces guide's registration order caution. The jump/respawn and
+  // camera-follow systems read the resolution step's results, so they run
+  // after it instead. The terrain render system must run before
+  // createRenderEcsSystem so the ball's sprite draws on top of the terrain
+  // mesh, not underneath it.
   world.addSystem(createRollEcsSystem(rollInput));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createGravityEcsSystem(time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+  );
   world.addSystem(
     createJumpEcsSystem(
-      physicsWorld,
-      player.body,
-      terrain.body,
+      collisionManifolds,
+      player.entity,
+      terrain.entity,
       jumpInput,
       spawnPosition,
     ),
@@ -120,6 +141,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
   world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
   world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

@@ -23,8 +23,10 @@ import {
 } from '@forge-game-engine/forge/lifecycle';
 import { Random, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
+  CollisionManifold,
+  CollisionPair,
+  createBroadPhaseEcsSystem,
+  createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createMovementEcsSystem } from './_movement.system';
@@ -214,7 +216,9 @@ export const createSpaceShooterGame = async (
   };
 
   const random = new Random();
-  const physicsWorld = new PhysicsWorld();
+
+  const collisionPairs: CollisionPair[] = [];
+  const collisionManifolds: CollisionManifold[] = [];
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
@@ -235,10 +239,13 @@ export const createSpaceShooterGame = async (
   world.addSystem(
     createSpriteAnimationEcsSystem(time, explosionSpawner.animationRegistry),
   );
-  world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  );
   world.addSystem(
     createAsteroidCollisionEcsSystem(
-      physicsWorld,
+      collisionManifolds,
       time,
       explosionSpawner,
       onPlayerDeath,

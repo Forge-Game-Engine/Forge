@@ -3,6 +3,7 @@ import { detectCollision } from './detect-collision.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { Collider } from '../colliders/collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
+import { TerrainCollider } from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { Vector2 } from '../../math/index.js';
 
@@ -62,6 +63,62 @@ describe('detectCollision', () => {
     expect(manifold).not.toBeNull();
     expect(manifold?.normal.x).toBeCloseTo(1);
     expect(manifold?.normal.y).toBeCloseTo(0);
+  });
+
+  it('should dispatch circle-terrain collisions', () => {
+    const terrain = new TerrainCollider(
+      [new Vector2(-100, 0), new Vector2(100, 0)],
+      50,
+    );
+    const bodyA = body(new Vector2(0, -0.5), new CircleCollider(1));
+    const bodyB = body(Vector2.zero, terrain);
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.y).toBeCloseTo(1);
+  });
+
+  it('should dispatch terrain-circle collisions, flipping the normal', () => {
+    const terrain = new TerrainCollider(
+      [new Vector2(-100, 0), new Vector2(100, 0)],
+      50,
+    );
+    const bodyA = body(Vector2.zero, terrain);
+    const bodyB = body(new Vector2(0, -0.5), new CircleCollider(1));
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.y).toBeCloseTo(-1);
+  });
+
+  it('should dispatch polygon-terrain collisions', () => {
+    const terrain = new TerrainCollider(
+      [new Vector2(-100, 0), new Vector2(100, 0)],
+      50,
+    );
+    const bodyA = body(new Vector2(0, -0.5), rectangle(2, 2));
+    const bodyB = body(Vector2.zero, terrain);
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.y).toBeCloseTo(1);
+  });
+
+  it('should dispatch terrain-polygon collisions, flipping the normal', () => {
+    const terrain = new TerrainCollider(
+      [new Vector2(-100, 0), new Vector2(100, 0)],
+      50,
+    );
+    const bodyA = body(Vector2.zero, terrain);
+    const bodyB = body(new Vector2(0, -0.5), rectangle(2, 2));
+
+    const manifold = detectCollision(bodyA, bodyB);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.normal.y).toBeCloseTo(-1);
   });
 
   it('should throw an error for an unregistered collider pair', () => {

@@ -5,10 +5,12 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addAabbComponent,
   addAngularVelocityMotorComponent,
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
+  addColliderComponent,
+  addGravityComponent,
+  addRigidBodyComponent,
+  CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
@@ -28,41 +30,32 @@ export const ballRadius = 24;
 export const ballMaxTorque = 30_000_000;
 
 export interface Player {
-  /** The entity carrying the ball's sprite, position and physics body. */
+  /** The entity carrying the ball's sprite, position and physics components. */
   entity: number;
-
-  /** The ball's `RigidBody`, for grounded checks and jump impulses. */
-  body: RigidBody;
 }
 
 /**
- * Creates the player-controlled ball: a dynamic `CircleShape` body with an
- * `AngularVelocityMotorEcsComponent` (driven by roll input, see
+ * Creates the player-controlled ball: a dynamic `CircleCollider` body with
+ * an `AngularVelocityMotorEcsComponent` (driven by roll input, see
  * `createRollEcsSystem`) that lets friction against the terrain turn spin
  * into rolling motion, exactly like a real ball.
  * @param world - The ECS world to add the ball entity to.
  * @param renderContext - The render context used to load the ball sprite.
  * @param renderLayer - The render layer the ball should be drawn on.
  * @param spawnPosition - The world-space position to spawn the ball at.
+ * @param gravity - The gravity vector applied to the ball.
  */
 export async function createPlayer(
   world: EcsWorld,
   renderContext: RenderContext,
   renderLayer: number,
   spawnPosition: Vector2,
+  gravity: Vector2,
 ): Promise<Player> {
   const ballImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/ball_blue_large.png'),
   );
   const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
-
-  const ballBody = new RigidBody({
-    shape: new CircleShape(ballRadius),
-    position: spawnPosition.clone(),
-    density: 1.2,
-    friction: 0.9,
-    restitution: 0.15,
-  });
 
   const entity = world.createEntity();
 
@@ -79,12 +72,24 @@ export async function createPlayer(
     height: ballRadius * 2,
   });
 
-  addPhysicsBodyComponent(world, entity, { physicsBody: ballBody });
+  const collider = new CircleCollider(ballRadius, 1.2);
+
+  addColliderComponent(world, entity, {
+    collider,
+    friction: 0.9,
+    restitution: 0.15,
+  });
+  addAabbComponent(world, entity);
+  addRigidBodyComponent(world, entity, {
+    mass: collider.mass,
+    momentOfInertia: collider.momentOfInertia,
+  });
+  addGravityComponent(world, entity, { amount: gravity });
 
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
     maxTorque: ballMaxTorque,
   });
 
-  return { entity, body: ballBody };
+  return { entity };
 }
