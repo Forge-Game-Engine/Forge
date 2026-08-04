@@ -19,8 +19,8 @@ Core concepts:
   `RigidBody` can have.
 - `TerrainShape`: a static heightmap
   ground shape for non-convex 2D terrain.
-- `raycast`: casts a ray against a set
-  of bodies.
+- `raycast`: casts a ray against every
+  collider entity in an `EcsWorld`.
 - `PrismaticJoint`: a slider
   constraint locking two bodies to one linear degree of freedom.
 - `RevoluteJoint`: a hinge
@@ -38,7 +38,7 @@ Guides in this section:
   integration, and collision events.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
-- [Raycasting](./raycasting.md): casting rays against bodies.
+- [Raycasting](./raycasting.md): casting rays against colliders.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
 - [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
