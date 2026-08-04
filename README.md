@@ -6,7 +6,8 @@ Forge is a browser-based, code-only game engine. It has everything you'd
 expect from an engine, including rendering, audio, input, animations, an
 Entity-Component-System (ECS) core, physics, and more.
 
-[Documentation](https://forge-game-engine.github.io/Forge/)
+[Documentation](https://forge-game-engine.github.io/Forge/) ·
+[Demos](https://forge-game-engine.github.io/Forge/demos/ecs)
 
 ## Getting started
 
