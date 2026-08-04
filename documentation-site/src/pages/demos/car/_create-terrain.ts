@@ -3,7 +3,7 @@ import {
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -48,10 +48,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -139,13 +139,13 @@ function createGroundColumn(
     return;
   }
 
-  const position = new Vector2(left + width / 2, height - columnDepth / 2);
+  const position = { x: left + width / 2, y: height - columnDepth / 2 };
 
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, {
@@ -207,5 +207,5 @@ export async function createTerrain(
     createGroundColumn(world, groundSprite, left, right, height);
   }
 
-  return new Vector2(carSpawnX, heightAt(carSpawnX, random));
+  return { x: carSpawnX, y: heightAt(carSpawnX, random) };
 }

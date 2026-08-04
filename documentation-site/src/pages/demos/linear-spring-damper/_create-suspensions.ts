@@ -3,7 +3,7 @@ import {
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -30,7 +30,7 @@ const mountSize = 24;
 const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
-const gravity = new Vector2(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -89,8 +89,8 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
@@ -174,14 +174,18 @@ function createSuspensionScenario(
     squareSlices,
   );
 
-  const wheelPosition = mountPosition.add(new Vector2(0, -wheelDropHeight));
+  // clone: mountPosition is reused below (unchanged) for the mount/line entities.
+  const wheelPosition = Vec2.add(
+    Vec2.clone(mountPosition),
+    { x: 0, y: -wheelDropHeight },
+  );
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
   const wheelEntity = world.createEntity();
 
   addPositionComponent(world, wheelEntity, {
-    world: wheelPosition.clone(),
-    local: wheelPosition.clone(),
+    world: Vec2.clone(wheelPosition),
+    local: Vec2.clone(wheelPosition),
   });
   addRotationComponent(world, wheelEntity);
   addSpriteComponent(world, wheelEntity, {
@@ -196,14 +200,14 @@ function createSuspensionScenario(
   addRigidBodyComponent(world, wheelEntity, {
     mass: wheelCollider.mass,
     momentOfInertia: wheelCollider.momentOfInertia,
-    velocity: bumpVelocity.clone(),
+    velocity: Vec2.clone(bumpVelocity),
   });
   addAabbComponent(world, wheelEntity);
   addGravityComponent(world, wheelEntity, { amount: gravity });
   addResetComponent(world, wheelEntity, {
     entity: wheelEntity,
-    initialPosition: wheelPosition.clone(),
-    initialVelocity: bumpVelocity.clone(),
+    initialPosition: Vec2.clone(wheelPosition),
+    initialVelocity: Vec2.clone(bumpVelocity),
     intervalSeconds: resetIntervalSeconds,
   });
 
@@ -226,8 +230,8 @@ function createSuspensionScenario(
   const lineEntity = world.createEntity();
 
   addPositionComponent(world, lineEntity, {
-    world: mountPosition.clone(),
-    local: mountPosition.clone(),
+    world: Vec2.clone(mountPosition),
+    local: Vec2.clone(mountPosition),
   });
   addRotationComponent(world, lineEntity);
   addSpriteComponent(world, lineEntity, {
@@ -236,7 +240,7 @@ function createSuspensionScenario(
     slices: narrowSlices,
   });
   addSpringLineComponent(world, lineEntity, {
-    anchorPosition: mountPosition.clone(),
+    anchorPosition: Vec2.clone(mountPosition),
     entity: wheelEntity,
     lineWidth,
   });
@@ -265,13 +269,13 @@ export async function createSuspensions(
   const columnWidth = width / 2;
   const mountY = height * 0.25;
   const stiffness = 30_000;
-  const bumpVelocity = new Vector2(0, 180);
+  const bumpVelocity = { x: 0, y: 180 };
   const resetIntervalSeconds = 6;
 
   // Spring only: nothing dissipates the energy of the bump, so the wheel
   // keeps oscillating until the next reset.
   createSuspensionScenario(world, sprites, {
-    mountPosition: new Vector2(-columnWidth / 2, mountY),
+    mountPosition: { x: -columnWidth / 2, y: mountY },
     wheelDropHeight: 120,
     stiffness,
     bumpVelocity,
@@ -281,7 +285,7 @@ export async function createSuspensions(
   // Spring and damper: the damper resists the compression/extension speed,
   // so the wheel settles back to rest well before the next reset.
   createSuspensionScenario(world, sprites, {
-    mountPosition: new Vector2(columnWidth / 2, mountY),
+    mountPosition: { x: columnWidth / 2, y: mountY },
     wheelDropHeight: 120,
     stiffness,
     dampingCoefficient: 15_000,

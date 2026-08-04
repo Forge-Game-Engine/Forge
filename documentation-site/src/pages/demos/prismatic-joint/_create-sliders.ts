@@ -3,7 +3,7 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import { lerp, Vector2 } from '@forge-game-engine/forge/math';
+import { lerp, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -29,7 +29,7 @@ import { addPumpComponent } from './_pump.component';
 const railDotCount = 15;
 const railDotSize = 10;
 const anchorSize = 14;
-const gravity = new Vector2(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
 // rounded corners and bolt-head detail at a fixed size while the center
@@ -90,10 +90,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -127,8 +127,8 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: position.clone(),
-    local: position.clone(),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
@@ -142,10 +142,7 @@ function createRailDots(
 ): void {
   for (let i = 0; i <= railDotCount; i++) {
     const t = i / railDotCount;
-    const position = new Vector2(
-      lerp(fromPosition.x, toPosition.x, t),
-      lerp(fromPosition.y, toPosition.y, t),
-    );
+    const position = { x: lerp(fromPosition.x, toPosition.x, t), y: lerp(fromPosition.y, toPosition.y, t) };
 
     createVisualEntity(world, dotSprite, position, railDotSize, railDotSize);
   }
@@ -180,15 +177,20 @@ function createSliderScenario(
     pumpAlternate,
   } = options;
 
-  const normalizedAxis = axis.normalize();
-  const lowerPoint = anchorPosition.add(
-    normalizedAxis.multiply(lowerTranslation),
+  // clone: axis/anchorPosition are caller-owned and reused below (anchorPosition
+  // for the anchor entity, normalizedAxis for the joint component).
+  const normalizedAxis = Vec2.normalize(Vec2.clone(axis));
+  const lowerPoint = Vec2.add(
+    Vec2.clone(anchorPosition),
+    Vec2.multiply(Vec2.clone(normalizedAxis), lowerTranslation),
   );
-  const upperPoint = anchorPosition.add(
-    normalizedAxis.multiply(upperTranslation),
+  const upperPoint = Vec2.add(
+    Vec2.clone(anchorPosition),
+    Vec2.multiply(Vec2.clone(normalizedAxis), upperTranslation),
   );
-  const startPosition = anchorPosition.add(
-    normalizedAxis.multiply(startTranslation),
+  const startPosition = Vec2.add(
+    Vec2.clone(anchorPosition),
+    Vec2.multiply(Vec2.clone(normalizedAxis), startTranslation),
   );
 
   createRailDots(world, sprites.dot, lowerPoint, upperPoint);
@@ -204,16 +206,16 @@ function createSliderScenario(
   const anchorEntity = world.createEntity();
 
   addPositionComponent(world, anchorEntity, {
-    world: anchorPosition.clone(),
-    local: anchorPosition.clone(),
+    world: Vec2.clone(anchorPosition),
+    local: Vec2.clone(anchorPosition),
   });
   addRotationComponent(world, anchorEntity);
 
   const sliderEntity = world.createEntity();
 
   addPositionComponent(world, sliderEntity, {
-    world: startPosition.clone(),
-    local: startPosition.clone(),
+    world: Vec2.clone(startPosition),
+    local: Vec2.clone(startPosition),
   });
   addRotationComponent(world, sliderEntity);
 
@@ -284,8 +286,8 @@ export async function createSliders(
   // window's aspect ratio while the other two scenarios' travel distances
   // (tied to the camera's fixed vertical world units) stayed constant.
   createSliderScenario(world, sprites, {
-    anchorPosition: new Vector2(columnLeft - columnWidth * 0.3, 0),
-    axis: Vector2.right,
+    anchorPosition: { x: columnLeft - columnWidth * 0.3, y: 0 },
+    axis: Vec2.right,
     lowerTranslation: 0,
     upperTranslation: 180,
     startTranslation: 0,
@@ -293,7 +295,7 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: new Vector2(200_000, 0),
+    pumpImpulse: { x: 200_000, y: 0 },
     pumpIntervalSeconds: 1.4,
     pumpAlternate: true,
   });
@@ -301,8 +303,8 @@ export async function createSliders(
   // Elevator: always pumped upward (positive Y); gravity (negative Y) brings
   // it back down to the lower limit in between pumps.
   createSliderScenario(world, sprites, {
-    anchorPosition: new Vector2(columnLeft + columnWidth, -height * 0.32),
-    axis: new Vector2(0, 1),
+    anchorPosition: { x: columnLeft + columnWidth, y: -height * 0.32 },
+    axis: { x: 0, y: 1 },
     lowerTranslation: 0,
     upperTranslation: height * 0.55,
     startTranslation: 0,
@@ -310,20 +312,17 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: new Vector2(0, 950_000),
+    pumpImpulse: { x: 0, y: 950_000 },
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
 
   // Incline: a ball pumped back up a diagonal rail (anchored near the top),
   // then released to roll back down it under gravity.
-  const inclineAxis = new Vector2(0.5, -1).normalize();
+  const inclineAxis = Vec2.normalize({ x: 0.5, y: -1 });
 
   createSliderScenario(world, sprites, {
-    anchorPosition: new Vector2(
-      columnLeft + columnWidth * 2 - columnWidth * 0.35,
-      height * 0.3,
-    ),
+    anchorPosition: { x: columnLeft + columnWidth * 2 - columnWidth * 0.35, y: height * 0.3 },
     axis: inclineAxis,
     lowerTranslation: 0,
     upperTranslation: height * 0.5,
@@ -332,7 +331,12 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: inclineAxis.negate().multiply(400_000),
+    // clone: inclineAxis is also passed as `axis` above (same object); must
+    // not be mutated by this negate/multiply.
+    pumpImpulse: Vec2.multiply(
+      Vec2.negate(Vec2.clone(inclineAxis)),
+      400_000,
+    ),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });

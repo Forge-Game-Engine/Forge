@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, type Vector2 } from '../../math/index.js';
 
 const RELATIVE_TOLERANCE = 0.95;
 const ABSOLUTE_TOLERANCE = 0.01;
@@ -6,6 +6,10 @@ const ABSOLUTE_TOLERANCE = 0.01;
 /**
  * The world-space vertices and outward-facing edge normals of a convex
  * polygon, as consumed by {@link detectPolygonFacesCollision}.
+ *
+ * `detectPolygonFacesCollision` never mutates `vertices`/`normals` (or their
+ * elements) - callers may safely reuse the same `PolygonFaces` object across
+ * multiple calls (e.g. against several terrain segments).
  */
 export interface PolygonFaces {
   vertices: Vector2[];
@@ -58,10 +62,10 @@ interface ReferenceIncidentFaces {
  */
 function getSupportPoint(vertices: Vector2[], direction: Vector2): Vector2 {
   let bestVertex = vertices[0];
-  let bestProjection = direction.dot(bestVertex);
+  let bestProjection = Vec2.dot(direction, bestVertex);
 
   for (let i = 1; i < vertices.length; i++) {
-    const projection = direction.dot(vertices[i]);
+    const projection = Vec2.dot(direction, vertices[i]);
 
     if (projection > bestProjection) {
       bestVertex = vertices[i];
@@ -87,8 +91,18 @@ function findAxisOfLeastPenetration(
 
   for (let i = 0; i < ownNormals.length; i++) {
     const normal = ownNormals[i];
-    const supportPoint = getSupportPoint(otherVertices, normal.negate());
-    const separation = normal.dot(supportPoint.subtract(ownVertices[i]));
+    // Clone before negating/subtracting: `normal` is `ownNormals[i]` (read
+    // again later as the reference/incident normal) and `supportPoint` is an
+    // element of `otherVertices` (reused across faces and, for terrain,
+    // across every segment sharing the same `PolygonFaces`).
+    const supportPoint = getSupportPoint(
+      otherVertices,
+      Vec2.negate(Vec2.clone(normal)),
+    );
+    const separation = Vec2.dot(
+      normal,
+      Vec2.subtract(Vec2.clone(supportPoint), ownVertices[i]),
+    );
 
     if (separation > bestSeparation) {
       bestSeparation = separation;
@@ -143,7 +157,7 @@ function findIncidentFaceIndex(
   let minDot = Infinity;
 
   for (let i = 0; i < incidentNormals.length; i++) {
-    const dot = referenceNormal.dot(incidentNormals[i]);
+    const dot = Vec2.dot(referenceNormal, incidentNormals[i]);
 
     if (dot < minDot) {
       minDot = dot;
@@ -157,7 +171,9 @@ function findIncidentFaceIndex(
 /**
  * Clips the segment `v1`-`v2` against the half-plane
  * `normal . point <= offset`, returning the points that lie within it
- * (including any interpolated intersection point).
+ * (including any interpolated intersection point). `v1`/`v2` themselves are
+ * never mutated, and may be pushed into the result as-is (still aliasing the
+ * caller's own vertex data).
  */
 function clip(
   v1: Vector2,
@@ -167,8 +183,8 @@ function clip(
 ): Vector2[] {
   const result: Vector2[] = [];
 
-  const distance1 = normal.dot(v1) - offset;
-  const distance2 = normal.dot(v2) - offset;
+  const distance1 = Vec2.dot(normal, v1) - offset;
+  const distance2 = Vec2.dot(normal, v2) - offset;
 
   if (distance1 <= 0) {
     result.push(v1);
@@ -181,7 +197,14 @@ function clip(
   if (distance1 * distance2 < 0) {
     const t = distance1 / (distance1 - distance2);
 
-    result.push(v1.add(v2.subtract(v1).multiply(t)));
+    // Clone before subtracting/adding: `v1`/`v2` may alias the caller's own
+    // vertex data.
+    result.push(
+      Vec2.add(
+        Vec2.clone(v1),
+        Vec2.multiply(Vec2.subtract(Vec2.clone(v2), v1), t),
+      ),
+    );
   }
 
   return result;
@@ -198,14 +221,20 @@ function clipIncidentEdge(
   referenceV1: Vector2,
   referenceV2: Vector2,
 ): Vector2[] | null {
-  const tangent = referenceV2.subtract(referenceV1).normalize();
-  const negativeSideOffset = -tangent.dot(referenceV1);
-  const positiveSideOffset = tangent.dot(referenceV2);
+  // Clone before subtracting/negating: `referenceV1`/`referenceV2` alias the
+  // caller's own vertex data, and `tangent` is reused across both `clip`
+  // calls below.
+  const tangent = Vec2.subtract(Vec2.clone(referenceV2), referenceV1);
+
+  Vec2.normalize(tangent);
+
+  const negativeSideOffset = -Vec2.dot(tangent, referenceV1);
+  const positiveSideOffset = Vec2.dot(tangent, referenceV2);
 
   let clippedPoints = clip(
     incidentV1,
     incidentV2,
-    tangent.negate(),
+    Vec2.negate(Vec2.clone(tangent)),
     negativeSideOffset,
   );
 
@@ -247,7 +276,12 @@ function findContactPoints(
 
   for (let i = 0; i < clippedPoints.length; i++) {
     const point = clippedPoints[i];
-    const separation = referenceNormal.dot(point.subtract(referenceV1));
+    // Clone before subtracting: `point` may alias the caller's own vertex
+    // data, and is pushed into `contactPoints` unchanged below.
+    const separation = Vec2.dot(
+      referenceNormal,
+      Vec2.subtract(Vec2.clone(point), referenceV1),
+    );
 
     if (separation <= 0) {
       contactPoints.push(point);
@@ -283,7 +317,9 @@ function computeFeatureId(
 /**
  * Detects a collision between two convex polygons, given as world-space
  * {@link PolygonFaces}, using the separating axis theorem with
- * reference/incident face clipping.
+ * reference/incident face clipping. Never mutates `facesA`/`facesB` (or
+ * their `vertices`/`normals` elements), so callers may safely reuse the
+ * same `PolygonFaces` across multiple calls.
  * @param facesA - The first polygon's world-space vertices and normals.
  * @param facesB - The second polygon's world-space vertices and normals.
  * @returns A {@link PolygonFacesContact} if the polygons overlap, otherwise
@@ -357,7 +393,11 @@ export function detectPolygonFacesCollision(
     return null;
   }
 
-  const normal = flip ? referenceNormal.negate() : referenceNormal;
+  // Clone before negating: `referenceNormal` aliases `reference.normals`,
+  // reused across every call sharing the same `PolygonFaces`.
+  const normal = flip
+    ? Vec2.negate(Vec2.clone(referenceNormal))
+    : referenceNormal;
 
   return {
     normal,

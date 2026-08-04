@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
@@ -27,8 +27,8 @@ export function addScaleComponent(
   // `local`/`world` default to fresh Vector2 instances per call (rather
   // than a shared module-level default) since systems mutate them in place.
   const defaultScaleOptions: ScaleEcsComponent = {
-    local: Vector2.one,
-    world: Vector2.one,
+    local: Vec2.one,
+    world: Vec2.one,
   };
 
   const component: ScaleEcsComponent = {

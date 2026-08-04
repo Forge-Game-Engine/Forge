@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { ActionResetType, actionResetTypes } from '../constants/index.js';
 import { InputAction } from '../input-action.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
@@ -18,7 +18,7 @@ export class Axis2dAction implements InputAction, Resettable {
 
   public inputGroup: string;
 
-  private readonly _value: Vector2 = Vector2.zero;
+  private readonly _value: Vector2 = Vec2.zero;
   private readonly _actionResetType: ActionResetType;
 
   /**

@@ -33,5 +33,5 @@ export function screenToWorldSpace(
   const worldY =
     (screenHeight / 2 - screenPosition.y) / scale + cameraPosition.y;
 
-  return new Vector2(worldX, worldY);
+  return { x: worldX, y: worldY };
 }

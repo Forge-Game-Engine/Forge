@@ -35,7 +35,7 @@ export function smoothDampVector2(
   let targetX = targetPosition.x;
   let targetY = targetPosition.y;
 
-  const velocityOutput = new Vector2(velocity.x, velocity.y);
+  const velocityOutput = { x: velocity.x, y: velocity.y };
 
   const omega = 2 / smoothTime;
 
@@ -68,10 +68,10 @@ export function smoothDampVector2(
   velocityOutput.x = (velocityOutput.x - omega * tempValsX) * exp;
   velocityOutput.y = (velocityOutput.y - omega * tempValsY) * exp;
 
-  const positionOutput = new Vector2(
-    targetX + (changeX + tempValsX) * exp,
-    targetY + (changeY + tempValsY) * exp,
-  );
+  const positionOutput = {
+    x: targetX + (changeX + tempValsX) * exp,
+    y: targetY + (changeY + tempValsY) * exp,
+  };
 
   //prevent over-shooting
   const originMinusCurrentPosX = originalToX - position.x;

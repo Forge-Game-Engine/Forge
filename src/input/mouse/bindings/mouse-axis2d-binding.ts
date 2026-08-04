@@ -13,7 +13,7 @@ interface MouseAxis2dBindingOptions {
 
 const defaultMouseAxis2dBindingOptions = {
   cursorValueType: cursorValueTypes.ratio,
-  cursorOrigin: new Vector2(0.5, 0.5),
+  cursorOrigin: { x: 0.5, y: 0.5 },
 };
 
 /** Mouse axis 2D input binding. */

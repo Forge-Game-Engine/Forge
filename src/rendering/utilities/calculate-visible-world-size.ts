@@ -26,5 +26,5 @@ export function calculateVisibleWorldSize(
 
   const aspectRatio = canvasWidth / canvasHeight;
 
-  return new Vector2(verticalWorldUnits * aspectRatio, verticalWorldUnits);
+  return { x: verticalWorldUnits * aspectRatio, y: verticalWorldUnits };
 }

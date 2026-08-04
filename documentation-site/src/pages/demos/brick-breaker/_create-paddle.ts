@@ -5,7 +5,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -29,10 +29,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -68,20 +68,20 @@ export async function createPaddle(
     (playAreaWidth * paddleHeightFraction) / paddleSprite.width;
   const paddleHeight = paddleSprite.height * paddleScaleY;
 
-  const position = new Vector2(0, playArea.bottomY + paddleHeightAboveBottom);
+  const position = { x: 0, y: playArea.bottomY + paddleHeightAboveBottom };
 
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: position.clone(),
-    world: position.clone(),
+    local: Vec2.clone(position),
+    world: Vec2.clone(position),
   });
 
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: new Vector2(paddleScaleX, paddleScaleY),
-    world: new Vector2(paddleScaleX, paddleScaleY),
+    local: { x: paddleScaleX, y: paddleScaleY },
+    world: { x: paddleScaleX, y: paddleScaleY },
   });
 
   addSpriteComponent(world, entity, paddleSprite);
@@ -93,9 +93,7 @@ export async function createPaddle(
   });
 
   addColliderComponent(world, entity, {
-    collider: new PolygonCollider(
-      rectangleVertices(paddleWidth, paddleHeight),
-    ),
+    collider: new PolygonCollider(rectangleVertices(paddleWidth, paddleHeight)),
     restitution: 1,
     friction: 0,
   });

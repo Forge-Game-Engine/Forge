@@ -1,6 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * Fields of {@link RigidBodyEcsComponent} with a sensible default; callers
@@ -43,7 +43,7 @@ export function addRigidBodyComponent(
   options: RigidBodyRequiredOptions & Partial<RigidBodyEcsComponent>,
 ): RigidBodyEcsComponent {
   const defaultRigidBodyOptions: RigidBodyDefaultedOptions = {
-    velocity: Vector2.zero,
+    velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,
   };

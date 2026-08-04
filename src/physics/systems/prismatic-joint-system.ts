@@ -1,6 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import {
   PrismaticJointEcsComponent,
   prismaticJointId,
@@ -109,17 +109,30 @@ function prepareJoint(
   bodyA: JointBody,
   bodyB: JointBody,
 ): PreparedPrismaticJoint {
-  const rA = joint.localAnchorA.rotate(bodyA.rotation);
-  const rB = joint.localAnchorB.rotate(bodyB.rotation);
-  const axis = joint.axis.rotate(bodyA.rotation);
-  const perp = axis.perpendicular();
+  // Clone before rotating: `joint.localAnchorA`/`localAnchorB`/`axis` are
+  // persistent component fields reused every tick.
+  const rA = Vec2.rotate(Vec2.clone(joint.localAnchorA), bodyA.rotation);
+  const rB = Vec2.rotate(Vec2.clone(joint.localAnchorB), bodyB.rotation);
+  const axis = Vec2.rotate(Vec2.clone(joint.axis), bodyA.rotation);
+  // Clone before computing the perpendicular: `axis` is reused for the rest
+  // of this tick (stored on `PreparedPrismaticJoint`).
+  const perp = Vec2.perpendicular(Vec2.clone(axis));
 
-  const d = bodyB.position.add(rB).subtract(bodyA.position).subtract(rA);
+  // Clone before adding: `bodyB.position`/`bodyA.position` are the entities'
+  // live world position.
+  const d = Vec2.subtract(
+    Vec2.subtract(Vec2.add(Vec2.clone(bodyB.position), rB), bodyA.position),
+    rA,
+  );
 
-  const s1 = d.add(rA).cross(perp);
-  const s2 = rB.cross(perp);
-  const a1 = d.add(rA).cross(axis);
-  const a2 = rB.cross(axis);
+  // Compute `d + rA` once and reuse it for both `s1`/`a1`: `d` is read again
+  // below (`perpSeparation`/`translation`), so it must not be mutated, and
+  // computing it twice would double-add `rA` under in-place addition.
+  const dPlusRA = Vec2.add(Vec2.clone(d), rA);
+  const s1 = Vec2.cross(dPlusRA, perp);
+  const s2 = Vec2.cross(rB, perp);
+  const a1 = Vec2.cross(dPlusRA, axis);
+  const a2 = Vec2.cross(rB, axis);
 
   const effMassPerp =
     bodyA.invMass +
@@ -148,14 +161,15 @@ function prepareJoint(
     effMassPerp,
     effMassAngular,
     effMassLimit,
-    perpSeparation: d.dot(perp),
+    perpSeparation: Vec2.dot(d, perp),
     angleError: bodyB.rotation - bodyA.rotation - joint.referenceAngle,
-    translation: d.dot(axis),
+    translation: Vec2.dot(d, axis),
   };
 }
 
 function relativeVelocity(prepared: PreparedPrismaticJoint): Vector2 {
-  return velocityAtPoint(prepared.bodyB.rigidBody, prepared.rB).subtract(
+  return Vec2.subtract(
+    velocityAtPoint(prepared.bodyB.rigidBody, prepared.rB),
     velocityAtPoint(prepared.bodyA.rigidBody, prepared.rA),
   );
 }
@@ -168,18 +182,23 @@ function applyAxisImpulse(
   lambda: number,
 ): void {
   const { bodyA, bodyB } = prepared;
-  const impulse = axisVector.multiply(lambda);
+  // Clone before scaling: `axisVector` (`perp`/`axis`) persists across the
+  // whole tick, reused by every remaining solve iteration.
+  const impulse = Vec2.multiply(Vec2.clone(axisVector), lambda);
 
   if (bodyA.rigidBody !== null) {
-    bodyA.rigidBody.velocity = bodyA.rigidBody.velocity.subtract(
-      impulse.multiply(bodyA.invMass),
+    // Clone before scaling: `impulse` is reused for bodyB right after.
+    Vec2.subtract(
+      bodyA.rigidBody.velocity,
+      Vec2.multiply(Vec2.clone(impulse), bodyA.invMass),
     );
     bodyA.rigidBody.angularVelocity -= bodyA.invInertia * coefficientA * lambda;
   }
 
   if (bodyB.rigidBody !== null) {
-    bodyB.rigidBody.velocity = bodyB.rigidBody.velocity.add(
-      impulse.multiply(bodyB.invMass),
+    Vec2.add(
+      bodyB.rigidBody.velocity,
+      Vec2.multiply(Vec2.clone(impulse), bodyB.invMass),
     );
     bodyB.rigidBody.angularVelocity += bodyB.invInertia * coefficientB * lambda;
   }
@@ -221,7 +240,7 @@ function solvePerpendicular(
 
   const relVel = relativeVelocity(prepared);
   const velocityError =
-    relVel.dot(perp) +
+    Vec2.dot(relVel, perp) +
     s2 * (prepared.bodyB.rigidBody?.angularVelocity ?? 0) -
     s1 * (prepared.bodyA.rigidBody?.angularVelocity ?? 0);
 
@@ -304,7 +323,7 @@ function solveLimit(prepared: PreparedPrismaticJoint, dt: number): void {
 
   const relVel = relativeVelocity(prepared);
   const velocityError =
-    relVel.dot(axis) +
+    Vec2.dot(relVel, axis) +
     a2 * (prepared.bodyB.rigidBody?.angularVelocity ?? 0) -
     a1 * (prepared.bodyA.rigidBody?.angularVelocity ?? 0);
 

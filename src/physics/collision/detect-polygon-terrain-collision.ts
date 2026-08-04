@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
@@ -27,9 +27,12 @@ function localXRange(
   let maxX = -Infinity;
 
   for (const vertex of worldVertices) {
-    const localX = vertex
-      .subtract(terrainBody.position)
-      .rotate(-terrainBody.rotation).x;
+    // Clone before subtracting: `worldVertices` (`polygonFaces.vertices`) is
+    // reused across every terrain segment in the caller's loop.
+    const localX = Vec2.rotate(
+      Vec2.subtract(Vec2.clone(vertex), terrainBody.position),
+      -terrainBody.rotation,
+    ).x;
 
     minX = Math.min(minX, localX);
     maxX = Math.max(maxX, localX);
@@ -81,12 +84,19 @@ export function detectPolygonTerrainCollision(
       continue;
     }
 
+    // Clone before rotating: `segment.vertices`/`segment.normals` are the
+    // terrain collider's own persistent local-space segment data (its
+    // surface vertices alias `terrainCollider.points` directly), reused
+    // every tick.
     const segmentFaces: PolygonFaces = {
       vertices: segment.vertices.map((vertex) =>
-        vertex.rotate(terrainBody.rotation).add(terrainBody.position),
+        Vec2.add(
+          Vec2.rotate(Vec2.clone(vertex), terrainBody.rotation),
+          terrainBody.position,
+        ),
       ),
       normals: segment.normals.map((normal) =>
-        normal.rotate(terrainBody.rotation),
+        Vec2.rotate(Vec2.clone(normal), terrainBody.rotation),
       ),
     };
 

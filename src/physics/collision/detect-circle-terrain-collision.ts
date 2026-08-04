@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
@@ -35,10 +35,15 @@ export function detectCircleTerrainCollision(
   const terrainCollider = terrainBody.collider as TerrainCollider;
   const { radius } = circleCollider;
 
-  const localCenter = circleBody.position
-    .add(circleCollider.offset)
-    .subtract(terrainBody.position)
-    .rotate(-terrainBody.rotation);
+  // Clone before adding: `circleBody.position` is the entity's live world
+  // position, so this must not mutate it.
+  const localCenter = Vec2.rotate(
+    Vec2.subtract(
+      Vec2.add(Vec2.clone(circleBody.position), circleCollider.offset),
+      terrainBody.position,
+    ),
+    -terrainBody.rotation,
+  );
 
   let best: BestContact | null = null;
 
@@ -90,10 +95,15 @@ export function detectCircleTerrainCollision(
     return null;
   }
 
-  const normal = best.localNormal.rotate(terrainBody.rotation).negate();
-  const contactPoint = best.localContactPoint
-    .rotate(terrainBody.rotation)
-    .add(terrainBody.position);
+  // `best.localNormal`/`best.localContactPoint` are always fresh clones
+  // (see circle-polygon-contact.ts), so mutating them in place here is safe.
+  const normal = Vec2.negate(
+    Vec2.rotate(best.localNormal, terrainBody.rotation),
+  );
+  const contactPoint = Vec2.add(
+    Vec2.rotate(best.localContactPoint, terrainBody.rotation),
+    terrainBody.position,
+  );
 
   return {
     normal,

@@ -1,4 +1,4 @@
-import { Vector2 } from '../../../math/index.js';
+import { Vec2 } from '../../../math/index.js';
 import {
   buttonMoments,
   cursorValueTypes,
@@ -49,7 +49,7 @@ export class MouseInputSource
   private readonly _mouseButtonUps = new Set<MouseButton>();
   private readonly _mouseButtonHolds = new Set<MouseButton>();
 
-  private readonly _lastMousePosition = Vector2.zero;
+  private readonly _lastMousePosition = Vec2.zero;
 
   /** Constructs a new MouseInputSource.
    * @param inputManager - The input manager to register with.

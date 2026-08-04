@@ -1,5 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { Vec2 } from '../../math/index.js';
 import {
   LinearDamperEcsComponent,
   linearDamperId,
@@ -40,34 +41,41 @@ export const createLinearDamperEcsSystem = (
         continue;
       }
 
-      const rA = damper.localAnchorA.rotate(bodyA.rotation);
-      const rB = damper.localAnchorB.rotate(bodyB.rotation);
+      // Clone before rotating: `damper.localAnchorA`/`localAnchorB` are
+      // persistent component fields reused every tick.
+      const rA = Vec2.rotate(Vec2.clone(damper.localAnchorA), bodyA.rotation);
+      const rB = Vec2.rotate(Vec2.clone(damper.localAnchorB), bodyB.rotation);
 
-      const worldAnchorA = bodyA.position.add(rA);
-      const worldAnchorB = bodyB.position.add(rB);
+      // Clone before adding: `bodyA.position`/`bodyB.position` are the
+      // entities' live world position.
+      const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
+      const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
 
-      const delta = worldAnchorB.subtract(worldAnchorA);
-      const length = delta.magnitude();
+      const delta = Vec2.subtract(worldAnchorB, worldAnchorA);
+      const length = Vec2.magnitude(delta);
 
       if (length < minAnchorDistance) {
         continue;
       }
 
-      const direction = delta.divide(length);
+      const direction = Vec2.divide(delta, length);
 
-      const relativeVelocity = velocityAtPoint(bodyB.rigidBody, rB).subtract(
+      const relativeVelocity = Vec2.subtract(
+        velocityAtPoint(bodyB.rigidBody, rB),
         velocityAtPoint(bodyA.rigidBody, rA),
       );
-      const closingSpeed = relativeVelocity.dot(direction);
+      const closingSpeed = Vec2.dot(relativeVelocity, direction);
       const forceMagnitude = -damper.dampingCoefficient * closingSpeed;
-      const impulse = direction.multiply(forceMagnitude * dt);
+      const impulse = Vec2.multiply(direction, forceMagnitude * dt);
 
+      // Negate a clone for bodyA: `impulse` is still needed unmodified for
+      // bodyB's (opposite-signed) impulse right after.
       applyPointImpulse(
         bodyA.rigidBody,
         rA,
         bodyA.invMass,
         bodyA.invInertia,
-        impulse.negate(),
+        Vec2.negate(Vec2.clone(impulse)),
       );
       applyPointImpulse(
         bodyB.rigidBody,

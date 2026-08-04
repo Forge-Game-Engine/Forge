@@ -20,7 +20,7 @@ import {
   createPrismaticJointEcsSystem,
   createRevoluteJointEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { Random } from '@forge-game-engine/forge/math';
 import { createAirControlEcsSystem } from './_air-control.system';
 import { addCameraFollowComponent } from './_camera-follow.component';
 import { createCameraFollowEcsSystem } from './_camera-follow.system';
@@ -73,7 +73,7 @@ export const createCarGame = async (): Promise<Game> => {
 
   addCameraFollowComponent(world, cameraEntity, {
     targetEntity: chassisEntity,
-    offset: new Vector2(140, 70),
+    offset: { x: 140, y: 70 },
     smoothTime: 0.25,
     maxSpeed: 3000,
   });

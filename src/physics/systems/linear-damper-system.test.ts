@@ -6,7 +6,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vector2 } from '../../math/index.js';
+
 import { addLinearDamperComponent } from '../components/linear-damper-component.js';
 import {
   addRigidBodyComponent,
@@ -32,14 +32,14 @@ describe('createLinearDamperEcsSystem', () => {
   ): { entity: number; rigidBody: RigidBodyEcsComponent } {
     const entity = world.createEntity();
     addPositionComponent(world, entity, {
-      world: new Vector2(x, 0),
-      local: new Vector2(x, 0),
+      world: { x, y: 0 },
+      local: { x, y: 0 },
     });
     addRotationComponent(world, entity);
     const rigidBody = addRigidBodyComponent(world, entity, {
       mass: 1,
       momentOfInertia: 1,
-      velocity: new Vector2(velocityX, 0),
+      velocity: { x: velocityX, y: 0 },
     });
 
     return { entity, rigidBody };

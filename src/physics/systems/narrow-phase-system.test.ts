@@ -38,8 +38,8 @@ describe('createNarrowPhaseEcsSystem', () => {
   }
 
   it('should produce a manifold for a candidate pair that actually overlaps', () => {
-    const entityA = addCircleEntity(new Vector2(0, 0), 1);
-    const entityB = addCircleEntity(new Vector2(1, 0), 1);
+    const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
+    const entityB = addCircleEntity({ x: 1, y: 0 }, 1);
 
     collisionPairs.push({ entityA, entityB });
 
@@ -53,8 +53,8 @@ describe('createNarrowPhaseEcsSystem', () => {
   });
 
   it('should discard a candidate pair that is a false-positive AABB overlap', () => {
-    const entityA = addCircleEntity(new Vector2(0, 0), 1);
-    const entityB = addCircleEntity(new Vector2(5, 0), 1);
+    const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
+    const entityB = addCircleEntity({ x: 5, y: 0 }, 1);
 
     collisionPairs.push({ entityA, entityB });
 
@@ -64,7 +64,7 @@ describe('createNarrowPhaseEcsSystem', () => {
   });
 
   it('should skip pairs referencing an entity that no longer has the required components', () => {
-    const entityA = addCircleEntity(new Vector2(0, 0), 1);
+    const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
 
     collisionPairs.push({ entityA, entityB: entityA + 999 });
 
@@ -74,8 +74,8 @@ describe('createNarrowPhaseEcsSystem', () => {
   });
 
   it('should clear stale manifolds from a previous tick', () => {
-    const entityA = addCircleEntity(new Vector2(0, 0), 1);
-    const entityB = addCircleEntity(new Vector2(1, 0), 1);
+    const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
+    const entityB = addCircleEntity({ x: 1, y: 0 }, 1);
 
     collisionPairs.push({ entityA, entityB });
     world.update();

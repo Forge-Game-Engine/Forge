@@ -1,6 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 export interface AabbDefaultedOptions {
   min: Vector2;
@@ -17,8 +17,8 @@ export function addAabbComponent(
   options?: Partial<AabbEcsComponent>,
 ): AabbEcsComponent {
   const defaultAabbOptions: AabbDefaultedOptions = {
-    min: Vector2.zero,
-    max: Vector2.zero,
+    min: Vec2.zero,
+    max: Vec2.zero,
   };
 
   const component: AabbEcsComponent = {

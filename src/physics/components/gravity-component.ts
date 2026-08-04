@@ -30,7 +30,7 @@ export function addGravityComponent(
   options: Partial<GravityEcsComponent> = {},
 ): GravityEcsComponent {
   const defaultGravityOptions: GravityDefaultedOptions = {
-    amount: new Vector2(0, -9.81),
+    amount: { x: 0, y: -9.81 },
   };
 
   const component: GravityEcsComponent = {

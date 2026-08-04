@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
 
 /**
@@ -26,6 +26,12 @@ export function applyPointImpulse(
     return;
   }
 
-  rigidBody.velocity = rigidBody.velocity.add(impulse.multiply(invMass));
-  rigidBody.angularVelocity += invInertia * r.cross(impulse);
+  // Clone before multiplying: callers (e.g. joint/contact solvers) commonly
+  // apply the same `impulse` object to both sides of a constraint, so this
+  // must not mutate it.
+  rigidBody.velocity = Vec2.add(
+    rigidBody.velocity,
+    Vec2.multiply(Vec2.clone(impulse), invMass),
+  );
+  rigidBody.angularVelocity += invInertia * Vec2.cross(r, impulse);
 }
