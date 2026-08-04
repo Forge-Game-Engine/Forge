@@ -70,19 +70,6 @@ export class Vec2 {
   }
 
   /**
-   * Sets a vector's components to match another vector, mutating it in place.
-   * @param target - The vector to mutate.
-   * @param value - The vector to copy components from.
-   * @returns `target`, for chaining.
-   */
-  public static set(target: Vector2, value: Vector2): Vector2 {
-    target.x = value.x;
-    target.y = value.y;
-
-    return target;
-  }
-
-  /**
    * Adds another vector into `target`, mutating it in place.
    * @param target - The vector to mutate.
    * @param value - The vector to add.

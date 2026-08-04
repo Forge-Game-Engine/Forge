@@ -41,13 +41,6 @@ describe('Vector2', () => {
       v2 = { x: 4, y: 5 };
     });
 
-    it('should set vector components', () => {
-      const vector = { x: 0, y: 0 };
-      const result = Vec2.set(vector, v1);
-      expect(vector).toEqual(v1);
-      expect(result).toBe(vector);
-    });
-
     it('should add vectors in place', () => {
       const result = Vec2.add(v1, v2);
       expect(Vec2.equals(result, { x: 6, y: 8 })).toBe(true);
