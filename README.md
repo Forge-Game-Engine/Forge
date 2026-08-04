@@ -15,9 +15,33 @@ Entity-Component-System (ECS) core, physics, and more.
 npm install @forge-game-engine/forge
 ```
 
-Follow the [Getting Started guide](https://forge-game-engine.github.io/Forge/docs/intro)
-to set up a `Game`, an ECS `World`, and render your first sprite. The
-[ECS demo](https://forge-game-engine.github.io/Forge/demos/ecs) shows a
+Add a `<div id="game-container"></div>` to your page, then create a game
+and render a sprite to it:
+
+```ts
+import { createGame } from '@forge-game-engine/forge/utilities';
+import {
+  addSpriteComponent,
+  createImageSprite,
+} from '@forge-game-engine/forge/rendering';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+
+const { game, world, renderContext } = createGame('game-container');
+
+const image = await renderContext.imageCache.getOrLoad('sprite.png');
+const sprite = createImageSprite(image, renderContext, 0);
+
+const entity = world.createEntity();
+
+addPositionComponent(world, entity);
+addSpriteComponent(world, entity, sprite);
+
+game.run();
+```
+
+See the [Getting Started guide](https://forge-game-engine.github.io/Forge/docs/intro)
+for a walkthrough of the above, and the
+[ECS demo](https://forge-game-engine.github.io/Forge/demos/ecs) for a
 complete runnable example.
 
 Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup,
