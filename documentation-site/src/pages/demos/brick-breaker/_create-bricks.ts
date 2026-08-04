@@ -5,7 +5,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -59,10 +59,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -130,11 +130,11 @@ function createBrickSprite(
     enabled: true,
     width: image.width,
     height: image.height,
-    pivot: new Vector2(0.5, 0.5),
+    pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     renderable,
-    uvOffset: new Vector2(0, 0),
-    uvScale: new Vector2(1, 1),
+    uvOffset: { x: 0, y: 0 },
+    uvScale: { x: 1, y: 1 },
     layer,
   };
 }
@@ -178,15 +178,15 @@ export async function createBrickField(
     const scale = width / sprite.width;
 
     addPositionComponent(world, entity, {
-      local: position.clone(),
-      world: position.clone(),
+      local: Vec2.clone(position),
+      world: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: new Vector2(scale, scale),
-      world: new Vector2(scale, scale),
+      local: { x: scale, y: scale },
+      world: { x: scale, y: scale },
     });
 
     addSpriteComponent(world, entity, sprite);
@@ -218,7 +218,7 @@ export async function createBrickField(
       for (let column = 0; column < columns; column++) {
         const x = startX + column * (brickWidth + columnGap);
 
-        spawnBrick(sprite, new Vector2(x, y), brickWidth, brickHeight);
+        spawnBrick(sprite, { x, y }, brickWidth, brickHeight);
       }
     }
   };

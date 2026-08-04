@@ -1,18 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { calculateVisibleWorldSize } from './calculate-visible-world-size';
-import { Vector2 } from '../../math';
 
 describe('calculateVisibleWorldSize', () => {
   it('should return verticalWorldUnits as the height, and scale width by aspect ratio', () => {
     const result = calculateVisibleWorldSize(1600, 900, 10);
 
-    expect(result).toEqual(new Vector2((10 * 1600) / 900, 10));
+    expect(result).toEqual({ x: (10 * 1600) / 900, y: 10 });
   });
 
   it('should return a square size for a square destination', () => {
     const result = calculateVisibleWorldSize(500, 500, 20);
 
-    expect(result).toEqual(new Vector2(20, 20));
+    expect(result).toEqual({ x: 20, y: 20 });
   });
 
   it('should keep height constant while width tracks aspect ratio changes', () => {

@@ -4,7 +4,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -25,10 +25,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -87,21 +87,15 @@ export async function createBoundaries(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: position.clone(),
-      local: position.clone(),
+      world: Vec2.clone(position),
+      local: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: new Vector2(
-        wallWidth / wallSprite.width,
-        wallHeight / wallSprite.height,
-      ),
-      world: new Vector2(
-        wallWidth / wallSprite.width,
-        wallHeight / wallSprite.height,
-      ),
+      local: { x: wallWidth / wallSprite.width, y: wallHeight / wallSprite.height },
+      world: { x: wallWidth / wallSprite.width, y: wallHeight / wallSprite.height },
     });
 
     addSpriteComponent(world, entity, wallSprite);
@@ -115,19 +109,19 @@ export async function createBoundaries(
   };
 
   createWall(
-    new Vector2(0, halfHeight - wallThickness / 2),
+    { x: 0, y: halfHeight - wallThickness / 2 },
     width,
     wallThickness,
   );
 
   createWall(
-    new Vector2(-halfWidth + wallThickness / 2, 0),
+    { x: -halfWidth + wallThickness / 2, y: 0 },
     wallThickness,
     height,
   );
 
   createWall(
-    new Vector2(halfWidth - wallThickness / 2, 0),
+    { x: halfWidth - wallThickness / 2, y: 0 },
     wallThickness,
     height,
   );

@@ -4,7 +4,7 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2 } from '@forge-game-engine/forge/math';
+
 import {
   addSpriteComponent,
   createImageSprite,
@@ -36,8 +36,8 @@ function placePanel(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: new Vector2(x, y),
-    world: new Vector2(x, y),
+    local: { x, y },
+    world: { x, y },
   });
 
   addRotationComponent(world, entity, {

@@ -1,7 +1,7 @@
 import { positionId, rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * Fields of {@link LinearSpringEcsComponent} with a sensible default;
@@ -63,8 +63,8 @@ export function addLinearSpringComponent(
     options.restLength ?? computeAnchorDistance(world, options);
 
   const component: LinearSpringEcsComponent = {
-    localAnchorA: Vector2.zero,
-    localAnchorB: Vector2.zero,
+    localAnchorA: Vec2.zero,
+    localAnchorB: Vec2.zero,
     ...options,
     restLength,
   };
@@ -92,15 +92,21 @@ function computeAnchorDistance(
     );
   }
 
-  const localAnchorA = options.localAnchorA ?? Vector2.zero;
-  const localAnchorB = options.localAnchorB ?? Vector2.zero;
+  const localAnchorA = options.localAnchorA ?? Vec2.zero;
+  const localAnchorB = options.localAnchorB ?? Vec2.zero;
 
-  const worldAnchorA = positionA.world.add(
-    localAnchorA.rotate(rotationA.world),
+  // Clone before rotating/adding: `positionA.world`/`positionB.world` are
+  // the entities' live position state, and `localAnchorA`/`localAnchorB` may
+  // be the same object references the component ends up storing, so these
+  // operations must not mutate them.
+  const worldAnchorA = Vec2.add(
+    Vec2.clone(positionA.world),
+    Vec2.rotate(Vec2.clone(localAnchorA), rotationA.world),
   );
-  const worldAnchorB = positionB.world.add(
-    localAnchorB.rotate(rotationB.world),
+  const worldAnchorB = Vec2.add(
+    Vec2.clone(positionB.world),
+    Vec2.rotate(Vec2.clone(localAnchorB), rotationB.world),
   );
 
-  return worldAnchorB.subtract(worldAnchorA).magnitude();
+  return Vec2.magnitude(Vec2.subtract(worldAnchorB, worldAnchorA));
 }

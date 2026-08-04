@@ -11,9 +11,10 @@ systems exactly as the engine does internally.
 
 Core concepts:
 
-- [`Vector2`](/Forge/docs/api/classes/Vector2) and
-  [`Vector3`](/Forge/docs/api/classes/Vector3): immutable-style vectors with
-  arithmetic, normalization, rotation, and dot/cross products.
+- [`Vector2`](/Forge/docs/api/interfaces/Vector2) and
+  [`Vector3`](/Forge/docs/api/interfaces/Vector3): plain `{ x, y }`/`{ x, y, z }`
+  objects, with standalone functions for arithmetic, normalization, rotation,
+  and dot/cross products that mutate their first argument in place.
 - [`Rect`](/Forge/docs/api/classes/Rect): an axis-aligned bounding box used
   for broad-phase collision and point/area checks.
 - [`Matrix3x3`](/Forge/docs/api/classes/Matrix3x3): a 2D transformation

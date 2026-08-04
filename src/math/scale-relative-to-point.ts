@@ -16,5 +16,5 @@ export const scaleRelativeToPoint = (
   const xScaled = scale.x * (point.x - pivot.x) + pivot.x;
   const yScaled = scale.y * (point.y - pivot.y) + pivot.y;
 
-  return new Vector2(xScaled, yScaled);
+  return { x: xScaled, y: yScaled };
 };

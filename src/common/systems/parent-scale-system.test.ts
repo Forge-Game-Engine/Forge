@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addScaleComponent } from '../components';
 import { EcsWorld } from '../../ecs';
-import { Vector2 } from '../../math';
+
 import { addParentComponent } from '../components/parent-component';
 import { createParentScaleEcsSystem } from './parent-scale-system';
 
@@ -17,8 +17,8 @@ describe('parent-scale-system', () => {
     const entity = world.createEntity();
 
     const scaleComponent = addScaleComponent(world, entity, {
-      local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
+      local: { x: 10, y: 20 },
+      world: { x: 0, y: 0 },
     });
 
     world.update();
@@ -34,13 +34,13 @@ describe('parent-scale-system', () => {
     const child = world.createEntity();
 
     const parentScale = addScaleComponent(world, parent, {
-      local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
+      local: { x: 10, y: 20 },
+      world: { x: 0, y: 0 },
     });
 
     const childScale = addScaleComponent(world, child, {
-      local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
+      local: { x: 5, y: 5 },
+      world: { x: 0, y: 0 },
     });
 
     addParentComponent(world, child, { parent });
@@ -63,18 +63,18 @@ describe('parent-scale-system', () => {
     const grandchild = world.createEntity();
 
     const parentScale = addScaleComponent(world, parent, {
-      local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
+      local: { x: 10, y: 20 },
+      world: { x: 0, y: 0 },
     });
 
     const childScale = addScaleComponent(world, child, {
-      local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
+      local: { x: 5, y: 5 },
+      world: { x: 0, y: 0 },
     });
 
     const grandchildScale = addScaleComponent(world, grandchild, {
-      local: new Vector2(2, 2),
-      world: new Vector2(0, 0),
+      local: { x: 2, y: 2 },
+      world: { x: 0, y: 0 },
     });
 
     addParentComponent(world, child, { parent });
@@ -104,18 +104,18 @@ describe('parent-scale-system', () => {
     const child = world.createEntity();
 
     const grandchildScale = addScaleComponent(world, grandchild, {
-      local: new Vector2(2, 2),
-      world: new Vector2(0, 0),
+      local: { x: 2, y: 2 },
+      world: { x: 0, y: 0 },
     });
 
     const parentScale = addScaleComponent(world, parent, {
-      local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
+      local: { x: 10, y: 20 },
+      world: { x: 0, y: 0 },
     });
 
     const childScale = addScaleComponent(world, child, {
-      local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
+      local: { x: 5, y: 5 },
+      world: { x: 0, y: 0 },
     });
 
     addParentComponent(world, grandchild, { parent: child });
@@ -145,18 +145,18 @@ describe('parent-scale-system', () => {
     const grandchild = world.createEntity();
 
     const parentScale = addScaleComponent(world, parent, {
-      local: new Vector2(10, 20),
-      world: new Vector2(0, 0),
+      local: { x: 10, y: 20 },
+      world: { x: 0, y: 0 },
     });
 
     const childScale = addScaleComponent(world, child, {
-      local: new Vector2(5, 5),
-      world: new Vector2(0, 0),
+      local: { x: 5, y: 5 },
+      world: { x: 0, y: 0 },
     });
 
     const grandchildScale = addScaleComponent(world, grandchild, {
-      local: new Vector2(2, 2),
-      world: new Vector2(0, 0),
+      local: { x: 2, y: 2 },
+      world: { x: 0, y: 0 },
     });
 
     addParentComponent(world, child, { parent });

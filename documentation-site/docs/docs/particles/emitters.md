@@ -54,13 +54,13 @@ previous burst finishes.
 ## Spawn position
 
 `spawnPosition` is called once per particle and returns the
-[`Vector2`](/Forge/docs/api/classes/Vector2) world position it spawns at. The
+[`Vector2`](/Forge/docs/api/interfaces/Vector2) world position it spawns at. The
 default spawns everything at the origin, so most emitters override it with
 the position of whatever is producing the effect:
 
 ```ts
 sparks.setOptions({
-  spawnPosition: () => playerPosition.clone(),
+  spawnPosition: () => Vec2.clone(playerPosition),
 });
 ```
 
@@ -75,7 +75,7 @@ trailEmitter.setOptions({
     const progress =
       trailEmitter.currentEmitDuration / trailEmitter.emitDurationSeconds;
 
-    return new Vector2(progress * 1200 - 600, 0);
+    return { x: progress * 1200 - 600, y: 0 };
   },
 });
 ```

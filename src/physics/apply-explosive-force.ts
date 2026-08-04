@@ -1,6 +1,6 @@
 import { PositionEcsComponent, positionId } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
-import { Vector2 } from '../math/index.js';
+import { Vec2, Vector2 } from '../math/index.js';
 import { applyImpulse } from './apply-impluse.js';
 import { RigidBodyEcsComponent, rigidBodyId } from './components/index.js';
 
@@ -30,16 +30,23 @@ export function applyExplosiveForce(
     const position = positions[i].world;
     const rigidBody = rigidBodies[i];
 
-    const offset = position.subtract(center);
-    const distance = offset.magnitude();
+    // Clone before subtracting: `position` is the entity's live world
+    // position, so this must not mutate it.
+    const offset = Vec2.subtract(Vec2.clone(position), center);
+    const distance = Vec2.magnitude(offset);
 
     if (distance >= radius) {
       continue;
     }
 
-    const direction = distance === 0 ? Vector2.up : offset.divide(distance);
+    const direction = distance === 0 ? Vec2.up : Vec2.divide(offset, distance);
     const magnitude = force * (1 - distance / radius);
 
-    applyImpulse(direction.multiply(magnitude), position, position, rigidBody);
+    applyImpulse(
+      Vec2.multiply(direction, magnitude),
+      position,
+      position,
+      rigidBody,
+    );
   }
 }

@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **math:** `Vector2`/`Vector3` are now plain `{ x, y }`/`{ x, y, z }` objects instead of classes, constructed with an object literal (`{ x: 1, y: 2 }`) and operated on via `Vec2`/`Vec3` static methods (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, etc.) that mutate their first (`target`) argument in place and return it, rather than allocating a new vector, for performance in hot loops like physics integration; see the "Vectors and Rectangles" doc for the full API and migration guidance. **Breaking change.**
+- **math:** `Vec2.normalize`/`Vec3.normalize` now throw when given a zero-length vector instead of silently returning it unchanged, since a normalized direction is undefined for a zero vector. **Breaking change.**
+
+#### Removed
+
+- **math:** Removed the `Vector2`/`Vector3` classes, including `new Vector2(...)`/`new Vector3(...)` construction, their instance methods (`.add()`, `.subtract()`, `.clone()`, etc.), and their static constant getters (`Vector2.zero`, `Vector2.up`, etc.), replaced by the `Vec2`/`Vec3` static-method API above. **Breaking change.**
+
 ## [0.24.2] - 2026-08-03
 
 #### Added

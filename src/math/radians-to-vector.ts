@@ -7,5 +7,5 @@ import { Vector2 } from './vector2.js';
  * @returns The corresponding 2D vector. (magnitude is 1)
  */
 export function radiansToVector(radians: number): Vector2 {
-  return new Vector2(Math.sin(radians), -Math.cos(radians));
+  return { x: Math.sin(radians), y: -Math.cos(radians) };
 }

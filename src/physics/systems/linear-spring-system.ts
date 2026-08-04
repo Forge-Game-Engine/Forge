@@ -1,5 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { Vec2 } from '../../math/index.js';
 import {
   LinearSpringEcsComponent,
   linearSpringId,
@@ -38,29 +39,35 @@ export const createLinearSpringEcsSystem = (
         continue;
       }
 
-      const rA = spring.localAnchorA.rotate(bodyA.rotation);
-      const rB = spring.localAnchorB.rotate(bodyB.rotation);
+      // Clone before rotating: `spring.localAnchorA`/`localAnchorB` are
+      // persistent component fields reused every tick.
+      const rA = Vec2.rotate(Vec2.clone(spring.localAnchorA), bodyA.rotation);
+      const rB = Vec2.rotate(Vec2.clone(spring.localAnchorB), bodyB.rotation);
 
-      const worldAnchorA = bodyA.position.add(rA);
-      const worldAnchorB = bodyB.position.add(rB);
+      // Clone before adding: `bodyA.position`/`bodyB.position` are the
+      // entities' live world position.
+      const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
+      const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
 
-      const delta = worldAnchorB.subtract(worldAnchorA);
-      const length = delta.magnitude();
+      const delta = Vec2.subtract(worldAnchorB, worldAnchorA);
+      const length = Vec2.magnitude(delta);
 
       if (length < minAnchorDistance) {
         continue;
       }
 
-      const direction = delta.divide(length);
+      const direction = Vec2.divide(delta, length);
       const forceMagnitude = -spring.stiffness * (length - spring.restLength);
-      const impulse = direction.multiply(forceMagnitude * dt);
+      const impulse = Vec2.multiply(direction, forceMagnitude * dt);
 
+      // Negate a clone for bodyA: `impulse` is still needed unmodified for
+      // bodyB's (opposite-signed) impulse right after.
       applyPointImpulse(
         bodyA.rigidBody,
         rA,
         bodyA.invMass,
         bodyA.invInertia,
-        impulse.negate(),
+        Vec2.negate(Vec2.clone(impulse)),
       );
       applyPointImpulse(
         bodyB.rigidBody,

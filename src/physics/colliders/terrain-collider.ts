@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 import { Collider } from './collider.js';
 import {
@@ -53,7 +53,7 @@ export interface TerrainSegment {
  * Unlike {@link PolygonCollider}, `TerrainCollider` does not re-center its
  * vertices around their centroid - `points` are used exactly as authored, in
  * the collider's own local space, with the owning entity's position acting
- * as a simple translation offset (typically `Vector2.zero`, with the terrain
+ * as a simple translation offset (typically `Vec2.zero`, with the terrain
  * authored directly in world coordinates).
  *
  * Narrow-phase collision against a `TerrainCollider` (see
@@ -114,12 +114,15 @@ export class TerrainCollider extends Collider {
       );
     }
 
-    const clonedPoints = points.map((point) => point.clone());
+    const clonedPoints = points.map((point) => Vec2.clone(point));
     const bottomY = Math.max(...clonedPoints.map((point) => point.y)) + depth;
     const silhouette = silhouetteVertices(clonedPoints, bottomY);
     const centroid = calculateCentroid(silhouette);
+    // Clone before subtracting: `silhouette`'s surface vertices are the same
+    // objects as `clonedPoints`, which becomes `this.points` below, so this
+    // must not mutate them.
     const verticesAboutCentroid = silhouette.map((vertex) =>
-      vertex.subtract(centroid),
+      Vec2.subtract(Vec2.clone(vertex), centroid),
     );
     const mass = calculateArea(silhouette);
     const momentOfInertia = calculatePolygonMomentOfInertia(
@@ -136,8 +139,15 @@ export class TerrainCollider extends Collider {
   }
 
   public computeAabb(position: Vector2, rotation: number): Aabb {
+    // Clone before transforming: `silhouetteVertices` reuses `this.points`'
+    // own vector objects for the surface vertices, so this must not mutate
+    // the collider's own stored points.
     const worldVertices = silhouetteVertices(this.points, this.bottomY).map(
-      (vertex) => vertex.add(this.offset).rotate(rotation).add(position),
+      (vertex) =>
+        Vec2.add(
+          Vec2.rotate(Vec2.add(Vec2.clone(vertex), this.offset), rotation),
+          position,
+        ),
     );
 
     let minX = Infinity;
@@ -153,8 +163,8 @@ export class TerrainCollider extends Collider {
     }
 
     return {
-      min: new Vector2(minX, minY),
-      max: new Vector2(maxX, maxY),
+      min: { x: minX, y: minY },
+      max: { x: maxX, y: maxY },
     };
   }
 }
@@ -166,11 +176,7 @@ function silhouetteVertices(
   const first = points[0];
   const last = points[points.length - 1];
 
-  return [
-    ...points,
-    new Vector2(last.x, bottomY),
-    new Vector2(first.x, bottomY),
-  ];
+  return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
 }
 
 function buildSegments(
@@ -186,8 +192,8 @@ function buildSegments(
     const vertices: Vector2[] = [
       surfaceLeft,
       surfaceRight,
-      new Vector2(surfaceRight.x, bottomY),
-      new Vector2(surfaceLeft.x, bottomY),
+      { x: surfaceRight.x, y: bottomY },
+      { x: surfaceLeft.x, y: bottomY },
     ];
 
     segments.push({

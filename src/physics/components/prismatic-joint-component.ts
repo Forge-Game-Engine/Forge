@@ -1,7 +1,7 @@
 import { rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * Fields of {@link PrismaticJointEcsComponent} with a sensible default;
@@ -73,9 +73,9 @@ export function addPrismaticJointComponent(
     Partial<PrismaticJointDefaultedOptions>,
 ): PrismaticJointEcsComponent {
   const defaultOptions: PrismaticJointDefaultedOptions = {
-    localAnchorA: Vector2.zero,
-    localAnchorB: Vector2.zero,
-    axis: Vector2.right,
+    localAnchorA: Vec2.zero,
+    localAnchorB: Vec2.zero,
+    axis: Vec2.right,
     enableLimit: false,
     lowerTranslation: 0,
     upperTranslation: 0,
@@ -85,7 +85,7 @@ export function addPrismaticJointComponent(
 
   const merged = { ...defaultOptions, ...options };
 
-  if (merged.axis.magnitudeSquared() === 0) {
+  if (Vec2.magnitudeSquared(merged.axis) === 0) {
     throw new Error(
       `Unable to add prismatic joint to entity "${entity}": axis must not be the zero vector.`,
     );
@@ -108,7 +108,9 @@ export function addPrismaticJointComponent(
 
   const component: PrismaticJointEcsComponent = {
     ...merged,
-    axis: merged.axis.normalize(),
+    // Clone before normalizing: `merged.axis` may be `options.axis`, the
+    // caller's own vector object, which must not be mutated as a side effect.
+    axis: Vec2.normalize(Vec2.clone(merged.axis)),
     referenceAngle: rotationB.world - rotationA.world,
     accumulatedPerpImpulse: 0,
     accumulatedAngularImpulse: 0,

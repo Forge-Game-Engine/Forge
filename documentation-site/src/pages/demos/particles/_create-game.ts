@@ -14,7 +14,7 @@ import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   createParticleEcsSystem,
   createParticlePositionEcsSystem,
@@ -50,10 +50,7 @@ export const createParticlesGame = async (): Promise<Game> => {
     renderLayers.foreground,
   );
 
-  const fountainPosition = new Vector2(
-    0,
-    -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom,
-  );
+  const fountainPosition = { x: 0, y: -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom };
 
   await createEmberFountain(
     world,
@@ -81,10 +78,7 @@ export const createParticlesGame = async (): Promise<Game> => {
   const toWorldPosition = (event: MouseEvent): Vector2 => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-    const screenPosition = new Vector2(
-      event.clientX - canvasBounds.left,
-      event.clientY - canvasBounds.top,
-    );
+    const screenPosition = { x: event.clientX - canvasBounds.left, y: event.clientY - canvasBounds.top };
 
     const pixelsPerUnit = calculatePixelsPerUnit(
       renderContext.height,
@@ -93,7 +87,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
     return screenToWorldSpace(
       screenPosition,
-      Vector2.zero,
+      Vec2.zero,
       1,
       renderContext.width,
       renderContext.height,

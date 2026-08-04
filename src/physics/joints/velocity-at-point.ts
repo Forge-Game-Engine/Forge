@@ -1,4 +1,4 @@
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
 
 /**
@@ -15,13 +15,13 @@ export function velocityAtPoint(
   r: Vector2,
 ): Vector2 {
   if (rigidBody === null) {
-    return Vector2.zero;
+    return Vec2.zero;
   }
 
-  return rigidBody.velocity.add(
-    new Vector2(
-      -rigidBody.angularVelocity * r.y,
-      rigidBody.angularVelocity * r.x,
-    ),
-  );
+  // Clone before adding: `rigidBody.velocity` is the body's live velocity
+  // state, so sampling a point's velocity must not mutate it.
+  return Vec2.add(Vec2.clone(rigidBody.velocity), {
+    x: -rigidBody.angularVelocity * r.y,
+    y: rigidBody.angularVelocity * r.x,
+  });
 }

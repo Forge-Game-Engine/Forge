@@ -11,9 +11,9 @@ shaders each frame, converting world-space coordinates into clip space.
 
 ## Matrices mutate in place
 
-Unlike [`Vector2`](/Forge/docs/api/classes/Vector2) and
-[`Vector3`](/Forge/docs/api/classes/Vector3), whose arithmetic methods
-return new instances, [`translate`](/Forge/docs/api/classes/Matrix3x3#translate),
+Like [`Vector2`](/Forge/docs/api/interfaces/Vector2) and
+[`Vector3`](/Forge/docs/api/interfaces/Vector3)'s arithmetic functions,
+[`translate`](/Forge/docs/api/classes/Matrix3x3#translate),
 [`rotate`](/Forge/docs/api/classes/Matrix3x3#rotate), and
 [`scale`](/Forge/docs/api/classes/Matrix3x3#scale) **mutate the matrix in
 place** and return `this` for chaining:

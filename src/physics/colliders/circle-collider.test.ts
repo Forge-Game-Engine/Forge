@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { CircleCollider } from './circle-collider.js';
-import { Vector2 } from '../../math/index.js';
 
 describe('CircleCollider', () => {
   it('should have type "circle"', () => {
@@ -18,7 +17,7 @@ describe('CircleCollider', () => {
 
   it('should compute an AABB centered on position, ignoring rotation', () => {
     const collider = new CircleCollider(1);
-    const aabb = collider.computeAabb(new Vector2(2, 3));
+    const aabb = collider.computeAabb({ x: 2, y: 3 });
 
     expect(aabb.min.x).toBeCloseTo(1);
     expect(aabb.min.y).toBeCloseTo(2);

@@ -1,3 +1,4 @@
+import { Vec2 } from '../../math/index.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { detectCircleCircleCollision } from './detect-circle-circle-collision.js';
@@ -16,7 +17,7 @@ function flipManifold(
   }
 
   return {
-    normal: manifold.normal.negate(),
+    normal: Vec2.negate(manifold.normal),
     depth: manifold.depth,
     contactPoints: manifold.contactPoints,
     featureIds: manifold.featureIds,

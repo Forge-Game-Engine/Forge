@@ -178,22 +178,23 @@ function createCellRegions(
   for (const xSegment of xSegments) {
     for (const ySegment of ySegments) {
       regions.push({
-        offset: new Vector2(
-          xSegment.start + xSegment.size / 2 - pivot.x * width,
+        offset: {
+          x: xSegment.start + xSegment.size / 2 - pivot.x * width,
           // Negated relative to x (written as a subtraction, not unary `-`,
-          // so a zero result stays +0 rather than -0): sprite instance data
-          // negates world.y again before it reaches the shader (see
-          // bindSpriteInstanceData), to convert this sprite-space, Y-down
-          // offset (near/top bands start at 0, far/bottom bands end at
-          // `height`) into the engine's Y-up world space. Without this, a
-          // region's own offset and its parent entity's position would be
-          // negated a different number of times, landing near/top bands at
-          // the far/bottom edge and vice versa.
-          pivot.y * height - (ySegment.start + ySegment.size / 2),
-        ),
-        size: new Vector2(xSegment.size, ySegment.size),
-        uvOffset: new Vector2(xBand.uvStart, yBand.uvStart),
-        uvScale: new Vector2(xBand.uvSize, yBand.uvSize),
+          y:
+            // so a zero result stays +0 rather than -0): sprite instance data
+            // negates world.y again before it reaches the shader (see
+            // bindSpriteInstanceData), to convert this sprite-space, Y-down
+            // offset (near/top bands start at 0, far/bottom bands end at
+            // `height`) into the engine's Y-up world space. Without this, a
+            // region's own offset and its parent entity's position would be
+            // negated a different number of times, landing near/top bands at
+            // the far/bottom edge and vice versa.
+            pivot.y * height - (ySegment.start + ySegment.size / 2),
+        },
+        size: { x: xSegment.size, y: ySegment.size },
+        uvOffset: { x: xBand.uvStart, y: yBand.uvStart },
+        uvScale: { x: xBand.uvSize, y: yBand.uvSize },
       });
     }
   }

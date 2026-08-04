@@ -1,6 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { Matrix2x2, Vector2 } from '../../math/index.js';
+import { Matrix2x2, Vec2, Vector2 } from '../../math/index.js';
 import {
   RevoluteJointEcsComponent,
   revoluteJointId,
@@ -103,8 +103,10 @@ function prepareJoint(
   bodyA: JointBody,
   bodyB: JointBody,
 ): PreparedRevoluteJoint {
-  const rA = joint.localAnchorA.rotate(bodyA.rotation);
-  const rB = joint.localAnchorB.rotate(bodyB.rotation);
+  // Clone before rotating: `joint.localAnchorA`/`localAnchorB` are
+  // persistent component fields reused every tick.
+  const rA = Vec2.rotate(Vec2.clone(joint.localAnchorA), bodyA.rotation);
+  const rB = Vec2.rotate(Vec2.clone(joint.localAnchorB), bodyB.rotation);
 
   const k00 =
     bodyA.invMass +
@@ -118,8 +120,10 @@ function prepareJoint(
     bodyA.invInertia * rA.x * rA.x +
     bodyB.invInertia * rB.x * rB.x;
 
-  const worldAnchorA = bodyA.position.add(rA);
-  const worldAnchorB = bodyB.position.add(rB);
+  // Clone before adding: `bodyA.position`/`bodyB.position` are the entities'
+  // live world position.
+  const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
+  const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
 
   return {
     joint,
@@ -128,7 +132,7 @@ function prepareJoint(
     rA,
     rB,
     pointMatrix: new Matrix2x2(k00, k01, k01, k11),
-    pointSeparation: worldAnchorB.subtract(worldAnchorA),
+    pointSeparation: Vec2.subtract(worldAnchorB, worldAnchorA),
     angle: bodyB.rotation - bodyA.rotation - joint.referenceAngle,
   };
 }
@@ -136,12 +140,14 @@ function prepareJoint(
 function warmStart(prepared: PreparedRevoluteJoint): void {
   const { joint, bodyA, bodyB, rA, rB } = prepared;
 
+  // Clone before negating: `joint.accumulatedPointImpulse` is a persistent
+  // warm-start field, still needed unmodified for bodyB's call right after.
   applyPointImpulse(
     bodyA.rigidBody,
     rA,
     bodyA.invMass,
     bodyA.invInertia,
-    joint.accumulatedPointImpulse.negate(),
+    Vec2.negate(Vec2.clone(joint.accumulatedPointImpulse)),
   );
   applyPointImpulse(
     bodyB.rigidBody,
@@ -156,7 +162,8 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
   const { joint, bodyA, bodyB, rA, rB, pointMatrix, pointSeparation } =
     prepared;
 
-  const relativeVelocity = velocityAtPoint(bodyB.rigidBody, rB).subtract(
+  const relativeVelocity = Vec2.subtract(
+    velocityAtPoint(bodyB.rigidBody, rB),
     velocityAtPoint(bodyA.rigidBody, rA),
   );
 
@@ -166,25 +173,37 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
     joint.dampingRatio,
     dt,
   );
-  const bias = pointSeparation.multiply(soft.biasRate);
+  // Clone before scaling: `pointSeparation` persists across every solve
+  // iteration this tick.
+  const bias = Vec2.multiply(Vec2.clone(pointSeparation), soft.biasRate);
 
   // The impulseScale decay term is a fraction of the accumulated impulse
   // itself, not something to run back through the effective-mass solve (a
   // second division by mass there would make the correction grow with the
   // square of the bodies' mass instead of staying scale-invariant).
-  const rhs = relativeVelocity.multiply(soft.massScale).add(bias).negate();
-  const impulse = pointMatrix
-    .solve(rhs)
-    .subtract(joint.accumulatedPointImpulse.multiply(soft.impulseScale));
+  const rhs = Vec2.negate(
+    Vec2.add(Vec2.multiply(relativeVelocity, soft.massScale), bias),
+  );
+  // Clone before scaling: `joint.accumulatedPointImpulse` persists across
+  // every solve iteration this tick.
+  const impulse = Vec2.subtract(
+    pointMatrix.solve(rhs),
+    Vec2.multiply(Vec2.clone(joint.accumulatedPointImpulse), soft.impulseScale),
+  );
 
-  joint.accumulatedPointImpulse = joint.accumulatedPointImpulse.add(impulse);
+  joint.accumulatedPointImpulse = Vec2.add(
+    joint.accumulatedPointImpulse,
+    impulse,
+  );
 
+  // Clone before negating: `impulse` is still needed unmodified for bodyB's
+  // call right after.
   applyPointImpulse(
     bodyA.rigidBody,
     rA,
     bodyA.invMass,
     bodyA.invInertia,
-    impulse.negate(),
+    Vec2.negate(Vec2.clone(impulse)),
   );
   applyPointImpulse(
     bodyB.rigidBody,

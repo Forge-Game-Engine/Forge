@@ -12,7 +12,7 @@ else: pistons, elevators, drawers, suspension struts, moving platforms with
 a fixed travel path.
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { addPrismaticJointComponent } from '@forge-game-engine/forge/physics';
 
 // frame and piston are entities with their own PositionEcsComponent,
@@ -24,7 +24,7 @@ const jointEntity = world.createEntity();
 addPrismaticJointComponent(world, jointEntity, {
   entityA: frame,
   entityB: piston,
-  axis: Vector2.up,
+  axis: Vec2.up,
   enableLimit: true,
   lowerTranslation: 0,
   upperTranslation: 120,
@@ -90,7 +90,7 @@ Add a `PrismaticJointEcsComponent` to a dedicated joint entity (not
 register `createPrismaticJointEcsSystem(time)`:
 
 ```ts
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addPrismaticJointComponent,
   createPrismaticJointEcsSystem,
@@ -101,7 +101,7 @@ const jointEntity = world.createEntity();
 addPrismaticJointComponent(world, jointEntity, {
   entityA: frame,
   entityB: piston,
-  axis: Vector2.up,
+  axis: Vec2.up,
 });
 
 // Must run after whatever system resolves collisions

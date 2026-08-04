@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createProjectionMatrix } from './create-projection-matrix';
-import { Matrix3x3, Vector2 } from '../../../math';
+import { Matrix3x3 } from '../../../math';
 
 describe('createProjectionMatrix', () => {
   it.each([
@@ -10,7 +10,7 @@ describe('createProjectionMatrix', () => {
   ])(
     'should create a correct projection matrix for $description',
     ({ width, height }) => {
-      const cameraPosition = new Vector2(0, 0);
+      const cameraPosition = { x: 0, y: 0 };
       const zoom = 1;
 
       const expectedMatrix = new Matrix3x3([
@@ -38,7 +38,7 @@ describe('createProjectionMatrix', () => {
 
   it('should create a correct projection matrix for a square area', () => {
     const size = 500;
-    const cameraPosition = new Vector2(0, 0);
+    const cameraPosition = { x: 0, y: 0 };
     const zoom = 1;
     const expectedMatrix = new Matrix3x3([
       2 / size,
@@ -60,7 +60,7 @@ describe('createProjectionMatrix', () => {
   it('should apply zoom correctly', () => {
     const width = 800;
     const height = 600;
-    const cameraPosition = new Vector2(0, 0);
+    const cameraPosition = { x: 0, y: 0 };
     const zoom = 2;
 
     const expectedMatrix = new Matrix3x3([
@@ -83,7 +83,7 @@ describe('createProjectionMatrix', () => {
   it('should translate the camera position correctly', () => {
     const width = 800;
     const height = 600;
-    const cameraPosition = new Vector2(100, 50);
+    const cameraPosition = { x: 100, y: 50 };
     const zoom = 1;
 
     // The matrix should include translation by -cameraPosition.x and
@@ -114,7 +114,7 @@ describe('createProjectionMatrix', () => {
   it('should apply both zoom and camera translation', () => {
     const width = 400;
     const height = 200;
-    const cameraPosition = new Vector2(10, -20);
+    const cameraPosition = { x: 10, y: -20 };
     const zoom = 0.5;
 
     const scaleX = (2 / width) * zoom;
@@ -143,7 +143,7 @@ describe('createProjectionMatrix', () => {
   it('should apply pixelsPerUnit as an additional scale factor', () => {
     const width = 800;
     const height = 600;
-    const cameraPosition = new Vector2(0, 0);
+    const cameraPosition = { x: 0, y: 0 };
     const zoom = 1;
     const pixelsPerUnit = 100;
 
@@ -173,7 +173,7 @@ describe('createProjectionMatrix', () => {
   it('should combine pixelsPerUnit with zoom and camera translation', () => {
     const width = 400;
     const height = 200;
-    const cameraPosition = new Vector2(10, -20);
+    const cameraPosition = { x: 10, y: -20 };
     const zoom = 0.5;
     const pixelsPerUnit = 20;
 
@@ -199,7 +199,7 @@ describe('createProjectionMatrix', () => {
   it('should default pixelsPerUnit to 1 when omitted', () => {
     const width = 800;
     const height = 600;
-    const cameraPosition = new Vector2(0, 0);
+    const cameraPosition = { x: 0, y: 0 };
     const zoom = 1;
 
     const withDefault = createProjectionMatrix(
@@ -222,7 +222,7 @@ describe('createProjectionMatrix', () => {
   it('should handle negative zoom (flipping)', () => {
     const width = 100;
     const height = 100;
-    const cameraPosition = new Vector2(0, 0);
+    const cameraPosition = { x: 0, y: 0 };
     const zoom = -1;
 
     const expectedMatrix = new Matrix3x3([

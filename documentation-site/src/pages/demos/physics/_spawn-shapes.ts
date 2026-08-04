@@ -4,7 +4,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Random, Vector2 } from '@forge-game-engine/forge/math';
+import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -28,7 +28,7 @@ import { wallThickness } from './_create-boundaries';
 const shapeCount = 300;
 const minSize = 30;
 const maxSize = 60;
-const gravity = new Vector2(0, -300);
+const gravity = { x: 0, y: -300 };
 
 /**
  * `block_corner_large.png` is a right triangle with its right angle at the
@@ -37,17 +37,17 @@ const gravity = new Vector2(0, -300);
  * the sprite's pivot is moved to match - keeping the rendered triangle
  * aligned with its physics shape as it rotates.
  */
-const trianglePivot = new Vector2(1 / 3, 2 / 3);
+const trianglePivot = { x: 1 / 3, y: 2 / 3 };
 
 function rectangleVertices(width: number, height: number): Vector2[] {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   return [
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
-    new Vector2(halfWidth, halfHeight),
-    new Vector2(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -64,9 +64,9 @@ function createTriangleCollider(width: number, height: number): Collider {
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    new Vector2(-halfWidth, halfHeight),
-    new Vector2(-halfWidth, -halfHeight),
-    new Vector2(halfWidth, -halfHeight),
+    { x: -halfWidth, y: halfHeight },
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
   ]);
 }
 
@@ -109,7 +109,7 @@ export async function spawnShapes(
     renderLayer,
   );
 
-  triangleSprite.pivot = trianglePivot.clone();
+  triangleSprite.pivot = Vec2.clone(trianglePivot);
 
   // One spawner per shape: pairs the sprite to render with the physics
   // collider to simulate, both sized relative to the sprite's height.
@@ -152,15 +152,15 @@ export async function spawnShapes(
     const scale = size / sprite.height;
 
     addPositionComponent(world, entity, {
-      world: position.clone(),
-      local: position.clone(),
+      world: Vec2.clone(position),
+      local: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: new Vector2(scale, scale),
-      world: new Vector2(scale, scale),
+      local: { x: scale, y: scale },
+      world: { x: scale, y: scale },
     });
 
     addSpriteComponent(world, entity, sprite);
@@ -182,13 +182,10 @@ export async function spawnShapes(
     const size = random.randomFloat(minSize, maxSize);
     const halfSize = size / 2;
 
-    const position = new Vector2(
-      random.randomFloat(
+    const position = { x: random.randomFloat(
         -halfWidth + wallThickness + halfSize,
         halfWidth - wallThickness - halfSize,
-      ),
-      random.randomFloat(0, halfHeight * 4 - halfSize),
-    );
+      ), y: random.randomFloat(0, halfHeight * 4 - halfSize) };
 
     const spawner =
       shapeSpawners[random.randomInt(0, shapeSpawners.length - 1)];
