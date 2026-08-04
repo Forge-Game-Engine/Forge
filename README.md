@@ -6,6 +6,9 @@ Forge is a browser-based, code only game engine. It has everything you'd expect 
 
 [Documentation](https://forge-game-engine.github.io/Forge/)
 
+Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup,
+verification steps, and commit/changelog conventions.
+
 ## Prerequisites
 
 - Install Docker: https://www.docker.com/products/docker-desktop/
