@@ -63,12 +63,21 @@ export class Game implements Stoppable {
     this._world.stop();
   }
 
-  private readonly _gameLoop = (currentTime: number): void => {
+  private readonly _gameLoop = (): void => {
     if (!this._isRunning) {
       return;
     }
 
-    this._time.update(currentTime);
+    // Use our own `performance.now()` reading taken at the point this
+    // callback actually executes, rather than the timestamp
+    // `requestAnimationFrame` passes in. That timestamp isn't guaranteed to
+    // be monotonic relative to a prior `performance.now()` call - it can
+    // reflect when the browser decided to start the frame rather than when
+    // the callback ran, which occasionally lands slightly before the
+    // previous tick's recorded time (e.g. right after a heavy synchronous
+    // block) and produces a negative delta. Reading our own clock here
+    // keeps every delta relative to the same monotonic source.
+    this._time.update(performance.now());
     this._world.update();
 
     this._animationFrameId = requestAnimationFrame(this._gameLoop);
