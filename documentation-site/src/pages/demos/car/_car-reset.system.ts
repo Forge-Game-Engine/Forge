@@ -1,7 +1,7 @@
 import { positionId, rotationId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { rigidBodyId } from '@forge-game-engine/forge/physics';
-import { vector2Clone, vector2Zero } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { CarResetEcsComponent, carResetId } from './_car-reset.component';
 
 /**
@@ -29,8 +29,8 @@ export const createCarResetEcsSystem = (): EcsSystem<
         if (position !== null) {
           // clone: initialPosition is the same recorded transform reused on
           // every restart, and world/local must be independent instances.
-          position.world = vector2Clone(initialPosition);
-          position.local = vector2Clone(initialPosition);
+          position.world = Vec2.clone(initialPosition);
+          position.local = Vec2.clone(initialPosition);
         }
 
         if (rotation !== null) {
@@ -39,7 +39,7 @@ export const createCarResetEcsSystem = (): EcsSystem<
         }
 
         if (rigidBody !== null) {
-          rigidBody.velocity = vector2Zero();
+          rigidBody.velocity = Vec2.zero;
           rigidBody.angularVelocity = 0;
         }
       }

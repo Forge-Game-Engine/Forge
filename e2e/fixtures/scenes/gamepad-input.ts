@@ -1,27 +1,4 @@
-import {
-  actionResetTypes,
-  Axis1dAction,
-  Color,
-  createCamera,
-  createCanvas,
-  createImageSprite,
-  createPresentEcsSystem,
-  createRenderContext,
-  createRenderEcsSystem,
-  createTransformEcsSystem,
-  createVector2,
-  EcsSystem,
-  EcsWorld,
-  gamepadAxes,
-  GamepadAxis1dBinding,
-  GamepadInputSource,
-  PositionEcsComponent,
-  positionId,
-  registerInputs,
-  SpriteEcsComponent,
-  spriteId,
-  Time,
-} from '../../../src/index.js';
+import { actionResetTypes, Axis1dAction, Color, createCamera, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsSystem, EcsWorld, gamepadAxes, GamepadAxis1dBinding, GamepadInputSource, PositionEcsComponent, positionId, registerInputs, SpriteEcsComponent, spriteId, Time, Vec2 } from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {
@@ -193,8 +170,8 @@ export const createScene: CreateScene = async (
     const entity = world.createEntity();
 
     const position = world.addComponent(entity, positionId, {
-      local: createVector2(x, y),
-      world: createVector2(x, y),
+      local: Vec2.create(x, y),
+      world: Vec2.create(x, y),
     });
 
     const sprite = world.addComponent(entity, spriteId, {

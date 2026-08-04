@@ -1,9 +1,9 @@
 import {
   Color,
   createQuadGeometry,
-  createVector2,
   Renderable,
   SpriteEcsComponent,
+  Vec2,
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
@@ -146,11 +146,11 @@ export function createImageSprite(
     enabled: true,
     width: options.frameDimensions?.x ?? image.width,
     height: options.frameDimensions?.y ?? image.height,
-    pivot: createVector2(0.5, 0.5),
+    pivot: Vec2.create(0.5, 0.5),
     tintColor: Color.white,
     renderable,
-    uvOffset: createVector2(0, 0),
-    uvScale: createVector2(1, 1),
+    uvOffset: Vec2.create(0, 0),
+    uvScale: Vec2.create(1, 1),
     layer: 0,
     slices: options.slices,
   };

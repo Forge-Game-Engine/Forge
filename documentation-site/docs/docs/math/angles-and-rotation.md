@@ -5,7 +5,7 @@ sidebar_position: 2
 # Angles and Rotation
 
 Forge represents rotation as **radians** everywhere: `RotationEcsComponent.local`/`world`,
-`RigidBody.angle`, [`vector2Rotate`](/Forge/docs/api/functions/vector2Rotate),
+`RigidBody.angle`, [`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate),
 and [`Matrix3x3.rotate`](/Forge/docs/api/classes/Matrix3x3#rotate) all take
 or store radians. The math module provides conversions for the cases where
 you need degrees or a direction vector instead.
@@ -19,24 +19,24 @@ content in degrees (level data, a debug slider) or displaying a rotation in
 a UI, then work in radians everywhere internally:
 
 ```ts
-import { degreesToRadians } from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vec2 } from '@forge-game-engine/forge/math';
 
 rotation.local = degreesToRadians(45);
 ```
 
 ## Rotating a vector
 
-[`vector2Rotate(v, angleInRadians)`](/Forge/docs/api/functions/vector2Rotate)
+[`Vec2.rotate(v, angleInRadians)`](/Forge/docs/api/classes/Vec2#rotate)
 rotates `v` in place by the given angle and returns it. Use it to turn a
 local-space offset into a world-space offset based on an entity's current
 rotation, for example positioning a turret or weapon mount relative to its
 parent:
 
 ```ts
-const localOffset = createVector2(0, -20); // 20px "above" the entity, in local space
-const worldOffset = vector2Rotate(localOffset, rotation.world);
+const localOffset = Vec2.create(0, -20); // 20px "above" the entity, in local space
+const worldOffset = Vec2.rotate(localOffset, rotation.world);
 // Clone before adding: `position.world` is the entity's live position.
-const turretPosition = vector2Add(vector2Clone(position.world), worldOffset);
+const turretPosition = Vec2.add(Vec2.clone(position.world), worldOffset);
 ```
 
 ## Converting between angles and direction vectors
@@ -46,11 +46,11 @@ const turretPosition = vector2Add(vector2Clone(position.world), worldOffset);
 between an angle and a unit `Vector2`, but they use **different zero
 references**:
 
-- `radiansToVector(0)` returns `(0, -1)`, i.e. `vector2Up()`. Angle `0` means
+- `radiansToVector(0)` returns `(0, -1)`, i.e. `Vec2.up`. Angle `0` means
   "facing up the screen", matching how `RotationEcsComponent` represents an
   unrotated entity.
 - `vectorToRadians` is a plain `Math.atan2(vector.y, vector.x)`, so
-  `vectorToRadians(vector2Right())` (i.e. `(1, 0)`) returns `0`.
+  `vectorToRadians(Vec2.right)` (i.e. `(1, 0)`) returns `0`.
 
 Both conventions increase the angle **clockwise** (a consequence of Forge's
 y-down coordinate system), but `radiansToVector` is offset from
@@ -84,7 +84,7 @@ own (right-is-zero) convention, so add `Math.PI / 2` to convert it into the
 "up-is-zero" convention `RotationEcsComponent` expects:
 
 ```ts
-import { vector2MagnitudeSquared, vectorToRadians } from '@forge-game-engine/forge/math';
+import { Vec2, vectorToRadians } from '@forge-game-engine/forge/math';
 
 const faceVelocitySystem = {
   query: [velocityId, rotationId] as const,
@@ -93,7 +93,7 @@ const faceVelocitySystem = {
       const velocity = velocities[i];
       const rotation = rotations[i];
 
-      if (vector2MagnitudeSquared(velocity.value) < 0.0001) {
+      if (Vec2.magnitudeSquared(velocity.value) < 0.0001) {
         continue;
       }
 

@@ -17,7 +17,7 @@ import {
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { createVector2, vector2Zero } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createBoundaries } from './_create-boundaries';
 import { spawnShapes } from './_spawn-shapes';
@@ -73,7 +73,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-    const screenPosition = createVector2(
+    const screenPosition = Vec2.create(
       event.clientX - canvasBounds.left,
       event.clientY - canvasBounds.top,
     );
@@ -85,7 +85,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
 
     const worldPosition = screenToWorldSpace(
       screenPosition,
-      vector2Zero(),
+      Vec2.zero,
       1,
       renderContext.width,
       renderContext.height,

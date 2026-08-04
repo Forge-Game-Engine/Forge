@@ -60,7 +60,7 @@ returns new `positionOutput` and `velocityOutput` values. The
 and pass it back in as `velocity` on the next call:
 
 ```ts
-import { smoothDampVector2 } from '@forge-game-engine/forge/math';
+import { smoothDampVector2, Vec2 } from '@forge-game-engine/forge/math';
 
 const cameraFollowSystem = {
   query: [cameraId, positionId] as const,
@@ -87,7 +87,7 @@ const cameraFollowSystem = {
 
 :::caution
 If `velocityOutput` is discarded instead of stored (for example, by passing
-`vector2Zero()` as `velocity` on every call instead of the previous
+`Vec2.zero` as `velocity` on every call instead of the previous
 `velocityOutput`), the spring never builds momentum. The camera will still
 move toward the target, but at a constant slow rate near `maxSpeed`, missing
 the acceleration/deceleration that makes the smoothing feel natural.

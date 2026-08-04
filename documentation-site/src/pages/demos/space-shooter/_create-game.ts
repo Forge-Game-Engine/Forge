@@ -21,7 +21,7 @@ import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
 } from '@forge-game-engine/forge/lifecycle';
-import { Random, vector2Zero } from '@forge-game-engine/forge/math';
+import { Random, Vec2 } from '@forge-game-engine/forge/math';
 import {
   CollisionManifold,
   CollisionPair,
@@ -135,7 +135,7 @@ export const createSpaceShooterGame = async (
     intensity: 0,
     durationSeconds: 0,
     elapsedSeconds: 0,
-    currentOffset: vector2Zero(),
+    currentOffset: Vec2.zero,
     nextOffsetChangeSeconds: 0,
   });
 

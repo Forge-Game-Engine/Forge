@@ -1,13 +1,4 @@
-import {
-  createVector2,
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Cross,
-  vector2Rotate,
-  vector2Subtract,
-  vector2Zero,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 import { Collider } from './collider.js';
 import {
@@ -30,10 +21,10 @@ function validateConvexity(vertices: readonly Vector2[]): void {
 
     // Clone before subtracting: `current`/`next`/`afterNext` are the
     // caller's actual vertex objects, so validation must not mutate them.
-    const edge = vector2Subtract(vector2Clone(next), current);
-    const nextEdge = vector2Subtract(vector2Clone(afterNext), next);
+    const edge = Vec2.subtract(Vec2.clone(next), current);
+    const nextEdge = Vec2.subtract(Vec2.clone(afterNext), next);
 
-    if (vector2Cross(edge, nextEdge) < -EPSILON) {
+    if (Vec2.cross(edge, nextEdge) < -EPSILON) {
       throw new Error('PolygonCollider vertices must form a convex polygon.');
     }
   }
@@ -47,7 +38,7 @@ function validateConvexity(vertices: readonly Vector2[]): void {
  */
 export class PolygonCollider extends Collider {
   public readonly type = 'polygon';
-  public offset: Vector2 = vector2Zero();
+  public offset: Vector2 = Vec2.zero;
   public readonly vertices: readonly Vector2[];
   public readonly normals: readonly Vector2[];
 
@@ -87,7 +78,7 @@ export class PolygonCollider extends Collider {
     // Clone before subtracting: `orderedVertices` holds the same vertex
     // objects the caller passed in, so this must not mutate them.
     const centeredVertices = orderedVertices.map((vertex) =>
-      vector2Subtract(vector2Clone(vertex), centroid),
+      Vec2.subtract(Vec2.clone(vertex), centroid),
     );
 
     const mass = density * calculateArea(centeredVertices);
@@ -112,8 +103,8 @@ export class PolygonCollider extends Collider {
     // Clone before transforming: `this.vertices` is reused every call, so
     // this must not mutate the collider's own stored vertices.
     return this.vertices.map((vertex) =>
-      vector2Add(
-        vector2Rotate(vector2Add(vector2Clone(vertex), this.offset), rotation),
+      Vec2.add(
+        Vec2.rotate(Vec2.add(Vec2.clone(vertex), this.offset), rotation),
         position,
       ),
     );
@@ -128,7 +119,7 @@ export class PolygonCollider extends Collider {
     // Clone before rotating: `this.normals` is reused every call, so this
     // must not mutate the collider's own stored normals.
     return this.normals.map((normal) =>
-      vector2Rotate(vector2Clone(normal), rotation),
+      Vec2.rotate(Vec2.clone(normal), rotation),
     );
   }
 
@@ -148,8 +139,8 @@ export class PolygonCollider extends Collider {
     }
 
     return {
-      min: createVector2(minX, minY),
-      max: createVector2(maxX, maxY),
+      min: Vec2.create(minX, minY),
+      max: Vec2.create(maxX, maxY),
     };
   }
 }

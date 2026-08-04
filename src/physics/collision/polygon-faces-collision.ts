@@ -1,13 +1,4 @@
-import {
-  type Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Dot,
-  vector2Multiply,
-  vector2Negate,
-  vector2Normalize,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Vec2, type Vector2 } from '../../math/index.js';
 
 const RELATIVE_TOLERANCE = 0.95;
 const ABSOLUTE_TOLERANCE = 0.01;
@@ -71,10 +62,10 @@ interface ReferenceIncidentFaces {
  */
 function getSupportPoint(vertices: Vector2[], direction: Vector2): Vector2 {
   let bestVertex = vertices[0];
-  let bestProjection = vector2Dot(direction, bestVertex);
+  let bestProjection = Vec2.dot(direction, bestVertex);
 
   for (let i = 1; i < vertices.length; i++) {
-    const projection = vector2Dot(direction, vertices[i]);
+    const projection = Vec2.dot(direction, vertices[i]);
 
     if (projection > bestProjection) {
       bestVertex = vertices[i];
@@ -106,11 +97,11 @@ function findAxisOfLeastPenetration(
     // across every segment sharing the same `PolygonFaces`).
     const supportPoint = getSupportPoint(
       otherVertices,
-      vector2Negate(vector2Clone(normal)),
+      Vec2.negate(Vec2.clone(normal)),
     );
-    const separation = vector2Dot(
+    const separation = Vec2.dot(
       normal,
-      vector2Subtract(vector2Clone(supportPoint), ownVertices[i]),
+      Vec2.subtract(Vec2.clone(supportPoint), ownVertices[i]),
     );
 
     if (separation > bestSeparation) {
@@ -166,7 +157,7 @@ function findIncidentFaceIndex(
   let minDot = Infinity;
 
   for (let i = 0; i < incidentNormals.length; i++) {
-    const dot = vector2Dot(referenceNormal, incidentNormals[i]);
+    const dot = Vec2.dot(referenceNormal, incidentNormals[i]);
 
     if (dot < minDot) {
       minDot = dot;
@@ -192,8 +183,8 @@ function clip(
 ): Vector2[] {
   const result: Vector2[] = [];
 
-  const distance1 = vector2Dot(normal, v1) - offset;
-  const distance2 = vector2Dot(normal, v2) - offset;
+  const distance1 = Vec2.dot(normal, v1) - offset;
+  const distance2 = Vec2.dot(normal, v2) - offset;
 
   if (distance1 <= 0) {
     result.push(v1);
@@ -209,9 +200,9 @@ function clip(
     // Clone before subtracting/adding: `v1`/`v2` may alias the caller's own
     // vertex data.
     result.push(
-      vector2Add(
-        vector2Clone(v1),
-        vector2Multiply(vector2Subtract(vector2Clone(v2), v1), t),
+      Vec2.add(
+        Vec2.clone(v1),
+        Vec2.multiply(Vec2.subtract(Vec2.clone(v2), v1), t),
       ),
     );
   }
@@ -233,17 +224,17 @@ function clipIncidentEdge(
   // Clone before subtracting/negating: `referenceV1`/`referenceV2` alias the
   // caller's own vertex data, and `tangent` is reused across both `clip`
   // calls below.
-  const tangent = vector2Subtract(vector2Clone(referenceV2), referenceV1);
+  const tangent = Vec2.subtract(Vec2.clone(referenceV2), referenceV1);
 
-  vector2Normalize(tangent);
+  Vec2.normalize(tangent);
 
-  const negativeSideOffset = -vector2Dot(tangent, referenceV1);
-  const positiveSideOffset = vector2Dot(tangent, referenceV2);
+  const negativeSideOffset = -Vec2.dot(tangent, referenceV1);
+  const positiveSideOffset = Vec2.dot(tangent, referenceV2);
 
   let clippedPoints = clip(
     incidentV1,
     incidentV2,
-    vector2Negate(vector2Clone(tangent)),
+    Vec2.negate(Vec2.clone(tangent)),
     negativeSideOffset,
   );
 
@@ -287,9 +278,9 @@ function findContactPoints(
     const point = clippedPoints[i];
     // Clone before subtracting: `point` may alias the caller's own vertex
     // data, and is pushed into `contactPoints` unchanged below.
-    const separation = vector2Dot(
+    const separation = Vec2.dot(
       referenceNormal,
-      vector2Subtract(vector2Clone(point), referenceV1),
+      Vec2.subtract(Vec2.clone(point), referenceV1),
     );
 
     if (separation <= 0) {
@@ -405,7 +396,7 @@ export function detectPolygonFacesCollision(
   // Clone before negating: `referenceNormal` aliases `reference.normals`,
   // reused across every call sharing the same `PolygonFaces`.
   const normal = flip
-    ? vector2Negate(vector2Clone(referenceNormal))
+    ? Vec2.negate(Vec2.clone(referenceNormal))
     : referenceNormal;
 
   return {

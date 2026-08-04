@@ -1,12 +1,4 @@
-import {
-  vector2Add,
-  vector2Clone,
-  vector2Divide,
-  vector2Magnitude,
-  vector2Multiply,
-  vector2Subtract,
-  vector2Up,
-} from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
@@ -27,24 +19,24 @@ export function detectCircleCircleCollision(
 
   // Clone before adding: `bodyA.position`/`bodyB.position` are the entities'
   // live world position, so this must not mutate them.
-  const centerA = vector2Add(vector2Clone(bodyA.position), colliderA.offset);
-  const centerB = vector2Add(vector2Clone(bodyB.position), colliderB.offset);
+  const centerA = Vec2.add(Vec2.clone(bodyA.position), colliderA.offset);
+  const centerB = Vec2.add(Vec2.clone(bodyB.position), colliderB.offset);
 
-  const delta = vector2Subtract(centerB, centerA);
-  const distance = vector2Magnitude(delta);
+  const delta = Vec2.subtract(centerB, centerA);
+  const distance = Vec2.magnitude(delta);
   const radiusSum = colliderA.radius + colliderB.radius;
 
   if (distance > radiusSum) {
     return null;
   }
 
-  const normal = distance === 0 ? vector2Up() : vector2Divide(delta, distance);
+  const normal = distance === 0 ? Vec2.up : Vec2.divide(delta, distance);
   const depth = radiusSum - distance;
   // Scale a clone of `normal`, not `normal` itself: `normal` is returned as
   // the manifold's unit contact normal.
-  const contactPoint = vector2Add(
+  const contactPoint = Vec2.add(
     centerA,
-    vector2Multiply(vector2Clone(normal), colliderA.radius),
+    Vec2.multiply(Vec2.clone(normal), colliderA.radius),
   );
 
   return {

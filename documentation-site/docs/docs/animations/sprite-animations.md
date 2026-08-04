@@ -74,7 +74,7 @@ import {
   createSpriteSheet,
   selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
-import { createVector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createCameraEcsSystem,
@@ -98,7 +98,7 @@ addSpriteComponent(
     image,
     renderContext,
     1, // 3.1 render layer
-    createVector2(32, 32), // 3.2 define the dimensions of a frame
+    Vec2.create(32, 32), // 3.2 define the dimensions of a frame
   ),
 );
 

@@ -1,15 +1,7 @@
 import { positionId, rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import {
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Magnitude,
-  vector2Rotate,
-  vector2Subtract,
-  vector2Zero,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * Fields of {@link LinearSpringEcsComponent} with a sensible default;
@@ -71,8 +63,8 @@ export function addLinearSpringComponent(
     options.restLength ?? computeAnchorDistance(world, options);
 
   const component: LinearSpringEcsComponent = {
-    localAnchorA: vector2Zero(),
-    localAnchorB: vector2Zero(),
+    localAnchorA: Vec2.zero,
+    localAnchorB: Vec2.zero,
     ...options,
     restLength,
   };
@@ -100,21 +92,21 @@ function computeAnchorDistance(
     );
   }
 
-  const localAnchorA = options.localAnchorA ?? vector2Zero();
-  const localAnchorB = options.localAnchorB ?? vector2Zero();
+  const localAnchorA = options.localAnchorA ?? Vec2.zero;
+  const localAnchorB = options.localAnchorB ?? Vec2.zero;
 
   // Clone before rotating/adding: `positionA.world`/`positionB.world` are
   // the entities' live position state, and `localAnchorA`/`localAnchorB` may
   // be the same object references the component ends up storing, so these
   // operations must not mutate them.
-  const worldAnchorA = vector2Add(
-    vector2Clone(positionA.world),
-    vector2Rotate(vector2Clone(localAnchorA), rotationA.world),
+  const worldAnchorA = Vec2.add(
+    Vec2.clone(positionA.world),
+    Vec2.rotate(Vec2.clone(localAnchorA), rotationA.world),
   );
-  const worldAnchorB = vector2Add(
-    vector2Clone(positionB.world),
-    vector2Rotate(vector2Clone(localAnchorB), rotationB.world),
+  const worldAnchorB = Vec2.add(
+    Vec2.clone(positionB.world),
+    Vec2.rotate(Vec2.clone(localAnchorB), rotationB.world),
   );
 
-  return vector2Magnitude(vector2Subtract(worldAnchorB, worldAnchorA));
+  return Vec2.magnitude(Vec2.subtract(worldAnchorB, worldAnchorA));
 }

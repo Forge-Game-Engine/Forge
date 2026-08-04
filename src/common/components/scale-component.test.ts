@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addScaleComponent, scaleId } from './scale-component.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { createVector2, vector2One } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 
 describe('addScaleComponent', () => {
   it('attaches a component with default local and world vectors', () => {
@@ -11,8 +11,8 @@ describe('addScaleComponent', () => {
     addScaleComponent(world, entity);
 
     expect(world.getComponent(entity, scaleId)).toEqual({
-      local: vector2One(),
-      world: vector2One(),
+      local: Vec2.one,
+      world: Vec2.one,
     });
   });
 
@@ -20,12 +20,12 @@ describe('addScaleComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = createVector2(2, 3);
+    const local = Vec2.create(2, 3);
     addScaleComponent(world, entity, { local });
 
     expect(world.getComponent(entity, scaleId)).toEqual({
       local,
-      world: vector2One(),
+      world: Vec2.one,
     });
   });
 
@@ -33,10 +33,10 @@ describe('addScaleComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = createVector2(2, 3);
+    const local = Vec2.create(2, 3);
     const component = addScaleComponent(world, entity, { local });
 
-    expect(component).toEqual({ local, world: vector2One() });
+    expect(component).toEqual({ local, world: Vec2.one });
     expect(world.getComponent(entity, scaleId)).toBe(component);
   });
 

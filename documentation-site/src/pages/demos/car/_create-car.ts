@@ -4,16 +4,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
-import {
-  createVector2,
-  degreesToRadians,
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Multiply,
-  vector2Rotate,
-  vector2Up,
-} from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addAngularVelocityMotorComponent,
@@ -43,7 +34,7 @@ import {
 } from './_ground-contact.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
-const gravity = createVector2(0, -600);
+const gravity = Vec2.create(0, -600);
 
 const chassisWidth = 450;
 const chassisHeight = 150;
@@ -124,8 +115,8 @@ const uprightDensity = 80;
 
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
-const frontAnchor = createVector2(chassisWidth / 2 - 115, -chassisHeight / 2);
-const rearAnchor = createVector2(
+const frontAnchor = Vec2.create(chassisWidth / 2 - 115, -chassisHeight / 2);
+const rearAnchor = Vec2.create(
   -(chassisWidth / 2 - 115),
   -chassisHeight / 2,
 );
@@ -140,8 +131,8 @@ const rearAnchor = createVector2(
 // face-on) now has a component along the suspension axis for the spring to
 // absorb, instead of landing entirely on the joint's hard, unsprung
 // constraint.
-const frontSuspensionAxis = vector2Rotate(vector2Up(), degreesToRadians(35));
-const rearSuspensionAxis = vector2Rotate(vector2Up(), degreesToRadians(-35));
+const frontSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(35));
+const rearSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(-35));
 
 // How far below each anchor a wheel starts, on top of the anchor's own
 // offset. Since `addLinearSpringComponent` defaults `restLength` to the
@@ -277,10 +268,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    createVector2(-halfWidth, -halfHeight),
-    createVector2(halfWidth, -halfHeight),
-    createVector2(halfWidth, halfHeight),
-    createVector2(-halfWidth, halfHeight),
+    Vec2.create(-halfWidth, -halfHeight),
+    Vec2.create(halfWidth, -halfHeight),
+    Vec2.create(halfWidth, halfHeight),
+    Vec2.create(-halfWidth, halfHeight),
   ];
 }
 
@@ -313,8 +304,8 @@ function createWheel(
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
   addPositionComponent(world, entity, {
-    world: vector2Clone(position),
-    local: vector2Clone(position),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
   addSpriteComponent(world, entity, {
@@ -375,14 +366,14 @@ function createWheelMount(
   wheelEntity: number,
   chassisAnchor: Vector2,
   uprightPosition: Vector2,
-  suspensionAxis: Vector2 = vector2Up(),
+  suspensionAxis: Vector2 = Vec2.up,
 ): number {
   const uprightEntity = world.createEntity();
   const uprightCollider = new CircleCollider(uprightRadius, uprightDensity);
 
   addPositionComponent(world, uprightEntity, {
-    world: vector2Clone(uprightPosition),
-    local: vector2Clone(uprightPosition),
+    world: Vec2.clone(uprightPosition),
+    local: Vec2.clone(uprightPosition),
   });
   addRotationComponent(world, uprightEntity);
   addRigidBodyComponent(world, uprightEntity, {
@@ -461,9 +452,9 @@ export async function createCar(
   // the springs.
   const wheelSpawnDrop = wheelDropHeight - 8;
   // clone: groundPosition is a caller-owned parameter, must not mutate it.
-  const chassisPosition = vector2Add(
-    vector2Clone(groundPosition),
-    createVector2(0, wheelRadius + wheelDropHeight + chassisHeight / 2 + 100),
+  const chassisPosition = Vec2.add(
+    Vec2.clone(groundPosition),
+    Vec2.create(0, wheelRadius + wheelDropHeight + chassisHeight / 2 + 100),
   );
 
   const chassisEntity = world.createEntity();
@@ -473,8 +464,8 @@ export async function createCar(
   );
 
   addPositionComponent(world, chassisEntity, {
-    world: vector2Clone(chassisPosition),
-    local: vector2Clone(chassisPosition),
+    world: Vec2.clone(chassisPosition),
+    local: Vec2.clone(chassisPosition),
   });
   addRotationComponent(world, chassisEntity);
   addSpriteComponent(world, chassisEntity, {
@@ -508,19 +499,19 @@ export async function createCar(
   // clone: chassisPosition is reused below for the rear wheel too, and
   // frontSuspensionAxis/rearSuspensionAxis are shared with the joint's
   // `axis` below - none of these may be mutated in place.
-  const frontWheelPosition = vector2Add(
-    vector2Add(
-      vector2Add(vector2Clone(chassisPosition), frontAnchor),
-      vector2Multiply(vector2Clone(frontSuspensionAxis), -wheelSpawnDrop),
+  const frontWheelPosition = Vec2.add(
+    Vec2.add(
+      Vec2.add(Vec2.clone(chassisPosition), frontAnchor),
+      Vec2.multiply(Vec2.clone(frontSuspensionAxis), -wheelSpawnDrop),
     ),
-    createVector2(0, -wheelRadius),
+    Vec2.create(0, -wheelRadius),
   );
-  const rearWheelPosition = vector2Add(
-    vector2Add(
-      vector2Add(vector2Clone(chassisPosition), rearAnchor),
-      vector2Multiply(vector2Clone(rearSuspensionAxis), -wheelSpawnDrop),
+  const rearWheelPosition = Vec2.add(
+    Vec2.add(
+      Vec2.add(Vec2.clone(chassisPosition), rearAnchor),
+      Vec2.multiply(Vec2.clone(rearSuspensionAxis), -wheelSpawnDrop),
     ),
-    createVector2(0, -wheelRadius),
+    Vec2.create(0, -wheelRadius),
   );
 
   const frontWheel = createWheel(
@@ -587,27 +578,27 @@ export async function createCar(
   const resetBodies: CarResetBody[] = [
     {
       entity: chassisEntity,
-      initialPosition: vector2Clone(chassisPosition),
+      initialPosition: Vec2.clone(chassisPosition),
       initialAngle: 0,
     },
     {
       entity: frontWheel.entity,
-      initialPosition: vector2Clone(frontWheelPosition),
+      initialPosition: Vec2.clone(frontWheelPosition),
       initialAngle: 0,
     },
     {
       entity: rearWheel.entity,
-      initialPosition: vector2Clone(rearWheelPosition),
+      initialPosition: Vec2.clone(rearWheelPosition),
       initialAngle: 0,
     },
     {
       entity: frontUprightEntity,
-      initialPosition: vector2Clone(frontWheelPosition),
+      initialPosition: Vec2.clone(frontWheelPosition),
       initialAngle: 0,
     },
     {
       entity: rearUprightEntity,
-      initialPosition: vector2Clone(rearWheelPosition),
+      initialPosition: Vec2.clone(rearWheelPosition),
       initialAngle: 0,
     },
   ];

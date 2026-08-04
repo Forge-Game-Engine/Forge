@@ -1,4 +1,4 @@
-import { createVector2, Vector2, vector2Zero } from '../vector2.js';
+import { Vec2, Vector2 } from '../vector2.js';
 
 /**
  * A 2x2 matrix, primarily used to solve small effective-mass systems in
@@ -24,18 +24,18 @@ export class Matrix2x2 {
   /**
    * Solves `this * x = b` for `x`, using Cramer's rule.
    * @param b - The right-hand side vector.
-   * @returns The solution vector, or `vector2Zero()` if the matrix is singular.
+   * @returns The solution vector, or `Vec2.zero` if the matrix is singular.
    */
   public solve(b: Vector2): Vector2 {
     const determinant = this.m00 * this.m11 - this.m01 * this.m10;
 
     if (determinant === 0) {
-      return vector2Zero();
+      return Vec2.zero;
     }
 
     const inverseDeterminant = 1 / determinant;
 
-    return createVector2(
+    return Vec2.create(
       inverseDeterminant * (this.m11 * b.x - this.m01 * b.y),
       inverseDeterminant * (this.m00 * b.y - this.m10 * b.x),
     );

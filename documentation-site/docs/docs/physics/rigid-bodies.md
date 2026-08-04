@@ -14,12 +14,12 @@ list: which shape to use, what `isStatic`/`isSensor`/`isKinematic` actually
 do, and how to get back from a collision to the ECS entity that caused it.
 
 ```ts
-import { createVector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { CircleShape, RigidBody } from '@forge-game-engine/forge/physics';
 
 const ball = new RigidBody({
   shape: new CircleShape(16),
-  position: createVector2(0, 100),
+  position: Vec2.create(0, 100),
   restitution: 0.6,
   friction: 0.4,
 });
@@ -88,13 +88,13 @@ import {
   CircleShape,
   RigidBody,
 } from '@forge-game-engine/forge/physics';
-import { createVector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 
 const entity = world.createEntity();
 
 addPositionComponent(world, entity, {
-  world: createVector2(0, 100),
-  local: createVector2(0, 100),
+  world: Vec2.create(0, 100),
+  local: Vec2.create(0, 100),
 });
 addRotationComponent(world, entity);
 addPhysicsBodyComponent(world, entity, {

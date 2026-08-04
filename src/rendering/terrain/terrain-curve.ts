@@ -1,11 +1,4 @@
-import {
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2DistanceTo,
-  vector2Multiply,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * A point on a curve built by {@link buildTerrainCurve}.
@@ -37,11 +30,11 @@ function sampleCubicBezier(
 
   // Clone before scaling: `b0`-`b3` are reused for every sample along this
   // segment, and `b0`/`b3` alias the caller's own control points.
-  const result = vector2Multiply(vector2Clone(b0), w0);
+  const result = Vec2.multiply(Vec2.clone(b0), w0);
 
-  vector2Add(result, vector2Multiply(vector2Clone(b1), w1));
-  vector2Add(result, vector2Multiply(vector2Clone(b2), w2));
-  vector2Add(result, vector2Multiply(vector2Clone(b3), w3));
+  Vec2.add(result, Vec2.multiply(Vec2.clone(b1), w1));
+  Vec2.add(result, Vec2.multiply(Vec2.clone(b2), w2));
+  Vec2.add(result, Vec2.multiply(Vec2.clone(b3), w3));
 
   return result;
 }
@@ -75,7 +68,7 @@ export function buildTerrainCurve(
   }
 
   const curvePoints: TerrainCurvePoint[] = [
-    { position: vector2Clone(controlPoints[0]), distance: 0 },
+    { position: Vec2.clone(controlPoints[0]), distance: 0 },
   ];
 
   for (let i = 0; i < controlPoints.length - 1; i++) {
@@ -87,13 +80,13 @@ export function buildTerrainCurve(
     // Clone before subtracting/adding throughout: `p0`-`p3` are the caller's
     // own control points, each reused across multiple segments.
     const b0 = p1;
-    const b1 = vector2Add(
-      vector2Clone(p1),
-      vector2Multiply(vector2Subtract(vector2Clone(p2), p0), 1 / 6),
+    const b1 = Vec2.add(
+      Vec2.clone(p1),
+      Vec2.multiply(Vec2.subtract(Vec2.clone(p2), p0), 1 / 6),
     );
-    const b2 = vector2Subtract(
-      vector2Clone(p2),
-      vector2Multiply(vector2Subtract(vector2Clone(p3), p1), 1 / 6),
+    const b2 = Vec2.subtract(
+      Vec2.clone(p2),
+      Vec2.multiply(Vec2.subtract(Vec2.clone(p3), p1), 1 / 6),
     );
     const b3 = p2;
 
@@ -102,7 +95,7 @@ export function buildTerrainCurve(
       const position = sampleCubicBezier(b0, b1, b2, b3, t);
       const previous = curvePoints[curvePoints.length - 1];
       const distance =
-        previous.distance + vector2DistanceTo(position, previous.position);
+        previous.distance + Vec2.distanceTo(position, previous.position);
 
       curvePoints.push({ position, distance });
     }

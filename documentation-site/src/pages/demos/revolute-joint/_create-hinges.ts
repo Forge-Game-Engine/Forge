@@ -3,13 +3,7 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import {
-  createVector2,
-  Vector2,
-  vector2Clone,
-  vector2Rotate,
-  vector2Subtract,
-} from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -32,7 +26,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
-const gravity = createVector2(0, -600);
+const gravity = Vec2.create(0, -600);
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -79,10 +73,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    createVector2(-halfWidth, -halfHeight),
-    createVector2(halfWidth, -halfHeight),
-    createVector2(halfWidth, halfHeight),
-    createVector2(-halfWidth, halfHeight),
+    Vec2.create(-halfWidth, -halfHeight),
+    Vec2.create(halfWidth, -halfHeight),
+    Vec2.create(halfWidth, halfHeight),
+    Vec2.create(-halfWidth, halfHeight),
   ];
 }
 
@@ -98,8 +92,8 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: vector2Clone(position),
-    local: vector2Clone(position),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
@@ -134,8 +128,8 @@ function createPivotMarker(
   const pivotEntity = world.createEntity();
 
   addPositionComponent(world, pivotEntity, {
-    world: vector2Clone(position),
-    local: vector2Clone(position),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, pivotEntity);
 
@@ -162,12 +156,12 @@ function createDoorScenario(
   // Hanging straight down: the hinge (local origin side) points up, the far
   // (push) edge points down.
   const doorAngle = -Math.PI / 2;
-  const localAnchorB = createVector2(-doorWidth / 2, 0);
+  const localAnchorB = Vec2.create(-doorWidth / 2, 0);
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
-  const doorPosition = vector2Subtract(
-    vector2Clone(pivotPosition),
-    vector2Rotate(vector2Clone(localAnchorB), doorAngle),
+  const doorPosition = Vec2.subtract(
+    Vec2.clone(pivotPosition),
+    Vec2.rotate(Vec2.clone(localAnchorB), doorAngle),
   );
 
   const pivotEntity = createPivotMarker(world, sprites.pivot, pivotPosition);
@@ -178,8 +172,8 @@ function createDoorScenario(
   );
 
   addPositionComponent(world, doorEntity, {
-    world: vector2Clone(doorPosition),
-    local: vector2Clone(doorPosition),
+    world: Vec2.clone(doorPosition),
+    local: Vec2.clone(doorPosition),
   });
   addRotationComponent(world, doorEntity, {
     local: doorAngle,
@@ -216,8 +210,8 @@ function createDoorScenario(
   });
   addPushComponent(world, jointEntity, {
     entity: doorEntity,
-    impulse: createVector2(260_000, 0),
-    localContactPoint: createVector2(doorWidth / 2, 0),
+    impulse: Vec2.create(260_000, 0),
+    localContactPoint: Vec2.create(doorWidth / 2, 0),
     intervalSeconds: 2,
   });
 }
@@ -240,12 +234,12 @@ function createPendulumScenario(
   const startAngle = 0.8;
   // The bob's anchor sits `armLength` above its own center in its local
   // (unrotated) frame, i.e. directly below the pivot at rest (angle 0).
-  const localAnchorB = createVector2(0, armLength);
+  const localAnchorB = Vec2.create(0, armLength);
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
-  const bobPosition = vector2Subtract(
-    vector2Clone(pivotPosition),
-    vector2Rotate(vector2Clone(localAnchorB), startAngle),
+  const bobPosition = Vec2.subtract(
+    Vec2.clone(pivotPosition),
+    Vec2.rotate(Vec2.clone(localAnchorB), startAngle),
   );
 
   const pivotEntity = createPivotMarker(world, sprites.pivot, pivotPosition);
@@ -254,8 +248,8 @@ function createPendulumScenario(
   const bobCollider = new CircleCollider(bobRadius);
 
   addPositionComponent(world, bobEntity, {
-    world: vector2Clone(bobPosition),
-    local: vector2Clone(bobPosition),
+    world: Vec2.clone(bobPosition),
+    local: Vec2.clone(bobPosition),
   });
   addRotationComponent(world, bobEntity, {
     local: startAngle,
@@ -309,8 +303,8 @@ function createWheelScenario(
   const wheelCollider = new CircleCollider(wheelRadius);
 
   addPositionComponent(world, wheelEntity, {
-    world: vector2Clone(hubPosition),
-    local: vector2Clone(hubPosition),
+    world: Vec2.clone(hubPosition),
+    local: Vec2.clone(hubPosition),
   });
   addRotationComponent(world, wheelEntity);
   addSpriteComponent(world, wheelEntity, {
@@ -364,18 +358,18 @@ export async function createHinges(
   createDoorScenario(
     world,
     sprites,
-    createVector2(columnLeft, height * 0.3),
+    Vec2.create(columnLeft, height * 0.3),
   );
 
   createPendulumScenario(
     world,
     sprites,
-    createVector2(columnLeft + columnWidth, height * 0.35),
+    Vec2.create(columnLeft + columnWidth, height * 0.35),
   );
 
   createWheelScenario(
     world,
     sprites,
-    createVector2(columnLeft + columnWidth * 2, 0),
+    Vec2.create(columnLeft + columnWidth * 2, 0),
   );
 }

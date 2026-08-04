@@ -56,7 +56,7 @@ position and angle back to the entity.
 
 ```ts
 import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
-import { createVector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addPhysicsBodyComponent,
   createPhysicsSyncEcsSystem,
@@ -68,7 +68,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, time } = createGame('game-container');
 
-const physicsWorld = new PhysicsWorld({ gravity: createVector2(0, -300) });
+const physicsWorld = new PhysicsWorld({ gravity: Vec2.create(0, -300) });
 
 const box = world.createEntity();
 

@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { buildTerrainCurve, heightAtLocalX } from './terrain-curve.js';
-import { createVector2 } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 
 describe('buildTerrainCurve', () => {
   it('should throw an error if fewer than 2 control points are provided', () => {
-    expect(() => buildTerrainCurve([createVector2(0, 0)], 4)).toThrow();
+    expect(() => buildTerrainCurve([Vec2.create(0, 0)], 4)).toThrow();
   });
 
   it('should start at the first control point', () => {
     const curve = buildTerrainCurve(
-      [createVector2(0, 5), createVector2(10, 5), createVector2(20, 5)],
+      [Vec2.create(0, 5), Vec2.create(10, 5), Vec2.create(20, 5)],
       4,
     );
 
@@ -20,10 +20,10 @@ describe('buildTerrainCurve', () => {
 
   it('should pass exactly through every control point', () => {
     const controlPoints = [
-      createVector2(0, 0),
-      createVector2(10, 40),
-      createVector2(20, -20),
-      createVector2(30, 10),
+      Vec2.create(0, 0),
+      Vec2.create(10, 40),
+      Vec2.create(20, -20),
+      Vec2.create(30, 10),
     ];
     const samplesPerSegment = 6;
 
@@ -40,10 +40,10 @@ describe('buildTerrainCurve', () => {
   it('should produce a straight line for evenly-spaced collinear control points', () => {
     const curve = buildTerrainCurve(
       [
-        createVector2(0, 0),
-        createVector2(10, 10),
-        createVector2(20, 20),
-        createVector2(30, 30),
+        Vec2.create(0, 0),
+        Vec2.create(10, 10),
+        Vec2.create(20, 20),
+        Vec2.create(30, 30),
       ],
       5,
     );
@@ -56,10 +56,10 @@ describe('buildTerrainCurve', () => {
   it('should produce monotonically increasing x and distance', () => {
     const curve = buildTerrainCurve(
       [
-        createVector2(0, 0),
-        createVector2(10, 50),
-        createVector2(20, -30),
-        createVector2(30, 0),
+        Vec2.create(0, 0),
+        Vec2.create(10, 50),
+        Vec2.create(20, -30),
+        Vec2.create(30, 0),
       ],
       8,
     );
@@ -78,7 +78,7 @@ describe('heightAtLocalX', () => {
 
   it('should return the exact height at a sampled point', () => {
     const curve = buildTerrainCurve(
-      [createVector2(0, 0), createVector2(10, 0), createVector2(20, 0)],
+      [Vec2.create(0, 0), Vec2.create(10, 0), Vec2.create(20, 0)],
       4,
     );
 
@@ -87,8 +87,8 @@ describe('heightAtLocalX', () => {
 
   it('should linearly interpolate between two bracketing points', () => {
     const curve = [
-      { position: createVector2(0, 0), distance: 0 },
-      { position: createVector2(10, 20), distance: 10 },
+      { position: Vec2.create(0, 0), distance: 0 },
+      { position: Vec2.create(10, 20), distance: 10 },
     ];
 
     expect(heightAtLocalX(curve, 5)).toBeCloseTo(10);
@@ -96,8 +96,8 @@ describe('heightAtLocalX', () => {
 
   it('should clamp to the first point before the start of the curve', () => {
     const curve = [
-      { position: createVector2(0, 7), distance: 0 },
-      { position: createVector2(10, 20), distance: 10 },
+      { position: Vec2.create(0, 7), distance: 0 },
+      { position: Vec2.create(10, 20), distance: 10 },
     ];
 
     expect(heightAtLocalX(curve, -100)).toBeCloseTo(7);
@@ -105,8 +105,8 @@ describe('heightAtLocalX', () => {
 
   it('should clamp to the last point past the end of the curve', () => {
     const curve = [
-      { position: createVector2(0, 7), distance: 0 },
-      { position: createVector2(10, 20), distance: 10 },
+      { position: Vec2.create(0, 7), distance: 0 },
+      { position: Vec2.create(10, 20), distance: 10 },
     ];
 
     expect(heightAtLocalX(curve, 100)).toBeCloseTo(20);

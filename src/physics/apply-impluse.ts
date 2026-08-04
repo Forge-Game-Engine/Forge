@@ -1,11 +1,4 @@
-import {
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Cross,
-  vector2Multiply,
-  vector2Subtract,
-} from '../math/index.js';
+import { Vec2, Vector2 } from '../math/index.js';
 import { RigidBodyEcsComponent } from './components/index.js';
 
 export function applyImpulse(
@@ -17,15 +10,15 @@ export function applyImpulse(
   // Clone before subtracting/multiplying: callers may pass the same object
   // for `impulseWorldPosition`/`entityPosition` (or a live world position),
   // and may reuse `impulse` afterward, so none of these may be mutated.
-  const localPosition = vector2Subtract(
-    vector2Clone(impulseWorldPosition),
+  const localPosition = Vec2.subtract(
+    Vec2.clone(impulseWorldPosition),
     entityPosition,
   );
-  const angularImpulse = vector2Cross(localPosition, impulse);
+  const angularImpulse = Vec2.cross(localPosition, impulse);
 
-  rigidBody.velocity = vector2Add(
+  rigidBody.velocity = Vec2.add(
     rigidBody.velocity,
-    vector2Multiply(vector2Clone(impulse), 1 / rigidBody.mass),
+    Vec2.multiply(Vec2.clone(impulse), 1 / rigidBody.mass),
   );
   rigidBody.angularVelocity += angularImpulse / rigidBody.momentOfInertia;
 }

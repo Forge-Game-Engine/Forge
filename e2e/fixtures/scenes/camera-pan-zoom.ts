@@ -1,32 +1,4 @@
-import {
-  actionResetTypes,
-  Axis1dAction,
-  Axis2dAction,
-  CameraEcsComponent,
-  cameraId,
-  Color,
-  createCamera,
-  createCameraEcsSystem,
-  createCanvas,
-  createImageSprite,
-  createPresentEcsSystem,
-  createRenderContext,
-  createRenderEcsSystem,
-  createTransformEcsSystem,
-  createVector2,
-  EcsWorld,
-  KeyboardAxis2dBinding,
-  KeyboardInputSource,
-  keyCodes,
-  MouseAxis1dBinding,
-  MouseInputSource,
-  PositionEcsComponent,
-  positionId,
-  registerInputs,
-  spriteId,
-  Time,
-  vector2Clone,
-} from '../../../src/index.js';
+import { actionResetTypes, Axis1dAction, Axis2dAction, CameraEcsComponent, cameraId, Color, createCamera, createCameraEcsSystem, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsWorld, KeyboardAxis2dBinding, KeyboardInputSource, keyCodes, MouseAxis1dBinding, MouseInputSource, PositionEcsComponent, positionId, registerInputs, spriteId, Time, Vec2 } from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
@@ -181,14 +153,14 @@ export const createScene: CreateScene = async (
   for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
     for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {
       const cellEntity = world.createEntity();
-      const cellPosition = createVector2(
+      const cellPosition = Vec2.create(
         gridX * cellSpacing,
         gridY * cellSpacing,
       );
 
       world.addComponent(cellEntity, positionId, {
-        world: vector2Clone(cellPosition),
-        local: vector2Clone(cellPosition),
+        world: Vec2.clone(cellPosition),
+        local: Vec2.clone(cellPosition),
       });
 
       world.addComponent(cellEntity, spriteId, {

@@ -1,6 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { vector2Add, vector2Clone, vector2Multiply } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import {
   GravityEcsComponent,
   gravityId,
@@ -25,10 +25,10 @@ export const createGravityEcsSystem = (
 
       // Clone before scaling: `gravityComponent.amount` is a persistent
       // component field reused every tick, not a disposable value.
-      vector2Add(
+      Vec2.add(
         rigidBodyComponent.velocity,
-        vector2Multiply(
-          vector2Clone(gravityComponent.amount),
+        Vec2.multiply(
+          Vec2.clone(gravityComponent.amount),
           time.deltaTimeInSeconds,
         ),
       );

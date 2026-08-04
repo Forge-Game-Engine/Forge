@@ -60,7 +60,7 @@ the position of whatever is producing the effect:
 
 ```ts
 sparks.setOptions({
-  spawnPosition: () => vector2Clone(playerPosition),
+  spawnPosition: () => Vec2.clone(playerPosition),
 });
 ```
 
@@ -75,7 +75,7 @@ trailEmitter.setOptions({
     const progress =
       trailEmitter.currentEmitDuration / trailEmitter.emitDurationSeconds;
 
-    return createVector2(progress * 1200 - 600, 0);
+    return Vec2.create(progress * 1200 - 600, 0);
   },
 });
 ```

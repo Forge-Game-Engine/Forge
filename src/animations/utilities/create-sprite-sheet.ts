@@ -1,4 +1,4 @@
-import { createVector2 } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { AnimationFrame } from '../types/index.js';
 
 /**
@@ -40,8 +40,8 @@ export function createSpriteSheet(
       const offsetX = column * spriteWidth;
 
       const frame: AnimationFrame = {
-        offset: createVector2(offsetX / image.width, offsetY / image.height),
-        dimensions: createVector2(
+        offset: Vec2.create(offsetX / image.width, offsetY / image.height),
+        dimensions: Vec2.create(
           spriteWidth / image.width,
           spriteHeight / image.height,
         ),

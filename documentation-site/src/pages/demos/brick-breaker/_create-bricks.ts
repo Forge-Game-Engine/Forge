@@ -5,11 +5,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import {
-  createVector2,
-  Vector2,
-  vector2Clone,
-} from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -63,10 +59,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    createVector2(-halfWidth, -halfHeight),
-    createVector2(halfWidth, -halfHeight),
-    createVector2(halfWidth, halfHeight),
-    createVector2(-halfWidth, halfHeight),
+    Vec2.create(-halfWidth, -halfHeight),
+    Vec2.create(halfWidth, -halfHeight),
+    Vec2.create(halfWidth, halfHeight),
+    Vec2.create(-halfWidth, halfHeight),
   ];
 }
 
@@ -134,11 +130,11 @@ function createBrickSprite(
     enabled: true,
     width: image.width,
     height: image.height,
-    pivot: createVector2(0.5, 0.5),
+    pivot: Vec2.create(0.5, 0.5),
     tintColor: Color.white,
     renderable,
-    uvOffset: createVector2(0, 0),
-    uvScale: createVector2(1, 1),
+    uvOffset: Vec2.create(0, 0),
+    uvScale: Vec2.create(1, 1),
     layer,
   };
 }
@@ -182,15 +178,15 @@ export async function createBrickField(
     const scale = width / sprite.width;
 
     addPositionComponent(world, entity, {
-      local: vector2Clone(position),
-      world: vector2Clone(position),
+      local: Vec2.clone(position),
+      world: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: createVector2(scale, scale),
-      world: createVector2(scale, scale),
+      local: Vec2.create(scale, scale),
+      world: Vec2.create(scale, scale),
     });
 
     addSpriteComponent(world, entity, sprite);
@@ -222,7 +218,7 @@ export async function createBrickField(
       for (let column = 0; column < columns; column++) {
         const x = startX + column * (brickWidth + columnGap);
 
-        spawnBrick(sprite, createVector2(x, y), brickWidth, brickHeight);
+        spawnBrick(sprite, Vec2.create(x, y), brickWidth, brickHeight);
       }
     }
   };

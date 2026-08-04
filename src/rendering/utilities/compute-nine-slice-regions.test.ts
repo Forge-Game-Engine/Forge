@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createVector2 } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { computeNineSliceRegions } from './compute-nine-slice-regions.js';
 
 describe('computeNineSliceRegions', () => {
-  const centerPivot = createVector2(0.5, 0.5);
-  const fullUv = { offset: createVector2(0, 0), scale: createVector2(1, 1) };
+  const centerPivot = Vec2.create(0.5, 0.5);
+  const fullUv = { offset: Vec2.create(0, 0), scale: Vec2.create(1, 1) };
 
   it('degenerates to a single region matching a non-sliced sprite when there are no insets', () => {
     const regions = computeNineSliceRegions(
@@ -17,10 +17,10 @@ describe('computeNineSliceRegions', () => {
     );
 
     expect(regions).toHaveLength(1);
-    expect(regions[0].offset).toEqual(createVector2(0, 0));
-    expect(regions[0].size).toEqual(createVector2(100, 50));
-    expect(regions[0].uvOffset).toEqual(createVector2(0, 0));
-    expect(regions[0].uvScale).toEqual(createVector2(1, 1));
+    expect(regions[0].offset).toEqual(Vec2.create(0, 0));
+    expect(regions[0].size).toEqual(Vec2.create(100, 50));
+    expect(regions[0].uvOffset).toEqual(Vec2.create(0, 0));
+    expect(regions[0].uvScale).toEqual(Vec2.create(1, 1));
   });
 
   it('produces nine regions for a sprite with borders on every side', () => {
@@ -72,7 +72,7 @@ describe('computeNineSliceRegions', () => {
     const regions = computeNineSliceRegions(
       100,
       100,
-      createVector2(0, 0),
+      Vec2.create(0, 0),
       fullUv.offset,
       fullUv.scale,
       { left: 10, right: 10, top: 10, bottom: 10 },
@@ -81,7 +81,7 @@ describe('computeNineSliceRegions', () => {
     const topLeft = regions.find((r) => r.size.x === 10 && r.size.y === 10);
 
     expect(topLeft).toBeDefined();
-    expect(topLeft!.offset).toEqual(createVector2(5, -5));
+    expect(topLeft!.offset).toEqual(Vec2.create(5, -5));
   });
 
   it('proportionally clamps insets that would otherwise overlap', () => {
@@ -108,8 +108,8 @@ describe('computeNineSliceRegions', () => {
       200, // stretched to double the native width
       100,
       centerPivot,
-      createVector2(0, 0),
-      createVector2(1, 1),
+      Vec2.create(0, 0),
+      Vec2.create(1, 1),
       { left: 10, right: 10, top: 0, bottom: 0, nativeWidth: 100 },
     );
 

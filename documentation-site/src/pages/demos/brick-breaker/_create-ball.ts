@@ -5,14 +5,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import {
-  createVector2,
-  degreesToRadians,
-  Random,
-  Vector2,
-  vector2Clone,
-  vector2Multiply,
-} from '@forge-game-engine/forge/math';
+import { degreesToRadians, Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -52,8 +45,8 @@ export function launchBall(
     random.randomFloat(-launchAngleRangeInDegrees, launchAngleRangeInDegrees),
   );
 
-  rigidBody.velocity = vector2Multiply(
-    createVector2(Math.sin(angle), Math.cos(angle)),
+  rigidBody.velocity = Vec2.multiply(
+    Vec2.create(Math.sin(angle), Math.cos(angle)),
     speed,
   );
 }
@@ -91,22 +84,22 @@ export async function createBall(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: vector2Clone(startPosition),
-    world: vector2Clone(startPosition),
+    local: Vec2.clone(startPosition),
+    world: Vec2.clone(startPosition),
   });
 
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: createVector2(ballScale, ballScale),
-    world: createVector2(ballScale, ballScale),
+    local: Vec2.create(ballScale, ballScale),
+    world: Vec2.create(ballScale, ballScale),
   });
 
   addSpriteComponent(world, entity, ballSprite);
 
   world.addComponent(entity, ballId, {
     speed,
-    startPosition: vector2Clone(startPosition),
+    startPosition: Vec2.clone(startPosition),
   });
 
   const collider = new CircleCollider(ballRadius);

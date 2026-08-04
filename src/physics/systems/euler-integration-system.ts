@@ -6,7 +6,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { vector2Add, vector2Clone, vector2Multiply } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import {
   RigidBodyEcsComponent,
   rigidBodyId,
@@ -34,10 +34,10 @@ export const createEulerIntegrationEcsSystem = (
 
       // Clone before scaling: `rigidBodyComponent.velocity` is the body's
       // live velocity state, not a disposable value.
-      vector2Add(
+      Vec2.add(
         positionComponent.world,
-        vector2Multiply(
-          vector2Clone(rigidBodyComponent.velocity),
+        Vec2.multiply(
+          Vec2.clone(rigidBodyComponent.velocity),
           time.deltaTimeInSeconds,
         ),
       );

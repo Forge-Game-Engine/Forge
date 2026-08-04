@@ -6,7 +6,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { createVector2 } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { addLinearSpringComponent } from '../components/linear-spring-component.js';
 import {
   addRigidBodyComponent,
@@ -32,8 +32,8 @@ describe('createLinearSpringEcsSystem', () => {
   } {
     const entity = world.createEntity();
     addPositionComponent(world, entity, {
-      world: createVector2(x, 0),
-      local: createVector2(x, 0),
+      world: Vec2.create(x, 0),
+      local: Vec2.create(x, 0),
     });
     addRotationComponent(world, entity);
     const rigidBody = addRigidBodyComponent(world, entity, {

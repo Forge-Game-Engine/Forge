@@ -1,6 +1,6 @@
 import { positionId, Time } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { vector2Clone } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { rigidBodyId } from '@forge-game-engine/forge/physics';
 import { ResetEcsComponent, resetId } from './_reset.component';
 
@@ -32,9 +32,9 @@ export const createResetEcsSystem = (
         continue;
       }
 
-      position.world = vector2Clone(reset.initialPosition);
-      position.local = vector2Clone(reset.initialPosition);
-      rigidBody.velocity = vector2Clone(reset.initialVelocity);
+      position.world = Vec2.clone(reset.initialPosition);
+      position.local = Vec2.clone(reset.initialPosition);
+      rigidBody.velocity = Vec2.clone(reset.initialVelocity);
     }
   },
 });

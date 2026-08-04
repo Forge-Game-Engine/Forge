@@ -4,11 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import {
-  smoothDampVector2,
-  vector2Add,
-  vector2Clone,
-} from '@forge-game-engine/forge/math';
+import { smoothDampVector2, Vec2 } from '@forge-game-engine/forge/math';
 import {
   CameraFollowEcsComponent,
   cameraFollowId,
@@ -46,7 +42,7 @@ export const createCameraFollowEcsSystem = (
       // position field, must not be mutated by adding offset into it.
       const { positionOutput, velocityOutput } = smoothDampVector2(
         positionComponent.local,
-        vector2Add(vector2Clone(targetPosition.world), offset),
+        Vec2.add(Vec2.clone(targetPosition.world), offset),
         velocity,
         maxSpeed,
         smoothTime,

@@ -7,7 +7,7 @@ import {
   addRotationComponent,
   PositionEcsComponent,
 } from '../../common';
-import { createVector2, vector2Zero } from '../../math';
+import { Vec2 } from '../../math';
 import { addCameraComponent, CameraEcsComponent } from '../components';
 import { addSpriteComponent, SpriteEcsComponent } from '../components';
 import { Renderable } from '../renderable';
@@ -73,11 +73,11 @@ describe('createRenderEcsSystem', () => {
   ): SpriteEcsComponent => ({
     width: 1,
     height: 1,
-    pivot: vector2Zero(),
+    pivot: Vec2.zero,
     tintColor: new Color(1, 1, 1, 1),
     renderable,
-    uvOffset: vector2Zero(),
-    uvScale: vector2Zero(),
+    uvOffset: Vec2.zero,
+    uvScale: Vec2.zero,
     enabled: true,
     layer: 0,
     ...overrides,
@@ -109,8 +109,8 @@ describe('createRenderEcsSystem', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      local: createVector2(0, worldY),
-      world: createVector2(0, worldY),
+      local: Vec2.create(0, worldY),
+      world: Vec2.create(0, worldY),
     });
     addSpriteComponent(world, entity, createSprite(renderable, overrides));
 
@@ -223,7 +223,7 @@ describe('createRenderEcsSystem', () => {
     const expected = createProjectionMatrix(
       400,
       200,
-      vector2Zero(),
+      Vec2.zero,
       1,
       expectedPixelsPerUnit,
     );
@@ -253,7 +253,7 @@ describe('createRenderEcsSystem', () => {
     const expected = createProjectionMatrix(
       400,
       200,
-      vector2Zero(),
+      Vec2.zero,
       1,
       expectedPixelsPerUnit,
     );
@@ -491,7 +491,7 @@ describe('createRenderEcsSystem', () => {
       addSpriteEntity(renderable, 0, {
         width: 100,
         height: 100,
-        pivot: createVector2(0.5, 0.5),
+        pivot: Vec2.create(0.5, 0.5),
         slices: { left: 10, right: 10, top: 10, bottom: 10 },
       });
 
@@ -516,8 +516,8 @@ describe('createRenderEcsSystem', () => {
       const entity = world.createEntity();
 
       addPositionComponent(world, entity, {
-        local: createVector2(50, 0),
-        world: createVector2(50, 0),
+        local: Vec2.create(50, 0),
+        world: Vec2.create(50, 0),
       });
       addRotationComponent(world, entity, { world: Math.PI });
       addSpriteComponent(
@@ -526,7 +526,7 @@ describe('createRenderEcsSystem', () => {
         createSprite(renderable, {
           width: 100,
           height: 100,
-          pivot: createVector2(0.5, 0.5),
+          pivot: Vec2.create(0.5, 0.5),
           slices: { left: 10, right: 10, top: 10, bottom: 10 },
         }),
       );
@@ -559,8 +559,8 @@ describe('createRenderEcsSystem', () => {
       const entity = world.createEntity();
 
       addPositionComponent(world, entity, {
-        local: createVector2(50, 0),
-        world: createVector2(50, 0),
+        local: Vec2.create(50, 0),
+        world: Vec2.create(50, 0),
       });
       addRotationComponent(world, entity, { world: Math.PI / 2 });
       addSpriteComponent(
@@ -569,7 +569,7 @@ describe('createRenderEcsSystem', () => {
         createSprite(renderable, {
           width: 100,
           height: 100,
-          pivot: createVector2(0.5, 0.5),
+          pivot: Vec2.create(0.5, 0.5),
           slices: { left: 10, right: 10, top: 10, bottom: 10 },
         }),
       );
@@ -581,7 +581,7 @@ describe('createRenderEcsSystem', () => {
       );
 
       // The top-left corner (offset (-45, 45) before rotation) orbits to
-      // (-45, -45): the same direction `vector2Rotate` (and the shader's
+      // (-45, -45): the same direction `Vec2.rotate` (and the shader's
       // own rotation of the region's quad) turns the entity's true world
       // rotation. Orbiting it the other way around the entity (a sign bug)
       // would instead land it at (45, 45), tearing the sliced sprite's

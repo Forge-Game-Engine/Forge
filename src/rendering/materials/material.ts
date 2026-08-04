@@ -1,10 +1,4 @@
-import {
-  Matrix3x3,
-  Vector2,
-  vector2ToFloat32Array,
-  Vector3,
-  vector3ToFloat32Array,
-} from '../../math/index.js';
+import { Matrix3x3, Vec2, Vec3, Vector2, Vector3 } from '../../math/index.js';
 import { assertNever } from '../../utilities/index.js';
 import type { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
@@ -121,11 +115,7 @@ export class Material {
       }
 
       if (isVector2(value)) {
-        this._setUniformFloat32Array(
-          gl,
-          location,
-          vector2ToFloat32Array(value),
-        );
+        this._setUniformFloat32Array(gl, location, Vec2.toFloat32Array(value));
 
         continue;
       }
@@ -160,9 +150,7 @@ export class Material {
   public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
     this.setUniform(
       name,
-      'z' in vector
-        ? vector3ToFloat32Array(vector)
-        : vector2ToFloat32Array(vector),
+      'z' in vector ? Vec3.toFloat32Array(vector) : Vec2.toFloat32Array(vector),
     );
   }
 

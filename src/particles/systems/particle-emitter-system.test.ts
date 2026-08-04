@@ -7,12 +7,7 @@ import {
   ParticleId,
 } from '../components';
 import { rotationId, Time } from '../../common';
-import {
-  createVector2,
-  degreesToRadians,
-  Random,
-  vector2Zero,
-} from '../../math';
+import { degreesToRadians, Random, Vec2 } from '../../math';
 import { Sprite } from '../../rendering';
 
 describe('ParticleEmitterSystem', () => {
@@ -32,7 +27,7 @@ describe('ParticleEmitterSystem', () => {
       width: 10,
       height: 10,
       bleed: 1,
-      pivot: createVector2(0.5, 0.5),
+      pivot: Vec2.create(0.5, 0.5),
       tintColor: { r: 1, g: 1, b: 1, a: 1 },
       renderable: {
         geometry: vi.fn(),
@@ -58,7 +53,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0,
-      spawnPosition: () => vector2Zero(),
+      spawnPosition: () => Vec2.zero,
     });
 
     emitter.startEmitting = true;
@@ -87,7 +82,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0,
-      spawnPosition: () => vector2Zero(),
+      spawnPosition: () => Vec2.zero,
     });
 
     emitter.startEmitting = true;
@@ -118,7 +113,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 180, max: 180 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0,
-      spawnPosition: () => vector2Zero(),
+      spawnPosition: () => Vec2.zero,
     });
 
     emitter.startEmitting = true;
@@ -149,7 +144,7 @@ describe('ParticleEmitterSystem', () => {
       rotationRange: { min: 0, max: 360 },
       rotationSpeedRange: { min: 0, max: 0 },
       emitDurationSeconds: 0.5,
-      spawnPosition: () => vector2Zero(),
+      spawnPosition: () => Vec2.zero,
     });
 
     // Manually set emitter state as if it has already emitted all particles

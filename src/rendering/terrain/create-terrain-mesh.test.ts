@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createTerrainMesh } from './create-terrain-mesh';
 import { buildTerrainCurve } from './terrain-curve';
 import { ImageCache } from '../../asset-loading/index.js';
-import { createVector2, vector2Zero } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { Color } from '../color.js';
 import { RenderContext } from '../render-context.js';
 import { ForgeShaderSource, ShaderCache } from '../shaders/index.js';
@@ -23,20 +23,20 @@ describe('createTerrainMesh', () => {
     overrides: Partial<Parameters<typeof createTerrainMesh>[1]> = {},
   ) => ({
     curvePoints: buildTerrainCurve(
-      [createVector2(0, 0), createVector2(10, 5), createVector2(20, 0)],
+      [Vec2.create(0, 0), Vec2.create(10, 5), Vec2.create(20, 0)],
       4,
     ),
     depth: 50,
-    position: vector2Zero(),
+    position: Vec2.zero,
     angle: 0,
     border: {
       image: borderImage,
-      tileSize: createVector2(20, 20),
+      tileSize: Vec2.create(20, 20),
       tint: Color.white,
     },
     fill: {
       image: fillImage,
-      tileSize: createVector2(30, 30),
+      tileSize: Vec2.create(30, 30),
       tint: Color.white,
     },
     borderWidth: 10,
@@ -137,7 +137,7 @@ describe('createTerrainMesh', () => {
 
   it('builds 6 vertices (2 triangles) per pair of consecutive curve points', () => {
     const curvePoints = buildTerrainCurve(
-      [createVector2(0, 0), createVector2(10, 0)],
+      [Vec2.create(0, 0), Vec2.create(10, 0)],
       5,
     );
 

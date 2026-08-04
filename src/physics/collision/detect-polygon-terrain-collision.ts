@@ -1,10 +1,4 @@
-import {
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Rotate,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
@@ -35,8 +29,8 @@ function localXRange(
   for (const vertex of worldVertices) {
     // Clone before subtracting: `worldVertices` (`polygonFaces.vertices`) is
     // reused across every terrain segment in the caller's loop.
-    const localX = vector2Rotate(
-      vector2Subtract(vector2Clone(vertex), terrainBody.position),
+    const localX = Vec2.rotate(
+      Vec2.subtract(Vec2.clone(vertex), terrainBody.position),
       -terrainBody.rotation,
     ).x;
 
@@ -96,13 +90,13 @@ export function detectPolygonTerrainCollision(
     // every tick.
     const segmentFaces: PolygonFaces = {
       vertices: segment.vertices.map((vertex) =>
-        vector2Add(
-          vector2Rotate(vector2Clone(vertex), terrainBody.rotation),
+        Vec2.add(
+          Vec2.rotate(Vec2.clone(vertex), terrainBody.rotation),
           terrainBody.position,
         ),
       ),
       normals: segment.normals.map((normal) =>
-        vector2Rotate(vector2Clone(normal), terrainBody.rotation),
+        Vec2.rotate(Vec2.clone(normal), terrainBody.rotation),
       ),
     };
 

@@ -1,15 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import {
-  Matrix2x2,
-  Vector2,
-  vector2Add,
-  vector2Clone,
-  vector2Multiply,
-  vector2Negate,
-  vector2Rotate,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Matrix2x2, Vec2, Vector2 } from '../../math/index.js';
 import {
   RevoluteJointEcsComponent,
   revoluteJointId,
@@ -114,8 +105,8 @@ function prepareJoint(
 ): PreparedRevoluteJoint {
   // Clone before rotating: `joint.localAnchorA`/`localAnchorB` are
   // persistent component fields reused every tick.
-  const rA = vector2Rotate(vector2Clone(joint.localAnchorA), bodyA.rotation);
-  const rB = vector2Rotate(vector2Clone(joint.localAnchorB), bodyB.rotation);
+  const rA = Vec2.rotate(Vec2.clone(joint.localAnchorA), bodyA.rotation);
+  const rB = Vec2.rotate(Vec2.clone(joint.localAnchorB), bodyB.rotation);
 
   const k00 =
     bodyA.invMass +
@@ -131,8 +122,8 @@ function prepareJoint(
 
   // Clone before adding: `bodyA.position`/`bodyB.position` are the entities'
   // live world position.
-  const worldAnchorA = vector2Add(vector2Clone(bodyA.position), rA);
-  const worldAnchorB = vector2Add(vector2Clone(bodyB.position), rB);
+  const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
+  const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
 
   return {
     joint,
@@ -141,7 +132,7 @@ function prepareJoint(
     rA,
     rB,
     pointMatrix: new Matrix2x2(k00, k01, k01, k11),
-    pointSeparation: vector2Subtract(worldAnchorB, worldAnchorA),
+    pointSeparation: Vec2.subtract(worldAnchorB, worldAnchorA),
     angle: bodyB.rotation - bodyA.rotation - joint.referenceAngle,
   };
 }
@@ -156,7 +147,7 @@ function warmStart(prepared: PreparedRevoluteJoint): void {
     rA,
     bodyA.invMass,
     bodyA.invInertia,
-    vector2Negate(vector2Clone(joint.accumulatedPointImpulse)),
+    Vec2.negate(Vec2.clone(joint.accumulatedPointImpulse)),
   );
   applyPointImpulse(
     bodyB.rigidBody,
@@ -171,7 +162,7 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
   const { joint, bodyA, bodyB, rA, rB, pointMatrix, pointSeparation } =
     prepared;
 
-  const relativeVelocity = vector2Subtract(
+  const relativeVelocity = Vec2.subtract(
     velocityAtPoint(bodyB.rigidBody, rB),
     velocityAtPoint(bodyA.rigidBody, rA),
   );
@@ -184,26 +175,23 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
   );
   // Clone before scaling: `pointSeparation` persists across every solve
   // iteration this tick.
-  const bias = vector2Multiply(vector2Clone(pointSeparation), soft.biasRate);
+  const bias = Vec2.multiply(Vec2.clone(pointSeparation), soft.biasRate);
 
   // The impulseScale decay term is a fraction of the accumulated impulse
   // itself, not something to run back through the effective-mass solve (a
   // second division by mass there would make the correction grow with the
   // square of the bodies' mass instead of staying scale-invariant).
-  const rhs = vector2Negate(
-    vector2Add(vector2Multiply(relativeVelocity, soft.massScale), bias),
+  const rhs = Vec2.negate(
+    Vec2.add(Vec2.multiply(relativeVelocity, soft.massScale), bias),
   );
   // Clone before scaling: `joint.accumulatedPointImpulse` persists across
   // every solve iteration this tick.
-  const impulse = vector2Subtract(
+  const impulse = Vec2.subtract(
     pointMatrix.solve(rhs),
-    vector2Multiply(
-      vector2Clone(joint.accumulatedPointImpulse),
-      soft.impulseScale,
-    ),
+    Vec2.multiply(Vec2.clone(joint.accumulatedPointImpulse), soft.impulseScale),
   );
 
-  joint.accumulatedPointImpulse = vector2Add(
+  joint.accumulatedPointImpulse = Vec2.add(
     joint.accumulatedPointImpulse,
     impulse,
   );
@@ -215,7 +203,7 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
     rA,
     bodyA.invMass,
     bodyA.invInertia,
-    vector2Negate(vector2Clone(impulse)),
+    Vec2.negate(Vec2.clone(impulse)),
   );
   applyPointImpulse(
     bodyB.rigidBody,

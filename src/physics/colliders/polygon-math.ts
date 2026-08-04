@@ -1,13 +1,4 @@
-import {
-  createVector2,
-  Vector2,
-  vector2Clone,
-  vector2Cross,
-  vector2Dot,
-  vector2Normalize,
-  vector2Perpendicular,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
  * Calculates the signed area of a polygon (positive for counter-clockwise
@@ -21,7 +12,7 @@ export function calculateSignedArea(vertices: readonly Vector2[]): number {
     const current = vertices[i];
     const next = vertices[(i + 1) % vertices.length];
 
-    signedArea += vector2Cross(current, next);
+    signedArea += Vec2.cross(current, next);
   }
 
   return signedArea;
@@ -40,7 +31,7 @@ export function calculateCentroid(vertices: readonly Vector2[]): Vector2 {
   for (let i = 0; i < vertices.length; i++) {
     const current = vertices[i];
     const next = vertices[(i + 1) % vertices.length];
-    const cross = vector2Cross(current, next);
+    const cross = Vec2.cross(current, next);
 
     signedArea += cross;
     centroidX += (current.x + next.x) * cross;
@@ -49,7 +40,7 @@ export function calculateCentroid(vertices: readonly Vector2[]): Vector2 {
 
   const factor = 1 / (3 * signedArea);
 
-  return createVector2(centroidX * factor, centroidY * factor);
+  return Vec2.create(centroidX * factor, centroidY * factor);
 }
 
 /**
@@ -66,9 +57,9 @@ export function calculateNormals(vertices: readonly Vector2[]): Vector2[] {
     // Clone before subtracting: `current`/`next` are the caller's actual
     // vertex objects (often the same references stored on a collider), so
     // this must not mutate them.
-    const edge = vector2Subtract(vector2Clone(next), current);
+    const edge = Vec2.subtract(Vec2.clone(next), current);
 
-    normals.push(vector2Normalize(vector2Perpendicular(edge)));
+    normals.push(Vec2.normalize(Vec2.perpendicular(edge)));
   }
 
   return normals;
@@ -91,13 +82,13 @@ export function calculatePolygonMomentOfInertia(
   for (let i = 0; i < verticesAboutCentroid.length; i++) {
     const current = verticesAboutCentroid[i];
     const next = verticesAboutCentroid[(i + 1) % verticesAboutCentroid.length];
-    const cross = Math.abs(vector2Cross(current, next));
+    const cross = Math.abs(Vec2.cross(current, next));
 
     numerator +=
       cross *
-      (vector2Dot(current, current) +
-        vector2Dot(current, next) +
-        vector2Dot(next, next));
+      (Vec2.dot(current, current) +
+        Vec2.dot(current, next) +
+        Vec2.dot(next, next));
     denominator += cross;
   }
 

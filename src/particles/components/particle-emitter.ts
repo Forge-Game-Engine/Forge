@@ -1,4 +1,4 @@
-import { Vector2, vector2Zero } from '../../math/vector2.js';
+import { Vec2, Vector2 } from '../../math/vector2.js';
 import { Sprite } from '../../rendering/index.js';
 
 /**
@@ -82,7 +82,7 @@ const defaultOptions: ParticleEmitterOptions = {
   lifetimeSecondsRange: { min: 1, max: 3 },
   lifetimeScaleReduction: 0,
   emitDurationSeconds: 0,
-  spawnPosition: () => vector2Zero(),
+  spawnPosition: () => Vec2.zero,
 };
 
 /**

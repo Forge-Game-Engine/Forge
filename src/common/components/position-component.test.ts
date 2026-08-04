@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addPositionComponent, positionId } from './position-component.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { createVector2, vector2Zero } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 
 describe('addPositionComponent', () => {
   it('attaches a component with default local and world vectors', () => {
@@ -11,8 +11,8 @@ describe('addPositionComponent', () => {
     addPositionComponent(world, entity);
 
     expect(world.getComponent(entity, positionId)).toEqual({
-      local: vector2Zero(),
-      world: vector2Zero(),
+      local: Vec2.zero,
+      world: Vec2.zero,
     });
   });
 
@@ -23,8 +23,8 @@ describe('addPositionComponent', () => {
     addPositionComponent(world, entity, { isStatic: true });
 
     expect(world.getComponent(entity, positionId)).toEqual({
-      local: vector2Zero(),
-      world: vector2Zero(),
+      local: Vec2.zero,
+      world: Vec2.zero,
       isStatic: true,
     });
   });
@@ -33,10 +33,10 @@ describe('addPositionComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = createVector2(1, 2);
+    const local = Vec2.create(1, 2);
     const component = addPositionComponent(world, entity, { local });
 
-    expect(component).toEqual({ local, world: vector2Zero() });
+    expect(component).toEqual({ local, world: Vec2.zero });
     expect(world.getComponent(entity, positionId)).toBe(component);
   });
 

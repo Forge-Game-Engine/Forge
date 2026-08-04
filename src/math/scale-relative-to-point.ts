@@ -1,4 +1,4 @@
-import { createVector2, Vector2 } from './vector2.js';
+import { Vec2, Vector2 } from './vector2.js';
 
 /**
  * Scales a point relative to a pivot point by a given scale factor.
@@ -16,5 +16,5 @@ export const scaleRelativeToPoint = (
   const xScaled = scale.x * (point.x - pivot.x) + pivot.x;
   const yScaled = scale.y * (point.y - pivot.y) + pivot.y;
 
-  return createVector2(xScaled, yScaled);
+  return Vec2.create(xScaled, yScaled);
 };

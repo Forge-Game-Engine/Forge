@@ -1,16 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import {
-  vector2Add,
-  vector2Clone,
-  vector2Divide,
-  vector2Dot,
-  vector2Magnitude,
-  vector2Multiply,
-  vector2Negate,
-  vector2Rotate,
-  vector2Subtract,
-} from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import {
   LinearDamperEcsComponent,
   linearDamperId,
@@ -53,36 +43,30 @@ export const createLinearDamperEcsSystem = (
 
       // Clone before rotating: `damper.localAnchorA`/`localAnchorB` are
       // persistent component fields reused every tick.
-      const rA = vector2Rotate(
-        vector2Clone(damper.localAnchorA),
-        bodyA.rotation,
-      );
-      const rB = vector2Rotate(
-        vector2Clone(damper.localAnchorB),
-        bodyB.rotation,
-      );
+      const rA = Vec2.rotate(Vec2.clone(damper.localAnchorA), bodyA.rotation);
+      const rB = Vec2.rotate(Vec2.clone(damper.localAnchorB), bodyB.rotation);
 
       // Clone before adding: `bodyA.position`/`bodyB.position` are the
       // entities' live world position.
-      const worldAnchorA = vector2Add(vector2Clone(bodyA.position), rA);
-      const worldAnchorB = vector2Add(vector2Clone(bodyB.position), rB);
+      const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
+      const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
 
-      const delta = vector2Subtract(worldAnchorB, worldAnchorA);
-      const length = vector2Magnitude(delta);
+      const delta = Vec2.subtract(worldAnchorB, worldAnchorA);
+      const length = Vec2.magnitude(delta);
 
       if (length < minAnchorDistance) {
         continue;
       }
 
-      const direction = vector2Divide(delta, length);
+      const direction = Vec2.divide(delta, length);
 
-      const relativeVelocity = vector2Subtract(
+      const relativeVelocity = Vec2.subtract(
         velocityAtPoint(bodyB.rigidBody, rB),
         velocityAtPoint(bodyA.rigidBody, rA),
       );
-      const closingSpeed = vector2Dot(relativeVelocity, direction);
+      const closingSpeed = Vec2.dot(relativeVelocity, direction);
       const forceMagnitude = -damper.dampingCoefficient * closingSpeed;
-      const impulse = vector2Multiply(direction, forceMagnitude * dt);
+      const impulse = Vec2.multiply(direction, forceMagnitude * dt);
 
       // Negate a clone for bodyA: `impulse` is still needed unmodified for
       // bodyB's (opposite-signed) impulse right after.
@@ -91,7 +75,7 @@ export const createLinearDamperEcsSystem = (
         rA,
         bodyA.invMass,
         bodyA.invInertia,
-        vector2Negate(vector2Clone(impulse)),
+        Vec2.negate(Vec2.clone(impulse)),
       );
       applyPointImpulse(
         bodyB.rigidBody,

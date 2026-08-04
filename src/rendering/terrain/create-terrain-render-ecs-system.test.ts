@@ -4,7 +4,7 @@ import { createTerrainRenderEcsSystem } from './create-terrain-render-ecs-system
 import type { TerrainMesh } from './create-terrain-mesh';
 import { EcsWorld } from '../../ecs/index.js';
 import { addPositionComponent } from '../../common/index.js';
-import { createVector2 } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { addCameraComponent, CameraEcsComponent } from '../components/index.js';
 import { ImageCache } from '../../asset-loading/index.js';
 import { RenderContext } from '../render-context.js';
@@ -67,7 +67,7 @@ describe('createTerrainRenderEcsSystem', () => {
   const addCamera = (overrides: Partial<CameraEcsComponent> = {}): void => {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: createVector2(10, 20) });
+    addPositionComponent(world, entity, { world: Vec2.create(10, 20) });
     addCameraComponent(world, entity, {
       minZoom: 0.0001,
       maxZoom: 10000,
@@ -127,7 +127,7 @@ describe('createTerrainRenderEcsSystem', () => {
     const expectedMatrix = createProjectionMatrix(
       800,
       600,
-      createVector2(10, 20),
+      Vec2.create(10, 20),
       1,
       expectedPixelsPerUnit,
     );

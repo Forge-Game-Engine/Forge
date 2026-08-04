@@ -1,9 +1,9 @@
-import { Vector2, vector2Zero } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
 
 export abstract class Collider {
   public abstract readonly type: 'circle' | 'polygon' | 'terrain';
-  public offset: Vector2 = vector2Zero();
+  public offset: Vector2 = Vec2.zero;
   public momentOfInertia: number;
   public mass: number;
 

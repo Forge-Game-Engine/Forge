@@ -1,34 +1,4 @@
-import {
-  actionResetTypes,
-  Axis1dAction,
-  Axis2dAction,
-  buttonMoments,
-  Color,
-  createCamera,
-  createCanvas,
-  createImageSprite,
-  createPresentEcsSystem,
-  createRenderContext,
-  createRenderEcsSystem,
-  createTransformEcsSystem,
-  createVector2,
-  EcsSystem,
-  EcsWorld,
-  HoldAction,
-  KeyboardAxis1dBinding,
-  KeyboardAxis2dBinding,
-  KeyboardHoldBinding,
-  KeyboardInputSource,
-  KeyboardTriggerBinding,
-  keyCodes,
-  PositionEcsComponent,
-  positionId,
-  registerInputs,
-  SpriteEcsComponent,
-  spriteId,
-  Time,
-  TriggerAction,
-} from '../../../src/index.js';
+import { actionResetTypes, Axis1dAction, Axis2dAction, buttonMoments, Color, createCamera, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsSystem, EcsWorld, HoldAction, KeyboardAxis1dBinding, KeyboardAxis2dBinding, KeyboardHoldBinding, KeyboardInputSource, KeyboardTriggerBinding, keyCodes, PositionEcsComponent, positionId, registerInputs, SpriteEcsComponent, spriteId, Time, TriggerAction, Vec2 } from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import {
   matchesColor,
@@ -176,8 +146,8 @@ export const createScene: CreateScene = async (
     const entity = world.createEntity();
 
     const position = world.addComponent(entity, positionId, {
-      local: createVector2(x, y),
-      world: createVector2(x, y),
+      local: Vec2.create(x, y),
+      world: Vec2.create(x, y),
     });
 
     const sprite = world.addComponent(entity, spriteId, {

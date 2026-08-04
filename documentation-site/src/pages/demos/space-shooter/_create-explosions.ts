@@ -17,11 +17,7 @@ import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import {
-  createVector2,
-  Vector2,
-  vector2Clone,
-} from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createImageSprite,
@@ -58,7 +54,7 @@ export async function createExplosionSpawner(
   );
 
   const explosionSprite = createImageSprite(image, renderContext, renderLayer, {
-    frameDimensions: createVector2(
+    frameDimensions: Vec2.create(
       image.width / explosionColumns,
       image.height / explosionRows,
     ),
@@ -68,7 +64,7 @@ export async function createExplosionSpawner(
 
   // clone: the frame's own dimensions object is shared spritesheet data, not
   // disposable to hand off as the sprite's live uvScale.
-  explosionSprite.uvScale = vector2Clone(spriteSheet.frames[0][0].dimensions);
+  explosionSprite.uvScale = Vec2.clone(spriteSheet.frames[0][0].dimensions);
 
   const animationClip = new AnimationClip(
     selectAnimationFrames(
@@ -93,17 +89,17 @@ export async function createExplosionSpawner(
 
       addSpriteComponent(world, explosionEntity, {
         ...explosionSprite,
-        uvOffset: createVector2(0, 0),
+        uvOffset: Vec2.create(0, 0),
       });
 
       addPositionComponent(world, explosionEntity, {
-        local: vector2Clone(position),
-        world: vector2Clone(position),
+        local: Vec2.clone(position),
+        world: Vec2.clone(position),
       });
 
       addScaleComponent(world, explosionEntity, {
-        local: createVector2(explosionScale, explosionScale),
-        world: createVector2(explosionScale, explosionScale),
+        local: Vec2.create(explosionScale, explosionScale),
+        world: Vec2.create(explosionScale, explosionScale),
       });
 
       addSpriteAnimationComponent(world, explosionEntity, {

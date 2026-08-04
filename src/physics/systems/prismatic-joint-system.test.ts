@@ -6,7 +6,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { createVector2, vector2Right, vector2Zero } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 import { addPrismaticJointComponent } from '../components/prismatic-joint-component.js';
 import { addRigidBodyComponent } from '../components/rigidbody-component.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -37,28 +37,28 @@ describe('createPrismaticJointEcsSystem', () => {
   it('keeps perpendicular displacement near zero while axial displacement is free', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     const sliderPosition = addPositionComponent(world, slider, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     addRotationComponent(world, slider);
     addRigidBodyComponent(world, slider, {
       mass: 1,
       momentOfInertia: 1,
-      velocity: createVector2(2, 3),
+      velocity: Vec2.create(2, 3),
     });
 
     const jointEntity = world.createEntity();
     addPrismaticJointComponent(world, jointEntity, {
       entityA: anchor,
       entityB: slider,
-      axis: vector2Right(),
+      axis: Vec2.right,
     });
 
     let maxPerpendicular = 0;
@@ -78,15 +78,15 @@ describe('createPrismaticJointEcsSystem', () => {
   it('locks relative rotation to the reference angle', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     addPositionComponent(world, slider, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     const sliderRotation = addRotationComponent(world, slider);
     addRigidBodyComponent(world, slider, {
@@ -99,7 +99,7 @@ describe('createPrismaticJointEcsSystem', () => {
     addPrismaticJointComponent(world, jointEntity, {
       entityA: anchor,
       entityB: slider,
-      axis: vector2Right(),
+      axis: Vec2.right,
     });
 
     for (let i = 0; i < 60; i++) {
@@ -112,28 +112,28 @@ describe('createPrismaticJointEcsSystem', () => {
   it('respects a translation limit', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     const sliderPosition = addPositionComponent(world, slider, {
-      world: vector2Zero(),
-      local: vector2Zero(),
+      world: Vec2.zero,
+      local: Vec2.zero,
     });
     addRotationComponent(world, slider);
     addRigidBodyComponent(world, slider, {
       mass: 1,
       momentOfInertia: 1,
-      velocity: createVector2(3, 0),
+      velocity: Vec2.create(3, 0),
     });
 
     const jointEntity = world.createEntity();
     addPrismaticJointComponent(world, jointEntity, {
       entityA: anchor,
       entityB: slider,
-      axis: vector2Right(),
+      axis: Vec2.right,
       enableLimit: true,
       lowerTranslation: 0,
       upperTranslation: 1,

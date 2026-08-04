@@ -5,7 +5,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { createVector2 } from '../../../../../dist';
+import { Vec2 } from '../../../../../dist';
 
 export function createEntity(
   world: EcsWorld,
@@ -17,10 +17,10 @@ export function createEntity(
   addSpriteComponent(world, entity, sprite);
 
   addPositionComponent(world, entity, {
-    world: createVector2(xPosition, 0),
+    world: Vec2.create(xPosition, 0),
   });
   addScaleComponent(world, entity, {
-    world: createVector2(4.5, 4.5),
+    world: Vec2.create(4.5, 4.5),
   });
 
   addRotationComponent(world, entity, {

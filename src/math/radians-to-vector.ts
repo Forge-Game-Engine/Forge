@@ -1,4 +1,4 @@
-import { createVector2, Vector2 } from './vector2.js';
+import { Vec2, Vector2 } from './vector2.js';
 
 /**
  * Converts an angle in radians to a 2D vector.
@@ -7,5 +7,5 @@ import { createVector2, Vector2 } from './vector2.js';
  * @returns The corresponding 2D vector. (magnitude is 1)
  */
 export function radiansToVector(radians: number): Vector2 {
-  return createVector2(Math.sin(radians), -Math.cos(radians));
+  return Vec2.create(Math.sin(radians), -Math.cos(radians));
 }

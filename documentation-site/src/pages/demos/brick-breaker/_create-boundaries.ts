@@ -4,11 +4,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import {
-  createVector2,
-  Vector2,
-  vector2Clone,
-} from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -29,10 +25,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    createVector2(-halfWidth, -halfHeight),
-    createVector2(halfWidth, -halfHeight),
-    createVector2(halfWidth, halfHeight),
-    createVector2(-halfWidth, halfHeight),
+    Vec2.create(-halfWidth, -halfHeight),
+    Vec2.create(halfWidth, -halfHeight),
+    Vec2.create(halfWidth, halfHeight),
+    Vec2.create(-halfWidth, halfHeight),
   ];
 }
 
@@ -91,18 +87,18 @@ export async function createBoundaries(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: vector2Clone(position),
-      local: vector2Clone(position),
+      world: Vec2.clone(position),
+      local: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: createVector2(
+      local: Vec2.create(
         wallWidth / wallSprite.width,
         wallHeight / wallSprite.height,
       ),
-      world: createVector2(
+      world: Vec2.create(
         wallWidth / wallSprite.width,
         wallHeight / wallSprite.height,
       ),
@@ -119,19 +115,19 @@ export async function createBoundaries(
   };
 
   createWall(
-    createVector2(0, halfHeight - wallThickness / 2),
+    Vec2.create(0, halfHeight - wallThickness / 2),
     width,
     wallThickness,
   );
 
   createWall(
-    createVector2(-halfWidth + wallThickness / 2, 0),
+    Vec2.create(-halfWidth + wallThickness / 2, 0),
     wallThickness,
     height,
   );
 
   createWall(
-    createVector2(halfWidth - wallThickness / 2, 0),
+    Vec2.create(halfWidth - wallThickness / 2, 0),
     wallThickness,
     height,
   );

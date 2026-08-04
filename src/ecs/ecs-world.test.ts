@@ -10,7 +10,7 @@ import {
   speedId,
 } from '../common/index.js';
 import { createComponentId } from './ecs-component.js';
-import { createVector2, vector2Zero } from '../math/index.js';
+import { Vec2 } from '../math/index.js';
 
 describe('EcsWorld', () => {
   it('queries entities with multiple components', () => {
@@ -20,13 +20,13 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: createVector2(1, 0),
-      world: createVector2(1, 0),
+      local: Vec2.create(1, 0),
+      world: Vec2.create(1, 0),
     };
     const rot1: RotationEcsComponent = { local: 10, world: 10 };
     const pos2: PositionEcsComponent = {
-      local: createVector2(2, 0),
-      world: createVector2(2, 0),
+      local: Vec2.create(2, 0),
+      world: Vec2.create(2, 0),
     };
 
     world.addComponent(entity1, positionId, pos1);
@@ -92,12 +92,12 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const position1: PositionEcsComponent = {
-      local: createVector2(1, 0),
-      world: createVector2(1, 0),
+      local: Vec2.create(1, 0),
+      world: Vec2.create(1, 0),
     };
     const position2: PositionEcsComponent = {
-      local: createVector2(2, 0),
-      world: createVector2(2, 0),
+      local: Vec2.create(2, 0),
+      world: Vec2.create(2, 0),
     };
     const speed2: SpeedEcsComponent = { speed: 3 };
 
@@ -145,12 +145,12 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     world.addComponent(entity1, positionId, {
-      local: vector2Zero(),
-      world: vector2Zero(),
+      local: Vec2.zero,
+      world: Vec2.zero,
     });
     world.addComponent(entity2, positionId, {
-      local: vector2Zero(),
-      world: vector2Zero(),
+      local: Vec2.zero,
+      world: Vec2.zero,
     });
 
     const update = vi.fn();
@@ -198,12 +198,12 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: createVector2(-5, 0),
-      world: createVector2(-5, 0),
+      local: Vec2.create(-5, 0),
+      world: Vec2.create(-5, 0),
     };
     const pos2: PositionEcsComponent = {
-      local: createVector2(5, 0),
-      world: createVector2(5, 0),
+      local: Vec2.create(5, 0),
+      world: Vec2.create(5, 0),
     };
 
     world.addComponent(entity1, positionId, pos1);
@@ -241,13 +241,13 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: createVector2(-5, 0),
-      world: createVector2(-5, 0),
+      local: Vec2.create(-5, 0),
+      world: Vec2.create(-5, 0),
     };
     const rot1: RotationEcsComponent = { local: 1, world: 1 };
     const pos2: PositionEcsComponent = {
-      local: createVector2(5, 0),
-      world: createVector2(5, 0),
+      local: Vec2.create(5, 0),
+      world: Vec2.create(5, 0),
     };
     const rot2: RotationEcsComponent = { local: 2, world: 2 };
 
@@ -387,8 +387,8 @@ describe('EcsWorld', () => {
       const entity = world.createEntity();
 
       world.addComponent(entity, positionId, {
-        local: vector2Zero(),
-        world: vector2Zero(),
+        local: Vec2.zero,
+        world: Vec2.zero,
       });
 
       const listener = vi.fn();
@@ -405,8 +405,8 @@ describe('EcsWorld', () => {
       const entity = world.createEntity();
 
       world.addComponent(entity, positionId, {
-        local: vector2Zero(),
-        world: vector2Zero(),
+        local: Vec2.zero,
+        world: Vec2.zero,
       });
 
       const listener = vi.fn();
@@ -423,8 +423,8 @@ describe('EcsWorld', () => {
       const entity = world.createEntity();
 
       world.addComponent(entity, positionId, {
-        local: vector2Zero(),
-        world: vector2Zero(),
+        local: Vec2.zero,
+        world: Vec2.zero,
       });
       world.addComponent(entity, rotationId, { local: 0, world: 0 });
 

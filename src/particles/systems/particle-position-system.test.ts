@@ -8,7 +8,7 @@ import {
   addSpeedComponent,
   Time,
 } from '../../common';
-import { createVector2 } from '../../math';
+import { Vec2 } from '../../math';
 
 describe('ParticlePositionSystem', () => {
   let world: EcsWorld;
@@ -66,8 +66,8 @@ describe('ParticlePositionSystem', () => {
     addParticleComponent(world, entity1);
 
     const pos2 = addPositionComponent(world, entity2, {
-      local: createVector2(10, 10),
-      world: createVector2(10, 10),
+      local: Vec2.create(10, 10),
+      world: Vec2.create(10, 10),
     });
 
     addRotationComponent(world, entity2, {

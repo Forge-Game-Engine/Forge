@@ -108,7 +108,7 @@ Like keyboard axes, cursor position needs `actionResetTypes.noReset` on the
 bound `Axis2dAction`, see
 [Actions and Input Groups](./actions.md#reset-behavior-zero-vs-noreset).
 `MouseAxis2dBinding` only calls `set()` on `mousemove`, so with the default
-`actionResetTypes.zero` the value snaps back to `vector2Zero()` on the next
+`actionResetTypes.zero` the value snaps back to `Vec2.zero` on the next
 frame's reset, even while the cursor sits still.
 :::
 

@@ -8,13 +8,7 @@ import {
   ScaleEcsComponent,
   scaleId,
 } from '../../common/index.js';
-import {
-  createVector2,
-  Matrix3x3,
-  vector2Add,
-  vector2Clone,
-  vector2Rotate,
-} from '../../math/index.js';
+import { Matrix3x3, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
@@ -136,8 +130,8 @@ const pushSpriteRenderCommands = (
     (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
   for (const region of regions) {
-    const regionOffset = vector2Rotate(
-      createVector2(region.offset.x * scaleX, region.offset.y * scaleY),
+    const regionOffset = Vec2.rotate(
+      Vec2.create(region.offset.x * scaleX, region.offset.y * scaleY),
       rotationRadians,
     );
 
@@ -146,7 +140,7 @@ const pushSpriteRenderCommands = (
       // Clone before adding: `entityPosition.world` is the entity's live
       // world position, so building a region's offset position must not
       // mutate it.
-      world: vector2Add(vector2Clone(entityPosition.world), regionOffset),
+      world: Vec2.add(Vec2.clone(entityPosition.world), regionOffset),
     };
 
     const regionSprite: SpriteEcsComponent = {
@@ -156,7 +150,7 @@ const pushSpriteRenderCommands = (
       // A fresh vector per region, not a shared constant: `pivot` may be
       // mutated in place downstream (e.g. by the sprite animation system),
       // and this object is unique to `regionSprite`.
-      pivot: createVector2(0.5, 0.5),
+      pivot: Vec2.create(0.5, 0.5),
       uvOffset: region.uvOffset,
       uvScale: region.uvScale,
     };

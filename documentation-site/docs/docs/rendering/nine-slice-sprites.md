@@ -16,7 +16,7 @@ drawn at their original, fixed size. Configure it with
 
 ```ts
 import { addPositionComponent } from '@forge-game-engine/forge/common';
-import { createVector2 } from '@forge-game-engine/forge/math';
+import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createImageSprite,
@@ -27,7 +27,7 @@ const panelSprite = createImageSprite(panelImage, renderContext, 0, {
 });
 
 const panel = world.createEntity();
-addPositionComponent(world, panel, { world: createVector2(400, 300) });
+addPositionComponent(world, panel, { world: Vec2.create(400, 300) });
 addSpriteComponent(world, panel, panelSprite);
 
 // Resize the panel later (e.g. to fit dynamic text) - the 12px corners

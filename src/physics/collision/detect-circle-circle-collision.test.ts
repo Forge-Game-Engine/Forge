@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { detectCircleCircleCollision } from './detect-circle-circle-collision.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import {
-  createVector2,
-  Vector2,
-  vector2Equals,
-  vector2Up,
-} from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 function circleBody(position: Vector2, radius: number): CollisionBody {
   return { position, rotation: 0, collider: new CircleCollider(radius) };
@@ -15,15 +10,15 @@ function circleBody(position: Vector2, radius: number): CollisionBody {
 
 describe('detectCircleCircleCollision', () => {
   it('should return null when the circles do not overlap', () => {
-    const bodyA = circleBody(createVector2(0, 0), 1);
-    const bodyB = circleBody(createVector2(3, 0), 1);
+    const bodyA = circleBody(Vec2.create(0, 0), 1);
+    const bodyB = circleBody(Vec2.create(3, 0), 1);
 
     expect(detectCircleCircleCollision(bodyA, bodyB)).toBeNull();
   });
 
   it('should return a manifold with zero depth when the circles are exactly touching', () => {
-    const bodyA = circleBody(createVector2(0, 0), 1);
-    const bodyB = circleBody(createVector2(2, 0), 1);
+    const bodyA = circleBody(Vec2.create(0, 0), 1);
+    const bodyB = circleBody(Vec2.create(2, 0), 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
@@ -32,8 +27,8 @@ describe('detectCircleCircleCollision', () => {
   });
 
   it('should return a manifold pointing from bodyA toward bodyB when overlapping', () => {
-    const bodyA = circleBody(createVector2(0, 0), 1);
-    const bodyB = circleBody(createVector2(1.5, 0), 1);
+    const bodyA = circleBody(Vec2.create(0, 0), 1);
+    const bodyB = circleBody(Vec2.create(1.5, 0), 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
@@ -48,13 +43,13 @@ describe('detectCircleCircleCollision', () => {
   });
 
   it('should fall back to a default normal when the circles are concentric', () => {
-    const bodyA = circleBody(createVector2(2, 2), 1);
-    const bodyB = circleBody(createVector2(2, 2), 1);
+    const bodyA = circleBody(Vec2.create(2, 2), 1);
+    const bodyB = circleBody(Vec2.create(2, 2), 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
     expect(manifold).not.toBeNull();
-    expect(vector2Equals(manifold!.normal, vector2Up())).toBe(true);
+    expect(Vec2.equals(manifold!.normal, Vec2.up)).toBe(true);
     expect(manifold?.depth).toBeCloseTo(2);
   });
 });

@@ -3,14 +3,7 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import {
-  createVector2,
-  degreesToRadians,
-  Vector2,
-  vector2Clone,
-  vector2Rotate,
-  vector2Subtract,
-} from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -34,7 +27,7 @@ const ballRadius = 35;
 const armLength = 220;
 const armWidth = 10;
 const startAngle = 0.9;
-const gravity = createVector2(0, -600);
+const gravity = Vec2.create(0, -600);
 
 // `paddle_10.png` is a 640x141 horizontal capsule (rounded caps with a
 // flat center); these insets keep its caps at a fixed size while the
@@ -99,8 +92,8 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: vector2Clone(position),
-    local: vector2Clone(position),
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
   });
   addRotationComponent(world, entity, { local: angle, world: angle });
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
@@ -153,16 +146,16 @@ export async function createCradle(
   const firstPivotX = center.x - (spacing * (ballCount - 1)) / 2;
 
   for (let i = 0; i < ballCount; i++) {
-    const pivotPosition = createVector2(firstPivotX + spacing * i, center.y);
+    const pivotPosition = Vec2.create(firstPivotX + spacing * i, center.y);
     // Only the leftmost ball starts displaced; the rest hang at rest,
     // touching their neighbors.
     const angle = i === 0 ? -startAngle : 0;
-    const localAnchorB = createVector2(0, armLength);
+    const localAnchorB = Vec2.create(0, armLength);
     // clone both: pivotPosition and localAnchorB are both reused below unchanged
     // (localAnchorB is also passed as-is to addRevoluteJointComponent).
-    const ballPosition = vector2Subtract(
-      vector2Clone(pivotPosition),
-      vector2Rotate(vector2Clone(localAnchorB), angle),
+    const ballPosition = Vec2.subtract(
+      Vec2.clone(pivotPosition),
+      Vec2.rotate(Vec2.clone(localAnchorB), angle),
     );
 
     // A static, non-colliding pivot marker: no ColliderEcsComponent (so it
@@ -171,8 +164,8 @@ export async function createCradle(
     const pivotEntity = world.createEntity();
 
     addPositionComponent(world, pivotEntity, {
-      world: vector2Clone(pivotPosition),
-      local: vector2Clone(pivotPosition),
+      world: Vec2.clone(pivotPosition),
+      local: Vec2.clone(pivotPosition),
     });
     addRotationComponent(world, pivotEntity);
 
@@ -180,8 +173,8 @@ export async function createCradle(
     const ballCollider = new CircleCollider(ballRadius);
 
     addPositionComponent(world, ballEntity, {
-      world: vector2Clone(ballPosition),
-      local: vector2Clone(ballPosition),
+      world: Vec2.clone(ballPosition),
+      local: Vec2.clone(ballPosition),
     });
     addRotationComponent(world, ballEntity, { local: angle, world: angle });
     addSpriteComponent(world, ballEntity, {
@@ -217,8 +210,8 @@ export async function createCradle(
     const armEntity = world.createEntity();
 
     addPositionComponent(world, armEntity, {
-      world: vector2Clone(pivotPosition),
-      local: vector2Clone(pivotPosition),
+      world: Vec2.clone(pivotPosition),
+      local: Vec2.clone(pivotPosition),
     });
     addRotationComponent(world, armEntity);
     addSpriteComponent(world, armEntity, {
@@ -227,7 +220,7 @@ export async function createCradle(
       slices: armSlices,
     });
     addArmComponent(world, armEntity, {
-      pivotPosition: vector2Clone(pivotPosition),
+      pivotPosition: Vec2.clone(pivotPosition),
       entity: ballEntity,
       armWidth,
     });

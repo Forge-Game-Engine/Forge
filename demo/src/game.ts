@@ -1,24 +1,4 @@
-import {
-  addPositionComponent,
-  addRotationComponent,
-  addSpriteComponent,
-  calculateVisibleWorldSize,
-  Color,
-  createCamera,
-  createGame,
-  createImageSprite,
-  createRenderEcsSystem,
-  createVector2,
-  degreesToRadians,
-  EcsSystem,
-  EcsWorld,
-  PositionEcsComponent,
-  positionId,
-  Random,
-  SpriteEcsComponent,
-  Time,
-  vector2Clone,
-} from '../../src';
+import { addPositionComponent, addRotationComponent, addSpriteComponent, calculateVisibleWorldSize, Color, createCamera, createGame, createImageSprite, createRenderEcsSystem, degreesToRadians, EcsSystem, EcsWorld, PositionEcsComponent, positionId, Random, SpriteEcsComponent, Time, Vec2 } from '../../src';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -106,7 +86,7 @@ function createFountainSpawnEcsSystem(
       random.randomFloat(1 - fountainSpeedJitter, 1 + fountainSpeedJitter);
     const horizontalDirection = side === 'left' ? 1 : -1;
 
-    const velocity = createVector2(
+    const velocity = Vec2.create(
       Math.cos(angle) * speed * horizontalDirection,
       Math.sin(angle) * speed,
     );
@@ -114,7 +94,7 @@ function createFountainSpawnEcsSystem(
       -template.angularVelocitySpread,
       template.angularVelocitySpread,
     );
-    const position = createVector2(side === 'left' ? leftX : rightX, fountainY);
+    const position = Vec2.create(side === 'left' ? leftX : rightX, fountainY);
 
     const sprite = addSpriteComponent(world, entity, template.sprite);
     spritesByEntity.set(entity, sprite);
@@ -213,10 +193,10 @@ function createSquareCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    createVector2(-half, -half),
-    createVector2(half, -half),
-    createVector2(half, half),
-    createVector2(-half, half),
+    Vec2.create(-half, -half),
+    Vec2.create(half, -half),
+    Vec2.create(half, half),
+    Vec2.create(-half, half),
   ]);
 }
 
@@ -227,15 +207,15 @@ function createSquareCollider(): PolygonCollider {
  * so the sprite's pivot is moved to match in `trianglePivot`, keeping the
  * rendered triangle aligned with its collider as it rotates.
  */
-const trianglePivot = createVector2(1 / 3, 2 / 3);
+const trianglePivot = Vec2.create(1 / 3, 2 / 3);
 
 function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    createVector2(-half, half),
-    createVector2(-half, -half),
-    createVector2(half, -half),
+    Vec2.create(-half, half),
+    Vec2.create(-half, -half),
+    Vec2.create(half, -half),
   ]);
 }
 
@@ -252,22 +232,22 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
 ]);
 
 const ballSprite = createImageSprite(ballImage, renderContext, renderLayer, {
-  frameDimensions: createVector2(shapeSize, shapeSize),
+  frameDimensions: Vec2.create(shapeSize, shapeSize),
 });
 const squareSprite = createImageSprite(
   squareImage,
   renderContext,
   renderLayer,
-  { frameDimensions: createVector2(shapeSize, shapeSize) },
+  { frameDimensions: Vec2.create(shapeSize, shapeSize) },
 );
 const triangleSprite = createImageSprite(
   triangleImage,
   renderContext,
   renderLayer,
-  { frameDimensions: createVector2(shapeSize, shapeSize) },
+  { frameDimensions: Vec2.create(shapeSize, shapeSize) },
 );
 
-triangleSprite.pivot = vector2Clone(trianglePivot);
+triangleSprite.pivot = Vec2.clone(trianglePivot);
 
 const shapeTemplates: ShapeTemplate[] = [
   {
@@ -298,7 +278,7 @@ const halfHeight = visibleHeight / 2;
 const spritesByEntity = new Map<number, SpriteEcsComponent>();
 
 const groundEntity = world.createEntity();
-const groundPosition = createVector2(0, -halfHeight + groundThickness / 2);
+const groundPosition = Vec2.create(0, -halfHeight + groundThickness / 2);
 const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
 const groundTopY = groundPosition.y + groundHalfHeight;
@@ -312,10 +292,10 @@ addSpriteComponent(world, groundEntity, {
 });
 addColliderComponent(world, groundEntity, {
   collider: new PolygonCollider([
-    createVector2(-groundHalfWidth, -groundHalfHeight),
-    createVector2(groundHalfWidth, -groundHalfHeight),
-    createVector2(groundHalfWidth, groundHalfHeight),
-    createVector2(-groundHalfWidth, groundHalfHeight),
+    Vec2.create(-groundHalfWidth, -groundHalfHeight),
+    Vec2.create(groundHalfWidth, -groundHalfHeight),
+    Vec2.create(groundHalfWidth, groundHalfHeight),
+    Vec2.create(-groundHalfWidth, groundHalfHeight),
   ]),
 });
 addAabbComponent(world, groundEntity);

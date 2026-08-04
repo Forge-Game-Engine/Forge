@@ -3,17 +3,17 @@ import { detectPolygonTerrainCollision } from './detect-polygon-terrain-collisio
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { createVector2, Vector2, vector2Zero } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 
 function rectangle(width: number, height: number): PolygonCollider {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    createVector2(-halfWidth, -halfHeight),
-    createVector2(halfWidth, -halfHeight),
-    createVector2(halfWidth, halfHeight),
-    createVector2(-halfWidth, halfHeight),
+    Vec2.create(-halfWidth, -halfHeight),
+    Vec2.create(halfWidth, -halfHeight),
+    Vec2.create(halfWidth, halfHeight),
+    Vec2.create(-halfWidth, halfHeight),
   ]);
 }
 
@@ -27,22 +27,22 @@ function body(
 
 function flatTerrain(): TerrainCollider {
   return new TerrainCollider(
-    [createVector2(-100, 0), createVector2(0, 0), createVector2(100, 0)],
+    [Vec2.create(-100, 0), Vec2.create(0, 0), Vec2.create(100, 0)],
     50,
   );
 }
 
 describe('detectPolygonTerrainCollision', () => {
   it('should return null when the polygon is above the terrain with a gap', () => {
-    const polygonBody = body(createVector2(0, -1.5), rectangle(2, 2));
-    const terrainBody = body(vector2Zero(), flatTerrain());
+    const polygonBody = body(Vec2.create(0, -1.5), rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toBeNull();
   });
 
   it('should return null when the polygon is outside the terrain x-range', () => {
-    const polygonBody = body(createVector2(500, -0.5), rectangle(2, 2));
-    const terrainBody = body(vector2Zero(), flatTerrain());
+    const polygonBody = body(Vec2.create(500, -0.5), rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toBeNull();
   });
@@ -51,8 +51,8 @@ describe('detectPolygonTerrainCollision', () => {
     // Mirrors detectCircleTerrainCollision's tests: the terrain's solid
     // slab extends in +y locally, so a polygon resting "above" the surface
     // in world space (unrotated) sits at a smaller y than the surface.
-    const polygonBody = body(createVector2(0, -0.5), rectangle(2, 2));
-    const terrainBody = body(vector2Zero(), flatTerrain());
+    const polygonBody = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifold = detectPolygonTerrainCollision(polygonBody, terrainBody);
 
@@ -64,8 +64,8 @@ describe('detectPolygonTerrainCollision', () => {
   });
 
   it('should offset feature ids by the matched segment so warm-starting stays segment-scoped', () => {
-    const polygonBody = body(createVector2(0, -0.5), rectangle(2, 2));
-    const terrainBody = body(vector2Zero(), flatTerrain());
+    const polygonBody = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifold = detectPolygonTerrainCollision(polygonBody, terrainBody);
 

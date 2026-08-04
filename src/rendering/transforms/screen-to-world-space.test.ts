@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { screenToWorldSpace } from './screen-to-world-space';
-import { createVector2 } from '../../math';
+import { Vec2 } from '../../math';
 
 describe('screenToWorldSpace', () => {
   it.each([
@@ -13,12 +13,12 @@ describe('screenToWorldSpace', () => {
   ])(
     'should convert screen position to world position correctly with $description and pointer in the center of the screen',
     ({ cameraZoom }) => {
-      const screenPosition = createVector2(400, 300);
-      const cameraPosition = createVector2(0, 0);
+      const screenPosition = Vec2.create(400, 300);
+      const cameraPosition = Vec2.create(0, 0);
       const screenWidth = 800;
       const screenHeight = 600;
 
-      const expectedWorldPosition = createVector2(0, 0);
+      const expectedWorldPosition = Vec2.create(0, 0);
 
       const result = screenToWorldSpace(
         screenPosition,
@@ -33,13 +33,13 @@ describe('screenToWorldSpace', () => {
   );
 
   it('should convert screen position to world position correctly with the default camera and pointer is close to the top-left of the screen', () => {
-    const screenPosition = createVector2(100, 100);
-    const cameraPosition = createVector2(0, 0);
+    const screenPosition = Vec2.create(100, 100);
+    const cameraPosition = Vec2.create(0, 0);
     const cameraZoom = 1;
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = createVector2(-300, 200);
+    const expectedWorldPosition = Vec2.create(-300, 200);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -53,13 +53,13 @@ describe('screenToWorldSpace', () => {
   });
 
   it('should convert screen position to world position correctly with the camera panned and pointer in the center of the screen', () => {
-    const screenPosition = createVector2(400, 300);
-    const cameraPosition = createVector2(-100, -100);
+    const screenPosition = Vec2.create(400, 300);
+    const cameraPosition = Vec2.create(-100, -100);
     const cameraZoom = 1;
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = createVector2(-100, -100);
+    const expectedWorldPosition = Vec2.create(-100, -100);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -73,13 +73,13 @@ describe('screenToWorldSpace', () => {
   });
 
   it('should convert screen position to world position correctly with the camera panned and pointer below center', () => {
-    const screenPosition = createVector2(500, 400);
-    const cameraPosition = createVector2(-100, -100);
+    const screenPosition = Vec2.create(500, 400);
+    const cameraPosition = Vec2.create(-100, -100);
     const cameraZoom = 1;
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = createVector2(0, -200);
+    const expectedWorldPosition = Vec2.create(0, -200);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -111,12 +111,12 @@ describe('screenToWorldSpace', () => {
   ])(
     'should convert screen position to world position correctly with $description and pointer exactly in the top-left',
     ({ cameraZoom, expected }) => {
-      const screenPosition = createVector2(0, 0);
-      const cameraPosition = createVector2(0, 0);
+      const screenPosition = Vec2.create(0, 0);
+      const cameraPosition = Vec2.create(0, 0);
       const screenWidth = 800;
       const screenHeight = 600;
 
-      const expectedWorldPosition = createVector2(expected.x, expected.y);
+      const expectedWorldPosition = Vec2.create(expected.x, expected.y);
 
       const result = screenToWorldSpace(
         screenPosition,
@@ -131,13 +131,13 @@ describe('screenToWorldSpace', () => {
   );
 
   it('should convert screen position to world position correctly with the camera panned, zoomed in and pointer exactly in the top-left', () => {
-    const screenPosition = createVector2(0, 0);
-    const cameraPosition = createVector2(100, 100);
+    const screenPosition = Vec2.create(0, 0);
+    const cameraPosition = Vec2.create(100, 100);
     const cameraZoom = 2;
     const screenWidth = 800;
     const screenHeight = 600;
 
-    const expectedWorldPosition = createVector2(-100, 250);
+    const expectedWorldPosition = Vec2.create(-100, 250);
 
     const result = screenToWorldSpace(
       screenPosition,
@@ -151,14 +151,14 @@ describe('screenToWorldSpace', () => {
   });
 
   it('should scale by pixelsPerUnit in addition to zoom', () => {
-    const screenPosition = createVector2(500, 400);
-    const cameraPosition = createVector2(0, 0);
+    const screenPosition = Vec2.create(500, 400);
+    const cameraPosition = Vec2.create(0, 0);
     const cameraZoom = 1;
     const screenWidth = 800;
     const screenHeight = 600;
     const pixelsPerUnit = 10;
 
-    const expectedWorldPosition = createVector2(10, -10);
+    const expectedWorldPosition = Vec2.create(10, -10);
 
     const result = screenToWorldSpace(
       screenPosition,

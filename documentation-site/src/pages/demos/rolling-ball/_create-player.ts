@@ -3,7 +3,7 @@ import {
   addPositionComponent,
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
-import { Vector2, vector2Clone } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addAngularVelocityMotorComponent,
@@ -60,8 +60,8 @@ export async function createPlayer(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: vector2Clone(spawnPosition),
-    local: vector2Clone(spawnPosition),
+    world: Vec2.clone(spawnPosition),
+    local: Vec2.clone(spawnPosition),
   });
 
   addRotationComponent(world, entity);

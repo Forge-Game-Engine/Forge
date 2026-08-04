@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { TerrainCollider } from './terrain-collider.js';
-import { createVector2, vector2Zero } from '../../math/index.js';
+import { Vec2 } from '../../math/index.js';
 
 describe('TerrainCollider', () => {
   describe('constructor', () => {
     it('should throw an error if fewer than 2 points are provided', () => {
-      expect(() => new TerrainCollider([createVector2(0, 0)], 100)).toThrow();
+      expect(() => new TerrainCollider([Vec2.create(0, 0)], 100)).toThrow();
     });
 
     it('should throw an error if points are not ordered by strictly increasing x', () => {
       expect(
         () =>
           new TerrainCollider(
-            [createVector2(0, 0), createVector2(-1, 0), createVector2(2, 0)],
+            [Vec2.create(0, 0), Vec2.create(-1, 0), Vec2.create(2, 0)],
             100,
           ),
       ).toThrow();
@@ -20,21 +20,19 @@ describe('TerrainCollider', () => {
 
     it('should throw an error if points have equal x', () => {
       expect(
-        () =>
-          new TerrainCollider([createVector2(0, 0), createVector2(0, 5)], 100),
+        () => new TerrainCollider([Vec2.create(0, 0), Vec2.create(0, 5)], 100),
       ).toThrow();
     });
 
     it('should throw an error if depth is not positive', () => {
       expect(
-        () =>
-          new TerrainCollider([createVector2(0, 0), createVector2(10, 0)], 0),
+        () => new TerrainCollider([Vec2.create(0, 0), Vec2.create(10, 0)], 0),
       ).toThrow();
     });
 
     it('should have type "terrain"', () => {
       const collider = new TerrainCollider(
-        [createVector2(0, 0), createVector2(10, 0)],
+        [Vec2.create(0, 0), Vec2.create(10, 0)],
         100,
       );
 
@@ -43,7 +41,7 @@ describe('TerrainCollider', () => {
 
     it('should set bottomY to depth below the point with the greatest y', () => {
       const collider = new TerrainCollider(
-        [createVector2(0, 10), createVector2(10, -5), createVector2(20, 0)],
+        [Vec2.create(0, 10), Vec2.create(10, -5), Vec2.create(20, 0)],
         100,
       );
 
@@ -52,7 +50,7 @@ describe('TerrainCollider', () => {
 
     it('should build one segment per consecutive pair of points', () => {
       const collider = new TerrainCollider(
-        [createVector2(0, 0), createVector2(10, 0), createVector2(20, 0)],
+        [Vec2.create(0, 0), Vec2.create(10, 0), Vec2.create(20, 0)],
         100,
       );
 
@@ -67,11 +65,11 @@ describe('TerrainCollider', () => {
   describe('computeAabb', () => {
     it('should span the points and the bottom edge, unrotated', () => {
       const collider = new TerrainCollider(
-        [createVector2(-10, 5), createVector2(0, -5), createVector2(10, 5)],
+        [Vec2.create(-10, 5), Vec2.create(0, -5), Vec2.create(10, 5)],
         50,
       );
 
-      const aabb = collider.computeAabb(vector2Zero(), 0);
+      const aabb = collider.computeAabb(Vec2.zero, 0);
 
       expect(aabb.min.x).toBeCloseTo(-10);
       expect(aabb.max.x).toBeCloseTo(10);
@@ -81,11 +79,11 @@ describe('TerrainCollider', () => {
 
     it('should translate the AABB by position', () => {
       const collider = new TerrainCollider(
-        [createVector2(0, 0), createVector2(10, 0)],
+        [Vec2.create(0, 0), Vec2.create(10, 0)],
         50,
       );
 
-      const aabb = collider.computeAabb(createVector2(100, 200), 0);
+      const aabb = collider.computeAabb(Vec2.create(100, 200), 0);
 
       expect(aabb.min.x).toBeCloseTo(100);
       expect(aabb.max.x).toBeCloseTo(110);
