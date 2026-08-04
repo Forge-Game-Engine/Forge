@@ -2,8 +2,8 @@
 
 The `@forge-game-engine/forge/math` module provides the vector, matrix, and
 numeric building blocks used throughout the engine: positions, velocities,
-and directions on entities, bounding boxes for collision and raycasting, and
-the rendering transforms that turn world coordinates into screen space.
+and directions on entities, bounding boxes for collision, and the rendering
+transforms that turn world coordinates into screen space.
 
 Everything here is plain data and pure functions, there is no `World` or
 `Entity` involved. You can use these types in your own components and

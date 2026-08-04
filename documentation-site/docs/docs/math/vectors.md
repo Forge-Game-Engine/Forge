@@ -158,9 +158,8 @@ surprising for UI hit-testing where you might expect adjacent elements to be
 mutually exclusive.
 :::
 
-See [Bodies and Shapes](../physics/rigid-bodies.md) and
-[Raycasting](../physics/raycasting.md) for how `Rect` is used in the physics
-module.
+See [Bodies and Shapes](../physics/rigid-bodies.md) for how `Rect` is used in
+the physics module.
 
 ## Worked example: seeking a target
 
