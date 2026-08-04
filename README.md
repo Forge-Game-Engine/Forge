@@ -2,50 +2,52 @@
 
 ![logo](assets/forge-banner.png)
 
-Forge is a browser-based, code only game engine. It has everything you'd expect from an engine, including rendering, audio, input, animations, ECS, etc.
+Forge is a browser-based, code-only game engine. It has everything you'd
+expect from an engine, including rendering, audio, input, animations, an
+Entity-Component-System (ECS) core, physics, and more.
 
 [![codecov](https://codecov.io/gh/Forge-Game-Engine/Forge/branch/dev/graph/badge.svg)](https://codecov.io/gh/Forge-Game-Engine/Forge)
 
-[Documentation](https://forge-game-engine.github.io/Forge/)
+[Documentation](https://forge-game-engine.github.io/Forge/) ·
+[Demos](https://forge-game-engine.github.io/Forge/demos/ecs)
 
-## Prerequisites
-
-- Install Docker: https://www.docker.com/products/docker-desktop/
-- Install vscode: https://code.visualstudio.com/
-
-## Installation
-
-Clone the repository and open up the dev environment:
+## Getting started
 
 ```sh
-git clone https://github.com/forge-game-engine/Forge.git && \
-cd Forge && \
-code .
+npm install @forge-game-engine/forge
 ```
 
-## Running the Demo
+Add a `<div id="game-container"></div>` to your page, then create a game
+and render a sprite to it:
 
-To run the demo application:
+```ts
+import { createGame } from '@forge-game-engine/forge/utilities';
+import {
+  addSpriteComponent,
+  createImageSprite,
+} from '@forge-game-engine/forge/rendering';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 
-```sh
-npm run dev
+const { game, world, renderContext } = createGame('game-container');
+
+const image = await renderContext.imageCache.getOrLoad('sprite.png');
+const sprite = createImageSprite(image, renderContext, 0);
+
+const entity = world.createEntity();
+
+addPositionComponent(world, entity);
+addSpriteComponent(world, entity, sprite);
+
+game.run();
 ```
 
-## Building the Project
+See the [Getting Started guide](https://forge-game-engine.github.io/Forge/docs/intro)
+for a walkthrough of the above, and the
+[ECS demo](https://forge-game-engine.github.io/Forge/demos/ecs) for a
+complete runnable example.
 
-To build the project:
-
-```sh
-npm run build
-```
-
-## Running Tests
-
-To run the tests:
-
-```sh
-npm test
-```
+Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup,
+verification steps, and commit/changelog conventions.
 
 ## What the engine is
 
