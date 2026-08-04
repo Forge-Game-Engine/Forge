@@ -2,6 +2,8 @@
 
 This document provides guidance for AI coding agents working on the Forge Game Engine codebase. It covers architecture, conventions, and best practices to help agents write code that matches the existing codebase.
 
+Human contributors: see [CONTRIBUTING.md](./CONTRIBUTING.md) for a shorter, human-facing summary of setup, verification steps, and commit/changelog conventions that links back here for the full detail.
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
