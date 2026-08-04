@@ -132,6 +132,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/raycasting',
+              label: 'Raycasting',
+            },
+            {
               to: 'demos/rolling-ball',
               label: 'Rolling Ball',
             },

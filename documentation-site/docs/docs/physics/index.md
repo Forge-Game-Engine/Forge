@@ -1,8 +1,8 @@
 # Physics
 
 Forge includes a native 2D physics engine: rigid bodies, convex collision
-shapes, gravity, collision detection and resolution, and impulse-based
-forces (including explosions). It has no external
+shapes, gravity, collision detection and resolution, raycasting, and
+impulse-based forces (including explosions). It has no external
 dependencies and integrates with the ECS via `createPhysicsSyncEcsSystem`, which
 steps a `PhysicsWorld` every frame and keeps `RigidBody` transforms in sync
 with entity position/rotation components.
@@ -19,6 +19,8 @@ Core concepts:
   `RigidBody` can have.
 - `TerrainShape`: a static heightmap
   ground shape for non-convex 2D terrain.
+- `raycast`: casts a ray against every
+  collider entity in an `EcsWorld`.
 - `PrismaticJoint`: a slider
   constraint locking two bodies to one linear degree of freedom.
 - `RevoluteJoint`: a hinge
@@ -36,6 +38,7 @@ Guides in this section:
   integration, and collision events.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
+- [Raycasting](./raycasting.md): casting rays against colliders.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
 - [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
