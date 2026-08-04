@@ -9,45 +9,6 @@ Forge is a browser-based, code only game engine. It has everything you'd expect 
 Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup,
 verification steps, and commit/changelog conventions.
 
-## Prerequisites
-
-- Install Docker: https://www.docker.com/products/docker-desktop/
-- Install vscode: https://code.visualstudio.com/
-
-## Installation
-
-Clone the repository and open up the dev environment:
-
-```sh
-git clone https://github.com/forge-game-engine/Forge.git && \
-cd Forge && \
-code .
-```
-
-## Running the Demo
-
-To run the demo application:
-
-```sh
-npm run dev
-```
-
-## Building the Project
-
-To build the project:
-
-```sh
-npm run build
-```
-
-## Running Tests
-
-To run the tests:
-
-```sh
-npm test
-```
-
 ## What the engine is
 
 The engine is where all the code is stored that is usable for most types of games. For example: the renderer, audio systems, animations, mouse pointer, etc.
