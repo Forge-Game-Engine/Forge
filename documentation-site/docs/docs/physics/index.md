@@ -68,7 +68,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, time } = createGame('game-container');
 
-const physicsWorld = new PhysicsWorld({ gravity: Vec2.create(0, -300) });
+const physicsWorld = new PhysicsWorld({ gravity: { x: 0, y: -300 } });
 
 const box = world.createEntity();
 

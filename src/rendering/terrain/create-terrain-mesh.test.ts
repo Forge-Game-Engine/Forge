@@ -23,7 +23,11 @@ describe('createTerrainMesh', () => {
     overrides: Partial<Parameters<typeof createTerrainMesh>[1]> = {},
   ) => ({
     curvePoints: buildTerrainCurve(
-      [Vec2.create(0, 0), Vec2.create(10, 5), Vec2.create(20, 0)],
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 5 },
+        { x: 20, y: 0 },
+      ],
       4,
     ),
     depth: 50,
@@ -31,12 +35,12 @@ describe('createTerrainMesh', () => {
     angle: 0,
     border: {
       image: borderImage,
-      tileSize: Vec2.create(20, 20),
+      tileSize: { x: 20, y: 20 },
       tint: Color.white,
     },
     fill: {
       image: fillImage,
-      tileSize: Vec2.create(30, 30),
+      tileSize: { x: 30, y: 30 },
       tint: Color.white,
     },
     borderWidth: 10,
@@ -137,7 +141,10 @@ describe('createTerrainMesh', () => {
 
   it('builds 6 vertices (2 triangles) per pair of consecutive curve points', () => {
     const curvePoints = buildTerrainCurve(
-      [Vec2.create(0, 0), Vec2.create(10, 0)],
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
       5,
     );
 

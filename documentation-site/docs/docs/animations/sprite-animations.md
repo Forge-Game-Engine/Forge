@@ -98,7 +98,7 @@ addSpriteComponent(
     image,
     renderContext,
     1, // 3.1 render layer
-    Vec2.create(32, 32), // 3.2 define the dimensions of a frame
+    { x: 32, y: 32 }, // 3.2 define the dimensions of a frame
   ),
 );
 

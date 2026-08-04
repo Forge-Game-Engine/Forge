@@ -12,7 +12,7 @@ export class Path implements Iterable<Vector2> {
    * Creates an instance of Path.
    * @param path - An array of Vector2 points representing the path.
    * @example
-   * const path = new Path([Vec2.create(0, 0), Vec2.create(1, 1)]);
+   * const path = new Path([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
    * console.log(path.length); // 2
    */
   constructor(path: Vector2[] = []) {

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { smoothDampVector2 } from './smooth-damp-vector2';
-import { Vec2 } from './vector2';
 
 describe('smoothDamp Vector2', () => {
   it('returns target position and zero velocity when already at target', () => {
-    const position = Vec2.create(1, 2);
-    const target = Vec2.create(1, 2);
-    const velocity = Vec2.create(0, 0);
+    const position = { x: 1, y: 2 };
+    const target = { x: 1, y: 2 };
+    const velocity = { x: 0, y: 0 };
     const maxSpeed = 10;
     const smoothTime = 0.5;
     const deltaTime = 0.016;
@@ -27,9 +26,9 @@ describe('smoothDamp Vector2', () => {
   });
 
   it('moves position closer to target', () => {
-    const position = Vec2.create(0, 0);
-    const target = Vec2.create(10, 0);
-    const velocity = Vec2.create(0, 0);
+    const position = { x: 0, y: 0 };
+    const target = { x: 10, y: 0 };
+    const velocity = { x: 0, y: 0 };
     const maxSpeed = 100;
     const smoothTime = 0.5;
     const deltaTime = 0.016;
@@ -49,9 +48,9 @@ describe('smoothDamp Vector2', () => {
   });
 
   it('limits movement by maxSpeed', () => {
-    const position = Vec2.create(0, 0);
-    const target = Vec2.create(1000, 0);
-    const velocity = Vec2.create(0, 0);
+    const position = { x: 0, y: 0 };
+    const target = { x: 1000, y: 0 };
+    const velocity = { x: 0, y: 0 };
     const maxSpeed = 1;
     const smoothTime = 0.5;
     const deltaTime = 0.016;
@@ -71,9 +70,9 @@ describe('smoothDamp Vector2', () => {
   });
 
   it('returns correct velocity output', () => {
-    const position = Vec2.create(0, 0);
-    const target = Vec2.create(10, 0);
-    const velocity = Vec2.create(0, 0);
+    const position = { x: 0, y: 0 };
+    const target = { x: 10, y: 0 };
+    const velocity = { x: 0, y: 0 };
     const maxSpeed = 100;
     const smoothTime = 0.5;
     const deltaTime = 0.016;
@@ -93,9 +92,9 @@ describe('smoothDamp Vector2', () => {
   });
 
   it('handles negative velocity', () => {
-    const position = Vec2.create(10, 0);
-    const target = Vec2.create(0, 0);
-    const velocity = Vec2.create(-5, 0);
+    const position = { x: 10, y: 0 };
+    const target = { x: 0, y: 0 };
+    const velocity = { x: -5, y: 0 };
     const maxSpeed = 100;
     const smoothTime = 0.5;
     const deltaTime = 0.016;
@@ -114,9 +113,9 @@ describe('smoothDamp Vector2', () => {
   });
 
   it('does not overshoot the target', () => {
-    const position = Vec2.create(0, 0);
-    const target = Vec2.create(1, 0);
-    const velocity = Vec2.create(1000, 0);
+    const position = { x: 0, y: 0 };
+    const target = { x: 1, y: 0 };
+    const velocity = { x: 1000, y: 0 };
     const maxSpeed = 1000;
     const smoothTime = 0.01;
     const deltaTime = 0.5;

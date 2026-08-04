@@ -138,8 +138,8 @@ function buildTerrainMeshData(
     const left = curvePoints[i];
     const right = curvePoints[i + 1];
 
-    const bottomLeft = Vec2.create(left.position.x, bottomY);
-    const bottomRight = Vec2.create(right.position.x, bottomY);
+    const bottomLeft = { x: left.position.x, y: bottomY };
+    const bottomRight = { x: right.position.x, y: bottomY };
     const depthLeft = bottomY - left.position.y;
     const depthRight = bottomY - right.position.y;
 

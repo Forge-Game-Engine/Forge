@@ -118,7 +118,7 @@ function emitParticle(
 
   world.addComponent(particleEntity, scaleId, {
     world: Vec2.one,
-    local: Vec2.create(originalScale, originalScale),
+    local: { x: originalScale, y: originalScale },
   });
 
   world.addComponent(particleEntity, rotationId, {

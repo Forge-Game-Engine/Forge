@@ -139,8 +139,8 @@ export class PolygonCollider extends Collider {
     }
 
     return {
-      min: Vec2.create(minX, minY),
-      max: Vec2.create(maxX, maxY),
+      min: { x: minX, y: minY },
+      max: { x: maxX, y: maxY },
     };
   }
 }

@@ -35,7 +35,7 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = Vec2.create(0, -700);
+const gravity = { x: 0, y: -700 };
 const terrainWidth = 8000;
 
 export const createRollingBallGame = async (): Promise<Game> => {
@@ -61,24 +61,21 @@ export const createRollingBallGame = async (): Promise<Game> => {
       textureUrl: getAssetUrl(
         'img/kenney_pattern-pack/PNG/Default/pattern_19.png',
       ),
-      tileSize: Vec2.create(160, 150),
+      tileSize: { x: 160, y: 150 },
       tint: new Color(0.6, 0.6, 0.6, 1),
     },
     fill: {
       textureUrl: getAssetUrl(
         'img/kenney_pattern-pack/PNG/Default/pattern_37.png',
       ),
-      tileSize: Vec2.create(30, 30),
+      tileSize: { x: 30, y: 30 },
       tint: new Color(0.4, 0.29, 0.18, 1),
     },
     borderWidth: 30,
     borderBlend: 5,
   });
 
-  const spawnPosition = Vec2.create(
-    terrain.spawnX,
-    terrain.worldSurfaceYAt(terrain.spawnX) + 60,
-  );
+  const spawnPosition = { x: terrain.spawnX, y: terrain.worldSurfaceYAt(terrain.spawnX) + 60 };
 
   const player = await createPlayer(
     world,

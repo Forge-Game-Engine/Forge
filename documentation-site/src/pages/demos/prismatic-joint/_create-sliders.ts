@@ -29,7 +29,7 @@ import { addPumpComponent } from './_pump.component';
 const railDotCount = 15;
 const railDotSize = 10;
 const anchorSize = 14;
-const gravity = Vec2.create(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
 // rounded corners and bolt-head detail at a fixed size while the center
@@ -90,10 +90,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -142,10 +142,7 @@ function createRailDots(
 ): void {
   for (let i = 0; i <= railDotCount; i++) {
     const t = i / railDotCount;
-    const position = Vec2.create(
-      lerp(fromPosition.x, toPosition.x, t),
-      lerp(fromPosition.y, toPosition.y, t),
-    );
+    const position = { x: lerp(fromPosition.x, toPosition.x, t), y: lerp(fromPosition.y, toPosition.y, t) };
 
     createVisualEntity(world, dotSprite, position, railDotSize, railDotSize);
   }
@@ -289,7 +286,7 @@ export async function createSliders(
   // window's aspect ratio while the other two scenarios' travel distances
   // (tied to the camera's fixed vertical world units) stayed constant.
   createSliderScenario(world, sprites, {
-    anchorPosition: Vec2.create(columnLeft - columnWidth * 0.3, 0),
+    anchorPosition: { x: columnLeft - columnWidth * 0.3, y: 0 },
     axis: Vec2.right,
     lowerTranslation: 0,
     upperTranslation: 180,
@@ -298,7 +295,7 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: Vec2.create(200_000, 0),
+    pumpImpulse: { x: 200_000, y: 0 },
     pumpIntervalSeconds: 1.4,
     pumpAlternate: true,
   });
@@ -306,8 +303,8 @@ export async function createSliders(
   // Elevator: always pumped upward (positive Y); gravity (negative Y) brings
   // it back down to the lower limit in between pumps.
   createSliderScenario(world, sprites, {
-    anchorPosition: Vec2.create(columnLeft + columnWidth, -height * 0.32),
-    axis: Vec2.create(0, 1),
+    anchorPosition: { x: columnLeft + columnWidth, y: -height * 0.32 },
+    axis: { x: 0, y: 1 },
     lowerTranslation: 0,
     upperTranslation: height * 0.55,
     startTranslation: 0,
@@ -315,20 +312,17 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: Vec2.create(0, 950_000),
+    pumpImpulse: { x: 0, y: 950_000 },
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
 
   // Incline: a ball pumped back up a diagonal rail (anchored near the top),
   // then released to roll back down it under gravity.
-  const inclineAxis = Vec2.normalize(Vec2.create(0.5, -1));
+  const inclineAxis = Vec2.normalize({ x: 0.5, y: -1 });
 
   createSliderScenario(world, sprites, {
-    anchorPosition: Vec2.create(
-      columnLeft + columnWidth * 2 - columnWidth * 0.35,
-      height * 0.3,
-    ),
+    anchorPosition: { x: columnLeft + columnWidth * 2 - columnWidth * 0.35, y: height * 0.3 },
     axis: inclineAxis,
     lowerTranslation: 0,
     upperTranslation: height * 0.5,

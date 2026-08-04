@@ -3,17 +3,17 @@ import { detectCirclePolygonCollision } from './detect-circle-polygon-collision.
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 
 function rectangle(width: number, height: number): PolygonCollider {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ]);
 }
 
@@ -27,15 +27,15 @@ function body(
 
 describe('detectCirclePolygonCollision', () => {
   it('should return null when the circle is far from the polygon', () => {
-    const circleBody = body(Vec2.create(10, 10), new CircleCollider(1));
-    const polygonBody = body(Vec2.create(0, 0), rectangle(2, 2));
+    const circleBody = body({ x: 10, y: 10 }, new CircleCollider(1));
+    const polygonBody = body({ x: 0, y: 0 }, rectangle(2, 2));
 
     expect(detectCirclePolygonCollision(circleBody, polygonBody)).toBeNull();
   });
 
   it('should detect a face-region collision', () => {
-    const circleBody = body(Vec2.create(0, -1.5), new CircleCollider(1));
-    const polygonBody = body(Vec2.create(0, 0), rectangle(2, 2));
+    const circleBody = body({ x: 0, y: -1.5 }, new CircleCollider(1));
+    const polygonBody = body({ x: 0, y: 0 }, rectangle(2, 2));
 
     const manifold = detectCirclePolygonCollision(circleBody, polygonBody);
 
@@ -50,8 +50,8 @@ describe('detectCirclePolygonCollision', () => {
   });
 
   it('should detect a vertex-region collision', () => {
-    const circleBody = body(Vec2.create(-2, -2), new CircleCollider(1.5));
-    const polygonBody = body(Vec2.create(0, 0), rectangle(2, 2));
+    const circleBody = body({ x: -2, y: -2 }, new CircleCollider(1.5));
+    const polygonBody = body({ x: 0, y: 0 }, rectangle(2, 2));
 
     const manifold = detectCirclePolygonCollision(circleBody, polygonBody);
 
@@ -64,8 +64,8 @@ describe('detectCirclePolygonCollision', () => {
   });
 
   it('should detect a deep penetration where the circle center is inside the polygon', () => {
-    const circleBody = body(Vec2.create(0, 0), new CircleCollider(0.5));
-    const polygonBody = body(Vec2.create(0, 0), rectangle(2, 2));
+    const circleBody = body({ x: 0, y: 0 }, new CircleCollider(0.5));
+    const polygonBody = body({ x: 0, y: 0 }, rectangle(2, 2));
 
     const manifold = detectCirclePolygonCollision(circleBody, polygonBody);
 
@@ -74,8 +74,8 @@ describe('detectCirclePolygonCollision', () => {
   });
 
   it('should account for the polygon body rotation', () => {
-    const circleBody = body(Vec2.create(1.5, 0), new CircleCollider(1));
-    const polygonBody = body(Vec2.create(0, 0), rectangle(2, 2), Math.PI / 2);
+    const circleBody = body({ x: 1.5, y: 0 }, new CircleCollider(1));
+    const polygonBody = body({ x: 0, y: 0 }, rectangle(2, 2), Math.PI / 2);
 
     const manifold = detectCirclePolygonCollision(circleBody, polygonBody);
 

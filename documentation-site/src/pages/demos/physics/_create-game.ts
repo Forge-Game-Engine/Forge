@@ -73,10 +73,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-    const screenPosition = Vec2.create(
-      event.clientX - canvasBounds.left,
-      event.clientY - canvasBounds.top,
-    );
+    const screenPosition = { x: event.clientX - canvasBounds.left, y: event.clientY - canvasBounds.top };
 
     const pixelsPerUnit = calculatePixelsPerUnit(
       renderContext.height,

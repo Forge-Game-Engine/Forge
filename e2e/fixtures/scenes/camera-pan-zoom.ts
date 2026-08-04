@@ -153,10 +153,7 @@ export const createScene: CreateScene = async (
   for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
     for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {
       const cellEntity = world.createEntity();
-      const cellPosition = Vec2.create(
-        gridX * cellSpacing,
-        gridY * cellSpacing,
-      );
+      const cellPosition = { x: gridX * cellSpacing, y: gridY * cellSpacing };
 
       world.addComponent(cellEntity, positionId, {
         world: Vec2.clone(cellPosition),

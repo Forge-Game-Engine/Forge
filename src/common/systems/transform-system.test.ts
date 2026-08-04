@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vec2 } from '../../math/index.js';
+
 import { addPositionComponent } from '../components/index.js';
 import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
@@ -17,7 +17,7 @@ describe('transform-system', () => {
     const entity = world.createEntity();
 
     const position = addPositionComponent(world, entity, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     world.update();
@@ -31,11 +31,11 @@ describe('transform-system', () => {
     const child = world.createEntity();
 
     addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
     });
 
     addParentComponent(world, child, { parent });
@@ -50,7 +50,7 @@ describe('transform-system', () => {
     const entity = world.createEntity();
 
     const position = addPositionComponent(world, entity, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     world.update();
@@ -68,7 +68,7 @@ describe('transform-system', () => {
     const entity = world.createEntity();
 
     const position = addPositionComponent(world, entity, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
       isStatic: true,
     });
 
@@ -91,11 +91,11 @@ describe('transform-system', () => {
     const child = world.createEntity();
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
       isStatic: true,
     });
 
@@ -120,12 +120,12 @@ describe('transform-system', () => {
     const child = world.createEntity();
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
       isStatic: true,
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
       isStatic: true,
     });
 
@@ -149,7 +149,7 @@ describe('transform-system', () => {
     const staticEntity = world.createEntity();
 
     addPositionComponent(world, staticEntity, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
       isStatic: true,
     });
 
@@ -160,7 +160,7 @@ describe('transform-system', () => {
     const recycledEntity = world.createEntity();
 
     const recycledPosition = addPositionComponent(world, recycledEntity, {
-      local: Vec2.create(50, 60),
+      local: { x: 50, y: 60 },
     });
 
     world.update();

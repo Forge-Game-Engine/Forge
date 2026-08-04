@@ -19,7 +19,7 @@ import { CircleShape, RigidBody } from '@forge-game-engine/forge/physics';
 
 const ball = new RigidBody({
   shape: new CircleShape(16),
-  position: Vec2.create(0, 100),
+  position: { x: 0, y: 100 },
   restitution: 0.6,
   friction: 0.4,
 });
@@ -93,8 +93,8 @@ import { Vec2 } from '@forge-game-engine/forge/math';
 const entity = world.createEntity();
 
 addPositionComponent(world, entity, {
-  world: Vec2.create(0, 100),
-  local: Vec2.create(0, 100),
+  world: { x: 0, y: 100 },
+  local: { x: 0, y: 100 },
 });
 addRotationComponent(world, entity);
 addPhysicsBodyComponent(world, entity, {

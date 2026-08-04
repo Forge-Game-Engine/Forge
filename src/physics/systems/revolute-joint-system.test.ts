@@ -44,8 +44,8 @@ describe('createRevoluteJointEcsSystem', () => {
 
     const ball = world.createEntity();
     const ballPosition = addPositionComponent(world, ball, {
-      world: Vec2.create(0, -5),
-      local: Vec2.create(0, -5),
+      world: { x: 0, y: -5 },
+      local: { x: 0, y: -5 },
     });
     const ballRotation = addRotationComponent(world, ball);
     const ballRigidBody = addRigidBodyComponent(world, ball, {
@@ -57,17 +57,17 @@ describe('createRevoluteJointEcsSystem', () => {
     addRevoluteJointComponent(world, jointEntity, {
       entityA: pivot,
       entityB: ball,
-      localAnchorB: Vec2.create(0, 5),
+      localAnchorB: { x: 0, y: 5 },
     });
 
     for (let i = 0; i < 180; i++) {
-      Vec2.add(ballRigidBody.velocity, Vec2.create(0, -9.8 * (1 / 60)));
+      Vec2.add(ballRigidBody.velocity, { x: 0, y: -9.8 * (1 / 60) });
       tick();
     }
 
     const anchorB = Vec2.add(
       Vec2.clone(ballPosition.world),
-      Vec2.rotate(Vec2.create(0, 5), ballRotation.world),
+      Vec2.rotate({ x: 0, y: 5 }, ballRotation.world),
     );
     const separation = Vec2.magnitude(anchorB);
 
@@ -127,8 +127,8 @@ describe('createRevoluteJointEcsSystem', () => {
 
     const ball = world.createEntity();
     addPositionComponent(world, ball, {
-      world: Vec2.create(3, 0),
-      local: Vec2.create(3, 0),
+      world: { x: 3, y: 0 },
+      local: { x: 3, y: 0 },
     });
     addRotationComponent(world, ball);
     addRigidBodyComponent(world, ball, { mass: 1, momentOfInertia: 1 });
@@ -137,7 +137,7 @@ describe('createRevoluteJointEcsSystem', () => {
     const joint = addRevoluteJointComponent(world, jointEntity, {
       entityA: pivot,
       entityB: ball,
-      localAnchorB: Vec2.create(-3, 0),
+      localAnchorB: { x: -3, y: 0 },
     });
 
     for (let i = 0; i < 300; i++) {

@@ -27,7 +27,7 @@ const panelSprite = createImageSprite(panelImage, renderContext, 0, {
 });
 
 const panel = world.createEntity();
-addPositionComponent(world, panel, { world: Vec2.create(400, 300) });
+addPositionComponent(world, panel, { world: { x: 400, y: 300 } });
 addSpriteComponent(world, panel, panelSprite);
 
 // Resize the panel later (e.g. to fit dynamic text) - the 12px corners

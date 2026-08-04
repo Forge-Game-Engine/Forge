@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addPositionComponent } from '../components';
 import { EcsWorld } from '../../ecs';
-import { Vec2 } from '../../math';
+
 import { addParentComponent } from '../components/parent-component';
 import { createParentPositionEcsSystem } from './parent-position-system';
 
@@ -17,7 +17,7 @@ describe('parent-position-system', () => {
     const entity = world.createEntity();
 
     const positionComponent = addPositionComponent(world, entity, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     world.update();
@@ -33,11 +33,11 @@ describe('parent-position-system', () => {
     const child = world.createEntity();
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
     });
 
     addParentComponent(world, child, { parent });
@@ -60,15 +60,15 @@ describe('parent-position-system', () => {
     const grandchild = world.createEntity();
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
     });
 
     const grandchildPosition = addPositionComponent(world, grandchild, {
-      local: Vec2.create(2, 2),
+      local: { x: 2, y: 2 },
     });
 
     addParentComponent(world, child, { parent });
@@ -98,15 +98,15 @@ describe('parent-position-system', () => {
     const child = world.createEntity();
 
     const grandchildPosition = addPositionComponent(world, grandchild, {
-      local: Vec2.create(2, 2),
+      local: { x: 2, y: 2 },
     });
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
     });
 
     addParentComponent(world, grandchild, { parent: child });
@@ -136,15 +136,15 @@ describe('parent-position-system', () => {
     const grandchild = world.createEntity();
 
     const parentPosition = addPositionComponent(world, parent, {
-      local: Vec2.create(10, 20),
+      local: { x: 10, y: 20 },
     });
 
     const childPosition = addPositionComponent(world, child, {
-      local: Vec2.create(5, 5),
+      local: { x: 5, y: 5 },
     });
 
     const grandchildPosition = addPositionComponent(world, grandchild, {
-      local: Vec2.create(2, 2),
+      local: { x: 2, y: 2 },
     });
 
     addParentComponent(world, child, { parent });

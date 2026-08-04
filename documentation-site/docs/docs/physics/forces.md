@@ -27,7 +27,7 @@ import {
 } from '@forge-game-engine/forge/physics';
 import { Vec2 } from '@forge-game-engine/forge/math';
 
-addGravityComponent(world, playerEntity, { amount: Vec2.create(0, -600) });
+addGravityComponent(world, playerEntity, { amount: { x: 0, y: -600 } });
 
 // Must run before whatever system resolves collisions
 // (createCollisionResolutionEcsSystem), so this tick's gravity is reflected
@@ -59,7 +59,7 @@ const rigidBody = world.getComponent(playerEntity, rigidBodyId);
 
 if (position !== null && rigidBody !== null) {
   // A straight-up jump through the center of mass: no spin.
-  applyImpulse(Vec2.create(0, 500), position.world, position.world, rigidBody);
+  applyImpulse({ x: 0, y: 500 }, position.world, position.world, rigidBody);
 }
 ```
 
@@ -306,10 +306,7 @@ import { applyExplosiveForce } from '@forge-game-engine/forge/physics';
 renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-  const screenPosition = Vec2.create(
-    event.clientX - canvasBounds.left,
-    event.clientY - canvasBounds.top,
-  );
+  const screenPosition = { x: event.clientX - canvasBounds.left, y: event.clientY - canvasBounds.top };
 
   const pixelsPerUnit = calculatePixelsPerUnit(
     renderContext.height,

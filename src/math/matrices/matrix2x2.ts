@@ -35,9 +35,9 @@ export class Matrix2x2 {
 
     const inverseDeterminant = 1 / determinant;
 
-    return Vec2.create(
-      inverseDeterminant * (this.m11 * b.x - this.m01 * b.y),
-      inverseDeterminant * (this.m00 * b.y - this.m10 * b.x),
-    );
+    return {
+      x: inverseDeterminant * (this.m11 * b.x - this.m01 * b.y),
+      y: inverseDeterminant * (this.m00 * b.y - this.m10 * b.x),
+    };
   }
 }

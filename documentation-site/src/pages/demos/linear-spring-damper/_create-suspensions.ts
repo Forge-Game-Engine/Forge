@@ -30,7 +30,7 @@ const mountSize = 24;
 const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
-const gravity = Vec2.create(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -177,7 +177,7 @@ function createSuspensionScenario(
   // clone: mountPosition is reused below (unchanged) for the mount/line entities.
   const wheelPosition = Vec2.add(
     Vec2.clone(mountPosition),
-    Vec2.create(0, -wheelDropHeight),
+    { x: 0, y: -wheelDropHeight },
   );
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
@@ -269,13 +269,13 @@ export async function createSuspensions(
   const columnWidth = width / 2;
   const mountY = height * 0.25;
   const stiffness = 30_000;
-  const bumpVelocity = Vec2.create(0, 180);
+  const bumpVelocity = { x: 0, y: 180 };
   const resetIntervalSeconds = 6;
 
   // Spring only: nothing dissipates the energy of the bump, so the wheel
   // keeps oscillating until the next reset.
   createSuspensionScenario(world, sprites, {
-    mountPosition: Vec2.create(-columnWidth / 2, mountY),
+    mountPosition: { x: -columnWidth / 2, y: mountY },
     wheelDropHeight: 120,
     stiffness,
     bumpVelocity,
@@ -285,7 +285,7 @@ export async function createSuspensions(
   // Spring and damper: the damper resists the compression/extension speed,
   // so the wheel settles back to rest well before the next reset.
   createSuspensionScenario(world, sprites, {
-    mountPosition: Vec2.create(columnWidth / 2, mountY),
+    mountPosition: { x: columnWidth / 2, y: mountY },
     wheelDropHeight: 120,
     stiffness,
     dampingCoefficient: 15_000,

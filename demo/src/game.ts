@@ -86,15 +86,12 @@ function createFountainSpawnEcsSystem(
       random.randomFloat(1 - fountainSpeedJitter, 1 + fountainSpeedJitter);
     const horizontalDirection = side === 'left' ? 1 : -1;
 
-    const velocity = Vec2.create(
-      Math.cos(angle) * speed * horizontalDirection,
-      Math.sin(angle) * speed,
-    );
+    const velocity = { x: Math.cos(angle) * speed * horizontalDirection, y: Math.sin(angle) * speed };
     const angularVelocity = random.randomFloat(
       -template.angularVelocitySpread,
       template.angularVelocitySpread,
     );
-    const position = Vec2.create(side === 'left' ? leftX : rightX, fountainY);
+    const position = { x: side === 'left' ? leftX : rightX, y: fountainY };
 
     const sprite = addSpriteComponent(world, entity, template.sprite);
     spritesByEntity.set(entity, sprite);
@@ -193,10 +190,10 @@ function createSquareCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    Vec2.create(-half, -half),
-    Vec2.create(half, -half),
-    Vec2.create(half, half),
-    Vec2.create(-half, half),
+    { x: -half, y: -half },
+    { x: half, y: -half },
+    { x: half, y: half },
+    { x: -half, y: half },
   ]);
 }
 
@@ -207,15 +204,15 @@ function createSquareCollider(): PolygonCollider {
  * so the sprite's pivot is moved to match in `trianglePivot`, keeping the
  * rendered triangle aligned with its collider as it rotates.
  */
-const trianglePivot = Vec2.create(1 / 3, 2 / 3);
+const trianglePivot = { x: 1 / 3, y: 2 / 3 };
 
 function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    Vec2.create(-half, half),
-    Vec2.create(-half, -half),
-    Vec2.create(half, -half),
+    { x: -half, y: half },
+    { x: -half, y: -half },
+    { x: half, y: -half },
   ]);
 }
 
@@ -232,19 +229,19 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
 ]);
 
 const ballSprite = createImageSprite(ballImage, renderContext, renderLayer, {
-  frameDimensions: Vec2.create(shapeSize, shapeSize),
+  frameDimensions: { x: shapeSize, y: shapeSize },
 });
 const squareSprite = createImageSprite(
   squareImage,
   renderContext,
   renderLayer,
-  { frameDimensions: Vec2.create(shapeSize, shapeSize) },
+  { frameDimensions: { x: shapeSize, y: shapeSize } },
 );
 const triangleSprite = createImageSprite(
   triangleImage,
   renderContext,
   renderLayer,
-  { frameDimensions: Vec2.create(shapeSize, shapeSize) },
+  { frameDimensions: { x: shapeSize, y: shapeSize } },
 );
 
 triangleSprite.pivot = Vec2.clone(trianglePivot);
@@ -278,7 +275,7 @@ const halfHeight = visibleHeight / 2;
 const spritesByEntity = new Map<number, SpriteEcsComponent>();
 
 const groundEntity = world.createEntity();
-const groundPosition = Vec2.create(0, -halfHeight + groundThickness / 2);
+const groundPosition = { x: 0, y: -halfHeight + groundThickness / 2 };
 const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
 const groundTopY = groundPosition.y + groundHalfHeight;
@@ -292,10 +289,10 @@ addSpriteComponent(world, groundEntity, {
 });
 addColliderComponent(world, groundEntity, {
   collider: new PolygonCollider([
-    Vec2.create(-groundHalfWidth, -groundHalfHeight),
-    Vec2.create(groundHalfWidth, -groundHalfHeight),
-    Vec2.create(groundHalfWidth, groundHalfHeight),
-    Vec2.create(-groundHalfWidth, groundHalfHeight),
+    { x: -groundHalfWidth, y: -groundHalfHeight },
+    { x: groundHalfWidth, y: -groundHalfHeight },
+    { x: groundHalfWidth, y: groundHalfHeight },
+    { x: -groundHalfWidth, y: groundHalfHeight },
   ]),
 });
 addAabbComponent(world, groundEntity);

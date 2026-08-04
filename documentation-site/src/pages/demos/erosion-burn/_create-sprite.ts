@@ -1,5 +1,5 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
-import { Vec2 } from '@forge-game-engine/forge/math';
+
 import {
   Color,
   combineInstanceDataSegments,
@@ -68,11 +68,11 @@ export async function createErosionSprite(
     enabled: true,
     width: logoImage.width,
     height: logoImage.height,
-    pivot: Vec2.create(0.5, 0.5),
+    pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     renderable,
-    uvOffset: Vec2.create(0, 0),
-    uvScale: Vec2.create(1, 1),
+    uvOffset: { x: 0, y: 0 },
+    uvScale: { x: 1, y: 1 },
     layer,
   };
 }

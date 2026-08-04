@@ -5,7 +5,7 @@ import {
   addScaleComponent,
   Time,
 } from '@forge-game-engine/forge/common';
-import { Random, Vec2 } from '@forge-game-engine/forge/math';
+import { Random } from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
   addAabbComponent,
@@ -50,15 +50,15 @@ export const createAsteroidSpawnerEcsSystem = (
       addSpriteComponent(world, asteroidEntity, sprite);
 
       addPositionComponent(world, asteroidEntity, {
-        local: Vec2.create(x, spawnerComponent.spawnY),
-        world: Vec2.create(x, spawnerComponent.spawnY),
+        local: { x, y: spawnerComponent.spawnY },
+        world: { x, y: spawnerComponent.spawnY },
       });
 
       addRotationComponent(world, asteroidEntity);
 
       addScaleComponent(world, asteroidEntity, {
-        local: Vec2.create(asteroidScale, asteroidScale),
-        world: Vec2.create(asteroidScale, asteroidScale),
+        local: { x: asteroidScale, y: asteroidScale },
+        world: { x: asteroidScale, y: asteroidScale },
       });
 
       world.addComponent(asteroidEntity, asteroidId, {

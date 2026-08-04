@@ -41,7 +41,7 @@ const brickCount = 10;
 const towerColumns = 6;
 
 const armWidth = 14;
-const gravity = Vec2.create(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
 // its rounded corners and bolt-head detail at a fixed size while the center
@@ -61,14 +61,14 @@ const armSlices: NineSliceOptions = {
 // position). The one exception is the joint's `localAnchorB`, which the
 // revolute joint API requires as an offset local to the ball, computed once
 // from `pivotPosition` and `ballStartPosition` (see `createWreckingBall`).
-const pivotPosition = Vec2.create(-260, 260);
-const ballStartPosition = Vec2.create(-480, 150);
+const pivotPosition = { x: -260, y: 260 };
+const ballStartPosition = { x: -480, y: 150 };
 // The center of the floor's middle tile. Its height was chosen so the
 // floor's top surface stays below the ball's swing everywhere the floor
 // spans, while the brick tower standing on it rises back up into the
 // ball's path, see the comment on `floorTileCount` uses in
 // `createWreckingBall`.
-const floorPosition = Vec2.create(-100, -107);
+const floorPosition = { x: -100, y: -107 };
 
 interface WreckingBallSprites {
   ball: SpriteEcsComponent;
@@ -100,10 +100,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -176,10 +176,7 @@ function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
     floorPosition.x - (floorTileSize * (floorTileCount - 1)) / 2;
 
   for (let i = 0; i < floorTileCount; i++) {
-    const position = Vec2.create(
-      firstTileX + i * floorTileSize,
-      floorPosition.y,
-    );
+    const position = { x: firstTileX + i * floorTileSize, y: floorPosition.y };
     const floorCollider = new PolygonCollider(
       rectangleVertices(floorTileSize, floorTileSize),
     );
@@ -196,16 +193,13 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
   // The bricks are explicitly half the size of their sprite's native 64x64
   // pixels, so (unlike every other object in this scene) they need a scale
   // to match their physics shape rather than rendering at native size.
-  const brickScale = Vec2.create(
-    brickSize / sprite.width,
-    brickSize / sprite.height,
-  );
+  const brickScale = { x: brickSize / sprite.width, y: brickSize / sprite.height };
 
   for (let row = 0; row < brickCount; row++) {
     const y = towerBottomY + brickSize / 2 + row * brickSize;
 
     for (let column = 0; column < towerColumns; column++) {
-      const position = Vec2.create(firstColumnX + column * brickSize, y);
+      const position = { x: firstColumnX + column * brickSize, y };
       const brickCollider = new PolygonCollider(
         rectangleVertices(brickSize, brickSize),
         0.01,

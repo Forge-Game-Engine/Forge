@@ -6,7 +6,11 @@ describe('PolygonCollider', () => {
   describe('constructor', () => {
     it('should throw an error if fewer than 3 vertices are provided', () => {
       expect(
-        () => new PolygonCollider([Vec2.create(0, 0), Vec2.create(1, 0)]),
+        () =>
+          new PolygonCollider([
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+          ]),
       ).toThrow();
     });
 
@@ -14,9 +18,9 @@ describe('PolygonCollider', () => {
       expect(
         () =>
           new PolygonCollider([
-            Vec2.create(0, 0),
-            Vec2.create(1, 0),
-            Vec2.create(2, 0),
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 2, y: 0 },
           ]),
       ).toThrow();
     });
@@ -25,20 +29,20 @@ describe('PolygonCollider', () => {
       expect(
         () =>
           new PolygonCollider([
-            Vec2.create(0, 0),
-            Vec2.create(4, 0),
-            Vec2.create(4, 4),
-            Vec2.create(2, 1),
-            Vec2.create(0, 4),
+            { x: 0, y: 0 },
+            { x: 4, y: 0 },
+            { x: 4, y: 4 },
+            { x: 2, y: 1 },
+            { x: 0, y: 4 },
           ]),
       ).toThrow();
     });
 
     it('should re-center vertices around their centroid', () => {
       const triangle = new PolygonCollider([
-        Vec2.create(0, 0),
-        Vec2.create(4, 0),
-        Vec2.create(0, 4),
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 0, y: 4 },
       ]);
 
       let sumX = 0;
@@ -55,10 +59,10 @@ describe('PolygonCollider', () => {
 
     it('should have type "polygon"', () => {
       const collider = new PolygonCollider([
-        Vec2.create(-1, -1),
-        Vec2.create(1, -1),
-        Vec2.create(1, 1),
-        Vec2.create(-1, 1),
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 1 },
       ]);
 
       expect(collider.type).toBe('polygon');
@@ -68,13 +72,13 @@ describe('PolygonCollider', () => {
   describe('getWorldVertices', () => {
     it('should translate local vertices by position with no rotation', () => {
       const square = new PolygonCollider([
-        Vec2.create(-1, -1),
-        Vec2.create(1, -1),
-        Vec2.create(1, 1),
-        Vec2.create(-1, 1),
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 1 },
       ]);
 
-      const worldVertices = square.getWorldVertices(Vec2.create(5, 5), 0);
+      const worldVertices = square.getWorldVertices({ x: 5, y: 5 }, 0);
 
       expect(worldVertices[0].x).toBeCloseTo(4);
       expect(worldVertices[0].y).toBeCloseTo(4);
@@ -82,10 +86,10 @@ describe('PolygonCollider', () => {
 
     it('should rotate local vertices before translating', () => {
       const square = new PolygonCollider([
-        Vec2.create(-1, -1),
-        Vec2.create(1, -1),
-        Vec2.create(1, 1),
-        Vec2.create(-1, 1),
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 1 },
       ]);
 
       const worldVertices = square.getWorldVertices(Vec2.zero, Math.PI / 2);
@@ -98,10 +102,10 @@ describe('PolygonCollider', () => {
   describe('computeAabb', () => {
     it('should compute an axis-aligned bounding box that grows for a rotated square', () => {
       const square = new PolygonCollider([
-        Vec2.create(-1, -1),
-        Vec2.create(1, -1),
-        Vec2.create(1, 1),
-        Vec2.create(-1, 1),
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 1 },
       ]);
 
       const unrotatedAabb = square.computeAabb(Vec2.zero, 0);

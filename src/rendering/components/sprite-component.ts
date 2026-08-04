@@ -116,7 +116,7 @@ export function addSpriteComponent(
   // module-init time (this file sits in a circular import cycle through
   // `../../index.js`).
   const defaultSpriteOptions: SpriteDefaultedOptions = {
-    pivot: Vec2.create(0.5, 0.5),
+    pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     uvOffset: Vec2.zero,
     uvScale: Vec2.one,

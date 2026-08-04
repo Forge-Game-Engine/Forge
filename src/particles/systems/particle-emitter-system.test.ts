@@ -27,7 +27,7 @@ describe('ParticleEmitterSystem', () => {
       width: 10,
       height: 10,
       bleed: 1,
-      pivot: Vec2.create(0.5, 0.5),
+      pivot: { x: 0.5, y: 0.5 },
       tintColor: { r: 1, g: 1, b: 1, a: 1 },
       renderable: {
         geometry: vi.fn(),

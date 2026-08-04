@@ -46,7 +46,7 @@ export function launchBall(
   );
 
   rigidBody.velocity = Vec2.multiply(
-    Vec2.create(Math.sin(angle), Math.cos(angle)),
+    { x: Math.sin(angle), y: Math.cos(angle) },
     speed,
   );
 }
@@ -91,8 +91,8 @@ export async function createBall(
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: Vec2.create(ballScale, ballScale),
-    world: Vec2.create(ballScale, ballScale),
+    local: { x: ballScale, y: ballScale },
+    world: { x: ballScale, y: ballScale },
   });
 
   addSpriteComponent(world, entity, ballSprite);

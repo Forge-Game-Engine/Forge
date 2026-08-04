@@ -22,22 +22,11 @@ export interface Vector3 {
  */
 export class Vec3 {
   /**
-   * Creates a new Vector3.
-   * @param x - The x-coordinate component (default: 0).
-   * @param y - The y-coordinate component (default: 0).
-   * @param z - The z-coordinate component (default: 0).
-   * @returns The created vector.
-   */
-  public static create(x: number = 0, y: number = 0, z: number = 0): Vector3 {
-    return { x, y, z };
-  }
-
-  /**
    * A zero vector (0, 0, 0). A fresh vector is created on every access, so
    * it's always safe to mutate.
    */
   static get zero(): Vector3 {
-    return Vec3.create(0, 0, 0);
+    return { x: 0, y: 0, z: 0 };
   }
 
   /**
@@ -45,7 +34,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get one(): Vector3 {
-    return Vec3.create(1, 1, 1);
+    return { x: 1, y: 1, z: 1 };
   }
 
   /**
@@ -53,7 +42,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get up(): Vector3 {
-    return Vec3.create(0, 1, 0);
+    return { x: 0, y: 1, z: 0 };
   }
 
   /**
@@ -61,7 +50,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get down(): Vector3 {
-    return Vec3.create(0, -1, 0);
+    return { x: 0, y: -1, z: 0 };
   }
 
   /**
@@ -69,7 +58,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get left(): Vector3 {
-    return Vec3.create(-1, 0, 0);
+    return { x: -1, y: 0, z: 0 };
   }
 
   /**
@@ -77,7 +66,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get right(): Vector3 {
-    return Vec3.create(1, 0, 0);
+    return { x: 1, y: 0, z: 0 };
   }
 
   /**
@@ -85,7 +74,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get forward(): Vector3 {
-    return Vec3.create(0, 0, 1);
+    return { x: 0, y: 0, z: 1 };
   }
 
   /**
@@ -93,7 +82,7 @@ export class Vec3 {
    * every access, so it's always safe to mutate.
    */
   static get backward(): Vector3 {
-    return Vec3.create(0, 0, -1);
+    return { x: 0, y: 0, z: -1 };
   }
 
   /**
@@ -234,7 +223,7 @@ export class Vec3 {
    * @returns A new Vector3 with the same component values.
    */
   public static clone(vector: Vector3): Vector3 {
-    return Vec3.create(vector.x, vector.y, vector.z);
+    return { x: vector.x, y: vector.y, z: vector.z };
   }
 
   /**
@@ -259,7 +248,7 @@ export class Vec3 {
   /**
    * Converts a vector to a glsl-compatible float32 array.
    * @param vector - The vector.
-   * @returns The 3d vector array (e.g. `[5, 3, 8]` for `Vec3.create(5, 3, 8)`).
+   * @returns The 3d vector array (e.g. `[5, 3, 8]` for `{ x: 5, y: 3, z: 8 }`).
    */
   public static toFloat32Array(vector: Vector3): Float32Array {
     return new Float32Array([vector.x, vector.y, vector.z]);

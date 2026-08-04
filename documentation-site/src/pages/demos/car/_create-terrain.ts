@@ -48,10 +48,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -139,7 +139,7 @@ function createGroundColumn(
     return;
   }
 
-  const position = Vec2.create(left + width / 2, height - columnDepth / 2);
+  const position = { x: left + width / 2, y: height - columnDepth / 2 };
 
   const entity = world.createEntity();
 
@@ -207,5 +207,5 @@ export async function createTerrain(
     createGroundColumn(world, groundSprite, left, right, height);
   }
 
-  return Vec2.create(carSpawnX, heightAt(carSpawnX, random));
+  return { x: carSpawnX, y: heightAt(carSpawnX, random) };
 }

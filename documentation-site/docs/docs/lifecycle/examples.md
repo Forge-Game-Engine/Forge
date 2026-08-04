@@ -17,7 +17,7 @@ import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 function spawnExplosion(x: number, y: number) {
   const explosion = world.createEntity();
 
-  addPositionComponent(world, explosion, { local: Vec2.create(x, y) });
+  addPositionComponent(world, explosion, { local: { x, y } });
   addScaleComponent(world, explosion);
   addSpriteComponent(world, explosion, explosionSprite);
   addLifetimeComponent(world, explosion, { durationSeconds: 2.0 });
@@ -76,7 +76,7 @@ function fireBullet(
   directionY: number,
 ) {
   const bullet = world.createEntity();
-  const position = Vec2.create(x, y);
+  const position = { x, y };
 
   addPositionComponent(world, bullet, { local: position, world: position });
   addRotationComponent(world, bullet);
@@ -85,7 +85,7 @@ function fireBullet(
     physicsBody: new RigidBody({
       shape: new CircleShape(4),
       position,
-      velocity: Vec2.create(directionX * 500, directionY * 500),
+      velocity: { x: directionX * 500, y: directionY * 500 },
     }),
   });
   addLifetimeComponent(world, bullet, { durationSeconds: 3.0 }); // Bullet exists for 3 seconds
@@ -113,7 +113,7 @@ import { Vec2 } from '@forge-game-engine/forge/math';
 
 function spawnTemporaryWall(x: number, y: number, duration: number) {
   const wall = world.createEntity();
-  const position = Vec2.create(x, y);
+  const position = { x, y };
 
   addPositionComponent(world, wall, { local: position, world: position });
   addRotationComponent(world, wall);

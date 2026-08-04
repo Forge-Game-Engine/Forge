@@ -13,8 +13,7 @@ same shape and is mostly used for shader uniforms (colors, 3D data) via
 axis-aligned bounding box.
 
 `Vector2`/`Vector3` are plain `{ x, y }`/`{ x, y, z }` objects, not classes -
-create one with [`Vec2.create(x, y)`](/Forge/docs/api/classes/Vec2#create)/
-[`Vec3.create(x, y, z)`](/Forge/docs/api/classes/Vec3#create) rather than
+create one with an object literal (`{ x: 1, y: 2 }`) rather than
 `new Vector2(x, y)`, and operate on them with [`Vec2`](/Forge/docs/api/classes/Vec2)/
 [`Vec3`](/Forge/docs/api/classes/Vec3)'s static methods below rather than
 instance methods.
@@ -143,7 +142,7 @@ a `size` (width/height), with two methods:
   rectangles overlap?
 
 ```ts
-const button = new Rect(Vec2.create(10, 10), Vec2.create(120, 32));
+const button = new Rect({ x: 10, y: 10 }, { x: 120, y: 32 });
 
 if (button.containsPoint(mousePosition)) {
   // mouse is over the button

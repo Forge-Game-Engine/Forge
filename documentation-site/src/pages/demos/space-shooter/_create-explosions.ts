@@ -54,10 +54,7 @@ export async function createExplosionSpawner(
   );
 
   const explosionSprite = createImageSprite(image, renderContext, renderLayer, {
-    frameDimensions: Vec2.create(
-      image.width / explosionColumns,
-      image.height / explosionRows,
-    ),
+    frameDimensions: { x: image.width / explosionColumns, y: image.height / explosionRows },
   });
 
   const spriteSheet = createSpriteSheet(image, explosionRows, explosionColumns);
@@ -89,7 +86,7 @@ export async function createExplosionSpawner(
 
       addSpriteComponent(world, explosionEntity, {
         ...explosionSprite,
-        uvOffset: Vec2.create(0, 0),
+        uvOffset: { x: 0, y: 0 },
       });
 
       addPositionComponent(world, explosionEntity, {
@@ -98,8 +95,8 @@ export async function createExplosionSpawner(
       });
 
       addScaleComponent(world, explosionEntity, {
-        local: Vec2.create(explosionScale, explosionScale),
-        world: Vec2.create(explosionScale, explosionScale),
+        local: { x: explosionScale, y: explosionScale },
+        world: { x: explosionScale, y: explosionScale },
       });
 
       addSpriteAnimationComponent(world, explosionEntity, {

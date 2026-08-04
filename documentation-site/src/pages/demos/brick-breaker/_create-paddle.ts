@@ -29,10 +29,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -68,7 +68,7 @@ export async function createPaddle(
     (playAreaWidth * paddleHeightFraction) / paddleSprite.width;
   const paddleHeight = paddleSprite.height * paddleScaleY;
 
-  const position = Vec2.create(0, playArea.bottomY + paddleHeightAboveBottom);
+  const position = { x: 0, y: playArea.bottomY + paddleHeightAboveBottom };
 
   const entity = world.createEntity();
 
@@ -80,8 +80,8 @@ export async function createPaddle(
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: Vec2.create(paddleScaleX, paddleScaleY),
-    world: Vec2.create(paddleScaleX, paddleScaleY),
+    local: { x: paddleScaleX, y: paddleScaleY },
+    world: { x: paddleScaleX, y: paddleScaleY },
   });
 
   addSpriteComponent(world, entity, paddleSprite);

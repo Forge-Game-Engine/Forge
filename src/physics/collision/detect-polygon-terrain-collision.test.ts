@@ -10,10 +10,10 @@ function rectangle(width: number, height: number): PolygonCollider {
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ]);
 }
 
@@ -27,21 +27,25 @@ function body(
 
 function flatTerrain(): TerrainCollider {
   return new TerrainCollider(
-    [Vec2.create(-100, 0), Vec2.create(0, 0), Vec2.create(100, 0)],
+    [
+      { x: -100, y: 0 },
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
     50,
   );
 }
 
 describe('detectPolygonTerrainCollision', () => {
   it('should return null when the polygon is above the terrain with a gap', () => {
-    const polygonBody = body(Vec2.create(0, -1.5), rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: -1.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toBeNull();
   });
 
   it('should return null when the polygon is outside the terrain x-range', () => {
-    const polygonBody = body(Vec2.create(500, -0.5), rectangle(2, 2));
+    const polygonBody = body({ x: 500, y: -0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toBeNull();
@@ -51,7 +55,7 @@ describe('detectPolygonTerrainCollision', () => {
     // Mirrors detectCircleTerrainCollision's tests: the terrain's solid
     // slab extends in +y locally, so a polygon resting "above" the surface
     // in world space (unrotated) sits at a smaller y than the surface.
-    const polygonBody = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifold = detectPolygonTerrainCollision(polygonBody, terrainBody);
@@ -64,7 +68,7 @@ describe('detectPolygonTerrainCollision', () => {
   });
 
   it('should offset feature ids by the matched segment so warm-starting stays segment-scoped', () => {
-    const polygonBody = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifold = detectPolygonTerrainCollision(polygonBody, terrainBody);

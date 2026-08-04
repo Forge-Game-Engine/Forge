@@ -26,7 +26,7 @@ export type SpriteOptions = {
  * Default options for creating a `Sprite`.
  */
 const defaultOptions = {
-  pivot: Vec2.create(0.5, 0.5),
+  pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
 };
 

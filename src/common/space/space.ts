@@ -1,5 +1,5 @@
 import { ForgeEvent } from '../../events/index.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 
 /**
  * Class to represent a 2D space with width, height, and center point.
@@ -28,7 +28,7 @@ export class Space {
     this._width = width;
     this._height = height;
 
-    this._center = Vec2.create(this._width / 2, this._height / 2);
+    this._center = { x: this._width / 2, y: this._height / 2 };
 
     this.onSpaceChange = new ForgeEvent('space-change');
   }
@@ -78,6 +78,6 @@ export class Space {
    * Calculates the center point of the space based on its dimensions.
    */
   private _calculateCenter() {
-    this._center = Vec2.create(this._width / 2, this._height / 2);
+    this._center = { x: this._width / 2, y: this._height / 2 };
   }
 }

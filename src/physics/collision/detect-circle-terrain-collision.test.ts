@@ -15,21 +15,25 @@ function body(
 
 function flatTerrain(): TerrainCollider {
   return new TerrainCollider(
-    [Vec2.create(-100, 0), Vec2.create(0, 0), Vec2.create(100, 0)],
+    [
+      { x: -100, y: 0 },
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
     50,
   );
 }
 
 describe('detectCircleTerrainCollision', () => {
   it('should return null when the circle is far above the terrain', () => {
-    const circleBody = body(Vec2.create(0, 100), new CircleCollider(1));
+    const circleBody = body({ x: 0, y: 100 }, new CircleCollider(1));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectCircleTerrainCollision(circleBody, terrainBody)).toBeNull();
   });
 
   it('should return null when the circle is outside the terrain x-range', () => {
-    const circleBody = body(Vec2.create(500, 0.5), new CircleCollider(1));
+    const circleBody = body({ x: 500, y: 0.5 }, new CircleCollider(1));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectCircleTerrainCollision(circleBody, terrainBody)).toBeNull();
@@ -40,7 +44,7 @@ describe('detectCircleTerrainCollision', () => {
     // from its surface points (in its own local space), so a circle resting
     // "above" the surface (in world space, with no rotation applied) sits
     // at a smaller y than the surface points themselves.
-    const circleBody = body(Vec2.create(0, -0.5), new CircleCollider(1));
+    const circleBody = body({ x: 0, y: -0.5 }, new CircleCollider(1));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifold = detectCircleTerrainCollision(circleBody, terrainBody);
@@ -55,10 +59,14 @@ describe('detectCircleTerrainCollision', () => {
 
   it('should pick the deepest contact across overlapping segments', () => {
     const terrain = new TerrainCollider(
-      [Vec2.create(-100, -20), Vec2.create(0, 0), Vec2.create(100, -20)],
+      [
+        { x: -100, y: -20 },
+        { x: 0, y: 0 },
+        { x: 100, y: -20 },
+      ],
       500,
     );
-    const circleBody = body(Vec2.create(0, -0.5), new CircleCollider(1));
+    const circleBody = body({ x: 0, y: -0.5 }, new CircleCollider(1));
     const terrainBody = body(Vec2.zero, terrain);
 
     const manifold = detectCircleTerrainCollision(circleBody, terrainBody);
@@ -72,7 +80,7 @@ describe('detectCircleTerrainCollision', () => {
     // Rotating the flat terrain by PI flips its solid slab to extend in
     // -y instead of +y, so a circle resting just above it (in world space)
     // still collides, with the normal flipped to match.
-    const circleBody = body(Vec2.create(0, 0.5), new CircleCollider(1));
+    const circleBody = body({ x: 0, y: 0.5 }, new CircleCollider(1));
     const terrainBody = body(Vec2.zero, flatTerrain(), Math.PI);
 
     const manifold = detectCircleTerrainCollision(circleBody, terrainBody);

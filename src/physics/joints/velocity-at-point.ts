@@ -20,11 +20,8 @@ export function velocityAtPoint(
 
   // Clone before adding: `rigidBody.velocity` is the body's live velocity
   // state, so sampling a point's velocity must not mutate it.
-  return Vec2.add(
-    Vec2.clone(rigidBody.velocity),
-    Vec2.create(
-      -rigidBody.angularVelocity * r.y,
-      rigidBody.angularVelocity * r.x,
-    ),
-  );
+  return Vec2.add(Vec2.clone(rigidBody.velocity), {
+    x: -rigidBody.angularVelocity * r.y,
+    y: rigidBody.angularVelocity * r.x,
+  });
 }

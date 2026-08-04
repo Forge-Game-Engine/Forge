@@ -131,7 +131,7 @@ const pushSpriteRenderCommands = (
 
   for (const region of regions) {
     const regionOffset = Vec2.rotate(
-      Vec2.create(region.offset.x * scaleX, region.offset.y * scaleY),
+      { x: region.offset.x * scaleX, y: region.offset.y * scaleY },
       rotationRadians,
     );
 
@@ -150,7 +150,7 @@ const pushSpriteRenderCommands = (
       // A fresh vector per region, not a shared constant: `pivot` may be
       // mutated in place downstream (e.g. by the sprite animation system),
       // and this object is unique to `regionSprite`.
-      pivot: Vec2.create(0.5, 0.5),
+      pivot: { x: 0.5, y: 0.5 },
       uvOffset: region.uvOffset,
       uvScale: region.uvScale,
     };

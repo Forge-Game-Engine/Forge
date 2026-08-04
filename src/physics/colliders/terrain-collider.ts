@@ -163,8 +163,8 @@ export class TerrainCollider extends Collider {
     }
 
     return {
-      min: Vec2.create(minX, minY),
-      max: Vec2.create(maxX, maxY),
+      min: { x: minX, y: minY },
+      max: { x: maxX, y: maxY },
     };
   }
 }
@@ -176,11 +176,7 @@ function silhouetteVertices(
   const first = points[0];
   const last = points[points.length - 1];
 
-  return [
-    ...points,
-    Vec2.create(last.x, bottomY),
-    Vec2.create(first.x, bottomY),
-  ];
+  return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
 }
 
 function buildSegments(
@@ -196,8 +192,8 @@ function buildSegments(
     const vertices: Vector2[] = [
       surfaceLeft,
       surfaceRight,
-      Vec2.create(surfaceRight.x, bottomY),
-      Vec2.create(surfaceLeft.x, bottomY),
+      { x: surfaceRight.x, y: bottomY },
+      { x: surfaceLeft.x, y: bottomY },
     ];
 
     segments.push({

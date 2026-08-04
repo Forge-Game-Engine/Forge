@@ -57,14 +57,14 @@ export const createGunEcsSystem = (
           world,
           gunComponent,
           positionComponent,
-          Vec2.create(20, 20),
+          { x: 20, y: 20 },
           sound,
         );
         createBulletWithOffset(
           world,
           gunComponent,
           positionComponent,
-          Vec2.create(-20, 20),
+          { x: -20, y: 20 },
           sound,
         );
 
@@ -101,8 +101,8 @@ function createBulletWithOffset(
   });
 
   addScaleComponent(world, bullet, {
-    local: Vec2.create(bulletScale, bulletScale),
-    world: Vec2.create(bulletScale, bulletScale),
+    local: { x: bulletScale, y: bulletScale },
+    world: { x: bulletScale, y: bulletScale },
   });
 
   world.addComponent(bullet, bulletId, {

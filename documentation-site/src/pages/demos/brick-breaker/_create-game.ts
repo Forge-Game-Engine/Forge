@@ -13,7 +13,7 @@ import {
   createEulerIntegrationEcsSystem,
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { Random, Vec2 } from '@forge-game-engine/forge/math';
+import { Random } from '@forge-game-engine/forge/math';
 import {
   actionResetTypes,
   Axis1dAction,
@@ -118,10 +118,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   const random = new Random();
   const playAreaWidth = playArea.maxX - playArea.minX;
 
-  const ballStartPosition = Vec2.create(
-    paddlePosition.x,
-    paddlePosition.y + ballStartOffset,
-  );
+  const ballStartPosition = { x: paddlePosition.x, y: paddlePosition.y + ballStartOffset };
 
   await createBall(
     world,

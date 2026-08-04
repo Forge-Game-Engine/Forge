@@ -32,10 +32,7 @@ export const createSpriteSpawnerEcsSystem = (
       spawner.nextSpawnTime = time.timeInSeconds + spawner.timeBetweenBatches;
 
       for (let i = 0; i < spawner.batchSize; i++) {
-        const position = Vec2.create(
-          random.randomFloat(spawner.minX, spawner.maxX),
-          random.randomFloat(spawner.minY, spawner.maxY),
-        );
+        const position = { x: random.randomFloat(spawner.minX, spawner.maxX), y: random.randomFloat(spawner.minY, spawner.maxY) };
 
         const entity = world.createEntity();
 
@@ -47,8 +44,8 @@ export const createSpriteSpawnerEcsSystem = (
         addRotationComponent(world, entity);
 
         addScaleComponent(world, entity, {
-          local: Vec2.create(spawner.spriteScale, spawner.spriteScale),
-          world: Vec2.create(spawner.spriteScale, spawner.spriteScale),
+          local: { x: spawner.spriteScale, y: spawner.spriteScale },
+          world: { x: spawner.spriteScale, y: spawner.spriteScale },
         });
 
         addSpriteComponent(world, entity, spawner.sprite);

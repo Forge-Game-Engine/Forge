@@ -23,7 +23,7 @@ const jointEntity = world.createEntity();
 addRevoluteJointComponent(world, jointEntity, {
   entityA: hinge,
   entityB: door,
-  localAnchorB: Vec2.create(-60, 0),
+  localAnchorB: { x: -60, y: 0 },
   enableLimit: true,
   lowerAngle: 0,
   upperAngle: Math.PI / 2,
@@ -107,7 +107,7 @@ const jointEntity = world.createEntity();
 addRevoluteJointComponent(world, jointEntity, {
   entityA: hinge,
   entityB: door,
-  localAnchorB: Vec2.create(-60, 0),
+  localAnchorB: { x: -60, y: 0 },
 });
 
 // Must run after whatever system resolves collisions

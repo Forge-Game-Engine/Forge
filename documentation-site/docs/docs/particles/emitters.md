@@ -75,7 +75,7 @@ trailEmitter.setOptions({
     const progress =
       trailEmitter.currentEmitDuration / trailEmitter.emitDurationSeconds;
 
-    return Vec2.create(progress * 1200 - 600, 0);
+    return { x: progress * 1200 - 600, y: 0 };
   },
 });
 ```

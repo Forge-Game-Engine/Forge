@@ -1,4 +1,4 @@
-import { Vec2, Vector2 } from './vector2.js';
+import { Vector2 } from './vector2.js';
 
 // this function implements a smooth damp follow behavior, found from here:
 // https://github.com/Unity-Technologies/UnityCsReference/blob/02d565cf3dd0f6b15069ba976064c75dc2705b08/Runtime/Export/Math/Vector2.cs#L243
@@ -35,7 +35,7 @@ export function smoothDampVector2(
   let targetX = targetPosition.x;
   let targetY = targetPosition.y;
 
-  const velocityOutput = Vec2.create(velocity.x, velocity.y);
+  const velocityOutput = { x: velocity.x, y: velocity.y };
 
   const omega = 2 / smoothTime;
 
@@ -68,10 +68,10 @@ export function smoothDampVector2(
   velocityOutput.x = (velocityOutput.x - omega * tempValsX) * exp;
   velocityOutput.y = (velocityOutput.y - omega * tempValsY) * exp;
 
-  const positionOutput = Vec2.create(
-    targetX + (changeX + tempValsX) * exp,
-    targetY + (changeY + tempValsY) * exp,
-  );
+  const positionOutput = {
+    x: targetX + (changeX + tempValsX) * exp,
+    y: targetY + (changeY + tempValsY) * exp,
+  };
 
   //prevent over-shooting
   const originMinusCurrentPosX = originalToX - position.x;

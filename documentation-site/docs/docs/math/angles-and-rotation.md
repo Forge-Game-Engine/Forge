@@ -33,7 +33,7 @@ rotation, for example positioning a turret or weapon mount relative to its
 parent:
 
 ```ts
-const localOffset = Vec2.create(0, -20); // 20px "above" the entity, in local space
+const localOffset = { x: 0, y: -20 }; // 20px "above" the entity, in local space
 const worldOffset = Vec2.rotate(localOffset, rotation.world);
 // Clone before adding: `position.world` is the entity's live position.
 const turretPosition = Vec2.add(Vec2.clone(position.world), worldOffset);

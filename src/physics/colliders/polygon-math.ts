@@ -40,7 +40,7 @@ export function calculateCentroid(vertices: readonly Vector2[]): Vector2 {
 
   const factor = 1 / (3 * signedArea);
 
-  return Vec2.create(centroidX * factor, centroidY * factor);
+  return { x: centroidX * factor, y: centroidY * factor };
 }
 
 /**

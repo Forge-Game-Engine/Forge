@@ -51,7 +51,7 @@ describe('createPrismaticJointEcsSystem', () => {
     addRigidBodyComponent(world, slider, {
       mass: 1,
       momentOfInertia: 1,
-      velocity: Vec2.create(2, 3),
+      velocity: { x: 2, y: 3 },
     });
 
     const jointEntity = world.createEntity();
@@ -126,7 +126,7 @@ describe('createPrismaticJointEcsSystem', () => {
     addRigidBodyComponent(world, slider, {
       mass: 1,
       momentOfInertia: 1,
-      velocity: Vec2.create(3, 0),
+      velocity: { x: 3, y: 0 },
     });
 
     const jointEntity = world.createEntity();

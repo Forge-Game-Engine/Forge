@@ -12,10 +12,10 @@ function rectangle(width: number, height: number): PolygonCollider {
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ]);
 }
 
@@ -25,15 +25,15 @@ function body(position: Vector2, collider: Collider): CollisionBody {
 
 describe('detectCollision', () => {
   it('should dispatch circle-circle collisions', () => {
-    const bodyA = body(Vec2.create(0, 0), new CircleCollider(1));
-    const bodyB = body(Vec2.create(1.5, 0), new CircleCollider(1));
+    const bodyA = body({ x: 0, y: 0 }, new CircleCollider(1));
+    const bodyB = body({ x: 1.5, y: 0 }, new CircleCollider(1));
 
     expect(detectCollision(bodyA, bodyB)).not.toBeNull();
   });
 
   it('should dispatch circle-polygon collisions', () => {
-    const bodyA = body(Vec2.create(0, -1.5), new CircleCollider(1));
-    const bodyB = body(Vec2.create(0, 0), rectangle(2, 2));
+    const bodyA = body({ x: 0, y: -1.5 }, new CircleCollider(1));
+    const bodyB = body({ x: 0, y: 0 }, rectangle(2, 2));
 
     const manifold = detectCollision(bodyA, bodyB);
 
@@ -43,8 +43,8 @@ describe('detectCollision', () => {
   });
 
   it('should dispatch polygon-circle collisions, flipping the normal', () => {
-    const bodyA = body(Vec2.create(0, 0), rectangle(2, 2));
-    const bodyB = body(Vec2.create(0, -1.5), new CircleCollider(1));
+    const bodyA = body({ x: 0, y: 0 }, rectangle(2, 2));
+    const bodyB = body({ x: 0, y: -1.5 }, new CircleCollider(1));
 
     const manifold = detectCollision(bodyA, bodyB);
 
@@ -55,8 +55,8 @@ describe('detectCollision', () => {
   });
 
   it('should dispatch polygon-polygon collisions', () => {
-    const bodyA = body(Vec2.create(0, 0), rectangle(2, 2));
-    const bodyB = body(Vec2.create(1.5, 0), rectangle(2, 2));
+    const bodyA = body({ x: 0, y: 0 }, rectangle(2, 2));
+    const bodyB = body({ x: 1.5, y: 0 }, rectangle(2, 2));
 
     const manifold = detectCollision(bodyA, bodyB);
 
@@ -67,10 +67,13 @@ describe('detectCollision', () => {
 
   it('should dispatch circle-terrain collisions', () => {
     const terrain = new TerrainCollider(
-      [Vec2.create(-100, 0), Vec2.create(100, 0)],
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
       50,
     );
-    const bodyA = body(Vec2.create(0, -0.5), new CircleCollider(1));
+    const bodyA = body({ x: 0, y: -0.5 }, new CircleCollider(1));
     const bodyB = body(Vec2.zero, terrain);
 
     const manifold = detectCollision(bodyA, bodyB);
@@ -81,11 +84,14 @@ describe('detectCollision', () => {
 
   it('should dispatch terrain-circle collisions, flipping the normal', () => {
     const terrain = new TerrainCollider(
-      [Vec2.create(-100, 0), Vec2.create(100, 0)],
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
       50,
     );
     const bodyA = body(Vec2.zero, terrain);
-    const bodyB = body(Vec2.create(0, -0.5), new CircleCollider(1));
+    const bodyB = body({ x: 0, y: -0.5 }, new CircleCollider(1));
 
     const manifold = detectCollision(bodyA, bodyB);
 
@@ -95,10 +101,13 @@ describe('detectCollision', () => {
 
   it('should dispatch polygon-terrain collisions', () => {
     const terrain = new TerrainCollider(
-      [Vec2.create(-100, 0), Vec2.create(100, 0)],
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
       50,
     );
-    const bodyA = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const bodyA = body({ x: 0, y: -0.5 }, rectangle(2, 2));
     const bodyB = body(Vec2.zero, terrain);
 
     const manifold = detectCollision(bodyA, bodyB);
@@ -109,11 +118,14 @@ describe('detectCollision', () => {
 
   it('should dispatch terrain-polygon collisions, flipping the normal', () => {
     const terrain = new TerrainCollider(
-      [Vec2.create(-100, 0), Vec2.create(100, 0)],
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
       50,
     );
     const bodyA = body(Vec2.zero, terrain);
-    const bodyB = body(Vec2.create(0, -0.5), rectangle(2, 2));
+    const bodyB = body({ x: 0, y: -0.5 }, rectangle(2, 2));
 
     const manifold = detectCollision(bodyA, bodyB);
 
@@ -122,7 +134,7 @@ describe('detectCollision', () => {
   });
 
   it('should throw an error for an unregistered collider pair', () => {
-    const bodyA = body(Vec2.create(0, 0), new CircleCollider(1));
+    const bodyA = body({ x: 0, y: 0 }, new CircleCollider(1));
     const fakeBody = {
       position: Vec2.zero,
       rotation: 0,

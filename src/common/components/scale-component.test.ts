@@ -20,7 +20,7 @@ describe('addScaleComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = Vec2.create(2, 3);
+    const local = { x: 2, y: 3 };
     addScaleComponent(world, entity, { local });
 
     expect(world.getComponent(entity, scaleId)).toEqual({
@@ -33,7 +33,7 @@ describe('addScaleComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = Vec2.create(2, 3);
+    const local = { x: 2, y: 3 };
     const component = addScaleComponent(world, entity, { local });
 
     expect(component).toEqual({ local, world: Vec2.one });

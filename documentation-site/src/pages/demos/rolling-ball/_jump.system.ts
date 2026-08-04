@@ -71,7 +71,7 @@ export const createJumpEcsSystem = (
 
     if (jumpInput.isTriggered && isGrounded) {
       applyImpulse(
-        Vec2.create(0, jumpImpulse),
+        { x: 0, y: jumpImpulse },
         position.world,
         position.world,
         rigidBody,

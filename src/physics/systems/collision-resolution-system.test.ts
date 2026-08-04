@@ -95,34 +95,28 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem({ restitutionThreshold: 100 });
 
     const { entity: entityA, rigidBody: rigidBodyA } = addCircleEntity(
-      Vec2.create(0, 0),
+      { x: 0, y: 0 },
       1,
       true,
       { restitution: 0 },
     );
     const { entity: entityB, rigidBody: rigidBodyB } = addCircleEntity(
-      Vec2.create(1.5, 0),
+      { x: 1.5, y: 0 },
       1,
       true,
       { restitution: 0 },
     );
 
-    rigidBodyA!.velocity = Vec2.create(1, 0);
-    rigidBodyB!.velocity = Vec2.create(-1, 0);
+    rigidBodyA!.velocity = { x: 1, y: 0 };
+    rigidBodyB!.velocity = { x: -1, y: 0 };
 
-    pushManifold(
-      entityA,
-      entityB,
-      Vec2.create(1, 0),
-      0.5,
-      Vec2.create(0.75, 0),
-    );
+    pushManifold(entityA, entityB, { x: 1, y: 0 }, 0.5, { x: 0.75, y: 0 });
 
     world.update();
 
     const relativeNormalVelocity = Vec2.dot(
       Vec2.subtract(Vec2.clone(rigidBodyB!.velocity), rigidBodyA!.velocity),
-      Vec2.create(1, 0),
+      { x: 1, y: 0 },
     );
 
     expect(relativeNormalVelocity).toBeGreaterThan(-1e-3);
@@ -132,23 +126,18 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      Vec2.create(0, 1),
+      { x: 0, y: 1 },
       1,
       true,
       { restitution: 1 },
     );
-    const { entity: ground } = addCircleEntity(
-      Vec2.create(0, -100),
-      100,
-      false,
-      {
-        restitution: 1,
-      },
-    );
+    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+      restitution: 1,
+    });
 
-    rigidBody!.velocity = Vec2.create(0, -5);
+    rigidBody!.velocity = { x: 0, y: -5 };
 
-    pushManifold(ground, ball, Vec2.create(0, 1), 0.01, Vec2.create(0, 0.99));
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
 
     world.update();
 
@@ -159,30 +148,25 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      Vec2.create(0, 1),
+      { x: 0, y: 1 },
       1,
       true,
       { restitution: 1 },
     );
-    const { entity: ground } = addCircleEntity(
-      Vec2.create(0, -100),
-      100,
-      false,
-      {
-        restitution: 1,
-      },
-    );
+    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+      restitution: 1,
+    });
 
-    rigidBody!.velocity = Vec2.create(0, -5);
-    pushManifold(ground, ball, Vec2.create(0, 1), 0.01, Vec2.create(0, 0.99));
+    rigidBody!.velocity = { x: 0, y: -5 };
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
     world.update();
 
     expect(rigidBody!.velocity.y).toBeGreaterThan(4);
     expect(contactConstraints[0].isReused).toBe(false);
 
     collisionManifolds.length = 0;
-    rigidBody!.velocity = Vec2.create(0, -5);
-    pushManifold(ground, ball, Vec2.create(0, 1), 0.01, Vec2.create(0, 0.99));
+    rigidBody!.velocity = { x: 0, y: -5 };
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
     world.update();
 
     expect(contactConstraints[0].isReused).toBe(true);
@@ -193,20 +177,14 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: entityA, rigidBody: rigidBodyA } = addCircleEntity(
-      Vec2.create(0, 0),
+      { x: 0, y: 0 },
       1,
       true,
     );
-    const { entity: entityB } = addCircleEntity(Vec2.create(1.9, 0), 1, false);
+    const { entity: entityB } = addCircleEntity({ x: 1.9, y: 0 }, 1, false);
 
-    rigidBodyA!.velocity = Vec2.create(1, 0);
-    pushManifold(
-      entityA,
-      entityB,
-      Vec2.create(1, 0),
-      0.1,
-      Vec2.create(0.95, 0),
-    );
+    rigidBodyA!.velocity = { x: 1, y: 0 };
+    pushManifold(entityA, entityB, { x: 1, y: 0 }, 0.1, { x: 0.95, y: 0 });
     world.update();
 
     const firstAccumulatedImpulse =
@@ -215,13 +193,7 @@ describe('createCollisionResolutionEcsSystem', () => {
     expect(firstAccumulatedImpulse).toBeGreaterThan(0);
 
     collisionManifolds.length = 0;
-    pushManifold(
-      entityA,
-      entityB,
-      Vec2.create(1, 0),
-      0.1,
-      Vec2.create(0.95, 0),
-    );
+    pushManifold(entityA, entityB, { x: 1, y: 0 }, 0.1, { x: 0.95, y: 0 });
     world.update();
 
     expect(contactConstraints[0].isReused).toBe(true);
@@ -232,22 +204,17 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      Vec2.create(0, 1),
+      { x: 0, y: 1 },
       1,
       true,
       { friction: 1 },
     );
-    const { entity: ground } = addCircleEntity(
-      Vec2.create(0, -100),
-      100,
-      false,
-      {
-        friction: 1,
-      },
-    );
+    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+      friction: 1,
+    });
 
-    rigidBody!.velocity = Vec2.create(2, 0);
-    pushManifold(ground, ball, Vec2.create(0, 1), 0.1, Vec2.create(0, 0.9));
+    rigidBody!.velocity = { x: 2, y: 0 };
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.1, { x: 0, y: 0.9 });
 
     world.update();
 
@@ -257,16 +224,10 @@ describe('createCollisionResolutionEcsSystem', () => {
   it('should not throw and should skip solving when neither body has a rigid body', () => {
     addSystem();
 
-    const { entity: entityA } = addCircleEntity(Vec2.create(0, 0), 1, false);
-    const { entity: entityB } = addCircleEntity(Vec2.create(1.5, 0), 1, false);
+    const { entity: entityA } = addCircleEntity({ x: 0, y: 0 }, 1, false);
+    const { entity: entityB } = addCircleEntity({ x: 1.5, y: 0 }, 1, false);
 
-    pushManifold(
-      entityA,
-      entityB,
-      Vec2.create(1, 0),
-      0.5,
-      Vec2.create(0.75, 0),
-    );
+    pushManifold(entityA, entityB, { x: 1, y: 0 }, 0.5, { x: 0.75, y: 0 });
 
     expect(() => world.update()).not.toThrow();
     expect(contactConstraints).toHaveLength(1);
@@ -276,20 +237,14 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: entityA, rigidBody: rigidBodyA } = addCircleEntity(
-      Vec2.create(0, 0),
+      { x: 0, y: 0 },
       1,
       true,
     );
-    const { entity: entityB } = addCircleEntity(Vec2.create(1.5, 0), 1, false);
+    const { entity: entityB } = addCircleEntity({ x: 1.5, y: 0 }, 1, false);
 
-    rigidBodyA!.velocity = Vec2.create(1, 0);
-    pushManifold(
-      entityA,
-      entityB,
-      Vec2.create(1, 0),
-      0.5,
-      Vec2.create(0.75, 0),
-    );
+    rigidBodyA!.velocity = { x: 1, y: 0 };
+    pushManifold(entityA, entityB, { x: 1, y: 0 }, 0.5, { x: 0.75, y: 0 });
     world.update();
 
     expect(contactConstraints).toHaveLength(1);

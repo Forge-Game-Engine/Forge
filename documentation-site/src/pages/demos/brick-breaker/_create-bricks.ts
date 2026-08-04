@@ -59,10 +59,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -130,11 +130,11 @@ function createBrickSprite(
     enabled: true,
     width: image.width,
     height: image.height,
-    pivot: Vec2.create(0.5, 0.5),
+    pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     renderable,
-    uvOffset: Vec2.create(0, 0),
-    uvScale: Vec2.create(1, 1),
+    uvOffset: { x: 0, y: 0 },
+    uvScale: { x: 1, y: 1 },
     layer,
   };
 }
@@ -185,8 +185,8 @@ export async function createBrickField(
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: Vec2.create(scale, scale),
-      world: Vec2.create(scale, scale),
+      local: { x: scale, y: scale },
+      world: { x: scale, y: scale },
     });
 
     addSpriteComponent(world, entity, sprite);
@@ -218,7 +218,7 @@ export async function createBrickField(
       for (let column = 0; column < columns; column++) {
         const x = startX + column * (brickWidth + columnGap);
 
-        spawnBrick(sprite, Vec2.create(x, y), brickWidth, brickHeight);
+        spawnBrick(sprite, { x, y }, brickWidth, brickHeight);
       }
     }
   };

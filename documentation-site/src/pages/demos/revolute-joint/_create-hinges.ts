@@ -26,7 +26,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
-const gravity = Vec2.create(0, -600);
+const gravity = { x: 0, y: -600 };
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -73,10 +73,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -156,7 +156,7 @@ function createDoorScenario(
   // Hanging straight down: the hinge (local origin side) points up, the far
   // (push) edge points down.
   const doorAngle = -Math.PI / 2;
-  const localAnchorB = Vec2.create(-doorWidth / 2, 0);
+  const localAnchorB = { x: -doorWidth / 2, y: 0 };
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
   const doorPosition = Vec2.subtract(
@@ -210,8 +210,8 @@ function createDoorScenario(
   });
   addPushComponent(world, jointEntity, {
     entity: doorEntity,
-    impulse: Vec2.create(260_000, 0),
-    localContactPoint: Vec2.create(doorWidth / 2, 0),
+    impulse: { x: 260_000, y: 0 },
+    localContactPoint: { x: doorWidth / 2, y: 0 },
     intervalSeconds: 2,
   });
 }
@@ -234,7 +234,7 @@ function createPendulumScenario(
   const startAngle = 0.8;
   // The bob's anchor sits `armLength` above its own center in its local
   // (unrotated) frame, i.e. directly below the pivot at rest (angle 0).
-  const localAnchorB = Vec2.create(0, armLength);
+  const localAnchorB = { x: 0, y: armLength };
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
   const bobPosition = Vec2.subtract(
@@ -358,18 +358,18 @@ export async function createHinges(
   createDoorScenario(
     world,
     sprites,
-    Vec2.create(columnLeft, height * 0.3),
+    { x: columnLeft, y: height * 0.3 },
   );
 
   createPendulumScenario(
     world,
     sprites,
-    Vec2.create(columnLeft + columnWidth, height * 0.35),
+    { x: columnLeft + columnWidth, y: height * 0.35 },
   );
 
   createWheelScenario(
     world,
     sprites,
-    Vec2.create(columnLeft + columnWidth * 2, 0),
+    { x: columnLeft + columnWidth * 2, y: 0 },
   );
 }

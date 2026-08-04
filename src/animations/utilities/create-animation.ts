@@ -22,10 +22,10 @@ function generateAnimationFrames(
     const col = i % spritesPerRow;
 
     animationFrames.push({
-      offset: Vec2.create(
-        startPositionPercentage.x + col * spriteUVSize.x,
-        startPositionPercentage.y + row * spriteUVSize.y,
-      ),
+      offset: {
+        x: startPositionPercentage.x + col * spriteUVSize.x,
+        y: startPositionPercentage.y + row * spriteUVSize.y,
+      },
       dimensions: spriteUVSize,
     });
   }
@@ -72,10 +72,10 @@ export function createAnimation(
 
   const numFrames = spritesPerColumn * spritesPerRow;
 
-  const spriteUVSize = Vec2.create(
-    (endPositionPercentage.x - startPositionPercentage.x) / spritesPerRow,
-    (endPositionPercentage.y - startPositionPercentage.y) / spritesPerColumn,
-  );
+  const spriteUVSize = {
+    x: (endPositionPercentage.x - startPositionPercentage.x) / spritesPerRow,
+    y: (endPositionPercentage.y - startPositionPercentage.y) / spritesPerColumn,
+  };
 
   const animationFrames = generateAnimationFrames(
     numFrames,

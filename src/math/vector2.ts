@@ -22,21 +22,11 @@ export interface Vector2 {
  */
 export class Vec2 {
   /**
-   * Creates a new Vector2.
-   * @param x - The x-coordinate component (default: 0).
-   * @param y - The y-coordinate component (default: 0).
-   * @returns The created vector.
-   */
-  public static create(x: number = 0, y: number = 0): Vector2 {
-    return { x, y };
-  }
-
-  /**
    * A zero vector (0, 0). A fresh vector is created on every access, so it's
    * always safe to mutate.
    */
   static get zero(): Vector2 {
-    return Vec2.create(0, 0);
+    return { x: 0, y: 0 };
   }
 
   /**
@@ -44,7 +34,7 @@ export class Vec2 {
    * access, so it's always safe to mutate.
    */
   static get one(): Vector2 {
-    return Vec2.create(1, 1);
+    return { x: 1, y: 1 };
   }
 
   /**
@@ -52,7 +42,7 @@ export class Vec2 {
    * every access, so it's always safe to mutate.
    */
   static get up(): Vector2 {
-    return Vec2.create(0, -1);
+    return { x: 0, y: -1 };
   }
 
   /**
@@ -60,7 +50,7 @@ export class Vec2 {
    * every access, so it's always safe to mutate.
    */
   static get down(): Vector2 {
-    return Vec2.create(0, 1);
+    return { x: 0, y: 1 };
   }
 
   /**
@@ -68,7 +58,7 @@ export class Vec2 {
    * access, so it's always safe to mutate.
    */
   static get left(): Vector2 {
-    return Vec2.create(-1, 0);
+    return { x: -1, y: 0 };
   }
 
   /**
@@ -76,7 +66,7 @@ export class Vec2 {
    * access, so it's always safe to mutate.
    */
   static get right(): Vector2 {
-    return Vec2.create(1, 0);
+    return { x: 1, y: 0 };
   }
 
   /**
@@ -210,7 +200,7 @@ export class Vec2 {
    * @returns A new Vector2 with the same component values.
    */
   public static clone(vector: Vector2): Vector2 {
-    return Vec2.create(vector.x, vector.y);
+    return { x: vector.x, y: vector.y };
   }
 
   /**
@@ -235,7 +225,7 @@ export class Vec2 {
   /**
    * Converts a vector to a glsl-compatible float32 array.
    * @param vector - The vector.
-   * @returns The 2d vector array (e.g. `[5, 3]` for `Vec2.create(5, 3)`).
+   * @returns The 2d vector array (e.g. `[5, 3]` for `{ x: 5, y: 3 }`).
    */
   public static toFloat32Array(vector: Vector2): Float32Array {
     return new Float32Array([vector.x, vector.y]);

@@ -10,15 +10,15 @@ function circleBody(position: Vector2, radius: number): CollisionBody {
 
 describe('detectCircleCircleCollision', () => {
   it('should return null when the circles do not overlap', () => {
-    const bodyA = circleBody(Vec2.create(0, 0), 1);
-    const bodyB = circleBody(Vec2.create(3, 0), 1);
+    const bodyA = circleBody({ x: 0, y: 0 }, 1);
+    const bodyB = circleBody({ x: 3, y: 0 }, 1);
 
     expect(detectCircleCircleCollision(bodyA, bodyB)).toBeNull();
   });
 
   it('should return a manifold with zero depth when the circles are exactly touching', () => {
-    const bodyA = circleBody(Vec2.create(0, 0), 1);
-    const bodyB = circleBody(Vec2.create(2, 0), 1);
+    const bodyA = circleBody({ x: 0, y: 0 }, 1);
+    const bodyB = circleBody({ x: 2, y: 0 }, 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
@@ -27,8 +27,8 @@ describe('detectCircleCircleCollision', () => {
   });
 
   it('should return a manifold pointing from bodyA toward bodyB when overlapping', () => {
-    const bodyA = circleBody(Vec2.create(0, 0), 1);
-    const bodyB = circleBody(Vec2.create(1.5, 0), 1);
+    const bodyA = circleBody({ x: 0, y: 0 }, 1);
+    const bodyB = circleBody({ x: 1.5, y: 0 }, 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
@@ -43,8 +43,8 @@ describe('detectCircleCircleCollision', () => {
   });
 
   it('should fall back to a default normal when the circles are concentric', () => {
-    const bodyA = circleBody(Vec2.create(2, 2), 1);
-    const bodyB = circleBody(Vec2.create(2, 2), 1);
+    const bodyA = circleBody({ x: 2, y: 2 }, 1);
+    const bodyB = circleBody({ x: 2, y: 2 }, 1);
 
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 

@@ -24,11 +24,11 @@ const groundEntity = world.createEntity();
 addColliderComponent(world, groundEntity, {
   collider: new TerrainCollider(
     [
-      Vec2.create(-400, 40),
-      Vec2.create(-200, -20),
-      Vec2.create(0, 0),
-      Vec2.create(200, -60),
-      Vec2.create(400, 20),
+      { x: -400, y: 40 },
+      { x: -200, y: -20 },
+      { x: 0, y: 0 },
+      { x: 200, y: -60 },
+      { x: 400, y: 20 },
     ],
     200, // depth: how far the solid slab extends below the lowest point
   ),
@@ -109,11 +109,11 @@ import { buildTerrainCurve } from '@forge-game-engine/forge/rendering';
 
 const curvePoints = buildTerrainCurve(
   [
-    Vec2.create(-400, 40),
-    Vec2.create(-200, -20),
-    Vec2.create(0, 0),
-    Vec2.create(200, -60),
-    Vec2.create(400, 20),
+    { x: -400, y: 40 },
+    { x: -200, y: -20 },
+    { x: 0, y: 0 },
+    { x: 200, y: -60 },
+    { x: 400, y: 20 },
   ],
   20, // samplesPerSegment: how many points to sample between each pair of control points
 );
@@ -155,12 +155,12 @@ const mesh = createTerrainMesh(renderContext, {
   angle: 0, // must match the entity's RotationEcsComponent
   border: {
     image: borderImage,
-    tileSize: Vec2.create(160, 70),
+    tileSize: { x: 160, y: 70 },
     tint: Color.white,
   },
   fill: {
     image: fillImage,
-    tileSize: Vec2.create(90, 90),
+    tileSize: { x: 90, y: 90 },
     tint: Color.white,
   },
   borderWidth: 40,

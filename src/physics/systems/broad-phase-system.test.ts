@@ -6,7 +6,7 @@ import {
   PositionEcsComponent,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import {
   AabbEcsComponent,
@@ -48,7 +48,7 @@ describe('createBroadPhaseEcsSystem', () => {
   }
 
   it('should update the AABB component from the collider', () => {
-    const { aabb } = addCircleEntity(Vec2.create(2, 3), 1);
+    const { aabb } = addCircleEntity({ x: 2, y: 3 }, 1);
 
     world.update();
 
@@ -59,8 +59,8 @@ describe('createBroadPhaseEcsSystem', () => {
   });
 
   it('should output a collision pair for overlapping entities', () => {
-    const { entity: entityA } = addCircleEntity(Vec2.create(0, 0), 1);
-    const { entity: entityB } = addCircleEntity(Vec2.create(1, 0), 1);
+    const { entity: entityA } = addCircleEntity({ x: 0, y: 0 }, 1);
+    const { entity: entityB } = addCircleEntity({ x: 1, y: 0 }, 1);
 
     world.update();
 
@@ -69,8 +69,8 @@ describe('createBroadPhaseEcsSystem', () => {
   });
 
   it('should not output a pair for entities that are far apart', () => {
-    addCircleEntity(Vec2.create(0, 0), 1);
-    addCircleEntity(Vec2.create(100, 0), 1);
+    addCircleEntity({ x: 0, y: 0 }, 1);
+    addCircleEntity({ x: 100, y: 0 }, 1);
 
     world.update();
 
@@ -78,15 +78,15 @@ describe('createBroadPhaseEcsSystem', () => {
   });
 
   it('should clear stale pairs when entities no longer overlap', () => {
-    const { position } = addCircleEntity(Vec2.create(0, 0), 1);
+    const { position } = addCircleEntity({ x: 0, y: 0 }, 1);
 
-    addCircleEntity(Vec2.create(1, 0), 1);
+    addCircleEntity({ x: 1, y: 0 }, 1);
 
     world.update();
 
     expect(collisionPairs).toHaveLength(1);
 
-    position.world = Vec2.create(100, 0);
+    position.world = { x: 100, y: 0 };
     world.update();
 
     expect(collisionPairs).toHaveLength(0);

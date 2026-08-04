@@ -29,7 +29,7 @@ describe('addSpriteComponent', () => {
       width: 32,
       height: 32,
       renderable,
-      pivot: Vec2.create(0.5, 0.5),
+      pivot: { x: 0.5, y: 0.5 },
       tintColor: Color.white,
       uvOffset: Vec2.zero,
       uvScale: Vec2.one,

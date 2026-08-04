@@ -109,8 +109,8 @@ describe('createRenderEcsSystem', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      local: Vec2.create(0, worldY),
-      world: Vec2.create(0, worldY),
+      local: { x: 0, y: worldY },
+      world: { x: 0, y: worldY },
     });
     addSpriteComponent(world, entity, createSprite(renderable, overrides));
 
@@ -491,7 +491,7 @@ describe('createRenderEcsSystem', () => {
       addSpriteEntity(renderable, 0, {
         width: 100,
         height: 100,
-        pivot: Vec2.create(0.5, 0.5),
+        pivot: { x: 0.5, y: 0.5 },
         slices: { left: 10, right: 10, top: 10, bottom: 10 },
       });
 
@@ -516,8 +516,8 @@ describe('createRenderEcsSystem', () => {
       const entity = world.createEntity();
 
       addPositionComponent(world, entity, {
-        local: Vec2.create(50, 0),
-        world: Vec2.create(50, 0),
+        local: { x: 50, y: 0 },
+        world: { x: 50, y: 0 },
       });
       addRotationComponent(world, entity, { world: Math.PI });
       addSpriteComponent(
@@ -526,7 +526,7 @@ describe('createRenderEcsSystem', () => {
         createSprite(renderable, {
           width: 100,
           height: 100,
-          pivot: Vec2.create(0.5, 0.5),
+          pivot: { x: 0.5, y: 0.5 },
           slices: { left: 10, right: 10, top: 10, bottom: 10 },
         }),
       );
@@ -559,8 +559,8 @@ describe('createRenderEcsSystem', () => {
       const entity = world.createEntity();
 
       addPositionComponent(world, entity, {
-        local: Vec2.create(50, 0),
-        world: Vec2.create(50, 0),
+        local: { x: 50, y: 0 },
+        world: { x: 50, y: 0 },
       });
       addRotationComponent(world, entity, { world: Math.PI / 2 });
       addSpriteComponent(
@@ -569,7 +569,7 @@ describe('createRenderEcsSystem', () => {
         createSprite(renderable, {
           width: 100,
           height: 100,
-          pivot: Vec2.create(0.5, 0.5),
+          pivot: { x: 0.5, y: 0.5 },
           slices: { left: 10, right: 10, top: 10, bottom: 10 },
         }),
       );

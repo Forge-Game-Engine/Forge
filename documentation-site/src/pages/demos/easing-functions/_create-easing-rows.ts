@@ -145,11 +145,8 @@ export async function createEasingRows(
     placeSprite(
       world,
       laneSprite,
-      Vec2.create(0, y),
-      Vec2.create(
-        (trackHalfWidth * 2) / spriteTemplate.width,
-        laneHeightPixels / spriteTemplate.height,
-      ),
+      { x: 0, y },
+      { x: (trackHalfWidth * 2) / spriteTemplate.width, y: laneHeightPixels / spriteTemplate.height },
     );
 
     const ballSprite: SpriteEcsComponent = {
@@ -160,11 +157,8 @@ export async function createEasingRows(
     const ballEntity = placeSprite(
       world,
       ballSprite,
-      Vec2.create(minX, y),
-      Vec2.create(
-        ballSizePixels / spriteTemplate.width,
-        ballSizePixels / spriteTemplate.height,
-      ),
+      { x: minX, y },
+      { x: ballSizePixels / spriteTemplate.width, y: ballSizePixels / spriteTemplate.height },
     );
 
     world.addComponent(ballEntity, easingRowId, {

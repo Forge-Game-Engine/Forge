@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { worldToScreenSpace } from './world-to-screen-space';
-import { Vec2 } from '../../math';
 
 describe('worldToScreenSpace', () => {
   it('should convert world position to screen position correctly', () => {
-    const worldPosition = Vec2.create(100, 200);
-    const cameraPosition = Vec2.create(50, 50);
+    const worldPosition = { x: 100, y: 200 };
+    const cameraPosition = { x: 50, y: 50 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(500, 600);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 500, y: 600 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -21,11 +20,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle negative world position correctly', () => {
-    const worldPosition = Vec2.create(-100, -200);
-    const cameraPosition = Vec2.create(50, 50);
+    const worldPosition = { x: -100, y: -200 };
+    const cameraPosition = { x: 50, y: 50 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(100, -200);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 100, y: -200 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -38,11 +37,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle zero world position correctly', () => {
-    const worldPosition = Vec2.create(0, 0);
-    const cameraPosition = Vec2.create(50, 50);
+    const worldPosition = { x: 0, y: 0 };
+    const cameraPosition = { x: 50, y: 50 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(300, 200);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 300, y: 200 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -55,11 +54,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle zero camera position correctly', () => {
-    const worldPosition = Vec2.create(100, 200);
-    const cameraPosition = Vec2.create(0, 0);
+    const worldPosition = { x: 100, y: 200 };
+    const cameraPosition = { x: 0, y: 0 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(600, 700);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 600, y: 700 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -72,11 +71,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle zero camera zoom correctly', () => {
-    const worldPosition = Vec2.create(100, 200);
-    const cameraPosition = Vec2.create(50, 50);
+    const worldPosition = { x: 100, y: 200 };
+    const cameraPosition = { x: 50, y: 50 };
     const cameraZoom = 1;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(450, 450);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 450, y: 450 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -89,11 +88,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle zero canvas center correctly', () => {
-    const worldPosition = Vec2.create(100, 200);
-    const cameraPosition = Vec2.create(50, 50);
+    const worldPosition = { x: 100, y: 200 };
+    const cameraPosition = { x: 50, y: 50 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(0, 0);
-    const expectedScreenPosition = Vec2.create(100, 300);
+    const canvasCenter = { x: 0, y: 0 };
+    const expectedScreenPosition = { x: 100, y: 300 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -106,11 +105,11 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should handle both zero world position and camera position correctly', () => {
-    const worldPosition = Vec2.create(0, 0);
-    const cameraPosition = Vec2.create(0, 0);
+    const worldPosition = { x: 0, y: 0 };
+    const cameraPosition = { x: 0, y: 0 };
     const cameraZoom = 2;
-    const canvasCenter = Vec2.create(400, 300);
-    const expectedScreenPosition = Vec2.create(400, 300);
+    const canvasCenter = { x: 400, y: 300 };
+    const expectedScreenPosition = { x: 400, y: 300 };
 
     const result = worldToScreenSpace(
       worldPosition,
@@ -123,12 +122,12 @@ describe('worldToScreenSpace', () => {
   });
 
   it('should scale by pixelsPerUnit in addition to zoom', () => {
-    const worldPosition = Vec2.create(10, 20);
-    const cameraPosition = Vec2.create(0, 0);
+    const worldPosition = { x: 10, y: 20 };
+    const cameraPosition = { x: 0, y: 0 };
     const cameraZoom = 1;
-    const canvasCenter = Vec2.create(400, 300);
+    const canvasCenter = { x: 400, y: 300 };
     const pixelsPerUnit = 10;
-    const expectedScreenPosition = Vec2.create(500, 500);
+    const expectedScreenPosition = { x: 500, y: 500 };
 
     const result = worldToScreenSpace(
       worldPosition,

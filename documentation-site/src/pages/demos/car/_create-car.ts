@@ -34,7 +34,7 @@ import {
 } from './_ground-contact.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
-const gravity = Vec2.create(0, -600);
+const gravity = { x: 0, y: -600 };
 
 const chassisWidth = 450;
 const chassisHeight = 150;
@@ -115,11 +115,8 @@ const uprightDensity = 80;
 
 // Anchors are in the chassis's local space: roughly at the bottom corners,
 // inset a bit so the wheels sit under the body rather than past its edges.
-const frontAnchor = Vec2.create(chassisWidth / 2 - 115, -chassisHeight / 2);
-const rearAnchor = Vec2.create(
-  -(chassisWidth / 2 - 115),
-  -chassisHeight / 2,
-);
+const frontAnchor = { x: chassisWidth / 2 - 115, y: -chassisHeight / 2 };
+const rearAnchor = { x: -(chassisWidth / 2 - 115), y: -chassisHeight / 2 };
 
 // Each wheel is constrained (via its mount's prismatic joint - see
 // `createWheelMount`) to slide only along this axis relative to its
@@ -268,10 +265,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -454,7 +451,7 @@ export async function createCar(
   // clone: groundPosition is a caller-owned parameter, must not mutate it.
   const chassisPosition = Vec2.add(
     Vec2.clone(groundPosition),
-    Vec2.create(0, wheelRadius + wheelDropHeight + chassisHeight / 2 + 100),
+    { x: 0, y: wheelRadius + wheelDropHeight + chassisHeight / 2 + 100 },
   );
 
   const chassisEntity = world.createEntity();
@@ -504,14 +501,14 @@ export async function createCar(
       Vec2.add(Vec2.clone(chassisPosition), frontAnchor),
       Vec2.multiply(Vec2.clone(frontSuspensionAxis), -wheelSpawnDrop),
     ),
-    Vec2.create(0, -wheelRadius),
+    { x: 0, y: -wheelRadius },
   );
   const rearWheelPosition = Vec2.add(
     Vec2.add(
       Vec2.add(Vec2.clone(chassisPosition), rearAnchor),
       Vec2.multiply(Vec2.clone(rearSuspensionAxis), -wheelSpawnDrop),
     ),
-    Vec2.create(0, -wheelRadius),
+    { x: 0, y: -wheelRadius },
   );
 
   const frontWheel = createWheel(

@@ -25,10 +25,10 @@ function rectangleVertices(width: number, height: number): Vector2[] {
   const halfHeight = height / 2;
 
   return [
-    Vec2.create(-halfWidth, -halfHeight),
-    Vec2.create(halfWidth, -halfHeight),
-    Vec2.create(halfWidth, halfHeight),
-    Vec2.create(-halfWidth, halfHeight),
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
   ];
 }
 
@@ -84,19 +84,19 @@ export async function createBoundaries(
   };
 
   createWall(
-    Vec2.create(0, -halfHeight + wallThickness / 2),
+    { x: 0, y: -halfHeight + wallThickness / 2 },
     width,
     wallThickness,
   );
 
   createWall(
-    Vec2.create(-halfWidth + wallThickness / 2, 0),
+    { x: -halfWidth + wallThickness / 2, y: 0 },
     wallThickness,
     height,
   );
 
   createWall(
-    Vec2.create(halfWidth - wallThickness / 2, 0),
+    { x: halfWidth - wallThickness / 2, y: 0 },
     wallThickness,
     height,
   );

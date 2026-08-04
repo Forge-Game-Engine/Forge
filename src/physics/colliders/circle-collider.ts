@@ -30,8 +30,8 @@ export class CircleCollider extends Collider {
     const cy = position.y + this.offset.y;
 
     return {
-      min: Vec2.create(cx - this.radius, cy - this.radius),
-      max: Vec2.create(cx + this.radius, cy + this.radius),
+      min: { x: cx - this.radius, y: cy - this.radius },
+      max: { x: cx + this.radius, y: cy + this.radius },
     };
   }
 }

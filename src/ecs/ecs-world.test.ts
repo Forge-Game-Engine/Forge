@@ -20,13 +20,13 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: Vec2.create(1, 0),
-      world: Vec2.create(1, 0),
+      local: { x: 1, y: 0 },
+      world: { x: 1, y: 0 },
     };
     const rot1: RotationEcsComponent = { local: 10, world: 10 };
     const pos2: PositionEcsComponent = {
-      local: Vec2.create(2, 0),
-      world: Vec2.create(2, 0),
+      local: { x: 2, y: 0 },
+      world: { x: 2, y: 0 },
     };
 
     world.addComponent(entity1, positionId, pos1);
@@ -92,12 +92,12 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const position1: PositionEcsComponent = {
-      local: Vec2.create(1, 0),
-      world: Vec2.create(1, 0),
+      local: { x: 1, y: 0 },
+      world: { x: 1, y: 0 },
     };
     const position2: PositionEcsComponent = {
-      local: Vec2.create(2, 0),
-      world: Vec2.create(2, 0),
+      local: { x: 2, y: 0 },
+      world: { x: 2, y: 0 },
     };
     const speed2: SpeedEcsComponent = { speed: 3 };
 
@@ -198,12 +198,12 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: Vec2.create(-5, 0),
-      world: Vec2.create(-5, 0),
+      local: { x: -5, y: 0 },
+      world: { x: -5, y: 0 },
     };
     const pos2: PositionEcsComponent = {
-      local: Vec2.create(5, 0),
-      world: Vec2.create(5, 0),
+      local: { x: 5, y: 0 },
+      world: { x: 5, y: 0 },
     };
 
     world.addComponent(entity1, positionId, pos1);
@@ -241,13 +241,13 @@ describe('EcsWorld', () => {
     const entity2 = world.createEntity();
 
     const pos1: PositionEcsComponent = {
-      local: Vec2.create(-5, 0),
-      world: Vec2.create(-5, 0),
+      local: { x: -5, y: 0 },
+      world: { x: -5, y: 0 },
     };
     const rot1: RotationEcsComponent = { local: 1, world: 1 };
     const pos2: PositionEcsComponent = {
-      local: Vec2.create(5, 0),
-      world: Vec2.create(5, 0),
+      local: { x: 5, y: 0 },
+      world: { x: 5, y: 0 },
     };
     const rot2: RotationEcsComponent = { local: 2, world: 2 };
 

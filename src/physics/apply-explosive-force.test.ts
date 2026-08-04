@@ -25,8 +25,8 @@ describe('applyExplosiveForce', () => {
   }
 
   it('applies an impulse directly away from the center, strongest closest to it', () => {
-    const near = createBody(Vec2.create(50, 0));
-    const far = createBody(Vec2.create(150, 0));
+    const near = createBody({ x: 50, y: 0 });
+    const far = createBody({ x: 150, y: 0 });
 
     applyExplosiveForce(world, Vec2.zero, 1000, 200);
 
@@ -39,7 +39,7 @@ describe('applyExplosiveForce', () => {
   });
 
   it('does not affect bodies at or beyond the radius', () => {
-    const outside = createBody(Vec2.create(200, 0));
+    const outside = createBody({ x: 200, y: 0 });
 
     applyExplosiveForce(world, Vec2.zero, 1000, 200);
 
@@ -53,8 +53,8 @@ describe('applyExplosiveForce', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: Vec2.create(50, 0),
-      local: Vec2.create(50, 0),
+      world: { x: 50, y: 0 },
+      local: { x: 50, y: 0 },
     });
 
     expect(() =>

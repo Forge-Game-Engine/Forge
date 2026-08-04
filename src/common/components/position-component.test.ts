@@ -33,7 +33,7 @@ describe('addPositionComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const local = Vec2.create(1, 2);
+    const local = { x: 1, y: 2 };
     const component = addPositionComponent(world, entity, { local });
 
     expect(component).toEqual({ local, world: Vec2.zero });

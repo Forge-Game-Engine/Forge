@@ -10,7 +10,7 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { Vec2 } from '@forge-game-engine/forge/math';
+
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createErosionSprite } from './_create-sprite';
 import { erosionId } from './_erosion.component';
@@ -45,8 +45,8 @@ export const createErosionBurnGame = async (): Promise<Game> => {
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
-    local: Vec2.create(scale, scale),
-    world: Vec2.create(scale, scale),
+    local: { x: scale, y: scale },
+    world: { x: scale, y: scale },
   });
 
   addSpriteComponent(world, entity, sprite);

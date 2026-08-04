@@ -124,7 +124,7 @@ function buildControlPoints(totalWidth: number): Vector2[] {
     }
 
     previousHeight = height;
-    controlPoints.push(Vec2.create(x, height));
+    controlPoints.push({ x, y: height });
   }
 
   return controlPoints;

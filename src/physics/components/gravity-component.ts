@@ -1,6 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vec2, Vector2 } from '../../math/vector2.js';
+import { Vector2 } from '../../math/vector2.js';
 
 /**
  * Fields of {@link GravityEcsComponent} with a sensible default; callers
@@ -30,7 +30,7 @@ export function addGravityComponent(
   options: Partial<GravityEcsComponent> = {},
 ): GravityEcsComponent {
   const defaultGravityOptions: GravityDefaultedOptions = {
-    amount: Vec2.create(0, -9.81),
+    amount: { x: 0, y: -9.81 },
   };
 
   const component: GravityEcsComponent = {
