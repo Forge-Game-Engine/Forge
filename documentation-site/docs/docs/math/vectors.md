@@ -26,9 +26,8 @@ instance methods.
 [`Vec2.divide`](/Forge/docs/api/classes/Vec2#divide),
 [`Vec2.normalize`](/Forge/docs/api/classes/Vec2#normalize),
 [`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate),
-[`Vec2.perpendicular`](/Forge/docs/api/classes/Vec2#perpendicular),
-[`Vec2.negate`](/Forge/docs/api/classes/Vec2#negate), and
-[`Vec2.set`](/Forge/docs/api/classes/Vec2#set) all **mutate their first
+[`Vec2.perpendicular`](/Forge/docs/api/classes/Vec2#perpendicular) and,
+[`Vec2.negate`](/Forge/docs/api/classes/Vec2#negate), all **mutate their first
 argument in place** (the `target`) and return it (for chaining), rather than
 allocating a new `Vector2`. This is a deliberate performance choice: the
 physics engine integrates every rigid body's motion every tick, and this way

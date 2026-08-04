@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **physics:** Add `raycast(world, start, end, sort?)`, casting a line segment against every entity in an `EcsWorld` with a `ColliderEcsComponent` (`CircleCollider`, `PolygonCollider`, and `TerrainCollider` alike) and returning every intersection as a `RaycastHit` (`entity`, `point`, `normal`, `distance`), ordered by distance from `start` by default
+
 #### Changed
 
 - **math:** `Vector2`/`Vector3` are now plain `{ x, y }`/`{ x, y, z }` objects instead of classes, constructed with an object literal (`{ x: 1, y: 2 }`) and operated on via `Vec2`/`Vec3` static methods (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, etc.) that mutate their first (`target`) argument in place and return it, rather than allocating a new vector, for performance in hot loops like physics integration; see the "Vectors and Rectangles" doc for the full API and migration guidance. **Breaking change.**
