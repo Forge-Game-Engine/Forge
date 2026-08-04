@@ -397,6 +397,20 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 
+### Coverage
+
+- `npm run test:coverage` runs the unit suite with V8 coverage instrumentation
+  (configured in `vite.config.base.js`'s `test.coverage`) and writes a report
+  to `/coverage` (gitignored): a terminal summary, an `lcov.info`, and an
+  HTML report at `coverage/index.html`.
+- CI's `test` job (`.github/workflows/ci.yml`) runs `test:coverage` instead of
+  plain `npm test` and uploads `/coverage` as the `coverage-report` workflow
+  artifact on every run, so coverage is checked without needing a local run.
+- There's no enforced coverage threshold yet - the report is a visibility
+  tool, not a gate. Modules with thin test suites (check the per-file
+  breakdown in the terminal summary or `coverage/index.html`) are good
+  candidates for new tests.
+
 ## Integration & E2E Testing
 
 `/e2e` holds real-browser tests (Playwright) for cross-system behavior that
