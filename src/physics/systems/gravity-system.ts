@@ -12,7 +12,9 @@ import {
 
 /**
  * Creates an ECS system to handle gravity of rigid body entities.
- * @returns An ECS system that updates velocity of a rigid body based on gravity.
+ * @returns An ECS system that updates velocity of a rigid body based on
+ * gravity. `'static'` and `'kinematic'` bodies (see {@link RigidBodyType})
+ * are skipped - neither is affected by forces.
  */
 export const createGravityEcsSystem = (
   time: Time,
@@ -21,6 +23,11 @@ export const createGravityEcsSystem = (
   update: (_world, { components: [rigidBodies, gravities] }) => {
     for (let i = 0; i < rigidBodies.length; i++) {
       const rigidBodyComponent = rigidBodies[i];
+
+      if (rigidBodyComponent.type !== 'dynamic') {
+        continue;
+      }
+
       const gravityComponent = gravities[i];
 
       // Clone before scaling: `gravityComponent.amount` is a persistent

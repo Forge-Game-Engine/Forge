@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HoldAction } from './hold-action';
 
 describe('HoldAction', () => {
@@ -43,5 +43,25 @@ describe('HoldAction', () => {
     expect(action.isHeld).toBe(false);
     action.startHold();
     expect(action.isHeld).toBe(true);
+  });
+
+  it('should default the input group to "game" when not provided', () => {
+    const defaultGroupAction = new HoldAction('accelerate');
+    expect(defaultGroupAction.inputGroup).toBe('game');
+  });
+
+  it('should raise holdStartEvent when started and holdEndEvent when ended', () => {
+    const startListener = vi.fn();
+    const endListener = vi.fn();
+
+    action.holdStartEvent.registerListener(startListener);
+    action.holdEndEvent.registerListener(endListener);
+
+    action.startHold();
+    expect(startListener).toHaveBeenCalledTimes(1);
+    expect(endListener).not.toHaveBeenCalled();
+
+    action.endHold();
+    expect(endListener).toHaveBeenCalledTimes(1);
   });
 });

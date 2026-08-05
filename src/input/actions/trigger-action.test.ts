@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TriggerAction } from './trigger-action';
 
 describe('InputAction', () => {
@@ -43,5 +43,19 @@ describe('InputAction', () => {
     expect(action.isTriggered).toBe(false);
     action.trigger();
     expect(action.isTriggered).toBe(true);
+  });
+
+  it('should default the input group to "game" when not provided', () => {
+    const defaultGroupAction = new TriggerAction('jump');
+    expect(defaultGroupAction.inputGroup).toBe('game');
+  });
+
+  it('should raise triggerEvent when triggered', () => {
+    const listener = vi.fn();
+
+    action.triggerEvent.registerListener(listener);
+    action.trigger();
+
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

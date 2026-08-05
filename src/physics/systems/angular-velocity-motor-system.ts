@@ -17,7 +17,9 @@ import {
  * external disturbance (a collision, a scripted torque). Order relative to
  * other physics systems doesn't matter beyond running before whatever
  * system integrates velocity into position
- * (`createEulerIntegrationEcsSystem`).
+ * (`createEulerIntegrationEcsSystem`). Entities whose `RigidBodyEcsComponent.type`
+ * (see {@link RigidBodyType}) isn't `'dynamic'` are skipped, since
+ * `'static'`/`'kinematic'` bodies aren't affected by torque.
  * @param time - Used to read the tick's delta time.
  * @returns An ECS system that drives every motor-equipped entity's angular
  * velocity every tick.
@@ -34,8 +36,13 @@ export const createAngularVelocityMotorEcsSystem = (
     }
 
     for (let i = 0; i < motors.length; i++) {
-      const motor = motors[i];
       const rigidBody = rigidBodies[i];
+
+      if (rigidBody.type !== 'dynamic') {
+        continue;
+      }
+
+      const motor = motors[i];
 
       const velocityError = motor.targetVelocity - rigidBody.angularVelocity;
       const impulse = rigidBody.momentOfInertia * velocityError;

@@ -41,7 +41,7 @@ Terrain is static, so `groundEntity` only needs `PositionEcsComponent`/
 `ColliderEcsComponent`, and `AabbEcsComponent` - no `RigidBodyEcsComponent`,
 the same convention every other static body (walls, ground boxes) in this
 engine follows. See the [Bodies and Shapes guide](/Forge/docs/docs/physics/rigid-bodies)
-for that static-vs-dynamic distinction.
+for that static/kinematic/dynamic distinction.
 
 ## Authoring points
 

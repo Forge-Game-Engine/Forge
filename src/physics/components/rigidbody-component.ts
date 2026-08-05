@@ -3,6 +3,26 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
+ * How a {@link RigidBodyEcsComponent} participates in the simulation:
+ *
+ * - `'dynamic'`: fully simulated. Affected by gravity, forces, and impulses;
+ *   pushed apart by collisions; integrated into position every tick.
+ * - `'kinematic'`: moved directly by game code (by setting `velocity`, or
+ *   position itself). Not affected by gravity, forces, or collision
+ *   impulses, but still integrated into position from `velocity` every tick
+ *   and still pushes dynamic bodies it contacts. Use this for moving
+ *   platforms and other scripted movers that dynamic bodies should react to.
+ * - `'static'`: never moves and is never integrated, with infinite effective
+ *   mass in the solver. Equivalent to an entity with no
+ *   `RigidBodyEcsComponent` at all (the convention every collider-only
+ *   entity, e.g. `TerrainCollider` ground, already follows); attaching a
+ *   `RigidBodyEcsComponent` with this type is only useful when other
+ *   components on the entity (e.g. a motor or joint) require one to be
+ *   present.
+ */
+export type RigidBodyType = 'dynamic' | 'kinematic' | 'static';
+
+/**
  * Fields of {@link RigidBodyEcsComponent} with a sensible default; callers
  * may omit these.
  */
@@ -14,6 +34,12 @@ export interface RigidBodyDefaultedOptions {
    * damping. Applied by {@link createEulerIntegrationEcsSystem}.
    */
   angularDrag: number;
+
+  /**
+   * How this body participates in the simulation. Defaults to `'dynamic'`.
+   * See {@link RigidBodyType}.
+   */
+  type: RigidBodyType;
 }
 
 export interface RigidBodyRequiredOptions {
@@ -46,6 +72,7 @@ export function addRigidBodyComponent(
     velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,
+    type: 'dynamic',
   };
 
   const component: RigidBodyEcsComponent = {

@@ -132,6 +132,10 @@ const config: Config = {
               label: 'Physics',
             },
             {
+              to: 'demos/moving-platform',
+              label: 'Moving Platform',
+            },
+            {
               to: 'demos/raycasting',
               label: 'Raycasting',
             },
