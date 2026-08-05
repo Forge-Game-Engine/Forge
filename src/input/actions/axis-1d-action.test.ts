@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Axis1dAction } from './axis-1d-action';
+import { actionResetTypes } from '../constants';
 
 describe('InputAxis1d', () => {
   let action: Axis1dAction;
@@ -34,5 +35,43 @@ describe('InputAxis1d', () => {
 
     action.reset();
     expect(action.value).toBe(0);
+  });
+
+  it('should default the input group to "game" when not provided', () => {
+    const defaultGroupAction = new Axis1dAction('zoom');
+    expect(defaultGroupAction.inputGroup).toBe('game');
+  });
+
+  it('should not reset the value when the reset type is noReset', () => {
+    const noResetAction = new Axis1dAction(
+      'zoom',
+      'default',
+      actionResetTypes.noReset,
+    );
+
+    noResetAction.set(1);
+    noResetAction.reset();
+
+    expect(noResetAction.value).toBe(1);
+  });
+
+  it('should raise valueChangeEvent when the value changes', () => {
+    const listener = vi.fn();
+
+    action.valueChangeEvent.registerListener(listener);
+    action.set(1);
+
+    expect(listener).toHaveBeenCalledWith(1);
+  });
+
+  it('should not raise valueChangeEvent when set to the same value', () => {
+    action.set(1);
+
+    const listener = vi.fn();
+
+    action.valueChangeEvent.registerListener(listener);
+    action.set(1);
+
+    expect(listener).not.toHaveBeenCalled();
   });
 });

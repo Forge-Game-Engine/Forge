@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputManager } from './input-manager';
-import { Axis1dAction, Axis2dAction, TriggerAction } from './actions';
+import {
+  Axis1dAction,
+  Axis2dAction,
+  HoldAction,
+  TriggerAction,
+} from './actions';
 import { actionResetTypes } from './constants';
 
 describe('InputManager', () => {
@@ -90,6 +95,131 @@ describe('InputManager', () => {
     manager.dispatchAxis2dAction(binding, 1, 5);
     expect(action.value.x).toBe(0);
     expect(action.value.y).toBe(0);
+  });
+
+  it('should dispatch hold start action only for active group', () => {
+    const action = new HoldAction('test-hold-action', group1);
+    const binding = {
+      action,
+      displayText: 'test binding',
+    };
+
+    manager.setActiveGroup(group2);
+    manager.dispatchHoldStartAction(binding);
+    expect(action.isHeld).toBe(false);
+
+    manager.setActiveGroup(group1);
+    manager.dispatchHoldStartAction(binding);
+    expect(action.isHeld).toBe(true);
+  });
+
+  it('should dispatch hold end action regardless of active group', () => {
+    const action = new HoldAction('test-hold-action', group1);
+    const binding = {
+      action,
+      displayText: 'test binding',
+    };
+
+    manager.setActiveGroup(group1);
+    manager.dispatchHoldStartAction(binding);
+    expect(action.isHeld).toBe(true);
+
+    manager.setActiveGroup(group2);
+    manager.dispatchHoldEndAction(binding);
+    expect(action.isHeld).toBe(false);
+  });
+
+  it('should add trigger, axis1d, axis2d, and hold actions and mark them resettable', () => {
+    const triggerAction = new TriggerAction('trigger', group1);
+    const axis1dAction = new Axis1dAction('axis1d', group1);
+    const axis2dAction = new Axis2dAction('axis2d', group1);
+    const holdAction = new HoldAction('hold', group1);
+
+    manager.addTriggerActions(triggerAction);
+    manager.addAxis1dActions(axis1dAction);
+    manager.addAxis2dActions(axis2dAction);
+    manager.addHoldActions(holdAction);
+
+    expect(manager.getTriggerAction('trigger')).toBe(triggerAction);
+    expect(manager.getAxis1dAction('axis1d')).toBe(axis1dAction);
+    expect(manager.getAxis2dAction('axis2d')).toBe(axis2dAction);
+    expect(manager.getHoldAction('hold')).toBe(holdAction);
+
+    triggerAction.trigger();
+    axis1dAction.set(1);
+    axis2dAction.set(1, 1);
+
+    manager.reset();
+
+    expect(triggerAction.isTriggered).toBe(false);
+    expect(axis1dAction.value).toBe(0);
+    expect(axis2dAction.value.x).toBe(0);
+    expect(axis2dAction.value.y).toBe(0);
+  });
+
+  it('should remove trigger, axis1d, axis2d, and hold actions', () => {
+    const triggerAction = new TriggerAction('trigger', group1);
+    const axis1dAction = new Axis1dAction('axis1d', group1);
+    const axis2dAction = new Axis2dAction('axis2d', group1);
+    const holdAction = new HoldAction('hold', group1);
+
+    manager.addTriggerActions(triggerAction);
+    manager.addAxis1dActions(axis1dAction);
+    manager.addAxis2dActions(axis2dAction);
+    manager.addHoldActions(holdAction);
+
+    manager.removeTriggerAction(triggerAction);
+    manager.removeAxis1dAction(axis1dAction);
+    manager.removeAxis2dAction(axis2dAction);
+    manager.removeHoldAction(holdAction);
+
+    expect(() => manager.getTriggerAction('trigger')).toThrow(
+      'No TriggerAction found with name: trigger',
+    );
+    expect(() => manager.getAxis1dAction('axis1d')).toThrow(
+      'No Axis1dAction found with name: axis1d',
+    );
+    expect(() => manager.getAxis2dAction('axis2d')).toThrow(
+      'No Axis2dAction found with name: axis2d',
+    );
+    expect(() => manager.getHoldAction('hold')).toThrow(
+      'No HoldAction found with name: hold',
+    );
+  });
+
+  it('should throw when getting an action that was never added', () => {
+    expect(() => manager.getTriggerAction('missing')).toThrow(
+      'No TriggerAction found with name: missing',
+    );
+    expect(() => manager.getAxis1dAction('missing')).toThrow(
+      'No Axis1dAction found with name: missing',
+    );
+    expect(() => manager.getAxis2dAction('missing')).toThrow(
+      'No Axis2dAction found with name: missing',
+    );
+    expect(() => manager.getHoldAction('missing')).toThrow(
+      'No HoldAction found with name: missing',
+    );
+  });
+
+  it('should throw when getting an action that does not match any other registered action', () => {
+    manager.addTriggerActions(new TriggerAction('trigger', group1));
+    manager.addAxis1dActions(new Axis1dAction('axis1d', group1));
+    manager.addAxis2dActions(new Axis2dAction('axis2d', group1));
+    manager.addHoldActions(new HoldAction('hold', group1));
+
+    expect(() => manager.getTriggerAction('missing')).toThrow(
+      'No TriggerAction found with name: missing',
+    );
+    expect(() => manager.getAxis1dAction('missing')).toThrow(
+      'No Axis1dAction found with name: missing',
+    );
+    expect(() => manager.getAxis2dAction('missing')).toThrow(
+      'No Axis2dAction found with name: missing',
+    );
+    expect(() => manager.getHoldAction('missing')).toThrow(
+      'No HoldAction found with name: missing',
+    );
   });
 
   it('should add and remove updatables', () => {
