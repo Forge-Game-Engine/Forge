@@ -92,7 +92,8 @@ simulation:
   static body it's still integrated every tick and its velocity still shows
   up in contact/joint solving, so it correctly pushes any dynamic body it
   touches. Use this for moving platforms and other scripted movers that
-  dynamic bodies should react to.
+  dynamic bodies should react to. See the
+  [Moving Platform demo](/Forge/demos/moving-platform) for a working example.
 
 ```ts
 import { addRigidBodyComponent } from '@forge-game-engine/forge/physics';
