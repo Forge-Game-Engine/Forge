@@ -2,8 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
 import { buttonMoments, keyCodes } from '../../constants';
 import { InputManager } from '../../input-manager';
-import { HoldAction, TriggerAction } from '../../actions';
-import { KeyboardHoldBinding, KeyboardTriggerBinding } from '../bindings';
+import {
+  Axis1dAction,
+  Axis2dAction,
+  HoldAction,
+  TriggerAction,
+} from '../../actions';
+import {
+  KeyboardAxis1dBinding,
+  KeyboardAxis2dBinding,
+  KeyboardHoldBinding,
+  KeyboardTriggerBinding,
+} from '../bindings';
 
 describe('KeyboardInputSource', () => {
   const group = 'default';
@@ -121,5 +131,84 @@ describe('KeyboardInputSource', () => {
     expect(keyHoldAction.isHeld).toBe(false);
     expect(holdStartEventHandler).not.toHaveBeenCalled();
     expect(holdEndEventHandler).not.toHaveBeenCalled();
+  });
+
+  it('does not dispatch key ups that are browser auto repeats', () => {
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
+
+    window.dispatchEvent(
+      new KeyboardEvent('keyup', { code: keyCodes.a, repeat: true }),
+    );
+
+    expect(keyUpAction.isTriggered).toBe(false);
+  });
+
+  it('dispatches axis1d bindings on key down and key up', () => {
+    const axis1dAction = new Axis1dAction('axis1dAction', group);
+
+    inputManager.addAxis1dActions(axis1dAction);
+    source.axis1dBindings.add(
+      new KeyboardAxis1dBinding(axis1dAction, keyCodes.d, keyCodes.a),
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
+    expect(axis1dAction.value).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
+    expect(axis1dAction.value).toBe(0);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+    expect(axis1dAction.value).toBe(-1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
+    expect(axis1dAction.value).toBe(0);
+  });
+
+  it('dispatches axis2d bindings on key down and key up', () => {
+    const axis2dAction = new Axis2dAction('axis2dAction', group);
+
+    inputManager.addAxis2dActions(axis2dAction);
+    source.axis2dBindings.add(
+      new KeyboardAxis2dBinding(
+        axis2dAction,
+        keyCodes.w,
+        keyCodes.s,
+        keyCodes.d,
+        keyCodes.a,
+      ),
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.w }));
+    expect(axis2dAction.value.y).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
+    expect(axis2dAction.value.x).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.w }));
+    expect(axis2dAction.value.y).toBe(0);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+    expect(axis2dAction.value.x).toBe(0);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.s }));
+    expect(axis2dAction.value.y).toBe(-1);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
+    expect(axis2dAction.value.x).toBe(-1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.s }));
+    expect(axis2dAction.value.y).toBe(0);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
+    expect(axis2dAction.value.x).toBe(0);
+  });
+
+  it('stops dispatching after stop is called', () => {
+    source.stop();
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
+    expect(keyUpAction.isTriggered).toBe(false);
   });
 });
