@@ -15,7 +15,11 @@ import {
 /**
  * Creates an ECS system to Euler integration of rigid body entities.
  * @returns An ECS system that updates position and rotation of a rigid body
- * based their respective velocity and angular velocity.
+ * based their respective velocity and angular velocity. `'static'` bodies
+ * (see {@link RigidBodyType}) are skipped entirely - they never move and
+ * are never integrated - while `'kinematic'` bodies are integrated the same
+ * as `'dynamic'` ones, since a kinematic body's `velocity` is expected to be
+ * driven directly by game code.
  */
 export const createEulerIntegrationEcsSystem = (
   time: Time,
@@ -25,9 +29,14 @@ export const createEulerIntegrationEcsSystem = (
   query: [positionId, rotationId, rigidBodyId],
   update: (_world, { components: [positions, rotations, rigidBodies] }) => {
     for (let i = 0; i < positions.length; i++) {
+      const rigidBodyComponent = rigidBodies[i];
+
+      if (rigidBodyComponent.type === 'static') {
+        continue;
+      }
+
       const positionComponent = positions[i];
       const rotationComponent = rotations[i];
-      const rigidBodyComponent = rigidBodies[i];
 
       rotationComponent.world +=
         rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;

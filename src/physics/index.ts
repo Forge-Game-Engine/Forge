@@ -6,6 +6,7 @@ export * from './collision/index.js';
 export * from './components/index.js';
 export * from './joints/index.js';
 export * from './raycast/index.js';
+export * from './rigid-body-inverse-mass.js';
 export * from './solve-soft-constraint.js';
 export * from './systems/index.js';
 export * from './types/index.js';
