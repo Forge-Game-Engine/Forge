@@ -3,27 +3,29 @@
 Forge includes a native 2D physics engine: rigid bodies, convex collision
 shapes, gravity, collision detection and resolution, raycasting, and
 impulse-based forces (including explosions). It has no external
-dependencies and integrates with the ECS via `createPhysicsSyncEcsSystem`, which
-steps a `PhysicsWorld` every frame and keeps `RigidBody` transforms in sync
-with entity position/rotation components.
+dependencies and is entirely ECS-native - there's no separate physics world
+object to step; each concern (gravity, broad phase, narrow phase, collision
+resolution, integration, joints) is its own system, registered on the
+`EcsWorld` like any other.
 
 Core concepts:
 
-- `PhysicsWorld`: owns the set of
-  simulated bodies, steps the simulation, and applies world-level forces
-  (gravity, explosions).
-- `RigidBody`: a simulated body with a
-  position, velocity, mass, and a collision shape.
-- `CircleShape` and
-  `PolygonShape`: the convex shapes a
-  `RigidBody` can have.
-- `TerrainShape`: a static heightmap
-  ground shape for non-convex 2D terrain.
+- `RigidBodyEcsComponent`: a
+  simulated body's velocity, mass, and `type` (`'dynamic'`, `'kinematic'`,
+  or `'static'`).
+- `ColliderEcsComponent`: an entity's
+  collision shape (`CircleCollider`,
+  `PolygonCollider`, or
+  `TerrainCollider`), plus friction and
+  restitution.
+- `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
+  `createCollisionResolutionEcsSystem`: detect and resolve collisions
+  between collider entities each tick.
 - `raycast`: casts a ray against every
   collider entity in an `EcsWorld`.
-- `PrismaticJoint`: a slider
-  constraint locking two bodies to one linear degree of freedom.
-- `RevoluteJoint`: a hinge
+- `PrismaticJointEcsComponent`: a
+  slider constraint locking two bodies to one linear degree of freedom.
+- `RevoluteJointEcsComponent`: a hinge
   constraint locking two bodies to one rotational degree of freedom about a
   shared anchor point.
 - `LinearSpringEcsComponent`
@@ -34,8 +36,8 @@ Core concepts:
 
 Guides in this section:
 
-- [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes, ECS
-  integration, and collision events.
+- [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes,
+  static/kinematic/dynamic bodies, and ECS integration.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against colliders.
@@ -48,43 +50,65 @@ Guides in this section:
 
 ## Quick Start
 
-The simplest way to use physics is through the ECS integration: give an
-entity a `PhysicsBodyEcsComponent` alongside its position and rotation
-components, then register `createPhysicsSyncEcsSystem`. Every `world.update()`,
-the system steps the `PhysicsWorld` and writes each dynamic body's resulting
-position and angle back to the entity.
+Give an entity a `ColliderEcsComponent` and a `RigidBodyEcsComponent`
+alongside its position and rotation components, then register the systems
+that simulate them. Every `world.update()`, those systems apply gravity,
+detect and resolve collisions, and integrate each dynamic (or kinematic)
+body's velocity into its position/rotation.
 
 ```ts
 import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
-import { Vec2 } from '@forge-game-engine/forge/math';
 import {
-  addPhysicsBodyComponent,
-  createPhysicsSyncEcsSystem,
-  PhysicsWorld,
-  PolygonShape,
-  RigidBody,
+  addAabbComponent,
+  addColliderComponent,
+  addGravityComponent,
+  addRigidBodyComponent,
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
+  PolygonCollider,
 } from '@forge-game-engine/forge/physics';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, time } = createGame('game-container');
 
-const physicsWorld = new PhysicsWorld({ gravity: { x: 0, y: -300 } });
-
 const box = world.createEntity();
+// PolygonCollider re-centers vertices around their centroid, so this 32x32
+// square's own position is its center.
+const collider = new PolygonCollider([
+  { x: -16, y: -16 },
+  { x: 16, y: -16 },
+  { x: 16, y: 16 },
+  { x: -16, y: 16 },
+]);
 
 addPositionComponent(world, box);
 addRotationComponent(world, box);
-addPhysicsBodyComponent(world, box, {
-  physicsBody: new RigidBody({ shape: PolygonShape.rectangle(32, 32) }),
+addColliderComponent(world, box, { collider });
+addAabbComponent(world, box);
+addRigidBodyComponent(world, box, {
+  mass: collider.mass,
+  momentOfInertia: collider.momentOfInertia,
 });
+addGravityComponent(world, box, { amount: { x: 0, y: -300 } });
 
-world.addSystem(createPhysicsSyncEcsSystem(physicsWorld, time));
+const collisionPairs: CollisionPair[] = [];
+const collisionManifolds: CollisionManifold[] = [];
+const contactConstraints: ContactConstraint[] = [];
+
+world.addSystem(createGravityEcsSystem(time));
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
+world.addSystem(
+  createCollisionResolutionEcsSystem(collisionManifolds, contactConstraints, time),
+);
+world.addSystem(createEulerIntegrationEcsSystem(time));
 ```
 
-See [Bodies and Shapes](./rigid-bodies.md#ecs-integration) for static and
-kinematic bodies, and how a body's transform maps onto
-`PositionEcsComponent`/`RotationEcsComponent`.
-
-You can also use `PhysicsWorld` and `RigidBody` directly, without the ECS, by
-calling `physicsWorld.addBody(body)` and `physicsWorld.step(deltaTimeInSeconds)`
-yourself each frame.
+See [Bodies and Shapes](./rigid-bodies.md) for static and kinematic bodies,
+choosing a collision shape, and the full system registration order.

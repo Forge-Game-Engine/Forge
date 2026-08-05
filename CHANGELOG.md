@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **physics:** Add `raycast(world, start, end, sort?)`, casting a line segment against every entity in an `EcsWorld` with a `ColliderEcsComponent` (`CircleCollider`, `PolygonCollider`, and `TerrainCollider` alike) and returning every intersection as a `RaycastHit` (`entity`, `point`, `normal`, `distance`), ordered by distance from `start` by default
+- **physics:** Add `RigidBodyEcsComponent.type` (`'dynamic'` | `'kinematic'` | `'static'`, defaulting to `'dynamic'`), letting a body be moved directly by game code (`'kinematic'`) so it still pushes dynamic bodies on contact without itself being affected by gravity, forces, or impulses - previously only possible implicitly, by giving an entity no `RigidBodyEcsComponent` at all (still supported, and equivalent to `type: 'static'`)
 
 #### Changed
 

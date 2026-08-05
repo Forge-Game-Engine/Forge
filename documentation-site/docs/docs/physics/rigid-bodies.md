@@ -4,147 +4,178 @@ sidebar_position: 1
 
 # Bodies and Shapes
 
-A `RigidBody` pairs a transform
-(position, angle, velocity) with a collision shape. For the full set of
-constructor options and properties, see
-`RigidBody` and
-`RigidBodyOptions` in the API
-reference. This page covers the choices that aren't obvious from the options
-list: which shape to use, what `isStatic`/`isSensor`/`isKinematic` actually
-do, and how to get back from a collision to the ECS entity that caused it.
+A simulated body is an entity with a `ColliderEcsComponent` (a shape) plus,
+for anything that isn't static, a `RigidBodyEcsComponent` (mass, velocity,
+and how it participates in the simulation). Both sit alongside the entity's
+`PositionEcsComponent`/`RotationEcsComponent` and an `AabbEcsComponent` used
+for broad-phase culling. This page covers the choices that aren't obvious
+from the component options: which collider shape to use, static vs.
+kinematic vs. dynamic bodies, and how to wire up the systems that actually
+simulate them.
 
 ```ts
+import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import {
+  addAabbComponent,
+  addColliderComponent,
+  addRigidBodyComponent,
+  CircleCollider,
+} from '@forge-game-engine/forge/physics';
 import { Vec2 } from '@forge-game-engine/forge/math';
-import { CircleShape, RigidBody } from '@forge-game-engine/forge/physics';
 
-const ball = new RigidBody({
-  shape: new CircleShape(16),
-  position: { x: 0, y: 100 },
+const ball = world.createEntity();
+const collider = new CircleCollider(16);
+
+addPositionComponent(world, ball, { world: { x: 0, y: 100 } });
+addRotationComponent(world, ball);
+addColliderComponent(world, ball, {
+  collider,
   restitution: 0.6,
   friction: 0.4,
+});
+addAabbComponent(world, ball);
+addRigidBodyComponent(world, ball, {
+  mass: collider.mass,
+  momentOfInertia: collider.momentOfInertia,
 });
 ```
 
 ## Choosing a shape
 
-Use `CircleShape` for anything round.
-Its area, bounding radius, and moment of inertia are all closed-form, and
-circle-circle/circle-polygon collision checks are the cheapest narrow-phase
-tests in the engine.
+Use `CircleCollider` for anything round. Its area, bounding radius, and
+moment of inertia are all closed-form, and circle-circle/circle-polygon
+collision checks are the cheapest narrow-phase tests in the engine.
 
-Use `PolygonShape` for everything
-else, including the `rectangle(width, height)` static helper for boxes.
-
-:::caution
-`PolygonShape` requires at least 3 vertices forming a **convex** polygon, and
-throws otherwise. If you need a concave shape, such as an L-shape, decompose
-it into multiple convex `PolygonShape`s on separate bodies rather than
-trying to pass the concave outline directly.
-:::
-
-## Static, dynamic, sensor, and kinematic bodies
-
-Most of the time spent configuring a body goes into deciding how it should
-participate in the simulation:
-
-- **Dynamic** (the default): gravity, collisions, and impulses all affect
-  it. Use this for anything that should move and react physically, such as
-  crates, characters, and projectiles.
-- **Static** (`isStatic: true`): infinite mass, never moves. Use this for
-  floors, walls, and other immovable geometry. A pair of two static bodies
-  never produces collision events, since neither side can move.
-- **Sensor** (`isSensor: true`): still participates in collision _detection_
-  (and so still raises `collisionStarts`/`collisionEnds`), but produces no
-  impulses or positional correction. Use this for trigger volumes, such as
-  pickups, checkpoints, and damage zones, where you want to know that
-  something overlapped without physically blocking it.
-- **Kinematic** (ECS only: `isKinematic: true` on `PhysicsBodyEcsComponent`
-  with `isStatic: false`): like static, the entity's position/rotation drive
-  the body every frame, but unlike static, it still participates in
-  collision detection against non-static bodies. Use this for moving
-  platforms or scripted actors whose motion is driven by another system but
-  that still need to raise collision events.
+Use `PolygonCollider` for everything else, including straight-edged shapes
+built from raw vertices (see `_spawn-shapes.ts`'s `rectangleVertices` in the
+[Physics demo](/Forge/demos/physics) for a boxes-and-triangles example). For
+non-convex ground built from a heightmap, use `TerrainCollider` instead - see
+[Terrain](./terrain.md).
 
 :::caution
-A sensor that needs to detect overlaps with a static body (for example, a
-pressure plate built into a wall) won't work if both bodies are static,
-since the pair never generates an event. Make the sensor `isKinematic: true`
-instead of `isStatic: true` if its position is externally controlled.
+`PolygonCollider` requires at least 3 vertices forming a **convex** polygon,
+and throws otherwise. If you need a concave shape, such as an L-shape,
+decompose it into multiple convex `PolygonCollider`s on separate entities
+rather than trying to pass the concave outline directly.
 :::
 
-## ECS Integration
+A collider's `mass`/`momentOfInertia` are computed from its shape (and, for
+`CircleCollider`, an optional `density`) - pass them straight into
+`addRigidBodyComponent` as shown above, rather than picking mass values by
+hand.
 
-Add a `PhysicsBodyEcsComponent`, keyed by
-`PhysicsBodyId`, alongside
-`PositionEcsComponent` and `RotationEcsComponent`, then register
-`createPhysicsSyncEcsSystem``(physicsWorld, time)`.
-See `PhysicsBodyEcsComponent`
-for the full component shape.
+## Static, kinematic, and dynamic bodies
+
+`RigidBodyEcsComponent.type` (`'dynamic'`, `'kinematic'`, or `'static'`,
+defaulting to `'dynamic'`) controls how a body participates in the
+simulation:
+
+- **Dynamic** (the default): gravity (via `GravityEcsComponent`), impulses,
+  and collisions all affect it, and `createEulerIntegrationEcsSystem`
+  integrates its `velocity`/`angularVelocity` into position/rotation every
+  tick. Use this for anything that should move and react physically, such
+  as crates, characters, and projectiles.
+- **Static**: infinite effective mass, never affected by anything, never
+  integrated. The simplest way to make a body static is to give its entity
+  a `ColliderEcsComponent` (plus `PositionEcsComponent`/
+  `RotationEcsComponent`/`AabbEcsComponent`) and **no**
+  `RigidBodyEcsComponent` at all - every static entity in the physics demos
+  (floors, walls, `TerrainCollider` ground) follows this convention, and it
+  still applies unchanged. Attaching a `RigidBodyEcsComponent` with
+  `type: 'static'` behaves identically; only do so when something else on
+  the entity (a motor, a joint) requires the component to be present.
+- **Kinematic**: driven directly by your own code, most commonly by setting
+  `velocity` (and letting `createEulerIntegrationEcsSystem` move it) or by
+  writing to `PositionEcsComponent`/`RotationEcsComponent` yourself. Like a
+  static body, it's never affected by gravity, forces, or collision/joint
+  impulses (its effective mass is infinite to the solver), but unlike a
+  static body it's still integrated every tick and its velocity still shows
+  up in contact/joint solving, so it correctly pushes any dynamic body it
+  touches. Use this for moving platforms and other scripted movers that
+  dynamic bodies should react to. See the
+  [Moving Platform demo](/Forge/demos/moving-platform) for a working example.
 
 ```ts
-import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
-import {
-  addPhysicsBodyComponent,
-  CircleShape,
-  RigidBody,
-} from '@forge-game-engine/forge/physics';
-import { Vec2 } from '@forge-game-engine/forge/math';
+import { addRigidBodyComponent } from '@forge-game-engine/forge/physics';
 
-const entity = world.createEntity();
-
-addPositionComponent(world, entity, {
-  world: { x: 0, y: 100 },
-  local: { x: 0, y: 100 },
-});
-addRotationComponent(world, entity);
-addPhysicsBodyComponent(world, entity, {
-  physicsBody: new RigidBody({ shape: new CircleShape(16) }),
+// A moving platform: velocity is set once (or updated by your own game
+// code), and createEulerIntegrationEcsSystem moves it every tick from
+// there. Dynamic bodies standing on it get carried along and pushed by it,
+// but nothing (gravity included) ever changes the platform's own velocity.
+addRigidBodyComponent(world, platformEntity, {
+  mass: platformCollider.mass,
+  momentOfInertia: platformCollider.momentOfInertia,
+  type: 'kinematic',
+  velocity: { x: 40, y: 0 },
 });
 ```
 
-The system registers each body with `physicsWorld` the first time its entity
-is queried, removes it when the entity stops matching (or is removed), and
-sets `physicsBody.userData` to the entity id, which is how you map
-collisions back to entities below.
-
-:::caution[Coordinate spaces]
-`RotationEcsComponent.world` is in render space (Y-down), while
-`RigidBody.angle` is in physics world space (Y-up). The two are mirrored, so
-the angle is negated whenever it crosses between the ECS and the physics
-simulation. If you read or write `physicsBody.angle` directly, remember it's
-the negation of the entity's render-space rotation, not the same value.
+:::caution
+A `'kinematic'` body still needs `mass`/`momentOfInertia` values to satisfy
+`RigidBodyEcsComponent`'s required options, even though they're never used
+by the solver (its effective mass is always treated as infinite). Pass its
+collider's `mass`/`momentOfInertia` the same as for a dynamic body.
 :::
+
+## ECS integration
+
+There's no single "physics world" object to step - each concern is its own
+system, registered on the `EcsWorld` alongside your other systems. A typical
+setup (see the [Physics demo](/Forge/demos/physics)'s `_create-game.ts` for
+the full, working version):
+
+```ts
+import { Time } from '@forge-game-engine/forge/common';
+import {
+  CollisionManifold,
+  CollisionPair,
+  ContactConstraint,
+  createBroadPhaseEcsSystem,
+  createCollisionResolutionEcsSystem,
+  createEulerIntegrationEcsSystem,
+  createGravityEcsSystem,
+  createNarrowPhaseEcsSystem,
+} from '@forge-game-engine/forge/physics';
+
+const collisionPairs: CollisionPair[] = [];
+const collisionManifolds: CollisionManifold[] = [];
+const contactConstraints: ContactConstraint[] = [];
+
+// Order matters: gravity/forces before collision resolution, before
+// integration, so each tick's forces are reflected in that same tick's
+// position update.
+world.addSystem(createGravityEcsSystem(time));
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
+world.addSystem(
+  createCollisionResolutionEcsSystem(collisionManifolds, contactConstraints, time),
+);
+world.addSystem(createEulerIntegrationEcsSystem(time));
+```
+
+Add joint (`createRevoluteJointEcsSystem`/`createPrismaticJointEcsSystem`)
+and force-generator (`createLinearSpringEcsSystem`/
+`createLinearDamperEcsSystem`) systems the same way; see
+[Applying Forces](./forces.md), [Prismatic Joints](./joints.md), and
+[Revolute Joints](./revolute-joints.md) for their registration order
+relative to the systems above.
 
 ## Mapping collisions back to entities
 
-After each step (handled for you by `createPhysicsSyncEcsSystem`),
-`collisionStarts`/`collisionEnds`
-list the body pairs that started or stopped touching. Since
-`createPhysicsSyncEcsSystem` sets `body.userData` to the entity id, you can
-recover the ECS entities involved:
+Because everything is ECS-native, there's no separate body object or
+`userData` mapping to bridge: `collisionManifolds` (populated by
+`createNarrowPhaseEcsSystem`) already holds the raw `entityA`/`entityB`
+entity ids for every confirmed collision each tick.
 
 ```ts
-for (const { bodyA, bodyB } of physicsWorld.collisionStarts) {
-  const entityA = bodyA.userData as number;
-  const entityB = bodyB.userData as number;
-
-  // check tags/components on entityA and entityB to award a pickup,
-  // apply damage, play a sound, etc.
+for (const manifold of collisionManifolds) {
+  // check tags/components on manifold.entityA and manifold.entityB to
+  // award a pickup, apply damage, play a sound, etc.
 }
 ```
 
-## Performance: cached bounding boxes and world-space geometry
-
-`RigidBody.aabb` and `PolygonShape.getWorldVertices`/`getWorldNormals` are
-recomputed only when the body's position or angle has changed since the last
-call (compared by value, so mutating `position.x` in place still invalidates
-the cache correctly). Reading them repeatedly within the same frame, as the
-broad- and narrow-phase collision detector does, is essentially free.
-
-:::caution
-The cached result is returned by reference, not copied. Treat the value
-returned from `aabb`, `getWorldVertices`, and `getWorldNormals` as read-only.
-Mutating it in place, for example `body.aabb.origin.x += 1`, corrupts the
-cached value for every later call until the body's position or angle next
-changes.
-:::
+Read `collisionManifolds` after `createCollisionResolutionEcsSystem` has run
+(later in the same tick, or at the start of the next one) if you need it to
+reflect this tick's resolved contacts; the array is cleared and refilled by
+`createNarrowPhaseEcsSystem` every tick, so hold onto anything you need
+before that system runs again.

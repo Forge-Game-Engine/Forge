@@ -5,12 +5,15 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { getRigidBodyInverseMass } from '../rigid-body-inverse-mass.js';
 
 /**
  * A joint constraint's view of one of its two connected entities: its
  * current world position/rotation plus the (inverse) mass/inertia the
- * solver needs. An entity with no `RigidBodyEcsComponent` is treated as
- * static (infinite mass), matching contact resolution's convention.
+ * solver needs. An entity with no `RigidBodyEcsComponent`, or one whose
+ * `RigidBodyEcsComponent.type` is `'static'`/`'kinematic'`, is treated as
+ * having infinite mass, matching contact resolution's convention (see
+ * {@link getRigidBodyInverseMass}).
  */
 export interface JointBody {
   readonly rigidBody: RigidBodyEcsComponent | null;
@@ -42,11 +45,12 @@ export function resolveJointBody(
   }
 
   const rigidBody = world.getComponent(entity, rigidBodyId);
+  const { invMass, invInertia } = getRigidBodyInverseMass(rigidBody);
 
   return {
     rigidBody,
-    invMass: rigidBody ? 1 / rigidBody.mass : 0,
-    invInertia: rigidBody ? 1 / rigidBody.momentOfInertia : 0,
+    invMass,
+    invInertia,
     position: position.world,
     rotation: rotation.world,
   };

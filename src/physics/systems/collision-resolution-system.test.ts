@@ -122,6 +122,34 @@ describe('createCollisionResolutionEcsSystem', () => {
     expect(relativeNormalVelocity).toBeGreaterThan(-1e-3);
   });
 
+  it('should let a kinematic body push a dynamic body without being affected itself', () => {
+    addSystem({ restitutionThreshold: 100 });
+
+    const { entity: platform, rigidBody: platformBody } = addCircleEntity(
+      { x: 0, y: 0 },
+      1,
+      true,
+      { restitution: 0 },
+      { type: 'kinematic' },
+    );
+    const { entity: box, rigidBody: boxBody } = addCircleEntity(
+      { x: 1.5, y: 0 },
+      1,
+      true,
+      { restitution: 0 },
+    );
+
+    platformBody!.velocity = { x: 1, y: 0 };
+    boxBody!.velocity = { x: 0, y: 0 };
+
+    pushManifold(platform, box, { x: 1, y: 0 }, 0.5, { x: 0.75, y: 0 });
+
+    world.update();
+
+    expect(platformBody!.velocity).toEqual({ x: 1, y: 0 });
+    expect(boxBody!.velocity.x).toBeGreaterThan(0);
+  });
+
   it('should apply restitution to a fast, newly-appearing impact', () => {
     addSystem();
 

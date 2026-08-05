@@ -12,6 +12,7 @@ import {
 } from '../components/rigidbody-component.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
+import { getRigidBodyInverseMass } from '../rigid-body-inverse-mass.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
@@ -243,8 +244,9 @@ function buildContactConstraints(
 /**
  * Looks up the current tick's bodies for a contact constraint, computing
  * the (inverse) mass/inertia and contact-point offsets the solver needs. An
- * entity with no `RigidBodyEcsComponent` is treated as having infinite mass
- * (static geometry).
+ * entity with no `RigidBodyEcsComponent`, or one whose
+ * `RigidBodyEcsComponent.type` is `'static'`/`'kinematic'`, is treated as
+ * having infinite mass (see {@link getRigidBodyInverseMass}).
  */
 function prepareContact(
   world: EcsWorld,
@@ -260,10 +262,10 @@ function prepareContact(
   const rigidBodyA = world.getComponent(constraint.entityA, rigidBodyId);
   const rigidBodyB = world.getComponent(constraint.entityB, rigidBodyId);
 
-  const invMassA = rigidBodyA ? 1 / rigidBodyA.mass : 0;
-  const invMassB = rigidBodyB ? 1 / rigidBodyB.mass : 0;
-  const invInertiaA = rigidBodyA ? 1 / rigidBodyA.momentOfInertia : 0;
-  const invInertiaB = rigidBodyB ? 1 / rigidBodyB.momentOfInertia : 0;
+  const { invMass: invMassA, invInertia: invInertiaA } =
+    getRigidBodyInverseMass(rigidBodyA);
+  const { invMass: invMassB, invInertia: invInertiaB } =
+    getRigidBodyInverseMass(rigidBodyB);
 
   // Clone before subtracting: `constraint.point` is used for both `rA` and
   // `rB` here, and `positionA.world`/`positionB.world` are the entities'

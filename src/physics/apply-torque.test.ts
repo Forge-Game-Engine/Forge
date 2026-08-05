@@ -11,6 +11,7 @@ describe('applyTorque', () => {
       velocity: Vec2.zero,
       angularVelocity: 0,
       angularDrag: 0,
+      type: 'dynamic',
     };
 
     applyTorque(4, 0.5, rigidBody);
@@ -25,10 +26,29 @@ describe('applyTorque', () => {
       velocity: Vec2.zero,
       angularVelocity: 2,
       angularDrag: 0,
+      type: 'dynamic',
     };
 
     applyTorque(-1, 1, rigidBody);
 
     expect(rigidBody.angularVelocity).toBeCloseTo(1);
   });
+
+  it.each(['static', 'kinematic'] as const)(
+    'should not change angularVelocity for a %s body',
+    (type) => {
+      const rigidBody: RigidBodyEcsComponent = {
+        mass: 1,
+        momentOfInertia: 2,
+        velocity: Vec2.zero,
+        angularVelocity: 0,
+        angularDrag: 0,
+        type,
+      };
+
+      applyTorque(4, 0.5, rigidBody);
+
+      expect(rigidBody.angularVelocity).toBe(0);
+    },
+  );
 });
