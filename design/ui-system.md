@@ -1,11 +1,11 @@
 # Design: Forge UI System
 
-|                                       |                                                                                             |
-| ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft — for review                                                                          |
-| **Target module**                     | `/src/ui` → `@forge-game-engine/forge/ui`                                                   |
-| **Engine version at time of writing** | `0.24.2`                                                                                    |
-| **Model**                             | Unity uGUI (Canvas / RectTransform / Graphic / EventSystem) — _not_ IMGUI, _not_ UI Toolkit |
+|                                       |                                                                                                                                           |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft — for review                                                                                                                        |
+| **Target module**                     | `/src/ui` → `@forge-game-engine/forge/ui`                                                                                                 |
+| **Engine version at time of writing** | `0.24.2`                                                                                                                                  |
+| **Model**                             | Retained **anchored rect tree** (canvas → rect transforms → graphics + event routing) — _not_ immediate-mode, _not_ markup-and-stylesheet |
 
 ---
 
@@ -16,17 +16,22 @@ menus, and buttons out of raw sprite entities and manual world-space math, or
 overlay DOM on top of the canvas and give up on gamepad navigation, in-world
 diegetic UI, and post-processing interaction.
 
-This document proposes a **retained-mode, ECS-native UI system modelled on Unity's
-uGUI**: a hierarchy of rectangle-shaped elements, anchored and pivoted against
-their parent's rectangle, resolved once per frame by a layout pass, drawn through
-the existing instanced sprite pipeline, and hit-tested by a raycaster that feeds a
-pointer event state machine.
+This document proposes a **retained-mode, ECS-native UI system built on an
+_anchored rect tree_**: a hierarchy of rectangle-shaped elements, each anchored
+and pivoted against its parent's rectangle, resolved once per frame by a layout
+pass, drawn through the existing instanced sprite pipeline, and hit-tested by a
+raycaster that feeds a pointer event state machine.
+
+"Anchored rect tree" is the term this document uses throughout for that model.
+It is deliberately descriptive rather than borrowed: the same approach appears in
+Unity's uGUI, Godot's `Control` nodes, and Flash's display list, but Forge should
+name it for what it does rather than adopt another engine's product name.
 
 The headline finding from the codebase survey: **the UI work is mostly not UI
 work.** Roughly half the critical path is two prerequisites Forge is missing
-outright — **text rendering** and a **canvas-space pointer**. The uGUI-shaped
-parts (rect layout, anchors, buttons, layout groups) sit comfortably on top of
-what already exists and are individually small.
+outright — **text rendering** and a **canvas-space pointer**. The rect-tree parts
+(rect layout, anchors, buttons, layout groups) sit comfortably on top of what
+already exists and are individually small.
 
 ---
 
@@ -51,10 +56,10 @@ what already exists and are individually small.
 
 ### Non-goals
 
-- **No immediate-mode API.** No `if (ui.button('Play')) { ... }`. That is the
-  IMGUI model and is explicitly out.
-- **No markup/stylesheet authoring language.** No UXML, no USS. That is the UI
-  Toolkit model and is explicitly out. Layout is expressed in TypeScript.
+- **No immediate-mode API.** No `if (ui.button('Play')) { ... }`. The
+  immediate-mode model is explicitly out.
+- **No markup or stylesheet authoring language.** No XML-ish layout files, no
+  CSS-ish style sheets, no parser. Layout is expressed in TypeScript.
 - **No visual editor.** The engine is code-only by design. A future editor may
   read and write this system, but is out of scope here.
 - **No rich-text document layout.** Single-font, single-style runs per text
@@ -65,32 +70,50 @@ what already exists and are individually small.
 
 ---
 
-## 3. Why uGUI is the right model here
+## 3. Why an anchored rect tree is the right model here
 
-The three models differ in where they put the source of truth for the UI tree.
+The three candidate models differ in where they put the source of truth for the
+UI tree.
 
-|                | Source of truth                                                                            | Fit for Forge                                                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| **IMGUI**      | Reconstructed every frame from call order                                                  | Poor. Fights ECS — there is no entity to attach an animation, a tween, or a physics-driven wobble to. Debug tooling only.      |
-| **UI Toolkit** | A retained tree defined in markup + stylesheets, with its own layout engine (Yoga/flexbox) | Poor. Requires an asset pipeline, a stylesheet language, and a parser before a single button renders. Contradicts "code-only". |
-| **uGUI**       | A retained tree of transform nodes carrying components                                     | **Strong.** A transform node carrying components _is_ an ECS entity. The model translates almost 1:1.                          |
+|                         | Source of truth                                                                           | Prior art                          | Fit for Forge                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Immediate mode**      | Reconstructed every frame from call order                                                 | Dear ImGui, Unity IMGUI            | Poor. Fights ECS — there is no entity to attach an animation, a tween, or a physics-driven wobble to. Debug tooling only.      |
+| **Markup + stylesheet** | A retained tree authored in markup and styled by stylesheets, with a flexbox-style solver | The web DOM, Unity UI Toolkit      | Poor. Requires an asset pipeline, a stylesheet language, and a parser before a single button renders. Contradicts "code-only". |
+| **Anchored rect tree**  | A retained tree of rect nodes carrying components                                         | Unity uGUI, Godot `Control`, Flash | **Strong.** A rect node carrying components _is_ an ECS entity. The model translates almost 1:1.                               |
 
-uGUI's specific virtues for this codebase:
+The anchored rect tree's specific virtues for this codebase:
 
 - **The anchor/pivot model is the whole responsive story.** Two normalized
   vectors per element (`anchorMin`, `anchorMax`) express pin-to-corner,
   stretch-horizontally, stretch-both, and center — no layout algorithm required.
   Layout _groups_ are then an optional convenience on top, not the foundation.
-- **It degrades to "just sprites".** A uGUI `Image` is a textured quad with a
-  tint and an optional nine-slice. Forge's `SpriteEcsComponent` is already
+- **It degrades to "just sprites".** A rect-tree image element is a textured quad
+  with a tint and an optional nine-slice. Forge's `SpriteEcsComponent` is already
   exactly that, nine-slice included (`src/rendering/nine-slice-options.ts`).
-- **Hierarchy order is draw order**, which is trivially explainable and needs no
-  z-index bookkeeping.
+- **It admits a single, explainable ordering rule** — draw in hierarchy
+  pre-order — without any z-index bookkeeping by the caller. This is a property
+  of the model, not of Forge today; see the note below.
 
-The one part of uGUI worth _not_ copying is its component-coupling ergonomics —
-`GetComponent<Graphic>()` chains, the `ICanvasElement` rebuild registry, and the
-`Selectable` inheritance tree. Those are consequences of Unity's OO component
-model. In ECS they become queries and plain data.
+**Ordering, precisely.** Draw order in Forge is currently a chain, not a single
+rule. A sprite is drawn only if its `Renderable.category` passes the camera's
+`cullingMask`; cameras are composited by `CameraEcsComponent.layer` across
+distinct render targets and in query order within one destination; and within a
+camera, commands sort by `SpriteEcsComponent.layer` and then by `depth`, which
+`render-system.ts` derives from `position.world.y`.
+
+So "hierarchy order is draw order" is **a property this design has to build, not
+one it inherits**, and even then it holds only _within_ a single UI canvas and a
+single sprite layer — the surrounding camera and culling-mask rules still apply
+and are what keep the UI pass separate from the world pass in the first place.
+DL-06 is the mechanism: the layout pass writes each element's hierarchy pre-order
+index into a `DepthEcsComponent`, which the render system prefers over world Y
+when present.
+
+The part of Unity's uGUI implementation worth _not_ copying is its
+component-coupling ergonomics — `GetComponent<Graphic>()` chains, the
+`ICanvasElement` rebuild registry, and the `Selectable` inheritance tree. Those
+are consequences of an OO component model. In ECS they become queries and plain
+data.
 
 ---
 
@@ -203,7 +226,7 @@ code. `CanvasScaler`'s three Unity modes fall out as:
 - _Constant pixel size_ → `verticalWorldUnits = renderContext.height`
 
 **Gotcha to document loudly:** `SpriteEcsComponent.pivot` is Y-**down**
-(`(0,0)` is top-left, per its JSDoc), while a uGUI `RectTransform.pivot` is
+(`(0,0)` is top-left, per its JSDoc), while `RectTransformEcsComponent.pivot` is
 Y-**up** (`(0,0)` is bottom-left). The bridge must write
 `sprite.pivot.y = 1 - rectTransform.pivot.y`. Getting this wrong produces UI that
 looks correct until an element is anchored to an edge.
@@ -282,7 +305,7 @@ tint appears on the same frame as the press.
 ### 5.5 RectTransform resolution
 
 The core of the layout pass, per element, given the parent's already-resolved
-rect. This is uGUI's exact formulation:
+rect. This is the standard anchored-rect formulation:
 
 ```
 anchorRectMin  = parentRect.min + anchorMin * parentRect.size
@@ -521,8 +544,8 @@ correctness requirement into the order the game happens to create entities.
 
 **Decision: (a).**
 
-**Rationale.** A uGUI `Image` is a tinted, optionally nine-sliced, optionally
-atlased quad. That is `SpriteEcsComponent`, feature for feature, today. Reusing it
+**Rationale.** A rect-tree image element is a tinted, optionally nine-sliced,
+optionally atlased quad. That is `SpriteEcsComponent`, feature for feature, today. Reusing it
 means UI inherits batching, culling masks, sprite animation, and nine-slice with
 no new code, and means a sprite can be moved between world and UI by reparenting
 it. (b) would duplicate the entire instance-data and batching pipeline for no new
@@ -630,7 +653,7 @@ const depth =
 ```
 
 The layout system writes each element's hierarchy pre-order index into it, so
-draw order is hierarchy order — the uGUI rule. World sprites are untouched.
+draw order is hierarchy order within a canvas. World sprites are untouched.
 
 **Consequences.** One extra component lookup per sprite per camera in the render
 loop. If that shows up in the stress-test demo, hoist it to a batched
@@ -682,7 +705,8 @@ would force a render-target readback and a pipeline stall.
 ### DL-09 — Clipping is per-instance shader rect clipping
 
 **Options.** (a) `gl.scissor`. (b) Stencil buffer. (c) A clip rect passed as
-per-instance data, `discard`ed in the fragment shader (uGUI's `RectMask2D`).
+per-instance data, `discard`ed in the fragment shader (the approach Unity's
+`RectMask2D` takes).
 
 **Decision: (c).**
 
@@ -857,7 +881,7 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Text is a subsystem, not a feature.** Phase 0 is over half the effort and delivers nothing visibly "UI".                                            | Certain    | High   | Frame and ship `/src/text` as its own release. It has standalone value (damage numbers, dialogue, debug overlays) before any UI exists.                                                                                                  |
 | **The sub-quad refactor (0.6) destabilizes the renderer.** It touches a hot path with existing tests and eight physics demos depending on nine-slice. | Medium     | High   | Land it as a pure refactor with zero behavior change first, verified by the existing nine-slice demo and e2e suite, _then_ add text on top. Fallback in DL-05.                                                                           |
-| **uGUI is enormous.** Unity has spent a decade on it. Scope creep is the default outcome.                                                             | High       | Medium | Phases 0–2 are the product. Phases 3–5 are a menu, prioritized by what the demos actually need. Ship Phase 2 before starting Phase 3.                                                                                                    |
+| **The model is enormous.** Mature implementations represent many years of engineering. Scope creep is the default outcome.                            | High       | Medium | Phases 0–2 are the product. Phases 3–5 are a menu, prioritized by what the demos actually need. Ship Phase 2 before starting Phase 3.                                                                                                    |
 | **Y-axis confusion** between Y-up world, Y-down sprite pivots, and Y-down canvas pixels.                                                              | High       | Medium | One documented conversion table (§5.2), conversions confined to two named functions, and an e2e test that asserts a corner-anchored element renders in the correct screen corner — the assertion that actually catches an inverted axis. |
 | **Layout↔transform ordering** is implicit and silently produces one-frame lag if reversed.                                                            | Medium     | Medium | Assert ordering in `createUiCanvas`, and add a unit test that registers the systems in the wrong order and asserts it throws.                                                                                                            |
 | **Per-frame full recompute** may not scale to large UIs.                                                                                              | Low        | Low    | (DL-12). The `isStatic` freeze pattern is already proven in `transform-system.ts`.                                                                                                                                                       |
@@ -865,7 +889,8 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ### The tradeoff worth stating plainly
 
-Choosing uGUI over UI Toolkit trades **layout expressiveness** for
+Choosing an anchored rect tree over a markup-and-stylesheet model trades
+**layout expressiveness** for
 **implementability**. Flexbox handles "three buttons, evenly spaced, wrapping when
 narrow" more gracefully than anchors do. Anchors handle "health bar pinned to the
 top-left, 24px inset" more directly, need no layout solver, and are far easier to
