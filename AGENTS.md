@@ -16,6 +16,7 @@ Human contributors: see [CONTRIBUTING.md](./CONTRIBUTING.md) for a shorter, huma
 - [Testing](#testing)
 - [Documentation Site Demos](#documentation-site-demos)
 - [Documentation Site Blog](#documentation-site-blog)
+- [Browser Playground](#browser-playground)
 - [Common Patterns](#common-patterns)
 - [Security Considerations](#security-considerations)
 
@@ -59,6 +60,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 
 /demo                      # Demo application
 /documentation-site        # Docusaurus documentation
+/playground                # Browser-only IDE for writing/exporting a Forge game
 /scripts                   # Build and utility scripts
 /assets                    # Static assets (images, etc.)
 ```
@@ -604,6 +606,42 @@ Conventions:
 - A new post should be verified with `npm run build` (from
   `documentation-site/`) to catch broken links/MDX errors, the same way a
   demo change is per the "Documentation Site Demos" section above.
+
+## Browser Playground
+
+`/playground` is a standalone, browser-only IDE (Vite + Monaco +
+`@typescript/vfs` + esbuild-wasm, no React, no backend) for writing a small
+single-file Forge game and downloading it as a self-contained `index.html`
++ `game.js` zip. It's a separate npm project (its own `package.json`,
+`node_modules`, `tsconfig.json`), the same pattern as `documentation-site`,
+so it isn't covered by the root `npm run check-types`/`lint`/`test`
+commands - verify it independently with `npm run typecheck` from
+`playground/`.
+
+Like the documentation site's demos, it depends on
+`@forge-game-engine/forge` via a `file:..` link resolved through this
+repo's `package.json` `exports`, which point at `/dist`. Two registries in
+`playground/src/forge-registry.ts` snapshot `/dist` (both its compiled JS
+and its `.d.ts` files) into the playground's own app bundle at dev/build
+time via Vite's `import.meta.glob`, and derive the set of valid
+`@forge-game-engine/forge/<subpath>` import specifiers directly from the
+root `package.json`'s `exports` map rather than hardcoding them. This means:
+
+- `npm run build` must be run at the repo root first (and again after any
+  `/src` change) before `playground/`'s dev server or build will reflect
+  it, the same gotcha as the documentation site's demos.
+- The esbuild-wasm plugin (`playground/src/build/forge-esbuild-plugin.ts`)
+  resolves a game's `@forge-game-engine/forge/<subpath>` imports - plus
+  Forge's own internal relative imports and its one runtime dependency
+  (`seedrandom`) - against that embedded snapshot, so Forge is inlined into
+  the downloaded `game.js` rather than referenced externally.
+- Monaco's extra libs (`playground/src/editor/forge-types.ts`) and the
+  `@typescript/vfs` pre-build type-check environment
+  (`playground/src/editor/type-check.ts`) both register the same `.d.ts`
+  snapshot, plus a tiny re-export shim per subpath (e.g. `fsm` ->
+  `finite-state-machine`) so `@forge-game-engine/forge/<subpath>` resolves
+  under classic Node module resolution even where the public subpath name
+  doesn't match Forge's internal dist folder name.
 
 ## Common Patterns
 
