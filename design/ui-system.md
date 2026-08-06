@@ -789,6 +789,52 @@ not scale its children's offsets.
 approach and it silently half-works. _Match width_ mode needs a small per-frame
 recompute of `verticalWorldUnits` from the live aspect ratio.
 
+#### Does this decision survive the transform fix ([#581](https://github.com/Forge-Game-Engine/Forge/issues/581))?
+
+**Yes — the decision stands, and for reasons that never depended on the bug.**
+Worth being precise about what #581 does and does not change, because the
+composition rules differ per channel and only one of them is wrong:
+
+| Channel  | Composition today                           | Correct?                                                                                            |
+| -------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Rotation | `parent.world + local` — **additive**       | ✅ correct; adding angles is what nesting rotations means                                           |
+| Scale    | `parent.world * local` — **multiplicative** | ✅ correct; a 2x parent with a 3x child is 6x                                                       |
+| Position | `parent.world + local` — **additive**       | ❌ incomplete — the local offset is added raw, without first being scaled and rotated by the parent |
+
+So #581 is not "make scale and rotation additive like position". Those two are
+already right. The fix is to make position's composition _account for_ the
+parent's already-correct rotation and scale:
+
+```
+world.position = parent.world.position
+               + rotate(local.position * parent.world.scale, parent.world.rotation)
+```
+
+Once that lands, option (b) stops being broken — a scaled canvas root _would_
+correctly scale its children's offsets, and sprite sizes already scale
+(`bindSpriteInstanceData` multiplies by `scale.world`). But (b) still loses, on
+the arguments that were always the real ones:
+
+- **Cost.** (a) changes one number on one camera and the projection matrix does
+  the rest. (b) dirties `position.world` and `scale.world` for **every** UI
+  entity on every resize.
+- **One coordinate space.** With (a), `rect` values stay in reference pixels no
+  matter the screen size, so layout math, hit testing, and anything reading a
+  rect all speak one language. With (b), rects live in a screen-dependent scaled
+  space, or you maintain both and every consumer has to know which it holds.
+- **It collides with `isStatic`** (DL-12). A subtree frozen at one scale is
+  simply wrong after a resize, so the freeze optimization would have to be
+  invalidated on every resize — exactly the dirty-tracking complexity DL-12
+  avoids.
+- **It collides with per-element scale.** An author scaling a button 1.1x for a
+  press animation would be multiplying against a screen-dependent base, so the
+  same "pop" reads differently at 720p and 4K.
+
+The honest correction to the original text: leaning on "(b) is broken" as the
+headline argument was lazy, since that is the one objection with an expiry date.
+The cost and single-coordinate-space arguments are the load-bearing ones and
+hold either way.
+
 ---
 
 ### DL-04 — Text uses MSDF atlases, in a sibling `/src/text` module
