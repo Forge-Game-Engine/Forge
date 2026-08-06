@@ -139,7 +139,7 @@ data.
 | ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **No text rendering of any kind**                            | **Blocking** | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                                                                                                                                                                                                                                                   |
 | **No canvas-space pointer**                                  | **Blocking** | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now".                                                                                                                                                                                                                                               |
-| **No touch input source**                                    | High         | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. There is no `TouchInputSource`.                                                                                                                                                                                                                                                               |
+| **No touch input source**                                    | Out of scope | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. There is no `TouchInputSource`. Touch is explicitly **out of scope for this design**; the documentation inaccuracy is tracked in [#582](https://github.com/Forge-Game-Engine/Forge/issues/582).                                                                                               |
 | **Draw order is world Y**                                    | High         | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is actively wrong: a label near the top of a panel would draw _behind_ the panel.                                                                                                                                                                                                                                                         |
 | **`DepthEcsComponent` is dead code**                         | Opportunity  | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing**. It is the exact shape needed to fix the line above.                                                                                                                                                                                                                                                                   |
 | **Parented position offsets ignore parent rotation/scale**   | **Bug**      | `transform-system.ts`'s `composeWithParent` inherits rotation (additively) and scale (multiplicatively) correctly, but composes position as `parent.world + local` — the child's offset is never rotated or scaled by the parent's world transform. A child of a rotating parent spins in place instead of orbiting it. Tracked in [#581](https://github.com/Forge-Game-Engine/Forge/issues/581); see the note below. |
@@ -715,10 +715,17 @@ UI works at all. (c) puts a second event listener set on the canvas, racing the
 input module's.
 
 **Consequences.** This is where the **stale `getBoundingClientRect`** bug
-(§4.2) gets fixed, and where a `TouchInputSource` should land so pointer state is
-unified across mouse and touch from day one. Both are prerequisites, not
-nice-to-haves: mobile UI is unusable without touch, and hit testing is wrong after
-any resize without the rect fix.
+(§4.2) gets fixed. That one is a genuine prerequisite — hit testing is wrong
+after any resize without it.
+
+**Touch is out of scope for this design.** `PointerStateEcsComponent` is
+therefore specified as a _source-agnostic_ pointer — position, buttons, delta,
+scroll — written by `MouseInputSource` today. That shape is deliberate: if a
+`TouchInputSource` is added later it becomes another writer of the same
+component and every UI system above it keeps working unchanged. Nothing in this
+design needs to be revisited to add touch; until then, the UI is
+mouse-and-gamepad only, which should be stated plainly in its docs rather than
+left implied.
 
 ---
 
@@ -833,7 +840,6 @@ Items on the critical path are marked ⛓.
 | #     | Item                                                                     | Size | Notes                                                                                                           |
 | ----- | ------------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------------------------------------------- |
 | 0.1 ⛓ | `PointerStateEcsComponent` + `createPointerEcsSystem` in `/src/input`    | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
-| 0.2 ⛓ | `TouchInputSource`                                                       | M    | Unified pointer across mouse + touch. Closes the gap between `AGENTS.md`'s claim and reality.                   |
 | 0.3 ⛓ | `FontAtlas` type + `loadFontAtlas` in `/src/asset-loading`               | M    | msdf-atlas-gen JSON + PNG. Glyph UVs, advances, kerning, `distanceRange`. (DL-04)                               |
 | 0.4 ⛓ | MSDF fragment shader + `createMsdfTextRenderable`                        | S    | Median-of-3 + `smoothstep`, screen-space-derivative antialiasing.                                               |
 | 0.5 ⛓ | `TextEcsComponent`, `TextMeshEcsComponent`, `createTextShapingEcsSystem` | L    | Shaping, word wrap, alignment, line spacing, kerning, dirty tracking.                                           |
@@ -842,6 +848,12 @@ Items on the critical path are marked ⛓.
 | 0.8   | Verify UI-camera compositing order via a dedicated render target         | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
 | 0.9   | Ship a default MSDF atlas + document the generation recipe               | S    | Zero-setup `createLabel`.                                                                                       |
 | 0.10  | `Rect2` plain-object type + static helpers                               | S    | (DL-11)                                                                                                         |
+
+Item 0.2 was a `TouchInputSource`. It has been **removed as out of scope** —
+numbering is left with the gap rather than renumbered so the decision stays
+visible. Item 0.1's `PointerStateEcsComponent` is specified source-agnostically
+so touch can be added later as another writer without revisiting this design
+(see DL-07).
 
 **Phase 0 exit criterion:** `createLabel(world, 'Hello')` renders crisp,
 correctly-kerned, batched text in the world, and `pointerState.position` is
