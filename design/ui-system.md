@@ -49,10 +49,10 @@ the largest external dependency on this plan.
 
 - **Retained-mode.** Elements are entities that persist across frames. Game code
   mutates them; it does not re-describe the UI every frame.
-- **Composable via ECS.** A button is not a class. It is an entity with a
-  `RectTransformEcsComponent`, a `SpriteEcsComponent`, a
-  `UiInteractableEcsComponent`, and a `ButtonEcsComponent`. Drop any one and you
-  get a coherent, less capable thing.
+- **Composable via ECS.** A button is not a class, and not even a component. It
+  is an entity with a `RectTransformEcsComponent`, a `SpriteEcsComponent`, a
+  `UiInteractableEcsComponent`, and a child label. Drop any one and you get a
+  coherent, less capable thing. (DL-13)
 - **Resolution-independent.** Author against a reference resolution; the same UI
   reads correctly at 720p and 4K, and at any aspect ratio.
 - **Reuses the existing renderer.** UI graphics are sprites. They batch with,
@@ -207,8 +207,6 @@ src/ui/
     canvas-component.ts             CanvasEcsComponent, addCanvasComponent
     rect-transform-component.ts     RectTransformEcsComponent
     ui-interactable-component.ts    UiInteractableEcsComponent
-    ui-pointer-state-component.ts   UiPointerStateEcsComponent
-    button-component.ts             ButtonEcsComponent
     toggle-component.ts             ToggleEcsComponent
     slider-component.ts             SliderEcsComponent
     scroll-rect-component.ts        ScrollRectEcsComponent
@@ -272,11 +270,13 @@ code. `CanvasScaler`'s three Unity modes fall out as:
   live aspect ratio each frame
 - _Constant pixel size_ → `verticalWorldUnits = renderContext.height`
 
-**Gotcha to document loudly:** `SpriteEcsComponent.pivot` is Y-**down**
-(`(0,0)` is top-left, per its JSDoc), while `RectTransformEcsComponent.pivot` is
-Y-**up** (`(0,0)` is bottom-left). The bridge must write
-`sprite.pivot.y = 1 - rectTransform.pivot.y`. Getting this wrong produces UI that
-looks correct until an element is anchored to an edge.
+**Gotcha, pending [#585](https://github.com/Forge-Game-Engine/Forge/issues/585):**
+`SpriteEcsComponent.pivot` is currently Y-**down** (`(0,0)` is top-left), while
+`RectTransformEcsComponent.pivot` is Y-**up** (`(0,0)` is bottom-left) like the
+rest of the engine. Until #585 lands, the bridge must write
+`sprite.pivot.y = 1 - rectTransform.pivot.y`; once it lands, that line should be
+**deleted** rather than kept as a compensating error. Getting this wrong produces
+UI that looks correct until an element is anchored to an edge.
 
 ### 5.3 Anatomy of a button
 
@@ -293,9 +293,9 @@ flowchart TD
         B2["RectTransformEcsComponent<br/>anchor: center, size: 240 x 64"]
         B3["PositionEcsComponent"]
         B4["SpriteEcsComponent<br/>nine-sliced panel, tinted"]
-        B5["UiInteractableEcsComponent"]
-        B6["UiPointerStateEcsComponent<br/><i>written by the raycaster</i>"]
-        B7["ButtonEcsComponent<br/>onClick: ParameterizedForgeEvent"]
+        B5["UiInteractableEcsComponent<br/>blocksRaycasts, interactable,<br/>onClick / onPointerEnter / …"]
+        B6["<i>hover/press/drag state lives on<br/>the interactable, written by<br/>the raycaster</i>"]
+        B7["<i>(no ButtonEcsComponent —<br/>onClick lives on interactable)</i>"]
         B8["UiColorTransitionEcsComponent<br/>normal / hover / pressed / disabled"]
     end
 
@@ -311,7 +311,8 @@ flowchart TD
 ```
 
 Every one of those components is independently useful. `UiInteractableEcsComponent`
-without `ButtonEcsComponent` gives you a hoverable region. `RectTransformEcsComponent`
+without a transition component gives you a clickable region with no visual
+feedback. `RectTransformEcsComponent`
 without `SpriteEcsComponent` gives you an invisible layout container. This is the
 payoff of not modelling `Button` as a class.
 
@@ -455,15 +456,16 @@ already exist in this codebase:
 
 ```typescript
 // Polled — ECS-idiomatic, trivially unit-testable, no listener lifetime concerns.
-const pointerState = world.getComponent(buttonEntity, uiPointerStateId);
+const interactable = world.getComponent(buttonEntity, uiInteractableId);
 
-if (pointerState?.wasClickedThisFrame) {
+if (interactable?.wasClickedThisFrame) {
   startGame();
 }
 
-// Evented — matches ForgeEvent usage elsewhere in the engine.
-const button = addButtonComponent(world, buttonEntity);
-button.onClick.registerListener(startGame);
+// Evented — matches ForgeEvent usage elsewhere in the engine. `onClick` lives
+// on the interactable, so *anything* clickable has it, not just buttons.
+const interactable = addUiInteractableComponent(world, buttonEntity);
+interactable.onClick.registerListener(startGame);
 ```
 
 `isPointerOverUi` is published once per frame on the canvas so game systems can
@@ -744,7 +746,7 @@ public API that nothing reads.
 
 ### DL-07 — A canvas-space pointer belongs in `/src/input`, not `/src/ui`
 
-**Options.** (a) Add `PointerStateEcsComponent` + `createPointerEcsSystem` to
+**Options.** (a) Add `PointerEcsComponent` + `createPointerEcsSystem` to
 `/src/input`. (b) Have the UI raycaster read an `Axis2dAction` the consumer wires
 up. (c) Read `MouseEvent`s directly inside the UI module.
 
@@ -760,7 +762,7 @@ input module's.
 (§4.2) gets fixed. That one is a genuine prerequisite — hit testing is wrong
 after any resize without it.
 
-**Touch is out of scope for this design.** `PointerStateEcsComponent` is
+**Touch is out of scope for this design.** `PointerEcsComponent` is
 therefore specified as a _source-agnostic_ pointer — position, buttons, delta,
 scroll — written by `MouseInputSource` today. That shape is deliberate: if a
 `TouchInputSource` is added later it becomes another writer of the same
@@ -885,6 +887,54 @@ frame is genuinely expensive.
 
 ---
 
+### DL-13 — Interaction events and state both live on `UiInteractableEcsComponent`; there is no `ButtonEcsComponent`
+
+**Options.** (a) `onClick` on a `ButtonEcsComponent`, with interaction state in a
+separate `UiPointerStateEcsComponent`. (b) Events and state both on
+`UiInteractableEcsComponent`; a button is an aggregate factory, not a component.
+(c) Events on interactable, state kept in its own component.
+
+**Decision: (b).** _(Changed from (a) during review.)_
+
+**Rationale.**
+
+_Why events move off the button._ Buttons are not the only clickable things.
+Toggles, sliders, scrollbar thumbs, list rows, inventory slots, cards, and close
+icons all want `onClick` and the pointer-enter/exit pair. Hanging the event
+surface off `ButtonEcsComponent` forces every one of those to also claim to be a
+button, or to duplicate the events. The component that says "this rect
+participates in pointer input" is `UiInteractableEcsComponent`, and that is the
+component the events belong to.
+
+_Why `ButtonEcsComponent` then disappears._ Once interactable owns the events,
+visual feedback belongs to a transition component, and focus belongs to
+`UiFocusEcsComponent`, nothing is left for a button component to hold. A button
+is fully described by interactable + transitions + a child label, so it becomes
+`createButton`, an aggregate factory in the mould of `createCamera` — the
+existing precedent in this codebase for "an entity that is always assembled the
+same way".
+
+_Why the state component disappears too._ Splitting author-set config from
+system-written state into two components looked tidy but had no independent
+reason to exist: nothing ever wants the interaction state without the
+interactable, or vice versa. The `State` suffix was the tell — every component
+is state, so a name needing that word usually marks a component carved out along
+the wrong seam. The codebase already keeps both in one component where they
+belong together: `PositionEcsComponent` holds author-set `local` beside
+system-written `world`, and `RectTransformEcsComponent` does the same with its
+resolved `rect`. Interaction state is `world` to the interactable's `local`.
+
+**Consequences.** One component instead of three, one query in the raycaster
+instead of two, and one place a reader has to look. Fields written by
+`createUiInteractionEcsSystem` (`isHovered`, `isPressed`, `isDragging`,
+`wasClickedThisFrame`) are documented as system-owned and read-only to callers,
+the same convention `PositionEcsComponent.world` already uses.
+
+For the same reason, `/src/input`'s pointer component is `PointerEcsComponent`,
+not `PointerStateEcsComponent`.
+
+---
+
 ## 8. Feature backlog
 
 Sizes: **S** ≈ 1–2 days, **M** ≈ 3–5 days, **L** ≈ 1–2 weeks, **XL** ≈ 2 weeks+.
@@ -894,7 +944,7 @@ Items on the critical path are marked ⛓.
 
 | #     | Item                                                                        | Size | Notes                                                                                                           |
 | ----- | --------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------- |
-| 0.1 ⛓ | `PointerStateEcsComponent` + `createPointerEcsSystem` in `/src/input`       | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
+| 0.1 ⛓ | `PointerEcsComponent` + `createPointerEcsSystem` in `/src/input`            | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
 | 0.2 ⛓ | `Rect2` plain-object type + static helpers                                  | S    | (DL-11) Foundational — every element in this design is a rect.                                                  |
 | 0.3   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
 | 0.4   | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.3 lands. (DL-06)                                                       |
@@ -914,7 +964,7 @@ Removing text also removed the plan's highest-risk item — the sub-quad expansi
 refactor of `render-system.ts` — from the UI critical path. It now sits with the
 work that actually needs it.
 
-**Phase 0 exit criterion:** `pointerState.position` is correct in canvas pixels
+**Phase 0 exit criterion:** `pointer.position` is correct in canvas pixels
 after a window resize, `Rect2` is available, and a sprite with an explicit
 `sortDepth` draws in that order rather than by world Y.
 
@@ -936,14 +986,14 @@ ratio changes.
 
 ### Phase 2 — Interaction
 
-| #     | Item                                                        | Size | Notes                                                                          |
-| ----- | ----------------------------------------------------------- | ---- | ------------------------------------------------------------------------------ |
-| 2.1 ⛓ | `UiInteractableEcsComponent` + `UiPointerStateEcsComponent` | S    | `blocksRaycasts`, `interactable`, hover/press/click/drag state.                |
-| 2.2 ⛓ | `createUiRaycastEcsSystem`                                  | M    | Reverse-depth scan, first hit wins, publishes `isPointerOverUi`. (DL-08)       |
-| 2.3 ⛓ | `createUiInteractionEcsSystem`                              | M    | The §5.7 state machine; polled state + `ForgeEvent`s.                          |
-| 2.4   | `ButtonEcsComponent` + `createButton`                       | S    | `onClick`, disabled state.                                                     |
-| 2.5   | `createUiTransitionEcsSystem`                               | S    | Color tint / sprite swap / scale per state, via the existing easing functions. |
-| 2.6   | Input-group interop docs                                    | S    | The "UI is open, pause the game" and "click landed on UI" patterns.            |
+| #     | Item                                                                         | Size | Notes                                                                                                                             |
+| ----- | ---------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1 ⛓ | `UiInteractableEcsComponent` — config, events, and current interaction state | S    | `blocksRaycasts`, `interactable`, the full pointer event set, `isHovered`/`isPressed`/`isDragging`/`wasClickedThisFrame`. (DL-13) |
+| 2.2 ⛓ | `createUiRaycastEcsSystem`                                                   | M    | Reverse-depth scan, first hit wins, publishes `isPointerOverUi`. (DL-08)                                                          |
+| 2.3 ⛓ | `createUiInteractionEcsSystem`                                               | M    | The §5.7 state machine; polled state + `ForgeEvent`s.                                                                             |
+| 2.4   | `createButton` aggregate factory                                             | S    | Assembles interactable + transitions + label. No `ButtonEcsComponent`. (DL-13)                                                    |
+| 2.5   | `createUiTransitionEcsSystem`                                                | S    | Color tint / sprite swap / scale per state, via the existing easing functions.                                                    |
+| 2.6   | Input-group interop docs                                                     | S    | The "UI is open, pause the game" and "click landed on UI" patterns.                                                               |
 
 **Phase 2 exit criterion:** A main menu with hoverable, clickable, keyboard-
 focusable buttons, where clicking a button does not also fire the player's weapon.
