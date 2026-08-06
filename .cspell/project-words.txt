@@ -24,6 +24,7 @@ eamodio
 Erdokovy
 esbenp
 Fira
+fflate
 Flaticon
 fphysics
 fract

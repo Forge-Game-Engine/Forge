@@ -1,0 +1,25 @@
+{
+  "name": "forge-playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@forge-game-engine/forge": "file:..",
+    "@typescript/vfs": "^1.6.4",
+    "esbuild-wasm": "^0.28.1",
+    "fflate": "^0.8.3",
+    "howler": "^2.2.4",
+    "monaco-editor": "^0.56.0",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5"
+  }
+}
