@@ -441,6 +441,7 @@ stateDiagram-v2
     Normal --> Hovered: pointer enters rect
     Hovered --> Normal: pointer exits rect
     Hovered --> Pressed: pointer down inside
+    Normal --> Pressed: enters AND presses in the same tick
     Pressed --> Hovered: pointer up inside → <b>raise onClick</b>
     Pressed --> Dragging: pointer moves > dragThreshold
     Pressed --> Normal: pointer up outside
@@ -451,14 +452,62 @@ stateDiagram-v2
     Disabled --> Normal: interactable = true
 ```
 
+**`Hovered` can be skipped entirely, and the design has to survive that.**
+Input is _sampled_ per tick, not streamed: `MouseInputSource` accumulates button
+downs and ups into per-frame sets and `reset()`s them each tick, so a system sees
+the pointer's current position plus a set of edges that occurred since the last
+tick — never their ordering within the frame. Two cases fall out of that:
+
+- **Enter and press in the same tick.** At 60 Hz a frame is ~16.7 ms, and a
+  flick-and-click comfortably fits inside one. More decisively, **touch has no
+  hover phase at all** — the first event is simultaneously "entered" and "down".
+  Touch is out of scope (#582), but DL-07 specifies the pointer
+  source-agnostically so it can be added later without revisiting this design,
+  and that promise is only real if the state machine already tolerates a missing
+  hover.
+- **Press and release in the same tick.** A synthetic `click()`, or a fast
+  enough real one. `MouseInputSource` already keeps downs and ups in _separate_
+  per-frame sets, so both facts survive the frame — but a system that reads only
+  "is the button currently held" sees neither and silently drops the click.
+
+So `createUiInteractionEcsSystem` must **not** be implemented as one transition
+per tick. State is _derived_ from the tick's facts, and events are derived from
+the delta against the previous tick:
+
+```
+isOver           = this element was the raycast hit this tick
+pressStartedHere = a pointer-down edge landed on this element (latched until release)
+
+state = Disabled  if !interactable
+      | Pressed   if isOver && pressStartedHere
+      | Hovered   if isOver
+      | Normal
+
+onPointerEnter    when !wasOver && isOver
+onPointerExit     when  wasOver && !isOver
+onPointerDown     when a down edge occurred && isOver
+onClick           when an up edge occurred && isOver && pressStartedHere
+```
+
+Under this formulation the reviewer's scenario raises `onPointerEnter` **and**
+`onPointerDown` in the same tick, the state goes `Normal → Pressed` directly, and
+`Hovered` is simply never observed — no click is swallowed. The diagram's
+`Normal → Pressed` edge exists to make that legal rather than accidental.
+
+The consequence for callers: **treat these states as sampled, not as a guaranteed
+sequence.** Code that assumes it will always see `Hovered` before `Pressed` — for
+example a transition that only starts a press animation from a hover animation —
+is wrong, and will misbehave first on touch and intermittently on fast mice. The
+unit tests should drive both same-tick cases explicitly (§10).
+
 Both a **polled** and an **evented** surface are exposed, because both idioms
 already exist in this codebase:
 
 ```typescript
 // Polled — ECS-idiomatic, trivially unit-testable, no listener lifetime concerns.
-const interactable = world.getComponent(buttonEntity, uiInteractableId);
+const state = world.getComponent(buttonEntity, uiInteractableId);
 
-if (interactable?.wasClickedThisFrame) {
+if (state?.wasClickedThisFrame) {
   startGame();
 }
 
@@ -467,6 +516,9 @@ if (interactable?.wasClickedThisFrame) {
 const interactable = addUiInteractableComponent(world, buttonEntity);
 interactable.onClick.registerListener(startGame);
 ```
+
+`wasClickedThisFrame` is an edge derived exactly as above, so it is `true` for
+one tick even when the press and release landed in the same tick.
 
 `isPointerOverUi` is published once per frame on the canvas so game systems can
 gate world interaction ("don't fire the weapon when the click landed on the
@@ -1074,7 +1126,14 @@ is pure data transformation.
 - Raycaster: overlapping elements resolve to the topmost; `blocksRaycasts: false`
   falls through; `interactable: false` is skipped.
 - Interaction: drive the §5.7 state machine through every transition with a
-  synthetic pointer, asserting events fire exactly once.
+  synthetic pointer, asserting events fire exactly once. Include the two
+  same-tick cases explicitly — enter-and-press in one tick (asserting
+  `onPointerEnter` and `onPointerDown` both fire and the state reaches
+  `Pressed` without ever being observed as `Hovered`), and press-and-release in
+  one tick (asserting `onClick` fires and `wasClickedThisFrame` is `true`).
+  These are the cases a one-transition-per-tick implementation silently drops,
+  and they are cheap to assert with a synthetic pointer but nearly impossible to
+  reproduce by hand.
   Text shaping tests belong to
   [#584](https://github.com/Forge-Game-Engine/Forge/issues/584), not this suite.
 
