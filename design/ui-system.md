@@ -964,6 +964,25 @@ input module's.
 (§4.2) gets fixed. That one is a genuine prerequisite — hit testing is wrong
 after any resize without it.
 
+**The two-camera setup constrains what this component may publish.** Because the
+UI renders through its own camera (DL-01), a single canvas-space pointer maps to
+**two different world positions** — one through the world camera, one through the
+UI camera — and they diverge the moment the world camera pans or zooms.
+
+So `PointerEcsComponent` publishes the pointer in **canvas pixels only**, and
+stays camera-agnostic as well as source-agnostic. It must not publish a "world
+position", because there is no single correct one. Conversion is the caller's
+job and is already camera-parameterized:
+`screenToWorldSpace(screenPosition, cameraPosition, cameraZoom, width, height, pixelsPerUnit)`.
+The UI raycaster converts through the UI camera; game-world picking converts
+through the world camera; neither is privileged.
+
+The matching consistency requirement in the other direction: the raycaster
+should only hit-test what the UI camera can actually **see**. An element culled
+from the UI camera by `cullingMask` must not be clickable, or the UI develops
+invisible hit regions — the same `Renderable.category` check that §3's ordering
+note describes for drawing has to gate hit testing too.
+
 **Touch is out of scope for this design.** `PointerEcsComponent` is
 therefore specified as a _source-agnostic_ pointer — position, buttons, delta,
 scroll — written by `MouseInputSource` today. That shape is deliberate: if a
