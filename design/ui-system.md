@@ -697,11 +697,10 @@ after the world camera. (b) A bespoke UI render pass outside the camera loop.
 **Rationale.** `render-system.ts` already iterates cameras in order, honours
 `cullingMask` against `Renderable.category`, supports `clearColor` (use
 `Color.transparent`), `isStatic`, and per-camera `renderTarget`. A UI camera is
-therefore _zero new rendering code_ — it is configuration. It also gets the right
-post-processing semantics by default: bloom and tone mapping attach to the world
-camera's target, so the UI is composited on top un-bloomed, which is what you
-want. (c) forfeits gamepad navigation, world-space UI, and shader effects, and
-splits the styling model in two.
+therefore _zero new rendering code_ — it is configuration. It also makes
+post-processing scope a **choice** rather than a constraint (see below). (c)
+forfeits gamepad navigation, world-space UI, and shader effects, and splits the
+styling model in two.
 
 **Consequences.** Draw order between cameras needs care.
 `createPresentEcsSystem` already sorts by `CameraEcsComponent.layer`, but only
@@ -714,9 +713,36 @@ the UI camera lands on top:
   extra blit.
 - Draw both to the canvas and rely on entity creation order.
 
-Prefer the first — it is the mechanism the engine already has, it keeps UI out of
-the world's post-processing chain by construction, and it does not encode a
-correctness requirement into the order the game happens to create entities.
+Prefer the first — it is the mechanism the engine already has, and it does not
+encode a correctness requirement into the order the game happens to create
+entities.
+
+#### Post-processing scope: world-only, UI-only, or everything
+
+A separate UI target is the **default**, not a ceiling. Post-processing in this
+engine attaches to a **render target**, not to a camera — `bloom-system.ts`
+dedupes with `processedTargetsThisFrame.has(renderTarget)`, so an effect is
+applied **once per target** no matter how many cameras drew into it. That single
+fact gives all three scopes with no new plumbing:
+
+| Want                                                              | Configuration                                                                                                                                                                                                           |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **World only** (default) — HUD stays crisp while the world blooms | World and UI cameras have **separate** `renderTarget`s. Effects attach to the world's.                                                                                                                                  |
+| **Everything, world + UI**                                        | Point the UI camera's `renderTarget` at the **same target** as the world camera. Both draw into it, the render system clears it once (`clearedDestinationsThisFrame`), and the effect is applied once to the composite. |
+| **UI only** — blur the UI behind a modal, vignette a pause menu   | Attach the post-processing components to the **UI camera**, which owns its own target.                                                                                                                                  |
+
+Ordering already works for the shared-target case: post-processing systems are
+documented to register _after_ the render system and _before_ the present
+system, and both cameras have drawn by the time the render system's update
+returns.
+
+The one real constraint to document: with a shared target you get **one** set of
+effects over both, so "bloom the world but not the UI, and tone-map everything"
+is not expressible in a single pass — that needs the world on its own target,
+effects there, then both composited into a shared target with the second effect.
+That is a legitimate future need and the argument for eventually letting a
+post-processing stack attach to the _present_ step rather than only to a camera,
+but it is out of scope here.
 
 ---
 
