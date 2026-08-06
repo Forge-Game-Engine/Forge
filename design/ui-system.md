@@ -121,31 +121,68 @@ data.
 
 ### 4.1 What already carries weight
 
-| Capability                       | Where                                                     | Notes                                                                                                                                                   |
-| -------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Entity hierarchy                 | `ParentEcsComponent`, `createTransformEcsSystem`          | Top-down recursive resolve with cycle detection and a per-frame memo cache. Composition is **additive for position** and ignores parent rotation/scale. |
-| Instanced sprite batching        | `render-system.ts`, `spriteInstanceDataSegment`           | 17 floats/instance, batched by `Renderable` identity.                                                                                                   |
-| Nine-slice                       | `computeNineSliceRegions`                                 | Already expands **one** sprite component into **up to nine** render commands — the precedent the text renderer needs (see DL-05).                       |
-| Per-camera culling masks         | `CameraEcsComponent.cullingMask` vs `Renderable.category` | The mechanism that isolates a UI pass from the world pass, for free.                                                                                    |
-| Resolution-independent camera    | `verticalWorldUnits`, `calculatePixelsPerUnit`            | Added in `0.24.0`. This is the canvas scaler, already built (see DL-03).                                                                                |
-| Off-screen targets & compositing | `RenderTarget`, `createPresentEcsSystem`, camera `layer`  | Lets UI skip the world's post-processing stack.                                                                                                         |
-| Action-based input with groups   | `InputManager`, `TriggerAction`, `HoldAction`             | Group gating (`activeGroup`) is the natural "menu open, game paused" switch.                                                                            |
-| Tweening + easing                | `createAnimationEcsSystem`, `easing-functions/`           | Button press/hover transitions get this for free.                                                                                                       |
-| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onClick`.                                                                                                                                |
+| Capability                       | Where                                                     | Notes                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entity hierarchy                 | `ParentEcsComponent`, `createTransformEcsSystem`          | Top-down recursive resolve with cycle detection and a per-frame memo cache. Rotation and scale are inherited correctly, but a child's local position offset is composed by **plain addition** — it is not rotated or scaled by the parent's world transform. See the note in §4.2; treated here as a bug to fix, not a constraint to design around. |
+| Instanced sprite batching        | `render-system.ts`, `spriteInstanceDataSegment`           | 17 floats/instance, batched by `Renderable` identity.                                                                                                                                                                                                                                                                                               |
+| Nine-slice                       | `computeNineSliceRegions`                                 | Already expands **one** sprite component into **up to nine** render commands — the precedent the text renderer needs (see DL-05).                                                                                                                                                                                                                   |
+| Per-camera culling masks         | `CameraEcsComponent.cullingMask` vs `Renderable.category` | The mechanism that isolates a UI pass from the world pass, for free.                                                                                                                                                                                                                                                                                |
+| Resolution-independent camera    | `verticalWorldUnits`, `calculatePixelsPerUnit`            | Added in `0.24.0`. This is the canvas scaler, already built (see DL-03).                                                                                                                                                                                                                                                                            |
+| Off-screen targets & compositing | `RenderTarget`, `createPresentEcsSystem`, camera `layer`  | Lets UI skip the world's post-processing stack.                                                                                                                                                                                                                                                                                                     |
+| Action-based input with groups   | `InputManager`, `TriggerAction`, `HoldAction`             | Group gating (`activeGroup`) is the natural "menu open, game paused" switch.                                                                                                                                                                                                                                                                        |
+| Tweening + easing                | `createAnimationEcsSystem`, `easing-functions/`           | Button press/hover transitions get this for free.                                                                                                                                                                                                                                                                                                   |
+| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onClick`.                                                                                                                                                                                                                                                                                                                            |
 
 ### 4.2 The gaps
 
-| Gap                                                          | Severity     | Detail                                                                                                                                                                                        |
-| ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No text rendering of any kind**                            | **Blocking** | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                           |
-| **No canvas-space pointer**                                  | **Blocking** | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now".                       |
-| **No touch input source**                                    | High         | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. There is no `TouchInputSource`.                                       |
-| **Draw order is world Y**                                    | High         | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is actively wrong: a label near the top of a panel would draw _behind_ the panel.                                 |
-| **`DepthEcsComponent` is dead code**                         | Opportunity  | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing**. It is the exact shape needed to fix the line above.                                           |
-| **No rectangle concept in the transform**                    | Expected     | Transforms are point + rotation + scale. Rects are new.                                                                                                                                       |
-| **No clipping/masking**                                      | Medium       | Needed for scroll views.                                                                                                                                                                      |
-| **`Rect` is a class**                                        | Minor        | `src/math/Rect.ts` predates the `Vector2` class→plain-object migration in `0.25.0-dev`. New rect types should be plain objects with a `Rect2`-style static helper namespace, matching `Vec2`. |
-| **`MouseInputSource` caches `getBoundingClientRect()` once** | Bug          | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. UI hit testing makes this immediately visible.           |
+| Gap                                                          | Severity     | Detail                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No text rendering of any kind**                            | **Blocking** | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                                                                                                                                                                                                                                                   |
+| **No canvas-space pointer**                                  | **Blocking** | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now".                                                                                                                                                                                                                                               |
+| **No touch input source**                                    | High         | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. There is no `TouchInputSource`.                                                                                                                                                                                                                                                               |
+| **Draw order is world Y**                                    | High         | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is actively wrong: a label near the top of a panel would draw _behind_ the panel.                                                                                                                                                                                                                                                         |
+| **`DepthEcsComponent` is dead code**                         | Opportunity  | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing**. It is the exact shape needed to fix the line above.                                                                                                                                                                                                                                                                   |
+| **Parented position offsets ignore parent rotation/scale**   | **Bug**      | `transform-system.ts`'s `composeWithParent` inherits rotation (additively) and scale (multiplicatively) correctly, but composes position as `parent.world + local` — the child's offset is never rotated or scaled by the parent's world transform. A child of a rotating parent spins in place instead of orbiting it. Tracked in [#581](https://github.com/Forge-Game-Engine/Forge/issues/581); see the note below. |
+| **No rectangle concept in the transform**                    | Expected     | Transforms are point + rotation + scale. Rects are new.                                                                                                                                                                                                                                                                                                                                                               |
+| **No clipping/masking**                                      | Medium       | Needed for scroll views.                                                                                                                                                                                                                                                                                                                                                                                              |
+| **`Rect` is a class**                                        | Minor        | `src/math/Rect.ts` predates the `Vector2` class→plain-object migration in `0.25.0-dev`. New rect types should be plain objects with a `Rect2`-style static helper namespace, matching `Vec2`.                                                                                                                                                                                                                         |
+| **`MouseInputSource` caches `getBoundingClientRect()` once** | Bug          | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. UI hit testing makes this immediately visible.                                                                                                                                                                                                                                   |
+
+**On the transform bug.** `composeWithParent`
+(`src/common/systems/transform-system.ts`) does this:
+
+```
+world.rotation = parent.world.rotation + local.rotation      // correct
+world.scale    = parent.world.scale    * local.scale         // correct
+world.position = parent.world.position + local.position      // missing two terms
+```
+
+A correct 2D TRS composition needs the child's local offset transformed by the
+parent before it is added:
+
+```
+world.position = parent.world.position
+               + rotate(local.position * parent.world.scale, parent.world.rotation)
+```
+
+Concretely: parent at the origin rotated 90°, child at local `(10, 0)`. The
+child's world position should be `(0, 10)` — instead it stays at `(10, 0)`,
+while the child's own `world` rotation _is_ correctly 90°. So the child sprite
+spins but does not orbit: a turret on a rotating tank rotates correctly and sits
+in the wrong place.
+
+Nothing currently locks this in — `transform-system.test.ts` has seven tests and
+none of them touch rotation or scale. The three older
+`parent-position-system.ts` / `parent-rotation-system.ts` /
+`parent-scale-system.ts` files carry the same additive position composition, but
+are not exported from `src/common/systems/index.ts` and are referenced only by
+their own tests, so they are dead code superseded by `createTransformEcsSystem`.
+
+This is filed as [#581](https://github.com/Forge-Game-Engine/Forge/issues/581)
+and is **not** something this design works around. Every diagram and decision below assumes it is fixed. The UI system does
+not itself depend on the fix (UI elements are unrotated and unscaled in the
+common case), but anything diegetic — a world-space health bar above a rotating
+ship, Phase 5.3 — does.
 
 ---
 
@@ -570,9 +607,11 @@ raw canvas pixels and re-resolve everything on resize.
 **Rationale.** `0.24.0` already made cameras resolution-independent; this is the
 same problem, already solved. It also means 1 UI world unit = 1 reference pixel,
 so every number in layout code is a pixel measurement, which is how designers
-think. (b) is a dead end — `createTransformEcsSystem`'s position composition is
-_additive and ignores parent scale_ (`transform-system.ts:52-59`), so a scaled
-canvas root would not scale its children's offsets.
+think. (b) is the weaker option regardless of the transform bug in §4.2: it puts the
+scaler in a second place that has to agree with the camera, and `ScaleEcsComponent`
+on the root would additionally have to survive layout, which owns sprite sizing.
+Until that bug is fixed, (b) is also outright broken — a scaled canvas root would
+not scale its children's offsets.
 
 **Consequences.** Note (b)'s failure mode in the docs; it is the obvious-looking
 approach and it silently half-works. _Match width_ mode needs a small per-frame
