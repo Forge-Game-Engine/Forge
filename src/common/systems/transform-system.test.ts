@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
 
-import { addPositionComponent } from '../components/index.js';
+import {
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
+} from '../components/index.js';
 import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
@@ -167,5 +171,106 @@ describe('transform-system', () => {
 
     expect(recycledPosition.world.x).toBe(50);
     expect(recycledPosition.world.y).toBe(60);
+  });
+
+  it('should rotate a child position offset by the parent rotation', () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
+    addRotationComponent(world, parent, { local: Math.PI / 2 });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 10, y: 0 },
+    });
+
+    addParentComponent(world, child, { parent });
+
+    world.update();
+
+    expect(childPosition.world.x).toBeCloseTo(0);
+    expect(childPosition.world.y).toBeCloseTo(10);
+  });
+
+  it('should scale a child position offset by the parent scale', () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
+    addScaleComponent(world, parent, { local: { x: 2, y: 2 } });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 10, y: 0 },
+    });
+
+    addParentComponent(world, child, { parent });
+
+    world.update();
+
+    expect(childPosition.world.x).toBeCloseTo(20);
+    expect(childPosition.world.y).toBeCloseTo(0);
+  });
+
+  it('should scale then rotate a child position offset by the parent transform', () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent, { local: { x: 5, y: 5 } });
+    addRotationComponent(world, parent, { local: Math.PI / 2 });
+    addScaleComponent(world, parent, { local: { x: 2, y: 2 } });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 10, y: 0 },
+    });
+
+    addParentComponent(world, child, { parent });
+
+    world.update();
+
+    expect(childPosition.world.x).toBeCloseTo(5);
+    expect(childPosition.world.y).toBeCloseTo(25);
+  });
+
+  it('should compose position, rotation and scale through a three-deep parent chain', () => {
+    const grandparent = world.createEntity();
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, grandparent, { local: { x: 0, y: 0 } });
+    addRotationComponent(world, grandparent, { local: Math.PI / 2 });
+    addScaleComponent(world, grandparent, { local: { x: 2, y: 2 } });
+
+    const parentPosition = addPositionComponent(world, parent, {
+      local: { x: 10, y: 0 },
+    });
+    const parentRotation = addRotationComponent(world, parent, {
+      local: Math.PI / 2,
+    });
+    const parentScale = addScaleComponent(world, parent, {
+      local: { x: 1, y: 1 },
+    });
+
+    addParentComponent(world, parent, { parent: grandparent });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 5, y: 0 },
+    });
+
+    addParentComponent(world, child, { parent });
+
+    world.update();
+
+    // grandparent: position (0, 0), rotation pi/2, scale (2, 2)
+    // parent: local offset (10, 0) scaled by (2, 2) -> (20, 0), rotated by pi/2 -> (0, 20)
+    expect(parentPosition.world.x).toBeCloseTo(0);
+    expect(parentPosition.world.y).toBeCloseTo(20);
+    expect(parentRotation.world).toBeCloseTo(Math.PI);
+    expect(parentScale.world.x).toBeCloseTo(2);
+    expect(parentScale.world.y).toBeCloseTo(2);
+
+    // child: local offset (5, 0) scaled by parent world scale (2, 2) -> (10, 0),
+    // rotated by parent world rotation pi -> (-10, 0), plus parent world position (0, 20)
+    expect(childPosition.world.x).toBeCloseTo(-10);
+    expect(childPosition.world.y).toBeCloseTo(20);
   });
 });

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+- **common:** Fix `createTransformEcsSystem` composing a child's world position by plain addition of the parent's world position, ignoring the parent's world rotation and scale entirely - a child parented to a rotated and/or scaled entity now orbits/scales with it instead of spinning or resizing in place at an un-rotated, un-scaled offset. **Behaviour change** for any existing content that parents a positioned entity to a rotated or scaled one and was authored against the previous (incorrect) composition.
 - **utilities:** Fix `Game`'s render loop occasionally producing a negative `deltaTime` for one frame (e.g. right after constructing hundreds of entities in a single tick), by reading `performance.now()` at the point the frame callback runs instead of trusting `requestAnimationFrame`'s supplied timestamp, which is not guaranteed to be monotonic relative to the previous frame
 
 ## [0.24.2] - 2026-08-03

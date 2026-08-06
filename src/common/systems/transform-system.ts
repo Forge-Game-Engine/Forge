@@ -1,5 +1,6 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { Vec2 } from '../../math/index.js';
 import {
   PositionEcsComponent,
   positionId,
@@ -34,48 +35,92 @@ function setLocalAsWorldIfExists(entity: number, world: EcsWorld): void {
   }
 }
 
-function composeWithParent(
+function composePositionWithParent(
   entity: number,
   parentEntity: number,
   world: EcsWorld,
 ): void {
   const positionComponent = world.getComponent(entity, positionId);
-  const rotationComponent = world.getComponent(entity, rotationId);
-  const scaleComponent = world.getComponent(entity, scaleId);
+
+  if (!positionComponent) {
+    return;
+  }
 
   const parentPosition = world.getComponent(parentEntity, positionId);
+
+  if (!parentPosition) {
+    positionComponent.world.x = positionComponent.local.x;
+    positionComponent.world.y = positionComponent.local.y;
+
+    return;
+  }
+
   const parentRotation = world.getComponent(parentEntity, rotationId);
   const parentScale = world.getComponent(parentEntity, scaleId);
+  const offset = Vec2.clone(positionComponent.local);
 
-  if (positionComponent) {
-    if (parentPosition) {
-      positionComponent.world.x =
-        parentPosition.world.x + positionComponent.local.x;
-      positionComponent.world.y =
-        parentPosition.world.y + positionComponent.local.y;
-    } else {
-      positionComponent.world.x = positionComponent.local.x;
-      positionComponent.world.y = positionComponent.local.y;
-    }
+  if (parentScale) {
+    Vec2.multiplyComponents(offset, parentScale.world);
   }
 
-  if (rotationComponent) {
-    if (parentRotation) {
-      rotationComponent.world = parentRotation.world + rotationComponent.local;
-    } else {
-      rotationComponent.world = rotationComponent.local;
-    }
+  if (parentRotation) {
+    Vec2.rotate(offset, parentRotation.world);
   }
 
-  if (scaleComponent) {
-    if (parentScale) {
-      scaleComponent.world.x = parentScale.world.x * scaleComponent.local.x;
-      scaleComponent.world.y = parentScale.world.y * scaleComponent.local.y;
-    } else {
-      scaleComponent.world.x = scaleComponent.local.x;
-      scaleComponent.world.y = scaleComponent.local.y;
-    }
+  positionComponent.world.x = parentPosition.world.x + offset.x;
+  positionComponent.world.y = parentPosition.world.y + offset.y;
+}
+
+function composeRotationWithParent(
+  entity: number,
+  parentEntity: number,
+  world: EcsWorld,
+): void {
+  const rotationComponent = world.getComponent(entity, rotationId);
+
+  if (!rotationComponent) {
+    return;
   }
+
+  const parentRotation = world.getComponent(parentEntity, rotationId);
+
+  rotationComponent.world = parentRotation
+    ? parentRotation.world + rotationComponent.local
+    : rotationComponent.local;
+}
+
+function composeScaleWithParent(
+  entity: number,
+  parentEntity: number,
+  world: EcsWorld,
+): void {
+  const scaleComponent = world.getComponent(entity, scaleId);
+
+  if (!scaleComponent) {
+    return;
+  }
+
+  const parentScale = world.getComponent(parentEntity, scaleId);
+
+  if (!parentScale) {
+    scaleComponent.world.x = scaleComponent.local.x;
+    scaleComponent.world.y = scaleComponent.local.y;
+
+    return;
+  }
+
+  scaleComponent.world.x = parentScale.world.x * scaleComponent.local.x;
+  scaleComponent.world.y = parentScale.world.y * scaleComponent.local.y;
+}
+
+function composeWithParent(
+  entity: number,
+  parentEntity: number,
+  world: EcsWorld,
+): void {
+  composePositionWithParent(entity, parentEntity, world);
+  composeRotationWithParent(entity, parentEntity, world);
+  composeScaleWithParent(entity, parentEntity, world);
 }
 
 function computeWorld(
