@@ -62,6 +62,7 @@ matterjs
 mediump
 Menlo
 Mertens
+minimaps
 mousedown
 mousemove
 mouseup
@@ -131,6 +132,7 @@ updatables
 upsamples
 uvec
 uxml
+viewports
 Vleugels
 WASD
 webgl

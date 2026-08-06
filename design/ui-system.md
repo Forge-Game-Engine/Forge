@@ -106,8 +106,8 @@ one it inherits**, and even then it holds only _within_ a single UI canvas and a
 single sprite layer — the surrounding camera and culling-mask rules still apply
 and are what keep the UI pass separate from the world pass in the first place.
 DL-06 is the mechanism: the layout pass writes each element's hierarchy pre-order
-index into a `DepthEcsComponent`, which the render system prefers over world Y
-when present.
+index into `SpriteEcsComponent.sortDepth`, which the render system prefers over
+world Y when set.
 
 The part of Unity's uGUI implementation worth _not_ copying is its
 component-coupling ergonomics — `GetComponent<Graphic>()` chains, the
@@ -135,18 +135,21 @@ data.
 
 ### 4.2 The gaps
 
-| Gap                                                          | Severity     | Detail                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No text rendering of any kind**                            | **Blocking** | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                                                                                                                                                                                                                                                   |
-| **No canvas-space pointer**                                  | **Blocking** | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now".                                                                                                                                                                                                                                               |
-| **No touch input source**                                    | Out of scope | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. There is no `TouchInputSource`. Touch is explicitly **out of scope for this design**; the documentation inaccuracy is tracked in [#582](https://github.com/Forge-Game-Engine/Forge/issues/582).                                                                                               |
-| **Draw order is world Y**                                    | High         | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is actively wrong: a label near the top of a panel would draw _behind_ the panel.                                                                                                                                                                                                                                                         |
-| **`DepthEcsComponent` is dead code**                         | Opportunity  | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing**. It is the exact shape needed to fix the line above.                                                                                                                                                                                                                                                                   |
-| **Parented position offsets ignore parent rotation/scale**   | **Bug**      | `transform-system.ts`'s `composeWithParent` inherits rotation (additively) and scale (multiplicatively) correctly, but composes position as `parent.world + local` — the child's offset is never rotated or scaled by the parent's world transform. A child of a rotating parent spins in place instead of orbiting it. Tracked in [#581](https://github.com/Forge-Game-Engine/Forge/issues/581); see the note below. |
-| **No rectangle concept in the transform**                    | Expected     | Transforms are point + rotation + scale. Rects are new.                                                                                                                                                                                                                                                                                                                                                               |
-| **No clipping/masking**                                      | Medium       | Needed for scroll views.                                                                                                                                                                                                                                                                                                                                                                                              |
-| **`Rect` is a class**                                        | Minor        | `src/math/Rect.ts` predates the `Vector2` class→plain-object migration in `0.25.0-dev`. New rect types should be plain objects with a `Rect2`-style static helper namespace, matching `Vec2`.                                                                                                                                                                                                                         |
-| **`MouseInputSource` caches `getBoundingClientRect()` once** | Bug          | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. UI hit testing makes this immediately visible.                                                                                                                                                                                                                                   |
+Priority is one scale, ordered: **Blocker** (no usable UI without it) > **High**
+(ships broken or misleading without it) > **Medium** > **Low**. "Tracked as"
+points at the backlog item in §8 or the issue that owns it.
+
+| Gap                                                          | Priority     | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------ | ------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No text rendering of any kind**                            | **Blocker**  | 0.3–0.5, 0.9                                                  | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                                                                                                                                                                                                               |
+| **No canvas-space pointer**                                  | **Blocker**  | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                 |
+| **No rectangle type or rect concept in the transform**       | **Blocker**  | 0.10, 1.1                                                     | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so `Rect2` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
+| **Draw order is world Y**                                    | **Blocker**  | 0.7                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                |
+| **`MouseInputSource` caches `getBoundingClientRect()` once** | High         | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                  |
+| **Parented position offsets ignore parent rotation/scale**   | High         | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                   |
+| **No clipping/masking**                                      | Out of scope | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                               |
+| **`DepthEcsComponent` is dead code**                         | Low          | 0.11                                                          | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                   |
+| **No touch input source**                                    | Out of scope | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                          |
 
 **On the transform bug.** `composeWithParent`
 (`src/common/systems/transform-system.ts`) does this:
@@ -201,7 +204,6 @@ src/ui/
     toggle-component.ts             ToggleEcsComponent
     slider-component.ts             SliderEcsComponent
     scroll-rect-component.ts        ScrollRectEcsComponent
-    rect-mask-component.ts          RectMaskEcsComponent
     layout-group-component.ts       Horizontal/Vertical/GridLayoutGroupEcsComponent
     layout-element-component.ts     LayoutElementEcsComponent
     content-size-fitter-component.ts
@@ -281,7 +283,7 @@ flowchart TD
     subgraph button["Button entity"]
         B1["ParentEcsComponent → canvas"]
         B2["RectTransformEcsComponent<br/>anchor: center, size: 240 x 64"]
-        B3["PositionEcsComponent + DepthEcsComponent"]
+        B3["PositionEcsComponent"]
         B4["SpriteEcsComponent<br/>nine-sliced panel, tinted"]
         B5["UiInteractableEcsComponent"]
         B6["UiPointerStateEcsComponent<br/><i>written by the raycaster</i>"]
@@ -316,7 +318,7 @@ flowchart TD
     IN["updateInputsSystem<br/><i>early</i>"]
     PTR["createPointerEcsSystem<br/>canvas-space pointer + buttons<br/><i>NEW, in /src/input</i>"]
     LG["createUiLayoutGroupEcsSystem<br/>bottom-up: measure preferred sizes<br/>top-down: assign child rects"]
-    UL["createUiLayoutEcsSystem<br/>resolve anchors/pivots → rect<br/>write position.local, sprite.w/h/pivot,<br/>DepthEcsComponent.depth"]
+    UL["createUiLayoutEcsSystem<br/>resolve anchors/pivots → rect<br/>write position.local,<br/>sprite.w/h/pivot/sortDepth"]
     TS["createTransformEcsSystem<br/><i>existing — composes world from local</i>"]
     TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads"]
     RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins"]
@@ -491,8 +493,8 @@ export const rectTransformId =
 /**
  * Creates a system that resolves every `RectTransformEcsComponent` against its
  * parent's rect, top-down, and writes the result into the element's
- * `PositionEcsComponent.local`, `SpriteEcsComponent` size/pivot, and
- * `DepthEcsComponent.depth`.
+ * `PositionEcsComponent.local` and the element's `SpriteEcsComponent`
+ * size, pivot, and `sortDepth`.
  *
  * Must be registered before `createTransformEcsSystem`.
  * @returns The UI layout ECS system.
@@ -672,31 +674,51 @@ uglier, but isolated.
 
 ---
 
-### DL-06 — Draw order comes from `DepthEcsComponent`, not world Y
+### DL-06 — Draw order comes from `SpriteEcsComponent.sortDepth`, not world Y
 
-**Options.** (a) Add an optional `depthOverride` to `SpriteEcsComponent`.
-(b) Wire up the existing, currently-unused `DepthEcsComponent` as the depth
-source when present, falling back to `position.world.y`. (c) Give UI its own
-sorted render pass.
+**Options.** (a) Add an optional `sortDepth` to `SpriteEcsComponent`, used as the
+tie-break within a layer when set and falling back to `position.world.y` when
+not. (b) Wire up the existing, currently-unused `DepthEcsComponent` as the depth
+source when present. (c) Give UI its own separately-sorted render pass.
 
-**Decision: (b).**
+**Decision: (a).** _(Changed from (b) during review.)_
 
-**Rationale.** `src/common/components/depth-component.ts` already exists with the
-exact shape needed (`depth: number`, `isDirty: boolean`), has tests, and is
-referenced by nothing in `src/`. Wiring it up removes dead code and fixes UI
-ordering in one change:
+**Rationale.** Draw order is already a sprite concern, and half of it already
+lives on the sprite. `SpriteEcsComponent.layer` is the primary sort key, and its
+own JSDoc says ties are broken "by depth (world Y position)". `sortDepth`
+overrides exactly that clause:
 
 ```typescript
-const depth =
-  world.getComponent(entity, depthId)?.depth ?? entityPosition.world.y;
+const depth = spriteComponent.sortDepth ?? entityPosition.world.y;
 ```
 
-The layout system writes each element's hierarchy pre-order index into it, so
-draw order is hierarchy order within a canvas. World sprites are untouched.
+Three reasons this beats a separate component:
 
-**Consequences.** One extra component lookup per sprite per camera in the render
-loop. If that shows up in the stress-test demo, hoist it to a batched
-`world.query` outside the per-camera loop, as sprites already are.
+- **The two halves of one sort key belong together.** Splitting `layer` and
+  `depth` across two components means someone tuning draw order has to know
+  about two places, and can attach one without the other.
+- **It is free, where (b) is not.** `buildCameraCommands` runs _per camera_ and
+  already does three `world.getComponent` calls per sprite (rotation, scale,
+  flip). Option (b) makes that four — `4 x sprites x cameras` lookups — and this
+  design adds a second camera, doubling the multiplier. `sortDepth` is a
+  property read on an object already in the batch array.
+- **A separate component buys no composition here.** Rotation and scale are
+  meaningful on an entity with no sprite; depth is not. There is no entity that
+  wants a draw-order key and nothing to draw, so the split is arbitrary rather
+  than expressive.
+
+The layout system writes each element's hierarchy pre-order index into
+`sortDepth`, so draw order is hierarchy order within a canvas.
+
+**Consequences.** Fully backward compatible: `sortDepth` left undefined
+reproduces today's behavior exactly, so no existing sprite changes. It follows
+the module's defaulted-options convention, though as a genuinely optional field
+it stays `undefined` rather than taking a default — a default of `0` would
+silently override world-Y sorting for every sprite.
+
+This leaves `DepthEcsComponent` still dead, and now with no prospective use.
+Delete it and its tests (backlog 0.11) rather than leaving a component in the
+public API that nothing reads.
 
 ---
 
@@ -748,7 +770,7 @@ would force a render-target readback and a pipeline stall.
 
 ---
 
-### DL-09 — Clipping is per-instance shader rect clipping
+### DL-09 — Clipping is per-instance shader rect clipping, built outside this module
 
 **Options.** (a) `gl.scissor`. (b) Stencil buffer. (c) A clip rect passed as
 per-instance data, `discard`ed in the fragment shader (the approach Unity's
@@ -762,9 +784,22 @@ but adds stencil state management to a renderer that has none. (c) costs 4 float
 per instance and keeps a scroll view in a single draw call. Nested masks
 intersect their rects, so nesting stays free.
 
-**Consequences.** +4 floats to the UI instance-data segment. Arbitrary-shape
-masking (`Mask` with an alpha cutoff) is deferred; if it is ever needed, stencil
-becomes a second, opt-in mechanism.
+**Consequences.** +4 floats to the instance-data segment. Arbitrary-shape masking
+(an alpha-cutoff `Mask`) is deferred; if it is ever needed, stencil becomes a
+second, opt-in mechanism.
+
+**Scope.** Clipping is **out of scope for the UI module** and is tracked as
+[#583](https://github.com/Forge-Game-Engine/Forge/issues/583). It is a rendering
+capability, not a UI one — minimap viewports, wipe transitions, fog-of-war
+reveals, and fill-by-reveal bars all want it with no UI involved — so it belongs
+in `/src/rendering` next to the sprite instance-data segment, for the same reason
+text lives in `/src/text` (DL-04). This decision record stays here because the
+UI design is what surfaced the requirement and reached this conclusion; #583
+owns the work.
+
+The only thing this blocks in the UI backlog is `ScrollRectEcsComponent` (3.4),
+which is unusable without clipping — content spills past the viewport. Every
+other UI item is unaffected, so this does not gate Phases 0–2.
 
 ---
 
@@ -820,9 +855,9 @@ mutation. (c) The `isStatic` freeze pattern from `transform-system.ts`.
 **Rationale.** Correctness first. Dirty tracking in a retained UI tree is where
 "the button didn't move until I resized the window" bugs live, and there is no
 performance evidence yet that it is needed for hundreds of elements. The escape
-hatch is already designed and proven in this codebase: `transform-system.ts`
-freezes static subtrees, and `DepthEcsComponent` already carries an `isDirty`
-field for exactly this.
+hatch is already proven in this codebase: `transform-system.ts` freezes static
+subtrees behind `PositionEcsComponent.isStatic`, and the same `isStatic` flag
+extends naturally to a `RectTransformEcsComponent` whose anchors never change.
 
 **Consequences.** Revisit with a UI stress-test demo (§10). Text shaping is the
 exception and is dirty-tracked from day one, because re-shaping a paragraph every
@@ -837,17 +872,18 @@ Items on the critical path are marked ⛓.
 
 ### Phase 0 — Prerequisites (nothing UI-shaped ships without these)
 
-| #     | Item                                                                     | Size | Notes                                                                                                           |
-| ----- | ------------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------------------------------------------- |
-| 0.1 ⛓ | `PointerStateEcsComponent` + `createPointerEcsSystem` in `/src/input`    | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
-| 0.3 ⛓ | `FontAtlas` type + `loadFontAtlas` in `/src/asset-loading`               | M    | msdf-atlas-gen JSON + PNG. Glyph UVs, advances, kerning, `distanceRange`. (DL-04)                               |
-| 0.4 ⛓ | MSDF fragment shader + `createMsdfTextRenderable`                        | S    | Median-of-3 + `smoothstep`, screen-space-derivative antialiasing.                                               |
-| 0.5 ⛓ | `TextEcsComponent`, `TextMeshEcsComponent`, `createTextShapingEcsSystem` | L    | Shaping, word wrap, alignment, line spacing, kerning, dirty tracking.                                           |
-| 0.6 ⛓ | Sub-quad expansion in `render-system.ts`; nine-slice migrated onto it    | M    | (DL-05) Highest-risk refactor in the plan — existing hot path, existing tests, existing demos.                  |
-| 0.7   | `DepthEcsComponent` wired into `render-system.ts`                        | S    | (DL-06) Removes dead code.                                                                                      |
-| 0.8   | Verify UI-camera compositing order via a dedicated render target         | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
-| 0.9   | Ship a default MSDF atlas + document the generation recipe               | S    | Zero-setup `createLabel`.                                                                                       |
-| 0.10  | `Rect2` plain-object type + static helpers                               | S    | (DL-11)                                                                                                         |
+| #     | Item                                                                        | Size | Notes                                                                                                           |
+| ----- | --------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------- |
+| 0.1 ⛓ | `PointerStateEcsComponent` + `createPointerEcsSystem` in `/src/input`       | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
+| 0.3 ⛓ | `FontAtlas` type + `loadFontAtlas` in `/src/asset-loading`                  | M    | msdf-atlas-gen JSON + PNG. Glyph UVs, advances, kerning, `distanceRange`. (DL-04)                               |
+| 0.4 ⛓ | MSDF fragment shader + `createMsdfTextRenderable`                           | S    | Median-of-3 + `smoothstep`, screen-space-derivative antialiasing.                                               |
+| 0.5 ⛓ | `TextEcsComponent`, `TextMeshEcsComponent`, `createTextShapingEcsSystem`    | L    | Shaping, word wrap, alignment, line spacing, kerning, dirty tracking.                                           |
+| 0.6 ⛓ | Sub-quad expansion in `render-system.ts`; nine-slice migrated onto it       | M    | (DL-05) Highest-risk refactor in the plan — existing hot path, existing tests, existing demos.                  |
+| 0.7   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
+| 0.8   | Verify UI-camera compositing order via a dedicated render target            | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
+| 0.9   | Ship a default MSDF atlas + document the generation recipe                  | S    | Zero-setup `createLabel`.                                                                                       |
+| 0.10  | `Rect2` plain-object type + static helpers                                  | S    | (DL-11)                                                                                                         |
+| 0.11  | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.7 lands. (DL-06)                                                       |
 
 Item 0.2 was a `TouchInputSource`. It has been **removed as out of scope** —
 numbering is left with the gap rather than renumbered so the decision stays
@@ -891,15 +927,15 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ### Phase 3 — Controls
 
-| #   | Item                                                                     | Size      |
-| --- | ------------------------------------------------------------------------ | --------- |
-| 3.1 | `ToggleEcsComponent` (checkbox / radio via toggle groups)                | S         |
-| 3.2 | `SliderEcsComponent` (drag handle, fill, min/max, whole-number mode)     | M         |
-| 3.3 | `RectMaskEcsComponent` + per-instance clip rect in the shader            | M (DL-09) |
-| 3.4 | `ScrollRectEcsComponent` (drag + wheel, inertia, elasticity, scrollbars) | L         |
-| 3.5 | `TextInputEcsComponent` via hidden DOM input                             | L (DL-10) |
-| 3.6 | `DropdownEcsComponent`                                                   | M         |
-| 3.7 | Progress bar / radial fill                                               | S         |
+| #   | Item                                                                                                                                                    | Size      |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 3.1 | `ToggleEcsComponent` (checkbox / radio via toggle groups)                                                                                               | S         |
+| 3.2 | `SliderEcsComponent` (drag handle, fill, min/max, whole-number mode)                                                                                    | M         |
+| 3.3 | ~~`RectMaskEcsComponent` + per-instance clip rect~~ — **out of scope**, tracked in [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)        | —         |
+| 3.4 | `ScrollRectEcsComponent` (drag + wheel, inertia, elasticity, scrollbars) — **blocked on [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)** | L         |
+| 3.5 | `TextInputEcsComponent` via hidden DOM input                                                                                                            | L (DL-10) |
+| 3.6 | `DropdownEcsComponent`                                                                                                                                  | M         |
+| 3.7 | Progress bar / radial fill                                                                                                                              | S         |
 
 ### Phase 4 — Layout groups
 
