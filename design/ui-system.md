@@ -1081,10 +1081,13 @@ system-written `world`, and `RectTransformEcsComponent` does the same with its
 resolved `rect`. Interaction state is `world` to the interactable's `local`.
 
 **Consequences.** One component instead of three, one query in the raycaster
-instead of two, and one place a reader has to look. Fields written by
-`createUiInteractionEcsSystem` (`isHovered`, `isPressed`, `isDragging`,
-`wasClickedThisFrame`) are documented as system-owned and read-only to callers,
-the same convention `PositionEcsComponent.world` already uses.
+instead of two, and one place a reader has to look. Fields written by the
+interaction and navigation systems (`isHovered`, `isFocused`, `isPressed`,
+`isDragging`, `wasActivatedThisFrame`) are documented as system-owned and
+read-only to callers, the same convention `PositionEcsComponent.world` already
+uses. Note `isFocused` and `wasActivatedThisFrame` are written by
+`createUiNavigationEcsSystem` as well as the interaction system (DL-14), so
+neither has a single owning system.
 
 For the same reason, `/src/input`'s pointer component is `PointerEcsComponent`,
 not `PointerStateEcsComponent`.
