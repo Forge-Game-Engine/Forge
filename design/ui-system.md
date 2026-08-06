@@ -157,17 +157,17 @@ Priority is one scale, ordered: **Blocker** (no usable UI without it) > **High**
 (ships broken or misleading without it) > **Medium** > **Low**. "Tracked as"
 points at the backlog item in §8 or the issue that owns it.
 
-| Gap                                                          | Priority                      | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No text rendering of any kind**                            | Out of scope (blocks release) | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. Generally useful outside UI (damage numbers, dialogue, debug overlays), so it belongs in `/src/text`. The UI module can be built and tested without it, but cannot ship a convincing demo until it lands.                                                      |
-| **No canvas-space pointer**                                  | **Blocker**                   | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                 |
-| **No rectangle type or rect concept in the transform**       | **Blocker**                   | 0.2, 1.1                                                      | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so `Rect2` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
-| **Draw order is world Y**                                    | **Blocker**                   | 0.3                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                |
-| **`MouseInputSource` caches `getBoundingClientRect()` once** | High                          | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                  |
-| **Parented position offsets ignore parent rotation/scale**   | High                          | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                   |
-| **No clipping/masking**                                      | Out of scope                  | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                               |
-| **`DepthEcsComponent` is dead code**                         | Low                           | 0.4                                                           | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                   |
-| **No touch input source**                                    | Out of scope                  | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                          |
+| Gap                                                          | Priority                      | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No text rendering of any kind**                            | Out of scope (blocks release) | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. Generally useful outside UI (damage numbers, dialogue, debug overlays), so it belongs in `/src/text`. The UI module can be built and tested without it, but cannot ship a convincing demo until it lands.                                                                      |
+| **No canvas-space pointer**                                  | **Blocker**                   | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                                 |
+| **No rectangle type or rect concept in the transform**       | **Blocker**                   | 0.2, 1.1                                                      | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so the plain-object `Rect` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
+| **Draw order is world Y**                                    | **Blocker**                   | 0.3                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                                |
+| **`MouseInputSource` caches `getBoundingClientRect()` once** | High                          | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                                  |
+| **Parented position offsets ignore parent rotation/scale**   | High                          | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                                   |
+| **No clipping/masking**                                      | Out of scope                  | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                                               |
+| **`DepthEcsComponent` is dead code**                         | Low                           | 0.4                                                           | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                                   |
+| **No touch input source**                                    | Out of scope                  | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                                          |
 
 **On the transform bug.** `composeWithParent`
 (`src/common/systems/transform-system.ts`) does this:
@@ -237,7 +237,7 @@ src/ui/
     create-button.ts, create-panel.ts, create-label.ts
     resolve-rect.ts                 the anchor/pivot math, pure and unit-tested
   types/
-    Rect2.ts, UiAnchor.ts (anchor presets), UiRenderMode.ts
+    UiAnchor.ts (anchor presets), UiRenderMode.ts
   index.ts
 
 src/text/                            (separate module — issue #584, not this work)
@@ -402,7 +402,7 @@ flowchart LR
 ```
 
 `resolve-rect.ts` holds this as a pure function of
-`(parentRect, rectTransform) → Rect2` — no world, no entity — which makes the
+`(parentRect, rectTransform) → Rect` — no world, no entity — which makes the
 entire responsive-layout surface unit-testable in isolation. Anchor presets
 (`UiAnchor.topLeft`, `.stretchHorizontal`, `.stretchAll`, …) are plain frozen
 constants, and are what most callers actually touch.
@@ -596,7 +596,7 @@ export interface RectTransformDefaultedOptions {
 
 export interface RectTransformEcsComponent extends RectTransformDefaultedOptions {
   /** Resolved rect in UI world space. Written every frame by `createUiLayoutEcsSystem`; do not set directly. */
-  readonly rect: Rect2;
+  readonly rect: Rect;
 }
 
 export const rectTransformId =
@@ -1005,7 +1005,7 @@ with an ID buffer.
 **Decision: (a).**
 
 **Rationale.** UI element counts are in the hundreds, not the hundreds of
-thousands. A linear scan over `Rect2` containment is a few microseconds and has no
+thousands. A linear scan over `Rect` containment is a few microseconds and has no
 build/update cost, no allocation, and no cache invalidation to get wrong. (c)
 would force a render-target readback and a pipeline stall.
 
@@ -1105,24 +1105,65 @@ disruptive than including it from the start.
 
 ---
 
-### DL-11 — Rects are plain objects with a `Rect2` static namespace
+### DL-11 — `Rect` becomes a plain object, replacing the existing class
 
-**Options.** (a) Reuse the existing `Rect` class. (b) A plain
-`{ min, max }` object with `Rect2.*` static helpers, matching the `Vec2`
-convention.
+**Options.** (a) Keep the existing `Rect` class. (b) Introduce a second,
+differently-named rect type alongside it. (c) **Replace** `Rect` in place with a
+plain `{ min, max }` object plus a static helper namespace, matching the
+`Vector2`/`Vec2` convention.
 
-**Decision: (b).**
+**Decision: (c).** _(Was (b) — a parallel `Rect2` — until review; the reviewer's
+call is to replace outright and not treat it as a breaking change.)_
 
 **Rationale.** `Rect` (`src/math/Rect.ts`) is a class holding two `Vector2`s and
-predates the class→plain-object migration that `Vector2`/`Vector3` just went
-through in the current `[Unreleased]` cycle. Introducing a new subsystem built on
-the old convention would immediately owe a second migration. `Rect2` should mirror
-`Vec2` exactly: mutate-in-place helpers taking a `target` first argument.
+predates the class→plain-object migration `Vector2`/`Vector3` just went through
+in the current `[Unreleased]` cycle. Building a new subsystem on the old
+convention would immediately owe a second migration, and carrying two rect types
+would make every consumer ask which one it holds.
 
-**Consequences.** Two rect types coexist temporarily. Deprecate `Rect` and migrate
-`CameraEcsComponent.scissorRect` in the same release, or accept the duplication
-and schedule it. `{ min, max }` is preferred over `{ origin, size }` because
-anchor math reads min/max far more often than origin/size.
+The shape mirrors `vector2.ts` exactly — a plain `interface` for the data, and a
+static-only `class` for the operations, with mutating helpers taking a `target`
+first argument and returning it:
+
+```typescript
+export interface Rect {
+  min: Vector2;
+  max: Vector2;
+}
+
+export class Rects {
+  static get zero(): Rect {
+    /* fresh instance per access, safe to mutate */
+  }
+  static contains(rect: Rect, point: Vector2): boolean;
+  static intersects(a: Rect, b: Rect): boolean;
+  /* mutating: set, translate, scale, expand, intersect, … (target first) */
+}
+```
+
+`{ min, max }` is preferred over the current `{ origin, size }` because anchor
+math reads min/max far more often, and `size` is one subtraction away when
+needed.
+
+**Consequences.** The blast radius is genuinely small: `Rect` is constructed
+nowhere in `/src` outside its own tests, and its only consumer is
+`CameraEcsComponent.scissorRect`, whose _type_ name does not change. What
+changes is construction (`new Rect(origin, size)` → `{ min, max }`) and the two
+methods becoming static calls.
+
+Per the reviewer, this is **not** documented as a breaking change.
+
+Two small things worth folding into the same edit:
+
+- **Rename the file to `rect.ts`.** `src/math/Rect.ts` violates the kebab-case
+  file convention in `AGENTS.md`; a full rewrite is the cheapest moment to fix
+  it.
+- **The static namespace name is the one open choice.** `Vector2`/`Vec2` puts the
+  long name on the type and the short one on the namespace, which doesn't
+  translate — `Rect` has no natural abbreviation. `Rects` is proposed above and
+  reads fine at call sites (`Rects.contains(rect, point)`). The alternative that
+  mirrors `Vector2`/`Vec2` more literally is `Rectangle` for the type and `Rect`
+  for the namespace; say the word if you'd rather have that.
 
 ---
 
@@ -1255,7 +1296,7 @@ Items on the critical path are marked ⛓.
 | #     | Item                                                                        | Size | Notes                                                                                                           |
 | ----- | --------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------- |
 | 0.1 ⛓ | `PointerEcsComponent` + `createPointerEcsSystem` in `/src/input`            | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
-| 0.2 ⛓ | `Rect2` plain-object type + static helpers                                  | S    | (DL-11) Foundational — every element in this design is a rect.                                                  |
+| 0.2 ⛓ | `Rect` replaced with a plain-object type + static helpers                   | S    | (DL-11) Foundational — every element in this design is a rect.                                                  |
 | 0.3   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
 | 0.4   | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.3 lands. (DL-06)                                                       |
 | 0.5   | Verify UI-camera compositing order via a dedicated render target            | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
@@ -1275,7 +1316,7 @@ refactor of `render-system.ts` — from the UI critical path. It now sits with t
 work that actually needs it.
 
 **Phase 0 exit criterion:** `pointer.position` is correct in canvas pixels
-after a window resize, `Rect2` is available, and a sprite with an explicit
+after a window resize, the plain-object `Rect` is available, and a sprite with an explicit
 `sortDepth` draws in that order rather than by world Y.
 
 ### Phase 1 — Layout core
@@ -1425,8 +1466,8 @@ feature in one page, and doubling as the stress test for DL-12.
    are a common need and might justify promoting it to Phase 2. Note it also
    depends on [#581](https://github.com/Forge-Game-Engine/Forge/issues/581), since
    a health bar parented to a rotating ship is exactly the broken case.
-3. **Should `Rect` be deprecated in the same release that introduces `Rect2`?**
-   (DL-11) — a small breaking change, cheapest to do now while pre-1.0.
+3. **What should the rect static namespace be called?** (DL-11) — `Rects`, or
+   `Rectangle`/`Rect` to mirror `Vector2`/`Vec2` more literally.
 4. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
    parallel offscreen DOM accessibility tree in scope before 1.0, or explicitly
    deferred? Worth an explicit decision rather than a silent omission.
