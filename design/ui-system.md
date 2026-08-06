@@ -27,11 +27,19 @@ It is deliberately descriptive rather than borrowed: the same approach appears i
 Unity's uGUI, Godot's `Control` nodes, and Flash's display list, but Forge should
 name it for what it does rather than adopt another engine's product name.
 
-The headline finding from the codebase survey: **the UI work is mostly not UI
-work.** Roughly half the critical path is two prerequisites Forge is missing
-outright — **text rendering** and a **canvas-space pointer**. The rect-tree parts
-(rect layout, anchors, buttons, layout groups) sit comfortably on top of what
-already exists and are individually small.
+The headline finding from the codebase survey: **most of what this needs is not
+UI.** Three capabilities Forge lacks outright — **text rendering**, **rect
+clipping**, and a **canvas-space pointer** — are each generally useful with no UI
+involved, and the first two are now owned separately
+([#584](https://github.com/Forge-Game-Engine/Forge/issues/584),
+[#583](https://github.com/Forge-Game-Engine/Forge/issues/583)). What remains
+genuinely UI-shaped — rect layout, anchors, hit testing, buttons, layout groups —
+sits comfortably on what already exists and is individually small.
+
+**The dependency worth stating up front:** UI layout, anchoring, hit testing, and
+interaction can all be built and unit-tested before #584 lands, but the module is
+not _useful_ without text — buttons need labels and HUDs need numbers. Text is
+the largest external dependency on this plan.
 
 ---
 
@@ -139,17 +147,17 @@ Priority is one scale, ordered: **Blocker** (no usable UI without it) > **High**
 (ships broken or misleading without it) > **Medium** > **Low**. "Tracked as"
 points at the backlog item in §8 or the issue that owns it.
 
-| Gap                                                          | Priority     | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------------ | ------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No text rendering of any kind**                            | **Blocker**  | 0.3–0.5, 0.9                                                  | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. A UI system without text is a decoration system.                                                                                                                                                                                                               |
-| **No canvas-space pointer**                                  | **Blocker**  | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                 |
-| **No rectangle type or rect concept in the transform**       | **Blocker**  | 0.10, 1.1                                                     | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so `Rect2` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
-| **Draw order is world Y**                                    | **Blocker**  | 0.7                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                |
-| **`MouseInputSource` caches `getBoundingClientRect()` once** | High         | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                  |
-| **Parented position offsets ignore parent rotation/scale**   | High         | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                   |
-| **No clipping/masking**                                      | Out of scope | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                               |
-| **`DepthEcsComponent` is dead code**                         | Low          | 0.11                                                          | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                   |
-| **No touch input source**                                    | Out of scope | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                          |
+| Gap                                                          | Priority                      | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No text rendering of any kind**                            | Out of scope (blocks release) | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. Generally useful outside UI (damage numbers, dialogue, debug overlays), so it belongs in `/src/text`. The UI module can be built and tested without it, but cannot ship a convincing demo until it lands.                                                      |
+| **No canvas-space pointer**                                  | **Blocker**                   | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                 |
+| **No rectangle type or rect concept in the transform**       | **Blocker**                   | 0.2, 1.1                                                      | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so `Rect2` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
+| **Draw order is world Y**                                    | **Blocker**                   | 0.3                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                |
+| **`MouseInputSource` caches `getBoundingClientRect()` once** | High                          | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                  |
+| **Parented position offsets ignore parent rotation/scale**   | High                          | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                   |
+| **No clipping/masking**                                      | Out of scope                  | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                               |
+| **`DepthEcsComponent` is dead code**                         | Low                           | 0.4                                                           | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                   |
+| **No touch input source**                                    | Out of scope                  | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                          |
 
 **On the transform bug.** `composeWithParent`
 (`src/common/systems/transform-system.ts`) does this:
@@ -224,7 +232,7 @@ src/ui/
     Rect2.ts, UiAnchor.ts (anchor presets), UiRenderMode.ts
   index.ts
 
-src/text/                            (new sibling module — see DL-04)
+src/text/                            (separate module — issue #584, not this work)
   font-atlas.ts, load-font-atlas.ts
   components/text-component.ts, components/text-mesh-component.ts
   systems/text-shaping-system.ts
@@ -294,7 +302,7 @@ flowchart TD
     subgraph label["Label entity"]
         L1["ParentEcsComponent → button"]
         L2["RectTransformEcsComponent<br/>stretch to fill, zero offsets"]
-        L3["TextEcsComponent<br/>'Play', 32px, center"]
+        L3["TextEcsComponent<br/>'Play', 32px, center<br/><i>#584</i>"]
         L4["TextMeshEcsComponent<br/><i>glyph quads, cached</i>"]
         L5["SpriteEcsComponent<br/>MSDF renderable"]
     end
@@ -320,7 +328,7 @@ flowchart TD
     LG["createUiLayoutGroupEcsSystem<br/>bottom-up: measure preferred sizes<br/>top-down: assign child rects"]
     UL["createUiLayoutEcsSystem<br/>resolve anchors/pivots → rect<br/>write position.local,<br/>sprite.w/h/pivot/sortDepth"]
     TS["createTransformEcsSystem<br/><i>existing — composes world from local</i>"]
-    TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads"]
+    TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads<br/><i>issue #584, not this module</i>"]
     RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins"]
     UI2["createUiInteractionEcsSystem<br/>enter/exit/down/up/click/drag<br/>+ raise events"]
     W["<b>Game systems</b><br/><i>read onClick, isHovered, isPointerOverUi</i>"]
@@ -388,6 +396,10 @@ entire responsive-layout surface unit-testable in isolation. Anchor presets
 constants, and are what most callers actually touch.
 
 ### 5.6 Text pipeline
+
+> Owned by [#584](https://github.com/Forge-Game-Engine/Forge/issues/584), not this
+> module. Included because the UI module consumes it and the two have to agree on
+> the sub-quad contract (DL-05).
 
 ```mermaid
 flowchart LR
@@ -623,6 +635,10 @@ recompute of `verticalWorldUnits` from the live aspect ratio.
 
 ### DL-04 — Text uses MSDF atlases, in a sibling `/src/text` module
 
+> **Out of scope for this module.** Tracked in
+> [#584](https://github.com/Forge-Game-Engine/Forge/issues/584); retained here as
+> the decision record that led to it.
+
 **Options.** (a) Canvas2D `fillText` rendered to a texture per string. (b) Bitmap
 font atlas (BMFont). (c) MSDF atlas. (d) Vector glyph tessellation.
 
@@ -651,6 +667,10 @@ the critical path for everything else.
 ---
 
 ### DL-05 — One sub-quad expansion path serves nine-slice and text
+
+> **Out of scope for this module.** Tracked in
+> [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) alongside the text
+> work it exists to serve; retained here as the decision record.
 
 **Options.** (a) One child entity per glyph. (b) A separate text render system
 with its own command buffer. (c) Generalize the existing nine-slice expansion in
@@ -717,7 +737,7 @@ it stays `undefined` rather than taking a default — a default of `0` would
 silently override world-Y sorting for every sprite.
 
 This leaves `DepthEcsComponent` still dead, and now with no prospective use.
-Delete it and its tests (backlog 0.11) rather than leaving a component in the
+Delete it and its tests (backlog 0.4) rather than leaving a component in the
 public API that nothing reads.
 
 ---
@@ -870,44 +890,47 @@ frame is genuinely expensive.
 Sizes: **S** ≈ 1–2 days, **M** ≈ 3–5 days, **L** ≈ 1–2 weeks, **XL** ≈ 2 weeks+.
 Items on the critical path are marked ⛓.
 
-### Phase 0 — Prerequisites (nothing UI-shaped ships without these)
+### Phase 0 — Prerequisites
 
 | #     | Item                                                                        | Size | Notes                                                                                                           |
 | ----- | --------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------- |
 | 0.1 ⛓ | `PointerStateEcsComponent` + `createPointerEcsSystem` in `/src/input`       | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
-| 0.3 ⛓ | `FontAtlas` type + `loadFontAtlas` in `/src/asset-loading`                  | M    | msdf-atlas-gen JSON + PNG. Glyph UVs, advances, kerning, `distanceRange`. (DL-04)                               |
-| 0.4 ⛓ | MSDF fragment shader + `createMsdfTextRenderable`                           | S    | Median-of-3 + `smoothstep`, screen-space-derivative antialiasing.                                               |
-| 0.5 ⛓ | `TextEcsComponent`, `TextMeshEcsComponent`, `createTextShapingEcsSystem`    | L    | Shaping, word wrap, alignment, line spacing, kerning, dirty tracking.                                           |
-| 0.6 ⛓ | Sub-quad expansion in `render-system.ts`; nine-slice migrated onto it       | M    | (DL-05) Highest-risk refactor in the plan — existing hot path, existing tests, existing demos.                  |
-| 0.7   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
-| 0.8   | Verify UI-camera compositing order via a dedicated render target            | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
-| 0.9   | Ship a default MSDF atlas + document the generation recipe                  | S    | Zero-setup `createLabel`.                                                                                       |
-| 0.10  | `Rect2` plain-object type + static helpers                                  | S    | (DL-11)                                                                                                         |
-| 0.11  | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.7 lands. (DL-06)                                                       |
+| 0.2 ⛓ | `Rect2` plain-object type + static helpers                                  | S    | (DL-11) Foundational — every element in this design is a rect.                                                  |
+| 0.3   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
+| 0.4   | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.3 lands. (DL-06)                                                       |
+| 0.5   | Verify UI-camera compositing order via a dedicated render target            | S    | (DL-01) Confirm the present pass layers a transparent UI target over the world target correctly.                |
 
-Item 0.2 was a `TouchInputSource`. It has been **removed as out of scope** —
-numbering is left with the gap rather than renumbered so the decision stays
-visible. Item 0.1's `PointerStateEcsComponent` is specified source-agnostically
-so touch can be added later as another writer without revisiting this design
-(see DL-07).
+**What moved out of Phase 0, and where it went.** Three things that started here
+are now separately owned, which is why this phase is far smaller than the work it
+gates:
 
-**Phase 0 exit criterion:** `createLabel(world, 'Hello')` renders crisp,
-correctly-kerned, batched text in the world, and `pointerState.position` is
-correct in canvas pixels after a window resize.
+| Was                                                                                                | Now                                                                                                                                |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `TouchInputSource`                                                                                 | Out of scope. Documentation accuracy only: [#582](https://github.com/Forge-Game-Engine/Forge/issues/582)                           |
+| Font atlas loading, MSDF shader, text shaping, default atlas, **and the sub-quad render refactor** | Out of scope: [#584](https://github.com/Forge-Game-Engine/Forge/issues/584). DL-04 and DL-05 remain here as decision records only. |
+| Rect clipping / masking                                                                            | Out of scope: [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)                                                        |
+
+Removing text also removed the plan's highest-risk item — the sub-quad expansion
+refactor of `render-system.ts` — from the UI critical path. It now sits with the
+work that actually needs it.
+
+**Phase 0 exit criterion:** `pointerState.position` is correct in canvas pixels
+after a window resize, `Rect2` is available, and a sprite with an explicit
+`sortDepth` draws in that order rather than by world Y.
 
 ### Phase 1 — Layout core
 
-| #     | Item                                                                | Size | Notes                                                                                  |
-| ----- | ------------------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------- |
-| 1.1 ⛓ | `RectTransformEcsComponent` + `resolveRect` pure function           | M    | §5.5. Unit-tested exhaustively — this is the piece everything else assumes correct.    |
-| 1.2 ⛓ | `CanvasEcsComponent` + `createUiCanvas`                             | M    | Render mode, reference resolution, scale mode, dedicated camera wiring. (DL-01, DL-03) |
-| 1.3 ⛓ | `createUiLayoutEcsSystem`                                           | M    | Top-down memoized resolve; writes `position.local`, sprite size/pivot, depth.          |
-| 1.4   | `UiAnchor` presets                                                  | S    | `topLeft`, `center`, `stretchAll`, `stretchHorizontal`, …                              |
-| 1.5   | `createPanel`, `createLabel` helpers                                | S    | The `createCamera` aggregate-factory pattern.                                          |
-| 1.6   | Resize handling                                                     | S    | Canvas rect follows `renderContext` dimensions; re-resolve on change.                  |
-| 1.7   | Docs page + a UI demo under `documentation-site/src/pages/demos/ui` | M    | Required by the verification checklist.                                                |
+| #     | Item                                                                                                              | Size | Notes                                                                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------- |
+| 1.1 ⛓ | `RectTransformEcsComponent` + `resolveRect` pure function                                                         | M    | §5.5. Unit-tested exhaustively — this is the piece everything else assumes correct.    |
+| 1.2 ⛓ | `CanvasEcsComponent` + `createUiCanvas`                                                                           | M    | Render mode, reference resolution, scale mode, dedicated camera wiring. (DL-01, DL-03) |
+| 1.3 ⛓ | `createUiLayoutEcsSystem`                                                                                         | M    | Top-down memoized resolve; writes `position.local`, sprite size/pivot, depth.          |
+| 1.4   | `UiAnchor` presets                                                                                                | S    | `topLeft`, `center`, `stretchAll`, `stretchHorizontal`, …                              |
+| 1.5   | `createPanel` helper (and `createLabel` once [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) lands) | S    | The `createCamera` aggregate-factory pattern.                                          |
+| 1.6   | Resize handling                                                                                                   | S    | Canvas rect follows `renderContext` dimensions; re-resolve on change.                  |
+| 1.7   | Docs page + a UI demo under `documentation-site/src/pages/demos/ui`                                               | M    | Required by the verification checklist.                                                |
 
-**Phase 1 exit criterion:** A HUD with a corner-anchored score label and a
+**Phase 1 exit criterion:** A HUD with a corner-anchored panel and a
 stretched top bar holds its layout correctly across window resizes and aspect
 ratio changes.
 
@@ -964,15 +987,15 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ## 9. Risks and tradeoffs
 
-| Risk                                                                                                                                                  | Likelihood | Impact | Mitigation                                                                                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Text is a subsystem, not a feature.** Phase 0 is over half the effort and delivers nothing visibly "UI".                                            | Certain    | High   | Frame and ship `/src/text` as its own release. It has standalone value (damage numbers, dialogue, debug overlays) before any UI exists.                                                                                                  |
-| **The sub-quad refactor (0.6) destabilizes the renderer.** It touches a hot path with existing tests and eight physics demos depending on nine-slice. | Medium     | High   | Land it as a pure refactor with zero behavior change first, verified by the existing nine-slice demo and e2e suite, _then_ add text on top. Fallback in DL-05.                                                                           |
-| **The model is enormous.** Mature implementations represent many years of engineering. Scope creep is the default outcome.                            | High       | Medium | Phases 0–2 are the product. Phases 3–5 are a menu, prioritized by what the demos actually need. Ship Phase 2 before starting Phase 3.                                                                                                    |
-| **Y-axis confusion** between Y-up world, Y-down sprite pivots, and Y-down canvas pixels.                                                              | High       | Medium | One documented conversion table (§5.2), conversions confined to two named functions, and an e2e test that asserts a corner-anchored element renders in the correct screen corner — the assertion that actually catches an inverted axis. |
-| **Layout↔transform ordering** is implicit and silently produces one-frame lag if reversed.                                                            | Medium     | Medium | Assert ordering in `createUiCanvas`, and add a unit test that registers the systems in the wrong order and asserts it throws.                                                                                                            |
-| **Per-frame full recompute** may not scale to large UIs.                                                                                              | Low        | Low    | (DL-12). The `isStatic` freeze pattern is already proven in `transform-system.ts`.                                                                                                                                                       |
-| **Demos are an untested runtime surface.** Per `AGENTS.md`, root `check-types`/`test` pass even when every demo is broken.                            | Medium     | Medium | The UI demo is part of Phase 1's definition of done, not a follow-up, and gets an e2e test rather than only a manual browser check.                                                                                                      |
+| Risk                                                                                                                                                                                                                                     | Likelihood | Impact | Mitigation                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The module is not useful until [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) lands.** Buttons need labels; HUDs need numbers. Every phase here can be built and unit-tested without text, but not demoed convincingly. | Certain    | High   | Accepted, not mitigated — this is a sequencing fact, not a risk to manage. Build Phases 0–2 in parallel with #584; treat text landing as the gate on the UI module's first release, and say so in its docs rather than shipping a text-less module that looks broken. |
+| **The sub-quad refactor destabilizes the renderer.** It touches a hot path with existing tests and eight-plus demos depending on nine-slice.                                                                                             | Medium     | High   | No longer on this plan's critical path — it moved to [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) with the text work that needs it. Recorded here because DL-05 is the decision that put it there.                                                   |
+| **The model is enormous.** Mature implementations represent many years of engineering. Scope creep is the default outcome.                                                                                                               | High       | Medium | Phases 0–2 are the product. Phases 3–5 are a menu, prioritized by what the demos actually need. Ship Phase 2 before starting Phase 3.                                                                                                                                 |
+| **Y-axis confusion** between Y-up world, Y-down sprite pivots, and Y-down canvas pixels.                                                                                                                                                 | High       | Medium | One documented conversion table (§5.2), conversions confined to two named functions, and an e2e test that asserts a corner-anchored element renders in the correct screen corner — the assertion that actually catches an inverted axis.                              |
+| **Layout↔transform ordering** is implicit and silently produces one-frame lag if reversed.                                                                                                                                               | Medium     | Medium | Assert ordering in `createUiCanvas`, and add a unit test that registers the systems in the wrong order and asserts it throws.                                                                                                                                         |
+| **Per-frame full recompute** may not scale to large UIs.                                                                                                                                                                                 | Low        | Low    | (DL-12). The `isStatic` freeze pattern is already proven in `transform-system.ts`.                                                                                                                                                                                    |
+| **Demos are an untested runtime surface.** Per `AGENTS.md`, root `check-types`/`test` pass even when every demo is broken.                                                                                                               | Medium     | Medium | The UI demo is part of Phase 1's definition of done, not a follow-up, and gets an e2e test rather than only a manual browser check.                                                                                                                                   |
 
 ### The tradeoff worth stating plainly
 
@@ -1002,8 +1025,8 @@ is pure data transformation.
   falls through; `interactable: false` is skipped.
 - Interaction: drive the §5.7 state machine through every transition with a
   synthetic pointer, asserting events fire exactly once.
-- Text shaping: known string + known metrics → known glyph positions; word wrap
-  boundaries; kerning pair application.
+  Text shaping tests belong to
+  [#584](https://github.com/Forge-Game-Engine/Forge/issues/584), not this suite.
 
 **E2E (`/e2e`, Playwright).** Per the `write-e2e-test` skill, the assertions that
 unit tests provably cannot make:
@@ -1027,15 +1050,16 @@ feature in one page, and doubling as the stress test for DL-12.
 
 ## 11. Open questions
 
-1. **Does `/src/text` ship before `/src/ui`, as its own minor release?**
-   Recommendation: yes. It has standalone value and de-risks the critical path.
+1. **Does the UI module get released before
+   [#584](https://github.com/Forge-Game-Engine/Forge/issues/584)?** It can be
+   _built_ first, but a text-less UI module will read as broken to anyone who
+   installs it. Recommendation: build in parallel, gate the release on text.
 2. **Is world-space canvas mode (5.3) actually Phase 5?** Health bars over enemies
-   are a common need and might justify promoting it to Phase 2.
-3. **Which default font ships with the engine?** Needs a permissive license, good
-   glyph coverage, and a small atlas. The repo already vendors Fira and Aoboshi
-   references in `.cspell/project-words.txt`, suggesting prior art to check.
-4. **Should `Rect` be deprecated in the same release that introduces `Rect2`?**
+   are a common need and might justify promoting it to Phase 2. Note it also
+   depends on [#581](https://github.com/Forge-Game-Engine/Forge/issues/581), since
+   a health bar parented to a rotating ship is exactly the broken case.
+3. **Should `Rect` be deprecated in the same release that introduces `Rect2`?**
    (DL-11) — a small breaking change, cheapest to do now while pre-1.0.
-5. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
+4. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
    parallel offscreen DOM accessibility tree in scope before 1.0, or explicitly
    deferred? Worth an explicit decision rather than a silent omission.
