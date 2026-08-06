@@ -81,8 +81,10 @@ the largest external dependency on this plan.
 - **No rich-text document layout.** Single-font, single-style runs per text
   element for v1. No inline images, no bidirectional text, no complex script
   shaping (Arabic, Devanagari).
-- **No DOM-backed widgets** other than the one deliberate exception for text
-  input (see DL-10).
+- **No DOM-backed widgets.** The one place browser text entry is unavoidable
+  (IME, mobile keyboards, clipboard) is isolated as an input primitive in
+  `/src/input`, not as DOM inside a UI component — so this module stays
+  DOM-free (DL-10).
 
 ---
 
@@ -1060,10 +1062,36 @@ accessibility — a multi-month rabbit hole that browsers already solve correctl
 This is the _one_ place where DOM interop is the right engineering call, and it is
 the standard approach in browser engines (PixiJS, Phaser).
 
-**Consequences.** A deliberate, contained DOM dependency in one component. It must
-be positioned to follow the element's screen rect (which requires
-`worldToScreenSpace` — already present in `src/rendering/transforms/`) and cleaned
-up in the system's `cleanup` hook.
+**Consequences.** A deliberate, contained DOM dependency. It must be positioned
+to follow the element's screen rect (which requires `worldToScreenSpace` —
+already present in `src/rendering/transforms/`) and cleaned up in the system's
+`cleanup` hook.
+
+#### Why a text _input_ stays in UI when text _rendering_ does not
+
+These look inconsistent and aren't, because a text input is two separable
+concerns wearing one name:
+
+| Concern                                                                      | Belongs to                                                    | Why                                                                                                                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Text entry** — keystrokes, caret, selection, IME, clipboard, soft keyboard | Input                                                         | Almost always implies a focused interactive widget. Unlike damage numbers or world signage, there is no "entry" without something to type into. |
+| **Text display** — drawing the string, caret, and selection highlight        | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) | Identical to drawing any other text.                                                                                                            |
+| **The focusable rect it all hangs off**                                      | UI                                                            | An interactive rectangle is exactly what this module is.                                                                                        |
+
+So the field itself belongs here — but **it is the most hard-blocked item in the
+backlog**. Scroll views merely look wrong without clipping; a text field is
+_unusable_ without text rendering, because you cannot see what you type. Item
+3.5 is marked blocked on #584 accordingly.
+
+**One piece should be split out, for the same reason DL-07 moved the pointer.**
+The hidden-`<input>` bridge — "give me a DOM input synced to this screen rect,
+and tell me its value, caret, and selection" — is where all the IME and
+mobile-keyboard complexity lives, and it is reusable by anything needing text
+entry rather than being specific to one UI widget. It belongs as a small
+primitive in `/src/input`, next to the other input sources, with
+`TextInputEcsComponent` consuming it. That keeps the UI module free of DOM
+entirely, which restores the "no DOM-backed widgets" non-goal in §2 as a real
+invariant rather than one with an exception carved out of it.
 
 ---
 
@@ -1273,15 +1301,15 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ### Phase 3 — Controls
 
-| #   | Item                                                                                                                                                    | Size      |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| 3.1 | `ToggleEcsComponent` (checkbox / radio via toggle groups)                                                                                               | S         |
-| 3.2 | `SliderEcsComponent` (drag handle, fill, min/max, whole-number mode)                                                                                    | M         |
-| 3.3 | ~~`RectMaskEcsComponent` + per-instance clip rect~~ — **out of scope**, tracked in [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)        | —         |
-| 3.4 | `ScrollRectEcsComponent` (drag + wheel, inertia, elasticity, scrollbars) — **blocked on [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)** | L         |
-| 3.5 | `TextInputEcsComponent` via hidden DOM input                                                                                                            | L (DL-10) |
-| 3.6 | `DropdownEcsComponent`                                                                                                                                  | M         |
-| 3.7 | Progress bar / radial fill                                                                                                                              | S         |
+| #   | Item                                                                                                                                                                                                                             | Size |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | `ToggleEcsComponent` (checkbox / radio via toggle groups)                                                                                                                                                                        | S    |
+| 3.2 | `SliderEcsComponent` (drag handle, fill, min/max, whole-number mode)                                                                                                                                                             | M    |
+| 3.3 | ~~`RectMaskEcsComponent` + per-instance clip rect~~ — **out of scope**, tracked in [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)                                                                                 | —    |
+| 3.4 | `ScrollRectEcsComponent` (drag + wheel, inertia, elasticity, scrollbars) — **blocked on [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)**                                                                          | L    |
+| 3.5 | `TextInputEcsComponent` — **hard-blocked on [#584](https://github.com/Forge-Game-Engine/Forge/issues/584)**; unusable, not merely imperfect, without text rendering. Consumes a DOM text-entry primitive in `/src/input` (DL-10) | L    |
+| 3.6 | `DropdownEcsComponent`                                                                                                                                                                                                           | M    |
+| 3.7 | Progress bar / radial fill                                                                                                                                                                                                       | S    |
 
 ### Phase 4 — Layout groups
 
