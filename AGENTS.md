@@ -28,7 +28,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **Physics**: Native 2D physics engine (rigid bodies, collision detection/resolution, gravity)
 - **Audio**: Sound management via Howler.js
 - **Animations**: Robust animation system
-- **Input**: Keyboard, mouse, and touch input handling
+- **Input**: Keyboard, mouse, and gamepad input handling
 - **Particles**: Particle system
 - **Asset Loading**: Resource management
 - **FSM**: Finite state machine implementation
