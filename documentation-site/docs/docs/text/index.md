@@ -31,6 +31,11 @@ Three pieces work together:
   [`TextMeshEcsComponent`](/Forge/docs/api/interfaces/TextMeshEcsComponent)
   the render system draws.
 
+Try it in the [Text demo](/Forge/demos/text), which renders word-wrapped,
+aligned paragraphs from a real generated Liberation Sans MSDF atlas,
+including a live per-frame-updated label showing the shaping system's dirty
+tracking in action.
+
 Guides in this section:
 
 - [MSDF Text](./msdf-text.md): generating a font atlas, loading it, and

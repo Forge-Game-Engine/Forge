@@ -17,6 +17,11 @@ msdf-atlas-gen -font Roboto-Regular.ttf -type msdf -format png \
   -charset charset.txt -size 32 -pxrange 4
 ```
 
+(The [Text demo](/Forge/demos/text)'s own atlas -
+`documentation-site/static/fonts/liberation-sans/` - was generated the same
+way, from Liberation Sans; see the `README.md` alongside it for the exact
+command used.)
+
 Host the resulting `.json` and `.png` as static assets (e.g. next to your
 other sprite sheets) and load them with
 [`loadFontAtlas`](/Forge/docs/api/functions/loadFontAtlas):

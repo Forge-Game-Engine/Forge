@@ -195,6 +195,10 @@ const config: Config = {
               to: 'demos/texture-filtering',
               label: 'Texture Filtering',
             },
+            {
+              to: 'demos/text',
+              label: 'Text',
+            },
           ],
         },
         {
