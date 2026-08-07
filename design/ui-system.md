@@ -157,53 +157,46 @@ Priority is one scale, ordered: **Blocker** (no usable UI without it) > **High**
 (ships broken or misleading without it) > **Medium** > **Low**. "Tracked as"
 points at the backlog item in §8 or the issue that owns it.
 
-| Gap                                                          | Priority                      | Tracked as                                                    | Detail                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No text rendering of any kind**                            | Out of scope (blocks release) | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584) | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. Generally useful outside UI (damage numbers, dialogue, debug overlays), so it belongs in `/src/text`. The UI module can be built and tested without it, but cannot ship a convincing demo until it lands.                                                                      |
-| **No canvas-space pointer**                                  | **Blocker**                   | 0.1                                                           | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                                 |
-| **No rectangle type or rect concept in the transform**       | **Blocker**                   | 0.2, 1.1                                                      | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so the plain-object `Rect` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
-| **Draw order is world Y**                                    | **Blocker**                   | 0.3                                                           | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                                |
-| **`MouseInputSource` caches `getBoundingClientRect()` once** | High                          | 0.1                                                           | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                                  |
-| **Parented position offsets ignore parent rotation/scale**   | High                          | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) | `composeWithParent` inherits rotation and scale correctly but composes position as `parent.world + local`, so a child's offset is never rotated or scaled by the parent. A child of a rotating parent spins in place instead of orbiting. Pre-existing bug; see the note below.                                                                                                                   |
-| **No clipping/masking**                                      | Out of scope                  | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                                               |
-| **`DepthEcsComponent` is dead code**                         | Low                           | 0.4                                                           | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                                   |
-| **No touch input source**                                    | Out of scope                  | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) | `AGENTS.md` advertises "Keyboard, mouse, and touch input handling"; `src/input/` has keyboard, mouse, and gamepad only. Touch is explicitly out of scope for this design; #582 covers only correcting the documentation.                                                                                                                                                                          |
+| Gap                                                            | Priority                      | Tracked as                                                                                                                                   | Detail                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No text rendering of any kind**                              | Out of scope (blocks release) | [#584](https://github.com/Forge-Game-Engine/Forge/issues/584)                                                                                | `grep -ri "font\|fillText" src` returns only terrain-mesh noise. There is no glyph, no font asset, no text shaper. Generally useful outside UI (damage numbers, dialogue, debug overlays), so it belongs in `/src/text`. The UI module can be built and tested without it, but cannot ship a convincing demo until it lands.                                                                      |
+| **No canvas-space pointer**                                    | **Blocker**                   | 0.1                                                                                                                                          | Cursor position only exists as a side effect of `Axis2dAction` bindings inside `MouseInputSource`. Nothing exposes "where is the pointer, in canvas pixels, right now" — so nothing can hit-test.                                                                                                                                                                                                 |
+| **No rectangle type or rect concept in the transform**         | **Blocker**                   | 0.2, 1.1                                                                                                                                     | Transforms are point + rotation + scale. Every element in this design is a rectangle resolved against its parent's rectangle, so the plain-object `Rect` and `RectTransformEcsComponent` are foundational and must be built first — not a nice-to-have. `src/math/Rect.ts` exists but is a class predating the `Vector2` class→plain-object migration, so it is not the type to build on (DL-11). |
+| **Draw order is world Y**                                      | **Blocker**                   | 0.3                                                                                                                                          | `render-system.ts:98` — `const depth = entityPosition.world.y`. For UI this is not a tuning problem, it is visibly wrong output: a label near the top of a panel draws _behind_ the panel. (DL-06)                                                                                                                                                                                                |
+| **`MouseInputSource` caches `getBoundingClientRect()` once**   | High                          | 0.1                                                                                                                                          | `mouse-input-source.ts:61` — captured in the constructor. Every pointer coordinate is wrong after a resize, scroll, or layout shift. Pre-existing bug; hit testing makes it immediately visible.                                                                                                                                                                                                  |
+| ~~**Parented position offsets ignore parent rotation/scale**~~ | **Fixed**                     | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) → [#587](https://github.com/Forge-Game-Engine/Forge/pull/587)                  | Landed on `dev`. `composePositionWithParent` now scales the child's local offset by the parent's world scale and rotates it by the parent's world rotation before adding. The three superseded `parent-*-system.ts` files were deleted in the same change.                                                                                                                                        |
+| **No clipping/masking**                                        | Out of scope                  | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)                                                                                | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                                               |
+| **`DepthEcsComponent` is dead code**                           | Low                           | 0.4                                                                                                                                          | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                                   |
+| **No touch input source**                                      | Out of scope                  | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) → [#588](https://github.com/Forge-Game-Engine/Forge/pull/588) (doc fix landed) | `src/input/` has keyboard, mouse, and gamepad. `AGENTS.md` no longer claims touch. Touch itself remains out of scope for this design; `PointerEcsComponent` is specified source-agnostically so it can be added later without revisiting anything here (DL-07).                                                                                                                                   |
 
-**On the transform bug.** `composeWithParent`
-(`src/common/systems/transform-system.ts`) does this:
+**On the transform bug (now fixed).** This design was written while
+`composeWithParent` composed a child's world position as
+`parent.world.position + local.position`, adding the local offset raw without
+first scaling and rotating it by the parent. A child of a rotating parent spun
+in place instead of orbiting — a turret on a rotating tank rotated correctly and
+sat in the wrong place — and nothing locked the behavior in, since
+`transform-system.test.ts` never attached a rotation or scale component to a
+parent.
+
+[#587](https://github.com/Forge-Game-Engine/Forge/pull/587) fixed it on `dev`,
+and the composition is now what a 2D TRS nesting requires:
 
 ```
-world.rotation = parent.world.rotation + local.rotation      // correct
-world.scale    = parent.world.scale    * local.scale         // correct
-world.position = parent.world.position + local.position      // missing two terms
+offset = local.position * parent.world.scale
+offset = rotate(offset, parent.world.rotation)
+world.position = parent.world.position + offset
 ```
 
-A correct 2D TRS composition needs the child's local offset transformed by the
-parent before it is added:
+The same change deleted `parent-position-system.ts`,
+`parent-rotation-system.ts`, and `parent-scale-system.ts`, which carried the
+identical additive composition and were dead code superseded by
+`createTransformEcsSystem`.
 
-```
-world.position = parent.world.position
-               + rotate(local.position * parent.world.scale, parent.world.rotation)
-```
-
-Concretely: parent at the origin rotated 90°, child at local `(10, 0)`. The
-child's world position should be `(0, 10)` — instead it stays at `(10, 0)`,
-while the child's own `world` rotation _is_ correctly 90°. So the child sprite
-spins but does not orbit: a turret on a rotating tank rotates correctly and sits
-in the wrong place.
-
-Nothing currently locks this in — `transform-system.test.ts` has seven tests and
-none of them touch rotation or scale. The three older
-`parent-position-system.ts` / `parent-rotation-system.ts` /
-`parent-scale-system.ts` files carry the same additive position composition, but
-are not exported from `src/common/systems/index.ts` and are referenced only by
-their own tests, so they are dead code superseded by `createTransformEcsSystem`.
-
-This is filed as [#581](https://github.com/Forge-Game-Engine/Forge/issues/581)
-and is **not** something this design works around. Every diagram and decision below assumes it is fixed. The UI system does
-not itself depend on the fix (UI elements are unrotated and unscaled in the
-common case), but anything diegetic — a world-space health bar above a rotating
-ship, Phase 5.3 — does.
+Retained here because the design's assumptions were formed against the broken
+behavior and it is worth knowing they no longer are. The UI system never
+depended on the fix directly — UI elements are unrotated and unscaled in the
+common case — but anything diegetic does: a world-space health bar above a
+rotating ship (Phase 5.3) was exactly the broken case, and is now unblocked.
 
 ---
 
@@ -472,7 +465,7 @@ tick — never their ordering within the frame. Two cases fall out of that:
 - **Enter and press in the same tick.** At 60 Hz a frame is ~16.7 ms, and a
   flick-and-click comfortably fits inside one. More decisively, **touch has no
   hover phase at all** — the first event is simultaneously "entered" and "down".
-  Touch is out of scope (#582), but DL-07 specifies the pointer
+  Touch is out of scope, but DL-07 specifies the pointer
   source-agnostically so it can be added later without revisiting this design,
   and that promise is only real if the state machine already tolerates a missing
   hover.
@@ -791,29 +784,29 @@ not scale its children's offsets.
 approach and it silently half-works. _Match width_ mode needs a small per-frame
 recompute of `verticalWorldUnits` from the live aspect ratio.
 
-#### Does this decision survive the transform fix ([#581](https://github.com/Forge-Game-Engine/Forge/issues/581))?
+#### Did this decision survive the transform fix ([#587](https://github.com/Forge-Game-Engine/Forge/pull/587))?
 
 **Yes — the decision stands, and for reasons that never depended on the bug.**
-Worth being precise about what #581 does and does not change, because the
-composition rules differ per channel and only one of them is wrong:
+The fix has since landed on `dev`. Worth keeping the per-channel breakdown,
+because the composition rules differ and only one of them was ever wrong:
 
-| Channel  | Composition today                           | Correct?                                                                                            |
-| -------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Rotation | `parent.world + local` — **additive**       | ✅ correct; adding angles is what nesting rotations means                                           |
-| Scale    | `parent.world * local` — **multiplicative** | ✅ correct; a 2x parent with a 3x child is 6x                                                       |
-| Position | `parent.world + local` — **additive**       | ❌ incomplete — the local offset is added raw, without first being scaled and rotated by the parent |
+| Channel  | Composition                                 | Was it correct before #587?                                                |
+| -------- | ------------------------------------------- | -------------------------------------------------------------------------- |
+| Rotation | `parent.world + local` — **additive**       | ✅ correct; adding angles is what nesting rotations means                  |
+| Scale    | `parent.world * local` — **multiplicative** | ✅ correct; a 2x parent with a 3x child is 6x                              |
+| Position | now scales + rotates the offset first       | ❌ was incomplete — the local offset was added raw, unscaled and unrotated |
 
-So #581 is not "make scale and rotation additive like position". Those two are
-already right. The fix is to make position's composition _account for_ the
-parent's already-correct rotation and scale:
+So #587 was not "make scale and rotation additive like position". Those two were
+already right. The fix made position's composition _account for_ the parent's
+already-correct rotation and scale:
 
 ```
 world.position = parent.world.position
                + rotate(local.position * parent.world.scale, parent.world.rotation)
 ```
 
-Once that lands, option (b) stops being broken — a scaled canvas root _would_
-correctly scale its children's offsets, and sprite sizes already scale
+Now that it has landed, option (b) is no longer broken — a scaled canvas root
+_does_ correctly scale its children's offsets, and sprite sizes already scale
 (`bindSpriteInstanceData` multiplies by `scale.world`). But (b) still loses, on
 the arguments that were always the real ones:
 
@@ -1463,9 +1456,10 @@ feature in one page, and doubling as the stress test for DL-12.
    _built_ first, but a text-less UI module will read as broken to anyone who
    installs it. Recommendation: build in parallel, gate the release on text.
 2. **Is world-space canvas mode (5.3) actually Phase 5?** Health bars over enemies
-   are a common need and might justify promoting it to Phase 2. Note it also
-   depends on [#581](https://github.com/Forge-Game-Engine/Forge/issues/581), since
-   a health bar parented to a rotating ship is exactly the broken case.
+   are a common need and might justify promoting it to Phase 2. Its one blocker
+   is gone — [#587](https://github.com/Forge-Game-Engine/Forge/pull/587) landed
+   the transform fix, and a health bar parented to a rotating ship was exactly
+   the broken case.
 3. **What should the rect static namespace be called?** (DL-11) — `Rects`, or
    `Rectangle`/`Rect` to mirror `Vector2`/`Vec2` more literally.
 4. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
