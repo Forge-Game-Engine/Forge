@@ -273,4 +273,54 @@ describe('transform-system', () => {
     expect(childPosition.world.x).toBeCloseTo(-10);
     expect(childPosition.world.y).toBeCloseTo(20);
   });
+
+  it('should leave a child unaffected when an ancestor in the chain has no position or rotation component', () => {
+    const grandparent = world.createEntity();
+    const middle = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, grandparent, { local: { x: 0, y: 0 } });
+
+    const middleRotation = addRotationComponent(world, middle, {
+      local: Math.PI / 2,
+    });
+
+    addParentComponent(world, middle, { parent: grandparent });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 5, y: 5 },
+    });
+
+    addParentComponent(world, child, { parent: middle });
+
+    world.update();
+
+    // middle has no PositionEcsComponent, so it composes rotation only, and
+    // since grandparent has no RotationEcsComponent, middle keeps its local rotation.
+    expect(middleRotation.world).toBeCloseTo(Math.PI / 2);
+
+    // child's parent (middle) has no PositionEcsComponent, so child's world
+    // position falls back to its local position, untransformed.
+    expect(childPosition.world.x).toBe(5);
+    expect(childPosition.world.y).toBe(5);
+  });
+
+  it('should leave a child scale unaffected when its parent has no scale component', () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
+
+    const childScale = addScaleComponent(world, child, {
+      local: { x: 3, y: 4 },
+    });
+
+    addPositionComponent(world, child, { local: { x: 0, y: 0 } });
+    addParentComponent(world, child, { parent });
+
+    world.update();
+
+    expect(childScale.world.x).toBe(3);
+    expect(childScale.world.y).toBe(4);
+  });
 });
