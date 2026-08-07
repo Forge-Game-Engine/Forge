@@ -17,7 +17,7 @@ const renderLayers = {
 };
 
 /**
- * Builds the Text demo: loads a Liberation Sans MSDF font atlas, builds its
+ * Builds the Text demo: loads an Open Sans MSDF font atlas, builds its
  * shared renderable, and lays out a few showcase labels (see
  * `_create-labels.ts`) - a title/byline, three word-wrapped paragraphs
  * (one per alignment), and a live elapsed-time counter.

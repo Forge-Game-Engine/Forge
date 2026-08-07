@@ -32,7 +32,7 @@ Three pieces work together:
   the render system draws.
 
 Try it in the [Text demo](/Forge/demos/text), which renders word-wrapped,
-aligned paragraphs from a real generated Liberation Sans MSDF atlas,
+aligned paragraphs from a real generated Open Sans MSDF atlas,
 including a live per-frame-updated label showing the shaping system's dirty
 tracking in action.
 

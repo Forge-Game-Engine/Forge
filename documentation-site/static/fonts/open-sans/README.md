@@ -1,15 +1,15 @@
-# Liberation Sans MSDF atlas
+# Open Sans MSDF atlas
 
-`liberation-sans-msdf.png` + `liberation-sans-msdf.json` were generated from
-`LiberationSans-Regular.ttf` (SIL Open Font License 1.1, see `OFL.txt`)
-using [`msdf-atlas-gen`](https://github.com/Chlumsky/msdf-atlas-gen) v1.4.0:
+`open-sans-msdf.png` + `open-sans-msdf.json` were generated from
+`OpenSans-Regular.ttf` (Apache License 2.0, see `LICENSE.txt`) using
+[`msdf-atlas-gen`](https://github.com/Chlumsky/msdf-atlas-gen) v1.4.0:
 
 ```sh
 msdf-atlas-gen \
-  -font LiberationSans-Regular.ttf \
+  -font OpenSans-Regular.ttf \
   -type msdf -format png \
-  -imageout liberation-sans-msdf.png \
-  -json liberation-sans-msdf.json \
+  -imageout open-sans-msdf.png \
+  -json open-sans-msdf.json \
   -size 48 -pxrange 4 -yorigin bottom
 ```
 

@@ -9,12 +9,8 @@ import elapsedCounterSystemCode from '!!raw-loader!./_elapsed-counter.system';
 import { Demo } from '@site/src/components/Demo';
 
 export default function Text(): JSX.Element {
-  const fontJsonUrl = useBaseUrl(
-    'fonts/liberation-sans/liberation-sans-msdf.json',
-  );
-  const fontPngUrl = useBaseUrl(
-    'fonts/liberation-sans/liberation-sans-msdf.png',
-  );
+  const fontJsonUrl = useBaseUrl('fonts/open-sans/open-sans-msdf.json');
+  const fontPngUrl = useBaseUrl('fonts/open-sans/open-sans-msdf.png');
 
   return (
     <Demo
@@ -24,7 +20,7 @@ export default function Text(): JSX.Element {
           'A demo showcasing MSDF font atlas text rendering: word-wrap, alignment, and cheap per-frame text updates.',
       }}
       header="Text"
-      blurb="Text rendered from an MSDF font atlas (Liberation Sans), showing word-wrap and alignment side by side, plus a live counter to show that updating a label's text every frame is cheap - only entities whose text actually changed get re-shaped."
+      blurb="Text rendered from an MSDF font atlas (Open Sans), showing word-wrap and alignment side by side, plus a live counter to show that updating a label's text every frame is cheap - only entities whose text actually changed get re-shaped."
       createGame={() => createTextGame(fontJsonUrl, fontPngUrl)}
       codeFiles={[
         { name: 'game.ts', content: gameCode },
