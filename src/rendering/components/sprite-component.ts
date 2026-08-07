@@ -37,9 +37,11 @@ export interface SpriteRequiredOptions {
 export interface SpriteDefaultedOptions {
   /**
    * The sprite's origin, normalized to the sprite's own size: `(0, 0)` is
-   * the top-left corner, `(0.5, 0.5)` (the default) is the center, and
-   * `(1, 1)` is the bottom-right corner. Determines which point of the
-   * sprite is placed at, and rotated/scaled around, the entity's position.
+   * the bottom-left corner, `(0.5, 0.5)` (the default) is the center, and
+   * `(1, 1)` is the top-right corner - Y-up, matching every other
+   * Y-facing value in the engine (world position, rotation). Determines
+   * which point of the sprite is placed at, and rotated/scaled around, the
+   * entity's position.
    */
   pivot: Vector2;
 

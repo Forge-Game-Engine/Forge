@@ -31,7 +31,18 @@ void main() {
     // pivot (0,0) lands 25% in from the sprite's edge instead of at the
     // edge, and every non-center pivot value needs a compensating
     // adjustment to land where it visually should.
-    vec2 normalizedPivot = (a_instancePivot - 0.5) * 2.0;
+    //
+    // Y is negated on top of that: `a_instancePivot` is public API
+    // (`SpriteEcsComponent.pivot`) and is Y-up like every other public
+    // Y-facing value in the engine (world position, rotation), so pivot
+    // (0, 0) means bottom-left and (1, 1) means top-right. Everything below
+    // this line - a_position, a_instancePos, the projection - lives in the
+    // Y-down space the projection matrix's flip expects, so the pivot's Y
+    // needs the same flip before it's combined with a_position.
+    vec2 normalizedPivot = vec2(
+        (a_instancePivot.x - 0.5) * 2.0,
+        -(a_instancePivot.y - 0.5) * 2.0
+    );
     
     // 1. Apply pivot (move origin)
     vec2 pivoted = a_position - normalizedPivot;
