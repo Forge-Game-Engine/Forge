@@ -8,6 +8,10 @@ draws the sprites matching that camera's `cullingMask`, sorted by each
 sprite's `layer` (draw order, lower first) and then by depth (world Y
 position) within a layer, batching consecutive sprites that share a
 [`Renderable`](/Forge/docs/api/classes/Renderable) into a single draw call.
+Shaped text (`@forge-game-engine/forge/text`) draws through this same path
+- each glyph quad expands into a `SpriteEcsComponent`-shaped render command,
+so a label sorts and batches with sprites exactly like a nine-sliced
+panel's regions do; see [Text](../text/index.md).
 
 This section is a work in progress and currently covers the multipass
 rendering foundation and its first post-processing effect; a full guide to

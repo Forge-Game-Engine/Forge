@@ -12,6 +12,12 @@ import { Matrix3x3, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
+  TextEcsComponent,
+  textId,
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/components/index.js';
+import {
   CameraEcsComponent,
   cameraId,
   SpriteEcsComponent,
@@ -170,6 +176,107 @@ const pushSpriteRenderCommands = (
   }
 };
 
+// Text is expanded into per-glyph, `SpriteEcsComponent`-shaped render
+// commands right here, isolated to these two functions, rather than
+// generalizing nine-slice's expansion into a shared `SubQuad[]` path (see
+// issue #584): every glyph quad needs exactly the same instance data a
+// sprite already carries (position, rotation, scale, size, pivot, uv,
+// tint), so a glyph can reuse the sprite vertex shader/instancing pipeline
+// unchanged by simply constructing a `SpriteEcsComponent` for it, the same
+// trick nine-slice regions already use.
+function pushTextRenderCommands(
+  commands: RenderCommand[],
+  textComponent: TextEcsComponent,
+  textMeshComponent: TextMeshEcsComponent,
+  entityPosition: PositionEcsComponent,
+  rotationComponent: RotationEcsComponent | null,
+  scaleComponent: ScaleEcsComponent | null,
+  flipComponent: FlipEcsComponent | null,
+): void {
+  const { renderable, layer, color } = textComponent;
+  const depth = entityPosition.world.y;
+
+  const rotationRadians = rotationComponent?.world ?? 0;
+  const scaleX =
+    (scaleComponent?.world.x ?? 1) * (flipComponent?.flipX ? -1 : 1);
+  const scaleY =
+    (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
+
+  for (const glyph of textMeshComponent.glyphs) {
+    const glyphOffset = Vec2.rotate(
+      { x: glyph.offset.x * scaleX, y: glyph.offset.y * scaleY },
+      rotationRadians,
+    );
+
+    const glyphPosition: PositionEcsComponent = {
+      local: entityPosition.local,
+      // Clone before adding, matching `pushSpriteRenderCommands`: must not
+      // mutate the entity's live world position.
+      world: Vec2.add(Vec2.clone(entityPosition.world), glyphOffset),
+    };
+
+    const glyphSprite: SpriteEcsComponent = {
+      enabled: true,
+      width: glyph.size.x,
+      height: glyph.size.y,
+      pivot: { x: 0.5, y: 0.5 },
+      tintColor: color,
+      renderable,
+      uvOffset: glyph.uvOffset,
+      uvScale: glyph.uvScale,
+      layer,
+    };
+
+    commands.push({
+      layer,
+      depth,
+      renderable,
+      components: {
+        position: glyphPosition,
+        rotation: rotationComponent,
+        scale: scaleComponent,
+        sprite: glyphSprite,
+        flip: flipComponent,
+      },
+    });
+  }
+}
+
+function buildTextCameraCommands(
+  world: EcsWorld,
+  texts: TextEcsComponent[],
+  textMeshes: TextMeshEcsComponent[],
+  textPositions: PositionEcsComponent[],
+  textEntities: readonly number[],
+  cullingMask: number,
+  commands: RenderCommand[],
+): void {
+  for (let t = 0; t < textEntities.length; t++) {
+    const textComponent = texts[t];
+
+    if (!textComponent.enabled) {
+      continue;
+    }
+
+    if (!matchesMask(textComponent.renderable.category, cullingMask)) {
+      continue;
+    }
+
+    const textEntity = textEntities[t];
+    const entityPosition = textPositions[t];
+
+    pushTextRenderCommands(
+      commands,
+      textComponent,
+      textMeshes[t],
+      entityPosition,
+      world.getComponent<RotationEcsComponent>(textEntity, rotationId),
+      world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+      world.getComponent<FlipEcsComponent>(textEntity, flipId),
+    );
+  }
+}
+
 function buildCameraCommands(
   world: EcsWorld,
   sprites: SpriteEcsComponent[],
@@ -246,6 +353,13 @@ export const createRenderEcsSystem = (
       positionId,
     ]);
 
+    const {
+      entities: textEntities,
+      components: [texts, textMeshes, textPositions],
+    } = world.query<
+      [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
+    >([textId, textMeshId, positionId]);
+
     for (let c = 0; c < cameras.length; c++) {
       const cameraComponent = cameras[c];
       const cameraPositionComponent = cameraPositions[c];
@@ -277,6 +391,16 @@ export const createRenderEcsSystem = (
         sprites,
         spritePositions,
         spriteEntities,
+        cameraComponent.cullingMask,
+        commands,
+      );
+
+      buildTextCameraCommands(
+        world,
+        texts,
+        textMeshes,
+        textPositions,
+        textEntities,
         cameraComponent.cullingMask,
         commands,
       );

@@ -1,6 +1,7 @@
 aabb
 aabbs
 afterrun
+antialiases
 Aoboshi
 artboard
 attw
@@ -28,6 +29,7 @@ Flaticon
 fphysics
 fract
 frontmatter
+fwidth
 gamedev
 gamepadconnected
 Gamepads
@@ -39,6 +41,7 @@ highp
 hitscan
 hotspot
 hoverable
+imageout
 impluse
 Infima
 inigo
@@ -55,6 +58,9 @@ Mertens
 mousedown
 mousemove
 mouseup
+Msdf
+msdf
+MSDF
 Narkowicz
 ndot
 Nisbet
@@ -65,6 +71,7 @@ pingpong
 Pixabay
 prebuild
 prestart
+pxrange
 quilez
 rasterizer
 readback

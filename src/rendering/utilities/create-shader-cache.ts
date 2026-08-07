@@ -5,6 +5,7 @@ import {
   cubicShaderInclude,
   ForgeShaderSource,
   gaussianBlurFragmentShader,
+  msdfFragmentShader,
   passthroughFragmentShader,
   passthroughVertexShader,
   perlinNoiseFragmentShader,
@@ -69,6 +70,7 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(perlinNoiseFragmentShader))
     .addShader(new ForgeShaderSource(spriteFragmentShader))
     .addShader(new ForgeShaderSource(spriteVertexShader))
+    .addShader(new ForgeShaderSource(msdfFragmentShader))
     .addShader(new ForgeShaderSource(passthroughFragmentShader))
     .addShader(new ForgeShaderSource(passthroughVertexShader))
     .addShader(new ForgeShaderSource(gaussianBlurFragmentShader))

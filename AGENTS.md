@@ -31,6 +31,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **Input**: Keyboard, mouse, and gamepad input handling
 - **Particles**: Particle system
 - **Asset Loading**: Resource management
+- **Text**: MSDF font atlas text rendering
 - **FSM**: Finite state machine implementation
 
 **Important**: The engine contains general-purpose game functionality. Game-specific or genre-specific code should be in separate packages.
@@ -53,6 +54,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
   /physics                 # Physics integration
   /pooling                 # Object pooling
   /rendering               # Rendering system
+  /text                    # MSDF font atlas text rendering
   /timer                   # Timer utilities
   /utilities               # General utilities
   index.ts                 # Main exports
