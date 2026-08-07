@@ -64,6 +64,7 @@ MSDF
 Narkowicz
 ndot
 Nisbet
+nokerning
 normalise
 Oboro
 perlin
