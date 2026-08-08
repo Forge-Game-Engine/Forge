@@ -182,15 +182,15 @@ function createCellRegions(
           x: xSegment.start + xSegment.size / 2 - pivot.x * width,
           // Negated relative to x (written as a subtraction, not unary `-`,
           y:
-            // so a zero result stays +0 rather than -0): sprite instance data
-            // negates world.y again before it reaches the shader (see
-            // bindSpriteInstanceData), to convert this sprite-space, Y-down
-            // offset (near/top bands start at 0, far/bottom bands end at
-            // `height`) into the engine's Y-up world space. Without this, a
-            // region's own offset and its parent entity's position would be
-            // negated a different number of times, landing near/top bands at
-            // the far/bottom edge and vice versa.
-            pivot.y * height - (ySegment.start + ySegment.size / 2),
+            // so a zero result stays +0 rather than -0): band coordinates
+            // (`ySegment.start`/`.size`) run sprite-space Y-down (near/top
+            // bands start at 0, far/bottom bands end at `height`), but this
+            // offset is added directly to `entityPosition.world`, which is
+            // Y-up. `pivot.y` is also Y-up (public API - `(0, 0)` bottom,
+            // `(1, 1)` top), so `1 - pivot.y` first converts it to the same
+            // Y-down distance-from-top the band coordinates use, before the
+            // subtraction flips the whole result back to Y-up.
+            (1 - pivot.y) * height - (ySegment.start + ySegment.size / 2),
         },
         size: { x: xSegment.size, y: ySegment.size },
         uvOffset: { x: xBand.uvStart, y: yBand.uvStart },
@@ -214,7 +214,9 @@ function createCellRegions(
  * region a non-sliced sprite would render.
  * @param width - The sprite's current width, in unscaled sprite-space units.
  * @param height - The sprite's current height, in unscaled sprite-space units.
- * @param pivot - The sprite's pivot, normalized to its own size.
+ * @param pivot - The sprite's pivot, normalized to its own size and Y-up
+ * (`(0, 0)` is bottom-left, `(1, 1)` is top-right), matching
+ * `SpriteEcsComponent.pivot`.
  * @param uvOffset - The sprite's texture rect offset, 0 to 1.
  * @param uvScale - The sprite's texture rect size, 0 to 1.
  * @param slices - The nine-slice configuration.
