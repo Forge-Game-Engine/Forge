@@ -67,7 +67,7 @@ Pass these to [`addTextComponent`](/Forge/docs/api/functions/addTextComponent):
 | `alignment` | `'left'` \| `'center'` \| `'right'` | `'left'` | How lines are positioned relative to each other. |
 | `wrapWidth` | `number` | *(none)* | Wraps `text` between words to fit this width, in world units. Omit for a single unwrapped line. |
 | `lineSpacing` | `number` | `1` | Multiplier for the gap between lines. |
-| `pivot` | `{ x, y }` | `(0.5, 0.5)` | The text block's origin, normalized to its own size - `(0, 0)` is top-left, `(1, 1)` is bottom-right. |
+| `pivot` | `{ x, y }` | `(0.5, 0.5)` | The text block's origin, normalized to its own size - `(0, 0)` is bottom-left, `(1, 1)` is top-right. |
 | `enabled` | `boolean` | `true` | Set `false` to hide the text. |
 | `layer` | `number` | `0` | Draw order relative to other sprites/text. |
 

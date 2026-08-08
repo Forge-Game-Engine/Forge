@@ -83,9 +83,9 @@ export interface TextDefaultedOptions {
 
   /**
    * The text block's origin, normalized to the block's own size: `(0, 0)`
-   * is the top-left corner, `(0.5, 0.5)` (the default) is the center, and
-   * `(1, 1)` is the bottom-right corner - matching
-   * `SpriteEcsComponent.pivot`'s convention exactly.
+   * is the bottom-left corner, `(0.5, 0.5)` (the default) is the center,
+   * and `(1, 1)` is the top-right corner - matching
+   * `SpriteEcsComponent.pivot`'s Y-up convention exactly.
    */
   pivot: Vector2;
 

@@ -210,30 +210,34 @@ describe('shapeText', () => {
   describe('pivot', () => {
     it('defaults to the block center (0.5, 0.5)', () => {
       const centered = shapeText('A', createFont(), 10);
-      const topLeft = shapeText('A', createFont(), 10, {
+      const bottomLeft = shapeText('A', createFont(), 10, {
         pivot: { x: 0, y: 0 },
       });
 
       expect(centered.glyphs[0].offset.x).toBeLessThan(
-        topLeft.glyphs[0].offset.x,
+        bottomLeft.glyphs[0].offset.x,
       );
     });
 
-    it('offsets every glyph by pivot * bounds', () => {
-      const topLeft = shapeText('AA', createFont(), 10, {
+    it('offsets every glyph by pivot * bounds, Y-up like SpriteEcsComponent.pivot', () => {
+      const bottomLeft = shapeText('AA', createFont(), 10, {
         pivot: { x: 0, y: 0 },
       });
-      const bottomRight = shapeText('AA', createFont(), 10, {
+      const topRight = shapeText('AA', createFont(), 10, {
         pivot: { x: 1, y: 1 },
       });
 
-      const { bounds } = topLeft;
+      const { bounds } = bottomLeft;
 
-      expect(bottomRight.glyphs[0].offset.x).toBeCloseTo(
-        topLeft.glyphs[0].offset.x - bounds.x,
+      expect(topRight.glyphs[0].offset.x).toBeCloseTo(
+        bottomLeft.glyphs[0].offset.x - bounds.x,
       );
-      expect(bottomRight.glyphs[0].offset.y).toBeCloseTo(
-        topLeft.glyphs[0].offset.y + bounds.y,
+      // pivot.y = 1 means top (Y-up), so it shifts the block down (offset.y
+      // decreases) relative to pivot.y = 0 (bottom) - the opposite sign
+      // from offset.x, since a higher pivot.x (more "right") shifts the
+      // block left the same way a higher pivot.y (more "top") shifts it down.
+      expect(topRight.glyphs[0].offset.y).toBeCloseTo(
+        bottomLeft.glyphs[0].offset.y - bounds.y,
       );
     });
   });

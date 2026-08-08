@@ -26,7 +26,11 @@ export interface ShapeTextOptions {
   /** A multiplier over `font.lineHeight`. Defaults to `1`. */
   lineSpacing?: number;
 
-  /** The text block's origin, normalized to its own size. Defaults to `(0.5, 0.5)`. */
+  /**
+   * The text block's origin, normalized to its own size and Y-up (`(0, 0)`
+   * is bottom-left, `(1, 1)` is top-right), matching
+   * `SpriteEcsComponent.pivot`. Defaults to `(0.5, 0.5)`.
+   */
   pivot?: Vector2;
 }
 
@@ -235,7 +239,13 @@ export function shapeText(
       glyphs.push({
         offset: {
           x: (left + right) / 2 - pivot.x * blockWidth,
-          y: pivot.y * blockHeight - (topDown + bottomDown) / 2,
+          // `topDown`/`bottomDown` run Y-down (distance from the block's
+          // top edge), but `pivot.y` is Y-up public API - `(0, 0)` bottom,
+          // `(1, 1)` top, matching `SpriteEcsComponent.pivot` - so
+          // `1 - pivot.y` first converts it to the same Y-down
+          // distance-from-top before the subtraction flips the whole
+          // result back to the engine's Y-up world space.
+          y: (1 - pivot.y) * blockHeight - (topDown + bottomDown) / 2,
         },
         size: { x: right - left, y: bottomDown - topDown },
         uvOffset: glyph.uvOffset,
