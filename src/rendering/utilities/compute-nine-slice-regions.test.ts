@@ -68,21 +68,38 @@ describe('computeNineSliceRegions', () => {
     expect(bottomRight!.offset.y).toBeCloseTo(-120 / 2 + 6 / 2, 5);
   });
 
-  it('places the top-left corner exactly at the anchor when the pivot is (0, 0)', () => {
-    const regions = computeNineSliceRegions(
-      100,
-      100,
-      { x: 0, y: 0 },
-      fullUv.offset,
-      fullUv.scale,
-      { left: 10, right: 10, top: 10, bottom: 10 },
-    );
+  // Pivot is Y-up (matching SpriteEcsComponent.pivot): (0, 0) is bottom-left
+  // and (1, 1) is top-right. Each case anchors at one corner of the sprite,
+  // so the near corner region's own center lands a half-region-size offset
+  // away from the anchor, signed toward the sprite's interior.
+  it.each([
+    { pivot: { x: 0, y: 0 }, name: 'bottom-left', offset: { x: 5, y: 5 } },
+    { pivot: { x: 1, y: 0 }, name: 'bottom-right', offset: { x: -5, y: 5 } },
+    { pivot: { x: 0, y: 1 }, name: 'top-left', offset: { x: 5, y: -5 } },
+    { pivot: { x: 1, y: 1 }, name: 'top-right', offset: { x: -5, y: -5 } },
+  ])(
+    'places the $name corner exactly at the anchor when the pivot is ($pivot.x, $pivot.y)',
+    ({ pivot, offset }) => {
+      const regions = computeNineSliceRegions(
+        100,
+        100,
+        pivot,
+        fullUv.offset,
+        fullUv.scale,
+        { left: 10, right: 10, top: 10, bottom: 10 },
+      );
 
-    const topLeft = regions.find((r) => r.size.x === 10 && r.size.y === 10);
+      const corner = regions.find(
+        (r) =>
+          r.size.x === 10 &&
+          r.size.y === 10 &&
+          r.offset.x === offset.x &&
+          r.offset.y === offset.y,
+      );
 
-    expect(topLeft).toBeDefined();
-    expect(topLeft!.offset).toEqual({ x: 5, y: -5 });
-  });
+      expect(corner).toBeDefined();
+    },
+  );
 
   it('proportionally clamps insets that would otherwise overlap', () => {
     const regions = computeNineSliceRegions(
