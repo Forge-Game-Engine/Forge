@@ -47,4 +47,6 @@ When constructing a design document. Never assume that the business wants a "qui
 
 Forge is it's own unique product, do not use wording, or text that are common place in a competitor's product. The design document should be written in a way that is clear and concise, and should avoid using jargon or buzzwords that are not relevant to the design.
 
-If there is any uncertainty or ambiguity during the design phase as to the direction of the product of the intention of the feature, as the user. 
+If there is any uncertainty or ambiguity during the design phase as to the direction of the product of the intention of the feature, as the user.
+
+If a large is being requested for design. Consider breaking it down into smaller pieces and suggesting a phased approach to the design to the user.
