@@ -1,6 +1,6 @@
 ---
-name: add-demo
-description: Decide whether a change needs a new interactive demo under documentation-site/src/pages/demos, and if so scaffold and wire it up (page, navbar dropdown entry, code-viewer files). Use when adding a new major engine feature or module, or when explicitly asked to add a demo.
+name: add-feature-demo
+description: Use this skill when adding a new feature to the engine.
 ---
 
 # Add a Demo
@@ -17,28 +17,20 @@ existing.
 **Every new major feature gets a demo.** A major feature is a new `/src`
 module (a new top-level directory under `/src` with its own `package.json`
 export, e.g. `physics`, `particles`), or a substantial new capability added
-to an existing module that a user couldn't do before (a new joint type, a
-new rendering effect, a new component category with its own systems) —
-the kind of thing that gets its own line in `CHANGELOG.md`'s `#### Added`,
-not a `#### Fixed` or `#### Changed` tweak to something already
-demonstrated.
+to an existing module that a user couldn't do before.
 
 Skip a new demo for:
 
 - Bug fixes, performance improvements, or refactors to something an
   existing demo already exercises — that demo continues to cover it (though
   see step 5 if the change altered the demo's API surface).
-- Internal-only APIs with no visible behavior (a new utility function, a
-  type export, an ECS plumbing change) — nothing to show on a canvas.
+- Internal-only APIs with no visible behavior.
 - A small option/parameter added to an already-demoed feature — extend the
   existing demo instead of creating a new one, unless the option is
-  significant enough to need its own dedicated scene to be legible (compare
-  how `revolute-joint`, `prismatic-joint`, and `torque` are three separate
-  physics demos rather than one crowded one).
+  significant enough to need its own dedicated scene to be legible.
 
 If genuinely unsure whether a change counts as "major," ask the user rather
-than guessing — an unwanted demo is wasted scaffolding, a missing one is a
-silent documentation gap.
+than guessing.
 
 ## 2. Pick a name and scaffold the directory
 
