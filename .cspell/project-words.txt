@@ -19,6 +19,7 @@ blits
 bmfont
 cachable
 Catmull
+charsets
 Chlumský
 commitlint
 Cramer
