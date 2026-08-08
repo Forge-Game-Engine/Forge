@@ -78,6 +78,20 @@ describe('FontAtlasCache', () => {
     );
   });
 
+  it('should resolve the atlas image relative to a root-level key', async () => {
+    mockFetchJsonResponse(buildValidJson());
+
+    const imageCache = new ImageCache();
+    const getOrLoadSpy = vi
+      .spyOn(imageCache, 'getOrLoad')
+      .mockResolvedValue(new Image());
+
+    const fontAtlasCache = new FontAtlasCache(imageCache);
+    await fontAtlasCache.getOrLoad('my-font');
+
+    expect(getOrLoadSpy).toHaveBeenCalledWith('my-font.png');
+  });
+
   it('should not re-fetch a font atlas that is already cached', async () => {
     mockFetchJsonResponse(buildValidJson());
 

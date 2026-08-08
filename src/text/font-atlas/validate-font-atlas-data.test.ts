@@ -83,6 +83,14 @@ describe('validateFontAtlasFileData', () => {
     );
   });
 
+  it('should throw when atlasSize is not an object', () => {
+    const json = { ...buildValidJson(), atlasSize: null };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /atlasSize must be an object/,
+    );
+  });
+
   it('should throw when distanceRange is not finite', () => {
     const json = { ...buildValidJson(), distanceRange: Number.NaN };
 
@@ -106,11 +114,44 @@ describe('validateFontAtlasFileData', () => {
     );
   });
 
+  it('should throw when metrics is not an object', () => {
+    const json = { ...buildValidJson(), metrics: 'nope' };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /metrics must be an object/,
+    );
+  });
+
   it('should throw when glyphs is not an array', () => {
     const json = { ...buildValidJson(), glyphs: {} };
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
       /glyphs must be an array/,
+    );
+  });
+
+  it('should throw when glyphs has more entries than the sane maximum', () => {
+    const json = {
+      ...buildValidJson(),
+      glyphs: Array.from({ length: 100_001 }, (_, index) => ({
+        codePoint: index,
+        advance: 0.5,
+        planeBounds: null,
+        atlasBounds: null,
+      })),
+    };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /glyphs has 100001 entries, exceeding the maximum of 100000/,
+    );
+  });
+
+  it('should throw when a glyph is not an object', () => {
+    const json = buildValidJson();
+    json.glyphs[0] = null as never;
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /glyphs\[0\] must be an object/,
     );
   });
 
@@ -123,6 +164,15 @@ describe('validateFontAtlasFileData', () => {
     );
   });
 
+  it('should throw when a glyph has a non-finite advance', () => {
+    const json = buildValidJson();
+    json.glyphs[0] = { ...json.glyphs[0], advance: Number.NaN };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /glyphs\[0\]\.advance must be a finite number/,
+    );
+  });
+
   it('should throw when a glyph planeBounds is malformed', () => {
     const json = buildValidJson();
     json.glyphs[0] = {
@@ -132,6 +182,29 @@ describe('validateFontAtlasFileData', () => {
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
       /glyphs\[0\]\.planeBounds's left, bottom, right, and top must all be finite numbers/,
+    );
+  });
+
+  it('should throw when a glyph planeBounds is not an object or null', () => {
+    const json = buildValidJson();
+    json.glyphs[0] = { ...json.glyphs[0], planeBounds: 'nope' as never };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /glyphs\[0\]\.planeBounds must be a Rect or null/,
+    );
+  });
+
+  it('should throw when kerning has more entries than the sane maximum', () => {
+    const kerning: Record<string, number> = {};
+
+    for (let index = 0; index < 1_000_001; index++) {
+      kerning[getKerningPairKey(index, 0)] = 0;
+    }
+
+    const json = { ...buildValidJson(), kerning };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /kerning has 1000001 entries, exceeding the maximum of 1000000/,
     );
   });
 
