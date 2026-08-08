@@ -101,8 +101,12 @@
     }
   },
   "types": "./dist/index.d.ts",
+  "bin": {
+    "forge-generate-font-atlas": "scripts/generate-font-atlas.mjs"
+  },
   "files": [
     "dist",
+    "scripts/generate-font-atlas.mjs",
     "README.md"
   ],
   "repository": {
@@ -166,7 +170,13 @@
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
-    "howler": "^2.2.4"
+    "howler": "^2.2.4",
+    "msdf-bmfont-xml": "^2.8.0"
+  },
+  "peerDependenciesMeta": {
+    "msdf-bmfont-xml": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@types/imurmurhash": "^0.1.4",

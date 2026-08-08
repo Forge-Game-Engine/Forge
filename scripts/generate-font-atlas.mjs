@@ -2,7 +2,16 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import generateBMFont from 'msdf-bmfont-xml';
+
+async function loadGenerateBMFont() {
+  try {
+    return (await import('msdf-bmfont-xml')).default;
+  } catch {
+    throw new Error(
+      'msdf-bmfont-xml is required to generate a font atlas but is not installed. Run `npm install --save-dev msdf-bmfont-xml` (an optional peer dependency of @forge-game-engine/forge) and try again.',
+    );
+  }
+}
 
 // Printable ASCII, the same default charset most BMFont/MSDF tools use.
 const ASCII_CHARSET = Array.from({ length: 126 - 32 + 1 }, (_, i) =>
@@ -29,10 +38,16 @@ function readFlag(name, defaultValue) {
 
 function printHelp() {
   console.log(`
-Usage: node scripts/generate-font-atlas.mjs --font <path> --out <path> [options]
+Usage: npx forge-generate-font-atlas --font <path> --out <path> [options]
+   or: npm run generate-font-atlas -- --font <path> --out <path> [options]
+       (from within the Forge repo itself)
 
 Generates a multi-channel signed distance field (MSDF) font atlas from a
 .ttf/.otf font file: an atlas PNG plus a normalized FontAtlasData JSON file.
+
+Requires msdf-bmfont-xml, an optional peer dependency of
+@forge-game-engine/forge - install it with
+\`npm install --save-dev msdf-bmfont-xml\` first.
 
 Options:
   --font <path>            Path to the input .ttf/.otf font file. Required.
@@ -150,7 +165,7 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
   };
 }
 
-function generateBMFontAsync(fontPath, options) {
+function generateBMFontAsync(generateBMFont, fontPath, options) {
   return new Promise((resolvePromise, rejectPromise) => {
     generateBMFont(fontPath, options, (error, textures, font) => {
       if (error) {
@@ -175,6 +190,8 @@ async function main() {
     throw new Error('--font and --out are required.');
   }
 
+  const generateBMFont = await loadGenerateBMFont();
+
   const charsetArg = readFlag('charset', 'ascii');
   const fontSize = Number(readFlag('size', '42'));
   const distanceRange = Number(readFlag('distance-range', '4'));
@@ -186,14 +203,18 @@ async function main() {
 
   mkdirSync(outDir, { recursive: true });
 
-  const { textures, font } = await generateBMFontAsync(resolve(fontPath), {
-    charset: resolveCharset(charsetArg),
-    outputType: 'json',
-    fontSize,
-    distanceRange,
-    fieldType: 'msdf',
-    textureSize: [textureWidth, textureHeight],
-  });
+  const { textures, font } = await generateBMFontAsync(
+    generateBMFont,
+    resolve(fontPath),
+    {
+      charset: resolveCharset(charsetArg),
+      outputType: 'json',
+      fontSize,
+      distanceRange,
+      fieldType: 'msdf',
+      textureSize: [textureWidth, textureHeight],
+    },
+  );
 
   if (textures.length !== 1) {
     throw new Error(
