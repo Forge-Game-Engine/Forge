@@ -75,6 +75,12 @@
         "default": "./dist/rendering/index.js"
       }
     },
+    "./text": {
+      "import": {
+        "types": "./dist/text/index.d.ts",
+        "default": "./dist/text/index.js"
+      }
+    },
     "./timer": {
       "import": {
         "types": "./dist/timer/index.d.ts",
@@ -107,6 +113,7 @@
     "dev": "vite --config vite.config.demo.js",
     "dev:e2e": "vite --config vite.config.e2e.js --port 4300 --strictPort",
     "build": "tsc --project tsconfig.build.json && node scripts/copy-shaders.js",
+    "generate-font-atlas": "node scripts/generate-font-atlas.mjs",
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -149,6 +156,7 @@
     "globals": "^17.8.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "msdf-bmfont-xml": "^2.8.0",
     "prettier": "^3.9.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
