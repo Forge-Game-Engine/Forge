@@ -75,6 +75,12 @@
         "default": "./dist/rendering/index.js"
       }
     },
+    "./text": {
+      "import": {
+        "types": "./dist/text/index.d.ts",
+        "default": "./dist/text/index.js"
+      }
+    },
     "./timer": {
       "import": {
         "types": "./dist/timer/index.d.ts",

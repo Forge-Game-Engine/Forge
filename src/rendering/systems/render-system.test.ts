@@ -17,9 +17,15 @@ import { Color } from '../color';
 import { Geometry } from '../geometry/geometry';
 import { Material } from '../materials/material';
 import { ShaderCache } from '../shaders';
-import { ImageCache } from '../../asset-loading';
+import { FontAtlas, ImageCache } from '../../asset-loading';
 import { createProjectionMatrix } from '../shaders';
 import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit';
+import {
+  addTextComponent,
+  addTextMeshComponent,
+  TextEcsComponent,
+  TextMeshEcsComponent,
+} from '../../text';
 
 describe('createRenderEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -604,6 +610,202 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('text', () => {
+    const createGlyph = (offset = Vec2.zero) => ({
+      offset,
+      size: { x: 1, y: 1 },
+      uvOffset: Vec2.zero,
+      uvScale: Vec2.one,
+    });
+
+    const addTextEntity = (
+      renderable: Renderable,
+      worldY: number,
+      textOverrides: Partial<TextEcsComponent> = {},
+      meshOverrides: Partial<TextMeshEcsComponent> = {},
+    ): number => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, {
+        local: { x: 0, y: worldY },
+        world: { x: 0, y: worldY },
+      });
+      const text = addTextComponent(world, entity, {
+        text: 'A',
+        font: {} as FontAtlas,
+        renderable,
+        fontSize: 1,
+        ...textOverrides,
+      });
+      addTextMeshComponent(world, entity, {
+        glyphs: [createGlyph()],
+        bounds: Vec2.one,
+        sourceText: text.text,
+        sourceFont: text.font,
+        sourceFontSize: text.fontSize,
+        sourceWrapWidth: text.wrapWidth,
+        sourceLineSpacing: text.lineSpacing,
+        sourceAlignment: text.alignment,
+        sourcePivot: text.pivot,
+        ...meshOverrides,
+      });
+
+      return entity;
+    };
+
+    it('does not draw text with no TextMeshEcsComponent yet (not shaped)', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity);
+      addTextComponent(world, entity, {
+        text: 'A',
+        font: {} as FontAtlas,
+        renderable,
+        fontSize: 1,
+      });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+      expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+    });
+
+    it('skips disabled text', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, { enabled: false });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it("skips text whose renderable category does not match the camera's culling mask", () => {
+      addCameraEntity(0b0010);
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      renderable.category = 0b0001;
+      addTextEntity(renderable, 0);
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it('draws one instance per glyph, batched into a single draw call', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, undefined, {
+        glyphs: [createGlyph(), createGlyph(), createGlyph()],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(3);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(
+        undefined,
+        0,
+        6,
+        3,
+      );
+    });
+
+    it("positions each glyph at the entity's world position plus the glyph's offset", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, {
+        local: { x: 10, y: 20 },
+        world: { x: 10, y: 20 },
+      });
+      const text = addTextComponent(world, entity, {
+        text: 'A',
+        font: {} as FontAtlas,
+        renderable,
+        fontSize: 1,
+      });
+      addTextMeshComponent(world, entity, {
+        glyphs: [createGlyph({ x: 5, y: 3 })],
+        bounds: Vec2.one,
+        sourceText: text.text,
+        sourceFont: text.font,
+        sourceFontSize: text.fontSize,
+        sourceWrapWidth: text.wrapWidth,
+        sourceLineSpacing: text.lineSpacing,
+        sourceAlignment: text.alignment,
+        sourcePivot: text.pivot,
+      });
+
+      world.update();
+
+      const [{ position }] = bindInstanceData.mock.calls[0] as [
+        { position: PositionEcsComponent },
+      ];
+
+      expect(position.world).toEqual({ x: 15, y: 23 });
+    });
+
+    it('sets each glyph instance from the shaped uv rect and the text color', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+      const color = new Color(1, 0, 0, 1);
+
+      addTextEntity(
+        renderable,
+        0,
+        { color },
+        {
+          glyphs: [
+            {
+              offset: Vec2.zero,
+              size: { x: 2, y: 3 },
+              uvOffset: { x: 0.25, y: 0.5 },
+              uvScale: { x: 0.1, y: 0.2 },
+            },
+          ],
+        },
+      );
+
+      world.update();
+
+      const [{ sprite }] = bindInstanceData.mock.calls[0] as [
+        { sprite: SpriteEcsComponent },
+      ];
+
+      expect(sprite.width).toBe(2);
+      expect(sprite.height).toBe(3);
+      expect(sprite.uvOffset).toEqual({ x: 0.25, y: 0.5 });
+      expect(sprite.uvScale).toEqual({ x: 0.1, y: 0.2 });
+      expect(sprite.tintColor).toBe(color);
+    });
+
+    it('interleaves with sprites in the same sorted, depth-ordered command buffer', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteEntity(renderable, 10);
+      addTextEntity(renderable, -5);
+      addSpriteEntity(renderable, 2);
+
+      world.update();
+
+      const drawnDepths = bindInstanceData.mock.calls.map(
+        (call) =>
+          (call[0] as { position: PositionEcsComponent }).position.world.y,
+      );
+
+      expect(drawnDepths).toEqual([-5, 2, 10]);
     });
   });
 });

@@ -13,12 +13,18 @@ plus two supporting building blocks:
 - [`AssetCache`](/Forge/docs/api/interfaces/AssetCache): the common
   `get` / `load` / `getOrLoad` contract that asset caches implement.
   `ImageCache` implements it for `HTMLImageElement`; if you add a cache for
-  another asset type (audio buffers, JSON data, fonts), implement this
-  interface so it behaves consistently with the rest of the engine.
+  another asset type (audio buffers, JSON data), implement this interface
+  so it behaves consistently with the rest of the engine.
 - [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry): maps
   human-readable string IDs to compact numeric IDs, so hot-path code (like a
   per-frame animation system) can look up an asset by index instead of by
   string.
+- [`loadFontAtlas`](/Forge/docs/api/functions/loadFontAtlas): parses an
+  MSDF font atlas (an `msdf-atlas-gen` JSON metrics file plus its PNG
+  texture, loaded through `ImageCache`) into a
+  [`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas) for
+  `@forge-game-engine/forge/text` to shape and draw. See
+  [Text](../text/index.md) for the full text rendering guide.
 
 Guides in this section:
 
