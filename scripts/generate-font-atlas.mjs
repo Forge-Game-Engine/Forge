@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 async function loadGenerateBMFont() {
   try {
@@ -11,10 +13,36 @@ async function loadGenerateBMFont() {
       throw error;
     }
 
+    const globalGenerateBMFont = await loadGlobalGenerateBMFont();
+
+    if (globalGenerateBMFont) {
+      return globalGenerateBMFont;
+    }
+
     throw new Error(
-      'msdf-bmfont-xml is required to generate a font atlas but is not installed. Run `npm install --save-dev msdf-bmfont-xml` (an optional peer dependency of @forge-game-engine/forge) and try again.',
+      'msdf-bmfont-xml is required to generate a font atlas but is not installed. Run `npm install --save-dev msdf-bmfont-xml` or `npm install -g msdf-bmfont-xml` and try again.',
       { cause: error },
     );
+  }
+}
+
+// A global install isn't a resolvable specifier for `import()` (ESM ignores
+// NODE_PATH), so a global msdf-bmfont-xml needs its absolute location looked
+// up and imported directly.
+async function loadGlobalGenerateBMFont() {
+  try {
+    const globalRoot = execFileSync('npm', ['root', '-g'], {
+      encoding: 'utf-8',
+    }).trim();
+    const packageDir = join(globalRoot, 'msdf-bmfont-xml');
+    const packageJson = JSON.parse(
+      readFileSync(join(packageDir, 'package.json'), 'utf-8'),
+    );
+    const entryPath = join(packageDir, packageJson.main ?? 'index.js');
+
+    return (await import(pathToFileURL(entryPath).href)).default;
+  } catch {
+    return null;
   }
 }
 

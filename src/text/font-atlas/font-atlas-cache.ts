@@ -5,9 +5,9 @@ import { validateFontAtlasFileData } from './validate-font-atlas-data.js';
 
 /**
  * Loads and caches `FontAtlas`es: a metrics JSON file plus its atlas image,
- * keyed by a shared base path (e.g. `getOrLoad('assets/fonts/my-font')`
- * loads `assets/fonts/my-font.json`, which in turn points at its own atlas
- * image, resolved relative to that JSON file).
+ * keyed by the JSON file's path (e.g. `getOrLoad('assets/fonts/my-font.json')`
+ * loads that file, which in turn points at its own atlas image, resolved
+ * relative to the JSON file).
  */
 export class FontAtlasCache implements AssetCache<FontAtlas> {
   public assets = new Map<string, FontAtlas>();
@@ -20,7 +20,7 @@ export class FontAtlasCache implements AssetCache<FontAtlas> {
 
   /**
    * Retrieves a font atlas from the cache.
-   * @param key - The key of the font atlas to retrieve.
+   * @param key - The path of the font atlas's JSON file.
    * @returns The cached font atlas.
    * @throws Will throw an error if the font atlas is not found in the cache.
    */
@@ -37,23 +37,22 @@ export class FontAtlasCache implements AssetCache<FontAtlas> {
   /**
    * Loads a font atlas's JSON metrics and image from the specified key and
    * caches it.
-   * @param key - The key of the font atlas to load, without a file extension.
+   * @param key - The path of the font atlas's JSON file.
    * @returns A promise that resolves when the font atlas is loaded and cached.
    * @throws Will throw an error if the JSON fails to fetch, is malformed, or
    * is an unsupported/incompatible atlas format.
    */
   public async load(key: string): Promise<void> {
-    const jsonPath = `${key}.json`;
-    const response = await fetch(jsonPath);
+    const response = await fetch(key);
 
     if (!response.ok) {
       throw new Error(
-        `Failed to load font atlas JSON at "${jsonPath}": ${response.status} ${response.statusText}`,
+        `Failed to load font atlas JSON at "${key}": ${response.status} ${response.statusText}`,
       );
     }
 
     const rawJson: unknown = await response.json();
-    const fileData = validateFontAtlasFileData(rawJson, jsonPath);
+    const fileData = validateFontAtlasFileData(rawJson, key);
     const data = toFontAtlasData(fileData);
     const imagePath = resolveRelativeToKey(key, data.atlasImage);
     const image = await this._imageCache.getOrLoad(imagePath);

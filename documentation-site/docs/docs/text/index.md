@@ -35,7 +35,7 @@ npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out assets/fo
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
 const fontAtlasCache = new FontAtlasCache();
-const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font');
+const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
 
 console.log(fontAtlas.data.glyphs.get('A'.codePointAt(0)!));
 ```

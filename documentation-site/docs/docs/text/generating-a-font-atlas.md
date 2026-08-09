@@ -16,15 +16,19 @@ something your game runs at runtime.
 The command wraps [`msdf-bmfont-xml`](https://www.npmjs.com/package/msdf-bmfont-xml),
 an **optional peer dependency** of `@forge-game-engine/forge`. A plain
 `npm install @forge-game-engine/forge` does not install it, since most games
-don't need the atlas generator itself, only its output. Install it once,
-as a dev dependency of your own project:
+don't need the atlas generator itself, only its output. Install it as a dev
+dependency of your project:
 
 ```bash
 npm install --save-dev msdf-bmfont-xml
 ```
 
-Running the command without it installed fails fast with a message telling
-you to install it, rather than a raw module-not-found error.
+Or, since most games never need it at runtime and only run it occasionally,
+install it globally instead:
+
+```bash
+npm install -g msdf-bmfont-xml
+```
 
 ## Generate an atlas
 
@@ -32,20 +36,19 @@ you to install it, rather than a raw module-not-found error.
 npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out assets/fonts/my-font
 ```
 
-This writes `assets/fonts/my-font.png` and `assets/fonts/my-font.json`.
-Commit both to your project; [`FontAtlasCache`](./loading-a-font-atlas.md)
-loads them together at runtime.
+This writes `assets/fonts/my-font.png` and `assets/fonts/my-font.json`, which
+[`FontAtlasCache`](./loading-a-font-atlas.md) loads together at runtime.
 
-| Flag                             | Default   | Meaning                                                                                                 |
-| --------------------------------- | --------- | --------------------------------------------------------------------------------------------------------- |
-| `--font <path>`                   | required  | The input `.ttf`/`.otf` file.                                                                              |
-| `--out <path>`                    | required  | Output path with no extension; writes `<out>.png` and `<out>.json`.                                        |
-| `--charset <name\|string\|path>`  | `ascii`   | `ascii` for printable ASCII (32-126), a literal string of characters, or a path to a text file to read them from. |
-| `--size <n>`                      | `42`      | The font size, in pixels, the distance field is authored at.                                               |
-| `--distance-range <n>`            | `4`       | The distance field's encoded range, in pixels.                                                             |
-| `--texture-width <n>`             | `512`     | Atlas texture width, in pixels.                                                                            |
-| `--texture-height <n>`            | `512`     | Atlas texture height, in pixels.                                                                           |
-| `--help`, `-h`                    |           | Print usage.                                                                                                |
+| Flag                             | Default  | Meaning                                                                                                           |
+| -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--font <path>`                  | required | The input `.ttf`/`.otf` file.                                                                                     |
+| `--out <path>`                   | required | Output path with no extension; writes `<out>.png` and `<out>.json`.                                               |
+| `--charset <name\|string\|path>` | `ascii`  | `ascii` for printable ASCII (32-126), a literal string of characters, or a path to a text file to read them from. |
+| `--size <n>`                     | `42`     | The font size, in pixels, the distance field is authored at.                                                      |
+| `--distance-range <n>`           | `4`      | The distance field's encoded range, in pixels.                                                                    |
+| `--texture-width <n>`            | `512`    | Atlas texture width, in pixels.                                                                                   |
+| `--texture-height <n>`           | `512`    | Atlas texture height, in pixels.                                                                                  |
+| `--help`, `-h`                   |          | Print usage.                                                                                                      |
 
 ## Picking a charset
 
@@ -75,11 +78,3 @@ with an error telling you to reduce the charset or increase
 glyphs across multiple pages. Multi-page atlases aren't supported: every
 `FontAtlas` maps to exactly one texture, so a `FontAtlasCache` lookup never
 needs to bind more than one image per font.
-
-## Regenerating after a font or charset change
-
-The output JSON is fully derived from the input font and flags, there's
-nothing to hand-edit. If your game later needs a character the atlas
-doesn't have (a new supported language, an added symbol), re-run the same
-command with an updated `--charset` and commit the new `.png`/`.json` pair;
-there's no incremental update path.

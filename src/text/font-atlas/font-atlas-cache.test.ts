@@ -38,8 +38,8 @@ describe('FontAtlasCache', () => {
   it('should throw when getting a font atlas that has not been loaded', () => {
     const fontAtlasCache = new FontAtlasCache();
 
-    expect(() => fontAtlasCache.get('assets/fonts/my-font')).toThrow(
-      'Font atlas with key "assets/fonts/my-font" not found in store.',
+    expect(() => fontAtlasCache.get('assets/fonts/my-font.json')).toThrow(
+      'Font atlas with key "assets/fonts/my-font.json" not found in store.',
     );
   });
 
@@ -53,13 +53,15 @@ describe('FontAtlasCache', () => {
       .mockResolvedValue(mockImage);
 
     const fontAtlasCache = new FontAtlasCache(imageCache);
-    const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font');
+    const fontAtlas = await fontAtlasCache.getOrLoad(
+      'assets/fonts/my-font.json',
+    );
 
     expect(fetch).toHaveBeenCalledWith('assets/fonts/my-font.json');
     expect(getOrLoadSpy).toHaveBeenCalledWith('assets/fonts/my-font.png');
     expect(fontAtlas.image).toBe(mockImage);
     expect(fontAtlas.data.glyphs.get(65)?.advance).toBeCloseTo(0.6);
-    expect(fontAtlasCache.get('assets/fonts/my-font')).toBe(fontAtlas);
+    expect(fontAtlasCache.get('assets/fonts/my-font.json')).toBe(fontAtlas);
   });
 
   it('should resolve the atlas image relative to a nested key', async () => {
@@ -71,7 +73,7 @@ describe('FontAtlasCache', () => {
       .mockResolvedValue(new Image());
 
     const fontAtlasCache = new FontAtlasCache(imageCache);
-    await fontAtlasCache.getOrLoad('assets/fonts/heading/my-font');
+    await fontAtlasCache.getOrLoad('assets/fonts/heading/my-font.json');
 
     expect(getOrLoadSpy).toHaveBeenCalledWith(
       'assets/fonts/heading/my-font.png',
@@ -87,7 +89,7 @@ describe('FontAtlasCache', () => {
       .mockResolvedValue(new Image());
 
     const fontAtlasCache = new FontAtlasCache(imageCache);
-    await fontAtlasCache.getOrLoad('my-font');
+    await fontAtlasCache.getOrLoad('my-font.json');
 
     expect(getOrLoadSpy).toHaveBeenCalledWith('my-font.png');
   });
@@ -99,8 +101,8 @@ describe('FontAtlasCache', () => {
     vi.spyOn(imageCache, 'getOrLoad').mockResolvedValue(new Image());
 
     const fontAtlasCache = new FontAtlasCache(imageCache);
-    await fontAtlasCache.getOrLoad('assets/fonts/my-font');
-    await fontAtlasCache.getOrLoad('assets/fonts/my-font');
+    await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
+    await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
 
     expect(fetch).toHaveBeenCalledTimes(1);
   });
@@ -111,7 +113,7 @@ describe('FontAtlasCache', () => {
     const fontAtlasCache = new FontAtlasCache();
 
     await expect(
-      fontAtlasCache.getOrLoad('assets/fonts/missing-font'),
+      fontAtlasCache.getOrLoad('assets/fonts/missing-font.json'),
     ).rejects.toThrow(
       'Failed to load font atlas JSON at "assets/fonts/missing-font.json": 404 Not Found',
     );
@@ -123,7 +125,7 @@ describe('FontAtlasCache', () => {
     const fontAtlasCache = new FontAtlasCache();
 
     await expect(
-      fontAtlasCache.getOrLoad('assets/fonts/broken-font'),
+      fontAtlasCache.getOrLoad('assets/fonts/broken-font.json'),
     ).rejects.toThrow(/unsupported formatVersion "999"/);
   });
 });
