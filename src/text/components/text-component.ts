@@ -47,8 +47,12 @@ export interface TextDefaultedOptions {
   horizontalAlign: 'left' | 'center' | 'right' | 'justify';
 
   /**
-   * Vertical alignment of the whole shaped block relative to the entity's
-   * position.
+   * Vertical alignment of the shaped block's visible ink relative to the
+   * entity's position: `'top'` anchors the first line's ascender (so text
+   * hangs *below* the entity's position), `'bottom'` anchors the last
+   * line's descender (so text sits *above* it), and `'middle'` centers the
+   * ink between the two - not the font's line-height box, which typically
+   * doesn't match the ink's own extent.
    */
   verticalAlign: 'top' | 'middle' | 'bottom';
 

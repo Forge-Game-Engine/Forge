@@ -28,8 +28,10 @@ export interface ShapeTextOptions {
   horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
 
   /**
-   * Vertical alignment of the whole shaped block relative to its anchor
-   * (the origin every glyph offset is relative to). Defaults to `'top'`.
+   * Vertical alignment of the shaped block's visible ink relative to its
+   * anchor (the origin every glyph offset is relative to) - see
+   * `TextDefaultedOptions.verticalAlign` for the precise semantics.
+   * Defaults to `'top'`.
    */
   verticalAlign?: 'top' | 'middle' | 'bottom';
 
@@ -293,27 +295,47 @@ function getJustifyGapStretch(
 
 /**
  * Computes the offset added to the whole shaped block to realize
- * `verticalAlign`, given that (before this offset) line `0`'s baseline sits
- * at `y = 0` and each following line's own box extends `actualLineHeight`
- * further in the negative (downward, Y-up) direction - so the unshifted
- * block spans from `y = 0` (its top) to `y = -blockHeight` (its bottom).
+ * `verticalAlign`, anchored to the block's actual visible ink - line `0`'s
+ * ascender for `'top'`, the last line's descender for `'bottom'` - rather
+ * than the line-height box `actualLineHeight` implies. Anchoring to the
+ * line-height box instead of the ink is the more obvious thing to try, but
+ * it's wrong: a capital letter's ink sits almost entirely *above* its
+ * baseline, so a `'top'` alignment built from "line 0's unshifted baseline
+ * sits at the box's top" would place most of the text *above* the anchor,
+ * the opposite of what `'top'` is supposed to mean, and `'middle'` would
+ * never actually cross through the visible glyphs.
+ *
+ * Before this offset, line `0`'s baseline sits at `y = 0` and each
+ * following line's baseline is `actualLineHeight` further in the negative
+ * (downward, Y-up) direction.
  * @param verticalAlign - The requested vertical alignment.
- * @param blockHeight - The shaped block's total height, in world units.
+ * @param fontAtlasData - The font atlas metrics `ascender`/`descender` are read from.
+ * @param size - Font size, in world units.
+ * @param lineCount - The number of lines in the shaped block.
+ * @param actualLineHeight - The distance between two lines' baselines, in world units.
  * @returns The Y offset to add to every glyph.
  */
 function getVerticalAlignOffset(
   verticalAlign: 'top' | 'middle' | 'bottom',
-  blockHeight: number,
+  fontAtlasData: FontAtlasData,
+  size: number,
+  lineCount: number,
+  actualLineHeight: number,
 ): number {
+  const inkTop = fontAtlasData.metrics.ascender * size;
+  const inkBottom =
+    -(lineCount - 1) * actualLineHeight +
+    fontAtlasData.metrics.descender * size;
+
   if (verticalAlign === 'bottom') {
-    return blockHeight;
+    return -inkBottom;
   }
 
   if (verticalAlign === 'middle') {
-    return blockHeight / 2;
+    return -(inkTop + inkBottom) / 2;
   }
 
-  return 0;
+  return -inkTop;
 }
 
 /**
@@ -362,7 +384,13 @@ export function shapeText(
   const blockWidth = Math.max(0, ...lines.map((line) => line.width));
   const actualLineHeight = lineHeight * fontAtlasData.metrics.lineHeight * size;
   const blockHeight = lines.length * actualLineHeight;
-  const verticalOffset = getVerticalAlignOffset(verticalAlign, blockHeight);
+  const verticalOffset = getVerticalAlignOffset(
+    verticalAlign,
+    fontAtlasData,
+    size,
+    lines.length,
+    actualLineHeight,
+  );
 
   const glyphs: GlyphQuad[] = [];
 

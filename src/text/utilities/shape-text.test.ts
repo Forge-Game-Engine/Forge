@@ -54,7 +54,11 @@ describe('shapeText', () => {
     });
 
     expect(glyphs).toHaveLength(1);
-    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 });
+    // `verticalAlign` defaults to `'top'`, which anchors the first line's
+    // *ascender* (0.9em * size 10 = 9) to y = 0, not its baseline - so the
+    // baseline-relative x/y this glyph would otherwise sit at (3, 3.5) is
+    // shifted down by 9.
+    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
     expect(glyphs[0].size).toEqual({ x: 5, y: 7 });
 
     // `atlasBounds` is `{ left: 0, bottom: 0, right: 0.1, top: 0.14 }`, a
@@ -162,10 +166,12 @@ describe('shapeText', () => {
       expect(glyphs).toHaveLength(6);
       expect(bounds).toEqual({ width: 11.2, height: 36 });
 
-      // First glyph ("A") of each line, one `actualLineHeight` (12) apart.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
-      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 12);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24);
+      // First glyph ("A") of each line, one `actualLineHeight` (12) apart,
+      // all shifted down by the default `'top'` alignment's ascender
+      // offset (9 - see the single-glyph test above).
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 12 - 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 - 9);
 
       // Every line is left-aligned by default, starting at x = 0.
       expect(glyphs[0].offset.x).toBeCloseTo(3);
@@ -186,8 +192,9 @@ describe('shapeText', () => {
       expect(glyphs).toHaveLength(6);
       // Second word on line 1 starts after the first word + space (14.2).
       expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2);
-      // The lone word on line 2.
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 12);
+      // The lone word on line 2, shifted down by the default `'top'`
+      // alignment's ascender offset (9).
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 12 - 9);
     });
 
     it('never splits a single word wider than maxWidth', () => {
@@ -287,36 +294,44 @@ describe('shapeText', () => {
   });
 
   describe('vertical alignment', () => {
-    it('anchors the block by its top by default, unshifted', () => {
+    // Anchored to the block's visible ink (ascender/descender), not its
+    // line-height box: fixture metrics are `ascender: 0.9`, `descender:
+    // -0.2`, so at size 10, `inkTop = 9` and (for a 3-line, `actualLineHeight:
+    // 12` block) `inkBottom = -(3 - 1) * 12 + -0.2 * 10 = -26`.
+
+    it("anchors the block by its top (the first line's ascender) by default", () => {
       const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
         size: 10,
       });
 
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
+      // `inkTop` for a single line is `0.9 * 10 = 9`; shifting the
+      // baseline-relative y (3.5) down by that puts the ascender at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
     });
 
-    it('anchors the block by its bottom', () => {
+    it("anchors the block by its bottom (the last line's descender)", () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 20,
         verticalAlign: 'bottom',
       });
 
-      // blockHeight is 36 (3 lines * 12); shifting by that puts the last
-      // line's baseline where the first line's baseline would otherwise be.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 36);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 + 12);
+      // Shifting by `-inkBottom` (26) puts the last line's descender at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 26);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 26);
     });
 
-    it('anchors the block by its vertical center', () => {
+    it('anchors the block by the vertical center of its ink', () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 20,
         verticalAlign: 'middle',
       });
 
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 18);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 6);
+      // Shifting by `-(inkTop + inkBottom) / 2` = `-(9 + -26) / 2` = 8.5
+      // centers the ink (not the line-height box) on y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 8.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 8.5);
     });
   });
 
@@ -337,9 +352,12 @@ describe('shapeText', () => {
         lineHeight: 2,
       });
 
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
-      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48);
+      // `actualLineHeight` doubles to 24, but the default `'top'`
+      // alignment's ascender offset (9) is independent of `lineHeight` - it
+      // only depends on the font's own `ascender` metric and `size`.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24 - 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48 - 9);
     });
   });
 });

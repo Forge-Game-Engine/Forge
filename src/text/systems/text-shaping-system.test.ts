@@ -153,7 +153,10 @@ describe('createTextShapingEcsSystem', () => {
 
     expect(mesh).not.toBeNull();
     expect(mesh?.glyphs).toHaveLength(1);
-    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 });
+    // `verticalAlign` defaults to `'top'`, which anchors the first line's
+    // ascender (0.9em * size 10 = 9) to y = 0, shifting the baseline-relative
+    // y (3.5) down by 9.
+    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
     expect(mesh?.bounds).toEqual({ width: 6, height: 12 });
   });
 
