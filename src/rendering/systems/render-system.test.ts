@@ -20,6 +20,15 @@ import { ShaderCache } from '../shaders';
 import { ImageCache } from '../../asset-loading';
 import { createProjectionMatrix } from '../shaders';
 import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit';
+import {
+  addTextComponent,
+  TextEcsComponent,
+} from '../../text/components/text-component.js';
+import {
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/components/text-mesh-component.js';
+import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 
 describe('createRenderEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -113,6 +122,36 @@ describe('createRenderEcsSystem', () => {
       world: { x: 0, y: worldY },
     });
     addSpriteComponent(world, entity, createSprite(renderable, overrides));
+
+    return entity;
+  };
+
+  const addTextEntity = (
+    renderable: Renderable,
+    worldY: number,
+    mesh: Partial<TextMeshEcsComponent> = {},
+    textOverrides: Partial<TextEcsComponent> = {},
+  ): number => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, {
+      local: { x: 0, y: worldY },
+      world: { x: 0, y: worldY },
+    });
+
+    addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: {} as FontAtlas,
+      size: 10,
+      ...textOverrides,
+    });
+
+    world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
+      glyphs: [],
+      bounds: { width: 0, height: 0 },
+      renderable,
+      ...mesh,
+    });
 
     return entity;
   };
@@ -604,6 +643,180 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('text', () => {
+    it('draws one batched instance per glyph in the text mesh', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, {
+        glyphs: [
+          {
+            offset: { x: 0, y: 0 },
+            size: { x: 1, y: 1 },
+            uvOffset: { x: 0, y: 0 },
+            uvScale: { x: 0.1, y: 0.1 },
+          },
+          {
+            offset: { x: 1, y: 0 },
+            size: { x: 1, y: 1 },
+            uvOffset: { x: 0.1, y: 0 },
+            uvScale: { x: 0.1, y: 0.1 },
+          },
+        ],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
+      // Both glyphs share the mesh's renderable, so they still batch into a
+      // single draw call.
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(
+        undefined,
+        0,
+        6,
+        2,
+      );
+    });
+
+    it("positions each glyph at the entity's world position plus the glyph's offset", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, {
+        local: { x: 10, y: 20 },
+        world: { x: 10, y: 20 },
+      });
+      addTextComponent(world, entity, {
+        text: 'A',
+        fontAtlas: {} as FontAtlas,
+        size: 10,
+      });
+      world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
+        glyphs: [
+          {
+            offset: { x: 3, y: 3.5 },
+            size: { x: 5, y: 7 },
+            uvOffset: { x: 0, y: 0 },
+            uvScale: { x: 0.1, y: 0.14 },
+          },
+        ],
+        bounds: { width: 6, height: 12 },
+        renderable,
+      });
+
+      world.update();
+
+      const [components] = bindInstanceData.mock.calls[0] as [
+        { position: PositionEcsComponent },
+      ];
+
+      expect(components.position.world).toEqual({ x: 13, y: 23.5 });
+    });
+
+    it('tints glyphs with the text color', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+      const textColor = new Color(1, 0, 0, 1);
+
+      addTextEntity(
+        renderable,
+        0,
+        {
+          glyphs: [
+            {
+              offset: Vec2.zero,
+              size: { x: 1, y: 1 },
+              uvOffset: Vec2.zero,
+              uvScale: Vec2.one,
+            },
+          ],
+        },
+        { color: textColor },
+      );
+
+      world.update();
+
+      const [components] = bindInstanceData.mock.calls[0] as [
+        { sprite: SpriteEcsComponent },
+      ];
+
+      expect(components.sprite.tintColor).toBe(textColor);
+    });
+
+    it('skips disabled text', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(
+        renderable,
+        0,
+        {
+          glyphs: [
+            {
+              offset: Vec2.zero,
+              size: { x: 1, y: 1 },
+              uvOffset: Vec2.zero,
+              uvScale: Vec2.one,
+            },
+          ],
+        },
+        { enabled: false },
+      );
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+      expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+    });
+
+    it('skips text whose mesh renderable category does not match the camera culling mask', () => {
+      addCameraEntity(0b0010);
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      renderable.category = 0b0001;
+      addTextEntity(renderable, 0, {
+        glyphs: [
+          {
+            offset: Vec2.zero,
+            size: { x: 1, y: 1 },
+            uvOffset: Vec2.zero,
+            uvScale: Vec2.one,
+          },
+        ],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+      expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+    });
+
+    it('batches text and sprites sharing a renderable into a single draw call', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteEntity(renderable, 0);
+      addTextEntity(renderable, 1, {
+        glyphs: [
+          {
+            offset: Vec2.zero,
+            size: { x: 1, y: 1 },
+            uvOffset: Vec2.zero,
+            uvScale: Vec2.one,
+          },
+        ],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
     });
   });
 });
