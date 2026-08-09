@@ -2,14 +2,12 @@ import {
   combineInstanceDataSegments,
   createQuadGeometry,
   createTextureFromImage,
-  ForgeShaderSource,
   Material,
   Renderable,
   RenderContext,
   spriteInstanceDataSegment,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { msdfFragmentShader } from './shaders/index.js';
 
 /**
  * The rendering category `createTextRenderable` assigns its `Renderable`s,
@@ -41,12 +39,7 @@ export function createTextRenderable(
   const { gl, shaderCache } = renderContext;
 
   // `sprite.vert` is reused verbatim: glyph quads need no vertex-stage
-  // behavior a sprite region doesn't already have. Registering it here is a
-  // no-op if it's already in the cache (`ShaderCache.addShader` is
-  // idempotent), so `/src/text` never needs `/src/rendering` to know about
-  // its shader up front.
-  shaderCache.addShader(new ForgeShaderSource(msdfFragmentShader));
-
+  // behavior a sprite region doesn't already have.
   const vertexShader = shaderCache.getShader('sprite.vert');
   const fragmentShader = shaderCache.getShader('msdf.frag');
 

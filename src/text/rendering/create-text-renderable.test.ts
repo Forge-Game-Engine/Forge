@@ -9,6 +9,7 @@ import {
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { createTextRenderable } from './create-text-renderable.js';
+import { msdfFragmentShader } from './shaders/index.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
 globalThis.WebGLTexture = class WebGLTexture {};
@@ -125,23 +126,15 @@ describe('createTextRenderable', () => {
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
-    const shaderCache = new ShaderCache([]).addShader(
-      new ForgeShaderSource(spriteVertexShader),
-    );
+    const shaderCache = new ShaderCache([])
+      .addShader(new ForgeShaderSource(spriteVertexShader))
+      .addShader(new ForgeShaderSource(msdfFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
   });
 
-  it('does not throw when the sprite vertex shader is already registered', () => {
+  it('does not throw when its shaders are already registered', () => {
     expect(() => createTextRenderable(renderContext, fontAtlas)).not.toThrow();
-  });
-
-  it('registers the msdf fragment shader in the shader cache', () => {
-    createTextRenderable(renderContext, fontAtlas);
-
-    expect(() =>
-      renderContext.shaderCache.getShader('msdf.frag'),
-    ).not.toThrow();
   });
 
   it("sets the distance range uniform from the font atlas's data", () => {

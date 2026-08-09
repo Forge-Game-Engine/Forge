@@ -31,6 +31,7 @@ import {
   terrainFragmentShader,
   terrainVertexShader,
 } from '../terrain/shaders/index.js';
+import { msdfFragmentShader } from '../../text/rendering/shaders/index.js';
 
 /**
  * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
@@ -77,7 +78,8 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(bloomCompositeFragmentShader))
     .addShader(new ForgeShaderSource(toneMappingFragmentShader))
     .addShader(new ForgeShaderSource(terrainVertexShader))
-    .addShader(new ForgeShaderSource(terrainFragmentShader));
+    .addShader(new ForgeShaderSource(terrainFragmentShader))
+    .addShader(new ForgeShaderSource(msdfFragmentShader));
 
   return shaderCache;
 }

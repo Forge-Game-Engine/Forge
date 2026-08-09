@@ -17,10 +17,10 @@ export function createLabels(
   fontAtlas: FontAtlas,
   layer: number,
 ): void {
-  // Phase 2 has no horizontal alignment yet (see design/msdf-text-rendering.md
-  // Phase 3): a label's own position is where its first glyph starts, not a
-  // centered anchor, so starting every label at the same left-hand `x`
-  // reads as a left-aligned block instead of drifting rightward from center.
+  // TextEcsComponent has no horizontal alignment option: a label's own
+  // position is where its first glyph starts, not a centered anchor, so
+  // starting every label at the same left-hand `x` reads as a left-aligned
+  // block instead of drifting rightward from center.
   const leftX = -260;
 
   const heading = world.createEntity();

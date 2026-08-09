@@ -19,7 +19,7 @@ import {
   TextMeshEcsComponent,
   textMeshId,
 } from '../../text/components/text-mesh-component.js';
-import { pushTextRenderCommands } from '../../text/rendering/glyph-quad.js';
+import { buildTextCameraCommands } from '../../text/rendering/glyph-quad.js';
 import {
   CameraEcsComponent,
   cameraId,
@@ -208,42 +208,6 @@ function buildCameraCommands(
       world.getComponent<RotationEcsComponent>(spriteEntity, rotationId),
       world.getComponent<ScaleEcsComponent>(spriteEntity, scaleId),
       world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
-    );
-  }
-}
-
-function buildTextCameraCommands(
-  world: EcsWorld,
-  textComponents: TextEcsComponent[],
-  textMeshes: TextMeshEcsComponent[],
-  textPositions: PositionEcsComponent[],
-  textEntities: readonly number[],
-  cullingMask: number,
-  commands: RenderCommand[],
-): void {
-  for (let t = 0; t < textEntities.length; t++) {
-    const textComponent = textComponents[t];
-
-    if (!textComponent.enabled) {
-      continue;
-    }
-
-    const textMesh = textMeshes[t];
-
-    if (!matchesMask(textMesh.renderable.category, cullingMask)) {
-      continue;
-    }
-
-    const textEntity = textEntities[t];
-    const entityPosition = textPositions[t];
-
-    pushTextRenderCommands(
-      commands,
-      textComponent,
-      textMesh,
-      entityPosition,
-      world.getComponent<RotationEcsComponent>(textEntity, rotationId),
-      world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
     );
   }
 }

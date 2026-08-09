@@ -42,7 +42,7 @@ const defaultShapeTextOptions = { letterSpacing: 0 };
  * player-supplied or localized text is a content problem, not a programming
  * error.
  * @param text - The string to shape. Multi-line/wrapping input is not
- * supported yet (Phase 3) - every code point is laid out on a single line.
+ * supported yet - every code point is laid out on a single line.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param options - Shaping options.
  * @returns The shaped glyph quads and the line's bounds.

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addRotationComponent,
+  addScaleComponent,
   PositionEcsComponent,
   RotationEcsComponent,
 } from '../../common/index.js';
+import { EcsWorld } from '../../ecs/index.js';
 import { Color } from '../../rendering/color.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { Renderable } from '../../rendering/renderable.js';
@@ -12,9 +15,12 @@ import type {
   TextMeshEcsComponent,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { pushTextRenderCommands } from './glyph-quad.js';
+import {
+  buildTextCameraCommands,
+  pushTextRenderCommands,
+} from './glyph-quad.js';
 
-const renderable = {} as Renderable;
+const renderable = { category: 1 } as Renderable;
 
 function buildTextComponent(
   overrides: Partial<TextEcsComponent> = {},
@@ -155,5 +161,96 @@ describe('pushTextRenderCommands', () => {
     );
 
     expect(commands).toHaveLength(0);
+  });
+});
+
+describe('buildTextCameraCommands', () => {
+  const position: PositionEcsComponent = {
+    local: { x: 0, y: 0 },
+    world: { x: 0, y: 0 },
+  };
+
+  it('pushes commands for an enabled entity matching the culling mask', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const commands: RenderCommand[] = [];
+
+    buildTextCameraCommands(
+      world,
+      [buildTextComponent()],
+      [buildTextMesh([glyph, glyph])],
+      [position],
+      [entity],
+      0xffffffff,
+      commands,
+    );
+
+    expect(commands).toHaveLength(2);
+  });
+
+  it('skips a disabled text entity', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const commands: RenderCommand[] = [];
+
+    buildTextCameraCommands(
+      world,
+      [buildTextComponent({ enabled: false })],
+      [buildTextMesh([glyph])],
+      [position],
+      [entity],
+      0xffffffff,
+      commands,
+    );
+
+    expect(commands).toHaveLength(0);
+  });
+
+  it("skips text whose mesh renderable category does not match the camera's culling mask", () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const commands: RenderCommand[] = [];
+    const mismatchedRenderable = { category: 0b0001 } as Renderable;
+
+    buildTextCameraCommands(
+      world,
+      [buildTextComponent()],
+      [
+        {
+          glyphs: [glyph],
+          bounds: { width: 0, height: 0 },
+          renderable: mismatchedRenderable,
+        },
+      ],
+      [position],
+      [entity],
+      0b0010,
+      commands,
+    );
+
+    expect(commands).toHaveLength(0);
+  });
+
+  it("looks up the entity's rotation and scale components from the world", () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const rotation = addRotationComponent(world, entity, { world: 1.5 });
+    const scale = addScaleComponent(world, entity, {
+      world: { x: 2, y: 2 },
+    });
+    const commands: RenderCommand[] = [];
+
+    buildTextCameraCommands(
+      world,
+      [buildTextComponent()],
+      [buildTextMesh([glyph])],
+      [position],
+      [entity],
+      0xffffffff,
+      commands,
+    );
+
+    expect(commands[0].components.rotation).toBe(rotation);
+    expect(commands[0].components.scale).toBe(scale);
   });
 });

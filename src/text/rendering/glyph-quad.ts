@@ -1,11 +1,15 @@
 import {
   PositionEcsComponent,
   RotationEcsComponent,
+  rotationId,
   ScaleEcsComponent,
+  scaleId,
 } from '../../common/index.js';
+import { EcsWorld } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
+import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import { TextMeshEcsComponent } from '../components/text-mesh-component.js';
 
@@ -39,9 +43,6 @@ export function pushTextRenderCommands(
   for (const glyph of textMesh.glyphs) {
     const glyphPosition: PositionEcsComponent = {
       local: entityPosition.local,
-      // Clone before adding, matching `pushSpriteRenderCommands`'s own
-      // region offset: `entityPosition.world` is the entity's live world
-      // position and must not be mutated by this glyph's offset.
       world: Vec2.add(Vec2.clone(entityPosition.world), glyph.offset),
     };
 
@@ -69,5 +70,55 @@ export function pushTextRenderCommands(
         flip: null,
       },
     });
+  }
+}
+
+/**
+ * Builds render commands for every visible text entity a camera should
+ * draw, mirroring `render-system.ts`'s own `buildCameraCommands` for
+ * sprites: skips disabled text and text whose mesh renderable category
+ * doesn't match `cullingMask`, then delegates to `pushTextRenderCommands`.
+ * @param world - The ECS world, used to look up each entity's optional
+ * rotation/scale components.
+ * @param textComponents - Each queried entity's `TextEcsComponent`.
+ * @param textMeshes - Each queried entity's `TextMeshEcsComponent`.
+ * @param textPositions - Each queried entity's `PositionEcsComponent`.
+ * @param textEntities - The queried entity ids, parallel to the arrays above.
+ * @param cullingMask - The camera's culling mask.
+ * @param commands - The render command buffer to push into.
+ */
+export function buildTextCameraCommands(
+  world: EcsWorld,
+  textComponents: TextEcsComponent[],
+  textMeshes: TextMeshEcsComponent[],
+  textPositions: PositionEcsComponent[],
+  textEntities: readonly number[],
+  cullingMask: number,
+  commands: RenderCommand[],
+): void {
+  for (let t = 0; t < textEntities.length; t++) {
+    const textComponent = textComponents[t];
+
+    if (!textComponent.enabled) {
+      continue;
+    }
+
+    const textMesh = textMeshes[t];
+
+    if (!matchesMask(textMesh.renderable.category, cullingMask)) {
+      continue;
+    }
+
+    const textEntity = textEntities[t];
+    const entityPosition = textPositions[t];
+
+    pushTextRenderCommands(
+      commands,
+      textComponent,
+      textMesh,
+      entityPosition,
+      world.getComponent<RotationEcsComponent>(textEntity, rotationId),
+      world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+    );
   }
 }
