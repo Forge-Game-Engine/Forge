@@ -233,6 +233,51 @@ describe('createTextShapingEcsSystem', () => {
     expect(mesh?.bounds).toEqual({ width: 12, height: 24 });
   });
 
+  it('re-shapes when maxWidth changes', () => {
+    const entity = world.createEntity();
+
+    const textComponent = addTextComponent(world, entity, {
+      text: 'A B',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+
+    world.update();
+
+    textComponent.maxWidth = 1;
+    world.update();
+
+    const mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    // "A" and "B" now each get their own line, since neither fits alongside
+    // the other within a maxWidth of 1.
+    expect(mesh?.bounds.height).toBeCloseTo(24);
+  });
+
+  it('re-shapes when horizontalAlign, verticalAlign, or lineHeight changes', () => {
+    const entity = world.createEntity();
+
+    const textComponent = addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+      lineHeight: 2,
+    });
+
+    world.update();
+
+    let mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    expect(mesh?.bounds.height).toBeCloseTo(24);
+
+    textComponent.lineHeight = 1;
+    world.update();
+
+    mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    expect(mesh?.bounds.height).toBeCloseTo(12);
+  });
+
   it('shares one renderable across entities using the same font atlas', () => {
     const sharedFontAtlas = buildFontAtlas();
     const entityA = world.createEntity();

@@ -35,6 +35,29 @@ export interface TextDefaultedOptions {
    */
   letterSpacing: number;
 
+  /** Multiplier on the font's authored line height. */
+  lineHeight: number;
+
+  /**
+   * Horizontal alignment of each line within the shaped block's own width.
+   * Irrelevant, and ignored, when `maxWidth` is unset (a single unwrapped
+   * line is always exactly as wide as the block itself, so every mode
+   * produces the same result).
+   */
+  horizontalAlign: 'left' | 'center' | 'right' | 'justify';
+
+  /**
+   * Vertical alignment of the whole shaped block relative to the entity's
+   * position.
+   */
+  verticalAlign: 'top' | 'middle' | 'bottom';
+
+  /**
+   * Wraps at word boundaries when a line would exceed this width, in world
+   * units. `undefined` (the default) never wraps.
+   */
+  maxWidth?: number;
+
   /**
    * The draw-order layer for this text, relative to other sprites/text drawn
    * by the same camera. Identical semantics to `SpriteEcsComponent.layer`.
@@ -66,6 +89,9 @@ export function addTextComponent(
   const defaultTextOptions: TextDefaultedOptions = {
     color: Color.white,
     letterSpacing: 0,
+    lineHeight: 1,
+    horizontalAlign: 'left',
+    verticalAlign: 'top',
     layer: 0,
     enabled: true,
   };

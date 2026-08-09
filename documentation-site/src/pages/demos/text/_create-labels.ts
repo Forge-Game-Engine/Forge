@@ -17,10 +17,9 @@ export function createLabels(
   fontAtlas: FontAtlas,
   layer: number,
 ): void {
-  // TextEcsComponent has no horizontal alignment option: a label's own
-  // position is where its first glyph starts, not a centered anchor, so
-  // starting every label at the same left-hand `x` reads as a left-aligned
-  // block instead of drifting rightward from center.
+  // horizontalAlign defaults to 'left' with no maxWidth set, so a label's
+  // own position is where its first glyph starts; starting every label at
+  // the same left-hand `x` reads as a left-aligned block.
   const leftX = -260;
 
   const heading = world.createEntity();
@@ -55,5 +54,18 @@ export function createLabels(
   world.addComponent(counter, counterId, {
     count: 0,
     secondsSinceLastTick: 0,
+  });
+
+  const paragraph = world.createEntity();
+  addPositionComponent(world, paragraph, { world: { x: leftX, y: -100 } });
+  addTextComponent(world, paragraph, {
+    text: 'Phase 3 adds multi-line layout: greedy word wrapping against maxWidth, plus horizontal and vertical alignment.',
+    fontAtlas,
+    size: 16,
+    color: new Color(0.75, 0.78, 0.85, 1),
+    maxWidth: 480,
+    lineHeight: 1.3,
+    horizontalAlign: 'justify',
+    layer,
   });
 }
