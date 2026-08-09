@@ -6,7 +6,6 @@ import {
   ForgeShaderSource,
   RenderContext,
   ShaderCache,
-  spriteVertexShader,
 } from '../../rendering/index.js';
 import { addTextComponent } from '../components/text-component.js';
 import {
@@ -14,7 +13,10 @@ import {
   textMeshId,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { msdfFragmentShader } from '../rendering/shaders/index.js';
+import {
+  msdfFragmentShader,
+  msdfVertexShader,
+} from '../rendering/shaders/index.js';
 import { createTextShapingEcsSystem } from './text-shaping-system.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
@@ -130,7 +132,7 @@ describe('createTextShapingEcsSystem', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(spriteVertexShader))
+      .addShader(new ForgeShaderSource(msdfVertexShader))
       .addShader(new ForgeShaderSource(msdfFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);

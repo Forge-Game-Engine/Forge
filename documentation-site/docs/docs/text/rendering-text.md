@@ -128,10 +128,12 @@ entities drawing from the same atlas, plus every glyph within each of them,
 batch into a single instanced draw call per camera, the same way sprites
 sharing a texture do.
 
+## Outline and shadow effects
+
+`TextEcsComponent` also supports an outline and a soft shadow - see
+[Text Effects](./text-effects.md).
+
 ## What's not supported yet
 
 A literal `\n` in `text` is not treated as a forced line break - only
-`maxWidth`-driven word wrapping produces multiple lines. There is no
-outline, glow, or shadow effect yet. `TextEcsComponent` grows these in later
-phases without changing how `addTextComponent`/`createTextShapingEcsSystem`
-are used today.
+`maxWidth`-driven word wrapping produces multiple lines.

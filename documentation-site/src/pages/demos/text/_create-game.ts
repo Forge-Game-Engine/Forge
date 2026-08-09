@@ -12,6 +12,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
+import { createEffectsExamples } from './_create-effects-examples';
 import { createHorizontalAlignmentExamples } from './_create-horizontal-alignment-examples';
 import { createLineHeightExamples } from './_create-line-height-examples';
 import { createLiveMaxWidthExample } from './_create-live-max-width-example';
@@ -35,10 +36,10 @@ const sectionGap = 26;
 
 /**
  * Builds the text rendering demo: a showcase of every `horizontalAlign` and
- * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, and
- * a paragraph whose `maxWidth` oscillates every frame to show
- * `createTextShapingEcsSystem` reflowing text live, all drawn from one
- * shared `FontAtlas` loaded from `fontAtlasUrl`.
+ * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, the
+ * outline/shadow effects, and a paragraph whose `maxWidth` oscillates every
+ * frame to show `createTextShapingEcsSystem` reflowing text live, all drawn
+ * from one shared `FontAtlas` loaded from `fontAtlasUrl`.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load (see
  * `index.tsx`, which resolves this against the site's configured base URL).
  * @returns The created game.
@@ -96,6 +97,17 @@ export const createTextGame = async (fontAtlasUrl: string): Promise<Game> => {
   y -= sectionGap;
 
   y = createLineHeightExamples(
+    world,
+    fontAtlas,
+    whiteSprite,
+    drawOrder.guide,
+    drawOrder.content,
+    { x: left, y },
+    usableWidth,
+  );
+  y -= sectionGap;
+
+  y = createEffectsExamples(
     world,
     fontAtlas,
     whiteSprite,

@@ -10,10 +10,31 @@ uniform float u_atlasSize;       // FontAtlasData.atlasSize.height (assumes squa
 
 in vec2 v_texCoord;
 in vec4 v_tint;
+in vec4 v_outlineColor;
+in float v_outlineWidth;
+in vec4 v_shadowColor;
+in vec2 v_shadowOffset;
+in float v_shadowSoftness;
 out vec4 fragColor;
 
 float median(float r, float g, float b) {
   return max(min(r, g), min(max(r, g), b));
+}
+
+// Standard "top over bottom" alpha compositing, both sides straight
+// (non-premultiplied) alpha - matches the layout `fragColor` itself must be
+// in, since the render pipeline blends with `gl.blendFunc(SRC_ALPHA,
+// ONE_MINUS_SRC_ALPHA)`.
+vec4 compositeOver(vec4 top, vec4 bottom) {
+  float outAlpha = top.a + bottom.a * (1.0 - top.a);
+
+  if (outAlpha <= 0.0) {
+    return vec4(0.0);
+  }
+
+  vec3 outColor = (top.rgb * top.a + bottom.rgb * bottom.a * (1.0 - top.a)) / outAlpha;
+
+  return vec4(outColor, outAlpha);
 }
 
 void main() {
@@ -32,11 +53,41 @@ void main() {
   // band from collapsing below one screen pixel at small on-screen sizes,
   // which otherwise aliases instead of anti-aliasing.
   vec2 unitRange = vec2(u_distanceRange) / vec2(u_atlasSize);
-  vec2 screenTexSize = vec2(1.0) / fwidth(v_texCoord);
+  vec2 uvPerScreenPx = fwidth(v_texCoord);
+  vec2 screenTexSize = vec2(1.0) / uvPerScreenPx;
   float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
   float screenPxDistance = signedDistance * screenPxRange;
 
   float glyphAlpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+  vec4 fillLayer = vec4(v_tint.rgb, v_tint.a * glyphAlpha);
 
-  fragColor = vec4(v_tint.rgb, v_tint.a * glyphAlpha);
+  // The outline is the ring between the glyph's own edge and `outlineWidth`
+  // screen pixels further out. Gated to exactly `0` alpha (rather than just
+  // relying on `outlineWidth` cancelling out below) when disabled: without
+  // the gate, at `outlineWidth == 0` this band is identical to `glyphAlpha`
+  // itself, which would still visibly blend `v_outlineColor` into the
+  // glyph's anti-aliased edge.
+  float outlineCoverage = v_outlineWidth > 0.0
+    ? clamp(screenPxDistance + 0.5 + v_outlineWidth, 0.0, 1.0)
+    : 0.0;
+  vec4 outlineLayer = vec4(v_outlineColor.rgb, outlineCoverage);
+
+  // The soft shadow re-samples the distance field at an offset UV (the
+  // offset, like `outlineWidth`, is expressed in screen-pixel-range units,
+  // so it's converted to UV space the same way `screenPxRange` converts the
+  // other direction: `uvPerScreenPx` is how much UV changes per screen
+  // pixel). `shadowSoftness` widens the anti-aliasing band around that
+  // second sample to blur its edge; `0` leaves it exactly as crisp as the
+  // glyph itself, just offset. Zero alpha (the default `shadowColor`) drops
+  // out of `compositeOver` with no visible effect, so no separate gate is
+  // needed here.
+  vec2 shadowUv = v_texCoord - v_shadowOffset * uvPerScreenPx;
+  vec3 shadowMsdf = texture(u_atlas, shadowUv).rgb;
+  float shadowSignedDistance = median(shadowMsdf.r, shadowMsdf.g, shadowMsdf.b) - 0.5;
+  float shadowScreenPxDistance = shadowSignedDistance * screenPxRange;
+  float shadowSoftness = max(v_shadowSoftness, 1.0);
+  float shadowCoverage = clamp(shadowScreenPxDistance / shadowSoftness + 0.5, 0.0, 1.0);
+  vec4 shadowLayer = vec4(v_shadowColor.rgb, shadowCoverage * v_shadowColor.a);
+
+  fragColor = compositeOver(fillLayer, compositeOver(outlineLayer, shadowLayer));
 }

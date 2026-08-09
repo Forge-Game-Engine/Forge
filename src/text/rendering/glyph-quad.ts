@@ -9,6 +9,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
+import { TextEffectsInstanceData } from '../../rendering/renderable.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import { TextMeshEcsComponent } from '../components/text-mesh-component.js';
@@ -37,8 +38,24 @@ export function pushTextRenderCommands(
   scaleComponent: ScaleEcsComponent | null,
 ): void {
   const { renderable } = textMesh;
-  const { layer, color } = textComponent;
+  const {
+    layer,
+    color,
+    outlineColor,
+    outlineWidth,
+    shadowColor,
+    shadowOffset,
+    shadowSoftness,
+  } = textComponent;
   const depth = entityPosition.world.y;
+
+  const textEffects: TextEffectsInstanceData = {
+    outlineColor,
+    outlineWidth,
+    shadowColor,
+    shadowOffset,
+    shadowSoftness,
+  };
 
   for (const glyph of textMesh.glyphs) {
     const glyphPosition: PositionEcsComponent = {
@@ -68,6 +85,7 @@ export function pushTextRenderCommands(
         scale: scaleComponent,
         sprite: glyphSprite,
         flip: null,
+        textEffects,
       },
     });
   }
