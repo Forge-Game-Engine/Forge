@@ -6,9 +6,14 @@ import { dirname, resolve } from 'node:path';
 async function loadGenerateBMFont() {
   try {
     return (await import('msdf-bmfont-xml')).default;
-  } catch {
+  } catch (error) {
+    if (error?.code !== 'ERR_MODULE_NOT_FOUND') {
+      throw error;
+    }
+
     throw new Error(
       'msdf-bmfont-xml is required to generate a font atlas but is not installed. Run `npm install --save-dev msdf-bmfont-xml` (an optional peer dependency of @forge-game-engine/forge) and try again.',
+      { cause: error },
     );
   }
 }
