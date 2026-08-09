@@ -16,8 +16,10 @@ Baumgarte
 Beziers
 blit
 blits
+bmfont
 cachable
 Catmull
+charsets
 Chlumský
 commitlint
 Cramer
@@ -61,6 +63,7 @@ interactable
 interactables
 Kenney
 kenneynl
+kernings
 keyup
 Killst
 lerp
@@ -151,5 +154,6 @@ Vleugels
 WASD
 webgl
 Wenrexa
+xadvance
 yoavbls
 Zoltan
