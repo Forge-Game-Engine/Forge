@@ -6,6 +6,7 @@ affordances
 afterrun
 agnostically
 Aoboshi
+Arimo
 artboard
 atlased
 attw
@@ -22,6 +23,7 @@ Catmull
 charsets
 Chlumský
 commitlint
+Cousine
 Cramer
 dbaeumer
 deadzone
@@ -135,6 +137,7 @@ thresholded
 thresholding
 thumbstick
 tileable
+Tinos
 tintable
 tweening
 unblurred

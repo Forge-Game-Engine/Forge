@@ -11,7 +11,7 @@ render size (12px or 400px, zoomed in or out) without regenerating anything,
 because the texture stores each glyph's distance-to-edge rather than a fixed
 raster of pixels.
 
-Two pieces make up the pipeline:
+Three pieces make up the module:
 
 - An offline command, `forge-generate-font-atlas`, that reads a font file
   and writes out an atlas image plus a
@@ -23,6 +23,10 @@ Two pieces make up the pipeline:
   [`AssetCache`](/Forge/docs/api/interfaces/AssetCache) contract as the
   rest of the engine's asset loading (see
   [Asset Loading](../asset-loading/index.md)).
+- [`addTextComponent`](/Forge/docs/api/functions/addTextComponent) and
+  [`createTextShapingEcsSystem`](/Forge/docs/api/functions/createTextShapingEcsSystem),
+  which draw a string from a loaded `FontAtlas` through the render system
+  (see [Rendering Text](./rendering-text.md)).
 
 ## Quick start
 

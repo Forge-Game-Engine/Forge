@@ -12,6 +12,15 @@ import { Matrix3x3, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
+  TextEcsComponent,
+  textId,
+} from '../../text/components/text-component.js';
+import {
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/components/text-mesh-component.js';
+import { buildTextCameraCommands } from '../../text/rendering/glyph-quad.js';
+import {
   CameraEcsComponent,
   cameraId,
   SpriteEcsComponent,
@@ -246,6 +255,13 @@ export const createRenderEcsSystem = (
       positionId,
     ]);
 
+    const {
+      entities: textEntities,
+      components: [textComponents, textMeshes, textPositions],
+    } = world.query<
+      [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
+    >([textId, textMeshId, positionId]);
+
     for (let c = 0; c < cameras.length; c++) {
       const cameraComponent = cameras[c];
       const cameraPositionComponent = cameraPositions[c];
@@ -277,6 +293,16 @@ export const createRenderEcsSystem = (
         sprites,
         spritePositions,
         spriteEntities,
+        cameraComponent.cullingMask,
+        commands,
+      );
+
+      buildTextCameraCommands(
+        world,
+        textComponents,
+        textMeshes,
+        textPositions,
+        textEntities,
         cameraComponent.cullingMask,
         commands,
       );
