@@ -2,9 +2,13 @@ import React, { JSX } from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { createTextGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
-import createLabelsCode from '!!raw-loader!./_create-labels';
-import counterComponentCode from '!!raw-loader!./_counter.component';
-import counterSystemCode from '!!raw-loader!./_counter.system';
+import createGuideBoxCode from '!!raw-loader!./_create-guide-box';
+import createHorizontalAlignmentExamplesCode from '!!raw-loader!./_create-horizontal-alignment-examples';
+import createVerticalAlignmentExamplesCode from '!!raw-loader!./_create-vertical-alignment-examples';
+import createLineHeightExamplesCode from '!!raw-loader!./_create-line-height-examples';
+import createLiveMaxWidthExampleCode from '!!raw-loader!./_create-live-max-width-example';
+import liveMaxWidthComponentCode from '!!raw-loader!./_live-max-width.component';
+import liveMaxWidthSystemCode from '!!raw-loader!./_live-max-width.system';
 
 import { Demo } from '@site/src/components/Demo';
 
@@ -17,16 +21,41 @@ export default function Text(): JSX.Element {
       metaData={{
         title: 'Text Rendering Demo',
         description:
-          'A demo showcasing MSDF text rendering with addTextComponent and createTextShapingEcsSystem.',
+          'A demo showcasing MSDF text rendering, multi-line layout, alignment, and live reflow with addTextComponent and createTextShapingEcsSystem.',
       }}
       header="Text Rendering"
-      blurb="Three TextEcsComponent entities (Liberation Sans, SIL OFL 1.1) rendered through the MSDF text pipeline: a heading, a subheading, and a counter that increments once per second by writing directly to its TextEcsComponent.text. createTextShapingEcsSystem only re-shapes the glyphs of the entity whose text actually changed that tick, so the heading and subheading are shaped once and never again."
+      blurb="A showcase of Phase 3's multi-line layout (Liberation Sans, SIL OFL 1.1): every horizontalAlign value (left/center/right/justify) wrapping the same sentence, every verticalAlign value (top/middle/bottom) positioned against a shared anchor line, a few lineHeight multipliers compared side by side, and - at the bottom - a paragraph whose maxWidth oscillates every frame, driving createTextShapingEcsSystem to reflow it live. Every guide box/line is sized from shapeText's own computed bounds, not guessed."
       createGame={() => createTextGame(fontAtlasUrl)}
       codeFiles={[
         { name: 'game.ts', content: gameCode },
-        { name: 'create-labels.ts', content: createLabelsCode },
-        { name: 'counter.component.ts', content: counterComponentCode },
-        { name: 'counter.system.ts', content: counterSystemCode },
+        {
+          name: 'create-guide-box.ts',
+          content: createGuideBoxCode,
+        },
+        {
+          name: 'create-horizontal-alignment-examples.ts',
+          content: createHorizontalAlignmentExamplesCode,
+        },
+        {
+          name: 'create-vertical-alignment-examples.ts',
+          content: createVerticalAlignmentExamplesCode,
+        },
+        {
+          name: 'create-line-height-examples.ts',
+          content: createLineHeightExamplesCode,
+        },
+        {
+          name: 'create-live-max-width-example.ts',
+          content: createLiveMaxWidthExampleCode,
+        },
+        {
+          name: 'live-max-width.component.ts',
+          content: liveMaxWidthComponentCode,
+        },
+        {
+          name: 'live-max-width.system.ts',
+          content: liveMaxWidthSystemCode,
+        },
       ]}
     />
   );
