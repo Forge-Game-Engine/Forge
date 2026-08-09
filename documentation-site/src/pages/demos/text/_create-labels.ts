@@ -17,8 +17,14 @@ export function createLabels(
   fontAtlas: FontAtlas,
   layer: number,
 ): void {
+  // Phase 2 has no horizontal alignment yet (see design/msdf-text-rendering.md
+  // Phase 3): a label's own position is where its first glyph starts, not a
+  // centered anchor, so starting every label at the same left-hand `x`
+  // reads as a left-aligned block instead of drifting rightward from center.
+  const leftX = -260;
+
   const heading = world.createEntity();
-  addPositionComponent(world, heading, { world: { x: 0, y: 120 } });
+  addPositionComponent(world, heading, { world: { x: leftX, y: 120 } });
   addTextComponent(world, heading, {
     text: 'Forge Text Rendering',
     fontAtlas,
@@ -27,7 +33,7 @@ export function createLabels(
   });
 
   const subheading = world.createEntity();
-  addPositionComponent(world, subheading, { world: { x: 0, y: 60 } });
+  addPositionComponent(world, subheading, { world: { x: leftX, y: 60 } });
   addTextComponent(world, subheading, {
     text: 'MSDF glyphs, batched through the same pipeline as sprites',
     fontAtlas,
@@ -37,7 +43,7 @@ export function createLabels(
   });
 
   const counter = world.createEntity();
-  addPositionComponent(world, counter, { world: { x: 0, y: -40 } });
+  addPositionComponent(world, counter, { world: { x: leftX, y: -40 } });
   addTextComponent(world, counter, {
     text: 'Count: 0',
     fontAtlas,

@@ -23,12 +23,17 @@ void main() {
   // Converts the distance field's abstract units into screen pixels so the
   // anti-aliasing band is exactly one screen pixel wide regardless of how
   // much the glyph is scaled - the entire reason MSDF stays crisp at any
-  // size. `u_distanceRange` is in atlas pixels, so it's first divided by
-  // `u_atlasSize` to get a normalized (0-1 UV space) unit range, then
-  // divided by `fwidth(v_texCoord)` (how much UV space one screen pixel
-  // covers) to land in screen pixels.
-  float screenPxRange = u_distanceRange /
-      (2.0 * length(fwidth(v_texCoord)) * u_atlasSize);
+  // size. `unitRange` is `u_distanceRange` (in atlas pixels) expressed as a
+  // fraction of the 0-1 UV space; `screenTexSize` is how many screen pixels
+  // correspond to a full 1.0 UV unit, per axis (the reciprocal of
+  // `fwidth(v_texCoord)`, taken per-axis and summed via `dot`, not combined
+  // through `length()` first - the two give different, and at non-uniform
+  // scale/rotation genuinely different, results). `max(..., 1.0)` keeps the
+  // band from collapsing below one screen pixel at small on-screen sizes,
+  // which otherwise aliases instead of anti-aliasing.
+  vec2 unitRange = vec2(u_distanceRange) / vec2(u_atlasSize);
+  vec2 screenTexSize = vec2(1.0) / fwidth(v_texCoord);
+  float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
   float screenPxDistance = signedDistance * screenPxRange;
 
   float glyphAlpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
