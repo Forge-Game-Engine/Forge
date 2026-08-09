@@ -90,7 +90,13 @@ export function shapeText(
           y: planeBounds.bottom * size + glyphHeight / 2,
         },
         size: { x: glyphWidth, y: glyphHeight },
-        uvOffset: { x: atlasBounds.left, y: atlasBounds.bottom },
+        // `atlasBounds` is Y-up (`top` > `bottom`, matching `planeBounds`),
+        // but UV sampling in this engine is Y-down (v=0 is the top of the
+        // texture - see `computeNineSliceRegions`'s `uvOffset`, documented
+        // as the region's top-left corner). `1 - atlasBounds.top` converts
+        // the glyph's top edge to its Y-down v; the scale's magnitude is
+        // unaffected by the flip.
+        uvOffset: { x: atlasBounds.left, y: 1 - atlasBounds.top },
         uvScale: {
           x: atlasBounds.right - atlasBounds.left,
           y: atlasBounds.top - atlasBounds.bottom,

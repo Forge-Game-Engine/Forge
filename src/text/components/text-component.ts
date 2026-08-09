@@ -52,12 +52,6 @@ export const textId = createComponentId<TextEcsComponent>('text');
 
 /**
  * Attaches a {@link TextEcsComponent} to `entity`.
- *
- * The rendered mesh (a {@link TextEcsComponent}'s shaped glyph quads) is not
- * built here - `createTextShapingEcsSystem` attaches a `TextMeshEcsComponent`
- * to the entity the first time it shapes this component's text, and
- * re-shapes it whenever `text`, `fontAtlas`, `size`, or `letterSpacing`
- * change.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the text. `text`, `fontAtlas`,
@@ -69,11 +63,6 @@ export function addTextComponent(
   entity: number,
   options: TextRequiredOptions & Partial<TextEcsComponent>,
 ): TextEcsComponent {
-  // Built inside the function body (rather than as a shared module-level
-  // default), mirroring `addSpriteComponent`: `Color.white` can't be read at
-  // module-init time since this file sits in a circular import cycle with
-  // `/src/rendering` (text needs `Renderable`/`Color`, and `render-system.ts`
-  // needs `TextMeshEcsComponent`).
   const defaultTextOptions: TextDefaultedOptions = {
     color: Color.white,
     letterSpacing: 0,

@@ -19,6 +19,7 @@ import {
   TextMeshEcsComponent,
   textMeshId,
 } from '../../text/components/text-mesh-component.js';
+import { pushTextRenderCommands } from '../../text/rendering/glyph-quad.js';
 import {
   CameraEcsComponent,
   cameraId,
@@ -173,63 +174,6 @@ const pushSpriteRenderCommands = (
         scale: scaleComponent,
         sprite: regionSprite,
         flip: flipComponent,
-      },
-    });
-  }
-};
-
-/**
- * Pushes one `RenderCommand` per visible glyph in `textMesh`, generalizing
- * the sub-quad expansion `pushSpriteRenderCommands` already does for
- * nine-slice sprites: each `GlyphQuad` is wrapped in a synthetic
- * `SpriteEcsComponent`-shaped object (centered via `pivot: (0.5, 0.5)`) so
- * glyphs reuse the exact same `bindSpriteInstanceData`/
- * `setupSpriteInstanceAttributes` machinery sprites and nine-slice regions
- * already batch through.
- */
-const pushTextRenderCommands = (
-  commands: RenderCommand[],
-  textComponent: TextEcsComponent,
-  textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
-): void => {
-  const { renderable } = textMesh;
-  const { layer, color } = textComponent;
-  const depth = entityPosition.world.y;
-
-  for (const glyph of textMesh.glyphs) {
-    const glyphPosition: PositionEcsComponent = {
-      local: entityPosition.local,
-      // Clone before adding, matching `pushSpriteRenderCommands`'s own
-      // region offset: `entityPosition.world` is the entity's live world
-      // position and must not be mutated by this glyph's offset.
-      world: Vec2.add(Vec2.clone(entityPosition.world), glyph.offset),
-    };
-
-    const glyphSprite: SpriteEcsComponent = {
-      width: glyph.size.x,
-      height: glyph.size.y,
-      pivot: { x: 0.5, y: 0.5 },
-      uvOffset: glyph.uvOffset,
-      uvScale: glyph.uvScale,
-      tintColor: color,
-      renderable,
-      enabled: true,
-      layer,
-    };
-
-    commands.push({
-      layer,
-      depth,
-      renderable,
-      components: {
-        position: glyphPosition,
-        rotation: rotationComponent,
-        scale: scaleComponent,
-        sprite: glyphSprite,
-        flip: null,
       },
     });
   }

@@ -57,7 +57,9 @@ describe('shapeText', () => {
       {
         offset: { x: 3, y: 3.5 },
         size: { x: 5, y: 7 },
-        uvOffset: { x: 0, y: 0 },
+        // `atlasBounds.top` (0.14) flips to a Y-down `uvOffset.y` of
+        // `1 - 0.14 = 0.86` - `atlasBounds` is Y-up, UV sampling is Y-down.
+        uvOffset: { x: 0, y: 0.86 },
         uvScale: { x: 0.1, y: 0.14 },
       },
     ]);
