@@ -53,16 +53,20 @@ describe('shapeText', () => {
       size: 10,
     });
 
-    expect(glyphs).toEqual([
-      {
-        offset: { x: 3, y: 3.5 },
-        size: { x: 5, y: 7 },
-        // `atlasBounds.top` (0.14) flips to a Y-down `uvOffset.y` of
-        // `1 - 0.14 = 0.86` - `atlasBounds` is Y-up, UV sampling is Y-down.
-        uvOffset: { x: 0, y: 0.86 },
-        uvScale: { x: 0.1, y: 0.14 },
-      },
-    ]);
+    expect(glyphs).toHaveLength(1);
+    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 });
+    expect(glyphs[0].size).toEqual({ x: 5, y: 7 });
+
+    // `atlasBounds` is `{ left: 0, bottom: 0, right: 0.1, top: 0.14 }`, a
+    // 256-wide/tall atlas (1/256 texel), inset by one texel on each edge to
+    // avoid GL_LINEAR sampling across the tile boundary into the next
+    // glyph, then flipped to this engine's Y-down UV convention.
+    const inset = 1 / 256;
+    expect(glyphs[0].uvOffset.x).toBeCloseTo(inset);
+    expect(glyphs[0].uvOffset.y).toBeCloseTo(1 - (0.14 - inset));
+    expect(glyphs[0].uvScale.x).toBeCloseTo(0.1 - 2 * inset);
+    expect(glyphs[0].uvScale.y).toBeCloseTo(0.14 - 2 * inset);
+
     expect(bounds).toEqual({ width: 6, height: 12 });
   });
 

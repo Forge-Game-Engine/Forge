@@ -207,8 +207,10 @@ describe('createTextShapingEcsSystem', () => {
     );
 
     expect(secondMesh).not.toBe(firstMesh);
-    // "B" uses a different atlas region (uvOffset.x 0.1) than "A" (0).
-    expect(secondMesh?.glyphs[0].uvOffset.x).toBeCloseTo(0.1);
+    // "B" uses a different atlas region (atlasBounds.left 0.1) than "A"
+    // (0) - both inset by one texel (1/256) to avoid sampling across the
+    // tile boundary.
+    expect(secondMesh?.glyphs[0].uvOffset.x).toBeCloseTo(0.1 + 1 / 256);
   });
 
   it('re-shapes when the size changes', () => {

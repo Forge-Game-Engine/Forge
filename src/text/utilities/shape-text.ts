@@ -84,6 +84,21 @@ export function shapeText(
       const glyphWidth = (planeBounds.right - planeBounds.left) * size;
       const glyphHeight = (planeBounds.top - planeBounds.bottom) * size;
 
+      // A UV rect that touches its tile's exact edge samples 50/50 with the
+      // next glyph's tile under GL_LINEAR (texture coordinates exactly at a
+      // texel boundary blend the texels on both sides of it) - visible as a
+      // faint "ghost" of the neighboring glyph, worse the more the glyph is
+      // minified on screen. Insetting by a texel keeps every sample a full
+      // texel away from the boundary; `generate-font-atlas.mjs` always pads
+      // each glyph's tile by at least `distanceRange / 2` (>= 1px for any
+      // supported distanceRange), so this never eats into real ink.
+      const insetX = 1 / fontAtlasData.atlasSize.width;
+      const insetY = 1 / fontAtlasData.atlasSize.height;
+      const atlasLeft = atlasBounds.left + insetX;
+      const atlasRight = atlasBounds.right - insetX;
+      const atlasBottom = atlasBounds.bottom + insetY;
+      const atlasTop = atlasBounds.top - insetY;
+
       glyphs.push({
         offset: {
           x: penX + (planeBounds.left * size + glyphWidth / 2),
@@ -93,13 +108,12 @@ export function shapeText(
         // `atlasBounds` is Y-up (`top` > `bottom`, matching `planeBounds`),
         // but UV sampling in this engine is Y-down (v=0 is the top of the
         // texture - see `computeNineSliceRegions`'s `uvOffset`, documented
-        // as the region's top-left corner). `1 - atlasBounds.top` converts
-        // the glyph's top edge to its Y-down v; the scale's magnitude is
-        // unaffected by the flip.
-        uvOffset: { x: atlasBounds.left, y: 1 - atlasBounds.top },
+        // as the region's top-left corner). `1 - atlasTop` converts the
+        // glyph's (inset) top edge to its Y-down v.
+        uvOffset: { x: atlasLeft, y: 1 - atlasTop },
         uvScale: {
-          x: atlasBounds.right - atlasBounds.left,
-          y: atlasBounds.top - atlasBounds.bottom,
+          x: atlasRight - atlasLeft,
+          y: atlasTop - atlasBottom,
         },
       });
     }
