@@ -153,7 +153,10 @@ describe('createTextShapingEcsSystem', () => {
 
     expect(mesh).not.toBeNull();
     expect(mesh?.glyphs).toHaveLength(1);
-    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 });
+    // `verticalAlign` defaults to `'top'`, which anchors the first line's
+    // ascender (0.9em * size 10 = 9) to y = 0, shifting the baseline-relative
+    // y (3.5) down by 9.
+    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
     expect(mesh?.bounds).toEqual({ width: 6, height: 12 });
   });
 
@@ -231,6 +234,51 @@ describe('createTextShapingEcsSystem', () => {
     const mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
 
     expect(mesh?.bounds).toEqual({ width: 12, height: 24 });
+  });
+
+  it('re-shapes when maxWidth changes', () => {
+    const entity = world.createEntity();
+
+    const textComponent = addTextComponent(world, entity, {
+      text: 'A B',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+
+    world.update();
+
+    textComponent.maxWidth = 1;
+    world.update();
+
+    const mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    // "A" and "B" now each get their own line, since neither fits alongside
+    // the other within a maxWidth of 1.
+    expect(mesh?.bounds.height).toBeCloseTo(24);
+  });
+
+  it('re-shapes when horizontalAlign, verticalAlign, or lineHeight changes', () => {
+    const entity = world.createEntity();
+
+    const textComponent = addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+      lineHeight: 2,
+    });
+
+    world.update();
+
+    let mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    expect(mesh?.bounds.height).toBeCloseTo(24);
+
+    textComponent.lineHeight = 1;
+    world.update();
+
+    mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+
+    expect(mesh?.bounds.height).toBeCloseTo(12);
   });
 
   it('shares one renderable across entities using the same font atlas', () => {

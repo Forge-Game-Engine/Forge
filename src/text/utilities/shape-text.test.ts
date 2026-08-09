@@ -54,7 +54,11 @@ describe('shapeText', () => {
     });
 
     expect(glyphs).toHaveLength(1);
-    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 });
+    // `verticalAlign` defaults to `'top'`, which anchors the first line's
+    // *ascender* (0.9em * size 10 = 9) to y = 0, not its baseline - so the
+    // baseline-relative x/y this glyph would otherwise sit at (3, 3.5) is
+    // shifted down by 9.
+    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
     expect(glyphs[0].size).toEqual({ x: 5, y: 7 });
 
     // `atlasBounds` is `{ left: 0, bottom: 0, right: 0.1, top: 0.14 }`, a
@@ -144,5 +148,216 @@ describe('shapeText', () => {
     });
 
     expect(bounds.height).toBeCloseTo(12);
+  });
+
+  describe('word wrapping', () => {
+    // Every "AV" word is 11.2 world units wide (see the kerning test above)
+    // and the space between words advances the pen by 3 (0.3 em * size 10).
+
+    it('wraps onto a new line when the next word would exceed maxWidth', () => {
+      const { glyphs, bounds } = shapeText(
+        'AV AV AV',
+        buildFixtureFontAtlasData(),
+        { size: 10, maxWidth: 20 },
+      );
+
+      // Each line only has room for one 11.2-wide word (11.2 + 3 + 11.2 =
+      // 25.4 > 20), so all three words land on their own line.
+      expect(glyphs).toHaveLength(6);
+      expect(bounds).toEqual({ width: 11.2, height: 36 });
+
+      // First glyph ("A") of each line, one `actualLineHeight` (12) apart,
+      // all shifted down by the default `'top'` alignment's ascender
+      // offset (9 - see the single-glyph test above).
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 12 - 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 - 9);
+
+      // Every line is left-aligned by default, starting at x = 0.
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[2].offset.x).toBeCloseTo(3);
+      expect(glyphs[4].offset.x).toBeCloseTo(3);
+    });
+
+    it('keeps as many words per line as fit within maxWidth', () => {
+      const { glyphs, bounds } = shapeText(
+        'AV AV AV',
+        buildFixtureFontAtlasData(),
+        { size: 10, maxWidth: 30 },
+      );
+
+      // Line 1: "AV" (11.2) + space (3) + "AV" (11.2) = 25.4, fits in 30.
+      // Adding a third "AV" would be 25.4 + 3 + 11.2 = 39.6, which doesn't.
+      expect(bounds).toEqual({ width: 25.4, height: 24 });
+      expect(glyphs).toHaveLength(6);
+      // Second word on line 1 starts after the first word + space (14.2).
+      expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2);
+      // The lone word on line 2, shifted down by the default `'top'`
+      // alignment's ascender offset (9).
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 12 - 9);
+    });
+
+    it('never splits a single word wider than maxWidth', () => {
+      const { glyphs, bounds } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 5,
+      });
+
+      expect(glyphs).toHaveLength(2);
+      expect(bounds.width).toBeCloseTo(11.2);
+    });
+
+    it('does not wrap when maxWidth is unset', () => {
+      const { glyphs, bounds } = shapeText(
+        'AV AV AV',
+        buildFixtureFontAtlasData(),
+        { size: 10 },
+      );
+
+      expect(glyphs).toHaveLength(6);
+      expect(bounds.height).toBeCloseTo(12);
+    });
+  });
+
+  describe('horizontal alignment', () => {
+    it('centers each line within the block width', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        horizontalAlign: 'center',
+      });
+
+      // Line 1 (25.4 wide) is the block's full width, so it's unshifted;
+      // line 2's lone "AV" (11.2 wide) is centered within the 25.4 block.
+      const centerOffset = (25.4 - 11.2) / 2;
+
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[4].offset.x).toBeCloseTo(3 + centerOffset);
+    });
+
+    it('right-aligns each line within the block width', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        horizontalAlign: 'right',
+      });
+
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[4].offset.x).toBeCloseTo(3 + (25.4 - 11.2));
+    });
+
+    it('stretches inter-word gaps to justify a wrapped line, but not the last line', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        horizontalAlign: 'justify',
+      });
+
+      // Line 1 ("AV AV", natural width 25.4) stretches to fill maxWidth
+      // (30): the single gap grows by (30 - 25.4) / 1 = 4.6.
+      const gapStretch = 30 - 25.4;
+
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2 + gapStretch);
+
+      // Line 2 is the last line and has only one word, so it stays
+      // left-aligned rather than being stretched.
+      expect(glyphs[4].offset.x).toBeCloseTo(3);
+    });
+
+    it('does not justify a single-word line (nothing to stretch)', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        horizontalAlign: 'justify',
+      });
+
+      // Every line here has exactly one word (see the maxWidth: 20 wrapping
+      // test above), so justify has nothing to stretch and every line
+      // stays left-aligned.
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[2].offset.x).toBeCloseTo(3);
+      expect(glyphs[4].offset.x).toBeCloseTo(3);
+    });
+
+    it('has no effect when maxWidth is unset', () => {
+      const { glyphs } = shapeText('AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        horizontalAlign: 'justify',
+      });
+
+      // Unwrapped text is always exactly one line, so it's already exactly
+      // as wide as the block - justify has nothing to distribute.
+      expect(glyphs[0].offset.x).toBeCloseTo(3);
+      expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2);
+    });
+  });
+
+  describe('vertical alignment', () => {
+    // Anchored to the block's visible ink (ascender/descender), not its
+    // line-height box: fixture metrics are `ascender: 0.9`, `descender:
+    // -0.2`, so at size 10, `inkTop = 9` and (for a 3-line, `actualLineHeight:
+    // 12` block) `inkBottom = -(3 - 1) * 12 + -0.2 * 10 = -26`.
+
+    it("anchors the block by its top (the first line's ascender) by default", () => {
+      const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // `inkTop` for a single line is `0.9 * 10 = 9`; shifting the
+      // baseline-relative y (3.5) down by that puts the ascender at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+    });
+
+    it("anchors the block by its bottom (the last line's descender)", () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        verticalAlign: 'bottom',
+      });
+
+      // Shifting by `-inkBottom` (26) puts the last line's descender at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 26);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 26);
+    });
+
+    it('anchors the block by the vertical center of its ink', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        verticalAlign: 'middle',
+      });
+
+      // Shifting by `-(inkTop + inkBottom) / 2` = `-(9 + -26) / 2` = 8.5
+      // centers the ink (not the line-height box) on y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 8.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 8.5);
+    });
+  });
+
+  describe('line height', () => {
+    it('multiplies the block height by the lineHeight option', () => {
+      const { bounds } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        lineHeight: 2,
+      });
+
+      expect(bounds.height).toBeCloseTo(24);
+    });
+
+    it('spaces wrapped lines apart by the multiplied line height', () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        lineHeight: 2,
+      });
+
+      // `actualLineHeight` doubles to 24, but the default `'top'`
+      // alignment's ascender offset (9) is independent of `lineHeight` - it
+      // only depends on the font's own `ascender` metric and `size`.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24 - 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48 - 9);
+    });
   });
 });

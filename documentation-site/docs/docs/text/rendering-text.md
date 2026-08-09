@@ -58,11 +58,51 @@ const scoreText = addTextComponent(world, label, {
 scoreText.text = `Score: ${score}`;
 ```
 
-The shaping system only re-walks the string (kerning, glyph positions) when
-`text`, `fontAtlas`, `size`, or `letterSpacing` actually changed since the
-last tick it ran against this entity. Changing `color`, `layer`, or
-`enabled` alone never triggers a re-shape, they're read directly by the
-render system each frame.
+The shaping system only re-walks the string (kerning, glyph positions,
+wrapping, alignment) when `text`, `fontAtlas`, `size`, `letterSpacing`,
+`lineHeight`, `horizontalAlign`, `verticalAlign`, or `maxWidth` actually
+changed since the last tick it ran against this entity. Changing `color`,
+`layer`, or `enabled` alone never triggers a re-shape, they're read directly
+by the render system each frame.
+
+## Multi-line layout
+
+Setting `maxWidth` (in world units) wraps text at word boundaries instead of
+drawing it as one continuous line:
+
+```ts
+addTextComponent(world, label, {
+  text: 'A longer line of dialogue that needs to wrap across a few lines.',
+  fontAtlas,
+  size: 20,
+  maxWidth: 400,
+  lineHeight: 1.2,
+  horizontalAlign: 'center',
+  verticalAlign: 'middle',
+});
+```
+
+- `horizontalAlign` (`'left'` | `'center'` | `'right'` | `'justify'`, default
+  `'left'`) positions each wrapped line within the shaped block's own width.
+  It's ignored when `maxWidth` is unset, since an unwrapped string is always
+  exactly one line and therefore already exactly as wide as the block.
+  `'justify'` stretches the gaps between words to fill `maxWidth` on every
+  line except the last (a fully-justified last line of one or two words
+  reads as visibly, unintentionally stretched) and except lines with only
+  one word (nothing to stretch) - both cases fall back to left-aligned.
+- `verticalAlign` (`'top'` | `'middle'` | `'bottom'`, default `'top'`)
+  positions the shaped block's visible ink relative to the entity's
+  position, using the font's own `ascender`/`descender` metrics rather than
+  its line-height box (which typically doesn't match the ink's own extent):
+  `'top'` anchors the first line's ascender, so text hangs *below* the
+  entity's position; `'bottom'` anchors the last line's descender, so text
+  sits *above* it; `'middle'` centers the ink between the two.
+- `lineHeight` (default `1`) multiplies the font atlas's own authored line
+  height to control the vertical distance between line baselines.
+
+A single word wider than `maxWidth` on its own is never split mid-word - it
+simply overflows its own line, the same as any other greedy word-wrapping
+implementation.
 
 ## Positioning and scale
 
@@ -90,9 +130,8 @@ sharing a texture do.
 
 ## What's not supported yet
 
-This is a single-line renderer: a `\n` in `text`, or a string too long for
-your layout, is not wrapped or broken across lines, it draws as one
-continuous run. There is no `maxWidth`, alignment, or line-height option
-yet, and no outline, glow, or shadow effect. `TextEcsComponent` grows these
-in later phases without changing how `addTextComponent`/
-`createTextShapingEcsSystem` are used today.
+A literal `\n` in `text` is not treated as a forced line break - only
+`maxWidth`-driven word wrapping produces multiple lines. There is no
+outline, glow, or shadow effect yet. `TextEcsComponent` grows these in later
+phases without changing how `addTextComponent`/`createTextShapingEcsSystem`
+are used today.

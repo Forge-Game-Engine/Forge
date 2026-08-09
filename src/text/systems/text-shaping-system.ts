@@ -21,6 +21,10 @@ interface ShapeSnapshot {
   fontAtlas: FontAtlas;
   size: number;
   letterSpacing: number;
+  lineHeight: number;
+  horizontalAlign: TextEcsComponent['horizontalAlign'];
+  verticalAlign: TextEcsComponent['verticalAlign'];
+  maxWidth: number | undefined;
 }
 
 function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
@@ -28,7 +32,11 @@ function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
     a.text === b.text &&
     a.fontAtlas === b.fontAtlas &&
     a.size === b.size &&
-    a.letterSpacing === b.letterSpacing
+    a.letterSpacing === b.letterSpacing &&
+    a.lineHeight === b.lineHeight &&
+    a.horizontalAlign === b.horizontalAlign &&
+    a.verticalAlign === b.verticalAlign &&
+    a.maxWidth === b.maxWidth
   );
 }
 
@@ -73,6 +81,10 @@ export const createTextShapingEcsSystem = (
           fontAtlas: textComponent.fontAtlas,
           size: textComponent.size,
           letterSpacing: textComponent.letterSpacing,
+          lineHeight: textComponent.lineHeight,
+          horizontalAlign: textComponent.horizontalAlign,
+          verticalAlign: textComponent.verticalAlign,
+          maxWidth: textComponent.maxWidth,
         };
 
         const lastSnapshot = lastShapedSnapshotByComponent.get(textComponent);
@@ -93,6 +105,10 @@ export const createTextShapingEcsSystem = (
           {
             size: textComponent.size,
             letterSpacing: textComponent.letterSpacing,
+            lineHeight: textComponent.lineHeight,
+            horizontalAlign: textComponent.horizontalAlign,
+            verticalAlign: textComponent.verticalAlign,
+            maxWidth: textComponent.maxWidth,
           },
         );
 
