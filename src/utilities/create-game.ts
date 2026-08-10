@@ -20,7 +20,12 @@ export function createGame(containerId: string): {
 } {
   const time = new Time();
   const world = new EcsWorld();
-  const container = document.getElementById(containerId)!;
+  const container = document.getElementById(containerId);
+
+  if (!container) {
+    throw new Error(`No DOM element with ID "${containerId}" found.`);
+  }
+
   const game = new Game(time, world, container);
 
   const canvas = createCanvas(container);
