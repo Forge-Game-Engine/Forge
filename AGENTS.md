@@ -53,6 +53,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
   /physics                 # Physics integration
   /pooling                 # Object pooling
   /rendering               # Rendering system
+  /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
   /utilities               # General utilities
   index.ts                 # Main exports
@@ -61,7 +62,15 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 /documentation-site        # Docusaurus documentation
 /scripts                   # Build and utility scripts
 /assets                    # Static assets (images, etc.)
+/design                    # Design docs / RFCs for not-yet-built subsystems
 ```
+
+`/design` holds forward-looking design documents for subsystems that don't exist
+yet (architecture, decision logs, phased backlogs). They are proposals, not
+descriptions of current behavior - never treat a `/design` document as a source
+of truth about what the engine does today, and don't cite one in user-facing
+documentation. Once a design ships, `documentation-site/docs/docs` becomes the
+authority and the design document stays as historical rationale.
 
 ### Module Exports
 

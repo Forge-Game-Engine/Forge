@@ -20,6 +20,15 @@ import { ShaderCache } from '../shaders';
 import { ImageCache } from '../../asset-loading';
 import { createProjectionMatrix } from '../shaders';
 import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit';
+import {
+  addTextComponent,
+  TextEcsComponent,
+} from '../../text/components/text-component.js';
+import {
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/components/text-mesh-component.js';
+import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 
 describe('createRenderEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -113,6 +122,36 @@ describe('createRenderEcsSystem', () => {
       world: { x: 0, y: worldY },
     });
     addSpriteComponent(world, entity, createSprite(renderable, overrides));
+
+    return entity;
+  };
+
+  const addTextEntity = (
+    renderable: Renderable,
+    worldY: number,
+    mesh: Partial<TextMeshEcsComponent> = {},
+    textOverrides: Partial<TextEcsComponent> = {},
+  ): number => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, {
+      local: { x: 0, y: worldY },
+      world: { x: 0, y: worldY },
+    });
+
+    addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: {} as FontAtlas,
+      size: 10,
+      ...textOverrides,
+    });
+
+    world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
+      glyphs: [],
+      bounds: { width: 0, height: 0 },
+      renderable,
+      ...mesh,
+    });
 
     return entity;
   };
@@ -604,6 +643,71 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('text', () => {
+    it('draws one batched instance per glyph in the text mesh', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, {
+        glyphs: [
+          {
+            offset: { x: 0, y: 0 },
+            size: { x: 1, y: 1 },
+            uvOffset: { x: 0, y: 0 },
+            uvScale: { x: 0.1, y: 0.1 },
+          },
+          {
+            offset: { x: 1, y: 0 },
+            size: { x: 1, y: 1 },
+            uvOffset: { x: 0.1, y: 0 },
+            uvScale: { x: 0.1, y: 0.1 },
+          },
+        ],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
+      // Both glyphs share the mesh's renderable, so they still batch into a
+      // single draw call.
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(
+        undefined,
+        0,
+        6,
+        2,
+      );
+    });
+
+    // Glyph positioning/tint, disabled-text skipping, and culling-mask
+    // filtering are unit-tested directly against `buildTextCameraCommands`/
+    // `pushTextRenderCommands` in `src/text/rendering/glyph-quad.test.ts`.
+    // What's left here is integration-only: that text actually reaches the
+    // draw call, and batches correctly alongside sprites.
+
+    it('batches text and sprites sharing a renderable into a single draw call', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteEntity(renderable, 0);
+      addTextEntity(renderable, 1, {
+        glyphs: [
+          {
+            offset: Vec2.zero,
+            size: { x: 1, y: 1 },
+            uvOffset: Vec2.zero,
+            uvScale: Vec2.one,
+          },
+        ],
+      });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
     });
   });
 });

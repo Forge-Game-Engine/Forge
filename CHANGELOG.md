@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
+- **text:** Add `@forge-game-engine/forge/text`'s font atlas pipeline (Phase 1 of MSDF text rendering, no rendering yet): `npm run generate-font-atlas` turns a `.ttf`/`.otf` font into a multi-channel signed distance field (MSDF) atlas PNG plus a versioned `FontAtlasData` JSON, and `FontAtlasCache` loads that pair into a `FontAtlas` at runtime
+- **text:** Add static single-line text rendering (Phase 2 of MSDF text rendering): `addTextComponent`/`TextEcsComponent` (string, `FontAtlas`, size, color, letter spacing, layer) is shaped by `createTextShapingEcsSystem` into a cached `TextMeshEcsComponent` (kerned glyph quads + bounds), drawn through `createRenderEcsSystem` via the same instanced sprite batching nine-slice sprites use, with a new MSDF fragment shader that stays crisp at any scale
+- **text:** Add multi-line layout (Phase 3 of MSDF text rendering): `TextEcsComponent.maxWidth` greedily word-wraps text across multiple lines, `horizontalAlign` (`'left'` | `'center'` | `'right'` | `'justify'`) and `verticalAlign` (`'top'` | `'middle'` | `'bottom'`) position lines within the shaped block and the block against the entity's position, and `lineHeight` controls the spacing between line baselines
 - **physics:** Add `raycast(world, start, end, sort?)`, casting a line segment against every entity in an `EcsWorld` with a `ColliderEcsComponent` (`CircleCollider`, `PolygonCollider`, and `TerrainCollider` alike) and returning every intersection as a `RaycastHit` (`entity`, `point`, `normal`, `distance`), ordered by distance from `start` by default
 - **physics:** Add `RigidBodyEcsComponent.type` (`'dynamic'` | `'kinematic'` | `'static'`, defaulting to `'dynamic'`), letting a body be moved directly by game code (`'kinematic'`) so it still pushes dynamic bodies on contact without itself being affected by gravity, forces, or impulses - previously only possible implicitly, by giving an entity no `RigidBodyEcsComponent` at all (still supported, and equivalent to `type: 'static'`)
 
@@ -21,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **math:** `Vector2`/`Vector3` are now plain `{ x, y }`/`{ x, y, z }` objects instead of classes, constructed with an object literal (`{ x: 1, y: 2 }`) and operated on via `Vec2`/`Vec3` static methods (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, etc.) that mutate their first (`target`) argument in place and return it, rather than allocating a new vector, for performance in hot loops like physics integration; see the "Vectors and Rectangles" doc for the full API and migration guidance. **Breaking change.**
 - **math:** `Vec2.normalize`/`Vec3.normalize` now throw when given a zero-length vector instead of silently returning it unchanged, since a normalized direction is undefined for a zero vector. **Breaking change.**
+- **utils:** `createGame` utility now throws a more useful error message when no matching DOM element is found that has the id matching `containerId`
 
 #### Removed
 
