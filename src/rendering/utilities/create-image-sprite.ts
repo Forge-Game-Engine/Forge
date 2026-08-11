@@ -71,6 +71,11 @@ export interface CreateImageSpriteOptions {
    * single-quad sprite.
    */
   slices?: NineSliceOptions;
+
+  /**
+   * The render layer for the sprite. Defaults to `1`.
+   */
+  layer?: number;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -81,7 +86,7 @@ export interface CreateImageSpriteOptions {
 // actually called, well after every module has finished loading.
 const defaultEmissiveMapOptions = { intensity: 1 };
 
-const defaultCreateImageSpriteOptions = { pixelated: false };
+const defaultCreateImageSpriteOptions = { pixelated: false, layer: 1 };
 
 /**
  * Creates a sprite using the provided image and render layer.
@@ -94,11 +99,13 @@ const defaultCreateImageSpriteOptions = { pixelated: false };
 export function createImageSprite(
   image: HTMLImageElement,
   renderContext: RenderContext,
-  layer: number,
   options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
   const { shaderCache, gl } = renderContext;
-  const { pixelated } = { ...defaultCreateImageSpriteOptions, ...options };
+  const { pixelated, layer } = {
+    ...defaultCreateImageSpriteOptions,
+    ...options,
+  };
 
   const spriteVertexShader = shaderCache.getShader('sprite.vert');
   const spriteFragmentShader = shaderCache.getShader('sprite.frag');
