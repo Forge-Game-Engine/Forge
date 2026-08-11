@@ -1,4 +1,23 @@
-import { addPositionComponent, addRotationComponent, addSpriteComponent, calculateVisibleWorldSize, Color, createCamera, createGame, createImageSprite, createRenderEcsSystem, degreesToRadians, EcsSystem, EcsWorld, PositionEcsComponent, positionId, Random, SpriteEcsComponent, Time, Vec2 } from '../../src';
+import {
+  addPositionComponent,
+  addRotationComponent,
+  addSpriteComponent,
+  calculateVisibleWorldSize,
+  Color,
+  createCamera,
+  createGame,
+  createImageSprite,
+  createRenderEcsSystem,
+  degreesToRadians,
+  EcsSystem,
+  EcsWorld,
+  PositionEcsComponent,
+  positionId,
+  Random,
+  SpriteEcsComponent,
+  Time,
+  Vec2,
+} from '../../src';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -86,7 +105,10 @@ function createFountainSpawnEcsSystem(
       random.randomFloat(1 - fountainSpeedJitter, 1 + fountainSpeedJitter);
     const horizontalDirection = side === 'left' ? 1 : -1;
 
-    const velocity = { x: Math.cos(angle) * speed * horizontalDirection, y: Math.sin(angle) * speed };
+    const velocity = {
+      x: Math.cos(angle) * speed * horizontalDirection,
+      y: Math.sin(angle) * speed,
+    };
     const angularVelocity = random.randomFloat(
       -template.angularVelocitySpread,
       template.angularVelocitySpread,
@@ -228,21 +250,18 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
   imageCache.getOrLoad('Triangle.png'),
 ]);
 
-const ballSprite = createImageSprite(ballImage, renderContext, renderLayer, {
+const ballSprite = createImageSprite(ballImage, renderContext, {
   frameDimensions: { x: shapeSize, y: shapeSize },
+  layer: renderLayer,
 });
-const squareSprite = createImageSprite(
-  squareImage,
-  renderContext,
-  renderLayer,
-  { frameDimensions: { x: shapeSize, y: shapeSize } },
-);
-const triangleSprite = createImageSprite(
-  triangleImage,
-  renderContext,
-  renderLayer,
-  { frameDimensions: { x: shapeSize, y: shapeSize } },
-);
+const squareSprite = createImageSprite(squareImage, renderContext, {
+  frameDimensions: { x: shapeSize, y: shapeSize },
+  layer: renderLayer,
+});
+const triangleSprite = createImageSprite(triangleImage, renderContext, {
+  frameDimensions: { x: shapeSize, y: shapeSize },
+  layer: renderLayer,
+});
 
 triangleSprite.pivot = Vec2.clone(trianglePivot);
 
