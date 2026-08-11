@@ -122,7 +122,7 @@ describe('createImageSprite', () => {
   });
 
   it('binds zero emissive intensity when no emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext, 0);
+    const sprite = createImageSprite(image, renderContext);
 
     sprite.renderable.material.bind(mockGl);
 
@@ -135,8 +135,8 @@ describe('createImageSprite', () => {
   });
 
   it('binds the same shared black placeholder texture across sprites with no emissive map', () => {
-    const spriteA = createImageSprite(image, renderContext, 0);
-    const spriteB = createImageSprite(image, renderContext, 0);
+    const spriteA = createImageSprite(image, renderContext);
+    const spriteB = createImageSprite(image, renderContext);
 
     spriteA.renderable.material.bind(mockGl);
     const [, spriteAEmissiveTexture] = (mockGl.bindTexture as Mock).mock
@@ -151,7 +151,7 @@ describe('createImageSprite', () => {
   });
 
   it('sets the configured emissive intensity when an emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext, 0, {
+    const sprite = createImageSprite(image, renderContext, {
       emissiveMap: {
         image: emissiveImage,
         intensity: 3,
@@ -169,7 +169,7 @@ describe('createImageSprite', () => {
   });
 
   it('defaults emissive intensity to 1 when an emissive map is given without an explicit intensity', () => {
-    const sprite = createImageSprite(image, renderContext, 0, {
+    const sprite = createImageSprite(image, renderContext, {
       emissiveMap: {
         image: emissiveImage,
       },
@@ -185,11 +185,11 @@ describe('createImageSprite', () => {
   });
 
   it('does not throw when creating a sprite without an emissive map', () => {
-    expect(() => createImageSprite(image, renderContext, 0)).not.toThrow();
+    expect(() => createImageSprite(image, renderContext)).not.toThrow();
   });
 
   it('defaults the emissive color to white when an emissive map is given without an explicit color', () => {
-    const sprite = createImageSprite(image, renderContext, 0, {
+    const sprite = createImageSprite(image, renderContext, {
       emissiveMap: {
         image: emissiveImage,
       },
@@ -206,7 +206,7 @@ describe('createImageSprite', () => {
   });
 
   it('sets the configured emissive color when given', () => {
-    const sprite = createImageSprite(image, renderContext, 0, {
+    const sprite = createImageSprite(image, renderContext, {
       emissiveMap: {
         image: emissiveImage,
         color: new Color(1, 0.5, 0.1),
@@ -225,7 +225,7 @@ describe('createImageSprite', () => {
   });
 
   it('sets the emissive color to white when no emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext, 0);
+    const sprite = createImageSprite(image, renderContext);
 
     sprite.renderable.material.bind(mockGl);
 
