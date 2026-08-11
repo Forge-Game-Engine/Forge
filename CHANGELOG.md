@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **math:** `Vector2`/`Vector3` are now plain `{ x, y }`/`{ x, y, z }` objects instead of classes, constructed with an object literal (`{ x: 1, y: 2 }`) and operated on via `Vec2`/`Vec3` static methods (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, etc.) that mutate their first (`target`) argument in place and return it, rather than allocating a new vector, for performance in hot loops like physics integration; see the "Vectors and Rectangles" doc for the full API and migration guidance. **Breaking change.**
 - **math:** `Vec2.normalize`/`Vec3.normalize` now throw when given a zero-length vector instead of silently returning it unchanged, since a normalized direction is undefined for a zero vector. **Breaking change.**
 - **utils:** `createGame` utility now throws a more useful error message when no matching DOM element is found that has the id matching `containerId`
-- **utils:** `createImageSprite` now makes layer an optional value in the options argument rather than a required arguument to the function. Defaults to `1`.
+- **utils:** `createImageSprite` now makes layer an optional value in the options argument rather than a required argument to the function. Defaults to `1`.
 
 #### Removed
 
