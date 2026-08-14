@@ -92,11 +92,17 @@ void main() {
   // offset, like `outlineWidth`, is expressed in screen-pixel-range units,
   // so it's converted to UV space the same way `screenPxRange` converts the
   // other direction: `uvPerScreenPx` is how much UV changes per screen
-  // pixel). `shadowSoftness` widens the anti-aliasing band around that
-  // second sample to blur its edge; `0` leaves it exactly as crisp as the
-  // glyph itself, just offset. Zero alpha (the default `shadowColor`) drops
-  // out of `compositeOver` with no visible effect, so no separate gate is
-  // needed here.
+  // pixel), then fades to fully transparent over `shadowSoftness` screen
+  // pixels beyond that sample's own edge - `0` leaves it exactly as crisp
+  // as the glyph itself, just offset. `shadowReach` caps the fade's radius
+  // to `maxSafeEffectDistance` for the same reason `outlineWidth` is capped
+  // above: past that radius the sampled distance is saturated, so a
+  // reach/divisor that isn't capped would fade towards some constant
+  // *non-zero* coverage instead of reaching `0` - visible as a soft-edged
+  // but otherwise flat, un-tapering rectangle of color around each glyph,
+  // rather than a shadow/glow that actually fades out. Zero alpha (the
+  // default `shadowColor`) drops out of `compositeOver` with no visible
+  // effect, so no separate gate is needed here.
   float shadowOffsetLength = length(v_shadowOffset);
   vec2 clampedShadowOffset = shadowOffsetLength > maxSafeEffectDistance && shadowOffsetLength > 0.0
     ? v_shadowOffset * (maxSafeEffectDistance / shadowOffsetLength)
@@ -105,8 +111,8 @@ void main() {
   vec3 shadowMsdf = texture(u_atlas, shadowUv).rgb;
   float shadowSignedDistance = median(shadowMsdf.r, shadowMsdf.g, shadowMsdf.b) - 0.5;
   float shadowScreenPxDistance = shadowSignedDistance * screenPxRange;
-  float shadowSoftness = max(v_shadowSoftness, 1.0);
-  float shadowCoverage = clamp(shadowScreenPxDistance / shadowSoftness + 0.5, 0.0, 1.0);
+  float shadowReach = max(min(v_shadowSoftness, maxSafeEffectDistance), 0.001);
+  float shadowCoverage = clamp(1.0 - (-shadowScreenPxDistance) / shadowReach, 0.0, 1.0);
   vec4 shadowLayer = vec4(v_shadowColor.rgb, shadowCoverage * v_shadowColor.a);
 
   fragColor = compositeOver(fillLayer, compositeOver(outlineLayer, shadowLayer));

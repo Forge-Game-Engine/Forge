@@ -11,6 +11,7 @@ artboard
 atlased
 attw
 autofetch
+backgroundish
 backquote
 Batchable
 Baumgarte
@@ -115,6 +116,7 @@ RGBA
 rigidbody
 rnaumovs
 rolloff
+scanline
 shaderstore
 skidmark
 slevesque
