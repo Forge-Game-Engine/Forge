@@ -13,6 +13,13 @@ export interface EcsSystem<
   TQuery extends readonly unknown[] = readonly unknown[],
 > {
   /**
+   * An optional human-readable name, used to identify the system in error
+   * messages (e.g. when a `before`/`after` ordering constraint given to
+   * `EcsWorld.addSystem` can't be satisfied).
+   */
+  name?: string;
+
+  /**
    * The component keys an entity must have for this system to query it.
    * Order determines the order of arrays inside `queryResult.components`.
    */
@@ -51,14 +58,3 @@ export interface EcsSystem<
    */
   cleanup?(world: EcsWorld): void;
 }
-
-/**
- * Priorities for `EcsWorld.addSystem`'s `registrationOrder` parameter.
- * Systems run in ascending numeric order; systems registered with the same
- * priority run in registration order.
- */
-export const SystemRegistrationOrder = {
-  early: -10_000,
-  normal: 0,
-  late: 10_000,
-};

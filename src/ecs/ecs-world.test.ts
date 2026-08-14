@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EcsWorld } from './ecs-world.js';
 import { EcsSystem } from './ecs-system.js';
+import { createSystemGroup } from './ecs-system-group.js';
 import {
   PositionEcsComponent,
   positionId,
@@ -11,6 +12,12 @@ import {
 } from '../common/index.js';
 import { createComponentId } from './ecs-component.js';
 import { Vec2 } from '../math/index.js';
+
+const trackingSystem = (name: string, calls: string[]): EcsSystem<[]> => ({
+  name,
+  query: [],
+  update: () => calls.push(name),
+});
 
 describe('EcsWorld', () => {
   it('queries entities with multiple components', () => {
@@ -378,6 +385,224 @@ describe('EcsWorld', () => {
       world.addSystem(system);
 
       expect(() => world.stop()).not.toThrow();
+    });
+  });
+
+  describe('system ordering', () => {
+    it('runs systems with no ordering constraints in registration order', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      world.addSystem(trackingSystem('a', calls));
+      world.addSystem(trackingSystem('b', calls));
+      world.addSystem(trackingSystem('c', calls));
+
+      world.update();
+
+      expect(calls).toEqual(['a', 'b', 'c']);
+    });
+
+    it('runs a system before another when declared with "before"', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const last = trackingSystem('last', calls);
+      world.addSystem(last);
+      world.addSystem(trackingSystem('first', calls), { before: [last] });
+
+      world.update();
+
+      expect(calls).toEqual(['first', 'last']);
+    });
+
+    it('runs a system after another when declared with "after"', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const first = trackingSystem('first', calls);
+      world.addSystem(first);
+      world.addSystem(trackingSystem('last', calls), { after: [first] });
+
+      world.update();
+
+      expect(calls).toEqual(['first', 'last']);
+    });
+
+    it('resolves transitive ordering constraints across several systems', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const a = trackingSystem('a', calls);
+      world.addSystem(a);
+
+      const b = trackingSystem('b', calls);
+      world.addSystem(b, { after: [a] });
+
+      world.addSystem(trackingSystem('c', calls), { after: [b] });
+
+      world.update();
+
+      expect(calls).toEqual(['a', 'b', 'c']);
+    });
+
+    it('throws when "before"/"after" references a system that has not been registered yet', () => {
+      const world = new EcsWorld();
+      const notRegistered: EcsSystem<[]> = {
+        name: 'notRegistered',
+        query: [],
+        update: () => {},
+      };
+
+      expect(() =>
+        world.addSystem(
+          { name: 'system', query: [], update: () => {} },
+          { after: [notRegistered] },
+        ),
+      ).toThrow(/has not been registered/);
+    });
+
+    it('throws when "before"/"after" would create a cycle', () => {
+      const world = new EcsWorld();
+      const a: EcsSystem<[]> = { name: 'a', query: [], update: () => {} };
+      const b: EcsSystem<[]> = { name: 'b', query: [], update: () => {} };
+
+      world.addSystem(a);
+      world.addSystem(b, { after: [a] });
+
+      expect(() => world.addSystem(a, { after: [b] })).toThrow(/cycle/);
+    });
+
+    it('drops ordering constraints for a system once it is removed', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const a = trackingSystem('a', calls);
+      world.addSystem(a);
+
+      const b = trackingSystem('b', calls);
+      world.addSystem(b, { after: [a] });
+
+      world.removeSystem(b);
+      world.addSystem(b);
+
+      world.update();
+
+      expect(calls).toEqual(['a', 'b']);
+    });
+  });
+
+  describe('system groups', () => {
+    it('runs every system in the default group when no group is specified', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      world.addSystem(trackingSystem('a', calls));
+      world.addSystem(trackingSystem('b', calls));
+
+      world.update();
+
+      expect(calls).toEqual(['a', 'b']);
+    });
+
+    it('runs a group before another when declared with "before"', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const lateGroup = createSystemGroup('late');
+      const earlyGroup = createSystemGroup('early');
+
+      world.addSystemGroup(lateGroup);
+      world.addSystemGroup(earlyGroup, { before: [lateGroup] });
+
+      world.addSystem(trackingSystem('late', calls), { group: lateGroup });
+      world.addSystem(trackingSystem('early', calls), { group: earlyGroup });
+
+      world.update();
+
+      expect(calls).toEqual(['early', 'late']);
+    });
+
+    it('orders a group relative to the world default group', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const earlyGroup = createSystemGroup('early');
+      world.addSystemGroup(earlyGroup, {
+        before: [world.defaultSystemGroup],
+      });
+
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystem(trackingSystem('early', calls), { group: earlyGroup });
+
+      world.update();
+
+      expect(calls).toEqual(['early', 'default']);
+    });
+
+    it('runs a group after another when declared with "after"', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      const earlyGroup = createSystemGroup('early');
+      const lateGroup = createSystemGroup('late');
+
+      world.addSystemGroup(earlyGroup);
+      world.addSystemGroup(lateGroup, { after: [earlyGroup] });
+
+      world.addSystem(trackingSystem('late', calls), { group: lateGroup });
+      world.addSystem(trackingSystem('early', calls), { group: earlyGroup });
+
+      world.update();
+
+      expect(calls).toEqual(['early', 'late']);
+    });
+
+    it('throws when addSystem is given a group that was not registered with addSystemGroup', () => {
+      const world = new EcsWorld();
+      const unregisteredGroup = createSystemGroup('unregistered');
+
+      expect(() =>
+        world.addSystem(
+          { name: 'system', query: [], update: () => {} },
+          { group: unregisteredGroup },
+        ),
+      ).toThrow(/has not been registered/);
+    });
+
+    it('throws when ordering two systems from different groups against each other', () => {
+      const world = new EcsWorld();
+      const groupA = createSystemGroup('a');
+      const groupB = createSystemGroup('b');
+
+      world.addSystemGroup(groupA);
+      world.addSystemGroup(groupB);
+
+      const systemInA: EcsSystem<[]> = {
+        name: 'systemInA',
+        query: [],
+        update: () => {},
+      };
+      world.addSystem(systemInA, { group: groupA });
+
+      expect(() =>
+        world.addSystem(
+          { name: 'systemInB', query: [], update: () => {} },
+          { group: groupB, after: [systemInA] },
+        ),
+      ).toThrow(/different system groups/);
+    });
+
+    it('throws when addSystemGroup would create a cycle', () => {
+      const world = new EcsWorld();
+      const groupA = createSystemGroup('a');
+      const groupB = createSystemGroup('b');
+
+      world.addSystemGroup(groupA);
+      world.addSystemGroup(groupB, { after: [groupA] });
+
+      expect(() => world.addSystemGroup(groupA, { after: [groupB] })).toThrow(
+        /cycle/,
+      );
     });
   });
 

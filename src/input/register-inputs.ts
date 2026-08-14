@@ -1,5 +1,5 @@
 import { Time } from '../common/index.js';
-import { EcsWorld, SystemRegistrationOrder } from '../ecs/index.js';
+import { createSystemGroup, EcsWorld } from '../ecs/index.js';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -55,11 +55,22 @@ export const registerInputs = (
   inputManager.addAxis2dActions(...axis2dActions);
   inputManager.addHoldActions(...holdActions);
 
-  world.addSystem(
-    createUpdateInputEcsSystem(time),
-    SystemRegistrationOrder.early,
-  );
-  world.addSystem(createResetInputsEcsSystem(), SystemRegistrationOrder.late);
+  const updateInputSystemGroup = createSystemGroup('input-update');
+  const resetInputSystemGroup = createSystemGroup('input-reset');
+
+  world.addSystemGroup(updateInputSystemGroup, {
+    before: [world.defaultSystemGroup],
+  });
+  world.addSystemGroup(resetInputSystemGroup, {
+    after: [world.defaultSystemGroup],
+  });
+
+  world.addSystem(createUpdateInputEcsSystem(time), {
+    group: updateInputSystemGroup,
+  });
+  world.addSystem(createResetInputsEcsSystem(), {
+    group: resetInputSystemGroup,
+  });
 
   return inputManager;
 };

@@ -10,4 +10,4 @@ export * from './assert-never.js';
 export * from './shallow-array-equals.js';
 export * from './matches-mask.js';
 export * from './sparse-set.js';
-export * from './sorted-set.js';
+export * from './directed-acyclic-graph.js';

@@ -105,13 +105,11 @@ expensive. Use systems with declared `query` arrays for per-frame processing.
 ## Add a system
 
 Create a system object that declares a `query` (component keys), optional `tags`,
-and an `update(world, queryResult)` method. Register it with
-`addSystem(system, registrationOrder)`.
+and an `update(world, queryResult)` method. Register it with `addSystem(system, options?)`.
 
 ```ts
-import { SystemRegistrationOrder } from '@forge-game-engine/forge/ecs';
-
 const moverSystem = {
+  name: 'mover',
   query: [Position, Velocity] as const,
   update(world, { entities, components: [positions, velocities] }) {
     for (let i = 0; i < entities.length; i++) {
@@ -121,20 +119,16 @@ const moverSystem = {
   },
 };
 
-world.addSystem(moverSystem, SystemRegistrationOrder.normal);
+world.addSystem(moverSystem);
 ```
 
-:::info[Default Registration Order]
-If you omit the `registrationOrder` the system is added with
-`SystemRegistrationOrder.normal`. Use `early`/`normal`/`late` (from `SystemRegistrationOrder`) to control ordering.
-:::
+`name` is optional, but giving your systems one makes any ordering error
+messages (see below) much easier to read.
 
-:::info[Systems Sharing The Same Registration Order]
-When multiple systems are registered with the same numeric order the world
-preserves insertion order. Systems added earlier will run before systems
-added later. Internally the world sorts systems by the numeric priority first
-and uses the registration sequence as a stable tie-breaker, so equal-priority
-systems keep their original registration ordering.
+:::info[Systems With No Ordering Constraint]
+When multiple systems are registered with no ordering relationship between
+them, the world preserves insertion order. Systems added earlier run before
+systems added later.
 :::
 
 :::info[Adding a System During a World Tick]
@@ -142,6 +136,64 @@ If a system is added while the world is iterating systems during `update()`,
 it will not run as part of the current tick. Newly added systems become active
 on the next tick.
 :::
+
+### Ordering systems with `before`/`after`
+
+Rather than an arbitrary numeric priority, order a system relative to
+specific other systems by passing `before`/`after` to `addSystem`. Every
+system referenced this way must already be registered.
+
+```ts
+const gravitySystem = { name: 'gravity', query: [RigidBody], update() {} };
+world.addSystem(gravitySystem);
+
+// integrationSystem always runs after gravitySystem, regardless of where
+// either one sits in your setup code
+const integrationSystem = {
+  name: 'integration',
+  query: [RigidBody, Position],
+  update() {},
+};
+world.addSystem(integrationSystem, { after: [gravitySystem] });
+```
+
+`before`/`after` can each take multiple systems, and the world resolves
+transitive dependencies for you - if C is `after` B and B is `after` A, C runs
+after A too, even though C never references A directly. Registering a
+`before`/`after` relationship that would create a cycle, or that references a
+system that hasn't been registered yet, throws.
+
+### Grouping systems
+
+A system group is a named, coarser unit of ordering: order a whole group of
+systems relative to another group, instead of wiring up `before`/`after`
+between every individual system. Register a group with `addSystemGroup`
+before adding systems into it, then pass `group` to `addSystem`.
+
+```ts
+import { createSystemGroup } from '@forge-game-engine/forge/ecs';
+
+const physicsGroup = createSystemGroup('physics');
+world.addSystemGroup(physicsGroup, { before: [world.defaultSystemGroup] });
+
+world.addSystem(gravitySystem, { group: physicsGroup });
+world.addSystem(integrationSystem, {
+  group: physicsGroup,
+  after: [gravitySystem],
+});
+```
+
+Every `EcsWorld` has a `defaultSystemGroup`, which is where `addSystem` puts
+a system when you don't specify a `group`. Order your own groups relative to
+`world.defaultSystemGroup` (as above) to consistently run before or after
+every system a caller registers without specifying a group - useful for
+infrastructure that must run first or last regardless of what game code adds
+later, the same role the old `SystemRegistrationOrder.early`/`late` priorities
+used to serve.
+
+`before`/`after` passed to `addSystem` can only reference systems in the same
+group; ordering systems across different groups is done by ordering their
+groups against each other instead.
 
 ## Remove a system
 

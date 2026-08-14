@@ -45,7 +45,7 @@ If a system needs to run some logic exactly once per tick regardless of how many
 
 Treat each call to `update(world, queryResult)` as a single, focused update for the tick's batch of matched entities. Systems should perform short, deterministic operations and avoid long-running or blocking work inside `update`.
 
-`queryResult.entities` and `queryResult.components` are snapshots computed before `update` is called, so it's safe to mutate world state (adding/removing components or entities) while iterating them - the arrays you're looping over won't change out from under you. Mutations still take effect immediately and may be visible to subsequent systems this same tick or on later iterations. Because of this, do not rely on implicit ordering between systems for coordination; prefer explicit events or deferred work when systems need to coordinate complex state changes.
+`queryResult.entities` and `queryResult.components` are snapshots computed before `update` is called, so it's safe to mutate world state (adding/removing components or entities) while iterating them - the arrays you're looping over won't change out from under you. Mutations still take effect immediately and may be visible to subsequent systems this same tick or on later iterations. Because of this, do not rely on the position a system happens to occupy in your setup code for coordination; when one system's `update` genuinely needs to run before or after another's, declare it explicitly with `addSystem`'s `before`/`after` options (see [World](./world.md#ordering-systems-with-beforeafter)) rather than relying on registration order, and prefer explicit events or deferred work when systems need to coordinate complex state changes.
 
 ## Releasing resources: cleanup
 
