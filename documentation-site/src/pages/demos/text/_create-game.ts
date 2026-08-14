@@ -18,6 +18,7 @@ import { createLineHeightExamples } from './_create-line-height-examples';
 import { createLiveMaxWidthExample } from './_create-live-max-width-example';
 import { createVerticalAlignmentExamples } from './_create-vertical-alignment-examples';
 import { createLiveMaxWidthEcsSystem } from './_live-max-width.system';
+import { createPulsingTextEffectEcsSystem } from './_pulsing-text-effect.system';
 
 const renderLayers = {
   foreground: 1 << 0,
@@ -36,10 +37,11 @@ const sectionGap = 26;
 
 /**
  * Builds the text rendering demo: a showcase of every `horizontalAlign` and
- * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, the
- * outline/shadow effects, and a paragraph whose `maxWidth` oscillates every
- * frame to show `createTextShapingEcsSystem` reflowing text live, all drawn
- * from one shared `FontAtlas` loaded from `fontAtlasUrl`.
+ * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, a
+ * pulsing outline and pulsing shadow (glow) effect, and a paragraph whose
+ * `maxWidth` oscillates every frame to show `createTextShapingEcsSystem`
+ * reflowing text live, all drawn from one shared `FontAtlas` loaded from
+ * `fontAtlasUrl`.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load (see
  * `index.tsx`, which resolves this against the site's configured base URL).
  * @returns The created game.
@@ -130,6 +132,7 @@ export const createTextGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createLiveMaxWidthEcsSystem(time));
+  world.addSystem(createPulsingTextEffectEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
 
