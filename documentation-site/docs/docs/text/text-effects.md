@@ -35,6 +35,23 @@ edge itself stays exactly 1 pixel of anti-aliasing wide at any of those. This
 is what keeps an outline or shadow looking consistent as the text is scaled,
 rather than growing or shrinking along with the glyphs.
 
+## Effect size is bounded by the atlas
+
+`outlineWidth` and `shadowOffset` cannot grow arbitrarily large: the
+distance field only encodes a graded distance up to a limited range around
+each glyph's own edge (`FontAtlasData.distanceRange`, set when the atlas was
+generated). Requesting a width or offset beyond that range does not keep
+growing the effect - it caps at the widest/furthest value the atlas can
+represent, so an oversized `outlineWidth` renders the thickest outline the
+atlas supports rather than growing further or producing visual artifacts.
+
+A font atlas generated with a small `--distance-range` (the default is `4`)
+supports comparably small effect sizes, especially when text is rendered at
+or below the atlas's own authored `--size`. Regenerate the atlas with a
+larger `--distance-range` (see
+[Generating a Font Atlas](./generating-a-font-atlas.md)) if a design calls
+for a thick outline or a far-offset shadow.
+
 ## Disabling an effect
 
 Both effects are off by default, and each is controlled independently:

@@ -61,14 +61,30 @@ void main() {
   float glyphAlpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
   vec4 fillLayer = vec4(v_tint.rgb, v_tint.a * glyphAlpha);
 
+  // The distance field only encodes a graded (non-saturated) distance up to
+  // `screenPxRange / 2` screen pixels from the glyph's true edge - beyond
+  // that, every texel reads the same saturated "fully outside" value
+  // (`msdf-atlas-gen`'s `distanceRange` is a finite, encoded range, not an
+  // unbounded true distance field). An `outlineWidth`/`shadowOffset` beyond
+  // that budget has no real distance data to extend into: naively adding it
+  // to `screenPxDistance` would make the *entire* saturated region (i.e.
+  // most of the glyph's padding, not just a thin ring near its edge) read as
+  // "inside the outline", painting a solid box around each glyph instead of
+  // a ring. Capping both to the safe budget keeps them within the region
+  // the atlas can faithfully represent - a request beyond the cap still
+  // renders the widest/most-offset effect the atlas supports, rather than
+  // degrading into a box or sampling into a neighboring glyph's atlas tile.
+  float maxSafeEffectDistance = max(screenPxRange * 0.5 - 0.5, 0.0);
+
   // The outline is the ring between the glyph's own edge and `outlineWidth`
   // screen pixels further out. Gated to exactly `0` alpha (rather than just
   // relying on `outlineWidth` cancelling out below) when disabled: without
   // the gate, at `outlineWidth == 0` this band is identical to `glyphAlpha`
   // itself, which would still visibly blend `v_outlineColor` into the
   // glyph's anti-aliased edge.
+  float clampedOutlineWidth = min(v_outlineWidth, maxSafeEffectDistance);
   float outlineCoverage = v_outlineWidth > 0.0
-    ? clamp(screenPxDistance + 0.5 + v_outlineWidth, 0.0, 1.0)
+    ? clamp(screenPxDistance + 0.5 + clampedOutlineWidth, 0.0, 1.0)
     : 0.0;
   vec4 outlineLayer = vec4(v_outlineColor.rgb, outlineCoverage);
 
@@ -81,7 +97,11 @@ void main() {
   // glyph itself, just offset. Zero alpha (the default `shadowColor`) drops
   // out of `compositeOver` with no visible effect, so no separate gate is
   // needed here.
-  vec2 shadowUv = v_texCoord - v_shadowOffset * uvPerScreenPx;
+  float shadowOffsetLength = length(v_shadowOffset);
+  vec2 clampedShadowOffset = shadowOffsetLength > maxSafeEffectDistance && shadowOffsetLength > 0.0
+    ? v_shadowOffset * (maxSafeEffectDistance / shadowOffsetLength)
+    : v_shadowOffset;
+  vec2 shadowUv = v_texCoord - clampedShadowOffset * uvPerScreenPx;
   vec3 shadowMsdf = texture(u_atlas, shadowUv).rgb;
   float shadowSignedDistance = median(shadowMsdf.r, shadowMsdf.g, shadowMsdf.b) - 0.5;
   float shadowScreenPxDistance = shadowSignedDistance * screenPxRange;
