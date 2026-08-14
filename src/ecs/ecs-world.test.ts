@@ -386,6 +386,21 @@ describe('EcsWorld', () => {
 
       expect(() => world.stop()).not.toThrow();
     });
+
+    it('still calls cleanup when removing a system that was never registered with addSystem', () => {
+      const world = new EcsWorld();
+      const cleanup = vi.fn();
+      const system: EcsSystem<[]> = {
+        query: [],
+        update: () => {},
+        cleanup,
+      };
+
+      world.removeSystem(system);
+
+      expect(cleanup).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledWith(world);
+    });
   });
 
   describe('system ordering', () => {
@@ -470,6 +485,38 @@ describe('EcsWorld', () => {
       world.addSystem(b, { after: [a] });
 
       expect(() => world.addSystem(a, { after: [b] })).toThrow(/cycle/);
+    });
+
+    it('orders systems with no "name" without throwing', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const first: EcsSystem<[]> = {
+        query: [],
+        update: () => calls.push('first'),
+      };
+
+      world.addSystem(first);
+      world.addSystem(
+        { query: [], update: () => calls.push('last') },
+        { after: [first] },
+      );
+
+      world.update();
+
+      expect(calls).toEqual(['first', 'last']);
+    });
+
+    it('labels systems with no "name" as "unnamed system" in a cycle error', () => {
+      const world = new EcsWorld();
+      const a: EcsSystem<[]> = { query: [], update: () => {} };
+      const b: EcsSystem<[]> = { query: [], update: () => {} };
+
+      world.addSystem(a);
+      world.addSystem(b, { after: [a] });
+
+      expect(() => world.addSystem(a, { after: [b] })).toThrow(
+        /unnamed system/,
+      );
     });
 
     it('drops ordering constraints for a system once it is removed', () => {
@@ -567,6 +614,18 @@ describe('EcsWorld', () => {
           { group: unregisteredGroup },
         ),
       ).toThrow(/has not been registered/);
+    });
+
+    it('labels a system with no "name" as "unnamed system" in the unregistered-group error', () => {
+      const world = new EcsWorld();
+      const unregisteredGroup = createSystemGroup('unregistered');
+
+      expect(() =>
+        world.addSystem(
+          { query: [], update: () => {} },
+          { group: unregisteredGroup },
+        ),
+      ).toThrow(/unnamed system/);
     });
 
     it('throws when ordering two systems from different groups against each other', () => {

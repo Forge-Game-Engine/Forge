@@ -150,6 +150,32 @@ describe('DirectedAcyclicGraph', () => {
     expect(() => graph.addEdge(c, a)).toThrow(/c -> a -> b -> c/);
   });
 
+  it('finds the cycle even when the search must backtrack out of an unrelated dead-end branch first', () => {
+    const a = { name: 'a' };
+    const b = { name: 'b' };
+    const c = { name: 'c' };
+    const d = { name: 'd' };
+
+    [a, b, c, d].forEach((node) => graph.addNode(node));
+
+    // a -> b is a dead end (b has no outgoing edges); a -> c -> d is the
+    // branch that, once d -> a is added, actually forms the cycle.
+    graph.addEdge(a, b);
+    graph.addEdge(a, c);
+    graph.addEdge(c, d);
+
+    expect(() => graph.addEdge(d, a)).toThrow(/d -> a -> c -> d/);
+  });
+
+  it('uses String(node) as the default label when none is provided', () => {
+    const unlabeledGraph = new DirectedAcyclicGraph<{ name: string }>();
+    const a = { name: 'a' };
+
+    unlabeledGraph.addNode(a);
+
+    expect(() => unlabeledGraph.addEdge(a, a)).toThrow(/\[object Object\]/);
+  });
+
   it('does not commit an edge that would create a cycle', () => {
     const a = { name: 'a' };
     const b = { name: 'b' };
