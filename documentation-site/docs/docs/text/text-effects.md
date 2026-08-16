@@ -58,6 +58,20 @@ for a thick outline or a far-offset shadow; the [Text Rendering
 demo](/Forge/demos/text)'s own atlas uses `--distance-range 32` for exactly
 this reason.
 
+A separate, sharper limit applies to very large effect sizes on glyphs with
+an acute (sharp-angled) corner, such as `W`, `M`, `N`, `V`, `K`, `X`, `Y`,
+`Z`, or `A`: the underlying MSDF generator can bake a visible seam artifact
+into the graded region near that corner, at a distance from the edge that
+depends on the corner's own geometry rather than on `--distance-range` -
+regenerating the atlas at a larger `--distance-range`, a higher `--size`,
+or a larger texture does not resolve it. This is invisible at the small
+outline/shadow sizes most designs use, and only becomes visible once an
+effect's reach approaches that corner-dependent distance. There's no atlas
+setting that avoids it for an affected glyph; if a design needs a very
+large effect (tens of screen pixels) specifically on text containing such
+letters, test that combination directly against the target font and glyphs
+rather than assuming the atlas budget alone determines the safe range.
+
 ## Disabling an effect
 
 Both effects are off by default, and each is controlled independently:

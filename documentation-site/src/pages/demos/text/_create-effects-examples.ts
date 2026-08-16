@@ -14,13 +14,37 @@ import {
   pulsingTextEffectId,
 } from './_pulsing-text-effect.component';
 
-// Short and rendered comparatively large: outline/shadow are bounded by how
-// much graded distance the atlas's own `distanceRange` encodes around each
+// Rendered comparatively large: outline/shadow are bounded by how much
+// graded distance the atlas's own `distanceRange` encodes around each
 // glyph's edge (see the "Effect size is bounded by the atlas" section of
 // the Text Effects doc) - a bigger on-screen size gives that fixed budget
 // more screen pixels to work with, which is what actually makes the
 // outline/glow below read as a visible ring/taper instead of a sliver.
-const sampleText = 'Boom';
+//
+// A single letter, not a word - and specifically "H", not just any
+// counter-free letter - for two independent reasons hit (not guessed at)
+// while pushing the pulse range all the way to a 20-screen-pixel peak:
+//
+// 1. Every letter used here must have no fully enclosed counter (like the
+//    ones in "o", "b", or "a"): an outline wide enough to bridge across a
+//    letter's own counter closes it into a solid shape and the letter
+//    misreads entirely (an "o" reads as a "c", a "B" reads as an "E").
+// 2. It must also have no sharp/acute corners (ruling out W, M, N, V, K,
+//    X, Y, Z, A): msdf-bmfont-xml's distance field, even regenerated at
+//    much higher resolution and with a larger `--distance-range`, bakes a
+//    visible seam artifact into the graded region near an acute corner -
+//    invisible at the small outline widths most designs use, but exposed
+//    once an effect reaches this far from the glyph's edge. This is a
+//    limitation of the underlying MSDF generation, not a Forge bug.
+//
+// A *word* made from only such letters (e.g. "HITS") still doesn't fit:
+// at a 20px outline, adjacent glyphs' own quads (padded to match
+// `distanceRange`, sized once at shaping time and independent of
+// whatever `outlineWidth` is set to afterwards) overlap enough that a
+// later glyph's near-opaque outline paints over an earlier one, and
+// spacing them apart enough to avoid that no longer fits this column's
+// width. A single letter sidesteps both problems at once.
+const sampleText = 'H';
 const bodySize = 72;
 const captionSize = 13;
 const captionColor = new Color(0.55, 0.6, 0.72, 1);
@@ -45,15 +69,15 @@ interface EffectsColumn {
   };
 }
 
-// `minValue`/`maxValue` stay comfortably within this column's safe budget
-// (see the "Effect size is bounded by the atlas" section of the Text
-// Effects doc) at `bodySize` below, so the pulse never visibly plateaus at
-// its peak - it's a smooth grow/shrink for the whole cycle.
+// `maxValue` is pushed all the way to this atlas's supported ceiling (see
+// `sampleText`'s comment above for why that requires a single letter) -
+// the pulse still never visibly plateaus or corrupts at its peak, it's a
+// smooth grow/shrink for the whole cycle.
 const columns: EffectsColumn[] = [
   { label: 'No effect (default)', effects: {} },
   {
     label: 'Outline (pulsing)',
-    effects: { outlineColor: Color.black, outlineWidth: 1.2 },
+    effects: { outlineColor: Color.black, outlineWidth: 0 },
     pulse: {
       effect: 'outlineWidth',
       minValue: 0,
@@ -66,7 +90,7 @@ const columns: EffectsColumn[] = [
     effects: {
       shadowColor: new Color(0.35, 0.78, 1, 0.9),
       shadowOffset: { x: 0, y: 0 },
-      shadowSoftness: 1.7,
+      shadowSoftness: 0,
     },
     pulse: {
       effect: 'shadowSoftness',
@@ -129,6 +153,7 @@ export function createEffectsExamples(
 
     const { bounds } = shapeText(sampleText, fontAtlas.data, {
       size: bodySize,
+      letterSpacing: column.effects.letterSpacing ?? 0,
     });
     const boxWidth = Math.max(columnWidth, bounds.width + boxPadding * 2);
     const boxHeight = bounds.height + boxPadding * 2;
