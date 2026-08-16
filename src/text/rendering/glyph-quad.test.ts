@@ -36,6 +36,11 @@ function buildTextComponent(
     verticalAlign: 'top',
     layer: 2,
     enabled: true,
+    outlineColor: Color.black,
+    outlineWidth: 0,
+    shadowColor: Color.transparent,
+    shadowOffset: { x: 0, y: 0 },
+    shadowSoftness: 0,
     ...overrides,
   };
 }
@@ -53,6 +58,7 @@ const glyph: GlyphQuad = {
   size: { x: 5, y: 7 },
   uvOffset: { x: 0.1, y: 0.2 },
   uvScale: { x: 0.3, y: 0.4 },
+  effectClearance: 1.5,
 };
 
 describe('pushTextRenderCommands', () => {
@@ -116,6 +122,54 @@ describe('pushTextRenderCommands', () => {
       enabled: true,
       layer: 3,
     });
+  });
+
+  it("builds textEffects from the text component's outline/shadow fields, plus this glyph's own effectClearance", () => {
+    const commands: RenderCommand[] = [];
+    const outlineColor = new Color(0, 1, 0, 1);
+    const shadowColor = new Color(0, 0, 1, 1);
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({
+        outlineColor,
+        outlineWidth: 2,
+        shadowColor,
+        shadowOffset: { x: 1, y: -1 },
+        shadowSoftness: 3,
+      }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands[0].components.textEffects).toEqual({
+      outlineColor,
+      outlineWidth: 2,
+      shadowColor,
+      shadowOffset: { x: 1, y: -1 },
+      shadowSoftness: 3,
+      maxEffectClearance: glyph.effectClearance,
+    });
+  });
+
+  it('gives each glyph its own maxEffectClearance, even when other textEffects fields are shared', () => {
+    const commands: RenderCommand[] = [];
+    const tightGlyph: GlyphQuad = { ...glyph, effectClearance: 0 };
+    const looseGlyph: GlyphQuad = { ...glyph, effectClearance: 12 };
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ outlineWidth: 5 }),
+      buildTextMesh([tightGlyph, looseGlyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands[0].components.textEffects?.maxEffectClearance).toBe(0);
+    expect(commands[1].components.textEffects?.maxEffectClearance).toBe(12);
   });
 
   it("uses the entity's world Y as depth", () => {

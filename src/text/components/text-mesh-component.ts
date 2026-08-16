@@ -23,6 +23,23 @@ export interface GlyphQuad {
 
   /** The width/height of this glyph's texture rect in the atlas, 0 to 1. */
   uvScale: Vector2;
+
+  /**
+   * How far, in world units, an outline/shadow effect can safely extend from
+   * this glyph's own edge before it would touch a neighboring glyph's quad -
+   * half the gap to the tighter of this glyph's left/right in-word
+   * neighbors (see `shapeWord` in `shape-text.ts`), or a large sentinel when
+   * there's no relevant neighbor (start/end of a word). Consumed by the MSDF
+   * fragment shader, converted to screen-pixel-range units there, so that
+   * `TextEcsComponent.outlineWidth`/`shadowSoftness` can never paint one
+   * glyph's effect over an adjacent glyph's - the effect degrades to
+   * whatever this glyph's own layout can safely fit, rather than
+   * overlapping. Effects across a word boundary (separated by at least one
+   * whitespace advance) are not constrained by this value; see
+   * `shape-text.ts` for why that's a deliberate scope decision, not an
+   * oversight.
+   */
+  effectClearance: number;
 }
 
 /**

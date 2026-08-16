@@ -64,6 +64,63 @@ interface ShapedWord {
   width: number;
 }
 
+/**
+ * The `effectClearance` assigned to a glyph with no relevant same-word
+ * neighbor on one (or both) sides - e.g. a word's first or last glyph, or a
+ * word with only one glyph. Deliberately a large-but-finite world-unit
+ * value rather than `Infinity`: it needs to survive being multiplied by a
+ * screen-pixel-per-world-unit factor in the (mediump-precision) fragment
+ * shader without overflowing GLSL ES's minimum guaranteed mediump range
+ * (~2^14), while still comfortably dwarfing any real atlas-budget-derived
+ * screen-pixel-range effect size at any sane camera zoom - so it behaves as
+ * "unconstrained by a neighbor" without any special-casing on the shader
+ * side (see `msdf.frag.glsl`, which just takes the `min` of this and the
+ * atlas's own safe budget).
+ */
+const UNCONSTRAINED_EFFECT_CLEARANCE = 100;
+
+/**
+ * Computes and assigns `GlyphQuad.effectClearance` for every glyph in a
+ * word, in place: half the gap (in world units) to the tighter of each
+ * glyph's left/right same-word neighbor, so that an outline/shadow effect
+ * on two adjacent glyphs can never together reach far enough to overlap -
+ * each glyph is only ever allowed to claim its own half of the gap between
+ * it and its neighbor.
+ *
+ * Deliberately scoped to *same-word* adjacency only - the actual reported
+ * failure mode (PR #598 / issue #584) is tight intra-word kerned pairs like
+ * "il"/"ff", which is exactly what word-local, kerning-aware advance
+ * positions already capture. A word boundary is always separated by at
+ * least one whitespace glyph's advance, which for any real font is already
+ * far wider than a typical outline/shadow, so leaving cross-word and
+ * cross-line proximity unconstrained (deferring entirely to the atlas's own
+ * safe budget there) is a deliberate, documented scope decision, not an
+ * oversight - the same word-scoping `shapeWord`'s own kerning already uses.
+ * @param glyphs - A word's shaped glyphs, in visual (left-to-right) order.
+ */
+function assignEffectClearances(glyphs: GlyphQuad[]): void {
+  for (let index = 0; index < glyphs.length; index++) {
+    const glyph = glyphs[index];
+    const leftEdge = glyph.offset.x - glyph.size.x / 2;
+    const rightEdge = glyph.offset.x + glyph.size.x / 2;
+
+    const previousGlyph = index > 0 ? glyphs[index - 1] : null;
+    const gapToLeftNeighbor = previousGlyph
+      ? leftEdge - (previousGlyph.offset.x + previousGlyph.size.x / 2)
+      : UNCONSTRAINED_EFFECT_CLEARANCE;
+
+    const nextGlyph = index < glyphs.length - 1 ? glyphs[index + 1] : null;
+    const gapToRightNeighbor = nextGlyph
+      ? nextGlyph.offset.x - nextGlyph.size.x / 2 - rightEdge
+      : UNCONSTRAINED_EFFECT_CLEARANCE;
+
+    glyph.effectClearance = Math.max(
+      0,
+      Math.min(gapToLeftNeighbor, gapToRightNeighbor) / 2,
+    );
+  }
+}
+
 /** A word placed within a line, at `startX` from the line's own (unaligned) start. */
 interface LineWord {
   word: ShapedWord;
@@ -160,12 +217,17 @@ function shapeWord(
           x: atlasRight - atlasLeft,
           y: atlasTop - atlasBottom,
         },
+        // Assigned below, once every glyph in the word has been placed and
+        // each one's actual neighbor gap is known.
+        effectClearance: 0,
       });
     }
 
     penX += (glyph.advance + letterSpacing) * size;
     previousCodePoint = codePoint;
   }
+
+  assignEffectClearances(glyphs);
 
   return { glyphs, width: Math.max(0, penX) };
 }

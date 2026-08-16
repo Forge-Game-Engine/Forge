@@ -335,6 +335,90 @@ describe('shapeText', () => {
     });
   });
 
+  describe('effectClearance (outline/shadow overlap safety)', () => {
+    // See `assignEffectClearances` in shape-text.ts: half the gap, in world
+    // units, to the tighter of a glyph's same-word left/right neighbors, so
+    // an outline/shadow effect on two adjacent glyphs can never together
+    // reach far enough to visually overlap.
+
+    it('gives a lone glyph the unconstrained sentinel, halved', () => {
+      const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // No same-word neighbor on either side, so both sides fall back to
+      // the internal 100-world-unit "unconstrained" sentinel; halved (per
+      // glyph's own share of an infinite gap) is 50.
+      expect(glyphs[0].effectClearance).toBe(50);
+    });
+
+    it('halves the real gap between two same-word neighbors with no kerning pair', () => {
+      const { glyphs } = shapeText('AA', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // Each "A" is 5 world units wide (plane bounds 0.05-0.55em * size
+      // 10), advancing by 6 (0.6em * size 10, no A:A kerning pair) - a 1
+      // world unit gap between the first glyph's right edge and the
+      // second's left edge, split 0.5/0.5 between them.
+      expect(glyphs[0].effectClearance).toBeCloseTo(0.5);
+      expect(glyphs[1].effectClearance).toBeCloseTo(0.5);
+    });
+
+    it('clamps to zero when tight kerning already makes same-word quads overlap', () => {
+      const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "A"'s quad spans world x 0.5-5.5 (see the kerning test above); "V"'s
+      // -0.08em kerning pair pulls its quad to span 5.4-11.0 - a -0.1 world
+      // unit gap (the quads already overlap slightly before any effect is
+      // even applied, exactly the tight-kerning scenario - "il"/"ff" in a
+      // real font - the reported overlap bug came from). Both glyphs clamp
+      // to 0 rather than a negative clearance.
+      expect(glyphs[0].effectClearance).toBe(0);
+      expect(glyphs[1].effectClearance).toBe(0);
+    });
+
+    it('treats a word boundary as unconstrained, not the actual whitespace gap', () => {
+      const { glyphs } = shapeText('A V', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "A" and "V" are in separate words (split on the space), so neither
+      // one's effectClearance is computed from the actual, much larger,
+      // cross-word gap - both fall back to the same lone-glyph sentinel
+      // (50) as the single-"A"-word case above. This is the deliberate
+      // same-word-only scope described in `assignEffectClearances`.
+      expect(glyphs[0].effectClearance).toBe(50);
+      expect(glyphs[1].effectClearance).toBe(50);
+    });
+
+    it('is unaffected by line/word placement offsets', () => {
+      // Regression guard: `effectClearance` is computed in word-local
+      // coordinates before `shapeText` translates words/lines into their
+      // final block position - translating both a glyph and its neighbor by
+      // the same offset must never change the gap between them.
+      const unwrapped = shapeText('AA', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const wrappedOntoSecondLine = shapeText(
+        'AV AA',
+        buildFixtureFontAtlasData(),
+        { size: 10, maxWidth: 12 },
+      );
+
+      const secondWordGlyphs = wrappedOntoSecondLine.glyphs.slice(2);
+
+      expect(secondWordGlyphs[0].effectClearance).toBeCloseTo(
+        unwrapped.glyphs[0].effectClearance,
+      );
+      expect(secondWordGlyphs[1].effectClearance).toBeCloseTo(
+        unwrapped.glyphs[1].effectClearance,
+      );
+    });
+  });
+
   describe('line height', () => {
     it('multiplies the block height by the lineHeight option', () => {
       const { bounds } = shapeText('A', buildFixtureFontAtlasData(), {

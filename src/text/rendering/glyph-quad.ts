@@ -9,6 +9,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
+import { TextEffectsInstanceData } from '../../rendering/renderable.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import { TextMeshEcsComponent } from '../components/text-mesh-component.js';
@@ -37,10 +38,32 @@ export function pushTextRenderCommands(
   scaleComponent: ScaleEcsComponent | null,
 ): void {
   const { renderable } = textMesh;
-  const { layer, color } = textComponent;
+  const {
+    layer,
+    color,
+    outlineColor,
+    outlineWidth,
+    shadowColor,
+    shadowOffset,
+    shadowSoftness,
+  } = textComponent;
   const depth = entityPosition.world.y;
 
   for (const glyph of textMesh.glyphs) {
+    // Built per glyph, not once per entity: `maxEffectClearance` is the one
+    // field here that varies glyph-to-glyph (each glyph's own kerned
+    // distance to its neighbors, computed at shape time - see
+    // `GlyphQuad.effectClearance`), so the whole object can't be hoisted
+    // out of this loop the way a plain sprite's tint color could be.
+    const textEffects: TextEffectsInstanceData = {
+      outlineColor,
+      outlineWidth,
+      shadowColor,
+      shadowOffset,
+      shadowSoftness,
+      maxEffectClearance: glyph.effectClearance,
+    };
+
     const glyphPosition: PositionEcsComponent = {
       local: entityPosition.local,
       world: Vec2.add(Vec2.clone(entityPosition.world), glyph.offset),
@@ -68,6 +91,7 @@ export function pushTextRenderCommands(
         scale: scaleComponent,
         sprite: glyphSprite,
         flip: null,
+        textEffects,
       },
     });
   }
