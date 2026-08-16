@@ -12,17 +12,34 @@ Let's begin with setting up a new project.
 
 ### Installing Forge in your project
 
-1. The Forge npm package is hosted on github, you will need to add an `.npmrc` file adjacent to your `package.json` file.
+1. The Forge npm package is hosted on GitHub Packages, so you will need to authenticate npm against it before you can install the package.
 
-```bash title="shell"
-echo '@forge-game-engine:registry=https://npm.pkg.github.com' > .npmrc
-```
+   a. [Create a classic personal access token](https://github.com/settings/tokens/new) with the `read:packages` scope.
 
-:::info
+   :::info
 
-You may need to [create a personal access token](https://github.com/settings/tokens) and use it to login to the github npm package manager.
+   The Forge-Game-Engine organization requires personal access tokens to expire in 60 days or fewer, so you will need to set an expiration of 60 days or less and regenerate the token periodically.
 
-:::
+   :::
+
+   b. Log in to the GitHub npm registry with that token, scoped to the `@forge-game-engine` package scope. When prompted, enter your GitHub username, the personal access token as your password, and any email address.
+
+   ```bash title="shell"
+   npm login --scope=@forge-game-engine --registry=https://npm.pkg.github.com
+   ```
+
+   This adds an `.npmrc` file adjacent to your `package.json` file that points the `@forge-game-engine` scope at the GitHub npm registry and stores your auth token, equivalent to running:
+
+   ```bash title="shell"
+   echo '@forge-game-engine:registry=https://npm.pkg.github.com' >> .npmrc
+   echo '//npm.pkg.github.com/:_authToken=<YOUR_PERSONAL_ACCESS_TOKEN>' >> .npmrc
+   ```
+
+   :::warning
+
+   Don't commit your personal access token. If you write the token into `.npmrc` directly, add `.npmrc` to your `.gitignore`, or reference an environment variable (e.g. `_authToken=${GITHUB_TOKEN}`) instead.
+
+   :::
 
 2. Install the forge package
 
