@@ -96,8 +96,25 @@ const glyphCOuterEdgeWorldX =
 
 /** The handle `text-effects-overlap.spec.ts` drives and asserts against. */
 export interface TextEffectsOverlapSceneHandle extends SceneHandle {
-  /** Sets both glyphs' `outlineWidth` (screen-pixel-range units). */
+  /**
+   * Sets every glyph's `outlineColor`. Takes plain r/g/b/a rather than a
+   * `Color` instance since this is called from `page.evaluate` (a separate
+   * browser-side execution context that can't share class instances with
+   * the Node-side spec that constructs the arguments).
+   */
+  setOutlineColor(r: number, g: number, b: number, a: number): void;
+
+  /** Sets every glyph's `outlineWidth` (screen-pixel-range units). */
   setOutlineWidth(width: number): void;
+
+  /** Sets every glyph's `shadowColor` - see `setOutlineColor` for why r/g/b/a. */
+  setShadowColor(r: number, g: number, b: number, a: number): void;
+
+  /** Sets every glyph's `shadowOffset` (screen-pixel-range units). */
+  setShadowOffset(offset: { x: number; y: number }): void;
+
+  /** Sets every glyph's `shadowSoftness` (screen-pixel-range units). */
+  setShadowSoftness(softness: number): void;
 
   /** See `contestedWorldX` above. */
   readonly contestedWorldX: number;
@@ -107,6 +124,9 @@ export interface TextEffectsOverlapSceneHandle extends SceneHandle {
 
   /** See `glyphCOuterEdgeWorldX` above. */
   readonly glyphCOuterEdgeWorldX: number;
+
+  /** World X of "C"'s own ink center. */
+  readonly glyphCCenterWorldX: number;
 
   /** World Y every glyph is vertically centered on. */
   readonly glyphCenterWorldY: number;
@@ -248,13 +268,30 @@ export const createScene: CreateScene = async (
       world.update();
     },
 
+    setOutlineColor(r: number, g: number, b: number, a: number): void {
+      textComponent.outlineColor = new Color(r, g, b, a);
+    },
+
     setOutlineWidth(width: number): void {
       textComponent.outlineWidth = width;
+    },
+
+    setShadowColor(r: number, g: number, b: number, a: number): void {
+      textComponent.shadowColor = new Color(r, g, b, a);
+    },
+
+    setShadowOffset(offset: { x: number; y: number }): void {
+      textComponent.shadowOffset = offset;
+    },
+
+    setShadowSoftness(softness: number): void {
+      textComponent.shadowSoftness = softness;
     },
 
     contestedWorldX,
     glyphACenterWorldX: 0.5 * SIZE,
     glyphCOuterEdgeWorldX,
+    glyphCCenterWorldX,
     glyphCenterWorldY: 0,
 
     sampleColorAt(

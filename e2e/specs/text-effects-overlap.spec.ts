@@ -17,6 +17,19 @@ function isGreenOutline(r: number, g: number, b: number): boolean {
   return g > 150 && r < 100 && b < 100;
 }
 
+// The text demo's own configured outline/glow colors (see
+// documentation-site/src/pages/demos/text/_create-effects-examples.ts).
+const demoOutlineColor = { r: 1, g: 0.55, b: 0.15, a: 1 };
+const demoShadowColor = { r: 0.15, g: 0.65, b: 1, a: 0.95 };
+
+function isDemoOutlineColor(r: number, g: number, b: number): boolean {
+  return r > 180 && g > 90 && g < 210 && b < 130;
+}
+
+function isDemoGlowColor(r: number, b: number): boolean {
+  return b > 150 && r < 150;
+}
+
 test.describe('text outline/shadow effect overlap', () => {
   test.beforeEach(async ({ page }) => {
     let pageError: Error | undefined;
@@ -95,5 +108,89 @@ test.describe('text outline/shadow effect overlap', () => {
     });
 
     expect(isGreenOutline(color.r, color.g, color.b)).toBe(true);
+  });
+});
+
+test.describe("text effects at the demo's own configured values", () => {
+  // The text demo (documentation-site/src/pages/demos/text/_create-effects-examples.ts)
+  // uses outlineWidth: 2 and shadowSoftness: 2.5 - deliberately conservative,
+  // documented-safe values (see text-effects.md), not the exaggerated 50
+  // used above to stress the overlap clamp. This proves those specific,
+  // small values actually render visibly on a real GPU, not just that a
+  // large value can be clamped - closing the gap between "the clamp works"
+  // and "the demo's own configuration is visible".
+  test.beforeEach(async ({ page }) => {
+    let pageError: Error | undefined;
+
+    page.once('pageerror', (error) => {
+      pageError = error;
+    });
+
+    await page.goto('/?scene=text-effects-overlap');
+
+    try {
+      await page.waitForFunction(() => Boolean(window.__forgeTestHooks));
+    } catch (timeoutError) {
+      throw pageError ?? timeoutError;
+    }
+  });
+
+  test("outlineWidth: 2 with the demo's outline color reads clearly just outside a glyph's ink edge", async ({
+    page,
+  }) => {
+    const color = await page.evaluate((outline) => {
+      const scene = window.__forgeTestHooks as unknown as Hooks;
+
+      scene.setOutlineColor(outline.r, outline.g, outline.b, outline.a);
+      scene.setOutlineWidth(2);
+      scene.step();
+
+      // Glyph C is unconstrained by any neighbor (see text-effects-overlap.ts) -
+      // 1 world unit (~1 screen px) past its own ink edge, comfortably
+      // inside a 2px-wide ring.
+      return scene.sampleColorAt(
+        scene.glyphCCenterWorldX + 32 + 1,
+        scene.glyphCenterWorldY,
+      );
+    }, demoOutlineColor);
+
+    expect(isDemoOutlineColor(color.r, color.g, color.b)).toBe(true);
+  });
+
+  test("shadowSoftness: 2.5 with the demo's glow color reads clearly somewhere around a glyph", async ({
+    page,
+  }) => {
+    // The soft shadow/glow is offset (shadowOffset: {1.5, -1.5} in the
+    // demo), so unlike the symmetric outline ring, it doesn't necessarily
+    // show at every point around the glyph equally - sampling a ring of
+    // candidate points around glyph C's ink boundary and requiring at
+    // least one to read as the glow color is robust to exactly which side
+    // it's strongest on, without hard-coding the shader's offset-to-screen-
+    // direction mapping into the test.
+    const colors = await page.evaluate((shadow) => {
+      const scene = window.__forgeTestHooks as unknown as Hooks;
+
+      scene.setShadowColor(shadow.r, shadow.g, shadow.b, shadow.a);
+      scene.setShadowOffset({ x: 1.5, y: -1.5 });
+      scene.setShadowSoftness(2.5);
+      scene.step();
+
+      const cx = scene.glyphCCenterWorldX;
+      const cy = scene.glyphCenterWorldY;
+      const r = 32 + 3;
+
+      return [
+        scene.sampleColorAt(cx + r, cy),
+        scene.sampleColorAt(cx - r, cy),
+        scene.sampleColorAt(cx, cy + r),
+        scene.sampleColorAt(cx, cy - r),
+        scene.sampleColorAt(cx + r, cy - r),
+        scene.sampleColorAt(cx - r, cy + r),
+      ];
+    }, demoShadowColor);
+
+    expect(
+      colors.some((color) => isDemoGlowColor(color.r, color.b)),
+    ).toBe(true);
   });
 });
