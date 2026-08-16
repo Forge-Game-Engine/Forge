@@ -336,23 +336,25 @@ describe('shapeText', () => {
   });
 
   describe('effectClearance (outline/shadow overlap safety)', () => {
-    // See `assignEffectClearances` in shape-text.ts: half the gap, in world
+    // See `assignEffectClearances` in shape-text.ts: the full gap, in world
     // units, to the tighter of a glyph's same-word left/right neighbors, so
-    // an outline/shadow effect on two adjacent glyphs can never together
-    // reach far enough to visually overlap.
+    // an outline/shadow effect can reach right up to - but never past - a
+    // same-word neighbor's own ink. Not split in half: both glyphs sharing a
+    // gap independently compute the same full-gap value, so their effects
+    // can meet or overlap in the gap between them without either one
+    // painting over the other's actual glyph shape.
 
-    it('gives a lone glyph the unconstrained sentinel, halved', () => {
+    it('gives a lone glyph the unconstrained sentinel', () => {
       const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
         size: 10,
       });
 
       // No same-word neighbor on either side, so both sides fall back to
-      // the internal 100-world-unit "unconstrained" sentinel; halved (per
-      // glyph's own share of an infinite gap) is 50.
-      expect(glyphs[0].effectClearance).toBe(50);
+      // the internal 100-world-unit "unconstrained" sentinel.
+      expect(glyphs[0].effectClearance).toBe(100);
     });
 
-    it('halves the real ink gap between two same-word neighbors with no kerning pair', () => {
+    it('uses the real ink gap between two same-word neighbors with no kerning pair', () => {
       const { glyphs } = shapeText('AA', buildFixtureFontAtlasData(), {
         size: 10,
       });
@@ -364,9 +366,10 @@ describe('shapeText', () => {
       // "A"'s own quad-to-ink padding is distanceRange/2 (2 atlas px) scaled
       // to world units via this glyph's own atlas-pixels-to-world-units
       // ratio (25.6 atlas px per 5 world units) - 0.390625 world units per
-      // side. Ink gap = 1 + 0.390625 + 0.390625 = 1.78125, split 50/50.
-      expect(glyphs[0].effectClearance).toBeCloseTo(0.890625);
-      expect(glyphs[1].effectClearance).toBeCloseTo(0.890625);
+      // side. Ink gap = 1 + 0.390625 + 0.390625 = 1.78125, and both glyphs
+      // independently get the full value.
+      expect(glyphs[0].effectClearance).toBeCloseTo(1.78125);
+      expect(glyphs[1].effectClearance).toBeCloseTo(1.78125);
     });
 
     it('does not clamp a small, realistic kerning correction that never brings the ink close', () => {
@@ -383,8 +386,8 @@ describe('shapeText', () => {
       // realistic kerning value must not clamp the effect to 0.
       expect(glyphs[0].effectClearance).toBeGreaterThan(0);
       expect(glyphs[1].effectClearance).toBeGreaterThan(0);
-      expect(glyphs[0].effectClearance).toBeCloseTo(0.3640625);
-      expect(glyphs[1].effectClearance).toBeCloseTo(0.3640625);
+      expect(glyphs[0].effectClearance).toBeCloseTo(0.728125);
+      expect(glyphs[1].effectClearance).toBeCloseTo(0.728125);
     });
 
     it('clamps to zero when kerning is tight enough that ink genuinely touches', () => {
@@ -441,10 +444,10 @@ describe('shapeText', () => {
       // "A" and "V" are in separate words (split on the space), so neither
       // one's effectClearance is computed from the actual, much larger,
       // cross-word gap - both fall back to the same lone-glyph sentinel
-      // (50) as the single-"A"-word case above. This is the deliberate
+      // (100) as the single-"A"-word case above. This is the deliberate
       // same-word-only scope described in `assignEffectClearances`.
-      expect(glyphs[0].effectClearance).toBe(50);
-      expect(glyphs[1].effectClearance).toBe(50);
+      expect(glyphs[0].effectClearance).toBe(100);
+      expect(glyphs[1].effectClearance).toBe(100);
     });
 
     it('is unaffected by line/word placement offsets', () => {

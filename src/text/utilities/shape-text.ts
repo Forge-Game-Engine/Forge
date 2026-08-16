@@ -81,11 +81,19 @@ const UNCONSTRAINED_EFFECT_CLEARANCE = 100;
 
 /**
  * Computes and assigns `GlyphQuad.effectClearance` for every glyph in a
- * word, in place: half the gap (in world units) to the tighter of each
+ * word, in place: the full gap (in world units) to the tighter of each
  * glyph's left/right same-word neighbor, so that an outline/shadow effect
- * on two adjacent glyphs can never together reach far enough to overlap -
- * each glyph is only ever allowed to claim its own half of the gap between
- * it and its neighbor.
+ * can safely reach right up to - but never past - a same-word neighbor's own
+ * ink. This is *not* split in half between the two glyphs sharing a gap:
+ * each one independently computes the same full gap back to the other, so
+ * an effect on both sides of a tight pair can meet (or overlap) in the
+ * middle without either one ever painting over the other's actual glyph
+ * shape - the only thing that produces a visible defect (see PR #598 /
+ * issue #584's "later glyph paints over earlier one's ink"). Two glyphs'
+ * outline/shadow *layers* overlapping in the gap between them is harmless -
+ * they're typically the same color, and even when they're not, blending is
+ * order-independent everywhere except right at the boundary of an actual
+ * glyph shape, which this clamp keeps clear.
  *
  * The gap is measured between each glyph's *ink* edges (`glyph.size` minus
  * `inkPadding` on each side), not its full padded quad edges. A real MSDF
@@ -133,7 +141,7 @@ function assignEffectClearances(
 
     glyphs[index].effectClearance = Math.max(
       0,
-      Math.min(gapToLeftNeighbor, gapToRightNeighbor) / 2,
+      Math.min(gapToLeftNeighbor, gapToRightNeighbor),
     );
   }
 }

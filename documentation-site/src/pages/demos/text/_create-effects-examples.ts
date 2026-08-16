@@ -23,12 +23,18 @@ const bodyColor = new Color(0.85, 0.87, 0.92, 1);
 const captionGap = 14;
 const columnGap = 18;
 
-// Comfortably inside this atlas's documented safe budget (4 screen-pixel-
-// range units at `distanceRange: 16` - see text-effects.md), not pushed to
-// the edge of it.
-const outlineWidth = 2;
-const shadowSoftness = 2.5;
-const shadowOffset: Vector2 = { x: 1.5, y: -1.5 };
+// At this caption-scale body size, the *neighbor* clamp (not the atlas's
+// own budget) is what actually limits these values - "Forge Engine"'s
+// tightest same-word letter pair ("rg" in "Forge") only allows about 1
+// screen-pixel-range unit here (see text-effects.md's "Choosing a safe
+// range": the neighbor budget is roughly a fixed percentage of the font's
+// *on-screen* size, so small caption text only ever has a little of it to
+// spend). This deliberately stays under that, not the atlas's own larger
+// budget - see the hero example below for what a bigger, bolder effect
+// looks like once the text itself is rendered large enough to afford it.
+const outlineWidth = 1;
+const shadowSoftness = 1.2;
+const shadowOffset: Vector2 = { x: 0.8, y: -0.8 };
 
 interface EffectsColumn {
   label: string;

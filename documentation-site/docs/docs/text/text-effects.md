@@ -54,23 +54,42 @@ degrade gracefully rather than corrupting a glyph or overlapping a neighbor:
 2. **Neighboring glyphs.** Tightly kerned pairs (`il`, `ff`, and similar)
    can sit close enough that an unclamped outline/shadow on one glyph would
    visually reach into its neighbor's own ink. Each glyph's effect is
-   automatically clamped to half the gap to its tightest same-line neighbor,
-   so two adjacent glyphs' effects can never together reach far enough to
-   overlap - this is computed per glyph at shape time, from the same
+   automatically clamped to the gap between its own ink and its tightest
+   same-word neighbor's ink, so it can safely reach right up to - but never
+   past - that neighbor, without ever painting over the neighbor's own
+   readable shape. This is computed per glyph at shape time, from the same
    kerning-aware layout that already positions each glyph, and needs no
-   configuration.
+   configuration. Two adjacent glyphs' effects *can* overlap each other in
+   the gap between them (harmless - they're typically the same color, and
+   even when they're not, neither one ever reaches into the other's ink) -
+   only crossing into a neighbor's own glyph shape is prevented.
 
 Both clamps mean a requested `outlineWidth`/`shadowSoftness` beyond what's
 actually safe degrades to the widest safe value instead of corrupting
 glyphs or bleeding into a neighbor - but a value picked *within* that budget
-still looks best, since nothing is fighting a clamp. For the engine's
-demo atlas (Liberation Sans at `--distance-range 16`), **4 screen-pixel-range
-units** is a comfortable, tested-safe default for both `outlineWidth` and
-`shadowSoftness` at typical UI/HUD sizes. If you generate your own atlas
-with a smaller `--distance-range` (the default is `4`, which only grades
-about 2 screen pixels of safe budget), stay proportionally smaller, or
-regenerate with a larger `--distance-range` if you need a bigger range -
-see [Generating a Font Atlas](./generating-a-font-atlas.md).
+still looks best, since nothing is fighting a clamp.
+
+**For most multi-letter words, the neighbor clamp - not the atlas's own
+budget - is what actually limits how big an effect can get**, and unlike the
+atlas budget, it scales with how large the text itself renders on screen: it's
+roughly a fixed *percentage* of the font's on-screen size (how tight that
+percentage is depends on the specific letter pairs in your string and the
+font's own kerning - a word with only loosely-spaced letters allows more than
+one with a tight pair like `rg` or `il`). Concretely, on the engine's own demo
+atlas (Liberation Sans at `--distance-range 16`), an ordinary word's tightest
+letter pair typically allows an outline/shadow of only up to roughly **5-12%
+of the font's rendered size** - about 1 screen pixel at a 22px caption, but 5-8
+screen pixels at an 80px heading. A large, clearly visible effect needs
+correspondingly large on-screen text, the same way a thick CSS
+`-webkit-text-stroke` needs a large `font-size` to read as a border instead of
+a smudge - it is not achievable on small caption text no matter how high
+`outlineWidth`/`shadowSoftness` is set. See the text demo's "outline + soft
+shadow / glow together, at a larger size" example for what a properly bold
+effect looks like at a size that has room for it. If you generate your own
+atlas with a smaller `--distance-range` (the default is `4`, which grades
+even less safe budget), the atlas-budget limit shrinks proportionally too;
+regenerate with a larger `--distance-range` if you need more headroom - see
+[Generating a Font Atlas](./generating-a-font-atlas.md).
 
 ## A note on extreme values and unusual glyphs
 

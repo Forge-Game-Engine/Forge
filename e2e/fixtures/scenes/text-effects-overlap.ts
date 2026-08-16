@@ -3,11 +3,11 @@ import {
   Color,
   createCamera,
   createCanvas,
-  createRenderContext,
-  createTransformEcsSystem,
   createPresentEcsSystem,
+  createRenderContext,
   createRenderEcsSystem,
   createTextShapingEcsSystem,
+  createTransformEcsSystem,
   EcsWorld,
   FontAtlas,
   positionId,
@@ -34,7 +34,8 @@ const SIZE = SYNTHETIC_GLYPH_TILE_SIZE;
 // real `msdf-bmfont-xml`-generated atlas uses (see the correction posted to
 // issue #584: the generator already bakes this padding into every glyph's
 // exported bounds, so this mirrors real atlas data, not an idealized one).
-const inkHalfFraction = SYNTHETIC_GLYPH_INK_HALF_SIZE / SYNTHETIC_GLYPH_TILE_SIZE;
+const inkHalfFraction =
+  SYNTHETIC_GLYPH_INK_HALF_SIZE / SYNTHETIC_GLYPH_TILE_SIZE;
 const paddingFraction =
   SYNTHETIC_GLYPH_DISTANCE_RANGE / 2 / SYNTHETIC_GLYPH_TILE_SIZE;
 const glyphHalfWidthEm = inkHalfFraction + paddingFraction;
@@ -71,21 +72,47 @@ const ATLAS_A_CODE_POINT = 65;
 const ATLAS_B_CODE_POINT = 66;
 const ATLAS_C_CODE_POINT = 67;
 
-/** World X of glyph "A"'s own ink right edge (`glyphBounds.right * SIZE`). */
-const glyphAInkRightWorldX = glyphBounds.right * SIZE;
+/**
+ * World X of glyph "A"'s own *padded quad* right edge (`glyphBounds.right *
+ * SIZE`) - not its ink edge (that's `glyphAInkRightWorldX` below). Exists
+ * only to derive the ink edge from, via the same padding this scene's own
+ * `atlasBounds`/`planeBounds` bake in.
+ */
+const glyphAPaddedRightEdgeWorldX = glyphBounds.right * SIZE;
 
 /**
- * World X of a point that sits inside glyph "A"'s own ink, but within
- * glyph "B"'s naive (atlas-budget-only, neighbor-unaware) outline reach -
- * the exact pixel the reported overlap bug painted the wrong (outline)
- * color over. 1 world unit inside "A"'s ink edge, comfortably clear of
- * rasterization/AA noise right at the edge itself.
+ * World X of glyph "A"'s own true ink right edge - the padded quad edge
+ * minus this scene's own baked-in `distanceRange / 2` padding (see the
+ * module doc comment above). This is what a neighbor's outline must never
+ * reach past.
  */
-const contestedWorldX = glyphAInkRightWorldX - 1;
+const glyphAInkRightWorldX =
+  glyphAPaddedRightEdgeWorldX - paddingFraction * SIZE;
+
+/**
+ * World X of a point that sits inside glyph "A"'s own ink, close to its
+ * boundary - the exact pixel an unclamped neighbor's oversized outline would
+ * threaten to paint over first, and the one `assignEffectClearances` exists
+ * to protect. 2 world units inside "A"'s true ink edge - the clamp boundary
+ * itself is anti-aliased over roughly a 1-world-unit-wide band (the same
+ * `screenPxDistance +/- 0.5` transition that makes the glyph's own edge
+ * smooth, not a hard step), so 1 unit of margin isn't quite enough to avoid
+ * sampling a partially-blended pixel; 2 is.
+ */
+const contestedWorldX = glyphAInkRightWorldX - 2;
+
+/**
+ * World X of the midpoint of the real gap between "A"'s and "B"'s true ink
+ * edges (`targetInkGapWorld` wide) - reachable by an outline only once its
+ * clamped reach covers at least half that gap, making it a clean single
+ * point to prove the reach actually grows with `outlineWidth` instead of
+ * being clamped to a sliver regardless of the requested value.
+ */
+const gapMidpointWorldX =
+  glyphAInkRightWorldX + Math.floor(targetInkGapWorld / 2);
 
 /** World X of glyph "C"'s own ink center - see `wideAdvanceEm` above. */
-const glyphCCenterWorldX =
-  (tightAdvanceEm + wideAdvanceEm + 0.5) * SIZE;
+const glyphCCenterWorldX = (tightAdvanceEm + wideAdvanceEm + 0.5) * SIZE;
 
 /**
  * World X a few screen px outside "C"'s own (uncontested) right ink edge -
@@ -118,6 +145,9 @@ export interface TextEffectsOverlapSceneHandle extends SceneHandle {
 
   /** See `contestedWorldX` above. */
   readonly contestedWorldX: number;
+
+  /** See `gapMidpointWorldX` above. */
+  readonly gapMidpointWorldX: number;
 
   /** World X of "A"'s own ink center - a same-run sanity baseline. */
   readonly glyphACenterWorldX: number;
@@ -289,6 +319,7 @@ export const createScene: CreateScene = async (
     },
 
     contestedWorldX,
+    gapMidpointWorldX,
     glyphACenterWorldX: 0.5 * SIZE,
     glyphCOuterEdgeWorldX,
     glyphCCenterWorldX,

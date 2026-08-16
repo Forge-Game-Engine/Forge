@@ -56,13 +56,16 @@ test.describe('text outline/shadow effect overlap', () => {
       scene.setOutlineWidth(0);
       scene.step();
 
-      return scene.sampleColorAt(scene.glyphACenterWorldX, scene.glyphCenterWorldY);
+      return scene.sampleColorAt(
+        scene.glyphACenterWorldX,
+        scene.glyphCenterWorldY,
+      );
     });
 
     expect(isRedInk(color.r, color.g, color.b)).toBe(true);
   });
 
-  test('never paints outline color over a neighboring glyph\'s own ink, even at a large outlineWidth', async ({
+  test("never paints outline color over a neighboring glyph's own ink, even at a large outlineWidth", async ({
     page,
   }) => {
     // The two glyphs in this scene are kerned so their *padded quads*
@@ -80,11 +83,64 @@ test.describe('text outline/shadow effect overlap', () => {
       scene.setOutlineWidth(50);
       scene.step();
 
-      return scene.sampleColorAt(scene.contestedWorldX, scene.glyphCenterWorldY);
+      return scene.sampleColorAt(
+        scene.contestedWorldX,
+        scene.glyphCenterWorldY,
+      );
     });
 
     expect(isGreenOutline(color.r, color.g, color.b)).toBe(false);
     expect(isRedInk(color.r, color.g, color.b)).toBe(true);
+  });
+
+  test('a same-word neighbor-limited outline still visibly grows with outlineWidth, not stuck at a sliver', async ({
+    page,
+  }) => {
+    // Regression guard for a real bug found after this clamp shipped: an
+    // earlier version *halved* the ink gap between two same-word neighbors
+    // (splitting it "evenly" between them), which made ordinary running
+    // text's usable outline budget so small that increasing outlineWidth
+    // had no visible effect at all above ~1 world unit. The fix lets each
+    // glyph claim the *full* gap up to (not past) its neighbor's own ink -
+    // this checks that `gapMidpointWorldX` (the middle of "A" and "B"'s real
+    // ink gap) reads as background at a small outlineWidth (not yet reaching
+    // halfway) but as A's outline at a larger one, proving the effect
+    // actually scales with the requested value instead of being clamped to
+    // an unusably small constant regardless of it.
+    const results = await page.evaluate(() => {
+      const scene = window.__forgeTestHooks as unknown as Hooks;
+
+      scene.setOutlineWidth(1);
+      scene.step();
+      const atSmallWidth = scene.sampleColorAt(
+        scene.gapMidpointWorldX,
+        scene.glyphCenterWorldY,
+      );
+
+      scene.setOutlineWidth(3);
+      scene.step();
+      const atLargerWidth = scene.sampleColorAt(
+        scene.gapMidpointWorldX,
+        scene.glyphCenterWorldY,
+      );
+
+      return { atSmallWidth, atLargerWidth };
+    });
+
+    expect(
+      isGreenOutline(
+        results.atSmallWidth.r,
+        results.atSmallWidth.g,
+        results.atSmallWidth.b,
+      ),
+    ).toBe(false);
+    expect(
+      isGreenOutline(
+        results.atLargerWidth.r,
+        results.atLargerWidth.g,
+        results.atLargerWidth.b,
+      ),
+    ).toBe(true);
   });
 
   test('still draws a visible outline elsewhere, so the clamp is not just suppressing everything', async ({
@@ -189,8 +245,8 @@ test.describe("text effects at the demo's own configured values", () => {
       ];
     }, demoShadowColor);
 
-    expect(
-      colors.some((color) => isDemoGlowColor(color.r, color.b)),
-    ).toBe(true);
+    expect(colors.some((color) => isDemoGlowColor(color.r, color.b))).toBe(
+      true,
+    );
   });
 });
