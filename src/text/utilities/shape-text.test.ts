@@ -405,6 +405,34 @@ describe('shapeText', () => {
       expect(glyphs[1].effectClearance).toBe(0);
     });
 
+    it('degrades to zero ink padding for a degenerate zero-width atlasBounds, instead of dividing by zero', () => {
+      // FontAtlasData can be loaded from an arbitrary external JSON asset
+      // (see validate-font-atlas-data.ts - it only checks finiteness, not
+      // that atlasBounds has positive width), so a malformed atlas with
+      // left === right is a real, if unlikely, external input to guard
+      // against, not an impossible internal state.
+      const degenerateFontAtlasData: FontAtlasData = {
+        ...buildFixtureFontAtlasData(),
+        glyphs: new Map([
+          [
+            A_CODE_POINT,
+            {
+              codePoint: A_CODE_POINT,
+              advance: 0.6,
+              planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
+              atlasBounds: { left: 0.1, bottom: 0, right: 0.1, top: 0.14 },
+            },
+          ],
+        ]),
+      };
+
+      const { glyphs } = shapeText('A', degenerateFontAtlasData, {
+        size: 10,
+      });
+
+      expect(Number.isFinite(glyphs[0].effectClearance)).toBe(true);
+    });
+
     it('treats a word boundary as unconstrained, not the actual whitespace gap', () => {
       const { glyphs } = shapeText('A V', buildFixtureFontAtlasData(), {
         size: 10,
