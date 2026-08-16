@@ -53,11 +53,11 @@ const columns: EffectsColumn[] = [
   { label: 'No effect (default)', effects: {} },
   {
     label: 'Outline (pulsing)',
-    effects: { outlineColor: Color.black, outlineWidth: 1.5 },
+    effects: { outlineColor: Color.black, outlineWidth: 1.2 },
     pulse: {
       effect: 'outlineWidth',
       minValue: 0.4,
-      maxValue: 6,
+      maxValue: 3.5,
       periodSeconds: 2.5,
     },
   },
