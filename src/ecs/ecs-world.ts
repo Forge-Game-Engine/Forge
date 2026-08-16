@@ -1,12 +1,47 @@
 import { ComponentKey, TagKey } from './ecs-component.js';
+import { createSystemGroup, EcsSystemGroup } from './ecs-system-group.js';
 import { Stoppable, Updatable } from '../common/index.js';
-import { SortedSet, SparseSet } from '../utilities/index.js';
+import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
-import { EcsSystem, SystemRegistrationOrder } from './ecs-system.js';
+import { EcsSystem } from './ecs-system.js';
 
 export interface QueryResult<T extends readonly unknown[]> {
   entities: readonly number[];
   components: { [K in keyof T]: T[K][] };
+}
+
+export interface AddSystemOptions {
+  /**
+   * Which group to register the system in. Defaults to the world's
+   * `defaultSystemGroup` when omitted.
+   */
+  group?: EcsSystemGroup;
+
+  /**
+   * Systems that must run before this one. Every referenced system must
+   * already be registered (via `addSystem`) in the same group as this one.
+   */
+  before?: EcsSystem[];
+
+  /**
+   * Systems that must run after this one. Every referenced system must
+   * already be registered (via `addSystem`) in the same group as this one.
+   */
+  after?: EcsSystem[];
+}
+
+export interface AddSystemGroupOptions {
+  /**
+   * Groups that must run before this one. Every referenced group must
+   * already be registered via `addSystemGroup`.
+   */
+  before?: EcsSystemGroup[];
+
+  /**
+   * Groups that must run after this one. Every referenced group must
+   * already be registered via `addSystemGroup`.
+   */
+  after?: EcsSystemGroup[];
 }
 
 export class EcsWorld implements Updatable, Stoppable {
@@ -15,37 +50,131 @@ export class EcsWorld implements Updatable, Stoppable {
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
   private readonly _freeEntityIds: number[] = [];
   private _nextEntityId = 0;
-  private readonly _systems: SortedSet<EcsSystem<readonly unknown[]>>;
+  private readonly _systemGraphsByGroup: Map<
+    EcsSystemGroup,
+    DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>
+  >;
+  private readonly _groupBySystem: Map<
+    EcsSystem<readonly unknown[]>,
+    EcsSystemGroup
+  >;
+  private readonly _groupGraph: DirectedAcyclicGraph<EcsSystemGroup>;
+  private readonly _defaultSystemGroup: EcsSystemGroup;
 
   constructor() {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
     this._componentSets = new Map();
-    this._systems = new SortedSet();
+    this._systemGraphsByGroup = new Map();
+    this._groupBySystem = new Map();
+    this._groupGraph = new DirectedAcyclicGraph<EcsSystemGroup>(
+      (group) => group.name,
+    );
+    this._defaultSystemGroup = createSystemGroup('default');
+    this._groupGraph.addNode(this._defaultSystemGroup);
+  }
+
+  /**
+   * The system group systems are registered into when `addSystem` is called
+   * without a `group` option. Order your own groups relative to it (via
+   * `addSystemGroup`'s `before`/`after`) to run consistently before or after
+   * every system a caller registers without specifying a group.
+   */
+  get defaultSystemGroup(): EcsSystemGroup {
+    return this._defaultSystemGroup;
   }
 
   public stop(): void {
-    for (const system of this._systems) {
+    for (const system of this._getOrderedSystems()) {
       system.cleanup?.(this);
     }
   }
 
+  /**
+   * Registers a system group, ordering it relative to other groups.
+   * @param group - The group to register.
+   * @param options - `before`/`after` groups to order this group against.
+   * Every referenced group must already be registered.
+   */
+  public addSystemGroup(
+    group: EcsSystemGroup,
+    options: AddSystemGroupOptions = {},
+  ): void {
+    const { before = [], after = [] } = options;
+
+    this._groupGraph.addNode(group);
+
+    for (const beforeGroup of before) {
+      this._groupGraph.addEdge(group, beforeGroup);
+    }
+
+    for (const afterGroup of after) {
+      this._groupGraph.addEdge(afterGroup, group);
+    }
+  }
+
+  /**
+   * Registers a system, optionally ordering it relative to other systems in
+   * its group.
+   * @param system - The system to register.
+   * @param options - Which group to register the system in, and `before`/
+   * `after` systems (within that same group) to order it against.
+   */
   public addSystem<T extends readonly unknown[]>(
     system: EcsSystem<T>,
-    registrationOrder: number = SystemRegistrationOrder.normal,
+    options: AddSystemOptions = {},
   ): void {
-    this._systems.add(system, registrationOrder);
+    const {
+      group = this._defaultSystemGroup,
+      before = [],
+      after = [],
+    } = options;
+
+    if (!this._groupGraph.has(group)) {
+      throw new Error(
+        `Unable to add system "${system.name ?? 'unnamed system'}" to group "${group.name}", the group has not been registered with addSystemGroup.`,
+      );
+    }
+
+    let systemGraph = this._systemGraphsByGroup.get(group);
+
+    if (!systemGraph) {
+      systemGraph = new DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>(
+        (otherSystem) => otherSystem.name ?? 'unnamed system',
+      );
+      this._systemGraphsByGroup.set(group, systemGraph);
+    }
+
+    systemGraph.addNode(system);
+    this._groupBySystem.set(system, group);
+
+    for (const beforeSystem of before) {
+      this._requireSameGroup(system, beforeSystem, group);
+      systemGraph.addEdge(system, beforeSystem);
+    }
+
+    for (const afterSystem of after) {
+      this._requireSameGroup(system, afterSystem, group);
+      systemGraph.addEdge(afterSystem, system);
+    }
+
     system.onRegister?.(this);
   }
 
   public removeSystem<T extends readonly unknown[]>(
     system: EcsSystem<T>,
   ): void {
-    this._systems.delete(system);
+    const group = this._groupBySystem.get(system);
+
+    if (group) {
+      this._systemGraphsByGroup.get(group)?.removeNode(system);
+      this._groupBySystem.delete(system);
+    }
+
     system.cleanup?.(this);
   }
 
   public update(): void {
-    for (const system of this._systems) {
+    for (const system of this._getOrderedSystems()) {
       const results = this.query(system.query, system.tags);
       system.update(this, results);
     }
@@ -208,6 +337,42 @@ export class EcsWorld implements Updatable, Stoppable {
     }
 
     return componentSet as SparseSet<T>;
+  }
+
+  private _requireSameGroup(
+    system: EcsSystem<readonly unknown[]>,
+    other: EcsSystem<readonly unknown[]>,
+    group: EcsSystemGroup,
+  ): void {
+    const otherGroup = this._groupBySystem.get(other);
+    const systemName = system.name ?? 'unnamed system';
+    const otherName = other.name ?? 'unnamed system';
+
+    if (!otherGroup) {
+      throw new Error(
+        `Unable to order system "${systemName}" relative to "${otherName}", "${otherName}" has not been registered with addSystem yet. Register it before referencing it in "before"/"after".`,
+      );
+    }
+
+    if (otherGroup !== group) {
+      throw new Error(
+        `Unable to order system "${systemName}" relative to "${otherName}", they belong to different system groups ("${group.name}" and "${otherGroup.name}"). Order groups against each other with addSystemGroup instead.`,
+      );
+    }
+  }
+
+  private _getOrderedSystems(): EcsSystem<readonly unknown[]>[] {
+    const orderedSystems: EcsSystem<readonly unknown[]>[] = [];
+
+    for (const group of this._groupGraph.topologicalSort()) {
+      const systemGraph = this._systemGraphsByGroup.get(group);
+
+      if (systemGraph) {
+        orderedSystems.push(...systemGraph.topologicalSort());
+      }
+    }
+
+    return orderedSystems;
   }
 
   private _generateEntityId(): number {
