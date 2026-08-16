@@ -47,10 +47,16 @@ atlas supports rather than growing further or producing visual artifacts.
 
 A font atlas generated with a small `--distance-range` (the default is `4`)
 supports comparably small effect sizes, especially when text is rendered at
-or below the atlas's own authored `--size`. Regenerate the atlas with a
-larger `--distance-range` (see
+or below the atlas's own authored `--size`. Beyond capping the effect's
+reach, a very small `--distance-range` also has less room to grade the
+distance field smoothly, so an outline/shadow pushed close to the cap can
+look coarse or blotchy rather than crisp - a symptom of running out of
+graded precision, not a shader bug. Regenerate the atlas with a larger
+`--distance-range` (see
 [Generating a Font Atlas](./generating-a-font-atlas.md)) if a design calls
-for a thick outline or a far-offset shadow.
+for a thick outline or a far-offset shadow; the [Text Rendering
+demo](/Forge/demos/text)'s own atlas uses `--distance-range 32` for exactly
+this reason.
 
 ## Disabling an effect
 

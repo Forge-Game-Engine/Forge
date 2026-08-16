@@ -57,7 +57,7 @@ const columns: EffectsColumn[] = [
     pulse: {
       effect: 'outlineWidth',
       minValue: 0.4,
-      maxValue: 2.6,
+      maxValue: 6,
       periodSeconds: 2.5,
     },
   },
@@ -71,7 +71,7 @@ const columns: EffectsColumn[] = [
     pulse: {
       effect: 'shadowSoftness',
       minValue: 0.8,
-      maxValue: 2.6,
+      maxValue: 8,
       periodSeconds: 2.5,
     },
   },
