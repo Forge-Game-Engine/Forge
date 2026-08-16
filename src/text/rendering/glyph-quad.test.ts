@@ -36,11 +36,6 @@ function buildTextComponent(
     verticalAlign: 'top',
     layer: 2,
     enabled: true,
-    outlineColor: Color.black,
-    outlineWidth: 0,
-    shadowColor: Color.transparent,
-    shadowOffset: { x: 0, y: 0 },
-    shadowSoftness: 0,
     ...overrides,
   };
 }
@@ -154,52 +149,6 @@ describe('pushTextRenderCommands', () => {
     expect(commands[0].components.rotation).toBe(rotation);
     expect(commands[0].components.scale).toBeNull();
     expect(commands[0].components.flip).toBeNull();
-  });
-
-  it("carries the text component's outline/shadow settings as textEffects", () => {
-    const commands: RenderCommand[] = [];
-    const outlineColor = new Color(0, 0, 0, 1);
-    const shadowColor = new Color(0, 0, 0, 0.5);
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent({
-        outlineColor,
-        outlineWidth: 2,
-        shadowColor,
-        shadowOffset: { x: 1, y: -1 },
-        shadowSoftness: 3,
-      }),
-      buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
-    );
-
-    expect(commands[0].components.textEffects).toEqual({
-      outlineColor,
-      outlineWidth: 2,
-      shadowColor,
-      shadowOffset: { x: 1, y: -1 },
-      shadowSoftness: 3,
-    });
-  });
-
-  it('shares the same textEffects object across every glyph of one entity', () => {
-    const commands: RenderCommand[] = [];
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent(),
-      buildTextMesh([glyph, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
-    );
-
-    expect(commands[0].components.textEffects).toBe(
-      commands[1].components.textEffects,
-    );
   });
 
   it('pushes nothing for a mesh with no glyphs', () => {

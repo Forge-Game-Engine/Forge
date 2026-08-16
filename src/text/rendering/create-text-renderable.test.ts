@@ -5,10 +5,11 @@ import {
   ForgeShaderSource,
   RenderContext,
   ShaderCache,
+  spriteVertexShader,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { createTextRenderable } from './create-text-renderable.js';
-import { msdfFragmentShader, msdfVertexShader } from './shaders/index.js';
+import { msdfFragmentShader } from './shaders/index.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
 globalThis.WebGLTexture = class WebGLTexture {};
@@ -126,7 +127,7 @@ describe('createTextRenderable', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(msdfVertexShader))
+      .addShader(new ForgeShaderSource(spriteVertexShader))
       .addShader(new ForgeShaderSource(msdfFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
@@ -162,13 +163,11 @@ describe('createTextRenderable', () => {
     expect(calls[0][1]).toBe(512);
   });
 
-  it('assigns the combined sprite + text effects instance data layout', () => {
+  it('assigns the standard sprite instance data layout', () => {
     const renderable = createTextRenderable(renderContext, fontAtlas);
 
-    // sprite segment: position(2) + rotation(1) + scale(2) + size(2) +
-    // pivot(2) + texOffset(2) + texSize(2) + tint(4) = 17.
-    // text effects segment: outlineColor(4) + outlineWidth(1) +
-    // shadowColor(4) + shadowOffset(2) + shadowSoftness(1) = 12.
-    expect(renderable.floatsPerInstance).toBe(17 + 12);
+    // position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
+    // texOffset(2) + texSize(2) + tint(4) = 17.
+    expect(renderable.floatsPerInstance).toBe(17);
   });
 });

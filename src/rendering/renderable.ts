@@ -4,35 +4,9 @@ import type {
   RotationEcsComponent,
   ScaleEcsComponent,
 } from '../common/index.js';
-import type { Vector2 } from '../math/index.js';
 import type { SpriteEcsComponent } from './components/index.js';
-import type { Color } from './color.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';
-
-/**
- * Per-instance MSDF text effect parameters (outline + soft shadow), read by
- * `textEffectsInstanceDataSegment` (`/src/text`). Only glyph instances
- * pushed by `pushTextRenderCommands` set this on `InstanceComponents`; every
- * other kind of instance (e.g. a plain sprite) leaves it `null`/unset, which
- * draws with no outline or shadow.
- */
-export interface TextEffectsInstanceData {
-  /** The outline's color; invisible while `outlineWidth` is `0`. */
-  outlineColor: Color;
-
-  /** The outline's thickness, in screen-pixel-range units. */
-  outlineWidth: number;
-
-  /** The soft shadow's color; invisible while its alpha is `0`. */
-  shadowColor: Color;
-
-  /** The soft shadow's offset from the glyph, in screen-pixel-range units. */
-  shadowOffset: Vector2;
-
-  /** How blurred the soft shadow's edge is, in screen-pixel-range units. */
-  shadowSoftness: number;
-}
 
 /**
  * The components needed to bind an entity's per-instance data, resolved once
@@ -64,12 +38,6 @@ export interface InstanceComponents {
    * The entity's flip flags, if it has any.
    */
   flip: FlipEcsComponent | null;
-
-  /**
-   * The entity's MSDF text effect parameters (outline/shadow), if any. Only
-   * set for text glyph instances; `undefined`/`null` for everything else.
-   */
-  textEffects?: TextEffectsInstanceData | null;
 }
 
 /**

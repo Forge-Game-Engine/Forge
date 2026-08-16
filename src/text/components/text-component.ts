@@ -1,6 +1,5 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vec2, Vector2 } from '../../math/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 
@@ -71,41 +70,6 @@ export interface TextDefaultedOptions {
 
   /** Whether this text is drawn at all. */
   enabled: boolean;
-
-  /**
-   * The outline's color. Has no visible effect while `outlineWidth` is `0`
-   * (the default), regardless of this value.
-   */
-  outlineColor: Color;
-
-  /**
-   * The outline's thickness, in screen-pixel-range units - the same
-   * scale-independent unit the MSDF anti-aliasing band itself is measured
-   * in, so an outline stays a constant on-screen thickness whether the text
-   * is scaled up or the camera zooms in. `0` (the default) draws no outline
-   * at all, regardless of `outlineColor`.
-   */
-  outlineWidth: number;
-
-  /**
-   * The soft shadow's color. Has no visible effect while its alpha is `0`
-   * (the default, `Color.transparent`), regardless of `shadowOffset`/
-   * `shadowSoftness`.
-   */
-  shadowColor: Color;
-
-  /**
-   * The soft shadow's offset from the glyph, in screen-pixel-range units
-   * (same convention as `outlineWidth`). Defaults to `(0, 0)`.
-   */
-  shadowOffset: Vector2;
-
-  /**
-   * How blurred the soft shadow's edge is, in screen-pixel-range units. `0`
-   * (the default) draws a shadow with the same crisp edge as the glyph
-   * itself, just offset; larger values widen and soften the falloff.
-   */
-  shadowSoftness: number;
 }
 
 export interface TextEcsComponent
@@ -134,11 +98,6 @@ export function addTextComponent(
     verticalAlign: 'top',
     layer: 0,
     enabled: true,
-    outlineColor: Color.black,
-    outlineWidth: 0,
-    shadowColor: Color.transparent,
-    shadowOffset: Vec2.zero,
-    shadowSoftness: 0,
   };
 
   const component: TextEcsComponent = {
