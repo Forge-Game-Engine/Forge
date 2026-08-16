@@ -35,7 +35,9 @@ export async function createEmberFountain(
     getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/circle_01.png'),
   );
 
-  const emberSprite = createImageSprite(emberImage, renderContext, renderLayer);
+  const emberSprite = createImageSprite(emberImage, renderContext, {
+    layer: renderLayer,
+  });
 
   emberSprite.tintColor = emberColor;
 

@@ -98,12 +98,12 @@ export async function createTargets(
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
-  const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
-  const squareSprite = createImageSprite(
-    squareImage,
-    renderContext,
-    renderLayer,
-  );
+  const ballSprite = createImageSprite(ballImage, renderContext, {
+    layer: renderLayer,
+  });
+  const squareSprite = createImageSprite(squareImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const { x: width } = calculateVisibleWorldSize(
     renderContext.width,

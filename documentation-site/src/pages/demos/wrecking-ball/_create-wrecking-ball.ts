@@ -89,9 +89,9 @@ async function loadWreckingBallSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, renderLayer),
-    brick: createImageSprite(brickImage, renderContext, renderLayer),
-    arm: createImageSprite(armImage, renderContext, renderLayer),
+    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
+    brick: createImageSprite(brickImage, renderContext, { layer: renderLayer }),
+    arm: createImageSprite(armImage, renderContext, { layer: renderLayer }),
   };
 }
 
@@ -193,7 +193,10 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
   // The bricks are explicitly half the size of their sprite's native 64x64
   // pixels, so (unlike every other object in this scene) they need a scale
   // to match their physics shape rather than rendering at native size.
-  const brickScale = { x: brickSize / sprite.width, y: brickSize / sprite.height };
+  const brickScale = {
+    x: brickSize / sprite.width,
+    y: brickSize / sprite.height,
+  };
 
   for (let row = 0; row < brickCount; row++) {
     const y = towerBottomY + brickSize / 2 + row * brickSize;
@@ -272,10 +275,7 @@ export async function createWreckingBall(
     entityA: pivotEntity,
     entityB: ballEntity,
     // clone: pivotPosition is a module-level constant reused below for the arm.
-    localAnchorB: Vec2.subtract(
-      Vec2.clone(pivotPosition),
-      ballStartPosition,
-    ),
+    localAnchorB: Vec2.subtract(Vec2.clone(pivotPosition), ballStartPosition),
   });
 
   // A nine-sliced sprite, resized and rotated every tick by
