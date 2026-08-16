@@ -87,6 +87,17 @@ const UNCONSTRAINED_EFFECT_CLEARANCE = 100;
  * each glyph is only ever allowed to claim its own half of the gap between
  * it and its neighbor.
  *
+ * The gap is measured between each glyph's *ink* edges (`glyph.size` minus
+ * `inkPadding` on each side), not its full padded quad edges. A real MSDF
+ * atlas's baked-in per-glyph padding (`distanceRange / 2` atlas pixels,
+ * baked into `planeBounds`/`atlasBounds` by the generator) is routinely
+ * *larger* than the actual visual gap between two ordinarily-spaced
+ * letters - measuring from the padded quad edges instead of the ink edges
+ * made this clamp to 0 for nearly every adjacent glyph pair in ordinary
+ * text (verified empirically against a real generated atlas: "AB" showed
+ * no outline at all at a small, otherwise-safe `outlineWidth`), not just
+ * the deliberately tight kerned pairs ("il"/"ff") this is meant to catch.
+ *
  * Deliberately scoped to *same-word* adjacency only - the actual reported
  * failure mode (PR #598 / issue #584) is tight intra-word kerned pairs like
  * "il"/"ff", which is exactly what word-local, kerning-aware advance
@@ -97,24 +108,30 @@ const UNCONSTRAINED_EFFECT_CLEARANCE = 100;
  * safe budget there) is a deliberate, documented scope decision, not an
  * oversight - the same word-scoping `shapeWord`'s own kerning already uses.
  * @param glyphs - A word's shaped glyphs, in visual (left-to-right) order.
+ * @param inkPadding - Each glyph's own quad-edge-to-ink-edge padding, in
+ * world units, parallel to `glyphs` (see `shapeWord`'s derivation).
  */
-function assignEffectClearances(glyphs: GlyphQuad[]): void {
+function assignEffectClearances(
+  glyphs: GlyphQuad[],
+  inkPadding: readonly number[],
+): void {
+  const inkLeftEdge = (index: number): number =>
+    glyphs[index].offset.x - glyphs[index].size.x / 2 + inkPadding[index];
+  const inkRightEdge = (index: number): number =>
+    glyphs[index].offset.x + glyphs[index].size.x / 2 - inkPadding[index];
+
   for (let index = 0; index < glyphs.length; index++) {
-    const glyph = glyphs[index];
-    const leftEdge = glyph.offset.x - glyph.size.x / 2;
-    const rightEdge = glyph.offset.x + glyph.size.x / 2;
+    const gapToLeftNeighbor =
+      index > 0
+        ? inkLeftEdge(index) - inkRightEdge(index - 1)
+        : UNCONSTRAINED_EFFECT_CLEARANCE;
 
-    const previousGlyph = index > 0 ? glyphs[index - 1] : null;
-    const gapToLeftNeighbor = previousGlyph
-      ? leftEdge - (previousGlyph.offset.x + previousGlyph.size.x / 2)
-      : UNCONSTRAINED_EFFECT_CLEARANCE;
+    const gapToRightNeighbor =
+      index < glyphs.length - 1
+        ? inkLeftEdge(index + 1) - inkRightEdge(index)
+        : UNCONSTRAINED_EFFECT_CLEARANCE;
 
-    const nextGlyph = index < glyphs.length - 1 ? glyphs[index + 1] : null;
-    const gapToRightNeighbor = nextGlyph
-      ? nextGlyph.offset.x - nextGlyph.size.x / 2 - rightEdge
-      : UNCONSTRAINED_EFFECT_CLEARANCE;
-
-    glyph.effectClearance = Math.max(
+    glyphs[index].effectClearance = Math.max(
       0,
       Math.min(gapToLeftNeighbor, gapToRightNeighbor) / 2,
     );
@@ -157,6 +174,11 @@ function shapeWord(
   letterSpacing: number,
 ): ShapedWord {
   const glyphs: GlyphQuad[] = [];
+  // Each glyph's own quad-edge-to-ink-edge padding, in world units, parallel
+  // to `glyphs` - see `assignEffectClearances`'s doc comment for why this
+  // (rather than the padded quad edges themselves) is what neighbor-gap
+  // clamping needs to measure from.
+  const inkPadding: number[] = [];
   let penX = 0;
   let previousCodePoint: number | null = null;
 
@@ -201,6 +223,26 @@ function shapeWord(
       const atlasBottom = atlasBounds.bottom + insetY;
       const atlasTop = atlasBounds.top - insetY;
 
+      // How many world units this glyph's own quad is padded beyond its
+      // true ink, horizontally - derived from distanceRange (in atlas
+      // pixels) via this glyph's own world-units-per-atlas-pixel ratio,
+      // rather than assumed constant across the atlas, since it's cheap to
+      // compute per-glyph and robust to any minor per-glyph packing
+      // variance. Clamped to at most half the glyph's own width so a very
+      // narrow glyph (e.g. "." or "i") can never produce inverted
+      // (left > right) ink edges.
+      const atlasWidthPx =
+        (atlasBounds.right - atlasBounds.left) * fontAtlasData.atlasSize.width;
+      const inkPaddingX =
+        atlasWidthPx > 0
+          ? Math.min(
+              (fontAtlasData.distanceRange / 2) * (glyphWidth / atlasWidthPx),
+              glyphWidth / 2,
+            )
+          : 0;
+
+      inkPadding.push(inkPaddingX);
+
       glyphs.push({
         offset: {
           x: penX + (planeBounds.left * size + glyphWidth / 2),
@@ -227,7 +269,7 @@ function shapeWord(
     previousCodePoint = codePoint;
   }
 
-  assignEffectClearances(glyphs);
+  assignEffectClearances(glyphs, inkPadding);
 
   return { glyphs, width: Math.max(0, penX) };
 }

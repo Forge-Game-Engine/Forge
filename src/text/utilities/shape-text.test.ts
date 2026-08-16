@@ -352,30 +352,55 @@ describe('shapeText', () => {
       expect(glyphs[0].effectClearance).toBe(50);
     });
 
-    it('halves the real gap between two same-word neighbors with no kerning pair', () => {
+    it('halves the real ink gap between two same-word neighbors with no kerning pair', () => {
       const { glyphs } = shapeText('AA', buildFixtureFontAtlasData(), {
         size: 10,
       });
 
-      // Each "A" is 5 world units wide (plane bounds 0.05-0.55em * size
+      // Each "A" quad is 5 world units wide (plane bounds 0.05-0.55em * size
       // 10), advancing by 6 (0.6em * size 10, no A:A kerning pair) - a 1
-      // world unit gap between the first glyph's right edge and the
-      // second's left edge, split 0.5/0.5 between them.
-      expect(glyphs[0].effectClearance).toBeCloseTo(0.5);
-      expect(glyphs[1].effectClearance).toBeCloseTo(0.5);
+      // world unit gap between the first glyph's *quad* edge and the
+      // second's, but the gap between their *ink* edges is wider still: each
+      // "A"'s own quad-to-ink padding is distanceRange/2 (2 atlas px) scaled
+      // to world units via this glyph's own atlas-pixels-to-world-units
+      // ratio (25.6 atlas px per 5 world units) - 0.390625 world units per
+      // side. Ink gap = 1 + 0.390625 + 0.390625 = 1.78125, split 50/50.
+      expect(glyphs[0].effectClearance).toBeCloseTo(0.890625);
+      expect(glyphs[1].effectClearance).toBeCloseTo(0.890625);
     });
 
-    it('clamps to zero when tight kerning already makes same-word quads overlap', () => {
+    it('does not clamp a small, realistic kerning correction that never brings the ink close', () => {
       const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
         size: 10,
       });
 
-      // "A"'s quad spans world x 0.5-5.5 (see the kerning test above); "V"'s
-      // -0.08em kerning pair pulls its quad to span 5.4-11.0 - a -0.1 world
-      // unit gap (the quads already overlap slightly before any effect is
-      // even applied, exactly the tight-kerning scenario - "il"/"ff" in a
-      // real font - the reported overlap bug came from). Both glyphs clamp
-      // to 0 rather than a negative clearance.
+      // "AV"'s -0.08em kerning pair pulls the *padded quads* into a slight
+      // (-0.1 world unit) overlap - the bug fixed by measuring from ink
+      // edges instead of quad edges (see assignEffectClearances's doc
+      // comment): despite that quad overlap, the actual *ink* stays a real
+      // ~0.73 world unit gap apart (0.390625 + 0.4375 of quad-to-ink padding
+      // more than offsets the -0.1 quad overlap), so this ordinary,
+      // realistic kerning value must not clamp the effect to 0.
+      expect(glyphs[0].effectClearance).toBeGreaterThan(0);
+      expect(glyphs[1].effectClearance).toBeGreaterThan(0);
+      expect(glyphs[0].effectClearance).toBeCloseTo(0.3640625);
+      expect(glyphs[1].effectClearance).toBeCloseTo(0.3640625);
+    });
+
+    it('clamps to zero when kerning is tight enough that ink genuinely touches', () => {
+      const extremeKerningFontAtlasData: FontAtlasData = {
+        ...buildFixtureFontAtlasData(),
+        // Far more extreme than any real font's kerning table - deliberately
+        // constructed so "A"'s and "V"'s *ink* (not just their padded
+        // quads) genuinely touches, the case `effectClearance` must still
+        // catch.
+        kerning: new Map([[`${A_CODE_POINT}:${V_CODE_POINT}`, -0.5]]),
+      };
+
+      const { glyphs } = shapeText('AV', extremeKerningFontAtlasData, {
+        size: 10,
+      });
+
       expect(glyphs[0].effectClearance).toBe(0);
       expect(glyphs[1].effectClearance).toBe(0);
     });
