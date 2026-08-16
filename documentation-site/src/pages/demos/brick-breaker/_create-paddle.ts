@@ -55,11 +55,9 @@ export async function createPaddle(
   const paddleImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/brick-breaker/paddle.png'),
   );
-  const paddleSprite = createImageSprite(
-    paddleImage,
-    renderContext,
-    renderLayer,
-  );
+  const paddleSprite = createImageSprite(paddleImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const playAreaWidth = playArea.maxX - playArea.minX;
   const paddleWidth = playAreaWidth * paddleWidthFraction;

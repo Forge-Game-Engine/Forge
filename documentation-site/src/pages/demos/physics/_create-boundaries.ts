@@ -47,7 +47,9 @@ export async function createBoundaries(
   const wallImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
   );
-  const wallSprite = createImageSprite(wallImage, renderContext, renderLayer);
+  const wallSprite = createImageSprite(wallImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const { x: width, y: height } = calculateVisibleWorldSize(
     renderContext.width,
@@ -95,9 +97,5 @@ export async function createBoundaries(
     height,
   );
 
-  createWall(
-    { x: halfWidth - wallThickness / 2, y: 0 },
-    wallThickness,
-    height,
-  );
+  createWall({ x: halfWidth - wallThickness / 2, y: 0 }, wallThickness, height);
 }

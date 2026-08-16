@@ -59,11 +59,9 @@ export const createTextGame = async (fontAtlasUrl: string): Promise<Game> => {
   const whiteImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
   );
-  const whiteSprite = createImageSprite(
-    whiteImage,
-    renderContext,
-    renderLayers.foreground,
-  );
+  const whiteSprite = createImageSprite(whiteImage, renderContext, {
+    layer: renderLayers.foreground,
+  });
 
   const { x: width, y: height } = calculateVisibleWorldSize(
     renderContext.width,

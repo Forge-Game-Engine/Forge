@@ -72,11 +72,9 @@ export async function createPlatform(
   const platformImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
-  const platformSprite = createImageSprite(
-    platformImage,
-    renderContext,
-    renderLayer,
-  );
+  const platformSprite = createImageSprite(platformImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const entity = world.createEntity();
   const startPosition: Vector2 = { x: leftX, y: platformY };

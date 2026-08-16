@@ -55,7 +55,9 @@ export async function createPlayer(
   const ballImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/ball_blue_large.png'),
   );
-  const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
+  const ballSprite = createImageSprite(ballImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const entity = world.createEntity();
 

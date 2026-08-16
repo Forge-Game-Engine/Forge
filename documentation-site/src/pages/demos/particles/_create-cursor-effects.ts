@@ -62,11 +62,15 @@ export async function createCursorEffects(
     ),
   ]);
 
-  const sparkSprite = createImageSprite(sparkImage, renderContext, renderLayer);
+  const sparkSprite = createImageSprite(sparkImage, renderContext, {
+    layer: renderLayer,
+  });
 
   sparkSprite.tintColor = sparkColor;
 
-  const smokeSprite = createImageSprite(smokeImage, renderContext, renderLayer);
+  const smokeSprite = createImageSprite(smokeImage, renderContext, {
+    layer: renderLayer,
+  });
 
   smokeSprite.tintColor = smokeColor;
 

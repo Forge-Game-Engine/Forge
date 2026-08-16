@@ -30,7 +30,9 @@ export async function createSpriteSpawner(
     getAssetUrl('img/space-shooter/star_small.png'),
   );
 
-  const sprite = createImageSprite(image, renderContext, renderLayer);
+  const sprite = createImageSprite(image, renderContext, {
+    layer: renderLayer,
+  });
 
   const { x: width, y: height } = calculateVisibleWorldSize(
     renderContext.width,

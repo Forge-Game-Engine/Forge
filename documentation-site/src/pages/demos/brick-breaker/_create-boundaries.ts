@@ -72,7 +72,9 @@ export async function createBoundaries(
   const wallImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
   );
-  const wallSprite = createImageSprite(wallImage, renderContext, renderLayer);
+  const wallSprite = createImageSprite(wallImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const width = playAreaWidth;
   const height = playAreaHeight;
@@ -94,8 +96,14 @@ export async function createBoundaries(
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
-      local: { x: wallWidth / wallSprite.width, y: wallHeight / wallSprite.height },
-      world: { x: wallWidth / wallSprite.width, y: wallHeight / wallSprite.height },
+      local: {
+        x: wallWidth / wallSprite.width,
+        y: wallHeight / wallSprite.height,
+      },
+      world: {
+        x: wallWidth / wallSprite.width,
+        y: wallHeight / wallSprite.height,
+      },
     });
 
     addSpriteComponent(world, entity, wallSprite);
@@ -108,11 +116,7 @@ export async function createBoundaries(
     addAabbComponent(world, entity);
   };
 
-  createWall(
-    { x: 0, y: halfHeight - wallThickness / 2 },
-    width,
-    wallThickness,
-  );
+  createWall({ x: 0, y: halfHeight - wallThickness / 2 }, width, wallThickness);
 
   createWall(
     { x: -halfWidth + wallThickness / 2, y: 0 },
@@ -120,11 +124,7 @@ export async function createBoundaries(
     height,
   );
 
-  createWall(
-    { x: halfWidth - wallThickness / 2, y: 0 },
-    wallThickness,
-    height,
-  );
+  createWall({ x: halfWidth - wallThickness / 2, y: 0 }, wallThickness, height);
 
   return {
     minX: -halfWidth + wallThickness,

@@ -181,11 +181,9 @@ export async function createTerrain(
   const groundImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
-  const groundSprite = createImageSprite(
-    groundImage,
-    renderContext,
-    renderLayer,
-  );
+  const groundSprite = createImageSprite(groundImage, renderContext, {
+    layer: renderLayer,
+  });
 
   // Phased so a column boundary lands exactly on `carSpawnX`: the car's two
   // wheels straddle that point (see `_create-car.ts`'s `frontAnchor`/

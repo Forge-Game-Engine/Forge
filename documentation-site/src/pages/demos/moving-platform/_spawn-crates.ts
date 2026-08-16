@@ -49,7 +49,7 @@ export async function loadCrateSprite(
     getAssetUrl('img/physics/block_square.png'),
   );
 
-  return createImageSprite(crateImage, renderContext, renderLayer);
+  return createImageSprite(crateImage, renderContext, { layer: renderLayer });
 }
 
 /**

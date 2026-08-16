@@ -29,7 +29,7 @@ export async function createAsteroidSpawner(
       createImageSprite(
         await renderContext.imageCache.getOrLoad(getAssetUrl(imagePath)),
         renderContext,
-        renderLayer,
+        { layer: renderLayer },
       ),
     ),
   );

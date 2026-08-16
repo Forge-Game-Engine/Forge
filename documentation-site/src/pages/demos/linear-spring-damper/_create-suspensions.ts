@@ -72,9 +72,9 @@ async function loadSuspensionSprites(
   ]);
 
   return {
-    mount: createImageSprite(mountImage, renderContext, renderLayer),
-    wheel: createImageSprite(wheelImage, renderContext, renderLayer),
-    line: createImageSprite(lineImage, renderContext, renderLayer),
+    mount: createImageSprite(mountImage, renderContext, { layer: renderLayer }),
+    wheel: createImageSprite(wheelImage, renderContext, { layer: renderLayer }),
+    line: createImageSprite(lineImage, renderContext, { layer: renderLayer }),
   };
 }
 
@@ -175,10 +175,10 @@ function createSuspensionScenario(
   );
 
   // clone: mountPosition is reused below (unchanged) for the mount/line entities.
-  const wheelPosition = Vec2.add(
-    Vec2.clone(mountPosition),
-    { x: 0, y: -wheelDropHeight },
-  );
+  const wheelPosition = Vec2.add(Vec2.clone(mountPosition), {
+    x: 0,
+    y: -wheelDropHeight,
+  });
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
   const wheelEntity = world.createEntity();
