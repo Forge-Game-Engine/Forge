@@ -57,7 +57,7 @@ const columns: EffectsColumn[] = [
     pulse: {
       effect: 'outlineWidth',
       minValue: 0.4,
-      maxValue: 3.5,
+      maxValue: 2.6,
       periodSeconds: 2.5,
     },
   },
