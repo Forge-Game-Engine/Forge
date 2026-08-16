@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **text:** Add multi-line layout (Phase 3 of MSDF text rendering): `TextEcsComponent.maxWidth` greedily word-wraps text across multiple lines, `horizontalAlign` (`'left'` | `'center'` | `'right'` | `'justify'`) and `verticalAlign` (`'top'` | `'middle'` | `'bottom'`) position lines within the shaped block and the block against the entity's position, and `lineHeight` controls the spacing between line baselines
 - **physics:** Add `raycast(world, start, end, sort?)`, casting a line segment against every entity in an `EcsWorld` with a `ColliderEcsComponent` (`CircleCollider`, `PolygonCollider`, and `TerrainCollider` alike) and returning every intersection as a `RaycastHit` (`entity`, `point`, `normal`, `distance`), ordered by distance from `start` by default
 - **physics:** Add `RigidBodyEcsComponent.type` (`'dynamic'` | `'kinematic'` | `'static'`, defaulting to `'dynamic'`), letting a body be moved directly by game code (`'kinematic'`) so it still pushes dynamic bodies on contact without itself being affected by gravity, forces, or impulses - previously only possible implicitly, by giving an entity no `RigidBodyEcsComponent` at all (still supported, and equivalent to `type: 'static'`)
+- **utilities:** Add `DirectedAcyclicGraph<T>`, a generic topological-ordering data structure (`addNode`, `addEdge`, `removeNode`, `topologicalSort`) that throws a descriptive error when an edge would create a cycle or reference an unregistered node
+- **ecs:** Add `EcsWorld.addSystem`'s `before`/`after` options, letting a system be ordered relative to specific other systems instead of an arbitrary numeric priority, and `EcsWorld.addSystemGroup`/`createSystemGroup`, for ordering whole groups of systems (each with their own `before`/`after`) against each other - see the "Ordering systems with before/after" and "Grouping systems" sections of the ECS World doc
 
 #### Changed
 
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Removed
 
 - **math:** Removed the `Vector2`/`Vector3` classes, including `new Vector2(...)`/`new Vector3(...)` construction, their instance methods (`.add()`, `.subtract()`, `.clone()`, etc.), and their static constant getters (`Vector2.zero`, `Vector2.up`, etc.), replaced by the `Vec2`/`Vec3` static-method API above. **Breaking change.**
+- **ecs:** Removed `EcsWorld.addSystem`'s numeric `registrationOrder` parameter and the `SystemRegistrationOrder` constants, replaced by the `before`/`after` options and system groups described above - an arbitrary priority number didn't tell you how many systems would run before yours, or what priorities were already taken, and gave no way to express "run before/after this specific system". **Breaking change.**
+- **utilities:** Removed `SortedSet`, which existed solely to back `EcsWorld`'s old priority-ordered system list and has no other consumers; use `DirectedAcyclicGraph` for ordering use cases going forward. **Breaking change.**
 
 #### Fixed
 
