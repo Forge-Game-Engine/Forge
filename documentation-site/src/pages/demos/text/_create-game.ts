@@ -12,6 +12,8 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
+import { createEffectsExamples } from './_create-effects-examples';
+import { createEffectsHeroExample } from './_create-effects-hero-example';
 import { createHorizontalAlignmentExamples } from './_create-horizontal-alignment-examples';
 import { createLineHeightExamples } from './_create-line-height-examples';
 import { createLiveMaxWidthExample } from './_create-live-max-width-example';
@@ -31,7 +33,7 @@ const drawOrder = {
 };
 
 const margin = 24;
-const sectionGap = 26;
+const sectionGap = 16;
 
 /**
  * Builds the text rendering demo: a showcase of every `horizontalAlign` and
@@ -104,7 +106,29 @@ export const createTextGame = async (fontAtlasUrl: string): Promise<Game> => {
   );
   y -= sectionGap;
 
-  createLiveMaxWidthExample(
+  y = createLiveMaxWidthExample(
+    world,
+    fontAtlas,
+    whiteSprite,
+    drawOrder.guide,
+    drawOrder.content,
+    { x: left, y },
+    usableWidth,
+  );
+  y -= sectionGap;
+
+  y = createEffectsExamples(
+    world,
+    fontAtlas,
+    whiteSprite,
+    drawOrder.guide,
+    drawOrder.content,
+    { x: left, y },
+    usableWidth,
+  );
+  y -= sectionGap;
+
+  createEffectsHeroExample(
     world,
     fontAtlas,
     whiteSprite,

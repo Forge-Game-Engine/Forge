@@ -1,0 +1,114 @@
+---
+sidebar_position: 4
+---
+
+# Text Effects
+
+MSDF's distance-field encoding makes an outline or soft shadow/glow nearly
+free: the same signed distance already used to anti-alias a glyph's edge can
+be re-thresholded a few pixels further out, with no extra draw call and no
+extra texture. [`TextEcsComponent`](/Forge/docs/api/interfaces/TextEcsComponent)
+exposes this as five fields, all off by default:
+
+```ts
+addTextComponent(world, label, {
+  text: 'Game Over',
+  fontAtlas,
+  size: 48,
+  outlineColor: Color.black,
+  outlineWidth: 2,
+  shadowColor: new Color(0, 0, 0, 0.6),
+  shadowOffset: { x: 1.5, y: -1.5 },
+  shadowSoftness: 2,
+});
+```
+
+- `outlineColor` / `outlineWidth` draw a ring around each glyph's own edge.
+  `outlineWidth: 0` (the default) draws no outline regardless of
+  `outlineColor`.
+- `shadowColor` / `shadowOffset` / `shadowSoftness` re-sample the distance
+  field at an offset to draw a soft shadow or glow beneath the glyph and its
+  outline. `shadowColor`'s alpha of `0` (the default) draws nothing
+  regardless of the other two.
+
+All three size-like fields (`outlineWidth`, `shadowOffset`, `shadowSoftness`)
+are in **screen-pixel-range units** - a fixed number of *screen* pixels,
+independent of the entity's `size`, any `ScaleEcsComponent`, or camera zoom,
+exactly like the anti-aliasing band MSDF itself uses. A 2px outline stays a
+crisp 2 screen pixels whether the text renders at 12px or 400px, or whether
+the camera is zoomed in or out.
+
+## Choosing a safe range
+
+Two independent limits bound how far an effect can actually reach, and both
+degrade gracefully rather than corrupting a glyph or overlapping a neighbor:
+
+1. **The atlas's own encoded budget.** A font atlas's distance field only
+   carries graded (non-saturated) data up to roughly half of
+   [`FontAtlasData.distanceRange`](/Forge/docs/api/interfaces/FontAtlasData)
+   screen pixels from a glyph's true edge - `--distance-range` when you
+   generated it (see [Generating a Font Atlas](./generating-a-font-atlas.md)).
+   Past that, an effect still renders, clamped to the widest value the atlas
+   can faithfully represent, rather than boxing out or producing quantized
+   banding.
+2. **Neighboring glyphs.** Tightly kerned pairs (`il`, `ff`, and similar)
+   can sit close enough that an unclamped outline/shadow on one glyph would
+   visually reach into its neighbor's own ink. Each glyph's effect is
+   automatically clamped to the gap between its own ink and its tightest
+   same-word neighbor's ink, so it can safely reach right up to - but never
+   past - that neighbor, without ever painting over the neighbor's own
+   readable shape. This is computed per glyph at shape time, from the same
+   kerning-aware layout that already positions each glyph, and needs no
+   configuration. Two adjacent glyphs' effects *can* overlap each other in
+   the gap between them (harmless - they're typically the same color, and
+   even when they're not, neither one ever reaches into the other's ink) -
+   only crossing into a neighbor's own glyph shape is prevented.
+
+Both clamps mean a requested `outlineWidth`/`shadowSoftness` beyond what's
+actually safe degrades to the widest safe value instead of corrupting
+glyphs or bleeding into a neighbor - but a value picked *within* that budget
+still looks best, since nothing is fighting a clamp.
+
+**For most multi-letter words, the neighbor clamp - not the atlas's own
+budget - is what actually limits how big an effect can get**, and unlike the
+atlas budget, it scales with how large the text itself renders on screen: it's
+roughly a fixed *percentage* of the font's on-screen size (how tight that
+percentage is depends on the specific letter pairs in your string and the
+font's own kerning - a word with only loosely-spaced letters allows more than
+one with a tight pair like `rg` or `il`). Concretely, on the engine's own demo
+atlas (Liberation Sans at `--distance-range 16`), an ordinary word's tightest
+letter pair typically allows an outline/shadow of only up to roughly **5-12%
+of the font's rendered size** - about 1 screen pixel at a 22px caption, but 5-8
+screen pixels at an 80px heading. A large, clearly visible effect needs
+correspondingly large on-screen text, the same way a thick CSS
+`-webkit-text-stroke` needs a large `font-size` to read as a border instead of
+a smudge - it is not achievable on small caption text no matter how high
+`outlineWidth`/`shadowSoftness` is set. See the text demo's "outline + soft
+shadow / glow together, at a larger size" example for what a properly bold
+effect looks like at a size that has room for it. If you generate your own
+atlas with a smaller `--distance-range` (the default is `4`, which grades
+even less safe budget), the atlas-budget limit shrinks proportionally too;
+regenerate with a larger `--distance-range` if you need more headroom - see
+[Generating a Font Atlas](./generating-a-font-atlas.md).
+
+## A note on extreme values and unusual glyphs
+
+Multi-channel signed distance fields are a lossy, low-resolution encoding of
+each glyph's true outline. Two failure modes are inherent to the technique
+itself, not bugs in this engine, and no amount of clamping fixes them:
+
+- **Counter-closing.** Glyphs with enclosed counters (`o`, `b`, `d`, `a`,
+  `e`, `B`, ...) can become misread as a different letter (`o` reading as
+  `c`, `B` reading as `E`) once an effect approaches the counter's own
+  stroke gap.
+- **Corner artifacts.** Glyphs with sharp, acute interior corners (`W`, `M`,
+  `N`, `V`, `K`, `X`, `Y`, `Z`, `A`) can show seam artifacts baked into the
+  atlas texture itself near those corners at wide effect values, regardless
+  of `distanceRange` or texture resolution.
+
+Both become more likely the further `outlineWidth`/`shadowSoftness` is
+pushed, and are font- and glyph-dependent rather than universal. Staying
+within the safe range above keeps typical UI text well clear of either
+issue; if you push effects further for a stylized look, preview the actual
+glyphs your game uses at your chosen values rather than assuming a range
+that looked fine for one font/string generalizes to another.

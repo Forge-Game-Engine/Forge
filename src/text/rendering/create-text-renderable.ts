@@ -8,6 +8,7 @@ import {
   spriteInstanceDataSegment,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
+import { textEffectsInstanceDataSegment } from './text-effects-instance-data-segment.js';
 
 /**
  * The rendering category `createTextRenderable` assigns its `Renderable`s,
@@ -38,9 +39,10 @@ export function createTextRenderable(
 ): Renderable {
   const { gl, shaderCache } = renderContext;
 
-  // `sprite.vert` is reused verbatim: glyph quads need no vertex-stage
-  // behavior a sprite region doesn't already have.
-  const vertexShader = shaderCache.getShader('sprite.vert');
+  // `msdf.vert` extends `sprite.vert`'s positioning/pivot/rotation/
+  // projection math verbatim, adding only the per-instance forwarding
+  // outline/shadow effects need (see `msdf.vert.glsl`).
+  const vertexShader = shaderCache.getShader('msdf.vert');
   const fragmentShader = shaderCache.getShader('msdf.frag');
 
   const material = new Material(vertexShader, fragmentShader, gl);
@@ -50,7 +52,10 @@ export function createTextRenderable(
   material.setUniform('u_atlasSize', fontAtlas.data.atlasSize.height);
 
   const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
+    combineInstanceDataSegments(
+      spriteInstanceDataSegment,
+      textEffectsInstanceDataSegment,
+    );
 
   return new Renderable(
     createQuadGeometry(gl),
