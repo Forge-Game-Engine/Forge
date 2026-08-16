@@ -114,11 +114,9 @@ export async function createEasingRows(
     getAssetUrl('img/White.png'),
   );
 
-  const spriteTemplate = createImageSprite(
-    whiteImage,
-    renderContext,
-    renderLayer,
-  );
+  const spriteTemplate = createImageSprite(whiteImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const { x: width, y: height } = calculateVisibleWorldSize(
     renderContext.width,
@@ -146,7 +144,10 @@ export async function createEasingRows(
       world,
       laneSprite,
       { x: 0, y },
-      { x: (trackHalfWidth * 2) / spriteTemplate.width, y: laneHeightPixels / spriteTemplate.height },
+      {
+        x: (trackHalfWidth * 2) / spriteTemplate.width,
+        y: laneHeightPixels / spriteTemplate.height,
+      },
     );
 
     const ballSprite: SpriteEcsComponent = {
@@ -158,7 +159,10 @@ export async function createEasingRows(
       world,
       ballSprite,
       { x: minX, y },
-      { x: ballSizePixels / spriteTemplate.width, y: ballSizePixels / spriteTemplate.height },
+      {
+        x: ballSizePixels / spriteTemplate.width,
+        y: ballSizePixels / spriteTemplate.height,
+      },
     );
 
     world.addComponent(ballEntity, easingRowId, {

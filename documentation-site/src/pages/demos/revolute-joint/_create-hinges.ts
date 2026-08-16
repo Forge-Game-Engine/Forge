@@ -60,11 +60,12 @@ async function loadHingeSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, renderLayer),
-    door: createImageSprite(doorImage, renderContext, renderLayer, {
+    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
+    door: createImageSprite(doorImage, renderContext, {
+      layer: renderLayer,
       slices: squareSlices,
     }),
-    pivot: createImageSprite(pivotImage, renderContext, renderLayer),
+    pivot: createImageSprite(pivotImage, renderContext, { layer: renderLayer }),
   };
 }
 
@@ -355,21 +356,15 @@ export async function createHinges(
   const columnWidth = width / 3;
   const columnLeft = -width / 2 + columnWidth / 2;
 
-  createDoorScenario(
-    world,
-    sprites,
-    { x: columnLeft, y: height * 0.3 },
-  );
+  createDoorScenario(world, sprites, { x: columnLeft, y: height * 0.3 });
 
-  createPendulumScenario(
-    world,
-    sprites,
-    { x: columnLeft + columnWidth, y: height * 0.35 },
-  );
+  createPendulumScenario(world, sprites, {
+    x: columnLeft + columnWidth,
+    y: height * 0.35,
+  });
 
-  createWheelScenario(
-    world,
-    sprites,
-    { x: columnLeft + columnWidth * 2, y: 0 },
-  );
+  createWheelScenario(world, sprites, {
+    x: columnLeft + columnWidth * 2,
+    y: 0,
+  });
 }

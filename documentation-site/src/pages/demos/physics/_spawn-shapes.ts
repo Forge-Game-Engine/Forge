@@ -92,22 +92,18 @@ export async function spawnShapes(
       imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
     ]);
 
-  const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
-  const squareSprite = createImageSprite(
-    squareImage,
-    renderContext,
-    renderLayer,
-  );
-  const triangleSprite = createImageSprite(
-    triangleImage,
-    renderContext,
-    renderLayer,
-  );
-  const narrowSprite = createImageSprite(
-    narrowImage,
-    renderContext,
-    renderLayer,
-  );
+  const ballSprite = createImageSprite(ballImage, renderContext, {
+    layer: renderLayer,
+  });
+  const squareSprite = createImageSprite(squareImage, renderContext, {
+    layer: renderLayer,
+  });
+  const triangleSprite = createImageSprite(triangleImage, renderContext, {
+    layer: renderLayer,
+  });
+  const narrowSprite = createImageSprite(narrowImage, renderContext, {
+    layer: renderLayer,
+  });
 
   triangleSprite.pivot = Vec2.clone(trianglePivot);
 
@@ -182,10 +178,13 @@ export async function spawnShapes(
     const size = random.randomFloat(minSize, maxSize);
     const halfSize = size / 2;
 
-    const position = { x: random.randomFloat(
+    const position = {
+      x: random.randomFloat(
         -halfWidth + wallThickness + halfSize,
         halfWidth - wallThickness - halfSize,
-      ), y: random.randomFloat(0, halfHeight * 4 - halfSize) };
+      ),
+      y: random.randomFloat(0, halfHeight * 4 - halfSize),
+    };
 
     const spawner =
       shapeSpawners[random.randomInt(0, shapeSpawners.length - 1)];

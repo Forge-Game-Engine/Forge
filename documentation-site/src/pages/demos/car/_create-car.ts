@@ -284,8 +284,10 @@ async function loadCarSprites(
   ]);
 
   return {
-    chassis: createImageSprite(chassisImage, renderContext, renderLayer),
-    wheel: createImageSprite(wheelImage, renderContext, renderLayer),
+    chassis: createImageSprite(chassisImage, renderContext, {
+      layer: renderLayer,
+    }),
+    wheel: createImageSprite(wheelImage, renderContext, { layer: renderLayer }),
   };
 }
 
@@ -449,10 +451,10 @@ export async function createCar(
   // the springs.
   const wheelSpawnDrop = wheelDropHeight - 8;
   // clone: groundPosition is a caller-owned parameter, must not mutate it.
-  const chassisPosition = Vec2.add(
-    Vec2.clone(groundPosition),
-    { x: 0, y: wheelRadius + wheelDropHeight + chassisHeight / 2 + 100 },
-  );
+  const chassisPosition = Vec2.add(Vec2.clone(groundPosition), {
+    x: 0,
+    y: wheelRadius + wheelDropHeight + chassisHeight / 2 + 100,
+  });
 
   const chassisEntity = world.createEntity();
   const chassisCollider = new PolygonCollider(

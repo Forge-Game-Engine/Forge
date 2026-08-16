@@ -110,9 +110,9 @@ async function loadSliderSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, renderLayer),
-    block: createImageSprite(blockImage, renderContext, renderLayer),
-    dot: createImageSprite(dotImage, renderContext, renderLayer),
+    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
+    block: createImageSprite(blockImage, renderContext, { layer: renderLayer }),
+    dot: createImageSprite(dotImage, renderContext, { layer: renderLayer }),
   };
 }
 
@@ -142,7 +142,10 @@ function createRailDots(
 ): void {
   for (let i = 0; i <= railDotCount; i++) {
     const t = i / railDotCount;
-    const position = { x: lerp(fromPosition.x, toPosition.x, t), y: lerp(fromPosition.y, toPosition.y, t) };
+    const position = {
+      x: lerp(fromPosition.x, toPosition.x, t),
+      y: lerp(fromPosition.y, toPosition.y, t),
+    };
 
     createVisualEntity(world, dotSprite, position, railDotSize, railDotSize);
   }
@@ -322,7 +325,10 @@ export async function createSliders(
   const inclineAxis = Vec2.normalize({ x: 0.5, y: -1 });
 
   createSliderScenario(world, sprites, {
-    anchorPosition: { x: columnLeft + columnWidth * 2 - columnWidth * 0.35, y: height * 0.3 },
+    anchorPosition: {
+      x: columnLeft + columnWidth * 2 - columnWidth * 0.35,
+      y: height * 0.3,
+    },
     axis: inclineAxis,
     lowerTranslation: 0,
     upperTranslation: height * 0.5,
@@ -333,10 +339,7 @@ export async function createSliders(
     sliderSprite: 'ball',
     // clone: inclineAxis is also passed as `axis` above (same object); must
     // not be mutated by this negate/multiply.
-    pumpImpulse: Vec2.multiply(
-      Vec2.negate(Vec2.clone(inclineAxis)),
-      400_000,
-    ),
+    pumpImpulse: Vec2.multiply(Vec2.negate(Vec2.clone(inclineAxis)), 400_000),
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
