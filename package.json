@@ -107,6 +107,7 @@
   "files": [
     "dist",
     "scripts/generate-font-atlas.mjs",
+    "assets/fonts/default",
     "README.md"
   ],
   "repository": {
