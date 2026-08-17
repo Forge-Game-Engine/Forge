@@ -40,10 +40,10 @@ export interface TextDefaultedOptions {
   lineHeight: number;
 
   /**
-   * Horizontal alignment of each line within the shaped block's own width.
-   * Irrelevant, and ignored, when `maxWidth` is unset (a single unwrapped
-   * line is always exactly as wide as the block itself, so every mode
-   * produces the same result).
+   * Horizontal alignment of each line within `maxWidth`. Irrelevant, and
+   * ignored, when `maxWidth` is unset (a single unwrapped line is always
+   * exactly as wide as the block itself, so every mode produces the same
+   * result).
    */
   horizontalAlign: 'left' | 'center' | 'right' | 'justify';
 

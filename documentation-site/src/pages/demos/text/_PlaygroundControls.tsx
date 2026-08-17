@@ -9,24 +9,50 @@ interface PlaygroundControlsProps {
   maxSize: number;
   horizontalAlign: PlaygroundHorizontalAlign;
   wrapEnabled: boolean;
+
   outlineEnabled: boolean;
+  outlineColorHex: string;
+  outlineWidth: number;
+  minOutlineWidth: number;
+  maxOutlineWidth: number;
+
   glowEnabled: boolean;
+  glowColorHex: string;
+  glowOffsetX: number;
+  glowOffsetY: number;
+  minGlowOffset: number;
+  maxGlowOffset: number;
+  glowSoftness: number;
+  minGlowSoftness: number;
+  maxGlowSoftness: number;
+
   onTextChange: (value: string) => void;
   onSizeChange: (value: number) => void;
   onHorizontalAlignChange: (value: PlaygroundHorizontalAlign) => void;
   onWrapEnabledChange: (value: boolean) => void;
+
   onOutlineEnabledChange: (value: boolean) => void;
+  onOutlineColorChange: (value: string) => void;
+  onOutlineWidthChange: (value: number) => void;
+
   onGlowEnabledChange: (value: boolean) => void;
+  onGlowColorChange: (value: string) => void;
+  onGlowOffsetXChange: (value: number) => void;
+  onGlowOffsetYChange: (value: number) => void;
+  onGlowSoftnessChange: (value: number) => void;
 }
 
 /**
- * Live controls for the text demo's "Try it yourself" playground: a
- * text input, a size slider, an alignment select (only meaningful while
- * wrapping is on - `TextEcsComponent.horizontalAlign` is otherwise ignored,
- * see `text-component.ts`), and wrap/outline/glow toggles. Every change
- * writes straight into the running playground's `TextEcsComponent` (see
- * `index.tsx`'s handlers and `_create-playground.ts`), the same way the
- * space-shooter demo's bloom/blur controls retune their components live.
+ * Live controls for the text demo's "Try it yourself" playground: a text
+ * input, a size slider, an alignment select (only meaningful while wrapping
+ * is on - `TextEcsComponent.horizontalAlign` is otherwise ignored, see
+ * `text-component.ts`), a wrap toggle, and full outline/glow controls
+ * (enabled toggle, color, width/offset) matching every field
+ * `TextEcsComponent` itself exposes for each effect (see `text-effects.md`).
+ * Every change writes straight into the running playground's
+ * `TextEcsComponent` (see `index.tsx`'s handlers and
+ * `_create-playground.ts`), the same way the space-shooter demo's bloom/blur
+ * controls retune their components live.
  */
 export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
   text,
@@ -36,13 +62,31 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
   horizontalAlign,
   wrapEnabled,
   outlineEnabled,
+  outlineColorHex,
+  outlineWidth,
+  minOutlineWidth,
+  maxOutlineWidth,
   glowEnabled,
+  glowColorHex,
+  glowOffsetX,
+  glowOffsetY,
+  minGlowOffset,
+  maxGlowOffset,
+  glowSoftness,
+  minGlowSoftness,
+  maxGlowSoftness,
   onTextChange,
   onSizeChange,
   onHorizontalAlignChange,
   onWrapEnabledChange,
   onOutlineEnabledChange,
+  onOutlineColorChange,
+  onOutlineWidthChange,
   onGlowEnabledChange,
+  onGlowColorChange,
+  onGlowOffsetXChange,
+  onGlowOffsetYChange,
+  onGlowSoftnessChange,
 }) => {
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
     onTextChange(event.target.value);
@@ -68,8 +112,32 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
     onOutlineEnabledChange(event.target.checked);
   };
 
+  const handleOutlineColorChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOutlineColorChange(event.target.value);
+  };
+
+  const handleOutlineWidthChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOutlineWidthChange(Number(event.target.value));
+  };
+
   const handleGlowEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
     onGlowEnabledChange(event.target.checked);
+  };
+
+  const handleGlowColorChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onGlowColorChange(event.target.value);
+  };
+
+  const handleGlowOffsetXChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onGlowOffsetXChange(Number(event.target.value));
+  };
+
+  const handleGlowOffsetYChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onGlowOffsetYChange(Number(event.target.value));
+  };
+
+  const handleGlowSoftnessChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onGlowSoftnessChange(Number(event.target.value));
   };
 
   return (
@@ -127,27 +195,121 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
           onChange={handleWrapEnabledChange}
         />
       </div>
-      <div className={styles.control}>
-        <label htmlFor="playground-outline">
-          <span>Outline</span>
-        </label>
-        <input
-          id="playground-outline"
-          type="checkbox"
-          checked={outlineEnabled}
-          onChange={handleOutlineEnabledChange}
-        />
+
+      <div className={styles.effectGroup}>
+        <div className={styles.control}>
+          <label htmlFor="playground-outline">
+            <span>Outline</span>
+          </label>
+          <input
+            id="playground-outline"
+            type="checkbox"
+            checked={outlineEnabled}
+            onChange={handleOutlineEnabledChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-outline-color">
+            <span>Color</span>
+          </label>
+          <input
+            id="playground-outline-color"
+            type="color"
+            value={outlineColorHex}
+            disabled={!outlineEnabled}
+            onChange={handleOutlineColorChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-outline-width">
+            <span>Width</span>
+            <span>{outlineWidth.toFixed(1)}</span>
+          </label>
+          <input
+            id="playground-outline-width"
+            type="range"
+            min={minOutlineWidth}
+            max={maxOutlineWidth}
+            step={0.1}
+            value={outlineWidth}
+            disabled={!outlineEnabled}
+            onChange={handleOutlineWidthChange}
+          />
+        </div>
       </div>
-      <div className={styles.control}>
-        <label htmlFor="playground-glow">
-          <span>Glow</span>
-        </label>
-        <input
-          id="playground-glow"
-          type="checkbox"
-          checked={glowEnabled}
-          onChange={handleGlowEnabledChange}
-        />
+
+      <div className={styles.effectGroup}>
+        <div className={styles.control}>
+          <label htmlFor="playground-glow">
+            <span>Glow</span>
+          </label>
+          <input
+            id="playground-glow"
+            type="checkbox"
+            checked={glowEnabled}
+            onChange={handleGlowEnabledChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-glow-color">
+            <span>Color</span>
+          </label>
+          <input
+            id="playground-glow-color"
+            type="color"
+            value={glowColorHex}
+            disabled={!glowEnabled}
+            onChange={handleGlowColorChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-glow-offset-x">
+            <span>Offset X</span>
+            <span>{glowOffsetX.toFixed(1)}</span>
+          </label>
+          <input
+            id="playground-glow-offset-x"
+            type="range"
+            min={minGlowOffset}
+            max={maxGlowOffset}
+            step={0.1}
+            value={glowOffsetX}
+            disabled={!glowEnabled}
+            onChange={handleGlowOffsetXChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-glow-offset-y">
+            <span>Offset Y</span>
+            <span>{glowOffsetY.toFixed(1)}</span>
+          </label>
+          <input
+            id="playground-glow-offset-y"
+            type="range"
+            min={minGlowOffset}
+            max={maxGlowOffset}
+            step={0.1}
+            value={glowOffsetY}
+            disabled={!glowEnabled}
+            onChange={handleGlowOffsetYChange}
+          />
+        </div>
+        <div className={styles.control}>
+          <label htmlFor="playground-glow-softness">
+            <span>Softness</span>
+            <span>{glowSoftness.toFixed(1)}</span>
+          </label>
+          <input
+            id="playground-glow-softness"
+            type="range"
+            min={minGlowSoftness}
+            max={maxGlowSoftness}
+            step={0.1}
+            value={glowSoftness}
+            disabled={!glowEnabled}
+            onChange={handleGlowSoftnessChange}
+          />
+        </div>
       </div>
     </div>
   );

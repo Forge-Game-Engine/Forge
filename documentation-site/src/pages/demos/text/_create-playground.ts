@@ -11,6 +11,39 @@ import { createGuideBox } from './_create-guide-box';
 
 export type PlaygroundHorizontalAlign = TextEcsComponent['horizontalAlign'];
 
+function colorComponentToHexByte(component: number): string {
+  return Math.round(component * 255)
+    .toString(16)
+    .padStart(2, '0');
+}
+
+/**
+ * Converts a `Color`'s RGB channels to a hex color string (e.g. `#3366ff`)
+ * for `<input type="color">`, which has no alpha channel of its own - the
+ * playground's own effect toggles carry alpha instead (see
+ * `setPlaygroundOutline`/`setPlaygroundGlow`).
+ * @param color - The color to convert.
+ * @returns The hex color string.
+ */
+export function colorToHex(color: Color): string {
+  return `#${colorComponentToHexByte(color.r)}${colorComponentToHexByte(color.g)}${colorComponentToHexByte(color.b)}`;
+}
+
+/**
+ * Converts a hex color string (from `<input type="color">`) back to a
+ * `Color`.
+ * @param hex - The hex color string.
+ * @param alpha - The alpha component (0-1) to give the resulting color.
+ * @returns The parsed color.
+ */
+export function hexToColor(hex: string, alpha: number): Color {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  return new Color(r, g, b, alpha);
+}
+
 /** The values the playground's controls start at (see `_PlaygroundControls.tsx`). */
 export const playgroundDefaults = {
   text: "Type your own text here! This is the engine's shipped default font atlas (Liberation Sans, SIL OFL 1.1) - zero font setup required.",
@@ -19,24 +52,33 @@ export const playgroundDefaults = {
   maxSize: 56,
   horizontalAlign: 'left' as PlaygroundHorizontalAlign,
   wrapEnabled: true,
+
   outlineEnabled: false,
+  // The same conservative, documented-safe effect values used by
+  // `_create-effects-examples.ts` - see `text-effects.md`'s "Choosing a
+  // safe range" section for why the playground doesn't default to an
+  // atlas's absolute maximum.
+  outlineColorHex: colorToHex(new Color(1, 0.55, 0.15, 1)),
+  outlineWidth: 1.2,
+  minOutlineWidth: 0.1,
+  maxOutlineWidth: 4,
+
   glowEnabled: false,
+  glowColorHex: colorToHex(new Color(0.15, 0.65, 1, 1)),
+  glowAlpha: 0.95,
+  glowOffsetX: 0.8,
+  glowOffsetY: -0.8,
+  minGlowOffset: -3,
+  maxGlowOffset: 3,
+  glowSoftness: 1.4,
+  minGlowSoftness: 0,
+  maxGlowSoftness: 4,
 };
 
 const captionColor = new Color(0.55, 0.6, 0.72, 1);
 const bodyColor = new Color(0.9, 0.92, 0.96, 1);
 const captionGap = 22;
 const boxHeight = 220;
-
-// The same conservative, documented-safe effect values used by
-// `_create-effects-examples.ts` - see `text-effects.md`'s "Choosing a safe
-// range" section for why the playground doesn't default to an atlas's
-// absolute maximum.
-const outlineColor = new Color(1, 0.55, 0.15, 1);
-const outlineWidth = 1.2;
-const glowColor = new Color(0.15, 0.65, 1, 0.95);
-const glowOffset: Vector2 = { x: 0.8, y: -0.8 };
-const glowSoftness = 1.4;
 
 export interface Playground {
   /** The live `TextEcsComponent` the controls mutate directly. */
@@ -65,30 +107,49 @@ export function setPlaygroundWrap(
 }
 
 /**
- * Sets `textComponent`'s outline fields from the "Outline" toggle.
+ * Sets `textComponent`'s outline fields from the outline controls.
+ * `outlineWidth` of `0` (when `enabled` is `false`) draws no outline
+ * regardless of `colorHex`, the same "width is its own off switch"
+ * semantics `TextEcsComponent.outlineWidth` itself documents.
  * @param textComponent - The playground's live text component.
  * @param enabled - Whether the outline is turned on.
+ * @param colorHex - The outline color, as a hex color string.
+ * @param width - The outline width, in screen-pixel-range units.
  */
 export function setPlaygroundOutline(
   textComponent: TextEcsComponent,
   enabled: boolean,
+  colorHex: string,
+  width: number,
 ): void {
-  textComponent.outlineColor = outlineColor;
-  textComponent.outlineWidth = enabled ? outlineWidth : 0;
+  textComponent.outlineColor = hexToColor(colorHex, 1);
+  textComponent.outlineWidth = enabled ? width : 0;
 }
 
 /**
- * Sets `textComponent`'s soft-shadow/glow fields from the "Glow" toggle.
+ * Sets `textComponent`'s soft-shadow/glow fields from the glow controls.
+ * A transparent `shadowColor` (when `enabled` is `false`) draws no glow
+ * regardless of the other fields, the same "alpha is its own off switch"
+ * semantics `TextEcsComponent.shadowColor` itself documents.
  * @param textComponent - The playground's live text component.
  * @param enabled - Whether the glow is turned on.
+ * @param colorHex - The glow color, as a hex color string.
+ * @param offset - The glow's offset from the glyph, in screen-pixel-range units.
+ * @param softness - How far the glow fades out, in screen-pixel-range units.
  */
 export function setPlaygroundGlow(
   textComponent: TextEcsComponent,
   enabled: boolean,
+  colorHex: string,
+  offset: Vector2,
+  softness: number,
 ): void {
-  textComponent.shadowColor = enabled ? glowColor : Color.transparent;
-  textComponent.shadowOffset = glowOffset;
-  textComponent.shadowSoftness = glowSoftness;
+  textComponent.shadowColor = hexToColor(
+    colorHex,
+    enabled ? playgroundDefaults.glowAlpha : 0,
+  );
+  textComponent.shadowOffset = offset;
+  textComponent.shadowSoftness = softness;
 }
 
 /**
@@ -150,6 +211,12 @@ export function createPlayground(
     horizontalAlign: playgroundDefaults.horizontalAlign,
     maxWidth: usableWidth,
     color: bodyColor,
+    outlineColor: hexToColor(playgroundDefaults.outlineColorHex, 1),
+    shadowOffset: {
+      x: playgroundDefaults.glowOffsetX,
+      y: playgroundDefaults.glowOffsetY,
+    },
+    shadowSoftness: playgroundDefaults.glowSoftness,
     layer: contentLayer,
   });
 

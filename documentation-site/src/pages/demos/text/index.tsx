@@ -36,11 +36,31 @@ export default function Text(): JSX.Element {
   const [wrapEnabled, setWrapEnabled] = useState(
     playgroundDefaults.wrapEnabled,
   );
+
   const [outlineEnabled, setOutlineEnabled] = useState(
     playgroundDefaults.outlineEnabled,
   );
+  const [outlineColorHex, setOutlineColorHex] = useState(
+    playgroundDefaults.outlineColorHex,
+  );
+  const [outlineWidth, setOutlineWidth] = useState(
+    playgroundDefaults.outlineWidth,
+  );
+
   const [glowEnabled, setGlowEnabled] = useState(
     playgroundDefaults.glowEnabled,
+  );
+  const [glowColorHex, setGlowColorHex] = useState(
+    playgroundDefaults.glowColorHex,
+  );
+  const [glowOffsetX, setGlowOffsetX] = useState(
+    playgroundDefaults.glowOffsetX,
+  );
+  const [glowOffsetY, setGlowOffsetY] = useState(
+    playgroundDefaults.glowOffsetY,
+  );
+  const [glowSoftness, setGlowSoftness] = useState(
+    playgroundDefaults.glowSoftness,
   );
 
   const createGame = useCallback(
@@ -87,20 +107,77 @@ export default function Text(): JSX.Element {
     }
   };
 
+  const applyOutline = (
+    enabled: boolean,
+    colorHex: string,
+    width: number,
+  ) => {
+    if (playgroundRef.current) {
+      setPlaygroundOutline(
+        playgroundRef.current.textComponent,
+        enabled,
+        colorHex,
+        width,
+      );
+    }
+  };
+
   const handleOutlineEnabledChange = (value: boolean) => {
     setOutlineEnabled(value);
+    applyOutline(value, outlineColorHex, outlineWidth);
+  };
 
+  const handleOutlineColorChange = (value: string) => {
+    setOutlineColorHex(value);
+    applyOutline(outlineEnabled, value, outlineWidth);
+  };
+
+  const handleOutlineWidthChange = (value: number) => {
+    setOutlineWidth(value);
+    applyOutline(outlineEnabled, outlineColorHex, value);
+  };
+
+  const applyGlow = (
+    enabled: boolean,
+    colorHex: string,
+    offsetX: number,
+    offsetY: number,
+    softness: number,
+  ) => {
     if (playgroundRef.current) {
-      setPlaygroundOutline(playgroundRef.current.textComponent, value);
+      setPlaygroundGlow(
+        playgroundRef.current.textComponent,
+        enabled,
+        colorHex,
+        { x: offsetX, y: offsetY },
+        softness,
+      );
     }
   };
 
   const handleGlowEnabledChange = (value: boolean) => {
     setGlowEnabled(value);
+    applyGlow(value, glowColorHex, glowOffsetX, glowOffsetY, glowSoftness);
+  };
 
-    if (playgroundRef.current) {
-      setPlaygroundGlow(playgroundRef.current.textComponent, value);
-    }
+  const handleGlowColorChange = (value: string) => {
+    setGlowColorHex(value);
+    applyGlow(glowEnabled, value, glowOffsetX, glowOffsetY, glowSoftness);
+  };
+
+  const handleGlowOffsetXChange = (value: number) => {
+    setGlowOffsetX(value);
+    applyGlow(glowEnabled, glowColorHex, value, glowOffsetY, glowSoftness);
+  };
+
+  const handleGlowOffsetYChange = (value: number) => {
+    setGlowOffsetY(value);
+    applyGlow(glowEnabled, glowColorHex, glowOffsetX, value, glowSoftness);
+  };
+
+  const handleGlowSoftnessChange = (value: number) => {
+    setGlowSoftness(value);
+    applyGlow(glowEnabled, glowColorHex, glowOffsetX, glowOffsetY, value);
   };
 
   return (
@@ -122,13 +199,31 @@ export default function Text(): JSX.Element {
           horizontalAlign={horizontalAlign}
           wrapEnabled={wrapEnabled}
           outlineEnabled={outlineEnabled}
+          outlineColorHex={outlineColorHex}
+          outlineWidth={outlineWidth}
+          minOutlineWidth={playgroundDefaults.minOutlineWidth}
+          maxOutlineWidth={playgroundDefaults.maxOutlineWidth}
           glowEnabled={glowEnabled}
+          glowColorHex={glowColorHex}
+          glowOffsetX={glowOffsetX}
+          glowOffsetY={glowOffsetY}
+          minGlowOffset={playgroundDefaults.minGlowOffset}
+          maxGlowOffset={playgroundDefaults.maxGlowOffset}
+          glowSoftness={glowSoftness}
+          minGlowSoftness={playgroundDefaults.minGlowSoftness}
+          maxGlowSoftness={playgroundDefaults.maxGlowSoftness}
           onTextChange={handleTextChange}
           onSizeChange={handleSizeChange}
           onHorizontalAlignChange={handleHorizontalAlignChange}
           onWrapEnabledChange={handleWrapEnabledChange}
           onOutlineEnabledChange={handleOutlineEnabledChange}
+          onOutlineColorChange={handleOutlineColorChange}
+          onOutlineWidthChange={handleOutlineWidthChange}
           onGlowEnabledChange={handleGlowEnabledChange}
+          onGlowColorChange={handleGlowColorChange}
+          onGlowOffsetXChange={handleGlowOffsetXChange}
+          onGlowOffsetYChange={handleGlowOffsetYChange}
+          onGlowSoftnessChange={handleGlowSoftnessChange}
         />
       }
       codeFiles={[

@@ -220,30 +220,58 @@ describe('shapeText', () => {
   });
 
   describe('horizontal alignment', () => {
-    it('centers each line within the block width', () => {
+    it('centers each line within maxWidth, not just within each other', () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 30,
         horizontalAlign: 'center',
       });
 
-      // Line 1 (25.4 wide) is the block's full width, so it's unshifted;
-      // line 2's lone "AV" (11.2 wide) is centered within the 25.4 block.
-      const centerOffset = (25.4 - 11.2) / 2;
+      // Both lines center against maxWidth (30), not against the block's
+      // own widest line (line 1, 25.4 wide) - centering against the widest
+      // line would leave line 1 itself unshifted, which is wrong: it's not
+      // actually as wide as the requested container.
+      const line1CenterOffset = (30 - 25.4) / 2;
+      const line2CenterOffset = (30 - 11.2) / 2;
 
-      expect(glyphs[0].offset.x).toBeCloseTo(3);
-      expect(glyphs[4].offset.x).toBeCloseTo(3 + centerOffset);
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + line1CenterOffset);
+      expect(glyphs[4].offset.x).toBeCloseTo(3 + line2CenterOffset);
     });
 
-    it('right-aligns each line within the block width', () => {
+    it('right-aligns each line within maxWidth, not just within each other', () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 30,
         horizontalAlign: 'right',
       });
 
-      expect(glyphs[0].offset.x).toBeCloseTo(3);
-      expect(glyphs[4].offset.x).toBeCloseTo(3 + (25.4 - 11.2));
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + (30 - 25.4));
+      expect(glyphs[4].offset.x).toBeCloseTo(3 + (30 - 11.2));
+    });
+
+    it('centers a single unwrapped line within maxWidth (regression: used to no-op)', () => {
+      // A line that never wraps used to always compute a zero offset for
+      // `center`/`right`, because the alignment reference was the content's
+      // own bounding box - which a single line is always exactly as wide
+      // as - rather than `maxWidth`. Fixed by aligning against `maxWidth`
+      // whenever it's set, matching ordinary text-align semantics.
+      const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        horizontalAlign: 'center',
+      });
+
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + (30 - 11.2) / 2);
+    });
+
+    it('right-aligns a single unwrapped line within maxWidth (regression: used to no-op)', () => {
+      const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        horizontalAlign: 'right',
+      });
+
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + (30 - 11.2));
     });
 
     it('stretches inter-word gaps to justify a wrapped line, but not the last line', () => {
