@@ -131,11 +131,14 @@ function setupTextEffectsInstanceAttributes(
  * `a_instanceOutlineWidth`, `a_instanceShadowColor`, `a_instanceShadowOffset`,
  * `a_instanceShadowSoftness` and `a_instanceMaxEffectClearance` attributes.
  *
- * `maxEffectClearance` is per-glyph (each glyph's own kerned distance to its
- * nearest same-word neighbor), unlike the other fields here, which are
- * uniform across a whole `TextEcsComponent` - `msdf.frag` uses it to clamp
- * `outlineWidth`/`shadowSoftness`/`shadowOffset` so adjacent glyphs' effects
- * can never overlap, regardless of what value a caller requests.
+ * `maxEffectClearance` is per-glyph (the word's tightest same-word ink gap,
+ * applied uniformly - see `assignEffectClearances` in `shape-text.ts`),
+ * unlike the other fields here, which are uniform across a whole
+ * `TextEcsComponent` - `msdf-effects.frag` uses it to clamp
+ * `shadowSoftness`/`shadowOffset` so a shadow's re-sampled UV never leaves
+ * this glyph's own atlas tile into a same-word neighbor's unrelated
+ * texels. `outlineWidth` is *not* clamped by it - see that shader's doc
+ * comment for why the fill/effects two-pass draw order makes that safe.
  *
  * Combine this with `spriteInstanceDataSegment` via
  * `combineInstanceDataSegments` to build the MSDF text `Renderable`'s

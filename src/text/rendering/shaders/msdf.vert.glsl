@@ -44,7 +44,7 @@ out float v_maxEffectClearance;
 // itself, which is in world units) lets the fragment shader convert this
 // glyph's world-unit neighbor clearance into the same screen-pixel-range
 // units `screenPxRange` already uses, at whatever scale/zoom is actually in
-// effect on screen - see `msdf.frag`'s derivation, which is the same
+// effect on screen - see `msdf-effects.frag`'s derivation, which is the same
 // technique `screenPxRange` itself uses via `fwidth`, just applied to world
 // space instead of atlas UV space.
 out vec2 v_worldPerUv;
@@ -78,7 +78,7 @@ void main() {
 
     // Passed through unchanged - every vertex of a glyph's quad shares the
     // same per-instance effect parameters, so no per-vertex computation is
-    // needed here; `msdf.frag` does all the actual effect work.
+    // needed here; `msdf-effects.frag` does all the actual effect work.
     v_outlineColor = a_instanceOutlineColor;
     v_outlineWidth = a_instanceOutlineWidth;
     v_shadowColor = a_instanceShadowColor;

@@ -25,19 +25,20 @@ export interface GlyphQuad {
   uvScale: Vector2;
 
   /**
-   * How far, in world units, an outline/shadow effect can safely extend from
-   * this glyph's own edge before it would touch a neighboring glyph's quad -
-   * half the gap to the tighter of this glyph's left/right in-word
-   * neighbors (see `shapeWord` in `shape-text.ts`), or a large sentinel when
-   * there's no relevant neighbor (start/end of a word). Consumed by the MSDF
-   * fragment shader, converted to screen-pixel-range units there, so that
-   * `TextEcsComponent.outlineWidth`/`shadowSoftness` can never paint one
-   * glyph's effect over an adjacent glyph's - the effect degrades to
-   * whatever this glyph's own layout can safely fit, rather than
-   * overlapping. Effects across a word boundary (separated by at least one
-   * whitespace advance) are not constrained by this value; see
-   * `shape-text.ts` for why that's a deliberate scope decision, not an
-   * oversight.
+   * How far, in world units, a same-word neighboring glyph's ink sits from
+   * this glyph's own ink - the word's single tightest same-word ink gap,
+   * applied uniformly to every glyph in the word (see `assignEffectClearances`
+   * in `shape-text.ts`), or a large sentinel when the word has no same-word
+   * neighbor at all (a lone glyph). Consumed by `msdf-effects.frag`,
+   * converted to screen-pixel-range units there, to clamp
+   * `TextEcsComponent.shadowOffset`/`shadowSoftness` so a shadow's
+   * re-sampled UV can never leave this glyph's own atlas tile into a
+   * neighbor's unrelated texels. `outlineWidth` is *not* clamped by this
+   * value - see `msdf-effects.frag`'s doc comment for why the two-pass
+   * fill/effects split makes that safe. Effects across a word boundary
+   * (separated by at least one whitespace advance) are not constrained by
+   * this value; see `shape-text.ts` for why that's a deliberate scope
+   * decision, not an oversight.
    */
   effectClearance: number;
 }
@@ -60,8 +61,18 @@ export interface TextMeshEcsComponent {
    */
   readonly bounds: { width: number; height: number };
 
-  /** The `FontAtlas`-backed `Renderable` these glyphs draw with. */
-  readonly renderable: Renderable;
+  /**
+   * The `FontAtlas`-backed `Renderable` these glyphs' fill draws with. See
+   * `createTextRenderable`'s doc comment for why fill and effects are two
+   * separate, ordered `Renderable`s rather than one.
+   */
+  readonly fillRenderable: Renderable;
+
+  /**
+   * The `FontAtlas`-backed `Renderable` these glyphs' outline/shadow draws
+   * with.
+   */
+  readonly effectsRenderable: Renderable;
 }
 
 export const textMeshId = createComponentId<TextMeshEcsComponent>('textMesh');

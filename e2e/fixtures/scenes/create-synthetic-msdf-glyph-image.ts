@@ -30,7 +30,8 @@ function boxSignedDistance(
   const insideDistance = Math.min(Math.max(dx, dy), 0);
 
   // Positive inside the ink square, negative outside, matching the same
-  // sign convention `msdf.frag.glsl` assumes (channel > 0.5 = inside).
+  // sign convention `msdf-fill.frag.glsl`/`msdf-effects.frag.glsl` assume
+  // (channel > 0.5 = inside).
   return -(outsideDistance + insideDistance);
 }
 
@@ -39,10 +40,10 @@ function boxSignedDistance(
  * square "glyph" onto an offscreen `<canvas>`, and resolves it as a loaded
  * `HTMLImageElement`. This is a real (if simple) distance field, computed
  * analytically from the square's own geometry - not a placeholder texture -
- * so `msdf.frag.glsl` samples genuine, correctly-saturating distance data
- * from it, exactly like a real `msdf-atlas-gen`-produced atlas. No font
- * file or external MSDF generator is needed (keeping `/e2e` dependent only
- * on `/src`), and R/G/B are set identically since a plain box needs no real
+ * so the MSDF fragment shaders sample genuine, correctly-saturating
+ * distance data from it, exactly like a real `msdf-atlas-gen`-produced
+ * atlas. No font file or external MSDF generator is needed (keeping `/e2e`
+ * dependent only on `/src`), and R/G/B are set identically since a plain box needs no real
  * multi-channel edge coloring to be unambiguous.
  * @returns The loaded image.
  */

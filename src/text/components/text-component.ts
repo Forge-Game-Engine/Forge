@@ -81,13 +81,15 @@ export interface TextDefaultedOptions {
   /**
    * Outline thickness, in screen-pixel-range units - a fixed number of
    * screen pixels regardless of camera zoom or entity scale, the same
-   * scale-independent unit the MSDF anti-aliasing band itself uses.
-   * Requesting more than a glyph's font/layout can safely render (the
-   * atlas's own encoded `distanceRange`, or the gap to a tightly-kerned
-   * neighboring glyph, whichever is smaller) silently clamps to the widest
-   * safe value rather than corrupting glyphs or overlapping a neighbor -
-   * see `GlyphMetrics.effectClearance` and `document-feature`'s Text
-   * Effects guide for the safe range of the font you're using.
+   * scale-independent unit the MSDF anti-aliasing band itself uses. Drawn
+   * as its own pass, always before every glyph's fill (see
+   * `createTextRenderable`), so an outline can safely reach past a
+   * same-word neighboring glyph - even merge with that neighbor's own
+   * outline - without ever painting over any glyph's fill. Requesting more
+   * than the atlas's own encoded `distanceRange` can faithfully represent
+   * silently clamps to the widest safe value rather than corrupting glyphs;
+   * see `text-effects.md`'s Text Effects guide for the safe range of the
+   * font you're using and how to raise it.
    */
   outlineWidth: number;
 
@@ -99,14 +101,19 @@ export interface TextDefaultedOptions {
 
   /**
    * Offset of the soft shadow/glow from the glyph, in screen-pixel-range
-   * units (see `outlineWidth`).
+   * units (see `outlineWidth`). Unlike `outlineWidth`, this is still
+   * clamped by the gap to a tightly-kerned same-word neighboring glyph (see
+   * `GlyphQuad.effectClearance`): the shadow re-samples the distance field
+   * at this offset, and reaching far enough could otherwise sample past
+   * this glyph's own atlas tile into a neighbor's unrelated texels.
    */
   shadowOffset: Vector2;
 
   /**
    * How far, in screen-pixel-range units (see `outlineWidth`), the soft
    * shadow/glow fades out from its offset sample. `0` leaves it exactly as
-   * crisp as the glyph itself, just offset.
+   * crisp as the glyph itself, just offset. Clamped the same way
+   * `shadowOffset` is, for the same reason.
    */
   shadowSoftness: number;
 }

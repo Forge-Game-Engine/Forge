@@ -23,15 +23,16 @@ const bodyColor = new Color(0.85, 0.87, 0.92, 1);
 const captionGap = 14;
 const columnGap = 18;
 
-// At this caption-scale body size, the *neighbor* clamp (not the atlas's
-// own budget) is what actually limits these values - "Forge Engine"'s
-// tightest same-word letter pair ("rg" in "Forge") only allows about 1
-// screen-pixel-range unit here (see text-effects.md's "Choosing a safe
-// range": the neighbor budget is roughly a fixed percentage of the font's
-// *on-screen* size, so small caption text only ever has a little of it to
-// spend). This deliberately stays under that, not the atlas's own larger
-// budget - see the hero example below for what a bigger, bolder effect
-// looks like once the text itself is rendered large enough to afford it.
+// `outlineWidth` is bounded only by the atlas's own encoded budget (see
+// text-effects.md's "Choosing a safe range") - it renders at the same,
+// uniform thickness on every glyph regardless of how tightly its neighbors
+// are kerned, including "rg" in "Forge", this atlas's tightest same-word
+// pair. `shadowSoftness`/`shadowOffset` are different: they're still
+// clamped by that same-word neighbor gap (roughly a fixed percentage of the
+// font's *on-screen* size), so small caption text only ever has a little
+// of it to spend - these deliberately stay under that. See the hero
+// example below for what a bigger, bolder effect looks like once the text
+// itself is rendered large enough to afford more.
 const outlineWidth = 1;
 const shadowSoftness = 1.2;
 const shadowOffset: Vector2 = { x: 0.8, y: -0.8 };

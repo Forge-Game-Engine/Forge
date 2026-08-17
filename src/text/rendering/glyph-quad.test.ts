@@ -20,7 +20,8 @@ import {
   pushTextRenderCommands,
 } from './glyph-quad.js';
 
-const renderable = { category: 1 } as Renderable;
+const fillRenderable = { category: 1 } as Renderable;
+const effectsRenderable = { category: 1 } as Renderable;
 
 function buildTextComponent(
   overrides: Partial<TextEcsComponent> = {},
@@ -49,7 +50,8 @@ function buildTextMesh(glyphs: GlyphQuad[]): TextMeshEcsComponent {
   return {
     glyphs,
     bounds: { width: 0, height: 0 },
-    renderable,
+    fillRenderable,
+    effectsRenderable,
   };
 }
 
@@ -172,6 +174,73 @@ describe('pushTextRenderCommands', () => {
     expect(commands[1].components.textEffects?.maxEffectClearance).toBe(12);
   });
 
+  it("pushes every glyph's effects command before any glyph's fill command, using effectsRenderable/fillRenderable respectively", () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ outlineWidth: 2 }),
+      buildTextMesh([glyph, glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    // Two glyphs, two passes: [effects, effects, fill, fill] - not
+    // interleaved per glyph - so that when these are drawn (effects always
+    // as one earlier, contiguous batch than fill, since both passes share
+    // the same layer/depth and the render system's sort is stable), every
+    // glyph's fill ends up on top of every glyph's outline/shadow,
+    // regardless of how far an outline reaches into a neighboring glyph.
+    expect(commands).toHaveLength(4);
+    expect(commands[0].renderable).toBe(effectsRenderable);
+    expect(commands[0].components.textEffects).toBeDefined();
+    expect(commands[1].renderable).toBe(effectsRenderable);
+    expect(commands[1].components.textEffects).toBeDefined();
+    expect(commands[2].renderable).toBe(fillRenderable);
+    expect(commands[2].components.textEffects).toBeUndefined();
+    expect(commands[3].renderable).toBe(fillRenderable);
+    expect(commands[3].components.textEffects).toBeUndefined();
+  });
+
+  it('skips the effects pass entirely when there is no outline and no shadow, pushing only fill commands', () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ outlineWidth: 0, shadowColor: Color.transparent }),
+      buildTextMesh([glyph, glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands).toHaveLength(2);
+    expect(
+      commands.every((command) => command.renderable === fillRenderable),
+    ).toBe(true);
+  });
+
+  it('still pushes the effects pass for a shadow-only text component (outlineWidth 0, opaque shadowColor)', () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({
+        outlineWidth: 0,
+        shadowColor: new Color(0, 0, 0, 0.5),
+      }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands).toHaveLength(2);
+    expect(commands[0].renderable).toBe(effectsRenderable);
+    expect(commands[1].renderable).toBe(fillRenderable);
+  });
+
   it("uses the entity's world Y as depth", () => {
     const commands: RenderCommand[] = [];
 
@@ -276,7 +345,8 @@ describe('buildTextCameraCommands', () => {
         {
           glyphs: [glyph],
           bounds: { width: 0, height: 0 },
-          renderable: mismatchedRenderable,
+          fillRenderable: mismatchedRenderable,
+          effectsRenderable: mismatchedRenderable,
         },
       ],
       [position],

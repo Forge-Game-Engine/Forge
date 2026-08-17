@@ -10,15 +10,15 @@ import {
 import { createGuideBox } from './_create-guide-box';
 
 // The safe outline/shadow budget is a fixed *fraction* of a glyph's
-// on-screen size (bound by both the atlas's own encoded distanceRange and,
-// for a multi-letter word, by its tightest same-word letter gap - see
-// text-effects.md's "Choosing a safe range") - so a large, clearly-visible
-// effect needs correspondingly large on-screen text, the same way a thick
-// CSS text-stroke needs a large font-size to read as anything but a smudge.
-// This hero example renders one big word specifically to prove that scaling
-// relationship: at this size, `outlineWidth`/`shadowSoftness` can go well
-// beyond the small-caption showcase above and still render at full,
-// uncapped strength.
+// on-screen size - the atlas's own encoded distanceRange for `outlineWidth`,
+// and additionally, for a multi-letter word, its tightest same-word letter
+// gap for `shadowSoftness`/`shadowOffset` (see text-effects.md's "Choosing
+// a safe range") - so a large, clearly-visible effect needs correspondingly
+// large on-screen text, the same way a thick CSS text-stroke needs a large
+// font-size to read as anything but a smudge. This hero example renders one
+// big word specifically to prove that scaling relationship: at this size,
+// `outlineWidth`/`shadowSoftness` can go well beyond the small-caption
+// showcase above and still render at full, uncapped strength.
 const heroText = 'FORGE';
 const heroSize = 80;
 const captionSize = 13;
@@ -37,8 +37,8 @@ const heroShadowSoftness = 7;
  * shadow/glow applied together, at a big enough on-screen size for
  * `outlineWidth`/`shadowSoftness` to read as genuinely large and soft,
  * proving the effect's size scales with the requested values (not silently
- * capped to a sliver) once there's enough room in both of `msdf.frag`'s
- * safe-distance budgets to actually use them.
+ * capped to a sliver) once there's enough room in the shaders' safe-distance
+ * budgets (`msdf-effects.frag`) to actually use them.
  * @param world - The ECS world to add label entities to.
  * @param fontAtlas - The font atlas every label draws from.
  * @param whiteSprite - A plain white sprite template for the guide box.
