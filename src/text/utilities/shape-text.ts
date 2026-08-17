@@ -74,26 +74,31 @@ interface ShapedWord {
  * (~2^14), while still comfortably dwarfing any real atlas-budget-derived
  * screen-pixel-range effect size at any sane camera zoom - so it behaves as
  * "unconstrained by a neighbor" without any special-casing on the shader
- * side (see `msdf.frag.glsl`, which just takes the `min` of this and the
- * atlas's own safe budget).
+ * side (see `msdf-effects.frag.glsl`'s shadow clamp, which just takes the
+ * `min` of this and the atlas's own safe budget; `outlineWidth` isn't
+ * clamped by this value at all - see that file's doc comment for why).
  */
 const UNCONSTRAINED_EFFECT_CLEARANCE = 100;
 
 /**
  * Computes and assigns `GlyphQuad.effectClearance` for every glyph in a
  * word, in place: the full gap (in world units) to the tighter of each
- * glyph's left/right same-word neighbor, so that an outline/shadow effect
- * can safely reach right up to - but never past - a same-word neighbor's own
- * ink. This is *not* split in half between the two glyphs sharing a gap:
- * each one independently computes the same full gap back to the other, so
- * an effect on both sides of a tight pair can meet (or overlap) in the
- * middle without either one ever painting over the other's actual glyph
- * shape - the only thing that produces a visible defect (see PR #598 /
- * issue #584's "later glyph paints over earlier one's ink"). Two glyphs'
- * outline/shadow *layers* overlapping in the gap between them is harmless -
- * they're typically the same color, and even when they're not, blending is
- * order-independent everywhere except right at the boundary of an actual
- * glyph shape, which this clamp keeps clear.
+ * glyph's left/right same-word neighbor - each glyph measures only its own
+ * immediate neighbor(s), not the word's single tightest pair overall, so a
+ * glyph far from a tight pair elsewhere in the word keeps its own, real
+ * (possibly much wider) headroom rather than being dragged down to that
+ * tight pair's gap.
+ *
+ * Consumed today only by `msdf-effects.frag`'s shadow clamp
+ * (`outlineWidth` is *not* clamped by this at all - see that file's doc
+ * comment for why the fill/effects two-pass draw order makes that safe):
+ * a shadow's re-sampled UV can safely reach right up to - but never past -
+ * a same-word neighbor's own ink before risking sampling into that
+ * neighbor's unrelated atlas texels. This is *not* split in half between
+ * the two glyphs sharing a gap: each one independently computes the same
+ * full gap back to the other, so an effect on both sides of a tight pair
+ * can meet (or overlap) in the middle without either one ever painting
+ * over the other's actual glyph shape.
  *
  * The gap is measured between each glyph's *ink* edges (`glyph.size` minus
  * `inkPadding` on each side), not its full padded quad edges. A real MSDF

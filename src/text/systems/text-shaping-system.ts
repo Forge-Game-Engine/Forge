@@ -1,12 +1,15 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { Renderable, RenderContext } from '../../rendering/index.js';
+import { RenderContext } from '../../rendering/index.js';
 import { TextEcsComponent, textId } from '../components/text-component.js';
 import {
   TextMeshEcsComponent,
   textMeshId,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { createTextRenderable } from '../rendering/create-text-renderable.js';
+import {
+  createTextRenderable,
+  TextRenderables,
+} from '../rendering/create-text-renderable.js';
 import { shapeText } from '../utilities/shape-text.js';
 
 /**
@@ -56,17 +59,17 @@ export const createTextShapingEcsSystem = (
     TextEcsComponent,
     ShapeSnapshot
   >();
-  const renderableByFontAtlas = new WeakMap<FontAtlas, Renderable>();
+  const renderablesByFontAtlas = new WeakMap<FontAtlas, TextRenderables>();
 
-  const getOrCreateRenderable = (fontAtlas: FontAtlas): Renderable => {
-    let renderable = renderableByFontAtlas.get(fontAtlas);
+  const getOrCreateRenderables = (fontAtlas: FontAtlas): TextRenderables => {
+    let renderables = renderablesByFontAtlas.get(fontAtlas);
 
-    if (!renderable) {
-      renderable = createTextRenderable(renderContext, fontAtlas);
-      renderableByFontAtlas.set(fontAtlas, renderable);
+    if (!renderables) {
+      renderables = createTextRenderable(renderContext, fontAtlas);
+      renderablesByFontAtlas.set(fontAtlas, renderables);
     }
 
-    return renderable;
+    return renderables;
   };
 
   return {
@@ -112,12 +115,15 @@ export const createTextShapingEcsSystem = (
           },
         );
 
-        const renderable = getOrCreateRenderable(textComponent.fontAtlas);
+        const { fillRenderable, effectsRenderable } = getOrCreateRenderables(
+          textComponent.fontAtlas,
+        );
 
         world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
           glyphs,
           bounds,
-          renderable,
+          fillRenderable,
+          effectsRenderable,
         });
         lastShapedSnapshotByComponent.set(textComponent, snapshot);
       }

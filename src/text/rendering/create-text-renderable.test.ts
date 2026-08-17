@@ -5,10 +5,16 @@ import {
   ForgeShaderSource,
   RenderContext,
   ShaderCache,
+  spriteFragmentShader,
+  spriteVertexShader,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { createTextRenderable } from './create-text-renderable.js';
-import { msdfFragmentShader, msdfVertexShader } from './shaders/index.js';
+import {
+  msdfEffectsFragmentShader,
+  msdfFillFragmentShader,
+  msdfVertexShader,
+} from './shaders/index.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
 globalThis.WebGLTexture = class WebGLTexture {};
@@ -126,8 +132,11 @@ describe('createTextRenderable', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     const shaderCache = new ShaderCache([])
+      .addShader(new ForgeShaderSource(spriteVertexShader))
+      .addShader(new ForgeShaderSource(spriteFragmentShader))
       .addShader(new ForgeShaderSource(msdfVertexShader))
-      .addShader(new ForgeShaderSource(msdfFragmentShader));
+      .addShader(new ForgeShaderSource(msdfFillFragmentShader))
+      .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
   });
@@ -136,39 +145,73 @@ describe('createTextRenderable', () => {
     expect(() => createTextRenderable(renderContext, fontAtlas)).not.toThrow();
   });
 
-  it("sets the distance range uniform from the font atlas's data", () => {
-    const { material } = createTextRenderable(renderContext, fontAtlas);
+  it("sets the distance range uniform on both renderables' materials from the font atlas's data", () => {
+    const { fillRenderable, effectsRenderable } = createTextRenderable(
+      renderContext,
+      fontAtlas,
+    );
 
-    material.bind(mockGl);
+    fillRenderable.material.bind(mockGl);
+    effectsRenderable.material.bind(mockGl);
 
     const calls = (mockGl.uniform1f as Mock).mock.calls.filter(
       ([location]) => location === distanceRangeLocation,
     );
 
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
     expect(calls[0][1]).toBe(4);
+    expect(calls[1][1]).toBe(4);
   });
 
-  it("sets the atlas size uniform from the font atlas's data", () => {
-    const { material } = createTextRenderable(renderContext, fontAtlas);
+  it("sets the atlas size uniform on both renderables' materials from the font atlas's data", () => {
+    const { fillRenderable, effectsRenderable } = createTextRenderable(
+      renderContext,
+      fontAtlas,
+    );
 
-    material.bind(mockGl);
+    fillRenderable.material.bind(mockGl);
+    effectsRenderable.material.bind(mockGl);
 
     const calls = (mockGl.uniform1f as Mock).mock.calls.filter(
       ([location]) => location === atlasSizeLocation,
     );
 
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
     expect(calls[0][1]).toBe(512);
+    expect(calls[1][1]).toBe(512);
   });
 
-  it('assigns the combined sprite + text-effects instance data layout', () => {
-    const renderable = createTextRenderable(renderContext, fontAtlas);
+  it('assigns the plain sprite instance data layout to fillRenderable and the combined sprite + text-effects layout to effectsRenderable', () => {
+    const { fillRenderable, effectsRenderable } = createTextRenderable(
+      renderContext,
+      fontAtlas,
+    );
 
     // Sprite: position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
     // texOffset(2) + texSize(2) + tint(4) = 17.
-    // Text effects: outlineColor(4) + outlineWidth(1) + shadowColor(4) +
-    // shadowOffset(2) + shadowSoftness(1) + maxEffectClearance(1) = 13.
-    expect(renderable.floatsPerInstance).toBe(30);
+    expect(fillRenderable.floatsPerInstance).toBe(17);
+
+    // Sprite (17) + text effects: outlineColor(4) + outlineWidth(1) +
+    // shadowColor(4) + shadowOffset(2) + shadowSoftness(1) +
+    // maxEffectClearance(1) = 13, for a total of 30.
+    expect(effectsRenderable.floatsPerInstance).toBe(30);
+  });
+
+  it('shares a single GPU texture between both renderables', () => {
+    const { fillRenderable, effectsRenderable } = createTextRenderable(
+      renderContext,
+      fontAtlas,
+    );
+
+    expect(mockGl.createTexture).toHaveBeenCalledTimes(1);
+
+    fillRenderable.material.bind(mockGl);
+    effectsRenderable.material.bind(mockGl);
+
+    const calls = (mockGl.uniform1i as Mock).mock.calls.filter(
+      ([location]) => location === atlasLocation,
+    );
+
+    expect(calls).toHaveLength(2);
   });
 });

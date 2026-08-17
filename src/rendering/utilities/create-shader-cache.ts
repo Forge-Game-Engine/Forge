@@ -32,7 +32,8 @@ import {
   terrainVertexShader,
 } from '../terrain/shaders/index.js';
 import {
-  msdfFragmentShader,
+  msdfEffectsFragmentShader,
+  msdfFillFragmentShader,
   msdfVertexShader,
 } from '../../text/rendering/shaders/index.js';
 
@@ -82,7 +83,8 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(toneMappingFragmentShader))
     .addShader(new ForgeShaderSource(terrainVertexShader))
     .addShader(new ForgeShaderSource(terrainFragmentShader))
-    .addShader(new ForgeShaderSource(msdfFragmentShader))
+    .addShader(new ForgeShaderSource(msdfFillFragmentShader))
+    .addShader(new ForgeShaderSource(msdfEffectsFragmentShader))
     .addShader(new ForgeShaderSource(msdfVertexShader));
 
   return shaderCache;

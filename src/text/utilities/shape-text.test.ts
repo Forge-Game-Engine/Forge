@@ -450,6 +450,28 @@ describe('shapeText', () => {
       expect(glyphs[1].effectClearance).toBe(100);
     });
 
+    it("gives a glyph its own nearest-neighbor gap, not the word's overall tightest pair", () => {
+      // "AVA": "A"-"V" is the tight, kerned pair (0.728125, per the earlier
+      // "AV" test), but "V"-"A" has no kerning pair defined, so it's a
+      // looser gap. The trailing "A"'s own nearest neighbor is "V" - it must
+      // keep that real, wider headroom rather than being dragged down to
+      // the tighter "A"-"V" pair elsewhere in the word, since only
+      // `shadowSoftness`/`shadowOffset` consume this value (see
+      // `assignEffectClearances`), and there's no reason to shrink a
+      // glyph's own safe shadow reach just because some other, unrelated
+      // pair in the same word is tight.
+      const { glyphs } = shapeText('AVA', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      expect(glyphs).toHaveLength(3);
+      expect(glyphs[0].effectClearance).toBeCloseTo(0.728125);
+      expect(glyphs[1].effectClearance).toBeCloseTo(0.728125);
+      expect(glyphs[2].effectClearance).toBeGreaterThan(
+        glyphs[1].effectClearance,
+      );
+    });
+
     it('is unaffected by line/word placement offsets', () => {
       // Regression guard: `effectClearance` is computed in word-local
       // coordinates before `shapeText` translates words/lines into their
