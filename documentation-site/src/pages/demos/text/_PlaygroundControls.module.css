@@ -1,0 +1,54 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 12px;
+  margin-right: 10px;
+  vertical-align: top;
+
+  background-color: var(--card-background-color);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.textControl {
+  min-width: 260px;
+  flex-grow: 1;
+}
+
+.effectGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding-left: 12px;
+  border-left: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.control label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.control input[type='range'],
+.control input[type='checkbox'] {
+  accent-color: var(--ifm-color-primary);
+}
+
+.control input[type='text'],
+.control select {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+}

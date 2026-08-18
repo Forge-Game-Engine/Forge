@@ -15,8 +15,8 @@ export async function createSprite(
       getAssetUrl('img/pixel-planet.png'),
     ),
     renderContext,
-    renderLayer,
     {
+      layer: renderLayer,
       pixelated,
     },
   );

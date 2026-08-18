@@ -15,6 +15,10 @@ const fontAtlasCache = new FontAtlasCache();
 const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
 ```
 
+Any atlas works here, including the default one the engine ships at
+`assets/fonts/default/default.json` (see [Text](./index.md)'s Quick start) -
+there's nothing default-atlas-specific about loading it.
+
 ## Cache keys point at the JSON file
 
 `getOrLoad('assets/fonts/my-font.json')` fetches that file, then loads

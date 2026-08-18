@@ -22,8 +22,10 @@ export interface ShapeTextOptions {
   lineHeight?: number;
 
   /**
-   * Horizontal alignment of each line within the shaped block's own width.
-   * Defaults to `'left'`. Irrelevant, and ignored, when `maxWidth` is unset.
+   * Horizontal alignment of each line within `maxWidth`. Defaults to
+   * `'left'`. Irrelevant, and ignored, when `maxWidth` is unset - with no
+   * container to align against, every unwrapped line is already exactly as
+   * wide as the block itself.
    */
   horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
 
@@ -381,7 +383,18 @@ export function shapeText(
     letterSpacing,
     maxWidth,
   );
-  const blockWidth = Math.max(0, ...lines.map((line) => line.width));
+  const contentWidth = Math.max(0, ...lines.map((line) => line.width));
+
+  // `center`/`right` align each line against the requested `maxWidth`
+  // container (matching ordinary text-align semantics), not against the
+  // content's own tightest bounding box - using the latter would make a
+  // single unwrapped line (or any line exactly as wide as the block's
+  // widest line) always compute a zero offset, silently no-op'ing
+  // `horizontalAlign` for the single-line case regardless of its value.
+  // Falls back to `contentWidth` when `maxWidth` is unset, matching
+  // `getJustifyGapStretch`'s own "no container, nothing to align against"
+  // behavior.
+  const alignmentWidth = maxWidth ?? contentWidth;
   const actualLineHeight = lineHeight * fontAtlasData.metrics.lineHeight * size;
   const blockHeight = lines.length * actualLineHeight;
   const verticalOffset = getVerticalAlignOffset(
@@ -404,9 +417,9 @@ export function shapeText(
     let uniformOffset = 0;
 
     if (horizontalAlign === 'center') {
-      uniformOffset = (blockWidth - line.width) / 2;
+      uniformOffset = (alignmentWidth - line.width) / 2;
     } else if (horizontalAlign === 'right') {
-      uniformOffset = blockWidth - line.width;
+      uniformOffset = alignmentWidth - line.width;
     }
 
     const justifyGapStretch = getJustifyGapStretch(
@@ -429,5 +442,5 @@ export function shapeText(
     });
   });
 
-  return { glyphs, bounds: { width: blockWidth, height: blockHeight } };
+  return { glyphs, bounds: { width: contentWidth, height: blockHeight } };
 }

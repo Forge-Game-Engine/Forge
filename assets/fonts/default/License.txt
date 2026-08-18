@@ -1,14 +1,15 @@
-	Liberation Sans (MSDF atlas, generated for the Forge text rendering demo)
+	Liberation Sans (MSDF atlas, Forge's shipped default font atlas)
 
 	Font: Liberation Sans Regular
 	Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine.
 	Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
 	Source: https://github.com/liberationfonts
 
-	liberation-sans.png and liberation-sans.json in this directory are a
-	multi-channel signed distance field (MSDF) atlas generated from this font
-	via `npm run generate-font-atlas` (see scripts/generate-font-atlas.mjs),
-	for use with @forge-game-engine/forge/text.
+	default.png and default.json in this directory are a multi-channel
+	signed distance field (MSDF) atlas generated from this font via
+	`npm run generate-font-atlas` (see scripts/generate-font-atlas.mjs), so
+	`@forge-game-engine/forge/text` has a font to render with out of the box,
+	with zero asset setup required (design/msdf-text-rendering.md, Phase 5).
 
 		------------------------------
 

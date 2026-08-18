@@ -43,8 +43,18 @@ export interface TextMeshEcsComponent {
    */
   readonly bounds: { width: number; height: number };
 
-  /** The `FontAtlas`-backed `Renderable` these glyphs draw with. */
-  readonly renderable: Renderable;
+  /**
+   * The `FontAtlas`-backed `Renderable` these glyphs' fill draws with. See
+   * `createTextRenderable`'s doc comment for why fill and effects are two
+   * separate, ordered `Renderable`s rather than one.
+   */
+  readonly fillRenderable: Renderable;
+
+  /**
+   * The `FontAtlas`-backed `Renderable` these glyphs' outline/shadow draws
+   * with.
+   */
+  readonly effectsRenderable: Renderable;
 }
 
 export const textMeshId = createComponentId<TextMeshEcsComponent>('textMesh');

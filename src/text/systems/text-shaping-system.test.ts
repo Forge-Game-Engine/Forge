@@ -6,6 +6,7 @@ import {
   ForgeShaderSource,
   RenderContext,
   ShaderCache,
+  spriteFragmentShader,
   spriteVertexShader,
 } from '../../rendering/index.js';
 import { addTextComponent } from '../components/text-component.js';
@@ -14,7 +15,11 @@ import {
   textMeshId,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { msdfFragmentShader } from '../rendering/shaders/index.js';
+import {
+  msdfEffectsFragmentShader,
+  msdfFillFragmentShader,
+  msdfVertexShader,
+} from '../rendering/shaders/index.js';
 import { createTextShapingEcsSystem } from './text-shaping-system.js';
 
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
@@ -131,7 +136,10 @@ describe('createTextShapingEcsSystem', () => {
 
     const shaderCache = new ShaderCache([])
       .addShader(new ForgeShaderSource(spriteVertexShader))
-      .addShader(new ForgeShaderSource(msdfFragmentShader));
+      .addShader(new ForgeShaderSource(spriteFragmentShader))
+      .addShader(new ForgeShaderSource(msdfVertexShader))
+      .addShader(new ForgeShaderSource(msdfFillFragmentShader))
+      .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
     world = new EcsWorld();
@@ -302,7 +310,8 @@ describe('createTextShapingEcsSystem', () => {
     const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
     const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
 
-    expect(meshA?.renderable).toBe(meshB?.renderable);
+    expect(meshA?.fillRenderable).toBe(meshB?.fillRenderable);
+    expect(meshA?.effectsRenderable).toBe(meshB?.effectsRenderable);
   });
 
   it('creates separate renderables for different font atlases', () => {
@@ -325,6 +334,7 @@ describe('createTextShapingEcsSystem', () => {
     const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
     const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
 
-    expect(meshA?.renderable).not.toBe(meshB?.renderable);
+    expect(meshA?.fillRenderable).not.toBe(meshB?.fillRenderable);
+    expect(meshA?.effectsRenderable).not.toBe(meshB?.effectsRenderable);
   });
 });

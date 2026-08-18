@@ -30,15 +30,34 @@ Three pieces make up the module:
 
 ## Quick start
 
+The engine ships a pre-generated default atlas (Liberation Sans, SIL Open
+Font License 1.1) at `assets/fonts/default/` (`default.json`, `default.png`,
+and a `License.txt` with the font's attribution) inside the
+`@forge-game-engine/forge` package itself, so you can render text with zero
+font setup - no `.ttf`, no `forge-generate-font-atlas` run, nothing to
+license or commit yourself. `FontAtlasCache.getOrLoad` just needs those
+three files reachable at a URL, the same as any atlas you generate
+yourself, so copy (or have your build script copy) them from
+`node_modules/@forge-game-engine/forge/assets/fonts/default/` into your
+project's own served assets directory - most bundlers don't serve
+`node_modules` directly:
+
+```ts
+import { FontAtlasCache } from '@forge-game-engine/forge/text';
+
+const fontAtlasCache = new FontAtlasCache();
+const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/default.json');
+```
+
+When you need your own font (a different look, or characters the default
+atlas's ASCII charset doesn't cover), generate one:
+
 ```bash
 npm install --save-dev msdf-bmfont-xml
 npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out assets/fonts/my-font
 ```
 
 ```ts
-import { FontAtlasCache } from '@forge-game-engine/forge/text';
-
-const fontAtlasCache = new FontAtlasCache();
 const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
 
 console.log(fontAtlas.data.glyphs.get('A'.codePointAt(0)!));

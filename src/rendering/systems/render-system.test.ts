@@ -149,7 +149,8 @@ describe('createRenderEcsSystem', () => {
     world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
       glyphs: [],
       bounds: { width: 0, height: 0 },
-      renderable,
+      fillRenderable: renderable,
+      effectsRenderable: renderable,
       ...mesh,
     });
 

@@ -65,7 +65,9 @@ async function createFlywheelEntity(
   const image = await imageCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
-  const sprite = createImageSprite(image, renderContext, renderLayer);
+  const sprite = createImageSprite(image, renderContext, {
+    layer: renderLayer,
+  });
 
   const entity = world.createEntity();
   const flywheelCollider = new PolygonCollider(

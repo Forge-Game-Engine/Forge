@@ -70,23 +70,21 @@ export async function createPanels(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
 
-  const naiveSprite = createImageSprite(panelImage, renderContext, renderLayer);
+  const naiveSprite = createImageSprite(panelImage, renderContext, {
+    layer: renderLayer,
+  });
 
-  const stretchSprite = createImageSprite(
-    panelImage,
-    renderContext,
-    renderLayer,
-    {
-      slices: {
-        left: borderInset,
-        right: borderInset,
-        top: borderInset,
-        bottom: borderInset,
-        nativeWidth: nativeSize,
-        nativeHeight: nativeSize,
-      },
+  const stretchSprite = createImageSprite(panelImage, renderContext, {
+    layer: renderLayer,
+    slices: {
+      left: borderInset,
+      right: borderInset,
+      top: borderInset,
+      bottom: borderInset,
+      nativeWidth: nativeSize,
+      nativeHeight: nativeSize,
     },
-  );
+  });
 
   const height = DEMO_VERTICAL_WORLD_UNITS;
   const spacing = Math.min(height / 2, 160);

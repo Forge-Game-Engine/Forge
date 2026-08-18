@@ -4,9 +4,34 @@ import type {
   RotationEcsComponent,
   ScaleEcsComponent,
 } from '../common/index.js';
+import type { Vector2 } from '../math/index.js';
 import type { SpriteEcsComponent } from './components/index.js';
+import type { Color } from './color.js';
 import type { Geometry } from './geometry/index.js';
 import type { Material } from './materials/index.js';
+
+/**
+ * Per-glyph outline/soft-shadow parameters, bound by
+ * `textEffectsInstanceDataSegment` (`@forge-game-engine/forge/text`).
+ * Populated only for glyph instances pushed by `pushTextRenderCommands` -
+ * `InstanceComponents.textEffects` is `undefined` for ordinary sprites.
+ */
+export interface TextEffectsInstanceData {
+  /** Outline color; see `TextEcsComponent.outlineColor`. */
+  outlineColor: Color;
+
+  /** Outline thickness, in screen-pixel-range units; see `TextEcsComponent.outlineWidth`. */
+  outlineWidth: number;
+
+  /** Soft shadow/glow color; see `TextEcsComponent.shadowColor`. */
+  shadowColor: Color;
+
+  /** Soft shadow/glow offset, in screen-pixel-range units; see `TextEcsComponent.shadowOffset`. */
+  shadowOffset: Vector2;
+
+  /** Soft shadow/glow fade radius, in screen-pixel-range units; see `TextEcsComponent.shadowSoftness`. */
+  shadowSoftness: number;
+}
 
 /**
  * The components needed to bind an entity's per-instance data, resolved once
@@ -38,6 +63,13 @@ export interface InstanceComponents {
    * The entity's flip flags, if it has any.
    */
   flip: FlipEcsComponent | null;
+
+  /**
+   * The entity's text outline/shadow effect data, if this instance is a
+   * glyph quad pushed by `pushTextRenderCommands`. `undefined` for ordinary
+   * sprites.
+   */
+  textEffects?: TextEffectsInstanceData;
 }
 
 /**

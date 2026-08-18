@@ -5,7 +5,12 @@ import {
   addRotationComponent,
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
-import { degreesToRadians, Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
+import {
+  degreesToRadians,
+  Random,
+  Vec2,
+  Vector2,
+} from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -74,7 +79,9 @@ export async function createBall(
   const ballImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/brick-breaker/ball.png'),
   );
-  const ballSprite = createImageSprite(ballImage, renderContext, renderLayer);
+  const ballSprite = createImageSprite(ballImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const ballDiameter = playAreaWidth * ballDiameterFraction;
   const ballScale = ballDiameter / ballSprite.width;

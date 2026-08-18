@@ -58,12 +58,12 @@ export async function createRayVisual(
     imageCache.getOrLoad(getAssetUrl('img/blue-circle.png')),
   ]);
 
-  const lineSprite = createImageSprite(lineImage, renderContext, renderLayer);
-  const markerSprite = createImageSprite(
-    markerImage,
-    renderContext,
-    renderLayer,
-  );
+  const lineSprite = createImageSprite(lineImage, renderContext, {
+    layer: renderLayer,
+  });
+  const markerSprite = createImageSprite(markerImage, renderContext, {
+    layer: renderLayer,
+  });
 
   const lineEntity = world.createEntity();
   const linePosition = addPositionComponent(world, lineEntity);
