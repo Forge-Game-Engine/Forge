@@ -9,6 +9,14 @@ updates:
     directory: '/' # Location of package manifests
     schedule:
       interval: 'weekly'
+    ignore:
+      # typescript-eslint@8.67.0's peerDependency caps typescript at "<6.1.0",
+      # and no newer typescript-eslint release lifts that cap yet, so a major
+      # typescript bump (e.g. 5.x -> 7.0.2) fails `npm ci` with an ERESOLVE
+      # peer dependency conflict. Revisit once typescript-eslint supports the
+      # new major.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: 'npm'
     directory: '/documentation-site' # Location of package manifests
     schedule:

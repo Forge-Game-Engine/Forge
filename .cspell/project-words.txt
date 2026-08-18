@@ -33,6 +33,7 @@ despawn
 devcontainers
 diegetic
 eamodio
+ERESOLVE
 Erdokovy
 esbenp
 evented
