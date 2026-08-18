@@ -69,21 +69,17 @@ function pushTextEffectsRenderCommands(
   } = textComponent;
   const depth = entityPosition.world.y;
 
-  for (const glyph of textMesh.glyphs) {
-    // Built per glyph, not once per entity: `maxEffectClearance` is the one
-    // field here that varies glyph-to-glyph (each glyph's own kerned
-    // distance to its neighbors, computed at shape time - see
-    // `GlyphQuad.effectClearance`), so the whole object can't be hoisted
-    // out of this loop the way a plain sprite's tint color could be.
-    const textEffects: TextEffectsInstanceData = {
-      outlineColor,
-      outlineWidth,
-      shadowColor,
-      shadowOffset,
-      shadowSoftness,
-      maxEffectClearance: glyph.effectClearance,
-    };
+  // Uniform across every glyph in this entity, so built once rather than
+  // per glyph.
+  const textEffects: TextEffectsInstanceData = {
+    outlineColor,
+    outlineWidth,
+    shadowColor,
+    shadowOffset,
+    shadowSoftness,
+  };
 
+  for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
       width: glyph.size.x,
       height: glyph.size.y,

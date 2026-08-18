@@ -22,7 +22,6 @@ in float a_instanceOutlineWidth;
 in vec4 a_instanceShadowColor;
 in vec2 a_instanceShadowOffset;
 in float a_instanceShadowSoftness;
-in float a_instanceMaxEffectClearance;
 
 // Uniforms for projection/camera:
 uniform mat3 u_projection; // 2D projection/camera matrix
@@ -34,20 +33,6 @@ out float v_outlineWidth;
 out vec4 v_shadowColor;
 out vec2 v_shadowOffset;
 out float v_shadowSoftness;
-out float v_maxEffectClearance;
-
-// World units per UV unit, per axis - the ratio between how far this
-// glyph's quad spans in world space (`a_instanceSize`) versus how far its
-// texture coordinates span in the atlas (`a_instanceTexSize`). Both are
-// per-instance constants (identical at all 4 of a glyph's quad vertices),
-// so this ratio is too; forwarding it (rather than `a_instanceMaxEffectClearance`
-// itself, which is in world units) lets the fragment shader convert this
-// glyph's world-unit neighbor clearance into the same screen-pixel-range
-// units `screenPxRange` already uses, at whatever scale/zoom is actually in
-// effect on screen - see `msdf-effects.frag`'s derivation, which is the same
-// technique `screenPxRange` itself uses via `fwidth`, just applied to world
-// space instead of atlas UV space.
-out vec2 v_worldPerUv;
 
 void main() {
     // Identical to `sprite.vert` - glyph quads are positioned, pivoted,
@@ -84,14 +69,4 @@ void main() {
     v_shadowColor = a_instanceShadowColor;
     v_shadowOffset = a_instanceShadowOffset;
     v_shadowSoftness = a_instanceShadowSoftness;
-    v_maxEffectClearance = a_instanceMaxEffectClearance;
-
-    // `a_instanceScale` is folded in here (not left for the fragment shader
-    // to rediscover) since it's a per-instance constant already available in
-    // this stage, exactly like `a_instanceSize`/`a_instanceTexSize`
-    // themselves - `abs()` because a negative scale (sprite flip) changes
-    // handedness, not magnitude, and this ratio only ever needs to convert
-    // *distances*.
-    v_worldPerUv = abs(a_instanceSize * a_instanceScale) /
-        max(a_instanceTexSize, vec2(1e-6));
 }

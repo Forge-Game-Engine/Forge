@@ -23,24 +23,6 @@ export interface GlyphQuad {
 
   /** The width/height of this glyph's texture rect in the atlas, 0 to 1. */
   uvScale: Vector2;
-
-  /**
-   * How far, in world units, a same-word neighboring glyph's ink sits from
-   * this glyph's own ink - the word's single tightest same-word ink gap,
-   * applied uniformly to every glyph in the word (see `assignEffectClearances`
-   * in `shape-text.ts`), or a large sentinel when the word has no same-word
-   * neighbor at all (a lone glyph). Consumed by `msdf-effects.frag`,
-   * converted to screen-pixel-range units there, to clamp
-   * `TextEcsComponent.shadowOffset`/`shadowSoftness` so a shadow's
-   * re-sampled UV can never leave this glyph's own atlas tile into a
-   * neighbor's unrelated texels. `outlineWidth` is *not* clamped by this
-   * value - see `msdf-effects.frag`'s doc comment for why the two-pass
-   * fill/effects split makes that safe. Effects across a word boundary
-   * (separated by at least one whitespace advance) are not constrained by
-   * this value; see `shape-text.ts` for why that's a deliberate scope
-   * decision, not an oversight.
-   */
-  effectClearance: number;
 }
 
 /**

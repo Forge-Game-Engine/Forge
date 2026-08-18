@@ -192,9 +192,9 @@ describe('createTextRenderable', () => {
     expect(fillRenderable.floatsPerInstance).toBe(17);
 
     // Sprite (17) + text effects: outlineColor(4) + outlineWidth(1) +
-    // shadowColor(4) + shadowOffset(2) + shadowSoftness(1) +
-    // maxEffectClearance(1) = 13, for a total of 30.
-    expect(effectsRenderable.floatsPerInstance).toBe(30);
+    // shadowColor(4) + shadowOffset(2) + shadowSoftness(1) = 12, for a
+    // total of 29.
+    expect(effectsRenderable.floatsPerInstance).toBe(29);
   });
 
   it('shares a single GPU texture between both renderables', () => {

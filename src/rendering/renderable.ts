@@ -31,15 +31,6 @@ export interface TextEffectsInstanceData {
 
   /** Soft shadow/glow fade radius, in screen-pixel-range units; see `TextEcsComponent.shadowSoftness`. */
   shadowSoftness: number;
-
-  /**
-   * How far, in world units, this specific glyph's effect can safely extend
-   * before touching a neighboring glyph's quad; see
-   * `GlyphQuad.effectClearance`. Per-glyph, unlike the fields above (which
-   * are uniform across a whole `TextEcsComponent`), because it depends on
-   * this glyph's actual kerned position relative to its neighbors.
-   */
-  maxEffectClearance: number;
 }
 
 /**

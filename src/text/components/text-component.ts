@@ -101,19 +101,17 @@ export interface TextDefaultedOptions {
 
   /**
    * Offset of the soft shadow/glow from the glyph, in screen-pixel-range
-   * units (see `outlineWidth`). Unlike `outlineWidth`, this is still
-   * clamped by the gap to a tightly-kerned same-word neighboring glyph (see
-   * `GlyphQuad.effectClearance`): the shadow re-samples the distance field
-   * at this offset, and reaching far enough could otherwise sample past
-   * this glyph's own atlas tile into a neighbor's unrelated texels.
+   * units (see `outlineWidth`). Bounded the same way `outlineWidth` is - by
+   * the atlas's own encoded `distanceRange` budget - rather than by
+   * anything to do with neighboring glyphs.
    */
   shadowOffset: Vector2;
 
   /**
    * How far, in screen-pixel-range units (see `outlineWidth`), the soft
    * shadow/glow fades out from its offset sample. `0` leaves it exactly as
-   * crisp as the glyph itself, just offset. Clamped the same way
-   * `shadowOffset` is, for the same reason.
+   * crisp as the glyph itself, just offset. Bounded the same way
+   * `shadowOffset` is.
    */
   shadowSoftness: number;
 }

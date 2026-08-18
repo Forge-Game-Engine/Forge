@@ -60,7 +60,6 @@ const glyph: GlyphQuad = {
   size: { x: 5, y: 7 },
   uvOffset: { x: 0.1, y: 0.2 },
   uvScale: { x: 0.3, y: 0.4 },
-  effectClearance: 1.5,
 };
 
 describe('pushTextRenderCommands', () => {
@@ -126,7 +125,7 @@ describe('pushTextRenderCommands', () => {
     });
   });
 
-  it("builds textEffects from the text component's outline/shadow fields, plus this glyph's own effectClearance", () => {
+  it("builds textEffects from the text component's outline/shadow fields", () => {
     const commands: RenderCommand[] = [];
     const outlineColor = new Color(0, 1, 0, 1);
     const shadowColor = new Color(0, 0, 1, 1);
@@ -152,26 +151,27 @@ describe('pushTextRenderCommands', () => {
       shadowColor,
       shadowOffset: { x: 1, y: -1 },
       shadowSoftness: 3,
-      maxEffectClearance: glyph.effectClearance,
     });
   });
 
-  it('gives each glyph its own maxEffectClearance, even when other textEffects fields are shared', () => {
+  it('shares the same textEffects object across every glyph in the entity', () => {
     const commands: RenderCommand[] = [];
-    const tightGlyph: GlyphQuad = { ...glyph, effectClearance: 0 };
-    const looseGlyph: GlyphQuad = { ...glyph, effectClearance: 12 };
 
     pushTextRenderCommands(
       commands,
       buildTextComponent({ outlineWidth: 5 }),
-      buildTextMesh([tightGlyph, looseGlyph]),
+      buildTextMesh([glyph, glyph]),
       { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
       null,
       null,
     );
 
-    expect(commands[0].components.textEffects?.maxEffectClearance).toBe(0);
-    expect(commands[1].components.textEffects?.maxEffectClearance).toBe(12);
+    // Outline/shadow are uniform across a whole `TextEcsComponent`, so the
+    // same `textEffects` instance is reused for every glyph rather than
+    // rebuilt per glyph.
+    expect(commands[0].components.textEffects).toBe(
+      commands[1].components.textEffects,
+    );
   });
 
   it("pushes every glyph's effects command before any glyph's fill command, using effectsRenderable/fillRenderable respectively", () => {

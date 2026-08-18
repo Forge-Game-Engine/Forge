@@ -17,6 +17,10 @@ function isGreenOutline(r: number, g: number, b: number): boolean {
   return g > 150 && r < 100 && b < 100;
 }
 
+function isBlueGlow(r: number, g: number, b: number): boolean {
+  return b > 150 && r < 100 && g < 100;
+}
+
 // The text demo's own configured outline/glow colors (see
 // documentation-site/src/pages/demos/text/_create-effects-examples.ts).
 const demoOutlineColor = { r: 1, g: 0.55, b: 0.15, a: 1 };
@@ -70,13 +74,14 @@ test.describe('text outline/shadow effect overlap', () => {
   }) => {
     // The two glyphs in this scene are kerned so their *padded quads*
     // already overlap by 11 world units while their *ink* stays a real 5
-    // world units apart (see text-effects-overlap.ts's derivation comment)
-    // - exactly the tight-kerning case `assignEffectClearances` in
-    // shape-text.ts clamps to 0. An outlineWidth far beyond both the
-    // atlas's own budget and that clearance must still leave glyph A's own
-    // ink (sampled at `contestedWorldX`, a point inside A's ink that a
-    // neighbor-unaware clamp would have painted glyph B's outline color
-    // over) showing A's ink color, not B's outline color.
+    // world units apart (see text-effects-overlap.ts's derivation comment).
+    // An outlineWidth far beyond the atlas's own budget must still leave
+    // glyph A's own ink (sampled at `contestedWorldX`, a point inside A's
+    // ink that an unclamped outline reaching all the way from B would have
+    // painted over) showing A's ink color, not B's outline color - the
+    // two-pass fill/effects draw order (see `msdf-effects.frag.glsl`'s doc
+    // comment) is what actually guarantees this, not any per-glyph
+    // neighbor clamp.
     const color = await page.evaluate(() => {
       const scene = window.__forgeTestHooks as unknown as Hooks;
 
@@ -147,10 +152,9 @@ test.describe('text outline/shadow effect overlap', () => {
     page,
   }) => {
     // A sanity guard against a fix that "works" only by disabling outlines
-    // entirely: glyph A and B are tightly kerned (clamped to 0 clearance
-    // uniformly on *both* sides, by design - see shape-text.ts), but glyph
-    // C sits comfortably wide of B and should still show a full,
-    // atlas-budget-only outline at the same outlineWidth used above.
+    // entirely: glyph A and B are tightly kerned, but glyph C sits
+    // comfortably wide of B and should still show a full, atlas-budget-only
+    // outline at the same outlineWidth used above.
     const color = await page.evaluate(() => {
       const scene = window.__forgeTestHooks as unknown as Hooks;
 
@@ -164,6 +168,39 @@ test.describe('text outline/shadow effect overlap', () => {
     });
 
     expect(isGreenOutline(color.r, color.g, color.b)).toBe(true);
+  });
+
+  test("a shadow's reach is bounded only by the atlas budget, not by how tightly a glyph is kerned against a neighbor", async ({
+    page,
+  }) => {
+    // Regression guard for the fix that removed the shadow's old
+    // same-word-neighbor clamp (see msdf-effects.frag.glsl's doc comment):
+    // that clamp computed a single scalar "safe reach" per glyph from its
+    // *tightest* neighbor gap, then applied it uniformly in every
+    // direction around that glyph - so glyph A's shadow used to render
+    // visibly thinner than an isolated glyph's even on A's own left side,
+    // which has no neighbor at all (A's only neighbor, B, sits to its
+    // right). `glyphAOuterEdgeWorldX` sits just outside that uncontested
+    // left edge; a `shadowSoftness` comfortably within the atlas's own
+    // ~7.5-screen-px budget but well beyond the old tight-pair clamp
+    // (~5 world units, driven entirely by the unrelated A-B gap) must
+    // still show full glow there.
+    const color = await page.evaluate(() => {
+      const scene = window.__forgeTestHooks as unknown as Hooks;
+
+      scene.setOutlineWidth(0);
+      scene.setShadowColor(0, 0, 1, 1);
+      scene.setShadowOffset({ x: 0, y: 0 });
+      scene.setShadowSoftness(7);
+      scene.step();
+
+      return scene.sampleColorAt(
+        scene.glyphAOuterEdgeWorldX,
+        scene.glyphCenterWorldY,
+      );
+    });
+
+    expect(isBlueGlow(color.r, color.g, color.b)).toBe(true);
   });
 });
 

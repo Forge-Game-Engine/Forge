@@ -42,27 +42,27 @@ the camera is zoomed in or out.
 
 Every glyph's outline and shadow draw in their own pass, always completing
 *before* any glyph's fill draws on top of it (see `createTextRenderable`
-internally, if you're curious). This is what lets an outline safely reach
-past a same-word neighboring glyph - even merge with that neighbor's own
-outline into one continuous stroke, the same way a thick Photoshop "stroke"
-layer effect bulges out past each letter and bridges the gaps between
-them - without ever painting over any glyph's own fill: fill always ends up
-on top, regardless of how far an outline reaches or in what order glyphs
-happen to draw. Outline layers overlapping each other is harmless (they're
-typically the same color, and blending is order-independent there); only
-painting over a glyph's fill would be a defect, and the two-pass draw order
-rules that out entirely.
+internally, if you're curious). This is what lets an outline - or a soft
+shadow/glow - safely reach past a same-word neighboring glyph - even merge
+with that neighbor's own effect into one continuous stroke or glow, the
+same way a thick Photoshop "stroke" or "outer glow" layer effect bulges out
+past each letter and bridges the gaps between them - without ever painting
+over any glyph's own fill: fill always ends up on top, regardless of how
+far an effect reaches or in what order glyphs happen to draw. Effect layers
+overlapping each other is harmless (they're typically the same color, and
+blending is order-independent there); only painting over a glyph's fill
+would be a defect, and the two-pass draw order rules that out entirely.
 
-The soft shadow/glow doesn't get the same freedom, because it works
-differently: it re-samples the distance field at an *offset* UV rather than
-just re-thresholding the same sample outline uses, so reaching far enough
-risks sampling past this glyph's own atlas tile into a same-word neighbor's
-unrelated texels (or the packer's padding gap) - a texture-sampling
-correctness problem the two-pass draw order doesn't touch. `shadowOffset`
-and `shadowSoftness` are still clamped to the gap between a glyph's own ink
-and its tightest same-word neighbor's ink, computed automatically per glyph
-at shape time from the same kerning-aware layout that already positions
-each glyph.
+The soft shadow/glow re-samples the distance field at an *offset* UV rather
+than just re-thresholding the same sample the outline uses, but that offset
+is always resolved against *this glyph's own* texture region
+(`a_instanceTexOffset`/`a_instanceTexSize` scope every sample this shader
+takes, base and shadow-offset alike) - never a neighboring glyph's, no
+matter how close that neighbor sits on screen. Atlas layout and text layout
+are unrelated: two glyphs placed close together on screen are not
+necessarily packed anywhere near each other in the atlas texture. So the
+shadow needs no clamp beyond the same atlas-encoding budget described
+below, which already bounds the outline.
 
 ## Choosing a safe range
 
@@ -76,39 +76,25 @@ screen pixels from a glyph's true edge - `--distance-range` when you
 generated it (see [Generating a Font Atlas](./generating-a-font-atlas.md)).
 Past that, an effect still renders, clamped to the widest value the atlas
 can faithfully represent, rather than boxing out or producing quantized
-banding. This is the *only* limit on `outlineWidth` - a requested value
-beyond it degrades to the widest safe value instead of corrupting glyphs,
-but a value picked within it still looks best, since nothing is fighting a
-clamp. It bounds `shadowOffset`/`shadowSoftness` too, alongside the
-same-word neighbor clamp described above - whichever of the two is
-tighter wins.
+banding. This is the *only* limit on either effect - a requested
+`outlineWidth`, `shadowOffset`, or `shadowSoftness` beyond it degrades to
+the widest safe value instead of corrupting glyphs, but a value picked
+within it still looks best, since nothing is fighting a clamp.
 
-Unlike the neighbor clamp described above, the atlas budget doesn't shrink
-just because two letters sit close together - it's a fixed number of
-screen pixels for a given atlas, regardless of layout. That's what makes a
-big, bold, merged outline (bridging the gaps between letters, like the
-Photoshop-stroke look) achievable: pick an `outlineWidth` within the
-atlas's budget and it renders at full strength on every glyph, letters
-included. Concretely, on the engine's own demo atlas (Liberation Sans at
-`--distance-range 16`), that budget is roughly **5-8 screen pixels** at an
-80px heading, scaling with `--distance-range` - regenerate with a larger
-value (the default is `4`, which grades even less budget) if you need more
-headroom for a wider merged stroke; see
+The atlas budget doesn't shrink just because two letters sit close
+together - it's a fixed number of screen pixels for a given atlas,
+regardless of layout. That's what makes a big, bold, merged outline or glow
+(bridging the gaps between letters, like the Photoshop-stroke/outer-glow
+look) achievable: pick a value within the atlas's budget and it renders at
+full strength on every glyph, letters included. Concretely, on the engine's
+own demo atlas (Liberation Sans at `--distance-range 16`), that budget is
+roughly **5-8 screen pixels** at an 80px heading, scaling with
+`--distance-range` - regenerate with a larger value (the default is `4`,
+which grades even less budget) if you need more headroom for a wider
+merged stroke or glow; see
 [Generating a Font Atlas](./generating-a-font-atlas.md). See the text demo's
 "outline + soft shadow / glow together, at a larger size" example for what
 a properly bold effect looks like at a size that has room for it.
-
-The same-word neighbor clamp that still applies to `shadowOffset`/
-`shadowSoftness` scales with how large the text itself renders on screen:
-it's roughly a fixed *percentage* of the font's on-screen size (how tight
-that percentage is depends on the specific letter pairs in your string and
-the font's own kerning - a word with only loosely-spaced letters allows
-more than one with a tight pair like `rg` or `il`). For an ordinary word's
-tightest letter pair, that's typically only up to roughly **5-12% of the
-font's rendered size** - about 1 screen pixel at a 22px caption, but 5-8
-screen pixels at an 80px heading. A large, clearly visible shadow/glow needs
-correspondingly large on-screen text - it is not achievable on small
-caption text no matter how high `shadowSoftness` is set.
 
 ## A note on extreme values and unusual glyphs
 
