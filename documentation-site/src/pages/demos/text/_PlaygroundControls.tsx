@@ -11,13 +11,11 @@ interface PlaygroundControlsProps {
   wrapEnabled: boolean;
 
   outlineEnabled: boolean;
-  outlineColorHex: string;
   outlineWidth: number;
   minOutlineWidth: number;
   maxOutlineWidth: number;
 
   glowEnabled: boolean;
-  glowColorHex: string;
   glowOffsetX: number;
   glowOffsetY: number;
   minGlowOffset: number;
@@ -32,11 +30,9 @@ interface PlaygroundControlsProps {
   onWrapEnabledChange: (value: boolean) => void;
 
   onOutlineEnabledChange: (value: boolean) => void;
-  onOutlineColorChange: (value: string) => void;
   onOutlineWidthChange: (value: number) => void;
 
   onGlowEnabledChange: (value: boolean) => void;
-  onGlowColorChange: (value: string) => void;
   onGlowOffsetXChange: (value: number) => void;
   onGlowOffsetYChange: (value: number) => void;
   onGlowSoftnessChange: (value: number) => void;
@@ -46,11 +42,11 @@ interface PlaygroundControlsProps {
  * Live controls for the text demo's "Try it yourself" playground: a text
  * input, a size slider, an alignment select (only meaningful while wrapping
  * is on - `TextEcsComponent.horizontalAlign` is otherwise ignored, see
- * `text-component.ts`), a wrap toggle, and full outline/glow controls
- * (enabled toggle, color, width/offset) matching every field
- * `TextEcsComponent` itself exposes for each effect (see `text-effects.md`).
- * Every change writes straight into the running playground's
- * `TextEcsComponent` (see `index.tsx`'s handlers and
+ * `text-component.ts`), a wrap toggle, and outline/glow controls (enabled
+ * toggle plus width/offset/softness - color is fixed, not user-controllable;
+ * an `<input type="color">` control was tried here and dropped for being
+ * noticeably slow to interact with). Every change writes straight into the
+ * running playground's `TextEcsComponent` (see `index.tsx`'s handlers and
  * `_create-playground.ts`), the same way the space-shooter demo's bloom/blur
  * controls retune their components live.
  */
@@ -62,12 +58,10 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
   horizontalAlign,
   wrapEnabled,
   outlineEnabled,
-  outlineColorHex,
   outlineWidth,
   minOutlineWidth,
   maxOutlineWidth,
   glowEnabled,
-  glowColorHex,
   glowOffsetX,
   glowOffsetY,
   minGlowOffset,
@@ -80,10 +74,8 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
   onHorizontalAlignChange,
   onWrapEnabledChange,
   onOutlineEnabledChange,
-  onOutlineColorChange,
   onOutlineWidthChange,
   onGlowEnabledChange,
-  onGlowColorChange,
   onGlowOffsetXChange,
   onGlowOffsetYChange,
   onGlowSoftnessChange,
@@ -112,20 +104,12 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
     onOutlineEnabledChange(event.target.checked);
   };
 
-  const handleOutlineColorChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOutlineColorChange(event.target.value);
-  };
-
   const handleOutlineWidthChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOutlineWidthChange(Number(event.target.value));
   };
 
   const handleGlowEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
     onGlowEnabledChange(event.target.checked);
-  };
-
-  const handleGlowColorChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onGlowColorChange(event.target.value);
   };
 
   const handleGlowOffsetXChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -209,18 +193,6 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
           />
         </div>
         <div className={styles.control}>
-          <label htmlFor="playground-outline-color">
-            <span>Color</span>
-          </label>
-          <input
-            id="playground-outline-color"
-            type="color"
-            value={outlineColorHex}
-            disabled={!outlineEnabled}
-            onChange={handleOutlineColorChange}
-          />
-        </div>
-        <div className={styles.control}>
           <label htmlFor="playground-outline-width">
             <span>Width</span>
             <span>{outlineWidth.toFixed(1)}</span>
@@ -248,18 +220,6 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
             type="checkbox"
             checked={glowEnabled}
             onChange={handleGlowEnabledChange}
-          />
-        </div>
-        <div className={styles.control}>
-          <label htmlFor="playground-glow-color">
-            <span>Color</span>
-          </label>
-          <input
-            id="playground-glow-color"
-            type="color"
-            value={glowColorHex}
-            disabled={!glowEnabled}
-            onChange={handleGlowColorChange}
           />
         </div>
         <div className={styles.control}>
