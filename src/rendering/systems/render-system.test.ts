@@ -340,6 +340,46 @@ describe('createRenderEcsSystem', () => {
     expect(drawnDepths).toEqual([-5, 2, 10]);
   });
 
+  it('sorts by sortDepth instead of world Y when set', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 10, { sortDepth: 1 });
+    addSpriteEntity(renderable, -5, { sortDepth: 3 });
+    addSpriteEntity(renderable, 2, { sortDepth: 2 });
+
+    world.update();
+
+    const drawnWorldYs = bindInstanceData.mock.calls.map(
+      (call) =>
+        (call[0] as { position: PositionEcsComponent }).position.world.y,
+    );
+
+    // sortDepth order (1, 2, 3) wins over world-Y order (-5, 2, 10).
+    expect(drawnWorldYs).toEqual([10, 2, -5]);
+  });
+
+  it('falls back to world Y for sprites with no sortDepth set', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    addSpriteEntity(renderable, 10, { sortDepth: -1 });
+    addSpriteEntity(renderable, -5);
+    addSpriteEntity(renderable, 2);
+
+    world.update();
+
+    const drawnWorldYs = bindInstanceData.mock.calls.map(
+      (call) =>
+        (call[0] as { position: PositionEcsComponent }).position.world.y,
+    );
+
+    // The explicit sortDepth (-1) sorts between the two world-Y-derived
+    // depths (-5, 2), even though this sprite's own world Y (10) is the
+    // largest.
+    expect(drawnWorldYs).toEqual([-5, 10, 2]);
+  });
+
   it("sorts render commands by the sprite's layer before depth", () => {
     addCameraEntity();
     const { renderable, bindInstanceData } = createRenderable(4);

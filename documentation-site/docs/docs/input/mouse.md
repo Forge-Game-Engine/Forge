@@ -119,13 +119,57 @@ naturally a "delta this frame" value, so the default
 `actionResetTypes.zero` is correct here, the value goes back to `0` once
 scrolling stops.
 
-[`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) captures the
-container's `getBoundingClientRect()` once, in its constructor, and reuses
-it for every `mousemove` event. If the container is resized or
-repositioned afterward (a responsive canvas, a window resize), cursor
-positions will be computed against the stale rect. Recreate the
-`MouseInputSource` after such a resize if precise cursor coordinates matter.
+[`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) calls the
+container's `getBoundingClientRect()` fresh on every `mousemove` event, so
+cursor positions stay correct after the container is resized, scrolled, or
+otherwise reflowed (a responsive canvas, a window resize) - no need to
+recreate the source afterward.
 
 [`MouseInputSource.stop()`](/Forge/docs/api/classes/MouseInputSource#stop)
 removes its event listeners from the container and unregisters it from the
 `InputManager`. Call it when the source is no longer needed.
+
+## Raw pointer state: position, delta, scroll, and buttons
+
+Bindings map mouse events onto named actions, but code that wants the raw
+device state directly - a UI hit-tester, a drag gesture, a debug overlay -
+can read it straight off `MouseInputSource` without an intervening action:
+
+- `position` - the cursor's current position in canvas pixels: Y-down,
+  origin at the container's top-left corner.
+- `delta` - how far `position` moved since the last tick.
+- `scroll` - accumulated `WheelEvent.deltaY` since the last tick.
+- `buttonsDown` / `buttonsHeld` / `buttonsUp` - `MouseButton` sets for
+  buttons that started being held down this tick, are currently held, and
+  stopped being held down this tick, respectively.
+
+`delta`, `scroll`, `buttonsDown`, and `buttonsUp` are per-tick edges that
+reset (via `MouseInputSource.reset()`, wired up automatically by
+`registerInputs`) once the frame that observed them ends; `position` and
+`buttonsHeld` persist across ticks until they next change.
+
+To bring this state into the ECS world instead of reading `MouseInputSource`
+directly, attach a
+[`PointerEcsComponent`](/Forge/docs/api/interfaces/PointerEcsComponent) with
+`addPointerComponent` and register
+[`createPointerEcsSystem`](/Forge/docs/api/functions/createPointerEcsSystem),
+which copies a `PointerInputSource` (implemented today by
+`MouseInputSource`) into every pointer component once per tick:
+
+```ts
+import {
+  addPointerComponent,
+  createPointerEcsSystem,
+} from '@forge-game-engine/forge/input';
+
+const pointerEntity = world.createEntity();
+
+addPointerComponent(world, pointerEntity);
+world.addSystem(createPointerEcsSystem(mouse));
+```
+
+`position` is deliberately in canvas pixels, not world space: with more than
+one camera (for example a dedicated UI camera layered over the world
+camera), a single canvas position maps to a different world position
+through each camera, so converting is left to the reader rather than baked
+into the component.

@@ -104,7 +104,7 @@ const pushSpriteRenderCommands = (
   flipComponent: FlipEcsComponent | null,
 ): void => {
   const { renderable, layer, slices } = spriteComponent;
-  const depth = entityPosition.world.y;
+  const depth = spriteComponent.sortDepth ?? entityPosition.world.y;
 
   if (!slices) {
     commands.push({

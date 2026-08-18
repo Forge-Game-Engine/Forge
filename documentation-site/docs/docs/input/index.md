@@ -29,7 +29,8 @@ Guides in this section:
 - [Actions and Input Groups](./actions.md): the four action types, when to
   use each, and switching the active group.
 - [Keyboard Input](./keyboard.md): `KeyboardInputSource` and its bindings.
-- [Mouse Input](./mouse.md): `MouseInputSource`, cursor position, and scroll.
+- [Mouse Input](./mouse.md): `MouseInputSource`, cursor position, scroll, and
+  the canvas-space `PointerEcsComponent`.
 - [Gamepad Input](./gamepad.md): `GamepadInputSource`, sticks, and D-pads.
 
 ## Quick Start

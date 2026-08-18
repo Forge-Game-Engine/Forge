@@ -1,4 +1,4 @@
-import { Vec2 } from '../../../math/index.js';
+import { Vec2, Vector2 } from '../../../math/index.js';
 import {
   buttonMoments,
   cursorValueTypes,
@@ -16,6 +16,7 @@ import {
   Axis1dInputSource,
   Axis2dInputSource,
   HoldInputSource,
+  PointerInputSource,
   TriggerInputSource,
 } from '../../input-sources/index.js';
 
@@ -26,6 +27,7 @@ export class MouseInputSource
     HoldInputSource<MouseHoldBinding>,
     Axis1dInputSource<MouseAxis1dBinding>,
     Axis2dInputSource<MouseAxis2dBinding>,
+    PointerInputSource,
     Resettable,
     Stoppable
 {
@@ -42,14 +44,15 @@ export class MouseInputSource
 
   private readonly _inputManager: InputManager;
   private readonly _container: HTMLElement;
-  private readonly _containerBoundingClientRect: DOMRect;
 
   private readonly _mouseButtonPresses = new Set<MouseButton>();
   private readonly _mouseButtonDowns = new Set<MouseButton>();
   private readonly _mouseButtonUps = new Set<MouseButton>();
   private readonly _mouseButtonHolds = new Set<MouseButton>();
 
-  private readonly _lastMousePosition = Vec2.zero;
+  private readonly _pointerPosition = Vec2.zero;
+  private readonly _pointerDelta = Vec2.zero;
+  private _pointerScroll = 0;
 
   /** Constructs a new MouseInputSource.
    * @param inputManager - The input manager to register with.
@@ -58,7 +61,6 @@ export class MouseInputSource
   constructor(inputManager: InputManager, container: HTMLElement) {
     this._inputManager = inputManager;
     this._container = container;
-    this._containerBoundingClientRect = container.getBoundingClientRect();
 
     container.addEventListener('mousedown', this._onMouseDownHandler);
     container.addEventListener('mouseup', this._onMouseUpHandler);
@@ -73,11 +75,55 @@ export class MouseInputSource
     this.axis2dBindings = new Set();
   }
 
+  /**
+   * The pointer's current position in canvas pixels: Y-down, origin at the
+   * container's top-left corner. Recomputed from a fresh
+   * `getBoundingClientRect()` call on every `mousemove`, so it stays correct
+   * after the container is resized, scrolled, or otherwise reflowed.
+   */
+  get position(): Vector2 {
+    return this._pointerPosition;
+  }
+
+  /** How far `position` moved since the last `reset()`, in canvas pixels. */
+  get delta(): Vector2 {
+    return this._pointerDelta;
+  }
+
+  /**
+   * Accumulated wheel scroll delta (`WheelEvent.deltaY`) since the last
+   * `reset()`.
+   */
+  get scroll(): number {
+    return this._pointerScroll;
+  }
+
+  /** Buttons that started being held down since the last `reset()`. */
+  get buttonsDown(): ReadonlySet<MouseButton> {
+    return this._mouseButtonDowns;
+  }
+
+  /** Buttons currently held down. */
+  get buttonsHeld(): ReadonlySet<MouseButton> {
+    return this._mouseButtonPresses;
+  }
+
+  /** Buttons that stopped being held down since the last `reset()`. */
+  get buttonsUp(): ReadonlySet<MouseButton> {
+    return this._mouseButtonUps;
+  }
+
   public reset(): void {
     this._mouseButtonDowns.clear();
     this._mouseButtonUps.clear();
-    this._mouseButtonPresses.clear();
     this._mouseButtonHolds.clear();
+
+    // _mouseButtonPresses (buttonsHeld) is intentionally not cleared here:
+    // it tracks buttons currently held down, which persists across ticks
+    // until the matching mouseup, unlike the down/up edge sets above.
+    this._pointerDelta.x = 0;
+    this._pointerDelta.y = 0;
+    this._pointerScroll = 0;
   }
 
   public stop(): void {
@@ -135,25 +181,32 @@ export class MouseInputSource
   };
 
   private readonly _onWheelHandler = (event: WheelEvent) => {
+    this._pointerScroll += event.deltaY;
+
     for (const binding of this.axis1dBindings) {
       binding.action.set(event.deltaY / 100);
     }
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {
-    const x = event.clientX - this._containerBoundingClientRect.left;
-    const y = event.clientY - this._containerBoundingClientRect.top;
+    // Computed fresh on every move rather than cached at construction, so
+    // the pointer position stays correct after the container is resized,
+    // scrolled, or otherwise reflowed.
+    const containerBoundingClientRect = this._container.getBoundingClientRect();
 
-    const normalizedX = x / this._containerBoundingClientRect.width;
-    const normalizedY = y / this._containerBoundingClientRect.height;
+    const x = event.clientX - containerBoundingClientRect.left;
+    const y = event.clientY - containerBoundingClientRect.top;
+
+    const normalizedX = x / containerBoundingClientRect.width;
+    const normalizedY = y / containerBoundingClientRect.height;
 
     for (const binding of this.axis2dBindings) {
       const { cursorValueType } = binding;
 
       const absoluteXOffset =
-        binding.cursorOrigin.x * this._containerBoundingClientRect.width;
+        binding.cursorOrigin.x * containerBoundingClientRect.width;
       const absoluteYOffset =
-        binding.cursorOrigin.y * this._containerBoundingClientRect.height;
+        binding.cursorOrigin.y * containerBoundingClientRect.height;
 
       if (cursorValueType === cursorValueTypes.absolute) {
         binding.action.set(x - absoluteXOffset, y - absoluteYOffset);
@@ -169,7 +222,10 @@ export class MouseInputSource
       }
     }
 
-    this._lastMousePosition.x = x;
-    this._lastMousePosition.y = y;
+    this._pointerDelta.x += event.movementX;
+    this._pointerDelta.y += event.movementY;
+
+    this._pointerPosition.x = x;
+    this._pointerPosition.y = y;
   };
 }
