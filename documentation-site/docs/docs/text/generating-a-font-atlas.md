@@ -11,6 +11,11 @@ font into an MSDF atlas: `<out>.png` (the atlas texture) and `<out>.json`
 build-time step, run once whenever your font or charset changes, not
 something your game runs at runtime.
 
+You don't need this at all to get started - the engine ships a
+pre-generated default atlas (see [Text](./index.md)'s Quick start). Reach
+for this command once you want your own look, or characters (accented
+Latin, Cyrillic, CJK) the default atlas's ASCII charset doesn't cover.
+
 ## Install the generator
 
 The command wraps [`msdf-bmfont-xml`](https://www.npmjs.com/package/msdf-bmfont-xml),

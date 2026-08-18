@@ -18,19 +18,18 @@ function buildComponents(
       shadowColor: new Color(0.5, 0.6, 0.7, 0.8),
       shadowOffset: { x: 1, y: -1 },
       shadowSoftness: 3,
-      maxEffectClearance: 6,
       ...overrides,
     },
   } as InstanceComponents;
 }
 
 describe('textEffectsInstanceDataSegment', () => {
-  it('occupies 13 floats', () => {
-    expect(textEffectsInstanceDataSegment.floatsPerInstance).toBe(13);
+  it('occupies 12 floats', () => {
+    expect(textEffectsInstanceDataSegment.floatsPerInstance).toBe(12);
   });
 
-  it('binds outline, shadow, and maxEffectClearance data into the buffer at the given offset', () => {
-    const buffer = new Float32Array(15);
+  it('binds outline and shadow data into the buffer at the given offset', () => {
+    const buffer = new Float32Array(14);
 
     textEffectsInstanceDataSegment.bindInstanceData(
       buildComponents(),
@@ -38,27 +37,15 @@ describe('textEffectsInstanceDataSegment', () => {
       2,
     );
 
-    const expected = [0.1, 0.2, 0.3, 0.4, 2, 0.5, 0.6, 0.7, 0.8, 1, -1, 3, 6];
+    const expected = [0.1, 0.2, 0.3, 0.4, 2, 0.5, 0.6, 0.7, 0.8, 1, -1, 3];
 
-    Array.from(buffer.slice(2, 15)).forEach((value, index) => {
+    Array.from(buffer.slice(2, 14)).forEach((value, index) => {
       expect(value).toBeCloseTo(expected[index]);
     });
   });
 
-  it("binds each glyph's own maxEffectClearance, distinct from the entity-uniform fields", () => {
-    const buffer = new Float32Array(13);
-
-    textEffectsInstanceDataSegment.bindInstanceData(
-      buildComponents({ maxEffectClearance: 0 }),
-      buffer,
-      0,
-    );
-
-    expect(buffer[12]).toBe(0);
-  });
-
   it('throws when InstanceComponents.textEffects is not set', () => {
-    const buffer = new Float32Array(13);
+    const buffer = new Float32Array(12);
     const components = {} as InstanceComponents;
 
     expect(() =>
@@ -78,7 +65,7 @@ describe('textEffectsInstanceDataSegment', () => {
     } as unknown as WebGL2RenderingContext;
     const renderable = {
       material: { program: {} },
-      floatsPerInstance: 30,
+      floatsPerInstance: 29,
     } as Renderable;
 
     textEffectsInstanceDataSegment.setupInstanceAttributes(gl, renderable, 17);
@@ -89,7 +76,6 @@ describe('textEffectsInstanceDataSegment', () => {
       'a_instanceShadowColor',
       'a_instanceShadowOffset',
       'a_instanceShadowSoftness',
-      'a_instanceMaxEffectClearance',
     ]) {
       expect(getAttribLocation).toHaveBeenCalledWith(
         renderable.material.program,
@@ -97,7 +83,7 @@ describe('textEffectsInstanceDataSegment', () => {
       );
     }
 
-    expect(vertexAttribPointer).toHaveBeenCalledTimes(6);
+    expect(vertexAttribPointer).toHaveBeenCalledTimes(5);
 
     const stride = renderable.floatsPerInstance * 4;
 
@@ -122,14 +108,14 @@ describe('textEffectsInstanceDataSegment', () => {
       (17 + 4) * 4,
     );
 
-    // a_instanceMaxEffectClearance: float, the last field, 12 floats in.
+    // a_instanceShadowSoftness: float, the last field, 11 floats in.
     expect(vertexAttribPointer).toHaveBeenCalledWith(
       0,
       1,
       'FLOAT',
       false,
       stride,
-      (17 + 12) * 4,
+      (17 + 11) * 4,
     );
   });
 });

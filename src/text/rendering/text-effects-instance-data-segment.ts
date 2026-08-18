@@ -17,14 +17,12 @@ const SHADOW_COLOR_A_OFFSET = 8;
 const SHADOW_OFFSET_X_OFFSET = 9;
 const SHADOW_OFFSET_Y_OFFSET = 10;
 const SHADOW_SOFTNESS_OFFSET = 11;
-const MAX_EFFECT_CLEARANCE_OFFSET = 12;
 
 /**
  * The number of floats occupied by a glyph's text effect instance data
- * (outline color/width, shadow color/offset/softness, and this glyph's own
- * neighbor-derived effect clearance).
+ * (outline color/width, shadow color/offset/softness).
  */
-export const TEXT_EFFECTS_INSTANCE_DATA_FLOATS_PER_INSTANCE = 13;
+export const TEXT_EFFECTS_INSTANCE_DATA_FLOATS_PER_INSTANCE = 12;
 
 function bindTextEffectsInstanceData(
   components: InstanceComponents,
@@ -45,7 +43,6 @@ function bindTextEffectsInstanceData(
     shadowColor,
     shadowOffset,
     shadowSoftness,
-    maxEffectClearance,
   } = textEffects;
 
   instanceDataBufferArray[offset + OUTLINE_COLOR_R_OFFSET] = outlineColor.r;
@@ -61,8 +58,6 @@ function bindTextEffectsInstanceData(
   instanceDataBufferArray[offset + SHADOW_OFFSET_X_OFFSET] = shadowOffset.x;
   instanceDataBufferArray[offset + SHADOW_OFFSET_Y_OFFSET] = shadowOffset.y;
   instanceDataBufferArray[offset + SHADOW_SOFTNESS_OFFSET] = shadowSoftness;
-  instanceDataBufferArray[offset + MAX_EFFECT_CLEARANCE_OFFSET] =
-    maxEffectClearance;
 }
 
 function setupTextEffectsInstanceAttributes(
@@ -112,14 +107,6 @@ function setupTextEffectsInstanceAttributes(
     stride,
     (offset + SHADOW_SOFTNESS_OFFSET) * 4,
   );
-
-  setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceMaxEffectClearance'),
-    gl,
-    1,
-    stride,
-    (offset + MAX_EFFECT_CLEARANCE_OFFSET) * 4,
-  );
 }
 
 /**
@@ -129,16 +116,9 @@ function setupTextEffectsInstanceAttributes(
  * Binds `InstanceComponents.textEffects` (set by `pushTextRenderCommands`
  * for every glyph instance) and wires it up to the `a_instanceOutlineColor`,
  * `a_instanceOutlineWidth`, `a_instanceShadowColor`, `a_instanceShadowOffset`,
- * `a_instanceShadowSoftness` and `a_instanceMaxEffectClearance` attributes.
- *
- * `maxEffectClearance` is per-glyph (the word's tightest same-word ink gap,
- * applied uniformly - see `assignEffectClearances` in `shape-text.ts`),
- * unlike the other fields here, which are uniform across a whole
- * `TextEcsComponent` - `msdf-effects.frag` uses it to clamp
- * `shadowSoftness`/`shadowOffset` so a shadow's re-sampled UV never leaves
- * this glyph's own atlas tile into a same-word neighbor's unrelated
- * texels. `outlineWidth` is *not* clamped by it - see that shader's doc
- * comment for why the fill/effects two-pass draw order makes that safe.
+ * and `a_instanceShadowSoftness` attributes - all uniform across a whole
+ * `TextEcsComponent`, so every glyph instance of the same text entity binds
+ * the same values.
  *
  * Combine this with `spriteInstanceDataSegment` via
  * `combineInstanceDataSegments` to build the MSDF text `Renderable`'s

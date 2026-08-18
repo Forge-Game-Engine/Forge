@@ -46,25 +46,22 @@ const glyphBounds = {
   top: 0.5 + glyphHalfWidthEm,
 };
 
-// The advance (in em) between the two glyphs is chosen so that:
-//  - their *ink* stays a real, positive 5 world units apart (a plausible
-//    tight-kerning gap, not glyphs literally touching) - comfortably inside
-//    the atlas's own graded budget (~7.5 screen px here), so an
-//    outline/shadow *would* visibly reach across it if nothing clamped
-//    against the neighbor;
-//  - their *padded quads* (ink + the atlas's own baked-in padding on each
-//    side) already overlap by 11 world units - this is exactly the
-//    `effectClearance <= 0` case `assignEffectClearances` in shape-text.ts
-//    is meant to catch, reproducing the tight-kerning ("il"/"ff") scenario
-//    from issue #584's reverted PR #598, not a hand-picked worst case.
+// The advance (in em) between the two glyphs is chosen so that their
+// *padded quads* (ink + the atlas's own baked-in padding on each side)
+// overlap by 11 world units while their *ink* stays a real, positive 5
+// world units apart (a plausible tight-kerning gap, not glyphs literally
+// touching) - comfortably inside the atlas's own graded budget (~7.5
+// screen px here). This reproduces the tight-kerning ("il"/"ff") scenario
+// from issue #584's reverted PR #598: an outline/shadow that measured from
+// the *padded quad* edges instead of the ink edges would see these two
+// glyphs as already overlapping and clamp to nothing, even though their
+// real ink is a healthy 5 world units apart.
 const targetInkGapWorld = 5;
 const tightAdvanceEm = 0.5 + targetInkGapWorld / SIZE;
 
 // The B -> C advance, by contrast, is deliberately wide: a 64 world unit
 // ink gap (comfortably more than double the atlas's own ~7.5 screen px
-// budget), so C's `effectClearance` is bounded by the atlas budget alone,
-// exactly like an isolated glyph - C is this scene's "outline still
-// renders normally when nothing is actually tight" sanity control,
+// budget) - C is this scene's "nothing nearby is tight" sanity control,
 // contrasted against A/B's deliberately tight pair above.
 const wideAdvanceEm = 1.0;
 
@@ -91,15 +88,37 @@ const glyphAInkRightWorldX =
 
 /**
  * World X of a point that sits inside glyph "A"'s own ink, close to its
- * boundary - the exact pixel an unclamped neighbor's oversized outline would
- * threaten to paint over first, and the one `assignEffectClearances` exists
- * to protect. 2 world units inside "A"'s true ink edge - the clamp boundary
- * itself is anti-aliased over roughly a 1-world-unit-wide band (the same
- * `screenPxDistance +/- 0.5` transition that makes the glyph's own edge
- * smooth, not a hard step), so 1 unit of margin isn't quite enough to avoid
- * sampling a partially-blended pixel; 2 is.
+ * boundary - the exact pixel an unclamped neighbor's oversized outline
+ * would threaten to paint over first. 2 world units inside "A"'s true ink
+ * edge - the clamp boundary itself is anti-aliased over roughly a
+ * 1-world-unit-wide band (the same `screenPxDistance +/- 0.5` transition
+ * that makes the glyph's own edge smooth, not a hard step), so 1 unit of
+ * margin isn't quite enough to avoid sampling a partially-blended pixel; 2
+ * is.
  */
 const contestedWorldX = glyphAInkRightWorldX - 2;
+
+/**
+ * World X of glyph "A"'s own true ink *left* edge - the side with no
+ * same-word neighbor at all (A is the word's first glyph), mirroring
+ * `glyphAInkRightWorldX` on the opposite side.
+ */
+const glyphAInkLeftWorldX = glyphBounds.left * SIZE + paddingFraction * SIZE;
+
+/**
+ * World X a few screen px outside "A"'s own uncontested left ink edge -
+ * where its shadow/glow should show at full, atlas-budget-only strength,
+ * exactly like `glyphCOuterEdgeWorldX` does for "C". Regression coordinate
+ * for the fix that removed the shadow's old same-word-neighbor clamp: that
+ * clamp computed a single scalar reach for the whole glyph from its
+ * *tightest* neighbor gap (here, the tight A-B gap on A's *right*), then
+ * applied it uniformly in every direction - so even this uncontested left
+ * side used to render a visibly thinner glow than an isolated glyph like
+ * "C" would, at the same `shadowSoftness`. Sampling here catches a
+ * regression of that bug even though this specific point was never near
+ * the tight neighbor that caused it.
+ */
+const glyphAOuterEdgeWorldX = glyphAInkLeftWorldX - 3;
 
 /**
  * World X of the midpoint of the real gap between "A"'s and "B"'s true ink
@@ -149,6 +168,9 @@ export interface TextEffectsOverlapSceneHandle extends SceneHandle {
   /** See `gapMidpointWorldX` above. */
   readonly gapMidpointWorldX: number;
 
+  /** See `glyphAOuterEdgeWorldX` above. */
+  readonly glyphAOuterEdgeWorldX: number;
+
   /** World X of "A"'s own ink center - a same-run sanity baseline. */
   readonly glyphACenterWorldX: number;
 
@@ -180,9 +202,13 @@ export interface TextEffectsOverlapSceneHandle extends SceneHandle {
  * generated MSDF atlas (no font file or external generator needed - see
  * `create-synthetic-msdf-glyph-image.ts`), kerned tightly enough that their
  * padded quads overlap while their ink stays a real, positive distance
- * apart. This is the real-GPU proof for the fix in issue #584: a large
- * `outlineWidth` must never paint one glyph's outline color over the
- * *other* glyph's own ink, however far the requested effect size reaches.
+ * apart. This is the real-GPU proof for two fixes:
+ * - issue #584: a large `outlineWidth` must never paint one glyph's
+ *   outline color over the *other* glyph's own ink, however far the
+ *   requested effect size reaches.
+ * - the shadow/glow's reach must depend only on the atlas's own encoded
+ *   budget, never on how tightly a glyph happens to be kerned against a
+ *   neighbor - see `glyphAOuterEdgeWorldX`'s doc comment.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -320,6 +346,7 @@ export const createScene: CreateScene = async (
 
     contestedWorldX,
     gapMidpointWorldX,
+    glyphAOuterEdgeWorldX,
     glyphACenterWorldX: 0.5 * SIZE,
     glyphCOuterEdgeWorldX,
     glyphCCenterWorldX,
