@@ -94,7 +94,7 @@ function validateMetrics(
     return;
   }
 
-  const { lineHeight, ascender, descender } = metrics as Record<
+  const { lineHeight, ascender, descender, capHeight } = metrics as Record<
     string,
     unknown
   >;
@@ -102,10 +102,11 @@ function validateMetrics(
   if (
     !Number.isFinite(lineHeight) ||
     !Number.isFinite(ascender) ||
-    !Number.isFinite(descender)
+    !Number.isFinite(descender) ||
+    !Number.isFinite(capHeight)
   ) {
     fail(
-      'metrics.lineHeight, metrics.ascender, and metrics.descender must all be finite numbers.',
+      'metrics.lineHeight, metrics.ascender, metrics.descender, and metrics.capHeight must all be finite numbers.',
     );
   }
 }

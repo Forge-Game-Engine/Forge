@@ -12,7 +12,7 @@ const buildValidJson = (): FontAtlasFileData => ({
   atlasImage: 'my-font.png',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
-  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2 },
+  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
   glyphs: [
     {
       codePoint: 65,
@@ -106,11 +106,28 @@ describe('validateFontAtlasFileData', () => {
         lineHeight: 1.2,
         ascender: Number.POSITIVE_INFINITY,
         descender: -0.2,
+        capHeight: 0.7,
       },
     };
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
-      /metrics\.lineHeight, metrics\.ascender, and metrics\.descender must all be finite numbers/,
+      /metrics\.lineHeight, metrics\.ascender, metrics\.descender, and metrics\.capHeight must all be finite numbers/,
+    );
+  });
+
+  it('should throw when metrics.capHeight is non-finite', () => {
+    const json = {
+      ...buildValidJson(),
+      metrics: {
+        lineHeight: 1.2,
+        ascender: 0.9,
+        descender: -0.2,
+        capHeight: Number.NaN,
+      },
+    };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /metrics\.lineHeight, metrics\.ascender, metrics\.descender, and metrics\.capHeight must all be finite numbers/,
     );
   });
 

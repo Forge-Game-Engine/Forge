@@ -49,13 +49,26 @@ export interface TextDefaultedOptions {
 
   /**
    * Vertical alignment of the shaped block's visible ink relative to the
-   * entity's position: `'top'` anchors the first line's ascender (so text
-   * hangs *below* the entity's position), `'bottom'` anchors the last
-   * line's descender (so text sits *above* it), and `'middle'` centers the
-   * ink between the two - not the font's line-height box, which typically
+   * entity's position - not the font's line-height box, which typically
    * doesn't match the ink's own extent.
+   *
+   * `'top'`, `'bottom'`, `'capline'`, and `'baseline'` all anchor to a
+   * fixed reference that doesn't depend on this specific string's rendered
+   * bounds, so a line's position stays stable as its text is edited:
+   * `'top'` anchors the font's ascender (so text hangs *below* the
+   * entity's position), `'bottom'` anchors the font's descender (so text
+   * sits *above* it), `'capline'` anchors the font's cap height - the top
+   * of a capital letter like "H", shorter than `ascender`'s "tallest glyph
+   * including ascenders like b/d/h" - and `'baseline'` anchors the first
+   * line's own baseline directly (most useful for single-line text).
+   *
+   * `'middle'` instead centers this exact string's *actual* rendered ink,
+   * since a font's ascender is typically taller than its descender is
+   * deep - most glyphs have no descender at all - so centering on the
+   * font's metrics would bias every descender-less string (numbers,
+   * titles, most short UI labels) above the true visual center of its box.
    */
-  verticalAlign: 'top' | 'middle' | 'bottom';
+  verticalAlign: 'top' | 'middle' | 'bottom' | 'baseline' | 'capline';
 
   /**
    * Wraps at word boundaries when a line would exceed this width, in world

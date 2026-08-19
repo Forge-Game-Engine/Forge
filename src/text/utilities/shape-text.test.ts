@@ -5,15 +5,25 @@ import { shapeText } from './shape-text.js';
 const A_CODE_POINT = 65;
 const V_CODE_POINT = 86;
 const SPACE_CODE_POINT = 32;
+const X_CODE_POINT = 120;
 
 function buildFixtureFontAtlasData(): FontAtlasData {
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     type: 'msdf',
     atlasImage: 'fixture.png',
     atlasSize: { width: 256, height: 256 },
     distanceRange: 4,
-    metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2 },
+    // `capHeight: 0.7` intentionally matches "A"/"V"'s own `planeBounds.top`
+    // below - the fixture's stand-in for "a capital letter's actual top" -
+    // while `ascender: 0.9` stays taller, standing in for a true ascender
+    // (e.g. "b"/"d"/"h") that reaches higher than any capital does.
+    metrics: {
+      lineHeight: 1.2,
+      ascender: 0.9,
+      descender: -0.2,
+      capHeight: 0.7,
+    },
     glyphs: new Map([
       [
         A_CODE_POINT,
@@ -40,6 +50,19 @@ function buildFixtureFontAtlasData(): FontAtlasData {
           advance: 0.3,
           planeBounds: null,
           atlasBounds: null,
+        },
+      ],
+      [
+        X_CODE_POINT,
+        // An x-height glyph: unlike "A"/"V" it reaches neither the font's
+        // ascender (0.9) nor its descender (-0.2), so it's the fixture
+        // `'middle'` uses to tell "centered on this string's actual ink"
+        // apart from "centered on the font's ascender/descender metrics".
+        {
+          codePoint: X_CODE_POINT,
+          advance: 0.5,
+          planeBounds: { left: 0.05, bottom: 0, right: 0.45, top: 0.5 },
+          atlasBounds: { left: 0.2, bottom: 0, right: 0.3, top: 0.14 },
         },
       ],
     ]),
@@ -349,17 +372,83 @@ describe('shapeText', () => {
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 26);
     });
 
-    it('anchors the block by the vertical center of its ink', () => {
+    it('anchors the block by the vertical center of its own rendered ink', () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 20,
         verticalAlign: 'middle',
       });
 
-      // Shifting by `-(inkTop + inkBottom) / 2` = `-(9 + -26) / 2` = 8.5
-      // centers the ink (not the line-height box) on y = 0.
+      // "A"/"V" both reach exactly the fixture's ascender/descender (0.7 top
+      // vs ascender 0.9, 0 bottom vs descender -0.2 - each 0.2em short by
+      // design, so this case can't tell "centered on rendered ink" apart
+      // from "centered on the font's ascender/descender metrics"; see the
+      // "centers on this string's own ink, not the font's ascender/
+      // descender" test below for that). The block's actual rendered ink
+      // spans from the first line's top (0.7 * 10 = 7) to the last line's
+      // bottom (-(3 - 1) * 12 + 0 * 10 = -24); shifting by
+      // `-(7 + -24) / 2` = 8.5 centers that (not the line-height box) on
+      // y = 0.
       expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 8.5);
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 8.5);
+    });
+
+    it("centers on this string's own ink, not the font's ascender/descender", () => {
+      const { glyphs } = shapeText('x', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'middle',
+      });
+
+      // "x"'s baseline-relative center is `0 * 10 + 5 / 2` = 2.5 - well
+      // short of the fixture's ascender (0.9) and descender (-0.2).
+      // Centering on the font's metrics would shift by `-(9 + -2) / 2` =
+      // -3.5, landing at `2.5 - 3.5` = -1; centering on "x"'s own rendered
+      // ink instead shifts by `-(5 + 0) / 2` = -2.5, putting its actual
+      // (not the font's nominal) vertical center at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(0);
+    });
+
+    it('falls back to the font metrics when there is no visible ink to center on', () => {
+      const { glyphs, bounds } = shapeText(' ', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'middle',
+      });
+
+      // A single space has no glyph quads at all, so there's no rendered
+      // ink for `'middle'` to measure - this must not throw or divide by
+      // an empty extent, and still shapes (an invisible, but valid) block.
+      expect(glyphs).toHaveLength(0);
+      expect(bounds.height).toBeCloseTo(12);
+    });
+
+    it("anchors the block by the first line's own baseline", () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        verticalAlign: 'baseline',
+      });
+
+      // Line 0's baseline already sits at y = 0 before any offset - `A`/`V`
+      // are baseline-relative center `3.5` above it - so `'baseline'` adds
+      // no shift at all, regardless of line count or the font's metrics.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24);
+    });
+
+    it("anchors the block by the first line's cap height, not its ascender", () => {
+      const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'capline',
+      });
+
+      // The fixture's `capHeight` (0.7) is shorter than its `ascender`
+      // (0.9) - standing in for a real font's cap height (capital letters)
+      // being shorter than its true ascender (which also covers taller
+      // ascenders like "b"/"d"/"h"). Shifting by `-(0.7 * 10)` = -7 puts
+      // "A"'s own top (which happens to sit exactly at the fixture's
+      // capHeight) at y = 0, not the `-9` a `'top'`-style ascender anchor
+      // would use (see the "anchors the block by its top" test above).
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 7);
     });
   });
 
