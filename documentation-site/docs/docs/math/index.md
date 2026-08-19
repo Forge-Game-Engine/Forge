@@ -15,8 +15,10 @@ Core concepts:
   [`Vector3`](/Forge/docs/api/interfaces/Vector3): plain `{ x, y }`/`{ x, y, z }`
   objects, with standalone functions for arithmetic, normalization, rotation,
   and dot/cross products that mutate their first argument in place.
-- [`Rect`](/Forge/docs/api/classes/Rect): an axis-aligned bounding box used
-  for broad-phase collision and point/area checks.
+- [`Rect`](/Forge/docs/api/interfaces/Rect) and
+  [`Rects`](/Forge/docs/api/classes/Rects): a plain `{ min, max }`
+  axis-aligned bounding box, with static helpers for point/area checks, used
+  for broad-phase collision and (in later UI work) rect layout.
 - [`Matrix3x3`](/Forge/docs/api/classes/Matrix3x3): a 2D transformation
   matrix used to build projection matrices for rendering.
 - [`Random`](/Forge/docs/api/classes/Random): a seeded random number

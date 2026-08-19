@@ -9,13 +9,14 @@ Forge: positions, velocities, sizes, directions, and collision normals are
 all `Vector2`. [`Vector3`](/Forge/docs/api/interfaces/Vector3) shares the
 same shape and is mostly used for shader uniforms (colors, 3D data) via
 [`Vec3.toFloat32Array`](/Forge/docs/api/classes/Vec3#tofloat32array).
-[`Rect`](/Forge/docs/api/classes/Rect) pairs two `Vector2`s into an
+[`Rect`](/Forge/docs/api/interfaces/Rect) pairs two `Vector2`s into an
 axis-aligned bounding box.
 
-`Vector2`/`Vector3` are plain `{ x, y }`/`{ x, y, z }` objects, not classes -
-create one with an object literal (`{ x: 1, y: 2 }`) rather than
-`new Vector2(x, y)`, and operate on them with [`Vec2`](/Forge/docs/api/classes/Vec2)/
-[`Vec3`](/Forge/docs/api/classes/Vec3)'s static methods below rather than
+`Vector2`/`Vector3`/`Rect` are plain `{ x, y }`/`{ x, y, z }`/`{ min, max }`
+objects, not classes - create one with an object literal (`{ x: 1, y: 2 }`)
+rather than `new Vector2(x, y)`, and operate on them with
+[`Vec2`](/Forge/docs/api/classes/Vec2)/[`Vec3`](/Forge/docs/api/classes/Vec3)/
+[`Rects`](/Forge/docs/api/classes/Rects)'s static methods below rather than
 instance methods.
 
 ## Vector operations mutate in place
@@ -132,29 +133,34 @@ shape's position.
 
 ## Rect: axis-aligned bounding boxes
 
-A [`Rect`](/Forge/docs/api/classes/Rect) is an `origin` (top-left corner) and
-a `size` (width/height), with two methods:
+A [`Rect`](/Forge/docs/api/interfaces/Rect) is a `min` corner and a `max`
+corner (both `Vector2`), with static helpers on
+[`Rects`](/Forge/docs/api/classes/Rects):
 
-- [`containsPoint(point)`](/Forge/docs/api/classes/Rect#containspoint): is a
-  point inside the rectangle?
-- [`intersects(other)`](/Forge/docs/api/classes/Rect#intersects): do two
-  rectangles overlap?
+- [`Rects.size(rect)`](/Forge/docs/api/classes/Rects#size): `max - min`, as a
+  fresh `Vector2`.
+- [`Rects.contains(rect, point)`](/Forge/docs/api/classes/Rects#contains): is
+  a point inside the rectangle?
+- [`Rects.intersects(a, b)`](/Forge/docs/api/classes/Rects#intersects): do
+  two rectangles overlap?
+- [`Rects.clone(rect)`](/Forge/docs/api/classes/Rects#clone): a deep copy.
 
 ```ts
-const button = new Rect({ x: 10, y: 10 }, { x: 120, y: 32 });
+const button: Rect = { min: { x: 10, y: 10 }, max: { x: 130, y: 42 } };
 
-if (button.containsPoint(mousePosition)) {
+if (Rects.contains(button, mousePosition)) {
   // mouse is over the button
 }
 ```
 
 :::caution
-Both methods are **inclusive of edges**: two rectangles that only touch along
-an edge or at a corner count as intersecting, and a zero-size `Rect` still
-contains its single `origin` point. This is the right behavior for
-broad-phase collision (touching counts as a potential collision), but can be
-surprising for UI hit-testing where you might expect adjacent elements to be
-mutually exclusive.
+Both `Rects.contains` and `Rects.intersects` are **inclusive of edges**: two
+rectangles that only touch along an edge or at a corner count as
+intersecting, and a zero-size `Rect` (`min` equal to `max`) still contains
+its single point. This is the right behavior for broad-phase collision
+(touching counts as a potential collision), but can be surprising for UI
+hit-testing where you might expect adjacent elements to be mutually
+exclusive.
 :::
 
 See [Bodies and Shapes](../physics/rigid-bodies.md) and

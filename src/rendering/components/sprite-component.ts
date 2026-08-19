@@ -94,7 +94,16 @@ export interface SpriteDefaultedOptions {
 }
 
 export interface SpriteEcsComponent
-  extends SpriteRequiredOptions, SpriteDefaultedOptions {}
+  extends SpriteRequiredOptions, SpriteDefaultedOptions {
+  /**
+   * Overrides the depth this sprite is sorted by within its `layer`, in
+   * place of the default (`position.world.y`). Lower values draw first
+   * (further back). Left `undefined`, sprites sort by world Y as before -
+   * this is a genuinely optional field, not one with a `0` default, since
+   * `0` would silently override world-Y sorting for every sprite.
+   */
+  sortDepth?: number;
+}
 
 export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
 

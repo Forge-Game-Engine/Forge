@@ -235,6 +235,93 @@ describe('MouseInputSource', () => {
     expect(clickDownAction.isTriggered).toBe(false);
   });
 
+  it('reports the pointer position in container-relative canvas pixels', () => {
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 150, clientY: 90 }),
+    );
+
+    // container is at (100, 50), so clientX/Y of (150, 90) is (50, 40)
+    // relative to it.
+    expect(source.position).toEqual({ x: 50, y: 40 });
+  });
+
+  it('recomputes the pointer position against a fresh bounding rect after a resize', () => {
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 150, clientY: 90 }),
+    );
+
+    expect(source.position).toEqual({ x: 50, y: 40 });
+
+    // Simulate the container moving/resizing (e.g. a window resize). A
+    // stale, constructor-time-cached bounding rect would keep reporting the
+    // old, now-wrong position.
+    container.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 400,
+        height: 200,
+      }) as DOMRect;
+
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 150, clientY: 90 }),
+    );
+
+    expect(source.position).toEqual({ x: 150, y: 90 });
+  });
+
+  it('accumulates the pointer delta from movementX/Y and clears it on reset', () => {
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { movementX: 5, movementY: -3 }),
+    );
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { movementX: 2, movementY: 1 }),
+    );
+
+    expect(source.delta).toEqual({ x: 7, y: -2 });
+
+    source.reset();
+
+    expect(source.delta).toEqual({ x: 0, y: 0 });
+  });
+
+  it('accumulates wheel scroll delta and clears it on reset', () => {
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: 50 }));
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: -20 }));
+
+    expect(source.scroll).toBe(30);
+
+    source.reset();
+
+    expect(source.scroll).toBe(0);
+  });
+
+  it('tracks buttonsDown, buttonsHeld, and buttonsUp across down/up edges', () => {
+    expect(source.buttonsDown.has(mouseButtons.left)).toBe(false);
+    expect(source.buttonsHeld.has(mouseButtons.left)).toBe(false);
+
+    container.dispatchEvent(
+      new MouseEvent('mousedown', { button: mouseButtons.left }),
+    );
+
+    expect(source.buttonsDown.has(mouseButtons.left)).toBe(true);
+    expect(source.buttonsHeld.has(mouseButtons.left)).toBe(true);
+    expect(source.buttonsUp.has(mouseButtons.left)).toBe(false);
+
+    source.reset();
+
+    // The down edge is a one-tick edge, but the button is still held.
+    expect(source.buttonsDown.has(mouseButtons.left)).toBe(false);
+    expect(source.buttonsHeld.has(mouseButtons.left)).toBe(true);
+
+    container.dispatchEvent(
+      new MouseEvent('mouseup', { button: mouseButtons.left }),
+    );
+
+    expect(source.buttonsHeld.has(mouseButtons.left)).toBe(false);
+    expect(source.buttonsUp.has(mouseButtons.left)).toBe(true);
+  });
+
   it('stops dispatching after stop is called', () => {
     source.stop();
 

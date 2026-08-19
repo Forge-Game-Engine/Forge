@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **physics:** Add `RigidBodyEcsComponent.type` (`'dynamic'` | `'kinematic'` | `'static'`, defaulting to `'dynamic'`), letting a body be moved directly by game code (`'kinematic'`) so it still pushes dynamic bodies on contact without itself being affected by gravity, forces, or impulses - previously only possible implicitly, by giving an entity no `RigidBodyEcsComponent` at all (still supported, and equivalent to `type: 'static'`)
 - **utilities:** Add `DirectedAcyclicGraph<T>`, a generic topological-ordering data structure (`addNode`, `addEdge`, `removeNode`, `topologicalSort`) that throws a descriptive error when an edge would create a cycle or reference an unregistered node
 - **ecs:** Add `EcsWorld.addSystem`'s `before`/`after` options, letting a system be ordered relative to specific other systems instead of an arbitrary numeric priority, and `EcsWorld.addSystemGroup`/`createSystemGroup`, for ordering whole groups of systems (each with their own `before`/`after`) against each other - see the "Ordering systems with before/after" and "Grouping systems" sections of the ECS World doc
+- **input:** Add canvas-space pointer state directly on `MouseInputSource`: `position`, `delta`, `scroll`, `buttonsDown`, `buttonsHeld`, and `buttonsUp`, for code (a UI hit-tester, a drag gesture, a debug overlay) that wants the raw device state without an intervening `InputAction` binding
+- **rendering:** Add `SpriteEcsComponent.sortDepth`, an optional per-sprite override for the depth a sprite is sorted by within its `layer`, taking priority over the existing default (`position.world.y`) when set
 
 #### Changed
 
@@ -30,18 +32,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **math:** `Vec2.normalize`/`Vec3.normalize` now throw when given a zero-length vector instead of silently returning it unchanged, since a normalized direction is undefined for a zero vector. **Breaking change.**
 - **utils:** `createGame` utility now throws a more useful error message when no matching DOM element is found that has the id matching `containerId`
 - **utils:** `createImageSprite` now makes layer an optional value in the options argument rather than a required argument to the function. Defaults to `1`.
+- **math:** `Rect` is now a plain `{ min, max }` object instead of an `{ origin, size }` class, constructed with an object literal and operated on via the new `Rects` static-method namespace (`Rects.contains`, `Rects.intersects`, `Rects.size`, `Rects.clone`) rather than instance methods, matching the `Vector2`/`Vec2` convention. `Rect` was constructed nowhere in the engine outside its own tests, so this is not expected to affect existing content.
 
 #### Removed
 
 - **math:** Removed the `Vector2`/`Vector3` classes, including `new Vector2(...)`/`new Vector3(...)` construction, their instance methods (`.add()`, `.subtract()`, `.clone()`, etc.), and their static constant getters (`Vector2.zero`, `Vector2.up`, etc.), replaced by the `Vec2`/`Vec3` static-method API above. **Breaking change.**
 - **ecs:** Removed `EcsWorld.addSystem`'s numeric `registrationOrder` parameter and the `SystemRegistrationOrder` constants, replaced by the `before`/`after` options and system groups described above - an arbitrary priority number didn't tell you how many systems would run before yours, or what priorities were already taken, and gave no way to express "run before/after this specific system". **Breaking change.**
 - **utilities:** Removed `SortedSet`, which existed solely to back `EcsWorld`'s old priority-ordered system list and has no other consumers; use `DirectedAcyclicGraph` for ordering use cases going forward. **Breaking change.**
+- **common:** Removed `DepthEcsComponent`/`addDepthComponent`, which was never read by anything in the engine; use the new `SpriteEcsComponent.sortDepth` for controlling sprite draw order instead. **Breaking change.**
 
 #### Fixed
 
 - **common:** Fix `createTransformEcsSystem` composing a child's world position by plain addition of the parent's world position, ignoring the parent's world rotation and scale entirely - a child parented to a rotated and/or scaled entity now orbits/scales with it instead of spinning or resizing in place at an un-rotated, un-scaled offset. **Behavior change** for any existing content that parents a positioned entity to a rotated or scaled one and was authored against the previous (incorrect) composition.
 - **rendering:** Fix `SpriteEcsComponent.pivot` using a Y-down convention (`(0, 0)` was the sprite's top-left) while every other Y-facing value in the engine (world position, rotation) is Y-up - `pivot` is now Y-up too, so `(0, 0)` is the bottom-left corner and `(1, 1)` is the top-right corner. Nine-slice region placement (`computeNineSliceRegions`) is updated to match. The centered default (`(0.5, 0.5)`) is unaffected. **Breaking change** for any content using a non-centered pivot: those sprites now render vertically mirrored around their old pivot point until the pivot's `y` is updated (`1 - oldPivotY`).
 - **utilities:** Fix `Game`'s render loop occasionally producing a negative `deltaTime` for one frame (e.g. right after constructing hundreds of entities in a single tick), by reading `performance.now()` at the point the frame callback runs instead of trusting `requestAnimationFrame`'s supplied timestamp, which is not guaranteed to be monotonic relative to the previous frame
+- **input:** Fix `MouseInputSource` caching its container's `getBoundingClientRect()` once in its constructor and reusing it for every `mousemove` event - cursor positions (and any binding derived from them) were wrong after the container was resized, scrolled, or otherwise reflowed. The bounding rect is now recomputed fresh on every `mousemove`
 
 ## [0.24.2] - 2026-08-03
 
