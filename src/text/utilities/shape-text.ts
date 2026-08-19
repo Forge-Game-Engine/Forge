@@ -35,7 +35,7 @@ export interface ShapeTextOptions {
    * `TextDefaultedOptions.verticalAlign` for the precise semantics.
    * Defaults to `'top'`.
    */
-  verticalAlign?: 'top' | 'middle' | 'bottom';
+  verticalAlign?: 'top' | 'middle' | 'bottom' | 'baseline' | 'capline';
 
   /**
    * Wraps at word boundaries when a line would exceed this width, in world
@@ -345,42 +345,62 @@ function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
  * *above* the anchor, the opposite of what `'top'` is supposed to mean, and
  * `'middle'` would never actually cross through the visible glyphs.
  *
- * `'top'`/`'bottom'` anchor to the font's own `ascender`/`descender`
- * metrics rather than this specific string's actual rendered bounds, so
- * that (e.g.) a multi-line paragraph's line positions - and a single label's
- * position as its text is edited - stay stable instead of shifting by a
- * fraction of a line every time the tallest/lowest glyph currently present
- * happens to change. `'middle'`, however, centers on `inkBounds` - the
- * *actual* rendered extent of this exact string - since a font's ascender
- * is typically taller than its descender is deep (most glyphs have no
+ * `'top'`/`'bottom'`/`'capline'`/`'baseline'` all anchor to the font's own
+ * metrics (or, for `'baseline'`, to nothing at all - see below) rather than
+ * this specific string's actual rendered bounds, so that (e.g.) a
+ * multi-line paragraph's line positions - and a single label's position as
+ * its text is edited - stay stable instead of shifting by a fraction of a
+ * line every time the tallest/lowest glyph currently present happens to
+ * change. `'middle'`, however, centers on `inkBounds` - the *actual*
+ * rendered extent of this exact string - since a font's ascender is
+ * typically taller than its descender is deep (most glyphs have no
  * descender at all), so centering on the font's metrics instead would
  * systematically bias every descender-less string (numbers, titles, most
  * short UI labels) above the true visual center of its box; `inkBounds`
  * doesn't have this bias, and a `'middle'`-aligned string being fully
  * replaced is already exactly the kind of content change a UI expects to
- * reflow around, unlike `'top'`/`'bottom'`'s "editing this line" case.
+ * reflow around, unlike `'top'`/`'bottom'`/`'capline'`/`'baseline'`'s
+ * "editing this line" case.
+ *
+ * `'capline'` is `'top'` with the font's `capHeight` (the top of a capital
+ * letter like "H") in place of its `ascender` (the top of the font's
+ * *tallest* glyphs, including ascenders like "b"/"d"/"h" that reach higher
+ * than a flat capital) - useful for a title or label set in caps, where
+ * anchoring to the taller `ascender` would leave a visible gap above the
+ * text's actual top. `'baseline'` anchors line `0`'s own baseline, which
+ * (per the paragraph below) is already sitting at `y = 0` before this
+ * offset is applied - so, uniquely among every mode, it's *always* `0`,
+ * regardless of `lineCount`/`actualLineHeight`/the font's metrics.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
  * following line's baseline is `actualLineHeight` further in the negative
  * (downward, Y-up) direction.
  * @param verticalAlign - The requested vertical alignment.
- * @param fontAtlasData - The font atlas metrics `ascender`/`descender` are read from.
+ * @param fontAtlasData - The font atlas metrics `ascender`/`descender`/`capHeight` are read from.
  * @param size - Font size, in world units.
  * @param lineCount - The number of lines in the shaped block.
  * @param actualLineHeight - The distance between two lines' baselines, in world units.
  * @param inkBounds - The block's actual rendered vertical extent (see
  * {@link getInkBounds}), or `null` if it has no visible glyphs. Only read
- * for `'middle'`; `'top'`/`'bottom'` always use the font's own metrics.
+ * for `'middle'`; every other mode always uses the font's own metrics.
  * @returns The Y offset to add to every glyph.
  */
 function getVerticalAlignOffset(
-  verticalAlign: 'top' | 'middle' | 'bottom',
+  verticalAlign: 'top' | 'middle' | 'bottom' | 'baseline' | 'capline',
   fontAtlasData: FontAtlasData,
   size: number,
   lineCount: number,
   actualLineHeight: number,
   inkBounds: InkBounds | null,
 ): number {
+  if (verticalAlign === 'baseline') {
+    return 0;
+  }
+
+  if (verticalAlign === 'capline') {
+    return -(fontAtlasData.metrics.capHeight * size);
+  }
+
   const inkTop = fontAtlasData.metrics.ascender * size;
   const inkBottom =
     -(lineCount - 1) * actualLineHeight +

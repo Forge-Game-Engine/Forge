@@ -14,7 +14,7 @@ const buildFileData = (): FontAtlasFileData => ({
   atlasImage: 'my-font.png',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
-  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2 },
+  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
   glyphs: [
     {
       codePoint: 65,
@@ -47,6 +47,7 @@ describe('toFontAtlasData', () => {
       lineHeight: 1.2,
       ascender: 0.9,
       descender: -0.2,
+      capHeight: 0.7,
     });
   });
 

@@ -55,7 +55,7 @@ const CHARSET_PRESETS = {
   ascii: ASCII_CHARSET,
 };
 
-const CURRENT_FONT_ATLAS_FORMAT_VERSION = 1;
+const CURRENT_FONT_ATLAS_FORMAT_VERSION = 2;
 
 const args = process.argv.slice(2);
 
@@ -151,6 +151,42 @@ function normalizeGlyph(char, fontSize, base, atlasWidth, atlasHeight) {
   };
 }
 
+// Flat-top capital letters, in priority order, used to measure `capHeight`
+// (see `computeCapHeight`). Deliberately excludes round/pointed capitals
+// like "O"/"C"/"A" - well-designed fonts draw those with a slight vertical
+// overshoot past the true cap height (an optical correction so round shapes
+// don't look shorter than flat ones), which would make `capHeight` a hair
+// taller than the letter it's meant to represent.
+const CAP_HEIGHT_REFERENCE_CHARACTERS = ['H', 'I', 'E', 'F', 'L', 'T'];
+
+/**
+ * Measures `capHeight` (the baseline-to-top distance of the font's capital
+ * letters) from whichever flat-top reference capital is actually present in
+ * `glyphs`, trying each of `CAP_HEIGHT_REFERENCE_CHARACTERS` in turn. Falls
+ * back to `fallback` (the already-computed `ascender`) when the charset
+ * contains none of them - e.g. a numbers-only or symbols-only atlas - since
+ * that's the same "safe outer bound" fallback `ascender`/`descender`
+ * themselves use when there's no ink to measure at all.
+ * @param glyphs - Every normalized glyph in this atlas.
+ * @param fallback - The value to use when no reference capital is present.
+ * @returns The measured (or fallback) cap height, in em units.
+ */
+function computeCapHeight(glyphs, fallback) {
+  const glyphsByCodePoint = new Map(
+    glyphs.map((glyph) => [glyph.codePoint, glyph]),
+  );
+
+  for (const character of CAP_HEIGHT_REFERENCE_CHARACTERS) {
+    const glyph = glyphsByCodePoint.get(character.codePointAt(0));
+
+    if (glyph?.planeBounds) {
+      return glyph.planeBounds.top;
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Normalizes msdf-bmfont-xml's raw BMFont-JSON output into Forge's own,
  * versioned `FontAtlasFileData` schema (see `src/text/font-atlas`), so
@@ -182,6 +218,7 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
   const inkBottoms = glyphs
     .filter((glyph) => glyph.planeBounds !== null)
     .map((glyph) => glyph.planeBounds.bottom);
+  const ascender = inkTops.length > 0 ? Math.max(...inkTops) : base / fontSize;
 
   const kerning = {};
 
@@ -211,11 +248,12 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
       // actual rendered bounds of every glyph in this charset instead
       // guarantees no glyph ever pokes past a `'top'`/`'bottom'`-aligned
       // anchor.
-      ascender: inkTops.length > 0 ? Math.max(...inkTops) : base / fontSize,
+      ascender,
       descender:
         inkBottoms.length > 0
           ? Math.min(...inkBottoms)
           : (base - lineHeight) / fontSize,
+      capHeight: computeCapHeight(glyphs, ascender),
     },
     glyphs,
     kerning,

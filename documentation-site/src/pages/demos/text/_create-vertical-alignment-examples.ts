@@ -23,26 +23,33 @@ const anchorLineThickness = 2;
 const captionGap = 20;
 const columnGap = 18;
 
-const columns: { label: string; verticalAlign: 'top' | 'middle' | 'bottom' }[] =
-  [
-    { label: 'top (default)', verticalAlign: 'top' },
-    { label: 'middle', verticalAlign: 'middle' },
-    { label: 'bottom', verticalAlign: 'bottom' },
-  ];
+const columns: {
+  label: string;
+  verticalAlign: 'top' | 'middle' | 'bottom' | 'baseline' | 'capline';
+}[] = [
+  { label: 'top (default)', verticalAlign: 'top' },
+  { label: 'middle', verticalAlign: 'middle' },
+  { label: 'bottom', verticalAlign: 'bottom' },
+  { label: 'baseline', verticalAlign: 'baseline' },
+  { label: 'capline', verticalAlign: 'capline' },
+];
 
 /**
- * Builds a 3-column showcase of every `verticalAlign` value
- * (`top`/`middle`/`bottom`): each column draws the same short block of text
- * against a shared, highlighted anchor line at the same entity position, so
- * the difference between the three is exactly what moves relative to that
- * line - `top` hangs below it, `bottom` sits above it, `middle` straddles it.
+ * Builds a 5-column showcase of every `verticalAlign` value (`top`/
+ * `middle`/`bottom`/`baseline`/`capline`): each column draws the same short
+ * block of text against a shared, highlighted anchor line at the same
+ * entity position, so the difference between them is exactly what moves
+ * relative to that line - `top` hangs below it, `bottom` sits above it,
+ * `middle` straddles it on this exact text's own rendered ink, `baseline`
+ * puts the first line's baseline directly on it, and `capline` hangs below
+ * it like `top` but from the shorter cap height instead of the ascender.
  * @param world - The ECS world to add label entities to.
  * @param fontAtlas - The font atlas every label draws from.
  * @param whiteSprite - A plain white sprite template for the anchor lines.
  * @param guideLayer - The draw-order layer for the anchor lines (drawn behind text).
  * @param contentLayer - The draw-order layer for captions/body text.
  * @param topLeft - This section's top-left corner, in world units.
- * @param usableWidth - The total width available to lay the 3 columns out in.
+ * @param usableWidth - The total width available to lay the 5 columns out in.
  * @returns The y coordinate immediately below the section's content, for
  * stacking the next section beneath it.
  */

@@ -9,12 +9,21 @@ const X_CODE_POINT = 120;
 
 function buildFixtureFontAtlasData(): FontAtlasData {
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     type: 'msdf',
     atlasImage: 'fixture.png',
     atlasSize: { width: 256, height: 256 },
     distanceRange: 4,
-    metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2 },
+    // `capHeight: 0.7` intentionally matches "A"/"V"'s own `planeBounds.top`
+    // below - the fixture's stand-in for "a capital letter's actual top" -
+    // while `ascender: 0.9` stays taller, standing in for a true ascender
+    // (e.g. "b"/"d"/"h") that reaches higher than any capital does.
+    metrics: {
+      lineHeight: 1.2,
+      ascender: 0.9,
+      descender: -0.2,
+      capHeight: 0.7,
+    },
     glyphs: new Map([
       [
         A_CODE_POINT,
@@ -410,6 +419,36 @@ describe('shapeText', () => {
       // an empty extent, and still shapes (an invisible, but valid) block.
       expect(glyphs).toHaveLength(0);
       expect(bounds.height).toBeCloseTo(12);
+    });
+
+    it("anchors the block by the first line's own baseline", () => {
+      const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        verticalAlign: 'baseline',
+      });
+
+      // Line 0's baseline already sits at y = 0 before any offset - `A`/`V`
+      // are baseline-relative center `3.5` above it - so `'baseline'` adds
+      // no shift at all, regardless of line count or the font's metrics.
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24);
+    });
+
+    it("anchors the block by the first line's cap height, not its ascender", () => {
+      const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'capline',
+      });
+
+      // The fixture's `capHeight` (0.7) is shorter than its `ascender`
+      // (0.9) - standing in for a real font's cap height (capital letters)
+      // being shorter than its true ascender (which also covers taller
+      // ascenders like "b"/"d"/"h"). Shifting by `-(0.7 * 10)` = -7 puts
+      // "A"'s own top (which happens to sit exactly at the fixture's
+      // capHeight) at y = 0, not the `-9` a `'top'`-style ascender anchor
+      // would use (see the "anchors the block by its top" test above).
+      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 7);
     });
   });
 

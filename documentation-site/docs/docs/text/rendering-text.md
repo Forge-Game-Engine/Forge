@@ -90,19 +90,27 @@ addTextComponent(world, label, {
   line except the last (a fully-justified last line of one or two words
   reads as visibly, unintentionally stretched) and except lines with only
   one word (nothing to stretch) - both cases fall back to left-aligned.
-- `verticalAlign` (`'top'` | `'middle'` | `'bottom'`, default `'top'`)
-  positions the shaped block's visible ink relative to the entity's
-  position, not its line-height box (which typically doesn't match the
-  ink's own extent). `'top'` anchors the font's ascender, so text hangs
-  *below* the entity's position, and `'bottom'` anchors the font's
-  descender, so text sits *above* it - both using the font's own metrics
-  rather than this specific string's rendered bounds, so a line's position
-  stays stable as its text is edited. `'middle'` centers this exact
-  string's *actual* rendered ink instead: a font's ascender is typically
-  taller than its descender is deep (most glyphs have no descender at all),
-  so centering on the font's metrics would bias every descender-less string
-  (numbers, titles, most short UI labels) above the true visual center of
-  its box.
+- `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
+  `'capline'`, default `'top'`) positions the shaped block's visible ink
+  relative to the entity's position, not its line-height box (which
+  typically doesn't match the ink's own extent).
+  - `'top'`, `'bottom'`, `'baseline'`, and `'capline'` all anchor to a
+    fixed reference that doesn't depend on this specific string's rendered
+    bounds, so a line's position stays stable as its text is edited:
+    `'top'` anchors the font's ascender, so text hangs *below* the
+    entity's position; `'bottom'` anchors the font's descender, so text
+    sits *above* it; `'capline'` is `'top'` but anchored to the font's cap
+    height (the top of a capital letter like "H") instead of its ascender
+    (the top of the font's *tallest* glyphs, including ascenders like
+    "b"/"d"/"h" that reach higher than a flat capital) - useful for a
+    title or label set in caps, where anchoring to the taller ascender
+    would leave a visible gap above the text; `'baseline'` anchors the
+    first line's own baseline directly, most useful for single-line text.
+  - `'middle'` instead centers this exact string's *actual* rendered ink: a
+    font's ascender is typically taller than its descender is deep (most
+    glyphs have no descender at all), so centering on the font's metrics
+    would bias every descender-less string (numbers, titles, most short UI
+    labels) above the true visual center of its box.
 - `lineHeight` (default `1`) multiplies the font atlas's own authored line
   height to control the vertical distance between line baselines.
 

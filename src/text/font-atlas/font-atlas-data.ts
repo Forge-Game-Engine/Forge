@@ -51,6 +51,15 @@ export interface FontAtlasMetrics {
 
   /** The distance from the baseline to the bottom of the font's lowest-descending glyphs (negative). */
   descender: number;
+
+  /**
+   * The distance from the baseline to the top of the font's capital letters
+   * (e.g. "H"), excluding ascenders like "b"/"d"/"h" that reach higher than
+   * a capital's flat top. Used by `TextEcsComponent.verticalAlign:
+   * 'capline'` to anchor a title/label to its capital letters specifically,
+   * ignoring both true ascenders and any descenders.
+   */
+  capHeight: number;
 }
 
 /** The pixel dimensions of an atlas texture. */
@@ -66,7 +75,7 @@ export interface AtlasSize {
  * The current version of the `FontAtlasData`/`FontAtlasFileData` schema.
  * Bumped on any breaking change to that shape.
  */
-export const CURRENT_FONT_ATLAS_FORMAT_VERSION = 1 as const;
+export const CURRENT_FONT_ATLAS_FORMAT_VERSION = 2 as const;
 
 /**
  * The runtime, Forge-owned representation of a generated MSDF font atlas's
