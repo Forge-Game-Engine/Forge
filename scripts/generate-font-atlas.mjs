@@ -176,6 +176,13 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
     normalizeGlyph(char, fontSize, base, scaleW, scaleH),
   );
 
+  const inkTops = glyphs
+    .filter((glyph) => glyph.planeBounds !== null)
+    .map((glyph) => glyph.planeBounds.top);
+  const inkBottoms = glyphs
+    .filter((glyph) => glyph.planeBounds !== null)
+    .map((glyph) => glyph.planeBounds.bottom);
+
   const kerning = {};
 
   for (const pair of raw.kernings) {
@@ -190,8 +197,25 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
     distanceRange: raw.distanceField.distanceRange,
     metrics: {
       lineHeight: lineHeight / fontSize,
-      ascender: base / fontSize,
-      descender: (base - lineHeight) / fontSize,
+      // `base` (BMFont's "line-top to baseline" distance) and
+      // `lineHeight - base` are the font's *nominal* ascent/descent line
+      // metrics, but they routinely undershoot the font's actually rendered
+      // ink - e.g. this engine's shipped default font renders "b"/"d"/"h"/
+      // "i"/"l" taller than `base` accounts for, and "("/")"/"j" lower than
+      // `lineHeight - base` accounts for. `ascender`/`descender` exist
+      // specifically to bound the block's *visible* ink for `verticalAlign`
+      // (see `getVerticalAlignOffset` in `shape-text.ts`), so a metric that
+      // undershoots real ink makes every alignment sit off by the shortfall
+      // - `'top'`/`'bottom'`-anchored glyphs poke past the anchor, and
+      // `'middle'` centers on the wrong point. Deriving them from the
+      // actual rendered bounds of every glyph in this charset instead
+      // guarantees no glyph ever pokes past a `'top'`/`'bottom'`-aligned
+      // anchor.
+      ascender: inkTops.length > 0 ? Math.max(...inkTops) : base / fontSize,
+      descender:
+        inkBottoms.length > 0
+          ? Math.min(...inkBottoms)
+          : (base - lineHeight) / fontSize,
     },
     glyphs,
     kerning,
