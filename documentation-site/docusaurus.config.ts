@@ -199,6 +199,10 @@ const config: Config = {
               to: 'demos/text',
               label: 'Text Rendering',
             },
+            {
+              to: 'demos/ui',
+              label: 'UI',
+            },
           ],
         },
         {
