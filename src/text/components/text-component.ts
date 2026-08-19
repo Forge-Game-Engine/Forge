@@ -117,7 +117,17 @@ export interface TextDefaultedOptions {
 }
 
 export interface TextEcsComponent
-  extends TextRequiredOptions, TextDefaultedOptions {}
+  extends TextRequiredOptions, TextDefaultedOptions {
+  /**
+   * Overrides the depth this text is sorted by within its `layer`, in place
+   * of the default (`position.world.y`). Lower values draw first (further
+   * back). Left `undefined`, text sorts by world Y as before - this is a
+   * genuinely optional field, not one with a `0` default, since `0` would
+   * silently override world-Y sorting for every text entity. Mirrors
+   * `SpriteEcsComponent.sortDepth` exactly.
+   */
+  sortDepth?: number;
+}
 
 export const textId = createComponentId<TextEcsComponent>('text');
 

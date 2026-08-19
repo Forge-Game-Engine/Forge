@@ -256,6 +256,38 @@ describe('pushTextRenderCommands', () => {
     expect(commands[0].depth).toBe(42);
   });
 
+  it('uses sortDepth instead of world Y when set', () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ sortDepth: 3 }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
+      null,
+      null,
+    );
+
+    expect(commands[0].depth).toBe(3);
+  });
+
+  it('uses sortDepth for both the effects pass and the fill pass', () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ sortDepth: 3, outlineWidth: 2 }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
+      null,
+      null,
+    );
+
+    expect(commands).toHaveLength(2);
+    expect(commands[0].depth).toBe(3);
+    expect(commands[1].depth).toBe(3);
+  });
+
   it('passes rotation and scale components through unchanged, and flip as null', () => {
     const commands: RenderCommand[] = [];
     const rotation: RotationEcsComponent = { local: 0, world: 1.5 };

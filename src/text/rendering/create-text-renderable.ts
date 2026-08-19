@@ -14,9 +14,11 @@ import { textEffectsInstanceDataSegment } from './text-effects-instance-data-seg
  * The rendering category `createTextRenderable` assigns its `Renderable`s,
  * matched against each camera's `cullingMask` (the same bitmask-matching
  * `SpriteEcsComponent`/`Renderable` category convention used throughout
- * `/src/rendering`).
+ * `/src/rendering`). Every `FontAtlas`'s glyphs share this one category
+ * regardless of context - a camera's `cullingMask` must include it for any
+ * text to be visible through that camera at all.
  */
-const TEXT_RENDER_CATEGORY = 1;
+export const TEXT_RENDER_CATEGORY = 1;
 
 /**
  * The pair of `Renderable`s a `FontAtlas`'s glyphs draw with - see

@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft — implementation not started. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open. |
+| **Status**                            | In progress — Phase 0 (prerequisites) and Phase 1 (layout core: `RectTransformEcsComponent`, `resolveRect`, `UiAnchor`, `CanvasEcsComponent`/`createUiCanvas`, `createUiLayoutEcsSystem`, `createPanel`/`createLabel`) have landed on `dev`, documented at `documentation-site/docs/docs/ui`. Phase 2 (interaction: raycasting, `UiInteractableEcsComponent`, focus navigation) has not started. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open. |
 | **Target module**                     | `/src/ui` → `@forge-game-engine/forge/ui`                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Engine version at time of writing** | `0.24.2`                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Model**                             | Retained **anchored rect tree** (canvas → rect transforms → graphics + event routing) — _not_ immediate-mode, _not_ markup-and-stylesheet                                                                                                                                                                                                                                                                                                         |
@@ -970,6 +970,16 @@ silently override world-Y sorting for every sprite.
 This leaves `DepthEcsComponent` still dead, and now with no prospective use.
 Delete it and its tests (backlog 0.4) rather than leaving a component in the
 public API that nothing reads.
+
+**Extended to text during Phase 1 implementation.** Phase 0 only added
+`sortDepth` to `SpriteEcsComponent`; `TextEcsComponent` still sorted by
+`position.world.y` unconditionally. That's not just an inconsistency — it
+broke the module's own core use case: a label parented to a panel (per §5.3's
+"anatomy of a button") is anchored at the panel's visual center, which sits at
+a *different* world Y than the panel's own anchor point, so the two routinely
+sorted in the wrong order and the panel drew over its own label. `sortDepth`
+now exists on `TextEcsComponent` too, mirroring the sprite field exactly, and
+`createUiLayoutEcsSystem` writes it on both.
 
 ---
 

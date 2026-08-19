@@ -67,7 +67,7 @@ function pushTextEffectsRenderCommands(
     shadowOffset,
     shadowSoftness,
   } = textComponent;
-  const depth = entityPosition.world.y;
+  const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   // Uniform across every glyph in this entity, so built once rather than
   // per glyph.
@@ -133,7 +133,7 @@ function pushTextFillRenderCommands(
 ): void {
   const { fillRenderable } = textMesh;
   const { layer, color } = textComponent;
-  const depth = entityPosition.world.y;
+  const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
