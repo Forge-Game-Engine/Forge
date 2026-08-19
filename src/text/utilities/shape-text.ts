@@ -296,16 +296,69 @@ function getJustifyGapStretch(
 }
 
 /**
+ * The vertical extent actually covered by a set of positioned glyphs, used
+ * to center `'middle'`-aligned text on what's actually rendered (see
+ * {@link getVerticalAlignOffset}).
+ */
+interface InkBounds {
+  /** The highest point covered by any glyph's quad. */
+  top: number;
+
+  /** The lowest point covered by any glyph's quad. */
+  bottom: number;
+}
+
+/**
+ * Computes the vertical extent `glyphs` actually covers - the highest and
+ * lowest point of any glyph's quad - or `null` if `glyphs` is empty (e.g. an
+ * empty or all-whitespace string, which has no ink to center on).
+ * @param glyphs - Every glyph in the shaped block, already positioned with
+ * each line's un-offset baseline (line `0` at `y = 0`; see {@link shapeText}).
+ * @returns The block's actual ink extent, or `null` if `glyphs` is empty.
+ */
+function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
+  if (glyphs.length === 0) {
+    return null;
+  }
+
+  let top = -Infinity;
+  let bottom = Infinity;
+
+  for (const glyph of glyphs) {
+    const glyphTop = glyph.offset.y + glyph.size.y / 2;
+    const glyphBottom = glyph.offset.y - glyph.size.y / 2;
+
+    top = Math.max(top, glyphTop);
+    bottom = Math.min(bottom, glyphBottom);
+  }
+
+  return { top, bottom };
+}
+
+/**
  * Computes the offset added to the whole shaped block to realize
- * `verticalAlign`, anchored to the block's actual visible ink - line `0`'s
- * ascender for `'top'`, the last line's descender for `'bottom'` - rather
- * than the line-height box `actualLineHeight` implies. Anchoring to the
- * line-height box instead of the ink is the more obvious thing to try, but
- * it's wrong: a capital letter's ink sits almost entirely *above* its
- * baseline, so a `'top'` alignment built from "line 0's unshifted baseline
- * sits at the box's top" would place most of the text *above* the anchor,
- * the opposite of what `'top'` is supposed to mean, and `'middle'` would
- * never actually cross through the visible glyphs.
+ * `verticalAlign`, rather than the line-height box `actualLineHeight`
+ * implies. Anchoring to the line-height box instead of the ink is the more
+ * obvious thing to try, but it's wrong: a capital letter's ink sits almost
+ * entirely *above* its baseline, so a `'top'` alignment built from "line 0's
+ * unshifted baseline sits at the box's top" would place most of the text
+ * *above* the anchor, the opposite of what `'top'` is supposed to mean, and
+ * `'middle'` would never actually cross through the visible glyphs.
+ *
+ * `'top'`/`'bottom'` anchor to the font's own `ascender`/`descender`
+ * metrics rather than this specific string's actual rendered bounds, so
+ * that (e.g.) a multi-line paragraph's line positions - and a single label's
+ * position as its text is edited - stay stable instead of shifting by a
+ * fraction of a line every time the tallest/lowest glyph currently present
+ * happens to change. `'middle'`, however, centers on `inkBounds` - the
+ * *actual* rendered extent of this exact string - since a font's ascender
+ * is typically taller than its descender is deep (most glyphs have no
+ * descender at all), so centering on the font's metrics instead would
+ * systematically bias every descender-less string (numbers, titles, most
+ * short UI labels) above the true visual center of its box; `inkBounds`
+ * doesn't have this bias, and a `'middle'`-aligned string being fully
+ * replaced is already exactly the kind of content change a UI expects to
+ * reflow around, unlike `'top'`/`'bottom'`'s "editing this line" case.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
  * following line's baseline is `actualLineHeight` further in the negative
@@ -315,6 +368,9 @@ function getJustifyGapStretch(
  * @param size - Font size, in world units.
  * @param lineCount - The number of lines in the shaped block.
  * @param actualLineHeight - The distance between two lines' baselines, in world units.
+ * @param inkBounds - The block's actual rendered vertical extent (see
+ * {@link getInkBounds}), or `null` if it has no visible glyphs. Only read
+ * for `'middle'`; `'top'`/`'bottom'` always use the font's own metrics.
  * @returns The Y offset to add to every glyph.
  */
 function getVerticalAlignOffset(
@@ -323,6 +379,7 @@ function getVerticalAlignOffset(
   size: number,
   lineCount: number,
   actualLineHeight: number,
+  inkBounds: InkBounds | null,
 ): number {
   const inkTop = fontAtlasData.metrics.ascender * size;
   const inkBottom =
@@ -334,6 +391,10 @@ function getVerticalAlignOffset(
   }
 
   if (verticalAlign === 'middle') {
+    if (inkBounds !== null) {
+      return -(inkBounds.top + inkBounds.bottom) / 2;
+    }
+
     return -(inkTop + inkBottom) / 2;
   }
 
@@ -397,14 +458,10 @@ export function shapeText(
   const alignmentWidth = maxWidth ?? contentWidth;
   const actualLineHeight = lineHeight * fontAtlasData.metrics.lineHeight * size;
   const blockHeight = lines.length * actualLineHeight;
-  const verticalOffset = getVerticalAlignOffset(
-    verticalAlign,
-    fontAtlasData,
-    size,
-    lines.length,
-    actualLineHeight,
-  );
 
+  // Built first with each line's *un-offset* baseline (line 0 at y = 0), so
+  // `'middle'` can measure this exact block's actual rendered ink before
+  // `verticalOffset` (which depends on that measurement) is applied below.
   const glyphs: GlyphQuad[] = [];
 
   lines.forEach((line, lineIndex) => {
@@ -428,7 +485,7 @@ export function shapeText(
       isLastLine,
       line,
     );
-    const lineY = -lineIndex * actualLineHeight + verticalOffset;
+    const lineY = -lineIndex * actualLineHeight;
 
     line.words.forEach(({ word, startX }, wordIndex) => {
       const x = startX + uniformOffset + wordIndex * justifyGapStretch;
@@ -441,6 +498,19 @@ export function shapeText(
       }
     });
   });
+
+  const verticalOffset = getVerticalAlignOffset(
+    verticalAlign,
+    fontAtlasData,
+    size,
+    lines.length,
+    actualLineHeight,
+    verticalAlign === 'middle' ? getInkBounds(glyphs) : null,
+  );
+
+  for (const glyph of glyphs) {
+    glyph.offset.y += verticalOffset;
+  }
 
   return { glyphs, bounds: { width: contentWidth, height: blockHeight } };
 }

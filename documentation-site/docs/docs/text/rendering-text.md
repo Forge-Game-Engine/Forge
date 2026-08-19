@@ -92,11 +92,17 @@ addTextComponent(world, label, {
   one word (nothing to stretch) - both cases fall back to left-aligned.
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'`, default `'top'`)
   positions the shaped block's visible ink relative to the entity's
-  position, using the font's own `ascender`/`descender` metrics rather than
-  its line-height box (which typically doesn't match the ink's own extent):
-  `'top'` anchors the first line's ascender, so text hangs *below* the
-  entity's position; `'bottom'` anchors the last line's descender, so text
-  sits *above* it; `'middle'` centers the ink between the two.
+  position, not its line-height box (which typically doesn't match the
+  ink's own extent). `'top'` anchors the font's ascender, so text hangs
+  *below* the entity's position, and `'bottom'` anchors the font's
+  descender, so text sits *above* it - both using the font's own metrics
+  rather than this specific string's rendered bounds, so a line's position
+  stays stable as its text is edited. `'middle'` centers this exact
+  string's *actual* rendered ink instead: a font's ascender is typically
+  taller than its descender is deep (most glyphs have no descender at all),
+  so centering on the font's metrics would bias every descender-less string
+  (numbers, titles, most short UI labels) above the true visual center of
+  its box.
 - `lineHeight` (default `1`) multiplies the font atlas's own authored line
   height to control the vertical distance between line baselines.
 
