@@ -7,35 +7,25 @@ import {
   createRenderTarget,
   RenderContext,
 } from '../../rendering/index.js';
-import { TEXT_RENDER_CATEGORY } from '../../text/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
 
 /**
- * The render category a UI sprite renderable should draw with (see
- * `createImageSprite`'s `layer` option and `Renderable`'s `category`
- * parameter) to be visible on a UI canvas using the default `cullingMask`.
- * Kept as a dedicated high bit so it's unlikely to collide with a game's own,
+ * The render category a UI sprite/text renderable should draw with (see
+ * `createImageSprite`'s `layer` option, `Renderable`'s `category` parameter,
+ * and `TextEcsComponent.category`) to be visible on a UI canvas using the
+ * default `cullingMask`. Not a reserved value - just a sensible default,
+ * which `createPanel`'s sprites (once built with a matching category) and
+ * `createLabel`'s text (automatically, see its own default) both use. Kept
+ * as a dedicated high bit so it's unlikely to collide with a game's own,
  * usually low-numbered, world render categories - without it, a world
  * camera whose own `cullingMask` still matches everything would draw UI
- * sprites a second time, wherever their UI-space position happens to land
- * in the world.
+ * content a second time, wherever its UI-space position happens to land in
+ * the world.
  */
 export const defaultUiRenderCategory = 1 << 30;
-
-/**
- * `createUiCanvas`'s camera's default `cullingMask`: {@link defaultUiRenderCategory}
- * for UI sprites, plus `TEXT_RENDER_CATEGORY` so `createLabel`'s text is
- * visible too - every `FontAtlas`'s glyphs share that one fixed category
- * regardless of context (see `createTextRenderable`), so there's no separate
- * "UI text" category to isolate it under. In practice this means a world
- * sprite that also happens to use `TEXT_RENDER_CATEGORY` as its own category
- * would incidentally be visible through the UI camera too - reserve that
- * category for text alone (world-space or UI) to avoid it.
- */
-const defaultUiCullingMask = defaultUiRenderCategory | TEXT_RENDER_CATEGORY;
 
 /**
  * Worlds that already have `createUiLayoutEcsSystem` registered, so calling
@@ -57,10 +47,9 @@ export interface CreateUiCanvasOptions {
 
   /**
    * The UI camera's culling mask. Defaults to {@link defaultUiRenderCategory}
-   * combined with text's fixed render category, so both `createPanel`
-   * sprites and `createLabel` text are visible by default - build UI
-   * sprites with a matching `Renderable.category` (see `createImageSprite`'s
-   * `layer` option) so the world camera doesn't also draw them.
+   * alone - build UI sprites with a matching `Renderable.category` (see
+   * `createImageSprite`'s `layer` option) so the world camera doesn't also
+   * draw them; `createLabel`'s text matches it automatically.
    */
   cullingMask?: number;
 
@@ -75,7 +64,7 @@ export interface CreateUiCanvasOptions {
 }
 
 const defaultCreateUiCanvasOptions = {
-  cullingMask: defaultUiCullingMask,
+  cullingMask: defaultUiRenderCategory,
   layer: 1000,
 };
 

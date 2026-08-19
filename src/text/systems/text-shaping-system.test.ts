@@ -319,6 +319,34 @@ describe('createTextShapingEcsSystem', () => {
     expect(meshA?.effectsRenderable).toBe(meshB?.effectsRenderable);
   });
 
+  it('creates separate renderables for the same font atlas under different categories', () => {
+    const sharedFontAtlas = buildFontAtlas();
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    addTextComponent(world, entityA, {
+      text: 'A',
+      fontAtlas: sharedFontAtlas,
+      size: 10,
+      category: 0b0001,
+    });
+    addTextComponent(world, entityB, {
+      text: 'B',
+      fontAtlas: sharedFontAtlas,
+      size: 10,
+      category: 0b0010,
+    });
+
+    world.update();
+
+    const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
+    const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
+
+    expect(meshA?.fillRenderable).not.toBe(meshB?.fillRenderable);
+    expect(meshA?.fillRenderable.category).toBe(0b0001);
+    expect(meshB?.fillRenderable.category).toBe(0b0010);
+  });
+
   it('creates separate renderables for different font atlases', () => {
     const entityA = world.createEntity();
     const entityB = world.createEntity();

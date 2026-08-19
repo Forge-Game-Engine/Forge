@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLabel } from './create-label.js';
+import { defaultUiRenderCategory } from './create-ui-canvas.js';
 import { parentId, positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
@@ -31,6 +32,35 @@ describe('createLabel', () => {
     expect(text.text).toBe('Play');
     expect(text.fontAtlas).toBe(fontAtlas);
     expect(text.size).toBe(32);
+  });
+
+  it('defaults category to defaultUiRenderCategory, matching createUiCanvas', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const label = createLabel(world, parent, {
+      text: 'Play',
+      fontAtlas,
+      size: 32,
+    });
+
+    expect(world.getComponent(label, textId)!.category).toBe(
+      defaultUiRenderCategory,
+    );
+  });
+
+  it('accepts an explicit category override', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const label = createLabel(world, parent, {
+      text: 'Play',
+      fontAtlas,
+      size: 32,
+      category: 0b0010,
+    });
+
+    expect(world.getComponent(label, textId)!.category).toBe(0b0010);
   });
 
   it('applies the given anchor and passes through TextEcsComponent options', () => {

@@ -75,14 +75,17 @@ usual meaning of "layer"). Without a matching category, a world camera
 whose own `cullingMask` still matches everything would draw the panel a
 second time wherever its UI-space position happens to land in the world.
 
-The canvas's default `cullingMask` also includes text's own render
-category unconditionally, so `createLabel` text is visible without any
-extra setup - every `FontAtlas`'s glyphs share one fixed category
-regardless of context, so there's no separate "UI text" category to give
-`defaultUiRenderCategory` credit for. In practice, avoid also using that
-same category for a *world* sprite (as opposed to world-space text, which
-is fine) if you don't want it incidentally visible through the UI camera
-too.
+Text works the same way: `TextEcsComponent.category` defaults to
+`TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't override
+it - not a value the engine reserves or forces, just an ordinary default,
+the same way `defaultUiRenderCategory` is one for UI sprites.
+[`createLabel`](/Forge/docs/api/functions/createLabel) defaults its own
+`category` to `defaultUiRenderCategory` instead, matching
+`createUiCanvas`'s default `cullingMask` automatically, so a label is
+visible without you having to think about categories at all for the common
+case. Building a `TextEcsComponent` by hand (via `addTextComponent`
+directly) for use inside a UI canvas needs `category: defaultUiRenderCategory`
+set explicitly, the same way a hand-built sprite does.
 
 ## RectTransform: anchors, pivots, and stretching
 

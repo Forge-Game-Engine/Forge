@@ -3,6 +3,7 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 import type { Vector2 } from '../../math/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
+import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
 
 /**
  * Fields of {@link TextEcsComponent} with no sensible default; callers must
@@ -81,6 +82,18 @@ export interface TextDefaultedOptions {
    * by the same camera. Identical semantics to `SpriteEcsComponent.layer`.
    */
   layer: number;
+
+  /**
+   * The render category this text's glyphs are drawn with, matched against
+   * each camera's `cullingMask` (the same bitmask-matching
+   * `SpriteEcsComponent.renderable.category` convention). Defaults to
+   * `TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't
+   * override it - not a reserved value, just a default: override it per
+   * entity when a game needs a specific text entity (e.g. a UI label) under
+   * a different camera's culling mask than whatever else already uses the
+   * default category.
+   */
+  category: number;
 
   /** Whether this text is drawn at all. */
   enabled: boolean;
@@ -164,6 +177,7 @@ export function addTextComponent(
     horizontalAlign: 'left',
     verticalAlign: 'top',
     layer: 0,
+    category: TEXT_RENDER_CATEGORY,
     enabled: true,
     outlineColor: Color.black,
     outlineWidth: 0,

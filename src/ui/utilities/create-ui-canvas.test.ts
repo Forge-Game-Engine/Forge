@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createUiCanvas, defaultUiRenderCategory } from './create-ui-canvas.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { cameraId, Color, RenderContext } from '../../rendering/index.js';
-import { TEXT_RENDER_CATEGORY } from '../../text/index.js';
 import { canvasId } from '../components/canvas-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 
@@ -50,9 +49,7 @@ describe('createUiCanvas', () => {
     expect(canvasComponent.referenceResolution).toEqual({ x: 1920, y: 1080 });
     expect(camera.isStatic).toBe(true);
     expect(camera.clearColor).toEqual(Color.transparent);
-    expect(camera.cullingMask).toBe(
-      defaultUiRenderCategory | TEXT_RENDER_CATEGORY,
-    );
+    expect(camera.cullingMask).toBe(defaultUiRenderCategory);
     expect(camera.layer).toBe(1000);
     expect(camera.verticalWorldUnits).toBe(1080);
     expect(camera.renderTarget).toBeDefined();

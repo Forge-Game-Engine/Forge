@@ -11,6 +11,7 @@ import {
 } from '../../text/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { defaultUiRenderCategory } from './create-ui-canvas.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
@@ -32,15 +33,26 @@ export type CreateLabelOptions = TextRequiredOptions &
 
 const defaultCreateLabelOptions = {
   anchor: UiAnchor.center,
+  category: defaultUiRenderCategory,
 };
 
 /**
  * Creates a UI label: an entity with a `RectTransformEcsComponent` (parented
  * to `parent`) and a `TextEcsComponent`. Every `TextEcsComponent` option
- * (`text`, `fontAtlas`, `size`, and the rest) is accepted directly.
+ * (`text`, `fontAtlas`, `size`, and the rest) is accepted directly, and
+ * `category` defaults to `defaultUiRenderCategory` - matching
+ * `createUiCanvas`'s own default `cullingMask` - rather than
+ * `TextEcsComponent`'s own default (`TEXT_RENDER_CATEGORY`), so a label is
+ * visible through its canvas's UI camera without either one needing to be
+ * hand-tuned to agree, for the common case of a canvas created with default
+ * options.
  * @param world - The ECS world to create the label entity in.
- * @param parent - The parent entity - a canvas (see `createUiCanvas`) or
- * another UI element.
+ * @param parent - The entity to parent the label to - required, no default.
+ * There's no standalone "no parent" case: pass the canvas entity itself
+ * (see `createUiCanvas`) for a top-level label, or another UI element (a
+ * panel, a button) to position the label relative to it, the way the label
+ * inside a button is parented to the button rather than to the canvas
+ * directly (see `design/ui-system.md`'s "Anatomy of a button").
  * @param options - Options for configuring the label. `text`, `fontAtlas`,
  * and `size` have no sensible default and must always be provided.
  * @returns The created label entity.

@@ -3,6 +3,7 @@ import { addTextComponent, textId } from './text-component.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
+import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
 
 const fontAtlas = {} as FontAtlas;
 
@@ -23,6 +24,7 @@ describe('addTextComponent', () => {
       horizontalAlign: 'left',
       verticalAlign: 'top',
       layer: 0,
+      category: TEXT_RENDER_CATEGORY,
       enabled: true,
       outlineColor: Color.black,
       outlineWidth: 0,
@@ -83,5 +85,30 @@ describe('addTextComponent', () => {
     });
 
     expect(world.getComponent(entity, textId)?.sortDepth).toBe(7);
+  });
+
+  it('defaults category to TEXT_RENDER_CATEGORY', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+
+    addTextComponent(world, entity, { text: 'Play', fontAtlas, size: 32 });
+
+    expect(world.getComponent(entity, textId)?.category).toBe(
+      TEXT_RENDER_CATEGORY,
+    );
+  });
+
+  it('accepts an explicit category override', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+
+    addTextComponent(world, entity, {
+      text: 'Play',
+      fontAtlas,
+      size: 32,
+      category: 1 << 30,
+    });
+
+    expect(world.getComponent(entity, textId)?.category).toBe(1 << 30);
   });
 });

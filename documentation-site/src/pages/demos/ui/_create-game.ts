@@ -31,11 +31,8 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
-// Bit 0 is reserved for text (see `TEXT_RENDER_CATEGORY`, shared by every
-// `FontAtlas`'s glyphs regardless of context) - kept off the world category
-// here so the world camera doesn't also draw the UI's labels.
 const renderLayers = {
-  world: 1 << 1,
+  world: 1 << 0,
 };
 
 // The panel artwork is a flat white fill, so labels need a dark tint to

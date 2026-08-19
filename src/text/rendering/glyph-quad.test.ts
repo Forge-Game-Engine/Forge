@@ -36,6 +36,7 @@ function buildTextComponent(
     horizontalAlign: 'left',
     verticalAlign: 'top',
     layer: 2,
+    category: 1,
     enabled: true,
     outlineColor: Color.black,
     outlineWidth: 0,
