@@ -16,7 +16,6 @@ import {
   Axis1dInputSource,
   Axis2dInputSource,
   HoldInputSource,
-  PointerInputSource,
   TriggerInputSource,
 } from '../../input-sources/index.js';
 
@@ -27,7 +26,6 @@ export class MouseInputSource
     HoldInputSource<MouseHoldBinding>,
     Axis1dInputSource<MouseAxis1dBinding>,
     Axis2dInputSource<MouseAxis2dBinding>,
-    PointerInputSource,
     Resettable,
     Stoppable
 {
@@ -118,9 +116,6 @@ export class MouseInputSource
     this._mouseButtonUps.clear();
     this._mouseButtonHolds.clear();
 
-    // _mouseButtonPresses (buttonsHeld) is intentionally not cleared here:
-    // it tracks buttons currently held down, which persists across ticks
-    // until the matching mouseup, unlike the down/up edge sets above.
     this._pointerDelta.x = 0;
     this._pointerDelta.y = 0;
     this._pointerScroll = 0;
@@ -189,9 +184,6 @@ export class MouseInputSource
   };
 
   private readonly _onMouseMoveHandler = (event: MouseEvent) => {
-    // Computed fresh on every move rather than cached at construction, so
-    // the pointer position stays correct after the container is resized,
-    // scrolled, or otherwise reflowed.
     const containerBoundingClientRect = this._container.getBoundingClientRect();
 
     const x = event.clientX - containerBoundingClientRect.left;

@@ -148,28 +148,11 @@ reset (via `MouseInputSource.reset()`, wired up automatically by
 `registerInputs`) once the frame that observed them ends; `position` and
 `buttonsHeld` persist across ticks until they next change.
 
-To bring this state into the ECS world instead of reading `MouseInputSource`
-directly, attach a
-[`PointerEcsComponent`](/Forge/docs/api/interfaces/PointerEcsComponent) with
-`addPointerComponent` and register
-[`createPointerEcsSystem`](/Forge/docs/api/functions/createPointerEcsSystem),
-which copies a `PointerInputSource` (implemented today by
-`MouseInputSource`) into every pointer component once per tick:
-
-```ts
-import {
-  addPointerComponent,
-  createPointerEcsSystem,
-} from '@forge-game-engine/forge/input';
-
-const pointerEntity = world.createEntity();
-
-addPointerComponent(world, pointerEntity);
-world.addSystem(createPointerEcsSystem(mouse));
-```
-
-`position` is deliberately in canvas pixels, not world space: with more than
-one camera (for example a dedicated UI camera layered over the world
-camera), a single canvas position maps to a different world position
-through each camera, so converting is left to the reader rather than baked
-into the component.
+There is no ECS component for this state - hold a reference to the
+`MouseInputSource` instance (the same way game code holds a reference to an
+`InputManager` or an `InputAction`) and read `.position`/`.delta`/etc.
+directly from a system's closure. `position` is deliberately in canvas
+pixels, not world space: with more than one camera (for example a dedicated
+UI camera layered over the world camera), a single canvas position maps to
+a different world position through each camera, so converting is left to
+the reader.

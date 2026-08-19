@@ -176,7 +176,7 @@ points at the backlog item in §8 or the issue that owns it.
 | ~~**Parented position offsets ignore parent rotation/scale**~~ | **Fixed**    | [#581](https://github.com/Forge-Game-Engine/Forge/issues/581) → [#587](https://github.com/Forge-Game-Engine/Forge/pull/587)                                                                                                                           | Landed on `dev`. `composePositionWithParent` now scales the child's local offset by the parent's world scale and rotates it by the parent's world rotation before adding. The three superseded `parent-*-system.ts` files were deleted in the same change.                                                                                                                                        |
 | **No clipping/masking**                                        | Out of scope | [#583](https://github.com/Forge-Game-Engine/Forge/issues/583)                                                                                                                                                                                         | Needed for scroll views and any list longer than its container, but equally for minimaps, wipe transitions, and fill-by-reveal bars — so it belongs in `/src/rendering`, not here. Blocks backlog 3.4 only. (DL-09)                                                                                                                                                                               |
 | **`DepthEcsComponent` is dead code**                           | Low          | 0.4                                                                                                                                                                                                                                                   | `src/common/components/depth-component.ts` exists, has tests, and is referenced by **nothing** in `/src`. DL-06 concludes it is _not_ the right vehicle for draw order either, so it should be deleted rather than resurrected.                                                                                                                                                                   |
-| **No touch input source**                                      | Out of scope | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) → [#588](https://github.com/Forge-Game-Engine/Forge/pull/588) (doc fix landed)                                                                                                          | `src/input/` has keyboard, mouse, and gamepad. `AGENTS.md` no longer claims touch. Touch itself remains out of scope for this design; `PointerEcsComponent` is specified source-agnostically so it can be added later without revisiting anything here (DL-07).                                                                                                                                   |
+| **No touch input source**                                      | Out of scope | [#582](https://github.com/Forge-Game-Engine/Forge/issues/582) → [#588](https://github.com/Forge-Game-Engine/Forge/pull/588) (doc fix landed)                                                                                                          | `src/input/` has keyboard, mouse, and gamepad. `AGENTS.md` no longer claims touch. Touch itself remains out of scope for this design; `MouseInputSource`'s pointer state (`position`/`delta`/`scroll`/buttons) is a plain shape a future `TouchInputSource` can expose the same way, so it can be added later without revisiting anything here (DL-07).                                                                                                                                   |
 
 **On the transform bug (now fixed).** This design was written while
 `composeWithParent` composed a child's world position as
@@ -340,19 +340,18 @@ numeric ordering.
 ```mermaid
 flowchart TD
     IN["updateInputsSystem<br/><i>early</i>"]
-    PTR["createPointerEcsSystem<br/>canvas-space pointer + buttons<br/><i>NEW, in /src/input</i>"]
     LG["createUiLayoutGroupEcsSystem<br/>bottom-up: measure preferred sizes<br/>top-down: assign child rects"]
     UL["createUiLayoutEcsSystem<br/>resolve anchors/pivots → rect<br/>write position.local,<br/>sprite.w/h/pivot/sortDepth"]
     TS["createTransformEcsSystem<br/><i>existing — composes world from local</i>"]
     TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads<br/><i>issue #584, not this module</i>"]
-    RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins"]
+    RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins<br/><i>closes over a MouseInputSource for<br/>canvas-space pointer + buttons (DL-07)</i>"]
     NAV["createUiNavigationEcsSystem<br/>navigateInput → move focus<br/>submitInput → <b>raise onActivate</b>"]
     UI2["createUiInteractionEcsSystem<br/>enter/exit/down/up/click/drag<br/>+ raise events"]
     W["<b>Game systems</b><br/><i>read onActivate, isFocused, isPointerOverUi</i>"]
     TR["createUiTransitionEcsSystem<br/>state → tint / sprite swap"]
     RS["createRenderEcsSystem<br/><i>late — world camera then UI camera</i>"]
 
-    IN --> PTR --> LG --> UL --> TS --> TX --> RC --> NAV --> UI2 --> W --> TR --> RS
+    IN --> LG --> UL --> TS --> TX --> RC --> NAV --> UI2 --> W --> TR --> RS
 ```
 
 Two ordering constraints that are easy to get wrong and worth asserting in tests:
@@ -978,9 +977,15 @@ public API that nothing reads.
 
 **Options.** (a) Add `PointerEcsComponent` + `createPointerEcsSystem` to
 `/src/input`. (b) Have the UI raycaster read an `Axis2dAction` the consumer wires
-up. (c) Read `MouseEvent`s directly inside the UI module.
+up. (c) Read `MouseEvent`s directly inside the UI module. (d) Expose the
+pointer state directly on `MouseInputSource` (position, delta, scroll, button
+down/held/up sets) and have consumers hold a reference to it directly, the
+same way `createCameraEcsSystem(time: Time)` and `createUpdateInputEcsSystem(time: Time)`
+close over `Time` rather than reading it from a component.
 
-**Decision: (a).**
+**Decision: (d).** _(Was (a) — a mirrored `PointerEcsComponent` written every
+tick by `createPointerEcsSystem` — until Phase 0 implementation review. Kept
+here as the decision record; the rationale below is otherwise unchanged.)_
 
 **Rationale.** "Where is the pointer" is an input concern that world-space code
 (drag-to-select, tower placement, aiming) wants too. (b) makes every consumer
@@ -988,19 +993,35 @@ hand-wire a binding with the right `cursorValueTypes.absolute` and origin before
 UI works at all. (c) puts a second event listener set on the canvas, racing the
 input module's.
 
-**Consequences.** This is where the **stale `getBoundingClientRect`** bug
-(§4.2) gets fixed. That one is a genuine prerequisite — hit testing is wrong
-after any resize without it.
+**Why (a) lost to (d).** Mirroring `MouseInputSource`'s live state into a
+queried `PointerEcsComponent` copied a pattern (`InputXEcsComponent` +
+`createXEcsSystem`) that exists elsewhere in `/src/input` for a different
+reason — `InputsEcsComponent` holds a *reference* to an `InputManager`
+(`{ inputManager: InputManager }`), it does not copy that manager's fields out
+into the component every tick, and no other input source (`KeyboardInputSource`,
+`GamepadInputSource`) has a matching `*EcsComponent` at all. A pointer's raw
+state is a shared, singleton-ish service exactly like `Time`, not per-entity
+configuration like `CameraEcsComponent.zoomInput`, so it belongs captured by
+closure the way `Time` is, not re-published into a component every frame for
+systems to query. The dedicated `PointerInputSource` marker interface this
+implied (living in `input-sources/`, alongside `TriggerInputSource<TBinding>`
+et al.) was the same anti-pattern from a different angle: those interfaces are
+generic, binding-parameterized capabilities any device can implement
+(`Set<TBinding>`), not a concrete state shape belonging to one kind of device.
 
-**The two-camera setup constrains what this component may publish.** Because the
+**Consequences.** This is where the **stale `getBoundingClientRect`** bug
+(§4.2) gets fixed regardless of (a) vs. (d). That one is a genuine
+prerequisite — hit testing is wrong after any resize without it.
+
+**The two-camera setup constrains what this state may publish.** Because the
 UI renders through its own camera (DL-01), a single canvas-space pointer maps to
 **two different world positions** — one through the world camera, one through the
 UI camera — and they diverge the moment the world camera pans or zooms.
 
-So `PointerEcsComponent` publishes the pointer in **canvas pixels only**, and
-stays camera-agnostic as well as source-agnostic. It must not publish a "world
-position", because there is no single correct one. Conversion is the caller's
-job and is already camera-parameterized:
+So `MouseInputSource.position` publishes the pointer in **canvas pixels
+only**, and stays camera-agnostic. It must not publish a "world position",
+because there is no single correct one. Conversion is the caller's job and is
+already camera-parameterized:
 `screenToWorldSpace(screenPosition, cameraPosition, cameraZoom, width, height, pixelsPerUnit)`.
 The UI raycaster converts through the UI camera; game-world picking converts
 through the world camera; neither is privileged.
@@ -1011,14 +1032,14 @@ from the UI camera by `cullingMask` must not be clickable, or the UI develops
 invisible hit regions — the same `Renderable.category` check that §3's ordering
 note describes for drawing has to gate hit testing too.
 
-**Touch is out of scope for this design.** `PointerEcsComponent` is
-therefore specified as a _source-agnostic_ pointer — position, buttons, delta,
-scroll — written by `MouseInputSource` today. That shape is deliberate: if a
-`TouchInputSource` is added later it becomes another writer of the same
-component and every UI system above it keeps working unchanged. Nothing in this
-design needs to be revisited to add touch; until then, the UI is
-mouse-and-gamepad only, which should be stated plainly in its docs rather than
-left implied.
+**Touch remains out of scope for this design, and (d) still accommodates it
+later.** `MouseInputSource` exposes `position`/`delta`/`scroll`/`buttonsDown`/
+`buttonsHeld`/`buttonsUp` as plain getters; a future `TouchInputSource`
+exposing the same shape is a drop-in replacement for whatever concrete source
+`createUiRaycastEcsSystem` (Phase 2) is constructed with — no shared marker
+interface needs to exist ahead of that second implementation actually being
+written. Until then, the UI is mouse-and-gamepad only, which should be stated
+plainly in its docs rather than left implied.
 
 ---
 
@@ -1260,9 +1281,6 @@ uses. Note `isFocused` and `wasActivatedThisFrame` are written by
 `createUiNavigationEcsSystem` as well as the interaction system (DL-14), so
 neither has a single owning system.
 
-For the same reason, `/src/input`'s pointer component is `PointerEcsComponent`,
-not `PointerStateEcsComponent`.
-
 ---
 
 ### DL-14 — Activation is an `InputAction`, not a click
@@ -1322,7 +1340,7 @@ Items on the critical path are marked ⛓.
 
 | #     | Item                                                                        | Size | Notes                                                                                                           |
 | ----- | --------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------- |
-| 0.1 ⛓ | `PointerEcsComponent` + `createPointerEcsSystem` in `/src/input`            | M    | Canvas-space position, button down/held/up, delta, scroll. Fixes the stale `getBoundingClientRect` bug. (DL-07) |
+| 0.1 ⛓ | Canvas-space pointer state on `MouseInputSource`                           | M    | `position`, `delta`, `scroll`, button down/held/up, read directly (no ECS component - see DL-07). Fixes the stale `getBoundingClientRect` bug. |
 | 0.2 ⛓ | `Rect` replaced with a plain-object type + static helpers                   | S    | (DL-11) Foundational — every element in this design is a rect.                                                  |
 | 0.3   | `SpriteEcsComponent.sortDepth` + `render-system.ts` prefers it over world Y | S    | (DL-06) Optional field; unset reproduces today's behavior exactly.                                              |
 | 0.4   | Delete `DepthEcsComponent` and its tests                                    | S    | Dead code with no prospective use once 0.3 lands. (DL-06)                                                       |
@@ -1342,9 +1360,9 @@ Removing text also removed the plan's highest-risk item — the sub-quad expansi
 refactor of `render-system.ts` — from the UI critical path. It now sits with the
 work that actually needs it.
 
-**Phase 0 exit criterion:** `pointer.position` is correct in canvas pixels
-after a window resize, the plain-object `Rect` is available, and a sprite with an explicit
-`sortDepth` draws in that order rather than by world Y.
+**Phase 0 exit criterion:** `MouseInputSource.position` is correct in canvas
+pixels after a window resize, the plain-object `Rect` is available, and a
+sprite with an explicit `sortDepth` draws in that order rather than by world Y.
 
 ### Phase 1 — Layout core
 
