@@ -13,12 +13,11 @@ language - a UI is a plain ECS entity hierarchy, assembled with factory
 functions the same way any other composite entity in Forge is.
 
 :::info Current scope
-This is the module's **layout core**: anchors, canvases, panels, and
-labels. Pointer/gamepad interaction (buttons, hover, focus navigation),
-toggles/sliders/scroll views, and layout groups aren't implemented yet -
+Layout (anchors, canvases, panels, labels) and interaction (buttons,
+hover/press/drag, gamepad/keyboard focus navigation, color transitions) are
+implemented. Toggles/sliders/scroll views and layout groups aren't yet -
 see [`design/ui-system.md`](https://github.com/Forge-Game-Engine/Forge/blob/dev/design/ui-system.md)
-for the full plan. Today, a UI element is something you look at, not
-something you click.
+for the full plan.
 :::
 
 ## Quick start
@@ -37,9 +36,11 @@ import {
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 
-// createUiCanvas registers the UI layout system itself - call it before
-// registering the transform/render systems, so layout runs first each frame.
-const canvas = createUiCanvas(world, renderContext);
+// createUiCanvas registers the UI layout (and, unconditionally, navigation/
+// transition) systems itself - call it before registering the transform/
+// render systems, so layout runs first each frame. `time` drives its color
+// transition tweens.
+const canvas = createUiCanvas(world, renderContext, time);
 
 const panelSprite = createImageSprite(panelImage, renderContext, {
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
@@ -193,9 +194,77 @@ so a label's own `maxWidth` (both for wrapping and, per above, for
 `horizontalAlign` to take effect at all) needs to be set explicitly to
 match, rather than being inferred from `sizeDelta`.
 
+## Interaction
+
+Two calls put a working, clickable, gamepad/keyboard-navigable button on
+screen:
+
+```ts
+const canvas = createUiCanvas(world, renderContext, time, {
+  // Pointer interaction needs a MouseInputSource; omit it for a
+  // gamepad/keyboard-only canvas.
+  mouseInputSource: new MouseInputSource(inputManager, game.container),
+  // Optional - both InputActions the same way CameraEcsComponent takes
+  // zoomInput/panInput. Omitted, the canvas is still fully clickable, just
+  // not focus-navigable.
+  submitInput: inputManager.getTriggerAction('ui-submit'),
+  navigateInput: inputManager.getAxis2dAction('ui-navigate'),
+});
+
+const play = createButton(world, canvas, {
+  sprite: panelSprite,
+  label: 'Play',
+  fontAtlas,
+  labelSize: 32,
+});
+
+play.onActivate.registerListener(startGame);
+```
+
+`createButton` assembles a panel (`createPanel`) with a
+[`UiInteractableEcsComponent`](/Forge/docs/api/interfaces/UiInteractableEcsComponent)
+and a
+[`UiColorTransitionEcsComponent`](/Forge/docs/api/interfaces/UiColorTransitionEcsComponent)
+added, plus a centered child label - there's no `ButtonEcsComponent`. Every
+piece is independently useful: add `UiInteractableEcsComponent` to any rect
+(a toggle, a list row, a close icon) to make it clickable, hoverable, and
+focus-navigable without it being a "button" at all.
+
+### Source-agnostic activation
+
+`onActivate` is raised the same way whether a pointer click, a gamepad/
+keyboard submit, or a script (`interactable.onActivate.raise()`, or
+triggering `submitInput` directly) caused it - the listener can't tell
+which. `isHovered` (pointer-only) and `isFocused` (source-agnostic - set by
+directional navigation, and by the pointer hovering an element, so the
+highlight follows the mouse) stay deliberately distinct; a `wasActivatedThisFrame`
+flag is available for polling instead of registering a listener.
+
+### Focus navigation
+
+Every `interactable: true` element is automatically focus-navigable: on the
+tick `navigateInput`'s magnitude first crosses a threshold, focus moves to
+the nearest candidate on the same canvas in that direction. Add a
+[`UiFocusEcsComponent`](/Forge/docs/api/interfaces/UiFocusEcsComponent) to
+override the search on specific sides (e.g. to wrap focus from the last
+item in a row back to the first). `cancelInput` clears focus; register your
+own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
+
+### Hit testing and drag
+
+`createUiRaycastEcsSystem` scans interactables topmost-first (reverse
+hierarchy order) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
+`isPointerOverUi` - read the latter to gate world interaction ("don't fire
+the weapon when the click landed on the pause button"). An element with
+`blocksRaycasts: false` is transparent to the scan. A captured press that
+moves beyond `dragThreshold` (measured in reference pixels) raises
+`onBeginDrag`/`onDrag`/`onEndDrag` instead of `onActivate` - useful for
+building a slider handle or a scrollbar thumb.
+
 ## Known limitations
 
-- **No interaction yet.** No hover/click/focus, no `UiInteractableEcsComponent`.
-  A UI built today is presentational only.
+- **No toggles/sliders/scroll views yet.** `UiInteractableEcsComponent` and
+  the pointer/focus interaction systems are the building blocks; the
+  higher-level controls aren't built yet.
 - **No clipping.** Content isn't clipped to its parent's rect - a scroll
   view isn't buildable yet.

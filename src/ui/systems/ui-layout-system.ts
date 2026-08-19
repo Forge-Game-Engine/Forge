@@ -71,12 +71,15 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
  * `CanvasEcsComponent`'s root. For each element it writes the resolved
  * `RectTransformEcsComponent.rect`, the entity's `PositionEcsComponent.local`
  * (so the existing `createTransformEcsSystem` composes the correct
- * `position.world`), and - for elements that also carry a
- * `SpriteEcsComponent` and/or a `TextEcsComponent` - `sortDepth`, set to the
- * element's hierarchy pre-order index (plus, for a sprite, its `width`/
- * `height`/`pivot`), so draw order follows hierarchy order within a canvas
- * regardless of whether a panel and its label happen to share a world Y;
- * see `design/ui-system.md`'s DL-06.
+ * `position.world`), and `RectTransformEcsComponent.sortDepth` - and, for
+ * elements that also carry a `SpriteEcsComponent` and/or a
+ * `TextEcsComponent`, their `sortDepth` too (plus, for a sprite, its
+ * `width`/`height`/`pivot`) - all set to the element's hierarchy pre-order
+ * index, so draw order follows hierarchy order within a canvas regardless
+ * of whether a panel and its label happen to share a world Y (see
+ * `design/ui-system.md`'s DL-06), and `createUiRaycastEcsSystem` has a
+ * topmost-first ordering for every interactable regardless of whether it
+ * happens to draw anything.
  *
  * A canvas root's rect (and its camera's `verticalWorldUnits`) is
  * recomputed from `renderContext`'s current dimensions every call, so
@@ -185,6 +188,7 @@ export const createUiLayoutEcsSystem = (
       }
 
       rectTransform.rect = rect;
+      rectTransform.sortDepth = sortDepth;
 
       const pivotPosition = pivotPositionOf(rect, rectTransform.pivot);
 

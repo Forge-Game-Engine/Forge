@@ -1,8 +1,20 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import {
+  Axis2dAction,
+  buttonMoments,
+  KeyboardAxis2dBinding,
+  keyCodes,
+  KeyboardInputSource,
+  KeyboardTriggerBinding,
+  MouseInputSource,
+  registerInputs,
+  TriggerAction,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -19,8 +31,10 @@ import {
   FontAtlas,
   FontAtlasCache,
   shapeText,
+  textId,
 } from '@forge-game-engine/forge/text';
 import {
+  createButton,
   createLabel,
   createPanel,
   createUiCanvas,
@@ -88,14 +102,59 @@ async function createBackdrop(
 }
 
 /**
- * Builds the UI layout demo: a "game world" (a plain tinted backdrop, drawn
- * by its own camera/culling mask) with a HUD overlaid on top of it through
- * a second, dedicated UI camera - a full-width top bar and a corner-anchored
- * score panel, both holding their layout correctly no matter the canvas's
- * size or aspect ratio (see `createUiLayoutEcsSystem`'s full-recompute-every-
- * frame resolve). The HUD is presentational only - no buttons, no hover -
- * pointer/gamepad interaction lands in a later phase (see
- * `design/ui-system.md`).
+ * Wires a `MouseInputSource` and a `KeyboardInputSource` (arrow keys to
+ * navigate focus, Enter/Space to submit) so the HUD's `Play` button is both
+ * clickable and gamepad/keyboard-focus-navigable, per
+ * `design/ui-system.md`'s DL-14 source-agnostic activation.
+ */
+function createUiInputs(
+  world: EcsWorld,
+  time: Time,
+  game: Game,
+): {
+  mouseInputSource: MouseInputSource;
+  submitInput: TriggerAction;
+  navigateInput: Axis2dAction;
+} {
+  const submitInput = new TriggerAction('ui-submit');
+  const navigateInput = new Axis2dAction('ui-navigate');
+
+  const inputManager = registerInputs(world, time, {
+    triggerActions: [submitInput],
+    axis2dActions: [navigateInput],
+  });
+
+  const mouseInputSource = new MouseInputSource(inputManager, game.container);
+  const keyboardInputSource = new KeyboardInputSource(inputManager);
+
+  keyboardInputSource.axis2dBindings.add(
+    new KeyboardAxis2dBinding(
+      navigateInput,
+      keyCodes.arrowUp,
+      keyCodes.arrowDown,
+      keyCodes.arrowRight,
+      keyCodes.arrowLeft,
+    ),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.enter, buttonMoments.down),
+  );
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.space, buttonMoments.down),
+  );
+
+  return { mouseInputSource, submitInput, navigateInput };
+}
+
+/**
+ * Builds the UI interaction demo: a "game world" (a plain tinted backdrop,
+ * drawn by its own camera/culling mask) with a HUD overlaid on top of it
+ * through a second, dedicated UI camera - a full-width top bar, a
+ * corner-anchored score panel, and a hoverable, clickable, keyboard/gamepad-
+ * focus-navigable `Play` button (see `createButton`) that increments a
+ * click counter on `onActivate`, whichever path raised it (pointer or
+ * `submitInput`) - `design/ui-system.md`'s Phase 2 exit criterion.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -115,8 +174,17 @@ export const createUiDemoGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
-  const canvas = createUiCanvas(world, renderContext, {
+  const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
+    world,
+    time,
+    game,
+  );
+
+  const canvas = createUiCanvas(world, renderContext, time, {
     referenceResolution: { x: 1920, y: 1080 },
+    mouseInputSource,
+    submitInput,
+    navigateInput,
   });
 
   const panelImage = await renderContext.imageCache.getOrLoad(
@@ -179,6 +247,43 @@ export const createUiDemoGame = async (
     },
     verticalAlign: 'middle',
     color: textColor,
+  });
+
+  const playButton = createButton(world, canvas, {
+    anchor: UiAnchor.bottomCenter,
+    anchoredPosition: { x: 0, y: 60 },
+    sizeDelta: { x: 220, y: 72 },
+    sprite: panelSprite,
+    label: 'Play',
+    fontAtlas,
+    labelSize: 30,
+    labelColor: textColor,
+    transition: {
+      normalColor: Color.white,
+      hoverColor: new Color(0.85, 0.85, 0.85, 1),
+      pressedColor: new Color(0.65, 0.65, 0.65, 1),
+      disabledColor: new Color(0.5, 0.5, 0.5, 0.6),
+    },
+  });
+
+  let clickCount = 0;
+
+  const clickLabel = createLabel(world, canvas, {
+    text: 'Clicks: 0',
+    fontAtlas,
+    size: 24,
+    anchor: UiAnchor.bottomCenter,
+    anchoredPosition: { x: 0, y: 140 },
+    sizeDelta: { x: 400, y: 40 },
+    horizontalAlign: 'center',
+    verticalAlign: 'middle',
+    maxWidth: 400,
+    color: textColor,
+  });
+
+  playButton.onActivate.registerListener(() => {
+    clickCount += 1;
+    world.getComponent(clickLabel, textId)!.text = `Clicks: ${clickCount}`;
   });
 
   world.addSystem(createCameraEcsSystem(time));

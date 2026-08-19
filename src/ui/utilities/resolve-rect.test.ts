@@ -15,6 +15,7 @@ const buildRectTransform = (
   anchoredPosition: { x: 0, y: 0 },
   sizeDelta: { x: 100, y: 100 },
   rect: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } },
+  sortDepth: 0,
   ...overrides,
 });
 
