@@ -28,12 +28,17 @@ globalThis.WebGLTexture = class WebGLTexture {};
 function buildFontAtlas(): FontAtlas {
   return {
     data: {
-      formatVersion: 1,
+      formatVersion: 2,
       type: 'msdf',
       atlasImage: 'fixture.png',
       atlasSize: { width: 256, height: 256 },
       distanceRange: 4,
-      metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2 },
+      metrics: {
+        lineHeight: 1.2,
+        ascender: 0.9,
+        descender: -0.2,
+        capHeight: 0.7,
+      },
       glyphs: new Map([
         [
           65,

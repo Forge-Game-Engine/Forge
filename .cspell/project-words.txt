@@ -19,6 +19,7 @@ blit
 blits
 bmfont
 cachable
+capline
 Catmull
 charsets
 Chlumský

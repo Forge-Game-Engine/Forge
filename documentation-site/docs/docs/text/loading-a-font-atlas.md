@@ -36,9 +36,10 @@ const glyph = fontAtlas.data.glyphs.get('A'.codePointAt(0)!);
 ```
 
 - `advance`, `planeBounds`, and the font-level `metrics` (`lineHeight`,
-  `ascender`, `descender`) are all in **em units**: multiply by your desired
-  render size to get world/screen units. `planeBounds` is **Y-up**, relative
-  to the glyph's baseline, matching the rest of Forge's Y-up conventions.
+  `ascender`, `descender`, `capHeight`) are all in **em units**: multiply by
+  your desired render size to get world/screen units. `planeBounds` is
+  **Y-up**, relative to the glyph's baseline, matching the rest of Forge's
+  Y-up conventions.
 - `atlasBounds` is the glyph's texture rect, normalized `0` to `1`, with
   `top` closer to the top of the atlas image than `bottom`.
 - Both `planeBounds` and `atlasBounds` are `null` for glyphs with no visible

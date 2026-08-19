@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "type": "msdf",
   "atlasImage": "default.png",
   "atlasSize": {
@@ -9,8 +9,9 @@
   "distanceRange": 16,
   "metrics": {
     "lineHeight": 1.0952380952380953,
-    "ascender": 0.7380952380952381,
-    "descender": -0.35714285714285715
+    "ascender": 0.9285714285714286,
+    "descender": -0.40476190476190477,
+    "capHeight": 0.8809523809523809
   },
   "glyphs": [
     {
