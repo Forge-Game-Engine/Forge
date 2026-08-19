@@ -11,12 +11,15 @@ import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { textEffectsInstanceDataSegment } from './text-effects-instance-data-segment.js';
 
 /**
- * The rendering category `createTextRenderable` assigns its `Renderable`s,
- * matched against each camera's `cullingMask` (the same bitmask-matching
- * `SpriteEcsComponent`/`Renderable` category convention used throughout
- * `/src/rendering`).
+ * The default rendering category a text entity's glyphs are drawn with when
+ * `TextEcsComponent.category` isn't overridden, matched against each
+ * camera's `cullingMask` (the same bitmask-matching `SpriteEcsComponent`/
+ * `Renderable` category convention used throughout `/src/rendering`). Not
+ * reserved or forced - it's a default like any other, and `TextEcsComponent.category`
+ * overrides it per entity when a game needs its text under a different mask
+ * than whatever else already uses this category.
  */
-const TEXT_RENDER_CATEGORY = 1;
+export const TEXT_RENDER_CATEGORY = 1;
 
 /**
  * The pair of `Renderable`s a `FontAtlas`'s glyphs draw with - see
@@ -61,17 +64,21 @@ export interface TextRenderables {
  * outline can reach.
  *
  * Callers should create (and cache) at most one pair of these per
- * `FontAtlas` - every `TextMeshEcsComponent` sharing a `Renderable` batches
- * into a single instanced draw call, exactly like sprites sharing a texture
- * do today. `createTextShapingEcsSystem` does this caching automatically.
+ * `(FontAtlas, category)` pair - every `TextMeshEcsComponent` sharing a
+ * `Renderable` batches into a single instanced draw call, exactly like
+ * sprites sharing a texture do today. `createTextShapingEcsSystem` does this
+ * caching automatically.
  * @param renderContext - The render context to build the renderables with.
  * @param fontAtlas - The loaded font atlas to draw glyphs from.
+ * @param category - The render category to assign both renderables (see
+ * `TEXT_RENDER_CATEGORY`).
  * @returns The renderables, ready to be shared by every `TextMeshEcsComponent`
- * using `fontAtlas`.
+ * using `fontAtlas` with this `category`.
  */
 export function createTextRenderable(
   renderContext: RenderContext,
   fontAtlas: FontAtlas,
+  category: number,
 ): TextRenderables {
   const { gl, shaderCache } = renderContext;
 
@@ -100,7 +107,7 @@ export function createTextRenderable(
     createQuadGeometry(gl),
     fillMaterial,
     fillFloatsPerInstance,
-    TEXT_RENDER_CATEGORY,
+    category,
     fillBindInstanceData,
     fillSetupInstanceAttributes,
   );
@@ -131,7 +138,7 @@ export function createTextRenderable(
     createQuadGeometry(gl),
     effectsMaterial,
     effectsFloatsPerInstance,
-    TEXT_RENDER_CATEGORY,
+    category,
     effectsBindInstanceData,
     effectsSetupInstanceAttributes,
   );

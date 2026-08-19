@@ -1,7 +1,9 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Color, Renderable, Vec2, Vector2 } from '../../index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
+import { Color } from '../color.js';
 import { NineSliceOptions } from '../nine-slice-options.js';
+import { Renderable } from '../renderable.js';
 
 /**
  * Fields of {@link SpriteEcsComponent} with no sensible default; callers
@@ -121,11 +123,9 @@ export function addSpriteComponent(
   options: SpriteRequiredOptions & Partial<SpriteEcsComponent>,
 ): SpriteEcsComponent {
   // Built inside the function body (rather than as a shared module-level
-  // default) for two reasons: `pivot`/`uvOffset`/`uvScale` are mutated in
-  // place by callers (e.g. the sprite animation system) so each entity
-  // needs its own `Vector2` instance, and `Color.white` can't be read at
-  // module-init time (this file sits in a circular import cycle through
-  // `../../index.js`).
+  // default) since `pivot`/`uvOffset`/`uvScale` are mutated in place by
+  // callers (e.g. the sprite animation system), so each entity needs its
+  // own `Vector2` instance.
   const defaultSpriteOptions: SpriteDefaultedOptions = {
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,

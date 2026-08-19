@@ -1,0 +1,90 @@
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '../../common/index.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
+import { Vec2, Vector2 } from '../../math/index.js';
+import {
+  addSpriteComponent,
+  NineSliceOptions,
+  SpriteEcsComponent,
+} from '../../rendering/index.js';
+import { addRectTransformComponent } from '../components/rect-transform-component.js';
+import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+
+export interface CreatePanelOptions {
+  /** The anchor/pivot preset to place the panel with. Defaults to `UiAnchor.center`. */
+  anchor?: UiAnchorPreset;
+
+  /** Offset of the panel's pivot from its anchor reference point, in reference pixels. */
+  anchoredPosition?: Vector2;
+
+  /**
+   * Size in reference pixels when point-anchored; a margin relative to the
+   * anchor rect when stretched. Defaults to `RectTransformEcsComponent`'s
+   * own default (`100x100`) when omitted.
+   */
+  sizeDelta?: Vector2;
+
+  /**
+   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
+   * rather than attached directly, so the same `sprite` can be passed to
+   * multiple `createPanel` calls without one panel's layout-driven
+   * `width`/`height`/`pivot` mutations affecting another's.
+   */
+  sprite: SpriteEcsComponent;
+
+  /**
+   * Overrides `sprite.slices` for this panel, for reusing one base sprite
+   * with different nine-slice configuration across panels.
+   */
+  slices?: NineSliceOptions;
+}
+
+const defaultCreatePanelOptions = {
+  anchor: UiAnchor.center,
+};
+
+/**
+ * Creates a UI panel: an entity with a `RectTransformEcsComponent` (parented
+ * to `parent`) and a `SpriteEcsComponent`. `createUiLayoutEcsSystem` drives
+ * the sprite's `width`/`height`/`pivot`/`sortDepth` from the resolved rect
+ * every frame - the panel always exactly fills its rect.
+ * @param world - The ECS world to create the panel entity in.
+ * @param parent - The parent entity - a canvas (see `createUiCanvas`) or
+ * another UI element.
+ * @param options - Options for configuring the panel. `sprite` has no
+ * sensible default and must always be provided.
+ * @returns The created panel entity.
+ */
+export function createPanel(
+  world: EcsWorld,
+  parent: number,
+  options: { sprite: SpriteEcsComponent } & Partial<
+    Omit<CreatePanelOptions, 'sprite'>
+  >,
+): number {
+  const { anchor, anchoredPosition, sizeDelta, sprite, slices } = {
+    ...defaultCreatePanelOptions,
+    ...options,
+  };
+
+  const entity = world.createEntity();
+
+  addPositionComponent(world, entity);
+  addParentComponent(world, entity, { parent });
+  addRectTransformComponent(world, entity, {
+    ...anchor,
+    ...(anchoredPosition && { anchoredPosition }),
+    ...(sizeDelta && { sizeDelta }),
+  });
+  addSpriteComponent(world, entity, {
+    ...sprite,
+    pivot: Vec2.clone(sprite.pivot),
+    uvOffset: Vec2.clone(sprite.uvOffset),
+    uvScale: Vec2.clone(sprite.uvScale),
+    slices: slices ?? sprite.slices,
+  });
+
+  return entity;
+}

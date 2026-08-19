@@ -147,13 +147,16 @@ describe('createTextRenderable', () => {
   });
 
   it('does not throw when its shaders are already registered', () => {
-    expect(() => createTextRenderable(renderContext, fontAtlas)).not.toThrow();
+    expect(() =>
+      createTextRenderable(renderContext, fontAtlas, 1),
+    ).not.toThrow();
   });
 
   it("sets the distance range uniform on both renderables' materials from the font atlas's data", () => {
     const { fillRenderable, effectsRenderable } = createTextRenderable(
       renderContext,
       fontAtlas,
+      1,
     );
 
     fillRenderable.material.bind(mockGl);
@@ -172,6 +175,7 @@ describe('createTextRenderable', () => {
     const { fillRenderable, effectsRenderable } = createTextRenderable(
       renderContext,
       fontAtlas,
+      1,
     );
 
     fillRenderable.material.bind(mockGl);
@@ -190,6 +194,7 @@ describe('createTextRenderable', () => {
     const { fillRenderable, effectsRenderable } = createTextRenderable(
       renderContext,
       fontAtlas,
+      1,
     );
 
     // Sprite: position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
@@ -206,6 +211,7 @@ describe('createTextRenderable', () => {
     const { fillRenderable, effectsRenderable } = createTextRenderable(
       renderContext,
       fontAtlas,
+      1,
     );
 
     expect(mockGl.createTexture).toHaveBeenCalledTimes(1);
