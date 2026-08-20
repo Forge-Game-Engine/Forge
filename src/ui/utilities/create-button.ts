@@ -20,25 +20,17 @@ import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
 
-export interface CreateButtonOptions {
-  /** The anchor/pivot preset to place the button with. Defaults to `UiAnchor.center`. */
-  anchor?: UiAnchorPreset;
-
-  /** Offset of the button's pivot from its anchor reference point, in reference pixels. */
-  anchoredPosition?: Vector2;
-
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `200x60`. */
-  sizeDelta?: Vector2;
-
+/**
+ * Fields of {@link CreateButtonOptions} with no sensible default; callers
+ * must always provide these.
+ */
+export interface CreateButtonRequiredOptions {
   /**
    * The sprite to draw the button's background with, e.g. from
    * `createImageSprite` - see `createPanel`'s `sprite` option, which this
    * is passed straight through to.
    */
   sprite: SpriteEcsComponent;
-
-  /** Overrides `sprite.slices` for this button. */
-  slices?: NineSliceOptions;
 
   /** The button's label text. */
   label: string;
@@ -48,9 +40,27 @@ export interface CreateButtonOptions {
 
   /** The label's font size, in reference pixels. */
   labelSize: number;
+}
+
+/**
+ * Fields of {@link CreateButtonOptions} with a sensible default, or that are
+ * genuinely optional (no default at all); callers may omit these.
+ */
+export interface CreateButtonDefaultedOptions {
+  /** The anchor/pivot preset to place the button with. Defaults to `UiAnchor.center`. */
+  anchor: UiAnchorPreset;
+
+  /** Offset of the button's pivot from its anchor reference point, in reference pixels. */
+  anchoredPosition?: Vector2;
+
+  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `200x60`. */
+  sizeDelta: Vector2;
+
+  /** Overrides `sprite.slices` for this button. */
+  slices?: NineSliceOptions;
 
   /** The label's tint. Defaults to `Color.black`. */
-  labelColor?: Color;
+  labelColor: Color;
 
   /**
    * Overrides for the button's `UiInteractableEcsComponent` (e.g. to start
@@ -64,6 +74,9 @@ export interface CreateButtonOptions {
    */
   transition?: Partial<UiColorTransitionDefaultedOptions>;
 }
+
+export type CreateButtonOptions = CreateButtonRequiredOptions &
+  Partial<CreateButtonDefaultedOptions>;
 
 export interface Button {
   /** The button's root entity - a `RectTransformEcsComponent` + `SpriteEcsComponent` + `UiInteractableEcsComponent` + `UiColorTransitionEcsComponent`. */
@@ -103,13 +116,7 @@ export interface Button {
 export function createButton(
   world: EcsWorld,
   parent: number,
-  options: Pick<
-    CreateButtonOptions,
-    'sprite' | 'label' | 'fontAtlas' | 'labelSize'
-  > &
-    Partial<
-      Omit<CreateButtonOptions, 'sprite' | 'label' | 'fontAtlas' | 'labelSize'>
-    >,
+  options: CreateButtonOptions,
 ): Button {
   // Built inside the function body (rather than as a shared module-level
   // default) since it references `Color.black`, and `rendering` and `ui`
