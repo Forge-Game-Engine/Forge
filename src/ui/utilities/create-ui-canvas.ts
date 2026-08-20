@@ -1,11 +1,7 @@
 import { addPositionComponent, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import {
-  Axis2dAction,
-  MouseInputSource,
-  TriggerAction,
-} from '../../input/index.js';
+import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { Vector2 } from '../../math/index.js';
 import {
   Color,
@@ -23,6 +19,7 @@ import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.j
 import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
 import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
 import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
+import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
 
 /**
@@ -37,6 +34,12 @@ import { UiScaleMode } from '../types/ui-scale-mode.js';
  * camera whose own `cullingMask` still matches everything would draw UI
  * content a second time, wherever its UI-space position happens to land in
  * the world.
+ *
+ * Bit 30, not bit 31: `matchesMask` does `identifier & mask` on plain JS
+ * `number`s, which `&` coerces to 32-bit *signed* integers - bit 31 is the
+ * sign bit, so `1 << 31` is `-2147483648`, not a clean single-bit flag.
+ * `1 << 30` is the highest bit that stays a positive, unsurprising number to
+ * log, store, or compare.
  */
 export const defaultUiRenderCategory = 1 << 30;
 
@@ -51,7 +54,7 @@ const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
 /**
  * The interaction pipeline systems already registered for a given world,
  * keyed so a second (or later) `createUiCanvas` call - for another canvas,
- * or one that supplies `mouseInputSource` after an earlier call didn't -
+ * or one that supplies `pointerSource` after an earlier call didn't -
  * extends the same pipeline instead of registering duplicates. See
  * `ensureUiInteractionPipeline`.
  */
@@ -69,19 +72,24 @@ const uiInteractionPipelinesByWorld = new WeakMap<
 
 /**
  * Registers `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
- * and - once a `MouseInputSource` is available - `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`, at most once each per `world`, ordered per
- * `design/ui-system.md`'s §5.4 frame pipeline (raycast, then navigation,
- * then interaction, then transition). Extends an already-registered
- * pipeline rather than duplicating it, so a canvas created without
- * `mouseInputSource` and a later one that supplies it still end up with a
- * single, correctly-ordered pipeline for the whole world.
+ * and - once a pointer source is available - `createUiRaycastEcsSystem`/
+ * `createUiInteractionEcsSystem`, at most once each per `world`. Registration
+ * order is raycast, then navigation, then interaction, then transition:
+ * raycast must run before navigation and interaction read its hit-test
+ * result, interaction must run before transition reads the interaction
+ * state it just wrote, and navigation must run before interaction because
+ * navigation is what resets `wasInvokedThisFrame` to `false` each tick
+ * before interaction conditionally sets it back to `true` for the pointer
+ * path. Extends an already-registered pipeline rather than duplicating it,
+ * so a canvas created without a pointer source and a later one that
+ * supplies it still end up with a single, correctly-ordered pipeline for
+ * the whole world.
  */
 function ensureUiInteractionPipeline(
   world: EcsWorld,
   renderContext: RenderContext,
   time: Time,
-  mouseInputSource: MouseInputSource | undefined,
+  pointerSource: UiPointerSource | undefined,
 ): void {
   let pipeline = uiInteractionPipelinesByWorld.get(world);
 
@@ -98,14 +106,14 @@ function ensureUiInteractionPipeline(
     uiInteractionPipelinesByWorld.set(world, pipeline);
   }
 
-  if (mouseInputSource && !pipeline.raycast) {
-    const raycast = createUiRaycastEcsSystem(mouseInputSource, renderContext);
+  if (pointerSource && !pipeline.raycast) {
+    const raycast = createUiRaycastEcsSystem(pointerSource, renderContext);
 
     world.addSystem(raycast, { before: [pipeline.navigation] });
     pipeline.raycast = raycast;
 
     const interaction = createUiInteractionEcsSystem(
-      mouseInputSource,
+      pointerSource,
       renderContext,
     );
 
@@ -147,17 +155,18 @@ export interface CreateUiCanvasOptions {
   /**
    * The pointer source this canvas's interactables (see
    * `UiInteractableEcsComponent`) are hit-tested and pressed/hovered/dragged
-   * against. Omit for a canvas with no pointer interaction at all (still
-   * fully focus-navigable if `submitInput`/`navigateInput` are given).
-   * Supply it on your first/only `createUiCanvas` call for a world to get a
+   * against - `MouseInputSource` satisfies this without any changes, and any
+   * other device (e.g. a touchscreen) can too by exposing the same shape.
+   * Omit for a canvas with no pointer interaction at all (still fully
+   * focus-navigable if `submitInput`/`navigateInput` are given). Supply it
+   * on your first/only `createUiCanvas` call for a world to get a
    * fully-ordered pipeline - see `ensureUiInteractionPipeline`.
    */
-  mouseInputSource?: MouseInputSource;
+  pointerSource?: UiPointerSource;
 
   /**
-   * The action that raises `onActivate` on the currently focused
-   * interactable. Omitted, this canvas's focused element is only
-   * activatable by pointer.
+   * The action that raises `onInvoke` on the currently focused interactable.
+   * Omitted, this canvas's focused element is only invocable by pointer.
    */
   submitInput?: TriggerAction;
 
@@ -177,13 +186,14 @@ const defaultCreateUiCanvasOptions = {
  * Creates a fully wired UI canvas: a root entity with a `CanvasEcsComponent`
  * and `RectTransformEcsComponent`, and a dedicated, static UI camera with a
  * transparent clear color, its own off-screen `RenderTarget`, and a culling
- * mask isolating it from the world (see `design/ui-system.md`'s DL-01). Also
+ * mask isolating it from the world so a world camera whose own `cullingMask`
+ * still matches everything doesn't draw UI content a second time. Also
  * registers `createUiLayoutEcsSystem`, `createUiNavigationEcsSystem`, and
  * `createUiTransitionEcsSystem` with `world` (each at most once, regardless
  * of how many canvases are created) - plus `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem` once `mouseInputSource` is supplied, on
- * this call or a later one for the same world - in the order
- * `design/ui-system.md`'s §5.4 frame pipeline calls for.
+ * `createUiInteractionEcsSystem` once a pointer source is supplied, on this
+ * call or a later one for the same world - see `ensureUiInteractionPipeline`
+ * for the registration order and why it matters.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
  * and `createRenderEcsSystem` with `world` - **after** calling
@@ -214,7 +224,7 @@ export function createUiCanvas(
     scaleMode,
     cullingMask,
     layer,
-    mouseInputSource,
+    pointerSource,
     submitInput,
     cancelInput,
     navigateInput,
@@ -256,7 +266,7 @@ export function createUiCanvas(
     worldsWithUiLayoutSystem.add(world);
   }
 
-  ensureUiInteractionPipeline(world, renderContext, time, mouseInputSource);
+  ensureUiInteractionPipeline(world, renderContext, time, pointerSource);
 
   return canvas;
 }

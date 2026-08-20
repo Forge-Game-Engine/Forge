@@ -37,16 +37,15 @@ export interface CanvasDefaultedOptions {
 
 /**
  * Optional `InputAction`s driving this canvas's gamepad/keyboard focus
- * navigation (`design/ui-system.md`'s DL-14). All optional - a canvas with
- * none of these is still fully pointer-interactive, just not
- * focus-navigable.
+ * navigation. All optional - a canvas with none of these is still fully
+ * pointer-interactive, just not focus-navigable.
  */
 export interface CanvasInputOptions {
   /**
-   * The action that raises `onActivate` on the currently focused
-   * interactable (the focus path in `design/ui-system.md`'s DL-14), read by
+   * The action that raises `onInvoke` on the currently focused interactable
+   * - the gamepad/keyboard counterpart to a pointer click, read by
    * `createUiNavigationEcsSystem`. Omit to leave this canvas's focused
-   * element only activatable by pointer.
+   * element only invocable by pointer.
    */
   submitInput?: TriggerAction;
 

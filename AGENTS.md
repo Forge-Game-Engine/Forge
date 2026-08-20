@@ -73,6 +73,14 @@ of truth about what the engine does today, and don't cite one in user-facing
 documentation. Once a design ships, `documentation-site/docs/docs` becomes the
 authority and the design document stays as historical rationale.
 
+Code comments (in `/src`, `/demo`, and `/documentation-site/src`) must never
+reference a `/design` document, a decision-log entry (e.g. "DL-06"), a phase
+number, or an implementation backlog/roadmap either. A comment should explain
+the *why* of the code it sits next to in a way that stands on its own - a
+reader with no access to `/design` (or to a since-superseded plan inside it)
+must still be able to follow the reasoning. If a design document's rationale
+is worth keeping, restate it in the comment; don't point at the document.
+
 ### Module Exports
 
 The package exports are modular. Each subsystem has its own export path:

@@ -1,10 +1,9 @@
 /**
  * The visual state `createUiTransitionEcsSystem` derives from a
  * `UiInteractableEcsComponent`'s interaction state, merging `isHovered` and
- * `isFocused` into one value (see `design/ui-system.md`'s §5.7) so an
- * element looks highlighted whether it's moused-over or gamepad-focused,
- * with no transition component having to know which input the player is
- * using.
+ * `isFocused` into one value so an element looks highlighted whether it's
+ * moused-over or gamepad-focused, with no transition component having to
+ * know which input the player is using.
  */
 export const uiInteractionVisualStates = {
   normal: 'normal',

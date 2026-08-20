@@ -4,6 +4,12 @@ import type { Vector2 } from '../../math/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
+import {
+  TextHorizontalAlign,
+  textHorizontalAlignments,
+  TextVerticalAlign,
+  textVerticalAlignments,
+} from '../types/text-alignment.js';
 
 /**
  * Fields of {@link TextEcsComponent} with no sensible default; callers must
@@ -46,7 +52,7 @@ export interface TextDefaultedOptions {
    * exactly as wide as the block itself, so every mode produces the same
    * result).
    */
-  horizontalAlign: 'left' | 'center' | 'right' | 'justify';
+  horizontalAlign: TextHorizontalAlign;
 
   /**
    * Vertical alignment of the shaped block's visible ink relative to the
@@ -69,7 +75,7 @@ export interface TextDefaultedOptions {
    * font's metrics would bias every descender-less string (numbers,
    * titles, most short UI labels) above the true visual center of its box.
    */
-  verticalAlign: 'top' | 'middle' | 'bottom' | 'baseline' | 'capline';
+  verticalAlign: TextVerticalAlign;
 
   /**
    * Wraps at word boundaries when a line would exceed this width, in world
@@ -174,8 +180,8 @@ export function addTextComponent(
     color: Color.white,
     letterSpacing: 0,
     lineHeight: 1,
-    horizontalAlign: 'left',
-    verticalAlign: 'top',
+    horizontalAlign: textHorizontalAlignments.left,
+    verticalAlign: textVerticalAlignments.top,
     layer: 0,
     category: TEXT_RENDER_CATEGORY,
     enabled: true,

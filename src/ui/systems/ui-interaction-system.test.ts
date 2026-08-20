@@ -128,11 +128,11 @@ describe('createUiInteractionEcsSystem', () => {
     expect(exits).toBe(1);
   });
 
-  it('raises onActivate and sets wasActivatedThisFrame for exactly one tick on a press-then-release-inside', () => {
+  it('raises onInvoke and sets wasInvokedThisFrame for exactly one tick on a press-then-release-inside', () => {
     const { mouseInputSource, tick, interactable } = setUp();
 
     let activations = 0;
-    interactable().onActivate.registerListener(() => (activations += 1));
+    interactable().onInvoke.registerListener(() => (activations += 1));
 
     mouseInputSource.position = { x: 960, y: 540 };
     mouseInputSource.buttonsDown.add(mouseButtons.left);
@@ -145,12 +145,12 @@ describe('createUiInteractionEcsSystem', () => {
     tick();
 
     expect(activations).toBe(1);
-    expect(interactable().wasActivatedThisFrame).toBe(true);
+    expect(interactable().wasInvokedThisFrame).toBe(true);
     expect(interactable().isPressed).toBe(false);
 
     tick();
 
-    expect(interactable().wasActivatedThisFrame).toBe(false);
+    expect(interactable().wasInvokedThisFrame).toBe(false);
   });
 
   it('handles a pointer entering and pressing in the same tick without dropping the press', () => {
@@ -175,7 +175,7 @@ describe('createUiInteractionEcsSystem', () => {
     const { mouseInputSource, tick, interactable } = setUp();
 
     let activations = 0;
-    interactable().onActivate.registerListener(() => (activations += 1));
+    interactable().onInvoke.registerListener(() => (activations += 1));
 
     mouseInputSource.position = { x: 960, y: 540 };
     mouseInputSource.buttonsDown.add(mouseButtons.left);
@@ -183,14 +183,14 @@ describe('createUiInteractionEcsSystem', () => {
     tick();
 
     expect(activations).toBe(1);
-    expect(interactable().wasActivatedThisFrame).toBe(true);
+    expect(interactable().wasInvokedThisFrame).toBe(true);
   });
 
-  it('does not raise onActivate when the pointer is released outside the element', () => {
+  it('does not raise onInvoke when the pointer is released outside the element', () => {
     const { mouseInputSource, tick, interactable } = setUp();
 
     let activations = 0;
-    interactable().onActivate.registerListener(() => (activations += 1));
+    interactable().onInvoke.registerListener(() => (activations += 1));
 
     // A huge drag threshold means moving off the rect doesn't count as a
     // drag - this isolates "released outside, not dragging" from the drag
@@ -215,14 +215,14 @@ describe('createUiInteractionEcsSystem', () => {
     expect(activations).toBe(0);
   });
 
-  it('raises onBeginDrag/onDrag/onEndDrag once a captured press exceeds dragThreshold, with no onActivate', () => {
+  it('raises onBeginDrag/onDrag/onEndDrag once a captured press exceeds dragThreshold, with no onInvoke', () => {
     const { mouseInputSource, tick, interactable } = setUp();
 
     let activations = 0;
     let beginDrags = 0;
     let drags = 0;
     let endDrags = 0;
-    interactable().onActivate.registerListener(() => (activations += 1));
+    interactable().onInvoke.registerListener(() => (activations += 1));
     interactable().onBeginDrag.registerListener(() => (beginDrags += 1));
     interactable().onDrag.registerListener(() => (drags += 1));
     interactable().onEndDrag.registerListener(() => (endDrags += 1));

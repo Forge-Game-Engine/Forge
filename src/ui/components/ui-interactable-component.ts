@@ -10,7 +10,7 @@ import { Vector2 } from '../../math/index.js';
 export interface UiInteractableDefaultedOptions {
   /**
    * Whether this element participates in interaction at all - receives
-   * hover/press/focus and raises `onActivate`. A `false` interactable is
+   * hover/press/focus and raises `onInvoke`. A `false` interactable is
    * skipped by `createUiNavigationEcsSystem`'s focus traversal, and (unlike
    * `blocksRaycasts`) still blocks the raycast for elements behind it if
    * `blocksRaycasts` is `true`, the same way a disabled button still shadows
@@ -37,19 +37,20 @@ export interface UiInteractableDefaultedOptions {
 
 /**
  * A rect that participates in pointer/gamepad interaction. Attach alongside
- * a `RectTransformEcsComponent` (see `design/ui-system.md`'s "Anatomy of a
- * button") to make any rect - not just a button - clickable, hoverable, and
- * focus-navigable: a toggle, a slider handle, a list row, a close icon.
+ * a `RectTransformEcsComponent` to make any rect - not just a button -
+ * clickable, hoverable, and focus-navigable: a toggle, a slider handle, a
+ * list row, a close icon.
  *
- * Activation is source-agnostic (`design/ui-system.md`'s DL-14):
- * `onActivate` is raised both by a pointer release on this element (via
- * `createUiInteractionEcsSystem`) and by `submitInput` while this element is
- * focused (via `createUiNavigationEcsSystem`), and the listener cannot tell
- * which fired it.
+ * Invocation is source-agnostic: `onInvoke` is raised both by a pointer
+ * release on this element (via `createUiInteractionEcsSystem`) and by
+ * `submitInput` while this element is focused (via
+ * `createUiNavigationEcsSystem`), and the listener cannot tell which fired
+ * it - so game code reacts to "this element was invoked" without caring
+ * whether a mouse, a gamepad, or a script did it.
  */
 export interface UiInteractableEcsComponent extends UiInteractableDefaultedOptions {
-  /** Raised when this element is activated, by a pointer or a submit action. */
-  readonly onActivate: ForgeEvent;
+  /** Raised when this element is invoked, by a pointer click or a submit action. */
+  readonly onInvoke: ForgeEvent;
 
   /** Raised when the pointer starts being over this element. Pointer-only. */
   readonly onPointerEnter: ForgeEvent;
@@ -97,10 +98,10 @@ export interface UiInteractableEcsComponent extends UiInteractableDefaultedOptio
 
   /**
    * Whether this element currently holds a captured press *and* the pointer
-   * is still over it (see `design/ui-system.md`'s §5.7 - moving the pointer
-   * off a held-down element visually un-presses it without cancelling the
-   * gesture; `pressCapture` tracks the gesture itself). System-owned,
-   * written by `createUiInteractionEcsSystem`; read-only to callers.
+   * is still over it - moving the pointer off a held-down element visually
+   * un-presses it without cancelling the gesture; `pressCapture` tracks the
+   * gesture itself. System-owned, written by `createUiInteractionEcsSystem`;
+   * read-only to callers.
    */
   isPressed: boolean;
 
@@ -112,26 +113,25 @@ export interface UiInteractableEcsComponent extends UiInteractableDefaultedOptio
   isDragging: boolean;
 
   /**
-   * `true` for exactly one tick: the tick `onActivate` was raised, from
+   * `true` for exactly one tick: the tick `onInvoke` was raised, from
    * either the pointer or the focus path. Poll this instead of registering
-   * an `onActivate` listener when that idiom fits better. System-owned,
+   * an `onInvoke` listener when that idiom fits better. System-owned,
    * written by `createUiInteractionEcsSystem` and
    * `createUiNavigationEcsSystem`; read-only to callers.
    */
-  wasActivatedThisFrame: boolean;
+  wasInvokedThisFrame: boolean;
 
   /**
    * System-owned bookkeeping `createUiInteractionEcsSystem` uses to track an
    * in-progress press/drag gesture across ticks between a pointer down and
    * its matching up - non-`null` from the down edge until the matching up
    * edge, regardless of whether the pointer stays over the element in
-   * between (so `isPressed`/drag-threshold/`onActivate` all resolve
-   * correctly even if the pointer wanders off and back). `originPosition`
-   * is the pointer's position, in its canvas's UI world space, at the tick
-   * the press began - what `dragThreshold` is measured against. Not part of
-   * the public state surface - read
-   * `isPressed`/`isDragging`/`wasActivatedThisFrame` instead of this
-   * directly.
+   * between (so `isPressed`/drag-threshold/`onInvoke` all resolve correctly
+   * even if the pointer wanders off and back). `originPosition` is the
+   * pointer's position, in its canvas's UI world space, at the tick the
+   * press began - what `dragThreshold` is measured against. Not part of the
+   * public state surface - read
+   * `isPressed`/`isDragging`/`wasInvokedThisFrame` instead of this directly.
    */
   pressCapture: { originPosition: Vector2 } | null;
 }
@@ -165,7 +165,7 @@ export function addUiInteractableComponent(
     ...defaultUiInteractableOptions,
     ...options,
 
-    onActivate: new ForgeEvent('uiInteractable.onActivate'),
+    onInvoke: new ForgeEvent('uiInteractable.onInvoke'),
     onPointerEnter: new ForgeEvent('uiInteractable.onPointerEnter'),
     onPointerExit: new ForgeEvent('uiInteractable.onPointerExit'),
     onPointerDown: new ForgeEvent('uiInteractable.onPointerDown'),
@@ -178,7 +178,7 @@ export function addUiInteractableComponent(
     isFocused: false,
     isPressed: false,
     isDragging: false,
-    wasActivatedThisFrame: false,
+    wasInvokedThisFrame: false,
     pressCapture: null,
   };
 

@@ -54,10 +54,11 @@ export interface RectTransformDefaultedOptions {
    * This element's hierarchy pre-order index within its canvas, written
    * every frame by `createUiLayoutEcsSystem` - the same value it writes
    * into `SpriteEcsComponent.sortDepth`/`TextEcsComponent.sortDepth` for
-   * elements that have one (see `design/ui-system.md`'s DL-06). Elements
-   * with neither still get one here, since `createUiRaycastEcsSystem`
-   * needs a topmost-first ordering for every interactable regardless of
-   * whether it happens to draw anything. Do not set this directly.
+   * elements that have one, so draw order follows hierarchy order within a
+   * canvas rather than world Y. Elements with neither still get one here,
+   * since `createUiRaycastEcsSystem` needs a topmost-first ordering for
+   * every interactable regardless of whether it happens to draw anything.
+   * Do not set this directly.
    */
   sortDepth: number;
 }

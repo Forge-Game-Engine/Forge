@@ -21,10 +21,10 @@ describe('addUiInteractableComponent', () => {
     expect(component.isFocused).toBe(false);
     expect(component.isPressed).toBe(false);
     expect(component.isDragging).toBe(false);
-    expect(component.wasActivatedThisFrame).toBe(false);
+    expect(component.wasInvokedThisFrame).toBe(false);
     expect(component.pressCapture).toBeNull();
 
-    expect(component.onActivate).toBeInstanceOf(ForgeEvent);
+    expect(component.onInvoke).toBeInstanceOf(ForgeEvent);
     expect(component.onPointerEnter).toBeInstanceOf(ForgeEvent);
     expect(component.onPointerExit).toBeInstanceOf(ForgeEvent);
     expect(component.onPointerDown).toBeInstanceOf(ForgeEvent);
@@ -59,11 +59,11 @@ describe('addUiInteractableComponent', () => {
     const componentB = addUiInteractableComponent(world, entityB);
 
     let calls = 0;
-    componentA.onActivate.registerListener(() => {
+    componentA.onInvoke.registerListener(() => {
       calls += 1;
     });
 
-    componentB.onActivate.raise();
+    componentB.onInvoke.raise();
 
     expect(calls).toBe(0);
   });

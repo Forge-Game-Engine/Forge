@@ -15,6 +15,10 @@ import {
   UiInteractableEcsComponent,
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
+import {
+  UiNavigationDirection,
+  uiNavigationDirections,
+} from '../types/ui-navigation-direction.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
 import { setUiFocus } from '../utilities/set-ui-focus.js';
 
@@ -26,26 +30,26 @@ import { setUiFocus } from '../utilities/set-ui-focus.js';
  */
 const navigationThreshold = 0.5;
 
-type NavigationDirection = 'up' | 'down' | 'left' | 'right';
-
 interface FocusCandidate {
   entity: number;
   rect: Rect;
 }
 
-const directionVectors: Record<NavigationDirection, Vector2> = {
-  up: { x: 0, y: 1 },
-  down: { x: 0, y: -1 },
-  left: { x: -1, y: 0 },
-  right: { x: 1, y: 0 },
+const directionVectors: Record<UiNavigationDirection, Vector2> = {
+  [uiNavigationDirections.up]: { x: 0, y: 1 },
+  [uiNavigationDirections.down]: { x: 0, y: -1 },
+  [uiNavigationDirections.left]: { x: -1, y: 0 },
+  [uiNavigationDirections.right]: { x: 1, y: 0 },
 };
 
-function dominantDirection(value: Vector2): NavigationDirection {
+function dominantDirection(value: Vector2): UiNavigationDirection {
   if (Math.abs(value.x) > Math.abs(value.y)) {
-    return value.x > 0 ? 'right' : 'left';
+    return value.x > 0
+      ? uiNavigationDirections.right
+      : uiNavigationDirections.left;
   }
 
-  return value.y > 0 ? 'up' : 'down';
+  return value.y > 0 ? uiNavigationDirections.up : uiNavigationDirections.down;
 }
 
 function centerOf(rect: Rect): Vector2 {
@@ -109,7 +113,7 @@ function groupFocusCandidatesByCanvas(
 function findNearestInDirection(
   candidates: readonly FocusCandidate[],
   fromCenter: Vector2,
-  direction: NavigationDirection,
+  direction: UiNavigationDirection,
 ): number | null {
   const directionVector = directionVectors[direction];
 
@@ -171,7 +175,7 @@ function pickTopmostCandidate(
 function resolveExplicitFocusTarget(
   world: EcsWorld,
   focusedEntity: number,
-  direction: NavigationDirection,
+  direction: UiNavigationDirection,
 ): number | null {
   const focusComponent = world.getComponent(focusedEntity, uiFocusId);
   const explicitTarget = focusComponent?.[direction];
@@ -185,7 +189,7 @@ function resolveExplicitFocusTarget(
 function resolveNextFocusTarget(
   world: EcsWorld,
   canvas: CanvasEcsComponent,
-  direction: NavigationDirection,
+  direction: UiNavigationDirection,
   candidates: readonly FocusCandidate[],
 ): number | null {
   if (canvas.focusedEntity === null) {
@@ -250,7 +254,7 @@ function applyNavigateInput(
   wasBeyondThresholdByAction.set(canvas.navigateInput, isBeyondThreshold);
 }
 
-/** Applies `canvas.submitInput`: raises `onActivate` on the focused element, if any, when it triggers. */
+/** Applies `canvas.submitInput`: raises `onInvoke` on the focused element, if any, when it triggers. */
 function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
   if (!canvas.submitInput?.isTriggered || canvas.focusedEntity === null) {
     return;
@@ -262,33 +266,33 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
   );
 
   if (focused?.interactable) {
-    focused.wasActivatedThisFrame = true;
-    focused.onActivate.raise();
+    focused.wasInvokedThisFrame = true;
+    focused.onInvoke.raise();
   }
 }
 
 /**
- * Creates a system that drives gamepad/keyboard focus navigation - the
- * focus path of `design/ui-system.md`'s DL-14 source-agnostic activation,
- * promoted to Phase 2 core rather than late polish (per that decision).
+ * Creates a system that drives gamepad/keyboard focus navigation, the
+ * counterpart to pointer hover/click that lets a controller or keyboard
+ * reach and invoke the same interactables.
  *
  * Every `interactable: true` `UiInteractableEcsComponent` is automatically
  * focus-navigable: on the tick a canvas's `navigateInput` magnitude first
  * crosses `navigationThreshold`, focus moves to the nearest candidate on
  * the same canvas in the dominant direction (a `UiFocusEcsComponent` on the
  * currently focused entity overrides that search on whichever sides it
- * sets). `submitInput` raises `onActivate` on the focused element;
+ * sets). `submitInput` raises `onInvoke` on the focused element;
  * `cancelInput` clears focus - register your own listener on
  * `cancelInput.triggerEvent` for bespoke "close this menu" behavior.
  *
- * Also resets every `UiInteractableEcsComponent.wasActivatedThisFrame` to
+ * Also resets every `UiInteractableEcsComponent.wasInvokedThisFrame` to
  * `false` at the start of its tick, before re-setting it for this tick's
- * submit activation - the single point in the pipeline responsible for that
+ * submit invocation - the single point in the pipeline responsible for that
  * reset (see `createUiInteractionEcsSystem`, which only ever sets it `true`
  * for the pointer path and relies on this system having already cleared
  * it this tick). Always register this system - even on a canvas with no
  * `submitInput`/`cancelInput`/`navigateInput` configured - or
- * `wasActivatedThisFrame` never clears; `createUiCanvas` does this for you.
+ * `wasInvokedThisFrame` never clears; `createUiCanvas` does this for you.
  *
  * Must be registered after `createUiRaycastEcsSystem` (if present) and
  * before `createUiInteractionEcsSystem`.
@@ -312,7 +316,7 @@ export const createUiNavigationEcsSystem = (): EcsSystem<
       ]);
 
       for (const interactable of interactables) {
-        interactable.wasActivatedThisFrame = false;
+        interactable.wasInvokedThisFrame = false;
       }
 
       const candidatesByCanvas = groupFocusCandidatesByCanvas(

@@ -75,7 +75,7 @@ describe('createButton', () => {
     ).toEqual({ x: 200, y: 60 });
   });
 
-  it('exposes onActivate directly, matching the interactable event', () => {
+  it('exposes onInvoke directly, matching the interactable event', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -87,12 +87,12 @@ describe('createButton', () => {
     });
 
     let activations = 0;
-    button.onActivate.registerListener(() => (activations += 1));
+    button.onInvoke.registerListener(() => (activations += 1));
 
-    button.interactable.onActivate.raise();
+    button.interactable.onInvoke.raise();
 
     expect(activations).toBe(1);
-    expect(button.onActivate).toBe(button.interactable.onActivate);
+    expect(button.onInvoke).toBe(button.interactable.onInvoke);
   });
 
   it('passes through interactable and transition overrides', () => {

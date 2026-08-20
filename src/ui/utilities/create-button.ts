@@ -72,25 +72,24 @@ export interface Button {
   /** The child label entity - see `createLabel`. */
   label: number;
 
-  /** The button's `UiInteractableEcsComponent`, for reading interaction state (`isHovered`, `isPressed`, ...) or registering pointer-event listeners beyond `onActivate`. */
+  /** The button's `UiInteractableEcsComponent`, for reading interaction state (`isHovered`, `isPressed`, ...) or registering pointer-event listeners beyond `onInvoke`. */
   interactable: UiInteractableEcsComponent;
 
   /**
-   * Raised when the button is activated, by a pointer or a submit action -
-   * `interactable.onActivate`, surfaced directly for the common case (see
-   * `design/ui-system.md`'s "two calls to a working button").
+   * Raised when the button is invoked, by a pointer click or a submit
+   * action - `interactable.onInvoke`, surfaced directly since registering a
+   * single listener on it is the overwhelmingly common case.
    */
-  onActivate: ForgeEvent;
+  onInvoke: ForgeEvent;
 }
 
 /**
  * Creates a button: a panel (see `createPanel`) with a
  * `UiInteractableEcsComponent` and a `UiColorTransitionEcsComponent` added,
- * plus a centered child label (see `createLabel`) - the aggregate factory
- * `design/ui-system.md`'s DL-13 calls for in place of a `ButtonEcsComponent`.
- * Every one of its parts (the interactable, the transition, the label) is
- * independently useful and can be dropped or replaced by building the same
- * pieces by hand instead of calling this.
+ * plus a centered child label (see `createLabel`). There is no
+ * `ButtonEcsComponent` - a button is fully described by those three parts,
+ * each of which is independently useful and can be dropped or replaced by
+ * building the same pieces by hand instead of calling this.
  * @param world - The ECS world to create the button entity in.
  * @param parent - The parent entity - a canvas (see `createUiCanvas`) or
  * another UI element.
@@ -98,7 +97,7 @@ export interface Button {
  * `fontAtlas`, and `labelSize` have no sensible default and must always be
  * provided.
  * @returns The created button: its entity, its child label entity, its
- * `UiInteractableEcsComponent`, and `onActivate` for the common case of
+ * `UiInteractableEcsComponent`, and `onInvoke` for the common case of
  * registering a single listener.
  */
 export function createButton(
@@ -167,6 +166,6 @@ export function createButton(
     entity,
     label: labelEntity,
     interactable,
-    onActivate: interactable.onActivate,
+    onInvoke: interactable.onInvoke,
   };
 }

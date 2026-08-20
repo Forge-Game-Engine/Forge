@@ -15,9 +15,7 @@ functions the same way any other composite entity in Forge is.
 :::info Current scope
 Layout (anchors, canvases, panels, labels) and interaction (buttons,
 hover/press/drag, gamepad/keyboard focus navigation, color transitions) are
-implemented. Toggles/sliders/scroll views and layout groups aren't yet -
-see [`design/ui-system.md`](https://github.com/Forge-Game-Engine/Forge/blob/dev/design/ui-system.md)
-for the full plan.
+implemented. Toggles, sliders, scroll views, and layout groups aren't yet.
 :::
 
 ## Quick start
@@ -201,9 +199,9 @@ screen:
 
 ```ts
 const canvas = createUiCanvas(world, renderContext, time, {
-  // Pointer interaction needs a MouseInputSource; omit it for a
-  // gamepad/keyboard-only canvas.
-  mouseInputSource: new MouseInputSource(inputManager, game.container),
+  // Pointer interaction needs a pointer source; omit it for a
+  // gamepad/keyboard-only canvas. MouseInputSource satisfies this directly.
+  pointerSource: new MouseInputSource(inputManager, game.container),
   // Optional - both InputActions the same way CameraEcsComponent takes
   // zoomInput/panInput. Omitted, the canvas is still fully clickable, just
   // not focus-navigable.
@@ -218,7 +216,7 @@ const play = createButton(world, canvas, {
   labelSize: 32,
 });
 
-play.onActivate.registerListener(startGame);
+play.onInvoke.registerListener(startGame);
 ```
 
 `createButton` assembles a panel (`createPanel`) with a
@@ -230,14 +228,14 @@ piece is independently useful: add `UiInteractableEcsComponent` to any rect
 (a toggle, a list row, a close icon) to make it clickable, hoverable, and
 focus-navigable without it being a "button" at all.
 
-### Source-agnostic activation
+### Source-agnostic invocation
 
-`onActivate` is raised the same way whether a pointer click, a gamepad/
-keyboard submit, or a script (`interactable.onActivate.raise()`, or
+`onInvoke` is raised the same way whether a pointer click, a gamepad/
+keyboard submit, or a script (`interactable.onInvoke.raise()`, or
 triggering `submitInput` directly) caused it - the listener can't tell
 which. `isHovered` (pointer-only) and `isFocused` (source-agnostic - set by
 directional navigation, and by the pointer hovering an element, so the
-highlight follows the mouse) stay deliberately distinct; a `wasActivatedThisFrame`
+highlight follows the mouse) stay deliberately distinct; a `wasInvokedThisFrame`
 flag is available for polling instead of registering a listener.
 
 ### Focus navigation
@@ -258,7 +256,7 @@ hierarchy order) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
 the weapon when the click landed on the pause button"). An element with
 `blocksRaycasts: false` is transparent to the scan. A captured press that
 moves beyond `dragThreshold` (measured in reference pixels) raises
-`onBeginDrag`/`onDrag`/`onEndDrag` instead of `onActivate` - useful for
+`onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
 building a slider handle or a scrollbar thumb.
 
 ## Known limitations

@@ -50,9 +50,8 @@ const defaultCreateLabelOptions = {
  * @param parent - The entity to parent the label to - required, no default.
  * There's no standalone "no parent" case: pass the canvas entity itself
  * (see `createUiCanvas`) for a top-level label, or another UI element (a
- * panel, a button) to position the label relative to it, the way the label
- * inside a button is parented to the button rather than to the canvas
- * directly (see `design/ui-system.md`'s "Anatomy of a button").
+ * panel, a button) to position the label relative to it, the way `createButton`
+ * parents its own label to the button rather than to the canvas directly.
  * @param options - Options for configuring the label. `text`, `fontAtlas`,
  * and `size` have no sensible default and must always be provided.
  * @returns The created label entity.

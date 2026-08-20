@@ -65,18 +65,18 @@ const createButtonAt = (
 };
 
 describe('createUiNavigationEcsSystem', () => {
-  it('resets wasActivatedThisFrame to false every tick before applying this tick', () => {
+  it('resets wasInvokedThisFrame to false every tick before applying this tick', () => {
     const world = new EcsWorld();
     const canvas = createTestCanvas(world);
     const button = createButtonAt(world, canvas, { x: 0, y: 0 });
     const interactable = world.getComponent(button, uiInteractableId)!;
 
-    interactable.wasActivatedThisFrame = true;
+    interactable.wasInvokedThisFrame = true;
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();
 
-    expect(interactable.wasActivatedThisFrame).toBe(false);
+    expect(interactable.wasInvokedThisFrame).toBe(false);
   });
 
   it('focuses the topmost candidate when navigating with nothing focused yet', () => {
@@ -162,7 +162,7 @@ describe('createUiNavigationEcsSystem', () => {
     );
   });
 
-  it('raises onActivate on the focused element when submitInput triggers', () => {
+  it('raises onInvoke on the focused element when submitInput triggers', () => {
     const world = new EcsWorld();
     const submitInput = new TriggerAction('submit');
     const canvas = createTestCanvas(world, { submitInput });
@@ -170,7 +170,7 @@ describe('createUiNavigationEcsSystem', () => {
     const interactable = world.getComponent(button, uiInteractableId)!;
 
     let activations = 0;
-    interactable.onActivate.registerListener(() => (activations += 1));
+    interactable.onInvoke.registerListener(() => (activations += 1));
 
     world.getComponent(canvas, canvasId)!.focusedEntity = button;
     interactable.isFocused = true;
@@ -181,7 +181,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.update();
 
     expect(activations).toBe(1);
-    expect(interactable.wasActivatedThisFrame).toBe(true);
+    expect(interactable.wasInvokedThisFrame).toBe(true);
   });
 
   it('clears focus when cancelInput triggers', () => {

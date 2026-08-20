@@ -31,7 +31,9 @@ import {
   FontAtlas,
   FontAtlasCache,
   shapeText,
+  textHorizontalAlignments,
   textId,
+  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   createButton,
@@ -104,8 +106,7 @@ async function createBackdrop(
 /**
  * Wires a `MouseInputSource` and a `KeyboardInputSource` (arrow keys to
  * navigate focus, Enter/Space to submit) so the HUD's `Play` button is both
- * clickable and gamepad/keyboard-focus-navigable, per
- * `design/ui-system.md`'s DL-14 source-agnostic activation.
+ * clickable and gamepad/keyboard-focus-navigable.
  */
 function createUiInputs(
   world: EcsWorld,
@@ -153,8 +154,8 @@ function createUiInputs(
  * through a second, dedicated UI camera - a full-width top bar, a
  * corner-anchored score panel, and a hoverable, clickable, keyboard/gamepad-
  * focus-navigable `Play` button (see `createButton`) that increments a
- * click counter on `onActivate`, whichever path raised it (pointer or
- * `submitInput`) - `design/ui-system.md`'s Phase 2 exit criterion.
+ * click counter on `onInvoke`, whichever path raised it (pointer or
+ * `submitInput`).
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -182,7 +183,7 @@ export const createUiDemoGame = async (
 
   const canvas = createUiCanvas(world, renderContext, time, {
     referenceResolution: { x: 1920, y: 1080 },
-    mouseInputSource,
+    pointerSource: mouseInputSource,
     submitInput,
     navigateInput,
   });
@@ -221,7 +222,7 @@ export const createUiDemoGame = async (
       x: -measureTextWidth(titleText, fontAtlas, titleSize) / 2,
       y: 0,
     },
-    verticalAlign: 'middle',
+    verticalAlign: textVerticalAlignments.middle,
     color: textColor,
   });
 
@@ -245,7 +246,7 @@ export const createUiDemoGame = async (
       x: -measureTextWidth(scoreText, fontAtlas, scoreSize) / 2,
       y: 0,
     },
-    verticalAlign: 'middle',
+    verticalAlign: textVerticalAlignments.middle,
     color: textColor,
   });
 
@@ -275,15 +276,20 @@ export const createUiDemoGame = async (
     anchor: UiAnchor.bottomCenter,
     anchoredPosition: { x: 0, y: 140 },
     sizeDelta: { x: 400, y: 40 },
-    horizontalAlign: 'center',
-    verticalAlign: 'middle',
+    horizontalAlign: textHorizontalAlignments.center,
+    verticalAlign: textVerticalAlignments.middle,
     maxWidth: 400,
     color: textColor,
   });
 
-  playButton.onActivate.registerListener(() => {
+  // Looked up once, rather than on every click - `world.getComponent` is a
+  // map lookup that a hot input-event handler doesn't need to repeat when
+  // the component reference itself never changes.
+  const clickText = world.getComponent(clickLabel, textId)!;
+
+  playButton.onInvoke.registerListener(() => {
     clickCount += 1;
-    world.getComponent(clickLabel, textId)!.text = `Clicks: ${clickCount}`;
+    clickText.text = `Clicks: ${clickCount}`;
   });
 
   world.addSystem(createCameraEcsSystem(time));

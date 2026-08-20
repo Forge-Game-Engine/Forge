@@ -1,6 +1,5 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { MouseInputSource } from '../../input/index.js';
 import { Rects } from '../../math/index.js';
 import {
   CameraEcsComponent,
@@ -22,6 +21,7 @@ import {
   UiInteractableEcsComponent,
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
+import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
 import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointer-position.js';
 
@@ -30,7 +30,7 @@ import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointe
  * `SpriteEcsComponent` (an invisible hit region has nothing to cull) or its
  * `Renderable.category` matches the camera's `cullingMask`. An element
  * culled from its canvas's camera must not be clickable either, or the UI
- * develops invisible hit regions (see `design/ui-system.md`'s DL-07).
+ * develops invisible hit regions.
  */
 function isVisibleToCamera(
   world: EcsWorld,
@@ -113,15 +113,17 @@ function findRaycastHit(
 }
 
 /**
- * Creates a system that, per `CanvasEcsComponent`, converts
- * `mouseInputSource`'s pointer position into that canvas's UI world space
- * and scans its `UiInteractableEcsComponent`s in reverse hierarchy order
- * (topmost first, by `RectTransformEcsComponent.sortDepth`) for the first
- * whose resolved `rect` contains it - a linear reverse-depth scan, per
- * `design/ui-system.md`'s DL-08. An element with `blocksRaycasts: false` is
- * transparent to the scan (never considered, hit or not); an element culled
- * from the canvas's camera by `cullingMask` is skipped the same way an
- * invisible element shouldn't be clickable.
+ * Creates a system that, per `CanvasEcsComponent`, converts the pointer
+ * source's position into that canvas's UI world space and scans its
+ * `UiInteractableEcsComponent`s in reverse hierarchy order (topmost first,
+ * by `RectTransformEcsComponent.sortDepth`) for the first whose resolved
+ * `rect` contains it - a linear reverse-depth scan: element counts here are
+ * in the hundreds, not the hundreds of thousands, so a plain scan is a few
+ * microseconds with no acceleration structure to build or invalidate. An
+ * element with `blocksRaycasts: false` is transparent to the scan (never
+ * considered, hit or not); an element culled from the canvas's camera by
+ * `cullingMask` is skipped the same way an invisible element shouldn't be
+ * clickable.
  *
  * Writes `CanvasEcsComponent.hoveredEntity` (the topmost hit, or `null`) and
  * `isPointerOverUi` (`hoveredEntity !== null`) every tick - read by
@@ -130,13 +132,13 @@ function findRaycastHit(
  *
  * Must be registered after `createUiLayoutEcsSystem` (it reads the rects/
  * sortDepths that system resolves) and before `createUiInteractionEcsSystem`.
- * @param mouseInputSource - The pointer source hit-tested against.
+ * @param pointerSource - The pointer source hit-tested against.
  * @param renderContext - The render context canvases' cameras render
  * through, used to convert the pointer position.
  * @returns The UI raycast ECS system.
  */
 export const createUiRaycastEcsSystem = (
-  mouseInputSource: MouseInputSource,
+  pointerSource: UiPointerSource,
   renderContext: RenderContext,
 ): EcsSystem<[CanvasEcsComponent]> => ({
   name: 'uiRaycast',
@@ -169,7 +171,7 @@ export const createUiRaycastEcsSystem = (
         world,
         canvas,
         renderContext,
-        mouseInputSource,
+        pointerSource,
       );
 
       const camera = world.getComponent<CameraEcsComponent>(

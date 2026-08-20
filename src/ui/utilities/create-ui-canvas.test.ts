@@ -132,7 +132,7 @@ describe('createUiCanvas', () => {
     return entity;
   };
 
-  it('does not hit-test or receive pointer interaction without a mouseInputSource', () => {
+  it('does not hit-test or receive pointer interaction without a pointerSource', () => {
     const canvas = createUiCanvas(world, renderContext, time);
     const button = createButtonEntity(canvas);
 
@@ -142,10 +142,10 @@ describe('createUiCanvas', () => {
     expect(world.getComponent(button, uiInteractableId)!.isHovered).toBe(false);
   });
 
-  it('wires pointer raycasting and interaction once a mouseInputSource is supplied', () => {
+  it('wires pointer raycasting and interaction once a pointerSource is supplied', () => {
     const mouseInputSource = buildMouseInputSource(960, 540);
     const canvas = createUiCanvas(world, renderContext, time, {
-      mouseInputSource,
+      pointerSource: mouseInputSource,
     });
     const button = createButtonEntity(canvas);
 
@@ -173,15 +173,15 @@ describe('createUiCanvas', () => {
     expect(canvasComponent.navigateInput).toBe(navigateInput);
   });
 
-  it('resets wasActivatedThisFrame every tick via the always-registered navigation system', () => {
+  it('resets wasInvokedThisFrame every tick via the always-registered navigation system', () => {
     const canvas = createUiCanvas(world, renderContext, time);
     const button = createButtonEntity(canvas);
     const interactable = world.getComponent(button, uiInteractableId)!;
 
-    interactable.wasActivatedThisFrame = true;
+    interactable.wasInvokedThisFrame = true;
 
     world.update();
 
-    expect(interactable.wasActivatedThisFrame).toBe(false);
+    expect(interactable.wasInvokedThisFrame).toBe(false);
   });
 });
