@@ -9,7 +9,15 @@ import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiDropdownId } from '../components/ui-dropdown-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
-const fontAtlas = {} as FontAtlas;
+// See create-button.test.ts's fontAtlas for why this shape (empty glyphs,
+// placeholder metrics) is enough - createDropdown builds its header/option
+// rows via createButton, which now measures the label width to center it.
+const fontAtlas = {
+  data: {
+    metrics: { lineHeight: 1, ascender: 1, descender: 0, capHeight: 1 },
+    glyphs: new Map(),
+  },
+} as FontAtlas;
 
 const buildSprite = () => ({
   width: 1,

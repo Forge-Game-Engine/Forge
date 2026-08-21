@@ -214,12 +214,18 @@ async function createSettingsPanel(
     sprite: panelSprite,
   });
 
+  const settingsTitleText = 'Settings';
+  const settingsTitleSize = 30;
+
   createLabel(world, settingsPanel, {
-    text: 'Settings',
+    text: settingsTitleText,
     fontAtlas,
-    size: 30,
+    size: settingsTitleSize,
     anchor: UiAnchor.topCenter,
-    anchoredPosition: { x: 0, y: -30 },
+    anchoredPosition: {
+      x: -measureTextWidth(settingsTitleText, fontAtlas, settingsTitleSize) / 2,
+      y: -30,
+    },
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
     category: renderLayers.ui,
@@ -326,9 +332,7 @@ async function createSettingsPanel(
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createUiDemoGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {

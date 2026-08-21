@@ -10,7 +10,18 @@ import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
-const fontAtlas = {} as FontAtlas;
+// `glyphs` is an empty Map rather than a full fixture - `shapeText` silently
+// skips code points it can't find (see its own doc comment), so this is
+// enough for createButton's label-centering measurement to run without
+// throwing; the measured width is just always 0. `metrics` still needs
+// real numbers - shapeText reads them unconditionally to size the block,
+// regardless of whether any glyph matched.
+const fontAtlas = {
+  data: {
+    metrics: { lineHeight: 1, ascender: 1, descender: 0, capHeight: 1 },
+    glyphs: new Map(),
+  },
+} as FontAtlas;
 
 const buildSprite = () => ({
   width: 1,

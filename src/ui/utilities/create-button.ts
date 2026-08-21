@@ -7,6 +7,7 @@ import {
   SpriteEcsComponent,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
+import { shapeText } from '../../text/index.js';
 import {
   addUiColorTransitionComponent,
   UiColorTransitionDefaultedOptions,
@@ -170,13 +171,25 @@ export function createButton(
   );
   addUiColorTransitionComponent(world, entity, transitionOptions);
 
+  // `horizontalAlign: 'center'` only re-centers within an explicit
+  // `maxWidth` box (see `createLabel`'s own doc comment), which a button
+  // doesn't set - a single unwrapped line otherwise always starts exactly
+  // at the label entity's own position and grows rightward, so without
+  // this offset the label reads as shifted right of the button's true
+  // center. Pre-measuring the shaped width and offsetting by half of it
+  // centers the text on that point instead, the same trick the UI demo
+  // uses for its own title/score labels.
+  const labelWidth = shapeText(label, fontAtlas.data, {
+    size: labelSize,
+  }).bounds.width;
+
   const labelEntity = createLabel(world, entity, {
     text: label,
     fontAtlas,
     size: labelSize,
     anchor: UiAnchor.stretchAll,
+    anchoredPosition: { x: -labelWidth / 2, y: 0 },
     verticalAlign: 'middle',
-    horizontalAlign: 'center',
     color: labelColor,
     ...(labelCategory !== undefined && { category: labelCategory }),
   });
