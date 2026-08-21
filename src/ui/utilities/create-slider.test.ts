@@ -4,6 +4,7 @@ import { parentId, positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
+import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiSliderId } from '../components/ui-slider-component.js';
 
@@ -34,6 +35,9 @@ describe('createSlider', () => {
       slider.interactable,
     );
     expect(world.getComponent(slider.entity, uiSliderId)).toBe(slider.slider);
+    expect(
+      world.getComponent(slider.entity, uiColorTransitionId),
+    ).not.toBeNull();
 
     expect(world.getComponent(slider.handle, parentId)).toEqual({
       parent: slider.entity,
@@ -120,6 +124,26 @@ describe('createSlider', () => {
     expect(
       world.getComponent(slider.entity, rectTransformId)!.anchoredPosition,
     ).toEqual({ x: 5, y: -5 });
+  });
+
+  it('passes through interactable and transition overrides', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const hoverColor = new Color(0.9, 0.9, 0.9, 1);
+
+    const slider = createSlider(world, parent, {
+      trackSprite: buildSprite(),
+      handleSprite: buildSprite(),
+      interactable: { interactable: false },
+      transition: { hoverColor, duration: 250 },
+    });
+
+    expect(slider.interactable.interactable).toBe(false);
+
+    const transition = world.getComponent(slider.entity, uiColorTransitionId)!;
+
+    expect(transition.hoverColor).toBe(hoverColor);
+    expect(transition.duration).toBe(250);
   });
 
   it('defaults sizeDelta to 300x24 and handleSize to 24x24', () => {

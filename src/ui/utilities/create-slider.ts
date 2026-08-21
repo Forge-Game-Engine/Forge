@@ -12,6 +12,10 @@ import {
 } from '../../rendering/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import {
+  addUiColorTransitionComponent,
+  UiColorTransitionDefaultedOptions,
+} from '../components/ui-color-transition-component.js';
+import {
   addUiInteractableComponent,
   UiInteractableDefaultedOptions,
   UiInteractableEcsComponent,
@@ -83,13 +87,21 @@ export interface CreateSliderDefaultedOptions {
    * moves the handle.
    */
   interactable?: Partial<UiInteractableDefaultedOptions>;
+
+  /**
+   * Overrides for the track's `UiColorTransitionEcsComponent` (its
+   * hover/pressed/disabled tints, transition duration, and easing) - the
+   * only visual feedback for a slider being keyboard/gamepad-focused, since
+   * the track itself has no separate "focused" decoration.
+   */
+  transition?: Partial<UiColorTransitionDefaultedOptions>;
 }
 
 export type CreateSliderOptions = CreateSliderRequiredOptions &
   Partial<CreateSliderDefaultedOptions>;
 
 export interface Slider {
-  /** The slider's root entity - the track - a `RectTransformEcsComponent` + `SpriteEcsComponent` + `UiInteractableEcsComponent` + `UiSliderEcsComponent`. */
+  /** The slider's root entity - the track - a `RectTransformEcsComponent` + `SpriteEcsComponent` + `UiInteractableEcsComponent` + `UiColorTransitionEcsComponent` + `UiSliderEcsComponent`. */
   entity: number;
 
   /** The child handle entity. */
@@ -114,11 +126,12 @@ export interface Slider {
 
 /**
  * Creates a slider: a panel (see `createPanel`) used as the drag track, with
- * a `UiInteractableEcsComponent` and a `UiSliderEcsComponent` added, plus a
- * child handle (and, if `fillSprite` is given, a child fill) whose rect
- * transforms `createUiSliderEcsSystem` drives from the slider's value every
- * tick. The whole track is the drag surface - clicking anywhere on it, not
- * just the handle, jumps the handle there.
+ * a `UiInteractableEcsComponent`, a `UiColorTransitionEcsComponent`, and a
+ * `UiSliderEcsComponent` added, plus a child handle (and, if `fillSprite` is
+ * given, a child fill) whose rect transforms `createUiSliderEcsSystem`
+ * drives from the slider's value every tick. The whole track is the drag
+ * surface - clicking anywhere on it, not just the handle, jumps the handle
+ * there.
  * @param world - The ECS world to create the slider entity in.
  * @param parent - The parent entity - a canvas (see `createUiCanvas`) or
  * another UI element.
@@ -157,6 +170,7 @@ export function createSlider(
     value,
     wholeNumbers,
     interactable: interactableOptions,
+    transition: transitionOptions,
   } = { ...defaultCreateSliderOptions, ...options };
 
   const entity = createPanel(world, parent, {
@@ -171,6 +185,7 @@ export function createSlider(
     dragThreshold: 0,
     ...interactableOptions,
   });
+  addUiColorTransitionComponent(world, entity, transitionOptions);
 
   let fill: number | undefined;
 

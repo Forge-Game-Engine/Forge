@@ -5,6 +5,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
+  actionResetTypes,
   Axis2dAction,
   buttonMoments,
   KeyboardAxis2dBinding,
@@ -128,7 +129,11 @@ function createUiInputs(
   navigateInput: Axis2dAction;
 } {
   const submitInput = new TriggerAction('ui-submit');
-  const navigateInput = new Axis2dAction('ui-navigate');
+  const navigateInput = new Axis2dAction(
+    'ui-navigate',
+    undefined,
+    actionResetTypes.noReset,
+  );
 
   const inputManager = registerInputs(world, time, {
     triggerActions: [submitInput],
@@ -196,10 +201,11 @@ async function createSettingsPanel(
   // instead.
   const boxSprite = buildFillSprite(boxColor);
 
-  // createButton/createToggle always attach a UiColorTransitionEcsComponent,
-  // which defaults every state to Color.white - without this override, it
-  // would override boxSprite's tint back to white every frame, on top of
-  // whatever tint the sprite itself was given.
+  // createButton/createToggle/createSlider always attach a
+  // UiColorTransitionEcsComponent, which defaults every state to
+  // Color.white - without this override, it would override boxSprite's
+  // tint back to white every frame, on top of whatever tint the sprite
+  // itself was given.
   const boxTransition = {
     normalColor: boxColor,
     hoverColor: new Color(0.78, 0.78, 0.83, 1),
@@ -279,6 +285,7 @@ async function createSettingsPanel(
     maxValue: 100,
     value: 75,
     wholeNumbers: true,
+    transition: boxTransition,
   });
 
   volumeSlider.onValueChanged.registerListener((value) => {
