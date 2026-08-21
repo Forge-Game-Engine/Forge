@@ -30,19 +30,25 @@ import {
 import {
   createPanel,
   createUiCanvas,
-  defaultUiRenderCategory,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
+
+// Forge doesn't reserve or ship a "UI" render category - pick any bit your
+// game isn't already using for another camera, and reuse it everywhere UI
+// content needs to match this canvas's cullingMask.
+const uiRenderCategory = 1 << 1;
 
 // createUiCanvas registers the UI layout (and, unconditionally, navigation/
 // transition) systems itself - call it before registering the transform/
 // render systems, so layout runs first each frame. `time` drives its color
 // transition tweens.
-const canvas = createUiCanvas(world, renderContext, time);
+const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
+});
 
 const panelSprite = createImageSprite(panelImage, renderContext, {
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
-  layer: defaultUiRenderCategory, // matches the UI camera's default cullingMask
+  layer: uiRenderCategory, // matches the UI camera's cullingMask above
 });
 
 createPanel(world, canvas, {
@@ -64,27 +70,27 @@ camera - a transparent-cleared, off-screen `RenderTarget` composited onto
 the canvas by `createPresentEcsSystem`, isolated from the world by
 `cullingMask`/`Renderable.category` (see
 [Multipass Rendering](../rendering/multipass-rendering.md) for how the
-camera/render-target/present-pass pieces fit together generally). Give a
-panel's sprite the same category the canvas's `cullingMask` expects
-(`defaultUiRenderCategory` unless you passed a different `cullingMask` to
-`createUiCanvas`) - `createImageSprite`'s `layer` option sets a sprite's
-`Renderable.category`, confusingly by that name (see
-`SpriteEcsComponent.layer`, a *different*, draw-order-only field, for the
-usual meaning of "layer"). Without a matching category, a world camera
-whose own `cullingMask` still matches everything would draw the panel a
-second time wherever its UI-space position happens to land in the world.
+camera/render-target/present-pass pieces fit together generally).
+`cullingMask` has no default - `createUiCanvas` requires it explicitly,
+since Forge has no reserved "this bit means UI" value: pick one your game
+isn't already using for another camera, and reuse that exact value for
+every UI visual's own category. Give a panel's sprite that same category -
+`createImageSprite`'s `layer` option sets a sprite's `Renderable.category`,
+confusingly by that name (see `SpriteEcsComponent.layer`, a *different*,
+draw-order-only field, for the usual meaning of "layer"). Without a
+matching category, a world camera whose own `cullingMask` still matches
+everything would draw the panel a second time wherever its UI-space
+position happens to land in the world.
 
 Text works the same way: `TextEcsComponent.category` defaults to
 `TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't override
 it - not a value the engine reserves or forces, just an ordinary default,
-the same way `defaultUiRenderCategory` is one for UI sprites.
-[`createLabel`](/Forge/docs/api/functions/createLabel) defaults its own
-`category` to `defaultUiRenderCategory` instead, matching
-`createUiCanvas`'s default `cullingMask` automatically, so a label is
-visible without you having to think about categories at all for the common
-case. Building a `TextEcsComponent` by hand (via `addTextComponent`
-directly) for use inside a UI canvas needs `category: defaultUiRenderCategory`
-set explicitly, the same way a hand-built sprite does.
+and one that has nothing to do with any particular UI canvas's
+`cullingMask`. [`createLabel`](/Forge/docs/api/functions/createLabel)
+doesn't override it either, so a label needs its own `category` passed
+explicitly - the same value you gave that canvas's `cullingMask` - to be
+visible through it; `createButton`'s `labelCategory` option forwards the
+same value to its own child label.
 
 ## RectTransform: anchors, pivots, and stretching
 
@@ -171,6 +177,7 @@ createLabel(world, panel, {
   text: 'Play',
   fontAtlas,
   size: 32,
+  category: uiRenderCategory,
   anchor: UiAnchor.center,
   // A center anchor only centers the *entity* on the panel - it doesn't
   // change how the text itself is shaped relative to that point.
@@ -199,6 +206,7 @@ screen:
 
 ```ts
 const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
   // Pointer interaction needs a pointer source; omit it for a
   // gamepad/keyboard-only canvas. MouseInputSource satisfies this directly.
   pointerSource: new MouseInputSource(inputManager, game.container),
@@ -214,6 +222,7 @@ const play = createButton(world, canvas, {
   label: 'Play',
   fontAtlas,
   labelSize: 32,
+  labelCategory: uiRenderCategory,
 });
 
 play.onInvoke.registerListener(startGame);

@@ -23,27 +23,6 @@ import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
 
 /**
- * The render category a UI sprite/text renderable should draw with (see
- * `createImageSprite`'s `layer` option, `Renderable`'s `category` parameter,
- * and `TextEcsComponent.category`) to be visible on a UI canvas using the
- * default `cullingMask`. Not a reserved value - just a sensible default,
- * which `createPanel`'s sprites (once built with a matching category) and
- * `createLabel`'s text (automatically, see its own default) both use. Kept
- * as a dedicated high bit so it's unlikely to collide with a game's own,
- * usually low-numbered, world render categories - without it, a world
- * camera whose own `cullingMask` still matches everything would draw UI
- * content a second time, wherever its UI-space position happens to land in
- * the world.
- *
- * Bit 30, not bit 31: `matchesMask` does `identifier & mask` on plain JS
- * `number`s, which `&` coerces to 32-bit *signed* integers - bit 31 is the
- * sign bit, so `1 << 31` is `-2147483648`, not a clean single-bit flag.
- * `1 << 30` is the highest bit that stays a positive, unsurprising number to
- * log, store, or compare.
- */
-export const defaultUiRenderCategory = 1 << 30;
-
-/**
  * Worlds that already have `createUiLayoutEcsSystem` registered, so calling
  * `createUiCanvas` more than once for the same `EcsWorld` (multiple canvases
  * sharing one game) doesn't register a second layout system redundantly
@@ -125,23 +104,43 @@ function ensureUiInteractionPipeline(
   }
 }
 
-export interface CreateUiCanvasOptions {
+/**
+ * Fields of {@link CreateUiCanvasOptions} with no sensible default; callers
+ * must always provide these.
+ */
+export interface CreateUiCanvasRequiredOptions {
+  /**
+   * The UI camera's culling mask, matched against `Renderable.category` (see
+   * `createImageSprite`'s `layer` option) and `TextEcsComponent.category` to
+   * decide what this camera draws. Forge doesn't reserve or suggest any
+   * particular bit for UI - pick any value your game isn't already using for
+   * another camera, and reuse that same value for every UI visual's own
+   * category (`createLabel`'s `category` option, the `layer` you build UI
+   * sprites with) so this canvas draws them and no other camera's
+   * `cullingMask` also matches them. A hardcoded "UI" bit baked into this
+   * module would only work by coincidence once more than one Forge-based
+   * package picks its own default independently - explicit, caller-owned
+   * values avoid that collision entirely. Note `matchesMask` does
+   * `identifier & mask` on plain JS `number`s, which `&` coerces to 32-bit
+   * *signed* integers - bit 31 is the sign bit, so `1 << 31` is
+   * `-2147483648`, not a clean single-bit flag; stick to bits 0-30.
+   */
+  cullingMask: number;
+}
+
+/**
+ * Fields of {@link CreateUiCanvasOptions} with a sensible default, or that
+ * are genuinely optional (no default at all); callers may omit these.
+ */
+export interface CreateUiCanvasDefaultedOptions {
   /**
    * The resolution UI is authored against, in reference pixels. Defaults to
    * `1920x1080`.
    */
-  referenceResolution?: Vector2;
+  referenceResolution: Vector2;
 
   /** How the canvas's root rect responds to the destination's live size. */
-  scaleMode?: UiScaleMode;
-
-  /**
-   * The UI camera's culling mask. Defaults to {@link defaultUiRenderCategory}
-   * alone - build UI sprites with a matching `Renderable.category` (see
-   * `createImageSprite`'s `layer` option) so the world camera doesn't also
-   * draw them; `createLabel`'s text matches it automatically.
-   */
-  cullingMask?: number;
+  scaleMode: UiScaleMode;
 
   /**
    * The UI camera's `layer`, i.e. its position in the present pass's
@@ -150,7 +149,7 @@ export interface CreateUiCanvasOptions {
    * composites on top without every game having to hand-tune camera layers
    * just to put a HUD on screen.
    */
-  layer?: number;
+  layer: number;
 
   /**
    * The pointer source this canvas's interactables (see
@@ -177,8 +176,10 @@ export interface CreateUiCanvasOptions {
   navigateInput?: Axis2dAction;
 }
 
+export type CreateUiCanvasOptions = CreateUiCanvasRequiredOptions &
+  Partial<CreateUiCanvasDefaultedOptions>;
+
 const defaultCreateUiCanvasOptions = {
-  cullingMask: defaultUiRenderCategory,
   layer: 1000,
 };
 
@@ -208,7 +209,8 @@ const defaultCreateUiCanvasOptions = {
  * @param time - The time instance driving `createUiTransitionEcsSystem`'s
  * tint tweens.
  * @param options - Options for configuring the canvas and its interaction
- * inputs.
+ * inputs. `cullingMask` has no sensible default and must always be provided
+ * - see {@link CreateUiCanvasRequiredOptions.cullingMask}.
  * @returns The created canvas entity. Attach children to it with
  * `addParentComponent(world, child, { parent: canvas })`, or use
  * `createPanel`/`createLabel`/`createButton`.
@@ -217,7 +219,7 @@ export function createUiCanvas(
   world: EcsWorld,
   renderContext: RenderContext,
   time: Time,
-  options: CreateUiCanvasOptions = {},
+  options: CreateUiCanvasOptions,
 ): number {
   const {
     referenceResolution,

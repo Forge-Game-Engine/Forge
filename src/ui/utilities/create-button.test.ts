@@ -95,6 +95,21 @@ describe('createButton', () => {
     expect(button.onInvoke).toBe(button.interactable.onInvoke);
   });
 
+  it('forwards labelCategory to the child label', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const button = createButton(world, parent, {
+      sprite: buildSprite(),
+      label: 'Play',
+      fontAtlas,
+      labelSize: 32,
+      labelCategory: 0b0100,
+    });
+
+    expect(world.getComponent(button.label, textId)!.category).toBe(0b0100);
+  });
+
   it('passes through interactable and transition overrides', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();

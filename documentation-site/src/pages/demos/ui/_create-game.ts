@@ -40,15 +40,19 @@ import {
   createLabel,
   createPanel,
   createUiCanvas,
-  defaultUiRenderCategory,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
+// Forge doesn't ship a reserved "UI" render category - each game picks its
+// own bit and reuses it for the UI canvas's cullingMask and every UI
+// visual's own category, so it's this demo's choice, not the engine's,
+// which bit separates the world camera from the UI camera.
 const renderLayers = {
   world: 1 << 0,
+  ui: 1 << 1,
 };
 
 // The panel artwork is a flat white fill, so labels need a dark tint to
@@ -182,6 +186,7 @@ export const createUiDemoGame = async (
   );
 
   const canvas = createUiCanvas(world, renderContext, time, {
+    cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
     pointerSource: mouseInputSource,
     submitInput,
@@ -192,7 +197,7 @@ export const createUiDemoGame = async (
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = createImageSprite(panelImage, renderContext, {
-    layer: defaultUiRenderCategory,
+    layer: renderLayers.ui,
     slices: {
       left: panelBorderInset,
       right: panelBorderInset,
@@ -224,6 +229,7 @@ export const createUiDemoGame = async (
     },
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
+    category: renderLayers.ui,
   });
 
   const scorePanelWidth = 260;
@@ -248,6 +254,7 @@ export const createUiDemoGame = async (
     },
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
+    category: renderLayers.ui,
   });
 
   const playButton = createButton(world, canvas, {
@@ -259,6 +266,7 @@ export const createUiDemoGame = async (
     fontAtlas,
     labelSize: 30,
     labelColor: textColor,
+    labelCategory: renderLayers.ui,
     transition: {
       normalColor: Color.white,
       hoverColor: new Color(0.85, 0.85, 0.85, 1),
@@ -280,6 +288,7 @@ export const createUiDemoGame = async (
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: 400,
     color: textColor,
+    category: renderLayers.ui,
   });
 
   // Looked up once, rather than on every click - `world.getComponent` is a

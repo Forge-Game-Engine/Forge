@@ -11,7 +11,6 @@ import {
 } from '../../text/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
-import { defaultUiRenderCategory } from './create-ui-canvas.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
@@ -33,19 +32,18 @@ export type CreateLabelOptions = TextRequiredOptions &
 
 const defaultCreateLabelOptions = {
   anchor: UiAnchor.center,
-  category: defaultUiRenderCategory,
 };
 
 /**
  * Creates a UI label: an entity with a `RectTransformEcsComponent` (parented
  * to `parent`) and a `TextEcsComponent`. Every `TextEcsComponent` option
- * (`text`, `fontAtlas`, `size`, and the rest) is accepted directly, and
- * `category` defaults to `defaultUiRenderCategory` - matching
- * `createUiCanvas`'s own default `cullingMask` - rather than
- * `TextEcsComponent`'s own default (`TEXT_RENDER_CATEGORY`), so a label is
- * visible through its canvas's UI camera without either one needing to be
- * hand-tuned to agree, for the common case of a canvas created with default
- * options.
+ * (`text`, `fontAtlas`, `size`, and the rest) is accepted directly. `category`
+ * is not defaulted here - omitted, it falls through to `TextEcsComponent`'s
+ * own default (`TEXT_RENDER_CATEGORY`), which has nothing to do with any
+ * particular canvas's culling mask. To make a label visible through a
+ * specific `createUiCanvas`, pass the same `category` value you gave that
+ * canvas's `cullingMask` (see `CreateUiCanvasRequiredOptions.cullingMask`
+ * for why there's no shared default to fall back on).
  * @param world - The ECS world to create the label entity in.
  * @param parent - The entity to parent the label to - required, no default.
  * There's no standalone "no parent" case: pass the canvas entity itself

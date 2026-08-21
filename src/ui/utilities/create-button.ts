@@ -63,6 +63,16 @@ export interface CreateButtonDefaultedOptions {
   labelColor: Color;
 
   /**
+   * The render category the label's text draws with, forwarded to
+   * `createLabel`'s `category` option - omitted, the label falls back to
+   * `TextEcsComponent`'s own default (`TEXT_RENDER_CATEGORY`), same as any
+   * other label. Pass the same value you gave the button's canvas's
+   * `cullingMask` (see `CreateUiCanvasRequiredOptions.cullingMask`) so the
+   * label is actually visible through it.
+   */
+  labelCategory?: number;
+
+  /**
    * Overrides for the button's `UiInteractableEcsComponent` (e.g. to start
    * it non-`interactable`, or to disable `blocksRaycasts`).
    */
@@ -140,6 +150,7 @@ export function createButton(
     fontAtlas,
     labelSize,
     labelColor,
+    labelCategory,
     interactable: interactableOptions,
     transition: transitionOptions,
   } = { ...defaultCreateButtonOptions, ...options };
@@ -167,6 +178,7 @@ export function createButton(
     verticalAlign: 'middle',
     horizontalAlign: 'center',
     color: labelColor,
+    ...(labelCategory !== undefined && { category: labelCategory }),
   });
 
   return {
