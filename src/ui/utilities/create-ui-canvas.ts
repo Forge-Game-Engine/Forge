@@ -17,16 +17,20 @@ import { addRectTransformComponent } from '../components/rect-transform-componen
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
 import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
+import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.js';
 import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
+import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
+import { createUiToggleEcsSystem } from '../systems/ui-toggle-system.js';
 import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
 
 /**
- * Worlds that already have `createUiLayoutEcsSystem` registered, so calling
- * `createUiCanvas` more than once for the same `EcsWorld` (multiple canvases
- * sharing one game) doesn't register a second layout system redundantly
- * resolving every canvas a second time.
+ * Worlds that already have `createUiLayoutEcsSystem` (and
+ * `createUiProgressBarEcsSystem`, which must run before it) registered, so
+ * calling `createUiCanvas` more than once for the same `EcsWorld` (multiple
+ * canvases sharing one game) doesn't register either a second time
+ * redundantly resolving every canvas again.
  */
 const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
 
@@ -40,8 +44,10 @@ const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
 interface UiInteractionPipeline {
   navigation: EcsSystem<[CanvasEcsComponent]>;
   transition: EcsSystem<readonly unknown[]>;
+  toggle: EcsSystem<readonly unknown[]>;
   raycast?: EcsSystem<[CanvasEcsComponent]>;
   interaction?: EcsSystem<readonly unknown[]>;
+  slider?: EcsSystem<readonly unknown[]>;
 }
 
 const uiInteractionPipelinesByWorld = new WeakMap<
@@ -51,18 +57,22 @@ const uiInteractionPipelinesByWorld = new WeakMap<
 
 /**
  * Registers `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
- * and - once a pointer source is available - `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`, at most once each per `world`. Registration
- * order is raycast, then navigation, then interaction, then transition:
- * raycast must run before navigation and interaction read its hit-test
- * result, interaction must run before transition reads the interaction
- * state it just wrote, and navigation must run before interaction because
- * navigation is what resets `wasInvokedThisFrame` to `false` each tick
- * before interaction conditionally sets it back to `true` for the pointer
- * path. Extends an already-registered pipeline rather than duplicating it,
- * so a canvas created without a pointer source and a later one that
- * supplies it still end up with a single, correctly-ordered pipeline for
- * the whole world.
+ * and `createUiToggleEcsSystem` unconditionally, and - once a pointer source
+ * is available - `createUiRaycastEcsSystem`/`createUiInteractionEcsSystem`/
+ * `createUiSliderEcsSystem`, at most once each per `world`. Registration
+ * order is raycast, then navigation, then interaction, then toggle and
+ * transition (order between those two doesn't matter, neither reads the
+ * other's writes), then slider: raycast must run before navigation and
+ * interaction read its hit-test result, interaction must run before
+ * transition reads the interaction state it just wrote, navigation must run
+ * before interaction because navigation is what resets
+ * `wasInvokedThisFrame` to `false` each tick before interaction
+ * conditionally sets it back to `true` for the pointer path, toggle must run
+ * after both navigation and interaction for the same reason, and slider must
+ * run after interaction (it reads `pressCapture`). Extends an
+ * already-registered pipeline rather than duplicating it, so a canvas
+ * created without a pointer source and a later one that supplies it still
+ * end up with a single, correctly-ordered pipeline for the whole world.
  */
 function ensureUiInteractionPipeline(
   world: EcsWorld,
@@ -81,7 +91,11 @@ function ensureUiInteractionPipeline(
 
     world.addSystem(transition, { after: [navigation] });
 
-    pipeline = { navigation, transition };
+    const toggle = createUiToggleEcsSystem();
+
+    world.addSystem(toggle, { after: [navigation] });
+
+    pipeline = { navigation, transition, toggle };
     uiInteractionPipelinesByWorld.set(world, pipeline);
   }
 
@@ -98,9 +112,14 @@ function ensureUiInteractionPipeline(
 
     world.addSystem(interaction, {
       after: [pipeline.navigation, raycast],
-      before: [pipeline.transition],
+      before: [pipeline.transition, pipeline.toggle],
     });
     pipeline.interaction = interaction;
+
+    const slider = createUiSliderEcsSystem(pointerSource, renderContext);
+
+    world.addSystem(slider, { after: [interaction] });
+    pipeline.slider = slider;
   }
 }
 
@@ -189,12 +208,14 @@ const defaultCreateUiCanvasOptions = {
  * transparent clear color, its own off-screen `RenderTarget`, and a culling
  * mask isolating it from the world so a world camera whose own `cullingMask`
  * still matches everything doesn't draw UI content a second time. Also
- * registers `createUiLayoutEcsSystem`, `createUiNavigationEcsSystem`, and
- * `createUiTransitionEcsSystem` with `world` (each at most once, regardless
- * of how many canvases are created) - plus `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem` once a pointer source is supplied, on this
- * call or a later one for the same world - see `ensureUiInteractionPipeline`
- * for the registration order and why it matters.
+ * registers `createUiLayoutEcsSystem`, `createUiProgressBarEcsSystem`,
+ * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`, and
+ * `createUiToggleEcsSystem` with `world` (each at most once, regardless of
+ * how many canvases are created) - plus `createUiRaycastEcsSystem`/
+ * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem` once a pointer
+ * source is supplied, on this call or a later one for the same world - see
+ * `ensureUiInteractionPipeline` for the registration order and why it
+ * matters.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
  * and `createRenderEcsSystem` with `world` - **after** calling
@@ -264,7 +285,17 @@ export function createUiCanvas(
   });
 
   if (!worldsWithUiLayoutSystem.has(world)) {
-    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    // Progress bars have no interaction dependency at all, so - unlike
+    // toggle/slider, which need this tick's interaction-pipeline state and
+    // so can only run after it - registering this before layout lets a
+    // `value` write and the fill visual it produces land in the very same
+    // frame.
+    const progressBar = createUiProgressBarEcsSystem();
+
+    world.addSystem(progressBar);
+    world.addSystem(createUiLayoutEcsSystem(renderContext), {
+      after: [progressBar],
+    });
     worldsWithUiLayoutSystem.add(world);
   }
 

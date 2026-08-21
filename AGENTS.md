@@ -55,7 +55,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
   /rendering               # Rendering system
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
-  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation)
+  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns)
   /utilities               # General utilities
   index.ts                 # Main exports
 

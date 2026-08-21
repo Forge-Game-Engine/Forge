@@ -25,6 +25,7 @@ import {
   createPresentEcsSystem,
   createRenderEcsSystem,
   RenderContext,
+  SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import {
   createTextShapingEcsSystem,
@@ -37,10 +38,15 @@ import {
 } from '@forge-game-engine/forge/text';
 import {
   createButton,
+  createDropdown,
   createLabel,
   createPanel,
+  createProgressBar,
+  createSlider,
+  createToggle,
   createUiCanvas,
   UiAnchor,
+  UiProgressBarEcsComponent,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -150,6 +156,163 @@ function createUiInputs(
   );
 
   return { mouseInputSource, submitInput, navigateInput };
+}
+
+/**
+ * Builds a "Settings" panel showcasing the Phase 3 controls - a mute
+ * toggle, a volume slider, a quality dropdown, and a health progress bar -
+ * anchored to the canvas's right edge, alongside the existing HUD/button
+ * showcase.
+ * @returns The health bar's `UiProgressBarEcsComponent`, so the caller can
+ * drive it from elsewhere (the demo ties it to the `Play` button below).
+ */
+async function createSettingsPanel(
+  world: EcsWorld,
+  renderContext: RenderContext,
+  canvas: number,
+  fontAtlas: FontAtlas,
+  panelSprite: SpriteEcsComponent,
+): Promise<UiProgressBarEcsComponent> {
+  const whiteImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/White.png'),
+  );
+
+  const buildFillSprite = (tintColor: Color): SpriteEcsComponent => {
+    const sprite = createImageSprite(whiteImage, renderContext, {
+      layer: renderLayers.ui,
+    });
+    sprite.tintColor = tintColor;
+
+    return sprite;
+  };
+
+  const accentColor = new Color(0.35, 0.55, 0.95, 1);
+  const boxColor = new Color(0.85, 0.85, 0.88, 1);
+  const captionSize = 22;
+
+  // The nine-sliced panelSprite's corner decorations are sized for large
+  // panels/buttons - at the small sizes controls below use, the corners
+  // would overlap into a mess, so small controls use a plain flat sprite
+  // instead.
+  const boxSprite = buildFillSprite(boxColor);
+
+  // createButton/createToggle always attach a UiColorTransitionEcsComponent,
+  // which defaults every state to Color.white - without this override, it
+  // would override boxSprite's tint back to white every frame, on top of
+  // whatever tint the sprite itself was given.
+  const boxTransition = {
+    normalColor: boxColor,
+    hoverColor: new Color(0.78, 0.78, 0.83, 1),
+    pressedColor: new Color(0.68, 0.68, 0.75, 1),
+    disabledColor: new Color(0.6, 0.6, 0.6, 0.6),
+  };
+
+  const settingsPanel = createPanel(world, canvas, {
+    anchor: UiAnchor.middleRight,
+    anchoredPosition: { x: -20, y: 0 },
+    sizeDelta: { x: 420, y: 600 },
+    sprite: panelSprite,
+  });
+
+  createLabel(world, settingsPanel, {
+    text: 'Settings',
+    fontAtlas,
+    size: 30,
+    anchor: UiAnchor.topCenter,
+    anchoredPosition: { x: 0, y: -30 },
+    verticalAlign: textVerticalAlignments.middle,
+    color: textColor,
+    category: renderLayers.ui,
+  });
+
+  const caption = (text: string, y: number): void => {
+    createLabel(world, settingsPanel, {
+      text,
+      fontAtlas,
+      size: captionSize,
+      anchor: UiAnchor.topLeft,
+      anchoredPosition: { x: 30, y },
+      verticalAlign: textVerticalAlignments.middle,
+      color: textColor,
+      category: renderLayers.ui,
+    });
+  };
+
+  caption('Mute', -90);
+
+  createToggle(world, settingsPanel, {
+    sprite: boxSprite,
+    checkmarkSprite: buildFillSprite(accentColor),
+    anchor: UiAnchor.topLeft,
+    anchoredPosition: { x: 340, y: -90 },
+    transition: boxTransition,
+  });
+
+  caption('Volume', -160);
+
+  const volumeValueLabel = createLabel(world, settingsPanel, {
+    text: '75',
+    fontAtlas,
+    size: captionSize,
+    anchor: UiAnchor.topLeft,
+    anchoredPosition: { x: 340, y: -160 },
+    verticalAlign: textVerticalAlignments.middle,
+    color: textColor,
+    category: renderLayers.ui,
+  });
+  const volumeValueText = world.getComponent(volumeValueLabel, textId)!;
+
+  const volumeSlider = createSlider(world, settingsPanel, {
+    trackSprite: boxSprite,
+    handleSprite: buildFillSprite(accentColor),
+    fillSprite: buildFillSprite(accentColor),
+    anchor: UiAnchor.topLeft,
+    anchoredPosition: { x: 30, y: -190 },
+    sizeDelta: { x: 360, y: 20 },
+    minValue: 0,
+    maxValue: 100,
+    value: 75,
+    wholeNumbers: true,
+  });
+
+  volumeSlider.onValueChanged.registerListener((value) => {
+    volumeValueText.text = `${value}`;
+  });
+
+  caption('Health', -250);
+
+  const healthBar = createProgressBar(world, settingsPanel, {
+    trackSprite: boxSprite,
+    fillSprite: buildFillSprite(new Color(0.85, 0.3, 0.3, 1)),
+    anchor: UiAnchor.topLeft,
+    anchoredPosition: { x: 30, y: -280 },
+    sizeDelta: { x: 360, y: 20 },
+    minValue: 0,
+    maxValue: 100,
+    value: 100,
+  });
+
+  caption('Quality', -350);
+
+  // Placed last, at the panel's bottom edge, so its option list - which
+  // extends below the header while open - overlaps empty canvas space
+  // rather than the sections above (there's no rect clipping yet, see the
+  // UI doc's "Known limitations").
+  createDropdown(world, settingsPanel, {
+    headerSprite: boxSprite,
+    optionSprite: boxSprite,
+    options: ['Low', 'Medium', 'High'],
+    fontAtlas,
+    labelColor: textColor,
+    labelCategory: renderLayers.ui,
+    anchor: UiAnchor.topLeft,
+    anchoredPosition: { x: 30, y: -380 },
+    sizeDelta: { x: 240, y: 48 },
+    selectedIndex: 2,
+    transition: boxTransition,
+  });
+
+  return healthBar.progressBar;
 }
 
 /**
@@ -275,6 +438,14 @@ export const createUiDemoGame = async (
     },
   });
 
+  const healthProgressBar = await createSettingsPanel(
+    world,
+    renderContext,
+    canvas,
+    fontAtlas,
+    panelSprite,
+  );
+
   let clickCount = 0;
 
   const clickLabel = createLabel(world, canvas, {
@@ -299,6 +470,12 @@ export const createUiDemoGame = async (
   playButton.onInvoke.registerListener(() => {
     clickCount += 1;
     clickText.text = `Clicks: ${clickCount}`;
+
+    // Demonstrates createUiProgressBarEcsSystem picking up an external
+    // value write the same frame it's set - unlike a slider, which has to
+    // wait a frame for the interaction pipeline.
+    healthProgressBar.value =
+      healthProgressBar.value <= 0 ? 100 : healthProgressBar.value - 10;
   });
 
   world.addSystem(createCameraEcsSystem(time));
