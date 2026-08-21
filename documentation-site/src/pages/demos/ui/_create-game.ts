@@ -229,6 +229,11 @@ async function createSettingsPanel(
     fontAtlas,
     size: 30,
     anchor: UiAnchor.stretchTopLeft,
+    // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
+    // literal size - omitting this widens maxWidth past the panel's actual
+    // width by 100, off-centering the text (see createToggle's checkmark
+    // for the same gotcha with a sprite instead of text).
+    sizeDelta: { x: 0, y: 0 },
     anchoredPosition: { x: 0, y: -30 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
@@ -402,6 +407,8 @@ export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
     fontAtlas,
     size: 40,
     anchor: UiAnchor.stretchHorizontalLeft,
+    // See the "Settings" label's own comment above for why this is needed.
+    sizeDelta: { x: 0, y: 0 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
@@ -420,6 +427,8 @@ export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
     fontAtlas,
     size: 28,
     anchor: UiAnchor.stretchHorizontalLeft,
+    // See the "Settings" label's own comment above for why this is needed.
+    sizeDelta: { x: 0, y: 0 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,

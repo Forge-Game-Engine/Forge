@@ -224,6 +224,10 @@ changes:
     size: 40,
     category: uiRenderCategory,
     anchor: UiAnchor.stretchHorizontalLeft,
+    // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
+    // literal size - omitting this widens maxWidth past topBar's actual
+    // width by 100, off-centering the text instead of centering it.
+    sizeDelta: { x: 0, y: 0 },
     horizontalAlign: 'center',
     verticalAlign: 'middle',
     // No maxWidth - createUiLayoutEcsSystem derives it from topBar's own
