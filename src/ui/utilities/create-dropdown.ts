@@ -200,6 +200,12 @@ export function createDropdown(
       anchor: optionRowAnchor,
       anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
       sizeDelta: { x: 0, y: resolvedOptionHeight },
+      // `optionRowAnchor` stretches each row to the header's full width
+      // with a zero margin (`sizeDelta.x` above), so the row's actual
+      // rendered width is the header's own `sizeDelta.x`, not its own -
+      // `createButton` can't derive that from a stretched button's own
+      // options alone (see `labelMaxWidth`'s doc comment).
+      labelMaxWidth: sizeDelta.x,
       sprite: optionSprite,
       slices,
       label,

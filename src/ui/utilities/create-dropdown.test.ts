@@ -9,15 +9,7 @@ import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiDropdownId } from '../components/ui-dropdown-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
-// See create-button.test.ts's fontAtlas for why this shape (empty glyphs,
-// placeholder metrics) is enough - createDropdown builds its header/option
-// rows via createButton, which now measures the label width to center it.
-const fontAtlas = {
-  data: {
-    metrics: { lineHeight: 1, ascender: 1, descender: 0, capHeight: 1 },
-    glyphs: new Map(),
-  },
-} as FontAtlas;
+const fontAtlas = {} as FontAtlas;
 
 const buildSprite = () => ({
   width: 1,
@@ -162,6 +154,29 @@ describe('createDropdown', () => {
     for (const optionButton of dropdown.options) {
       expect(world.getComponent(optionButton.label, textId)!.category).toBe(
         0b0100,
+      );
+    }
+  });
+
+  it("centers the header's and each option row's label against the header's width, not the option row's own (stretched, zero-width) sizeDelta", () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const dropdown = createDropdown(world, parent, {
+      headerSprite: buildSprite(),
+      optionSprite: buildSprite(),
+      options: ['Low', 'Medium', 'High'],
+      fontAtlas,
+      sizeDelta: { x: 240, y: 56 },
+    });
+
+    expect(world.getComponent(dropdown.header.label, textId)!.maxWidth).toBe(
+      240,
+    );
+
+    for (const optionButton of dropdown.options) {
+      expect(world.getComponent(optionButton.label, textId)!.maxWidth).toBe(
+        240,
       );
     }
   });

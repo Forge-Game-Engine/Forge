@@ -7,7 +7,7 @@ import {
   SpriteEcsComponent,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
-import { shapeText } from '../../text/index.js';
+import { textHorizontalAlignments } from '../../text/index.js';
 import {
   addUiColorTransitionComponent,
   UiColorTransitionDefaultedOptions,
@@ -56,6 +56,16 @@ export interface CreateButtonDefaultedOptions {
 
   /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `200x60`. */
   sizeDelta: Vector2;
+
+  /**
+   * The width the label centers within, in reference pixels. Defaults to
+   * `sizeDelta.x`, which is only the button's actual rendered width for a
+   * point anchor - pass this explicitly when `anchor` is a stretch anchor,
+   * where `sizeDelta.x` is a margin rather than a width and can't be used
+   * to derive it (see `createDropdown`'s option rows, which stretch to the
+   * header's width and pass that through here).
+   */
+  labelMaxWidth?: number;
 
   /** Overrides `sprite.slices` for this button. */
   slices?: NineSliceOptions;
@@ -145,6 +155,7 @@ export function createButton(
     anchor,
     anchoredPosition,
     sizeDelta,
+    labelMaxWidth,
     sprite,
     slices,
     label,
@@ -171,24 +182,25 @@ export function createButton(
   );
   addUiColorTransitionComponent(world, entity, transitionOptions);
 
-  // `horizontalAlign: 'center'` only re-centers within an explicit
-  // `maxWidth` box (see `createLabel`'s own doc comment), which a button
-  // doesn't set - a single unwrapped line otherwise always starts exactly
-  // at the label entity's own position and grows rightward, so without
-  // this offset the label reads as shifted right of the button's true
-  // center. Pre-measuring the shaped width and offsetting by half of it
-  // centers the text on that point instead, the same trick the UI demo
-  // uses for its own title/score labels.
-  const labelWidth = shapeText(label, fontAtlas.data, {
-    size: labelSize,
-  }).bounds.width;
-
+  // `horizontalAlign: 'center'` re-centers each line within `maxWidth` (see
+  // `createLabel`'s own doc comment) - it needs the label's own local x = 0
+  // to land exactly on the button's left edge, not its center, for that box
+  // to line up with the button's actual bounds. `UiAnchor.middleLeft` (a
+  // point anchor, not a stretch) puts it there; `UiAnchor.stretchAll`
+  // wouldn't, since its pivot sits at the rect's center. Letting the engine
+  // recompute this from `maxWidth`/`horizontalAlign` - rather than
+  // pre-measuring the label's shaped width once and baking in a fixed
+  // offset - keeps the label centered even when its `text` changes later
+  // (e.g. `createDropdown` swapping the header label to a different
+  // option), since `createTextShapingEcsSystem` re-shapes on every text
+  // change.
   const labelEntity = createLabel(world, entity, {
     text: label,
     fontAtlas,
     size: labelSize,
-    anchor: UiAnchor.stretchAll,
-    anchoredPosition: { x: -labelWidth / 2, y: 0 },
+    anchor: UiAnchor.middleLeft,
+    maxWidth: labelMaxWidth ?? sizeDelta.x,
+    horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
     color: labelColor,
     ...(labelCategory !== undefined && { category: labelCategory }),
