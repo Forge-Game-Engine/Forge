@@ -194,6 +194,16 @@ async function createSettingsPanel(
     getAssetUrl('img/space-shooter/icon_crossSmall.png'),
   );
 
+  // A grey-to-yellow gradient strip, used below for the Health bar's fill -
+  // like the coin/cross above, a genuine textured image sprite rather than
+  // another flat tinted rectangle, this time for `fillSprite` specifically.
+  // `createUiLayoutEcsSystem` stretches every sprite to its resolved rect
+  // regardless of the source image's own size, so this thin 100x5 source
+  // stretches cleanly across the bar with no tiling/repeat involved.
+  const healthFillImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/Burn_Gradient.png'),
+  );
+
   const buildFillSprite = (tintColor: Color): SpriteEcsComponent => {
     const sprite = createImageSprite(whiteImage, renderContext, {
       layer: renderLayers.ui,
@@ -315,7 +325,9 @@ async function createSettingsPanel(
 
   const healthBar = createProgressBar(world, settingsPanel, {
     trackSprite: boxSprite,
-    fillSprite: buildFillSprite(new Color(0.85, 0.3, 0.3, 1)),
+    fillSprite: createImageSprite(healthFillImage, renderContext, {
+      layer: renderLayers.ui,
+    }),
     anchor: UiAnchor.topLeft,
     anchoredPosition: { x: 30, y: -280 },
     sizeDelta: { x: 360, y: 20 },
