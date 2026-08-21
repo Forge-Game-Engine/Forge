@@ -24,6 +24,7 @@ import {
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { setUiFocus } from '../utilities/set-ui-focus.js';
 
 const buildRenderContext = (width: number, height: number): RenderContext =>
   ({ width, height }) as RenderContext;
@@ -259,5 +260,36 @@ describe('createUiInteractionEcsSystem', () => {
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(panel);
     expect(interactable().isFocused).toBe(true);
+  });
+
+  it('does not re-focus a still-hovered element on every tick, so it never fights a focus change made while the pointer sits still', () => {
+    const { world, mouseInputSource, tick, canvas, panel } = setUp();
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    // Placed well away from `panel` (which sits at the canvas center) so
+    // the two never overlap - this test cares about a focus change made
+    // some other way while the pointer stays put, not about which of two
+    // overlapping elements the raycast happens to hit.
+    const otherElement = world.createEntity();
+
+    addPositionComponent(world, otherElement);
+    addParentComponent(world, otherElement, { parent: canvas });
+    addRectTransformComponent(world, otherElement, {
+      ...UiAnchor.topLeft,
+      sizeDelta: { x: 100, y: 100 },
+    });
+    addUiInteractableComponent(world, otherElement);
+
+    mouseInputSource.position = { x: 960, y: 540 };
+    tick();
+
+    expect(canvasComponent.focusedEntity).toBe(panel);
+
+    // Simulate a keyboard/gamepad navigation move to a different element,
+    // made between ticks while the pointer hasn't budged from `panel`.
+    setUiFocus(world, canvasComponent, otherElement);
+    tick();
+
+    expect(canvasComponent.focusedEntity).toBe(otherElement);
   });
 });

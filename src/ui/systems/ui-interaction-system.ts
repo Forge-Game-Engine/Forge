@@ -40,7 +40,12 @@ function updateHoverAndFocus(
 
   interactable.isHovered = isOver;
 
-  if (isOver && interactable.interactable && canvas) {
+  // Edge-triggered, matching onPointerEnter just above - not level-
+  // triggered on `isOver` alone, or a stationary pointer left resting over
+  // an element would silently re-focus it on every single tick, fighting
+  // (and always winning, since this system runs after navigation) any
+  // keyboard/gamepad navigation move made while the pointer hasn't budged.
+  if (isOver && !wasHovered && interactable.interactable && canvas) {
     setUiFocus(world, canvas, entity);
   }
 }
