@@ -32,7 +32,6 @@ import {
   createTextShapingEcsSystem,
   FontAtlas,
   FontAtlasCache,
-  shapeText,
   textHorizontalAlignments,
   textId,
   textVerticalAlignments,
@@ -69,23 +68,6 @@ const textColor = new Color(0.12, 0.12, 0.16, 1);
 /** The panel artwork's own border, in texture pixels (see the nine-slice demo). */
 const panelBorderInset = 26;
 const panelNativeSize = 96;
-
-/**
- * A center-pivoted `RectTransformEcsComponent` only centers the label
- * *entity* on its parent - text shaping always starts a line at the
- * entity's own position and grows right/down from there (horizontalAlign
- * only re-centers within an explicit `maxWidth` box, which isn't known
- * ahead of time for the stretched top bar here). Pre-measuring the shaped
- * width and offsetting `anchoredPosition.x` by half of it centers the text
- * itself on that same point instead, regardless of container width.
- */
-function measureTextWidth(
-  text: string,
-  fontAtlas: FontAtlas,
-  size: number,
-): number {
-  return shapeText(text, fontAtlas.data, { size }).bounds.width;
-}
 
 async function createBackdrop(
   world: EcsWorld,
@@ -242,18 +224,13 @@ async function createSettingsPanel(
     sprite: panelSprite,
   });
 
-  const settingsTitleText = 'Settings';
-  const settingsTitleSize = 30;
-
   createLabel(world, settingsPanel, {
-    text: settingsTitleText,
+    text: 'Settings',
     fontAtlas,
-    size: settingsTitleSize,
-    anchor: UiAnchor.topCenter,
-    anchoredPosition: {
-      x: -measureTextWidth(settingsTitleText, fontAtlas, settingsTitleSize) / 2,
-      y: -30,
-    },
+    size: 30,
+    anchor: UiAnchor.stretchTopLeft,
+    anchoredPosition: { x: 0, y: -30 },
+    horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
     category: renderLayers.ui,
@@ -420,43 +397,30 @@ export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
     sprite: panelSprite,
   });
 
-  const titleText = 'Forge UI Demo';
-  const titleSize = 40;
-
   createLabel(world, topBar, {
-    text: titleText,
+    text: 'Forge UI Demo',
     fontAtlas,
-    size: titleSize,
-    anchor: UiAnchor.center,
-    anchoredPosition: {
-      x: -measureTextWidth(titleText, fontAtlas, titleSize) / 2,
-      y: 0,
-    },
+    size: 40,
+    anchor: UiAnchor.stretchHorizontalLeft,
+    horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
     category: renderLayers.ui,
   });
 
-  const scorePanelWidth = 260;
   const scorePanel = createPanel(world, canvas, {
     anchor: UiAnchor.topLeft,
     anchoredPosition: { x: 20, y: -136 },
-    sizeDelta: { x: scorePanelWidth, y: 96 },
+    sizeDelta: { x: 260, y: 96 },
     sprite: panelSprite,
   });
 
-  const scoreText = 'Score: 1234';
-  const scoreSize = 28;
-
   createLabel(world, scorePanel, {
-    text: scoreText,
+    text: 'Score: 1234',
     fontAtlas,
-    size: scoreSize,
-    anchor: UiAnchor.center,
-    anchoredPosition: {
-      x: -measureTextWidth(scoreText, fontAtlas, scoreSize) / 2,
-      y: 0,
-    },
+    size: 28,
+    anchor: UiAnchor.stretchHorizontalLeft,
+    horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
     category: renderLayers.ui,
@@ -490,16 +454,29 @@ export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   let clickCount = 0;
 
+  const clickLabelWidth = 400;
+
+  // `UiAnchor.bottomCenter`'s pivot sits at the box's own center, which
+  // `maxWidth`-based centering needs to *not* be the case (see
+  // `UiAnchor.stretchHorizontalLeft`'s doc comment) - a custom point anchor
+  // keeps the same bottom-center placement (the anchor reference point)
+  // while pivoting the box itself to its left edge instead, offsetting
+  // `anchoredPosition.x` by half the box's own (fixed, known) width to land
+  // in the same place visually.
   const clickLabel = createLabel(world, canvas, {
     text: 'Clicks: 0',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.bottomCenter,
-    anchoredPosition: { x: 0, y: 140 },
-    sizeDelta: { x: 400, y: 40 },
+    anchor: {
+      anchorMin: { x: 0.5, y: 0 },
+      anchorMax: { x: 0.5, y: 0 },
+      pivot: { x: 0, y: 0 },
+    },
+    anchoredPosition: { x: -clickLabelWidth / 2, y: 140 },
+    sizeDelta: { x: clickLabelWidth, y: 40 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
-    maxWidth: 400,
+    maxWidth: clickLabelWidth,
     color: textColor,
     category: renderLayers.ui,
   });

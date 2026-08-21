@@ -22,10 +22,13 @@ export type CreateLabelOptions = TextRequiredOptions &
 
     /**
      * Size in reference pixels when point-anchored; a margin relative to the
-     * anchor rect when stretched. Note this sizes the label's *rect* for
-     * anchoring purposes only - `createUiLayoutEcsSystem` doesn't (yet) sync
-     * it with `TextEcsComponent.maxWidth`, so wrapping still needs
-     * `maxWidth` set explicitly.
+     * anchor rect when stretched. For a point anchor this sizes the label's
+     * *rect* for anchoring purposes only - `TextEcsComponent.maxWidth`
+     * still needs setting explicitly for wrapping/`horizontalAlign` to have
+     * an actual box to work against (see `UiAnchor.stretchHorizontalLeft`'s
+     * own doc comment). For a stretch anchor, `createUiLayoutEcsSystem`
+     * keeps `maxWidth` in sync with the resolved rect's width every frame,
+     * overriding whatever `maxWidth` was passed here.
      */
     sizeDelta?: Vector2;
   };
