@@ -182,6 +182,18 @@ async function createSettingsPanel(
     getAssetUrl('img/White.png'),
   );
 
+  // A round coin icon and an "X" icon, standing in for real game art - used
+  // below for the slider handle and the toggle's checkmark, so this panel
+  // demonstrates a distinctly-shaped image sprite (not just a tinted flat
+  // rectangle like every other control here) for at least one of each kind
+  // of graphic these controls accept.
+  const handleImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/kenney_puzzle-pack-2/PNG/Coins/coin_01.png'),
+  );
+  const crossImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/icon_crossSmall.png'),
+  );
+
   const buildFillSprite = (tintColor: Color): SpriteEcsComponent => {
     const sprite = createImageSprite(whiteImage, renderContext, {
       layer: renderLayers.ui,
@@ -252,9 +264,14 @@ async function createSettingsPanel(
 
   caption('Mute', -90);
 
+  const crossSprite = createImageSprite(crossImage, renderContext, {
+    layer: renderLayers.ui,
+  });
+  crossSprite.tintColor = accentColor;
+
   createToggle(world, settingsPanel, {
     sprite: boxSprite,
-    checkmarkSprite: buildFillSprite(accentColor),
+    checkmarkSprite: crossSprite,
     anchor: UiAnchor.topLeft,
     anchoredPosition: { x: 340, y: -90 },
     transition: boxTransition,
@@ -276,7 +293,9 @@ async function createSettingsPanel(
 
   const volumeSlider = createSlider(world, settingsPanel, {
     trackSprite: boxSprite,
-    handleSprite: buildFillSprite(accentColor),
+    handleSprite: createImageSprite(handleImage, renderContext, {
+      layer: renderLayers.ui,
+    }),
     fillSprite: buildFillSprite(accentColor),
     anchor: UiAnchor.topLeft,
     anchoredPosition: { x: 30, y: -190 },
