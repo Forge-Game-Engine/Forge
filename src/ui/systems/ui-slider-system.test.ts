@@ -216,6 +216,105 @@ describe('createUiSliderEcsSystem', () => {
     expect(handleRectTransform().anchorMax.x).toBeCloseTo(0.25);
   });
 
+  it('also drives a fill entity anchorMax.x, when one is given', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const mouseInputSource = buildMouseInputSource();
+
+    const camera = world.createEntity();
+    addPositionComponent(world, camera);
+    addCameraComponent(world, camera, { verticalWorldUnits: 1080 });
+
+    const canvas = world.createEntity();
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    const track = world.createEntity();
+    addPositionComponent(world, track);
+    addParentComponent(world, track, { parent: canvas });
+    addRectTransformComponent(world, track, {
+      ...UiAnchor.center,
+      sizeDelta: { x: 300, y: 24 },
+    });
+    addUiInteractableComponent(world, track, { dragThreshold: 0 });
+
+    const handle = world.createEntity();
+    addPositionComponent(world, handle);
+    addParentComponent(world, handle, { parent: track });
+    addRectTransformComponent(world, handle, {
+      anchorMin: { x: 0, y: 0.5 },
+      anchorMax: { x: 0, y: 0.5 },
+      pivot: { x: 0.5, y: 0.5 },
+      sizeDelta: { x: 24, y: 24 },
+    });
+
+    const fill = world.createEntity();
+    addPositionComponent(world, fill);
+    addParentComponent(world, fill, { parent: track });
+    addRectTransformComponent(world, fill, {
+      anchorMin: { x: 0, y: 0 },
+      anchorMax: { x: 0, y: 1 },
+      pivot: { x: 0, y: 0.5 },
+    });
+
+    addUiSliderComponent(world, track, { handle, fill });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.addSystem(createUiRaycastEcsSystem(mouseInputSource, renderContext));
+    world.addSystem(createUiNavigationEcsSystem());
+    world.addSystem(
+      createUiInteractionEcsSystem(mouseInputSource, renderContext),
+    );
+    world.addSystem(createUiSliderEcsSystem(mouseInputSource, renderContext));
+
+    mouseInputSource.position = { x: 1110, y: 540 }; // right edge -> 1
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    world.update();
+
+    expect(world.getComponent(fill, rectTransformId)!.anchorMax.x).toBeCloseTo(
+      1,
+    );
+  });
+
+  it('does nothing (and does not throw) when a press is captured on a track with no owning canvas', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const mouseInputSource = buildMouseInputSource();
+
+    const track = world.createEntity();
+    addPositionComponent(world, track);
+    addRectTransformComponent(world, track, {
+      ...UiAnchor.center,
+      sizeDelta: { x: 300, y: 24 },
+    });
+    const interactable = addUiInteractableComponent(world, track, {
+      dragThreshold: 0,
+    });
+
+    const handle = world.createEntity();
+    addPositionComponent(world, handle);
+    addParentComponent(world, handle, { parent: track });
+    addRectTransformComponent(world, handle, {
+      anchorMin: { x: 0, y: 0.5 },
+      anchorMax: { x: 0, y: 0.5 },
+      pivot: { x: 0.5, y: 0.5 },
+      sizeDelta: { x: 24, y: 24 },
+    });
+
+    const slider = addUiSliderComponent(world, track, { handle });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.addSystem(createUiSliderEcsSystem(mouseInputSource, renderContext));
+
+    // Simulates a press without a raycast/interaction pipeline ever running
+    // (no canvas ancestor for findOwningCanvas to resolve).
+    interactable.pressCapture = { originPosition: { x: 0, y: 0 } };
+
+    expect(() => world.update()).not.toThrow();
+    expect(slider.value).toBe(0);
+  });
+
   it('raises onValueChanged exactly when the value actually changes', () => {
     const { mouseInputSource, tick, slider } = setUp();
 

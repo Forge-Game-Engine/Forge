@@ -107,6 +107,21 @@ describe('createSlider', () => {
     expect(slider.onValueChanged).toBe(slider.slider.onValueChanged);
   });
 
+  it('passes through anchoredPosition', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const slider = createSlider(world, parent, {
+      trackSprite: buildSprite(),
+      handleSprite: buildSprite(),
+      anchoredPosition: { x: 5, y: -5 },
+    });
+
+    expect(
+      world.getComponent(slider.entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 5, y: -5 });
+  });
+
   it('defaults sizeDelta to 300x24 and handleSize to 24x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();

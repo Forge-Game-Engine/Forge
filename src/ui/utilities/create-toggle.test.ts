@@ -136,6 +136,21 @@ describe('createToggle', () => {
     expect(transition.duration).toBe(250);
   });
 
+  it('passes through anchoredPosition', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const toggle = createToggle(world, parent, {
+      sprite: buildSprite(),
+      checkmarkSprite: buildSprite(),
+      anchoredPosition: { x: 5, y: -5 },
+    });
+
+    expect(
+      world.getComponent(toggle.entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 5, y: -5 });
+  });
+
   it('defaults sizeDelta to 32x32', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();

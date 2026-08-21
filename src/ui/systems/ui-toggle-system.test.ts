@@ -99,6 +99,36 @@ describe('createUiToggleEcsSystem', () => {
     expect(toggle.isOn).toBe(true);
   });
 
+  it('leaves an already-off toggle in the group untouched (no spurious onValueChanged)', () => {
+    const world = new EcsWorld();
+    const group = world.createEntity();
+    addUiToggleGroupComponent(world, group);
+
+    const entityA = world.createEntity();
+    addUiInteractableComponent(world, entityA);
+    const toggleA = addUiToggleComponent(world, entityA, { isOn: true, group });
+
+    const entityB = world.createEntity();
+    const interactableB = addUiInteractableComponent(world, entityB);
+    const toggleB = addUiToggleComponent(world, entityB, { group });
+
+    const entityC = world.createEntity();
+    addUiInteractableComponent(world, entityC);
+    const toggleC = addUiToggleComponent(world, entityC, { group });
+    const cValues: boolean[] = [];
+    toggleC.onValueChanged.registerListener((value) => cValues.push(value));
+
+    world.addSystem(createUiToggleEcsSystem());
+
+    interactableB.wasInvokedThisFrame = true;
+    world.update();
+
+    expect(toggleB.isOn).toBe(true);
+    expect(toggleA.isOn).toBe(false);
+    expect(toggleC.isOn).toBe(false);
+    expect(cValues).toEqual([]);
+  });
+
   it('allows switching the already-on toggle off when allowSwitchOff is true', () => {
     const world = new EcsWorld();
     const group = world.createEntity();

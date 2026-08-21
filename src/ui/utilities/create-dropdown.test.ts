@@ -4,8 +4,10 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
+import { parentId, positionId } from '../../common/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiDropdownId } from '../components/ui-dropdown-component.js';
+import { UiAnchor } from '../types/ui-anchor.js';
 
 const fontAtlas = {} as FontAtlas;
 
@@ -124,6 +126,36 @@ describe('createDropdown', () => {
     expect(world.getComponent(dropdown.header.label, textId)!.text).toBe(
       'Medium',
     );
+  });
+
+  it('passes through anchoredPosition and labelCategory to the header and every option row', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const dropdown = createDropdown(world, parent, {
+      headerSprite: buildSprite(),
+      optionSprite: buildSprite(),
+      options: ['Low', 'Medium', 'High'],
+      fontAtlas,
+      anchor: UiAnchor.topLeft,
+      anchoredPosition: { x: 10, y: -10 },
+      labelCategory: 0b0100,
+    });
+
+    expect(world.getComponent(dropdown.entity, parentId)).toEqual({ parent });
+    expect(world.getComponent(dropdown.entity, positionId)).not.toBeNull();
+    expect(
+      world.getComponent(dropdown.entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 10, y: -10 });
+    expect(world.getComponent(dropdown.header.label, textId)!.category).toBe(
+      0b0100,
+    );
+
+    for (const optionButton of dropdown.options) {
+      expect(world.getComponent(optionButton.label, textId)!.category).toBe(
+        0b0100,
+      );
+    }
   });
 
   it('stacks option rows below the header at optionHeight increments', () => {

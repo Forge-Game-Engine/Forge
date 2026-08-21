@@ -57,6 +57,21 @@ describe('createProgressBar', () => {
     ).toBeCloseTo(0.75);
   });
 
+  it('passes through anchoredPosition', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const progressBar = createProgressBar(world, parent, {
+      trackSprite: buildSprite(),
+      fillSprite: buildSprite(),
+      anchoredPosition: { x: 5, y: -5 },
+    });
+
+    expect(
+      world.getComponent(progressBar.entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 5, y: -5 });
+  });
+
   it('defaults sizeDelta to 300x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
