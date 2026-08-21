@@ -5,8 +5,7 @@ import { RectTransformEcsComponent } from '../components/rect-transform-componen
  * Resolves a `RectTransformEcsComponent`'s rect against its parent's
  * already-resolved rect. Pure - takes no `EcsWorld`/entity, reads no other
  * state - so the entire anchor/pivot/stretch surface is unit-testable in
- * isolation. See `design/ui-system.md`'s "RectTransform resolution" section
- * for the derivation.
+ * isolation.
  *
  * Two regimes fall out of the same formula depending on whether
  * `anchorMin`/`anchorMax` coincide: a **point anchor** (`anchorMin ==

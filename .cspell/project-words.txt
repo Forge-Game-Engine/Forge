@@ -140,7 +140,9 @@ thumbstick
 tileable
 Tinos
 tintable
+tween
 tweening
+tweens
 unblurred
 undersamples
 unmarks

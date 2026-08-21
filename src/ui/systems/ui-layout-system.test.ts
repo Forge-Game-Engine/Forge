@@ -275,6 +275,25 @@ describe('createUiLayoutEcsSystem', () => {
     // canvas root (index 0) -> panel (index 1) -> label (index 2)
     expect(panelSprite.sortDepth).toBe(1);
     expect(labelSprite.sortDepth).toBe(2);
+    expect(world.getComponent(panel, rectTransformId)!.sortDepth).toBe(1);
+    expect(world.getComponent(label, rectTransformId)!.sortDepth).toBe(2);
+  });
+
+  it('writes RectTransformEcsComponent.sortDepth even for elements with no sprite or text', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const hitRegion = world.createEntity();
+
+    addPositionComponent(world, hitRegion);
+    addParentComponent(world, hitRegion, { parent: canvas });
+    addRectTransformComponent(world, hitRegion, { ...UiAnchor.stretchAll });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(hitRegion, rectTransformId)!.sortDepth).toBe(1);
   });
 
   it('writes sortDepth for a TextEcsComponent child so it draws after its parent panel regardless of world Y', () => {

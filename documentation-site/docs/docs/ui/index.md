@@ -13,12 +13,9 @@ language - a UI is a plain ECS entity hierarchy, assembled with factory
 functions the same way any other composite entity in Forge is.
 
 :::info Current scope
-This is the module's **layout core**: anchors, canvases, panels, and
-labels. Pointer/gamepad interaction (buttons, hover, focus navigation),
-toggles/sliders/scroll views, and layout groups aren't implemented yet -
-see [`design/ui-system.md`](https://github.com/Forge-Game-Engine/Forge/blob/dev/design/ui-system.md)
-for the full plan. Today, a UI element is something you look at, not
-something you click.
+Layout (anchors, canvases, panels, labels) and interaction (buttons,
+hover/press/drag, gamepad/keyboard focus navigation, color transitions) are
+implemented. Toggles, sliders, scroll views, and layout groups aren't yet.
 :::
 
 ## Quick start
@@ -33,17 +30,25 @@ import {
 import {
   createPanel,
   createUiCanvas,
-  defaultUiRenderCategory,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 
-// createUiCanvas registers the UI layout system itself - call it before
-// registering the transform/render systems, so layout runs first each frame.
-const canvas = createUiCanvas(world, renderContext);
+// Forge doesn't reserve or ship a "UI" render category - pick any bit your
+// game isn't already using for another camera, and reuse it everywhere UI
+// content needs to match this canvas's cullingMask.
+const uiRenderCategory = 1 << 1;
+
+// createUiCanvas registers the UI layout (and, unconditionally, navigation/
+// transition) systems itself - call it before registering the transform/
+// render systems, so layout runs first each frame. `time` drives its color
+// transition tweens.
+const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
+});
 
 const panelSprite = createImageSprite(panelImage, renderContext, {
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
-  layer: defaultUiRenderCategory, // matches the UI camera's default cullingMask
+  layer: uiRenderCategory, // matches the UI camera's cullingMask above
 });
 
 createPanel(world, canvas, {
@@ -65,27 +70,27 @@ camera - a transparent-cleared, off-screen `RenderTarget` composited onto
 the canvas by `createPresentEcsSystem`, isolated from the world by
 `cullingMask`/`Renderable.category` (see
 [Multipass Rendering](../rendering/multipass-rendering.md) for how the
-camera/render-target/present-pass pieces fit together generally). Give a
-panel's sprite the same category the canvas's `cullingMask` expects
-(`defaultUiRenderCategory` unless you passed a different `cullingMask` to
-`createUiCanvas`) - `createImageSprite`'s `layer` option sets a sprite's
-`Renderable.category`, confusingly by that name (see
-`SpriteEcsComponent.layer`, a *different*, draw-order-only field, for the
-usual meaning of "layer"). Without a matching category, a world camera
-whose own `cullingMask` still matches everything would draw the panel a
-second time wherever its UI-space position happens to land in the world.
+camera/render-target/present-pass pieces fit together generally).
+`cullingMask` has no default - `createUiCanvas` requires it explicitly,
+since Forge has no reserved "this bit means UI" value: pick one your game
+isn't already using for another camera, and reuse that exact value for
+every UI visual's own category. Give a panel's sprite that same category -
+`createImageSprite`'s `layer` option sets a sprite's `Renderable.category`,
+confusingly by that name (see `SpriteEcsComponent.layer`, a *different*,
+draw-order-only field, for the usual meaning of "layer"). Without a
+matching category, a world camera whose own `cullingMask` still matches
+everything would draw the panel a second time wherever its UI-space
+position happens to land in the world.
 
 Text works the same way: `TextEcsComponent.category` defaults to
 `TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't override
 it - not a value the engine reserves or forces, just an ordinary default,
-the same way `defaultUiRenderCategory` is one for UI sprites.
-[`createLabel`](/Forge/docs/api/functions/createLabel) defaults its own
-`category` to `defaultUiRenderCategory` instead, matching
-`createUiCanvas`'s default `cullingMask` automatically, so a label is
-visible without you having to think about categories at all for the common
-case. Building a `TextEcsComponent` by hand (via `addTextComponent`
-directly) for use inside a UI canvas needs `category: defaultUiRenderCategory`
-set explicitly, the same way a hand-built sprite does.
+and one that has nothing to do with any particular UI canvas's
+`cullingMask`. [`createLabel`](/Forge/docs/api/functions/createLabel)
+doesn't override it either, so a label needs its own `category` passed
+explicitly - the same value you gave that canvas's `cullingMask` - to be
+visible through it; `createButton`'s `labelCategory` option forwards the
+same value to its own child label.
 
 ## RectTransform: anchors, pivots, and stretching
 
@@ -172,6 +177,7 @@ createLabel(world, panel, {
   text: 'Play',
   fontAtlas,
   size: 32,
+  category: uiRenderCategory,
   anchor: UiAnchor.center,
   // A center anchor only centers the *entity* on the panel - it doesn't
   // change how the text itself is shaped relative to that point.
@@ -193,9 +199,79 @@ so a label's own `maxWidth` (both for wrapping and, per above, for
 `horizontalAlign` to take effect at all) needs to be set explicitly to
 match, rather than being inferred from `sizeDelta`.
 
+## Interaction
+
+Two calls put a working, clickable, gamepad/keyboard-navigable button on
+screen:
+
+```ts
+const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
+  // Pointer interaction needs a pointer source; omit it for a
+  // gamepad/keyboard-only canvas. MouseInputSource satisfies this directly.
+  pointerSource: new MouseInputSource(inputManager, game.container),
+  // Optional - both InputActions the same way CameraEcsComponent takes
+  // zoomInput/panInput. Omitted, the canvas is still fully clickable, just
+  // not focus-navigable.
+  submitInput: inputManager.getTriggerAction('ui-submit'),
+  navigateInput: inputManager.getAxis2dAction('ui-navigate'),
+});
+
+const play = createButton(world, canvas, {
+  sprite: panelSprite,
+  label: 'Play',
+  fontAtlas,
+  labelSize: 32,
+  labelCategory: uiRenderCategory,
+});
+
+play.onInvoke.registerListener(startGame);
+```
+
+`createButton` assembles a panel (`createPanel`) with a
+[`UiInteractableEcsComponent`](/Forge/docs/api/interfaces/UiInteractableEcsComponent)
+and a
+[`UiColorTransitionEcsComponent`](/Forge/docs/api/interfaces/UiColorTransitionEcsComponent)
+added, plus a centered child label - there's no `ButtonEcsComponent`. Every
+piece is independently useful: add `UiInteractableEcsComponent` to any rect
+(a toggle, a list row, a close icon) to make it clickable, hoverable, and
+focus-navigable without it being a "button" at all.
+
+### Source-agnostic invocation
+
+`onInvoke` is raised the same way whether a pointer click, a gamepad/
+keyboard submit, or a script (`interactable.onInvoke.raise()`, or
+triggering `submitInput` directly) caused it - the listener can't tell
+which. `isHovered` (pointer-only) and `isFocused` (source-agnostic - set by
+directional navigation, and by the pointer hovering an element, so the
+highlight follows the mouse) stay deliberately distinct; a `wasInvokedThisFrame`
+flag is available for polling instead of registering a listener.
+
+### Focus navigation
+
+Every `interactable: true` element is automatically focus-navigable: on the
+tick `navigateInput`'s magnitude first crosses a threshold, focus moves to
+the nearest candidate on the same canvas in that direction. Add a
+[`UiFocusEcsComponent`](/Forge/docs/api/interfaces/UiFocusEcsComponent) to
+override the search on specific sides (e.g. to wrap focus from the last
+item in a row back to the first). `cancelInput` clears focus; register your
+own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
+
+### Hit testing and drag
+
+`createUiRaycastEcsSystem` scans interactables topmost-first (reverse
+hierarchy order) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
+`isPointerOverUi` - read the latter to gate world interaction ("don't fire
+the weapon when the click landed on the pause button"). An element with
+`blocksRaycasts: false` is transparent to the scan. A captured press that
+moves beyond `dragThreshold` (measured in reference pixels) raises
+`onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
+building a slider handle or a scrollbar thumb.
+
 ## Known limitations
 
-- **No interaction yet.** No hover/click/focus, no `UiInteractableEcsComponent`.
-  A UI built today is presentational only.
+- **No toggles/sliders/scroll views yet.** `UiInteractableEcsComponent` and
+  the pointer/focus interaction systems are the building blocks; the
+  higher-level controls aren't built yet.
 - **No clipping.** Content isn't clipped to its parent's rect - a scroll
   view isn't buildable yet.

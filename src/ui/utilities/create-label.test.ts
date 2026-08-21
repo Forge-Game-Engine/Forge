@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createLabel } from './create-label.js';
-import { defaultUiRenderCategory } from './create-ui-canvas.js';
 import { parentId, positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
-import { textId } from '../../text/index.js';
+import { TEXT_RENDER_CATEGORY, textId } from '../../text/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
@@ -34,7 +33,7 @@ describe('createLabel', () => {
     expect(text.size).toBe(32);
   });
 
-  it('defaults category to defaultUiRenderCategory, matching createUiCanvas', () => {
+  it('falls through to the TextEcsComponent default category when omitted', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -45,7 +44,7 @@ describe('createLabel', () => {
     });
 
     expect(world.getComponent(label, textId)!.category).toBe(
-      defaultUiRenderCategory,
+      TEXT_RENDER_CATEGORY,
     );
   });
 

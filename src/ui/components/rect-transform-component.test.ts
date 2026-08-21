@@ -21,6 +21,7 @@ describe('addRectTransformComponent', () => {
       anchoredPosition: { x: 0, y: 0 },
       sizeDelta: { x: 100, y: 100 },
       rect: Rects.zero,
+      sortDepth: 0,
     });
     expect(world.getComponent(entity, rectTransformId)).toBe(component);
   });

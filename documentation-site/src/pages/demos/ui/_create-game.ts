@@ -1,8 +1,20 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import {
+  Axis2dAction,
+  buttonMoments,
+  KeyboardAxis2dBinding,
+  keyCodes,
+  KeyboardInputSource,
+  KeyboardTriggerBinding,
+  MouseInputSource,
+  registerInputs,
+  TriggerAction,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -19,20 +31,28 @@ import {
   FontAtlas,
   FontAtlasCache,
   shapeText,
+  textHorizontalAlignments,
+  textId,
+  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
+  createButton,
   createLabel,
   createPanel,
   createUiCanvas,
-  defaultUiRenderCategory,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
+// Forge doesn't ship a reserved "UI" render category - each game picks its
+// own bit and reuses it for the UI canvas's cullingMask and every UI
+// visual's own category, so it's this demo's choice, not the engine's,
+// which bit separates the world camera from the UI camera.
 const renderLayers = {
   world: 1 << 0,
+  ui: 1 << 1,
 };
 
 // The panel artwork is a flat white fill, so labels need a dark tint to
@@ -88,14 +108,58 @@ async function createBackdrop(
 }
 
 /**
- * Builds the UI layout demo: a "game world" (a plain tinted backdrop, drawn
- * by its own camera/culling mask) with a HUD overlaid on top of it through
- * a second, dedicated UI camera - a full-width top bar and a corner-anchored
- * score panel, both holding their layout correctly no matter the canvas's
- * size or aspect ratio (see `createUiLayoutEcsSystem`'s full-recompute-every-
- * frame resolve). The HUD is presentational only - no buttons, no hover -
- * pointer/gamepad interaction lands in a later phase (see
- * `design/ui-system.md`).
+ * Wires a `MouseInputSource` and a `KeyboardInputSource` (arrow keys to
+ * navigate focus, Enter/Space to submit) so the HUD's `Play` button is both
+ * clickable and gamepad/keyboard-focus-navigable.
+ */
+function createUiInputs(
+  world: EcsWorld,
+  time: Time,
+  game: Game,
+): {
+  mouseInputSource: MouseInputSource;
+  submitInput: TriggerAction;
+  navigateInput: Axis2dAction;
+} {
+  const submitInput = new TriggerAction('ui-submit');
+  const navigateInput = new Axis2dAction('ui-navigate');
+
+  const inputManager = registerInputs(world, time, {
+    triggerActions: [submitInput],
+    axis2dActions: [navigateInput],
+  });
+
+  const mouseInputSource = new MouseInputSource(inputManager, game.container);
+  const keyboardInputSource = new KeyboardInputSource(inputManager);
+
+  keyboardInputSource.axis2dBindings.add(
+    new KeyboardAxis2dBinding(
+      navigateInput,
+      keyCodes.arrowUp,
+      keyCodes.arrowDown,
+      keyCodes.arrowRight,
+      keyCodes.arrowLeft,
+    ),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.enter, buttonMoments.down),
+  );
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.space, buttonMoments.down),
+  );
+
+  return { mouseInputSource, submitInput, navigateInput };
+}
+
+/**
+ * Builds the UI interaction demo: a "game world" (a plain tinted backdrop,
+ * drawn by its own camera/culling mask) with a HUD overlaid on top of it
+ * through a second, dedicated UI camera - a full-width top bar, a
+ * corner-anchored score panel, and a hoverable, clickable, keyboard/gamepad-
+ * focus-navigable `Play` button (see `createButton`) that increments a
+ * click counter on `onInvoke`, whichever path raised it (pointer or
+ * `submitInput`).
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -115,15 +179,25 @@ export const createUiDemoGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
-  const canvas = createUiCanvas(world, renderContext, {
+  const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
+    world,
+    time,
+    game,
+  );
+
+  const canvas = createUiCanvas(world, renderContext, time, {
+    cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
+    pointerSource: mouseInputSource,
+    submitInput,
+    navigateInput,
   });
 
   const panelImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = createImageSprite(panelImage, renderContext, {
-    layer: defaultUiRenderCategory,
+    layer: renderLayers.ui,
     slices: {
       left: panelBorderInset,
       right: panelBorderInset,
@@ -153,8 +227,9 @@ export const createUiDemoGame = async (
       x: -measureTextWidth(titleText, fontAtlas, titleSize) / 2,
       y: 0,
     },
-    verticalAlign: 'middle',
+    verticalAlign: textVerticalAlignments.middle,
     color: textColor,
+    category: renderLayers.ui,
   });
 
   const scorePanelWidth = 260;
@@ -177,8 +252,53 @@ export const createUiDemoGame = async (
       x: -measureTextWidth(scoreText, fontAtlas, scoreSize) / 2,
       y: 0,
     },
-    verticalAlign: 'middle',
+    verticalAlign: textVerticalAlignments.middle,
     color: textColor,
+    category: renderLayers.ui,
+  });
+
+  const playButton = createButton(world, canvas, {
+    anchor: UiAnchor.bottomCenter,
+    anchoredPosition: { x: 0, y: 60 },
+    sizeDelta: { x: 220, y: 72 },
+    sprite: panelSprite,
+    label: 'Play',
+    fontAtlas,
+    labelSize: 30,
+    labelColor: textColor,
+    labelCategory: renderLayers.ui,
+    transition: {
+      normalColor: Color.white,
+      hoverColor: new Color(0.85, 0.85, 0.85, 1),
+      pressedColor: new Color(0.65, 0.65, 0.65, 1),
+      disabledColor: new Color(0.5, 0.5, 0.5, 0.6),
+    },
+  });
+
+  let clickCount = 0;
+
+  const clickLabel = createLabel(world, canvas, {
+    text: 'Clicks: 0',
+    fontAtlas,
+    size: 24,
+    anchor: UiAnchor.bottomCenter,
+    anchoredPosition: { x: 0, y: 140 },
+    sizeDelta: { x: 400, y: 40 },
+    horizontalAlign: textHorizontalAlignments.center,
+    verticalAlign: textVerticalAlignments.middle,
+    maxWidth: 400,
+    color: textColor,
+    category: renderLayers.ui,
+  });
+
+  // Looked up once, rather than on every click - `world.getComponent` is a
+  // map lookup that a hot input-event handler doesn't need to repeat when
+  // the component reference itself never changes.
+  const clickText = world.getComponent(clickLabel, textId)!;
+
+  playButton.onInvoke.registerListener(() => {
+    clickCount += 1;
+    clickText.text = `Clicks: ${clickCount}`;
   });
 
   world.addSystem(createCameraEcsSystem(time));

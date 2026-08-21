@@ -1,5 +1,7 @@
-import { addPositionComponent } from '../../common/index.js';
+import { addPositionComponent, Time } from '../../common/index.js';
+import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { Vector2 } from '../../math/index.js';
 import {
   Color,
@@ -7,25 +9,18 @@ import {
   createRenderTarget,
   RenderContext,
 } from '../../rendering/index.js';
-import { addCanvasComponent } from '../components/canvas-component.js';
+import {
+  addCanvasComponent,
+  CanvasEcsComponent,
+} from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
+import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
+import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
+import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
+import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
+import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
-
-/**
- * The render category a UI sprite/text renderable should draw with (see
- * `createImageSprite`'s `layer` option, `Renderable`'s `category` parameter,
- * and `TextEcsComponent.category`) to be visible on a UI canvas using the
- * default `cullingMask`. Not a reserved value - just a sensible default,
- * which `createPanel`'s sprites (once built with a matching category) and
- * `createLabel`'s text (automatically, see its own default) both use. Kept
- * as a dedicated high bit so it's unlikely to collide with a game's own,
- * usually low-numbered, world render categories - without it, a world
- * camera whose own `cullingMask` still matches everything would draw UI
- * content a second time, wherever its UI-space position happens to land in
- * the world.
- */
-export const defaultUiRenderCategory = 1 << 30;
 
 /**
  * Worlds that already have `createUiLayoutEcsSystem` registered, so calling
@@ -35,23 +30,117 @@ export const defaultUiRenderCategory = 1 << 30;
  */
 const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
 
-export interface CreateUiCanvasOptions {
+/**
+ * The interaction pipeline systems already registered for a given world,
+ * keyed so a second (or later) `createUiCanvas` call - for another canvas,
+ * or one that supplies `pointerSource` after an earlier call didn't -
+ * extends the same pipeline instead of registering duplicates. See
+ * `ensureUiInteractionPipeline`.
+ */
+interface UiInteractionPipeline {
+  navigation: EcsSystem<[CanvasEcsComponent]>;
+  transition: EcsSystem<readonly unknown[]>;
+  raycast?: EcsSystem<[CanvasEcsComponent]>;
+  interaction?: EcsSystem<readonly unknown[]>;
+}
+
+const uiInteractionPipelinesByWorld = new WeakMap<
+  EcsWorld,
+  UiInteractionPipeline
+>();
+
+/**
+ * Registers `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
+ * and - once a pointer source is available - `createUiRaycastEcsSystem`/
+ * `createUiInteractionEcsSystem`, at most once each per `world`. Registration
+ * order is raycast, then navigation, then interaction, then transition:
+ * raycast must run before navigation and interaction read its hit-test
+ * result, interaction must run before transition reads the interaction
+ * state it just wrote, and navigation must run before interaction because
+ * navigation is what resets `wasInvokedThisFrame` to `false` each tick
+ * before interaction conditionally sets it back to `true` for the pointer
+ * path. Extends an already-registered pipeline rather than duplicating it,
+ * so a canvas created without a pointer source and a later one that
+ * supplies it still end up with a single, correctly-ordered pipeline for
+ * the whole world.
+ */
+function ensureUiInteractionPipeline(
+  world: EcsWorld,
+  renderContext: RenderContext,
+  time: Time,
+  pointerSource: UiPointerSource | undefined,
+): void {
+  let pipeline = uiInteractionPipelinesByWorld.get(world);
+
+  if (!pipeline) {
+    const navigation = createUiNavigationEcsSystem();
+
+    world.addSystem(navigation);
+
+    const transition = createUiTransitionEcsSystem(time);
+
+    world.addSystem(transition, { after: [navigation] });
+
+    pipeline = { navigation, transition };
+    uiInteractionPipelinesByWorld.set(world, pipeline);
+  }
+
+  if (pointerSource && !pipeline.raycast) {
+    const raycast = createUiRaycastEcsSystem(pointerSource, renderContext);
+
+    world.addSystem(raycast, { before: [pipeline.navigation] });
+    pipeline.raycast = raycast;
+
+    const interaction = createUiInteractionEcsSystem(
+      pointerSource,
+      renderContext,
+    );
+
+    world.addSystem(interaction, {
+      after: [pipeline.navigation, raycast],
+      before: [pipeline.transition],
+    });
+    pipeline.interaction = interaction;
+  }
+}
+
+/**
+ * Fields of {@link CreateUiCanvasOptions} with no sensible default; callers
+ * must always provide these.
+ */
+export interface CreateUiCanvasRequiredOptions {
+  /**
+   * The UI camera's culling mask, matched against `Renderable.category` (see
+   * `createImageSprite`'s `layer` option) and `TextEcsComponent.category` to
+   * decide what this camera draws. Forge doesn't reserve or suggest any
+   * particular bit for UI - pick any value your game isn't already using for
+   * another camera, and reuse that same value for every UI visual's own
+   * category (`createLabel`'s `category` option, the `layer` you build UI
+   * sprites with) so this canvas draws them and no other camera's
+   * `cullingMask` also matches them. A hardcoded "UI" bit baked into this
+   * module would only work by coincidence once more than one Forge-based
+   * package picks its own default independently - explicit, caller-owned
+   * values avoid that collision entirely. Note `matchesMask` does
+   * `identifier & mask` on plain JS `number`s, which `&` coerces to 32-bit
+   * *signed* integers - bit 31 is the sign bit, so `1 << 31` is
+   * `-2147483648`, not a clean single-bit flag; stick to bits 0-30.
+   */
+  cullingMask: number;
+}
+
+/**
+ * Fields of {@link CreateUiCanvasOptions} with a sensible default, or that
+ * are genuinely optional (no default at all); callers may omit these.
+ */
+export interface CreateUiCanvasDefaultedOptions {
   /**
    * The resolution UI is authored against, in reference pixels. Defaults to
    * `1920x1080`.
    */
-  referenceResolution?: Vector2;
+  referenceResolution: Vector2;
 
   /** How the canvas's root rect responds to the destination's live size. */
-  scaleMode?: UiScaleMode;
-
-  /**
-   * The UI camera's culling mask. Defaults to {@link defaultUiRenderCategory}
-   * alone - build UI sprites with a matching `Renderable.category` (see
-   * `createImageSprite`'s `layer` option) so the world camera doesn't also
-   * draw them; `createLabel`'s text matches it automatically.
-   */
-  cullingMask?: number;
+  scaleMode: UiScaleMode;
 
   /**
    * The UI camera's `layer`, i.e. its position in the present pass's
@@ -60,11 +149,37 @@ export interface CreateUiCanvasOptions {
    * composites on top without every game having to hand-tune camera layers
    * just to put a HUD on screen.
    */
-  layer?: number;
+  layer: number;
+
+  /**
+   * The pointer source this canvas's interactables (see
+   * `UiInteractableEcsComponent`) are hit-tested and pressed/hovered/dragged
+   * against - `MouseInputSource` satisfies this without any changes, and any
+   * other device (e.g. a touchscreen) can too by exposing the same shape.
+   * Omit for a canvas with no pointer interaction at all (still fully
+   * focus-navigable if `submitInput`/`navigateInput` are given). Supply it
+   * on your first/only `createUiCanvas` call for a world to get a
+   * fully-ordered pipeline - see `ensureUiInteractionPipeline`.
+   */
+  pointerSource?: UiPointerSource;
+
+  /**
+   * The action that raises `onInvoke` on the currently focused interactable.
+   * Omitted, this canvas's focused element is only invocable by pointer.
+   */
+  submitInput?: TriggerAction;
+
+  /** The action that clears this canvas's currently focused element. */
+  cancelInput?: TriggerAction;
+
+  /** The action that moves this canvas's focus between interactable elements. */
+  navigateInput?: Axis2dAction;
 }
 
+export type CreateUiCanvasOptions = CreateUiCanvasRequiredOptions &
+  Partial<CreateUiCanvasDefaultedOptions>;
+
 const defaultCreateUiCanvasOptions = {
-  cullingMask: defaultUiRenderCategory,
   layer: 1000,
 };
 
@@ -72,9 +187,14 @@ const defaultCreateUiCanvasOptions = {
  * Creates a fully wired UI canvas: a root entity with a `CanvasEcsComponent`
  * and `RectTransformEcsComponent`, and a dedicated, static UI camera with a
  * transparent clear color, its own off-screen `RenderTarget`, and a culling
- * mask isolating it from the world (see `design/ui-system.md`'s DL-01).
- * Also registers `createUiLayoutEcsSystem` with `world` (once, regardless of
- * how many canvases are created).
+ * mask isolating it from the world so a world camera whose own `cullingMask`
+ * still matches everything doesn't draw UI content a second time. Also
+ * registers `createUiLayoutEcsSystem`, `createUiNavigationEcsSystem`, and
+ * `createUiTransitionEcsSystem` with `world` (each at most once, regardless
+ * of how many canvases are created) - plus `createUiRaycastEcsSystem`/
+ * `createUiInteractionEcsSystem` once a pointer source is supplied, on this
+ * call or a later one for the same world - see `ensureUiInteractionPipeline`
+ * for the registration order and why it matters.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
  * and `createRenderEcsSystem` with `world` - **after** calling
@@ -86,17 +206,31 @@ const defaultCreateUiCanvasOptions = {
  * @param world - The ECS world to create the canvas entity in.
  * @param renderContext - The render context the UI camera's render target
  * (and the layout system's canvas-root sizing) is built against.
- * @param options - Options for configuring the canvas.
+ * @param time - The time instance driving `createUiTransitionEcsSystem`'s
+ * tint tweens.
+ * @param options - Options for configuring the canvas and its interaction
+ * inputs. `cullingMask` has no sensible default and must always be provided
+ * - see {@link CreateUiCanvasRequiredOptions.cullingMask}.
  * @returns The created canvas entity. Attach children to it with
  * `addParentComponent(world, child, { parent: canvas })`, or use
- * `createPanel`/`createLabel`.
+ * `createPanel`/`createLabel`/`createButton`.
  */
 export function createUiCanvas(
   world: EcsWorld,
   renderContext: RenderContext,
-  options: CreateUiCanvasOptions = {},
+  time: Time,
+  options: CreateUiCanvasOptions,
 ): number {
-  const { referenceResolution, scaleMode, cullingMask, layer } = {
+  const {
+    referenceResolution,
+    scaleMode,
+    cullingMask,
+    layer,
+    pointerSource,
+    submitInput,
+    cancelInput,
+    navigateInput,
+  } = {
     ...defaultCreateUiCanvasOptions,
     ...options,
   };
@@ -124,12 +258,17 @@ export function createUiCanvas(
     camera,
     ...(referenceResolution && { referenceResolution }),
     ...(scaleMode && { scaleMode }),
+    ...(submitInput && { submitInput }),
+    ...(cancelInput && { cancelInput }),
+    ...(navigateInput && { navigateInput }),
   });
 
   if (!worldsWithUiLayoutSystem.has(world)) {
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     worldsWithUiLayoutSystem.add(world);
   }
+
+  ensureUiInteractionPipeline(world, renderContext, time, pointerSource);
 
   return canvas;
 }

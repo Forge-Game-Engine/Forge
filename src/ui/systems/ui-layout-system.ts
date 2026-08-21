@@ -27,9 +27,9 @@ import { resolveRect } from '../utilities/resolve-rect.js';
 
 /**
  * Resolves a canvas's root rect (and the world height its dedicated camera
- * should show) from the render destination's live size, per `scaleMode` -
- * see `design/ui-system.md`'s "Coordinate spaces" section. Centered at the
- * origin, matching the world camera's own projection convention.
+ * should show) from the render destination's live size, per `scaleMode`.
+ * Centered at the origin, matching the world camera's own projection
+ * convention.
  */
 function resolveCanvasRootRect(
   renderContext: RenderContext,
@@ -71,18 +71,23 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
  * `CanvasEcsComponent`'s root. For each element it writes the resolved
  * `RectTransformEcsComponent.rect`, the entity's `PositionEcsComponent.local`
  * (so the existing `createTransformEcsSystem` composes the correct
- * `position.world`), and - for elements that also carry a
- * `SpriteEcsComponent` and/or a `TextEcsComponent` - `sortDepth`, set to the
- * element's hierarchy pre-order index (plus, for a sprite, its `width`/
- * `height`/`pivot`), so draw order follows hierarchy order within a canvas
- * regardless of whether a panel and its label happen to share a world Y;
- * see `design/ui-system.md`'s DL-06.
+ * `position.world`), and `RectTransformEcsComponent.sortDepth` - and, for
+ * elements that also carry a `SpriteEcsComponent` and/or a
+ * `TextEcsComponent`, their `sortDepth` too (plus, for a sprite, its
+ * `width`/`height`/`pivot`) - all set to the element's hierarchy pre-order
+ * index, so draw order follows hierarchy order within a canvas regardless
+ * of whether a panel and its label happen to share a world Y (draw order
+ * otherwise ties on `position.world.y`, which a panel and a centered child
+ * label routinely don't share), and `createUiRaycastEcsSystem` has a
+ * topmost-first ordering for every interactable regardless of whether it
+ * happens to draw anything.
  *
  * A canvas root's rect (and its camera's `verticalWorldUnits`) is
  * recomputed from `renderContext`'s current dimensions every call, so
  * resizing the render destination is picked up automatically on the next
- * frame with no separate resize hook (per DL-12, this system does a full
- * recompute every frame rather than tracking dirty state). A canvas's
+ * frame with no separate resize hook - this system does a full recompute
+ * every frame rather than tracking dirty state, favoring correctness over
+ * the added complexity dirty-tracking a retained tree would need. A canvas's
  * camera's `renderTarget`, if it has one (see `createUiCanvas`), is resized
  * to match `renderContext` the same way, so the UI's own off-screen target
  * never drifts out of sync with the destination it's composited onto.
@@ -185,6 +190,7 @@ export const createUiLayoutEcsSystem = (
       }
 
       rectTransform.rect = rect;
+      rectTransform.sortDepth = sortDepth;
 
       const pivotPosition = pivotPositionOf(rect, rectTransform.pivot);
 

@@ -1,8 +1,7 @@
 /**
  * Controls how a `CanvasEcsComponent`'s root rect (and, in turn, its UI
  * camera's `verticalWorldUnits`) responds to the render destination's
- * current size, resolved fresh every frame by `createUiLayoutEcsSystem` -
- * see `design/ui-system.md`'s "Coordinate spaces" section for the derivation.
+ * current size, resolved fresh every frame by `createUiLayoutEcsSystem`.
  */
 export const uiScaleModes = {
   /**

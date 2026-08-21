@@ -21,9 +21,8 @@ const point = (x: number, y: number): UiAnchorPreset => ({
 
 /**
  * Common anchor/pivot presets for `RectTransformEcsComponent`, expressing
- * the "pin to corner/edge/center" and "stretch" cases described in
- * `design/ui-system.md`'s "RectTransform resolution" section without hand
- * writing `anchorMin`/`anchorMax`/`pivot` triples. Spread one into
+ * the "pin to corner/edge/center" and "stretch" cases `resolveRect` supports
+ * without hand writing `anchorMin`/`anchorMax`/`pivot` triples. Spread one into
  * `addRectTransformComponent`'s options (e.g.
  * `addRectTransformComponent(world, entity, { ...UiAnchor.topLeft, sizeDelta })`).
  * These are shared, module-level objects, but that's safe: every call to
