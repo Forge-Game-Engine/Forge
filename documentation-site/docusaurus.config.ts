@@ -200,12 +200,32 @@ const config: Config = {
               label: 'Text Rendering',
             },
             {
-              to: 'demos/ui',
-              label: 'UI',
+              to: 'demos/ui-anchors',
+              label: 'UI Anchors',
+            },
+            {
+              to: 'demos/ui-button',
+              label: 'UI Buttons',
+            },
+            {
+              to: 'demos/ui-toggle',
+              label: 'UI Toggles',
+            },
+            {
+              to: 'demos/ui-slider',
+              label: 'UI Slider',
+            },
+            {
+              to: 'demos/ui-progress-bar',
+              label: 'UI Progress Bar',
+            },
+            {
+              to: 'demos/ui-dropdown',
+              label: 'UI Dropdown',
             },
             {
               to: 'demos/layout-groups',
-              label: 'Layout Groups',
+              label: 'UI Layout Groups',
             },
           ],
         },
