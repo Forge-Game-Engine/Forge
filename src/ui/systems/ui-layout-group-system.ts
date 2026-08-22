@@ -315,11 +315,10 @@ function distributeExtraSpace(
 
   const totalFlexible = mainMeasures.reduce((sum, m) => sum + m.flexible, 0);
   const weights = mainMeasures.map((m) => (totalFlexible > 0 ? m.flexible : 1));
+  // `weights` always has at least one entry here (arrangeAxisGroup already
+  // returned early for zero children) and every entry is either a positive
+  // flexible value or 1, so this sum is always positive.
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-
-  if (totalWeight <= 0) {
-    return;
-  }
 
   for (let i = 0; i < mainSizes.length; i++) {
     mainSizes[i] += (extraSpace * weights[i]) / totalWeight;

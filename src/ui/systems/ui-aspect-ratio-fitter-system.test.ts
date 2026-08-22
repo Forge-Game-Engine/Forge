@@ -119,4 +119,25 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
       y: 60,
     });
   });
+
+  it('is a no-op for fitInParent/envelopeParent when the parent has no RectTransformEcsComponent', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const entity = world.createEntity();
+
+    addParentComponent(world, entity, { parent });
+    addRectTransformComponent(world, entity, { sizeDelta: { x: 50, y: 60 } });
+    addAspectRatioFitterComponent(world, entity, {
+      aspectMode: 'fitInParent',
+      aspectRatio: 1,
+    });
+
+    world.addSystem(createUiAspectRatioFitterEcsSystem());
+    world.update();
+
+    expect(world.getComponent(entity, rectTransformId)!.sizeDelta).toEqual({
+      x: 50,
+      y: 60,
+    });
+  });
 });

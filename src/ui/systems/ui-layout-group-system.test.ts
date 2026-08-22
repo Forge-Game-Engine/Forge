@@ -127,6 +127,31 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(ignoredRectAfter.sizeDelta).toEqual(ignoredRectBefore.sizeDelta);
       expect(ignoredRectAfter.anchorMin).toEqual(ignoredRectBefore.anchorMin);
     });
+
+    it("distributes leftover main-axis space by each child's own flexible weight", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group);
+
+      const a = createChild(world, group, { x: 50, y: 50 });
+      const b = createChild(world, group, { x: 50, y: 50 });
+
+      addLayoutElementComponent(world, a, { flexibleWidth: 1 });
+      addLayoutElementComponent(world, b, { flexibleWidth: 3 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Preferred total = 100, leftover = 200, split 1:3 -> a gets 50, b
+      // gets 150, on top of their own preferred 50 each.
+      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBeCloseTo(
+        100,
+      );
+      expect(world.getComponent(b, rectTransformId)!.sizeDelta.x).toBeCloseTo(
+        200,
+      );
+    });
   });
 
   describe('vertical layout groups', () => {
@@ -178,6 +203,53 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // child's bottom edge sits at the box's own bottom (y = 0).
       expect(rectA.anchoredPosition.y).toBeCloseTo(0);
     });
+
+    it('is a no-op with no children', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addVerticalLayoutGroupComponent(world, group);
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+
+      expect(() => world.update()).not.toThrow();
+    });
+
+    it("sizes the cross axis to each child's own preferred size when childForceExpandWidth is off", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addVerticalLayoutGroupComponent(world, group, {
+        childForceExpandWidth: false,
+      });
+
+      const a = createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Cross axis (width) is controlled (childControlWidth stays the
+      // default true) but not force-expanded, so it's sized to the
+      // child's own measured preferred width (40) rather than filling
+      // the box (100).
+      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBe(40);
+    });
+
+    it("leaves a child's own width alone on the cross axis when childControlWidth is false", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addVerticalLayoutGroupComponent(world, group, {
+        childControlWidth: false,
+      });
+
+      const a = createChild(world, group, { x: 33, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBe(33);
+    });
   });
 
   describe('grid layout groups', () => {
@@ -212,6 +284,128 @@ describe('createUiLayoutGroupEcsSystem', () => {
           y: 50,
         });
       }
+    });
+
+    it('derives column count from a fixed row count', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group, {
+        cellSize: { x: 50, y: 50 },
+        constraint: 'fixedRowCount',
+        constraintCount: 2,
+      });
+
+      const cells = [0, 1, 2].map(() =>
+        createChild(world, group, { x: 50, y: 50 }),
+      );
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const positions = cells.map(
+        (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
+      );
+
+      // rows: 2 (fixed) -> columns: ceil(3 / 2) = 2, same layout as the
+      // fixedColumnCount test above (columns also happens to be 2 there).
+      expect(positions[0]).toEqual({ x: 0, y: 50 });
+      expect(positions[1]).toEqual({ x: 50, y: 50 });
+      expect(positions[2]).toEqual({ x: 0, y: 0 });
+    });
+
+    it('fills columns first, then wraps to a new row, for startAxis: vertical', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group, {
+        cellSize: { x: 50, y: 50 },
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        startAxis: 'vertical',
+      });
+
+      const cells = [0, 1, 2].map(() =>
+        createChild(world, group, { x: 50, y: 50 }),
+      );
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const positions = cells.map(
+        (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
+      );
+
+      // 2 columns, so 2 rows needed for 3 cells; startAxis: 'vertical' fills
+      // the first column top-to-bottom before wrapping to the next column.
+      expect(positions[0]).toEqual({ x: 0, y: 50 });
+      expect(positions[1]).toEqual({ x: 0, y: 0 });
+      expect(positions[2]).toEqual({ x: 50, y: 50 });
+    });
+
+    it('flips both column and row placement, for startCorner: lowerRight', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group, {
+        cellSize: { x: 50, y: 50 },
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        startCorner: 'lowerRight',
+      });
+
+      const cells = [0, 1, 2].map(() =>
+        createChild(world, group, { x: 50, y: 50 }),
+      );
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const positions = cells.map(
+        (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
+      );
+
+      expect(positions[0]).toEqual({ x: 50, y: 0 });
+      expect(positions[1]).toEqual({ x: 0, y: 0 });
+      expect(positions[2]).toEqual({ x: 50, y: 50 });
+    });
+
+    it('is a no-op with no children', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group);
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+
+      expect(() => world.update()).not.toThrow();
+    });
+
+    it('fits as many columns as the content box allows, for the default flexible constraint', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group, {
+        cellSize: { x: 30, y: 30 },
+        spacing: { x: 10, y: 10 },
+      });
+
+      const cells = [0, 1, 2, 3].map(() =>
+        createChild(world, group, { x: 30, y: 30 }),
+      );
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // columns = floor((100 + 10) / (30 + 10)) = 2, so 2 rows for 4 cells.
+      const positions = cells.map(
+        (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
+      );
+
+      expect(positions[0].x).toBeCloseTo(0);
+      expect(positions[1].x).toBeCloseTo(40);
+      expect(positions[2].x).toBeCloseTo(0);
+      expect(positions[3].x).toBeCloseTo(40);
     });
   });
 
@@ -255,6 +449,191 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(world.getComponent(entity, rectTransformId)!.sizeDelta).toEqual({
         x: 100,
         y: 100,
+      });
+    });
+
+    it('leaves sizeDelta alone entirely when both fit modes default to unconstrained', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, group);
+      addContentSizeFitterComponent(world, group);
+
+      createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(world.getComponent(group, rectTransformId)!.sizeDelta).toEqual({
+        x: 100,
+        y: 100,
+      });
+    });
+
+    it('fits to the measured minimum size for minSize', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, group);
+      addContentSizeFitterComponent(world, group, {
+        horizontalFit: 'minSize',
+        verticalFit: 'minSize',
+      });
+
+      const child = createChild(world, group, { x: 40, y: 20 });
+
+      addLayoutElementComponent(world, child, { minWidth: 10, minHeight: 5 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(world.getComponent(group, rectTransformId)!.sizeDelta).toEqual({
+        x: 10,
+        y: 5,
+      });
+    });
+
+    it('fits only the axis with a non-unconstrained mode, leaving the other alone', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, group);
+      addContentSizeFitterComponent(world, group, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'unconstrained',
+      });
+
+      createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const groupRect = world.getComponent(group, rectTransformId)!;
+
+      expect(groupRect.sizeDelta.x).toBe(40);
+      // Untouched - the fitter's own starting sizeDelta, not the group's
+      // measured height.
+      expect(groupRect.sizeDelta.y).toBe(100);
+    });
+
+    it('fits only the vertical axis, leaving an unconstrained horizontal axis alone', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, group);
+      addContentSizeFitterComponent(world, group, {
+        horizontalFit: 'unconstrained',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const groupRect = world.getComponent(group, rectTransformId)!;
+
+      // Untouched - the fitter's own starting sizeDelta, not the group's
+      // measured width.
+      expect(groupRect.sizeDelta.x).toBe(100);
+      expect(groupRect.sizeDelta.y).toBe(20);
+    });
+
+    it('measures an empty layout group as just its own padding', () => {
+      const world = new EcsWorld();
+      const padding = { left: 4, right: 6, top: 8, bottom: 10 };
+
+      const verticalGroup = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, verticalGroup, { padding });
+      addContentSizeFitterComponent(world, verticalGroup, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      const horizontalGroup = createGroupEntity(world, 500, 500);
+
+      addHorizontalLayoutGroupComponent(world, horizontalGroup, { padding });
+      addContentSizeFitterComponent(world, horizontalGroup, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Cross/main axis are swapped between the two directions, but an
+      // empty group's own size is always just its padding, either way.
+      expect(
+        world.getComponent(verticalGroup, rectTransformId)!.sizeDelta,
+      ).toEqual({ x: 10, y: 18 });
+      expect(
+        world.getComponent(horizontalGroup, rectTransformId)!.sizeDelta,
+      ).toEqual({ x: 10, y: 18 });
+    });
+
+    it("measures a grid group's own content size, including when it has no children", () => {
+      const world = new EcsWorld();
+      const gridWithChildren = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, gridWithChildren, {
+        cellSize: { x: 40, y: 30 },
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+      });
+      addContentSizeFitterComponent(world, gridWithChildren, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, gridWithChildren, { x: 1, y: 1 });
+      createChild(world, gridWithChildren, { x: 1, y: 1 });
+      createChild(world, gridWithChildren, { x: 1, y: 1 });
+
+      const emptyGrid = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, emptyGrid);
+      addContentSizeFitterComponent(world, emptyGrid, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // 2 columns, 2 rows (ceil(3 / 2)) of 40x30 cells, no spacing/padding.
+      expect(
+        world.getComponent(gridWithChildren, rectTransformId)!.sizeDelta,
+      ).toEqual({ x: 80, y: 60 });
+      expect(world.getComponent(emptyGrid, rectTransformId)!.sizeDelta).toEqual(
+        { x: 0, y: 0 },
+      );
+    });
+
+    it("measures a grid group's content size as a single row when its constraint is flexible (no known content box width to fit columns into)", () => {
+      const world = new EcsWorld();
+      const grid = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, grid, {
+        cellSize: { x: 20, y: 15 },
+        spacing: { x: 5, y: 5 },
+      });
+      addContentSizeFitterComponent(world, grid, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, grid, { x: 1, y: 1 });
+      createChild(world, grid, { x: 1, y: 1 });
+      createChild(world, grid, { x: 1, y: 1 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // 3 columns (one per child), 1 row: width = 3*20 + 2*5 = 70, height = 15.
+      expect(world.getComponent(grid, rectTransformId)!.sizeDelta).toEqual({
+        x: 70,
+        y: 15,
       });
     });
   });
