@@ -1,5 +1,4 @@
 import {
-  addParentComponent,
   addPositionComponent,
   createTransformEcsSystem,
   Time,
@@ -38,8 +37,6 @@ import {
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
-  addHorizontalLayoutGroupComponent,
-  addRectTransformComponent,
   createButton,
   createDropdown,
   createLabel,
@@ -48,7 +45,6 @@ import {
   createSlider,
   createToggle,
   createUiCanvas,
-  uiAlignments,
   UiAnchor,
   UiProgressBarEcsComponent,
 } from '@forge-game-engine/forge/ui';
@@ -346,96 +342,13 @@ async function createSettingsPanel(
 }
 
 /**
- * Builds a "Difficulty" panel showcasing `addHorizontalLayoutGroupComponent`
- * (Phase 4 of the UI design): unlike every other control in this demo, the
- * three buttons below get no `anchoredPosition`/`sizeDelta` of their own at
- * all - `createUiLayoutGroupEcsSystem` spaces and evenly resizes them every
- * frame purely from the row entity's `HorizontalLayoutGroupEcsComponent`.
- */
-function createLayoutGroupPanel(
-  world: EcsWorld,
-  canvas: number,
-  fontAtlas: FontAtlas,
-  panelSprite: SpriteEcsComponent,
-): void {
-  const panel = createPanel(world, canvas, {
-    // Stacked below the score panel, in the same left column - unlike the
-    // bottom-center cluster (Play button, click counter), this spot's
-    // horizontal clearance barely changes as the canvas's aspect ratio
-    // narrows (scaleWithScreenSize keeps height pinned; only width
-    // shrinks), since nothing else anchors to the top-left.
-    anchor: UiAnchor.topLeft,
-    anchoredPosition: { x: 20, y: -260 },
-    sizeDelta: { x: 320, y: 160 },
-    sprite: panelSprite,
-  });
-
-  createLabel(world, panel, {
-    text: 'Difficulty',
-    fontAtlas,
-    size: 28,
-    anchor: UiAnchor.stretchTopLeft,
-    // See the "Settings" label's own comment above for why this is needed.
-    sizeDelta: { x: 0, y: 0 },
-    anchoredPosition: { x: 0, y: -28 },
-    horizontalAlign: textHorizontalAlignments.center,
-    verticalAlign: textVerticalAlignments.middle,
-    color: textColor,
-    category: renderLayers.ui,
-  });
-
-  // A plain RectTransform - no sprite, so it draws nothing itself - purely
-  // to give the HorizontalLayoutGroupEcsComponent below a content box (the
-  // panel's own width, minus a small margin) to arrange the three buttons
-  // within.
-  const row = world.createEntity();
-
-  addPositionComponent(world, row);
-  addParentComponent(world, row, { parent: panel });
-  addRectTransformComponent(world, row, {
-    ...UiAnchor.stretchBottom,
-    sizeDelta: { x: -40, y: 64 },
-    anchoredPosition: { x: 0, y: 24 },
-  });
-  addHorizontalLayoutGroupComponent(world, row, {
-    spacing: 16,
-    childAlignment: uiAlignments.center,
-  });
-
-  const buttonTransition = {
-    normalColor: Color.white,
-    hoverColor: new Color(0.85, 0.85, 0.85, 1),
-    pressedColor: new Color(0.65, 0.65, 0.65, 1),
-    disabledColor: new Color(0.5, 0.5, 0.5, 0.6),
-  };
-
-  for (const label of ['Easy', 'Medium', 'Hard']) {
-    createButton(world, row, {
-      sprite: panelSprite,
-      label,
-      fontAtlas,
-      labelSize: 22,
-      labelColor: textColor,
-      labelCategory: renderLayers.ui,
-      // Deliberately narrower than the row's own content box - the
-      // HorizontalLayoutGroupEcsComponent's default childForceExpandWidth
-      // stretches all three evenly to fill the remaining space, which a
-      // sizeDelta already matching the box exactly wouldn't demonstrate.
-      sizeDelta: { x: 64, y: 56 },
-      transition: buttonTransition,
-    });
-  }
-}
-
-/**
  * Builds the UI interaction demo: a "game world" (a plain tinted backdrop,
  * drawn by its own camera/culling mask) with a HUD overlaid on top of it
  * through a second, dedicated UI camera - a full-width top bar, a
- * corner-anchored score panel, a hoverable, clickable, keyboard/gamepad-
+ * corner-anchored score panel, and a hoverable, clickable, keyboard/gamepad-
  * focus-navigable `Play` button (see `createButton`) that increments a
  * click counter on `onInvoke`, whichever path raised it (pointer or
- * `submitInput`), a "Settings" panel showcasing the Phase 3 controls, and a
- * "Difficulty" panel showcasing `addHorizontalLayoutGroupComponent`.
+ * `submitInput`).
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -547,8 +460,6 @@ export const createUiDemoGame = async (fontAtlasUrl: string): Promise<Game> => {
     fontAtlas,
     panelSprite,
   );
-
-  createLayoutGroupPanel(world, canvas, fontAtlas, panelSprite);
 
   let clickCount = 0;
 

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createUiLayoutGroupEcsSystem } from './ui-layout-group-system.js';
-import { addParentComponent } from '../../common/index.js';
+import { createUiLayoutEcsSystem } from './ui-layout-system.js';
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
+import { RenderContext } from '../../rendering/index.js';
 import { addContentSizeFitterComponent } from '../components/content-size-fitter-component.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import {
@@ -685,6 +690,65 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // outer's cross axis (width) force-expands both children to fill 100.
       expect(innerFinalRect.sizeDelta.x).toBeCloseTo(100);
       expect(siblingRect.sizeDelta.x).toBeCloseTo(100);
+    });
+  });
+
+  describe('stability across frames', () => {
+    it("doesn't oscillate when a ContentSizeFitterEcsComponent and a force-expanding cross axis share an entity", () => {
+      // Regression test: a group's own RectTransformEcsComponent.rect is one
+      // frame stale by design (see this system's own doc comment), so it
+      // starts at Rects.zero on a brand-new entity - subtracting padding
+      // from that gives a *negative* inner cross size on the very first
+      // frame. Force-expanding a child to fill that negative size used to
+      // write a negative sizeDelta into it with no floor; a
+      // ContentSizeFitterEcsComponent on the same group then measured that
+      // corrupted child size and fed it back into the group's own size the
+      // next frame - a permanent oscillation between the corrupted and the
+      // correct size, never converging, rather than a one-frame hiccup.
+      const world = new EcsWorld();
+      const renderContext = { width: 1920, height: 1080 } as RenderContext;
+
+      const canvas = world.createEntity();
+
+      addPositionComponent(world, canvas);
+      addRectTransformComponent(world, canvas);
+
+      const panel = createGroupEntity(world, 0, 0);
+
+      addPositionComponent(world, panel);
+      addParentComponent(world, panel, { parent: canvas });
+      addVerticalLayoutGroupComponent(world, panel, {
+        padding: { left: 24, right: 24, top: 64, bottom: 24 },
+        spacing: 16,
+      });
+      addContentSizeFitterComponent(world, panel, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, panel, { x: 220, y: 56 });
+      createChild(world, panel, { x: 220, y: 56 });
+      createChild(world, panel, { x: 220, y: 56 });
+
+      const layoutGroup = createUiLayoutGroupEcsSystem();
+      const layout = createUiLayoutEcsSystem(renderContext);
+
+      world.addSystem(layoutGroup);
+      world.addSystem(layout, { after: [layoutGroup] });
+
+      const widths: number[] = [];
+
+      for (let i = 0; i < 6; i++) {
+        world.update();
+
+        const panelRect = world.getComponent(panel, rectTransformId)!;
+
+        widths.push(panelRect.rect.max.x - panelRect.rect.min.x);
+      }
+
+      // width = max child preferred width (220) + padding (24 + 24) = 268,
+      // every frame from the very first one onward.
+      expect(widths).toEqual([268, 268, 268, 268, 268, 268]);
     });
   });
 });

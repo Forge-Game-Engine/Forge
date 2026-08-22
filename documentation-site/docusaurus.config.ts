@@ -203,6 +203,10 @@ const config: Config = {
               to: 'demos/ui',
               label: 'UI',
             },
+            {
+              to: 'demos/layout-groups',
+              label: 'Layout Groups',
+            },
           ],
         },
         {

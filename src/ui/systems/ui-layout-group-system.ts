@@ -325,7 +325,25 @@ function distributeExtraSpace(
   }
 }
 
-/** A child's cross-axis size: force-expanded to fill the whole cross axis, its own measured preferred size, or its own current size, per the group's control/force-expand flags. */
+/**
+ * A child's cross-axis size: force-expanded to fill the whole cross axis
+ * (but never shrunk below the child's own measured preferred size - the
+ * same "grow, never shrink" floor the main axis's own leftover-space
+ * distribution already enforces via its `Math.max(0, ...)` clamp), its own
+ * measured preferred size, or its own current size, per the group's
+ * control/force-expand flags.
+ *
+ * The floor matters beyond just "don't shrink": `innerCross` is computed
+ * from this group's own rect as of the *previous* frame (`rect` is one
+ * frame stale by design - see this file's own system doc comment), which
+ * starts at `Rects.zero` for a brand-new entity and so is negative here
+ * once padding is subtracted. Without the floor, that transient negative
+ * value would get written into the child's own `sizeDelta`, which a
+ * `ContentSizeFitterEcsComponent` on the *group* elsewhere in this same
+ * tree could then measure and feed back into the group's own size next
+ * frame - a self-sustaining, permanent oscillation between the corrupted
+ * and correct size, never converging, rather than a one-frame hiccup.
+ */
 function crossSizeOf(
   crossControl: boolean,
   crossForceExpand: boolean,
@@ -339,7 +357,7 @@ function crossSizeOf(
   }
 
   if (crossForceExpand) {
-    return innerCross;
+    return Math.max(crossMeasure.preferred, innerCross);
   }
 
   return crossMeasure.preferred;
@@ -683,6 +701,24 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
     }
 
     const measure = createMeasure(world, childrenByParent);
+
+    // Measuring is a pure, read-only pass; arranging mutates sizeDelta -
+    // the very field a plain (non-group) entity's own measure() falls back
+    // to reading. Warming the cache for every entity here, before any
+    // arrange/fit call below can mutate anything, guarantees every measure()
+    // call from this point on is a cache hit rather than a fresh
+    // computation - so an entity's measured size always reflects its
+    // pre-arrangement state for the rest of this tick, never a sibling
+    // group's (or its own) already-mutated one. Skipping this and instead
+    // measuring lazily, interleaved with arrangement, self-corrupts for any
+    // entity that is both arranged by a group and re-measured later in the
+    // same tick (e.g. a ContentSizeFitterEcsComponent on the same entity as
+    // the group whose children it measures) - the two disagree on which of
+    // two possible sizes is current, oscillating between them forever
+    // rather than converging.
+    for (const entity of entities) {
+      measure(entity);
+    }
 
     for (const entity of entities) {
       const axisGroup = world.getComponent<UiAxisLayoutGroupEcsComponent>(
