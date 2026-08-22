@@ -365,19 +365,19 @@ function createLayoutGroupPanel(
     // narrows (scaleWithScreenSize keeps height pinned; only width
     // shrinks), since nothing else anchors to the top-left.
     anchor: UiAnchor.topLeft,
-    anchoredPosition: { x: 20, y: -250 },
-    sizeDelta: { x: 300, y: 90 },
+    anchoredPosition: { x: 20, y: -260 },
+    sizeDelta: { x: 320, y: 160 },
     sprite: panelSprite,
   });
 
   createLabel(world, panel, {
     text: 'Difficulty',
     fontAtlas,
-    size: 20,
+    size: 28,
     anchor: UiAnchor.stretchTopLeft,
     // See the "Settings" label's own comment above for why this is needed.
     sizeDelta: { x: 0, y: 0 },
-    anchoredPosition: { x: 0, y: -16 },
+    anchoredPosition: { x: 0, y: -28 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
@@ -394,11 +394,11 @@ function createLayoutGroupPanel(
   addParentComponent(world, row, { parent: panel });
   addRectTransformComponent(world, row, {
     ...UiAnchor.stretchBottom,
-    sizeDelta: { x: -20, y: 36 },
-    anchoredPosition: { x: 0, y: 8 },
+    sizeDelta: { x: -40, y: 64 },
+    anchoredPosition: { x: 0, y: 24 },
   });
   addHorizontalLayoutGroupComponent(world, row, {
-    spacing: 8,
+    spacing: 16,
     childAlignment: uiAlignments.center,
   });
 
@@ -414,14 +414,14 @@ function createLayoutGroupPanel(
       sprite: panelSprite,
       label,
       fontAtlas,
-      labelSize: 16,
+      labelSize: 22,
       labelColor: textColor,
       labelCategory: renderLayers.ui,
       // Deliberately narrower than the row's own content box - the
       // HorizontalLayoutGroupEcsComponent's default childForceExpandWidth
       // stretches all three evenly to fill the remaining space, which a
       // sizeDelta already matching the box exactly wouldn't demonstrate.
-      sizeDelta: { x: 60, y: 32 },
+      sizeDelta: { x: 64, y: 56 },
       transition: buttonTransition,
     });
   }
