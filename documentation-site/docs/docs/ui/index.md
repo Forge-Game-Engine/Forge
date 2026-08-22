@@ -14,9 +14,10 @@ functions the same way any other composite entity in Forge is.
 
 :::info Current scope
 Layout (anchors, canvases, panels, labels), interaction (buttons,
-hover/press/drag, gamepad/keyboard focus navigation, color transitions), and
-controls (toggles, sliders, progress bars, dropdowns) are implemented. Scroll
-views, text input, rect clipping, and layout groups aren't yet.
+hover/press/drag, gamepad/keyboard focus navigation, color transitions),
+controls (toggles, sliders, progress bars, dropdowns), and layout groups
+(horizontal/vertical/grid, content size fitting, aspect ratio fitting) are
+implemented. Scroll views, text input, and rect clipping aren't yet.
 :::
 
 ## Quick start
@@ -457,6 +458,96 @@ not a polled system) knows how to reach. Clicking outside the open list
 doesn't close it - only clicking the header again or selecting an option
 does; register your own listener (e.g. gated on `dropdown.isOpen`) if your
 game needs that.
+
+## Layout groups
+
+Every element seen so far is positioned manually - an explicit anchor and
+`anchoredPosition`/`sizeDelta`. A layout group instead arranges its own
+direct children automatically, recomputing every frame just like
+`createUiLayoutEcsSystem` itself does:
+
+```ts
+import {
+  addVerticalLayoutGroupComponent,
+  createButton,
+  createPanel,
+  uiAlignments,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
+
+const menu = createPanel(world, canvas, {
+  anchor: UiAnchor.center,
+  sizeDelta: { x: 320, y: 400 },
+  sprite: panelSprite,
+});
+
+addVerticalLayoutGroupComponent(world, menu, {
+  padding: { left: 24, right: 24, top: 24, bottom: 24 },
+  spacing: 16,
+  childAlignment: uiAlignments.topCenter,
+});
+
+// createUiLayoutGroupEcsSystem (registered automatically by createUiCanvas)
+// resizes and stacks every direct child added below - no anchor/sizeDelta
+// of its own needed.
+createButton(world, menu, { sprite: buttonSprite, label: 'Play', fontAtlas });
+createButton(world, menu, { sprite: buttonSprite, label: 'Options', fontAtlas });
+createButton(world, menu, { sprite: buttonSprite, label: 'Quit', fontAtlas });
+```
+
+[`addHorizontalLayoutGroupComponent`](/Forge/docs/api/functions/addHorizontalLayoutGroupComponent)/
+[`addVerticalLayoutGroupComponent`](/Forge/docs/api/functions/addVerticalLayoutGroupComponent)
+arrange direct children left-to-right/top-to-bottom, resizing each one (per
+`childControlWidth`/`childControlHeight`) to its measured preferred size -
+its own `RectTransformEcsComponent.sizeDelta`, unless overridden by a
+[`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
+(`minWidth`/`minHeight`/`preferredWidth`/`preferredHeight`/`flexibleWidth`/
+`flexibleHeight`) - plus, by default (`childForceExpandWidth`/
+`childForceExpandHeight`), stretching every child to fill the whole cross
+axis and distributing any leftover main-axis space, weighted by
+`flexibleWidth`/`flexibleHeight` (or evenly, with none set). `childAlignment`
+(see [`uiAlignments`](/Forge/docs/api/variables/uiAlignments), named the same
+way as `UiAnchor`'s nine point presets) places the child block within any
+leftover main-axis space, and aligns each child individually within the
+cross axis. A child with `LayoutElementEcsComponent.ignoreLayout: true` is
+skipped entirely - useful for a decorative element (a background flourish, a
+badge) placed inside an otherwise-arranged panel.
+
+[`addGridLayoutGroupComponent`](/Forge/docs/api/functions/addGridLayoutGroupComponent)
+arranges direct children into fixed-size `cellSize` cells instead of
+measuring them - `constraint` picks whether the column count is derived from
+the content box's width (`flexible`, the default) or held fixed
+(`fixedColumnCount`/`fixedRowCount`), and `startCorner`/`startAxis` control
+placement order.
+
+Layout groups nest: a `VerticalLayoutGroupEcsComponent`'s own measured
+content size (used when a parent group, or a `ContentSizeFitterEcsComponent`,
+asks) comes from recursively measuring its own children, so a horizontal row
+of buttons can itself be one "row" inside an outer vertical group.
+
+[`addContentSizeFitterComponent`](/Forge/docs/api/functions/addContentSizeFitterComponent)
+resizes its own entity's `sizeDelta` to match its measured content on each
+axis (`unconstrained` leaves that axis alone; `minSize`/`preferredSize` fit
+to it) - pair it with a layout group on the same entity to make a panel
+shrink-wrap its arranged children, rather than the fixed size `createPanel`
+was given.
+
+[`addAspectRatioFitterComponent`](/Forge/docs/api/functions/addAspectRatioFitterComponent)
+keeps an entity's `sizeDelta` at a constant width-to-height ratio -
+`widthControlsHeight`/`heightControlsWidth` derive one axis from the other;
+`fitInParent`/`envelopeParent` derive both from the parent's own resolved
+rect, useful for a thumbnail or minimap that shouldn't stretch with its
+container.
+
+Every layout group/fitter runs in `createUiLayoutGroupEcsSystem`/
+`createUiAspectRatioFitterEcsSystem`, registered automatically by
+`createUiCanvas` *before* `createUiLayoutEcsSystem` - both read
+`RectTransformEcsComponent.rect` as it stood at the end of the previous
+frame (the same rect `createUiLayoutEcsSystem` is about to recompute this
+tick), so a group whose own size just changed (a fresh entity, a nested
+group, a content size fitter reacting to a resized child) arranges its
+children against a one-frame-stale box. Like the rest of this module, this
+converges within a frame or two rather than being tracked with dirty state.
 
 ## Known limitations
 
