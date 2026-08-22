@@ -218,6 +218,21 @@ export const createUiLayoutEcsSystem = (
 
       if (text) {
         text.sortDepth = sortDepth;
+
+        // A stretch anchor's sizeDelta is a margin, not a width (see
+        // RectTransformEcsComponent's own convention), so the entity's
+        // resolved rect - not anything statically knowable at the call site
+        // - is the only correct source for maxWidth here; a full-width
+        // title bar's actual width, for instance, depends on the render
+        // destination's live size. horizontalAlign/maxWidth-based centering
+        // (see createButton) then keeps working with no caller-side
+        // measurement even when the box itself is dynamically sized. A
+        // point anchor's maxWidth is left untouched - it's the caller's own
+        // explicit choice (or unset, for a label that's simply sized to its
+        // own content).
+        if (rectTransform.anchorMin.x !== rectTransform.anchorMax.x) {
+          text.maxWidth = rect.max.x - rect.min.x;
+        }
       }
 
       sortDepth += 1;

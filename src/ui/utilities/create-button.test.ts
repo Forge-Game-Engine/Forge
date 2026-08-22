@@ -59,6 +59,32 @@ describe('createButton', () => {
     expect(world.getComponent(button.label, textId)!.fontAtlas).toBe(fontAtlas);
   });
 
+  it("centers the label via horizontalAlign/maxWidth, not a one-off measurement, so it re-centers if the label's text is changed later (e.g. by createDropdown)", () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const button = createButton(world, parent, {
+      sprite: buildSprite(),
+      label: 'Play',
+      fontAtlas,
+      labelSize: 32,
+      sizeDelta: { x: 240, y: 60 },
+    });
+
+    const text = world.getComponent(button.label, textId)!;
+
+    expect(text.horizontalAlign).toBe('center');
+    expect(text.maxWidth).toBe(240);
+
+    text.text = 'A much longer label';
+
+    // Still centered against the same fixed box - unlike a pre-measured,
+    // one-off pixel offset, nothing here needs to change for the new text
+    // to reshape centered the next time createTextShapingEcsSystem runs.
+    expect(text.horizontalAlign).toBe('center');
+    expect(text.maxWidth).toBe(240);
+  });
+
   it('defaults sizeDelta to 200x60', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
@@ -108,6 +134,22 @@ describe('createButton', () => {
     });
 
     expect(world.getComponent(button.label, textId)!.category).toBe(0b0100);
+  });
+
+  it('lets labelMaxWidth override sizeDelta.x as the width the label centers within', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const button = createButton(world, parent, {
+      sprite: buildSprite(),
+      label: 'Play',
+      fontAtlas,
+      labelSize: 32,
+      sizeDelta: { x: 0, y: 60 },
+      labelMaxWidth: 240,
+    });
+
+    expect(world.getComponent(button.label, textId)!.maxWidth).toBe(240);
   });
 
   it('passes through interactable and transition overrides', () => {

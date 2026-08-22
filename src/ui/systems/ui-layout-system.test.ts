@@ -338,6 +338,55 @@ describe('createUiLayoutEcsSystem', () => {
     expect(labelText.sortDepth).toBeGreaterThan(panelSprite.sortDepth!);
   });
 
+  it("syncs TextEcsComponent.maxWidth to the resolved rect's width for a stretch-x anchor, leaving a point anchor's maxWidth untouched", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const topBar = world.createEntity();
+
+    addPositionComponent(world, topBar);
+    addParentComponent(world, topBar, { parent: canvas });
+    addRectTransformComponent(world, topBar, {
+      ...UiAnchor.stretchTop,
+      sizeDelta: { x: -40, y: 96 },
+    });
+
+    const stretchedLabel = world.createEntity();
+
+    addPositionComponent(world, stretchedLabel);
+    addParentComponent(world, stretchedLabel, { parent: topBar });
+    addRectTransformComponent(world, stretchedLabel, {
+      ...UiAnchor.stretchHorizontalLeft,
+      sizeDelta: { x: 0, y: 0 },
+    });
+    addTextComponent(world, stretchedLabel, {
+      text: 'Title',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+    });
+
+    const pointLabel = world.createEntity();
+
+    addPositionComponent(world, pointLabel);
+    addParentComponent(world, pointLabel, { parent: topBar });
+    addRectTransformComponent(world, pointLabel, { ...UiAnchor.center });
+    addTextComponent(world, pointLabel, {
+      text: 'Title',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+      maxWidth: 123,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // topBar's own resolved width - see the "resolves a stretched child"
+    // test above for where 1920 - 40 comes from.
+    expect(world.getComponent(stretchedLabel, textId)!.maxWidth).toBe(1880);
+    expect(world.getComponent(pointLabel, textId)!.maxWidth).toBe(123);
+  });
+
   it('composes correctly with createTransformEcsSystem to produce the intended absolute world position, nested three deep', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);

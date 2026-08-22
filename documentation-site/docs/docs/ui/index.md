@@ -13,9 +13,10 @@ language - a UI is a plain ECS entity hierarchy, assembled with factory
 functions the same way any other composite entity in Forge is.
 
 :::info Current scope
-Layout (anchors, canvases, panels, labels) and interaction (buttons,
-hover/press/drag, gamepad/keyboard focus navigation, color transitions) are
-implemented. Toggles, sliders, scroll views, and layout groups aren't yet.
+Layout (anchors, canvases, panels, labels), interaction (buttons,
+hover/press/drag, gamepad/keyboard focus navigation, color transitions), and
+controls (toggles, sliders, progress bars, dropdowns) are implemented. Scroll
+views, text input, rect clipping, and layout groups aren't yet.
 :::
 
 ## Quick start
@@ -124,8 +125,10 @@ anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
 bands (`stretchTop`, `stretchBottom`, `stretchLeft`, `stretchRight` - the
 common "HUD bar" and "side panel" anchors, where `sizeDelta` sets the
 band's thickness), center bands (`stretchHorizontal`, `stretchVertical`),
-and `stretchAll`. Spread one into `addRectTransformComponent`'s options, or
-into `createPanel`/`createLabel`'s `anchor` option:
+`stretchAll`, and two left-pivoted variants for text - `stretchTopLeft` and
+`stretchHorizontalLeft` - covered in [Labels](#labels) below. Spread one
+into `addRectTransformComponent`'s options, or into
+`createPanel`/`createLabel`'s `anchor` option:
 
 ```ts
 addRectTransformComponent(world, entity, {
@@ -178,26 +181,66 @@ createLabel(world, panel, {
   fontAtlas,
   size: 32,
   category: uiRenderCategory,
-  anchor: UiAnchor.center,
-  // A center anchor only centers the *entity* on the panel - it doesn't
-  // change how the text itself is shaped relative to that point.
   // horizontalAlign/verticalAlign (both default to 'left'/'top', i.e. the
-  // entity's position is the text's top-left corner) need to match.
+  // entity's position is the text's top-left corner) only take effect once
+  // maxWidth is set - with no box to align within, a single unwrapped line
+  // always starts exactly at the entity's position regardless of
+  // horizontalAlign. verticalAlign has no such caveat.
   horizontalAlign: 'center',
   verticalAlign: 'middle',
-  // horizontalAlign only takes effect once maxWidth is set - with no box
-  // to align within, a single unwrapped line always starts exactly at the
-  // entity's position regardless of horizontalAlign. verticalAlign has no
-  // such caveat.
+  // `UiAnchor.center`'s pivot sits at the box's own center, not its left
+  // edge - `horizontalAlign` measures its box from the entity's own
+  // position, so that position needs to land on the box's actual left edge
+  // for the two to agree on where the box is. `UiAnchor.middleLeft` does
+  // that; `maxWidth` is then the box's width from that left edge, matching
+  // sizeDelta since middleLeft is point-anchored (sizeDelta is a literal
+  // size, not a margin, there - see the anchoring fields above).
+  anchor: UiAnchor.middleLeft,
+  sizeDelta: { x: 200, y: 40 },
   maxWidth: 200,
 });
 ```
 
-A label's `sizeDelta` sizes its *rect* (for anchoring purposes only) -
-`createUiLayoutEcsSystem` doesn't yet sync it with `TextEcsComponent.maxWidth`,
-so a label's own `maxWidth` (both for wrapping and, per above, for
-`horizontalAlign` to take effect at all) needs to be set explicitly to
-match, rather than being inferred from `sizeDelta`.
+A center-*pivoted* anchor (`center`, `topCenter`, `stretchAll`, ...)
+doesn't work for a centered label the way it might seem to - see the
+`anchor: UiAnchor.middleLeft` comment above for why. Two presets exist
+specifically for text that needs to stay centered as its own content
+changes:
+
+- **`UiAnchor.middleLeft`** (or any other point anchor with `pivot.x: 0`,
+  like `topLeft`/`bottomLeft`) for a label sized with a literal, known
+  `sizeDelta.x` - pass the same value as `maxWidth`, as above.
+- **`UiAnchor.stretchHorizontalLeft`** (or `stretchTopLeft`) for a label
+  whose box should track its parent's actual width, which isn't always
+  known ahead of time (a title centered in a full-width top bar, say).
+  `createUiLayoutEcsSystem` keeps `TextEcsComponent.maxWidth` in sync with
+  the resolved rect's width every frame for any stretch-anchored (`anchorMin.x
+  !== anchorMax.x`) text entity, so `maxWidth` doesn't need setting at all:
+
+  ```ts
+  createLabel(world, topBar, {
+    text: 'Forge UI Demo',
+    fontAtlas,
+    size: 40,
+    category: uiRenderCategory,
+    anchor: UiAnchor.stretchHorizontalLeft,
+    // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
+    // literal size - omitting this widens maxWidth past topBar's actual
+    // width by 100, off-centering the text instead of centering it.
+    sizeDelta: { x: 0, y: 0 },
+    horizontalAlign: 'center',
+    verticalAlign: 'middle',
+    // No maxWidth - createUiLayoutEcsSystem derives it from topBar's own
+    // resolved width every frame, so the label stays centered even if
+    // topBar itself resizes, and even if the label's own text changes
+    // later (e.g. a dropdown header showing a newly-selected option).
+  });
+  ```
+
+A point anchor's `sizeDelta` still only sizes the label's *rect* for
+anchoring purposes - `maxWidth` needs setting to match it explicitly, as in
+the `middleLeft` example above; only a stretch anchor gets the automatic
+sync.
 
 ## Interaction
 
@@ -268,10 +311,159 @@ moves beyond `dragThreshold` (measured in reference pixels) raises
 `onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
 building a slider handle or a scrollbar thumb.
 
+## Controls
+
+Toggles, sliders, progress bars, and dropdowns build on the same
+`UiInteractableEcsComponent`/rect-transform pieces `createButton` does -
+each is a plain data component (`UiToggleEcsComponent`,
+`UiSliderEcsComponent`, `UiProgressBarEcsComponent`,
+`UiDropdownEcsComponent`) plus a `create*` aggregate factory that assembles
+the visual pieces around it, the same pattern as `createButton`.
+
+### Toggles
+
+[`createToggle`](/Forge/docs/api/functions/createToggle) creates a box (a
+panel, like `createButton`'s background) with a
+[`UiToggleEcsComponent`](/Forge/docs/api/interfaces/UiToggleEcsComponent)
+added, plus a child checkmark panel whose `SpriteEcsComponent.enabled`
+tracks `isOn`:
+
+```ts
+const toggle = createToggle(world, canvas, {
+  sprite: boxSprite,
+  checkmarkSprite: checkSprite,
+  isOn: true,
+});
+
+toggle.onValueChanged.registerListener((isOn) => {
+  musicMuted = !isOn;
+});
+```
+
+`createUiToggleEcsSystem` (registered automatically by `createUiCanvas`)
+flips `isOn` whenever the toggle's `UiInteractableEcsComponent` is invoked -
+by a pointer click or a submit action, same as a button. Unlike a button, a
+toggle doesn't assemble its own caption label; place one with a separate
+`createLabel` call next to it, since where a caption goes (left, right,
+above) - and whether one exists at all - varies more than a button's
+centered label does.
+
+Pass a shared
+[`UiToggleGroupEcsComponent`](/Forge/docs/api/type-aliases/UiToggleGroupEcsComponent)
+entity (`addUiToggleGroupComponent`) as `group` to make a set of toggles
+mutually exclusive - radio-button behavior by default (`allowSwitchOff:
+false`, so exactly one is always on and clicking the active one is a
+no-op), or checkbox-like mutual exclusion that still allows none selected
+with `allowSwitchOff: true`:
+
+```ts
+const difficultyGroup = world.createEntity();
+addUiToggleGroupComponent(world, difficultyGroup);
+
+const easy = createToggle(world, canvas, { sprite, checkmarkSprite, group: difficultyGroup, isOn: true });
+const hard = createToggle(world, canvas, { sprite, checkmarkSprite, group: difficultyGroup });
+```
+
+### Sliders
+
+[`createSlider`](/Forge/docs/api/functions/createSlider) creates a track (a
+panel used as the drag surface) with a
+[`UiSliderEcsComponent`](/Forge/docs/api/interfaces/UiSliderEcsComponent)
+added, plus a child handle and, if `fillSprite` is given, a child fill:
+
+```ts
+const volume = createSlider(world, canvas, {
+  trackSprite,
+  handleSprite,
+  fillSprite,
+  minValue: 0,
+  maxValue: 100,
+  value: 75,
+  wholeNumbers: true,
+});
+
+volume.onValueChanged.registerListener((value) => {
+  audio.volume = value / 100;
+});
+```
+
+The whole track is the drag surface - clicking anywhere on it, not just the
+handle, jumps the handle there, and `createUiSliderEcsSystem` (registered
+automatically once a `pointerSource` is given to `createUiCanvas`) keeps
+tracking the drag even if the pointer strays outside the track's vertical
+bounds. Because that system has to run after the interaction pipeline each
+tick (it reads this tick's press state) but `createUiLayoutEcsSystem` runs
+*before* it (layout needs last tick's resolved rects for this tick's
+raycasting), a value change - from a drag or an external `slider.value =`
+write - is reflected one frame later; imperceptible at normal frame rates.
+
+### Progress bars
+
+[`createProgressBar`](/Forge/docs/api/functions/createProgressBar) creates
+a track with a
+[`UiProgressBarEcsComponent`](/Forge/docs/api/interfaces/UiProgressBarEcsComponent)
+added and a child fill, driven purely by `value` - no
+`UiInteractableEcsComponent`, since a progress bar reports state rather
+than accepting input:
+
+```ts
+const health = createProgressBar(world, canvas, {
+  trackSprite,
+  fillSprite,
+  minValue: 0,
+  maxValue: playerMaxHealth,
+  value: playerHealth,
+});
+
+// Later, whenever health changes:
+health.progressBar.value = playerHealth;
+```
+
+Unlike a slider, `createUiProgressBarEcsSystem` runs *before*
+`createUiLayoutEcsSystem` (it has no interaction dependency to wait on), so
+a `value` write is reflected the same frame. Only a linear fill is
+supported - a radial/clock-wipe fill would need a shader-level fill-amount
+uniform, not just a rect resize, and hasn't been built yet.
+
+### Dropdowns
+
+[`createDropdown`](/Forge/docs/api/functions/createDropdown) creates a
+header button (`createButton`, showing the currently selected option) with
+a
+[`UiDropdownEcsComponent`](/Forge/docs/api/interfaces/UiDropdownEcsComponent)
+added, plus one option-row button per entry in `options`, stacked below the
+header and hidden until it's clicked open:
+
+```ts
+const quality = createDropdown(world, canvas, {
+  headerSprite,
+  optionSprite,
+  options: ['Low', 'Medium', 'High'],
+  fontAtlas,
+  selectedIndex: 1,
+});
+
+quality.onValueChanged.registerListener((index) => {
+  applyGraphicsPreset(quality.dropdown.options[index]);
+});
+```
+
+Selecting an option updates the header's label, raises `onValueChanged`,
+and closes the list. Unlike toggles and sliders, there's no generic
+`createUiDropdownEcsSystem` - opening/closing the list touches several
+sibling entities' `enabled`/`interactable` state at once, which only
+`createDropdown`'s own wiring (registered as ordinary `onInvoke` listeners,
+not a polled system) knows how to reach. Clicking outside the open list
+doesn't close it - only clicking the header again or selecting an option
+does; register your own listener (e.g. gated on `dropdown.isOpen`) if your
+game needs that.
+
 ## Known limitations
 
-- **No toggles/sliders/scroll views yet.** `UiInteractableEcsComponent` and
-  the pointer/focus interaction systems are the building blocks; the
-  higher-level controls aren't built yet.
+- **No scroll views or text input yet.** Both are blocked on rect clipping
+  ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)).
 - **No clipping.** Content isn't clipped to its parent's rect - a scroll
   view isn't buildable yet.
+- **No radial/clock-wipe progress fill.** Only the linear fill
+  `createProgressBar` builds is supported; see its section above.
+- **A dropdown doesn't close on an outside click.** See its section above.

@@ -22,8 +22,10 @@ cachable
 capline
 Catmull
 charsets
+checkmark
 Chlumský
 commitlint
+cooldowns
 Cousine
 Cramer
 dbaeumer
@@ -99,6 +101,7 @@ prestart
 quadtree
 quilez
 rasterizer
+raycastable
 raycaster
 readback
 rects
