@@ -126,10 +126,11 @@ anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
 bands (`stretchTop`, `stretchBottom`, `stretchLeft`, `stretchRight` - the
 common "HUD bar" and "side panel" anchors, where `sizeDelta` sets the
 band's thickness), center bands (`stretchHorizontal`, `stretchVertical`),
-`stretchAll`, and two left-pivoted variants for text - `stretchTopLeft` and
-`stretchHorizontalLeft` - covered in [Labels](#labels) below. Spread one
-into `addRectTransformComponent`'s options, or into
-`createPanel`/`createLabel`'s `anchor` option:
+`stretchAll`, and two left-pivoted variants - `stretchTopLeft` and
+`stretchHorizontalLeft`, for when you specifically want the rect's own
+local origin on the left edge rather than the center (see
+[Labels](#labels) below). Spread one into `addRectTransformComponent`'s
+options, or into `createPanel`/`createLabel`'s `anchor` option:
 
 ```ts
 addRectTransformComponent(world, entity, {
@@ -189,59 +190,55 @@ createLabel(world, panel, {
   // horizontalAlign. verticalAlign has no such caveat.
   horizontalAlign: 'center',
   verticalAlign: 'middle',
-  // `UiAnchor.center`'s pivot sits at the box's own center, not its left
-  // edge - `horizontalAlign` measures its box from the entity's own
-  // position, so that position needs to land on the box's actual left edge
-  // for the two to agree on where the box is. `UiAnchor.middleLeft` does
-  // that; `maxWidth` is then the box's width from that left edge, matching
-  // sizeDelta since middleLeft is point-anchored (sizeDelta is a literal
-  // size, not a margin, there - see the anchoring fields above).
+  // `UiAnchor.middleLeft` is point-anchored, so its `sizeDelta` is a
+  // literal size - `maxWidth` needs to be set to match it explicitly.
   anchor: UiAnchor.middleLeft,
   sizeDelta: { x: 200, y: 40 },
   maxWidth: 200,
 });
 ```
 
-A center-*pivoted* anchor (`center`, `topCenter`, `stretchAll`, ...)
-doesn't work for a centered label the way it might seem to - see the
-`anchor: UiAnchor.middleLeft` comment above for why. Two presets exist
-specifically for text that needs to stay centered as its own content
-changes:
+`horizontalAlign`'s alignment box is measured from the entity's own local
+`x = 0` - which only lands on the resolved rect's actual left edge for a
+`pivot.x: 0` anchor like `middleLeft`. A center-pivoted anchor (`center`,
+`topCenter`, `stretchAll`, ...) would offset that box away from the rect's
+real bounds, *except* `createUiLayoutEcsSystem` compensates for this
+automatically for any stretch-x anchor (`anchorMin.x !== anchorMax.x`,
+e.g. `stretchAll`, `stretchHorizontal`) - it syncs both
+`TextEcsComponent.maxWidth` and `horizontalAlignPivot` from the resolved
+rect and its pivot every frame, so `horizontalAlign` works correctly under
+any pivot for those anchors, with no `maxWidth` to set at all:
 
-- **`UiAnchor.middleLeft`** (or any other point anchor with `pivot.x: 0`,
-  like `topLeft`/`bottomLeft`) for a label sized with a literal, known
-  `sizeDelta.x` - pass the same value as `maxWidth`, as above.
-- **`UiAnchor.stretchHorizontalLeft`** (or `stretchTopLeft`) for a label
-  whose box should track its parent's actual width, which isn't always
-  known ahead of time (a title centered in a full-width top bar, say).
-  `createUiLayoutEcsSystem` keeps `TextEcsComponent.maxWidth` in sync with
-  the resolved rect's width every frame for any stretch-anchored (`anchorMin.x
-  !== anchorMax.x`) text entity, so `maxWidth` doesn't need setting at all:
+```ts
+createLabel(world, topBar, {
+  text: 'Forge UI Demo',
+  fontAtlas,
+  size: 40,
+  category: uiRenderCategory,
+  anchor: UiAnchor.stretchAll,
+  // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
+  // literal size - omitting this widens maxWidth past topBar's actual
+  // width by 100, off-centering the text instead of centering it.
+  sizeDelta: { x: 0, y: 0 },
+  horizontalAlign: 'center',
+  verticalAlign: 'middle',
+  // No maxWidth - createUiLayoutEcsSystem derives it (and the pivot
+  // correction) from topBar's own resolved rect every frame, so the label
+  // stays centered even if topBar itself resizes, and even if the label's
+  // own text changes later (e.g. a dropdown header showing a newly-selected
+  // option).
+});
+```
 
-  ```ts
-  createLabel(world, topBar, {
-    text: 'Forge UI Demo',
-    fontAtlas,
-    size: 40,
-    category: uiRenderCategory,
-    anchor: UiAnchor.stretchHorizontalLeft,
-    // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
-    // literal size - omitting this widens maxWidth past topBar's actual
-    // width by 100, off-centering the text instead of centering it.
-    sizeDelta: { x: 0, y: 0 },
-    horizontalAlign: 'center',
-    verticalAlign: 'middle',
-    // No maxWidth - createUiLayoutEcsSystem derives it from topBar's own
-    // resolved width every frame, so the label stays centered even if
-    // topBar itself resizes, and even if the label's own text changes
-    // later (e.g. a dropdown header showing a newly-selected option).
-  });
-  ```
-
-A point anchor's `sizeDelta` still only sizes the label's *rect* for
-anchoring purposes - `maxWidth` needs setting to match it explicitly, as in
-the `middleLeft` example above; only a stretch anchor gets the automatic
-sync.
+A **point** anchor doesn't get this automatic sync (there's no per-frame
+resolved rect to derive it from beyond what `sizeDelta` already gives you
+statically), so a point-anchored label centering against an explicit
+`maxWidth` still needs a `pivot.x: 0` anchor - `middleLeft`,
+`topLeft`/`bottomLeft` - as in the example above.
+`stretchHorizontalLeft`/`stretchTopLeft` remain available for when you
+specifically want a stretch rect's own local origin pinned to the left
+edge for some other reason (manual position math, a non-text child), but
+they're no longer necessary just to make `horizontalAlign` work.
 
 ## Interaction
 
@@ -433,7 +430,11 @@ header button (`createButton`, showing the currently selected option) with
 a
 [`UiDropdownEcsComponent`](/Forge/docs/api/interfaces/UiDropdownEcsComponent)
 added, plus one option-row button per entry in `options`, stacked below the
-header and hidden until it's clicked open:
+header and hidden until it's clicked open. A chevron label sits on the
+header's right edge, flipping between `v` (closed) and `^` (open) in step
+with `dropdown.isOpen` - the bundled default font atlas is ASCII-only, so
+these stand in for a down/up-pointing triangle rather than proper chevron
+glyphs:
 
 ```ts
 const quality = createDropdown(world, canvas, {

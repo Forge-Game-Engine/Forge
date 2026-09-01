@@ -89,8 +89,6 @@ export const createAnchorsGame = async (fontAtlasUrl: string): Promise<Game> => 
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createBackdrop(world, renderContext);
-
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 

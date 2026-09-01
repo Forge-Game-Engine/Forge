@@ -387,6 +387,66 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(pointLabel, textId)!.maxWidth).toBe(123);
   });
 
+  it("syncs TextEcsComponent.horizontalAlignPivot to the anchor's pivot.x for a stretch-x anchor, leaving a point anchor's untouched", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const centerPivotLabel = world.createEntity();
+
+    addPositionComponent(world, centerPivotLabel);
+    addParentComponent(world, centerPivotLabel, { parent: canvas });
+    addRectTransformComponent(world, centerPivotLabel, {
+      ...UiAnchor.stretchAll,
+      sizeDelta: { x: 0, y: 0 },
+    });
+    addTextComponent(world, centerPivotLabel, {
+      text: 'Title',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+    });
+
+    const leftPivotLabel = world.createEntity();
+
+    addPositionComponent(world, leftPivotLabel);
+    addParentComponent(world, leftPivotLabel, { parent: canvas });
+    addRectTransformComponent(world, leftPivotLabel, {
+      ...UiAnchor.stretchHorizontalLeft,
+      sizeDelta: { x: 0, y: 0 },
+    });
+    addTextComponent(world, leftPivotLabel, {
+      text: 'Title',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+    });
+
+    const pointLabel = world.createEntity();
+
+    addPositionComponent(world, pointLabel);
+    addParentComponent(world, pointLabel, { parent: canvas });
+    addRectTransformComponent(world, pointLabel, { ...UiAnchor.center });
+    addTextComponent(world, pointLabel, {
+      text: 'Title',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+      maxWidth: 123,
+      horizontalAlignPivot: 0.5,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(
+      world.getComponent(centerPivotLabel, textId)!.horizontalAlignPivot,
+    ).toBe(0.5);
+    expect(
+      world.getComponent(leftPivotLabel, textId)!.horizontalAlignPivot,
+    ).toBe(0);
+    expect(world.getComponent(pointLabel, textId)!.horizontalAlignPivot).toBe(
+      0.5,
+    );
+  });
+
   it('composes correctly with createTransformEcsSystem to produce the intended absolute world position, nested three deep', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);

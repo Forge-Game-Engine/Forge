@@ -35,6 +35,7 @@ function buildTextComponent(
     lineHeight: 1,
     horizontalAlign: 'left',
     verticalAlign: 'top',
+    horizontalAlignPivot: 0,
     layer: 2,
     category: 1,
     enabled: true,

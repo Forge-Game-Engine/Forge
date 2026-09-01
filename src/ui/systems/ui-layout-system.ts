@@ -230,8 +230,22 @@ export const createUiLayoutEcsSystem = (
         // point anchor's maxWidth is left untouched - it's the caller's own
         // explicit choice (or unset, for a label that's simply sized to its
         // own content).
+        //
+        // `horizontalAlignPivot` is synced alongside it to `pivot.x` for
+        // the same reason: `shapeText`'s alignment box is measured from the
+        // entity's own local `x = 0`, which only lands on the resolved
+        // rect's left edge for a `0` (left) pivot. Without this, any
+        // stretch-x preset whose pivot isn't `0` - `UiAnchor.stretchAll`,
+        // `stretchHorizontal`, `center`, and so on all default to a center
+        // pivot - would silently offset centered/right/justified text away
+        // from the panel it's actually meant to fill. Syncing this here
+        // means every stretch-x anchor centers correctly regardless of
+        // which pivot it uses, so callers no longer have to reach for a
+        // left-pivoted preset (`stretchHorizontalLeft`/`stretchTopLeft`)
+        // just to make `horizontalAlign` work.
         if (rectTransform.anchorMin.x !== rectTransform.anchorMax.x) {
           text.maxWidth = rect.max.x - rect.min.x;
+          text.horizontalAlignPivot = rectTransform.pivot.x;
         }
       }
 

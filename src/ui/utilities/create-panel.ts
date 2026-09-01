@@ -12,9 +12,27 @@ import {
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
 
-export interface CreatePanelOptions {
+/**
+ * Fields of {@link CreatePanelOptions} with no sensible default; callers
+ * must always provide these.
+ */
+export interface CreatePanelRequiredOptions {
+  /**
+   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
+   * rather than attached directly, so the same `sprite` can be passed to
+   * multiple `createPanel` calls without one panel's layout-driven
+   * `width`/`height`/`pivot` mutations affecting another's.
+   */
+  sprite: SpriteEcsComponent;
+}
+
+/**
+ * Fields of {@link CreatePanelOptions} with a sensible default; callers may
+ * omit these.
+ */
+export interface CreatePanelDefaultedOptions {
   /** The anchor/pivot preset to place the panel with. Defaults to `UiAnchor.center`. */
-  anchor?: UiAnchorPreset;
+  anchor: UiAnchorPreset;
 
   /** Offset of the panel's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
@@ -27,19 +45,14 @@ export interface CreatePanelOptions {
   sizeDelta?: Vector2;
 
   /**
-   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
-   * rather than attached directly, so the same `sprite` can be passed to
-   * multiple `createPanel` calls without one panel's layout-driven
-   * `width`/`height`/`pivot` mutations affecting another's.
-   */
-  sprite: SpriteEcsComponent;
-
-  /**
    * Overrides `sprite.slices` for this panel, for reusing one base sprite
    * with different nine-slice configuration across panels.
    */
   slices?: NineSliceOptions;
 }
+
+export type CreatePanelOptions = CreatePanelRequiredOptions &
+  Partial<CreatePanelDefaultedOptions>;
 
 const defaultCreatePanelOptions = {
   anchor: UiAnchor.center,
@@ -60,9 +73,7 @@ const defaultCreatePanelOptions = {
 export function createPanel(
   world: EcsWorld,
   parent: number,
-  options: { sprite: SpriteEcsComponent } & Partial<
-    Omit<CreatePanelOptions, 'sprite'>
-  >,
+  options: CreatePanelOptions,
 ): number {
   const { anchor, anchoredPosition, sizeDelta, sprite, slices } = {
     ...defaultCreatePanelOptions,

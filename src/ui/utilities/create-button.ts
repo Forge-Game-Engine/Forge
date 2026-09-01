@@ -183,17 +183,17 @@ export function createButton(
   addUiColorTransitionComponent(world, entity, transitionOptions);
 
   // `horizontalAlign: 'center'` re-centers each line within `maxWidth` (see
-  // `createLabel`'s own doc comment) - it needs the label's own local x = 0
-  // to land exactly on the button's left edge, not its center, for that box
-  // to line up with the button's actual bounds. `UiAnchor.middleLeft` (a
-  // point anchor, not a stretch) puts it there; `UiAnchor.stretchAll`
-  // wouldn't, since its pivot sits at the rect's center. Letting the engine
-  // recompute this from `maxWidth`/`horizontalAlign` - rather than
-  // pre-measuring the label's shaped width once and baking in a fixed
-  // offset - keeps the label centered even when its `text` changes later
-  // (e.g. `createDropdown` swapping the header label to a different
-  // option), since `createTextShapingEcsSystem` re-shapes on every text
-  // change.
+  // `createLabel`'s own doc comment). `UiAnchor.middleLeft` (a point
+  // anchor) puts the label's own `x = 0` at the button's left edge, so
+  // `maxWidth: sizeDelta.x` - already known statically here, since a point
+  // anchor's `sizeDelta` is a literal size - is the button's actual width
+  // with no per-frame resolved-rect lookup needed, unlike a stretch anchor.
+  // Letting the engine recompute the label's position from
+  // `maxWidth`/`horizontalAlign` - rather than pre-measuring the label's
+  // shaped width once and baking in a fixed offset - keeps the label
+  // centered even when its `text` changes later (e.g. `createDropdown`
+  // swapping the header label to a different option), since
+  // `createTextShapingEcsSystem` re-shapes on every text change.
   const labelEntity = createLabel(world, entity, {
     text: label,
     fontAtlas,

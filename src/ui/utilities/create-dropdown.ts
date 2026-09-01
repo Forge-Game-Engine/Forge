@@ -8,7 +8,7 @@ import {
   spriteId,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
-import { textId } from '../../text/index.js';
+import { textHorizontalAlignments, textId } from '../../text/index.js';
 import { UiColorTransitionDefaultedOptions } from '../components/ui-color-transition-component.js';
 import { UiInteractableDefaultedOptions } from '../components/ui-interactable-component.js';
 import {
@@ -17,6 +17,7 @@ import {
 } from '../components/ui-dropdown-component.js';
 import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
 import { Button, createButton } from './create-button.js';
+import { createLabel } from './create-label.js';
 
 /**
  * Fields of {@link CreateDropdownOptions} with no sensible default; callers
@@ -103,6 +104,14 @@ export interface Dropdown {
    */
   options: Button[];
 
+  /**
+   * The chevron label entity, parented to the header - shows `v` while
+   * closed and `^` while open (see `chevronClosedText`/`chevronOpenText`;
+   * the bundled default font atlas is ASCII-only, so these stand in for a
+   * down/up-pointing triangle).
+   */
+  chevron: number;
+
   /** The dropdown's `UiDropdownEcsComponent`, for reading `isOpen`/`selectedIndex` directly. */
   dropdown: UiDropdownEcsComponent;
 
@@ -122,11 +131,22 @@ const optionRowAnchor: UiAnchorPreset = {
 };
 
 /**
+ * The chevron glyph shown while the option list is closed/open,
+ * respectively. The bundled default font atlas only covers ASCII, so these
+ * stand in for a down/up-pointing triangle rather than proper chevron
+ * glyphs (e.g. `▼`/`▲`), which it doesn't have.
+ */
+const chevronClosedText = 'v';
+const chevronOpenText = '^';
+
+/**
  * Creates a dropdown: a header button (see `createButton`) showing the
- * currently selected option, with a `UiDropdownEcsComponent` added, plus one
- * option-row button per entry in `options`, stacked below the header and
- * hidden until the header is clicked open. Selecting an option updates the
- * header's label, raises `onValueChanged`, and closes the list.
+ * currently selected option and a chevron indicator on its right edge, with
+ * a `UiDropdownEcsComponent` added, plus one option-row button per entry in
+ * `options`, stacked below the header and hidden until the header is
+ * clicked open. Selecting an option updates the header's label, raises
+ * `onValueChanged`, and closes the list. The chevron flips between
+ * `chevronClosedText` and `chevronOpenText` in step with `dropdown.isOpen`.
  *
  * **Known limitation**: clicking outside the open list doesn't close it -
  * only clicking the header again or selecting an option does. Register your
@@ -139,8 +159,8 @@ const optionRowAnchor: UiAnchorPreset = {
  * `optionSprite`, `options`, and `fontAtlas` have no sensible default and
  * must always be provided.
  * @returns The created dropdown: its header entity/button, its option row
- * buttons, its `UiDropdownEcsComponent`, and `onValueChanged` for the common
- * case of registering a single listener.
+ * buttons, its chevron label entity, its `UiDropdownEcsComponent`, and
+ * `onValueChanged` for the common case of registering a single listener.
  */
 export function createDropdown(
   world: EcsWorld,
@@ -175,10 +195,17 @@ export function createDropdown(
 
   const resolvedOptionHeight = optionHeight ?? sizeDelta.y;
 
+  // Reserves room on the header's right edge for the chevron, so the
+  // selected-option label (`createButton`'s own centered label, `maxWidth`
+  // otherwise defaulting to the header's full `sizeDelta.x`) doesn't
+  // overlap it.
+  const chevronReservedWidth = labelSize * 1.5;
+
   const header = createButton(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
     sizeDelta,
+    labelMaxWidth: sizeDelta.x - chevronReservedWidth,
     sprite: headerSprite,
     slices,
     label: optionLabels[selectedIndex],
@@ -194,6 +221,19 @@ export function createDropdown(
     options: optionLabels,
     selectedIndex,
   });
+
+  const chevron = createLabel(world, header.entity, {
+    text: chevronClosedText,
+    fontAtlas,
+    size: labelSize,
+    anchor: UiAnchor.middleRight,
+    anchoredPosition: { x: -chevronReservedWidth / 2, y: 0 },
+    horizontalAlign: textHorizontalAlignments.center,
+    verticalAlign: 'middle',
+    color: labelColor,
+    ...(labelCategory !== undefined && { category: labelCategory }),
+  });
+  const chevronText = world.getComponent(chevron, textId)!;
 
   const optionButtons = optionLabels.map((label, index) =>
     createButton(world, header.entity, {
@@ -222,6 +262,7 @@ export function createDropdown(
 
   const setOpen = (isOpen: boolean): void => {
     dropdown.isOpen = isOpen;
+    chevronText.text = isOpen ? chevronOpenText : chevronClosedText;
 
     for (const optionButton of optionButtons) {
       optionButton.interactable.interactable = isOpen;
@@ -251,6 +292,7 @@ export function createDropdown(
     entity: header.entity,
     header,
     options: optionButtons,
+    chevron,
     dropdown,
     onValueChanged: dropdown.onValueChanged,
   };

@@ -85,6 +85,45 @@ describe('createDropdown', () => {
     }
   });
 
+  it('flips the chevron text when the header is invoked, and back when it closes again', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const dropdown = createDropdown(world, parent, {
+      headerSprite: buildSprite(),
+      optionSprite: buildSprite(),
+      options: ['Low', 'Medium', 'High'],
+      fontAtlas,
+    });
+
+    expect(world.getComponent(dropdown.chevron, textId)!.text).toBe('v');
+
+    dropdown.header.interactable.onInvoke.raise();
+
+    expect(world.getComponent(dropdown.chevron, textId)!.text).toBe('^');
+
+    dropdown.header.interactable.onInvoke.raise();
+
+    expect(world.getComponent(dropdown.chevron, textId)!.text).toBe('v');
+  });
+
+  it('resets the chevron to closed when an option is selected', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const dropdown = createDropdown(world, parent, {
+      headerSprite: buildSprite(),
+      optionSprite: buildSprite(),
+      options: ['Low', 'Medium', 'High'],
+      fontAtlas,
+    });
+
+    dropdown.header.interactable.onInvoke.raise();
+    dropdown.options[1].interactable.onInvoke.raise();
+
+    expect(world.getComponent(dropdown.chevron, textId)!.text).toBe('v');
+  });
+
   it('selects an option, updates the header label, raises onValueChanged, and closes', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
@@ -158,7 +197,7 @@ describe('createDropdown', () => {
     }
   });
 
-  it("centers the header's and each option row's label against the header's width, not the option row's own (stretched, zero-width) sizeDelta", () => {
+  it("centers each option row's label against the header's full width, not the option row's own (stretched, zero-width) sizeDelta, while the header's own label reserves room for the chevron", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -168,10 +207,11 @@ describe('createDropdown', () => {
       options: ['Low', 'Medium', 'High'],
       fontAtlas,
       sizeDelta: { x: 240, y: 56 },
+      labelSize: 24,
     });
 
     expect(world.getComponent(dropdown.header.label, textId)!.maxWidth).toBe(
-      240,
+      240 - 24 * 1.5,
     );
 
     for (const optionButton of dropdown.options) {

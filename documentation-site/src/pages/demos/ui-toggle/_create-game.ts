@@ -136,6 +136,15 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
     disabledColor: new Color(0.6, 0.6, 0.6, 0.6),
   };
 
+  // A topLeft-anchored label's `verticalAlign: middle` centers its ink on
+  // the rect's pivot line - its `anchoredPosition.y` itself, not the middle
+  // of its (otherwise-unused, for a caption) `sizeDelta` box. So to land a
+  // caption's vertical center on a same-row toggle's center, its y must be
+  // offset down by half the toggle's height, not simply match the toggle's
+  // own (top-edge) anchoredPosition.y.
+  const toggleSize = 32;
+  const rowCenterY = (toggleTopY: number): number => toggleTopY - toggleSize / 2;
+
   const caption = (
     text: string,
     anchoredPosition: { x: number; y: number },
@@ -152,17 +161,21 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
     });
   };
 
-  caption('Mute', { x: 60, y: -80 });
+  const muteToggleY = -80;
+
+  caption('Mute', { x: 60, y: rowCenterY(muteToggleY) });
 
   createToggle(world, canvas, {
     sprite: { ...boxSprite },
     checkmarkSprite: { ...crossSprite },
     anchor: UiAnchor.topLeft,
-    anchoredPosition: { x: 240, y: -80 },
+    anchoredPosition: { x: 240, y: muteToggleY },
     transition: boxTransition,
   });
 
-  caption('Difficulty', { x: 60, y: -180 });
+  const difficultyToggleY = -220;
+
+  caption('Difficulty', { x: 60, y: rowCenterY(difficultyToggleY) });
 
   const difficultyGroup = world.createEntity();
 
@@ -177,7 +190,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
       group: difficultyGroup,
       isOn: i === 0,
       anchor: UiAnchor.topLeft,
-      anchoredPosition: { x: 240 + i * 90, y: -220 },
+      anchoredPosition: { x: 240 + i * 90, y: difficultyToggleY },
       transition: boxTransition,
     });
 

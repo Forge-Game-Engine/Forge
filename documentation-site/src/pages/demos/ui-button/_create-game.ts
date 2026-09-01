@@ -184,16 +184,30 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
     disabledColor: new Color(0.5, 0.5, 0.5, 0.6),
   };
 
+  const statusLabelWidth = 600;
+
   const statusLabel = createLabel(world, canvas, {
     text: 'Click, or focus-navigate to, a button below',
     fontAtlas,
     size: 26,
-    anchor: UiAnchor.topCenter,
-    anchoredPosition: { x: 0, y: -60 },
-    sizeDelta: { x: 600, y: 40 },
+    // `horizontalAlign: 'center'` re-centers the text within `maxWidth`,
+    // measured from the label's own local x = 0 (see `createButton`'s doc
+    // comment on this same pitfall) - `UiAnchor.topCenter`'s pivot sits at
+    // the rect's center, which would offset that alignment box off to one
+    // side. Anchoring at the canvas's top-center point but with a left
+    // pivot, then shifting left by half the label's width, keeps local
+    // x = 0 on the box's actual left edge while still centering it
+    // on-screen.
+    anchor: {
+      anchorMin: { x: 0.5, y: 1 },
+      anchorMax: { x: 0.5, y: 1 },
+      pivot: { x: 0, y: 1 },
+    },
+    anchoredPosition: { x: -statusLabelWidth / 2, y: -60 },
+    sizeDelta: { x: statusLabelWidth, y: 40 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
-    maxWidth: 600,
+    maxWidth: statusLabelWidth,
     color: Color.white,
     category: renderLayers.ui,
   });

@@ -60,10 +60,10 @@ scoreText.text = `Score: ${score}`;
 
 The shaping system only re-walks the string (kerning, glyph positions,
 wrapping, alignment) when `text`, `fontAtlas`, `size`, `letterSpacing`,
-`lineHeight`, `horizontalAlign`, `verticalAlign`, or `maxWidth` actually
-changed since the last tick it ran against this entity. Changing `color`,
-`layer`, or `enabled` alone never triggers a re-shape, they're read directly
-by the render system each frame.
+`lineHeight`, `horizontalAlign`, `verticalAlign`, `maxWidth`, or
+`horizontalAlignPivot` actually changed since the last tick it ran against
+this entity. Changing `color`, `layer`, or `enabled` alone never triggers a
+re-shape, they're read directly by the render system each frame.
 
 ## Multi-line layout
 
@@ -90,6 +90,14 @@ addTextComponent(world, label, {
   line except the last (a fully-justified last line of one or two words
   reads as visibly, unintentionally stretched) and except lines with only
   one word (nothing to stretch) - both cases fall back to left-aligned.
+- `horizontalAlignPivot` (default `0`) - where the entity's own local
+  `x = 0` sits within the `horizontalAlign` box, as a fraction of
+  `maxWidth` from the box's left edge. `horizontalAlign` positions each
+  line by measuring from `x = 0`, so this only needs setting when
+  something *other* than `x = 0` positions the entity's left edge - e.g. a
+  `RectTransformEcsComponent` whose `pivot.x` isn't `0` (see
+  [UI: Labels](../ui/index.md#labels), which sets this automatically for
+  its own stretch-anchored labels).
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
   `'capline'`, default `'top'`) positions the shaped block's visible ink
   relative to the entity's position, not its line-height box (which

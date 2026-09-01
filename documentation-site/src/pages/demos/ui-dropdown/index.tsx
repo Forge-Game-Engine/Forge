@@ -33,7 +33,7 @@ export default function UiDropdown(): JSX.Element {
           'A demo showcasing createDropdown from the ui module: a header button showing the selected option, plus a click-to-open list of option rows.',
       }}
       header="UI Dropdown"
-      blurb="createDropdown builds a header (an ordinary createButton showing the currently-selected option) with a UiDropdownEcsComponent, plus one option-row button per entry - stacked below the header and hidden until it's clicked open. Selecting an option updates the header's label, raises onValueChanged, and closes the list. Clicking outside the open list doesn't close it - only clicking the header again or selecting an option does."
+      blurb="createDropdown builds a header (an ordinary createButton showing the currently-selected option) with a UiDropdownEcsComponent, plus one option-row button per entry - stacked below the header and hidden until it's clicked open. A chevron on the header's right edge flips between v (closed) and ^ (open) as the list toggles. Selecting an option updates the header's label, raises onValueChanged, and closes the list. Clicking outside the open list doesn't close it - only clicking the header again or selecting an option does."
       createGame={createGame}
       interactions={
         <InteractionInstruction

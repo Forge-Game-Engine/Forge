@@ -25,10 +25,15 @@ export type CreateLabelOptions = TextRequiredOptions &
      * anchor rect when stretched. For a point anchor this sizes the label's
      * *rect* for anchoring purposes only - `TextEcsComponent.maxWidth`
      * still needs setting explicitly for wrapping/`horizontalAlign` to have
-     * an actual box to work against (see `UiAnchor.stretchHorizontalLeft`'s
-     * own doc comment). For a stretch anchor, `createUiLayoutEcsSystem`
-     * keeps `maxWidth` in sync with the resolved rect's width every frame,
-     * overriding whatever `maxWidth` was passed here.
+     * an actual box to work against, and its pivot needs to be `0` (a
+     * left-pivoted preset, e.g. `UiAnchor.middleLeft`) for `horizontalAlign`
+     * to measure against the right edge - see `createButton`'s own use of
+     * both for why. For a stretch-x anchor (any anchor whose `anchorMin.x`
+     * and `anchorMax.x` differ, e.g. `UiAnchor.stretchAll`),
+     * `createUiLayoutEcsSystem` keeps `maxWidth` and `horizontalAlignPivot`
+     * in sync with the resolved rect every frame instead - so `horizontalAlign`
+     * works correctly under *any* pivot, not just a left one - overriding
+     * whatever `maxWidth` was passed here.
      */
     sizeDelta?: Vector2;
   };
