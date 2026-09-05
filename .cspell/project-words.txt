@@ -149,8 +149,10 @@ tweening
 tweens
 unblurred
 undersamples
+unflipped
 unmarks
 unnegated
+unrepresentable
 unrotated
 unshifted
 untextured
