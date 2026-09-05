@@ -132,7 +132,7 @@ describe('createUiCanvas', () => {
     addParentComponent(world, entity, { parent: canvas });
     addRectTransformComponent(world, entity, {
       ...UiAnchor.center,
-      sizeDelta: { x: 300, y: 150 },
+      sizeOrMargin: { x: 300, y: 150 },
     });
     addUiInteractableComponent(world, entity);
 

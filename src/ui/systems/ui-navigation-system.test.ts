@@ -51,7 +51,7 @@ const createButtonAt = (
   const rectTransform = addRectTransformComponent(world, entity, {
     ...UiAnchor.center,
     anchoredPosition,
-    sizeDelta: { x: 100, y: 50 },
+    sizeOrMargin: { x: 100, y: 50 },
   });
 
   rectTransform.rect = {

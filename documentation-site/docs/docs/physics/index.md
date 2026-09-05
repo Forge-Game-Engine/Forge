@@ -57,7 +57,10 @@ detect and resolve collisions, and integrate each dynamic (or kinematic)
 body's velocity into its position/rotation.
 
 ```ts
-import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -105,7 +108,11 @@ world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(
-  createCollisionResolutionEcsSystem(collisionManifolds, contactConstraints, time),
+  createCollisionResolutionEcsSystem(
+    collisionManifolds,
+    contactConstraints,
+    time,
+  ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
 ```

@@ -114,15 +114,15 @@ Notes:
     (never in `default<PascalCaseName>Options`), e.g. `isKinematic?` on
     `PhysicsBodyEcsComponent`. Never required, may stay `undefined` for the
     entity's whole lifetime; systems reading it must handle that.
-  Never use `Pick<<PascalCaseName>EcsComponent, 'requiredField'>` to mark a
-  field required in the factory's `options` — the string literal isn't
-  checked against the interface, so a field added later without a default
-  silently becomes optional instead of a type error. Extract a named
-  interface instead, following whichever of these matches the component:
+    Never use `Pick<<PascalCaseName>EcsComponent, 'requiredField'>` to mark a
+    field required in the factory's `options` — the string literal isn't
+    checked against the interface, so a field added later without a default
+    silently becomes optional instead of a type error. Extract a named
+    interface instead, following whichever of these matches the component:
   - **Has required fields, and nothing else** (only required, or required
     plus already-`?`-optional fields): the component interface is already
     the exact shape the factory needs — use `options:
-    <PascalCaseName>EcsComponent` directly, no extra interface, no `Pick`,
+<PascalCaseName>EcsComponent` directly, no extra interface, no `Pick`,
     no `Partial` (see `parent-component.ts`, `inputs-component.ts`, or
     `physics-body-component.ts`).
   - **Has required fields and defaulted fields**: pull the required ones

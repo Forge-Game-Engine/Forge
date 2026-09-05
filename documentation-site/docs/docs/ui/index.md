@@ -14,9 +14,10 @@ functions the same way any other composite entity in Forge is.
 
 :::info Current scope
 Layout (anchors, canvases, panels, labels), interaction (buttons,
-hover/press/drag, gamepad/keyboard focus navigation, color transitions), and
-controls (toggles, sliders, progress bars, dropdowns) are implemented. Scroll
-views, text input, rect clipping, and layout groups aren't yet.
+hover/press/drag, gamepad/keyboard focus navigation, color transitions),
+controls (toggles, sliders, progress bars, dropdowns), and layout groups
+(horizontal/vertical/grid, content size fitting, aspect ratio fitting) are
+implemented. Scroll views, text input, and rect clipping aren't yet.
 :::
 
 ## Quick start
@@ -55,7 +56,7 @@ const panelSprite = createImageSprite(panelImage, renderContext, {
 createPanel(world, canvas, {
   anchor: UiAnchor.topLeft,
   anchoredPosition: { x: 20, y: -20 },
-  sizeDelta: { x: 240, y: 96 },
+  sizeOrMargin: { x: 240, y: 96 },
   sprite: panelSprite,
 });
 
@@ -77,7 +78,7 @@ since Forge has no reserved "this bit means UI" value: pick one your game
 isn't already using for another camera, and reuse that exact value for
 every UI visual's own category. Give a panel's sprite that same category -
 `createImageSprite`'s `layer` option sets a sprite's `Renderable.category`,
-confusingly by that name (see `SpriteEcsComponent.layer`, a *different*,
+confusingly by that name (see `SpriteEcsComponent.layer`, a _different_,
 draw-order-only field, for the usual meaning of "layer"). Without a
 matching category, a world camera whose own `cullingMask` still matches
 everything would draw the panel a second time wherever its UI-space
@@ -109,13 +110,13 @@ Five fields drive resolution:
 - **`anchorMin`/`anchorMax`** - normalized points within the parent's rect,
   `(0, 0)` its bottom-left corner and `(1, 1)` its top-right. Equal to each
   other, the element is **point-anchored**: it keeps its own size
-  (`sizeDelta`) and moves with the anchor. Different, it's
-  **stretch-anchored**: it resizes with the parent, and `sizeDelta` acts as
+  (`sizeOrMargin`) and moves with the anchor. Different, it's
+  **stretch-anchored**: it resizes with the parent, and `sizeOrMargin` acts as
   a margin added to the anchor rect instead of a literal size.
 - **`pivot`** - the point within the element's own rect that sits at the
   anchor (and that sprites/text position around).
 - **`anchoredPosition`** - an offset from the anchor, in reference pixels.
-- **`sizeDelta`** - the element's literal size when point-anchored, or a
+- **`sizeOrMargin`** - the element's literal size when point-anchored, or a
   margin when stretched.
 
 [`UiAnchor`](/Forge/docs/api/variables/UiAnchor) has presets for the common
@@ -123,17 +124,18 @@ cases, each setting `anchorMin`/`anchorMax`/`pivot` together: the nine point
 anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
 `middleRight`, `bottomLeft`, `bottomCenter`, `bottomRight`), edge-pinned
 bands (`stretchTop`, `stretchBottom`, `stretchLeft`, `stretchRight` - the
-common "HUD bar" and "side panel" anchors, where `sizeDelta` sets the
+common "HUD bar" and "side panel" anchors, where `sizeOrMargin` sets the
 band's thickness), center bands (`stretchHorizontal`, `stretchVertical`),
-`stretchAll`, and two left-pivoted variants for text - `stretchTopLeft` and
-`stretchHorizontalLeft` - covered in [Labels](#labels) below. Spread one
-into `addRectTransformComponent`'s options, or into
-`createPanel`/`createLabel`'s `anchor` option:
+`stretchAll`, and two left-pivoted variants - `stretchTopLeft` and
+`stretchHorizontalLeft`, for when you specifically want the rect's own
+local origin on the left edge rather than the center (see
+[Labels](#labels) below). Spread one into `addRectTransformComponent`'s
+options, or into `createPanel`/`createLabel`'s `anchor` option:
 
 ```ts
 addRectTransformComponent(world, entity, {
   ...UiAnchor.stretchTop,
-  sizeDelta: { x: 0, y: 64 }, // a 64-unit-tall bar spanning the full width
+  sizeOrMargin: { x: 0, y: 64 }, // a 64-unit-tall bar spanning the full width
 });
 ```
 
@@ -188,59 +190,55 @@ createLabel(world, panel, {
   // horizontalAlign. verticalAlign has no such caveat.
   horizontalAlign: 'center',
   verticalAlign: 'middle',
-  // `UiAnchor.center`'s pivot sits at the box's own center, not its left
-  // edge - `horizontalAlign` measures its box from the entity's own
-  // position, so that position needs to land on the box's actual left edge
-  // for the two to agree on where the box is. `UiAnchor.middleLeft` does
-  // that; `maxWidth` is then the box's width from that left edge, matching
-  // sizeDelta since middleLeft is point-anchored (sizeDelta is a literal
-  // size, not a margin, there - see the anchoring fields above).
+  // `UiAnchor.middleLeft` is point-anchored, so its `sizeOrMargin` is a
+  // literal size - `maxWidth` needs to be set to match it explicitly.
   anchor: UiAnchor.middleLeft,
-  sizeDelta: { x: 200, y: 40 },
+  sizeOrMargin: { x: 200, y: 40 },
   maxWidth: 200,
 });
 ```
 
-A center-*pivoted* anchor (`center`, `topCenter`, `stretchAll`, ...)
-doesn't work for a centered label the way it might seem to - see the
-`anchor: UiAnchor.middleLeft` comment above for why. Two presets exist
-specifically for text that needs to stay centered as its own content
-changes:
+`horizontalAlign`'s alignment box is measured from the entity's own local
+`x = 0` - which only lands on the resolved rect's actual left edge for a
+`pivot.x: 0` anchor like `middleLeft`. A center-pivoted anchor (`center`,
+`topCenter`, `stretchAll`, ...) would offset that box away from the rect's
+real bounds, _except_ `createUiLayoutEcsSystem` compensates for this
+automatically for any stretch-x anchor (`anchorMin.x !== anchorMax.x`,
+e.g. `stretchAll`, `stretchHorizontal`) - it syncs both
+`TextEcsComponent.maxWidth` and `horizontalAlignPivot` from the resolved
+rect and its pivot every frame, so `horizontalAlign` works correctly under
+any pivot for those anchors, with no `maxWidth` to set at all:
 
-- **`UiAnchor.middleLeft`** (or any other point anchor with `pivot.x: 0`,
-  like `topLeft`/`bottomLeft`) for a label sized with a literal, known
-  `sizeDelta.x` - pass the same value as `maxWidth`, as above.
-- **`UiAnchor.stretchHorizontalLeft`** (or `stretchTopLeft`) for a label
-  whose box should track its parent's actual width, which isn't always
-  known ahead of time (a title centered in a full-width top bar, say).
-  `createUiLayoutEcsSystem` keeps `TextEcsComponent.maxWidth` in sync with
-  the resolved rect's width every frame for any stretch-anchored (`anchorMin.x
-  !== anchorMax.x`) text entity, so `maxWidth` doesn't need setting at all:
+```ts
+createLabel(world, topBar, {
+  text: 'Forge UI Demo',
+  fontAtlas,
+  size: 40,
+  category: uiRenderCategory,
+  anchor: UiAnchor.stretchAll,
+  // A stretch anchor's default sizeOrMargin ({100, 100}) is a margin, not a
+  // literal size - omitting this widens maxWidth past topBar's actual
+  // width by 100, off-centering the text instead of centering it.
+  sizeOrMargin: { x: 0, y: 0 },
+  horizontalAlign: 'center',
+  verticalAlign: 'middle',
+  // No maxWidth - createUiLayoutEcsSystem derives it (and the pivot
+  // correction) from topBar's own resolved rect every frame, so the label
+  // stays centered even if topBar itself resizes, and even if the label's
+  // own text changes later (e.g. a dropdown header showing a newly-selected
+  // option).
+});
+```
 
-  ```ts
-  createLabel(world, topBar, {
-    text: 'Forge UI Demo',
-    fontAtlas,
-    size: 40,
-    category: uiRenderCategory,
-    anchor: UiAnchor.stretchHorizontalLeft,
-    // A stretch anchor's default sizeDelta ({100, 100}) is a margin, not a
-    // literal size - omitting this widens maxWidth past topBar's actual
-    // width by 100, off-centering the text instead of centering it.
-    sizeDelta: { x: 0, y: 0 },
-    horizontalAlign: 'center',
-    verticalAlign: 'middle',
-    // No maxWidth - createUiLayoutEcsSystem derives it from topBar's own
-    // resolved width every frame, so the label stays centered even if
-    // topBar itself resizes, and even if the label's own text changes
-    // later (e.g. a dropdown header showing a newly-selected option).
-  });
-  ```
-
-A point anchor's `sizeDelta` still only sizes the label's *rect* for
-anchoring purposes - `maxWidth` needs setting to match it explicitly, as in
-the `middleLeft` example above; only a stretch anchor gets the automatic
-sync.
+A **point** anchor doesn't get this automatic sync (there's no per-frame
+resolved rect to derive it from beyond what `sizeOrMargin` already gives you
+statically), so a point-anchored label centering against an explicit
+`maxWidth` still needs a `pivot.x: 0` anchor - `middleLeft`,
+`topLeft`/`bottomLeft` - as in the example above.
+`stretchHorizontalLeft`/`stretchTopLeft` remain available for when you
+specifically want a stretch rect's own local origin pinned to the left
+edge for some other reason (manual position math, a non-text child), but
+they're no longer necessary just to make `horizontalAlign` work.
 
 ## Interaction
 
@@ -360,8 +358,17 @@ with `allowSwitchOff: true`:
 const difficultyGroup = world.createEntity();
 addUiToggleGroupComponent(world, difficultyGroup);
 
-const easy = createToggle(world, canvas, { sprite, checkmarkSprite, group: difficultyGroup, isOn: true });
-const hard = createToggle(world, canvas, { sprite, checkmarkSprite, group: difficultyGroup });
+const easy = createToggle(world, canvas, {
+  sprite,
+  checkmarkSprite,
+  group: difficultyGroup,
+  isOn: true,
+});
+const hard = createToggle(world, canvas, {
+  sprite,
+  checkmarkSprite,
+  group: difficultyGroup,
+});
 ```
 
 ### Sliders
@@ -393,7 +400,7 @@ automatically once a `pointerSource` is given to `createUiCanvas`) keeps
 tracking the drag even if the pointer strays outside the track's vertical
 bounds. Because that system has to run after the interaction pipeline each
 tick (it reads this tick's press state) but `createUiLayoutEcsSystem` runs
-*before* it (layout needs last tick's resolved rects for this tick's
+_before_ it (layout needs last tick's resolved rects for this tick's
 raycasting), a value change - from a drag or an external `slider.value =`
 write - is reflected one frame later; imperceptible at normal frame rates.
 
@@ -419,7 +426,7 @@ const health = createProgressBar(world, canvas, {
 health.progressBar.value = playerHealth;
 ```
 
-Unlike a slider, `createUiProgressBarEcsSystem` runs *before*
+Unlike a slider, `createUiProgressBarEcsSystem` runs _before_
 `createUiLayoutEcsSystem` (it has no interaction dependency to wait on), so
 a `value` write is reflected the same frame. Only a linear fill is
 supported - a radial/clock-wipe fill would need a shader-level fill-amount
@@ -432,7 +439,11 @@ header button (`createButton`, showing the currently selected option) with
 a
 [`UiDropdownEcsComponent`](/Forge/docs/api/interfaces/UiDropdownEcsComponent)
 added, plus one option-row button per entry in `options`, stacked below the
-header and hidden until it's clicked open:
+header and hidden until it's clicked open. A chevron label sits on the
+header's right edge, flipping between `v` (closed) and `^` (open) in step
+with `dropdown.isOpen` - the bundled default font atlas is ASCII-only, so
+these stand in for a down/up-pointing triangle rather than proper chevron
+glyphs:
 
 ```ts
 const quality = createDropdown(world, canvas, {
@@ -457,6 +468,100 @@ not a polled system) knows how to reach. Clicking outside the open list
 doesn't close it - only clicking the header again or selecting an option
 does; register your own listener (e.g. gated on `dropdown.isOpen`) if your
 game needs that.
+
+## Layout groups
+
+Every element seen so far is positioned manually - an explicit anchor and
+`anchoredPosition`/`sizeOrMargin`. A layout group instead arranges its own
+direct children automatically, recomputing every frame just like
+`createUiLayoutEcsSystem` itself does:
+
+```ts
+import {
+  addVerticalLayoutGroupComponent,
+  createButton,
+  createPanel,
+  uiAlignments,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
+
+const menu = createPanel(world, canvas, {
+  anchor: UiAnchor.center,
+  sizeOrMargin: { x: 320, y: 400 },
+  sprite: panelSprite,
+});
+
+addVerticalLayoutGroupComponent(world, menu, {
+  padding: { left: 24, right: 24, top: 24, bottom: 24 },
+  spacing: 16,
+  childAlignment: uiAlignments.topCenter,
+});
+
+// createUiLayoutGroupEcsSystem (registered automatically by createUiCanvas)
+// resizes and stacks every direct child added below - no anchor/sizeOrMargin
+// of its own needed.
+createButton(world, menu, { sprite: buttonSprite, label: 'Play', fontAtlas });
+createButton(world, menu, {
+  sprite: buttonSprite,
+  label: 'Options',
+  fontAtlas,
+});
+createButton(world, menu, { sprite: buttonSprite, label: 'Quit', fontAtlas });
+```
+
+[`addHorizontalLayoutGroupComponent`](/Forge/docs/api/functions/addHorizontalLayoutGroupComponent)/
+[`addVerticalLayoutGroupComponent`](/Forge/docs/api/functions/addVerticalLayoutGroupComponent)
+arrange direct children left-to-right/top-to-bottom, resizing each one (per
+`childControlWidth`/`childControlHeight`) to its measured preferred size -
+its own `RectTransformEcsComponent.sizeOrMargin`, unless overridden by a
+[`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
+(`minWidth`/`minHeight`/`preferredWidth`/`preferredHeight`/`flexibleWidth`/
+`flexibleHeight`) - plus, by default (`childForceExpandWidth`/
+`childForceExpandHeight`), stretching every child to fill the whole cross
+axis and distributing any leftover main-axis space, weighted by
+`flexibleWidth`/`flexibleHeight` (or evenly, with none set). `childAlignment`
+(see [`uiAlignments`](/Forge/docs/api/variables/uiAlignments), named the same
+way as `UiAnchor`'s nine point presets) places the child block within any
+leftover main-axis space, and aligns each child individually within the
+cross axis. A child with `LayoutElementEcsComponent.ignoreLayout: true` is
+skipped entirely - useful for a decorative element (a background flourish, a
+badge) placed inside an otherwise-arranged panel.
+
+[`addGridLayoutGroupComponent`](/Forge/docs/api/functions/addGridLayoutGroupComponent)
+arranges direct children into fixed-size `cellSize` cells instead of
+measuring them - `constraint` picks whether the column count is derived from
+the content box's width (`flexible`, the default) or held fixed
+(`fixedColumnCount`/`fixedRowCount`), and `startCorner`/`startAxis` control
+placement order.
+
+Layout groups nest: a `VerticalLayoutGroupEcsComponent`'s own measured
+content size (used when a parent group, or a `ContentSizeFitterEcsComponent`,
+asks) comes from recursively measuring its own children, so a horizontal row
+of buttons can itself be one "row" inside an outer vertical group.
+
+[`addContentSizeFitterComponent`](/Forge/docs/api/functions/addContentSizeFitterComponent)
+resizes its own entity's `sizeOrMargin` to match its measured content on each
+axis (`unconstrained` leaves that axis alone; `minSize`/`preferredSize` fit
+to it) - pair it with a layout group on the same entity to make a panel
+shrink-wrap its arranged children, rather than the fixed size `createPanel`
+was given.
+
+[`addAspectRatioFitterComponent`](/Forge/docs/api/functions/addAspectRatioFitterComponent)
+keeps an entity's `sizeOrMargin` at a constant width-to-height ratio -
+`widthControlsHeight`/`heightControlsWidth` derive one axis from the other;
+`fitInParent`/`envelopeParent` derive both from the parent's own resolved
+rect, useful for a thumbnail or minimap that shouldn't stretch with its
+container.
+
+Every layout group/fitter runs in `createUiLayoutGroupEcsSystem`/
+`createUiAspectRatioFitterEcsSystem`, registered automatically by
+`createUiCanvas` _before_ `createUiLayoutEcsSystem` - both read
+`RectTransformEcsComponent.rect` as it stood at the end of the previous
+frame (the same rect `createUiLayoutEcsSystem` is about to recompute this
+tick), so a group whose own size just changed (a fresh entity, a nested
+group, a content size fitter reacting to a resized child) arranges its
+children against a one-frame-stale box. Like the rest of this module, this
+converges within a frame or two rather than being tracked with dirty state.
 
 ## Known limitations
 

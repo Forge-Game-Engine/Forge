@@ -33,8 +33,7 @@ export const createLiveMaxWidthEcsSystem = (
 
       textComponent.maxWidth = currentMaxWidth;
       live.guideBoxSprite.width = currentMaxWidth;
-      live.guideBoxPosition.world.x =
-        live.guideBoxLeftX + currentMaxWidth / 2;
+      live.guideBoxPosition.world.x = live.guideBoxLeftX + currentMaxWidth / 2;
       live.captionText.text = `maxWidth: ${Math.round(currentMaxWidth)} world units (live)`;
     }
   },

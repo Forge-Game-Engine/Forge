@@ -221,13 +221,10 @@ const camera = createCamera(world, { renderTarget: sceneTarget });
 addBloomComponent(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
 addToneMappingComponent(world, camera);
 
-const neonSign = createImageSprite(
-  neonSignImage,
-  renderContext,
-  0,
-  undefined,
-  { image: neonSignEmissiveMap, intensity: 4 },
-);
+const neonSign = createImageSprite(neonSignImage, renderContext, 0, undefined, {
+  image: neonSignEmissiveMap,
+  intensity: 4,
+});
 
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createBloomEcsSystem(renderContext));
@@ -239,7 +236,7 @@ Without the emissive map, `threshold` is the only way to make part of a
 sprite glow more than the rest, and it can't distinguish "this part is
 meant to be a light source" from "this part happens to be pale" — both
 read as the same brightness once clamped to `[0, 1]`. The emissive map
-sidesteps that: its contribution is added *after* the albedo sample, so it
+sidesteps that: its contribution is added _after_ the albedo sample, so it
 can push specific pixels arbitrarily bright regardless of the sprite's own
 tint or texture color, without lightening the rest of the sprite. See [HDR
 Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render

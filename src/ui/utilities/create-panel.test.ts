@@ -36,7 +36,7 @@ describe('createPanel', () => {
     );
   });
 
-  it('applies the given anchor, anchoredPosition, and sizeDelta', () => {
+  it('applies the given anchor, anchoredPosition, and sizeOrMargin', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
     const sprite = buildSprite();
@@ -45,14 +45,14 @@ describe('createPanel', () => {
       sprite,
       anchor: UiAnchor.topLeft,
       anchoredPosition: { x: 10, y: -10 },
-      sizeDelta: { x: 200, y: 100 },
+      sizeOrMargin: { x: 200, y: 100 },
     });
 
     const rectTransform = world.getComponent(panel, rectTransformId)!;
 
     expect(rectTransform.anchorMin).toEqual(UiAnchor.topLeft.anchorMin);
     expect(rectTransform.anchoredPosition).toEqual({ x: 10, y: -10 });
-    expect(rectTransform.sizeDelta).toEqual({ x: 200, y: 100 });
+    expect(rectTransform.sizeOrMargin).toEqual({ x: 200, y: 100 });
   });
 
   it('clones the passed sprite rather than aliasing it, so reusing one across panels is safe', () => {

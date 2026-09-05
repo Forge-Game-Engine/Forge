@@ -146,7 +146,7 @@ describe('createSlider', () => {
     expect(transition.duration).toBe(250);
   });
 
-  it('defaults sizeDelta to 300x24 and handleSize to 24x24', () => {
+  it('defaults sizeOrMargin to 300x24 and handleSize to 24x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -156,10 +156,10 @@ describe('createSlider', () => {
     });
 
     expect(
-      world.getComponent(slider.entity, rectTransformId)!.sizeDelta,
+      world.getComponent(slider.entity, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 300, y: 24 });
     expect(
-      world.getComponent(slider.handle, rectTransformId)!.sizeDelta,
+      world.getComponent(slider.handle, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 24, y: 24 });
   });
 });

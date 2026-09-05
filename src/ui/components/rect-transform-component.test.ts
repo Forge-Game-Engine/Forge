@@ -19,7 +19,7 @@ describe('addRectTransformComponent', () => {
       anchorMax: { x: 0.5, y: 0.5 },
       pivot: { x: 0.5, y: 0.5 },
       anchoredPosition: { x: 0, y: 0 },
-      sizeDelta: { x: 100, y: 100 },
+      sizeOrMargin: { x: 100, y: 100 },
       rect: Rects.zero,
       sortDepth: 0,
     });
@@ -31,11 +31,11 @@ describe('addRectTransformComponent', () => {
     const entity = world.createEntity();
 
     const component = addRectTransformComponent(world, entity, {
-      sizeDelta: { x: 240, y: 64 },
+      sizeOrMargin: { x: 240, y: 64 },
       anchoredPosition: { x: 10, y: -10 },
     });
 
-    expect(component.sizeDelta).toEqual({ x: 240, y: 64 });
+    expect(component.sizeOrMargin).toEqual({ x: 240, y: 64 });
     expect(component.anchoredPosition).toEqual({ x: 10, y: -10 });
     expect(component.anchorMin).toEqual({ x: 0.5, y: 0.5 });
     expect(component.pivot).toEqual({ x: 0.5, y: 0.5 });

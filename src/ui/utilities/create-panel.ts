@@ -10,11 +10,29 @@ import {
   SpriteEcsComponent,
 } from '../../rendering/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 
-export interface CreatePanelOptions {
+/**
+ * Fields of {@link CreatePanelOptions} with no sensible default; callers
+ * must always provide these.
+ */
+export interface CreatePanelRequiredOptions {
+  /**
+   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
+   * rather than attached directly, so the same `sprite` can be passed to
+   * multiple `createPanel` calls without one panel's layout-driven
+   * `width`/`height`/`pivot` mutations affecting another's.
+   */
+  sprite: SpriteEcsComponent;
+}
+
+/**
+ * Fields of {@link CreatePanelOptions} with a sensible default; callers may
+ * omit these.
+ */
+export interface CreatePanelDefaultedOptions {
   /** The anchor/pivot preset to place the panel with. Defaults to `UiAnchor.center`. */
-  anchor?: UiAnchorPreset;
+  anchor: AnchorPivotConfig;
 
   /** Offset of the panel's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
@@ -24,15 +42,7 @@ export interface CreatePanelOptions {
    * anchor rect when stretched. Defaults to `RectTransformEcsComponent`'s
    * own default (`100x100`) when omitted.
    */
-  sizeDelta?: Vector2;
-
-  /**
-   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
-   * rather than attached directly, so the same `sprite` can be passed to
-   * multiple `createPanel` calls without one panel's layout-driven
-   * `width`/`height`/`pivot` mutations affecting another's.
-   */
-  sprite: SpriteEcsComponent;
+  sizeOrMargin?: Vector2;
 
   /**
    * Overrides `sprite.slices` for this panel, for reusing one base sprite
@@ -40,6 +50,9 @@ export interface CreatePanelOptions {
    */
   slices?: NineSliceOptions;
 }
+
+export type CreatePanelOptions = CreatePanelRequiredOptions &
+  Partial<CreatePanelDefaultedOptions>;
 
 const defaultCreatePanelOptions = {
   anchor: UiAnchor.center,
@@ -60,11 +73,9 @@ const defaultCreatePanelOptions = {
 export function createPanel(
   world: EcsWorld,
   parent: number,
-  options: { sprite: SpriteEcsComponent } & Partial<
-    Omit<CreatePanelOptions, 'sprite'>
-  >,
+  options: CreatePanelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeDelta, sprite, slices } = {
+  const { anchor, anchoredPosition, sizeOrMargin, sprite, slices } = {
     ...defaultCreatePanelOptions,
     ...options,
   };
@@ -76,7 +87,7 @@ export function createPanel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeDelta && { sizeDelta }),
+    ...(sizeOrMargin && { sizeOrMargin }),
   });
   addSpriteComponent(world, entity, {
     ...sprite,

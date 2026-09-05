@@ -1,4 +1,31 @@
-import { actionResetTypes, Axis1dAction, Axis2dAction, CameraEcsComponent, cameraId, Color, createCamera, createCameraEcsSystem, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsWorld, KeyboardAxis2dBinding, KeyboardInputSource, keyCodes, MouseAxis1dBinding, MouseInputSource, PositionEcsComponent, positionId, registerInputs, spriteId, Time, Vec2 } from '../../../src/index.js';
+import {
+  actionResetTypes,
+  Axis1dAction,
+  Axis2dAction,
+  CameraEcsComponent,
+  cameraId,
+  Color,
+  createCamera,
+  createCameraEcsSystem,
+  createCanvas,
+  createImageSprite,
+  createPresentEcsSystem,
+  createRenderContext,
+  createRenderEcsSystem,
+  createTransformEcsSystem,
+  EcsWorld,
+  KeyboardAxis2dBinding,
+  KeyboardInputSource,
+  keyCodes,
+  MouseAxis1dBinding,
+  MouseInputSource,
+  PositionEcsComponent,
+  positionId,
+  registerInputs,
+  spriteId,
+  Time,
+  Vec2,
+} from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';

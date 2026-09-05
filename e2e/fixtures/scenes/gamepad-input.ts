@@ -1,4 +1,26 @@
-import { actionResetTypes, Axis1dAction, Color, createCamera, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsSystem, EcsWorld, gamepadAxes, GamepadAxis1dBinding, GamepadInputSource, PositionEcsComponent, positionId, registerInputs, SpriteEcsComponent, spriteId, Time } from '../../../src/index.js';
+import {
+  actionResetTypes,
+  Axis1dAction,
+  Color,
+  createCamera,
+  createCanvas,
+  createImageSprite,
+  createPresentEcsSystem,
+  createRenderContext,
+  createRenderEcsSystem,
+  createTransformEcsSystem,
+  EcsSystem,
+  EcsWorld,
+  gamepadAxes,
+  GamepadAxis1dBinding,
+  GamepadInputSource,
+  PositionEcsComponent,
+  positionId,
+  registerInputs,
+  SpriteEcsComponent,
+  spriteId,
+  Time,
+} from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {

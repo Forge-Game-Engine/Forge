@@ -40,12 +40,12 @@ export interface RectTransformDefaultedOptions {
    * Size in reference pixels when point-anchored (`anchorMin == anchorMax`);
    * a margin relative to the anchor rect (added to it) when stretched.
    */
-  sizeDelta: Vector2;
+  sizeOrMargin: Vector2;
 
   /**
    * The resolved rect, in UI world space. Written every frame by
    * `createUiLayoutEcsSystem` from `anchorMin`/`anchorMax`/`pivot`/
-   * `anchoredPosition`/`sizeDelta` and the parent's own resolved rect - do
+   * `anchoredPosition`/`sizeOrMargin` and the parent's own resolved rect - do
    * not set this directly, it's overwritten on the next layout pass.
    */
   rect: Rect;
@@ -93,7 +93,7 @@ export function addRectTransformComponent(
     anchorMax: { x: 0.5, y: 0.5 },
     pivot: { x: 0.5, y: 0.5 },
     anchoredPosition: Vec2.zero,
-    sizeDelta: { x: 100, y: 100 },
+    sizeOrMargin: { x: 100, y: 100 },
     rect: Rects.zero,
     sortDepth: 0,
   };
@@ -105,7 +105,7 @@ export function addRectTransformComponent(
     anchorMax: Vec2.clone(merged.anchorMax),
     pivot: Vec2.clone(merged.pivot),
     anchoredPosition: Vec2.clone(merged.anchoredPosition),
-    sizeDelta: Vec2.clone(merged.sizeDelta),
+    sizeOrMargin: Vec2.clone(merged.sizeOrMargin),
     rect: Rects.clone(merged.rect),
     sortDepth: merged.sortDepth,
   };

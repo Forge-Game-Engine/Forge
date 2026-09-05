@@ -15,7 +15,7 @@ Every design document should be a markdown file in the `design` folder. The file
 In the document, include the following sections:
 
 - Name: A short, descriptive name for the feature, re-write or refactor.
-- A table that lists: 
+- A table that lists:
   - the targeted modules, indicating which are new, which are being modified, and which are being removed.
   - Engine version at time of design
 - Summary: A brief summary of the feature, re-write or refactor, that briefly includes its purpose and goals.
@@ -25,7 +25,7 @@ In the document, include the following sections:
 - Phases: A list of the phases of the design, including a brief description of each phase and its goals, a table of task that need to be implemented in each phase. Each task should have a name, a description, and a T-shit size estimate (S, M, L, XL). Phases should be pieces of work that need to happen in order to complete the design, and should be ordered in a logical sequence. Each phase should have a clear definition of done, and should be able to be completed and released independently of other phases.
 - A decision log: A list of the major decisions made during the design process, including the possible options, the decision (which option was chosen), and the rationale behind it, the tradeoff and assumptions made.
 - A list of open questions: A list of the open questions that need to be answered in order to complete the design, including the question, the possible options, and the rationale behind each option. The list should be ordered by priority, with the most important questions at the top.
-- Design sub-sections: An arbitrary number of sections that describe major parts of the design, include anything that is relevant to the design, including but not limited to: 
+- Design sub-sections: An arbitrary number of sections that describe major parts of the design, include anything that is relevant to the design, including but not limited to:
   - API design
   - Data structures
   - Algorithms

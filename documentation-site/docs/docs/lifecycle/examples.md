@@ -9,7 +9,10 @@ import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import { addPositionComponent, addScaleComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addScaleComponent,
+} from '@forge-game-engine/forge/common';
 import { Vec2 } from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 
@@ -64,9 +67,16 @@ import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
-import { addPhysicsBodyComponent, CircleShape, RigidBody } from '@forge-game-engine/forge/physics';
+import {
+  addPhysicsBodyComponent,
+  CircleShape,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { Vec2 } from '@forge-game-engine/forge/math';
 
 function fireBullet(
@@ -106,9 +116,16 @@ import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
-import { addPhysicsBodyComponent, PolygonShape, RigidBody } from '@forge-game-engine/forge/physics';
+import {
+  addPhysicsBodyComponent,
+  PolygonShape,
+  RigidBody,
+} from '@forge-game-engine/forge/physics';
 import { Vec2 } from '@forge-game-engine/forge/math';
 
 function spawnTemporaryWall(x: number, y: number, duration: number) {

@@ -75,7 +75,10 @@ export const createRollingBallGame = async (): Promise<Game> => {
     borderBlend: 5,
   });
 
-  const spawnPosition = { x: terrain.spawnX, y: terrain.worldSurfaceYAt(terrain.spawnX) + 60 };
+  const spawnPosition = {
+    x: terrain.spawnX,
+    y: terrain.worldSurfaceYAt(terrain.spawnX) + 60,
+  };
 
   const player = await createPlayer(
     world,

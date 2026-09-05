@@ -9,9 +9,9 @@ import { RectTransformEcsComponent } from '../components/rect-transform-componen
  *
  * Two regimes fall out of the same formula depending on whether
  * `anchorMin`/`anchorMax` coincide: a **point anchor** (`anchorMin ==
- * anchorMax`) keeps `sizeDelta` as the element's literal size and moves with
+ * anchorMax`) keeps `sizeOrMargin` as the element's literal size and moves with
  * the anchor; a **stretch anchor** (`anchorMin != anchorMax`) resizes with
- * the parent, with `sizeDelta` acting as a margin.
+ * the parent, with `sizeOrMargin` acting as a margin.
  * @param parentRect - The parent's already-resolved rect, in UI world space.
  * @param rectTransform - The rect transform to resolve.
  * @returns The resolved rect, in the same UI world space as `parentRect`.
@@ -20,7 +20,7 @@ export function resolveRect(
   parentRect: Rect,
   rectTransform: RectTransformEcsComponent,
 ): Rect {
-  const { anchorMin, anchorMax, pivot, anchoredPosition, sizeDelta } =
+  const { anchorMin, anchorMax, pivot, anchoredPosition, sizeOrMargin } =
     rectTransform;
   const parentWidth = parentRect.max.x - parentRect.min.x;
   const parentHeight = parentRect.max.y - parentRect.min.y;
@@ -33,8 +33,8 @@ export function resolveRect(
   const anchorRectSizeX = anchorRectMaxX - anchorRectMinX;
   const anchorRectSizeY = anchorRectMaxY - anchorRectMinY;
 
-  const width = anchorRectSizeX + sizeDelta.x;
-  const height = anchorRectSizeY + sizeDelta.y;
+  const width = anchorRectSizeX + sizeOrMargin.x;
+  const height = anchorRectSizeY + sizeOrMargin.y;
 
   const referencePointX = anchorRectMinX + anchorRectSizeX * pivot.x;
   const referencePointY = anchorRectMinY + anchorRectSizeY * pivot.y;

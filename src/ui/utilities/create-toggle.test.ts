@@ -65,7 +65,7 @@ describe('createToggle', () => {
     });
 
     expect(
-      world.getComponent(toggle.checkmark, rectTransformId)!.sizeDelta,
+      world.getComponent(toggle.checkmark, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 0, y: 0 });
   });
 
@@ -151,7 +151,7 @@ describe('createToggle', () => {
     ).toEqual({ x: 5, y: -5 });
   });
 
-  it('defaults sizeDelta to 32x32', () => {
+  it('defaults sizeOrMargin to 32x32', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -161,7 +161,7 @@ describe('createToggle', () => {
     });
 
     expect(
-      world.getComponent(toggle.entity, rectTransformId)!.sizeDelta,
+      world.getComponent(toggle.entity, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 32, y: 32 });
   });
 });

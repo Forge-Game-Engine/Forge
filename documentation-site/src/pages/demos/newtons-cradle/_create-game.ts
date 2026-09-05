@@ -33,12 +33,10 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createCradle(
-    world,
-    renderContext,
-    renderLayers.foreground,
-    { x: 0, y: DEMO_VERTICAL_WORLD_UNITS * 0.3 },
-  );
+  await createCradle(world, renderContext, renderLayers.foreground, {
+    x: 0,
+    y: DEMO_VERTICAL_WORLD_UNITS * 0.3,
+  });
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

@@ -10,12 +10,12 @@ import {
   TextRequiredOptions,
 } from '../../text/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
     /** The anchor/pivot preset to place the label with. Defaults to `UiAnchor.center`. */
-    anchor?: UiAnchorPreset;
+    anchor?: AnchorPivotConfig;
 
     /** Offset of the label's pivot from its anchor reference point, in reference pixels. */
     anchoredPosition?: Vector2;
@@ -25,12 +25,17 @@ export type CreateLabelOptions = TextRequiredOptions &
      * anchor rect when stretched. For a point anchor this sizes the label's
      * *rect* for anchoring purposes only - `TextEcsComponent.maxWidth`
      * still needs setting explicitly for wrapping/`horizontalAlign` to have
-     * an actual box to work against (see `UiAnchor.stretchHorizontalLeft`'s
-     * own doc comment). For a stretch anchor, `createUiLayoutEcsSystem`
-     * keeps `maxWidth` in sync with the resolved rect's width every frame,
-     * overriding whatever `maxWidth` was passed here.
+     * an actual box to work against, and its pivot needs to be `0` (a
+     * left-pivoted preset, e.g. `UiAnchor.middleLeft`) for `horizontalAlign`
+     * to measure against the right edge - see `createButton`'s own use of
+     * both for why. For a stretch-x anchor (any anchor whose `anchorMin.x`
+     * and `anchorMax.x` differ, e.g. `UiAnchor.stretchAll`),
+     * `createUiLayoutEcsSystem` keeps `maxWidth` and `horizontalAlignPivot`
+     * in sync with the resolved rect every frame instead - so `horizontalAlign`
+     * works correctly under *any* pivot, not just a left one - overriding
+     * whatever `maxWidth` was passed here.
      */
-    sizeDelta?: Vector2;
+    sizeOrMargin?: Vector2;
   };
 
 const defaultCreateLabelOptions = {
@@ -62,7 +67,7 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeDelta, ...textOptions } = {
+  const { anchor, anchoredPosition, sizeOrMargin, ...textOptions } = {
     ...defaultCreateLabelOptions,
     ...options,
   };
@@ -74,7 +79,7 @@ export function createLabel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeDelta && { sizeDelta }),
+    ...(sizeOrMargin && { sizeOrMargin }),
   });
   addTextComponent(world, entity, textOptions);
 

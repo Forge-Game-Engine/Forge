@@ -1,10 +1,7 @@
 import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
-import {
-  Color,
-  SpriteEcsComponent,
-} from '@forge-game-engine/forge/rendering';
+import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
 import {
   addTextComponent,
   FontAtlas,

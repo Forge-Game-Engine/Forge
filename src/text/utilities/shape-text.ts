@@ -42,6 +42,26 @@ export interface ShapeTextOptions {
    * units. `undefined` (the default) never wraps.
    */
   maxWidth?: number;
+
+  /**
+   * Where the shaped block's local origin (`x = 0`, the point every glyph
+   * offset is ultimately relative to) sits within the `horizontalAlign`
+   * box, as a fraction of `maxWidth` from the box's left edge - `0` (the
+   * default) means the origin *is* the box's left edge, `0.5` means it sits
+   * at the box's horizontal center, and `1` at its right edge. Irrelevant
+   * when `maxWidth` is unset, for the same reason `horizontalAlign` is (see
+   * its own doc comment).
+   *
+   * This exists because a caller that positions the shaped block by a
+   * center (or right) pivot - rather than a left edge - would otherwise get
+   * `horizontalAlign`'s alignment box measured from the wrong point: e.g. a
+   * `'center'`-aligned single line under a center pivot would end up
+   * offset by half its own alignment box, since `x = 0` would land at the
+   * box's center rather than its left edge. Defaults to `0` because that's
+   * the shape every existing caller before this field was added already
+   * assumed.
+   */
+  horizontalAlignPivot?: number;
 }
 
 /** The pure-data result of shaping a string against a `FontAtlasData`. */
@@ -58,6 +78,7 @@ const defaultShapeTextOptions = {
   lineHeight: 1,
   horizontalAlign: 'left' as const,
   verticalAlign: 'top' as const,
+  horizontalAlignPivot: 0,
 };
 
 /** A single word's shaped glyphs, positioned relative to the word's own start (x = 0). */
@@ -455,6 +476,7 @@ export function shapeText(
     horizontalAlign,
     verticalAlign,
     maxWidth,
+    horizontalAlignPivot,
   } = { ...defaultShapeTextOptions, ...options };
 
   const lines = wrapIntoLines(
@@ -478,6 +500,13 @@ export function shapeText(
   const alignmentWidth = maxWidth ?? contentWidth;
   const actualLineHeight = lineHeight * fontAtlasData.metrics.lineHeight * size;
   const blockHeight = lines.length * actualLineHeight;
+
+  // Shifts the whole alignment box so its left edge - not `x = 0` - is
+  // where `horizontalAlignPivot` says the box's left edge sits relative to
+  // the shaped block's local origin. `0` (the default) leaves this at `0`,
+  // i.e. `x = 0` *is* the box's left edge, matching every alignment mode's
+  // existing behavior before this field was added.
+  const boxLeftOffset = -horizontalAlignPivot * alignmentWidth;
 
   // Built first with each line's *un-offset* baseline (line 0 at y = 0), so
   // `'middle'` can measure this exact block's actual rendered ink before
@@ -508,7 +537,8 @@ export function shapeText(
     const lineY = -lineIndex * actualLineHeight;
 
     line.words.forEach(({ word, startX }, wordIndex) => {
-      const x = startX + uniformOffset + wordIndex * justifyGapStretch;
+      const x =
+        startX + boxLeftOffset + uniformOffset + wordIndex * justifyGapStretch;
 
       for (const glyph of word.glyphs) {
         glyphs.push({

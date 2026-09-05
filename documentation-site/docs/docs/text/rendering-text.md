@@ -60,10 +60,10 @@ scoreText.text = `Score: ${score}`;
 
 The shaping system only re-walks the string (kerning, glyph positions,
 wrapping, alignment) when `text`, `fontAtlas`, `size`, `letterSpacing`,
-`lineHeight`, `horizontalAlign`, `verticalAlign`, or `maxWidth` actually
-changed since the last tick it ran against this entity. Changing `color`,
-`layer`, or `enabled` alone never triggers a re-shape, they're read directly
-by the render system each frame.
+`lineHeight`, `horizontalAlign`, `verticalAlign`, `maxWidth`, or
+`horizontalAlignPivot` actually changed since the last tick it ran against
+this entity. Changing `color`, `layer`, or `enabled` alone never triggers a
+re-shape, they're read directly by the render system each frame.
 
 ## Multi-line layout
 
@@ -90,6 +90,14 @@ addTextComponent(world, label, {
   line except the last (a fully-justified last line of one or two words
   reads as visibly, unintentionally stretched) and except lines with only
   one word (nothing to stretch) - both cases fall back to left-aligned.
+- `horizontalAlignPivot` (default `0`) - where the entity's own local
+  `x = 0` sits within the `horizontalAlign` box, as a fraction of
+  `maxWidth` from the box's left edge. `horizontalAlign` positions each
+  line by measuring from `x = 0`, so this only needs setting when
+  something _other_ than `x = 0` positions the entity's left edge - e.g. a
+  `RectTransformEcsComponent` whose `pivot.x` isn't `0` (see
+  [UI: Labels](../ui/index.md#labels), which sets this automatically for
+  its own stretch-anchored labels).
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
   `'capline'`, default `'top'`) positions the shaped block's visible ink
   relative to the entity's position, not its line-height box (which
@@ -97,16 +105,16 @@ addTextComponent(world, label, {
   - `'top'`, `'bottom'`, `'baseline'`, and `'capline'` all anchor to a
     fixed reference that doesn't depend on this specific string's rendered
     bounds, so a line's position stays stable as its text is edited:
-    `'top'` anchors the font's ascender, so text hangs *below* the
+    `'top'` anchors the font's ascender, so text hangs _below_ the
     entity's position; `'bottom'` anchors the font's descender, so text
-    sits *above* it; `'capline'` is `'top'` but anchored to the font's cap
+    sits _above_ it; `'capline'` is `'top'` but anchored to the font's cap
     height (the top of a capital letter like "H") instead of its ascender
-    (the top of the font's *tallest* glyphs, including ascenders like
+    (the top of the font's _tallest_ glyphs, including ascenders like
     "b"/"d"/"h" that reach higher than a flat capital) - useful for a
     title or label set in caps, where anchoring to the taller ascender
     would leave a visible gap above the text; `'baseline'` anchors the
     first line's own baseline directly, most useful for single-line text.
-  - `'middle'` instead centers this exact string's *actual* rendered ink: a
+  - `'middle'` instead centers this exact string's _actual_ rendered ink: a
     font's ascender is typically taller than its descender is deep (most
     glyphs have no descender at all), so centering on the font's metrics
     would bias every descender-less string (numbers, titles, most short UI

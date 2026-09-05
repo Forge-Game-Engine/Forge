@@ -306,7 +306,10 @@ import { applyExplosiveForce } from '@forge-game-engine/forge/physics';
 renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-  const screenPosition = { x: event.clientX - canvasBounds.left, y: event.clientY - canvasBounds.top };
+  const screenPosition = {
+    x: event.clientX - canvasBounds.left,
+    y: event.clientY - canvasBounds.top,
+  };
 
   const pixelsPerUnit = calculatePixelsPerUnit(
     renderContext.height,

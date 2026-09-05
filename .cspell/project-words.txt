@@ -51,6 +51,7 @@ gamepadconnected
 Gamepads
 GLSL
 greyscale
+hangle
 HarfBuzz
 heightmap
 Heliagon
@@ -148,8 +149,10 @@ tweening
 tweens
 unblurred
 undersamples
+unflipped
 unmarks
 unnegated
+unrepresentable
 unrotated
 unshifted
 untextured

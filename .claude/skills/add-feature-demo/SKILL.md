@@ -148,7 +148,7 @@ verification checklist:
 
 If this was prompted by a `/src` change (not a brand-new demo for existing
 functionality), also re-run the full root-level `CLAUDE.md` verification
-suite for that change, and check whether any *other* existing demo imports
+suite for that change, and check whether any _other_ existing demo imports
 the module you changed (`grep -rl "/<module>" documentation-site/src/pages/demos`)
 — an altered API can silently break a demo that already covered it even
 when this task is about adding a different, new one.

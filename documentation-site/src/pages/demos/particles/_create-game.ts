@@ -50,7 +50,10 @@ export const createParticlesGame = async (): Promise<Game> => {
     renderLayers.foreground,
   );
 
-  const fountainPosition = { x: 0, y: -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom };
+  const fountainPosition = {
+    x: 0,
+    y: -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom,
+  };
 
   await createEmberFountain(
     world,
@@ -78,7 +81,10 @@ export const createParticlesGame = async (): Promise<Game> => {
   const toWorldPosition = (event: MouseEvent): Vector2 => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-    const screenPosition = { x: event.clientX - canvasBounds.left, y: event.clientY - canvasBounds.top };
+    const screenPosition = {
+      x: event.clientX - canvasBounds.left,
+      y: event.clientY - canvasBounds.top,
+    };
 
     const pixelsPerUnit = calculatePixelsPerUnit(
       renderContext.height,

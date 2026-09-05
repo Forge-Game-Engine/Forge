@@ -24,7 +24,10 @@ don't specify, then register
 to advance them every tick:
 
 ```ts
-import { addPositionComponent, positionId } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  positionId,
+} from '@forge-game-engine/forge/common';
 import {
   addAnimationComponent,
   animationId,

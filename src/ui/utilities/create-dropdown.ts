@@ -8,15 +8,16 @@ import {
   spriteId,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
-import { textId } from '../../text/index.js';
+import { textHorizontalAlignments, textId } from '../../text/index.js';
 import { UiColorTransitionDefaultedOptions } from '../components/ui-color-transition-component.js';
 import { UiInteractableDefaultedOptions } from '../components/ui-interactable-component.js';
 import {
   addUiDropdownComponent,
   UiDropdownEcsComponent,
 } from '../components/ui-dropdown-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 import { Button, createButton } from './create-button.js';
+import { createLabel } from './create-label.js';
 
 /**
  * Fields of {@link CreateDropdownOptions} with no sensible default; callers
@@ -42,13 +43,13 @@ export interface CreateDropdownRequiredOptions {
  */
 export interface CreateDropdownDefaultedOptions {
   /** The anchor/pivot preset to place the header with. Defaults to `UiAnchor.topLeft`. */
-  anchor: UiAnchorPreset;
+  anchor: AnchorPivotConfig;
 
   /** Offset of the header's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
 
   /** The header's size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `240x56`. */
-  sizeDelta: Vector2;
+  sizeOrMargin: Vector2;
 
   /** Overrides `headerSprite.slices`/`optionSprite.slices`. */
   slices?: NineSliceOptions;
@@ -70,7 +71,7 @@ export interface CreateDropdownDefaultedOptions {
    */
   labelCategory?: number;
 
-  /** Each option row's height, in reference pixels. Defaults to the header's own `sizeDelta.y`. */
+  /** Each option row's height, in reference pixels. Defaults to the header's own `sizeOrMargin.y`. */
   optionHeight?: number;
 
   /**
@@ -103,6 +104,14 @@ export interface Dropdown {
    */
   options: Button[];
 
+  /**
+   * The chevron label entity, parented to the header - shows `v` while
+   * closed and `^` while open (see `chevronClosedText`/`chevronOpenText`;
+   * the bundled default font atlas is ASCII-only, so these stand in for a
+   * down/up-pointing triangle).
+   */
+  chevron: number;
+
   /** The dropdown's `UiDropdownEcsComponent`, for reading `isOpen`/`selectedIndex` directly. */
   dropdown: UiDropdownEcsComponent;
 
@@ -115,18 +124,29 @@ export interface Dropdown {
 }
 
 /** The anchor every option row shares: full header width, hanging down from the header's bottom edge. */
-const optionRowAnchor: UiAnchorPreset = {
+const optionRowAnchor: AnchorPivotConfig = {
   anchorMin: { x: 0, y: 0 },
   anchorMax: { x: 1, y: 0 },
   pivot: { x: 0.5, y: 1 },
 };
 
 /**
+ * The chevron glyph shown while the option list is closed/open,
+ * respectively. The bundled default font atlas only covers ASCII, so these
+ * stand in for a down/up-pointing triangle rather than proper chevron
+ * glyphs (e.g. `▼`/`▲`), which it doesn't have.
+ */
+const chevronClosedText = 'v';
+const chevronOpenText = '^';
+
+/**
  * Creates a dropdown: a header button (see `createButton`) showing the
- * currently selected option, with a `UiDropdownEcsComponent` added, plus one
- * option-row button per entry in `options`, stacked below the header and
- * hidden until the header is clicked open. Selecting an option updates the
- * header's label, raises `onValueChanged`, and closes the list.
+ * currently selected option and a chevron indicator on its right edge, with
+ * a `UiDropdownEcsComponent` added, plus one option-row button per entry in
+ * `options`, stacked below the header and hidden until the header is
+ * clicked open. Selecting an option updates the header's label, raises
+ * `onValueChanged`, and closes the list. The chevron flips between
+ * `chevronClosedText` and `chevronOpenText` in step with `dropdown.isOpen`.
  *
  * **Known limitation**: clicking outside the open list doesn't close it -
  * only clicking the header again or selecting an option does. Register your
@@ -139,8 +159,8 @@ const optionRowAnchor: UiAnchorPreset = {
  * `optionSprite`, `options`, and `fontAtlas` have no sensible default and
  * must always be provided.
  * @returns The created dropdown: its header entity/button, its option row
- * buttons, its `UiDropdownEcsComponent`, and `onValueChanged` for the common
- * case of registering a single listener.
+ * buttons, its chevron label entity, its `UiDropdownEcsComponent`, and
+ * `onValueChanged` for the common case of registering a single listener.
  */
 export function createDropdown(
   world: EcsWorld,
@@ -149,7 +169,7 @@ export function createDropdown(
 ): Dropdown {
   const defaultCreateDropdownOptions = {
     anchor: UiAnchor.topLeft,
-    sizeDelta: { x: 240, y: 56 },
+    sizeOrMargin: { x: 240, y: 56 },
     selectedIndex: 0,
     labelSize: 24,
     labelColor: Color.black,
@@ -158,7 +178,7 @@ export function createDropdown(
   const {
     anchor,
     anchoredPosition,
-    sizeDelta,
+    sizeOrMargin,
     headerSprite,
     optionSprite,
     slices,
@@ -173,12 +193,19 @@ export function createDropdown(
     transition: transitionOptions,
   } = { ...defaultCreateDropdownOptions, ...options };
 
-  const resolvedOptionHeight = optionHeight ?? sizeDelta.y;
+  const resolvedOptionHeight = optionHeight ?? sizeOrMargin.y;
+
+  // Reserves room on the header's right edge for the chevron, so the
+  // selected-option label (`createButton`'s own centered label, `maxWidth`
+  // otherwise defaulting to the header's full `sizeOrMargin.x`) doesn't
+  // overlap it.
+  const chevronReservedWidth = labelSize * 1.5;
 
   const header = createButton(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeDelta,
+    sizeOrMargin,
+    labelMaxWidth: sizeOrMargin.x - chevronReservedWidth,
     sprite: headerSprite,
     slices,
     label: optionLabels[selectedIndex],
@@ -195,17 +222,30 @@ export function createDropdown(
     selectedIndex,
   });
 
+  const chevron = createLabel(world, header.entity, {
+    text: chevronClosedText,
+    fontAtlas,
+    size: labelSize,
+    anchor: UiAnchor.middleRight,
+    anchoredPosition: { x: -chevronReservedWidth / 2, y: 0 },
+    horizontalAlign: textHorizontalAlignments.center,
+    verticalAlign: 'middle',
+    color: labelColor,
+    ...(labelCategory !== undefined && { category: labelCategory }),
+  });
+  const chevronText = world.getComponent(chevron, textId)!;
+
   const optionButtons = optionLabels.map((label, index) =>
     createButton(world, header.entity, {
       anchor: optionRowAnchor,
       anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
-      sizeDelta: { x: 0, y: resolvedOptionHeight },
+      sizeOrMargin: { x: 0, y: resolvedOptionHeight },
       // `optionRowAnchor` stretches each row to the header's full width
-      // with a zero margin (`sizeDelta.x` above), so the row's actual
-      // rendered width is the header's own `sizeDelta.x`, not its own -
+      // with a zero margin (`sizeOrMargin.x` above), so the row's actual
+      // rendered width is the header's own `sizeOrMargin.x`, not its own -
       // `createButton` can't derive that from a stretched button's own
       // options alone (see `labelMaxWidth`'s doc comment).
-      labelMaxWidth: sizeDelta.x,
+      labelMaxWidth: sizeOrMargin.x,
       sprite: optionSprite,
       slices,
       label,
@@ -222,6 +262,7 @@ export function createDropdown(
 
   const setOpen = (isOpen: boolean): void => {
     dropdown.isOpen = isOpen;
+    chevronText.text = isOpen ? chevronOpenText : chevronClosedText;
 
     for (const optionButton of optionButtons) {
       optionButton.interactable.interactable = isOpen;
@@ -251,6 +292,7 @@ export function createDropdown(
     entity: header.entity,
     header,
     options: optionButtons,
+    chevron,
     dropdown,
     onValueChanged: dropdown.onValueChanged,
   };
