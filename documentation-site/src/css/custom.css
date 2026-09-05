@@ -88,7 +88,7 @@
 /*
  * The "Demos" navbar dropdown grows by one entry per demo and, past a
  * couple dozen, overflows the viewport height with no way to scroll to the
- * later entries - silently making them unclickable rather than erroring,
+ * later entries - silently making them impossible to click rather than erroring,
  * so it went unnoticed across several PRs that each correctly added their
  * entry to docusaurus.config.ts. Capping the menu's height to the visible
  * space below the navbar and scrolling internally keeps every entry
