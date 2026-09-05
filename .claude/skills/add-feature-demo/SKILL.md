@@ -145,6 +145,16 @@ verification checklist:
    reload (fast refresh doesn't guarantee a clean re-init), and confirm it
    renders and behaves correctly — click through any interactions the
    `blurb` describes.
+4. **Also click the entry from the actual "Demos" navbar dropdown** - don't
+   only visit the URL directly. Adding the array entry in step 4 above is
+   necessary but not sufficient: the dropdown has grown to ~30 entries and
+   its `.dropdown__menu` is capped to the viewport height with internal
+   scrolling (`documentation-site/src/css/custom.css`) specifically so
+   every entry stays reachable regardless of list length - confirm your new
+   entry actually scrolls into view and is clickable in a real browser,
+   since a syntactically-correct array entry can still end up unreachable
+   if that CSS ever regresses or a future redesign changes the dropdown
+   markup.
 
 If this was prompted by a `/src` change (not a brand-new demo for existing
 functionality), also re-run the full root-level `CLAUDE.md` verification
