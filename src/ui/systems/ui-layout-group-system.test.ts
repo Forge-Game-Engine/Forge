@@ -491,6 +491,44 @@ describe('createUiLayoutGroupEcsSystem', () => {
       ).toBe(20);
     });
 
+    it('shrinks a content-sized column/row below the default cellSize when its cells are smaller than it', () => {
+      // Regression test: computeGridSizing used to seed columnWidths/rowHeights
+      // with cellSize.x/y even on a 'content' axis, then only ever grow them
+      // via Math.max - so a column/row whose cells were all smaller than the
+      // default 100x100 cellSize (never overridden here) stayed floored at
+      // 100 instead of shrinking to fit, throwing off every cell placed
+      // after it.
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, group, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        columnWidthMode: 'content',
+        rowHeightMode: 'content',
+        childAlignment: uiAlignments.bottomLeft,
+      });
+
+      const label = createChild(world, group, { x: 40, y: 20 });
+      const control = createChild(world, group, { x: 60, y: 15 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Column 0 (the label) is only 40 wide - well under the unset
+      // cellSize's default of 100 - so column 1 should start at 40, not 100.
+      expect(
+        world.getComponent(control, rectTransformId)!.anchoredPosition.x,
+      ).toBe(40);
+      expect(world.getComponent(label, rectTransformId)!.sizeOrMargin.x).toBe(
+        40,
+      );
+      // Row 0's height is the taller of the two cells (20), not 100.
+      expect(world.getComponent(label, rectTransformId)!.sizeOrMargin.y).toBe(
+        20,
+      );
+    });
+
     it('centers a narrower cell within its content-sized column per cellAlignment', () => {
       const world = new EcsWorld();
       const group = createGroupEntity(world, 500, 200);

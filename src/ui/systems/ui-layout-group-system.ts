@@ -229,8 +229,17 @@ function computeGridSizing(
 ): GridSizing {
   const { columns, rows } = gridDimensions(grid, children.length, innerWidth);
 
-  const columnWidths = new Array<number>(columns).fill(grid.cellSize.x);
-  const rowHeights = new Array<number>(rows).fill(grid.cellSize.y);
+  // A 'content' axis starts each column/row at 0 so its first measured cell
+  // sets the size outright - seeding it with cellSize instead (as a 'fixed'
+  // axis must) would floor every column/row at cellSize's default 100,
+  // silently ignoring any measured content smaller than that instead of
+  // shrinking to fit it.
+  const columnWidths = new Array<number>(columns).fill(
+    grid.columnWidthMode === 'content' ? 0 : grid.cellSize.x,
+  );
+  const rowHeights = new Array<number>(rows).fill(
+    grid.rowHeightMode === 'content' ? 0 : grid.cellSize.y,
+  );
 
   if (grid.columnWidthMode === 'content' || grid.rowHeightMode === 'content') {
     for (let i = 0; i < children.length; i++) {
