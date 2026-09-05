@@ -66,7 +66,7 @@ describe('createUiSliderEcsSystem', () => {
     addParentComponent(world, track, { parent: canvas });
     addRectTransformComponent(world, track, {
       ...UiAnchor.center,
-      sizeDelta: { x: 300, y: 24 },
+      sizeOrMargin: { x: 300, y: 24 },
     });
     const interactable = addUiInteractableComponent(world, track, {
       dragThreshold: 0,
@@ -79,7 +79,7 @@ describe('createUiSliderEcsSystem', () => {
       anchorMin: { x: 0, y: 0.5 },
       anchorMax: { x: 0, y: 0.5 },
       pivot: { x: 0.5, y: 0.5 },
-      sizeDelta: { x: 24, y: 24 },
+      sizeOrMargin: { x: 24, y: 24 },
     });
 
     const slider = addUiSliderComponent(world, track, {
@@ -235,7 +235,7 @@ describe('createUiSliderEcsSystem', () => {
     addParentComponent(world, track, { parent: canvas });
     addRectTransformComponent(world, track, {
       ...UiAnchor.center,
-      sizeDelta: { x: 300, y: 24 },
+      sizeOrMargin: { x: 300, y: 24 },
     });
     addUiInteractableComponent(world, track, { dragThreshold: 0 });
 
@@ -246,7 +246,7 @@ describe('createUiSliderEcsSystem', () => {
       anchorMin: { x: 0, y: 0.5 },
       anchorMax: { x: 0, y: 0.5 },
       pivot: { x: 0.5, y: 0.5 },
-      sizeDelta: { x: 24, y: 24 },
+      sizeOrMargin: { x: 24, y: 24 },
     });
 
     const fill = world.createEntity();
@@ -286,7 +286,7 @@ describe('createUiSliderEcsSystem', () => {
     addPositionComponent(world, track);
     addRectTransformComponent(world, track, {
       ...UiAnchor.center,
-      sizeDelta: { x: 300, y: 24 },
+      sizeOrMargin: { x: 300, y: 24 },
     });
     const interactable = addUiInteractableComponent(world, track, {
       dragThreshold: 0,
@@ -299,7 +299,7 @@ describe('createUiSliderEcsSystem', () => {
       anchorMin: { x: 0, y: 0.5 },
       anchorMax: { x: 0, y: 0.5 },
       pivot: { x: 0.5, y: 0.5 },
-      sizeDelta: { x: 24, y: 24 },
+      sizeOrMargin: { x: 24, y: 24 },
     });
 
     const slider = addUiSliderComponent(world, track, { handle });

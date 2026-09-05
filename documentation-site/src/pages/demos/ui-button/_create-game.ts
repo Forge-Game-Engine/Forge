@@ -35,7 +35,12 @@ import {
   textId,
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
-import { createButton, createLabel, createUiCanvas, UiAnchor } from '@forge-game-engine/forge/ui';
+import {
+  createButton,
+  createLabel,
+  createUiCanvas,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -204,7 +209,7 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
       pivot: { x: 0, y: 1 },
     },
     anchoredPosition: { x: -statusLabelWidth / 2, y: -60 },
-    sizeDelta: { x: statusLabelWidth, y: 40 },
+    sizeOrMargin: { x: statusLabelWidth, y: 40 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: statusLabelWidth,
@@ -220,7 +225,7 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
     const button = createButton(world, canvas, {
       anchor: UiAnchor.center,
       anchoredPosition: { x: 0, y: buttonY[i] },
-      sizeDelta: { x: 260, y: 64 },
+      sizeOrMargin: { x: 260, y: 64 },
       sprite: panelSprite,
       label: labels[i],
       fontAtlas,

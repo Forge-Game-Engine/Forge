@@ -78,9 +78,7 @@ export function createSyntheticMsdfGlyphImage(): Promise<HTMLImageElement> {
         0,
         Math.min(
           255,
-          Math.round(
-            255 * (0.5 + distance / SYNTHETIC_GLYPH_DISTANCE_RANGE),
-          ),
+          Math.round(255 * (0.5 + distance / SYNTHETIC_GLYPH_DISTANCE_RANGE)),
         ),
       );
 

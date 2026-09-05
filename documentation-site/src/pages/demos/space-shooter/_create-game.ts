@@ -125,7 +125,11 @@ export const createSpaceShooterGame = async (
   // foreground, so a bloom glow makes them read as glowing/energetic
   // instead of flat sprites. The component is handed back to the caller
   // (see the sliders on this demo's page) so it can be retuned live.
-  const bloomComponent = addBloomComponent(world, foregroundCameraEntity, bloomDefaults);
+  const bloomComponent = addBloomComponent(
+    world,
+    foregroundCameraEntity,
+    bloomDefaults,
+  );
 
   onBloomReady?.(bloomComponent);
 

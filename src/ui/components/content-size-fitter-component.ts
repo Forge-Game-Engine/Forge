@@ -3,7 +3,7 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * How `ContentSizeFitterEcsComponent` sizes one axis of its own
- * `RectTransformEcsComponent.sizeDelta`.
+ * `RectTransformEcsComponent.sizeOrMargin`.
  */
 export type UiContentSizeFitMode =
   'unconstrained' | 'minSize' | 'preferredSize';
@@ -13,10 +13,10 @@ export type UiContentSizeFitMode =
  * callers may omit these.
  */
 export interface ContentSizeFitterDefaultedOptions {
-  /** How `sizeDelta.x` is fit. `unconstrained` (the default) leaves it alone. */
+  /** How `sizeOrMargin.x` is fit. `unconstrained` (the default) leaves it alone. */
   horizontalFit: UiContentSizeFitMode;
 
-  /** How `sizeDelta.y` is fit. `unconstrained` (the default) leaves it alone. */
+  /** How `sizeOrMargin.y` is fit. `unconstrained` (the default) leaves it alone. */
   verticalFit: UiContentSizeFitMode;
 }
 
@@ -32,7 +32,7 @@ const defaultContentSizeFitterOptions: ContentSizeFitterDefaultedOptions = {
 
 /**
  * Attaches a {@link ContentSizeFitterEcsComponent} to `entity`, resizing its
- * `RectTransformEcsComponent.sizeDelta` every frame (via
+ * `RectTransformEcsComponent.sizeOrMargin` every frame (via
  * `createUiLayoutGroupEcsSystem`, alongside its layout-group handling) to
  * match `entity`'s own measured content size on each configured axis - the
  * same min/preferred size a `HorizontalLayoutGroupEcsComponent`/
@@ -43,7 +43,7 @@ const defaultContentSizeFitterOptions: ContentSizeFitterDefaultedOptions = {
  * layout group, to make a panel shrink-wrap its arranged children.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Assumes a
- * point-anchored `RectTransformEcsComponent` (`sizeDelta` is a literal
+ * point-anchored `RectTransformEcsComponent` (`sizeOrMargin` is a literal
  * size, not a stretch margin).
  * @param options - Options for configuring the fitter.
  * @returns The attached component, for further tuning or runtime changes.

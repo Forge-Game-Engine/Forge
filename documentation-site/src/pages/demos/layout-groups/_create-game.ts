@@ -67,7 +67,7 @@ async function createBackdrop(
  * (`VerticalLayoutGroupEcsComponent` + `ContentSizeFitterEcsComponent`), a
  * "Toolbar" (`HorizontalLayoutGroupEcsComponent`), and an "Inventory"
  * (`GridLayoutGroupEcsComponent`) - each arranging its own children with no
- * manual `anchoredPosition`/`sizeDelta` bookkeeping.
+ * manual `anchoredPosition`/`sizeOrMargin` bookkeeping.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */

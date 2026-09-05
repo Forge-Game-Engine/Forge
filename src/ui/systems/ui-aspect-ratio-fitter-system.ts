@@ -12,7 +12,7 @@ import {
 
 /**
  * Creates a system that keeps every `AspectRatioFitterEcsComponent`'s
- * `RectTransformEcsComponent.sizeDelta` at its configured `aspectRatio` -
+ * `RectTransformEcsComponent.sizeOrMargin` at its configured `aspectRatio` -
  * `widthControlsHeight`/`heightControlsWidth` derive one axis from the
  * other; `fitInParent`/`envelopeParent` derive both axes from the parent's
  * own resolved `rect` (one frame stale, like every other cross-entity read
@@ -34,13 +34,15 @@ export const createUiAspectRatioFitterEcsSystem = (): EcsSystem<
       const { aspectMode, aspectRatio } = fitter;
 
       if (aspectMode === 'widthControlsHeight') {
-        rectTransform.sizeDelta.y = rectTransform.sizeDelta.x / aspectRatio;
+        rectTransform.sizeOrMargin.y =
+          rectTransform.sizeOrMargin.x / aspectRatio;
 
         continue;
       }
 
       if (aspectMode === 'heightControlsWidth') {
-        rectTransform.sizeDelta.x = rectTransform.sizeDelta.y * aspectRatio;
+        rectTransform.sizeOrMargin.x =
+          rectTransform.sizeOrMargin.y * aspectRatio;
 
         continue;
       }
@@ -71,11 +73,11 @@ export const createUiAspectRatioFitterEcsSystem = (): EcsSystem<
           : parentAspectRatio < aspectRatio;
 
       if (isHeightBound) {
-        rectTransform.sizeDelta.y = parentSize.y;
-        rectTransform.sizeDelta.x = parentSize.y * aspectRatio;
+        rectTransform.sizeOrMargin.y = parentSize.y;
+        rectTransform.sizeOrMargin.x = parentSize.y * aspectRatio;
       } else {
-        rectTransform.sizeDelta.x = parentSize.x;
-        rectTransform.sizeDelta.y = parentSize.x / aspectRatio;
+        rectTransform.sizeOrMargin.x = parentSize.x;
+        rectTransform.sizeOrMargin.y = parentSize.x / aspectRatio;
       }
     }
   },

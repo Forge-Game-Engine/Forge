@@ -4,7 +4,10 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { MouseInputSource, registerInputs } from '@forge-game-engine/forge/input';
+import {
+  MouseInputSource,
+  registerInputs,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -138,12 +141,13 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   // A topLeft-anchored label's `verticalAlign: middle` centers its ink on
   // the rect's pivot line - its `anchoredPosition.y` itself, not the middle
-  // of its (otherwise-unused, for a caption) `sizeDelta` box. So to land a
+  // of its (otherwise-unused, for a caption) `sizeOrMargin` box. So to land a
   // caption's vertical center on a same-row toggle's center, its y must be
   // offset down by half the toggle's height, not simply match the toggle's
   // own (top-edge) anchoredPosition.y.
   const toggleSize = 32;
-  const rowCenterY = (toggleTopY: number): number => toggleTopY - toggleSize / 2;
+  const rowCenterY = (toggleTopY: number): number =>
+    toggleTopY - toggleSize / 2;
 
   const caption = (
     text: string,
@@ -201,7 +205,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
       anchor: UiAnchor.topLeft,
       anchoredPosition: { x: 236 + i * 90, y: -262 },
       horizontalAlign: textHorizontalAlignments.center,
-      sizeDelta: { x: 60, y: 30 },
+      sizeOrMargin: { x: 60, y: 30 },
       color: Color.white,
       category: renderLayers.ui,
     });

@@ -68,7 +68,7 @@ describe('createButton', () => {
       label: 'Play',
       fontAtlas,
       labelSize: 32,
-      sizeDelta: { x: 240, y: 60 },
+      sizeOrMargin: { x: 240, y: 60 },
     });
 
     const text = world.getComponent(button.label, textId)!;
@@ -85,7 +85,7 @@ describe('createButton', () => {
     expect(text.maxWidth).toBe(240);
   });
 
-  it('defaults sizeDelta to 200x60', () => {
+  it('defaults sizeOrMargin to 200x60', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -97,7 +97,7 @@ describe('createButton', () => {
     });
 
     expect(
-      world.getComponent(button.entity, rectTransformId)!.sizeDelta,
+      world.getComponent(button.entity, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 200, y: 60 });
   });
 
@@ -136,7 +136,7 @@ describe('createButton', () => {
     expect(world.getComponent(button.label, textId)!.category).toBe(0b0100);
   });
 
-  it('lets labelMaxWidth override sizeDelta.x as the width the label centers within', () => {
+  it('lets labelMaxWidth override sizeOrMargin.x as the width the label centers within', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -145,7 +145,7 @@ describe('createButton', () => {
       label: 'Play',
       fontAtlas,
       labelSize: 32,
-      sizeDelta: { x: 0, y: 60 },
+      sizeOrMargin: { x: 0, y: 60 },
       labelMaxWidth: 240,
     });
 

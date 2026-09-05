@@ -14,7 +14,10 @@ kinematic vs. dynamic bodies, and how to wire up the systems that actually
 simulate them.
 
 ```ts
-import { addPositionComponent, addRotationComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
 import {
   addAabbComponent,
   addColliderComponent,
@@ -148,7 +151,11 @@ world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(
-  createCollisionResolutionEcsSystem(collisionManifolds, contactConstraints, time),
+  createCollisionResolutionEcsSystem(
+    collisionManifolds,
+    contactConstraints,
+    time,
+  ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
 ```

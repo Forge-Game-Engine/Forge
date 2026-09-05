@@ -19,7 +19,7 @@ import {
   addUiToggleComponent,
   UiToggleEcsComponent,
 } from '../components/ui-toggle-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 import { createPanel } from './create-panel.js';
 
 /**
@@ -45,13 +45,13 @@ export interface CreateToggleRequiredOptions {
  */
 export interface CreateToggleDefaultedOptions {
   /** The anchor/pivot preset to place the toggle with. Defaults to `UiAnchor.center`. */
-  anchor: UiAnchorPreset;
+  anchor: AnchorPivotConfig;
 
   /** Offset of the toggle's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
 
   /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `32x32`. */
-  sizeDelta: Vector2;
+  sizeOrMargin: Vector2;
 
   /** Overrides `sprite.slices` for the toggle's box. */
   slices?: NineSliceOptions;
@@ -127,14 +127,14 @@ export function createToggle(
 ): Toggle {
   const defaultCreateToggleOptions = {
     anchor: UiAnchor.center,
-    sizeDelta: { x: 32, y: 32 },
+    sizeOrMargin: { x: 32, y: 32 },
     isOn: false,
   };
 
   const {
     anchor,
     anchoredPosition,
-    sizeDelta,
+    sizeOrMargin,
     sprite,
     slices,
     checkmarkSprite,
@@ -147,7 +147,7 @@ export function createToggle(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeDelta,
+    sizeOrMargin,
     sprite,
     slices,
   });
@@ -166,10 +166,10 @@ export function createToggle(
   const checkmark = createPanel(world, entity, {
     anchor: UiAnchor.stretchAll,
     // Without an explicit zero margin, a stretch anchor falls back to
-    // RectTransformEcsComponent's own default sizeDelta (100x100 - a
+    // RectTransformEcsComponent's own default sizeOrMargin (100x100 - a
     // literal size for a point anchor, but a *margin* for a stretch one),
     // ballooning the checkmark far past the box it's meant to exactly fill.
-    sizeDelta: { x: 0, y: 0 },
+    sizeOrMargin: { x: 0, y: 0 },
     sprite: checkmarkSprite,
   });
 

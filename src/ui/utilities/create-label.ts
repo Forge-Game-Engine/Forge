@@ -10,12 +10,12 @@ import {
   TextRequiredOptions,
 } from '../../text/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
     /** The anchor/pivot preset to place the label with. Defaults to `UiAnchor.center`. */
-    anchor?: UiAnchorPreset;
+    anchor?: AnchorPivotConfig;
 
     /** Offset of the label's pivot from its anchor reference point, in reference pixels. */
     anchoredPosition?: Vector2;
@@ -35,7 +35,7 @@ export type CreateLabelOptions = TextRequiredOptions &
      * works correctly under *any* pivot, not just a left one - overriding
      * whatever `maxWidth` was passed here.
      */
-    sizeDelta?: Vector2;
+    sizeOrMargin?: Vector2;
   };
 
 const defaultCreateLabelOptions = {
@@ -67,7 +67,7 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeDelta, ...textOptions } = {
+  const { anchor, anchoredPosition, sizeOrMargin, ...textOptions } = {
     ...defaultCreateLabelOptions,
     ...options,
   };
@@ -79,7 +79,7 @@ export function createLabel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeDelta && { sizeDelta }),
+    ...(sizeOrMargin && { sizeOrMargin }),
   });
   addTextComponent(world, entity, textOptions);
 

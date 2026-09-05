@@ -22,7 +22,7 @@ export interface LayoutElementDefaultedOptions {
  * ECS-style component interface overriding a UI element's measured size for
  * `createUiLayoutGroupEcsSystem` and `ContentSizeFitterEcsComponent`. Every
  * field but `ignoreLayout` is optional - omitted, a group falls back to this
- * element's current `RectTransformEcsComponent.sizeDelta` as its preferred
+ * element's current `RectTransformEcsComponent.sizeOrMargin` as its preferred
  * size, with a min of `0` and a flexible weight of `0` (fixed size, taking
  * no share of any leftover space in a force-expanded group). Add this
  * component only to override that default on a per-field basis; a plain

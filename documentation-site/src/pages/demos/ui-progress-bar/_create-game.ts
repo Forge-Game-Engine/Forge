@@ -20,7 +20,12 @@ import {
   FontAtlasCache,
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
-import { createLabel, createProgressBar, createUiCanvas, UiAnchor } from '@forge-game-engine/forge/ui';
+import {
+  createLabel,
+  createProgressBar,
+  createUiCanvas,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -119,7 +124,7 @@ export const createProgressBarGame = async (
     }),
     anchor: UiAnchor.center,
     anchoredPosition: { x: 0, y: 0 },
-    sizeDelta: { x: 460, y: 28 },
+    sizeOrMargin: { x: 460, y: 28 },
     minValue: 0,
     maxValue: 100,
     value: 100,

@@ -4,7 +4,7 @@ import { Vector2 } from '../../math/index.js';
  * The anchor/pivot fields a `UiAnchor` preset supplies, spread into
  * `addRectTransformComponent`'s options.
  */
-export interface UiAnchorPreset {
+export interface AnchorPivotConfig {
   /** Normalized lower-left anchor within the parent's rect. */
   anchorMin: Vector2;
   /** Normalized upper-right anchor within the parent's rect. */
@@ -13,7 +13,7 @@ export interface UiAnchorPreset {
   pivot: Vector2;
 }
 
-const point = (x: number, y: number): UiAnchorPreset => ({
+const point = (x: number, y: number): AnchorPivotConfig => ({
   anchorMin: { x, y },
   anchorMax: { x, y },
   pivot: { x, y },
@@ -24,7 +24,7 @@ const point = (x: number, y: number): UiAnchorPreset => ({
  * the "pin to corner/edge/center" and "stretch" cases `resolveRect` supports
  * without hand writing `anchorMin`/`anchorMax`/`pivot` triples. Spread one into
  * `addRectTransformComponent`'s options (e.g.
- * `addRectTransformComponent(world, entity, { ...UiAnchor.topLeft, sizeDelta })`).
+ * `addRectTransformComponent(world, entity, { ...UiAnchor.topLeft, sizeOrMargin })`).
  * These are shared, module-level objects, but that's safe: every call to
  * `addRectTransformComponent` clones the `Vector2`s it's given into fresh
  * instances rather than holding onto the ones passed in, so no entity's
@@ -43,8 +43,8 @@ export const UiAnchor = {
 
   /**
    * A full-width horizontal band pinned to the parent's top edge - the
-   * common "HUD top bar" anchor. `sizeDelta.y` sets the band's height (it's
-   * point-anchored vertically); `sizeDelta.x` is a horizontal margin.
+   * common "HUD top bar" anchor. `sizeOrMargin.y` sets the band's height (it's
+   * point-anchored vertically); `sizeOrMargin.x` is a horizontal margin.
    */
   stretchTop: {
     anchorMin: { x: 0, y: 1 },
@@ -61,7 +61,7 @@ export const UiAnchor = {
 
   /**
    * A full-width horizontal band pinned to the parent's bottom edge - the
-   * common "HUD bottom bar" anchor. `sizeDelta.y` sets the band's height.
+   * common "HUD bottom bar" anchor. `sizeOrMargin.y` sets the band's height.
    */
   stretchBottom: {
     anchorMin: { x: 0, y: 0 },
@@ -71,7 +71,7 @@ export const UiAnchor = {
 
   /**
    * A full-height vertical band pinned to the parent's left edge - the
-   * common "side panel" anchor. `sizeDelta.x` sets the band's width.
+   * common "side panel" anchor. `sizeOrMargin.x` sets the band's width.
    */
   stretchLeft: {
     anchorMin: { x: 0, y: 0 },
@@ -88,7 +88,7 @@ export const UiAnchor = {
 
   /**
    * A full-height vertical band pinned to the parent's right edge.
-   * `sizeDelta.x` sets the band's width.
+   * `sizeOrMargin.x` sets the band's width.
    */
   stretchRight: {
     anchorMin: { x: 1, y: 0 },
@@ -131,8 +131,8 @@ export const UiAnchor = {
    * A full-width horizontal band pinned to the parent's top edge, like
    * `stretchTop`, but with its pivot on the left edge rather than the
    * center - see `stretchHorizontalLeft`'s own doc comment for what that's
-   * useful for. `sizeDelta.y` still sets the band's height (point-anchored
-   * vertically); `sizeDelta.x` is still a horizontal margin.
+   * useful for. `sizeOrMargin.y` still sets the band's height (point-anchored
+   * vertically); `sizeOrMargin.x` is still a horizontal margin.
    */
   stretchTopLeft: {
     anchorMin: { x: 0, y: 1 },

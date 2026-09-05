@@ -34,7 +34,9 @@ export const createBallEcsSystem = (
   random: Random,
   missY: number,
   brickField: BrickField,
-): EcsSystem<[BallEcsComponent, PositionEcsComponent, RigidBodyEcsComponent]> => ({
+): EcsSystem<
+  [BallEcsComponent, PositionEcsComponent, RigidBodyEcsComponent]
+> => ({
   query: [ballId, positionId, rigidBodyId],
   update: (
     _world,

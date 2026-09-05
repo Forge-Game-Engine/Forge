@@ -13,7 +13,7 @@ const buildRectTransform = (
   anchorMax: { x: 0.5, y: 0.5 },
   pivot: { x: 0.5, y: 0.5 },
   anchoredPosition: { x: 0, y: 0 },
-  sizeDelta: { x: 100, y: 100 },
+  sizeOrMargin: { x: 100, y: 100 },
   rect: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } },
   sortDepth: 0,
   ...overrides,
@@ -23,7 +23,7 @@ describe('resolveRect', () => {
   it('resolves a center point anchor', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.center,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -35,7 +35,7 @@ describe('resolveRect', () => {
   it('resolves a top-left point anchor', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.topLeft,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -47,7 +47,7 @@ describe('resolveRect', () => {
   it('resolves a top-right point anchor', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.topRight,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -59,7 +59,7 @@ describe('resolveRect', () => {
   it('resolves a bottom-left point anchor', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.bottomLeft,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -71,7 +71,7 @@ describe('resolveRect', () => {
   it('resolves a bottom-right point anchor', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.bottomRight,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -83,7 +83,7 @@ describe('resolveRect', () => {
   it('offsets a point anchor by anchoredPosition', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.center,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
       anchoredPosition: { x: 5, y: -5 },
     });
 
@@ -93,10 +93,10 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches horizontally, sizeDelta acting as a margin', () => {
+  it('stretches horizontally, sizeOrMargin acting as a margin', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.stretchHorizontal,
-      sizeDelta: { x: -40, y: 20 },
+      sizeOrMargin: { x: -40, y: 20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -105,10 +105,10 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches vertically, sizeDelta acting as a margin', () => {
+  it('stretches vertically, sizeOrMargin acting as a margin', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.stretchVertical,
-      sizeDelta: { x: 20, y: -20 },
+      sizeOrMargin: { x: 20, y: -20 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -117,10 +117,10 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches to fill the parent rect exactly with a zero sizeDelta', () => {
+  it('stretches to fill the parent rect exactly with a zero sizeOrMargin', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.stretchAll,
-      sizeDelta: { x: 0, y: 0 },
+      sizeOrMargin: { x: 0, y: 0 },
     });
 
     expect(resolveRect(parentRect, rectTransform)).toEqual(parentRect);
@@ -131,16 +131,22 @@ describe('resolveRect', () => {
       parentRect,
       buildRectTransform({
         ...UiAnchor.stretchAll,
-        sizeDelta: { x: -20, y: -20 },
+        sizeOrMargin: { x: -20, y: -20 },
       }),
     );
     const level2 = resolveRect(
       level1,
-      buildRectTransform({ ...UiAnchor.topRight, sizeDelta: { x: 30, y: 20 } }),
+      buildRectTransform({
+        ...UiAnchor.topRight,
+        sizeOrMargin: { x: 30, y: 20 },
+      }),
     );
     const level3 = resolveRect(
       level2,
-      buildRectTransform({ ...UiAnchor.center, sizeDelta: { x: 10, y: 10 } }),
+      buildRectTransform({
+        ...UiAnchor.center,
+        sizeOrMargin: { x: 10, y: 10 },
+      }),
     );
 
     // level1 = parentRect inset by 10 on every side: (-90,-40) to (90,40)
@@ -155,7 +161,7 @@ describe('resolveRect', () => {
     const zeroParent: Rect = { min: { x: 5, y: 5 }, max: { x: 5, y: 5 } };
     const rectTransform = buildRectTransform({
       ...UiAnchor.center,
-      sizeDelta: { x: 20, y: 20 },
+      sizeOrMargin: { x: 20, y: 20 },
     });
 
     expect(resolveRect(zeroParent, rectTransform)).toEqual({
@@ -169,7 +175,7 @@ describe('resolveRect', () => {
       anchorMin: { x: 1, y: 1 },
       anchorMax: { x: 0, y: 0 },
       pivot: { x: 0.5, y: 0.5 },
-      sizeDelta: { x: 0, y: 0 },
+      sizeOrMargin: { x: 0, y: 0 },
     });
 
     // anchorRectSize is (-200,-100) here, so the resolved rect comes out
@@ -184,7 +190,7 @@ describe('resolveRect', () => {
   it('does not mutate its inputs', () => {
     const rectTransform = buildRectTransform({
       ...UiAnchor.center,
-      sizeDelta: { x: 40, y: 20 },
+      sizeOrMargin: { x: 40, y: 20 },
     });
     const parentRectClone: Rect = {
       min: { ...parentRect.min },
@@ -194,6 +200,6 @@ describe('resolveRect', () => {
     resolveRect(parentRectClone, rectTransform);
 
     expect(parentRectClone).toEqual(parentRect);
-    expect(rectTransform.sizeDelta).toEqual({ x: 40, y: 20 });
+    expect(rectTransform.sizeOrMargin).toEqual({ x: 40, y: 20 });
   });
 });

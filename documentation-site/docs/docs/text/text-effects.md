@@ -32,7 +32,7 @@ addTextComponent(world, label, {
   regardless of the other two.
 
 All three size-like fields (`outlineWidth`, `shadowOffset`, `shadowSoftness`)
-are in **screen-pixel-range units** - a fixed number of *screen* pixels,
+are in **screen-pixel-range units** - a fixed number of _screen_ pixels,
 independent of the entity's `size`, any `ScaleEcsComponent`, or camera zoom,
 exactly like the anti-aliasing band MSDF itself uses. A 2px outline stays a
 crisp 2 screen pixels whether the text renders at 12px or 400px, or whether
@@ -41,7 +41,7 @@ the camera is zoomed in or out.
 ## Two draw passes: outline/shadow, then fill
 
 Every glyph's outline and shadow draw in their own pass, always completing
-*before* any glyph's fill draws on top of it (see `createTextRenderable`
+_before_ any glyph's fill draws on top of it (see `createTextRenderable`
 internally, if you're curious). This is what lets an outline - or a soft
 shadow/glow - safely reach past a same-word neighboring glyph - even merge
 with that neighbor's own effect into one continuous stroke or glow, the
@@ -53,9 +53,9 @@ overlapping each other is harmless (they're typically the same color, and
 blending is order-independent there); only painting over a glyph's fill
 would be a defect, and the two-pass draw order rules that out entirely.
 
-The soft shadow/glow re-samples the distance field at an *offset* UV rather
+The soft shadow/glow re-samples the distance field at an _offset_ UV rather
 than just re-thresholding the same sample the outline uses, but that offset
-is always resolved against *this glyph's own* texture region
+is always resolved against _this glyph's own_ texture region
 (`a_instanceTexOffset`/`a_instanceTexSize` scope every sample this shader
 takes, base and shadow-offset alike) - never a neighboring glyph's, no
 matter how close that neighbor sits on screen. Atlas layout and text layout
@@ -76,7 +76,7 @@ screen pixels from a glyph's true edge - `--distance-range` when you
 generated it (see [Generating a Font Atlas](./generating-a-font-atlas.md)).
 Past that, an effect still renders, clamped to the widest value the atlas
 can faithfully represent, rather than boxing out or producing quantized
-banding. This is the *only* limit on either effect - a requested
+banding. This is the _only_ limit on either effect - a requested
 `outlineWidth`, `shadowOffset`, or `shadowSoftness` beyond it degrades to
 the widest safe value instead of corrupting glyphs, but a value picked
 within it still looks best, since nothing is fighting a clamp.

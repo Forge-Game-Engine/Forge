@@ -13,23 +13,30 @@ import {
   createPresentEcsSystem,
   createRenderEcsSystem,
   RenderContext,
+  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import {
   createTextShapingEcsSystem,
   FontAtlasCache,
   textHorizontalAlignments,
+  textId,
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
+  AnchorPivotConfig,
   createLabel,
   createPanel,
   createUiCanvas,
+  rectTransformId,
   UiAnchor,
-  UiAnchorPreset,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import {
+  AnchorPlayground,
+  anchorPlaygroundDefaults,
+} from './_create-anchor-playground';
 
 // Forge doesn't ship a reserved "UI" render category - each game picks its
 // own bit and reuses it for the UI canvas's cullingMask and every UI
@@ -69,18 +76,27 @@ async function createBackdrop(
   addSpriteComponent(world, backdrop, backdropSprite);
 }
 
+const playgroundTintColor = new Color(0.95, 0.55, 0.2, 1);
+
 /**
- * Builds the anchors demo: five panels, each labeled with the `UiAnchor`
- * preset that places it - a full-width top bar (`stretchTop`), and four
- * corner-pinned panels (`topLeft`/`topRight`/`bottomLeft`/`bottomRight`),
- * plus one centered panel (`center`). Every panel resolves its layout fresh
- * every frame from the canvas's current aspect ratio, so toggling
- * fullscreen keeps all of them exactly where their anchor says they should
- * be, at any window shape.
+ * Builds the anchors demo: four corner-pinned reference panels
+ * (`topLeft`/`topRight`/`bottomLeft`/`bottomRight`) and a full-width top bar
+ * (`stretchTop`), plus one orange "playground" panel whose anchor,
+ * position, and size/margin are live-controlled by `_PlaygroundControls.tsx`
+ * via the `AnchorPlayground` handed back through `onPlaygroundReady`. Every
+ * panel resolves its layout fresh every frame from the canvas's current
+ * aspect ratio, so toggling fullscreen (or dragging the playground's
+ * controls) keeps each one exactly where its anchor says it should be, at
+ * any window shape.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
+ * @param onPlaygroundReady - Called once the playground panel's live
+ * components exist, so the page can wire its controls up to them.
  * @returns The created game.
  */
-export const createAnchorsGame = async (fontAtlasUrl: string): Promise<Game> => {
+export const createAnchorsGame = async (
+  fontAtlasUrl: string,
+  onPlaygroundReady?: (playground: AnchorPlayground) => void,
+): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
@@ -114,28 +130,52 @@ export const createAnchorsGame = async (fontAtlasUrl: string): Promise<Game> => 
 
   const labeledPanel = (
     text: string,
-    anchor: UiAnchorPreset,
+    anchor: AnchorPivotConfig,
     anchoredPosition: { x: number; y: number },
-    sizeDelta: { x: number; y: number },
-  ): void => {
+    sizeOrMargin: { x: number; y: number },
+    tintColor?: Color,
+  ): AnchorPlayground => {
     const panel = createPanel(world, canvas, {
       anchor,
       anchoredPosition,
-      sizeDelta,
+      sizeOrMargin,
       sprite: panelSprite,
     });
 
-    createLabel(world, panel, {
+    if (tintColor) {
+      const sprite = world.getComponent(panel, spriteId);
+
+      if (!sprite) {
+        throw new Error(
+          `Panel entity "${panel}" is missing its sprite component.`,
+        );
+      }
+
+      sprite.tintColor = tintColor;
+    }
+
+    const label = createLabel(world, panel, {
       text,
       fontAtlas,
       size: 24,
       anchor: UiAnchor.stretchAll,
-      sizeDelta: { x: 0, y: 0 },
+      sizeOrMargin: { x: 0, y: 0 },
       horizontalAlign: textHorizontalAlignments.center,
       verticalAlign: textVerticalAlignments.middle,
       color: textColor,
       category: renderLayers.ui,
     });
+
+    const rectTransform = world.getComponent(panel, rectTransformId);
+    const labelText = world.getComponent(label, textId);
+
+    if (!rectTransform || !labelText) {
+      throw new Error(
+        `Panel entity "${panel}" is missing its rect transform or label text component.`,
+      );
+    }
+
+    return { rectTransform, labelText };
   };
 
   labeledPanel(
@@ -168,7 +208,22 @@ export const createAnchorsGame = async (fontAtlasUrl: string): Promise<Game> => 
     { x: -20, y: 20 },
     { x: 260, y: 96 },
   );
-  labeledPanel('center', UiAnchor.center, { x: 0, y: 0 }, { x: 260, y: 96 });
+
+  const playground = labeledPanel(
+    anchorPlaygroundDefaults.presetName,
+    UiAnchor[anchorPlaygroundDefaults.presetName],
+    {
+      x: anchorPlaygroundDefaults.anchoredPositionX,
+      y: anchorPlaygroundDefaults.anchoredPositionY,
+    },
+    {
+      x: anchorPlaygroundDefaults.sizeOrMarginX,
+      y: anchorPlaygroundDefaults.sizeOrMarginY,
+    },
+    playgroundTintColor,
+  );
+
+  onPlaygroundReady?.(playground);
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());

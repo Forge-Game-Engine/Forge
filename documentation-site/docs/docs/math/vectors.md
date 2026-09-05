@@ -36,7 +36,10 @@ that no longer allocates a fresh vector per body per frame:
 
 ```ts
 Vec2.add(body.velocity, Vec2.multiply(Vec2.clone(gravity), deltaTimeInSeconds));
-Vec2.add(body.position, Vec2.multiply(Vec2.clone(body.velocity), deltaTimeInSeconds));
+Vec2.add(
+  body.position,
+  Vec2.multiply(Vec2.clone(body.velocity), deltaTimeInSeconds),
+);
 ```
 
 :::caution

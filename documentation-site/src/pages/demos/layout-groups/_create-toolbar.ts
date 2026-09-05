@@ -1,4 +1,7 @@
-import { addParentComponent, addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
@@ -31,7 +34,7 @@ const iconColors = [
 /**
  * Builds a "Toolbar" panel: a `HorizontalLayoutGroupEcsComponent` spacing
  * and evenly resizing a row of plain colored icons, with no
- * `anchoredPosition`/`sizeDelta` of their own - reordering, adding, or
+ * `anchoredPosition`/`sizeOrMargin` of their own - reordering, adding, or
  * removing an icon needs no other change, since the group recomputes the
  * row every frame.
  * @param world - The ECS world to create the toolbar entities in.
@@ -55,7 +58,7 @@ export async function createToolbar(
     size: 24,
     anchor: UiAnchor.topRight,
     anchoredPosition: { x: -60, y: -50 },
-    sizeDelta: { x: 400, y: 32 },
+    sizeOrMargin: { x: 400, y: 32 },
     horizontalAlign: textHorizontalAlignments.right,
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
@@ -65,7 +68,7 @@ export async function createToolbar(
   const panel = createPanel(world, canvas, {
     anchor: UiAnchor.topRight,
     anchoredPosition: { x: -60, y: -90 },
-    sizeDelta: { x: 400, y: 110 },
+    sizeOrMargin: { x: 400, y: 110 },
     sprite: panelSprite,
   });
 
@@ -83,7 +86,7 @@ export async function createToolbar(
 
     addPositionComponent(world, icon);
     addParentComponent(world, icon, { parent: panel });
-    addRectTransformComponent(world, icon, { sizeDelta: { x: 70, y: 70 } });
+    addRectTransformComponent(world, icon, { sizeOrMargin: { x: 70, y: 70 } });
 
     const sprite = createImageSprite(whiteImage, renderContext, {
       layer: uiCategory,

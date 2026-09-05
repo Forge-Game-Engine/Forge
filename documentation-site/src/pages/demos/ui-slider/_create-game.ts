@@ -4,7 +4,10 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { MouseInputSource, registerInputs } from '@forge-game-engine/forge/input';
+import {
+  MouseInputSource,
+  registerInputs,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -23,7 +26,12 @@ import {
   textId,
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
-import { createLabel, createSlider, createUiCanvas, UiAnchor } from '@forge-game-engine/forge/ui';
+import {
+  createLabel,
+  createSlider,
+  createUiCanvas,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -157,7 +165,7 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
     fillSprite,
     anchor: UiAnchor.center,
     anchoredPosition: { x: 0, y: 0 },
-    sizeDelta: { x: 500, y: 28 },
+    sizeOrMargin: { x: 500, y: 28 },
     minValue: 0,
     maxValue: 100,
     value: 75,

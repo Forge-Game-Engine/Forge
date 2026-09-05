@@ -72,7 +72,7 @@ describe('createProgressBar', () => {
     ).toEqual({ x: 5, y: -5 });
   });
 
-  it('defaults sizeDelta to 300x24', () => {
+  it('defaults sizeOrMargin to 300x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -82,7 +82,7 @@ describe('createProgressBar', () => {
     });
 
     expect(
-      world.getComponent(progressBar.entity, rectTransformId)!.sizeDelta,
+      world.getComponent(progressBar.entity, rectTransformId)!.sizeOrMargin,
     ).toEqual({ x: 300, y: 24 });
   });
 });

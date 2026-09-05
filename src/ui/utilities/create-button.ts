@@ -17,7 +17,7 @@ import {
   UiInteractableDefaultedOptions,
   UiInteractableEcsComponent,
 } from '../components/ui-interactable-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
 
@@ -49,19 +49,19 @@ export interface CreateButtonRequiredOptions {
  */
 export interface CreateButtonDefaultedOptions {
   /** The anchor/pivot preset to place the button with. Defaults to `UiAnchor.center`. */
-  anchor: UiAnchorPreset;
+  anchor: AnchorPivotConfig;
 
   /** Offset of the button's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
 
   /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `200x60`. */
-  sizeDelta: Vector2;
+  sizeOrMargin: Vector2;
 
   /**
    * The width the label centers within, in reference pixels. Defaults to
-   * `sizeDelta.x`, which is only the button's actual rendered width for a
+   * `sizeOrMargin.x`, which is only the button's actual rendered width for a
    * point anchor - pass this explicitly when `anchor` is a stretch anchor,
-   * where `sizeDelta.x` is a margin rather than a width and can't be used
+   * where `sizeOrMargin.x` is a margin rather than a width and can't be used
    * to derive it (see `createDropdown`'s option rows, which stretch to the
    * header's width and pass that through here).
    */
@@ -147,14 +147,14 @@ export function createButton(
   // `defaultSpriteOptions` for the same pattern.
   const defaultCreateButtonOptions = {
     anchor: UiAnchor.center,
-    sizeDelta: { x: 200, y: 60 },
+    sizeOrMargin: { x: 200, y: 60 },
     labelColor: Color.black,
   };
 
   const {
     anchor,
     anchoredPosition,
-    sizeDelta,
+    sizeOrMargin,
     labelMaxWidth,
     sprite,
     slices,
@@ -170,7 +170,7 @@ export function createButton(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeDelta,
+    sizeOrMargin,
     sprite,
     slices,
   });
@@ -185,8 +185,8 @@ export function createButton(
   // `horizontalAlign: 'center'` re-centers each line within `maxWidth` (see
   // `createLabel`'s own doc comment). `UiAnchor.middleLeft` (a point
   // anchor) puts the label's own `x = 0` at the button's left edge, so
-  // `maxWidth: sizeDelta.x` - already known statically here, since a point
-  // anchor's `sizeDelta` is a literal size - is the button's actual width
+  // `maxWidth: sizeOrMargin.x` - already known statically here, since a point
+  // anchor's `sizeOrMargin` is a literal size - is the button's actual width
   // with no per-frame resolved-rect lookup needed, unlike a stretch anchor.
   // Letting the engine recompute the label's position from
   // `maxWidth`/`horizontalAlign` - rather than pre-measuring the label's
@@ -199,7 +199,7 @@ export function createButton(
     fontAtlas,
     size: labelSize,
     anchor: UiAnchor.middleLeft,
-    maxWidth: labelMaxWidth ?? sizeDelta.x,
+    maxWidth: labelMaxWidth ?? sizeOrMargin.x,
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
     color: labelColor,

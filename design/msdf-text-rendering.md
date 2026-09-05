@@ -1,10 +1,10 @@
 # Design: MSDF Text Rendering
 
-|                                       |                                                                                                                                                    |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft — for review                                                                                                                                  |
-| **Target module**                     | `/src/text` → `@forge-game-engine/forge/text`                                                                                                        |
-| **Engine version at time of writing** | `0.24.2`                                                                                                                                              |
+|                                       |                                                                                                                                                             |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft — for review                                                                                                                                          |
+| **Target module**                     | `/src/text` → `@forge-game-engine/forge/text`                                                                                                               |
+| **Engine version at time of writing** | `0.24.2`                                                                                                                                                    |
 | **Model**                             | Offline **MSDF atlas generation** tool + a runtime glyph-quad mesher, drawn through the existing instanced sprite pipeline with a dedicated fragment shader |
 
 ---
@@ -107,13 +107,13 @@ ones but do not block them from releasing.
 no rendering yet. Fully testable without a GPU: the loader parses JSON, and
 the generation tool can be verified against fixture fonts in CI.
 
-| Task                                                                                       | Description                                                                                                                                                                       | Size |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| `scripts/generate-font-atlas.mjs` CLI                                                        | Wraps the `msdf-atlas-gen` binary (via the `msdf-atlas-gen` npm package, DL-02) to produce a PNG atlas + JSON metrics from an input font file and a charset.                        | M    |
-| `FontAtlas` runtime type + JSON schema                                                       | Normalizes the generator's JSON output into a stable, versioned Forge type (`FontAtlasData`) decoupled from the generator's own schema (DL-03).                                     | M    |
-| `FontAtlasCache` in `/src/asset-loading`                                                     | Loads the PNG (via the existing `ImageCache`/`createTextureFromImage`) and JSON together, keyed by atlas name, following the `AssetCache<T>` contract.                              | S    |
-| Atlas JSON validation                                                                        | Throws a descriptive error on a malformed/incompatible-version atlas file rather than failing deep inside the shaping system (§5.13).                                              | S    |
-| Unit tests for the loader and schema validation                                              | Fixture atlas JSON (valid, malformed, wrong-version) exercised against the loader.                                                                                                   | S    |
+| Task                                            | Description                                                                                                                                                  | Size |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| `scripts/generate-font-atlas.mjs` CLI           | Wraps the `msdf-atlas-gen` binary (via the `msdf-atlas-gen` npm package, DL-02) to produce a PNG atlas + JSON metrics from an input font file and a charset. | M    |
+| `FontAtlas` runtime type + JSON schema          | Normalizes the generator's JSON output into a stable, versioned Forge type (`FontAtlasData`) decoupled from the generator's own schema (DL-03).              | M    |
+| `FontAtlasCache` in `/src/asset-loading`        | Loads the PNG (via the existing `ImageCache`/`createTextureFromImage`) and JSON together, keyed by atlas name, following the `AssetCache<T>` contract.       | S    |
+| Atlas JSON validation                           | Throws a descriptive error on a malformed/incompatible-version atlas file rather than failing deep inside the shaping system (§5.13).                        | S    |
+| Unit tests for the loader and schema validation | Fixture atlas JSON (valid, malformed, wrong-version) exercised against the loader.                                                                           | S    |
 
 **Definition of done.** `npm run generate-font-atlas -- --font my-font.ttf
 --charset ascii --out assets/fonts/my-font` produces a PNG + JSON pair, and
@@ -125,14 +125,14 @@ the generation tool can be verified against fixture fonts in CI.
 **Goal.** A `TextEcsComponent` on an entity renders as crisp, correctly
 kerned, single-line text through the existing camera/batching pipeline.
 
-| Task                                                                 | Description                                                                                                                                          | Size |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| `TextEcsComponent` + `addTextComponent`                                | String, font atlas, size, color, letter/word spacing, dirty flag.                                                                                     | S    |
-| `TextMeshEcsComponent`                                                 | Cached glyph quads (`GlyphQuad[]`) and computed bounds; written only by the shaping system.                                                           | S    |
-| `createTextShapingEcsSystem`                                           | Single-line shaping: advance + kerning walk over the string, emits one `GlyphQuad` per visible (non-whitespace) glyph. Runs only when text is dirty. | M    |
-| `createTextRenderable` / MSDF `Material`                               | `msdf.vert` (= `sprite.vert`, reused verbatim) + new `msdf.frag`. One `Renderable` per loaded `FontAtlas`.                                            | M    |
-| Render pipeline integration                                            | Generalizes the nine-slice glyph-quad expansion in `render-system.ts` so `TextMeshEcsComponent` entities push `RenderCommand`s the same way (DL-04). | L    |
-| Unit tests for shaping (advance, kerning, bounds)                      | Golden-value tests against a small fixture atlas with known metrics.                                                                                  | M    |
+| Task                                              | Description                                                                                                                                          | Size |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `TextEcsComponent` + `addTextComponent`           | String, font atlas, size, color, letter/word spacing, dirty flag.                                                                                    | S    |
+| `TextMeshEcsComponent`                            | Cached glyph quads (`GlyphQuad[]`) and computed bounds; written only by the shaping system.                                                          | S    |
+| `createTextShapingEcsSystem`                      | Single-line shaping: advance + kerning walk over the string, emits one `GlyphQuad` per visible (non-whitespace) glyph. Runs only when text is dirty. | M    |
+| `createTextRenderable` / MSDF `Material`          | `msdf.vert` (= `sprite.vert`, reused verbatim) + new `msdf.frag`. One `Renderable` per loaded `FontAtlas`.                                           | M    |
+| Render pipeline integration                       | Generalizes the nine-slice glyph-quad expansion in `render-system.ts` so `TextMeshEcsComponent` entities push `RenderCommand`s the same way (DL-04). | L    |
+| Unit tests for shaping (advance, kerning, bounds) | Golden-value tests against a small fixture atlas with known metrics.                                                                                 | M    |
 
 **Definition of done.** A world with a `PositionEcsComponent` +
 `TextEcsComponent` entity renders visible, correctly kerned text through
@@ -143,12 +143,12 @@ single draw call.
 
 **Goal.** Paragraphs of text wrap, align, and space themselves correctly.
 
-| Task                                                    | Description                                                                                                 | Size |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---- |
-| Greedy word wrapping                                      | `maxWidth` on `TextEcsComponent` triggers line breaking at word boundaries (§5.6).                            | M    |
-| Horizontal alignment                                       | `left` / `center` / `right` / `justify`, computed per line against the shaped block's width.                  | S    |
-| Line height and vertical alignment                         | `lineHeight` multiplier; block-level `top`/`middle`/`bottom` vertical alignment against the text's own bounds. | S    |
-| Unit tests for wrapping/alignment                          | Fixture strings with known break points at various `maxWidth`s.                                               | M    |
+| Task                               | Description                                                                                                    | Size |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---- |
+| Greedy word wrapping               | `maxWidth` on `TextEcsComponent` triggers line breaking at word boundaries (§5.6).                             | M    |
+| Horizontal alignment               | `left` / `center` / `right` / `justify`, computed per line against the shaped block's width.                   | S    |
+| Line height and vertical alignment | `lineHeight` multiplier; block-level `top`/`middle`/`bottom` vertical alignment against the text's own bounds. | S    |
+| Unit tests for wrapping/alignment  | Fixture strings with known break points at various `maxWidth`s.                                                | M    |
 
 **Definition of done.** A `TextEcsComponent` with `maxWidth` set wraps
 correctly at word boundaries, and every alignment mode places lines where
@@ -159,12 +159,12 @@ the tests expect against the fixture atlas's metrics.
 **Goal.** The near-free MSDF extras (outline, glow, soft shadow) are exposed
 as component fields, not just shader constants.
 
-| Task                                             | Description                                                                                       | Size |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---- |
-| Outline parameters on `TextEcsComponent`             | `outlineColor`, `outlineWidth` (in screen-pixel-range units, §5.9).                                 | S    |
-| Glow/soft-shadow parameters                          | `shadowColor`, `shadowOffset`, `shadowSoftness` — a second, blurred median sample offset in the frag shader. | M    |
-| Shader + instance data extension                     | A second small instance-data segment (outline/shadow params) combined onto the base sprite segment via `combineInstanceDataSegments`. | M    |
-| Demo covering outline/glow                           | Documentation-site demo showing base, outlined, and glowing text.                                    | S    |
+| Task                                     | Description                                                                                                                           | Size |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| Outline parameters on `TextEcsComponent` | `outlineColor`, `outlineWidth` (in screen-pixel-range units, §5.9).                                                                   | S    |
+| Glow/soft-shadow parameters              | `shadowColor`, `shadowOffset`, `shadowSoftness` — a second, blurred median sample offset in the frag shader.                          | M    |
+| Shader + instance data extension         | A second small instance-data segment (outline/shadow params) combined onto the base sprite segment via `combineInstanceDataSegments`. | M    |
+| Demo covering outline/glow               | Documentation-site demo showing base, outlined, and glowing text.                                                                     | S    |
 
 **Definition of done.** Setting `outlineColor`/`outlineWidth` on a
 `TextEcsComponent` visibly outlines the text with no additional draw call.
@@ -174,11 +174,11 @@ as component fields, not just shader constants.
 **Goal.** `createLabel`-equivalent code paths (this module's own demo, and
 later the UI module) work with zero font setup.
 
-| Task                                                | Description                                                                                                       | Size |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---- |
-| Generate and ship a default atlas                       | One permissively-licensed font (open question 1), pre-generated and committed under `/assets/fonts/default`.          | S    |
-| `documentation-site/docs/docs/text/` conceptual guide   | Usage, gotchas (dirty tracking, kerning-less fallback fonts, wrapping performance), matching `document-feature` conventions. | M    |
-| `documentation-site/src/pages/demos/text` demo          | Interactive demo: live-typed string, size slider, alignment/wrap toggles, outline/glow toggles.                       | M    |
+| Task                                                  | Description                                                                                                                  | Size |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---- |
+| Generate and ship a default atlas                     | One permissively-licensed font (open question 1), pre-generated and committed under `/assets/fonts/default`.                 | S    |
+| `documentation-site/docs/docs/text/` conceptual guide | Usage, gotchas (dirty tracking, kerning-less fallback fonts, wrapping performance), matching `document-feature` conventions. | M    |
+| `documentation-site/src/pages/demos/text` demo        | Interactive demo: live-typed string, size slider, alignment/wrap toggles, outline/glow toggles.                              | M    |
 
 **Definition of done.** `documentation-site`'s text demo renders correctly
 with the default atlas and no user-supplied font, verified per
@@ -201,12 +201,12 @@ each glyph's outline, draw as a mesh).
 made this call for the UI module's benefit; it applies identically here
 since that document explicitly deferred the "how" to this one.
 
-|                     | Batches                | Crisp at any scale       | Toolchain needed | Effects nearly free             |
-| ------------------- | ----------------------- | -------------------------- | ------------------ | ---------------------------------- |
-| Canvas2D → texture   | ✗ one draw per string    | ✗                           | none                | ✗                                    |
-| Bitmap atlas         | ✓                        | ✗ blurs above authored size | atlas generator     | ✗                                    |
-| **MSDF**             | **✓**                    | **✓**                       | atlas generator     | **✓ outline/glow/shadow**            |
-| Vector tessellation  | ✗ (variable vertex count breaks instancing) | ✓             | none                | partial (no cheap outline/glow)    |
+|                     | Batches                                     | Crisp at any scale          | Toolchain needed | Effects nearly free             |
+| ------------------- | ------------------------------------------- | --------------------------- | ---------------- | ------------------------------- |
+| Canvas2D → texture  | ✗ one draw per string                       | ✗                           | none             | ✗                               |
+| Bitmap atlas        | ✓                                           | ✗ blurs above authored size | atlas generator  | ✗                               |
+| **MSDF**            | **✓**                                       | **✓**                       | atlas generator  | **✓ outline/glow/shadow**       |
+| Vector tessellation | ✗ (variable vertex count breaks instancing) | ✓                           | none             | partial (no cheap outline/glow) |
 
 (a) re-uploads a texture on every text change, which is fatal for anything
 that changes per frame (a score counter, a damage number) and breaks
@@ -469,10 +469,20 @@ export interface GlyphMetrics {
    * This glyph's quad, in em units relative to the text baseline origin.
    * Empty for glyphs with no visible ink (e.g. space).
    */
-  planeBounds: { left: number; bottom: number; right: number; top: number } | null;
+  planeBounds: {
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+  } | null;
 
   /** This glyph's texture rect in the atlas, 0 to 1, or `null` to match `planeBounds`. */
-  atlasBounds: { left: number; bottom: number; right: number; top: number } | null;
+  atlasBounds: {
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+  } | null;
 }
 
 export interface FontAtlasData {
@@ -577,7 +587,8 @@ export interface TextDefaultedOptions {
   enabled: boolean;
 }
 
-export interface TextEcsComponent extends TextRequiredOptions, TextDefaultedOptions {}
+export interface TextEcsComponent
+  extends TextRequiredOptions, TextDefaultedOptions {}
 
 export const textId = createComponentId<TextEcsComponent>('text');
 
@@ -816,7 +827,7 @@ evaluated twice.
 `TextEcsComponent.size` is a world-unit em size, exactly analogous to
 `SpriteEcsComponent.width`/`height` — the same quantity that's affected by
 `ScaleEcsComponent`, camera zoom, and DPI, and none of that needs any special
-handling *except* inside the fragment shader's anti-aliasing band, because
+handling _except_ inside the fragment shader's anti-aliasing band, because
 MSDF's crispness guarantee only holds if the shader knows how many **screen
 pixels** currently map to one **atlas texel**. That ratio changes continuously
 as the camera zooms or the entity scales — `fwidth(v_texCoord)` is exactly
@@ -868,7 +879,7 @@ uniform.
 - **Pixel-level rendering assertions belong in `/e2e`, and per the existing
   e2e guidance in `AGENTS.md`, should be relative, not absolute.** An e2e
   text scenario should measure a rendered glyph's on-screen bounding box
-  before/after a `size` or camera-zoom change and assert the *ratio* matches
+  before/after a `size` or camera-zoom change and assert the _ratio_ matches
   what the logic predicts, exactly the pattern
   `camera-pan-zoom.ts`'s `measureGreenSquareBounds()` established — not an
   exact pixel color or coordinate, which the existing SwiftShader
@@ -885,7 +896,7 @@ uniform.
   file fails with a descriptive error (matching the codebase's
   throw-early convention) rather than producing a huge allocation or `NaN`
   propagating silently into shader uniforms.
-- **No code execution risk.** Unlike a font *file* itself (parsing
+- **No code execution risk.** Unlike a font _file_ itself (parsing
   arbitrary `.ttf` is exactly the kind of untrusted-binary-format surface
   browsers spend significant effort hardening), this design never parses a
   raw font at runtime — only the offline tool touches `.ttf`/`.otf` files,

@@ -32,7 +32,10 @@ export const createSpriteSpawnerEcsSystem = (
       spawner.nextSpawnTime = time.timeInSeconds + spawner.timeBetweenBatches;
 
       for (let i = 0; i < spawner.batchSize; i++) {
-        const position = { x: random.randomFloat(spawner.minX, spawner.maxX), y: random.randomFloat(spawner.minY, spawner.maxY) };
+        const position = {
+          x: random.randomFloat(spawner.minX, spawner.maxX),
+          y: random.randomFloat(spawner.minY, spawner.maxY),
+        };
 
         const entity = world.createEntity();
 

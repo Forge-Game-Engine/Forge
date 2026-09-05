@@ -204,6 +204,10 @@ const config: Config = {
               label: 'UI Anchors',
             },
             {
+              to: 'demos/ui-nested-resize',
+              label: 'UI Nested Resize',
+            },
+            {
               to: 'demos/ui-button',
               label: 'UI Buttons',
             },

@@ -118,7 +118,10 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   const random = new Random();
   const playAreaWidth = playArea.maxX - playArea.minX;
 
-  const ballStartPosition = { x: paddlePosition.x, y: paddlePosition.y + ballStartOffset };
+  const ballStartPosition = {
+    x: paddlePosition.x,
+    y: paddlePosition.y + ballStartOffset,
+  };
 
   await createBall(
     world,

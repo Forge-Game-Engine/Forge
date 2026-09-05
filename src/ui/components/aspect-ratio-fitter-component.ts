@@ -3,11 +3,11 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * How `AspectRatioFitterEcsComponent` keeps `aspectRatio`:
- * - `widthControlsHeight` - `sizeDelta.y` is derived from `sizeDelta.x`.
- * - `heightControlsWidth` - `sizeDelta.x` is derived from `sizeDelta.y`.
- * - `fitInParent` - `sizeDelta` is the largest size, matching `aspectRatio`,
+ * - `widthControlsHeight` - `sizeOrMargin.y` is derived from `sizeOrMargin.x`.
+ * - `heightControlsWidth` - `sizeOrMargin.x` is derived from `sizeOrMargin.y`.
+ * - `fitInParent` - `sizeOrMargin` is the largest size, matching `aspectRatio`,
  *   that fits entirely within the parent's rect.
- * - `envelopeParent` - `sizeDelta` is the smallest size, matching
+ * - `envelopeParent` - `sizeOrMargin` is the smallest size, matching
  *   `aspectRatio`, that fully covers the parent's rect.
  */
 export type UiAspectRatioFitMode =
@@ -41,7 +41,7 @@ const defaultAspectRatioFitterOptions: AspectRatioFitterDefaultedOptions = {
 /**
  * Attaches an {@link AspectRatioFitterEcsComponent} to `entity`, so
  * `createUiAspectRatioFitterEcsSystem` keeps its
- * `RectTransformEcsComponent.sizeDelta` at a constant `aspectRatio` every
+ * `RectTransformEcsComponent.sizeOrMargin` at a constant `aspectRatio` every
  * frame - useful for a portrait/thumbnail image or a minimap whose
  * container might otherwise stretch it. `fitInParent`/`envelopeParent` read
  * the parent's own resolved `rect` (one frame stale, like every other
@@ -49,7 +49,7 @@ const defaultAspectRatioFitterOptions: AspectRatioFitterDefaultedOptions = {
  * doc comment) - `entity` needs a `ParentEcsComponent` for those two modes.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Assumes a
- * point-anchored `RectTransformEcsComponent` (`sizeDelta` is a literal
+ * point-anchored `RectTransformEcsComponent` (`sizeOrMargin` is a literal
  * size, not a stretch margin).
  * @param options - Options for configuring the fitter.
  * @returns The attached component, for further tuning or runtime changes.

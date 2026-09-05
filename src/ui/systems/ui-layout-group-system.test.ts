@@ -37,12 +37,12 @@ function createGroupEntity(
 function createChild(
   world: EcsWorld,
   parent: number,
-  sizeDelta: { x: number; y: number },
+  sizeOrMargin: { x: number; y: number },
 ): number {
   const entity = world.createEntity();
 
   addParentComponent(world, entity, { parent });
-  addRectTransformComponent(world, entity, { sizeDelta });
+  addRectTransformComponent(world, entity, { sizeOrMargin });
 
   return entity;
 }
@@ -74,7 +74,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
         expect(rect.pivot).toEqual({ x: 0, y: 0 });
         // Main axis (width): 150 preferred total, 150 leftover split evenly
         // -> 100 each. Cross axis (height): force-expand fills the full box.
-        expect(rect.sizeDelta).toEqual({ x: 100, y: 100 });
+        expect(rect.sizeOrMargin).toEqual({ x: 100, y: 100 });
         expect(rect.anchoredPosition).toEqual({ x: expectedX, y: 0 });
       }
     });
@@ -98,9 +98,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const rectA = world.getComponent(a, rectTransformId)!;
       const rectB = world.getComponent(b, rectTransformId)!;
 
-      expect(rectA.sizeDelta).toEqual({ x: 40, y: 20 });
+      expect(rectA.sizeOrMargin).toEqual({ x: 40, y: 20 });
       expect(rectA.anchoredPosition.x).toBe(0);
-      expect(rectB.sizeDelta).toEqual({ x: 60, y: 30 });
+      expect(rectB.sizeOrMargin).toEqual({ x: 60, y: 30 });
       expect(rectB.anchoredPosition.x).toBe(40);
     });
 
@@ -125,11 +125,13 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const rectA = world.getComponent(a, rectTransformId)!;
 
       // Only one arrangeable child, so it takes the entire content box.
-      expect(rectA.sizeDelta.x).toBe(300);
+      expect(rectA.sizeOrMargin.x).toBe(300);
 
       const ignoredRectAfter = world.getComponent(ignored, rectTransformId)!;
 
-      expect(ignoredRectAfter.sizeDelta).toEqual(ignoredRectBefore.sizeDelta);
+      expect(ignoredRectAfter.sizeOrMargin).toEqual(
+        ignoredRectBefore.sizeOrMargin,
+      );
       expect(ignoredRectAfter.anchorMin).toEqual(ignoredRectBefore.anchorMin);
     });
 
@@ -150,12 +152,12 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       // Preferred total = 100, leftover = 200, split 1:3 -> a gets 50, b
       // gets 150, on top of their own preferred 50 each.
-      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBeCloseTo(
-        100,
-      );
-      expect(world.getComponent(b, rectTransformId)!.sizeDelta.x).toBeCloseTo(
-        200,
-      );
+      expect(
+        world.getComponent(a, rectTransformId)!.sizeOrMargin.x,
+      ).toBeCloseTo(100);
+      expect(
+        world.getComponent(b, rectTransformId)!.sizeOrMargin.x,
+      ).toBeCloseTo(200);
     });
   });
 
@@ -177,14 +179,14 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       // Preferred total = 60, box = 60, no leftover: heights stay 20/40,
       // `a` (first child) at the top.
-      expect(rectA.sizeDelta.y).toBeCloseTo(20);
+      expect(rectA.sizeOrMargin.y).toBeCloseTo(20);
       expect(rectA.anchoredPosition.y).toBeCloseTo(40);
-      expect(rectB.sizeDelta.y).toBeCloseTo(40);
+      expect(rectB.sizeOrMargin.y).toBeCloseTo(40);
       expect(rectB.anchoredPosition.y).toBeCloseTo(0);
 
       // Cross axis (width) force-expands to the full box width by default.
-      expect(rectA.sizeDelta.x).toBeCloseTo(100);
-      expect(rectB.sizeDelta.x).toBeCloseTo(100);
+      expect(rectA.sizeOrMargin.x).toBeCloseTo(100);
+      expect(rectB.sizeOrMargin.x).toBeCloseTo(100);
     });
 
     it('aligns the block within leftover main-axis space per childAlignment', () => {
@@ -237,7 +239,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // default true) but not force-expanded, so it's sized to the
       // child's own measured preferred width (40) rather than filling
       // the box (100).
-      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBe(40);
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.x).toBe(40);
     });
 
     it("leaves a child's own width alone on the cross axis when childControlWidth is false", () => {
@@ -253,7 +255,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addSystem(createUiLayoutGroupEcsSystem());
       world.update();
 
-      expect(world.getComponent(a, rectTransformId)!.sizeDelta.x).toBe(33);
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.x).toBe(33);
     });
   });
 
@@ -284,10 +286,12 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(positions[2]).toEqual({ x: 0, y: 0 });
 
       for (const cell of cells) {
-        expect(world.getComponent(cell, rectTransformId)!.sizeDelta).toEqual({
-          x: 50,
-          y: 50,
-        });
+        expect(world.getComponent(cell, rectTransformId)!.sizeOrMargin).toEqual(
+          {
+            x: 50,
+            y: 50,
+          },
+        );
       }
     });
 
@@ -415,7 +419,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
   });
 
   describe('ContentSizeFitterEcsComponent', () => {
-    it("fits a group's own sizeDelta to its measured preferred content size", () => {
+    it("fits a group's own sizeOrMargin to its measured preferred content size", () => {
       const world = new EcsWorld();
       const group = createGroupEntity(world, 500, 500);
 
@@ -434,7 +438,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const groupRect = world.getComponent(group, rectTransformId)!;
 
       // width = max(40, 60); height = 20 + 30 + spacing(10)
-      expect(groupRect.sizeDelta).toEqual({ x: 60, y: 60 });
+      expect(groupRect.sizeOrMargin).toEqual({ x: 60, y: 60 });
     });
 
     it('is a no-op with nothing to measure', () => {
@@ -449,15 +453,17 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addSystem(createUiLayoutGroupEcsSystem());
       world.update();
 
-      // Falls back to the entity's own sizeDelta, which is untouched by
+      // Falls back to the entity's own sizeOrMargin, which is untouched by
       // this system with no layout group present - a harmless self-assignment.
-      expect(world.getComponent(entity, rectTransformId)!.sizeDelta).toEqual({
-        x: 100,
-        y: 100,
-      });
+      expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual(
+        {
+          x: 100,
+          y: 100,
+        },
+      );
     });
 
-    it('leaves sizeDelta alone entirely when both fit modes default to unconstrained', () => {
+    it('leaves sizeOrMargin alone entirely when both fit modes default to unconstrained', () => {
       const world = new EcsWorld();
       const group = createGroupEntity(world, 500, 500);
 
@@ -469,7 +475,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addSystem(createUiLayoutGroupEcsSystem());
       world.update();
 
-      expect(world.getComponent(group, rectTransformId)!.sizeDelta).toEqual({
+      expect(world.getComponent(group, rectTransformId)!.sizeOrMargin).toEqual({
         x: 100,
         y: 100,
       });
@@ -492,7 +498,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addSystem(createUiLayoutGroupEcsSystem());
       world.update();
 
-      expect(world.getComponent(group, rectTransformId)!.sizeDelta).toEqual({
+      expect(world.getComponent(group, rectTransformId)!.sizeOrMargin).toEqual({
         x: 10,
         y: 5,
       });
@@ -515,10 +521,10 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       const groupRect = world.getComponent(group, rectTransformId)!;
 
-      expect(groupRect.sizeDelta.x).toBe(40);
-      // Untouched - the fitter's own starting sizeDelta, not the group's
+      expect(groupRect.sizeOrMargin.x).toBe(40);
+      // Untouched - the fitter's own starting sizeOrMargin, not the group's
       // measured height.
-      expect(groupRect.sizeDelta.y).toBe(100);
+      expect(groupRect.sizeOrMargin.y).toBe(100);
     });
 
     it('fits only the vertical axis, leaving an unconstrained horizontal axis alone', () => {
@@ -538,10 +544,10 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       const groupRect = world.getComponent(group, rectTransformId)!;
 
-      // Untouched - the fitter's own starting sizeDelta, not the group's
+      // Untouched - the fitter's own starting sizeOrMargin, not the group's
       // measured width.
-      expect(groupRect.sizeDelta.x).toBe(100);
-      expect(groupRect.sizeDelta.y).toBe(20);
+      expect(groupRect.sizeOrMargin.x).toBe(100);
+      expect(groupRect.sizeOrMargin.y).toBe(20);
     });
 
     it('measures an empty layout group as just its own padding', () => {
@@ -570,10 +576,10 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // Cross/main axis are swapped between the two directions, but an
       // empty group's own size is always just its padding, either way.
       expect(
-        world.getComponent(verticalGroup, rectTransformId)!.sizeDelta,
+        world.getComponent(verticalGroup, rectTransformId)!.sizeOrMargin,
       ).toEqual({ x: 10, y: 18 });
       expect(
-        world.getComponent(horizontalGroup, rectTransformId)!.sizeDelta,
+        world.getComponent(horizontalGroup, rectTransformId)!.sizeOrMargin,
       ).toEqual({ x: 10, y: 18 });
     });
 
@@ -608,11 +614,11 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       // 2 columns, 2 rows (ceil(3 / 2)) of 40x30 cells, no spacing/padding.
       expect(
-        world.getComponent(gridWithChildren, rectTransformId)!.sizeDelta,
+        world.getComponent(gridWithChildren, rectTransformId)!.sizeOrMargin,
       ).toEqual({ x: 80, y: 60 });
-      expect(world.getComponent(emptyGrid, rectTransformId)!.sizeDelta).toEqual(
-        { x: 0, y: 0 },
-      );
+      expect(
+        world.getComponent(emptyGrid, rectTransformId)!.sizeOrMargin,
+      ).toEqual({ x: 0, y: 0 });
     });
 
     it("measures a grid group's content size as a single row when its constraint is flexible (no known content box width to fit columns into)", () => {
@@ -636,7 +642,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.update();
 
       // 3 columns (one per child), 1 row: width = 3*20 + 2*5 = 70, height = 15.
-      expect(world.getComponent(grid, rectTransformId)!.sizeDelta).toEqual({
+      expect(world.getComponent(grid, rectTransformId)!.sizeOrMargin).toEqual({
         x: 70,
         y: 15,
       });
@@ -668,7 +674,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // inner is a horizontal group; its own measured width is the sum of
       // its children's widths (30 + 20 = 50), and its own measured height
       // is the max of its children's heights (max(20, 15) = 20) - not
-      // inner's stale sizeDelta ({100, 100}) from before this ran.
+      // inner's stale sizeOrMargin ({100, 100}) from before this ran.
       // outer force-expands its own children's widths to fill the full
       // box width (100) regardless, but the *height* distribution below
       // depends on that measured 20.
@@ -684,12 +690,12 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const innerFinalRect = world.getComponent(inner, rectTransformId)!;
       const siblingRect = world.getComponent(sibling, rectTransformId)!;
 
-      expect(innerFinalRect.sizeDelta.y).toBeCloseTo(30);
-      expect(siblingRect.sizeDelta.y).toBeCloseTo(70);
+      expect(innerFinalRect.sizeOrMargin.y).toBeCloseTo(30);
+      expect(siblingRect.sizeOrMargin.y).toBeCloseTo(70);
 
       // outer's cross axis (width) force-expands both children to fill 100.
-      expect(innerFinalRect.sizeDelta.x).toBeCloseTo(100);
-      expect(siblingRect.sizeDelta.x).toBeCloseTo(100);
+      expect(innerFinalRect.sizeOrMargin.x).toBeCloseTo(100);
+      expect(siblingRect.sizeOrMargin.x).toBeCloseTo(100);
     });
   });
 
@@ -700,7 +706,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // starts at Rects.zero on a brand-new entity - subtracting padding
       // from that gives a *negative* inner cross size on the very first
       // frame. Force-expanding a child to fill that negative size used to
-      // write a negative sizeDelta into it with no floor; a
+      // write a negative sizeOrMargin into it with no floor; a
       // ContentSizeFitterEcsComponent on the same group then measured that
       // corrupted child size and fed it back into the group's own size the
       // next frame - a permanent oscillation between the corrupted and the

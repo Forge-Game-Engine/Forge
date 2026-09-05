@@ -65,7 +65,9 @@ const audioSystem: EcsSystem<[AudioComponent]> = {
     }
   },
   cleanup(world) {
-    const { components: [audioComponents] } = world.query<[AudioComponent]>([Audio]);
+    const {
+      components: [audioComponents],
+    } = world.query<[AudioComponent]>([Audio]);
 
     for (const audio of audioComponents) {
       if (audio.sound.playing()) {

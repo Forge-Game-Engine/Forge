@@ -204,7 +204,7 @@ function measureGridContent(
  * min/preferred/flexible size on each axis: a `HorizontalLayoutGroupEcsComponent`/
  * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent`'s own
  * content size (recursing into its own children, bottom-up), or - with none
- * of those - `RectTransformEcsComponent.sizeDelta` as the preferred size (a
+ * of those - `RectTransformEcsComponent.sizeOrMargin` as the preferred size (a
  * min of `0`, a flexible weight of `0`). A `LayoutElementEcsComponent`
  * overrides individual fields on top of either source. Results are cached
  * per entity for the lifetime of one `update` call, so a group nested
@@ -258,8 +258,12 @@ function createMeasure(
       );
     } else {
       base = {
-        width: { min: 0, preferred: rectTransform.sizeDelta.x, flexible: 0 },
-        height: { min: 0, preferred: rectTransform.sizeDelta.y, flexible: 0 },
+        width: { min: 0, preferred: rectTransform.sizeOrMargin.x, flexible: 0 },
+        height: {
+          min: 0,
+          preferred: rectTransform.sizeOrMargin.y,
+          flexible: 0,
+        },
       };
     }
 
@@ -292,7 +296,7 @@ function initialMainSize(
   childRect: RectTransformEcsComponent,
 ): number {
   if (!mainControl) {
-    return isHorizontal ? childRect.sizeDelta.x : childRect.sizeDelta.y;
+    return isHorizontal ? childRect.sizeOrMargin.x : childRect.sizeOrMargin.y;
   }
 
   return mainMeasure.preferred;
@@ -338,7 +342,7 @@ function distributeExtraSpace(
  * frame stale by design - see this file's own system doc comment), which
  * starts at `Rects.zero` for a brand-new entity and so is negative here
  * once padding is subtracted. Without the floor, that transient negative
- * value would get written into the child's own `sizeDelta`, which a
+ * value would get written into the child's own `sizeOrMargin`, which a
  * `ContentSizeFitterEcsComponent` on the *group* elsewhere in this same
  * tree could then measure and feed back into the group's own size next
  * frame - a self-sustaining, permanent oscillation between the corrupted
@@ -353,7 +357,7 @@ function crossSizeOf(
   childRect: RectTransformEcsComponent,
 ): number {
   if (!crossControl) {
-    return isHorizontal ? childRect.sizeDelta.y : childRect.sizeDelta.x;
+    return isHorizontal ? childRect.sizeOrMargin.y : childRect.sizeOrMargin.x;
   }
 
   if (crossForceExpand) {
@@ -404,17 +408,17 @@ function placeChild(options: PlaceChildOptions): void {
 
   if (mainControl) {
     if (isHorizontal) {
-      childRect.sizeDelta.x = mainSize;
+      childRect.sizeOrMargin.x = mainSize;
     } else {
-      childRect.sizeDelta.y = mainSize;
+      childRect.sizeOrMargin.y = mainSize;
     }
   }
 
   if (crossControl) {
     if (isHorizontal) {
-      childRect.sizeDelta.y = crossSize;
+      childRect.sizeOrMargin.y = crossSize;
     } else {
-      childRect.sizeDelta.x = crossSize;
+      childRect.sizeOrMargin.x = crossSize;
     }
   }
 
@@ -605,7 +609,7 @@ function arrangeGrid(
     childRect.anchorMin = { x: 0, y: 0 };
     childRect.anchorMax = { x: 0, y: 0 };
     childRect.pivot = { x: 0, y: 0 };
-    childRect.sizeDelta = { x: cellSize.x, y: cellSize.y };
+    childRect.sizeOrMargin = { x: cellSize.x, y: cellSize.y };
 
     const cellLeft = contentLeft + actualColumn * (cellSize.x + spacing.x);
     const rowFromTop = actualRow * (cellSize.y + spacing.y);
@@ -637,15 +641,15 @@ function applyContentSizeFitter(
   const measured = measure(entity);
 
   if (fitter.horizontalFit === 'minSize') {
-    rectTransform.sizeDelta.x = measured.width.min;
+    rectTransform.sizeOrMargin.x = measured.width.min;
   } else if (fitter.horizontalFit === 'preferredSize') {
-    rectTransform.sizeDelta.x = measured.width.preferred;
+    rectTransform.sizeOrMargin.x = measured.width.preferred;
   }
 
   if (fitter.verticalFit === 'minSize') {
-    rectTransform.sizeDelta.y = measured.height.min;
+    rectTransform.sizeOrMargin.y = measured.height.min;
   } else if (fitter.verticalFit === 'preferredSize') {
-    rectTransform.sizeDelta.y = measured.height.preferred;
+    rectTransform.sizeOrMargin.y = measured.height.preferred;
   }
 }
 
@@ -656,7 +660,7 @@ function applyContentSizeFitter(
  * to its measured content size - both against `RectTransformEcsComponent.rect`
  * as it stood at the *end of the previous frame*, since this system must run
  * before `createUiLayoutEcsSystem` (the one that resolves `rect` for this
- * frame) so the `sizeDelta`/`anchoredPosition` it writes are resolved into
+ * frame) so the `sizeOrMargin`/`anchoredPosition` it writes are resolved into
  * an up-to-date rect the same tick. This means a group whose own size just
  * changed (a fresh entity, a `ContentSizeFitterEcsComponent` reacting to a
  * child that changed size, a group nested inside another) arranges its
@@ -702,7 +706,7 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
 
     const measure = createMeasure(world, childrenByParent);
 
-    // Measuring is a pure, read-only pass; arranging mutates sizeDelta -
+    // Measuring is a pure, read-only pass; arranging mutates sizeOrMargin -
     // the very field a plain (non-group) entity's own measure() falls back
     // to reading. Warming the cache for every entity here, before any
     // arrange/fit call below can mutate anything, guarantees every measure()

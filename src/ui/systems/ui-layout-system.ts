@@ -219,7 +219,7 @@ export const createUiLayoutEcsSystem = (
       if (text) {
         text.sortDepth = sortDepth;
 
-        // A stretch anchor's sizeDelta is a margin, not a width (see
+        // A stretch anchor's sizeOrMargin is a margin, not a width (see
         // RectTransformEcsComponent's own convention), so the entity's
         // resolved rect - not anything statically knowable at the call site
         // - is the only correct source for maxWidth here; a full-width

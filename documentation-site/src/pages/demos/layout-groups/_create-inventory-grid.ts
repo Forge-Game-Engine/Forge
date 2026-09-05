@@ -1,4 +1,7 @@
-import { addParentComponent, addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
@@ -50,7 +53,7 @@ export async function createInventoryGrid(
     size: 24,
     anchor: UiAnchor.bottomLeft,
     anchoredPosition: { x: 60, y: 272 },
-    sizeDelta: { x: 400, y: 32 },
+    sizeOrMargin: { x: 400, y: 32 },
     horizontalAlign: textHorizontalAlignments.left,
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
@@ -60,7 +63,7 @@ export async function createInventoryGrid(
   const panel = createPanel(world, canvas, {
     anchor: UiAnchor.bottomLeft,
     anchoredPosition: { x: 60, y: 60 },
-    sizeDelta: { x: 400, y: 200 },
+    sizeOrMargin: { x: 400, y: 200 },
     sprite: panelSprite,
   });
 

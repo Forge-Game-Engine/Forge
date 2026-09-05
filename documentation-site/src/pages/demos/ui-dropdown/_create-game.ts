@@ -4,7 +4,10 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { MouseInputSource, registerInputs } from '@forge-game-engine/forge/input';
+import {
+  MouseInputSource,
+  registerInputs,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -21,7 +24,11 @@ import {
   FontAtlas,
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
-import { createDropdown, createUiCanvas, UiAnchor } from '@forge-game-engine/forge/ui';
+import {
+  createDropdown,
+  createUiCanvas,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -128,7 +135,7 @@ export const createDropdownGame = async (
     labelCategory: renderLayers.ui,
     anchor: UiAnchor.center,
     anchoredPosition: { x: 0, y: 100 },
-    sizeDelta: { x: 320, y: 56 },
+    sizeOrMargin: { x: 320, y: 56 },
     selectedIndex: 2,
     transition: boxTransition,
   });

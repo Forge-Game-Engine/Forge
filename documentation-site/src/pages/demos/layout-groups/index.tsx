@@ -24,7 +24,7 @@ export default function LayoutGroups(): JSX.Element {
           'A demo showcasing horizontal, vertical, and grid layout groups, plus content size fitting, from the ui module.',
       }}
       header="Layout Groups"
-      blurb="Three panels, each arranged automatically instead of by hand. 'Menu' stacks three buttons with a VerticalLayoutGroupEcsComponent, and shrink-wraps its own size to fit them via a ContentSizeFitterEcsComponent - resize a button and the panel follows. 'Toolbar' spaces a row of icons evenly with a HorizontalLayoutGroupEcsComponent. 'Inventory' places eight cells into a 4-column grid with a GridLayoutGroupEcsComponent. None of the arranged children set their own anchoredPosition or sizeDelta - createUiLayoutGroupEcsSystem computes all of it, every frame."
+      blurb="Three panels, each arranged automatically instead of by hand. 'Menu' stacks three buttons with a VerticalLayoutGroupEcsComponent, and shrink-wraps its own size to fit them via a ContentSizeFitterEcsComponent - resize a button and the panel follows. 'Toolbar' spaces a row of icons evenly with a HorizontalLayoutGroupEcsComponent. 'Inventory' places eight cells into a 4-column grid with a GridLayoutGroupEcsComponent. None of the arranged children set their own anchoredPosition or sizeOrMargin - createUiLayoutGroupEcsSystem computes all of it, every frame."
       createGame={createGame}
       codeFiles={[
         { name: 'game.ts', content: gameCode },

@@ -295,7 +295,7 @@ export function createUiCanvas(
     // `value` write and the fill visual it produces land in the very same
     // frame. The aspect ratio fitter and layout group systems likewise have
     // no interaction dependency, and must run before layout so the
-    // sizeDelta/anchoredPosition they compute get resolved into a rect the
+    // sizeOrMargin/anchoredPosition they compute get resolved into a rect the
     // same tick, rather than lagging a frame behind.
     const progressBar = createUiProgressBarEcsSystem();
     const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();

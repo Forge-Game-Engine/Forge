@@ -15,7 +15,7 @@ import {
   addUiDropdownComponent,
   UiDropdownEcsComponent,
 } from '../components/ui-dropdown-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 import { Button, createButton } from './create-button.js';
 import { createLabel } from './create-label.js';
 
@@ -43,13 +43,13 @@ export interface CreateDropdownRequiredOptions {
  */
 export interface CreateDropdownDefaultedOptions {
   /** The anchor/pivot preset to place the header with. Defaults to `UiAnchor.topLeft`. */
-  anchor: UiAnchorPreset;
+  anchor: AnchorPivotConfig;
 
   /** Offset of the header's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
 
   /** The header's size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `240x56`. */
-  sizeDelta: Vector2;
+  sizeOrMargin: Vector2;
 
   /** Overrides `headerSprite.slices`/`optionSprite.slices`. */
   slices?: NineSliceOptions;
@@ -71,7 +71,7 @@ export interface CreateDropdownDefaultedOptions {
    */
   labelCategory?: number;
 
-  /** Each option row's height, in reference pixels. Defaults to the header's own `sizeDelta.y`. */
+  /** Each option row's height, in reference pixels. Defaults to the header's own `sizeOrMargin.y`. */
   optionHeight?: number;
 
   /**
@@ -124,7 +124,7 @@ export interface Dropdown {
 }
 
 /** The anchor every option row shares: full header width, hanging down from the header's bottom edge. */
-const optionRowAnchor: UiAnchorPreset = {
+const optionRowAnchor: AnchorPivotConfig = {
   anchorMin: { x: 0, y: 0 },
   anchorMax: { x: 1, y: 0 },
   pivot: { x: 0.5, y: 1 },
@@ -169,7 +169,7 @@ export function createDropdown(
 ): Dropdown {
   const defaultCreateDropdownOptions = {
     anchor: UiAnchor.topLeft,
-    sizeDelta: { x: 240, y: 56 },
+    sizeOrMargin: { x: 240, y: 56 },
     selectedIndex: 0,
     labelSize: 24,
     labelColor: Color.black,
@@ -178,7 +178,7 @@ export function createDropdown(
   const {
     anchor,
     anchoredPosition,
-    sizeDelta,
+    sizeOrMargin,
     headerSprite,
     optionSprite,
     slices,
@@ -193,19 +193,19 @@ export function createDropdown(
     transition: transitionOptions,
   } = { ...defaultCreateDropdownOptions, ...options };
 
-  const resolvedOptionHeight = optionHeight ?? sizeDelta.y;
+  const resolvedOptionHeight = optionHeight ?? sizeOrMargin.y;
 
   // Reserves room on the header's right edge for the chevron, so the
   // selected-option label (`createButton`'s own centered label, `maxWidth`
-  // otherwise defaulting to the header's full `sizeDelta.x`) doesn't
+  // otherwise defaulting to the header's full `sizeOrMargin.x`) doesn't
   // overlap it.
   const chevronReservedWidth = labelSize * 1.5;
 
   const header = createButton(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeDelta,
-    labelMaxWidth: sizeDelta.x - chevronReservedWidth,
+    sizeOrMargin,
+    labelMaxWidth: sizeOrMargin.x - chevronReservedWidth,
     sprite: headerSprite,
     slices,
     label: optionLabels[selectedIndex],
@@ -239,13 +239,13 @@ export function createDropdown(
     createButton(world, header.entity, {
       anchor: optionRowAnchor,
       anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
-      sizeDelta: { x: 0, y: resolvedOptionHeight },
+      sizeOrMargin: { x: 0, y: resolvedOptionHeight },
       // `optionRowAnchor` stretches each row to the header's full width
-      // with a zero margin (`sizeDelta.x` above), so the row's actual
-      // rendered width is the header's own `sizeDelta.x`, not its own -
+      // with a zero margin (`sizeOrMargin.x` above), so the row's actual
+      // rendered width is the header's own `sizeOrMargin.x`, not its own -
       // `createButton` can't derive that from a stretched button's own
       // options alone (see `labelMaxWidth`'s doc comment).
-      labelMaxWidth: sizeDelta.x,
+      labelMaxWidth: sizeOrMargin.x,
       sprite: optionSprite,
       slices,
       label,
