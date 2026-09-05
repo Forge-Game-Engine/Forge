@@ -271,6 +271,14 @@ layout group child already has. An explicit
 `sizeToText`, the same precedence every other field on that component
 already has.
 
+`sizeToText` also defaults `verticalAlign` to `'bottom'` (unless you pass
+your own): a layout-arranged child is always forced to a bottom-left pivot
+(see [Layout groups](#layout-groups) below), and `verticalAlign`'s own
+default (`'top'`) assumes a top pivot instead - without this, the text
+renders a full line-height below its own `sizeToText`-measured box rather
+than inside it. Pass an explicit `verticalAlign` to opt out (e.g. if you've
+overridden the label's own pivot to something other than bottom-anchored).
+
 ## Interaction
 
 Two calls put a working, clickable, gamepad/keyboard-navigable button on

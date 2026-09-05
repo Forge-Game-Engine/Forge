@@ -8,6 +8,7 @@ import {
   addTextComponent,
   TextDefaultedOptions,
   TextRequiredOptions,
+  textVerticalAlignments,
 } from '../../text/index.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
@@ -24,8 +25,13 @@ export type CreateLabelOptions = TextRequiredOptions &
     /**
      * When `true`, attaches a `LayoutElementEcsComponent` with
      * `sizeToText: true`, so a parent layout group measures this label by
-     * its own shaped text bounds instead of `sizeOrMargin`. Defaults to
-     * `false`.
+     * its own shaped text bounds instead of `sizeOrMargin`. Also defaults
+     * `verticalAlign` to `'bottom'` (unless explicitly overridden) - a
+     * layout-arranged child is always forced to a bottom-left pivot (see
+     * `placeChild`'s doc comment in `ui-layout-group-system.ts`), and
+     * `verticalAlign`'s own default (`'top'`) assumes a top pivot instead,
+     * which renders the text a full line-height below its own
+     * `sizeToText`-measured box rather than inside it. Defaults to `false`.
      */
     sizeToText?: boolean;
 
@@ -79,6 +85,9 @@ export function createLabel(
   const { anchor, anchoredPosition, sizeOrMargin, sizeToText, ...textOptions } =
     {
       ...defaultCreateLabelOptions,
+      ...(options.sizeToText && options.verticalAlign === undefined
+        ? { verticalAlign: textVerticalAlignments.bottom }
+        : {}),
       ...options,
     };
 
