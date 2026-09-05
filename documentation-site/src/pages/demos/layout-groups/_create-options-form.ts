@@ -85,8 +85,15 @@ export async function createOptionsForm(
     text: 'Options',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.bottomRight,
-    anchoredPosition: { x: -60, y: 272 },
+    // A plain UiAnchor.bottomRight pivot (1, 0) sits at the box's own
+    // bottom edge, but verticalAlign: 'middle' centers the text around the
+    // entity's own local origin regardless of the box's declared height -
+    // pairing them left half the text rendering below the box and half
+    // within it. A custom pivot.y of 0.5 (keeping the same bottom-right
+    // anchor reference) makes the origin the box's actual vertical center,
+    // so 'middle' centers the text within the declared 32-tall box for real.
+    anchor: { ...UiAnchor.bottomRight, pivot: { x: 1, y: 0.5 } },
+    anchoredPosition: { x: -60, y: 288 },
     sizeOrMargin: { x: 400, y: 32 },
     horizontalAlign: textHorizontalAlignments.right,
     verticalAlign: textVerticalAlignments.middle,
