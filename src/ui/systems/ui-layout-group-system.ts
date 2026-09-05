@@ -3,6 +3,12 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rects } from '../../math/index.js';
 import {
+  TextEcsComponent,
+  textId,
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/index.js';
+import {
   ContentSizeFitterEcsComponent,
   contentSizeFitterId,
 } from '../components/content-size-fitter-component.js';
@@ -161,12 +167,104 @@ function measureAxisGroupContent(
     : { width: crossAxis, height: mainAxis };
 }
 
-/** A grid's own content size: its column/row count (see `gridDimensions`) times `cellSize`, plus spacing and padding. */
+/**
+ * A grid cell index's logical (pre-`startCorner`-flip) column/row, derived
+ * from `startAxis` - which axis is filled first before wrapping to the next
+ * column/row. Sizing (see `computeGridSizing`) is always done in this
+ * logical space; only physical placement (see `arrangeGrid`) applies
+ * `startCorner`'s flip on top of it.
+ */
+function logicalCellOf(
+  grid: GridLayoutGroupEcsComponent,
+  index: number,
+  columns: number,
+  rows: number,
+): { column: number; row: number } {
+  if (grid.startAxis === 'horizontal') {
+    return { column: index % columns, row: Math.floor(index / columns) };
+  }
+
+  return { row: index % rows, column: Math.floor(index / rows) };
+}
+
+/** Running offsets into `sizes`, each entry followed by `spacing` - `offsets[i]` is where `sizes[i]` starts. */
+function prefixSum(sizes: readonly number[], spacing: number): number[] {
+  const offsets: number[] = [];
+  let cursor = 0;
+
+  for (const size of sizes) {
+    offsets.push(cursor);
+    cursor += size + spacing;
+  }
+
+  return offsets;
+}
+
+interface GridSizing {
+  columns: number;
+  rows: number;
+  /** Each logical column's width - `cellSize.x` on a `'fixed'` axis, the max measured preferred width of its cells on a `'content'` axis. */
+  columnWidths: number[];
+  /** The row equivalent of `columnWidths`. */
+  rowHeights: number[];
+  /** Total grid content width: `columnWidths` summed, plus inter-column spacing. */
+  width: number;
+  /** The height equivalent of `width`. */
+  height: number;
+}
+
+/**
+ * Derives a grid's per-column/row sizes and overall content size. On a
+ * `'fixed'` axis every column/row is exactly `cellSize` (today's original
+ * behavior); on a `'content'` axis, each column's/row's size is the max
+ * measured preferred size among the cells `logicalCellOf` places in it.
+ * Shared by `measureGridContent` (which only needs the overall size) and
+ * `arrangeGrid` (which also needs the per-column/row sizes to place cells).
+ */
+function computeGridSizing(
+  grid: GridLayoutGroupEcsComponent,
+  children: readonly number[],
+  measure: Measure,
+  innerWidth?: number,
+): GridSizing {
+  const { columns, rows } = gridDimensions(grid, children.length, innerWidth);
+
+  const columnWidths = new Array<number>(columns).fill(grid.cellSize.x);
+  const rowHeights = new Array<number>(rows).fill(grid.cellSize.y);
+
+  if (grid.columnWidthMode === 'content' || grid.rowHeightMode === 'content') {
+    for (let i = 0; i < children.length; i++) {
+      const { column, row } = logicalCellOf(grid, i, columns, rows);
+      const measured = measure(children[i]);
+
+      if (grid.columnWidthMode === 'content') {
+        columnWidths[column] = Math.max(
+          columnWidths[column],
+          measured.width.preferred,
+        );
+      }
+
+      if (grid.rowHeightMode === 'content') {
+        rowHeights[row] = Math.max(rowHeights[row], measured.height.preferred);
+      }
+    }
+  }
+
+  const width =
+    columnWidths.reduce((a, b) => a + b, 0) + grid.spacing.x * (columns - 1);
+  const height =
+    rowHeights.reduce((a, b) => a + b, 0) + grid.spacing.y * (rows - 1);
+
+  return { columns, rows, columnWidths, rowHeights, width, height };
+}
+
+/** A grid's own content size: its per-column/row sizes (see `computeGridSizing`), plus spacing and padding. */
 function measureGridContent(
   grid: GridLayoutGroupEcsComponent,
-  childCount: number,
+  children: readonly number[],
+  measure: Measure,
 ): Measured {
-  if (childCount === 0) {
+  if (children.length === 0) {
     const width: AxisMeasure = {
       min: grid.padding.left + grid.padding.right,
       preferred: grid.padding.left + grid.padding.right,
@@ -181,17 +279,9 @@ function measureGridContent(
     return { width, height };
   }
 
-  const { columns, rows } = gridDimensions(grid, childCount, undefined);
-  const width =
-    columns * grid.cellSize.x +
-    (columns - 1) * grid.spacing.x +
-    grid.padding.left +
-    grid.padding.right;
-  const height =
-    rows * grid.cellSize.y +
-    (rows - 1) * grid.spacing.y +
-    grid.padding.top +
-    grid.padding.bottom;
+  const sizing = computeGridSizing(grid, children, measure);
+  const width = sizing.width + grid.padding.left + grid.padding.right;
+  const height = sizing.height + grid.padding.top + grid.padding.bottom;
 
   return {
     width: { min: width, preferred: width, flexible: 0 },
@@ -254,8 +344,46 @@ function createMeasure(
     } else if (gridGroup) {
       base = measureGridContent(
         gridGroup,
-        arrangeableChildrenOf(world, childrenByParent, entity).length,
+        arrangeableChildrenOf(world, childrenByParent, entity),
+        measure,
       );
+    } else if (layoutElement?.sizeToText) {
+      const textComponent = world.getComponent<TextEcsComponent>(
+        entity,
+        textId,
+      );
+
+      if (!textComponent) {
+        throw new Error(
+          `Entity "${entity}" has LayoutElementEcsComponent.sizeToText set but no TextEcsComponent - sizeToText only applies to text entities (e.g. a label created via createLabel).`,
+        );
+      }
+
+      // TextMeshEcsComponent is only attached once createTextShapingEcsSystem
+      // has actually shaped this entity's text, which - depending on
+      // registration order relative to createUiLayoutGroupEcsSystem - may
+      // not have happened yet for a brand-new entity on the very first tick
+      // it exists. Measuring as 0 for that one tick (rather than throwing)
+      // matches the one-frame-stale convergence every other freshly-created
+      // entity in this system already has; it self-corrects the next tick
+      // once shaping runs.
+      const textMesh = world.getComponent<TextMeshEcsComponent>(
+        entity,
+        textMeshId,
+      );
+
+      base = {
+        width: {
+          min: textMesh?.bounds.width ?? 0,
+          preferred: textMesh?.bounds.width ?? 0,
+          flexible: 0,
+        },
+        height: {
+          min: textMesh?.bounds.height ?? 0,
+          preferred: textMesh?.bounds.height ?? 0,
+          flexible: 0,
+        },
+      };
     } else {
       base = {
         width: { min: 0, preferred: rectTransform.sizeOrMargin.x, flexible: 0 },
@@ -542,24 +670,29 @@ function arrangeAxisGroup(
 }
 
 /**
- * Arranges one `GridLayoutGroupEcsComponent`'s direct children into fixed
- * `cellSize` cells, per `constraint`/`startAxis`/`startCorner`, with the
- * whole grid block aligned within any leftover content-box space per
- * `childAlignment`. Unlike an axis group, cell size never comes from a
- * child's own measured size.
+ * Arranges one `GridLayoutGroupEcsComponent`'s direct children into cells,
+ * per `constraint`/`startAxis`/`startCorner`, with the whole grid block
+ * aligned within any leftover content-box space per `childAlignment`. On a
+ * `'fixed'` axis (`columnWidthMode`/`rowHeightMode`, the default for both),
+ * cell size on that axis never comes from a child's own measured size -
+ * every cell is exactly `cellSize`, unchanged from the grid's original
+ * behavior. On a `'content'` axis, each column's/row's size instead comes
+ * from `computeGridSizing`, and a cell narrower/shorter than its own
+ * column/row is offset within it per `cellAlignment`.
  */
 function arrangeGrid(
   world: EcsWorld,
   entity: number,
   grid: GridLayoutGroupEcsComponent,
   childrenByParent: Map<number, number[]>,
+  measure: Measure,
 ): void {
   const rectTransform = world.getComponent<RectTransformEcsComponent>(
     entity,
     rectTransformId,
   )!;
   const rectSize = Rects.size(rectTransform.rect);
-  const { padding, cellSize, spacing, childAlignment } = grid;
+  const { padding, spacing, childAlignment, cellAlignment } = grid;
 
   const children = arrangeableChildrenOf(world, childrenByParent, entity);
 
@@ -570,10 +703,10 @@ function arrangeGrid(
   const innerWidth = rectSize.x - padding.left - padding.right;
   const innerHeight = rectSize.y - padding.top - padding.bottom;
 
-  const { columns, rows } = gridDimensions(grid, children.length, innerWidth);
-
-  const gridContentWidth = columns * cellSize.x + (columns - 1) * spacing.x;
-  const gridContentHeight = rows * cellSize.y + (rows - 1) * spacing.y;
+  const { columns, rows, columnWidths, rowHeights, width, height } =
+    computeGridSizing(grid, children, measure, innerWidth);
+  const gridContentWidth = width;
+  const gridContentHeight = height;
 
   const leftoverX = Math.max(0, innerWidth - gridContentWidth);
   const leftoverY = Math.max(0, innerHeight - gridContentHeight);
@@ -586,20 +719,38 @@ function arrangeGrid(
   const flipRow =
     grid.startCorner === 'lowerLeft' || grid.startCorner === 'lowerRight';
 
+  // A flipped grid's physical column/row 0 holds whichever logical
+  // column/row ends up there, so the offsets used to place cells (computed
+  // over physical order) need the same reversal applied to the logical
+  // column/row sizes before the prefix sum runs.
+  const physicalColumnWidths = columnWidths.map(
+    (_, physical) =>
+      columnWidths[flipColumn ? columns - 1 - physical : physical],
+  );
+  const physicalRowHeights = rowHeights.map(
+    (_, physical) => rowHeights[flipRow ? rows - 1 - physical : physical],
+  );
+
+  const columnOffsets = prefixSum(physicalColumnWidths, spacing.x);
+  const rowOffsets = prefixSum(physicalRowHeights, spacing.y);
+
   for (let i = 0; i < children.length; i++) {
-    let row: number;
-    let column: number;
-
-    if (grid.startAxis === 'horizontal') {
-      column = i % columns;
-      row = Math.floor(i / columns);
-    } else {
-      row = i % rows;
-      column = Math.floor(i / rows);
-    }
-
+    const { column, row } = logicalCellOf(grid, i, columns, rows);
     const actualColumn = flipColumn ? columns - 1 - column : column;
     const actualRow = flipRow ? rows - 1 - row : row;
+
+    const columnWidth = columnWidths[column];
+    const rowHeight = rowHeights[row];
+
+    const childMeasured = measure(children[i]);
+    const cellWidth =
+      grid.columnWidthMode === 'content'
+        ? childMeasured.width.preferred
+        : columnWidth;
+    const cellHeight =
+      grid.rowHeightMode === 'content'
+        ? childMeasured.height.preferred
+        : rowHeight;
 
     const childRect = world.getComponent<RectTransformEcsComponent>(
       children[i],
@@ -609,12 +760,18 @@ function arrangeGrid(
     childRect.anchorMin = { x: 0, y: 0 };
     childRect.anchorMax = { x: 0, y: 0 };
     childRect.pivot = { x: 0, y: 0 };
-    childRect.sizeOrMargin = { x: cellSize.x, y: cellSize.y };
+    childRect.sizeOrMargin = { x: cellWidth, y: cellHeight };
 
-    const cellLeft = contentLeft + actualColumn * (cellSize.x + spacing.x);
-    const rowFromTop = actualRow * (cellSize.y + spacing.y);
+    const offsetX = (columnWidth - cellWidth) * cellAlignment.x;
+    const offsetY = (rowHeight - cellHeight) * cellAlignment.y;
+
+    const cellLeft = contentLeft + columnOffsets[actualColumn] + offsetX;
     const cellBottom =
-      contentBottom + gridContentHeight - rowFromTop - cellSize.y;
+      contentBottom +
+      gridContentHeight -
+      rowOffsets[actualRow] -
+      rowHeight +
+      offsetY;
 
     childRect.anchoredPosition = { x: cellLeft, y: cellBottom };
   }
@@ -742,7 +899,7 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
       );
 
       if (gridGroup) {
-        arrangeGrid(world, entity, gridGroup, childrenByParent);
+        arrangeGrid(world, entity, gridGroup, childrenByParent, measure);
       }
     }
 

@@ -62,6 +62,21 @@ export interface LayoutElementEcsComponent extends LayoutElementDefaultedOptions
    * takes none.
    */
   flexibleHeight?: number;
+
+  /**
+   * This element's preferred (and min) size, on whichever axis this is
+   * relevant to, comes from its own `TextMeshEcsComponent.bounds` instead of
+   * `RectTransformEcsComponent.sizeOrMargin`. Requires a `TextEcsComponent`
+   * on the same entity - `createUiLayoutGroupEcsSystem` throws otherwise. Its
+   * `TextMeshEcsComponent` (added once `createTextShapingEcsSystem` actually
+   * shapes the text) may not exist yet on the very first tick a brand-new
+   * entity is created - that tick measures as `0` rather than throwing,
+   * self-correcting the next tick once shaping runs. An explicit
+   * `preferredWidth`/`preferredHeight` still overrides this, the same
+   * precedence every other `LayoutElementEcsComponent` field already has.
+   * Defaults to `false`.
+   */
+  sizeToText?: boolean;
 }
 
 export const layoutElementId =

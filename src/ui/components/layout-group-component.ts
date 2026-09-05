@@ -178,6 +178,15 @@ export type UiGridLayoutGroupCorner =
 export type UiGridLayoutGroupAxis = 'horizontal' | 'vertical';
 
 /**
+ * How a `GridLayoutGroupEcsComponent` sizes one axis's columns/rows: `'fixed'`
+ * uses `cellSize` for every column/row, unchanged from the grid's original
+ * behavior; `'content'` derives each column's width (or row's height) from
+ * the largest measured preferred size among the cells that land in it - the
+ * same way an HTML `<table>` auto-sizes its columns.
+ */
+export type UiGridSizingMode = 'fixed' | 'content';
+
+/**
  * Fields of {@link GridLayoutGroupEcsComponent} with a sensible default;
  * callers may omit these.
  */
@@ -211,6 +220,28 @@ export interface GridLayoutGroupDefaultedOptions {
    * `fixedColumnCount`/`fixedRowCount`. Unused for `flexible`.
    */
   constraintCount: number;
+
+  /**
+   * Derives every column's width from the largest measured preferred width
+   * among the cells placed in it, instead of `cellSize.x`. Requires
+   * `constraint` to be `fixedColumnCount` or `fixedRowCount` -
+   * `addGridLayoutGroupComponent` throws for `'flexible'`, since a flexible
+   * grid's column count itself depends on column width, which would depend
+   * on column count. Defaults to `'fixed'`.
+   */
+  columnWidthMode: UiGridSizingMode;
+
+  /** The height/row equivalent of `columnWidthMode`. Defaults to `'fixed'`. */
+  rowHeightMode: UiGridSizingMode;
+
+  /**
+   * Where a cell's own content sits within its column/row when that axis's
+   * `columnWidthMode`/`rowHeightMode` is `'content'` and this specific cell
+   * is narrower/shorter than the shared column/row size. No effect on a
+   * `'fixed'` axis, where a cell always fills `cellSize` exactly. Defaults
+   * to `uiAlignments.topLeft`.
+   */
+  cellAlignment: UiAlignment;
 }
 
 export type GridLayoutGroupEcsComponent = GridLayoutGroupDefaultedOptions;
@@ -227,20 +258,30 @@ const defaultGridLayoutGroupOptions: GridLayoutGroupDefaultedOptions = {
   startAxis: 'horizontal',
   constraint: 'flexible',
   constraintCount: 1,
+  columnWidthMode: 'fixed',
+  rowHeightMode: 'fixed',
+  cellAlignment: uiAlignments.topLeft,
 };
 
 /**
  * Attaches a {@link GridLayoutGroupEcsComponent} to `entity`, arranging every
  * direct child that has a `RectTransformEcsComponent` and whose
  * `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true` into a
- * fixed-size cell grid within the entity's own content box (its resolved
- * rect, inset by `padding`). Unlike the axis groups, cell size never comes
- * from a child's own measured size - every cell is exactly `cellSize`.
+ * cell grid within the entity's own content box (its resolved rect, inset by
+ * `padding`). Unlike the axis groups, cell size never comes from a child's
+ * own measured size on a `'fixed'` axis (the default for both
+ * `columnWidthMode`/`rowHeightMode`) - every cell on that axis is exactly
+ * `cellSize`. Setting either to `'content'` instead derives that axis's
+ * column/row size from its cells' own measured preferred size - see
+ * `columnWidthMode`'s doc comment.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Its own
  * `RectTransformEcsComponent` supplies the group's content box - add one
  * first if `entity` doesn't already have one (e.g. via `createPanel`).
  * @param options - Options for configuring the grid.
+ * @throws An error if `columnWidthMode` or `rowHeightMode` is `'content'`
+ * while `constraint` is `'flexible'` - content sizing requires a fixed
+ * column or row count.
  * @returns The attached component, for further tuning or runtime changes.
  */
 export function addGridLayoutGroupComponent(
@@ -249,12 +290,23 @@ export function addGridLayoutGroupComponent(
   options: Partial<GridLayoutGroupEcsComponent> = {},
 ): GridLayoutGroupEcsComponent {
   const merged = { ...defaultGridLayoutGroupOptions, ...options };
+
+  if (
+    merged.constraint === 'flexible' &&
+    (merged.columnWidthMode === 'content' || merged.rowHeightMode === 'content')
+  ) {
+    throw new Error(
+      `Unable to add GridLayoutGroupEcsComponent to entity "${entity}": columnWidthMode/rowHeightMode "content" requires constraint "fixedColumnCount" or "fixedRowCount", not "flexible" - a flexible grid's column count depends on column width, which would depend on column count.`,
+    );
+  }
+
   const component: GridLayoutGroupEcsComponent = {
     ...merged,
     padding: clonePadding(merged.padding),
     cellSize: Vec2.clone(merged.cellSize),
     spacing: Vec2.clone(merged.spacing),
     childAlignment: Vec2.clone(merged.childAlignment),
+    cellAlignment: Vec2.clone(merged.cellAlignment),
   };
 
   return world.addComponent(entity, gridLayoutGroupId, component);

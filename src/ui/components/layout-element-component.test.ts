@@ -19,6 +19,7 @@ describe('addLayoutElementComponent', () => {
     expect(component.preferredHeight).toBeUndefined();
     expect(component.flexibleWidth).toBeUndefined();
     expect(component.flexibleHeight).toBeUndefined();
+    expect(component.sizeToText).toBeUndefined();
     expect(world.getComponent(entity, layoutElementId)).toBe(component);
   });
 
@@ -34,6 +35,7 @@ describe('addLayoutElementComponent', () => {
       preferredHeight: 50,
       flexibleWidth: 1,
       flexibleHeight: 2,
+      sizeToText: true,
     });
 
     expect(component.ignoreLayout).toBe(true);
@@ -43,5 +45,6 @@ describe('addLayoutElementComponent', () => {
     expect(component.preferredHeight).toBe(50);
     expect(component.flexibleWidth).toBe(1);
     expect(component.flexibleHeight).toBe(2);
+    expect(component.sizeToText).toBe(true);
   });
 });

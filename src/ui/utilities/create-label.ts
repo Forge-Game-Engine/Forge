@@ -9,6 +9,7 @@ import {
   TextDefaultedOptions,
   TextRequiredOptions,
 } from '../../text/index.js';
+import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
 
@@ -19,6 +20,14 @@ export type CreateLabelOptions = TextRequiredOptions &
 
     /** Offset of the label's pivot from its anchor reference point, in reference pixels. */
     anchoredPosition?: Vector2;
+
+    /**
+     * When `true`, attaches a `LayoutElementEcsComponent` with
+     * `sizeToText: true`, so a parent layout group measures this label by
+     * its own shaped text bounds instead of `sizeOrMargin`. Defaults to
+     * `false`.
+     */
+    sizeToText?: boolean;
 
     /**
      * Size in reference pixels when point-anchored; a margin relative to the
@@ -67,10 +76,11 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeOrMargin, ...textOptions } = {
-    ...defaultCreateLabelOptions,
-    ...options,
-  };
+  const { anchor, anchoredPosition, sizeOrMargin, sizeToText, ...textOptions } =
+    {
+      ...defaultCreateLabelOptions,
+      ...options,
+    };
 
   const entity = world.createEntity();
 
@@ -82,6 +92,10 @@ export function createLabel(
     ...(sizeOrMargin && { sizeOrMargin }),
   });
   addTextComponent(world, entity, textOptions);
+
+  if (sizeToText) {
+    addLayoutElementComponent(world, entity, { sizeToText: true });
+  }
 
   return entity;
 }

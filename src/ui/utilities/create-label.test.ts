@@ -4,6 +4,7 @@ import { parentId, positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { TEXT_RENDER_CATEGORY, textId } from '../../text/index.js';
+import { layoutElementId } from '../components/layout-element-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
@@ -81,5 +82,32 @@ describe('createLabel', () => {
     expect(rectTransform.anchorMin).toEqual(UiAnchor.topLeft.anchorMin);
     expect(rectTransform.anchoredPosition).toEqual({ x: 20, y: -20 });
     expect(text.horizontalAlign).toBe('right');
+  });
+
+  it('attaches a LayoutElementEcsComponent with sizeToText when requested', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const label = createLabel(world, parent, {
+      text: 'Music',
+      fontAtlas,
+      size: 20,
+      sizeToText: true,
+    });
+
+    expect(world.getComponent(label, layoutElementId)?.sizeToText).toBe(true);
+  });
+
+  it('adds no LayoutElementEcsComponent when sizeToText is omitted', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const label = createLabel(world, parent, {
+      text: 'Music',
+      fontAtlas,
+      size: 20,
+    });
+
+    expect(world.getComponent(label, layoutElementId)).toBeNull();
   });
 });

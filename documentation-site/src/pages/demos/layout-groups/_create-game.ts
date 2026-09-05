@@ -24,6 +24,7 @@ import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createInventoryGrid } from './_create-inventory-grid';
 import { createMenu } from './_create-menu';
+import { createOptionsForm } from './_create-options-form';
 import { createToolbar } from './_create-toolbar';
 
 // Forge doesn't ship a reserved "UI" render category - each game picks its
@@ -63,11 +64,13 @@ async function createBackdrop(
 }
 
 /**
- * Builds the layout groups demo: three independent panels - a "Menu"
+ * Builds the layout groups demo: four independent panels - a "Menu"
  * (`VerticalLayoutGroupEcsComponent` + `ContentSizeFitterEcsComponent`), a
- * "Toolbar" (`HorizontalLayoutGroupEcsComponent`), and an "Inventory"
- * (`GridLayoutGroupEcsComponent`) - each arranging its own children with no
- * manual `anchoredPosition`/`sizeOrMargin` bookkeeping.
+ * "Toolbar" (`HorizontalLayoutGroupEcsComponent`), an "Inventory"
+ * (`GridLayoutGroupEcsComponent` with fixed `cellSize` cells), and an
+ * "Options" form (`GridLayoutGroupEcsComponent` with `columnWidthMode:
+ * 'content'`) - each arranging its own children with no manual
+ * `anchoredPosition`/`sizeOrMargin` bookkeeping.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -117,6 +120,14 @@ export const createLayoutGroupsGame = async (
     renderLayers.ui,
   );
   await createInventoryGrid(
+    world,
+    renderContext,
+    canvas,
+    fontAtlas,
+    panelSprite,
+    renderLayers.ui,
+  );
+  await createOptionsForm(
     world,
     renderContext,
     canvas,

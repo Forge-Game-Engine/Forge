@@ -240,6 +240,37 @@ specifically want a stretch rect's own local origin pinned to the left
 edge for some other reason (manual position math, a non-text child), but
 they're no longer necessary just to make `horizontalAlign` work.
 
+### Sizing a label to its own text
+
+`createLabel`'s `sizeToText` option attaches a
+[`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
+with `sizeToText: true`, so a parent layout group (see
+[Layout groups](#layout-groups) below) measures the label by its own shaped
+`TextMeshEcsComponent.bounds` instead of a hand-set `sizeOrMargin`:
+
+```ts
+createLabel(world, optionsRow, {
+  text: 'Music',
+  fontAtlas,
+  size: 20,
+  sizeToText: true,
+});
+```
+
+This re-reads the shaped bounds every frame, the same full-recompute model
+the rest of this module uses - a label whose text changes at runtime (a
+localized string, a live volume percentage) keeps sizing correctly with no
+extra work. `sizeToText` requires a `TextEcsComponent` on the same entity
+(throwing otherwise - it only applies to text entities). Its shaped
+`TextMeshEcsComponent`, added by `createTextShapingEcsSystem` (registered by
+`createUiCanvas`) once it actually shapes the label's text, may not exist yet
+on the very first tick a brand-new label is created - that tick measures as
+zero-width instead of throwing, the same one-frame lag every freshly-created
+layout group child already has. An explicit
+`LayoutElementEcsComponent.preferredWidth`/`preferredHeight` still overrides
+`sizeToText`, the same precedence every other field on that component
+already has.
+
 ## Interaction
 
 Two calls put a working, clickable, gamepad/keyboard-navigable button on
@@ -528,11 +559,71 @@ skipped entirely - useful for a decorative element (a background flourish, a
 badge) placed inside an otherwise-arranged panel.
 
 [`addGridLayoutGroupComponent`](/Forge/docs/api/functions/addGridLayoutGroupComponent)
-arranges direct children into fixed-size `cellSize` cells instead of
-measuring them - `constraint` picks whether the column count is derived from
-the content box's width (`flexible`, the default) or held fixed
-(`fixedColumnCount`/`fixedRowCount`), and `startCorner`/`startAxis` control
-placement order.
+arranges direct children into cells - `constraint` picks whether the column
+count is derived from the content box's width (`flexible`, the default) or
+held fixed (`fixedColumnCount`/`fixedRowCount`), and `startCorner`/
+`startAxis` control placement order. By default (`columnWidthMode`/
+`rowHeightMode: 'fixed'`), every cell is exactly `cellSize`, without
+measuring its child at all - the original behavior, unchanged.
+
+Setting `columnWidthMode` and/or `rowHeightMode` to `'content'` instead
+derives that axis's column/row size from the largest measured preferred size
+among the cells placed in it - the same way an HTML `<table>` auto-sizes its
+columns. This is the tool for the classic label/control form layout: give
+every row a "label" cell and a "control" cell, size the label column to
+`'content'`, and every row's control lands at the same x position
+automatically, sized to whichever label is actually widest - no hand-computed
+offsets:
+
+```ts
+import {
+  addGridLayoutGroupComponent,
+  createLabel,
+  createSlider,
+  createToggle,
+  uiAlignments,
+} from '@forge-game-engine/forge/ui';
+
+addGridLayoutGroupComponent(world, optionsGrid, {
+  constraint: 'fixedColumnCount',
+  constraintCount: 2,
+  columnWidthMode: 'content',
+  rowHeightMode: 'fixed',
+  cellSize: { x: 0, y: 40 }, // x is ignored (content mode); y is every row's fixed height
+  spacing: { x: 16, y: 12 },
+  cellAlignment: uiAlignments.middleLeft,
+});
+
+createLabel(world, optionsGrid, {
+  text: 'Music',
+  fontAtlas,
+  size: 20,
+  sizeToText: true,
+});
+createSlider(world, optionsGrid, {
+  /* ... */
+});
+createLabel(world, optionsGrid, {
+  text: 'Fullscreen',
+  fontAtlas,
+  size: 20,
+  sizeToText: true,
+});
+createToggle(world, optionsGrid, {
+  /* ... */
+});
+```
+
+A cell on a `'content'` axis always keeps its own measured size - unlike a
+`'fixed'` cell, it never stretches to fill its column/row - so `cellAlignment`
+(a `uiAlignments` preset, same shape as `childAlignment`) controls where a
+cell narrower/shorter than its shared column/row sits within it. It has no
+effect on a `'fixed'` axis, where a cell always fills `cellSize` exactly.
+
+`columnWidthMode`/`rowHeightMode: 'content'` requires `constraint` to be
+`fixedColumnCount` or `fixedRowCount` - `addGridLayoutGroupComponent` throws
+for `'flexible'`, since a flexible grid's column count depends on column
+width, which would itself depend on column count.
 
 Layout groups nest: a `VerticalLayoutGroupEcsComponent`'s own measured
 content size (used when a parent group, or a `ContentSizeFitterEcsComponent`,
@@ -572,3 +663,7 @@ converges within a frame or two rather than being tracked with dirty state.
 - **No radial/clock-wipe progress fill.** Only the linear fill
   `createProgressBar` builds is supported; see its section above.
 - **A dropdown doesn't close on an outside click.** See its section above.
+- **No per-column/row `cellAlignment` on a content-sized grid.** One
+  `cellAlignment` applies to every column/row in the grid - there's no way to,
+  say, left-align a label column while centering a control column in the same
+  grid.
