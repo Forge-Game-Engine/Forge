@@ -126,10 +126,10 @@ anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
 bands (`stretchTop`, `stretchBottom`, `stretchLeft`, `stretchRight` - the
 common "HUD bar" and "side panel" anchors, where `sizeOrMargin` sets the
 band's thickness), center bands (`stretchHorizontal`, `stretchVertical`),
-`stretchAll`, and two left-pivoted variants - `stretchTopLeft` and
-`stretchHorizontalLeft`, for when you specifically want the rect's own
-local origin on the left edge rather than the center (see
-[Labels](#labels) below). Spread one into `addRectTransformComponent`'s
+`stretchAll`, and a few non-center-pivoted variants - `stretchTopLeft`,
+`stretchHorizontalLeft`, and `stretchTopRight` - for when you specifically
+want the rect's own local origin on a particular edge rather than the
+center (see [Labels](#labels) below). Spread one into `addRectTransformComponent`'s
 options, or into `createPanel`/`createLabel`'s `anchor` option:
 
 ```ts
@@ -235,10 +235,11 @@ resolved rect to derive it from beyond what `sizeOrMargin` already gives you
 statically), so a point-anchored label centering against an explicit
 `maxWidth` still needs a `pivot.x: 0` anchor - `middleLeft`,
 `topLeft`/`bottomLeft` - as in the example above.
-`stretchHorizontalLeft`/`stretchTopLeft` remain available for when you
-specifically want a stretch rect's own local origin pinned to the left
-edge for some other reason (manual position math, a non-text child), but
-they're no longer necessary just to make `horizontalAlign` work.
+`stretchHorizontalLeft`/`stretchTopLeft`/`stretchTopRight` remain available
+for when you specifically want a stretch rect's own local origin pinned to
+a particular edge for some other reason (manual position math, a non-text
+child), but they're no longer necessary just to make `horizontalAlign`
+work.
 
 ### Sizing a label to its own text
 
