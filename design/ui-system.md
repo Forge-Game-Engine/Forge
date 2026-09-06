@@ -1272,6 +1272,33 @@ extends naturally to a `RectTransformEcsComponent` whose anchors never change.
 exception and is dirty-tracked from day one, because re-shaping a paragraph every
 frame is genuinely expensive.
 
+**Revisited with the Phase 5 stress-test demo (backlog 5.6).** The demo spawns
+batches of grid-arranged panels and logs the count on screen when the frame
+rate first drops below 100/60/30 FPS, the same methodology the engine's
+existing plain-sprite stress-test demo already used - run side by side (same
+machine, same browser session), UI elements cost roughly 3x a plain sprite
+per frame (dropping below 100 FPS at a few hundred UI elements vs. roughly
+triple that many plain sprites), consistent with `createUiLayoutEcsSystem`'s
+recursive top-down resolve and `createUiLayoutGroupEcsSystem`'s multi-pass
+measure/arrange doing genuinely more per-element work than a transform
+update - not a quadratic blowup, which would show a much sharper relative
+falloff as the count grows.
+
+**Decision: still (a), dirty tracking stays deferred.** A few hundred
+simultaneous UI elements comfortably covers a HUD, a settings menu, or an
+inventory grid - the scale this design targeted - and only degrades well
+past that. Retrofitting dirty tracking into two already-substantial,
+well-tested systems is real complexity and correctness risk (exactly the
+"button didn't move until I resized the window" class of bug this decision
+originally wanted to avoid) for a benefit that only matters at a scale most
+UIs built with this module won't reach. Consistent with the instruction not
+to add it speculatively - only once a concrete scenario actually needs more
+than a few hundred live UI elements should this be revisited again, ideally
+against a real device rather than only the isolated, software-rendered
+environment this measurement was taken in, since that environment's GC
+pauses under heavy per-frame allocation (`createUiLayoutEcsSystem` allocates
+fresh `Set`/`Map`s every tick) may itself inflate the gap somewhat.
+
 ---
 
 ### DL-13 — Interaction events and state both live on `UiInteractableEcsComponent`; there is no `ButtonEcsComponent`
@@ -1472,7 +1499,7 @@ widest label with no hand-computed offsets. Documented in the UI doc's "Layout g
 | 5.3 | World-space canvas render mode (diegetic UI, health bars)                   | M         |
 | 5.4 | **Landed**, outside this module: text effects (outline, drop shadow, glow as MSDF shader parameters) shipped via `/src/text` ([#608](https://github.com/Forge-Game-Engine/Forge/pull/608), [#610](https://github.com/Forge-Game-Engine/Forge/pull/610)), documented in the text module's Text Effects doc. Nothing left to do here. | S         |
 | 5.5 | Tooltips + a UI-safe-area concept for notched displays                      | S         |
-| 5.6 | UI stress-test demo + dirty-tracking optimization if warranted              | M (DL-12) |
+| 5.6 | **Landed.** UI stress-test demo - dirty-tracking optimization evaluated and deferred, not warranted at the scale measured; see DL-12 | M (DL-12) |
 | 5.7 | Rich text tags (`<b>`, `<color>`)                                           | L         |
 
 ---
@@ -1541,9 +1568,13 @@ unit tests provably cannot make:
 - Text renders as a non-empty, correctly-bounded region at two different camera
   zooms, with the bounds ratio matching the zoom ratio (proves MSDF scaling).
 
-**Demo (`documentation-site/src/pages/demos/ui`).** A menu, a HUD, a settings
-panel with sliders and toggles, and a scrolling list — exercising every Phase 1–3
-feature in one page, and doubling as the stress test for DL-12.
+**Demo.** As implemented, each phase/control landed its own focused demo page
+under `documentation-site/src/pages/demos/` (`ui-anchors`, `ui-button`,
+`ui-toggle`, `ui-slider`, `ui-progress-bar`, `ui-dropdown`, `layout-groups`,
+`ui-nested-resize`) rather than one combined page - a scrolling list isn't
+among them, since it's blocked on rect clipping (#583). The DL-12 stress test
+similarly landed as its own dedicated `ui-stress-test` demo (backlog 5.6)
+rather than folded into another page.
 
 ---
 

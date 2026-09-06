@@ -231,6 +231,10 @@ const config: Config = {
               to: 'demos/layout-groups',
               label: 'UI Layout Groups',
             },
+            {
+              to: 'demos/ui-stress-test',
+              label: 'UI Stress Test',
+            },
           ],
         },
         {
