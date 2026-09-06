@@ -135,4 +135,74 @@ describe('createUiSafeAreaEcsSystem', () => {
 
     expect(y.kind === 'stretch' && y.margin).toBe(-40);
   });
+
+  it('leaves the rect untouched when the entity is not parented to a canvas', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1080);
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addRectTransformComponent(world, entity);
+    addUiSafeAreaComponent(world, entity);
+
+    const originalRectTransform = world.getComponent(entity, rectTransformId)!;
+    const originalX = originalRectTransform.x;
+    const originalY = originalRectTransform.y;
+
+    world.addSystem(
+      createUiSafeAreaEcsSystem(renderContext, () => ({
+        top: 40,
+        right: 5,
+        bottom: 20,
+        left: 5,
+      })),
+    );
+    world.update();
+
+    const rectTransform = world.getComponent(entity, rectTransformId)!;
+
+    expect(rectTransform.x).toEqual(originalX);
+    expect(rectTransform.y).toEqual(originalY);
+  });
+
+  it('leaves the rect untouched when the owning canvas has no camera component', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1080);
+
+    // A camera entity id that never gets a CameraEcsComponent attached.
+    const camera = world.createEntity();
+
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addParentComponent(world, entity, { parent: canvas });
+    addRectTransformComponent(world, entity);
+    addUiSafeAreaComponent(world, entity);
+
+    const originalRectTransform = world.getComponent(entity, rectTransformId)!;
+    const originalX = originalRectTransform.x;
+    const originalY = originalRectTransform.y;
+
+    world.addSystem(
+      createUiSafeAreaEcsSystem(renderContext, () => ({
+        top: 40,
+        right: 5,
+        bottom: 20,
+        left: 5,
+      })),
+    );
+    world.update();
+
+    const rectTransform = world.getComponent(entity, rectTransformId)!;
+
+    expect(rectTransform.x).toEqual(originalX);
+    expect(rectTransform.y).toEqual(originalY);
+  });
 });

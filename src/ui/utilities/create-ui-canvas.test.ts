@@ -22,6 +22,7 @@ import {
   addUiInteractableComponent,
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
+import { addUiSafeAreaComponent } from '../components/ui-safe-area-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 
 const buildMouseInputSource = (x = 0, y = 0): MouseInputSource =>
@@ -123,6 +124,26 @@ describe('createUiCanvas', () => {
       min: { x: -640, y: -360 },
       max: { x: 640, y: 360 },
     });
+  });
+
+  it('wires the safe-area system before layout when getSafeAreaInsets is supplied', () => {
+    const canvas = createUiCanvas(world, renderContext, time, {
+      cullingMask: testCullingMask,
+      getSafeAreaInsets: () => ({ top: 40, right: 0, bottom: 0, left: 0 }),
+    });
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addParentComponent(world, entity, { parent: canvas });
+    addRectTransformComponent(world, entity);
+    addUiSafeAreaComponent(world, entity);
+
+    world.update();
+
+    const { y } = world.getComponent(entity, rectTransformId)!;
+
+    expect(y.kind === 'stretch' && y.margin).toBeLessThan(0);
   });
 
   const createButtonEntity = (canvas: number): number => {

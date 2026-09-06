@@ -55,6 +55,21 @@ describe('createTooltip', () => {
     expect(tooltipComponent.showDelayMilliseconds).toBe(400);
   });
 
+  it('forwards a supplied category to the label', () => {
+    const world = new EcsWorld();
+    const source = createSource(world);
+
+    const tooltip = createTooltip(world, source, {
+      text: 'Mutes all sound effects',
+      fontAtlas,
+      textSize: 16,
+      sprite: buildSprite(),
+      category: 0b0010,
+    });
+
+    expect(world.getComponent(tooltip.label, textId)!.category).toBe(0b0010);
+  });
+
   it('throws if the source has no UiInteractableEcsComponent', () => {
     const world = new EcsWorld();
     const source = world.createEntity();

@@ -137,4 +137,29 @@ describe('createUiTooltipEcsSystem', () => {
     expect(world.getComponent(panel, spriteId)!.enabled).toBe(false);
     expect(world.getComponent(label, textId)!.enabled).toBe(false);
   });
+
+  it('tolerates a panel/label that no longer carries a sprite/text component', () => {
+    const world = new EcsWorld();
+    const source = world.createEntity();
+    const interactable = addUiInteractableComponent(world, source);
+
+    const panel = world.createEntity();
+    const label = world.createEntity();
+
+    addTooltipComponent(world, source, {
+      panel,
+      label,
+      showDelayMilliseconds: 0,
+    });
+
+    interactable.isHovered = true;
+
+    const system = createUiTooltipEcsSystem(buildTime(16));
+
+    world.addSystem(system);
+
+    expect(() => world.update()).not.toThrow();
+    expect(world.getComponent(panel, spriteId)).toBeNull();
+    expect(world.getComponent(label, textId)).toBeNull();
+  });
 });
