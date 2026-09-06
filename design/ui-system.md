@@ -1471,7 +1471,7 @@ widest label with no hand-computed offsets. Documented in the UI doc's "Layout g
 | 5.2 | `CanvasGroupEcsComponent` (inherited alpha / interactable / blocksRaycasts) | M         |
 | 5.3 | World-space canvas render mode (diegetic UI, health bars)                   | M         |
 | 5.4 | **Landed**, outside this module: text effects (outline, drop shadow, glow as MSDF shader parameters) shipped via `/src/text` ([#608](https://github.com/Forge-Game-Engine/Forge/pull/608), [#610](https://github.com/Forge-Game-Engine/Forge/pull/610)), documented in the text module's Text Effects doc. Nothing left to do here. | S         |
-| 5.5 | Tooltips + a UI-safe-area concept for notched displays                      | S         |
+| 5.5 | **Landed.** Tooltips + a UI-safe-area concept for notched displays          | S         |
 | 5.6 | UI stress-test demo + dirty-tracking optimization if warranted              | M (DL-12) |
 | 5.7 | Rich text tags (`<b>`, `<color>`)                                           | L         |
 

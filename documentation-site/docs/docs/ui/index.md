@@ -15,9 +15,10 @@ functions the same way any other composite entity in Forge is.
 :::info Current scope
 Layout (anchors, canvases, panels, labels), interaction (buttons,
 hover/press/drag, gamepad/keyboard focus navigation, color transitions),
-controls (toggles, sliders, progress bars, dropdowns), and layout groups
-(horizontal/vertical/grid, content size fitting, aspect ratio fitting) are
-implemented. Scroll views, text input, and rect clipping aren't yet.
+controls (toggles, sliders, progress bars, dropdowns), layout groups
+(horizontal/vertical/grid, content size fitting, aspect ratio fitting),
+tooltips, and safe-area support for notched displays are implemented.
+Scroll views, text input, and rect clipping aren't yet.
 :::
 
 ## Quick start
@@ -669,6 +670,78 @@ group, a content size fitter reacting to a resized child) arranges its
 children against a one-frame-stale box. Like the rest of this module, this
 converges within a frame or two rather than being tracked with dirty state.
 
+## Tooltips
+
+[`createTooltip`](/Forge/docs/api/functions/createTooltip) attaches a
+floating panel/label to an already-interactable entity, shown after it's
+been hovered or focused for a delay:
+
+```ts
+const muteToggle = createToggle(world, canvas, { /* ... */ });
+
+createTooltip(world, muteToggle.entity, {
+  text: 'Mutes all sound effects',
+  fontAtlas,
+  textSize: 16,
+  sprite: tooltipPanelSprite,
+});
+```
+
+The tooltip panel is parented directly to the source element, pinned just
+above its top edge, so it follows the source automatically as an ordinary
+UI child - [`createUiTooltipEcsSystem`](/Forge/docs/api/functions/createUiTooltipEcsSystem)
+(registered automatically by `createUiCanvas`) only ever toggles it
+visible/hidden, never repositions it. It appears while the source reads
+`hover` or `pressed` under
+[`deriveUiInteractionVisualState`](/Forge/docs/api/functions/deriveUiInteractionVisualState)
+- hovered by pointer *or* focused by gamepad/keyboard, matching the rest of
+this module's source-agnostic interaction model - continuously for at
+least [`TooltipEcsComponent.showDelayMilliseconds`](/Forge/docs/api/interfaces/TooltipEcsComponent)
+(defaults to `400`), and hides immediately once that state ends.
+
+A tooltip's draw order still follows its hierarchy position like any other
+UI element (see `resolveRect`'s ordering) - for a tooltip that must always
+render above every other element regardless of where its source sits in
+the tree, create it last, after every other UI element on the canvas.
+
+## Safe area
+
+Mobile browsers report a notch, camera cutout, rounded corners, or home
+indicator via the CSS `env(safe-area-inset-*)` values.
+[`getSafeAreaInsets`](/Forge/docs/api/functions/getSafeAreaInsets) (from
+`@forge-game-engine/forge/rendering`) reads them back into plain numbers;
+pass it to `createUiCanvas` to keep any
+[`UiSafeAreaEcsComponent`](/Forge/docs/api/type-aliases/UiSafeAreaEcsComponent)
+element clear of them automatically:
+
+```ts
+import { getSafeAreaInsets } from '@forge-game-engine/forge/rendering';
+
+const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
+  getSafeAreaInsets, // only needs reading on the first createUiCanvas call
+});
+
+const hudRoot = createPanel(world, canvas, {
+  anchor: UiAnchor.stretchAll(),
+  sprite: transparentSprite,
+});
+
+addUiSafeAreaComponent(world, hudRoot);
+```
+
+`addUiSafeAreaComponent` expects its entity to already be
+`UiAnchor.stretchAll()`-anchored - `createUiSafeAreaEcsSystem` (registered
+automatically once `getSafeAreaInsets` is supplied) overwrites its
+`x`/`y`/`anchoredPosition` every frame to shrink the full-stretch rect
+inward from whichever edges actually need it, converted from CSS pixels
+into that canvas's own UI world units. Set a field (`top`/`right`/`bottom`/
+`left`) `false` to leave that specific edge flush with its parent
+regardless of the device's insets - e.g. a bottom bar that intentionally
+extends under a home indicator. A browser with no notch/cutout (or that
+doesn't support `env()`) reports all zeroes, so this is always safe to
+wire up unconditionally.
+
 ## Known limitations
 
 - **No scroll views or text input yet.** Both are blocked on rect clipping
@@ -682,3 +755,5 @@ converges within a frame or two rather than being tracked with dirty state.
   `cellAlignment` applies to every column/row in the grid - there's no way to,
   say, left-align a label column while centering a control column in the same
   grid.
+- **A tooltip's draw order follows its hierarchy position, not always-on-top.**
+  See its section above for the workaround (create it last).

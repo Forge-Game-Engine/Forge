@@ -8,6 +8,7 @@ import {
   createCamera,
   createRenderTarget,
   RenderContext,
+  SafeAreaInsets,
 } from '../../rendering/index.js';
 import {
   addCanvasComponent,
@@ -21,8 +22,10 @@ import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.j
 import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
 import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.js';
 import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
+import { createUiSafeAreaEcsSystem } from '../systems/ui-safe-area-system.js';
 import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
 import { createUiToggleEcsSystem } from '../systems/ui-toggle-system.js';
+import { createUiTooltipEcsSystem } from '../systems/ui-tooltip-system.js';
 import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
@@ -48,6 +51,7 @@ interface UiInteractionPipeline {
   navigation: EcsSystem<[CanvasEcsComponent]>;
   transition: EcsSystem<readonly unknown[]>;
   toggle: EcsSystem<readonly unknown[]>;
+  tooltip: EcsSystem<readonly unknown[]>;
   raycast?: EcsSystem<[CanvasEcsComponent]>;
   interaction?: EcsSystem<readonly unknown[]>;
   slider?: EcsSystem<readonly unknown[]>;
@@ -60,21 +64,22 @@ const uiInteractionPipelinesByWorld = new WeakMap<
 
 /**
  * Registers `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
- * and `createUiToggleEcsSystem` unconditionally, and - once a pointer source
- * is available - `createUiRaycastEcsSystem`/`createUiInteractionEcsSystem`/
- * `createUiSliderEcsSystem`, at most once each per `world`. Registration
- * order is raycast, then navigation, then interaction, then toggle and
- * transition (order between those two doesn't matter, neither reads the
- * other's writes), then slider: raycast must run before navigation and
- * interaction read its hit-test result, interaction must run before
- * transition reads the interaction state it just wrote, navigation must run
- * before interaction because navigation is what resets
- * `wasInvokedThisFrame` to `false` each tick before interaction
- * conditionally sets it back to `true` for the pointer path, toggle must run
- * after both navigation and interaction for the same reason, and slider must
- * run after interaction (it reads `pressCapture`). Extends an
- * already-registered pipeline rather than duplicating it, so a canvas
- * created without a pointer source and a later one that supplies it still
+ * `createUiToggleEcsSystem`, and `createUiTooltipEcsSystem` unconditionally,
+ * and - once a pointer source is available - `createUiRaycastEcsSystem`/
+ * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem`, at most once
+ * each per `world`. Registration order is raycast, then navigation, then
+ * interaction, then toggle/transition/tooltip (order between those three
+ * doesn't matter, none reads another's writes), then slider: raycast must
+ * run before navigation and interaction read its hit-test result,
+ * interaction must run before transition/tooltip read the interaction
+ * state it just wrote, navigation must run before interaction because
+ * navigation is what resets `wasInvokedThisFrame` to `false` each tick
+ * before interaction conditionally sets it back to `true` for the pointer
+ * path, toggle/tooltip must run after both navigation and interaction for
+ * the same reason, and slider must run after interaction (it reads
+ * `pressCapture`). Extends an already-registered pipeline rather than
+ * duplicating it, so a canvas created without a pointer source and a later
+ * one that supplies it still
  * end up with a single, correctly-ordered pipeline for the whole world.
  */
 function ensureUiInteractionPipeline(
@@ -98,7 +103,11 @@ function ensureUiInteractionPipeline(
 
     world.addSystem(toggle, { after: [navigation] });
 
-    pipeline = { navigation, transition, toggle };
+    const tooltip = createUiTooltipEcsSystem(time);
+
+    world.addSystem(tooltip, { after: [navigation] });
+
+    pipeline = { navigation, transition, toggle, tooltip };
     uiInteractionPipelinesByWorld.set(world, pipeline);
   }
 
@@ -115,7 +124,7 @@ function ensureUiInteractionPipeline(
 
     world.addSystem(interaction, {
       after: [pipeline.navigation, raycast],
-      before: [pipeline.transition, pipeline.toggle],
+      before: [pipeline.transition, pipeline.toggle, pipeline.tooltip],
     });
     pipeline.interaction = interaction;
 
@@ -196,6 +205,18 @@ export interface CreateUiCanvasDefaultedOptions {
 
   /** The action that moves this canvas's focus between interactable elements. */
   navigateInput?: Axis2dAction;
+
+  /**
+   * Returns the browser viewport's current safe-area insets - supply it
+   * (`getSafeAreaInsets` from `@forge-game-engine/forge/rendering`
+   * satisfies this directly) to register `createUiSafeAreaEcsSystem`, so
+   * any `UiSafeAreaEcsComponent` element on any canvas in `world` stays
+   * clear of a notch/cutout/home indicator. Omit for a game that doesn't
+   * need safe-area support - only read on the first `createUiCanvas` call
+   * for a given `world`, since it's a page-wide browser capability rather
+   * than a per-canvas one.
+   */
+  getSafeAreaInsets?: () => SafeAreaInsets;
 }
 
 export type CreateUiCanvasOptions = CreateUiCanvasRequiredOptions &
@@ -213,12 +234,14 @@ const defaultCreateUiCanvasOptions = {
  * still matches everything doesn't draw UI content a second time. Also
  * registers `createUiLayoutEcsSystem`, `createUiLayoutGroupEcsSystem`,
  * `createUiAspectRatioFitterEcsSystem`, `createUiProgressBarEcsSystem`,
- * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`, and
- * `createUiToggleEcsSystem` with `world` (each at most once, regardless of
- * how many canvases are created) - plus `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem` once a pointer
- * source is supplied, on this call or a later one for the same world - see
- * `ensureUiInteractionPipeline` for the registration order and why it
+ * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
+ * `createUiToggleEcsSystem`, and `createUiTooltipEcsSystem` with `world`
+ * (each at most once, regardless of how many canvases are created) - plus
+ * `createUiRaycastEcsSystem`/`createUiInteractionEcsSystem`/
+ * `createUiSliderEcsSystem` once a pointer source is supplied, and
+ * `createUiSafeAreaEcsSystem` once `getSafeAreaInsets` is supplied, on this
+ * call or (for the pointer-driven systems) a later one for the same world -
+ * see `ensureUiInteractionPipeline` for the registration order and why it
  * matters.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
@@ -255,6 +278,7 @@ export function createUiCanvas(
     submitInput,
     cancelInput,
     navigateInput,
+    getSafeAreaInsets,
   } = {
     ...defaultCreateUiCanvasOptions,
     ...options,
@@ -306,8 +330,24 @@ export function createUiCanvas(
     world.addSystem(layoutGroup, {
       after: [progressBar, aspectRatioFitter],
     });
+
+    const layoutDependencies: EcsSystem[] = [layoutGroup];
+
+    // Safe-area insets are a page-wide browser capability, not a per-canvas
+    // one, so this only needs reading on the first createUiCanvas call for
+    // `world` - same as the rest of this block.
+    if (getSafeAreaInsets) {
+      const safeArea = createUiSafeAreaEcsSystem(
+        renderContext,
+        getSafeAreaInsets,
+      );
+
+      world.addSystem(safeArea);
+      layoutDependencies.push(safeArea);
+    }
+
     world.addSystem(createUiLayoutEcsSystem(renderContext), {
-      after: [layoutGroup],
+      after: layoutDependencies,
     });
     worldsWithUiLayoutSystem.add(world);
   }

@@ -5,6 +5,7 @@ export * from './create-panel.js';
 export * from './create-progress-bar.js';
 export * from './create-slider.js';
 export * from './create-toggle.js';
+export * from './create-tooltip.js';
 export * from './create-ui-canvas.js';
 export * from './find-owning-canvas.js';
 export * from './resolve-canvas-pointer-position.js';
