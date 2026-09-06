@@ -33,6 +33,17 @@ const kenneyAsset = (color: string, fileName: string): string =>
 // (unlike the "Options" title above, which sits on the dark canvas backdrop).
 const rowLabelColor = new Color(0.12, 0.12, 0.16, 1);
 
+// Shared by the slider track and toggle box below - both are the same
+// flat grey Kenney sprite, so the same hover/pressed tints apply to
+// either. Without an explicit transition, createSlider/createToggle
+// default every state to Color.white (see UiColorTransitionDefaultedOptions),
+// i.e. no visible feedback at all.
+const controlTransition = {
+  normalColor: Color.white,
+  hoverColor: new Color(0.85, 0.85, 0.9, 1),
+  pressedColor: new Color(0.7, 0.7, 0.78, 1),
+};
+
 interface ControlSprites {
   track: SpriteEcsComponent;
   fill: SpriteEcsComponent;
@@ -149,6 +160,7 @@ export async function createOptionsForm(
     fillSprite: sprites.fill,
     sizeOrMargin: { x: 180, y: 20 },
     value: 0.7,
+    transition: controlTransition,
   });
 
   createLabel(world, panel, {
@@ -164,5 +176,6 @@ export async function createOptionsForm(
     checkmarkSprite: sprites.checkmark,
     sizeOrMargin: { x: 28, y: 28 },
     isOn: true,
+    transition: controlTransition,
   });
 }
