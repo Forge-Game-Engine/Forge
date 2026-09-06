@@ -27,6 +27,7 @@ import {
   rectTransformId,
 } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 
 const buildRenderContext = (width: number, height: number): RenderContext =>
@@ -137,6 +138,53 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
       min: { x: -720, y: -540 },
       max: { x: 720, y: 540 },
+    });
+  });
+
+  it('resolves a renderMode: worldSpace canvas as an ordinary anchored rect, ignoring renderContext, and never touches its camera', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas, camera } = createTestCanvas(world, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+    });
+
+    const cameraComponent = world.getComponent(camera, cameraId)!;
+
+    cameraComponent.verticalWorldUnits = 12;
+
+    addRectTransformComponent(world, canvas, UiAnchor.center({ x: 4, y: 2 }));
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -2, y: -1 },
+      max: { x: 2, y: 1 },
+    });
+    expect(cameraComponent.verticalWorldUnits).toBe(12);
+  });
+
+  it('resolves a renderMode: worldSpace canvas relative to a non-UI parent entity (e.g. an enemy), like any other rect-transform root', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+    });
+
+    addRectTransformComponent(world, canvas, UiAnchor.center({ x: 4, y: 2 }));
+
+    const enemy = world.createEntity();
+
+    addPositionComponent(world, enemy, { local: { x: 100, y: 200 } });
+    addParentComponent(world, canvas, { parent: enemy });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.addSystem(createTransformEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, positionId)!.world).toEqual({
+      x: 100,
+      y: 200,
     });
   });
 

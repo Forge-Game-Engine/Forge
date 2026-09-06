@@ -15,9 +15,10 @@ functions the same way any other composite entity in Forge is.
 :::info Current scope
 Layout (anchors, canvases, panels, labels), interaction (buttons,
 hover/press/drag, gamepad/keyboard focus navigation, color transitions),
-controls (toggles, sliders, progress bars, dropdowns), and layout groups
-(horizontal/vertical/grid, content size fitting, aspect ratio fitting) are
-implemented. Scroll views, text input, and rect clipping aren't yet.
+controls (toggles, sliders, progress bars, dropdowns), layout groups
+(horizontal/vertical/grid, content size fitting, aspect ratio fitting), and
+world-space (diegetic) canvases are implemented. Scroll views, text input,
+and rect clipping aren't yet.
 :::
 
 ## Quick start
@@ -170,6 +171,48 @@ controls how the canvas's root rect - and its camera's
   pixel size one-to-one (`referenceResolution` is ignored); UI elements
   keep a constant on-screen size at the cost of covering a different
   fraction of the screen on different displays.
+
+Everything above describes `renderMode: 'screenSpace'` (the default) - see
+the next section for the other mode.
+
+## World-space canvases
+
+Pass `renderMode: 'worldSpace'` to put UI content in the game world instead
+of overlaid on the screen - diegetic UI like a health bar over an enemy's
+head, a name tag, or a floating damage indicator with a persistent rect:
+
+```ts
+const healthBarCanvas = createUiCanvas(world, renderContext, time, {
+  renderMode: 'worldSpace',
+  camera: worldCamera, // the game's own world camera, not a dedicated UI one
+  anchor: UiAnchor.center({ x: 80, y: 10 }),
+});
+
+addParentComponent(world, healthBarCanvas, { parent: enemy });
+addPositionComponent(world, healthBarCanvas, {
+  local: { x: 0, y: 40 }, // 40 units above the enemy's own origin
+});
+
+const fill = createPanel(world, healthBarCanvas, {
+  anchor: UiAnchor.stretchAll(),
+  sprite: fillSprite,
+});
+```
+
+A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
+- sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
+options) rather than the render destination's size, and positioned through
+the normal entity hierarchy: parent it to the entity it should follow, the
+same way any other sprite would be. It draws through whichever camera
+`camera` names - typically the game's own world camera - not a dedicated UI
+camera `createUiCanvas` creates for you, so it pans, zooms, and (parented to
+a rotating/moving entity) moves with the world exactly like any other
+sprite. `referenceResolution`/`scaleMode` have no effect in this mode -
+there's no "destination size" for a canvas embedded in the world to scale
+against.
+
+`createUiCanvas` throws if `cullingMask` is omitted for the default
+`'screenSpace'` mode, or if `camera` is omitted for `'worldSpace'`.
 
 ## Labels
 

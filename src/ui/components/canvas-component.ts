@@ -2,6 +2,10 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { Vector2 } from '../../math/index.js';
+import {
+  UiCanvasRenderMode,
+  uiCanvasRenderModes,
+} from '../types/ui-canvas-render-mode.js';
 import { UiScaleMode, uiScaleModes } from '../types/ui-scale-mode.js';
 
 /**
@@ -10,10 +14,14 @@ import { UiScaleMode, uiScaleModes } from '../types/ui-scale-mode.js';
  */
 export interface CanvasRequiredOptions {
   /**
-   * The entity id of the dedicated UI camera this canvas draws through (see
-   * `createUiCanvas`). `createUiLayoutEcsSystem` keeps this camera's
+   * The entity id of the camera this canvas draws through. For
+   * `renderMode: 'screenSpace'` (the default), this is the dedicated UI
+   * camera `createUiCanvas` creates, and `createUiLayoutEcsSystem` keeps its
    * `verticalWorldUnits` in sync with the canvas's resolved root rect every
-   * frame.
+   * frame. For `renderMode: 'worldSpace'`, this is typically the game's own
+   * world camera - `createUiLayoutEcsSystem` never mutates it, since a
+   * world-space canvas's rect comes from its own `RectTransformEcsComponent`
+   * and entity hierarchy, not the render destination's size.
    */
   camera: number;
 }
@@ -24,14 +32,23 @@ export interface CanvasRequiredOptions {
  */
 export interface CanvasDefaultedOptions {
   /**
+   * How this canvas is positioned and drawn. See {@link UiCanvasRenderMode}.
+   * Defaults to `'screenSpace'`.
+   */
+  renderMode: UiCanvasRenderMode;
+
+  /**
    * The resolution UI is authored against, in reference pixels (UI world
    * units). Defaults to `1920x1080`. How the canvas's root rect departs from
    * this at other destination sizes/aspect ratios is controlled by
-   * `scaleMode`.
+   * `scaleMode`. Has no effect when `renderMode` is `'worldSpace'`.
    */
   referenceResolution: Vector2;
 
-  /** How the canvas's root rect responds to the destination's live size. */
+  /**
+   * How the canvas's root rect responds to the destination's live size. Has
+   * no effect when `renderMode` is `'worldSpace'`.
+   */
   scaleMode: UiScaleMode;
 }
 
@@ -104,6 +121,7 @@ const defaultCanvasOptions: CanvasDefaultedOptions & {
   hoveredEntity: number | null;
   focusedEntity: number | null;
 } = {
+  renderMode: uiCanvasRenderModes.screenSpace,
   referenceResolution: { x: 1920, y: 1080 },
   scaleMode: uiScaleModes.scaleWithScreenSize,
   isPointerOverUi: false,
@@ -113,10 +131,13 @@ const defaultCanvasOptions: CanvasDefaultedOptions & {
 
 /**
  * Attaches a {@link CanvasEcsComponent} to `entity`. A canvas also needs a
- * `RectTransformEcsComponent` (its root rect, resolved every frame from
- * `referenceResolution`/`scaleMode` rather than a parent) and a
- * `PositionEcsComponent`; use `createUiCanvas` to get a fully wired canvas
- * entity - including its dedicated camera - in one call.
+ * `RectTransformEcsComponent` and a `PositionEcsComponent` - for
+ * `renderMode: 'screenSpace'` (the default), the rect is resolved every
+ * frame from `referenceResolution`/`scaleMode` rather than a parent; for
+ * `'worldSpace'`, it's an ordinary rect positioned via the entity hierarchy
+ * like any other UI element. Use `createUiCanvas` to get a fully wired
+ * canvas entity - including its camera for `'screenSpace'` mode - in one
+ * call.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the canvas. `camera` has no

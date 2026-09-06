@@ -1433,7 +1433,7 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 | #   | Item                                                                        | Size      |
 | --- | --------------------------------------------------------------------------- | --------- |
 | 5.2 | `CanvasGroupEcsComponent` (inherited alpha / interactable / blocksRaycasts) | M         |
-| 5.3 | World-space canvas render mode (diegetic UI, health bars)                   | M         |
+| 5.3 | **Landed.** World-space canvas render mode (diegetic UI, health bars)        | M         |
 | 5.4 | Text effects: outline, drop shadow, glow (MSDF shader parameters)           | S         |
 | 5.5 | Tooltips + a UI-safe-area concept for notched displays                      | S         |
 | 5.6 | UI stress-test demo + dirty-tracking optimization if warranted              | M (DL-12) |

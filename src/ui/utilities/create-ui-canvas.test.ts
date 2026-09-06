@@ -12,7 +12,12 @@ import {
   MouseInputSource,
   TriggerAction,
 } from '../../input/index.js';
-import { cameraId, Color, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  cameraId,
+  Color,
+  RenderContext,
+} from '../../rendering/index.js';
 import { canvasId } from '../components/canvas-component.js';
 import {
   addRectTransformComponent,
@@ -23,6 +28,7 @@ import {
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 
 const buildMouseInputSource = (x = 0, y = 0): MouseInputSource =>
   ({
@@ -197,5 +203,62 @@ describe('createUiCanvas', () => {
     world.update();
 
     expect(interactable.wasInvokedThisFrame).toBe(false);
+  });
+
+  it('throws when renderMode is screenSpace (the default) and cullingMask is omitted', () => {
+    expect(() => createUiCanvas(world, renderContext, time, {})).toThrow(
+      /cullingMask/,
+    );
+  });
+
+  it('throws when renderMode is worldSpace and camera is omitted', () => {
+    expect(() =>
+      createUiCanvas(world, renderContext, time, {
+        renderMode: uiCanvasRenderModes.worldSpace,
+      }),
+    ).toThrow(/camera/);
+  });
+
+  it('draws a worldSpace canvas through the given camera instead of creating one', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, { cullingMask: testCullingMask });
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+    });
+
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    expect(canvasComponent.camera).toBe(worldCamera);
+    expect(canvasComponent.renderMode).toBe(uiCanvasRenderModes.worldSpace);
+  });
+
+  it('resolves a worldSpace canvas root as an ordinary anchored rect, not the render destination size, and never touches the given camera', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, {
+      cullingMask: testCullingMask,
+      verticalWorldUnits: 12,
+    });
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+      anchor: UiAnchor.center({ x: 4, y: 1 }),
+    });
+
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -2, y: -0.5 },
+      max: { x: 2, y: 0.5 },
+    });
+    expect(world.getComponent(worldCamera, cameraId)!.verticalWorldUnits).toBe(
+      12,
+    );
   });
 });

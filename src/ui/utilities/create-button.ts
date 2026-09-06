@@ -81,7 +81,7 @@ export interface CreateButtonDefaultedOptions {
    * `createLabel`'s `category` option - omitted, the label falls back to
    * `TextEcsComponent`'s own default (`TEXT_RENDER_CATEGORY`), same as any
    * other label. Pass the same value you gave the button's canvas's
-   * `cullingMask` (see `CreateUiCanvasRequiredOptions.cullingMask`) so the
+   * `cullingMask` (see `CreateUiCanvasDefaultedOptions.cullingMask`) so the
    * label is actually visible through it.
    */
   labelCategory?: number;

@@ -14,6 +14,11 @@ import {
   CanvasEcsComponent,
 } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import {
+  UiCanvasRenderMode,
+  uiCanvasRenderModes,
+} from '../types/ui-canvas-render-mode.js';
 import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { createUiLayoutGroupEcsSystem } from '../systems/ui-layout-group-system.js';
@@ -127,51 +132,90 @@ function ensureUiInteractionPipeline(
 }
 
 /**
- * Fields of {@link CreateUiCanvasOptions} with no sensible default; callers
- * must always provide these.
- */
-export interface CreateUiCanvasRequiredOptions {
-  /**
-   * The UI camera's culling mask, matched against `Renderable.category` (see
-   * `createImageSprite`'s `layer` option) and `TextEcsComponent.category` to
-   * decide what this camera draws. Forge doesn't reserve or suggest any
-   * particular bit for UI - pick any value your game isn't already using for
-   * another camera, and reuse that same value for every UI visual's own
-   * category (`createLabel`'s `category` option, the `layer` you build UI
-   * sprites with) so this canvas draws them and no other camera's
-   * `cullingMask` also matches them. A hardcoded "UI" bit baked into this
-   * module would only work by coincidence once more than one Forge-based
-   * package picks its own default independently - explicit, caller-owned
-   * values avoid that collision entirely. Note `matchesMask` does
-   * `identifier & mask` on plain JS `number`s, which `&` coerces to 32-bit
-   * *signed* integers - bit 31 is the sign bit, so `1 << 31` is
-   * `-2147483648`, not a clean single-bit flag; stick to bits 0-30.
-   */
-  cullingMask: number;
-}
-
-/**
  * Fields of {@link CreateUiCanvasOptions} with a sensible default, or that
- * are genuinely optional (no default at all); callers may omit these.
+ * are genuinely optional (no default at all); callers may omit these. None
+ * of `createUiCanvas`'s options are unconditionally required - which of
+ * `camera`/`cullingMask` is actually needed depends on `renderMode`, and
+ * `createUiCanvas` throws a descriptive error if the wrong one is missing.
  */
 export interface CreateUiCanvasDefaultedOptions {
   /**
+   * How this canvas is positioned and drawn. See {@link UiCanvasRenderMode}.
+   * Defaults to `'screenSpace'`.
+   */
+  renderMode: UiCanvasRenderMode;
+
+  /**
+   * The camera this canvas draws through. **Required** when `renderMode` is
+   * `'worldSpace'` - typically the game's own world camera, so this canvas
+   * pans, zooms, and moves with everything else it draws through. **Must
+   * not be set** for `renderMode: 'screenSpace'` (the default) -
+   * `createUiCanvas` creates a dedicated UI camera for it instead, using
+   * `cullingMask`/`layer` below.
+   */
+  camera?: number;
+
+  /**
+   * The dedicated UI camera's culling mask, matched against
+   * `Renderable.category` (see `createImageSprite`'s `layer` option) and
+   * `TextEcsComponent.category` to decide what this camera draws.
+   * **Required** for `renderMode: 'screenSpace'` (the default); has no
+   * effect for `'worldSpace'`, where `camera` above already has its own
+   * culling mask. Forge doesn't reserve or suggest any particular bit for
+   * UI - pick any value your game isn't already using for another camera,
+   * and reuse that same value for every UI visual's own category
+   * (`createLabel`'s `category` option, the `layer` you build UI sprites
+   * with) so this canvas draws them and no other camera's `cullingMask`
+   * also matches them. A hardcoded "UI" bit baked into this module would
+   * only work by coincidence once more than one Forge-based package picks
+   * its own default independently - explicit, caller-owned values avoid
+   * that collision entirely. Note `matchesMask` does `identifier & mask` on
+   * plain JS `number`s, which `&` coerces to 32-bit *signed* integers - bit
+   * 31 is the sign bit, so `1 << 31` is `-2147483648`, not a clean
+   * single-bit flag; stick to bits 0-30.
+   */
+  cullingMask?: number;
+
+  /**
    * The resolution UI is authored against, in reference pixels. Defaults to
-   * `1920x1080`.
+   * `1920x1080`. Has no effect for `renderMode: 'worldSpace'`.
    */
   referenceResolution: Vector2;
 
-  /** How the canvas's root rect responds to the destination's live size. */
+  /**
+   * How the canvas's root rect responds to the destination's live size. Has
+   * no effect for `renderMode: 'worldSpace'`.
+   */
   scaleMode: UiScaleMode;
 
   /**
-   * The UI camera's `layer`, i.e. its position in the present pass's
-   * compositing order (see `CameraEcsComponent.layer`). Defaults to `1000`,
-   * comfortably above any world camera's default `layer` of `0`, so the UI
-   * composites on top without every game having to hand-tune camera layers
-   * just to put a HUD on screen.
+   * The dedicated UI camera's `layer`, i.e. its position in the present
+   * pass's compositing order (see `CameraEcsComponent.layer`). Defaults to
+   * `1000`, comfortably above any world camera's default `layer` of `0`, so
+   * the UI composites on top without every game having to hand-tune camera
+   * layers just to put a HUD on screen. Has no effect for
+   * `renderMode: 'worldSpace'`, which draws through `camera` as given.
    */
   layer: number;
+
+  /**
+   * The anchor this canvas's own root rect resolves with. Only meaningful
+   * for `renderMode: 'worldSpace'` - a `'screenSpace'` canvas's root rect is
+   * always recomputed from the render destination's size instead (see
+   * `createUiLayoutEcsSystem`), regardless of this option. Defaults to
+   * `UiAnchor.center()` (a literal `100x100` reference-pixel box) - parent
+   * the canvas to the entity it should follow
+   * (`addParentComponent(world, canvas, { parent: enemy })`) and size it to
+   * fit the content you'll add as its children (a health bar background,
+   * say).
+   */
+  anchor: UiAnchorConfig;
+
+  /**
+   * Offset of this canvas's own root rect from its anchor. Only meaningful
+   * for `renderMode: 'worldSpace'` - see `anchor` above.
+   */
+  anchoredPosition?: Vector2;
 
   /**
    * The pointer source this canvas's interactables (see
@@ -198,28 +242,35 @@ export interface CreateUiCanvasDefaultedOptions {
   navigateInput?: Axis2dAction;
 }
 
-export type CreateUiCanvasOptions = CreateUiCanvasRequiredOptions &
-  Partial<CreateUiCanvasDefaultedOptions>;
+export type CreateUiCanvasOptions = Partial<CreateUiCanvasDefaultedOptions>;
 
-const defaultCreateUiCanvasOptions = {
+const defaultCreateUiCanvasOptions: Pick<
+  CreateUiCanvasDefaultedOptions,
+  'renderMode' | 'layer' | 'anchor'
+> = {
+  renderMode: uiCanvasRenderModes.screenSpace,
   layer: 1000,
+  anchor: UiAnchor.center(),
 };
 
 /**
  * Creates a fully wired UI canvas: a root entity with a `CanvasEcsComponent`
- * and `RectTransformEcsComponent`, and a dedicated, static UI camera with a
- * transparent clear color, its own off-screen `RenderTarget`, and a culling
- * mask isolating it from the world so a world camera whose own `cullingMask`
- * still matches everything doesn't draw UI content a second time. Also
+ * and `RectTransformEcsComponent`. For `renderMode: 'screenSpace'` (the
+ * default), also a dedicated, static UI camera with a transparent clear
+ * color, its own off-screen `RenderTarget`, and a culling mask isolating it
+ * from the world so a world camera whose own `cullingMask` still matches
+ * everything doesn't draw UI content a second time. For
+ * `renderMode: 'worldSpace'`, no camera is created - `options.camera` names
+ * the (typically world) camera this canvas draws through instead. Also
  * registers `createUiLayoutEcsSystem`, `createUiLayoutGroupEcsSystem`,
  * `createUiAspectRatioFitterEcsSystem`, `createUiProgressBarEcsSystem`,
- * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`, and
- * `createUiToggleEcsSystem` with `world` (each at most once, regardless of
- * how many canvases are created) - plus `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem` once a pointer
- * source is supplied, on this call or a later one for the same world - see
- * `ensureUiInteractionPipeline` for the registration order and why it
- * matters.
+ * `createUiCanvasGroupEcsSystem`, `createUiNavigationEcsSystem`,
+ * `createUiTransitionEcsSystem`, and `createUiToggleEcsSystem` with `world`
+ * (each at most once, regardless of how many canvases are created) - plus
+ * `createUiRaycastEcsSystem`/`createUiInteractionEcsSystem`/
+ * `createUiSliderEcsSystem` once a pointer source is supplied, on this call
+ * or a later one for the same world - see `ensureUiInteractionPipeline` for
+ * the registration order and why it matters.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
  * and `createRenderEcsSystem` with `world` - **after** calling
@@ -229,13 +280,16 @@ const defaultCreateUiCanvasOptions = {
  * are ordinary, already-existing systems a game registers once regardless
  * of UI, so `createUiCanvas` doesn't register a second instance of either.
  * @param world - The ECS world to create the canvas entity in.
- * @param renderContext - The render context the UI camera's render target
- * (and the layout system's canvas-root sizing) is built against.
+ * @param renderContext - The render context a `'screenSpace'` canvas's UI
+ * camera/render target (and the layout system's canvas-root sizing) are
+ * built against. Unused for `'worldSpace'`.
  * @param time - The time instance driving `createUiTransitionEcsSystem`'s
  * tint tweens.
  * @param options - Options for configuring the canvas and its interaction
- * inputs. `cullingMask` has no sensible default and must always be provided
- * - see {@link CreateUiCanvasRequiredOptions.cullingMask}.
+ * inputs.
+ * @throws An error if `renderMode` is `'screenSpace'` (the default) and
+ * `cullingMask` is omitted, or if it's `'worldSpace'` and `camera` is
+ * omitted - see {@link CreateUiCanvasDefaultedOptions.camera}.
  * @returns The created canvas entity. Attach children to it with
  * `addParentComponent(world, child, { parent: canvas })`, or use
  * `createPanel`/`createLabel`/`createButton`.
@@ -247,10 +301,13 @@ export function createUiCanvas(
   options: CreateUiCanvasOptions,
 ): number {
   const {
+    renderMode,
     referenceResolution,
     scaleMode,
     cullingMask,
     layer,
+    anchor,
+    anchoredPosition,
     pointerSource,
     submitInput,
     cancelInput,
@@ -260,27 +317,47 @@ export function createUiCanvas(
     ...options,
   };
 
-  const renderTarget = createRenderTarget(
-    renderContext.gl,
-    renderContext.width,
-    renderContext.height,
-  );
+  let { camera } = options;
 
-  const camera = createCamera(world, {
-    isStatic: true,
-    cullingMask,
-    layer,
-    clearColor: Color.transparent,
-    renderTarget,
-    verticalWorldUnits: referenceResolution?.y ?? 1080,
-  });
+  if (renderMode === uiCanvasRenderModes.worldSpace) {
+    if (camera === undefined) {
+      throw new Error(
+        "createUiCanvas requires a 'camera' option when renderMode is 'worldSpace' - pass the entity id of the camera this canvas should draw through (typically the game's own world camera).",
+      );
+    }
+  } else {
+    if (cullingMask === undefined) {
+      throw new Error(
+        "createUiCanvas requires a 'cullingMask' option when renderMode is 'screenSpace' (the default) - see CreateUiCanvasDefaultedOptions.cullingMask.",
+      );
+    }
+
+    const renderTarget = createRenderTarget(
+      renderContext.gl,
+      renderContext.width,
+      renderContext.height,
+    );
+
+    camera = createCamera(world, {
+      isStatic: true,
+      cullingMask,
+      layer,
+      clearColor: Color.transparent,
+      renderTarget,
+      verticalWorldUnits: referenceResolution?.y ?? 1080,
+    });
+  }
 
   const canvas = world.createEntity();
 
   addPositionComponent(world, canvas);
-  addRectTransformComponent(world, canvas);
+  addRectTransformComponent(world, canvas, {
+    ...anchor,
+    ...(anchoredPosition && { anchoredPosition }),
+  });
   addCanvasComponent(world, canvas, {
     camera,
+    renderMode,
     ...(referenceResolution && { referenceResolution }),
     ...(scaleMode && { scaleMode }),
     ...(submitInput && { submitInput }),

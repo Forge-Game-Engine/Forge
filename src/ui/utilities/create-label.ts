@@ -52,7 +52,7 @@ const defaultCreateLabelOptions = {
  * own default (`TEXT_RENDER_CATEGORY`), which has nothing to do with any
  * particular canvas's culling mask. To make a label visible through a
  * specific `createUiCanvas`, pass the same `category` value you gave that
- * canvas's `cullingMask` (see `CreateUiCanvasRequiredOptions.cullingMask`
+ * canvas's `cullingMask` (see `CreateUiCanvasDefaultedOptions.cullingMask`
  * for why there's no shared default to fall back on).
  * @param world - The ECS world to create the label entity in.
  * @param parent - The entity to parent the label to - required, no default.
