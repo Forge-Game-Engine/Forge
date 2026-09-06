@@ -1,3 +1,7 @@
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   Color,
@@ -8,10 +12,10 @@ import {
 import {
   FontAtlas,
   textHorizontalAlignments,
-  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   addGridLayoutGroupComponent,
+  addRectTransformComponent,
   createLabel,
   createPanel,
   createSlider,
@@ -59,6 +63,11 @@ async function loadControlSprites(
   };
 }
 
+const width = 400;
+const titleHeight = 32;
+const titleGap = 12;
+const panelHeight = 200;
+
 /**
  * Builds an "Options" panel: a two-column `GridLayoutGroupEcsComponent` with
  * `columnWidthMode: 'content'`, sizing the label column to whichever of
@@ -81,42 +90,36 @@ export async function createOptionsForm(
   panelSprite: SpriteEcsComponent,
   uiCategory: number,
 ): Promise<void> {
-  createLabel(world, canvas, {
+  // A plain sprite-less group holds the title and the textured panel as its
+  // own children, rather than anchoring each of them independently to the
+  // canvas - so they can never drift apart from each other, only from this
+  // one shared anchor. The title anchors to the group's own top-left
+  // corner; the panel anchors to the group's bottom-left. Both express
+  // their position purely in terms of the group's rect, never the canvas's.
+  const group = world.createEntity();
+
+  addPositionComponent(world, group);
+  addParentComponent(world, group, { parent: canvas });
+  addRectTransformComponent(world, group, {
+    ...UiAnchor.bottomRight,
+    anchoredPosition: { x: -60, y: 60 },
+    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
+  });
+
+  createLabel(world, group, {
     text: 'Options',
     fontAtlas,
     size: 24,
-    // A plain UiAnchor.bottomRight pivot (1, 0) sits at the box's own
-    // bottom edge, but verticalAlign: 'middle' centers the text around the
-    // entity's own local origin regardless of the box's declared height -
-    // pairing them left half the text rendering below the box and half
-    // within it. A custom pivot.y of 0.5 (keeping the same bottom-right
-    // anchor reference) makes the origin the box's actual vertical center,
-    // so 'middle' centers the text within the declared 32-tall box for real.
-    anchor: { ...UiAnchor.bottomRight, pivot: { x: 1, y: 0.5 } },
-    anchoredPosition: { x: -60, y: 288 },
-    sizeOrMargin: { x: 400, y: 32 },
-    // A point anchor (this one included) never gets `maxWidth`/
-    // `horizontalAlignPivot` synced from its rect the way a stretch-x
-    // anchor does (see createLabel's own doc comment) - left unset,
-    // `horizontalAlign: 'right'` had nothing to align against but the
-    // text's own width, and `horizontalAlignPivot` stayed its default 0
-    // instead of matching this label's pivot.x of 1, so the text rendered
-    // flush with local x = 0 (the box's *right* edge, per pivot.x = 1) and
-    // grew further right from there - past the panel's right edge instead
-    // of flush against it. Setting both explicitly gives `horizontalAlign`
-    // the actual 400-wide box to right-align within.
-    maxWidth: 400,
-    horizontalAlignPivot: 1,
+    anchor: UiAnchor.stretchTopLeft,
+    sizeOrMargin: { x: 0, y: titleHeight },
     horizontalAlign: textHorizontalAlignments.right,
-    verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: uiCategory,
   });
 
-  const panel = createPanel(world, canvas, {
-    anchor: UiAnchor.bottomRight,
-    anchoredPosition: { x: -60, y: 60 },
-    sizeOrMargin: { x: 400, y: 200 },
+  const panel = createPanel(world, group, {
+    anchor: UiAnchor.bottomLeft,
+    sizeOrMargin: { x: width, y: panelHeight },
     sprite: panelSprite,
   });
 
