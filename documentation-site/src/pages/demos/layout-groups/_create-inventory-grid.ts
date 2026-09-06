@@ -13,7 +13,6 @@ import {
 import {
   FontAtlas,
   textHorizontalAlignments,
-  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   addGridLayoutGroupComponent,
@@ -26,6 +25,11 @@ import {
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 const cellCount = 8;
+
+const width = 400;
+const titleHeight = 32;
+const titleGap = 12;
+const panelHeight = 200;
 
 /**
  * Builds an "Inventory" panel: a `GridLayoutGroupEcsComponent` placing 8
@@ -47,23 +51,36 @@ export async function createInventoryGrid(
   panelSprite: SpriteEcsComponent,
   uiCategory: number,
 ): Promise<void> {
-  createLabel(world, canvas, {
+  // A plain sprite-less group holds the title and the textured panel as its
+  // own children, rather than anchoring each of them independently to the
+  // canvas - so they can never drift apart from each other, only from this
+  // one shared anchor. The title anchors to the group's own top-left
+  // corner; the panel anchors to the group's bottom-left. Both express
+  // their position purely in terms of the group's rect, never the canvas's.
+  const group = world.createEntity();
+
+  addPositionComponent(world, group);
+  addParentComponent(world, group, { parent: canvas });
+  addRectTransformComponent(world, group, {
+    ...UiAnchor.bottomLeft,
+    anchoredPosition: { x: 60, y: 60 },
+    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
+  });
+
+  createLabel(world, group, {
     text: 'Inventory',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.bottomLeft,
-    anchoredPosition: { x: 60, y: 272 },
-    sizeOrMargin: { x: 400, y: 32 },
+    anchor: UiAnchor.stretchTopLeft,
+    sizeOrMargin: { x: 0, y: titleHeight },
     horizontalAlign: textHorizontalAlignments.left,
-    verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: uiCategory,
   });
 
-  const panel = createPanel(world, canvas, {
+  const panel = createPanel(world, group, {
     anchor: UiAnchor.bottomLeft,
-    anchoredPosition: { x: 60, y: 60 },
-    sizeOrMargin: { x: 400, y: 200 },
+    sizeOrMargin: { x: width, y: panelHeight },
     sprite: panelSprite,
   });
 

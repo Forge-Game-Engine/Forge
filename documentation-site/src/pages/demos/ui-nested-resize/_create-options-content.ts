@@ -1,15 +1,19 @@
+import {
+  addParentComponent,
+  addPositionComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Color } from '@forge-game-engine/forge/rendering';
+import { FontAtlas } from '@forge-game-engine/forge/text';
 import {
-  FontAtlas,
-  textHorizontalAlignments,
-  textVerticalAlignments,
-} from '@forge-game-engine/forge/text';
-import {
+  addContentSizeFitterComponent,
+  addGridLayoutGroupComponent,
+  addRectTransformComponent,
   createButton,
   createLabel,
   createSlider,
   createToggle,
+  uiAlignments,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { DemoSprites } from './_load-demo-sprites';
@@ -26,53 +30,61 @@ export function createOptionsContent(
   textColor: Color,
   uiLayer: number,
 ): void {
-  // Both row labels share this box width (rather than each sizing to its own
-  // text), so "Music" and "Fullscreen" line up on the same left edge, and
-  // every control sits at the same `controlX` right after it - the controls
-  // end up aligned on their own left edge too, regardless of how long the
-  // label text next to them is.
-  const labelX = 16;
-  const labelWidth = 140;
-  const controlX = labelX + labelWidth + 16;
+  // A `GridLayoutGroupEcsComponent` with `columnWidthMode: 'content'` sizes
+  // the label column to whichever of "Music"/"Fullscreen" is actually
+  // widest, so every row's control lands at the same x position with no
+  // hand-computed offsets - a `ContentSizeFitterEcsComponent` on the same
+  // entity shrink-wraps the grid itself to that measured content.
+  const optionsGrid = world.createEntity();
 
-  const rowLabel = (text: string, y: number, size = 20): void => {
-    createLabel(world, content, {
-      text,
-      fontAtlas,
-      size,
-      anchor: UiAnchor.topLeft,
-      anchoredPosition: { x: labelX, y },
-      sizeOrMargin: { x: labelWidth, y: size + 8 },
-      horizontalAlign: textHorizontalAlignments.left,
-      verticalAlign: textVerticalAlignments.middle,
-      color: textColor,
-      category: uiLayer,
-    });
-  };
+  addPositionComponent(world, optionsGrid);
+  addParentComponent(world, optionsGrid, { parent: content });
+  addRectTransformComponent(world, optionsGrid, {
+    ...UiAnchor.topLeft,
+    anchoredPosition: { x: 16, y: -96 },
+  });
+  addContentSizeFitterComponent(world, optionsGrid, {
+    horizontalFit: 'preferredSize',
+    verticalFit: 'preferredSize',
+  });
+  addGridLayoutGroupComponent(world, optionsGrid, {
+    constraint: 'fixedColumnCount',
+    constraintCount: 2,
+    columnWidthMode: 'content',
+    rowHeightMode: 'content',
+    spacing: { x: 16, y: 16 },
+    cellAlignment: uiAlignments.middleLeft,
+  });
 
-  const musicRowY = -96;
+  createLabel(world, optionsGrid, {
+    text: 'Music',
+    fontAtlas,
+    size: 20,
+    sizeToText: true,
+    color: textColor,
+    category: uiLayer,
+  });
 
-  rowLabel('Music', musicRowY);
-
-  createSlider(world, content, {
+  createSlider(world, optionsGrid, {
     trackSprite: sprites.track,
     handleSprite: sprites.handle,
     fillSprite: sprites.fill,
-    anchor: UiAnchor.topLeft,
-    anchoredPosition: { x: controlX, y: musicRowY - 2 },
     sizeOrMargin: { x: 180, y: 20 },
     value: 0.7,
   });
 
-  const fullscreenRowY = -152;
+  createLabel(world, optionsGrid, {
+    text: 'Fullscreen',
+    fontAtlas,
+    size: 20,
+    sizeToText: true,
+    color: textColor,
+    category: uiLayer,
+  });
 
-  rowLabel('Fullscreen', fullscreenRowY);
-
-  createToggle(world, content, {
+  createToggle(world, optionsGrid, {
     sprite: sprites.box,
     checkmarkSprite: sprites.checkmark,
-    anchor: UiAnchor.topLeft,
-    anchoredPosition: { x: controlX, y: fullscreenRowY + 10 },
     sizeOrMargin: { x: 28, y: 28 },
     isOn: true,
   });

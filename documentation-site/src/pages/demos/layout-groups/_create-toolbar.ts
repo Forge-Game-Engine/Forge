@@ -13,7 +13,6 @@ import {
 import {
   FontAtlas,
   textHorizontalAlignments,
-  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   addHorizontalLayoutGroupComponent,
@@ -30,6 +29,11 @@ const iconColors = [
   new Color(0.45, 0.75, 0.45, 1),
   new Color(0.85, 0.65, 0.3, 1),
 ];
+
+const width = 400;
+const titleHeight = 32;
+const titleGap = 8;
+const panelHeight = 110;
 
 /**
  * Builds a "Toolbar" panel: a `HorizontalLayoutGroupEcsComponent` spacing
@@ -52,23 +56,36 @@ export async function createToolbar(
   panelSprite: SpriteEcsComponent,
   uiCategory: number,
 ): Promise<void> {
-  createLabel(world, canvas, {
+  // A plain sprite-less group holds the title and the textured panel as its
+  // own children, rather than anchoring each of them independently to the
+  // canvas - so they can never drift apart from each other, only from this
+  // one shared anchor. The title anchors to the group's own top-left
+  // corner; the panel anchors to the group's bottom-left. Both express
+  // their position purely in terms of the group's rect, never the canvas's.
+  const group = world.createEntity();
+
+  addPositionComponent(world, group);
+  addParentComponent(world, group, { parent: canvas });
+  addRectTransformComponent(world, group, {
+    ...UiAnchor.topRight,
+    anchoredPosition: { x: -60, y: -60 },
+    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
+  });
+
+  createLabel(world, group, {
     text: 'Toolbar',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.topRight,
-    anchoredPosition: { x: -60, y: -50 },
-    sizeOrMargin: { x: 400, y: 32 },
+    anchor: UiAnchor.stretchTopLeft,
+    sizeOrMargin: { x: 0, y: titleHeight },
     horizontalAlign: textHorizontalAlignments.right,
-    verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: uiCategory,
   });
 
-  const panel = createPanel(world, canvas, {
-    anchor: UiAnchor.topRight,
-    anchoredPosition: { x: -60, y: -90 },
-    sizeOrMargin: { x: 400, y: 110 },
+  const panel = createPanel(world, group, {
+    anchor: UiAnchor.bottomLeft,
+    sizeOrMargin: { x: width, y: panelHeight },
     sprite: panelSprite,
   });
 

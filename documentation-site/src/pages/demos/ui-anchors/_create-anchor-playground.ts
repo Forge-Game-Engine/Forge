@@ -8,9 +8,9 @@ import { TextEcsComponent } from '@forge-game-engine/forge/text';
  * The `UiAnchor` presets exposed by the anchors playground's dropdown - the
  * nine point anchors plus the four edge-stretch presets and `stretchAll`.
  * `UiAnchor` also ships pivot variants (`stretchHorizontalLeft`,
- * `stretchTopLeft`, `stretchHorizontal`, `stretchVertical`) that exist for
- * text-alignment/manual-position edge cases rather than to teach anchoring,
- * so they're left out of this list.
+ * `stretchTopLeft`, `stretchTopRight`, `stretchHorizontal`,
+ * `stretchVertical`) that exist for text-alignment/manual-position edge
+ * cases rather than to teach anchoring, so they're left out of this list.
  */
 export const anchorPlaygroundPresetNames = [
   'topLeft',

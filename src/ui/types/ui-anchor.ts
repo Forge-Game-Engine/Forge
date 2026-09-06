@@ -139,4 +139,21 @@ export const UiAnchor = {
     anchorMax: { x: 1, y: 1 },
     pivot: { x: 0, y: 1 },
   },
+
+  /**
+   * The mirror image of `stretchTopLeft` - a full-width horizontal band
+   * pinned to the parent's top edge, with its pivot on the right edge
+   * rather than the left or center. Useful for the same reasons
+   * `stretchHorizontalLeft`/`stretchTopLeft` are (manual position math, or a
+   * non-text child, anchored from the right edge instead) - not for
+   * `horizontalAlign`, which works under any pivot on a stretch-x anchor
+   * (see `createUiLayoutEcsSystem`'s own doc comment on `horizontalAlignPivot`
+   * syncing). `sizeOrMargin.y` still sets the band's height (point-anchored
+   * vertically); `sizeOrMargin.x` is still a horizontal margin.
+   */
+  stretchTopRight: {
+    anchorMin: { x: 0, y: 1 },
+    anchorMax: { x: 1, y: 1 },
+    pivot: { x: 1, y: 1 },
+  },
 } as const;

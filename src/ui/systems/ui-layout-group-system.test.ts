@@ -7,6 +7,12 @@ import {
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { RenderContext } from '../../rendering/index.js';
+import {
+  TextEcsComponent,
+  textId,
+  TextMeshEcsComponent,
+  textMeshId,
+} from '../../text/index.js';
 import { addContentSizeFitterComponent } from '../components/content-size-fitter-component.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import {
@@ -43,6 +49,25 @@ function createChild(
 
   addParentComponent(world, entity, { parent });
   addRectTransformComponent(world, entity, { sizeOrMargin });
+
+  return entity;
+}
+
+function createTextMeshChild(
+  world: EcsWorld,
+  parent: number,
+  bounds: { width: number; height: number },
+): number {
+  const entity = createChild(world, parent, { x: 0, y: 0 });
+
+  world.addComponent(entity, textId, {
+    text: 'placeholder',
+  } as unknown as TextEcsComponent);
+  world.addComponent(entity, textMeshId, {
+    glyphs: [],
+    bounds,
+  } as unknown as TextMeshEcsComponent);
+  addLayoutElementComponent(world, entity, { sizeToText: true });
 
   return entity;
 }
@@ -415,6 +440,414 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(positions[1].x).toBeCloseTo(40);
       expect(positions[2].x).toBeCloseTo(0);
       expect(positions[3].x).toBeCloseTo(40);
+    });
+  });
+
+  describe('content-sized grid columns and rows', () => {
+    it("aligns every row's control column to the widest label in the label column", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 200);
+
+      addGridLayoutGroupComponent(world, group, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        columnWidthMode: 'content',
+        rowHeightMode: 'fixed',
+        cellSize: { x: 0, y: 40 },
+        childAlignment: uiAlignments.bottomLeft,
+      });
+
+      const label0 = createChild(world, group, { x: 90, y: 20 });
+      const control0 = createChild(world, group, { x: 200, y: 20 });
+      const label1 = createChild(world, group, { x: 150, y: 20 });
+      const control1 = createChild(world, group, { x: 20, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Column 0's content-derived width is the wider of the two labels
+      // (150), so column 1's cells all start at the same x regardless of
+      // how wide each row's own control happens to be.
+      expect(
+        world.getComponent(control0, rectTransformId)!.anchoredPosition.x,
+      ).toBe(150);
+      expect(
+        world.getComponent(control1, rectTransformId)!.anchoredPosition.x,
+      ).toBe(150);
+      expect(
+        world.getComponent(label0, rectTransformId)!.anchoredPosition.x,
+      ).toBe(0);
+      expect(
+        world.getComponent(label1, rectTransformId)!.anchoredPosition.x,
+      ).toBe(0);
+
+      // A content-sized axis never stretches a cell to fill its column -
+      // each control keeps its own measured width.
+      expect(
+        world.getComponent(control0, rectTransformId)!.sizeOrMargin.x,
+      ).toBe(200);
+      expect(
+        world.getComponent(control1, rectTransformId)!.sizeOrMargin.x,
+      ).toBe(20);
+    });
+
+    it('shrinks a content-sized column/row below the default cellSize when its cells are smaller than it', () => {
+      // Regression test: computeGridSizing used to seed columnWidths/rowHeights
+      // with cellSize.x/y even on a 'content' axis, then only ever grow them
+      // via Math.max - so a column/row whose cells were all smaller than the
+      // default 100x100 cellSize (never overridden here) stayed floored at
+      // 100 instead of shrinking to fit, throwing off every cell placed
+      // after it.
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, group, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        columnWidthMode: 'content',
+        rowHeightMode: 'content',
+        childAlignment: uiAlignments.bottomLeft,
+      });
+
+      const label = createChild(world, group, { x: 40, y: 20 });
+      const control = createChild(world, group, { x: 60, y: 15 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Column 0 (the label) is only 40 wide - well under the unset
+      // cellSize's default of 100 - so column 1 should start at 40, not 100.
+      expect(
+        world.getComponent(control, rectTransformId)!.anchoredPosition.x,
+      ).toBe(40);
+      expect(world.getComponent(label, rectTransformId)!.sizeOrMargin.x).toBe(
+        40,
+      );
+      // Row 0's height is the taller of the two cells (20), not 100.
+      expect(world.getComponent(label, rectTransformId)!.sizeOrMargin.y).toBe(
+        20,
+      );
+    });
+
+    it('centers a narrower cell within its content-sized column per cellAlignment', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 200);
+
+      addGridLayoutGroupComponent(world, group, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 1,
+        columnWidthMode: 'content',
+        rowHeightMode: 'fixed',
+        cellSize: { x: 0, y: 20 },
+        childAlignment: uiAlignments.bottomLeft,
+        cellAlignment: uiAlignments.center,
+      });
+
+      const wide = createChild(world, group, { x: 100, y: 20 });
+      const narrow = createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(
+        world.getComponent(wide, rectTransformId)!.anchoredPosition.x,
+      ).toBe(0);
+      // Column width is 100 (the max of the two); centering the 40-wide
+      // cell within it: offset = (100 - 40) * 0.5 = 30.
+      expect(
+        world.getComponent(narrow, rectTransformId)!.anchoredPosition.x,
+      ).toBe(30);
+    });
+
+    it('keeps a fixed axis at cellSize while the other axis is content-sized', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 200);
+
+      addGridLayoutGroupComponent(world, group, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        columnWidthMode: 'content',
+        rowHeightMode: 'fixed',
+        cellSize: { x: 0, y: 50 },
+        childAlignment: uiAlignments.bottomLeft,
+      });
+
+      const a = createChild(world, group, { x: 30, y: 10 });
+      const b = createChild(world, group, { x: 80, y: 90 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // rowHeightMode is 'fixed': every cell's height is forced to
+      // cellSize.y (50) regardless of its own measured height.
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.y).toBe(50);
+      expect(world.getComponent(b, rectTransformId)!.sizeOrMargin.y).toBe(50);
+
+      // columnWidthMode is 'content': each cell keeps its own width.
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.x).toBe(30);
+      expect(world.getComponent(b, rectTransformId)!.sizeOrMargin.x).toBe(80);
+    });
+
+    it("measures a content-sized grid's own content size for a ContentSizeFitterEcsComponent", () => {
+      const world = new EcsWorld();
+      const grid = createGroupEntity(world, 500, 500);
+
+      addGridLayoutGroupComponent(world, grid, {
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+        columnWidthMode: 'content',
+        rowHeightMode: 'fixed',
+        cellSize: { x: 0, y: 30 },
+      });
+      addContentSizeFitterComponent(world, grid, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, grid, { x: 10, y: 1 });
+      createChild(world, grid, { x: 50, y: 1 });
+      createChild(world, grid, { x: 20, y: 1 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // columns: [child0(10), child2(20)] -> 20; [child1(50)] -> 50 -
+      // width = 70. 2 rows of the fixed 30-tall row height -> height = 60.
+      expect(world.getComponent(grid, rectTransformId)!.sizeOrMargin).toEqual({
+        x: 70,
+        y: 60,
+      });
+    });
+
+    it.each([
+      [
+        'upperLeft',
+        'horizontal',
+        [
+          [0, 100],
+          [30, 100],
+          [0, 0],
+          [30, 0],
+        ],
+      ],
+      [
+        'upperRight',
+        'horizontal',
+        [
+          [40, 100],
+          [0, 100],
+          [40, 0],
+          [0, 0],
+        ],
+      ],
+      [
+        'lowerLeft',
+        'horizontal',
+        [
+          [0, 0],
+          [30, 0],
+          [0, 100],
+          [30, 100],
+        ],
+      ],
+      [
+        'lowerRight',
+        'horizontal',
+        [
+          [40, 0],
+          [0, 0],
+          [40, 100],
+          [0, 100],
+        ],
+      ],
+      [
+        'upperLeft',
+        'vertical',
+        [
+          [0, 100],
+          [0, 0],
+          [20, 100],
+          [20, 0],
+        ],
+      ],
+      [
+        'upperRight',
+        'vertical',
+        [
+          [40, 100],
+          [40, 0],
+          [0, 100],
+          [0, 0],
+        ],
+      ],
+      [
+        'lowerLeft',
+        'vertical',
+        [
+          [0, 0],
+          [0, 100],
+          [20, 0],
+          [20, 100],
+        ],
+      ],
+      [
+        'lowerRight',
+        'vertical',
+        [
+          [40, 0],
+          [40, 100],
+          [0, 0],
+          [0, 100],
+        ],
+      ],
+    ] as const)(
+      'places content-sized cells correctly for startCorner: %s, startAxis: %s',
+      (startCorner, startAxis, expected) => {
+        const world = new EcsWorld();
+        const group = createGroupEntity(world, 200, 300);
+
+        addGridLayoutGroupComponent(world, group, {
+          constraint: 'fixedColumnCount',
+          constraintCount: 2,
+          columnWidthMode: 'content',
+          rowHeightMode: 'fixed',
+          cellSize: { x: 0, y: 100 },
+          childAlignment: uiAlignments.bottomLeft,
+          startCorner,
+          startAxis,
+        });
+
+        const widths = [10, 20, 30, 40];
+        const cells = widths.map((width) =>
+          createChild(world, group, { x: width, y: 100 }),
+        );
+
+        world.addSystem(createUiLayoutGroupEcsSystem());
+        world.update();
+
+        const positions = cells.map(
+          (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
+        );
+
+        expect(positions).toEqual(expected.map(([x, y]) => ({ x, y })));
+      },
+    );
+  });
+
+  describe('sizeToText', () => {
+    it("measures a plain entity's preferred size from TextMeshEcsComponent.bounds", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group, {
+        childForceExpandWidth: false,
+      });
+
+      const a = createTextMeshChild(world, group, { width: 40, height: 20 });
+      const b = createTextMeshChild(world, group, { width: 90, height: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Two labels of different text lengths size (and therefore position)
+      // differently, driven entirely by their shaped bounds.
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.x).toBe(40);
+      expect(world.getComponent(b, rectTransformId)!.sizeOrMargin.x).toBe(90);
+      expect(world.getComponent(a, rectTransformId)!.anchoredPosition.x).toBe(
+        0,
+      );
+      expect(world.getComponent(b, rectTransformId)!.anchoredPosition.x).toBe(
+        40,
+      );
+    });
+
+    it('falls back to sizeOrMargin when sizeToText is not set', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group, {
+        childForceExpandWidth: false,
+      });
+
+      const a = createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(world.getComponent(a, rectTransformId)!.sizeOrMargin.x).toBe(40);
+    });
+
+    it('throws a descriptive error when sizeToText is set with no TextEcsComponent at all', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group);
+
+      const a = createChild(world, group, { x: 40, y: 20 });
+
+      addLayoutElementComponent(world, a, { sizeToText: true });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+
+      expect(() => world.update()).toThrow(/TextEcsComponent/);
+    });
+
+    it('measures as 0 (rather than throwing) when TextEcsComponent exists but has not been shaped into a TextMeshEcsComponent yet', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group, {
+        childForceExpandWidth: false,
+        childForceExpandHeight: false,
+      });
+
+      const a = createChild(world, group, { x: 0, y: 0 });
+
+      world.addComponent(a, textId, {
+        text: 'Music',
+      } as unknown as TextEcsComponent);
+      addLayoutElementComponent(world, a, { sizeToText: true });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+
+      expect(() => world.update()).not.toThrow();
+
+      const rect = world.getComponent(a, rectTransformId)!;
+
+      expect(rect.sizeOrMargin).toEqual({ x: 0, y: 0 });
+    });
+
+    it('still lets an explicit preferredWidth/preferredHeight override sizeToText', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group, {
+        childForceExpandWidth: false,
+        childForceExpandHeight: false,
+      });
+
+      const a = createChild(world, group, { x: 0, y: 0 });
+
+      world.addComponent(a, textId, {
+        text: 'placeholder',
+      } as unknown as TextEcsComponent);
+      world.addComponent(a, textMeshId, {
+        glyphs: [],
+        bounds: { width: 40, height: 20 },
+      } as unknown as TextMeshEcsComponent);
+      addLayoutElementComponent(world, a, {
+        sizeToText: true,
+        preferredWidth: 123,
+        preferredHeight: 45,
+      });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const rect = world.getComponent(a, rectTransformId)!;
+
+      expect(rect.sizeOrMargin.x).toBe(123);
+      expect(rect.sizeOrMargin.y).toBe(45);
     });
   });
 

@@ -1,8 +1,21 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import {
+  actionResetTypes,
+  Axis2dAction,
+  buttonMoments,
+  KeyboardAxis2dBinding,
+  keyCodes,
+  KeyboardInputSource,
+  KeyboardTriggerBinding,
+  MouseInputSource,
+  registerInputs,
+  TriggerAction,
+} from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -24,6 +37,7 @@ import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createInventoryGrid } from './_create-inventory-grid';
 import { createMenu } from './_create-menu';
+import { createOptionsForm } from './_create-options-form';
 import { createToolbar } from './_create-toolbar';
 
 // Forge doesn't ship a reserved "UI" render category - each game picks its
@@ -63,11 +77,67 @@ async function createBackdrop(
 }
 
 /**
- * Builds the layout groups demo: three independent panels - a "Menu"
+ * Wires a `MouseInputSource` and a `KeyboardInputSource` (arrow keys to
+ * navigate focus, Enter/Space to submit) so every interactable across all
+ * four panels - the Menu's buttons, and the Options panel's slider/toggle -
+ * is clickable, hoverable, and keyboard/gamepad-focus-navigable, matching
+ * `ui-button`'s demo of the same pattern.
+ */
+function createUiInputs(
+  world: EcsWorld,
+  time: Time,
+  game: Game,
+): {
+  mouseInputSource: MouseInputSource;
+  submitInput: TriggerAction;
+  navigateInput: Axis2dAction;
+} {
+  const submitInput = new TriggerAction('ui-submit');
+  const navigateInput = new Axis2dAction(
+    'ui-navigate',
+    undefined,
+    actionResetTypes.noReset,
+  );
+
+  const inputManager = registerInputs(world, time, {
+    triggerActions: [submitInput],
+    axis2dActions: [navigateInput],
+  });
+
+  const mouseInputSource = new MouseInputSource(inputManager, game.container);
+  const keyboardInputSource = new KeyboardInputSource(inputManager);
+
+  keyboardInputSource.axis2dBindings.add(
+    new KeyboardAxis2dBinding(
+      navigateInput,
+      keyCodes.arrowUp,
+      keyCodes.arrowDown,
+      keyCodes.arrowRight,
+      keyCodes.arrowLeft,
+    ),
+  );
+
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.enter, buttonMoments.down),
+  );
+  keyboardInputSource.triggerBindings.add(
+    new KeyboardTriggerBinding(submitInput, keyCodes.space, buttonMoments.down),
+  );
+
+  return { mouseInputSource, submitInput, navigateInput };
+}
+
+/**
+ * Builds the layout groups demo: four independent panels - a "Menu"
  * (`VerticalLayoutGroupEcsComponent` + `ContentSizeFitterEcsComponent`), a
- * "Toolbar" (`HorizontalLayoutGroupEcsComponent`), and an "Inventory"
- * (`GridLayoutGroupEcsComponent`) - each arranging its own children with no
- * manual `anchoredPosition`/`sizeOrMargin` bookkeeping.
+ * "Toolbar" (`HorizontalLayoutGroupEcsComponent`), an "Inventory"
+ * (`GridLayoutGroupEcsComponent` with fixed `cellSize` cells), and an
+ * "Options" form (`GridLayoutGroupEcsComponent` with `columnWidthMode:
+ * 'content'`) - each arranging its own children with no manual
+ * `anchoredPosition`/`sizeOrMargin` bookkeeping. Every interactable
+ * (the Menu's buttons, the Options panel's Music slider and Fullscreen
+ * toggle) is clickable and keyboard/gamepad-focus-navigable via
+ * `createUiInputs`.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -87,9 +157,18 @@ export const createLayoutGroupsGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
+  const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
+    world,
+    time,
+    game,
+  );
+
   const canvas = createUiCanvas(world, renderContext, time, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
+    pointerSource: mouseInputSource,
+    submitInput,
+    navigateInput,
   });
 
   const panelImage = await renderContext.imageCache.getOrLoad(
@@ -117,6 +196,14 @@ export const createLayoutGroupsGame = async (
     renderLayers.ui,
   );
   await createInventoryGrid(
+    world,
+    renderContext,
+    canvas,
+    fontAtlas,
+    panelSprite,
+    renderLayers.ui,
+  );
+  await createOptionsForm(
     world,
     renderContext,
     canvas,
