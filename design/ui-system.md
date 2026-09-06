@@ -158,7 +158,7 @@ data.
 | Off-screen targets & compositing | `RenderTarget`, `createPresentEcsSystem`, camera `layer`  | Lets UI skip the world's post-processing stack.                                                                                                                                                                                                                                                                                                     |
 | Action-based input with groups   | `InputManager`, `TriggerAction`, `HoldAction`             | Group gating (`activeGroup`) is the natural "menu open, game paused" switch. `CameraEcsComponent.zoomInput`/`panInput` are the precedent for a component taking `InputAction`s rather than raw input — the UI canvas follows it (DL-14).                                                                                                            |
 | Tweening + easing                | `createAnimationEcsSystem`, `easing-functions/`           | Button press/hover transitions get this for free.                                                                                                                                                                                                                                                                                                   |
-| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onActivate`.                                                                                                                                                                                                                                                                                                                         |
+| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onInvoke`.                                                                                                                                                                                                                                                                                                                         |
 
 ### 4.2 The gaps
 
@@ -308,9 +308,9 @@ flowchart TD
         B2["RectTransformEcsComponent<br/>anchor: center, size: 240 x 64"]
         B3["PositionEcsComponent"]
         B4["SpriteEcsComponent<br/>nine-sliced panel, tinted"]
-        B5["UiInteractableEcsComponent<br/>blocksRaycasts, interactable,<br/><b>onActivate</b> (source-agnostic),<br/>onPointerEnter / … (pointer-only)"]
+        B5["UiInteractableEcsComponent<br/>blocksRaycasts, interactable,<br/><b>onInvoke</b> (source-agnostic),<br/>onPointerEnter / … (pointer-only)"]
         B6["<i>hover/press/drag state lives on<br/>the interactable, written by<br/>the raycaster</i>"]
-        B7["<i>(no ButtonEcsComponent —<br/>onActivate lives on interactable)</i>"]
+        B7["<i>(no ButtonEcsComponent —<br/>onInvoke lives on interactable)</i>"]
         B8["UiColorTransitionEcsComponent<br/>normal / hover / pressed / disabled"]
     end
 
@@ -345,9 +345,9 @@ flowchart TD
     TS["createTransformEcsSystem<br/><i>existing — composes world from local</i>"]
     TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads<br/><i>issue #584, not this module</i>"]
     RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins<br/><i>closes over a MouseInputSource for<br/>canvas-space pointer + buttons (DL-07)</i>"]
-    NAV["createUiNavigationEcsSystem<br/>navigateInput → move focus<br/>submitInput → <b>raise onActivate</b>"]
+    NAV["createUiNavigationEcsSystem<br/>navigateInput → move focus<br/>submitInput → <b>raise onInvoke</b>"]
     UI2["createUiInteractionEcsSystem<br/>enter/exit/down/up/click/drag<br/>+ raise events"]
-    W["<b>Game systems</b><br/><i>read onActivate, isFocused, isPointerOverUi</i>"]
+    W["<b>Game systems</b><br/><i>read onInvoke, isFocused, isPointerOverUi</i>"]
     TR["createUiTransitionEcsSystem<br/>state → tint / sprite swap"]
     RS["createRenderEcsSystem<br/><i>late — world camera then UI camera</i>"]
 
@@ -461,7 +461,7 @@ stateDiagram-v2
     Hovered --> Normal: pointer exits rect
     Hovered --> Pressed: pointer down inside
     Normal --> Pressed: enters AND presses in the same tick
-    Pressed --> Hovered: pointer up inside → <b>raise onActivate</b>
+    Pressed --> Hovered: pointer up inside → <b>raise onInvoke</b>
     Pressed --> Dragging: pointer moves > dragThreshold
     Pressed --> Normal: pointer up outside
     Dragging --> Normal: pointer up → raise onEndDrag
@@ -505,7 +505,7 @@ state = Disabled  if !interactable
 onPointerEnter    when !wasOver && isOver
 onPointerExit     when  wasOver && !isOver
 onPointerDown     when a down edge occurred && isOver
-onActivate        when an up edge occurred && isOver && pressStartedHere
+onInvoke        when an up edge occurred && isOver && pressStartedHere
 ```
 
 Under this formulation the reviewer's scenario raises `onPointerEnter` **and**
@@ -525,7 +525,7 @@ The state machine above is the **pointer** state machine. It is not the whole
 interaction model, because a gamepad has no cursor, no hover, and no click. What
 it has is a _focused_ element and a _submit_ action.
 
-So `onActivate` is raised from two independent paths, and the author cannot tell
+So `onInvoke` is raised from two independent paths, and the author cannot tell
 which fired it:
 
 ```mermaid
@@ -533,7 +533,7 @@ flowchart LR
     P["Pointer path<br/><i>createUiInteractionEcsSystem</i><br/>up edge inside, press started here"] --> A
     N["Focus path<br/><i>createUiNavigationEcsSystem</i><br/>submitInput triggered while focused"] --> A
     S["Script path<br/>action.trigger() from a test<br/>or a scripted tutorial"] --> N
-    A["<b>onActivate</b><br/>raised once"]
+    A["<b>onInvoke</b><br/>raised once"]
 ```
 
 Two states, deliberately distinct:
@@ -560,19 +560,19 @@ already exist in this codebase:
 // Polled — ECS-idiomatic, trivially unit-testable, no listener lifetime concerns.
 const state = world.getComponent(buttonEntity, uiInteractableId);
 
-if (state?.wasActivatedThisFrame) {
+if (state?.wasInvokedThisFrame) {
   startGame();
 }
 
-// Evented — matches ForgeEvent usage elsewhere in the engine. `onActivate` lives
+// Evented — matches ForgeEvent usage elsewhere in the engine. `onInvoke` lives
 // on the interactable, so *anything* activatable has it, not just buttons — and
 // it fires the same way whether a mouse, a gamepad, a key, or a test triggered
 // it (DL-14).
 const interactable = addUiInteractableComponent(world, buttonEntity);
-interactable.onActivate.registerListener(startGame);
+interactable.onInvoke.registerListener(startGame);
 ```
 
-`wasActivatedThisFrame` is an edge derived exactly as above, so it is `true` for
+`wasInvokedThisFrame` is an edge derived exactly as above, so it is `true` for
 one tick even when the press and release landed in the same tick — and it is
 equally `true` when the activation came from a gamepad or a script.
 
@@ -669,7 +669,7 @@ button on screen:
 const canvas = createUiCanvas(world, renderContext);
 const play = createButton(world, canvas, { label: 'Play' });
 
-play.onActivate.registerListener(startGame);
+play.onInvoke.registerListener(startGame);
 ```
 
 `createUiCanvas` creates the canvas entity, its `RectTransformEcsComponent`, a
@@ -716,7 +716,7 @@ const playButton = createButton(world, panel, {
   preferredHeight: 64,
 });
 
-playButton.onActivate.registerListener(() =>
+playButton.onInvoke.registerListener(() =>
   inputManager.setActiveGroup('game'),
 );
 ```
@@ -1314,9 +1314,9 @@ resolved `rect`. Interaction state is `world` to the interactable's `local`.
 **Consequences.** One component instead of three, one query in the raycaster
 instead of two, and one place a reader has to look. Fields written by the
 interaction and navigation systems (`isHovered`, `isFocused`, `isPressed`,
-`isDragging`, `wasActivatedThisFrame`) are documented as system-owned and
+`isDragging`, `wasInvokedThisFrame`) are documented as system-owned and
 read-only to callers, the same convention `PositionEcsComponent.world` already
-uses. Note `isFocused` and `wasActivatedThisFrame` are written by
+uses. Note `isFocused` and `wasInvokedThisFrame` are written by
 `createUiNavigationEcsSystem` as well as the interaction system (DL-14), so
 neither has a single owning system.
 
@@ -1325,7 +1325,7 @@ neither has a single owning system.
 ### DL-14 — Activation is an `InputAction`, not a click
 
 **Options.** (a) `onClick`, raised by the pointer, with gamepad navigation added
-later as a separate concern. (b) A source-agnostic `onActivate`, raised by a
+later as a separate concern. (b) A source-agnostic `onInvoke`, raised by a
 pointer release _or_ a `submitInput` `InputAction` while focused, with the
 activating source never exposed to the author.
 
@@ -1423,10 +1423,10 @@ ratio changes.
 
 | #     | Item                                                                         | Size | Notes                                                                                                                                                            |
 | ----- | ---------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.1 ⛓ | `UiInteractableEcsComponent` — config, events, and current interaction state | S    | `blocksRaycasts`, `interactable`, `onActivate` + the pointer event set, `isHovered`/`isFocused`/`isPressed`/`isDragging`/`wasActivatedThisFrame`. (DL-13, DL-14) |
+| 2.1 ⛓ | `UiInteractableEcsComponent` — config, events, and current interaction state | S    | `blocksRaycasts`, `interactable`, `onInvoke` + the pointer event set, `isHovered`/`isFocused`/`isPressed`/`isDragging`/`wasInvokedThisFrame`. (DL-13, DL-14) |
 | 2.2 ⛓ | `createUiRaycastEcsSystem`                                                   | M    | Reverse-depth scan, first hit wins, publishes `isPointerOverUi`. (DL-08)                                                                                         |
-| 2.3 ⛓ | `createUiInteractionEcsSystem`                                               | M    | The §5.7 pointer state machine; polled state + `ForgeEvent`s. Raises `onActivate` on the pointer path.                                                           |
-| 2.4 ⛓ | `UiFocusEcsComponent` + `createUiNavigationEcsSystem`                        | M    | Directional focus traversal and `submitInput`/`cancelInput`. Raises `onActivate` on the focus path. **Core, not polish** (DL-14).                                |
+| 2.3 ⛓ | `createUiInteractionEcsSystem`                                               | M    | The §5.7 pointer state machine; polled state + `ForgeEvent`s. Raises `onInvoke` on the pointer path.                                                           |
+| 2.4 ⛓ | `UiFocusEcsComponent` + `createUiNavigationEcsSystem`                        | M    | Directional focus traversal and `submitInput`/`cancelInput`. Raises `onInvoke` on the focus path. **Core, not polish** (DL-14).                                |
 | 2.5   | `createButton` aggregate factory                                             | S    | Assembles interactable + transitions + label. No `ButtonEcsComponent`. (DL-13)                                                                                   |
 | 2.6   | `createUiTransitionEcsSystem`                                                | S    | Color tint / sprite swap / scale per state, via the existing easing functions.                                                                                   |
 | 2.7   | Input-group interop docs                                                     | S    | The "UI is open, pause the game" and "click landed on UI" patterns.                                                                                              |
@@ -1520,7 +1520,7 @@ is pure data transformation.
   same-tick cases explicitly — enter-and-press in one tick (asserting
   `onPointerEnter` and `onPointerDown` both fire and the state reaches
   `Pressed` without ever being observed as `Hovered`), and press-and-release in
-  one tick (asserting `onActivate` fires and `wasActivatedThisFrame` is `true`).
+  one tick (asserting `onInvoke` fires and `wasInvokedThisFrame` is `true`).
   These are the cases a one-transition-per-tick implementation silently drops,
   and they are cheap to assert with a synthetic pointer but nearly impossible to
   reproduce by hand.
@@ -1536,7 +1536,7 @@ unit tests provably cannot make:
   on-screen bounds before and after, assert the _ratio_ matches the predicted
   scale factor. Relative, same-run measurement per the e2e guidance — never
   absolute pixel values.
-- A real `page.mouse.click` on a button raises `onActivate` exactly once, and a click
+- A real `page.mouse.click` on a button raises `onInvoke` exactly once, and a click
   on the panel _behind_ a button does not.
 - Text renders as a non-empty, correctly-bounded region at two different camera
   zooms, with the bounds ratio matching the zoom ratio (proves MSDF scaling).
