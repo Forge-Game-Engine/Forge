@@ -3,11 +3,11 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * How `AspectRatioFitterEcsComponent` keeps `aspectRatio`:
- * - `widthControlsHeight` - `sizeOrMargin.y` is derived from `sizeOrMargin.x`.
- * - `heightControlsWidth` - `sizeOrMargin.x` is derived from `sizeOrMargin.y`.
- * - `fitInParent` - `sizeOrMargin` is the largest size, matching `aspectRatio`,
- *   that fits entirely within the parent's rect.
- * - `envelopeParent` - `sizeOrMargin` is the smallest size, matching
+ * - `widthControlsHeight` - the entity's height is derived from its width.
+ * - `heightControlsWidth` - the entity's width is derived from its height.
+ * - `fitInParent` - the entity's size is the largest size, matching
+ *   `aspectRatio`, that fits entirely within the parent's rect.
+ * - `envelopeParent` - the entity's size is the smallest size, matching
  *   `aspectRatio`, that fully covers the parent's rect.
  */
 export type UiAspectRatioFitMode =
@@ -41,7 +41,7 @@ const defaultAspectRatioFitterOptions: AspectRatioFitterDefaultedOptions = {
 /**
  * Attaches an {@link AspectRatioFitterEcsComponent} to `entity`, so
  * `createUiAspectRatioFitterEcsSystem` keeps its
- * `RectTransformEcsComponent.sizeOrMargin` at a constant `aspectRatio` every
+ * `RectTransformEcsComponent`'s own size at a constant `aspectRatio` every
  * frame - useful for a portrait/thumbnail image or a minimap whose
  * container might otherwise stretch it. `fitInParent`/`envelopeParent` read
  * the parent's own resolved `rect` (one frame stale, like every other
@@ -49,8 +49,8 @@ const defaultAspectRatioFitterOptions: AspectRatioFitterDefaultedOptions = {
  * doc comment) - `entity` needs a `ParentEcsComponent` for those two modes.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Assumes a
- * point-anchored `RectTransformEcsComponent` (`sizeOrMargin` is a literal
- * size, not a stretch margin).
+ * point-anchored `RectTransformEcsComponent` (its `x`/`y` are each a
+ * literal size, not a stretch margin).
  * @param options - Options for configuring the fitter.
  * @returns The attached component, for further tuning or runtime changes.
  */

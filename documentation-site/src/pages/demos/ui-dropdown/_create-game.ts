@@ -133,9 +133,8 @@ export const createDropdownGame = async (
     fontAtlas,
     labelColor: textColor,
     labelCategory: renderLayers.ui,
-    anchor: UiAnchor.center,
+    anchor: UiAnchor.center({ x: 320, y: 56 }),
     anchoredPosition: { x: 0, y: 100 },
-    sizeOrMargin: { x: 320, y: 56 },
     selectedIndex: 2,
     transition: boxTransition,
   });

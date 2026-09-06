@@ -7,6 +7,7 @@ import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiSliderId } from '../components/ui-slider-component.js';
+import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -74,7 +75,8 @@ describe('createSlider', () => {
 
     expect(slider.fill).not.toBeUndefined();
     expect(
-      world.getComponent(slider.fill!, rectTransformId)!.anchorMax.x,
+      (world.getComponent(slider.fill!, rectTransformId)!.x as UiStretchAxis)
+        .anchorMax,
     ).toBeCloseTo(0.5);
   });
 
@@ -95,8 +97,9 @@ describe('createSlider', () => {
       rectTransformId,
     )!;
 
-    expect(handleRectTransform.anchorMin.x).toBeCloseTo(0.25);
-    expect(handleRectTransform.anchorMax.x).toBeCloseTo(0.25);
+    expect((handleRectTransform.x as { anchor: number }).anchor).toBeCloseTo(
+      0.25,
+    );
   });
 
   it('exposes onValueChanged directly, matching the slider event', () => {
@@ -146,7 +149,7 @@ describe('createSlider', () => {
     expect(transition.duration).toBe(250);
   });
 
-  it('defaults sizeOrMargin to 300x24 and handleSize to 24x24', () => {
+  it('defaults the track size to 300x24 and handleSize to 24x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -155,11 +158,22 @@ describe('createSlider', () => {
       handleSprite: buildSprite(),
     });
 
-    expect(
-      world.getComponent(slider.entity, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 300, y: 24 });
-    expect(
-      world.getComponent(slider.handle, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 24, y: 24 });
+    const trackRectTransform = world.getComponent(
+      slider.entity,
+      rectTransformId,
+    )!;
+    const handleRectTransform = world.getComponent(
+      slider.handle,
+      rectTransformId,
+    )!;
+
+    expect({
+      x: uiAxisValue(trackRectTransform.x),
+      y: uiAxisValue(trackRectTransform.y),
+    }).toEqual({ x: 300, y: 24 });
+    expect({
+      x: uiAxisValue(handleRectTransform.x),
+      y: uiAxisValue(handleRectTransform.y),
+    }).toEqual({ x: 24, y: 24 });
   });
 });

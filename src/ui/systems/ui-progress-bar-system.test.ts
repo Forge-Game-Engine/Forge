@@ -6,16 +6,16 @@ import {
   addRectTransformComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
+import { UiStretchAxis } from '../types/ui-axis.js';
 
 describe('createUiProgressBarEcsSystem', () => {
-  it("drives the fill entity's anchorMax.x from value", () => {
+  it("drives the fill entity's x.anchorMax from value", () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
     const fill = world.createEntity();
 
     addRectTransformComponent(world, fill, {
-      anchorMin: { x: 0, y: 0 },
-      anchorMax: { x: 0, y: 1 },
+      x: { kind: 'stretch', anchorMin: 0, anchorMax: 0, pivot: 0, margin: 0 },
     });
     const progressBar = addUiProgressBarComponent(world, entity, {
       fill,
@@ -27,14 +27,16 @@ describe('createUiProgressBarEcsSystem', () => {
     world.addSystem(createUiProgressBarEcsSystem());
     world.update();
 
-    expect(world.getComponent(fill, rectTransformId)!.anchorMax.x).toBeCloseTo(
-      0.5,
-    );
+    expect(
+      (world.getComponent(fill, rectTransformId)!.x as UiStretchAxis).anchorMax,
+    ).toBeCloseTo(0.5);
 
     progressBar.value = 10;
     world.update();
 
-    expect(world.getComponent(fill, rectTransformId)!.anchorMax.x).toBe(1);
+    expect(
+      (world.getComponent(fill, rectTransformId)!.x as UiStretchAxis).anchorMax,
+    ).toBe(1);
   });
 
   it('does nothing when the fill entity has no rect transform', () => {

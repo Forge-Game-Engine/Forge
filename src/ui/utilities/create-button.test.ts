@@ -9,6 +9,7 @@ import { uiColorTransitionId } from '../components/ui-color-transition-component
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const fontAtlas = {} as FontAtlas;
 
@@ -39,9 +40,9 @@ describe('createButton', () => {
 
     expect(world.getComponent(button.entity, parentId)).toEqual({ parent });
     expect(world.getComponent(button.entity, positionId)).not.toBeNull();
-    expect(
-      world.getComponent(button.entity, rectTransformId)!.anchorMin,
-    ).toEqual(UiAnchor.center.anchorMin);
+    expect(world.getComponent(button.entity, rectTransformId)!.x).toEqual(
+      UiAnchor.center({ x: 200, y: 60 }).x,
+    );
     expect(world.getComponent(button.entity, spriteId)!.renderable).toBe(
       sprite.renderable,
     );
@@ -68,7 +69,7 @@ describe('createButton', () => {
       label: 'Play',
       fontAtlas,
       labelSize: 32,
-      sizeOrMargin: { x: 240, y: 60 },
+      anchor: UiAnchor.center({ x: 240, y: 60 }),
     });
 
     const text = world.getComponent(button.label, textId)!;
@@ -85,7 +86,7 @@ describe('createButton', () => {
     expect(text.maxWidth).toBe(240);
   });
 
-  it('defaults sizeOrMargin to 200x60', () => {
+  it('defaults the anchor size to 200x60', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -96,9 +97,12 @@ describe('createButton', () => {
       labelSize: 32,
     });
 
-    expect(
-      world.getComponent(button.entity, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 200, y: 60 });
+    const rectTransform = world.getComponent(button.entity, rectTransformId)!;
+
+    expect({
+      x: uiAxisValue(rectTransform.x),
+      y: uiAxisValue(rectTransform.y),
+    }).toEqual({ x: 200, y: 60 });
   });
 
   it('exposes onInvoke directly, matching the interactable event', () => {
@@ -136,7 +140,7 @@ describe('createButton', () => {
     expect(world.getComponent(button.label, textId)!.category).toBe(0b0100);
   });
 
-  it('lets labelMaxWidth override sizeOrMargin.x as the width the label centers within', () => {
+  it("lets labelMaxWidth override the anchor's own width as the width the label centers within", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -145,7 +149,7 @@ describe('createButton', () => {
       label: 'Play',
       fontAtlas,
       labelSize: 32,
-      sizeOrMargin: { x: 0, y: 60 },
+      anchor: UiAnchor.center({ x: 0, y: 60 }),
       labelMaxWidth: 240,
     });
 

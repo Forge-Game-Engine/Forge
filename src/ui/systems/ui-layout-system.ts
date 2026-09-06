@@ -192,7 +192,8 @@ export const createUiLayoutEcsSystem = (
       rectTransform.rect = rect;
       rectTransform.sortDepth = sortDepth;
 
-      const pivotPosition = pivotPositionOf(rect, rectTransform.pivot);
+      const pivot = { x: rectTransform.x.pivot, y: rectTransform.y.pivot };
+      const pivotPosition = pivotPositionOf(rect, pivot);
 
       const position = world.getComponent<PositionEcsComponent>(
         entity,
@@ -209,8 +210,8 @@ export const createUiLayoutEcsSystem = (
 
         sprite.width = size.x;
         sprite.height = size.y;
-        sprite.pivot.x = rectTransform.pivot.x;
-        sprite.pivot.y = rectTransform.pivot.y;
+        sprite.pivot.x = pivot.x;
+        sprite.pivot.y = pivot.y;
         sprite.sortDepth = sortDepth;
       }
 
@@ -219,17 +220,16 @@ export const createUiLayoutEcsSystem = (
       if (text) {
         text.sortDepth = sortDepth;
 
-        // A stretch anchor's sizeOrMargin is a margin, not a width (see
-        // RectTransformEcsComponent's own convention), so the entity's
-        // resolved rect - not anything statically knowable at the call site
-        // - is the only correct source for maxWidth here; a full-width
-        // title bar's actual width, for instance, depends on the render
-        // destination's live size. horizontalAlign/maxWidth-based centering
-        // (see createButton) then keeps working with no caller-side
-        // measurement even when the box itself is dynamically sized. A
-        // point anchor's maxWidth is left untouched - it's the caller's own
-        // explicit choice (or unset, for a label that's simply sized to its
-        // own content).
+        // A `UiStretchAxis`'s `margin` is a margin, not a width, so the
+        // entity's resolved rect - not anything statically knowable at the
+        // call site - is the only correct source for maxWidth here; a
+        // full-width title bar's actual width, for instance, depends on the
+        // render destination's live size. horizontalAlign/maxWidth-based
+        // centering (see createButton) then keeps working with no
+        // caller-side measurement even when the box itself is dynamically
+        // sized. A point-anchored `x`'s maxWidth is left untouched - it's
+        // the caller's own explicit choice (or unset, for a label that's
+        // simply sized to its own content).
         //
         // `horizontalAlignPivot` is synced alongside it to `pivot.x` for
         // the same reason: `shapeText`'s alignment box is measured from the
@@ -243,9 +243,9 @@ export const createUiLayoutEcsSystem = (
         // which pivot it uses, so callers no longer have to reach for a
         // left-pivoted preset (`stretchHorizontalLeft`/`stretchTopLeft`)
         // just to make `horizontalAlign` work.
-        if (rectTransform.anchorMin.x !== rectTransform.anchorMax.x) {
+        if (rectTransform.x.kind === 'stretch') {
           text.maxWidth = rect.max.x - rect.min.x;
-          text.horizontalAlignPivot = rectTransform.pivot.x;
+          text.horizontalAlignPivot = pivot.x;
         }
       }
 

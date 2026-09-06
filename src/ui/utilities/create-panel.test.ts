@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -28,31 +29,33 @@ describe('createPanel', () => {
 
     expect(world.getComponent(panel, parentId)).toEqual({ parent });
     expect(world.getComponent(panel, positionId)).not.toBeNull();
-    expect(world.getComponent(panel, rectTransformId)!.anchorMin).toEqual(
-      UiAnchor.center.anchorMin,
+    expect(world.getComponent(panel, rectTransformId)!.x).toEqual(
+      UiAnchor.center().x,
     );
     expect(world.getComponent(panel, spriteId)!.renderable).toBe(
       sprite.renderable,
     );
   });
 
-  it('applies the given anchor, anchoredPosition, and sizeOrMargin', () => {
+  it('applies the given anchor and anchoredPosition', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
     const sprite = buildSprite();
 
     const panel = createPanel(world, parent, {
       sprite,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft({ x: 200, y: 100 }),
       anchoredPosition: { x: 10, y: -10 },
-      sizeOrMargin: { x: 200, y: 100 },
     });
 
     const rectTransform = world.getComponent(panel, rectTransformId)!;
 
-    expect(rectTransform.anchorMin).toEqual(UiAnchor.topLeft.anchorMin);
+    expect(rectTransform.x).toEqual(UiAnchor.topLeft({ x: 200, y: 100 }).x);
     expect(rectTransform.anchoredPosition).toEqual({ x: 10, y: -10 });
-    expect(rectTransform.sizeOrMargin).toEqual({ x: 200, y: 100 });
+    expect({
+      x: uiAxisValue(rectTransform.x),
+      y: uiAxisValue(rectTransform.y),
+    }).toEqual({ x: 200, y: 100 });
   });
 
   it('clones the passed sprite rather than aliasing it, so reusing one across panels is safe', () => {

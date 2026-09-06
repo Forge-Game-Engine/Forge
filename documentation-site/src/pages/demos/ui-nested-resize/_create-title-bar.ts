@@ -28,9 +28,8 @@ export function createTitleBar(
   uiLayer: number,
 ): void {
   const titleBar = createPanel(world, content, {
-    anchor: UiAnchor.stretchTop,
+    anchor: UiAnchor.stretchTop({ height: 64, horizontalMargin: -16 }),
     anchoredPosition: { x: 0, y: -8 },
-    sizeOrMargin: { x: -16, y: 64 },
     sprite: sprites.header,
   });
 
@@ -38,8 +37,7 @@ export function createTitleBar(
     text: 'Options',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.stretchAll,
-    sizeOrMargin: { x: -24, y: 0 },
+    anchor: UiAnchor.stretchAll({ x: -24, y: 0 }),
     horizontalAlign: textHorizontalAlignments.left,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
@@ -47,9 +45,8 @@ export function createTitleBar(
   });
 
   const closeButton = createPanel(world, titleBar, {
-    anchor: UiAnchor.middleRight,
+    anchor: UiAnchor.middleRight({ x: 40, y: 40 }),
     anchoredPosition: { x: -8, y: 0 },
-    sizeOrMargin: { x: 40, y: 40 },
     sprite: sprites.closeButton,
   });
 
@@ -57,8 +54,7 @@ export function createTitleBar(
     text: 'X',
     fontAtlas,
     size: 20,
-    anchor: UiAnchor.stretchAll,
-    sizeOrMargin: { x: 0, y: 0 },
+    anchor: UiAnchor.stretchAll(),
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,

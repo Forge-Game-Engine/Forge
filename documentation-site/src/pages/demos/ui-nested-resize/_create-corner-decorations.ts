@@ -27,9 +27,8 @@ export function createCornerDecorations(
   uiLayer: number,
 ): void {
   const versionTag = createPanel(world, windowPanel, {
-    anchor: UiAnchor.bottomLeft,
+    anchor: UiAnchor.bottomLeft({ x: 120, y: 32 }),
     anchoredPosition: { x: 16, y: 16 },
-    sizeOrMargin: { x: 120, y: 32 },
     sprite: sprites.cornerAccent,
   });
 
@@ -37,8 +36,7 @@ export function createCornerDecorations(
     text: 'v1.0.0',
     fontAtlas,
     size: 14,
-    anchor: UiAnchor.stretchAll,
-    sizeOrMargin: { x: 0, y: 0 },
+    anchor: UiAnchor.stretchAll(),
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: mutedTextColor,

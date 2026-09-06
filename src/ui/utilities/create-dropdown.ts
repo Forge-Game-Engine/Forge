@@ -15,7 +15,8 @@ import {
   addUiDropdownComponent,
   UiDropdownEcsComponent,
 } from '../components/ui-dropdown-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { UiAxis, uiAxisValue } from '../types/ui-axis.js';
 import { Button, createButton } from './create-button.js';
 import { createLabel } from './create-label.js';
 
@@ -42,14 +43,15 @@ export interface CreateDropdownRequiredOptions {
  * may omit these.
  */
 export interface CreateDropdownDefaultedOptions {
-  /** The anchor/pivot preset to place the header with. Defaults to `UiAnchor.topLeft`. */
-  anchor: AnchorPivotConfig;
+  /**
+   * The anchor to place the header with - see `UiAnchor` for common
+   * presets (e.g. `UiAnchor.topLeft({ x: 240, y: 56 })`). Defaults to
+   * `UiAnchor.topLeft({ x: 240, y: 56 })`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the header's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
-
-  /** The header's size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `240x56`. */
-  sizeOrMargin: Vector2;
 
   /** Overrides `headerSprite.slices`/`optionSprite.slices`. */
   slices?: NineSliceOptions;
@@ -71,7 +73,7 @@ export interface CreateDropdownDefaultedOptions {
    */
   labelCategory?: number;
 
-  /** Each option row's height, in reference pixels. Defaults to the header's own `sizeOrMargin.y`. */
+  /** Each option row's height, in reference pixels. Defaults to the header's own height. */
   optionHeight?: number;
 
   /**
@@ -123,12 +125,15 @@ export interface Dropdown {
   onValueChanged: ParameterizedForgeEvent<number>;
 }
 
-/** The anchor every option row shares: full header width, hanging down from the header's bottom edge. */
-const optionRowAnchor: AnchorPivotConfig = {
-  anchorMin: { x: 0, y: 0 },
-  anchorMax: { x: 1, y: 0 },
-  pivot: { x: 0.5, y: 1 },
-};
+/**
+ * The anchor every option row shares: full header width, hanging down from
+ * the header's bottom edge. `height` sets each row's height - a literal
+ * size, since the row is point-anchored vertically.
+ */
+const optionRowAnchor = (height: number): UiAnchorConfig => ({
+  x: UiAxis.stretch({ min: 0, max: 1 }),
+  y: UiAxis.point(0, { pivot: 1, size: height }),
+});
 
 /**
  * The chevron glyph shown while the option list is closed/open,
@@ -168,8 +173,7 @@ export function createDropdown(
   options: CreateDropdownOptions,
 ): Dropdown {
   const defaultCreateDropdownOptions = {
-    anchor: UiAnchor.topLeft,
-    sizeOrMargin: { x: 240, y: 56 },
+    anchor: UiAnchor.topLeft({ x: 240, y: 56 }),
     selectedIndex: 0,
     labelSize: 24,
     labelColor: Color.black,
@@ -178,7 +182,6 @@ export function createDropdown(
   const {
     anchor,
     anchoredPosition,
-    sizeOrMargin,
     headerSprite,
     optionSprite,
     slices,
@@ -193,19 +196,18 @@ export function createDropdown(
     transition: transitionOptions,
   } = { ...defaultCreateDropdownOptions, ...options };
 
-  const resolvedOptionHeight = optionHeight ?? sizeOrMargin.y;
+  const headerWidth = uiAxisValue(anchor.x);
+  const resolvedOptionHeight = optionHeight ?? uiAxisValue(anchor.y);
 
   // Reserves room on the header's right edge for the chevron, so the
   // selected-option label (`createButton`'s own centered label, `maxWidth`
-  // otherwise defaulting to the header's full `sizeOrMargin.x`) doesn't
-  // overlap it.
+  // otherwise defaulting to the header's full width) doesn't overlap it.
   const chevronReservedWidth = labelSize * 1.5;
 
   const header = createButton(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeOrMargin,
-    labelMaxWidth: sizeOrMargin.x - chevronReservedWidth,
+    labelMaxWidth: headerWidth - chevronReservedWidth,
     sprite: headerSprite,
     slices,
     label: optionLabels[selectedIndex],
@@ -226,7 +228,7 @@ export function createDropdown(
     text: chevronClosedText,
     fontAtlas,
     size: labelSize,
-    anchor: UiAnchor.middleRight,
+    anchor: UiAnchor.middleRight(),
     anchoredPosition: { x: -chevronReservedWidth / 2, y: 0 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
@@ -237,15 +239,14 @@ export function createDropdown(
 
   const optionButtons = optionLabels.map((label, index) =>
     createButton(world, header.entity, {
-      anchor: optionRowAnchor,
+      anchor: optionRowAnchor(resolvedOptionHeight),
       anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
-      sizeOrMargin: { x: 0, y: resolvedOptionHeight },
-      // `optionRowAnchor` stretches each row to the header's full width
-      // with a zero margin (`sizeOrMargin.x` above), so the row's actual
-      // rendered width is the header's own `sizeOrMargin.x`, not its own -
-      // `createButton` can't derive that from a stretched button's own
-      // options alone (see `labelMaxWidth`'s doc comment).
-      labelMaxWidth: sizeOrMargin.x,
+      // `optionRowAnchor` stretches each row to the header's full width with
+      // a zero margin, so the row's actual rendered width is the header's
+      // own width, not its own - `createButton` can't derive that from a
+      // stretched button's own options alone (see `labelMaxWidth`'s doc
+      // comment).
+      labelMaxWidth: headerWidth,
       sprite: optionSprite,
       slices,
       label,

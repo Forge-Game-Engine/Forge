@@ -53,7 +53,7 @@ function createPointerInput(
 
 /**
  * Builds the nested resize demo, dressed up to read as a basic options
- * menu: a window panel whose `RectTransformEcsComponent.sizeOrMargin` *and*
+ * menu: a window panel whose `RectTransformEcsComponent`'s own size (`x`/`y`) *and*
  * `anchoredPosition` `createLiveMotionEcsSystem` oscillates every frame (see
  * `_live-motion.system.ts`), with nested children reacting to that
  * resize/move purely through their own anchors - no code anywhere reacts to
@@ -97,7 +97,7 @@ export const createNestedResizeGame = async (
 
   // Registered before `createUiCanvas` (which registers
   // `createUiLayoutEcsSystem` internally) so the outer panel's resized/moved
-  // `sizeOrMargin`/`anchoredPosition` are already up to date by the time
+  // size (`x`/`y`)/`anchoredPosition` are already up to date by the time
   // layout resolves every rect this same frame - see
   // `_live-motion.system.ts`'s own doc comment.
   world.addSystem(createLiveMotionEcsSystem(time));

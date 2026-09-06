@@ -23,18 +23,19 @@ import {
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
-  AnchorPivotConfig,
   createLabel,
   createPanel,
   createUiCanvas,
   rectTransformId,
   UiAnchor,
+  UiAnchorConfig,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import {
   AnchorPlayground,
+  anchorPlaygroundConfigBuilders,
   anchorPlaygroundDefaults,
 } from './_create-anchor-playground';
 
@@ -130,15 +131,13 @@ export const createAnchorsGame = async (
 
   const labeledPanel = (
     text: string,
-    anchor: AnchorPivotConfig,
+    anchor: UiAnchorConfig,
     anchoredPosition: { x: number; y: number },
-    sizeOrMargin: { x: number; y: number },
     tintColor?: Color,
   ): AnchorPlayground => {
     const panel = createPanel(world, canvas, {
       anchor,
       anchoredPosition,
-      sizeOrMargin,
       sprite: panelSprite,
     });
 
@@ -158,8 +157,7 @@ export const createAnchorsGame = async (
       text,
       fontAtlas,
       size: 24,
-      anchor: UiAnchor.stretchAll,
-      sizeOrMargin: { x: 0, y: 0 },
+      anchor: UiAnchor.stretchAll(),
       horizontalAlign: textHorizontalAlignments.center,
       verticalAlign: textVerticalAlignments.middle,
       color: textColor,
@@ -180,45 +178,35 @@ export const createAnchorsGame = async (
 
   labeledPanel(
     'stretchTop',
-    UiAnchor.stretchTop,
+    UiAnchor.stretchTop({ height: 96, horizontalMargin: -40 }),
     { x: 0, y: -20 },
-    { x: -40, y: 96 },
   );
-  labeledPanel(
-    'topLeft',
-    UiAnchor.topLeft,
-    { x: 20, y: -140 },
-    { x: 260, y: 96 },
-  );
-  labeledPanel(
-    'topRight',
-    UiAnchor.topRight,
-    { x: -20, y: -140 },
-    { x: 260, y: 96 },
-  );
-  labeledPanel(
-    'bottomLeft',
-    UiAnchor.bottomLeft,
-    { x: 20, y: 20 },
-    { x: 260, y: 96 },
-  );
-  labeledPanel(
-    'bottomRight',
-    UiAnchor.bottomRight,
-    { x: -20, y: 20 },
-    { x: 260, y: 96 },
-  );
+  labeledPanel('topLeft', UiAnchor.topLeft({ x: 260, y: 96 }), {
+    x: 20,
+    y: -140,
+  });
+  labeledPanel('topRight', UiAnchor.topRight({ x: 260, y: 96 }), {
+    x: -20,
+    y: -140,
+  });
+  labeledPanel('bottomLeft', UiAnchor.bottomLeft({ x: 260, y: 96 }), {
+    x: 20,
+    y: 20,
+  });
+  labeledPanel('bottomRight', UiAnchor.bottomRight({ x: 260, y: 96 }), {
+    x: -20,
+    y: 20,
+  });
 
   const playground = labeledPanel(
     anchorPlaygroundDefaults.presetName,
-    UiAnchor[anchorPlaygroundDefaults.presetName],
+    anchorPlaygroundConfigBuilders[anchorPlaygroundDefaults.presetName]({
+      x: anchorPlaygroundDefaults.sizeOrMarginX,
+      y: anchorPlaygroundDefaults.sizeOrMarginY,
+    }),
     {
       x: anchorPlaygroundDefaults.anchoredPositionX,
       y: anchorPlaygroundDefaults.anchoredPositionY,
-    },
-    {
-      x: anchorPlaygroundDefaults.sizeOrMarginX,
-      y: anchorPlaygroundDefaults.sizeOrMarginY,
     },
     playgroundTintColor,
   );

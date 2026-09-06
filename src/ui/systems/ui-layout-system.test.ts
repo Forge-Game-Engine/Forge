@@ -184,10 +184,11 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, panel);
     addParentComponent(world, panel, { parent: canvas });
-    addRectTransformComponent(world, panel, {
-      ...UiAnchor.topLeft,
-      sizeOrMargin: { x: 200, y: 100 },
-    });
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.topLeft({ x: 200, y: 100 }),
+    );
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.update();
@@ -213,10 +214,11 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, topBar);
     addParentComponent(world, topBar, { parent: canvas });
-    addRectTransformComponent(world, topBar, {
-      ...UiAnchor.stretchTop,
-      sizeOrMargin: { x: 0, y: 80 },
-    });
+    addRectTransformComponent(
+      world,
+      topBar,
+      UiAnchor.stretchTop({ height: 80 }),
+    );
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.update();
@@ -236,10 +238,11 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, panel);
     addParentComponent(world, panel, { parent: canvas });
-    addRectTransformComponent(world, panel, {
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 300, y: 150 },
-    });
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.center({ x: 300, y: 150 }),
+    );
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
@@ -250,10 +253,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, label);
     addParentComponent(world, label, { parent: panel });
-    addRectTransformComponent(world, label, {
-      ...UiAnchor.stretchAll,
-      sizeOrMargin: { x: 0, y: 0 },
-    });
+    addRectTransformComponent(world, label, UiAnchor.stretchAll());
     addSpriteComponent(world, label, {
       width: 1,
       height: 1,
@@ -288,7 +288,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, hitRegion);
     addParentComponent(world, hitRegion, { parent: canvas });
-    addRectTransformComponent(world, hitRegion, { ...UiAnchor.stretchAll });
+    addRectTransformComponent(world, hitRegion, UiAnchor.stretchAll());
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.update();
@@ -308,10 +308,11 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, panel);
     addParentComponent(world, panel, { parent: canvas });
-    addRectTransformComponent(world, panel, {
-      ...UiAnchor.stretchTop,
-      sizeOrMargin: { x: 0, y: 96 },
-    });
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.stretchTop({ height: 96 }),
+    );
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
@@ -322,7 +323,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, label);
     addParentComponent(world, label, { parent: panel });
-    addRectTransformComponent(world, label, { ...UiAnchor.center });
+    addRectTransformComponent(world, label, UiAnchor.center());
     addTextComponent(world, label, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -347,19 +348,21 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, topBar);
     addParentComponent(world, topBar, { parent: canvas });
-    addRectTransformComponent(world, topBar, {
-      ...UiAnchor.stretchTop,
-      sizeOrMargin: { x: -40, y: 96 },
-    });
+    addRectTransformComponent(
+      world,
+      topBar,
+      UiAnchor.stretchTop({ height: 96, horizontalMargin: -40 }),
+    );
 
     const stretchedLabel = world.createEntity();
 
     addPositionComponent(world, stretchedLabel);
     addParentComponent(world, stretchedLabel, { parent: topBar });
-    addRectTransformComponent(world, stretchedLabel, {
-      ...UiAnchor.stretchHorizontalLeft,
-      sizeOrMargin: { x: 0, y: 0 },
-    });
+    addRectTransformComponent(
+      world,
+      stretchedLabel,
+      UiAnchor.stretchHorizontalLeft({ height: 0 }),
+    );
     addTextComponent(world, stretchedLabel, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -370,7 +373,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, pointLabel);
     addParentComponent(world, pointLabel, { parent: topBar });
-    addRectTransformComponent(world, pointLabel, { ...UiAnchor.center });
+    addRectTransformComponent(world, pointLabel, UiAnchor.center());
     addTextComponent(world, pointLabel, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -396,10 +399,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, centerPivotLabel);
     addParentComponent(world, centerPivotLabel, { parent: canvas });
-    addRectTransformComponent(world, centerPivotLabel, {
-      ...UiAnchor.stretchAll,
-      sizeOrMargin: { x: 0, y: 0 },
-    });
+    addRectTransformComponent(world, centerPivotLabel, UiAnchor.stretchAll());
     addTextComponent(world, centerPivotLabel, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -410,10 +410,11 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, leftPivotLabel);
     addParentComponent(world, leftPivotLabel, { parent: canvas });
-    addRectTransformComponent(world, leftPivotLabel, {
-      ...UiAnchor.stretchHorizontalLeft,
-      sizeOrMargin: { x: 0, y: 0 },
-    });
+    addRectTransformComponent(
+      world,
+      leftPivotLabel,
+      UiAnchor.stretchHorizontalLeft({ height: 0 }),
+    );
     addTextComponent(world, leftPivotLabel, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -424,7 +425,7 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, pointLabel);
     addParentComponent(world, pointLabel, { parent: canvas });
-    addRectTransformComponent(world, pointLabel, { ...UiAnchor.center });
+    addRectTransformComponent(world, pointLabel, UiAnchor.center());
     addTextComponent(world, pointLabel, {
       text: 'Title',
       fontAtlas: {} as FontAtlas,
@@ -456,19 +457,17 @@ describe('createUiLayoutEcsSystem', () => {
 
     addPositionComponent(world, panel);
     addParentComponent(world, panel, { parent: canvas });
-    addRectTransformComponent(world, panel, {
-      ...UiAnchor.topRight,
-      sizeOrMargin: { x: 200, y: 100 },
-    });
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.topRight({ x: 200, y: 100 }),
+    );
 
     const label = world.createEntity();
 
     addPositionComponent(world, label);
     addParentComponent(world, label, { parent: panel });
-    addRectTransformComponent(world, label, {
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    addRectTransformComponent(world, label, UiAnchor.center({ x: 40, y: 20 }));
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.addSystem(createTransformEcsSystem());
@@ -491,10 +490,7 @@ describe('createUiLayoutEcsSystem', () => {
     const orphan = world.createEntity();
 
     addPositionComponent(world, orphan);
-    addRectTransformComponent(world, orphan, {
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 20, y: 20 },
-    });
+    addRectTransformComponent(world, orphan, UiAnchor.center({ x: 20, y: 20 }));
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.update();

@@ -9,10 +9,11 @@ import {
   RectTransformEcsComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
+import { uiAxisValue, withUiAxisValue } from '../types/ui-axis.js';
 
 /**
  * Creates a system that keeps every `AspectRatioFitterEcsComponent`'s
- * `RectTransformEcsComponent.sizeOrMargin` at its configured `aspectRatio` -
+ * `RectTransformEcsComponent`'s own size at its configured `aspectRatio` -
  * `widthControlsHeight`/`heightControlsWidth` derive one axis from the
  * other; `fitInParent`/`envelopeParent` derive both axes from the parent's
  * own resolved `rect` (one frame stale, like every other cross-entity read
@@ -34,15 +35,19 @@ export const createUiAspectRatioFitterEcsSystem = (): EcsSystem<
       const { aspectMode, aspectRatio } = fitter;
 
       if (aspectMode === 'widthControlsHeight') {
-        rectTransform.sizeOrMargin.y =
-          rectTransform.sizeOrMargin.x / aspectRatio;
+        rectTransform.y = withUiAxisValue(
+          rectTransform.y,
+          uiAxisValue(rectTransform.x) / aspectRatio,
+        );
 
         continue;
       }
 
       if (aspectMode === 'heightControlsWidth') {
-        rectTransform.sizeOrMargin.x =
-          rectTransform.sizeOrMargin.y * aspectRatio;
+        rectTransform.x = withUiAxisValue(
+          rectTransform.x,
+          uiAxisValue(rectTransform.y) * aspectRatio,
+        );
 
         continue;
       }
@@ -73,11 +78,17 @@ export const createUiAspectRatioFitterEcsSystem = (): EcsSystem<
           : parentAspectRatio < aspectRatio;
 
       if (isHeightBound) {
-        rectTransform.sizeOrMargin.y = parentSize.y;
-        rectTransform.sizeOrMargin.x = parentSize.y * aspectRatio;
+        rectTransform.y = withUiAxisValue(rectTransform.y, parentSize.y);
+        rectTransform.x = withUiAxisValue(
+          rectTransform.x,
+          parentSize.y * aspectRatio,
+        );
       } else {
-        rectTransform.sizeOrMargin.x = parentSize.x;
-        rectTransform.sizeOrMargin.y = parentSize.x / aspectRatio;
+        rectTransform.x = withUiAxisValue(rectTransform.x, parentSize.x);
+        rectTransform.y = withUiAxisValue(
+          rectTransform.y,
+          parentSize.x / aspectRatio,
+        );
       }
     }
   },
