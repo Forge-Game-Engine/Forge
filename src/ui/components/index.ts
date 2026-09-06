@@ -1,5 +1,6 @@
 export * from './aspect-ratio-fitter-component.js';
 export * from './canvas-component.js';
+export * from './canvas-group-component.js';
 export * from './content-size-fitter-component.js';
 export * from './layout-element-component.js';
 export * from './layout-group-component.js';
