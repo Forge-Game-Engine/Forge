@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Draft |
+| **Status** | Implemented — all three phases (label text auto-sizing, content-sized grid columns/rows, documentation and demo migration) landed in [#630](https://github.com/Forge-Game-Engine/Forge/pull/630) and are on `dev`. `documentation-site/docs/docs/ui/index.md` (its "Labels" and "Layout groups" sections) is now the authoritative reference for `sizeToText` and `columnWidthMode`/`rowHeightMode`/`cellAlignment`; this document remains as historical rationale, including the [Decision log](#4-decision-log) and [Open questions](#5-open-questions)' resolutions noted inline below. Section 6's code sketches predate a later, unrelated refactor ([#631](https://github.com/Forge-Game-Engine/Forge/pull/631)) that replaced `RectTransformEcsComponent.sizeOrMargin` with typed per-axis `UiAxis` fields (`rectTransform.x`/`.y`) - the algorithms they describe are otherwise still accurate to the shipped implementation. |
 | **Engine version at time of writing** | `0.24.2` |
 
 | Module | Change |
@@ -279,7 +279,20 @@ this module already accepts by design (see `design/ui-system.md`'s DL-12,
 "Full recompute per frame; no dirty tracking in v1") rather than
 introducing a new kind of inconsistency.
 
+**As implemented:** the shipped behavior in `ui-layout-group-system.ts`
+splits this more precisely than "require `TextMeshEcsComponent`, throw
+otherwise" suggests - it throws immediately if the entity has no
+`TextEcsComponent` at all (the genuine-misconfiguration case this decision
+is about), but measures as `0` rather than throwing when a
+`TextEcsComponent` exists without a `TextMeshEcsComponent` yet (the
+transient one-frame-lag case this section's own Tradeoff paragraph already
+accepted).
+
 ## 5. Open questions
+
+All four were resolved during implementation; each is left in place with its
+resolution rather than removed, since the reasoning may matter for a future,
+related decision.
 
 1. **Should `sizeToText` live on `LayoutElementEcsComponent`, or become a
    `CreateLabelOptions`-only convenience with no queryable component at
@@ -290,18 +303,32 @@ introducing a new kind of inconsistency.
    design without a precedent to lean on (`preferredWidth`/`Height` are
    plain numeric overrides; `sizeToText` is the first override whose value
    depends on *another component*).
+
+   **Resolved:** kept on `LayoutElementEcsComponent`, as proposed.
+   `CreateLabelOptions.sizeToText` (in `create-label.ts`) is a thin
+   convenience that attaches the component for the caller; it isn't the only
+   way to set it.
 2. **Does `cellAlignment` need independent horizontal/vertical values, or is
    one `UiAlignment` (the existing `Vector2`-shaped preset) enough?** This
    design reuses `UiAlignment` directly, matching `childAlignment`'s
    existing shape on both group types - flag if a real layout needs, say,
    left-aligned labels but centered controls in the same grid, which would
    need per-column (not per-grid) alignment instead.
+
+   **Resolved:** shipped as a single grid-wide `UiAlignment`, as proposed.
+   No use case surfaced needing per-column/row alignment; the shipped UI doc
+   ("Known limitations") records this as a known, not-yet-needed gap rather
+   than closing the door on it.
 3. **Should the new demo (Phase 2) replace `layout-groups`' existing
    inventory grid, or sit alongside it as a fourth panel?** The existing
    three-panel structure (Menu/Toolbar/Inventory) is a deliberate one-panel-
    per-feature split (see `6b9c85da`'s commit splitting the old monolithic
    demo) - confirm whether a fourth "Options form" panel fits that pattern
    or deserves its own demo page.
+
+   **Resolved:** added as a fourth "Options" panel
+   (`_create-options-form.ts`) alongside Menu/Toolbar/Inventory, consistent
+   with the existing one-panel-per-feature split.
 4. **Is a validation error the right failure mode for `'flexible'` +
    `'content'` (DL-02), or should it just be silently disallowed by the
    type system** (e.g. a discriminated union making the combination
@@ -312,6 +339,11 @@ introducing a new kind of inconsistency.
    returned component reference) - worth confirming a discriminated union
    doesn't fight that pattern before committing to the runtime-check
    version this design assumes.
+
+   **Resolved:** shipped as a runtime validation error, thrown by
+   `addGridLayoutGroupComponent` - `GridLayoutGroupDefaultedOptions` stayed a
+   flat, independently-mutable interface rather than becoming a
+   discriminated union, per the concern raised above.
 
 ## 6. Design sub-sections
 
