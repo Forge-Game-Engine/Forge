@@ -66,6 +66,18 @@ export async function createToolbar(
     anchor: { ...UiAnchor.topRight, pivot: { x: 1, y: 0.5 } },
     anchoredPosition: { x: -60, y: -66 },
     sizeOrMargin: { x: 400, y: 32 },
+    // A point anchor (this one included) never gets `maxWidth`/
+    // `horizontalAlignPivot` synced from its rect the way a stretch-x
+    // anchor does (see createLabel's own doc comment) - left unset,
+    // `horizontalAlign: 'right'` had nothing to align against but the
+    // text's own width, and `horizontalAlignPivot` stayed its default 0
+    // instead of matching this label's pivot.x of 1, so the text rendered
+    // flush with local x = 0 (the box's *right* edge, per pivot.x = 1) and
+    // grew further right from there - past the panel's right edge instead
+    // of flush against it. Setting both explicitly gives `horizontalAlign`
+    // the actual 400-wide box to right-align within.
+    maxWidth: 400,
+    horizontalAlignPivot: 1,
     horizontalAlign: textHorizontalAlignments.right,
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
