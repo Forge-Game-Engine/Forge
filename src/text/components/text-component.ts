@@ -84,6 +84,18 @@ export interface TextDefaultedOptions {
   maxWidth?: number;
 
   /**
+   * Where this entity's own local origin sits within the `horizontalAlign`
+   * box, as a fraction of `maxWidth` from the box's left edge - `0` (the
+   * default) means the entity's local `x = 0` *is* the box's left edge.
+   * Set this to match a parent `RectTransformEcsComponent`'s `pivot.x` when
+   * that pivot isn't `0`: `createUiLayoutEcsSystem` already does this
+   * automatically for any stretch-x-anchored label (see its own doc
+   * comment), so most callers never need to set it themselves. See
+   * `ShapeTextOptions.horizontalAlignPivot` for the full mechanics.
+   */
+  horizontalAlignPivot: number;
+
+  /**
    * The draw-order layer for this text, relative to other sprites/text drawn
    * by the same camera. Identical semantics to `SpriteEcsComponent.layer`.
    */
@@ -182,6 +194,7 @@ export function addTextComponent(
     lineHeight: 1,
     horizontalAlign: textHorizontalAlignments.left,
     verticalAlign: textVerticalAlignments.top,
+    horizontalAlignPivot: 0,
     layer: 0,
     category: TEXT_RENDER_CATEGORY,
     enabled: true,

@@ -1,6 +1,9 @@
 import { positionId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { RigidBodyEcsComponent, rigidBodyId } from '@forge-game-engine/forge/physics';
+import {
+  RigidBodyEcsComponent,
+  rigidBodyId,
+} from '@forge-game-engine/forge/physics';
 import {
   PlatformMoverEcsComponent,
   platformMoverId,
@@ -29,10 +32,7 @@ export const createPlatformMoverEcsSystem = (): EcsSystem<
 
       if (position.world.x <= mover.leftX && rigidBody.velocity.x < 0) {
         rigidBody.velocity.x = mover.speed;
-      } else if (
-        position.world.x >= mover.rightX &&
-        rigidBody.velocity.x > 0
-      ) {
+      } else if (position.world.x >= mover.rightX && rigidBody.velocity.x > 0) {
         rigidBody.velocity.x = -mover.speed;
       }
     }

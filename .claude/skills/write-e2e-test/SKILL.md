@@ -73,8 +73,8 @@ visible.
 
 ### The pattern: relative, same-run pixel measurements tied to logic state
 
-Add a measurement method to the scene handle that scans the *actual
-displayed canvas bitmap* for a landmark (a distinctively tinted sprite, a
+Add a measurement method to the scene handle that scans the _actual
+displayed canvas bitmap_ for a landmark (a distinctively tinted sprite, a
 UI element, whatever the feature under test moves/resizes/recolors) and
 returns its on-screen bounds. `measureGreenSquareBounds()` in
 `camera-pan-zoom.ts` is the reference implementation:
@@ -110,7 +110,7 @@ measureGreenSquareBounds(): GreenSquareBounds | null {
 },
 ```
 
-In the spec, capture logic state (`zoom`, `position`, ...) *and* the
+In the spec, capture logic state (`zoom`, `position`, ...) _and_ the
 measured bounds in the same `captureState` call, before and after the
 action under test, then assert the measured bounds moved/resized by the
 amount the logic state predicts:
@@ -127,7 +127,7 @@ expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.8);
 expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.2);
 ```
 
-Why *relative* and *same-run*, specifically:
+Why _relative_ and _same-run_, specifically:
 
 - Comparing a before/after measurement captured within the same test run
   means you never hardcode an expected pixel coordinate or exact color
@@ -143,8 +143,8 @@ Why *relative* and *same-run*, specifically:
 - **Hardcoded/absolute pixel-color assertions.** Don't assert
   `getPixel(400, 300) === '#3388cc'` or similar exact-coordinate,
   exact-color checks. They're brittle to anything that shifts layout by a
-  pixel, and worse, they can be *wrong for reasons unrelated to your
-  feature* - see the SwiftShader note below - in which case they fail
+  pixel, and worse, they can be _wrong for reasons unrelated to your
+  feature_ - see the SwiftShader note below - in which case they fail
   the whole suite for the wrong reason instead of degrading gracefully.
 - **Cross-environment golden-image screenshot diffing**
   (`expect(page).toHaveScreenshot()` / `toMatchSnapshot()`). This repo does
@@ -159,8 +159,8 @@ Why *relative* and *same-run*, specifically:
   readback method. A golden-image diff would have flagged that as a
   regression on every single CI run, forever, unrelated to whether the
   feature worked. Relative measurement against the same run's own
-  before/after state sidesteps this entirely: it only cares whether *this
-  environment's* rendering changed by the right amount, never what the
+  before/after state sidesteps this entirely: it only cares whether _this
+  environment's_ rendering changed by the right amount, never what the
   absolute pixels are.
 - **Numeric-only assertions as the sole check**, per the case study above -
   they're not wrong to include (they're often the clearer failure message
@@ -170,7 +170,7 @@ Why *relative* and *same-run*, specifically:
   canvas isn't created with `preserveDrawingBuffer`, so the browser may
   clear it as soon as control returns to Playwright after a frame is
   presented. Always call `step()` and any pixel-measurement method in the
-  *same* `page.evaluate` callback (see `captureState` in
+  _same_ `page.evaluate` callback (see `captureState` in
   `camera-pan-zoom.spec.ts`).
 
 ## 4. Write the spec

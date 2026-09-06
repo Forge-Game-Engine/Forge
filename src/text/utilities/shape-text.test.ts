@@ -342,6 +342,52 @@ describe('shapeText', () => {
       expect(glyphs[0].offset.x).toBeCloseTo(3);
       expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2);
     });
+
+    describe('horizontalAlignPivot', () => {
+      it('shifts a centered line so it centers on the box rather than on x = 0, when the local origin sits at the box center', () => {
+        // A caller positioned by a center pivot (e.g. `UiAnchor.stretchAll`)
+        // has its own local x = 0 sitting at the box's horizontal center,
+        // not its left edge - `horizontalAlignPivot: 0.5` tells shapeText
+        // that, so the alignment box (and therefore the centered line) is
+        // shifted left by half of maxWidth relative to the no-pivot case.
+        const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+          size: 10,
+          maxWidth: 30,
+          horizontalAlign: 'center',
+          horizontalAlignPivot: 0.5,
+        });
+
+        expect(glyphs[0].offset.x).toBeCloseTo(3 + (30 - 11.2) / 2 - 15);
+      });
+
+      it('shifts a left-aligned line to still start at the box left edge, when the local origin sits at the box center', () => {
+        const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+          size: 10,
+          maxWidth: 30,
+          horizontalAlignPivot: 0.5,
+        });
+
+        expect(glyphs[0].offset.x).toBeCloseTo(3 - 15);
+      });
+
+      it("defaults to 0, matching every alignment mode's pre-existing behavior", () => {
+        const withoutPivot = shapeText('AV', buildFixtureFontAtlasData(), {
+          size: 10,
+          maxWidth: 30,
+          horizontalAlign: 'center',
+        });
+        const withZeroPivot = shapeText('AV', buildFixtureFontAtlasData(), {
+          size: 10,
+          maxWidth: 30,
+          horizontalAlign: 'center',
+          horizontalAlignPivot: 0,
+        });
+
+        expect(withZeroPivot.glyphs[0].offset.x).toBeCloseTo(
+          withoutPivot.glyphs[0].offset.x,
+        );
+      });
+    });
   });
 
   describe('vertical alignment', () => {

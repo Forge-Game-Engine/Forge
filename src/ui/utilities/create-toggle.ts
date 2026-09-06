@@ -19,7 +19,7 @@ import {
   addUiToggleComponent,
   UiToggleEcsComponent,
 } from '../components/ui-toggle-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { createPanel } from './create-panel.js';
 
 /**
@@ -44,14 +44,15 @@ export interface CreateToggleRequiredOptions {
  * omit these.
  */
 export interface CreateToggleDefaultedOptions {
-  /** The anchor/pivot preset to place the toggle with. Defaults to `UiAnchor.center`. */
-  anchor: UiAnchorPreset;
+  /**
+   * The anchor to place the toggle with - see `UiAnchor` for common
+   * presets (e.g. `UiAnchor.center({ x: 32, y: 32 })`). Defaults to
+   * `UiAnchor.center({ x: 32, y: 32 })`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the toggle's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
-
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `32x32`. */
-  sizeDelta: Vector2;
 
   /** Overrides `sprite.slices` for the toggle's box. */
   slices?: NineSliceOptions;
@@ -126,15 +127,13 @@ export function createToggle(
   options: CreateToggleOptions,
 ): Toggle {
   const defaultCreateToggleOptions = {
-    anchor: UiAnchor.center,
-    sizeDelta: { x: 32, y: 32 },
+    anchor: UiAnchor.center({ x: 32, y: 32 }),
     isOn: false,
   };
 
   const {
     anchor,
     anchoredPosition,
-    sizeDelta,
     sprite,
     slices,
     checkmarkSprite,
@@ -147,7 +146,6 @@ export function createToggle(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeDelta,
     sprite,
     slices,
   });
@@ -164,12 +162,9 @@ export function createToggle(
   });
 
   const checkmark = createPanel(world, entity, {
-    anchor: UiAnchor.stretchAll,
-    // Without an explicit zero margin, a stretch anchor falls back to
-    // RectTransformEcsComponent's own default sizeDelta (100x100 - a
-    // literal size for a point anchor, but a *margin* for a stretch one),
-    // ballooning the checkmark far past the box it's meant to exactly fill.
-    sizeDelta: { x: 0, y: 0 },
+    // `UiAnchor.stretchAll()`'s default margin is zero on both axes, so the
+    // checkmark exactly fills the box it's meant to cover.
+    anchor: UiAnchor.stretchAll(),
     sprite: checkmarkSprite,
   });
 

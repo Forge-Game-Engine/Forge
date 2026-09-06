@@ -1,10 +1,7 @@
 import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
-import {
-  Color,
-  SpriteEcsComponent,
-} from '@forge-game-engine/forge/rendering';
+import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
 import {
   addTextComponent,
   FontAtlas,
@@ -25,13 +22,15 @@ const bodyColor = new Color(0.85, 0.87, 0.92, 1);
 const captionGap = 20;
 const columnGap = 18;
 
-const columns: { label: string; horizontalAlign: 'left' | 'center' | 'right' | 'justify' }[] =
-  [
-    { label: 'left (default)', horizontalAlign: 'left' },
-    { label: 'center', horizontalAlign: 'center' },
-    { label: 'right', horizontalAlign: 'right' },
-    { label: 'justify', horizontalAlign: 'justify' },
-  ];
+const columns: {
+  label: string;
+  horizontalAlign: 'left' | 'center' | 'right' | 'justify';
+}[] = [
+  { label: 'left (default)', horizontalAlign: 'left' },
+  { label: 'center', horizontalAlign: 'center' },
+  { label: 'right', horizontalAlign: 'right' },
+  { label: 'justify', horizontalAlign: 'justify' },
+];
 
 /**
  * Builds a 4-column showcase of every `horizontalAlign` value

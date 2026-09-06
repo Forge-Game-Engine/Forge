@@ -85,7 +85,10 @@ object with an `entities` array and a `components` array (one array per queried
 component key, in query order).
 
 ```ts
-const { entities, components: [positions] } = world.query([Position]);
+const {
+  entities,
+  components: [positions],
+} = world.query([Position]);
 
 for (let i = 0; i < entities.length; i++) {
   // do something with positions[i]

@@ -270,6 +270,36 @@ describe('createTextShapingEcsSystem', () => {
     expect(mesh?.bounds.height).toBeCloseTo(24);
   });
 
+  it('re-shapes when horizontalAlignPivot changes', () => {
+    const entity = world.createEntity();
+
+    const textComponent = addTextComponent(world, entity, {
+      text: 'A B',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+      maxWidth: 30,
+      horizontalAlign: 'center',
+    });
+
+    world.update();
+
+    const meshBefore = world.getComponent<TextMeshEcsComponent>(
+      entity,
+      textMeshId,
+    );
+    const glyphXBefore = meshBefore?.glyphs[0].offset.x;
+
+    textComponent.horizontalAlignPivot = 0.5;
+    world.update();
+
+    const meshAfter = world.getComponent<TextMeshEcsComponent>(
+      entity,
+      textMeshId,
+    );
+
+    expect(meshAfter?.glyphs[0].offset.x).toBeCloseTo(glyphXBefore! - 15);
+  });
+
   it('re-shapes when horizontalAlign, verticalAlign, or lineHeight changes', () => {
     const entity = world.createEntity();
 

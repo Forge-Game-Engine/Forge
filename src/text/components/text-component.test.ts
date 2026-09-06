@@ -23,6 +23,7 @@ describe('addTextComponent', () => {
       lineHeight: 1,
       horizontalAlign: 'left',
       verticalAlign: 'top',
+      horizontalAlignPivot: 0,
       layer: 0,
       category: TEXT_RENDER_CATEGORY,
       enabled: true,

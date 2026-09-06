@@ -84,3 +84,17 @@
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
 }
+
+/*
+ * The "Demos" navbar dropdown grows by one entry per demo and, past a
+ * couple dozen, overflows the viewport height with no way to scroll to the
+ * later entries - silently making them impossible to click rather than erroring,
+ * so it went unnoticed across several PRs that each correctly added their
+ * entry to docusaurus.config.ts. Capping the menu's height to the visible
+ * space below the navbar and scrolling internally keeps every entry
+ * reachable regardless of how long the list grows.
+ */
+.navbar .dropdown__menu {
+  max-height: calc(100vh - var(--ifm-navbar-height));
+  overflow-y: auto;
+}

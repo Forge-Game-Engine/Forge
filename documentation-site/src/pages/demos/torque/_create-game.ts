@@ -65,12 +65,10 @@ export const createTorqueGame = async (): Promise<Game> => {
     thrustInput,
   );
 
-  await createMotorScenario(
-    world,
-    renderContext,
-    renderLayers.foreground,
-    { x: columnWidth / 2, y: height * 0.1 },
-  );
+  await createMotorScenario(world, renderContext, renderLayers.foreground, {
+    x: columnWidth / 2,
+    y: height * 0.1,
+  });
 
   // `createThrusterEcsSystem` and `createGustEcsSystem` change
   // `RigidBodyEcsComponent.angularVelocity` directly for this tick, and

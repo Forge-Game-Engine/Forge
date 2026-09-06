@@ -98,9 +98,7 @@ export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
     onWrapEnabledChange(event.target.checked);
   };
 
-  const handleOutlineEnabledChange = (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleOutlineEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOutlineEnabledChange(event.target.checked);
   };
 

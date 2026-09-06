@@ -8,33 +8,40 @@ import {
   addTextComponent,
   TextDefaultedOptions,
   TextRequiredOptions,
+  textVerticalAlignments,
 } from '../../text/index.js';
+import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { UiAnchor, UiAnchorPreset } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
-    /** The anchor/pivot preset to place the label with. Defaults to `UiAnchor.center`. */
-    anchor?: UiAnchorPreset;
+    /**
+     * The anchor to place the label with - see `UiAnchor` for common
+     * presets (e.g. `UiAnchor.center({ x: 200, y: 60 })`). Defaults to
+     * `UiAnchor.center()`.
+     */
+    anchor?: UiAnchorConfig;
 
     /** Offset of the label's pivot from its anchor reference point, in reference pixels. */
     anchoredPosition?: Vector2;
 
     /**
-     * Size in reference pixels when point-anchored; a margin relative to the
-     * anchor rect when stretched. For a point anchor this sizes the label's
-     * *rect* for anchoring purposes only - `TextEcsComponent.maxWidth`
-     * still needs setting explicitly for wrapping/`horizontalAlign` to have
-     * an actual box to work against (see `UiAnchor.stretchHorizontalLeft`'s
-     * own doc comment). For a stretch anchor, `createUiLayoutEcsSystem`
-     * keeps `maxWidth` in sync with the resolved rect's width every frame,
-     * overriding whatever `maxWidth` was passed here.
+     * When `true`, attaches a `LayoutElementEcsComponent` with
+     * `sizeToText: true`, so a parent layout group measures this label by
+     * its own shaped text bounds instead of its own rect. Also defaults
+     * `verticalAlign` to `'bottom'` (unless explicitly overridden) - a
+     * layout-arranged child is always forced to a bottom-left pivot (see
+     * `placeChild`'s doc comment in `ui-layout-group-system.ts`), and
+     * `verticalAlign`'s own default (`'top'`) assumes a top pivot instead,
+     * which renders the text a full line-height below its own
+     * `sizeToText`-measured box rather than inside it. Defaults to `false`.
      */
-    sizeDelta?: Vector2;
+    sizeToText?: boolean;
   };
 
 const defaultCreateLabelOptions = {
-  anchor: UiAnchor.center,
+  anchor: UiAnchor.center(),
 };
 
 /**
@@ -62,8 +69,11 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeDelta, ...textOptions } = {
+  const { anchor, anchoredPosition, sizeToText, ...textOptions } = {
     ...defaultCreateLabelOptions,
+    ...(options.sizeToText && options.verticalAlign === undefined
+      ? { verticalAlign: textVerticalAlignments.bottom }
+      : {}),
     ...options,
   };
 
@@ -74,9 +84,12 @@ export function createLabel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeDelta && { sizeDelta }),
   });
   addTextComponent(world, entity, textOptions);
+
+  if (sizeToText) {
+    addLayoutElementComponent(world, entity, { sizeToText: true });
+  }
 
   return entity;
 }

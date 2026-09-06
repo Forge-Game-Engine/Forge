@@ -1,4 +1,33 @@
-import { actionResetTypes, Axis1dAction, Axis2dAction, buttonMoments, Color, createCamera, createCanvas, createImageSprite, createPresentEcsSystem, createRenderContext, createRenderEcsSystem, createTransformEcsSystem, EcsSystem, EcsWorld, HoldAction, MouseAxis1dBinding, MouseAxis2dBinding, mouseButtons, MouseHoldBinding, MouseInputSource, MouseTriggerBinding, PositionEcsComponent, positionId, registerInputs, SpriteEcsComponent, spriteId, Time, TriggerAction } from '../../../src/index.js';
+import {
+  actionResetTypes,
+  Axis1dAction,
+  Axis2dAction,
+  buttonMoments,
+  Color,
+  createCamera,
+  createCanvas,
+  createImageSprite,
+  createPresentEcsSystem,
+  createRenderContext,
+  createRenderEcsSystem,
+  createTransformEcsSystem,
+  EcsSystem,
+  EcsWorld,
+  HoldAction,
+  MouseAxis1dBinding,
+  MouseAxis2dBinding,
+  mouseButtons,
+  MouseHoldBinding,
+  MouseInputSource,
+  MouseTriggerBinding,
+  PositionEcsComponent,
+  positionId,
+  registerInputs,
+  SpriteEcsComponent,
+  spriteId,
+  Time,
+  TriggerAction,
+} from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {

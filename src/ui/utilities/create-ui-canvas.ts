@@ -14,7 +14,9 @@ import {
   CanvasEcsComponent,
 } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
+import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
+import { createUiLayoutGroupEcsSystem } from '../systems/ui-layout-group-system.js';
 import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
 import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
 import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.js';
@@ -27,10 +29,11 @@ import { UiScaleMode } from '../types/ui-scale-mode.js';
 
 /**
  * Worlds that already have `createUiLayoutEcsSystem` (and
- * `createUiProgressBarEcsSystem`, which must run before it) registered, so
- * calling `createUiCanvas` more than once for the same `EcsWorld` (multiple
- * canvases sharing one game) doesn't register either a second time
- * redundantly resolving every canvas again.
+ * `createUiProgressBarEcsSystem`/`createUiAspectRatioFitterEcsSystem`/
+ * `createUiLayoutGroupEcsSystem`, which must all run before it) registered,
+ * so calling `createUiCanvas` more than once for the same `EcsWorld`
+ * (multiple canvases sharing one game) doesn't register any of them a
+ * second time redundantly resolving every canvas again.
  */
 const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
 
@@ -208,7 +211,8 @@ const defaultCreateUiCanvasOptions = {
  * transparent clear color, its own off-screen `RenderTarget`, and a culling
  * mask isolating it from the world so a world camera whose own `cullingMask`
  * still matches everything doesn't draw UI content a second time. Also
- * registers `createUiLayoutEcsSystem`, `createUiProgressBarEcsSystem`,
+ * registers `createUiLayoutEcsSystem`, `createUiLayoutGroupEcsSystem`,
+ * `createUiAspectRatioFitterEcsSystem`, `createUiProgressBarEcsSystem`,
  * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`, and
  * `createUiToggleEcsSystem` with `world` (each at most once, regardless of
  * how many canvases are created) - plus `createUiRaycastEcsSystem`/
@@ -289,12 +293,21 @@ export function createUiCanvas(
     // toggle/slider, which need this tick's interaction-pipeline state and
     // so can only run after it - registering this before layout lets a
     // `value` write and the fill visual it produces land in the very same
-    // frame.
+    // frame. The aspect ratio fitter and layout group systems likewise have
+    // no interaction dependency, and must run before layout so the
+    // size/anchoredPosition they compute get resolved into a rect the
+    // same tick, rather than lagging a frame behind.
     const progressBar = createUiProgressBarEcsSystem();
+    const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();
+    const layoutGroup = createUiLayoutGroupEcsSystem();
 
     world.addSystem(progressBar);
+    world.addSystem(aspectRatioFitter);
+    world.addSystem(layoutGroup, {
+      after: [progressBar, aspectRatioFitter],
+    });
     world.addSystem(createUiLayoutEcsSystem(renderContext), {
-      after: [progressBar],
+      after: [layoutGroup],
     });
     worldsWithUiLayoutSystem.add(world);
   }

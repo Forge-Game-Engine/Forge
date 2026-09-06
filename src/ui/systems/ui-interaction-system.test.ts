@@ -62,14 +62,14 @@ const createTestCanvas = (
 const createInteractablePanel = (
   world: EcsWorld,
   parent: number,
-  sizeDelta: { x: number; y: number },
+  size: { x: number; y: number },
   overrides: Parameters<typeof addUiInteractableComponent>[2] = {},
 ): number => {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
   addParentComponent(world, entity, { parent });
-  addRectTransformComponent(world, entity, { ...UiAnchor.center, sizeDelta });
+  addRectTransformComponent(world, entity, UiAnchor.center(size));
   addUiInteractableComponent(world, entity, overrides);
 
   return entity;
@@ -274,10 +274,11 @@ describe('createUiInteractionEcsSystem', () => {
 
     addPositionComponent(world, otherElement);
     addParentComponent(world, otherElement, { parent: canvas });
-    addRectTransformComponent(world, otherElement, {
-      ...UiAnchor.topLeft,
-      sizeDelta: { x: 100, y: 100 },
-    });
+    addRectTransformComponent(
+      world,
+      otherElement,
+      UiAnchor.topLeft({ x: 100, y: 100 }),
+    );
     addUiInteractableComponent(world, otherElement);
 
     mouseInputSource.position = { x: 960, y: 540 };

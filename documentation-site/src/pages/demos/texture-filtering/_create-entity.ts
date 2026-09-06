@@ -6,7 +6,6 @@ import {
   addScaleComponent,
 } from '@forge-game-engine/forge/common';
 
-
 export function createEntity(
   world: EcsWorld,
   sprite: Sprite,

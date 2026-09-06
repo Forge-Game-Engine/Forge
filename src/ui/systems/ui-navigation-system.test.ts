@@ -49,9 +49,8 @@ const createButtonAt = (
   addParentComponent(world, entity, { parent: canvas });
 
   const rectTransform = addRectTransformComponent(world, entity, {
-    ...UiAnchor.center,
+    ...UiAnchor.center({ x: 100, y: 50 }),
     anchoredPosition,
-    sizeDelta: { x: 100, y: 50 },
   });
 
   rectTransform.rect = {
