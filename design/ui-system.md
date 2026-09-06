@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | In progress — Phase 0 (prerequisites), Phase 1 (layout core: `RectTransformEcsComponent`, `resolveRect`, `UiAnchor`, `CanvasEcsComponent`/`createUiCanvas`, `createUiLayoutEcsSystem`, `createPanel`/`createLabel`), Phase 2 (interaction: `UiInteractableEcsComponent`, `createUiRaycastEcsSystem`, `createUiInteractionEcsSystem`, `UiFocusEcsComponent`/`createUiNavigationEcsSystem`, `createButton`, `UiColorTransitionEcsComponent`/`createUiTransitionEcsSystem`), and most of Phase 3 (controls: `UiToggleEcsComponent`/`UiToggleGroupEcsComponent`/`createUiToggleEcsSystem`/`createToggle`, `UiSliderEcsComponent`/`createUiSliderEcsSystem`/`createSlider`, `UiProgressBarEcsComponent`/`createUiProgressBarEcsSystem`/`createProgressBar`, `UiDropdownEcsComponent`/`createDropdown`) have landed on `dev`, documented at `documentation-site/docs/docs/ui`. Backlog 3.3 (`RectMaskEcsComponent`) and 3.5 (`TextInputEcsComponent`) remain out of scope per the table below; 3.4 (`ScrollRectEcsComponent`) remains blocked on rect clipping; radial fill (part of backlog 3.7) was deferred alongside clipping - see that item's note. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open, and continue to block only `ScrollRectEcsComponent`/`TextInputEcsComponent` (backlog 3.4/3.5). |
+| **Status**                            | In progress — Phase 0 (prerequisites), Phase 1 (layout core: `RectTransformEcsComponent`, `resolveRect`, `UiAnchor`, `CanvasEcsComponent`/`createUiCanvas`, `createUiLayoutEcsSystem`, `createPanel`/`createLabel`), Phase 2 (interaction: `UiInteractableEcsComponent`, `createUiRaycastEcsSystem`, `createUiInteractionEcsSystem`, `UiFocusEcsComponent`/`createUiNavigationEcsSystem`, `createButton`, `UiColorTransitionEcsComponent`/`createUiTransitionEcsSystem`), most of Phase 3 (controls: `UiToggleEcsComponent`/`UiToggleGroupEcsComponent`/`createUiToggleEcsSystem`/`createToggle`, `UiSliderEcsComponent`/`createUiSliderEcsSystem`/`createSlider`, `UiProgressBarEcsComponent`/`createUiProgressBarEcsSystem`/`createProgressBar`, `UiDropdownEcsComponent`/`createDropdown`), and all of Phase 4 (layout groups: `LayoutElementEcsComponent`, `createUiLayoutGroupEcsSystem`, horizontal/vertical/grid layout groups, `ContentSizeFitterEcsComponent`, `AspectRatioFitterEcsComponent` - [#622](https://github.com/Forge-Game-Engine/Forge/pull/622) - plus the column-aligned form layout extras from `design/form-layout-columns.md`: `LayoutElementEcsComponent.sizeToText` and `GridLayoutGroupEcsComponent.columnWidthMode`/`rowHeightMode`/`cellAlignment` - [#630](https://github.com/Forge-Game-Engine/Forge/pull/630)) have landed on `dev`, documented at `documentation-site/docs/docs/ui`. [#631](https://github.com/Forge-Game-Engine/Forge/pull/631) subsequently replaced `RectTransformEcsComponent`'s `anchorMin`/`anchorMax`/`pivot`/`sizeOrMargin` fields with typed per-axis `UiAxis` (`x`/`y`, each a `UiPointAxis` or `UiStretchAxis` built via `UiAxis.point`/`UiAxis.stretch`) and `UiAnchor`'s presets with factory functions taking the size/margin their own axes need - a breaking change; §6's API sketch and the examples below reflect the current shape. Phase 5 (polish) is in progress - see the backlog table in §8 for per-item status. Backlog 3.3 (`RectMaskEcsComponent`) and 3.5 (`TextInputEcsComponent`) remain out of scope per the table below; 3.4 (`ScrollRectEcsComponent`) remains blocked on rect clipping; radial fill (part of backlog 3.7) was deferred alongside clipping - see that item's note. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open, and continue to block only `ScrollRectEcsComponent`/`TextInputEcsComponent` (backlog 3.4/3.5). |
 | **Target module**                     | `/src/ui` → `@forge-game-engine/forge/ui`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **Engine version at time of writing** | `0.24.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Model**                             | Retained **anchored rect tree** (canvas → rect transforms → graphics + event routing) — _not_ immediate-mode, _not_ markup-and-stylesheet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -588,24 +588,54 @@ Idiomatic to this codebase: plain-data interfaces, a `createComponentId` key, an
 `add<Name>Component` factory, `create<Name>EcsSystem` returning a plain object
 with a batched `update`.
 
+**As implemented** (post-[#631](https://github.com/Forge-Game-Engine/Forge/pull/631)): each axis is a
+discriminated union rather than a shared `Vector2`, so a point-anchored axis has no `margin` to
+set and a stretch-anchored axis has no `size` to set:
+
 ```typescript
-export interface RectTransformDefaultedOptions {
-  /** Normalized lower-left anchor within the parent's rect. `(0,0)` = parent's bottom-left. */
-  anchorMin: Vector2;
-  /** Normalized upper-right anchor within the parent's rect. Equal to `anchorMin` for a point anchor. */
-  anchorMax: Vector2;
-  /** Normalized origin within this element's own rect; the point placed at the anchor. */
-  pivot: Vector2;
-  /** Offset of this element's pivot from its anchor reference point, in reference pixels. */
-  anchoredPosition: Vector2;
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. */
-  sizeDelta: Vector2;
+export interface UiPointAxis {
+  kind: 'point';
+  /** Normalized anchor position within the parent's rect on this axis. */
+  anchor: number;
+  /** Normalized origin within the element's own rect on this axis. */
+  pivot: number;
+  /** The element's literal size on this axis, in reference pixels. */
+  size: number;
 }
 
-export interface RectTransformEcsComponent extends RectTransformDefaultedOptions {
-  /** Resolved rect in UI world space. Written every frame by `createUiLayoutEcsSystem`; do not set directly. */
-  readonly rect: Rect;
+export interface UiStretchAxis {
+  kind: 'stretch';
+  /** Normalized lower/upper anchor bounds within the parent's rect on this axis. */
+  anchorMin: number;
+  anchorMax: number;
+  /** Normalized origin within the element's own rect on this axis. */
+  pivot: number;
+  /** Margin added to the anchor span's size on this axis, in reference pixels. */
+  margin: number;
 }
+
+export type UiAxis = UiPointAxis | UiStretchAxis;
+
+// Build one with the `UiAxis.point`/`UiAxis.stretch` factories, not a raw object literal.
+export const UiAxis = {
+  point: (anchor: number, options?: { size?: number; pivot?: number }): UiPointAxis => ({/* ... */}),
+  stretch: (range: { min: number; max: number }, options?: { margin?: number; pivot?: number }): UiStretchAxis => ({/* ... */}),
+};
+
+export interface RectTransformDefaultedOptions {
+  /** This element's horizontal anchoring - a `UiPointAxis` or `UiStretchAxis`. */
+  x: UiAxis;
+  /** This element's vertical anchoring - see `x`. */
+  y: UiAxis;
+  /** Offset of this element's pivot from its anchor reference point, in reference pixels. */
+  anchoredPosition: Vector2;
+  /** Resolved rect in UI world space. Written every frame by `createUiLayoutEcsSystem`; do not set directly. */
+  rect: Rect;
+  /** Hierarchy pre-order index within its canvas, written every frame by `createUiLayoutEcsSystem`. */
+  sortDepth: number;
+}
+
+export type RectTransformEcsComponent = RectTransformDefaultedOptions;
 
 export const rectTransformId =
   createComponentId<RectTransformEcsComponent>('rectTransform');
@@ -670,8 +700,7 @@ const canvas = createUiCanvas(world, renderContext, {
 });
 
 const panel = createPanel(world, canvas, {
-  anchor: UiAnchor.center,
-  sizeDelta: { x: 480, y: 640 },
+  anchor: UiAnchor.center({ x: 480, y: 640 }),
   sprite: panelSprite,
   slices: { left: 16, right: 16, top: 16, bottom: 16 },
 });
@@ -1419,14 +1448,21 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ### Phase 4 — Layout groups
 
-| #   | Item                                                       | Size |
-| --- | ---------------------------------------------------------- | ---- |
-| 4.1 | `LayoutElementEcsComponent` (min/preferred/flexible sizes) | S    |
-| 4.2 | `createUiLayoutGroupEcsSystem` — two-pass measure/arrange  | M    |
-| 4.3 | Horizontal / Vertical layout groups                        | M    |
-| 4.4 | Grid layout group                                          | M    |
-| 4.5 | `ContentSizeFitterEcsComponent`                            | S    |
-| 4.6 | `AspectRatioFitterEcsComponent`                            | S    |
+**Landed in full** ([#622](https://github.com/Forge-Game-Engine/Forge/pull/622)), plus the
+column-aligned form layout extras from `design/form-layout-columns.md`
+([#630](https://github.com/Forge-Game-Engine/Forge/pull/630)):
+`LayoutElementEcsComponent.sizeToText` and `GridLayoutGroupEcsComponent.columnWidthMode`/
+`rowHeightMode`/`cellAlignment`, letting a label/control grid align every row's control to the
+widest label with no hand-computed offsets. Documented in the UI doc's "Layout groups" section.
+
+| #   | Item                                                        | Size |
+| --- | ------------------------------------------------------------ | ---- |
+| 4.1 | **Landed.** `LayoutElementEcsComponent` (min/preferred/flexible sizes, plus `sizeToText`) | S    |
+| 4.2 | **Landed.** `createUiLayoutGroupEcsSystem` — two-pass measure/arrange  | M    |
+| 4.3 | **Landed.** Horizontal / Vertical layout groups                        | M    |
+| 4.4 | **Landed.** Grid layout group (plus `columnWidthMode`/`rowHeightMode`/`cellAlignment`) | M    |
+| 4.5 | **Landed.** `ContentSizeFitterEcsComponent`                            | S    |
+| 4.6 | **Landed.** `AspectRatioFitterEcsComponent`                            | S    |
 
 ### Phase 5 — Polish
 
@@ -1434,7 +1470,7 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 | --- | --------------------------------------------------------------------------- | --------- |
 | 5.2 | `CanvasGroupEcsComponent` (inherited alpha / interactable / blocksRaycasts) | M         |
 | 5.3 | World-space canvas render mode (diegetic UI, health bars)                   | M         |
-| 5.4 | Text effects: outline, drop shadow, glow (MSDF shader parameters)           | S         |
+| 5.4 | **Landed**, outside this module: text effects (outline, drop shadow, glow as MSDF shader parameters) shipped via `/src/text` ([#608](https://github.com/Forge-Game-Engine/Forge/pull/608), [#610](https://github.com/Forge-Game-Engine/Forge/pull/610)), documented in the text module's Text Effects doc. Nothing left to do here. | S         |
 | 5.5 | Tooltips + a UI-safe-area concept for notched displays                      | S         |
 | 5.6 | UI stress-test demo + dirty-tracking optimization if warranted              | M (DL-12) |
 | 5.7 | Rich text tags (`<b>`, `<color>`)                                           | L         |
@@ -1517,13 +1553,26 @@ feature in one page, and doubling as the stress test for DL-12.
    [#584](https://github.com/Forge-Game-Engine/Forge/issues/584)?**~~ Moot —
    #584 landed on `dev` before UI implementation started, so there is no
    text-less window to worry about.
-2. **Is world-space canvas mode (5.3) actually Phase 5?** Health bars over enemies
-   are a common need and might justify promoting it to Phase 2. Its one blocker
-   is gone — [#587](https://github.com/Forge-Game-Engine/Forge/pull/587) landed
-   the transform fix, and a health bar parented to a rotating ship was exactly
-   the broken case.
-3. **What should the rect static namespace be called?** (DL-11) — `Rects`, or
-   `Rectangle`/`Rect` to mirror `Vector2`/`Vec2` more literally.
-4. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
-   parallel offscreen DOM accessibility tree in scope before 1.0, or explicitly
-   deferred? Worth an explicit decision rather than a silent omission.
+2. ~~**Is world-space canvas mode (5.3) actually Phase 5?**~~ Moot. Its one
+   blocker is gone - [#587](https://github.com/Forge-Game-Engine/Forge/pull/587)
+   landed the transform fix, and a health bar parented to a rotating ship was
+   exactly the broken case - but by the time that was confirmed, Phases 0-4 were
+   already landing in the order this document laid out, and re-sequencing an
+   in-flight phased rollout for one item cost more than shipping it as 5.3 as
+   originally planned. It lands as part of Phase 5 (see §8's backlog table for
+   status).
+3. ~~**What should the rect static namespace be called?**~~ Decided as `Rects`
+   (DL-11's proposed name), not the more literal `Rectangle`/`Rect` mirror - see
+   the `CHANGELOG.md` "math" `Changed` entry: `Rect` is a plain `{ min, max }`
+   object operated on via `Rects.contains`/`Rects.intersects`/`Rects.size`/
+   `Rects.clone`.
+4. **Accessibility — decided: explicitly deferred.** Canvas-rendered UI is
+   invisible to screen readers, and this module's non-goals already rule out
+   DOM-backed widgets except for the one narrow, browser-forced exception text
+   entry needed (DL-10). Reversing that more broadly for accessibility is a
+   substantial feature in its own right - a parallel offscreen DOM tree kept in
+   sync with `RectTransformEcsComponent`/`UiInteractableEcsComponent`/
+   `UiFocusEcsComponent` state - not a small addition to any Phase 5 item, and
+   no current consumer has asked for it. Deferred beyond this backlog and
+   tracked on its own issue, [#634](https://github.com/Forge-Game-Engine/Forge/issues/634),
+   rather than left as a silent omission.
