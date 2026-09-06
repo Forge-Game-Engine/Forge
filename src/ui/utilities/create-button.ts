@@ -17,7 +17,8 @@ import {
   UiInteractableDefaultedOptions,
   UiInteractableEcsComponent,
 } from '../components/ui-interactable-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
 
@@ -48,22 +49,24 @@ export interface CreateButtonRequiredOptions {
  * genuinely optional (no default at all); callers may omit these.
  */
 export interface CreateButtonDefaultedOptions {
-  /** The anchor/pivot preset to place the button with. Defaults to `UiAnchor.center`. */
-  anchor: AnchorPivotConfig;
+  /**
+   * The anchor to place the button with - see `UiAnchor` for common
+   * presets (e.g. `UiAnchor.center({ x: 200, y: 60 })`). Defaults to
+   * `UiAnchor.center({ x: 200, y: 60 })`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the button's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
 
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `200x60`. */
-  sizeOrMargin: Vector2;
-
   /**
    * The width the label centers within, in reference pixels. Defaults to
-   * `sizeOrMargin.x`, which is only the button's actual rendered width for a
-   * point anchor - pass this explicitly when `anchor` is a stretch anchor,
-   * where `sizeOrMargin.x` is a margin rather than a width and can't be used
-   * to derive it (see `createDropdown`'s option rows, which stretch to the
-   * header's width and pass that through here).
+   * `anchor.x`'s own size/margin value, which is only the button's actual
+   * rendered width when `anchor.x` is point-anchored - pass this explicitly
+   * when it's stretch-anchored instead, where that value is a margin rather
+   * than a width and can't be used to derive it (see `createDropdown`'s
+   * option rows, which stretch to the header's width and pass that through
+   * here).
    */
   labelMaxWidth?: number;
 
@@ -146,15 +149,13 @@ export function createButton(
   // `Color` export exists yet. See `sprite-component.ts`'s
   // `defaultSpriteOptions` for the same pattern.
   const defaultCreateButtonOptions = {
-    anchor: UiAnchor.center,
-    sizeOrMargin: { x: 200, y: 60 },
+    anchor: UiAnchor.center({ x: 200, y: 60 }),
     labelColor: Color.black,
   };
 
   const {
     anchor,
     anchoredPosition,
-    sizeOrMargin,
     labelMaxWidth,
     sprite,
     slices,
@@ -170,7 +171,6 @@ export function createButton(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeOrMargin,
     sprite,
     slices,
   });
@@ -185,8 +185,8 @@ export function createButton(
   // `horizontalAlign: 'center'` re-centers each line within `maxWidth` (see
   // `createLabel`'s own doc comment). `UiAnchor.middleLeft` (a point
   // anchor) puts the label's own `x = 0` at the button's left edge, so
-  // `maxWidth: sizeOrMargin.x` - already known statically here, since a point
-  // anchor's `sizeOrMargin` is a literal size - is the button's actual width
+  // `maxWidth: uiAxisValue(anchor.x)` - already known statically here, since
+  // a point axis's value is a literal size - is the button's actual width
   // with no per-frame resolved-rect lookup needed, unlike a stretch anchor.
   // Letting the engine recompute the label's position from
   // `maxWidth`/`horizontalAlign` - rather than pre-measuring the label's
@@ -198,8 +198,8 @@ export function createButton(
     text: label,
     fontAtlas,
     size: labelSize,
-    anchor: UiAnchor.middleLeft,
-    maxWidth: labelMaxWidth ?? sizeOrMargin.x,
+    anchor: UiAnchor.middleLeft(),
+    maxWidth: labelMaxWidth ?? uiAxisValue(anchor.x),
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
     color: labelColor,

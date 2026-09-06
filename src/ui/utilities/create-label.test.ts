@@ -27,8 +27,8 @@ describe('createLabel', () => {
 
     expect(world.getComponent(label, parentId)).toEqual({ parent });
     expect(world.getComponent(label, positionId)).not.toBeNull();
-    expect(world.getComponent(label, rectTransformId)!.anchorMin).toEqual(
-      UiAnchor.center.anchorMin,
+    expect(world.getComponent(label, rectTransformId)!.x).toEqual(
+      UiAnchor.center().x,
     );
 
     const text = world.getComponent(label, textId)!;
@@ -75,7 +75,7 @@ describe('createLabel', () => {
       text: 'Score: 0',
       fontAtlas,
       size: 24,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft(),
       anchoredPosition: { x: 20, y: -20 },
       horizontalAlign: 'right',
     });
@@ -83,7 +83,7 @@ describe('createLabel', () => {
     const rectTransform = world.getComponent(label, rectTransformId)!;
     const text = world.getComponent(label, textId)!;
 
-    expect(rectTransform.anchorMin).toEqual(UiAnchor.topLeft.anchorMin);
+    expect(rectTransform.x).toEqual(UiAnchor.topLeft().x);
     expect(rectTransform.anchoredPosition).toEqual({ x: 20, y: -20 });
     expect(text.horizontalAlign).toBe('right');
   });

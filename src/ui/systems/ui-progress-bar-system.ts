@@ -8,6 +8,7 @@ import {
   RectTransformEcsComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
+import { driveUiAxis } from '../types/ui-axis.js';
 
 /**
  * Creates a system that drives a `UiProgressBarEcsComponent`'s fill entity
@@ -34,8 +35,10 @@ export const createUiProgressBarEcsSystem = (): EcsSystem<
       );
 
       if (fillRectTransform) {
-        fillRectTransform.anchorMax.x =
-          normalizeUiProgressBarValue(progressBar);
+        driveUiAxis(
+          fillRectTransform.x,
+          normalizeUiProgressBarValue(progressBar),
+        );
       }
     }
   },

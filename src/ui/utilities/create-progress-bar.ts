@@ -16,7 +16,8 @@ import {
   UiProgressBarEcsComponent,
 } from '../components/ui-progress-bar-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { driveUiAxis, UiAxis } from '../types/ui-axis.js';
 import { createPanel } from './create-panel.js';
 
 /**
@@ -36,14 +37,15 @@ export interface CreateProgressBarRequiredOptions {
  * callers may omit these.
  */
 export interface CreateProgressBarDefaultedOptions {
-  /** The anchor/pivot preset to place the bar with. Defaults to `UiAnchor.center`. */
-  anchor: AnchorPivotConfig;
+  /**
+   * The anchor to place the bar with - see `UiAnchor` for common presets
+   * (e.g. `UiAnchor.center({ x: 300, y: 24 })`). Defaults to
+   * `UiAnchor.center({ x: 300, y: 24 })`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the bar's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
-
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `300x24`. */
-  sizeOrMargin: Vector2;
 
   /** Overrides `trackSprite.slices` for the track. */
   slices?: NineSliceOptions;
@@ -92,8 +94,7 @@ export function createProgressBar(
   options: CreateProgressBarOptions,
 ): ProgressBar {
   const defaultCreateProgressBarOptions = {
-    anchor: UiAnchor.center,
-    sizeOrMargin: { x: 300, y: 24 },
+    anchor: UiAnchor.center({ x: 300, y: 24 }),
     minValue: 0,
     maxValue: 1,
   };
@@ -101,7 +102,6 @@ export function createProgressBar(
   const {
     anchor,
     anchoredPosition,
-    sizeOrMargin,
     trackSprite,
     slices,
     fillSprite,
@@ -113,7 +113,6 @@ export function createProgressBar(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeOrMargin,
     sprite: trackSprite,
     slices,
   });
@@ -123,10 +122,13 @@ export function createProgressBar(
   addPositionComponent(world, fill);
   addParentComponent(world, fill, { parent: entity });
   addRectTransformComponent(world, fill, {
-    anchorMin: { x: 0, y: 0 },
-    anchorMax: { x: 0, y: 1 },
-    pivot: { x: 0, y: 0.5 },
-    sizeOrMargin: { x: 0, y: 0 },
+    // A stretch axis rather than a point one even though it starts at zero
+    // width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax` is
+    // driven up to the bar's normalized value below and every tick by
+    // `createUiProgressBarEcsSystem`, growing the fill as a genuine stretch
+    // span rather than ever becoming a literal size.
+    x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
+    y: UiAxis.stretch({ min: 0, max: 1 }),
   });
   addSpriteComponent(world, fill, {
     ...fillSprite,
@@ -142,8 +144,10 @@ export function createProgressBar(
     ...(value !== undefined && { value }),
   });
 
-  world.getComponent(fill, rectTransformId)!.anchorMax.x =
-    normalizeUiProgressBarValue(progressBar);
+  driveUiAxis(
+    world.getComponent(fill, rectTransformId)!.x,
+    normalizeUiProgressBarValue(progressBar),
+  );
 
   return { entity, fill, progressBar };
 }

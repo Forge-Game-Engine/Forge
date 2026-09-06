@@ -62,25 +62,22 @@ export async function createInventoryGrid(
   addPositionComponent(world, group);
   addParentComponent(world, group, { parent: canvas });
   addRectTransformComponent(world, group, {
-    ...UiAnchor.bottomLeft,
+    ...UiAnchor.bottomLeft({ x: width, y: titleHeight + titleGap + panelHeight }),
     anchoredPosition: { x: 60, y: 60 },
-    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
   });
 
   createLabel(world, group, {
     text: 'Inventory',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.stretchTopLeft,
-    sizeOrMargin: { x: 0, y: titleHeight },
+    anchor: UiAnchor.stretchTopLeft({ height: titleHeight }),
     horizontalAlign: textHorizontalAlignments.left,
     color: Color.white,
     category: uiCategory,
   });
 
   const panel = createPanel(world, group, {
-    anchor: UiAnchor.bottomLeft,
-    sizeOrMargin: { x: width, y: panelHeight },
+    anchor: UiAnchor.bottomLeft({ x: width, y: panelHeight }),
     sprite: panelSprite,
   });
 

@@ -22,7 +22,7 @@ export interface LayoutElementDefaultedOptions {
  * ECS-style component interface overriding a UI element's measured size for
  * `createUiLayoutGroupEcsSystem` and `ContentSizeFitterEcsComponent`. Every
  * field but `ignoreLayout` is optional - omitted, a group falls back to this
- * element's current `RectTransformEcsComponent.sizeOrMargin` as its preferred
+ * element's current `RectTransformEcsComponent` size (`x`/`y`) as its preferred
  * size, with a min of `0` and a flexible weight of `0` (fixed size, taking
  * no share of any leftover space in a force-expanded group). Add this
  * component only to override that default on a per-field basis; a plain
@@ -66,7 +66,7 @@ export interface LayoutElementEcsComponent extends LayoutElementDefaultedOptions
   /**
    * This element's preferred (and min) size, on whichever axis this is
    * relevant to, comes from its own `TextMeshEcsComponent.bounds` instead of
-   * `RectTransformEcsComponent.sizeOrMargin`. Requires a `TextEcsComponent`
+   * `RectTransformEcsComponent`'s own size. Requires a `TextEcsComponent`
    * on the same entity - `createUiLayoutGroupEcsSystem` throws otherwise. Its
    * `TextMeshEcsComponent` (added once `createTextShapingEcsSystem` actually
    * shapes the text) may not exist yet on the very first tick a brand-new

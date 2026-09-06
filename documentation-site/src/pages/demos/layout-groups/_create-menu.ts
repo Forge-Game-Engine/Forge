@@ -22,7 +22,7 @@ const textColor = new Color(0.12, 0.12, 0.16, 1);
  * Builds a "Menu" panel: a `VerticalLayoutGroupEcsComponent` stacking three
  * buttons, with a `ContentSizeFitterEcsComponent` on the panel itself so it
  * shrink-wraps to exactly fit them - resize a button (or add a fourth) and
- * the panel grows with it, with no `sizeOrMargin` of its own to keep in sync.
+ * the panel grows with it, with no explicit size of its own to keep in sync.
  * `padding.top` reserves room for the title label, which is excluded from
  * the group's own arrangement (and from the size the fitter measures) via
  * `LayoutElementEcsComponent.ignoreLayout` - it's positioned by its own
@@ -41,7 +41,7 @@ export function createMenu(
   uiCategory: number,
 ): void {
   const panel = createPanel(world, canvas, {
-    anchor: UiAnchor.topLeft,
+    anchor: UiAnchor.topLeft(),
     anchoredPosition: { x: 60, y: -60 },
     sprite: panelSprite,
   });
@@ -60,10 +60,7 @@ export function createMenu(
     text: 'Menu',
     fontAtlas,
     size: 28,
-    anchor: UiAnchor.stretchTopLeft,
-    // See createButton's own labels below for why this is needed - a
-    // stretch anchor's default sizeOrMargin is a margin, not a literal size.
-    sizeOrMargin: { x: 0, y: 0 },
+    anchor: UiAnchor.stretchTopLeft({ height: 0 }),
     anchoredPosition: { x: 0, y: -20 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
@@ -88,7 +85,7 @@ export function createMenu(
       labelSize: 22,
       labelColor: textColor,
       labelCategory: uiCategory,
-      sizeOrMargin: { x: 220, y: 56 },
+      anchor: UiAnchor.center({ x: 220, y: 56 }),
       transition: buttonTransition,
     });
   }

@@ -26,7 +26,8 @@ import {
   UiSliderEcsComponent,
 } from '../components/ui-slider-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { driveUiAxis, UiAxis } from '../types/ui-axis.js';
 import { createPanel } from './create-panel.js';
 
 /**
@@ -46,14 +47,15 @@ export interface CreateSliderRequiredOptions {
  * genuinely optional (no default at all); callers may omit these.
  */
 export interface CreateSliderDefaultedOptions {
-  /** The anchor/pivot preset to place the track with. Defaults to `UiAnchor.center`. */
-  anchor: AnchorPivotConfig;
+  /**
+   * The anchor to place the track with - see `UiAnchor` for common
+   * presets (e.g. `UiAnchor.center({ x: 300, y: 24 })`). Defaults to
+   * `UiAnchor.center({ x: 300, y: 24 })`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the track's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
-
-  /** The track's size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. Defaults to `300x24`. */
-  sizeOrMargin: Vector2;
 
   /** Overrides `trackSprite.slices` for the track. */
   slices?: NineSliceOptions;
@@ -148,8 +150,7 @@ export function createSlider(
   options: CreateSliderOptions,
 ): Slider {
   const defaultCreateSliderOptions = {
-    anchor: UiAnchor.center,
-    sizeOrMargin: { x: 300, y: 24 },
+    anchor: UiAnchor.center({ x: 300, y: 24 }),
     handleSize: { x: 24, y: 24 },
     minValue: 0,
     maxValue: 1,
@@ -159,7 +160,6 @@ export function createSlider(
   const {
     anchor,
     anchoredPosition,
-    sizeOrMargin,
     trackSprite,
     slices,
     handleSprite,
@@ -176,7 +176,6 @@ export function createSlider(
   const entity = createPanel(world, parent, {
     anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    sizeOrMargin,
     sprite: trackSprite,
     slices,
   });
@@ -195,10 +194,13 @@ export function createSlider(
     addPositionComponent(world, fill);
     addParentComponent(world, fill, { parent: entity });
     addRectTransformComponent(world, fill, {
-      anchorMin: { x: 0, y: 0 },
-      anchorMax: { x: 0, y: 1 },
-      pivot: { x: 0, y: 0.5 },
-      sizeOrMargin: { x: 0, y: 0 },
+      // A stretch axis rather than a point one even though it starts at
+      // zero width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax`
+      // is driven up to the slider's normalized value below and every tick
+      // by `createUiSliderEcsSystem`, growing the fill as a genuine stretch
+      // span rather than ever becoming a literal size.
+      x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
     });
     addSpriteComponent(world, fill, {
       ...fillSprite,
@@ -213,10 +215,10 @@ export function createSlider(
   addPositionComponent(world, handle);
   addParentComponent(world, handle, { parent: entity });
   addRectTransformComponent(world, handle, {
-    anchorMin: { x: 0, y: 0.5 },
-    anchorMax: { x: 0, y: 0.5 },
-    pivot: { x: 0.5, y: 0.5 },
-    sizeOrMargin: handleSize,
+    // `x.anchor` is driven to the slider's normalized value below and every
+    // tick by `createUiSliderEcsSystem`, sliding the handle along the track.
+    x: UiAxis.point(0, { pivot: 0.5, size: handleSize.x }),
+    y: UiAxis.point(0.5, { size: handleSize.y }),
   });
   addSpriteComponent(world, handle, {
     ...handleSprite,
@@ -237,11 +239,10 @@ export function createSlider(
   const t = normalizeUiSliderValue(slider);
   const handleRectTransform = world.getComponent(handle, rectTransformId)!;
 
-  handleRectTransform.anchorMin.x = t;
-  handleRectTransform.anchorMax.x = t;
+  driveUiAxis(handleRectTransform.x, t);
 
   if (fill !== undefined) {
-    world.getComponent(fill, rectTransformId)!.anchorMax.x = t;
+    driveUiAxis(world.getComponent(fill, rectTransformId)!.x, t);
   }
 
   return {

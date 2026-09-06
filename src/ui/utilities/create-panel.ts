@@ -10,7 +10,7 @@ import {
   SpriteEcsComponent,
 } from '../../rendering/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 
 /**
  * Fields of {@link CreatePanelOptions} with no sensible default; callers
@@ -31,18 +31,16 @@ export interface CreatePanelRequiredOptions {
  * omit these.
  */
 export interface CreatePanelDefaultedOptions {
-  /** The anchor/pivot preset to place the panel with. Defaults to `UiAnchor.center`. */
-  anchor: AnchorPivotConfig;
+  /**
+   * The anchor to place the panel with - see `UiAnchor` for common
+   * presets (e.g. `UiAnchor.center({ x: 200, y: 60 })`), each of which
+   * bakes in the literal size/margin its own axes actually take. Defaults
+   * to `UiAnchor.center()`.
+   */
+  anchor: UiAnchorConfig;
 
   /** Offset of the panel's pivot from its anchor reference point, in reference pixels. */
   anchoredPosition?: Vector2;
-
-  /**
-   * Size in reference pixels when point-anchored; a margin relative to the
-   * anchor rect when stretched. Defaults to `RectTransformEcsComponent`'s
-   * own default (`100x100`) when omitted.
-   */
-  sizeOrMargin?: Vector2;
 
   /**
    * Overrides `sprite.slices` for this panel, for reusing one base sprite
@@ -55,7 +53,7 @@ export type CreatePanelOptions = CreatePanelRequiredOptions &
   Partial<CreatePanelDefaultedOptions>;
 
 const defaultCreatePanelOptions = {
-  anchor: UiAnchor.center,
+  anchor: UiAnchor.center(),
 };
 
 /**
@@ -75,7 +73,7 @@ export function createPanel(
   parent: number,
   options: CreatePanelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeOrMargin, sprite, slices } = {
+  const { anchor, anchoredPosition, sprite, slices } = {
     ...defaultCreatePanelOptions,
     ...options,
   };
@@ -87,7 +85,6 @@ export function createPanel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeOrMargin && { sizeOrMargin }),
   });
   addSpriteComponent(world, entity, {
     ...sprite,

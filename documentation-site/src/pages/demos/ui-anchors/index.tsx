@@ -124,7 +124,7 @@ export default function UiAnchors(): JSX.Element {
           'A demo showcasing RectTransformEcsComponent anchors and pivots from the ui module: corner-pinned, edge-stretched, and centered panels, plus a live-controllable anchor playground.',
       }}
       header="UI Anchors"
-      blurb="Four corner-pinned reference panels (topLeft, topRight, bottomLeft, bottomRight) and a full-width top bar (stretchTop), plus one orange playground panel you can drive yourself with the controls above: pick any UiAnchor preset, then drag its position and size/margin sliders to see exactly how anchorMin/anchorMax/pivot/anchoredPosition/sizeOrMargin interact. Every panel's RectTransformEcsComponent resolves fresh every frame from the canvas's current aspect ratio, so toggling fullscreen keeps each one exactly where its own anchor says it should be, at any window shape - no manual reflow code required."
+      blurb="Four corner-pinned reference panels (topLeft, topRight, bottomLeft, bottomRight) and a full-width top bar (stretchTop), plus one orange playground panel you can drive yourself with the controls above: pick any UiAnchor preset, then drag its position and size/margin sliders to see exactly how each axis's anchor, pivot, anchoredPosition, and size (or margin, for a stretched axis) interact. Every panel's RectTransformEcsComponent resolves fresh every frame from the canvas's current aspect ratio, so toggling fullscreen keeps each one exactly where its own anchor says it should be, at any window shape - no manual reflow code required."
       createGame={createGame}
       interactions={
         <>

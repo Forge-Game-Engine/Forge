@@ -130,10 +130,11 @@ describe('createUiCanvas', () => {
 
     addPositionComponent(world, entity);
     addParentComponent(world, entity, { parent: canvas });
-    addRectTransformComponent(world, entity, {
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 300, y: 150 },
-    });
+    addRectTransformComponent(
+      world,
+      entity,
+      UiAnchor.center({ x: 300, y: 150 }),
+    );
     addUiInteractableComponent(world, entity);
 
     return entity;

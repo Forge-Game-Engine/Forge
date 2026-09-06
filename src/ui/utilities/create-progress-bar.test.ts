@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiProgressBarId } from '../components/ui-progress-bar-component.js';
+import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -53,7 +54,10 @@ describe('createProgressBar', () => {
     });
 
     expect(
-      world.getComponent(progressBar.fill, rectTransformId)!.anchorMax.x,
+      (
+        world.getComponent(progressBar.fill, rectTransformId)!
+          .x as UiStretchAxis
+      ).anchorMax,
     ).toBeCloseTo(0.75);
   });
 
@@ -72,7 +76,7 @@ describe('createProgressBar', () => {
     ).toEqual({ x: 5, y: -5 });
   });
 
-  it('defaults sizeOrMargin to 300x24', () => {
+  it('defaults the track size to 300x24', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -81,8 +85,14 @@ describe('createProgressBar', () => {
       fillSprite: buildSprite(),
     });
 
-    expect(
-      world.getComponent(progressBar.entity, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 300, y: 24 });
+    const rectTransform = world.getComponent(
+      progressBar.entity,
+      rectTransformId,
+    )!;
+
+    expect({
+      x: uiAxisValue(rectTransform.x),
+      y: uiAxisValue(rectTransform.y),
+    }).toEqual({ x: 300, y: 24 });
   });
 });

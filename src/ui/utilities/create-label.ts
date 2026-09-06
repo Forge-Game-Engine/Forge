@@ -12,12 +12,16 @@ import {
 } from '../../text/index.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { AnchorPivotConfig, UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
-    /** The anchor/pivot preset to place the label with. Defaults to `UiAnchor.center`. */
-    anchor?: AnchorPivotConfig;
+    /**
+     * The anchor to place the label with - see `UiAnchor` for common
+     * presets (e.g. `UiAnchor.center({ x: 200, y: 60 })`). Defaults to
+     * `UiAnchor.center()`.
+     */
+    anchor?: UiAnchorConfig;
 
     /** Offset of the label's pivot from its anchor reference point, in reference pixels. */
     anchoredPosition?: Vector2;
@@ -25,7 +29,7 @@ export type CreateLabelOptions = TextRequiredOptions &
     /**
      * When `true`, attaches a `LayoutElementEcsComponent` with
      * `sizeToText: true`, so a parent layout group measures this label by
-     * its own shaped text bounds instead of `sizeOrMargin`. Also defaults
+     * its own shaped text bounds instead of its own rect. Also defaults
      * `verticalAlign` to `'bottom'` (unless explicitly overridden) - a
      * layout-arranged child is always forced to a bottom-left pivot (see
      * `placeChild`'s doc comment in `ui-layout-group-system.ts`), and
@@ -34,27 +38,10 @@ export type CreateLabelOptions = TextRequiredOptions &
      * `sizeToText`-measured box rather than inside it. Defaults to `false`.
      */
     sizeToText?: boolean;
-
-    /**
-     * Size in reference pixels when point-anchored; a margin relative to the
-     * anchor rect when stretched. For a point anchor this sizes the label's
-     * *rect* for anchoring purposes only - `TextEcsComponent.maxWidth`
-     * still needs setting explicitly for wrapping/`horizontalAlign` to have
-     * an actual box to work against, and its pivot needs to be `0` (a
-     * left-pivoted preset, e.g. `UiAnchor.middleLeft`) for `horizontalAlign`
-     * to measure against the right edge - see `createButton`'s own use of
-     * both for why. For a stretch-x anchor (any anchor whose `anchorMin.x`
-     * and `anchorMax.x` differ, e.g. `UiAnchor.stretchAll`),
-     * `createUiLayoutEcsSystem` keeps `maxWidth` and `horizontalAlignPivot`
-     * in sync with the resolved rect every frame instead - so `horizontalAlign`
-     * works correctly under *any* pivot, not just a left one - overriding
-     * whatever `maxWidth` was passed here.
-     */
-    sizeOrMargin?: Vector2;
   };
 
 const defaultCreateLabelOptions = {
-  anchor: UiAnchor.center,
+  anchor: UiAnchor.center(),
 };
 
 /**
@@ -82,14 +69,13 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeOrMargin, sizeToText, ...textOptions } =
-    {
-      ...defaultCreateLabelOptions,
-      ...(options.sizeToText && options.verticalAlign === undefined
-        ? { verticalAlign: textVerticalAlignments.bottom }
-        : {}),
-      ...options,
-    };
+  const { anchor, anchoredPosition, sizeToText, ...textOptions } = {
+    ...defaultCreateLabelOptions,
+    ...(options.sizeToText && options.verticalAlign === undefined
+      ? { verticalAlign: textVerticalAlignments.bottom }
+      : {}),
+    ...options,
+  };
 
   const entity = world.createEntity();
 
@@ -98,7 +84,6 @@ export function createLabel(
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),
-    ...(sizeOrMargin && { sizeOrMargin }),
   });
   addTextComponent(world, entity, textOptions);
 

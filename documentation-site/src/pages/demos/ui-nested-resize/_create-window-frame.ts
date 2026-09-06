@@ -9,7 +9,7 @@ export interface WindowFrame {
 }
 
 /**
- * Creates the window panel (whose `sizeOrMargin`/`anchoredPosition`
+ * Creates the window panel (whose size (`x`/`y`)/`anchoredPosition`
  * `createLiveMotionEcsSystem` oscillates every frame - see
  * `_live-motion.system.ts`) and, nested inside it, the `stretchAll` content
  * panel that hosts the rest of the options menu.
@@ -21,9 +21,8 @@ export function createWindowFrame(
   sprites: DemoSprites,
 ): WindowFrame {
   const windowPanel = createPanel(world, canvas, {
-    anchor: UiAnchor.center,
+    anchor: UiAnchor.center({ x: 740, y: 480 }),
     anchoredPosition: { x: 0, y: 0 },
-    sizeOrMargin: { x: 740, y: 480 },
     sprite: sprites.frame,
   });
 
@@ -44,9 +43,8 @@ export function createWindowFrame(
   });
 
   const content = createPanel(world, windowPanel, {
-    anchor: UiAnchor.stretchAll,
+    anchor: UiAnchor.stretchAll({ x: -48, y: -48 }),
     anchoredPosition: { x: 0, y: 0 },
-    sizeOrMargin: { x: -48, y: -48 },
     sprite: sprites.content,
   });
 

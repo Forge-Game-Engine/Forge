@@ -141,7 +141,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   // A topLeft-anchored label's `verticalAlign: middle` centers its ink on
   // the rect's pivot line - its `anchoredPosition.y` itself, not the middle
-  // of its (otherwise-unused, for a caption) `sizeOrMargin` box. So to land a
+  // of its (otherwise-unused, for a caption) rect. So to land a
   // caption's vertical center on a same-row toggle's center, its y must be
   // offset down by half the toggle's height, not simply match the toggle's
   // own (top-edge) anchoredPosition.y.
@@ -157,7 +157,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
       text,
       fontAtlas,
       size: 26,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft(),
       anchoredPosition,
       verticalAlign: textVerticalAlignments.middle,
       color: Color.white,
@@ -172,7 +172,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
   createToggle(world, canvas, {
     sprite: { ...boxSprite },
     checkmarkSprite: { ...crossSprite },
-    anchor: UiAnchor.topLeft,
+    anchor: UiAnchor.topLeft({ x: 32, y: 32 }),
     anchoredPosition: { x: 240, y: muteToggleY },
     transition: boxTransition,
   });
@@ -193,7 +193,7 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
       checkmarkSprite: crossSprite,
       group: difficultyGroup,
       isOn: i === 0,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft({ x: 32, y: 32 }),
       anchoredPosition: { x: 240 + i * 90, y: difficultyToggleY },
       transition: boxTransition,
     });
@@ -202,10 +202,9 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
       text: difficulties[i],
       fontAtlas,
       size: 20,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft({ x: 60, y: 30 }),
       anchoredPosition: { x: 236 + i * 90, y: -262 },
       horizontalAlign: textHorizontalAlignments.center,
-      sizeOrMargin: { x: 60, y: 30 },
       color: Color.white,
       category: renderLayers.ui,
     });

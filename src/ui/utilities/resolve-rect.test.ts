@@ -2,18 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { resolveRect } from './resolve-rect.js';
 import { Rect } from '../../math/index.js';
 import { RectTransformEcsComponent } from '../components/rect-transform-component.js';
-import { UiAnchor } from '../types/ui-anchor.js';
+import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { UiAxis } from '../types/ui-axis.js';
 
 const parentRect: Rect = { min: { x: -100, y: -50 }, max: { x: 100, y: 50 } };
 
 const buildRectTransform = (
-  overrides: Partial<RectTransformEcsComponent> = {},
+  overrides: Partial<RectTransformEcsComponent> & UiAnchorConfig,
 ): RectTransformEcsComponent => ({
-  anchorMin: { x: 0.5, y: 0.5 },
-  anchorMax: { x: 0.5, y: 0.5 },
-  pivot: { x: 0.5, y: 0.5 },
   anchoredPosition: { x: 0, y: 0 },
-  sizeOrMargin: { x: 100, y: 100 },
   rect: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } },
   sortDepth: 0,
   ...overrides,
@@ -21,10 +18,7 @@ const buildRectTransform = (
 
 describe('resolveRect', () => {
   it('resolves a center point anchor', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(UiAnchor.center({ x: 40, y: 20 }));
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: -20, y: -10 },
@@ -33,10 +27,9 @@ describe('resolveRect', () => {
   });
 
   it('resolves a top-left point anchor', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.topLeft,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(
+      UiAnchor.topLeft({ x: 40, y: 20 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: -100, y: 30 },
@@ -45,10 +38,9 @@ describe('resolveRect', () => {
   });
 
   it('resolves a top-right point anchor', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.topRight,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(
+      UiAnchor.topRight({ x: 40, y: 20 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: 60, y: 30 },
@@ -57,10 +49,9 @@ describe('resolveRect', () => {
   });
 
   it('resolves a bottom-left point anchor', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.bottomLeft,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(
+      UiAnchor.bottomLeft({ x: 40, y: 20 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: -100, y: -50 },
@@ -69,10 +60,9 @@ describe('resolveRect', () => {
   });
 
   it('resolves a bottom-right point anchor', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.bottomRight,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(
+      UiAnchor.bottomRight({ x: 40, y: 20 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: 60, y: -50 },
@@ -82,8 +72,7 @@ describe('resolveRect', () => {
 
   it('offsets a point anchor by anchoredPosition', () => {
     const rectTransform = buildRectTransform({
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 40, y: 20 },
+      ...UiAnchor.center({ x: 40, y: 20 }),
       anchoredPosition: { x: 5, y: -5 },
     });
 
@@ -93,11 +82,10 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches horizontally, sizeOrMargin acting as a margin', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.stretchHorizontal,
-      sizeOrMargin: { x: -40, y: 20 },
-    });
+  it('stretches horizontally, margin acting as a margin', () => {
+    const rectTransform = buildRectTransform(
+      UiAnchor.stretchHorizontal({ height: 20, horizontalMargin: -40 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: -80, y: -10 },
@@ -105,11 +93,10 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches vertically, sizeOrMargin acting as a margin', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.stretchVertical,
-      sizeOrMargin: { x: 20, y: -20 },
-    });
+  it('stretches vertically, margin acting as a margin', () => {
+    const rectTransform = buildRectTransform(
+      UiAnchor.stretchVertical({ width: 20, verticalMargin: -20 }),
+    );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
       min: { x: -10, y: -40 },
@@ -117,11 +104,8 @@ describe('resolveRect', () => {
     });
   });
 
-  it('stretches to fill the parent rect exactly with a zero sizeOrMargin', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.stretchAll,
-      sizeOrMargin: { x: 0, y: 0 },
-    });
+  it('stretches to fill the parent rect exactly with a zero margin', () => {
+    const rectTransform = buildRectTransform(UiAnchor.stretchAll());
 
     expect(resolveRect(parentRect, rectTransform)).toEqual(parentRect);
   });
@@ -129,24 +113,15 @@ describe('resolveRect', () => {
   it('resolves three levels deep', () => {
     const level1 = resolveRect(
       parentRect,
-      buildRectTransform({
-        ...UiAnchor.stretchAll,
-        sizeOrMargin: { x: -20, y: -20 },
-      }),
+      buildRectTransform(UiAnchor.stretchAll({ x: -20, y: -20 })),
     );
     const level2 = resolveRect(
       level1,
-      buildRectTransform({
-        ...UiAnchor.topRight,
-        sizeOrMargin: { x: 30, y: 20 },
-      }),
+      buildRectTransform(UiAnchor.topRight({ x: 30, y: 20 })),
     );
     const level3 = resolveRect(
       level2,
-      buildRectTransform({
-        ...UiAnchor.center,
-        sizeOrMargin: { x: 10, y: 10 },
-      }),
+      buildRectTransform(UiAnchor.center({ x: 10, y: 10 })),
     );
 
     // level1 = parentRect inset by 10 on every side: (-90,-40) to (90,40)
@@ -159,10 +134,7 @@ describe('resolveRect', () => {
 
   it('resolves against a zero-size parent rect to a rect at the parent origin', () => {
     const zeroParent: Rect = { min: { x: 5, y: 5 }, max: { x: 5, y: 5 } };
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 20, y: 20 },
-    });
+    const rectTransform = buildRectTransform(UiAnchor.center({ x: 20, y: 20 }));
 
     expect(resolveRect(zeroParent, rectTransform)).toEqual({
       min: { x: -5, y: -5 },
@@ -172,13 +144,11 @@ describe('resolveRect', () => {
 
   it('handles inverted anchors (anchorMin above anchorMax) as a negative-size stretch', () => {
     const rectTransform = buildRectTransform({
-      anchorMin: { x: 1, y: 1 },
-      anchorMax: { x: 0, y: 0 },
-      pivot: { x: 0.5, y: 0.5 },
-      sizeOrMargin: { x: 0, y: 0 },
+      x: UiAxis.stretch({ min: 1, max: 0 }),
+      y: UiAxis.stretch({ min: 1, max: 0 }),
     });
 
-    // anchorRectSize is (-200,-100) here, so the resolved rect comes out
+    // anchorSpanSize is (-200,-100) here, so the resolved rect comes out
     // with max < min on both axes - `resolveRect` doesn't normalize this,
     // it faithfully reflects what an author-supplied inverted anchor means.
     expect(resolveRect(parentRect, rectTransform)).toEqual({
@@ -188,10 +158,7 @@ describe('resolveRect', () => {
   });
 
   it('does not mutate its inputs', () => {
-    const rectTransform = buildRectTransform({
-      ...UiAnchor.center,
-      sizeOrMargin: { x: 40, y: 20 },
-    });
+    const rectTransform = buildRectTransform(UiAnchor.center({ x: 40, y: 20 }));
     const parentRectClone: Rect = {
       min: { ...parentRect.min },
       max: { ...parentRect.max },
@@ -200,6 +167,11 @@ describe('resolveRect', () => {
     resolveRect(parentRectClone, rectTransform);
 
     expect(parentRectClone).toEqual(parentRect);
-    expect(rectTransform.sizeOrMargin).toEqual({ x: 40, y: 20 });
+    expect(rectTransform.x).toEqual(
+      expect.objectContaining({ kind: 'point', size: 40 }),
+    );
+    expect(rectTransform.y).toEqual(
+      expect.objectContaining({ kind: 'point', size: 20 }),
+    );
   });
 });

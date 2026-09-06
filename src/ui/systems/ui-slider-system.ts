@@ -20,6 +20,7 @@ import {
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
 import { Rect } from '../../math/index.js';
+import { driveUiAxis } from '../types/ui-axis.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
 import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointer-position.js';
@@ -85,8 +86,7 @@ function applySliderVisuals(
   );
 
   if (handleRectTransform) {
-    handleRectTransform.anchorMin.x = t;
-    handleRectTransform.anchorMax.x = t;
+    driveUiAxis(handleRectTransform.x, t);
   }
 
   if (slider.fill !== undefined) {
@@ -96,7 +96,7 @@ function applySliderVisuals(
     );
 
     if (fillRectTransform) {
-      fillRectTransform.anchorMax.x = t;
+      driveUiAxis(fillRectTransform.x, t);
     }
   }
 }

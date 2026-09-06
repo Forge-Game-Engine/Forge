@@ -112,25 +112,22 @@ export async function createOptionsForm(
   addPositionComponent(world, group);
   addParentComponent(world, group, { parent: canvas });
   addRectTransformComponent(world, group, {
-    ...UiAnchor.bottomRight,
+    ...UiAnchor.bottomRight({ x: width, y: titleHeight + titleGap + panelHeight }),
     anchoredPosition: { x: -60, y: 60 },
-    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
   });
 
   createLabel(world, group, {
     text: 'Options',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.stretchTopLeft,
-    sizeOrMargin: { x: 0, y: titleHeight },
+    anchor: UiAnchor.stretchTopLeft({ height: titleHeight }),
     horizontalAlign: textHorizontalAlignments.right,
     color: Color.white,
     category: uiCategory,
   });
 
   const panel = createPanel(world, group, {
-    anchor: UiAnchor.bottomLeft,
-    sizeOrMargin: { x: width, y: panelHeight },
+    anchor: UiAnchor.bottomLeft({ x: width, y: panelHeight }),
     sprite: panelSprite,
   });
 
@@ -158,7 +155,7 @@ export async function createOptionsForm(
     trackSprite: sprites.track,
     handleSprite: sprites.handle,
     fillSprite: sprites.fill,
-    sizeOrMargin: { x: 180, y: 20 },
+    anchor: UiAnchor.center({ x: 180, y: 20 }),
     value: 0.7,
     transition: controlTransition,
   });
@@ -174,7 +171,7 @@ export async function createOptionsForm(
   createToggle(world, panel, {
     sprite: sprites.box,
     checkmarkSprite: sprites.checkmark,
-    sizeOrMargin: { x: 28, y: 28 },
+    anchor: UiAnchor.center({ x: 28, y: 28 }),
     isOn: true,
     transition: controlTransition,
   });

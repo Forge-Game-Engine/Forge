@@ -3,6 +3,7 @@ import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
   RectTransformEcsComponent,
   rectTransformId,
+  withUiAxisValue,
 } from '@forge-game-engine/forge/ui';
 import { LiveMotionEcsComponent, liveMotionId } from './_live-motion.component';
 
@@ -15,7 +16,7 @@ const oscillate = (min: number, max: number, angle: number): number => {
 
 /**
  * Sweeps every `LiveMotionEcsComponent` entity's own
- * `RectTransformEcsComponent.sizeOrMargin` *and* `anchoredPosition` back and
+ * `RectTransformEcsComponent`'s own size (`x`/`y`) *and* `anchoredPosition` back and
  * forth (a sine wave per axis, each on its own period, between that axis's
  * min/max) every frame - this is what demonstrates every nested child's
  * anchor reacting live: a `stretchAll` child fills the resizing rect
@@ -46,10 +47,14 @@ export const createLiveMotionEcsSystem = (
       const xAngle = (live.elapsedSeconds / live.xPeriodSeconds) * Math.PI * 2;
       const yAngle = (live.elapsedSeconds / live.yPeriodSeconds) * Math.PI * 2;
 
-      rectTransform.sizeOrMargin = {
-        x: oscillate(live.minWidth, live.maxWidth, widthAngle),
-        y: oscillate(live.minHeight, live.maxHeight, heightAngle),
-      };
+      rectTransform.x = withUiAxisValue(
+        rectTransform.x,
+        oscillate(live.minWidth, live.maxWidth, widthAngle),
+      );
+      rectTransform.y = withUiAxisValue(
+        rectTransform.y,
+        oscillate(live.minHeight, live.maxHeight, heightAngle),
+      );
       rectTransform.anchoredPosition = {
         x: oscillate(live.minX, live.maxX, xAngle),
         y: oscillate(live.minY, live.maxY, yAngle),

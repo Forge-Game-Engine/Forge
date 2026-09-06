@@ -40,6 +40,7 @@ import {
   createLabel,
   createUiCanvas,
   UiAnchor,
+  UiAxis,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -204,12 +205,10 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
     // x = 0 on the box's actual left edge while still centering it
     // on-screen.
     anchor: {
-      anchorMin: { x: 0.5, y: 1 },
-      anchorMax: { x: 0.5, y: 1 },
-      pivot: { x: 0, y: 1 },
+      x: UiAxis.point(0.5, { pivot: 0, size: statusLabelWidth }),
+      y: UiAxis.point(1, { size: 40 }),
     },
     anchoredPosition: { x: -statusLabelWidth / 2, y: -60 },
-    sizeOrMargin: { x: statusLabelWidth, y: 40 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: statusLabelWidth,
@@ -223,9 +222,8 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   for (let i = 0; i < labels.length; i++) {
     const button = createButton(world, canvas, {
-      anchor: UiAnchor.center,
+      anchor: UiAnchor.center({ x: 260, y: 64 }),
       anchoredPosition: { x: 0, y: buttonY[i] },
-      sizeOrMargin: { x: 260, y: 64 },
       sprite: panelSprite,
       label: labels[i],
       fontAtlas,

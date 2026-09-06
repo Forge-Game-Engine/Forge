@@ -40,7 +40,7 @@ export function createOptionsContent(
   addPositionComponent(world, optionsGrid);
   addParentComponent(world, optionsGrid, { parent: content });
   addRectTransformComponent(world, optionsGrid, {
-    ...UiAnchor.topLeft,
+    ...UiAnchor.topLeft(),
     anchoredPosition: { x: 16, y: -96 },
   });
   addContentSizeFitterComponent(world, optionsGrid, {
@@ -69,7 +69,7 @@ export function createOptionsContent(
     trackSprite: sprites.track,
     handleSprite: sprites.handle,
     fillSprite: sprites.fill,
-    sizeOrMargin: { x: 180, y: 20 },
+    anchor: UiAnchor.center({ x: 180, y: 20 }),
     value: 0.7,
   });
 
@@ -85,7 +85,7 @@ export function createOptionsContent(
   createToggle(world, optionsGrid, {
     sprite: sprites.box,
     checkmarkSprite: sprites.checkmark,
-    sizeOrMargin: { x: 28, y: 28 },
+    anchor: UiAnchor.center({ x: 28, y: 28 }),
     isOn: true,
   });
 
@@ -96,8 +96,7 @@ export function createOptionsContent(
     labelSize: 18,
     labelColor: textColor,
     labelCategory: uiLayer,
-    anchor: UiAnchor.bottomRight,
+    anchor: UiAnchor.bottomRight({ x: 100, y: 40 }),
     anchoredPosition: { x: -16, y: 16 },
-    sizeOrMargin: { x: 100, y: 40 },
   });
 }

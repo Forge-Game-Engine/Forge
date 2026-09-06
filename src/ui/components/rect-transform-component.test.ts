@@ -6,6 +6,7 @@ import {
 import { EcsWorld } from '../../ecs/index.js';
 import { Rects } from '../../math/index.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { UiAxis } from '../types/ui-axis.js';
 
 describe('addRectTransformComponent', () => {
   it('attaches a component with default values for unspecified options', () => {
@@ -15,11 +16,9 @@ describe('addRectTransformComponent', () => {
     const component = addRectTransformComponent(world, entity);
 
     expect(world.getComponent(entity, rectTransformId)).toEqual({
-      anchorMin: { x: 0.5, y: 0.5 },
-      anchorMax: { x: 0.5, y: 0.5 },
-      pivot: { x: 0.5, y: 0.5 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 100 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 100 },
       anchoredPosition: { x: 0, y: 0 },
-      sizeOrMargin: { x: 100, y: 100 },
       rect: Rects.zero,
       sortDepth: 0,
     });
@@ -31,31 +30,38 @@ describe('addRectTransformComponent', () => {
     const entity = world.createEntity();
 
     const component = addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 240, y: 64 },
+      x: UiAxis.point(0.5, { size: 240 }),
+      y: UiAxis.point(0.5, { size: 64 }),
       anchoredPosition: { x: 10, y: -10 },
     });
 
-    expect(component.sizeOrMargin).toEqual({ x: 240, y: 64 });
+    expect(component.x).toEqual({
+      kind: 'point',
+      anchor: 0.5,
+      pivot: 0.5,
+      size: 240,
+    });
+    expect(component.y).toEqual({
+      kind: 'point',
+      anchor: 0.5,
+      pivot: 0.5,
+      size: 64,
+    });
     expect(component.anchoredPosition).toEqual({ x: 10, y: -10 });
-    expect(component.anchorMin).toEqual({ x: 0.5, y: 0.5 });
-    expect(component.pivot).toEqual({ x: 0.5, y: 0.5 });
   });
 
-  it('clones Vector2 options rather than aliasing them', () => {
+  it('clones axis options rather than aliasing them', () => {
     const world = new EcsWorld();
     const entityA = world.createEntity();
     const entityB = world.createEntity();
 
-    const componentA = addRectTransformComponent(world, entityA, {
-      ...UiAnchor.topLeft,
-    });
-    const componentB = addRectTransformComponent(world, entityB, {
-      ...UiAnchor.topLeft,
-    });
+    const topLeft = UiAnchor.topLeft();
+    const componentA = addRectTransformComponent(world, entityA, topLeft);
+    const componentB = addRectTransformComponent(world, entityB, topLeft);
 
-    componentA.anchorMin.x = 0.9;
+    (componentA.x as { anchor: number }).anchor = 0.9;
 
-    expect(componentB.anchorMin.x).toBe(0);
-    expect(UiAnchor.topLeft.anchorMin.x).toBe(0);
+    expect((componentB.x as { anchor: number }).anchor).toBe(0);
+    expect((topLeft.x as { anchor: number }).anchor).toBe(0);
   });
 });

@@ -2,7 +2,7 @@ import { createComponentId } from '@forge-game-engine/forge/ecs';
 
 /**
  * Demo-only component driving the outer panel's live motion: sweeps its own
- * `RectTransformEcsComponent.sizeOrMargin` *and* `anchoredPosition` back and
+ * `RectTransformEcsComponent`'s own size (`x`/`y`) *and* `anchoredPosition` back and
  * forth every frame (an independent sine wave per axis - four axes total,
  * each on its own period, so the panel neither pulses symmetrically nor
  * moves in a simple loop) - see `createLiveMotionEcsSystem`. Every nested

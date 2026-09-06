@@ -176,7 +176,7 @@ describe('createDropdown', () => {
       optionSprite: buildSprite(),
       options: ['Low', 'Medium', 'High'],
       fontAtlas,
-      anchor: UiAnchor.topLeft,
+      anchor: UiAnchor.topLeft({ x: 240, y: 56 }),
       anchoredPosition: { x: 10, y: -10 },
       labelCategory: 0b0100,
     });
@@ -197,7 +197,7 @@ describe('createDropdown', () => {
     }
   });
 
-  it("centers each option row's label against the header's full width, not the option row's own (stretched, zero-width) sizeOrMargin, while the header's own label reserves room for the chevron", () => {
+  it("centers each option row's label against the header's full width, not the option row's own (stretched, zero-width) rect, while the header's own label reserves room for the chevron", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -206,7 +206,6 @@ describe('createDropdown', () => {
       optionSprite: buildSprite(),
       options: ['Low', 'Medium', 'High'],
       fontAtlas,
-      sizeOrMargin: { x: 240, y: 56 },
       labelSize: 24,
     });
 

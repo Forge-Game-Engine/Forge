@@ -54,9 +54,8 @@ const panelSprite = createImageSprite(panelImage, renderContext, {
 });
 
 createPanel(world, canvas, {
-  anchor: UiAnchor.topLeft,
+  anchor: UiAnchor.topLeft({ x: 240, y: 96 }),
   anchoredPosition: { x: 20, y: -20 },
-  sizeOrMargin: { x: 240, y: 96 },
   sprite: panelSprite,
 });
 
@@ -105,37 +104,47 @@ existing `createTransformEcsSystem` composes the right
 `position.world`), and - for elements with a `SpriteEcsComponent` - the
 sprite's `width`/`height`/`pivot`.
 
-Five fields drive resolution:
+Two fields, `x` and `y`, drive resolution - one per axis, each a
+[`UiAxis`](/Forge/docs/api/type-aliases/UiAxis):
 
-- **`anchorMin`/`anchorMax`** - normalized points within the parent's rect,
-  `(0, 0)` its bottom-left corner and `(1, 1)` its top-right. Equal to each
-  other, the element is **point-anchored**: it keeps its own size
-  (`sizeOrMargin`) and moves with the anchor. Different, it's
-  **stretch-anchored**: it resizes with the parent, and `sizeOrMargin` acts as
-  a margin added to the anchor rect instead of a literal size.
-- **`pivot`** - the point within the element's own rect that sits at the
-  anchor (and that sprites/text position around).
-- **`anchoredPosition`** - an offset from the anchor, in reference pixels.
-- **`sizeOrMargin`** - the element's literal size when point-anchored, or a
-  margin when stretched.
+- A **point axis** (`UiAxis.point`) anchors to a single normalized position
+  within the parent's rect on that axis, `0` its low edge and `1` its high
+  edge. It keeps its own literal `size` and moves with the anchor.
+- A **stretch axis** (`UiAxis.stretch`) anchors to a normalized
+  `[anchorMin, anchorMax]` span of the parent's rect on that axis instead. It
+  resizes with the parent, with `margin` added to that span.
 
-[`UiAnchor`](/Forge/docs/api/variables/UiAnchor) has presets for the common
-cases, each setting `anchorMin`/`anchorMax`/`pivot` together: the nine point
+Both kinds also carry a `pivot` - the point within the element's own extent
+on that axis that sits at the anchor (and that sprites/text position
+around) - and the component separately has an **`anchoredPosition`**, an
+`{x, y}` offset from the anchor, in reference pixels, that applies
+regardless of either axis's kind.
+
+Splitting `size` and `margin` into different fields, gated by which kind of
+axis they belong to, means a stretch axis's type simply has no `size`
+field to set by mistake, and a point axis's has no `margin` field - the
+type checker rules out the mix-up that a single, do-everything field would
+otherwise allow silently.
+
+[`UiAnchor`](/Forge/docs/api/variables/UiAnchor) has factories for the
+common cases, each producing an `{x, y}` pair of axes: the nine point
 anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
-`middleRight`, `bottomLeft`, `bottomCenter`, `bottomRight`), edge-pinned
-bands (`stretchTop`, `stretchBottom`, `stretchLeft`, `stretchRight` - the
-common "HUD bar" and "side panel" anchors, where `sizeOrMargin` sets the
-band's thickness), center bands (`stretchHorizontal`, `stretchVertical`),
-`stretchAll`, and a few non-center-pivoted variants - `stretchTopLeft`,
-`stretchHorizontalLeft`, and `stretchTopRight` - for when you specifically
+`middleRight`, `bottomLeft`, `bottomCenter`, `bottomRight`) take a `size`
+`Vector2`; edge-pinned bands (`stretchTop`, `stretchBottom`, `stretchLeft`,
+`stretchRight` - the common "HUD bar" and "side panel" anchors) take a
+`height`/`width` plus an optional `horizontalMargin`/`verticalMargin`;
+center bands (`stretchHorizontal`, `stretchVertical`) take the same;
+`stretchAll` takes a `margin` `Vector2`; and a few non-center-pivoted
+variants - `stretchTopLeft`, `stretchHorizontalLeft`, and `stretchTopRight`
+- take the same shape as their band counterparts, for when you specifically
 want the rect's own local origin on a particular edge rather than the
-center (see [Labels](#labels) below). Spread one into `addRectTransformComponent`'s
-options, or into `createPanel`/`createLabel`'s `anchor` option:
+center (see [Labels](#labels) below). Spread the result into
+`addRectTransformComponent`'s options, or into `createPanel`/`createLabel`'s
+`anchor` option:
 
 ```ts
 addRectTransformComponent(world, entity, {
-  ...UiAnchor.stretchTop,
-  sizeOrMargin: { x: 0, y: 64 }, // a 64-unit-tall bar spanning the full width
+  ...UiAnchor.stretchTop({ height: 64 }), // a 64-unit-tall bar spanning the full width
 });
 ```
 
@@ -190,10 +199,9 @@ createLabel(world, panel, {
   // horizontalAlign. verticalAlign has no such caveat.
   horizontalAlign: 'center',
   verticalAlign: 'middle',
-  // `UiAnchor.middleLeft` is point-anchored, so its `sizeOrMargin` is a
-  // literal size - `maxWidth` needs to be set to match it explicitly.
-  anchor: UiAnchor.middleLeft,
-  sizeOrMargin: { x: 200, y: 40 },
+  // `UiAnchor.middleLeft` is point-anchored on both axes, so its `x` carries
+  // a literal size - `maxWidth` needs to be set to match it explicitly.
+  anchor: UiAnchor.middleLeft({ x: 200, y: 40 }),
   maxWidth: 200,
 });
 ```
@@ -203,8 +211,8 @@ createLabel(world, panel, {
 `pivot.x: 0` anchor like `middleLeft`. A center-pivoted anchor (`center`,
 `topCenter`, `stretchAll`, ...) would offset that box away from the rect's
 real bounds, _except_ `createUiLayoutEcsSystem` compensates for this
-automatically for any stretch-x anchor (`anchorMin.x !== anchorMax.x`,
-e.g. `stretchAll`, `stretchHorizontal`) - it syncs both
+automatically for any stretch-x anchor (`x.kind === 'stretch'`, e.g.
+`stretchAll`, `stretchHorizontal`) - it syncs both
 `TextEcsComponent.maxWidth` and `horizontalAlignPivot` from the resolved
 rect and its pivot every frame, so `horizontalAlign` works correctly under
 any pivot for those anchors, with no `maxWidth` to set at all:
@@ -215,11 +223,9 @@ createLabel(world, topBar, {
   fontAtlas,
   size: 40,
   category: uiRenderCategory,
-  anchor: UiAnchor.stretchAll,
-  // A stretch anchor's default sizeOrMargin ({100, 100}) is a margin, not a
-  // literal size - omitting this widens maxWidth past topBar's actual
-  // width by 100, off-centering the text instead of centering it.
-  sizeOrMargin: { x: 0, y: 0 },
+  // `stretchAll`'s default margin is zero on both axes, so maxWidth ends up
+  // matching topBar's actual width rather than being widened past it.
+  anchor: UiAnchor.stretchAll(),
   horizontalAlign: 'center',
   verticalAlign: 'middle',
   // No maxWidth - createUiLayoutEcsSystem derives it (and the pivot
@@ -230,8 +236,8 @@ createLabel(world, topBar, {
 });
 ```
 
-A **point** anchor doesn't get this automatic sync (there's no per-frame
-resolved rect to derive it from beyond what `sizeOrMargin` already gives you
+A **point** axis doesn't get this automatic sync (there's no per-frame
+resolved rect to derive it from beyond what its own `size` already gives you
 statically), so a point-anchored label centering against an explicit
 `maxWidth` still needs a `pivot.x: 0` anchor - `middleLeft`,
 `topLeft`/`bottomLeft` - as in the example above.
@@ -247,7 +253,7 @@ work.
 [`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
 with `sizeToText: true`, so a parent layout group (see
 [Layout groups](#layout-groups) below) measures the label by its own shaped
-`TextMeshEcsComponent.bounds` instead of a hand-set `sizeOrMargin`:
+`TextMeshEcsComponent.bounds` instead of its own hand-set rect size:
 
 ```ts
 createLabel(world, optionsRow, {
@@ -512,9 +518,9 @@ game needs that.
 ## Layout groups
 
 Every element seen so far is positioned manually - an explicit anchor and
-`anchoredPosition`/`sizeOrMargin`. A layout group instead arranges its own
-direct children automatically, recomputing every frame just like
-`createUiLayoutEcsSystem` itself does:
+`anchoredPosition`. A layout group instead arranges its own direct children
+automatically, recomputing every frame just like `createUiLayoutEcsSystem`
+itself does:
 
 ```ts
 import {
@@ -526,8 +532,7 @@ import {
 } from '@forge-game-engine/forge/ui';
 
 const menu = createPanel(world, canvas, {
-  anchor: UiAnchor.center,
-  sizeOrMargin: { x: 320, y: 400 },
+  anchor: UiAnchor.center({ x: 320, y: 400 }),
   sprite: panelSprite,
 });
 
@@ -538,8 +543,8 @@ addVerticalLayoutGroupComponent(world, menu, {
 });
 
 // createUiLayoutGroupEcsSystem (registered automatically by createUiCanvas)
-// resizes and stacks every direct child added below - no anchor/sizeOrMargin
-// of its own needed.
+// resizes and stacks every direct child added below - no anchor of its own
+// needed.
 createButton(world, menu, { sprite: buttonSprite, label: 'Play', fontAtlas });
 createButton(world, menu, {
   sprite: buttonSprite,
@@ -553,7 +558,8 @@ createButton(world, menu, { sprite: buttonSprite, label: 'Quit', fontAtlas });
 [`addVerticalLayoutGroupComponent`](/Forge/docs/api/functions/addVerticalLayoutGroupComponent)
 arrange direct children left-to-right/top-to-bottom, resizing each one (per
 `childControlWidth`/`childControlHeight`) to its measured preferred size -
-its own `RectTransformEcsComponent.sizeOrMargin`, unless overridden by a
+its own `RectTransformEcsComponent`'s current size on each axis, unless
+overridden by a
 [`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
 (`minWidth`/`minHeight`/`preferredWidth`/`preferredHeight`/`flexibleWidth`/
 `flexibleHeight`) - plus, by default (`childForceExpandWidth`/
@@ -640,14 +646,14 @@ asks) comes from recursively measuring its own children, so a horizontal row
 of buttons can itself be one "row" inside an outer vertical group.
 
 [`addContentSizeFitterComponent`](/Forge/docs/api/functions/addContentSizeFitterComponent)
-resizes its own entity's `sizeOrMargin` to match its measured content on each
-axis (`unconstrained` leaves that axis alone; `minSize`/`preferredSize` fit
-to it) - pair it with a layout group on the same entity to make a panel
+resizes its own entity to match its measured content on each axis
+(`unconstrained` leaves that axis alone; `minSize`/`preferredSize` fit to
+it) - pair it with a layout group on the same entity to make a panel
 shrink-wrap its arranged children, rather than the fixed size `createPanel`
 was given.
 
 [`addAspectRatioFitterComponent`](/Forge/docs/api/functions/addAspectRatioFitterComponent)
-keeps an entity's `sizeOrMargin` at a constant width-to-height ratio -
+keeps an entity's size at a constant width-to-height ratio -
 `widthControlsHeight`/`heightControlsWidth` derive one axis from the other;
 `fitInParent`/`envelopeParent` derive both from the parent's own resolved
 rect, useful for a thumbnail or minimap that shouldn't stretch with its

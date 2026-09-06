@@ -2,11 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { createUiAspectRatioFitterEcsSystem } from './ui-aspect-ratio-fitter-system.js';
 import { addParentComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
+import { Vector2 } from '../../math/index.js';
 import { addAspectRatioFitterComponent } from '../components/aspect-ratio-fitter-component.js';
 import {
   addRectTransformComponent,
+  RectTransformEcsComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
+import { uiAxisValue } from '../types/ui-axis.js';
+
+function sizeOf(rectTransform: RectTransformEcsComponent): Vector2 {
+  return {
+    x: uiAxisValue(rectTransform.x),
+    y: uiAxisValue(rectTransform.y),
+  };
+}
 
 describe('createUiAspectRatioFitterEcsSystem', () => {
   it('derives height from width for widthControlsHeight', () => {
@@ -14,7 +24,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     const entity = world.createEntity();
 
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 200, y: 999 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 200 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'widthControlsHeight',
@@ -24,7 +35,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.addSystem(createUiAspectRatioFitterEcsSystem());
     world.update();
 
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 200,
       y: 100,
     });
@@ -35,7 +46,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     const entity = world.createEntity();
 
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 999, y: 50 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 50 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'heightControlsWidth',
@@ -45,7 +57,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.addSystem(createUiAspectRatioFitterEcsSystem());
     world.update();
 
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 100,
       y: 50,
     });
@@ -63,7 +75,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
 
     addParentComponent(world, entity, { parent });
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 999, y: 999 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'fitInParent',
@@ -74,7 +87,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.update();
 
     // parent aspect (4) > target aspect (1) -> height-bound: 100x100.
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 100,
       y: 100,
     });
@@ -92,7 +105,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
 
     addParentComponent(world, entity, { parent });
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 999, y: 999 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'envelopeParent',
@@ -103,7 +117,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.update();
 
     // parent aspect (4) > target aspect (1) -> width-bound: 400x400.
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 400,
       y: 400,
     });
@@ -114,7 +128,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     const entity = world.createEntity();
 
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 50, y: 60 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 50 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 60 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'fitInParent',
@@ -124,7 +139,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.addSystem(createUiAspectRatioFitterEcsSystem());
     world.update();
 
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 50,
       y: 60,
     });
@@ -137,7 +152,8 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
 
     addParentComponent(world, entity, { parent });
     addRectTransformComponent(world, entity, {
-      sizeOrMargin: { x: 50, y: 60 },
+      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 50 },
+      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 60 },
     });
     addAspectRatioFitterComponent(world, entity, {
       aspectMode: 'fitInParent',
@@ -147,7 +163,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     world.addSystem(createUiAspectRatioFitterEcsSystem());
     world.update();
 
-    expect(world.getComponent(entity, rectTransformId)!.sizeOrMargin).toEqual({
+    expect(sizeOf(world.getComponent(entity, rectTransformId)!)).toEqual({
       x: 50,
       y: 60,
     });

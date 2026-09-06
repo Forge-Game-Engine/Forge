@@ -1,5 +1,36 @@
 import { Rect } from '../../math/index.js';
 import { RectTransformEcsComponent } from '../components/rect-transform-component.js';
+import { UiAxis } from '../types/ui-axis.js';
+
+/**
+ * Resolves one axis (`x` or `y`) against the parent's already-resolved span
+ * on that axis. A `UiPointAxis`'s `anchorMin`/`anchorMax` coincide at
+ * `anchor`, so `anchorSpan` collapses to `0` and `size` falls out as the
+ * element's literal size; a `UiStretchAxis`'s span scales with the parent,
+ * with `margin` added to it - the same formula covers both regimes.
+ */
+function resolveAxis(
+  axis: UiAxis,
+  parentMin: number,
+  parentSize: number,
+  anchoredPositionOnAxis: number,
+): { min: number; max: number } {
+  const anchorMin = axis.kind === 'point' ? axis.anchor : axis.anchorMin;
+  const anchorMax = axis.kind === 'point' ? axis.anchor : axis.anchorMax;
+
+  const anchorSpanMin = parentMin + anchorMin * parentSize;
+  const anchorSpanMax = parentMin + anchorMax * parentSize;
+  const anchorSpanSize = anchorSpanMax - anchorSpanMin;
+
+  const size = axis.kind === 'point' ? axis.size : anchorSpanSize + axis.margin;
+
+  const referencePoint = anchorSpanMin + anchorSpanSize * axis.pivot;
+  const pivotPosition = referencePoint + anchoredPositionOnAxis;
+
+  const min = pivotPosition - size * axis.pivot;
+
+  return { min, max: min + size };
+}
 
 /**
  * Resolves a `RectTransformEcsComponent`'s rect against its parent's
@@ -7,11 +38,12 @@ import { RectTransformEcsComponent } from '../components/rect-transform-componen
  * state - so the entire anchor/pivot/stretch surface is unit-testable in
  * isolation.
  *
- * Two regimes fall out of the same formula depending on whether
- * `anchorMin`/`anchorMax` coincide: a **point anchor** (`anchorMin ==
- * anchorMax`) keeps `sizeOrMargin` as the element's literal size and moves with
- * the anchor; a **stretch anchor** (`anchorMin != anchorMax`) resizes with
- * the parent, with `sizeOrMargin` acting as a margin.
+ * `x` and `y` are resolved independently by {@link resolveAxis}, since each
+ * is its own `UiPointAxis` (literal size, moves with the anchor) or
+ * `UiStretchAxis` (resizes with the parent, `margin` added to the anchored
+ * span) - a mixed anchor (e.g. `UiAnchor.stretchTop`, stretched
+ * horizontally but point-anchored vertically) simply resolves each axis
+ * under its own rule.
  * @param parentRect - The parent's already-resolved rect, in UI world space.
  * @param rectTransform - The rect transform to resolve.
  * @returns The resolved rect, in the same UI world space as `parentRect`.
@@ -20,33 +52,25 @@ export function resolveRect(
   parentRect: Rect,
   rectTransform: RectTransformEcsComponent,
 ): Rect {
-  const { anchorMin, anchorMax, pivot, anchoredPosition, sizeOrMargin } =
-    rectTransform;
+  const { x, y, anchoredPosition } = rectTransform;
   const parentWidth = parentRect.max.x - parentRect.min.x;
   const parentHeight = parentRect.max.y - parentRect.min.y;
 
-  const anchorRectMinX = parentRect.min.x + anchorMin.x * parentWidth;
-  const anchorRectMinY = parentRect.min.y + anchorMin.y * parentHeight;
-  const anchorRectMaxX = parentRect.min.x + anchorMax.x * parentWidth;
-  const anchorRectMaxY = parentRect.min.y + anchorMax.y * parentHeight;
-
-  const anchorRectSizeX = anchorRectMaxX - anchorRectMinX;
-  const anchorRectSizeY = anchorRectMaxY - anchorRectMinY;
-
-  const width = anchorRectSizeX + sizeOrMargin.x;
-  const height = anchorRectSizeY + sizeOrMargin.y;
-
-  const referencePointX = anchorRectMinX + anchorRectSizeX * pivot.x;
-  const referencePointY = anchorRectMinY + anchorRectSizeY * pivot.y;
-
-  const pivotPositionX = referencePointX + anchoredPosition.x;
-  const pivotPositionY = referencePointY + anchoredPosition.y;
-
-  const minX = pivotPositionX - width * pivot.x;
-  const minY = pivotPositionY - height * pivot.y;
+  const resolvedX = resolveAxis(
+    x,
+    parentRect.min.x,
+    parentWidth,
+    anchoredPosition.x,
+  );
+  const resolvedY = resolveAxis(
+    y,
+    parentRect.min.y,
+    parentHeight,
+    anchoredPosition.y,
+  );
 
   return {
-    min: { x: minX, y: minY },
-    max: { x: minX + width, y: minY + height },
+    min: { x: resolvedX.min, y: resolvedY.min },
+    max: { x: resolvedX.max, y: resolvedY.max },
   };
 }

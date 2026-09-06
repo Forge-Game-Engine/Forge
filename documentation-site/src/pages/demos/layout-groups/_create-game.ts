@@ -134,7 +134,7 @@ function createUiInputs(
  * (`GridLayoutGroupEcsComponent` with fixed `cellSize` cells), and an
  * "Options" form (`GridLayoutGroupEcsComponent` with `columnWidthMode:
  * 'content'`) - each arranging its own children with no manual
- * `anchoredPosition`/`sizeOrMargin` bookkeeping. Every interactable
+ * `anchoredPosition`/size bookkeeping. Every interactable
  * (the Menu's buttons, the Options panel's Music slider and Fullscreen
  * toggle) is clickable and keyboard/gamepad-focus-navigable via
  * `createUiInputs`.

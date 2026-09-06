@@ -38,7 +38,7 @@ const panelHeight = 110;
 /**
  * Builds a "Toolbar" panel: a `HorizontalLayoutGroupEcsComponent` spacing
  * and evenly resizing a row of plain colored icons, with no
- * `anchoredPosition`/`sizeOrMargin` of their own - reordering, adding, or
+ * `anchoredPosition`/anchor size of their own - reordering, adding, or
  * removing an icon needs no other change, since the group recomputes the
  * row every frame.
  * @param world - The ECS world to create the toolbar entities in.
@@ -67,25 +67,22 @@ export async function createToolbar(
   addPositionComponent(world, group);
   addParentComponent(world, group, { parent: canvas });
   addRectTransformComponent(world, group, {
-    ...UiAnchor.topRight,
+    ...UiAnchor.topRight({ x: width, y: titleHeight + titleGap + panelHeight }),
     anchoredPosition: { x: -60, y: -60 },
-    sizeOrMargin: { x: width, y: titleHeight + titleGap + panelHeight },
   });
 
   createLabel(world, group, {
     text: 'Toolbar',
     fontAtlas,
     size: 24,
-    anchor: UiAnchor.stretchTopLeft,
-    sizeOrMargin: { x: 0, y: titleHeight },
+    anchor: UiAnchor.stretchTopLeft({ height: titleHeight }),
     horizontalAlign: textHorizontalAlignments.right,
     color: Color.white,
     category: uiCategory,
   });
 
   const panel = createPanel(world, group, {
-    anchor: UiAnchor.bottomLeft,
-    sizeOrMargin: { x: width, y: panelHeight },
+    anchor: UiAnchor.bottomLeft({ x: width, y: panelHeight }),
     sprite: panelSprite,
   });
 
@@ -103,7 +100,7 @@ export async function createToolbar(
 
     addPositionComponent(world, icon);
     addParentComponent(world, icon, { parent: panel });
-    addRectTransformComponent(world, icon, { sizeOrMargin: { x: 70, y: 70 } });
+    addRectTransformComponent(world, icon, UiAnchor.center({ x: 70, y: 70 }));
 
     const sprite = createImageSprite(whiteImage, renderContext, {
       layer: uiCategory,

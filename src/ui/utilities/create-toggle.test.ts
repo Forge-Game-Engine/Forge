@@ -8,6 +8,7 @@ import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiToggleId } from '../components/ui-toggle-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -35,9 +36,9 @@ describe('createToggle', () => {
 
     expect(world.getComponent(toggle.entity, parentId)).toEqual({ parent });
     expect(world.getComponent(toggle.entity, positionId)).not.toBeNull();
-    expect(
-      world.getComponent(toggle.entity, rectTransformId)!.anchorMin,
-    ).toEqual(UiAnchor.center.anchorMin);
+    expect(world.getComponent(toggle.entity, rectTransformId)!.x).toEqual(
+      UiAnchor.center({ x: 32, y: 32 }).x,
+    );
     expect(world.getComponent(toggle.entity, spriteId)!.renderable).toBe(
       sprite.renderable,
     );
@@ -64,9 +65,15 @@ describe('createToggle', () => {
       checkmarkSprite: buildSprite(),
     });
 
-    expect(
-      world.getComponent(toggle.checkmark, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 0, y: 0 });
+    const checkmarkRectTransform = world.getComponent(
+      toggle.checkmark,
+      rectTransformId,
+    )!;
+
+    expect({
+      x: uiAxisValue(checkmarkRectTransform.x),
+      y: uiAxisValue(checkmarkRectTransform.y),
+    }).toEqual({ x: 0, y: 0 });
   });
 
   it('starts the checkmark visible when isOn is true', () => {
@@ -151,7 +158,7 @@ describe('createToggle', () => {
     ).toEqual({ x: 5, y: -5 });
   });
 
-  it('defaults sizeOrMargin to 32x32', () => {
+  it('defaults the anchor size to 32x32', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -160,8 +167,11 @@ describe('createToggle', () => {
       checkmarkSprite: buildSprite(),
     });
 
-    expect(
-      world.getComponent(toggle.entity, rectTransformId)!.sizeOrMargin,
-    ).toEqual({ x: 32, y: 32 });
+    const rectTransform = world.getComponent(toggle.entity, rectTransformId)!;
+
+    expect({
+      x: uiAxisValue(rectTransform.x),
+      y: uiAxisValue(rectTransform.y),
+    }).toEqual({ x: 32, y: 32 });
   });
 });
