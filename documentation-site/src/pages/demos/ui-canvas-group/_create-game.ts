@@ -1,4 +1,5 @@
 import {
+  addParentComponent,
   addPositionComponent,
   createTransformEcsSystem,
   Time,
@@ -23,15 +24,17 @@ import {
   createTextShapingEcsSystem,
   FontAtlas,
   FontAtlasCache,
-  textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   addCanvasGroupComponent,
+  addHorizontalLayoutGroupComponent,
+  addRectTransformComponent,
   createButton,
   createLabel,
   createPanel,
   createToggle,
   createUiCanvas,
+  uiAlignments,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
@@ -128,13 +131,33 @@ export const createCanvasGroupGame = async (
   });
   boxSprite.tintColor = boxColor;
 
-  createLabel(world, canvas, {
+  // A label and a toggle placed with independent, hand-matched anchors
+  // (same anchoredPosition.y, different box heights) only looks aligned by
+  // coincidence - their anchors' pivots sit at each box's own top edge, so
+  // matching y aligns the *tops* of two differently-sized boxes, not their
+  // visual centers. A HorizontalLayoutGroupEcsComponent with
+  // childAlignment: middleLeft is the actual fix: it centers each child on
+  // the row's own cross axis regardless of how tall any of them are.
+  const modalToggleRow = world.createEntity();
+
+  addPositionComponent(world, modalToggleRow);
+  addParentComponent(world, modalToggleRow, { parent: canvas });
+  addRectTransformComponent(world, modalToggleRow, {
+    ...UiAnchor.topLeft({ x: 400, y: 40 }),
+    anchoredPosition: { x: 60, y: -60 },
+  });
+  addHorizontalLayoutGroupComponent(world, modalToggleRow, {
+    spacing: 16,
+    childAlignment: uiAlignments.middleLeft,
+    childControlWidth: false,
+    childControlHeight: false,
+  });
+
+  createLabel(world, modalToggleRow, {
     text: 'Disable modal',
     fontAtlas,
     size: 26,
-    anchor: UiAnchor.topLeft(),
-    anchoredPosition: { x: 60, y: -60 },
-    verticalAlign: textVerticalAlignments.middle,
+    sizeToText: true,
     color: Color.white,
     category: renderLayers.ui,
   });
@@ -236,11 +259,9 @@ export const createCanvasGroupGame = async (
     },
   });
 
-  const modalToggle = createToggle(world, canvas, {
+  const modalToggle = createToggle(world, modalToggleRow, {
     sprite: toggleBoxSprite,
     checkmarkSprite: crossSprite,
-    anchor: UiAnchor.topLeft({ x: 32, y: 32 }),
-    anchoredPosition: { x: 300, y: -60 },
   });
 
   modalToggle.onValueChanged.registerListener((isDisabled) => {
