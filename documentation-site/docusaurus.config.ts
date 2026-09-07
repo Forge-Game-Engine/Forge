@@ -231,6 +231,10 @@ const config: Config = {
               to: 'demos/layout-groups',
               label: 'UI Layout Groups',
             },
+            {
+              to: 'demos/ui-canvas-group',
+              label: 'UI Canvas Group',
+            },
           ],
         },
         {
