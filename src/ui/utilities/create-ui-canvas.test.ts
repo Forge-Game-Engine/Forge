@@ -12,7 +12,12 @@ import {
   MouseInputSource,
   TriggerAction,
 } from '../../input/index.js';
-import { cameraId, Color, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  cameraId,
+  Color,
+  RenderContext,
+} from '../../rendering/index.js';
 import { canvasId } from '../components/canvas-component.js';
 import {
   addRectTransformComponent,
@@ -23,6 +28,8 @@ import {
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
+import { uiScaleModes } from '../types/ui-scale-mode.js';
 
 const buildMouseInputSource = (x = 0, y = 0): MouseInputSource =>
   ({
@@ -77,6 +84,11 @@ describe('createUiCanvas', () => {
     const camera = world.getComponent(canvasComponent.camera, cameraId)!;
 
     expect(rectTransform).not.toBeNull();
+
+    if (canvasComponent.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
+
     expect(canvasComponent.referenceResolution).toEqual({ x: 1920, y: 1080 });
     expect(camera.isStatic).toBe(true);
     expect(camera.clearColor).toEqual(Color.transparent);
@@ -91,6 +103,7 @@ describe('createUiCanvas', () => {
   it('honors overrides for referenceResolution, scaleMode, cullingMask, and layer', () => {
     const canvas = createUiCanvas(world, renderContext, time, {
       referenceResolution: { x: 1280, y: 720 },
+      scaleMode: uiScaleModes.constantPixelSize,
       cullingMask: 0b0010,
       layer: 5,
     });
@@ -98,7 +111,12 @@ describe('createUiCanvas', () => {
     const canvasComponent = world.getComponent(canvas, canvasId)!;
     const camera = world.getComponent(canvasComponent.camera, cameraId)!;
 
+    if (canvasComponent.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
+
     expect(canvasComponent.referenceResolution).toEqual({ x: 1280, y: 720 });
+    expect(canvasComponent.scaleMode).toBe(uiScaleModes.constantPixelSize);
     expect(camera.cullingMask).toBe(0b0010);
     expect(camera.layer).toBe(5);
     expect(camera.verticalWorldUnits).toBe(720);
@@ -197,5 +215,74 @@ describe('createUiCanvas', () => {
     world.update();
 
     expect(interactable.wasInvokedThisFrame).toBe(false);
+  });
+
+  it('draws a worldSpace canvas through the given camera instead of creating one', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, { cullingMask: testCullingMask });
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+    });
+
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    expect(canvasComponent.camera).toBe(worldCamera);
+    expect(canvasComponent.renderMode).toBe(uiCanvasRenderModes.worldSpace);
+  });
+
+  it('resolves a worldSpace canvas root as an ordinary anchored rect, not the render destination size, and never touches the given camera', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, {
+      cullingMask: testCullingMask,
+      verticalWorldUnits: 12,
+    });
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+      anchor: UiAnchor.center({ x: 4, y: 1 }),
+      anchoredPosition: { x: 10, y: -5 },
+    });
+
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: 8, y: -5.5 },
+      max: { x: 12, y: -4.5 },
+    });
+    expect(world.getComponent(worldCamera, cameraId)!.verticalWorldUnits).toBe(
+      12,
+    );
+  });
+
+  it('passes submitInput/cancelInput/navigateInput through to a worldSpace canvas component', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, { cullingMask: testCullingMask });
+
+    const submitInput = new TriggerAction('ui-submit');
+    const cancelInput = new TriggerAction('ui-cancel');
+    const navigateInput = new Axis2dAction('ui-navigate');
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+      submitInput,
+      cancelInput,
+      navigateInput,
+    });
+
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    expect(canvasComponent.submitInput).toBe(submitInput);
+    expect(canvasComponent.cancelInput).toBe(cancelInput);
+    expect(canvasComponent.navigateInput).toBe(navigateInput);
   });
 });

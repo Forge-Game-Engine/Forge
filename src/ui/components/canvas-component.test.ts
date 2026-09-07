@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addCanvasComponent, canvasId } from './canvas-component.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Axis2dAction, TriggerAction } from '../../input/index.js';
+import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 
 describe('addCanvasComponent', () => {
@@ -16,6 +17,7 @@ describe('addCanvasComponent', () => {
 
     expect(world.getComponent(entity, canvasId)).toEqual({
       camera: cameraEntity,
+      renderMode: uiCanvasRenderModes.screenSpace,
       referenceResolution: { x: 1920, y: 1080 },
       scaleMode: uiScaleModes.scaleWithScreenSize,
       isPointerOverUi: false,
@@ -35,8 +37,25 @@ describe('addCanvasComponent', () => {
       scaleMode: uiScaleModes.matchWidth,
     });
 
+    if (component.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
+
     expect(component.scaleMode).toBe(uiScaleModes.matchWidth);
     expect(component.referenceResolution).toEqual({ x: 1920, y: 1080 });
+  });
+
+  it('accepts renderMode: worldSpace', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const cameraEntity = world.createEntity();
+
+    const component = addCanvasComponent(world, entity, {
+      camera: cameraEntity,
+      renderMode: uiCanvasRenderModes.worldSpace,
+    });
+
+    expect(component.renderMode).toBe(uiCanvasRenderModes.worldSpace);
   });
 
   it('accepts optional submitInput/cancelInput/navigateInput', () => {
