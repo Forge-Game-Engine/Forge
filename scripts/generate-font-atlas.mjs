@@ -195,7 +195,7 @@ function computeCapHeight(glyphs, fallback) {
 function normalizeBmfontJson(raw, atlasImageFilename) {
   if (raw.distanceField?.fieldType !== 'msdf') {
     throw new Error(
-      `Expected a "msdf" distance field, got "${raw.distanceField?.fieldType}". Forge's text renderer only supports MSDF atlases (see design/msdf-text-rendering.md, DL-05).`,
+      `Expected a "msdf" distance field, got "${raw.distanceField?.fieldType}". Forge's text renderer only supports MSDF atlases.`,
     );
   }
 
