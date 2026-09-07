@@ -239,6 +239,10 @@ const config: Config = {
               to: 'demos/ui-world-space-canvas',
               label: 'UI World-Space Canvas',
             },
+            {
+              to: 'demos/ui-stress-test',
+              label: 'UI Stress Test',
+            },
           ],
         },
         {
