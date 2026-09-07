@@ -207,13 +207,9 @@ function createSpinEcsSystem(time: Time): EcsSystem<[RotationEcsComponent]> {
  * each with a diegetic health-bar canvas (`renderMode: 'worldSpace'`)
  * attached to it. The left enemy's health bar is attached with the
  * ordinary `addParentComponent` and visibly spins and swings around with
- * the enemy - inheriting the full world transform is exactly what being
- * parented means throughout the engine. The right enemy's is attached
- * with `addUiWorldSpaceFollowComponent` instead, and stays upright,
- * directly above, regardless of which way the enemy is facing - the
- * behavior a health bar almost always wants, and a deliberately different
- * relationship from parenting rather than a flag that would change what
- * parenting itself means.
+ * the enemy. The right enemy's is attached with
+ * `addUiWorldSpaceFollowComponent` instead, and stays upright, directly
+ * above, regardless of which way the enemy is facing.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */

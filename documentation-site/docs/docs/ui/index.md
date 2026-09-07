@@ -218,18 +218,14 @@ for `renderMode: 'worldSpace'` at all - the type checker rejects them,
 since there's no "destination size" for a canvas embedded in the world to
 scale against, and no dedicated UI camera for them to configure.
 
-**Following, not parenting**: `addUiWorldSpaceFollowComponent` -
+**Following, not parenting**: `addUiWorldSpaceFollowComponent`/
 `createUiWorldSpaceFollowEcsSystem` overwrites the canvas's world position
 every frame with the target's own world position plus the canvas's local
-offset - is a deliberately different relationship from
-`addParentComponent`. Being parented already has an unambiguous meaning
-throughout the engine: inherit the target's *entire* world transform,
-including its rotation (the ordinary case for, say, a turret mounted on a
-rotating tank). A diegetic UI canvas almost always wants something
-narrower - follow the target's world position, but stay upright regardless
-of which way it's facing, instead of swinging around with it - so that's
-its own mechanism rather than a flag that would make `addParentComponent`
-mean two different things depending on how it's called. Because
+offset, ignoring the target's rotation entirely - unlike
+`addParentComponent`, which inherits the target's full world transform
+(the ordinary case for, say, a turret mounted on a rotating tank). Use
+this so a diegetic UI canvas stays upright above its target regardless of
+which way it's facing, instead of swinging around with it. Because
 `createUiWorldSpaceFollowEcsSystem` needs the target's world position
 already resolved for the current tick, register it yourself, once, right
 after `createTransformEcsSystem` - unlike the rest of the UI pipeline,
