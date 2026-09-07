@@ -12,8 +12,6 @@ import {
  * *position* only, never the target's rotation or scale, unlike an
  * ordinary `ParentEcsComponent` relationship (see that component's own
  * follow-vs-parent doc comment for why this is a separate mechanism).
- * Entities with no `target` `PositionEcsComponent` are left untouched for
- * that tick.
  *
  * Must be registered after `createTransformEcsSystem` (so `target`'s world
  * position for this tick is already resolved) - unlike the rest of the UI
@@ -23,6 +21,8 @@ import {
  * yourself, once, right after `createTransformEcsSystem`, for any world
  * using `renderMode: 'worldSpace'` canvases that should follow a target.
  * @returns The UI world-space follow ECS system.
+ * @throws An error if a `UiWorldSpaceFollowEcsComponent.target` has no
+ * `PositionEcsComponent`.
  */
 export const createUiWorldSpaceFollowEcsSystem = (): EcsSystem<
   [UiWorldSpaceFollowEcsComponent, PositionEcsComponent]
@@ -37,7 +37,9 @@ export const createUiWorldSpaceFollowEcsSystem = (): EcsSystem<
       );
 
       if (!targetPosition) {
-        continue;
+        throw new Error(
+          `Entity "${entities[i]}" has a UiWorldSpaceFollowEcsComponent targeting entity "${follows[i].target}", which has no PositionEcsComponent.`,
+        );
       }
 
       const position = positions[i];

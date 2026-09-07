@@ -56,12 +56,13 @@ describe('createUiWorldSpaceFollowEcsSystem', () => {
     expect(position.world.y).toBe(0);
   });
 
-  it('leaves the position untouched when the target has no PositionEcsComponent', () => {
+  it('throws when the target has no PositionEcsComponent', () => {
     const world = new EcsWorld();
     const target = world.createEntity();
 
     const entity = world.createEntity();
-    const position = addPositionComponent(world, entity, {
+
+    addPositionComponent(world, entity, {
       local: { x: 5, y: 5 },
       world: { x: 999, y: 999 },
     });
@@ -69,10 +70,10 @@ describe('createUiWorldSpaceFollowEcsSystem', () => {
     addUiWorldSpaceFollowComponent(world, entity, { target });
 
     world.addSystem(createUiWorldSpaceFollowEcsSystem());
-    world.update();
 
-    expect(position.world.x).toBe(999);
-    expect(position.world.y).toBe(999);
+    expect(() => world.update()).toThrow(
+      `Entity "${entity}" has a UiWorldSpaceFollowEcsComponent targeting entity "${target}", which has no PositionEcsComponent.`,
+    );
   });
 
   it('follows the target across multiple ticks as its world position changes', () => {
