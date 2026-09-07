@@ -15,9 +15,11 @@ functions the same way any other composite entity in Forge is.
 :::info Current scope
 Layout (anchors, canvases, panels, labels), interaction (buttons,
 hover/press/drag, gamepad/keyboard focus navigation, color transitions),
-controls (toggles, sliders, progress bars, dropdowns), and layout groups
-(horizontal/vertical/grid, content size fitting, aspect ratio fitting) are
-implemented. Scroll views, text input, and rect clipping aren't yet.
+controls (toggles, sliders, progress bars, dropdowns), layout groups
+(horizontal/vertical/grid, content size fitting, aspect ratio fitting),
+world-space (diegetic) canvases, tooltips, and safe-area support for
+notched displays are implemented. Scroll views, text input, and rect
+clipping aren't yet.
 :::
 
 ## Quick start
@@ -170,6 +172,72 @@ controls how the canvas's root rect - and its camera's
   pixel size one-to-one (`referenceResolution` is ignored); UI elements
   keep a constant on-screen size at the cost of covering a different
   fraction of the screen on different displays.
+
+Everything above describes `renderMode: 'screenSpace'` (the default) - see
+the next section for the other mode.
+
+## World-space canvases
+
+Pass `renderMode: 'worldSpace'` to put UI content in the game world instead
+of overlaid on the screen - diegetic UI like a health bar over an enemy's
+head, a name tag, or a floating damage indicator with a persistent rect:
+
+```ts
+const healthBarCanvas = createUiCanvas(world, renderContext, time, {
+  renderMode: 'worldSpace',
+  camera: worldCamera, // the game's own world camera, not a dedicated UI one
+  anchor: UiAnchor.center({ x: 80, y: 10 }),
+  anchoredPosition: { x: 0, y: 40 }, // 40 units above the enemy's own origin
+});
+
+addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target: enemy });
+
+const fill = createPanel(world, healthBarCanvas, {
+  anchor: UiAnchor.stretchAll(),
+  sprite: fillSprite,
+});
+
+world.addSystem(createTransformEcsSystem());
+// After createTransformEcsSystem, not before like the rest of the UI
+// pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
+world.addSystem(createUiWorldSpaceFollowEcsSystem());
+```
+
+A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
+- sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
+options) rather than the render destination's size. Its offset from the
+entity it follows comes from `anchoredPosition` above, not from touching
+`PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
+canvas's local position from its anchor every frame, so a manually-set
+`PositionEcsComponent.local` would just be overwritten on the next frame.
+
+It draws through whichever camera `camera` names - typically the game's own
+world camera - not a dedicated UI camera `createUiCanvas` creates for you,
+so it pans and zooms with the world exactly like any other sprite.
+`referenceResolution`/`scaleMode`/`cullingMask`/`layer` aren't valid options
+for `renderMode: 'worldSpace'` at all - the type checker rejects them,
+since there's no "destination size" for a canvas embedded in the world to
+scale against, and no dedicated UI camera for them to configure.
+
+**Following, not parenting**: `addUiWorldSpaceFollowComponent`/
+`createUiWorldSpaceFollowEcsSystem` overwrites the canvas's world position
+every frame with the target's own world position plus the canvas's local
+offset, ignoring the target's rotation entirely - unlike
+`addParentComponent`, which inherits the target's full world transform
+(the ordinary case for, say, a turret mounted on a rotating tank). Use
+this so a diegetic UI canvas stays upright above its target regardless of
+which way it's facing, instead of swinging around with it. Because
+`createUiWorldSpaceFollowEcsSystem` needs the target's world position
+already resolved for the current tick, register it yourself, once, right
+after `createTransformEcsSystem` - unlike the rest of the UI pipeline,
+`createUiCanvas` doesn't register it for you.
+
+`createUiCanvas`'s options are a discriminated union on `renderMode`: the
+type checker requires `cullingMask` for the default `'screenSpace'` mode and
+`camera` for `'worldSpace'`, and rejects the other mode's fields
+(`referenceResolution`/`scaleMode`/`layer` vs. `camera`/`anchor`/
+`anchoredPosition`) outright, rather than accepting them and ignoring them
+at runtime.
 
 ## Labels
 
@@ -669,6 +737,122 @@ group, a content size fitter reacting to a resized child) arranges its
 children against a one-frame-stale box. Like the rest of this module, this
 converges within a frame or two rather than being tracked with dirty state.
 
+## Canvas groups
+
+[`addCanvasGroupComponent`](/Forge/docs/api/functions/addCanvasGroupComponent)
+fades, disables, or makes click-through a whole subtree with one component
+instead of one per element - the "grey out and disable this panel while a
+modal is open" case:
+
+```ts
+const settingsPanel = createPanel(world, canvas, {
+  anchor: UiAnchor.center({ x: 480, y: 640 }),
+  sprite: panelSprite,
+});
+
+const settingsGroup = addCanvasGroupComponent(world, settingsPanel, {
+  alpha: 0.3,
+  interactable: false,
+  blocksRaycasts: false,
+});
+
+// Later, closing the modal:
+settingsGroup.alpha = 1;
+settingsGroup.interactable = true;
+settingsGroup.blocksRaycasts = true;
+```
+
+`alpha` multiplies into every descendant's rendered opacity (written to
+`SpriteEcsComponent.opacityMultiplier`/`TextEcsComponent.opacityMultiplier`
+by `createUiCanvasGroupEcsSystem`, registered automatically by
+`createUiCanvas`) on top of - not instead of - each element's own
+`tintColor`/`color` alpha, so a half-transparent overlay still darkens
+further under a faded group. `interactable`/`blocksRaycasts` are combined
+the same way but read on demand by the raycast/interaction/navigation
+systems, ANDed with each descendant's own
+`UiInteractableEcsComponent.interactable`/`blocksRaycasts`.
+
+Nested groups multiply/AND together up the parent chain. Set
+`ignoreParentGroups: true` on a group to keep it (and its own descendants)
+fully opaque and interactive even while an ancestor group fades or disables
+the rest of the screen - useful for a modal's own close button.
+
+Only a label's *fill* inherits a group's alpha - its `outlineColor`/
+`shadowColor` text effects don't currently fade with it, a known
+limitation.
+
+## Tooltips
+
+[`createTooltip`](/Forge/docs/api/functions/createTooltip) attaches a
+floating panel/label to an already-interactable entity, shown after it's
+been hovered or focused for a delay:
+
+```ts
+const muteToggle = createToggle(world, canvas, { /* ... */ });
+
+createTooltip(world, muteToggle.entity, {
+  text: 'Mutes all sound effects',
+  fontAtlas,
+  textSize: 16,
+  sprite: tooltipPanelSprite,
+});
+```
+
+The tooltip panel is parented directly to the source element, pinned just
+above its top edge, so it follows the source automatically as an ordinary
+UI child - [`createUiTooltipEcsSystem`](/Forge/docs/api/functions/createUiTooltipEcsSystem)
+(registered automatically by `createUiCanvas`) only ever toggles it
+visible/hidden, never repositions it. It appears while the source reads
+`hover` or `pressed` under
+[`deriveUiInteractionVisualState`](/Forge/docs/api/functions/deriveUiInteractionVisualState)
+- hovered by pointer *or* focused by gamepad/keyboard, matching the rest of
+this module's source-agnostic interaction model - continuously for at
+least [`TooltipEcsComponent.showDelayMilliseconds`](/Forge/docs/api/interfaces/TooltipEcsComponent)
+(defaults to `400`), and hides immediately once that state ends.
+
+A tooltip's draw order still follows its hierarchy position like any other
+UI element (see `resolveRect`'s ordering) - for a tooltip that must always
+render above every other element regardless of where its source sits in
+the tree, create it last, after every other UI element on the canvas.
+
+## Safe area
+
+Mobile browsers report a notch, camera cutout, rounded corners, or home
+indicator via the CSS `env(safe-area-inset-*)` values.
+[`getSafeAreaInsets`](/Forge/docs/api/functions/getSafeAreaInsets) (from
+`@forge-game-engine/forge/rendering`) reads them back into plain numbers;
+pass it to `createUiCanvas` to keep any
+[`UiSafeAreaEcsComponent`](/Forge/docs/api/type-aliases/UiSafeAreaEcsComponent)
+element clear of them automatically:
+
+```ts
+import { getSafeAreaInsets } from '@forge-game-engine/forge/rendering';
+
+const canvas = createUiCanvas(world, renderContext, time, {
+  cullingMask: uiRenderCategory,
+  getSafeAreaInsets, // only needs reading on the first createUiCanvas call
+});
+
+const hudRoot = createPanel(world, canvas, {
+  anchor: UiAnchor.stretchAll(),
+  sprite: transparentSprite,
+});
+
+addUiSafeAreaComponent(world, hudRoot);
+```
+
+`addUiSafeAreaComponent` expects its entity to already be
+`UiAnchor.stretchAll()`-anchored - `createUiSafeAreaEcsSystem` (registered
+automatically once `getSafeAreaInsets` is supplied) overwrites its
+`x`/`y`/`anchoredPosition` every frame to shrink the full-stretch rect
+inward from whichever edges actually need it, converted from CSS pixels
+into that canvas's own UI world units. Set a field (`top`/`right`/`bottom`/
+`left`) `false` to leave that specific edge flush with its parent
+regardless of the device's insets - e.g. a bottom bar that intentionally
+extends under a home indicator. A browser with no notch/cutout (or that
+doesn't support `env()`) reports all zeroes, so this is always safe to
+wire up unconditionally.
+
 ## Known limitations
 
 - **No scroll views or text input yet.** Both are blocked on rect clipping
@@ -682,3 +866,5 @@ converges within a frame or two rather than being tracked with dirty state.
   `cellAlignment` applies to every column/row in the grid - there's no way to,
   say, left-align a label column while centering a control column in the same
   grid.
+- **A tooltip's draw order follows its hierarchy position, not always-on-top.**
+  See its section above for the workaround (create it last).

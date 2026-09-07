@@ -19,5 +19,5 @@ void main() {
   vec3 emissiveMask = texture(u_emissiveTexture, v_texCoord).rgb;
   vec3 emissive = emissiveMask * u_emissiveColor.rgb * u_emissiveIntensity;
 
-  fragColor = vec4(tex.rgb * v_tint.rgb + emissive, tex.a);
+  fragColor = vec4(tex.rgb * v_tint.rgb + emissive, tex.a * v_tint.a);
 }

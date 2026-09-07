@@ -20,6 +20,7 @@ import {
   uiNavigationDirections,
 } from '../types/ui-navigation-direction.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
+import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state.js';
 import { setUiFocus } from '../utilities/set-ui-focus.js';
 
 /**
@@ -64,10 +65,13 @@ function isFocusable(world: EcsWorld, entity: number): boolean {
     uiInteractableId,
   );
 
-  return !!interactable?.interactable;
+  return (
+    !!interactable?.interactable &&
+    resolveCanvasGroupState(world, entity).interactable
+  );
 }
 
-/** Groups every `interactable: true` candidate (into `interactableEntities`/`rectTransforms`) by its owning canvas entity. */
+/** Groups every focusable candidate (own `interactable: true`, and not disabled by an ancestor `CanvasGroupEcsComponent`) into `interactableEntities`/`rectTransforms` by its owning canvas entity. */
 function groupFocusCandidatesByCanvas(
   world: EcsWorld,
   interactableEntities: readonly number[],
@@ -77,7 +81,10 @@ function groupFocusCandidatesByCanvas(
   const candidatesByCanvas = new Map<number, FocusCandidate[]>();
 
   for (let i = 0; i < interactableEntities.length; i++) {
-    if (!interactables[i].interactable) {
+    if (
+      !interactables[i].interactable ||
+      !resolveCanvasGroupState(world, interactableEntities[i]).interactable
+    ) {
       continue;
     }
 
@@ -265,7 +272,10 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
     uiInteractableId,
   );
 
-  if (focused?.interactable) {
+  if (
+    focused?.interactable &&
+    resolveCanvasGroupState(world, canvas.focusedEntity).interactable
+  ) {
     focused.wasInvokedThisFrame = true;
     focused.onInvoke.raise();
   }
@@ -276,8 +286,10 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * counterpart to pointer hover/click that lets a controller or keyboard
  * reach and invoke the same interactables.
  *
- * Every `interactable: true` `UiInteractableEcsComponent` is automatically
- * focus-navigable: on the tick a canvas's `navigateInput` magnitude first
+ * Every `interactable: true` `UiInteractableEcsComponent` - not disabled by
+ * an ancestor `CanvasGroupEcsComponent` either, see `resolveCanvasGroupState`
+ * - is automatically focus-navigable: on the tick a canvas's `navigateInput`
+ * magnitude first
  * crosses `navigationThreshold`, focus moves to the nearest candidate on
  * the same canvas in the dominant direction (a `UiFocusEcsComponent` on the
  * currently focused entity overrides that search on whichever sides it
