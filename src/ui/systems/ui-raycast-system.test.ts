@@ -17,6 +17,7 @@ import {
   addCanvasComponent,
   canvasId,
 } from '../components/canvas-component.js';
+import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
@@ -183,5 +184,31 @@ describe('createUiRaycastEcsSystem', () => {
     const canvasComponent = world.getComponent(canvas, canvasId)!;
 
     expect(canvasComponent.hoveredEntity).toBe(panel);
+  });
+
+  it('lets the pointer pass through an interactable whose ancestor CanvasGroupEcsComponent has blocksRaycasts: false', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+    const back = createInteractablePanel(world, canvas, { x: 400, y: 400 });
+
+    const group = world.createEntity();
+
+    addPositionComponent(world, group);
+    addParentComponent(world, group, { parent: canvas });
+    addRectTransformComponent(
+      world,
+      group,
+      UiAnchor.center({ x: 200, y: 200 }),
+    );
+    addCanvasGroupComponent(world, group, { blocksRaycasts: false });
+
+    createInteractablePanel(world, group, { x: 200, y: 200 });
+
+    runRaycast(world, renderContext, 960, 540);
+
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    expect(canvasComponent.hoveredEntity).toBe(back);
   });
 });

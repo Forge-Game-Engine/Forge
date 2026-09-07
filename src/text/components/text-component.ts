@@ -171,6 +171,17 @@ export interface TextEcsComponent
    * `SpriteEcsComponent.sortDepth` exactly.
    */
   sortDepth?: number;
+
+  /**
+   * An additional multiplier applied to `color.a` when computing this
+   * text's final rendered alpha, on top of (not instead of) the color's
+   * own alpha - only its fill, not its `outlineColor`/`shadowColor`
+   * effects, currently inherit this. Left `undefined`, this text renders
+   * at `color.a` alone. Mirrors `SpriteEcsComponent.opacityMultiplier`
+   * exactly, including why it's a separate field from `color.a` itself -
+   * see that field's own doc comment.
+   */
+  opacityMultiplier?: number;
 }
 
 export const textId = createComponentId<TextEcsComponent>('text');

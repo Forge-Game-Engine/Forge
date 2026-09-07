@@ -17,6 +17,7 @@ import {
 } from '../components/ui-interactable-component.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
+import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state.js';
 import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointer-position.js';
 import { setUiFocus } from '../utilities/set-ui-focus.js';
 
@@ -29,6 +30,7 @@ function updateHoverAndFocus(
   interactable: UiInteractableEcsComponent,
   canvas: CanvasEcsComponent | null,
   isOver: boolean,
+  effectiveInteractable: boolean,
 ): void {
   const wasHovered = interactable.isHovered;
 
@@ -45,7 +47,7 @@ function updateHoverAndFocus(
   // an element would silently re-focus it on every single tick, fighting
   // (and always winning, since this system runs after navigation) any
   // keyboard/gamepad navigation move made while the pointer hasn't budged.
-  if (isOver && !wasHovered && interactable.interactable && canvas) {
+  if (isOver && !wasHovered && effectiveInteractable && canvas) {
     setUiFocus(world, canvas, entity);
   }
 }
@@ -56,11 +58,12 @@ function beginPressIfNeeded(
   isOver: boolean,
   downEdge: boolean,
   pointerPosition: Vector2 | null,
+  effectiveInteractable: boolean,
 ): void {
   if (
     !downEdge ||
     !isOver ||
-    !interactable.interactable ||
+    !effectiveInteractable ||
     interactable.pressCapture !== null ||
     !pointerPosition
   ) {
@@ -145,6 +148,12 @@ function endPressIfNeeded(
  * focuses it too (via `setUiFocus`), so the focus highlight follows the
  * mouse the same way it follows gamepad navigation.
  *
+ * An element whose own `interactable` is `true` but sits under a
+ * `CanvasGroupEcsComponent` ancestor with `interactable: false` cannot
+ * begin a new press or gain focus by hover - see `resolveCanvasGroupState`
+ * - the same way it couldn't if `interactable` were `false` on the element
+ * itself.
+ *
  * Must be registered after `createUiRaycastEcsSystem` (it reads
  * `CanvasEcsComponent.hoveredEntity`).
  * @param pointerSource - The pointer source driving this state machine.
@@ -199,8 +208,25 @@ export const createUiInteractionEcsSystem = (
           ? getPointerPosition(owningCanvasEntity, canvas)
           : null;
 
-      updateHoverAndFocus(world, entity, interactable, canvas, isOver);
-      beginPressIfNeeded(interactable, isOver, downEdge, pointerPosition);
+      const effectiveInteractable =
+        interactable.interactable &&
+        resolveCanvasGroupState(world, entity).interactable;
+
+      updateHoverAndFocus(
+        world,
+        entity,
+        interactable,
+        canvas,
+        isOver,
+        effectiveInteractable,
+      );
+      beginPressIfNeeded(
+        interactable,
+        isOver,
+        downEdge,
+        pointerPosition,
+        effectiveInteractable,
+      );
       updateDragState(interactable, pointerPosition);
 
       interactable.isPressed = interactable.pressCapture !== null && isOver;

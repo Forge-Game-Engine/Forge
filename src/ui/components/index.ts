@@ -1,5 +1,6 @@
 export * from './aspect-ratio-fitter-component.js';
 export * from './canvas-component.js';
+export * from './canvas-group-component.js';
 export * from './content-size-fitter-component.js';
 export * from './layout-element-component.js';
 export * from './layout-group-component.js';
@@ -14,3 +15,4 @@ export * from './ui-safe-area-component.js';
 export * from './ui-slider-component.js';
 export * from './ui-toggle-component.js';
 export * from './ui-toggle-group-component.js';
+export * from './ui-world-space-follow-component.js';
