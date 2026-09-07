@@ -13,6 +13,19 @@ describe('addParentComponent', () => {
     expect(world.getComponent(entity, parentId)).toEqual({ parent });
   });
 
+  it('attaches a component with the given inheritRotation', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const entity = world.createEntity();
+
+    addParentComponent(world, entity, { parent, inheritRotation: false });
+
+    expect(world.getComponent(entity, parentId)).toEqual({
+      parent,
+      inheritRotation: false,
+    });
+  });
+
   it('returns the attached component', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();

@@ -38,6 +38,7 @@ function setLocalAsWorldIfExists(entity: number, world: EcsWorld): void {
 function composePositionWithParent(
   entity: number,
   parentEntity: number,
+  inheritRotation: boolean,
   world: EcsWorld,
 ): void {
   const positionComponent = world.getComponent(entity, positionId);
@@ -63,7 +64,7 @@ function composePositionWithParent(
     Vec2.multiplyComponents(offset, parentScale.world);
   }
 
-  if (parentRotation) {
+  if (parentRotation && inheritRotation) {
     Vec2.rotate(offset, parentRotation.world);
   }
 
@@ -74,6 +75,7 @@ function composePositionWithParent(
 function composeRotationWithParent(
   entity: number,
   parentEntity: number,
+  inheritRotation: boolean,
   world: EcsWorld,
 ): void {
   const rotationComponent = world.getComponent(entity, rotationId);
@@ -84,9 +86,10 @@ function composeRotationWithParent(
 
   const parentRotation = world.getComponent(parentEntity, rotationId);
 
-  rotationComponent.world = parentRotation
-    ? parentRotation.world + rotationComponent.local
-    : rotationComponent.local;
+  rotationComponent.world =
+    parentRotation && inheritRotation
+      ? parentRotation.world + rotationComponent.local
+      : rotationComponent.local;
 }
 
 function composeScaleWithParent(
@@ -116,10 +119,11 @@ function composeScaleWithParent(
 function composeWithParent(
   entity: number,
   parentEntity: number,
+  inheritRotation: boolean,
   world: EcsWorld,
 ): void {
-  composePositionWithParent(entity, parentEntity, world);
-  composeRotationWithParent(entity, parentEntity, world);
+  composePositionWithParent(entity, parentEntity, inheritRotation, world);
+  composeRotationWithParent(entity, parentEntity, inheritRotation, world);
   composeScaleWithParent(entity, parentEntity, world);
 }
 
@@ -184,7 +188,12 @@ function computeWorld(
 
   computeWorld(parentEntity, cache, frozen, world);
 
-  composeWithParent(entity, parentEntity, world);
+  composeWithParent(
+    entity,
+    parentEntity,
+    parentComponent.inheritRotation ?? true,
+    world,
+  );
 
   cache.visiting.delete(entity);
   cache.computed.add(entity);
@@ -197,7 +206,9 @@ function computeWorld(
 /**
  * Creates a system that computes the world position, rotation and scale of
  * every entity from its local transform and, if it has a `ParentEcsComponent`,
- * its parent's world transform.
+ * its parent's world transform. Set `ParentEcsComponent.inheritRotation` to
+ * `false` for a child that should follow its parent's world position but
+ * never rotate or orbit with it - see that field's doc comment.
  *
  * Entities (and their entire parent chain) with `PositionEcsComponent.isStatic`
  * set to `true` have their world transform computed once and then skipped on

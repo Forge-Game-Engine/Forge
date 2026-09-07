@@ -205,9 +205,15 @@ export interface CreateUiCanvasDefaultedOptions {
    * `createUiLayoutEcsSystem`), regardless of this option. Defaults to
    * `UiAnchor.center()` (a literal `100x100` reference-pixel box) - parent
    * the canvas to the entity it should follow
-   * (`addParentComponent(world, canvas, { parent: enemy })`) and size it to
-   * fit the content you'll add as its children (a health bar background,
-   * say).
+   * (`addParentComponent(world, canvas, { parent: enemy, inheritRotation: false })`)
+   * and size it to fit the content you'll add as its children (a health bar
+   * background, say). `inheritRotation: false` is almost always what a
+   * diegetic UI canvas wants - it keeps the canvas following the parent's
+   * world *position* without swinging around as the parent rotates/faces a
+   * new direction, exactly like a health bar or nameplate should behave;
+   * omit it only if the canvas is meant to visually rotate with its parent
+   * (a cockpit HUD painted onto a spinning ship's hull, say). See
+   * `ParentEcsComponent.inheritRotation`.
    */
   anchor: UiAnchorConfig;
 
