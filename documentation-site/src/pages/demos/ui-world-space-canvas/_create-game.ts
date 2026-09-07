@@ -33,6 +33,7 @@ import {
   createUiCanvas,
   createUiWorldSpaceFollowEcsSystem,
   UiAnchor,
+  uiAxisValue,
   uiCanvasRenderModes,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
@@ -173,6 +174,8 @@ async function createSpinningEnemyWithHealthBar(
     anchor: UiAnchor.stretchAll({ x: -3, y: -3 }),
   });
 
+  const labelAnchor = UiAnchor.center({ x: 260, y: 32 });
+
   createLabel(world, healthBarCanvas, {
     text:
       attachment === 'parent'
@@ -180,7 +183,14 @@ async function createSpinningEnemyWithHealthBar(
         : 'addUiWorldSpaceFollowComponent',
     fontAtlas,
     size: 20,
-    anchor: UiAnchor.center({ x: 260, y: 32 }),
+    anchor: labelAnchor,
+    // A point anchor only gives horizontalAlign a box to center within if
+    // maxWidth is set explicitly - createUiLayoutEcsSystem only auto-syncs
+    // that for a stretch-anchored label. Without it, the text renders from
+    // its own local origin instead of the anchor's actual center, visibly
+    // offset from the bar and the enemy above it (see createButton's own
+    // labelMaxWidth for the same trap and fix).
+    maxWidth: uiAxisValue(labelAnchor.x),
     anchoredPosition: { x: 0, y: -34 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
