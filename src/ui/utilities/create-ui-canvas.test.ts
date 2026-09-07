@@ -29,6 +29,7 @@ import {
 } from '../components/ui-interactable-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
+import { uiScaleModes } from '../types/ui-scale-mode.js';
 
 const buildMouseInputSource = (x = 0, y = 0): MouseInputSource =>
   ({
@@ -102,6 +103,7 @@ describe('createUiCanvas', () => {
   it('honors overrides for referenceResolution, scaleMode, cullingMask, and layer', () => {
     const canvas = createUiCanvas(world, renderContext, time, {
       referenceResolution: { x: 1280, y: 720 },
+      scaleMode: uiScaleModes.constantPixelSize,
       cullingMask: 0b0010,
       layer: 5,
     });
@@ -114,6 +116,7 @@ describe('createUiCanvas', () => {
     }
 
     expect(canvasComponent.referenceResolution).toEqual({ x: 1280, y: 720 });
+    expect(canvasComponent.scaleMode).toBe(uiScaleModes.constantPixelSize);
     expect(camera.cullingMask).toBe(0b0010);
     expect(camera.layer).toBe(5);
     expect(camera.verticalWorldUnits).toBe(720);
@@ -244,16 +247,42 @@ describe('createUiCanvas', () => {
       renderMode: uiCanvasRenderModes.worldSpace,
       camera: worldCamera,
       anchor: UiAnchor.center({ x: 4, y: 1 }),
+      anchoredPosition: { x: 10, y: -5 },
     });
 
     world.update();
 
     expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
-      min: { x: -2, y: -0.5 },
-      max: { x: 2, y: 0.5 },
+      min: { x: 8, y: -5.5 },
+      max: { x: 12, y: -4.5 },
     });
     expect(world.getComponent(worldCamera, cameraId)!.verticalWorldUnits).toBe(
       12,
     );
+  });
+
+  it('passes submitInput/cancelInput/navigateInput through to a worldSpace canvas component', () => {
+    const worldCamera = world.createEntity();
+
+    addPositionComponent(world, worldCamera);
+    addCameraComponent(world, worldCamera, { cullingMask: testCullingMask });
+
+    const submitInput = new TriggerAction('ui-submit');
+    const cancelInput = new TriggerAction('ui-cancel');
+    const navigateInput = new Axis2dAction('ui-navigate');
+
+    const canvas = createUiCanvas(world, renderContext, time, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+      camera: worldCamera,
+      submitInput,
+      cancelInput,
+      navigateInput,
+    });
+
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    expect(canvasComponent.submitInput).toBe(submitInput);
+    expect(canvasComponent.cancelInput).toBe(cancelInput);
+    expect(canvasComponent.navigateInput).toBe(navigateInput);
   });
 });
