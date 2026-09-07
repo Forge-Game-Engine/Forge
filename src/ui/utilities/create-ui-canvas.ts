@@ -20,6 +20,7 @@ import {
   uiCanvasRenderModes,
 } from '../types/ui-canvas-render-mode.js';
 import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
+import { createUiCanvasGroupEcsSystem } from '../systems/ui-canvas-group-system.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { createUiLayoutGroupEcsSystem } from '../systems/ui-layout-group-system.js';
 import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
@@ -384,15 +385,22 @@ export function createUiCanvas(
     const progressBar = createUiProgressBarEcsSystem();
     const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();
     const layoutGroup = createUiLayoutGroupEcsSystem();
+    const layout = createUiLayoutEcsSystem(renderContext);
 
     world.addSystem(progressBar);
     world.addSystem(aspectRatioFitter);
     world.addSystem(layoutGroup, {
       after: [progressBar, aspectRatioFitter],
     });
-    world.addSystem(createUiLayoutEcsSystem(renderContext), {
+    world.addSystem(layout, {
       after: [layoutGroup],
     });
+    // Applies CanvasGroupEcsComponent's inherited alpha to
+    // SpriteEcsComponent/TextEcsComponent.opacityMultiplier - doesn't
+    // depend on resolved rects, but runs after layout so every UI system's
+    // relative order stays predictable, and before whatever renders this
+    // frame reads the sprites/text it wrote.
+    world.addSystem(createUiCanvasGroupEcsSystem(), { after: [layout] });
     worldsWithUiLayoutSystem.add(world);
   }
 

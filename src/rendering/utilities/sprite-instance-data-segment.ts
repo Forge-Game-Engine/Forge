@@ -64,11 +64,14 @@ function bindSpriteInstanceData(
   instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = sprite.uvScale.x;
   instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = sprite.uvScale.y;
 
-  // Tint color
+  // Tint color. Alpha additionally folds in `opacityMultiplier`, if set -
+  // see its own doc comment on `SpriteEcsComponent` for why that's a
+  // separate field rather than mutating `tintColor.a` itself.
   instanceDataBufferArray[offset + TINT_COLOR_R_OFFSET] = sprite.tintColor.r;
   instanceDataBufferArray[offset + TINT_COLOR_G_OFFSET] = sprite.tintColor.g;
   instanceDataBufferArray[offset + TINT_COLOR_B_OFFSET] = sprite.tintColor.b;
-  instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] = sprite.tintColor.a;
+  instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] =
+    sprite.tintColor.a * (sprite.opacityMultiplier ?? 1);
 }
 
 function setupSpriteInstanceAttributes(
