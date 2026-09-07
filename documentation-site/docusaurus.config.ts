@@ -232,6 +232,14 @@ const config: Config = {
               label: 'UI Layout Groups',
             },
             {
+              to: 'demos/ui-canvas-group',
+              label: 'UI Canvas Group',
+            },
+            {
+              to: 'demos/ui-world-space-canvas',
+              label: 'UI World-Space Canvas',
+            },
+            {
               to: 'demos/ui-stress-test',
               label: 'UI Stress Test',
             },

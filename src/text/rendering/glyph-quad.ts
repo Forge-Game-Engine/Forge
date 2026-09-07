@@ -143,6 +143,7 @@ function pushTextFillRenderCommands(
       uvOffset: glyph.uvOffset,
       uvScale: glyph.uvScale,
       tintColor: color,
+      opacityMultiplier: textComponent.opacityMultiplier,
       renderable: fillRenderable,
       enabled: true,
       layer,

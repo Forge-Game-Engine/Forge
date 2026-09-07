@@ -22,6 +22,7 @@ import {
   RectTransformEcsComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
+import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 import { resolveRect } from '../utilities/resolve-rect.js';
 
@@ -33,7 +34,10 @@ import { resolveRect } from '../utilities/resolve-rect.js';
  */
 function resolveCanvasRootRect(
   renderContext: RenderContext,
-  canvas: CanvasEcsComponent,
+  canvas: Extract<
+    CanvasEcsComponent,
+    { renderMode: typeof uiCanvasRenderModes.screenSpace }
+  >,
 ): { rect: Rect; worldHeight: number } {
   const aspectRatio = renderContext.width / renderContext.height;
 
@@ -82,15 +86,21 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
  * topmost-first ordering for every interactable regardless of whether it
  * happens to draw anything.
  *
- * A canvas root's rect (and its camera's `verticalWorldUnits`) is
- * recomputed from `renderContext`'s current dimensions every call, so
- * resizing the render destination is picked up automatically on the next
- * frame with no separate resize hook - this system does a full recompute
- * every frame rather than tracking dirty state, favoring correctness over
- * the added complexity dirty-tracking a retained tree would need. A canvas's
- * camera's `renderTarget`, if it has one (see `createUiCanvas`), is resized
- * to match `renderContext` the same way, so the UI's own off-screen target
- * never drifts out of sync with the destination it's composited onto.
+ * A `renderMode: 'screenSpace'` canvas root's rect (and its camera's
+ * `verticalWorldUnits`) is recomputed from `renderContext`'s current
+ * dimensions every call, so resizing the render destination is picked up
+ * automatically on the next frame with no separate resize hook - this
+ * system does a full recompute every frame rather than tracking dirty
+ * state, favoring correctness over the added complexity dirty-tracking a
+ * retained tree would need. Its camera's `renderTarget`, if it has one (see
+ * `createUiCanvas`), is resized to match `renderContext` the same way, so
+ * the UI's own off-screen target never drifts out of sync with the
+ * destination it's composited onto.
+ *
+ * A `renderMode: 'worldSpace'` canvas root is resolved exactly like any
+ * other element instead - against its own parent's rect (or, with no UI
+ * parent, as an ordinary root) - and its camera is never touched, since a
+ * world-space canvas typically shares the game's own world camera.
  *
  * Must be registered before `createTransformEcsSystem`.
  * @param renderContext - The render context UI canvases resolve their root
@@ -159,7 +169,10 @@ export const createUiLayoutEcsSystem = (
 
       let rect: Rect;
 
-      if (canvasComponent) {
+      if (
+        canvasComponent &&
+        canvasComponent.renderMode === uiCanvasRenderModes.screenSpace
+      ) {
         const resolved = resolveCanvasRootRect(renderContext, canvasComponent);
         rect = resolved.rect;
 

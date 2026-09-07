@@ -105,6 +105,19 @@ export interface SpriteEcsComponent
    * `0` would silently override world-Y sorting for every sprite.
    */
   sortDepth?: number;
+
+  /**
+   * An additional multiplier applied to `tintColor.a` when computing this
+   * sprite's final rendered alpha, on top of (not instead of) the tint's
+   * own alpha. Left `undefined`, this sprite renders at `tintColor.a`
+   * alone - a genuinely optional field, not one with a `1` default, kept
+   * separate from `tintColor.a` so a system can apply an environment-wide
+   * fade (e.g. `@forge-game-engine/forge/ui`'s `CanvasGroupEcsComponent`,
+   * via `createUiCanvasGroupEcsSystem`) without overwriting - and later
+   * needing to restore - whatever alpha the caller authored on `tintColor`
+   * itself.
+   */
+  opacityMultiplier?: number;
 }
 
 export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
