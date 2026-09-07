@@ -37,6 +37,10 @@ describe('addCanvasComponent', () => {
       scaleMode: uiScaleModes.matchWidth,
     });
 
+    if (component.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
+
     expect(component.scaleMode).toBe(uiScaleModes.matchWidth);
     expect(component.referenceResolution).toEqual({ x: 1920, y: 1080 });
   });

@@ -20,7 +20,8 @@ import { addTextComponent, textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
   addCanvasComponent,
-  CanvasDefaultedOptions,
+  ScreenSpaceCanvasFields,
+  WorldSpaceCanvasFields,
 } from '../components/canvas-component.js';
 import {
   addRectTransformComponent,
@@ -38,7 +39,7 @@ const buildRenderable = (): Renderable => ({}) as Renderable;
 /** Creates a canvas entity (`CanvasEcsComponent` + `RectTransformEcsComponent` + `PositionEcsComponent`) with a UI camera, without going through `createUiCanvas`, so the layout system can be tested in isolation. */
 const createTestCanvas = (
   world: EcsWorld,
-  options: Partial<CanvasDefaultedOptions> = {},
+  options: ScreenSpaceCanvasFields | WorldSpaceCanvasFields = {},
   renderTarget?: RenderTarget,
 ): { canvas: number; camera: number } => {
   const camera = world.createEntity();

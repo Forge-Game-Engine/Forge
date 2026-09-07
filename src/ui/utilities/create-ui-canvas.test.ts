@@ -83,6 +83,11 @@ describe('createUiCanvas', () => {
     const camera = world.getComponent(canvasComponent.camera, cameraId)!;
 
     expect(rectTransform).not.toBeNull();
+
+    if (canvasComponent.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
+
     expect(canvasComponent.referenceResolution).toEqual({ x: 1920, y: 1080 });
     expect(camera.isStatic).toBe(true);
     expect(camera.clearColor).toEqual(Color.transparent);
@@ -103,6 +108,10 @@ describe('createUiCanvas', () => {
 
     const canvasComponent = world.getComponent(canvas, canvasId)!;
     const camera = world.getComponent(canvasComponent.camera, cameraId)!;
+
+    if (canvasComponent.renderMode !== uiCanvasRenderModes.screenSpace) {
+      throw new Error('expected a screenSpace canvas');
+    }
 
     expect(canvasComponent.referenceResolution).toEqual({ x: 1280, y: 720 });
     expect(camera.cullingMask).toBe(0b0010);
@@ -203,20 +212,6 @@ describe('createUiCanvas', () => {
     world.update();
 
     expect(interactable.wasInvokedThisFrame).toBe(false);
-  });
-
-  it('throws when renderMode is screenSpace (the default) and cullingMask is omitted', () => {
-    expect(() => createUiCanvas(world, renderContext, time, {})).toThrow(
-      /cullingMask/,
-    );
-  });
-
-  it('throws when renderMode is worldSpace and camera is omitted', () => {
-    expect(() =>
-      createUiCanvas(world, renderContext, time, {
-        renderMode: uiCanvasRenderModes.worldSpace,
-      }),
-    ).toThrow(/camera/);
   });
 
   it('draws a worldSpace canvas through the given camera instead of creating one', () => {

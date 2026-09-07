@@ -34,7 +34,10 @@ import { resolveRect } from '../utilities/resolve-rect.js';
  */
 function resolveCanvasRootRect(
   renderContext: RenderContext,
-  canvas: CanvasEcsComponent,
+  canvas: Extract<
+    CanvasEcsComponent,
+    { renderMode: typeof uiCanvasRenderModes.screenSpace }
+  >,
 ): { rect: Rect; worldHeight: number } {
   const aspectRatio = renderContext.width / renderContext.height;
 

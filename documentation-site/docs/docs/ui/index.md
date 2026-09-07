@@ -213,8 +213,10 @@ canvas's local position from its anchor every frame, so a manually-set
 It draws through whichever camera `camera` names - typically the game's own
 world camera - not a dedicated UI camera `createUiCanvas` creates for you,
 so it pans and zooms with the world exactly like any other sprite.
-`referenceResolution`/`scaleMode` have no effect in this mode - there's no
-"destination size" for a canvas embedded in the world to scale against.
+`referenceResolution`/`scaleMode`/`cullingMask`/`layer` aren't valid options
+for `renderMode: 'worldSpace'` at all - the type checker rejects them,
+since there's no "destination size" for a canvas embedded in the world to
+scale against, and no dedicated UI camera for them to configure.
 
 **Following, not parenting**: `addUiWorldSpaceFollowComponent` -
 `createUiWorldSpaceFollowEcsSystem` overwrites the canvas's world position
@@ -233,8 +235,12 @@ already resolved for the current tick, register it yourself, once, right
 after `createTransformEcsSystem` - unlike the rest of the UI pipeline,
 `createUiCanvas` doesn't register it for you.
 
-`createUiCanvas` throws if `cullingMask` is omitted for the default
-`'screenSpace'` mode, or if `camera` is omitted for `'worldSpace'`.
+`createUiCanvas`'s options are a discriminated union on `renderMode`: the
+type checker requires `cullingMask` for the default `'screenSpace'` mode and
+`camera` for `'worldSpace'`, and rejects the other mode's fields
+(`referenceResolution`/`scaleMode`/`layer` vs. `camera`/`anchor`/
+`anchoredPosition`) outright, rather than accepting them and ignoring them
+at runtime.
 
 ## Labels
 

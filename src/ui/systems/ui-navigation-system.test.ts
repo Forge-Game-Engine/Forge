@@ -10,6 +10,7 @@ import { addCameraComponent } from '../../rendering/index.js';
 import {
   addCanvasComponent,
   canvasId,
+  CanvasInputOptions,
 } from '../components/canvas-component.js';
 import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
@@ -22,7 +23,7 @@ import { UiAnchor } from '../types/ui-anchor.js';
 
 const createTestCanvas = (
   world: EcsWorld,
-  options: Omit<Parameters<typeof addCanvasComponent>[2], 'camera'> = {},
+  options: CanvasInputOptions = {},
 ): number => {
   const camera = world.createEntity();
 
