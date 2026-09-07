@@ -18,10 +18,10 @@ export default function UiWorldSpaceCanvas(): JSX.Element {
       metaData={{
         title: 'UI World-Space Canvas',
         description:
-          'A demo showcasing renderMode: worldSpace and ParentEcsComponent.inheritRotation - a diegetic health bar that follows its parent position without spinning with it.',
+          'A demo showcasing renderMode: worldSpace and UiWorldSpaceFollowEcsComponent - a diegetic health bar that follows its target position without spinning with it.',
       }}
       header="UI World-Space Canvas"
-      blurb="Two identical spinning 'enemies', each with a diegetic health-bar canvas (renderMode: 'worldSpace') parented directly to it. The left enemy's health bar has inheritRotation: true (the parent-child default) and visibly spins and swings around as the enemy rotates. The right enemy's has inheritRotation: false and stays upright, directly above, regardless of which way the enemy is facing - the behavior a health bar almost always wants, and the default for any child that should follow its parent's world position without inheriting its rotation."
+      blurb="Two identical spinning 'enemies', each with a diegetic health-bar canvas (renderMode: 'worldSpace'). The left enemy's health bar is attached the ordinary way, with addParentComponent - it inherits the enemy's full world transform and visibly spins and swings around as the enemy rotates, exactly like any other parented entity. The right enemy's is attached with addUiWorldSpaceFollowComponent instead, and stays upright, directly above, regardless of which way the enemy is facing - the behavior a health bar almost always wants. It's a deliberately separate mechanism from parenting, not a flag on it: being parented already means 'inherit the full world transform' everywhere else in the engine, so 'follow position only' gets its own component instead of quietly changing what parenting itself means."
       createGame={createGame}
       codeFiles={[{ name: 'game.ts', content: gameCode }]}
     />

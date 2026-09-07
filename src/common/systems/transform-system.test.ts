@@ -192,63 +192,6 @@ describe('transform-system', () => {
     expect(childPosition.world.y).toBeCloseTo(10);
   });
 
-  it('should not rotate a child position offset by the parent rotation when inheritRotation is false', () => {
-    const parent = world.createEntity();
-    const child = world.createEntity();
-
-    addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
-    addRotationComponent(world, parent, { local: Math.PI / 2 });
-
-    const childPosition = addPositionComponent(world, child, {
-      local: { x: 10, y: 0 },
-    });
-
-    addParentComponent(world, child, { parent, inheritRotation: false });
-
-    world.update();
-
-    expect(childPosition.world.x).toBeCloseTo(10);
-    expect(childPosition.world.y).toBeCloseTo(0);
-  });
-
-  it('should not compose a child rotation with the parent rotation when inheritRotation is false', () => {
-    const parent = world.createEntity();
-    const child = world.createEntity();
-
-    addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
-    addRotationComponent(world, parent, { local: Math.PI / 2 });
-
-    addPositionComponent(world, child, { local: { x: 0, y: 0 } });
-    const childRotation = addRotationComponent(world, child, {
-      local: Math.PI / 4,
-    });
-
-    addParentComponent(world, child, { parent, inheritRotation: false });
-
-    world.update();
-
-    expect(childRotation.world).toBeCloseTo(Math.PI / 4);
-  });
-
-  it('should still follow the parent world position when inheritRotation is false', () => {
-    const parent = world.createEntity();
-    const child = world.createEntity();
-
-    addPositionComponent(world, parent, { local: { x: 100, y: 50 } });
-    addRotationComponent(world, parent, { local: Math.PI });
-
-    const childPosition = addPositionComponent(world, child, {
-      local: { x: 0, y: 10 },
-    });
-
-    addParentComponent(world, child, { parent, inheritRotation: false });
-
-    world.update();
-
-    expect(childPosition.world.x).toBeCloseTo(100);
-    expect(childPosition.world.y).toBeCloseTo(60);
-  });
-
   it('should scale a child position offset by the parent scale', () => {
     const parent = world.createEntity();
     const child = world.createEntity();

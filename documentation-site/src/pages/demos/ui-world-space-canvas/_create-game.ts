@@ -27,9 +27,11 @@ import {
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
+  addUiWorldSpaceFollowComponent,
   createLabel,
   createPanel,
   createUiCanvas,
+  createUiWorldSpaceFollowEcsSystem,
   UiAnchor,
   uiCanvasRenderModes,
 } from '@forge-game-engine/forge/ui';
@@ -84,11 +86,13 @@ async function createBackdrop(
 /**
  * Creates a spinning "enemy" (a square sprite plus a triangle-ish facing
  * marker, so the rotation is visually obvious) at `x`, and a world-space
- * health-bar canvas parented to it.
- * @param inheritRotation - Forwarded to the health bar's own
- * `addParentComponent` call - `false` keeps it upright and directly above
- * the enemy regardless of facing; `true` (the parent-child default) lets
- * it orbit and spin with the enemy, for contrast.
+ * health-bar canvas attached to it.
+ * @param attachment - `'parent'` attaches the canvas the ordinary way
+ * (`addParentComponent`), which inherits the enemy's full world transform
+ * - the canvas visibly spins and swings around as the enemy rotates.
+ * `'follow'` attaches it with `addUiWorldSpaceFollowComponent` instead,
+ * which tracks only the enemy's world position - the canvas stays upright
+ * and directly above the enemy no matter which way it's facing.
  */
 async function createSpinningEnemyWithHealthBar(
   world: EcsWorld,
@@ -97,7 +101,7 @@ async function createSpinningEnemyWithHealthBar(
   fontAtlas: FontAtlas,
   worldCamera: number,
   x: number,
-  inheritRotation: boolean,
+  attachment: 'parent' | 'follow',
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
@@ -141,7 +145,11 @@ async function createSpinningEnemyWithHealthBar(
     anchoredPosition: { x: 0, y: 80 },
   });
 
-  addParentComponent(world, healthBarCanvas, { parent: enemy, inheritRotation });
+  if (attachment === 'parent') {
+    addParentComponent(world, healthBarCanvas, { parent: enemy });
+  } else {
+    addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target: enemy });
+  }
 
   const barBackgroundSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.world,
@@ -166,7 +174,10 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   createLabel(world, healthBarCanvas, {
-    text: inheritRotation ? 'inheritRotation: true' : 'inheritRotation: false',
+    text:
+      attachment === 'parent'
+        ? 'addParentComponent'
+        : 'addUiWorldSpaceFollowComponent',
     fontAtlas,
     size: 20,
     anchor: UiAnchor.center({ x: 260, y: 32 }),
@@ -179,9 +190,7 @@ async function createSpinningEnemyWithHealthBar(
 }
 
 /** Spins every entity with a RotationEcsComponent at a constant rate - the demo's only source of motion. */
-function createSpinEcsSystem(
-  time: Time,
-): EcsSystem<[RotationEcsComponent]> {
+function createSpinEcsSystem(time: Time): EcsSystem<[RotationEcsComponent]> {
   return {
     name: 'spin',
     query: [rotationId],
@@ -196,12 +205,15 @@ function createSpinEcsSystem(
 /**
  * Builds the world-space canvas demo: two identical spinning "enemies",
  * each with a diegetic health-bar canvas (`renderMode: 'worldSpace'`)
- * parented directly to it. The left enemy's health bar has
- * `inheritRotation: true` (the parent-child default) and visibly spins and
- * swings around with the enemy; the right enemy's has
- * `inheritRotation: false` and stays upright, directly above, regardless
- * of which way the enemy is facing - the behavior a health bar almost
- * always wants.
+ * attached to it. The left enemy's health bar is attached with the
+ * ordinary `addParentComponent` and visibly spins and swings around with
+ * the enemy - inheriting the full world transform is exactly what being
+ * parented means throughout the engine. The right enemy's is attached
+ * with `addUiWorldSpaceFollowComponent` instead, and stays upright,
+ * directly above, regardless of which way the enemy is facing - the
+ * behavior a health bar almost always wants, and a deliberately different
+ * relationship from parenting rather than a flag that would change what
+ * parenting itself means.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -228,7 +240,7 @@ export const createWorldSpaceCanvasGame = async (
     fontAtlas,
     worldCamera,
     -180,
-    true,
+    'parent',
   );
 
   await createSpinningEnemyWithHealthBar(
@@ -238,12 +250,15 @@ export const createWorldSpaceCanvasGame = async (
     fontAtlas,
     worldCamera,
     180,
-    false,
+    'follow',
   );
 
   world.addSystem(createSpinEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
+  // After createTransformEcsSystem, not before like the rest of the UI
+  // pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
+  world.addSystem(createUiWorldSpaceFollowEcsSystem());
   world.addSystem(createTextShapingEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

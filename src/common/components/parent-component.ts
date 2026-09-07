@@ -6,22 +6,6 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  */
 export interface ParentEcsComponent {
   parent: number;
-
-  /**
-   * Whether this entity inherits its parent's world rotation -
-   * `createTransformEcsSystem` applies this both when rotating this
-   * entity's local position offset by the parent's world rotation, and
-   * (if this entity has its own `RotationEcsComponent`) when composing
-   * this entity's world rotation from the parent's. Defaults to `true` -
-   * the ordinary case of a child that rotates and orbits with its parent,
-   * e.g. a turret mounted on a rotating tank. Set to `false` for a child
-   * that should only follow its parent's world *position*, never its
-   * rotation - e.g. a health bar, nameplate, or other world-space UI
-   * canvas attached to a rotating/facing character, which should stay
-   * upright and directly above it rather than swinging around as the
-   * character turns.
-   */
-  inheritRotation?: boolean;
 }
 
 export const parentId = createComponentId<ParentEcsComponent>('Parent');

@@ -23,12 +23,12 @@ const captureBounds = (page: import('@playwright/test').Page) =>
     return scene.measureBarBounds();
   });
 
-const setParentRotation = (
+const setTargetRotation = (
   page: import('@playwright/test').Page,
   radians: number,
 ) =>
   page.evaluate(
-    (r) => (window.__forgeTestHooks as unknown as Hooks).setParentRotation(r),
+    (r) => (window.__forgeTestHooks as unknown as Hooks).setTargetRotation(r),
     radians,
   );
 
@@ -55,7 +55,7 @@ test.describe('world-space canvas rotation independence', () => {
     });
   });
 
-  test('keeps the health bar at a fixed on-screen position as its parent rotates', async ({
+  test('keeps the health bar at a fixed on-screen position as its target rotates', async ({
     page,
   }) => {
     const atZeroRotation =
@@ -64,8 +64,8 @@ test.describe('world-space canvas rotation independence', () => {
 
     expect(atZeroRotation).not.toBeNull();
 
-    await test.step('rotate the parent a quarter turn and step', async () => {
-      await setParentRotation(page, Math.PI / 2);
+    await test.step('rotate the target a quarter turn and step', async () => {
+      await setTargetRotation(page, Math.PI / 2);
     });
 
     const afterQuarterTurn =
@@ -79,10 +79,10 @@ test.describe('world-space canvas rotation independence', () => {
       const after = afterQuarterTurn!;
 
       // Exact equality is realistic here (unlike a zoom/pan ratio test) -
-      // nothing about the bar's own resolved rect depends on the parent's
-      // rotation once inheritRotation is false, so a real regression would
-      // show up as a large, unambiguous pixel shift, not a rounding-sized
-      // one. A small tolerance still guards against flaky antialiasing.
+      // nothing about the bar's own resolved rect depends on the target's
+      // rotation, so a real regression would show up as a large,
+      // unambiguous pixel shift, not a rounding-sized one. A small
+      // tolerance still guards against flaky antialiasing.
       expect(after.left).toBeGreaterThanOrEqual(before.left - 1);
       expect(after.left).toBeLessThanOrEqual(before.left + 1);
       expect(after.right).toBeGreaterThanOrEqual(before.right - 1);
@@ -94,7 +94,7 @@ test.describe('world-space canvas rotation independence', () => {
     });
 
     await test.step('rotate a further half turn and assert the bar still has not moved', async () => {
-      await setParentRotation(page, Math.PI * 1.5);
+      await setTargetRotation(page, Math.PI * 1.5);
 
       const afterFurtherRotation = await captureBounds(page);
 

@@ -1,5 +1,4 @@
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -16,8 +15,10 @@ import {
   createRenderEcsSystem,
 } from '../../../src/rendering/index.js';
 import {
+  addUiWorldSpaceFollowComponent,
   createPanel,
   createUiCanvas,
+  createUiWorldSpaceFollowEcsSystem,
   UiAnchor,
 } from '../../../src/ui/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
@@ -27,7 +28,7 @@ const defaultStepDeltaMilliseconds = 16.6666;
 
 // A pure, saturated green with no equivalent anywhere else in the scene
 // (clear color, panel), so a same-run canvas readback (see
-// `measureGreenBarBounds` below - mirrors `camera-pan-zoom.ts`'s
+// `findBarPixelBounds` below - mirrors `camera-pan-zoom.ts`'s
 // `measureGreenSquareBounds`) can find it unambiguously.
 const barColor = new Color(0, 1, 0, 1);
 
@@ -41,8 +42,8 @@ export interface BarBounds {
 
 /** The handle `world-space-canvas-rotation.spec.ts` drives and asserts against. */
 export interface WorldSpaceCanvasRotationSceneHandle extends SceneHandle {
-  /** Sets the followed entity's own world rotation, in radians. */
-  setParentRotation(radians: number): void;
+  /** Sets the followed target entity's own world rotation, in radians. */
+  setTargetRotation(radians: number): void;
 
   /**
    * Scans the canvas's actual displayed bitmap for the health bar's own
@@ -88,15 +89,15 @@ function findBarPixelBounds(
 }
 
 /**
- * Builds a minimal scene proving `ParentEcsComponent.inheritRotation:
- * false` at the actual rendering layer, not just in ECS state: a
- * world-space UI canvas (a stand-in health bar) parented to a rotating
- * entity, with `inheritRotation: false`. `world-space-canvas-rotation.spec.ts`
- * rotates the parent and asserts the bar's *rendered pixel bounds* stay
- * fixed - catching a regression anywhere between the ECS fix
- * (`composePositionWithParent`) and what actually reaches the screen,
- * which a purely numeric `position.world` assertion could miss (see
- * AGENTS.md's e2e philosophy).
+ * Builds a minimal scene proving `UiWorldSpaceFollowEcsComponent` at the
+ * actual rendering layer, not just in ECS state: a world-space UI canvas
+ * (a stand-in health bar) following a rotating entity via
+ * `addUiWorldSpaceFollowComponent`. `world-space-canvas-rotation.spec.ts`
+ * rotates the target and asserts the bar's *rendered pixel bounds* stay
+ * fixed - catching a regression anywhere between the ECS logic
+ * (`createUiWorldSpaceFollowEcsSystem`) and what actually reaches the
+ * screen, which a purely numeric `position.world` assertion could miss
+ * (see AGENTS.md's e2e philosophy).
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -124,10 +125,10 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: canvas.height,
   });
 
-  const parent = world.createEntity();
+  const target = world.createEntity();
 
-  addPositionComponent(world, parent, { local: { x: 0, y: 0 } });
-  const parentRotation = addRotationComponent(world, parent, { local: 0 });
+  addPositionComponent(world, target, { local: { x: 0, y: 0 } });
+  const targetRotation = addRotationComponent(world, target, { local: 0 });
 
   const healthBarCanvas = createUiCanvas(world, renderContext, time, {
     renderMode: 'worldSpace',
@@ -136,10 +137,7 @@ export const createScene: CreateScene = async (
     anchoredPosition: { x: 0, y: 100 },
   });
 
-  addParentComponent(world, healthBarCanvas, {
-    parent,
-    inheritRotation: false,
-  });
+  addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target });
 
   const barImage = await createWhiteSquareImage();
   const barSprite = createImageSprite(barImage, renderContext, { layer: 1 });
@@ -152,6 +150,9 @@ export const createScene: CreateScene = async (
   });
 
   world.addSystem(createTransformEcsSystem());
+  // After createTransformEcsSystem - see createUiWorldSpaceFollowEcsSystem's
+  // own doc comment for why.
+  world.addSystem(createUiWorldSpaceFollowEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 
@@ -164,8 +165,8 @@ export const createScene: CreateScene = async (
       world.update();
     },
 
-    setParentRotation(radians: number): void {
-      parentRotation.local = radians;
+    setTargetRotation(radians: number): void {
+      targetRotation.local = radians;
     },
 
     measureBarBounds(): BarBounds | null {

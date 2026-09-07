@@ -189,26 +189,26 @@ const healthBarCanvas = createUiCanvas(world, renderContext, time, {
   anchoredPosition: { x: 0, y: 40 }, // 40 units above the enemy's own origin
 });
 
-addParentComponent(world, healthBarCanvas, {
-  parent: enemy,
-  inheritRotation: false, // stay upright/above the enemy, don't orbit it
-});
+addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target: enemy });
 
 const fill = createPanel(world, healthBarCanvas, {
   anchor: UiAnchor.stretchAll(),
   sprite: fillSprite,
 });
+
+world.addSystem(createTransformEcsSystem());
+// After createTransformEcsSystem, not before like the rest of the UI
+// pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
+world.addSystem(createUiWorldSpaceFollowEcsSystem());
 ```
 
 A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
 - sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
-options) rather than the render destination's size, and positioned through
-the normal entity hierarchy: parent it to the entity it should follow, the
-same way any other sprite would be. Its offset from that entity comes from
-`anchoredPosition` above, not from touching `PositionEcsComponent` directly
-- `createUiLayoutEcsSystem` recomputes the canvas's local position from its
-anchor every frame, so a manually-set `PositionEcsComponent.local` would
-just be overwritten on the next frame.
+options) rather than the render destination's size. Its offset from the
+entity it follows comes from `anchoredPosition` above, not from touching
+`PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
+canvas's local position from its anchor every frame, so a manually-set
+`PositionEcsComponent.local` would just be overwritten on the next frame.
 
 It draws through whichever camera `camera` names - typically the game's own
 world camera - not a dedicated UI camera `createUiCanvas` creates for you,
@@ -216,15 +216,22 @@ so it pans and zooms with the world exactly like any other sprite.
 `referenceResolution`/`scaleMode` have no effect in this mode - there's no
 "destination size" for a canvas embedded in the world to scale against.
 
-**Rotation**: by default, a child follows both its parent's world position
-*and* rotation - the ordinary case for a sprite mounted on a rotating body
-(a turret on a tank). A diegetic UI canvas almost always wants the
-opposite: follow the parent's position but stay upright regardless of which
-way it's facing, exactly like the health bar above. Pass
-`inheritRotation: false` to `addParentComponent` (a general
-`ParentEcsComponent` option, not specific to UI) to get that - without it,
-a health bar parented to a rotating/turning enemy will swing around with
-the rotation instead of staying fixed above its head.
+**Following, not parenting**: `addUiWorldSpaceFollowComponent` -
+`createUiWorldSpaceFollowEcsSystem` overwrites the canvas's world position
+every frame with the target's own world position plus the canvas's local
+offset - is a deliberately different relationship from
+`addParentComponent`. Being parented already has an unambiguous meaning
+throughout the engine: inherit the target's *entire* world transform,
+including its rotation (the ordinary case for, say, a turret mounted on a
+rotating tank). A diegetic UI canvas almost always wants something
+narrower - follow the target's world position, but stay upright regardless
+of which way it's facing, instead of swinging around with it - so that's
+its own mechanism rather than a flag that would make `addParentComponent`
+mean two different things depending on how it's called. Because
+`createUiWorldSpaceFollowEcsSystem` needs the target's world position
+already resolved for the current tick, register it yourself, once, right
+after `createTransformEcsSystem` - unlike the rest of the UI pipeline,
+`createUiCanvas` doesn't register it for you.
 
 `createUiCanvas` throws if `cullingMask` is omitted for the default
 `'screenSpace'` mode, or if `camera` is omitted for `'worldSpace'`.
