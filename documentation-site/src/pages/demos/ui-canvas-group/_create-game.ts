@@ -23,11 +23,11 @@ import {
   createTextShapingEcsSystem,
   FontAtlas,
   FontAtlasCache,
-  textHorizontalAlignments,
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
   addCanvasGroupComponent,
+  createButton,
   createLabel,
   createPanel,
   createToggle,
@@ -83,12 +83,14 @@ function createPointerInput(
 /**
  * Builds the CanvasGroup demo: a "modal" card - a background panel
  * containing a nested inner panel, which itself contains a label and a
- * small button - all governed by a single `CanvasGroupEcsComponent` on the
- * outermost panel. Toggling "Disable modal" fades the whole three-level
- * subtree to 30% alpha and turns off its interaction in one write, proving
+ * small `createButton` - all governed by a single `CanvasGroupEcsComponent`
+ * on the outermost panel. Toggling "Disable modal" fades the whole
+ * three-level subtree to 30% alpha and turns off its interaction
+ * (`interactable`/`blocksRaycasts`) in one write, proving
  * `createUiCanvasGroupEcsSystem` propagates through every descendant, not
- * just direct children - the toggle itself lives outside the group, so it
- * stays fully opaque and clickable throughout.
+ * just direct children - the "Confirm" button becomes genuinely
+ * unable to be clicked while disabled, not just dimmed. The toggle itself lives
+ * outside the group, so it stays fully opaque and clickable throughout.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -202,24 +204,36 @@ export const createCanvasGroupGame = async (
   const nestedButtonSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
   });
-  nestedButtonSprite.tintColor = new Color(0.35, 0.55, 0.95, 1);
 
-  createPanel(world, card, {
+  const buttonColor = new Color(0.35, 0.55, 0.95, 1);
+
+  // A real createButton, not just a panel + label - a point-anchored
+  // label's text only centers within maxWidth (see createButton's own
+  // labelMaxWidth doc comment: it's derived from anchor.x's own size for a
+  // point anchor), which a hand-paired createPanel/createLabel forgets to
+  // pass. Using createButton here sidesteps that trap entirely, and as a
+  // bonus makes "Confirm" a genuinely interactable button - so disabling
+  // the modal also demonstrates CanvasGroupEcsComponent.interactable/
+  // blocksRaycasts, not just alpha.
+  //
+  // createUiTransitionEcsSystem drives the sprite's own tintColor from
+  // this `transition` every frame (normalColor while idle), overwriting
+  // whatever tint the sprite had before it was passed in - so the button's
+  // actual color is set here, not via `nestedButtonSprite.tintColor`.
+  createButton(world, card, {
     sprite: nestedButtonSprite,
-    anchor: UiAnchor.bottomLeft({ x: 200, y: 56 }),
-    anchoredPosition: { x: 40, y: 40 },
-  });
-
-  createLabel(world, card, {
-    text: 'Confirm',
+    label: 'Confirm',
     fontAtlas,
-    size: 22,
+    labelSize: 22,
+    labelColor: Color.white,
+    labelCategory: renderLayers.ui,
     anchor: UiAnchor.bottomLeft({ x: 200, y: 56 }),
     anchoredPosition: { x: 40, y: 40 },
-    horizontalAlign: textHorizontalAlignments.center,
-    verticalAlign: textVerticalAlignments.middle,
-    color: Color.white,
-    category: renderLayers.ui,
+    transition: {
+      normalColor: buttonColor,
+      hoverColor: new Color(0.45, 0.63, 0.98, 1),
+      pressedColor: new Color(0.25, 0.42, 0.8, 1),
+    },
   });
 
   const modalToggle = createToggle(world, canvas, {
