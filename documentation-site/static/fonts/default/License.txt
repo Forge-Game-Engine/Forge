@@ -9,7 +9,7 @@
 	signed distance field (MSDF) atlas generated from this font via
 	`npm run generate-font-atlas` (see scripts/generate-font-atlas.mjs), so
 	`@forge-game-engine/forge/text` has a font to render with out of the box,
-	with zero asset setup required (design/msdf-text-rendering.md, Phase 5).
+	with zero asset setup required.
 
 		------------------------------
 

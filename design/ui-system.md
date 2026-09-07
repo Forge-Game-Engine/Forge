@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | In progress — Phase 0 (prerequisites), Phase 1 (layout core: `RectTransformEcsComponent`, `resolveRect`, `UiAnchor`, `CanvasEcsComponent`/`createUiCanvas`, `createUiLayoutEcsSystem`, `createPanel`/`createLabel`), Phase 2 (interaction: `UiInteractableEcsComponent`, `createUiRaycastEcsSystem`, `createUiInteractionEcsSystem`, `UiFocusEcsComponent`/`createUiNavigationEcsSystem`, `createButton`, `UiColorTransitionEcsComponent`/`createUiTransitionEcsSystem`), and most of Phase 3 (controls: `UiToggleEcsComponent`/`UiToggleGroupEcsComponent`/`createUiToggleEcsSystem`/`createToggle`, `UiSliderEcsComponent`/`createUiSliderEcsSystem`/`createSlider`, `UiProgressBarEcsComponent`/`createUiProgressBarEcsSystem`/`createProgressBar`, `UiDropdownEcsComponent`/`createDropdown`) have landed on `dev`, documented at `documentation-site/docs/docs/ui`. Backlog 3.3 (`RectMaskEcsComponent`) and 3.5 (`TextInputEcsComponent`) remain out of scope per the table below; 3.4 (`ScrollRectEcsComponent`) remains blocked on rect clipping; radial fill (part of backlog 3.7) was deferred alongside clipping - see that item's note. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open, and continue to block only `ScrollRectEcsComponent`/`TextInputEcsComponent` (backlog 3.4/3.5). |
+| **Status**                            | In progress — Phase 0 (prerequisites), Phase 1 (layout core: `RectTransformEcsComponent`, `resolveRect`, `UiAnchor`, `CanvasEcsComponent`/`createUiCanvas`, `createUiLayoutEcsSystem`, `createPanel`/`createLabel`), Phase 2 (interaction: `UiInteractableEcsComponent`, `createUiRaycastEcsSystem`, `createUiInteractionEcsSystem`, `UiFocusEcsComponent`/`createUiNavigationEcsSystem`, `createButton`, `UiColorTransitionEcsComponent`/`createUiTransitionEcsSystem`), most of Phase 3 (controls: `UiToggleEcsComponent`/`UiToggleGroupEcsComponent`/`createUiToggleEcsSystem`/`createToggle`, `UiSliderEcsComponent`/`createUiSliderEcsSystem`/`createSlider`, `UiProgressBarEcsComponent`/`createUiProgressBarEcsSystem`/`createProgressBar`, `UiDropdownEcsComponent`/`createDropdown`), and all of Phase 4 (layout groups: `LayoutElementEcsComponent`, `createUiLayoutGroupEcsSystem`, horizontal/vertical/grid layout groups, `ContentSizeFitterEcsComponent`, `AspectRatioFitterEcsComponent` - [#622](https://github.com/Forge-Game-Engine/Forge/pull/622) - plus the column-aligned form layout extras from `design/form-layout-columns.md`: `LayoutElementEcsComponent.sizeToText` and `GridLayoutGroupEcsComponent.columnWidthMode`/`rowHeightMode`/`cellAlignment` - [#630](https://github.com/Forge-Game-Engine/Forge/pull/630)) have landed on `dev`, documented at `documentation-site/docs/docs/ui`. [#631](https://github.com/Forge-Game-Engine/Forge/pull/631) subsequently replaced `RectTransformEcsComponent`'s `anchorMin`/`anchorMax`/`pivot`/`sizeOrMargin` fields with typed per-axis `UiAxis` (`x`/`y`, each a `UiPointAxis` or `UiStretchAxis` built via `UiAxis.point`/`UiAxis.stretch`) and `UiAnchor`'s presets with factory functions taking the size/margin their own axes need - a breaking change; §6's API sketch and the examples below reflect the current shape. Phase 5 (polish) is in progress - see the backlog table in §8 for per-item status. Backlog 3.3 (`RectMaskEcsComponent`) and 3.5 (`TextInputEcsComponent`) remain out of scope per the table below; 3.4 (`ScrollRectEcsComponent`) remains blocked on rect clipping; radial fill (part of backlog 3.7) was deferred alongside clipping - see that item's note. Two of the three external dependencies have landed: text rendering ([#584](https://github.com/Forge-Game-Engine/Forge/issues/584)) and the sprite pivot convention ([#585](https://github.com/Forge-Game-Engine/Forge/issues/585)). Rect clipping ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)) and text input ([#586](https://github.com/Forge-Game-Engine/Forge/issues/586)) remain open, and continue to block only `ScrollRectEcsComponent`/`TextInputEcsComponent` (backlog 3.4/3.5). |
 | **Target module**                     | `/src/ui` → `@forge-game-engine/forge/ui`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **Engine version at time of writing** | `0.24.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Model**                             | Retained **anchored rect tree** (canvas → rect transforms → graphics + event routing) — _not_ immediate-mode, _not_ markup-and-stylesheet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -158,7 +158,7 @@ data.
 | Off-screen targets & compositing | `RenderTarget`, `createPresentEcsSystem`, camera `layer`  | Lets UI skip the world's post-processing stack.                                                                                                                                                                                                                                                                                                     |
 | Action-based input with groups   | `InputManager`, `TriggerAction`, `HoldAction`             | Group gating (`activeGroup`) is the natural "menu open, game paused" switch. `CameraEcsComponent.zoomInput`/`panInput` are the precedent for a component taking `InputAction`s rather than raw input — the UI canvas follows it (DL-14).                                                                                                            |
 | Tweening + easing                | `createAnimationEcsSystem`, `easing-functions/`           | Button press/hover transitions get this for free.                                                                                                                                                                                                                                                                                                   |
-| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onActivate`.                                                                                                                                                                                                                                                                                                                         |
+| Events                           | `ForgeEvent`, `ParameterizedForgeEvent`                   | The idiom for `onInvoke`.                                                                                                                                                                                                                                                                                                                         |
 
 ### 4.2 The gaps
 
@@ -308,9 +308,9 @@ flowchart TD
         B2["RectTransformEcsComponent<br/>anchor: center, size: 240 x 64"]
         B3["PositionEcsComponent"]
         B4["SpriteEcsComponent<br/>nine-sliced panel, tinted"]
-        B5["UiInteractableEcsComponent<br/>blocksRaycasts, interactable,<br/><b>onActivate</b> (source-agnostic),<br/>onPointerEnter / … (pointer-only)"]
+        B5["UiInteractableEcsComponent<br/>blocksRaycasts, interactable,<br/><b>onInvoke</b> (source-agnostic),<br/>onPointerEnter / … (pointer-only)"]
         B6["<i>hover/press/drag state lives on<br/>the interactable, written by<br/>the raycaster</i>"]
-        B7["<i>(no ButtonEcsComponent —<br/>onActivate lives on interactable)</i>"]
+        B7["<i>(no ButtonEcsComponent —<br/>onInvoke lives on interactable)</i>"]
         B8["UiColorTransitionEcsComponent<br/>normal / hover / pressed / disabled"]
     end
 
@@ -345,9 +345,9 @@ flowchart TD
     TS["createTransformEcsSystem<br/><i>existing — composes world from local</i>"]
     TX["createTextShapingEcsSystem<br/>shape dirty text → glyph quads<br/><i>issue #584, not this module</i>"]
     RC["createUiRaycastEcsSystem<br/>reverse depth order, first hit wins<br/><i>closes over a MouseInputSource for<br/>canvas-space pointer + buttons (DL-07)</i>"]
-    NAV["createUiNavigationEcsSystem<br/>navigateInput → move focus<br/>submitInput → <b>raise onActivate</b>"]
+    NAV["createUiNavigationEcsSystem<br/>navigateInput → move focus<br/>submitInput → <b>raise onInvoke</b>"]
     UI2["createUiInteractionEcsSystem<br/>enter/exit/down/up/click/drag<br/>+ raise events"]
-    W["<b>Game systems</b><br/><i>read onActivate, isFocused, isPointerOverUi</i>"]
+    W["<b>Game systems</b><br/><i>read onInvoke, isFocused, isPointerOverUi</i>"]
     TR["createUiTransitionEcsSystem<br/>state → tint / sprite swap"]
     RS["createRenderEcsSystem<br/><i>late — world camera then UI camera</i>"]
 
@@ -461,7 +461,7 @@ stateDiagram-v2
     Hovered --> Normal: pointer exits rect
     Hovered --> Pressed: pointer down inside
     Normal --> Pressed: enters AND presses in the same tick
-    Pressed --> Hovered: pointer up inside → <b>raise onActivate</b>
+    Pressed --> Hovered: pointer up inside → <b>raise onInvoke</b>
     Pressed --> Dragging: pointer moves > dragThreshold
     Pressed --> Normal: pointer up outside
     Dragging --> Normal: pointer up → raise onEndDrag
@@ -505,7 +505,7 @@ state = Disabled  if !interactable
 onPointerEnter    when !wasOver && isOver
 onPointerExit     when  wasOver && !isOver
 onPointerDown     when a down edge occurred && isOver
-onActivate        when an up edge occurred && isOver && pressStartedHere
+onInvoke        when an up edge occurred && isOver && pressStartedHere
 ```
 
 Under this formulation the reviewer's scenario raises `onPointerEnter` **and**
@@ -525,7 +525,7 @@ The state machine above is the **pointer** state machine. It is not the whole
 interaction model, because a gamepad has no cursor, no hover, and no click. What
 it has is a _focused_ element and a _submit_ action.
 
-So `onActivate` is raised from two independent paths, and the author cannot tell
+So `onInvoke` is raised from two independent paths, and the author cannot tell
 which fired it:
 
 ```mermaid
@@ -533,7 +533,7 @@ flowchart LR
     P["Pointer path<br/><i>createUiInteractionEcsSystem</i><br/>up edge inside, press started here"] --> A
     N["Focus path<br/><i>createUiNavigationEcsSystem</i><br/>submitInput triggered while focused"] --> A
     S["Script path<br/>action.trigger() from a test<br/>or a scripted tutorial"] --> N
-    A["<b>onActivate</b><br/>raised once"]
+    A["<b>onInvoke</b><br/>raised once"]
 ```
 
 Two states, deliberately distinct:
@@ -560,19 +560,19 @@ already exist in this codebase:
 // Polled — ECS-idiomatic, trivially unit-testable, no listener lifetime concerns.
 const state = world.getComponent(buttonEntity, uiInteractableId);
 
-if (state?.wasActivatedThisFrame) {
+if (state?.wasInvokedThisFrame) {
   startGame();
 }
 
-// Evented — matches ForgeEvent usage elsewhere in the engine. `onActivate` lives
+// Evented — matches ForgeEvent usage elsewhere in the engine. `onInvoke` lives
 // on the interactable, so *anything* activatable has it, not just buttons — and
 // it fires the same way whether a mouse, a gamepad, a key, or a test triggered
 // it (DL-14).
 const interactable = addUiInteractableComponent(world, buttonEntity);
-interactable.onActivate.registerListener(startGame);
+interactable.onInvoke.registerListener(startGame);
 ```
 
-`wasActivatedThisFrame` is an edge derived exactly as above, so it is `true` for
+`wasInvokedThisFrame` is an edge derived exactly as above, so it is `true` for
 one tick even when the press and release landed in the same tick — and it is
 equally `true` when the activation came from a gamepad or a script.
 
@@ -588,24 +588,54 @@ Idiomatic to this codebase: plain-data interfaces, a `createComponentId` key, an
 `add<Name>Component` factory, `create<Name>EcsSystem` returning a plain object
 with a batched `update`.
 
+**As implemented** (post-[#631](https://github.com/Forge-Game-Engine/Forge/pull/631)): each axis is a
+discriminated union rather than a shared `Vector2`, so a point-anchored axis has no `margin` to
+set and a stretch-anchored axis has no `size` to set:
+
 ```typescript
-export interface RectTransformDefaultedOptions {
-  /** Normalized lower-left anchor within the parent's rect. `(0,0)` = parent's bottom-left. */
-  anchorMin: Vector2;
-  /** Normalized upper-right anchor within the parent's rect. Equal to `anchorMin` for a point anchor. */
-  anchorMax: Vector2;
-  /** Normalized origin within this element's own rect; the point placed at the anchor. */
-  pivot: Vector2;
-  /** Offset of this element's pivot from its anchor reference point, in reference pixels. */
-  anchoredPosition: Vector2;
-  /** Size in reference pixels when point-anchored; a margin relative to the anchor rect when stretched. */
-  sizeDelta: Vector2;
+export interface UiPointAxis {
+  kind: 'point';
+  /** Normalized anchor position within the parent's rect on this axis. */
+  anchor: number;
+  /** Normalized origin within the element's own rect on this axis. */
+  pivot: number;
+  /** The element's literal size on this axis, in reference pixels. */
+  size: number;
 }
 
-export interface RectTransformEcsComponent extends RectTransformDefaultedOptions {
-  /** Resolved rect in UI world space. Written every frame by `createUiLayoutEcsSystem`; do not set directly. */
-  readonly rect: Rect;
+export interface UiStretchAxis {
+  kind: 'stretch';
+  /** Normalized lower/upper anchor bounds within the parent's rect on this axis. */
+  anchorMin: number;
+  anchorMax: number;
+  /** Normalized origin within the element's own rect on this axis. */
+  pivot: number;
+  /** Margin added to the anchor span's size on this axis, in reference pixels. */
+  margin: number;
 }
+
+export type UiAxis = UiPointAxis | UiStretchAxis;
+
+// Build one with the `UiAxis.point`/`UiAxis.stretch` factories, not a raw object literal.
+export const UiAxis = {
+  point: (anchor: number, options?: { size?: number; pivot?: number }): UiPointAxis => ({/* ... */}),
+  stretch: (range: { min: number; max: number }, options?: { margin?: number; pivot?: number }): UiStretchAxis => ({/* ... */}),
+};
+
+export interface RectTransformDefaultedOptions {
+  /** This element's horizontal anchoring - a `UiPointAxis` or `UiStretchAxis`. */
+  x: UiAxis;
+  /** This element's vertical anchoring - see `x`. */
+  y: UiAxis;
+  /** Offset of this element's pivot from its anchor reference point, in reference pixels. */
+  anchoredPosition: Vector2;
+  /** Resolved rect in UI world space. Written every frame by `createUiLayoutEcsSystem`; do not set directly. */
+  rect: Rect;
+  /** Hierarchy pre-order index within its canvas, written every frame by `createUiLayoutEcsSystem`. */
+  sortDepth: number;
+}
+
+export type RectTransformEcsComponent = RectTransformDefaultedOptions;
 
 export const rectTransformId =
   createComponentId<RectTransformEcsComponent>('rectTransform');
@@ -639,7 +669,7 @@ button on screen:
 const canvas = createUiCanvas(world, renderContext);
 const play = createButton(world, canvas, { label: 'Play' });
 
-play.onActivate.registerListener(startGame);
+play.onInvoke.registerListener(startGame);
 ```
 
 `createUiCanvas` creates the canvas entity, its `RectTransformEcsComponent`, a
@@ -670,8 +700,7 @@ const canvas = createUiCanvas(world, renderContext, {
 });
 
 const panel = createPanel(world, canvas, {
-  anchor: UiAnchor.center,
-  sizeDelta: { x: 480, y: 640 },
+  anchor: UiAnchor.center({ x: 480, y: 640 }),
   sprite: panelSprite,
   slices: { left: 16, right: 16, top: 16, bottom: 16 },
 });
@@ -687,7 +716,7 @@ const playButton = createButton(world, panel, {
   preferredHeight: 64,
 });
 
-playButton.onActivate.registerListener(() =>
+playButton.onInvoke.registerListener(() =>
   inputManager.setActiveGroup('game'),
 );
 ```
@@ -1285,9 +1314,9 @@ resolved `rect`. Interaction state is `world` to the interactable's `local`.
 **Consequences.** One component instead of three, one query in the raycaster
 instead of two, and one place a reader has to look. Fields written by the
 interaction and navigation systems (`isHovered`, `isFocused`, `isPressed`,
-`isDragging`, `wasActivatedThisFrame`) are documented as system-owned and
+`isDragging`, `wasInvokedThisFrame`) are documented as system-owned and
 read-only to callers, the same convention `PositionEcsComponent.world` already
-uses. Note `isFocused` and `wasActivatedThisFrame` are written by
+uses. Note `isFocused` and `wasInvokedThisFrame` are written by
 `createUiNavigationEcsSystem` as well as the interaction system (DL-14), so
 neither has a single owning system.
 
@@ -1296,7 +1325,7 @@ neither has a single owning system.
 ### DL-14 — Activation is an `InputAction`, not a click
 
 **Options.** (a) `onClick`, raised by the pointer, with gamepad navigation added
-later as a separate concern. (b) A source-agnostic `onActivate`, raised by a
+later as a separate concern. (b) A source-agnostic `onInvoke`, raised by a
 pointer release _or_ a `submitInput` `InputAction` while focused, with the
 activating source never exposed to the author.
 
@@ -1394,10 +1423,10 @@ ratio changes.
 
 | #     | Item                                                                         | Size | Notes                                                                                                                                                            |
 | ----- | ---------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.1 ⛓ | `UiInteractableEcsComponent` — config, events, and current interaction state | S    | `blocksRaycasts`, `interactable`, `onActivate` + the pointer event set, `isHovered`/`isFocused`/`isPressed`/`isDragging`/`wasActivatedThisFrame`. (DL-13, DL-14) |
+| 2.1 ⛓ | `UiInteractableEcsComponent` — config, events, and current interaction state | S    | `blocksRaycasts`, `interactable`, `onInvoke` + the pointer event set, `isHovered`/`isFocused`/`isPressed`/`isDragging`/`wasInvokedThisFrame`. (DL-13, DL-14) |
 | 2.2 ⛓ | `createUiRaycastEcsSystem`                                                   | M    | Reverse-depth scan, first hit wins, publishes `isPointerOverUi`. (DL-08)                                                                                         |
-| 2.3 ⛓ | `createUiInteractionEcsSystem`                                               | M    | The §5.7 pointer state machine; polled state + `ForgeEvent`s. Raises `onActivate` on the pointer path.                                                           |
-| 2.4 ⛓ | `UiFocusEcsComponent` + `createUiNavigationEcsSystem`                        | M    | Directional focus traversal and `submitInput`/`cancelInput`. Raises `onActivate` on the focus path. **Core, not polish** (DL-14).                                |
+| 2.3 ⛓ | `createUiInteractionEcsSystem`                                               | M    | The §5.7 pointer state machine; polled state + `ForgeEvent`s. Raises `onInvoke` on the pointer path.                                                           |
+| 2.4 ⛓ | `UiFocusEcsComponent` + `createUiNavigationEcsSystem`                        | M    | Directional focus traversal and `submitInput`/`cancelInput`. Raises `onInvoke` on the focus path. **Core, not polish** (DL-14).                                |
 | 2.5   | `createButton` aggregate factory                                             | S    | Assembles interactable + transitions + label. No `ButtonEcsComponent`. (DL-13)                                                                                   |
 | 2.6   | `createUiTransitionEcsSystem`                                                | S    | Color tint / sprite swap / scale per state, via the existing easing functions.                                                                                   |
 | 2.7   | Input-group interop docs                                                     | S    | The "UI is open, pause the game" and "click landed on UI" patterns.                                                                                              |
@@ -1419,14 +1448,21 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 
 ### Phase 4 — Layout groups
 
-| #   | Item                                                       | Size |
-| --- | ---------------------------------------------------------- | ---- |
-| 4.1 | `LayoutElementEcsComponent` (min/preferred/flexible sizes) | S    |
-| 4.2 | `createUiLayoutGroupEcsSystem` — two-pass measure/arrange  | M    |
-| 4.3 | Horizontal / Vertical layout groups                        | M    |
-| 4.4 | Grid layout group                                          | M    |
-| 4.5 | `ContentSizeFitterEcsComponent`                            | S    |
-| 4.6 | `AspectRatioFitterEcsComponent`                            | S    |
+**Landed in full** ([#622](https://github.com/Forge-Game-Engine/Forge/pull/622)), plus the
+column-aligned form layout extras from `design/form-layout-columns.md`
+([#630](https://github.com/Forge-Game-Engine/Forge/pull/630)):
+`LayoutElementEcsComponent.sizeToText` and `GridLayoutGroupEcsComponent.columnWidthMode`/
+`rowHeightMode`/`cellAlignment`, letting a label/control grid align every row's control to the
+widest label with no hand-computed offsets. Documented in the UI doc's "Layout groups" section.
+
+| #   | Item                                                        | Size |
+| --- | ------------------------------------------------------------ | ---- |
+| 4.1 | **Landed.** `LayoutElementEcsComponent` (min/preferred/flexible sizes, plus `sizeToText`) | S    |
+| 4.2 | **Landed.** `createUiLayoutGroupEcsSystem` — two-pass measure/arrange  | M    |
+| 4.3 | **Landed.** Horizontal / Vertical layout groups                        | M    |
+| 4.4 | **Landed.** Grid layout group (plus `columnWidthMode`/`rowHeightMode`/`cellAlignment`) | M    |
+| 4.5 | **Landed.** `ContentSizeFitterEcsComponent`                            | S    |
+| 4.6 | **Landed.** `AspectRatioFitterEcsComponent`                            | S    |
 
 ### Phase 5 — Polish
 
@@ -1434,7 +1470,7 @@ focusable buttons, where clicking a button does not also fire the player's weapo
 | --- | --------------------------------------------------------------------------- | --------- |
 | 5.2 | **Landed.** `CanvasGroupEcsComponent` (inherited alpha / interactable / blocksRaycasts) | M         |
 | 5.3 | World-space canvas render mode (diegetic UI, health bars)                   | M         |
-| 5.4 | Text effects: outline, drop shadow, glow (MSDF shader parameters)           | S         |
+| 5.4 | **Landed**, outside this module: text effects (outline, drop shadow, glow as MSDF shader parameters) shipped via `/src/text` ([#608](https://github.com/Forge-Game-Engine/Forge/pull/608), [#610](https://github.com/Forge-Game-Engine/Forge/pull/610)), documented in the text module's Text Effects doc. Nothing left to do here. | S         |
 | 5.5 | Tooltips + a UI-safe-area concept for notched displays                      | S         |
 | 5.6 | UI stress-test demo + dirty-tracking optimization if warranted              | M (DL-12) |
 | 5.7 | Rich text tags (`<b>`, `<color>`)                                           | L         |
@@ -1484,7 +1520,7 @@ is pure data transformation.
   same-tick cases explicitly — enter-and-press in one tick (asserting
   `onPointerEnter` and `onPointerDown` both fire and the state reaches
   `Pressed` without ever being observed as `Hovered`), and press-and-release in
-  one tick (asserting `onActivate` fires and `wasActivatedThisFrame` is `true`).
+  one tick (asserting `onInvoke` fires and `wasInvokedThisFrame` is `true`).
   These are the cases a one-transition-per-tick implementation silently drops,
   and they are cheap to assert with a synthetic pointer but nearly impossible to
   reproduce by hand.
@@ -1500,7 +1536,7 @@ unit tests provably cannot make:
   on-screen bounds before and after, assert the _ratio_ matches the predicted
   scale factor. Relative, same-run measurement per the e2e guidance — never
   absolute pixel values.
-- A real `page.mouse.click` on a button raises `onActivate` exactly once, and a click
+- A real `page.mouse.click` on a button raises `onInvoke` exactly once, and a click
   on the panel _behind_ a button does not.
 - Text renders as a non-empty, correctly-bounded region at two different camera
   zooms, with the bounds ratio matching the zoom ratio (proves MSDF scaling).
@@ -1517,13 +1553,26 @@ feature in one page, and doubling as the stress test for DL-12.
    [#584](https://github.com/Forge-Game-Engine/Forge/issues/584)?**~~ Moot —
    #584 landed on `dev` before UI implementation started, so there is no
    text-less window to worry about.
-2. **Is world-space canvas mode (5.3) actually Phase 5?** Health bars over enemies
-   are a common need and might justify promoting it to Phase 2. Its one blocker
-   is gone — [#587](https://github.com/Forge-Game-Engine/Forge/pull/587) landed
-   the transform fix, and a health bar parented to a rotating ship was exactly
-   the broken case.
-3. **What should the rect static namespace be called?** (DL-11) — `Rects`, or
-   `Rectangle`/`Rect` to mirror `Vector2`/`Vec2` more literally.
-4. **Accessibility.** Canvas-rendered UI is invisible to screen readers. Is a
-   parallel offscreen DOM accessibility tree in scope before 1.0, or explicitly
-   deferred? Worth an explicit decision rather than a silent omission.
+2. ~~**Is world-space canvas mode (5.3) actually Phase 5?**~~ Moot. Its one
+   blocker is gone - [#587](https://github.com/Forge-Game-Engine/Forge/pull/587)
+   landed the transform fix, and a health bar parented to a rotating ship was
+   exactly the broken case - but by the time that was confirmed, Phases 0-4 were
+   already landing in the order this document laid out, and re-sequencing an
+   in-flight phased rollout for one item cost more than shipping it as 5.3 as
+   originally planned. It lands as part of Phase 5 (see §8's backlog table for
+   status).
+3. ~~**What should the rect static namespace be called?**~~ Decided as `Rects`
+   (DL-11's proposed name), not the more literal `Rectangle`/`Rect` mirror - see
+   the `CHANGELOG.md` "math" `Changed` entry: `Rect` is a plain `{ min, max }`
+   object operated on via `Rects.contains`/`Rects.intersects`/`Rects.size`/
+   `Rects.clone`.
+4. **Accessibility — decided: explicitly deferred.** Canvas-rendered UI is
+   invisible to screen readers, and this module's non-goals already rule out
+   DOM-backed widgets except for the one narrow, browser-forced exception text
+   entry needed (DL-10). Reversing that more broadly for accessibility is a
+   substantial feature in its own right - a parallel offscreen DOM tree kept in
+   sync with `RectTransformEcsComponent`/`UiInteractableEcsComponent`/
+   `UiFocusEcsComponent` state - not a small addition to any Phase 5 item, and
+   no current consumer has asked for it. Deferred beyond this backlog and
+   tracked on its own issue, [#634](https://github.com/Forge-Game-Engine/Forge/issues/634),
+   rather than left as a silent omission.
