@@ -10,12 +10,9 @@ import {
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 
-// A fully opaque, dark tint rather than a translucent one: `sprite.frag`
-// takes a sprite's alpha from its texture, not `tintColor.a` (see
-// `fragColor = vec4(tex.rgb * v_tint.rgb + emissive, tex.a)`), so a
-// low-alpha tint on this demo's fully-opaque White.png would render just as
-// opaque as `alpha: 1` - a dark, canvas-distinct color is what actually
-// reads as a faint "panel" against the demo's black background.
+// A fully opaque, dark tint rather than a translucent one: a dark,
+// canvas-distinct color is what reads as a faint "panel" against the
+// demo's black background, without relying on partial transparency.
 export const guideBoxColor = new Color(0.16, 0.17, 0.21, 1);
 
 /**

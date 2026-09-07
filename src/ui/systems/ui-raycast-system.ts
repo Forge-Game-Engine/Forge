@@ -23,6 +23,7 @@ import {
 } from '../components/ui-interactable-component.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
+import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state.js';
 import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointer-position.js';
 
 /**
@@ -100,7 +101,10 @@ function findRaycastHit(
 
     const entity = interactableEntities[index];
 
-    if (!isVisibleToCamera(world, entity, camera)) {
+    if (
+      !isVisibleToCamera(world, entity, camera) ||
+      !resolveCanvasGroupState(world, entity).blocksRaycasts
+    ) {
       continue;
     }
 
@@ -121,7 +125,9 @@ function findRaycastHit(
  * in the hundreds, not the hundreds of thousands, so a plain scan is a few
  * microseconds with no acceleration structure to build or invalidate. An
  * element with `blocksRaycasts: false` is transparent to the scan (never
- * considered, hit or not); an element culled from the canvas's camera by
+ * considered, hit or not) - so is one with an ancestor
+ * `CanvasGroupEcsComponent` whose own `blocksRaycasts` is `false` (see
+ * `resolveCanvasGroupState`); an element culled from the canvas's camera by
  * `cullingMask` is skipped the same way an invisible element shouldn't be
  * clickable.
  *

@@ -1,4 +1,5 @@
 export * from './ui-aspect-ratio-fitter-system.js';
+export * from './ui-canvas-group-system.js';
 export * from './ui-interaction-system.js';
 export * from './ui-layout-group-system.js';
 export * from './ui-layout-system.js';

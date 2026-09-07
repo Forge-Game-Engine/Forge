@@ -11,6 +11,7 @@ import {
   addCanvasComponent,
   canvasId,
 } from '../components/canvas-component.js';
+import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { addUiFocusComponent } from '../components/ui-focus-component.js';
 import {
@@ -181,6 +182,46 @@ describe('createUiNavigationEcsSystem', () => {
 
     expect(activations).toBe(1);
     expect(interactable.wasInvokedThisFrame).toBe(true);
+  });
+
+  it('does not raise onInvoke when the focused element sits under a CanvasGroupEcsComponent with interactable: false', () => {
+    const world = new EcsWorld();
+    const submitInput = new TriggerAction('submit');
+    const canvas = createTestCanvas(world, { submitInput });
+    const button = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const interactable = world.getComponent(button, uiInteractableId)!;
+
+    addCanvasGroupComponent(world, button, { interactable: false });
+
+    let activations = 0;
+    interactable.onInvoke.registerListener(() => (activations += 1));
+
+    world.getComponent(canvas, canvasId)!.focusedEntity = button;
+    interactable.isFocused = true;
+
+    submitInput.trigger();
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(activations).toBe(0);
+  });
+
+  it('skips a candidate whose ancestor CanvasGroupEcsComponent has interactable: false when picking the topmost candidate', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const disabled = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const enabled = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    addCanvasGroupComponent(world, disabled, { interactable: false });
+
+    navigateInput.set(1, 0);
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(enabled);
   });
 
   it('clears focus when cancelInput triggers', () => {

@@ -15,6 +15,7 @@ import {
 } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
+import { createUiCanvasGroupEcsSystem } from '../systems/ui-canvas-group-system.js';
 import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { createUiLayoutGroupEcsSystem } from '../systems/ui-layout-group-system.js';
 import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
@@ -213,8 +214,9 @@ const defaultCreateUiCanvasOptions = {
  * still matches everything doesn't draw UI content a second time. Also
  * registers `createUiLayoutEcsSystem`, `createUiLayoutGroupEcsSystem`,
  * `createUiAspectRatioFitterEcsSystem`, `createUiProgressBarEcsSystem`,
- * `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`, and
- * `createUiToggleEcsSystem` with `world` (each at most once, regardless of
+ * `createUiCanvasGroupEcsSystem`, `createUiNavigationEcsSystem`,
+ * `createUiTransitionEcsSystem`, and `createUiToggleEcsSystem` with `world`
+ * (each at most once, regardless of
  * how many canvases are created) - plus `createUiRaycastEcsSystem`/
  * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem` once a pointer
  * source is supplied, on this call or a later one for the same world - see
@@ -300,15 +302,22 @@ export function createUiCanvas(
     const progressBar = createUiProgressBarEcsSystem();
     const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();
     const layoutGroup = createUiLayoutGroupEcsSystem();
+    const layout = createUiLayoutEcsSystem(renderContext);
 
     world.addSystem(progressBar);
     world.addSystem(aspectRatioFitter);
     world.addSystem(layoutGroup, {
       after: [progressBar, aspectRatioFitter],
     });
-    world.addSystem(createUiLayoutEcsSystem(renderContext), {
+    world.addSystem(layout, {
       after: [layoutGroup],
     });
+    // Applies CanvasGroupEcsComponent's inherited alpha to
+    // SpriteEcsComponent/TextEcsComponent.opacityMultiplier - doesn't
+    // depend on resolved rects, but runs after layout so every UI system's
+    // relative order stays predictable, and before whatever renders this
+    // frame reads the sprites/text it wrote.
+    world.addSystem(createUiCanvasGroupEcsSystem(), { after: [layout] });
     worldsWithUiLayoutSystem.add(world);
   }
 
