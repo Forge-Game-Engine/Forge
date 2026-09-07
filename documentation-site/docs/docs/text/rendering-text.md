@@ -96,7 +96,7 @@ addTextComponent(world, label, {
   line by measuring from `x = 0`, so this only needs setting when
   something _other_ than `x = 0` positions the entity's left edge - e.g. a
   `RectTransformEcsComponent` whose `pivot.x` isn't `0` (see
-  [UI: Labels](../ui/index.md#labels), which sets this automatically for
+  [UI: Labels](../ui/labels.md), which sets this automatically for
   its own stretch-anchored labels).
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
   `'capline'`, default `'top'`) positions the shaped block's visible ink
