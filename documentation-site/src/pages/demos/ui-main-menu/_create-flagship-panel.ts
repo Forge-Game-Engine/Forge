@@ -15,12 +15,18 @@ import {
 } from '@forge-game-engine/forge/ui';
 import { fleetCommandPalette } from './_palette';
 
-/** The sprites {@link createFlagshipPanel} draws its background/meter/button with. */
+/** The sprites {@link createFlagshipPanel} draws its ship placeholder/card/meter/button with. */
 export interface FlagshipPanelSprites {
-  /** The card's own flat background, tinted `fleetCommandPalette.panel`. */
+  /** The stat card's own flat background, tinted `fleetCommandPalette.panel`. */
   panelSprite: SpriteEcsComponent;
 
-  /** The fleet-strength meter's track, tinted `fleetCommandPalette.well`. */
+  /** The hero ship render placeholder's border frame, tinted `fleetCommandPalette.border`. */
+  borderSprite: SpriteEcsComponent;
+
+  /** The hero ship render placeholder's inset fill, tinted `fleetCommandPalette.void` to match the canvas backdrop. */
+  voidSprite: SpriteEcsComponent;
+
+  /** The fleet-strength meter's track, tinted `fleetCommandPalette.border` so it reads against the card's own `panel`-tinted background. */
   trackSprite: SpriteEcsComponent;
 
   /** The fleet-strength meter's fill, tinted `fleetCommandPalette.blue`. */
@@ -39,122 +45,169 @@ export interface FlagshipPanel {
   onDeploy: ForgeEvent;
 }
 
-const panelWidth = 520;
-const panelHeight = 260;
-const contentWidth = panelWidth - 56;
+const heroBoxWidth = 634;
+const heroBoxHeight = 302;
+const heroBoxBorderWidth = 2;
+
+const cardWidth = 492;
+const cardHeight = 242;
+const cardContentWidth = cardWidth - 48;
 
 /**
- * Builds the reference design's flagship readout card: the ship's
- * name/class, a `createProgressBar` "Fleet Strength" meter, and a `createButton`
- * "Deploy" call to action - the main menu's secondary panel, showing a
- * progress bar and a button alongside the numbered menu built by
- * `createMainMenu`.
- * @param world - The ECS world to create the panel entities in.
- * @param canvas - The canvas entity to parent the panel to.
- * @param fontAtlas - The font atlas the panel's labels are drawn from.
- * @param sprites - The background/meter/button sprites - see {@link FlagshipPanelSprites}.
+ * Builds the reference design's ship readout: a bordered "hero ship render"
+ * placeholder (a stand-in for real ship art - see `heroBoxBorderWidth`'s
+ * doc comment) beside a flagship stat card showing the ship's name/class, a
+ * `createProgressBar` "Fleet Strength" meter, and a `createButton` "Deploy"
+ * call to action.
+ * @param world - The ECS world to create the readout entities in.
+ * @param parent - The parent entity to anchor the readout within - `createMissionBrief`'s returned root, so both share the same right-column coordinate space.
+ * @param fontAtlas - The font atlas the card's labels are drawn from.
+ * @param sprites - The border/fill/meter/button sprites - see {@link FlagshipPanelSprites}.
  * @param uiCategory - The render category the canvas's camera culls to.
  * @param fleetStrength - The fleet-strength meter's initial value, from `0` (empty) to `1` (full).
  * @returns `onDeploy`, raised when the Deploy button is invoked.
  */
 export function createFlagshipPanel(
   world: EcsWorld,
-  canvas: number,
+  parent: number,
   fontAtlas: FontAtlas,
   sprites: FlagshipPanelSprites,
   uiCategory: number,
   fleetStrength: number,
 ): FlagshipPanel {
-  const { panelSprite, trackSprite, fillSprite, buttonSprite } = sprites;
+  const {
+    panelSprite,
+    borderSprite,
+    voidSprite,
+    trackSprite,
+    fillSprite,
+    buttonSprite,
+  } = sprites;
 
-  const panel = createPanel(world, canvas, {
-    anchor: UiAnchor.bottomRight({ x: panelWidth, y: panelHeight }),
-    anchoredPosition: { x: -80, y: 80 },
+  const heroBox = createPanel(world, parent, {
+    anchor: UiAnchor.topLeft({ x: heroBoxWidth, y: heroBoxHeight }),
+    anchoredPosition: { x: 86, y: -694 },
+    sprite: borderSprite,
+  });
+
+  createPanel(world, heroBox, {
+    // `stretchAll`'s margin is added to (or, negative, subtracted from) the
+    // full anchored span - shrinking a centered rect by `2 * borderWidth`
+    // total (split evenly across both edges by the default 0.5 pivot)
+    // insets it by exactly `borderWidth` on every side.
+    anchor: UiAnchor.stretchAll({
+      x: -2 * heroBoxBorderWidth,
+      y: -2 * heroBoxBorderWidth,
+    }),
+    sprite: voidSprite,
+  });
+
+  createLabel(world, heroBox, {
+    text: 'HERO SHIP RENDER - 420x200',
+    fontAtlas,
+    size: 16,
+    letterSpacing: 0.02,
+    // A left-pivoted anchor even though the text reads centered - see
+    // `createButton`'s own doc comment on this pitfall: `horizontalAlign`
+    // measures its box from the label's own local x = 0, which a
+    // center/right pivot would place in the middle/at the right edge of
+    // that box instead of its left edge, pushing "centered" text off to
+    // one side.
+    anchor: UiAnchor.middleLeft({ x: heroBoxWidth, y: 24 }),
+    horizontalAlign: textHorizontalAlignments.center,
+    verticalAlign: textVerticalAlignments.middle,
+    maxWidth: heroBoxWidth,
+    color: new Color(
+      fleetCommandPalette.ink.r,
+      fleetCommandPalette.ink.g,
+      fleetCommandPalette.ink.b,
+      0.5,
+    ),
+    category: uiCategory,
+  });
+
+  const card = createPanel(world, parent, {
+    anchor: UiAnchor.topLeft({ x: cardWidth, y: cardHeight }),
+    anchoredPosition: { x: 744, y: -754 },
     sprite: panelSprite,
   });
 
-  createLabel(world, panel, {
+  createLabel(world, card, {
     text: 'FLAGSHIP',
     fontAtlas,
     size: 15,
     letterSpacing: 0.12,
     anchor: UiAnchor.topLeft({ x: 300, y: 22 }),
-    anchoredPosition: { x: 28, y: -24 },
-    verticalAlign: textVerticalAlignments.middle,
+    anchoredPosition: { x: 24, y: -20 },
+    verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.blue,
     category: uiCategory,
   });
 
-  createLabel(world, panel, {
-    text: 'TSN VANGUARD',
+  createLabel(world, card, {
+    text: 'TSN VANGUARD - CRUISER',
     fontAtlas,
-    size: 28,
-    letterSpacing: 0.03,
-    anchor: UiAnchor.topLeft({ x: 400, y: 38 }),
-    anchoredPosition: { x: 28, y: -54 },
-    verticalAlign: textVerticalAlignments.middle,
+    size: 24,
+    letterSpacing: 0.02,
+    anchor: UiAnchor.topLeft({ x: 440, y: 32 }),
+    anchoredPosition: { x: 24, y: -46 },
+    verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
   });
 
-  createLabel(world, panel, {
-    text: 'CRUISER',
-    fontAtlas,
-    size: 15,
-    letterSpacing: 0.1,
-    anchor: UiAnchor.topLeft({ x: 300, y: 22 }),
-    anchoredPosition: { x: 28, y: -92 },
-    verticalAlign: textVerticalAlignments.middle,
-    color: fleetCommandPalette.blue,
-    category: uiCategory,
-  });
-
-  createLabel(world, panel, {
+  createLabel(world, card, {
     text: 'FLEET STRENGTH',
     fontAtlas,
     size: 15,
     letterSpacing: 0.05,
     anchor: UiAnchor.topLeft({ x: 220, y: 20 }),
-    anchoredPosition: { x: 28, y: -134 },
-    verticalAlign: textVerticalAlignments.middle,
+    anchoredPosition: { x: 24, y: -96 },
+    verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
   });
 
-  createLabel(world, panel, {
+  const percentageWidth = 100;
+
+  createLabel(world, card, {
     text: `${Math.round(fleetStrength * 100)}%`,
     fontAtlas,
     size: 15,
-    anchor: UiAnchor.topRight({ x: 100, y: 20 }),
-    anchoredPosition: { x: -28, y: -134 },
-    maxWidth: 100,
+    // Left-pivoted for the same reason as the hero box's placeholder label
+    // above - a right pivot would place the `horizontalAlign: 'right'` box
+    // to the *right* of the card's own edge instead of flush with it, since
+    // that box is always measured rightward from the label's local x = 0.
+    anchor: UiAnchor.topLeft({ x: percentageWidth, y: 20 }),
+    anchoredPosition: { x: cardWidth - 24 - percentageWidth, y: -96 },
+    maxWidth: percentageWidth,
     horizontalAlign: textHorizontalAlignments.right,
-    verticalAlign: textVerticalAlignments.middle,
+    verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.yellow,
     category: uiCategory,
   });
 
-  createProgressBar(world, panel, {
-    anchor: UiAnchor.topLeft({ x: contentWidth, y: 18 }),
-    anchoredPosition: { x: 28, y: -160 },
+  createProgressBar(world, card, {
+    anchor: UiAnchor.topLeft({ x: cardContentWidth, y: 16 }),
+    anchoredPosition: { x: 24, y: -120 },
     trackSprite,
     fillSprite,
     value: fleetStrength,
   });
 
-  const deployButton = createButton(world, panel, {
-    anchor: UiAnchor.bottomLeft({ x: contentWidth, y: 56 }),
-    anchoredPosition: { x: 28, y: 28 },
+  const deployButton = createButton(world, card, {
+    anchor: UiAnchor.bottomLeft({ x: cardContentWidth, y: 56 }),
+    anchoredPosition: { x: 24, y: 24 },
     sprite: buttonSprite,
     label: 'DEPLOY',
     fontAtlas,
-    labelSize: 24,
+    labelSize: 22,
     labelColor: fleetCommandPalette.void,
     labelCategory: uiCategory,
     transition: {
-      normalColor: fleetCommandPalette.yellow,
+      normalColor: fleetCommandPalette.blue,
       hoverColor: Color.white,
-      pressedColor: fleetCommandPalette.blue,
+      pressedColor: fleetCommandPalette.border,
     },
   });
 

@@ -19,7 +19,6 @@ import {
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
-  Color,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
@@ -38,6 +37,7 @@ import {
 import {
   canvasId,
   createLabel,
+  createPanel,
   createUiCanvas,
   setUiFocus,
   UiAnchor,
@@ -47,7 +47,8 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createFlagshipPanel } from './_create-flagship-panel';
-import { createMainMenu } from './_create-main-menu';
+import { createMainMenu, leftPanelWidth } from './_create-main-menu';
+import { createMissionBrief } from './_create-mission-brief';
 import { fleetCommandPalette } from './_palette';
 
 // Forge doesn't ship a reserved "UI" render category - each game picks its
@@ -138,8 +139,9 @@ function createUiInputs(
 }
 
 /**
- * Builds the "TSN Fleet Command" main-menu demo: the title lockup and
- * numbered menu from `createMainMenu`, plus a flagship readout card
+ * Builds the "TSN Fleet Command" main-menu demo: the left nav panel and
+ * numbered menu from `createMainMenu`, a mission brief (`createMissionBrief`)
+ * with its decorative backdrop circle, and a ship readout
  * (`createFlagshipPanel`) showing a fleet-strength meter and a Deploy
  * button. Selecting a menu row or invoking Deploy updates a shared status
  * label, and the first row ("Campaign") starts focused - matching the
@@ -181,38 +183,54 @@ export const createUiMainMenuGame = async (
   const whiteImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
   );
+  const whiteCircleImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/White_Circle.png'),
+  );
 
   // Each "flavor" gets its own sprite from the same flat white image -
-  // `rowSprite`/`buttonSprite` stay untinted since their visible color comes
-  // entirely from the interactable they're attached to's own
-  // `UiColorTransitionEcsComponent`; `panelSprite`/`trackSprite`/`fillSprite`
-  // are non-interactive, so they carry a fixed tint set once, up front.
-  const rowSprite = createImageSprite(whiteImage, renderContext, {
-    layer: renderLayers.ui,
-  });
-  const buttonSprite = createImageSprite(whiteImage, renderContext, {
+  // `plainSprite` stays untinted since its visible color comes entirely
+  // from whichever interactable it's attached to's own
+  // `UiColorTransitionEcsComponent` (menu rows, the Deploy button); the rest
+  // are non-interactive, so they carry a fixed tint set once, up front, and
+  // are freely reused across several unrelated elements that happen to
+  // share a tint (e.g. `panelSprite` backs the left nav panel *and* the
+  // flagship card).
+  const plainSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
   });
 
   const panelSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
   });
-  panelSprite.tintColor = new Color(
-    fleetCommandPalette.panel.r,
-    fleetCommandPalette.panel.g,
-    fleetCommandPalette.panel.b,
-    0.92,
-  );
+  panelSprite.tintColor = fleetCommandPalette.panel;
 
-  const trackSprite = createImageSprite(whiteImage, renderContext, {
+  const yellowSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
   });
-  trackSprite.tintColor = fleetCommandPalette.well;
+  yellowSprite.tintColor = fleetCommandPalette.yellow;
 
-  const fillSprite = createImageSprite(whiteImage, renderContext, {
+  const borderSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
   });
-  fillSprite.tintColor = fleetCommandPalette.blue;
+  borderSprite.tintColor = fleetCommandPalette.border;
+
+  const voidSprite = createImageSprite(whiteImage, renderContext, {
+    layer: renderLayers.ui,
+  });
+  voidSprite.tintColor = fleetCommandPalette.void;
+
+  const blueSprite = createImageSprite(whiteImage, renderContext, {
+    layer: renderLayers.ui,
+  });
+  blueSprite.tintColor = fleetCommandPalette.blue;
+
+  // The reference design's decorative backdrop circle is an actual circle,
+  // not a tinted square, so it's drawn from its own plain white circle
+  // image rather than reusing `panelSprite`'s square White.png source.
+  const circleSprite = createImageSprite(whiteCircleImage, renderContext, {
+    layer: renderLayers.ui,
+  });
+  circleSprite.tintColor = fleetCommandPalette.panel;
 
   const statusLabelWidth = 720;
 
@@ -243,7 +261,7 @@ export const createUiMainMenuGame = async (
     world,
     canvas,
     fontAtlas,
-    rowSprite,
+    { panelSprite, yellowSprite, borderSprite, rowSprite: plainSprite },
     renderLayers.ui,
   );
 
@@ -251,11 +269,26 @@ export const createUiMainMenuGame = async (
     statusText.text = `Selected: ${label}`;
   });
 
-  const flagshipPanel = createFlagshipPanel(
+  const missionBrief = createMissionBrief(
     world,
     canvas,
     fontAtlas,
-    { panelSprite, trackSprite, fillSprite, buttonSprite },
+    { circleSprite, tagSprite: yellowSprite, underlineSprite: blueSprite },
+    renderLayers.ui,
+  );
+
+  const flagshipPanel = createFlagshipPanel(
+    world,
+    missionBrief,
+    fontAtlas,
+    {
+      panelSprite,
+      borderSprite,
+      voidSprite,
+      trackSprite: borderSprite,
+      fillSprite: blueSprite,
+      buttonSprite: plainSprite,
+    },
     renderLayers.ui,
     0.72,
   );
@@ -264,28 +297,17 @@ export const createUiMainMenuGame = async (
     statusText.text = 'Deploying the TSN Vanguard...';
   });
 
-  createLabel(world, canvas, {
-    text: 'PILOT: CMDR. A. OKONJO',
-    fontAtlas,
-    size: 16,
-    letterSpacing: 0.02,
-    anchor: UiAnchor.bottomLeft({ x: 500, y: 24 }),
-    anchoredPosition: { x: 80, y: 56 },
-    verticalAlign: textVerticalAlignments.middle,
-    color: fleetCommandPalette.ink,
-    category: renderLayers.ui,
-  });
-
-  createLabel(world, canvas, {
-    text: 'BUILD 0.9.14-RC2',
-    fontAtlas,
-    size: 14,
-    letterSpacing: 0.02,
-    anchor: UiAnchor.bottomLeft({ x: 400, y: 20 }),
-    anchoredPosition: { x: 80, y: 28 },
-    verticalAlign: textVerticalAlignments.middle,
-    color: fleetCommandPalette.blue,
-    category: renderLayers.ui,
+  // The reference design's left nav panel is visually separated from the
+  // mission content beside it by nothing more than this one thin rule -
+  // both sides are otherwise close in tone (`panel` vs `void`), so the
+  // rule alone (not a background color difference) is what reads as "two
+  // panels" - see `createMainMenu`'s own `leftPanelWidth`. Created last so
+  // it draws on top of the left panel/mission brief backgrounds it divides,
+  // rather than being partly covered by whichever of them is created after it.
+  createPanel(world, canvas, {
+    anchor: UiAnchor.topLeft({ x: 3, y: 1080 }),
+    anchoredPosition: { x: leftPanelWidth - 1, y: 0 },
+    sprite: borderSprite,
   });
 
   const canvasComponent = world.getComponent(canvas, canvasId)!;
