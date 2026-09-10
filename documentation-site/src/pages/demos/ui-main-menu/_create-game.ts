@@ -42,6 +42,7 @@ import {
   setUiFocus,
   UiAnchor,
   UiAxis,
+  uiScaleModes,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -175,6 +176,20 @@ export const createUiMainMenuGame = async (
   const canvas = createUiCanvas(world, renderContext, time, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
+    // The default `scaleWithScreenSize` pins the canvas's *height* to the
+    // reference resolution and lets width follow the destination's live
+    // aspect ratio - fine for a UI that doesn't care exactly how wide it
+    // gets, but this screen's two side-by-side panels are positioned all
+    // the way out to both edges of a 1920-wide layout, so a narrower
+    // destination (this demo's own box included, at some browser widths -
+    // see `documentation-site/src/components/_Demo.module.css`'s
+    // `.demoBox`, a fixed height with a *percentage* width, so its aspect
+    // ratio isn't fixed either) would crop the right-hand content entirely.
+    // `matchWidth` pins width instead, keeping the whole 1920-wide layout
+    // visible always; height still varies with aspect ratio, which is why
+    // every full-height rect in this demo stretches to fill it rather than
+    // assuming a literal `1080`.
+    scaleMode: uiScaleModes.matchWidth,
     pointerSource: mouseInputSource,
     submitInput,
     navigateInput,
@@ -305,7 +320,11 @@ export const createUiMainMenuGame = async (
   // it draws on top of the left panel/mission brief backgrounds it divides,
   // rather than being partly covered by whichever of them is created after it.
   createPanel(world, canvas, {
-    anchor: UiAnchor.topLeft({ x: 3, y: 1080 }),
+    // A full vertical *stretch*, not a literal `1080`, so the rule always
+    // spans the canvas's actual height - see `createMainMenu`'s own left
+    // panel for why a literal height would leave a gap (or clip) on a
+    // canvas taller (or shorter) than the reference resolution.
+    anchor: UiAnchor.stretchLeft({ width: 3 }),
     anchoredPosition: { x: leftPanelWidth - 1, y: 0 },
     sprite: borderSprite,
   });

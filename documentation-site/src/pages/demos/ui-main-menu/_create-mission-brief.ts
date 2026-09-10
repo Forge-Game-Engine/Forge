@@ -14,7 +14,9 @@ import {
   createLabel,
   createPanel,
   UiAnchor,
+  UiAxis,
 } from '@forge-game-engine/forge/ui';
+import { leftPanelWidth } from './_create-main-menu';
 import { fleetCommandPalette } from './_palette';
 
 /** The sprites {@link createMissionBrief} draws its circle/tag/underline with. */
@@ -64,8 +66,21 @@ export function createMissionBrief(
   addPositionComponent(world, root);
   addParentComponent(world, root, { parent: canvas });
   addRectTransformComponent(world, root, {
-    ...UiAnchor.topLeft({ x: 1320, y: 1080 }),
-    anchoredPosition: { x: 600, y: 0 },
+    // Fills whatever's left of the canvas after `leftPanelWidth`, on both
+    // axes: `margin: -leftPanelWidth` shrinks the horizontal stretch span by
+    // exactly that much (see `createMainMenu`'s own left panel for the same
+    // stretch-margin trick applied to a *literal* width instead), and the
+    // left-pivoted `anchoredPosition.x` shifts the whole span right by
+    // `leftPanelWidth` rather than re-centering it - together, a rect
+    // spanning `[leftPanelWidth, canvasWidth]` on any canvas width. The
+    // vertical axis is a plain full stretch, for the same reason
+    // `createMainMenu`'s panel needs one instead of a literal `1080`.
+    x: UiAxis.stretch(
+      { min: 0, max: 1 },
+      { pivot: 0, margin: -leftPanelWidth },
+    ),
+    y: UiAxis.stretch({ min: 0, max: 1 }),
+    anchoredPosition: { x: leftPanelWidth, y: 0 },
   });
 
   createPanel(world, root, {

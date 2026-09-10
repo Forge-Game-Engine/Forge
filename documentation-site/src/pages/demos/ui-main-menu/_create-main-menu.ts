@@ -111,7 +111,14 @@ export function createMainMenu(
   const { panelSprite, yellowSprite, borderSprite, rowSprite } = sprites;
 
   const panel = createPanel(world, canvas, {
-    anchor: UiAnchor.topLeft({ x: leftPanelWidth, y: 1080 }),
+    // A fixed `leftPanelWidth` but a full *stretch* on the vertical axis -
+    // not a literal `1080` - so the panel always fills the canvas's actual
+    // height. `createUiMainMenuGame`'s `matchWidth` scale mode keeps the
+    // canvas's width pinned to the 1920 every position in this file is
+    // authored against, but its height still varies with the destination's
+    // live aspect ratio, and a literal `1080` would leave a gap (or get
+    // clipped) on anything taller (or shorter) than that.
+    anchor: UiAnchor.stretchLeft({ width: leftPanelWidth }),
     sprite: panelSprite,
   });
 
