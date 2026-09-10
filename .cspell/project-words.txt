@@ -74,6 +74,9 @@ keyup
 Killst
 Kryll
 lerp
+letterbox
+letterboxed
+letterboxing
 lifecycles
 matterjs
 mediump
@@ -97,6 +100,8 @@ notdef
 Oboro
 Okonjo
 perlin
+pillarbox
+pillarboxing
 pingpong
 Pixabay
 prebuild

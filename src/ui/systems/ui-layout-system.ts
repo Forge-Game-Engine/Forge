@@ -47,6 +47,15 @@ function resolveCanvasRootRect(
     worldHeight = renderContext.height;
   } else if (canvas.scaleMode === uiScaleModes.matchWidth) {
     worldHeight = canvas.referenceResolution.x / aspectRatio;
+  } else if (canvas.scaleMode === uiScaleModes.fitReferenceResolution) {
+    // The larger of `scaleWithScreenSize`'s and `matchWidth`'s own
+    // candidate world heights - see `fitReferenceResolution`'s own doc
+    // comment for why that's exactly the rect that's always at least
+    // `referenceResolution` on both axes.
+    worldHeight = Math.max(
+      canvas.referenceResolution.y,
+      canvas.referenceResolution.x / aspectRatio,
+    );
   } else {
     worldHeight = canvas.referenceResolution.y;
   }

@@ -172,6 +172,17 @@ controls how the canvas's root rect - and its camera's
   pixel size one-to-one (`referenceResolution` is ignored); UI elements
   keep a constant on-screen size at the cost of covering a different
   fraction of the screen on different displays.
+- `fitReferenceResolution` - the root rect is always at least
+  `referenceResolution` on *both* axes, whichever of `scaleWithScreenSize`'s
+  or `matchWidth`'s height would be larger, letterboxing/pillarboxing the
+  destination's excess space on whichever axis isn't the limiting one.
+  Reach for this over the other two when a layout fills the full reference
+  resolution edge to edge (content anchored out to all four corners, say) -
+  `scaleWithScreenSize`/`matchWidth` each only protect *one* axis from
+  shrinking below the reference size, so a destination aspect ratio far
+  enough from `referenceResolution`'s own can crop or squash a layout that
+  assumes it always has the full reference size to work with, on whichever
+  axis that mode doesn't pin.
 
 Everything above describes `renderMode: 'screenSpace'` (the default) - see
 the next section for the other mode.

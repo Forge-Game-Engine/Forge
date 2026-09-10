@@ -207,6 +207,46 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(960);
   });
 
+  it('pins height to referenceResolution.y in fitReferenceResolution mode on a wider-than-reference destination', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(2400, 800); // 3:1 aspect ratio, wider than 1920x1080's 16:9
+    const { canvas, camera } = createTestCanvas(world, {
+      scaleMode: uiScaleModes.fitReferenceResolution,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // height stays pinned to 1080 (never squashed below the reference
+    // resolution); width follows the aspect ratio out past 1920, rather
+    // than matchWidth's 1920 / 3 = 640, which would squash height instead.
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -1620, y: -540 },
+      max: { x: 1620, y: 540 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(1080);
+  });
+
+  it('pins width to referenceResolution.x in fitReferenceResolution mode on a narrower-than-reference destination', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(800, 1600); // 1:2 aspect ratio, narrower than 1920x1080's 16:9
+    const { canvas, camera } = createTestCanvas(world, {
+      scaleMode: uiScaleModes.fitReferenceResolution,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // width stays at 1920 (never cropped below the reference resolution);
+    // height follows the aspect ratio out past 1080, rather than
+    // scaleWithScreenSize's 1080, which would crop width instead.
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -960, y: -1920 },
+      max: { x: 960, y: 1920 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(3840);
+  });
+
   it('sizes the root rect to the destination pixel size in constantPixelSize mode', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(800, 600);
