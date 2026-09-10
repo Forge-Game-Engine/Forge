@@ -94,6 +94,7 @@ Nisbet
 normalise
 notdef
 Oboro
+Okonjo
 perlin
 pingpong
 Pixabay
@@ -156,6 +157,7 @@ unrepresentable
 unrotated
 unshifted
 untextured
+untinted
 unvalidated
 updatables
 upsamples

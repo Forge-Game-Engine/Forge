@@ -212,6 +212,10 @@ const config: Config = {
               label: 'UI Buttons',
             },
             {
+              to: 'demos/ui-main-menu',
+              label: 'UI Main Menu',
+            },
+            {
               to: 'demos/ui-toggle',
               label: 'UI Toggles',
             },
