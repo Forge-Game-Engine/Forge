@@ -1,5 +1,5 @@
 import { Vector2 } from '../../math/index.js';
-import { UiAxis } from './ui-axis.js';
+import { UiAxis, UiAxisSizeUnit } from './ui-axis.js';
 
 /**
  * The `x`/`y` axis pair a `UiAnchor` preset produces, spread into
@@ -33,11 +33,14 @@ const point =
  * spanning the parent's full width) but is point-anchored vertically.
  */
 export interface UiHorizontalBandOptions {
-  /** The band's height, in reference pixels - the vertical axis is point-anchored, so this is a literal size. */
+  /** The band's height, in `heightUnit` - the vertical axis is point-anchored, so this is a literal size. */
   height: number;
 
   /** Margin added to the band's horizontal span, in reference pixels. Defaults to `0`. */
   horizontalMargin?: number;
+
+  /** The unit `height` is expressed in. Defaults to `'referencePixels'`. See {@link UiAxisSizeUnit}. */
+  heightUnit?: UiAxisSizeUnit;
 }
 
 /** A preset whose `x` stretches full-width and `y` is a point anchor - callers supply the band's height and an optional horizontal margin. */
@@ -46,12 +49,13 @@ const horizontalBand =
   ({
     height,
     horizontalMargin = 0,
+    heightUnit,
   }: UiHorizontalBandOptions): UiAnchorConfig => ({
     x: UiAxis.stretch(
       { min: 0, max: 1 },
       { pivot: pivotX, margin: horizontalMargin },
     ),
-    y: UiAxis.point(verticalAnchor, { size: height }),
+    y: UiAxis.point(verticalAnchor, { size: height, sizeUnit: heightUnit }),
   });
 
 /**
@@ -59,18 +63,25 @@ const horizontalBand =
  * spanning the parent's full height) but is point-anchored horizontally.
  */
 export interface UiVerticalBandOptions {
-  /** The band's width, in reference pixels - the horizontal axis is point-anchored, so this is a literal size. */
+  /** The band's width, in `widthUnit` - the horizontal axis is point-anchored, so this is a literal size. */
   width: number;
 
   /** Margin added to the band's vertical span, in reference pixels. Defaults to `0`. */
   verticalMargin?: number;
+
+  /** The unit `width` is expressed in. Defaults to `'referencePixels'`. See {@link UiAxisSizeUnit}. */
+  widthUnit?: UiAxisSizeUnit;
 }
 
 /** A preset whose `y` stretches full-height and `x` is a point anchor - callers supply the band's width and an optional vertical margin. */
 const verticalBand =
   (horizontalAnchor: number, pivotY: number) =>
-  ({ width, verticalMargin = 0 }: UiVerticalBandOptions): UiAnchorConfig => ({
-    x: UiAxis.point(horizontalAnchor, { size: width }),
+  ({
+    width,
+    verticalMargin = 0,
+    widthUnit,
+  }: UiVerticalBandOptions): UiAnchorConfig => ({
+    x: UiAxis.point(horizontalAnchor, { size: width, sizeUnit: widthUnit }),
     y: UiAxis.stretch(
       { min: 0, max: 1 },
       { pivot: pivotY, margin: verticalMargin },

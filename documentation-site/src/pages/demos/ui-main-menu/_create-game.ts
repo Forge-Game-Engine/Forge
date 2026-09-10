@@ -48,7 +48,7 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { createFlagshipPanel } from './_create-flagship-panel';
-import { createMainMenu, leftPanelWidth } from './_create-main-menu';
+import { createMainMenu } from './_create-main-menu';
 import { createMissionBrief } from './_create-mission-brief';
 import { fleetCommandPalette } from './_palette';
 
@@ -315,16 +315,20 @@ export const createUiMainMenuGame = async (
   // mission content beside it by nothing more than this one thin rule -
   // both sides are otherwise close in tone (`panel` vs `void`), so the
   // rule alone (not a background color difference) is what reads as "two
-  // panels" - see `createMainMenu`'s own `leftPanelWidth`. Created last so
-  // it draws on top of the left panel/mission brief backgrounds it divides,
-  // rather than being partly covered by whichever of them is created after it.
-  createPanel(world, canvas, {
-    // A full vertical *stretch*, not a literal `1080`, so the rule always
-    // spans the canvas's actual height - see `createMainMenu`'s own left
-    // panel for why a literal height would leave a gap on a destination
-    // `fitReferenceResolution` has letterboxed taller than 1080.
-    anchor: UiAnchor.stretchLeft({ width: 3 }),
-    anchoredPosition: { x: leftPanelWidth - 1, y: 0 },
+  // panels". Parented to `mainMenu.panel` itself (rather than `canvas`,
+  // alongside it) and pinned to its right edge (`anchorMin`/`anchorMax: 1`,
+  // a zero-size anchor span, extended outward by `margin`) so it always
+  // tracks that panel's actual right edge - including its own fixed
+  // on-screen width (see `createMainMenu`'s own `leftPanelWidth`) - with no
+  // separate `leftPanelWidth`-based position math needed here. Created last
+  // so it draws on top of the left panel/mission brief backgrounds it
+  // divides, rather than being partly covered by whichever of them is
+  // created after it.
+  createPanel(world, mainMenu.panel, {
+    anchor: {
+      x: UiAxis.stretch({ min: 1, max: 1 }, { pivot: 0, margin: 3 }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    },
     sprite: borderSprite,
   });
 

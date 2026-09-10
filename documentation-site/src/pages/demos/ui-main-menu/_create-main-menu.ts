@@ -19,6 +19,7 @@ import {
   createPanel,
   uiAlignments,
   UiAnchor,
+  UiAxis,
 } from '@forge-game-engine/forge/ui';
 import { fleetCommandPalette } from './_palette';
 
@@ -32,8 +33,18 @@ const menuItems = [
   'QUIT TO DESKTOP',
 ];
 
-/** The left nav panel's full width, measured off the reference design at a 1920-wide reference resolution. */
-export const leftPanelWidth = 600;
+/**
+ * The left nav panel's full width, in actual on-screen (device) pixels -
+ * kept fixed regardless of the canvas's live scale factor (see `UiAxis`'s
+ * `sizeUnit`/`marginUnit`), unlike the rest of this demo, which scales
+ * normally with `fitReferenceResolution`. `600 * (1080 / 1920)`: the
+ * on-screen width the reference design's own 600-reference-pixel panel
+ * already had once the canvas's aspect ratio reaches 16:9 or wider (where
+ * `fitReferenceResolution` pins `verticalWorldUnits` at exactly `1080`) -
+ * chosen so this fixed width matches the reference design's own look
+ * exactly at that aspect ratio, rather than picking an arbitrary number.
+ */
+export const leftPanelWidth = 600 * (1080 / 1920);
 
 const rowWidth = 464;
 const rowHeight = 76;
@@ -111,10 +122,15 @@ export function createMainMenu(
   const { panelSprite, yellowSprite, borderSprite, rowSprite } = sprites;
 
   const panel = createPanel(world, parent, {
-    // A fixed `leftPanelWidth` but a full *stretch* on the vertical axis -
-    // not a literal `1080` - so the panel always fills its parent's actual
-    // height, whatever that resolves to.
-    anchor: UiAnchor.stretchLeft({ width: leftPanelWidth }),
+    // `widthUnit: 'screenPixels'` keeps this panel a fixed on-screen width
+    // regardless of the canvas's live scale factor (see `leftPanelWidth`'s
+    // own doc comment) - a full *stretch* on the vertical axis, not a
+    // literal `1080`, so the panel always fills its parent's actual height,
+    // whatever that resolves to.
+    anchor: UiAnchor.stretchLeft({
+      width: leftPanelWidth,
+      widthUnit: 'screenPixels',
+    }),
     sprite: panelSprite,
   });
 
@@ -148,9 +164,21 @@ export function createMainMenu(
     category: uiCategory,
   });
 
+  // `rowWidth === leftPanelWidth's own 600-reference-pixel measurement minus
+  // `2 * rowLeftInset` (464 = 600 - 2*68) - i.e. this divider (and
+  // `menuContainer` below) were always meant to span the panel's full width
+  // symmetrically inset by `rowLeftInset` on each edge. Now that the panel's
+  // own width is a fixed on-screen pixel count rather than a fixed
+  // reference-pixel one (see `leftPanelWidth`), that has to be expressed as
+  // a *percentage* of the panel's actual resolved width (a stretch anchor)
+  // instead of a literal `rowWidth`, so it keeps spanning correctly at any
+  // aspect ratio rather than overflowing or leaving a gap.
   createPanel(world, panel, {
-    anchor: UiAnchor.topLeft({ x: rowWidth, y: 2 }),
-    anchoredPosition: { x: rowLeftInset, y: -202 },
+    anchor: {
+      x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),
+      y: UiAxis.point(1, { size: 2 }),
+    },
+    anchoredPosition: { x: 0, y: -202 },
     sprite: borderSprite,
   });
 
@@ -159,15 +187,19 @@ export function createMainMenu(
   addPositionComponent(world, menuContainer);
   addParentComponent(world, menuContainer, { parent: panel });
   addRectTransformComponent(world, menuContainer, {
-    ...UiAnchor.topLeft({ x: rowWidth, y: rowHeight }),
-    anchoredPosition: { x: rowLeftInset, y: -252 },
+    x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),
+    y: UiAxis.point(1, { size: rowHeight }),
+    anchoredPosition: { x: 0, y: -252 },
   });
   addVerticalLayoutGroupComponent(world, menuContainer, {
     spacing: 0,
     childAlignment: uiAlignments.topLeft,
   });
+  // No `horizontalFit` - left at its `'unconstrained'` default so the
+  // stretch-x anchor above stands; each row still fills the container's
+  // actual width via `VerticalLayoutGroupEcsComponent`'s own
+  // `childForceExpandWidth` (defaulted `true`), regardless of `rowWidth`.
   addContentSizeFitterComponent(world, menuContainer, {
-    horizontalFit: 'preferredSize',
     verticalFit: 'preferredSize',
   });
 

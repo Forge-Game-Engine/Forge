@@ -5,8 +5,10 @@ import {
   positionId,
 } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vector2 } from '../../math/index.js';
 import {
+  calculatePixelsPerUnit,
   CameraEcsComponent,
   cameraId,
   RenderContext,
@@ -79,6 +81,83 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
 }
 
 /**
+ * Resolves one entity's rect - a screen-space canvas root (via
+ * `resolveCanvasRootRect`, also syncing its camera's `verticalWorldUnits`
+ * and resizing its `renderTarget` if it has one), or, for anything else
+ * (an ordinary element, or a world-space canvas root), against `parentRect`
+ * via `resolveRect` - and the reference-pixel-to-screen-pixel ratio this
+ * entity's own *children* should resolve a `'screenPixels'`-unit `UiAxis`
+ * against (see `UiAxisSizeUnit`): recomputed from whichever camera this
+ * entity's own canvas has, for either kind of canvas root, or inherited
+ * unchanged from `pixelsPerUnit` for a non-canvas element or a canvas root
+ * with no resolvable camera.
+ */
+function resolveEntityRect(
+  world: EcsWorld,
+  renderContext: RenderContext,
+  canvasComponent: CanvasEcsComponent | null,
+  rectTransform: RectTransformEcsComponent,
+  parentRect: Rect,
+  pixelsPerUnit: number,
+): { rect: Rect; childPixelsPerUnit: number } {
+  if (
+    canvasComponent &&
+    canvasComponent.renderMode === uiCanvasRenderModes.screenSpace
+  ) {
+    const resolved = resolveCanvasRootRect(renderContext, canvasComponent);
+    const camera = world.getComponent<CameraEcsComponent>(
+      canvasComponent.camera,
+      cameraId,
+    );
+
+    if (!camera) {
+      return { rect: resolved.rect, childPixelsPerUnit: pixelsPerUnit };
+    }
+
+    camera.verticalWorldUnits = resolved.worldHeight;
+
+    const { renderTarget } = camera;
+
+    if (
+      renderTarget &&
+      (renderTarget.width !== renderContext.width ||
+        renderTarget.height !== renderContext.height)
+    ) {
+      renderTarget.resize(
+        renderContext.gl,
+        renderContext.width,
+        renderContext.height,
+      );
+    }
+
+    return {
+      rect: resolved.rect,
+      childPixelsPerUnit: calculatePixelsPerUnit(
+        renderContext.height,
+        resolved.worldHeight,
+      ),
+    };
+  }
+
+  const rect = resolveRect(parentRect, rectTransform, pixelsPerUnit);
+  const camera = canvasComponent
+    ? world.getComponent<CameraEcsComponent>(canvasComponent.camera, cameraId)
+    : null;
+
+  if (!camera) {
+    return { rect, childPixelsPerUnit: pixelsPerUnit };
+  }
+
+  return {
+    rect,
+    childPixelsPerUnit: calculatePixelsPerUnit(
+      renderContext.height,
+      camera.verticalWorldUnits,
+    ),
+  };
+}
+
+/**
  * Creates a system that resolves every `RectTransformEcsComponent` against
  * its parent's rect, top-down, in hierarchy pre-order starting from each
  * `CanvasEcsComponent`'s root. For each element it writes the resolved
@@ -110,6 +189,14 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
  * other element instead - against its own parent's rect (or, with no UI
  * parent, as an ordinary root) - and its camera is never touched, since a
  * world-space canvas typically shares the game's own world camera.
+ *
+ * Also computes each canvas's current reference-pixel-to-screen-pixel ratio
+ * (`calculatePixelsPerUnit(renderContext.height, verticalWorldUnits)`,
+ * re-derived from whichever camera that canvas root just resolved) and
+ * threads it down through the whole subtree, so any descendant's
+ * `'screenPixels'`-unit `UiAxis` size/margin (see `UiAxisSizeUnit`) converts
+ * against the ratio that's actually live for the canvas it belongs to, not
+ * a stale or unrelated one.
  *
  * Must be registered before `createTransformEcsSystem`.
  * @param renderContext - The render context UI canvases resolve their root
@@ -160,6 +247,7 @@ export const createUiLayoutEcsSystem = (
       entity: number,
       parentRect: Rect,
       parentPivotPosition: Vector2,
+      pixelsPerUnit: number,
     ): void => {
       if (visited.has(entity)) {
         return;
@@ -176,40 +264,14 @@ export const createUiLayoutEcsSystem = (
         canvasId,
       );
 
-      let rect: Rect;
-
-      if (
-        canvasComponent &&
-        canvasComponent.renderMode === uiCanvasRenderModes.screenSpace
-      ) {
-        const resolved = resolveCanvasRootRect(renderContext, canvasComponent);
-        rect = resolved.rect;
-
-        const camera = world.getComponent<CameraEcsComponent>(
-          canvasComponent.camera,
-          cameraId,
-        );
-
-        if (camera) {
-          camera.verticalWorldUnits = resolved.worldHeight;
-
-          const { renderTarget } = camera;
-
-          if (
-            renderTarget &&
-            (renderTarget.width !== renderContext.width ||
-              renderTarget.height !== renderContext.height)
-          ) {
-            renderTarget.resize(
-              renderContext.gl,
-              renderContext.width,
-              renderContext.height,
-            );
-          }
-        }
-      } else {
-        rect = resolveRect(parentRect, rectTransform);
-      }
+      const { rect, childPixelsPerUnit } = resolveEntityRect(
+        world,
+        renderContext,
+        canvasComponent,
+        rectTransform,
+        parentRect,
+        pixelsPerUnit,
+      );
 
       rectTransform.rect = rect;
       rectTransform.sortDepth = sortDepth;
@@ -274,12 +336,12 @@ export const createUiLayoutEcsSystem = (
       sortDepth += 1;
 
       for (const child of childrenByParent.get(entity) ?? []) {
-        visit(child, rect, pivotPosition);
+        visit(child, rect, pivotPosition, childPixelsPerUnit);
       }
     };
 
     for (const root of roots) {
-      visit(root, Rects.zero, { x: 0, y: 0 });
+      visit(root, Rects.zero, { x: 0, y: 0 }, 1);
     }
   },
 });

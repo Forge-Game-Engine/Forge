@@ -28,6 +28,7 @@ import {
   rectTransformId,
 } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { UiAxis } from '../types/ui-axis.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 
@@ -292,6 +293,45 @@ describe('createUiLayoutEcsSystem', () => {
       x: -960,
       y: 540,
     });
+  });
+
+  it("keeps a screenPixels-unit child's on-screen size constant across a resolution change that leaves verticalWorldUnits unchanged", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const sidebar = world.createEntity();
+
+    addPositionComponent(world, sidebar);
+    addParentComponent(world, sidebar, { parent: canvas });
+    addRectTransformComponent(world, sidebar, {
+      x: UiAxis.point(0, { pivot: 0, size: 200, sizeUnit: 'screenPixels' }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    });
+
+    const system = createUiLayoutEcsSystem(renderContext);
+
+    world.addSystem(system);
+    world.update();
+
+    // pixelsPerUnit = 1080 / 1080 = 1, so 200 screenPixels is 200 reference
+    // pixels here.
+    let rect = world.getComponent(sidebar, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBe(200);
+
+    // Rendering the same scaleWithScreenSize canvas (verticalWorldUnits
+    // stays pinned at referenceResolution.y regardless of the destination's
+    // actual pixel size) at half the physical resolution halves
+    // pixelsPerUnit to 0.5 - so the sidebar's reference-pixel width must
+    // double to keep covering the same 200 *screen* pixels.
+    renderContext.width = 960;
+    renderContext.height = 540;
+    world.update();
+
+    rect = world.getComponent(sidebar, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBe(400);
   });
 
   it('resolves a stretched child that spans the full canvas width', () => {
