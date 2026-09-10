@@ -95,7 +95,7 @@ export interface MainMenu {
  * `ContentSizeFitterEcsComponent` container, so adding, removing, or
  * renaming an item never requires touching layout math.
  * @param world - The ECS world to create the panel/menu entities in.
- * @param canvas - The canvas entity to parent the left panel to.
+ * @param parent - The entity to parent the left panel to - a canvas (see `createUiCanvas`) or another UI element.
  * @param fontAtlas - The font atlas the title/menu/footer labels are drawn from.
  * @param sprites - The sprites this panel/menu is drawn with - see {@link MainMenuSprites}.
  * @param uiCategory - The render category the canvas's camera culls to.
@@ -103,21 +103,17 @@ export interface MainMenu {
  */
 export function createMainMenu(
   world: EcsWorld,
-  canvas: number,
+  parent: number,
   fontAtlas: FontAtlas,
   sprites: MainMenuSprites,
   uiCategory: number,
 ): MainMenu {
   const { panelSprite, yellowSprite, borderSprite, rowSprite } = sprites;
 
-  const panel = createPanel(world, canvas, {
+  const panel = createPanel(world, parent, {
     // A fixed `leftPanelWidth` but a full *stretch* on the vertical axis -
-    // not a literal `1080` - so the panel always fills the canvas's actual
-    // height. `createUiMainMenuGame`'s `matchWidth` scale mode keeps the
-    // canvas's width pinned to the 1920 every position in this file is
-    // authored against, but its height still varies with the destination's
-    // live aspect ratio, and a literal `1080` would leave a gap (or get
-    // clipped) on anything taller (or shorter) than that.
+    // not a literal `1080` - so the panel always fills its parent's actual
+    // height, whatever that resolves to.
     anchor: UiAnchor.stretchLeft({ width: leftPanelWidth }),
     sprite: panelSprite,
   });

@@ -46,15 +46,15 @@ const mutedInk = new Color(
  * rule, and a wrapped blurb paragraph. Purely decorative/informational - no
  * interactables here, unlike `createMainMenu`/`createFlagshipPanel`.
  * @param world - The ECS world to create the mission brief entities in.
- * @param canvas - The canvas entity to parent the mission brief to.
+ * @param parent - The entity to parent the mission brief to - a canvas (see `createUiCanvas`) or another UI element.
  * @param fontAtlas - The font atlas the tag/title/blurb labels are drawn from.
  * @param sprites - The sprites this panel is drawn with - see {@link MissionBriefSprites}.
  * @param uiCategory - The render category the canvas's camera culls to.
- * @returns The mission brief's root entity, parented to `canvas` and anchored to fill the canvas's right two-thirds - other right-column content (see `createFlagshipPanel`) parents to this same entity to share its coordinate space.
+ * @returns The mission brief's root entity, parented to `parent` and anchored to fill its right two-thirds - other right-column content (see `createFlagshipPanel`) parents to this same entity to share its coordinate space.
  */
 export function createMissionBrief(
   world: EcsWorld,
-  canvas: number,
+  parent: number,
   fontAtlas: FontAtlas,
   sprites: MissionBriefSprites,
   uiCategory: number,
@@ -64,17 +64,17 @@ export function createMissionBrief(
   const root = world.createEntity();
 
   addPositionComponent(world, root);
-  addParentComponent(world, root, { parent: canvas });
+  addParentComponent(world, root, { parent });
   addRectTransformComponent(world, root, {
-    // Fills whatever's left of the canvas after `leftPanelWidth`, on both
+    // Fills whatever's left of `parent` after `leftPanelWidth`, on both
     // axes: `margin: -leftPanelWidth` shrinks the horizontal stretch span by
     // exactly that much (see `createMainMenu`'s own left panel for the same
     // stretch-margin trick applied to a *literal* width instead), and the
     // left-pivoted `anchoredPosition.x` shifts the whole span right by
     // `leftPanelWidth` rather than re-centering it - together, a rect
-    // spanning `[leftPanelWidth, canvasWidth]` on any canvas width. The
-    // vertical axis is a plain full stretch, for the same reason
-    // `createMainMenu`'s panel needs one instead of a literal `1080`.
+    // spanning `[leftPanelWidth, parentWidth]` on whatever `parent`'s width
+    // actually is. The vertical axis is a plain full stretch, for the same
+    // reason `createMainMenu`'s panel needs one instead of a literal `1080`.
     x: UiAxis.stretch(
       { min: 0, max: 1 },
       { pivot: 0, margin: -leftPanelWidth },

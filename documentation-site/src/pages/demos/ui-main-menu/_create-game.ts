@@ -173,22 +173,25 @@ export const createUiMainMenuGame = async (
     game,
   );
 
+  // KNOWN LIMITATION: this screen's two side-by-side panels are positioned
+  // all the way out to both edges of a 1920x1080 layout, and the `ui`
+  // module's three UiScaleModes each only pin *one* axis to the reference
+  // resolution and let the other float with the live aspect ratio - none of
+  // them clamp the floating axis to a minimum, i.e. there's no "letterbox/
+  // fit" mode that guarantees the full reference resolution stays visible,
+  // undistorted, at any aspect ratio. `matchWidth` (below) pins width,
+  // which keeps this demo correct across the ordinary range of browser
+  // widths this demo's own box produces (a fixed-height, percentage-width
+  // box - see `documentation-site/src/components/_Demo.module.css`'s
+  // `.demoBox` - so its aspect ratio isn't fixed either), but height still
+  // shrinks below 1080 on a sufficiently wide destination (a genuinely
+  // ultrawide monitor, or just a very wide, non-maximized browser window),
+  // which can squash this screen's vertically-stacked content. Flagged
+  // rather than worked around here - see the PR/session discussion for the
+  // proposed fix (a new UiScaleMode).
   const canvas = createUiCanvas(world, renderContext, time, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
-    // The default `scaleWithScreenSize` pins the canvas's *height* to the
-    // reference resolution and lets width follow the destination's live
-    // aspect ratio - fine for a UI that doesn't care exactly how wide it
-    // gets, but this screen's two side-by-side panels are positioned all
-    // the way out to both edges of a 1920-wide layout, so a narrower
-    // destination (this demo's own box included, at some browser widths -
-    // see `documentation-site/src/components/_Demo.module.css`'s
-    // `.demoBox`, a fixed height with a *percentage* width, so its aspect
-    // ratio isn't fixed either) would crop the right-hand content entirely.
-    // `matchWidth` pins width instead, keeping the whole 1920-wide layout
-    // visible always; height still varies with aspect ratio, which is why
-    // every full-height rect in this demo stretches to fill it rather than
-    // assuming a literal `1080`.
     scaleMode: uiScaleModes.matchWidth,
     pointerSource: mouseInputSource,
     submitInput,
@@ -322,8 +325,8 @@ export const createUiMainMenuGame = async (
   createPanel(world, canvas, {
     // A full vertical *stretch*, not a literal `1080`, so the rule always
     // spans the canvas's actual height - see `createMainMenu`'s own left
-    // panel for why a literal height would leave a gap (or clip) on a
-    // canvas taller (or shorter) than the reference resolution.
+    // panel for why a literal height would leave a gap (or clip) on
+    // anything taller (or shorter) than the reference resolution.
     anchor: UiAnchor.stretchLeft({ width: 3 }),
     anchoredPosition: { x: leftPanelWidth - 1, y: 0 },
     sprite: borderSprite,

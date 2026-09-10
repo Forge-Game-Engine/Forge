@@ -149,6 +149,7 @@ tintable
 tween
 tweening
 tweens
+ultrawide
 unblurred
 undersamples
 unflipped
