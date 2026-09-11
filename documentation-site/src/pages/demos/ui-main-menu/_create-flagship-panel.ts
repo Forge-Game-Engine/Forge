@@ -84,9 +84,17 @@ export function createFlagshipPanel(
     buttonSprite,
   } = sprites;
 
+  // Both boxes below are right-pivoted (`topRight`, not `topLeft`) so they
+  // stay pinned to `parent`'s (the mission brief's) actual right edge
+  // instead of drifting away from it - and leaving a growing empty gap on
+  // the right - on a wider-than-16:9 destination, where
+  // `fitReferenceResolution` grows `parent` past the reference design's
+  // 1320-wide assumption (1920 minus the nav panel). Each `anchoredPosition.x`
+  // reproduces the reference design's exact measurement as an offset from
+  // the right edge instead of the left: `originalLeftOffset + width - 1320`.
   const heroBox = createPanel(world, parent, {
-    anchor: UiAnchor.topLeft({ x: heroBoxWidth, y: heroBoxHeight }),
-    anchoredPosition: { x: 86, y: -694 },
+    anchor: UiAnchor.topRight({ x: heroBoxWidth, y: heroBoxHeight }),
+    anchoredPosition: { x: 86 + heroBoxWidth - 1320, y: -694 },
     sprite: borderSprite,
   });
 
@@ -127,8 +135,8 @@ export function createFlagshipPanel(
   });
 
   const card = createPanel(world, parent, {
-    anchor: UiAnchor.topLeft({ x: cardWidth, y: cardHeight }),
-    anchoredPosition: { x: 744, y: -754 },
+    anchor: UiAnchor.topRight({ x: cardWidth, y: cardHeight }),
+    anchoredPosition: { x: 744 + cardWidth - 1320, y: -754 },
     sprite: panelSprite,
   });
 

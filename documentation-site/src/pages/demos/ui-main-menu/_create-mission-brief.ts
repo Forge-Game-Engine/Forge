@@ -89,8 +89,18 @@ export function createMissionBrief(
   });
 
   createPanel(world, root, {
-    anchor: UiAnchor.topLeft({ x: 942, y: 942 }),
-    anchoredPosition: { x: 692, y: 309 },
+    // Right-pivoted (`topRight`, not `topLeft`) so this stays pinned to
+    // `root`'s own right edge - and thus bleeds off the actual top-right
+    // corner of the screen, matching the reference design - regardless of
+    // how wide `root` actually resolves to; `root`'s own width isn't fixed
+    // at the reference design's 1320 (1920 minus the nav panel), since
+    // `fitReferenceResolution` grows it past that on a wider-than-16:9
+    // destination. `anchoredPosition.x: 314` reproduces the reference
+    // design's exact measurement (942-wide circle, right edge 314 reference
+    // pixels past a 1320-wide root: `692 + 942 - 1320`) as an offset from
+    // the right edge instead of the left.
+    anchor: UiAnchor.topRight({ x: 942, y: 942 }),
+    anchoredPosition: { x: 314, y: 309 },
     sprite: circleSprite,
   });
 
