@@ -16,8 +16,20 @@ describe('addRectTransformComponent', () => {
     const component = addRectTransformComponent(world, entity);
 
     expect(world.getComponent(entity, rectTransformId)).toEqual({
-      x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 100 },
-      y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 100 },
+      x: {
+        kind: 'point',
+        anchor: 0.5,
+        pivot: 0.5,
+        size: 100,
+        sizeUnit: 'referencePixels',
+      },
+      y: {
+        kind: 'point',
+        anchor: 0.5,
+        pivot: 0.5,
+        size: 100,
+        sizeUnit: 'referencePixels',
+      },
       anchoredPosition: { x: 0, y: 0 },
       rect: Rects.zero,
       sortDepth: 0,
@@ -40,12 +52,14 @@ describe('addRectTransformComponent', () => {
       anchor: 0.5,
       pivot: 0.5,
       size: 240,
+      sizeUnit: 'referencePixels',
     });
     expect(component.y).toEqual({
       kind: 'point',
       anchor: 0.5,
       pivot: 0.5,
       size: 64,
+      sizeUnit: 'referencePixels',
     });
     expect(component.anchoredPosition).toEqual({ x: 10, y: -10 });
   });

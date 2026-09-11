@@ -172,9 +172,52 @@ controls how the canvas's root rect - and its camera's
   pixel size one-to-one (`referenceResolution` is ignored); UI elements
   keep a constant on-screen size at the cost of covering a different
   fraction of the screen on different displays.
+- `fitReferenceResolution` - the root rect is always at least
+  `referenceResolution` on *both* axes, whichever of `scaleWithScreenSize`'s
+  or `matchWidth`'s height would be larger, letterboxing/pillarboxing the
+  destination's excess space on whichever axis isn't the limiting one.
+  Reach for this over the other two when a layout fills the full reference
+  resolution edge to edge (content anchored out to all four corners, say) -
+  `scaleWithScreenSize`/`matchWidth` each only protect *one* axis from
+  shrinking below the reference size, so a destination aspect ratio far
+  enough from `referenceResolution`'s own can crop or squash a layout that
+  assumes it always has the full reference size to work with, on whichever
+  axis that mode doesn't pin.
 
 Everything above describes `renderMode: 'screenSpace'` (the default) - see
 the next section for the other mode.
+
+### Pixel-locking one element with `screenPixels`
+
+Every `UiAxis`'s `size`/`margin` is in **reference pixels** by default,
+scaling with the canvas's scale factor exactly like everything else - a
+600-reference-pixel-wide sidebar covers the same *proportion* of the screen
+at any resolution or aspect ratio. Sometimes that's the wrong call for one
+specific element: a fixed-width nav rail or a HUD icon that should hold a
+constant **on-screen** size instead of growing or shrinking as the window
+resizes. Pass `sizeUnit`/`marginUnit: 'screenPixels'` to keep that one axis
+in literal, unscaled device pixels, converted to reference pixels fresh
+every frame from the owning canvas's live scale factor:
+
+```ts
+addRectTransformComponent(world, sidebar, {
+  ...UiAnchor.stretchLeft({ width: 320, widthUnit: 'screenPixels' }),
+});
+```
+
+This sidebar stays exactly 320 device pixels wide at any window size or
+aspect ratio, even though the rest of the canvas keeps scaling normally with
+`referenceResolution`. `UiAnchor`'s edge-pinned band presets
+(`stretchLeft`/`stretchRight`/`stretchVertical` via `widthUnit`,
+`stretchTop`/`stretchBottom`/`stretchHorizontal`/`stretchHorizontalLeft`/`stretchTopLeft`/`stretchTopRight`
+via `heightUnit`) accept this directly; for a raw `UiAxis.point`/`UiAxis.stretch`,
+pass `sizeUnit`/`marginUnit` in its own options.
+
+Only `size`/`margin` convert this way - `anchoredPosition` and font sizes
+stay in reference pixels regardless, so a `screenPixels`-sized element's own
+children/content aren't automatically pixel-locked too; give a child its own
+stretch anchor (a percentage of its now-pixel-locked parent, not a fixed
+`anchoredPosition` inset) if it needs to track that parent's actual size.
 
 ## World-space canvases
 

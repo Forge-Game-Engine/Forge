@@ -72,7 +72,11 @@ kenneynl
 kernings
 keyup
 Killst
+Kryll
 lerp
+letterbox
+letterboxed
+letterboxing
 lifecycles
 matterjs
 mediump
@@ -94,7 +98,10 @@ Nisbet
 normalise
 notdef
 Oboro
+Okonjo
 perlin
+pillarbox
+pillarboxing
 pingpong
 Pixabay
 prebuild
@@ -147,6 +154,7 @@ tintable
 tween
 tweening
 tweens
+ultrawide
 unblurred
 undersamples
 unflipped
@@ -156,6 +164,7 @@ unrepresentable
 unrotated
 unshifted
 untextured
+untinted
 unvalidated
 updatables
 upsamples

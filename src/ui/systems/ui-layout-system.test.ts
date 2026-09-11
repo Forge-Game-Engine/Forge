@@ -28,6 +28,7 @@ import {
   rectTransformId,
 } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
+import { UiAxis } from '../types/ui-axis.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 
@@ -74,6 +75,27 @@ describe('createUiLayoutEcsSystem', () => {
       y: 0,
     });
     expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(1080);
+  });
+
+  it('still resolves a screen-space canvas root rect when its camera entity has no CameraEcsComponent', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+
+    // A camera entity id that never gets a CameraEcsComponent attached.
+    const camera = world.createEntity();
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -960, y: -540 },
+      max: { x: 960, y: 540 },
+    });
   });
 
   it('follows the destination aspect ratio (scaleWithScreenSize keeps height, grows width)', () => {
@@ -207,6 +229,46 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(960);
   });
 
+  it('pins height to referenceResolution.y in fitReferenceResolution mode on a wider-than-reference destination', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(2400, 800); // 3:1 aspect ratio, wider than 1920x1080's 16:9
+    const { canvas, camera } = createTestCanvas(world, {
+      scaleMode: uiScaleModes.fitReferenceResolution,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // height stays pinned to 1080 (never squashed below the reference
+    // resolution); width follows the aspect ratio out past 1920, rather
+    // than matchWidth's 1920 / 3 = 640, which would squash height instead.
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -1620, y: -540 },
+      max: { x: 1620, y: 540 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(1080);
+  });
+
+  it('pins width to referenceResolution.x in fitReferenceResolution mode on a narrower-than-reference destination', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(800, 1600); // 1:2 aspect ratio, narrower than 1920x1080's 16:9
+    const { canvas, camera } = createTestCanvas(world, {
+      scaleMode: uiScaleModes.fitReferenceResolution,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // width stays at 1920 (never cropped below the reference resolution);
+    // height follows the aspect ratio out past 1080, rather than
+    // scaleWithScreenSize's 1080, which would crop width instead.
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -960, y: -1920 },
+      max: { x: 960, y: 1920 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(3840);
+  });
+
   it('sizes the root rect to the destination pixel size in constantPixelSize mode', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(800, 600);
@@ -252,6 +314,45 @@ describe('createUiLayoutEcsSystem', () => {
       x: -960,
       y: 540,
     });
+  });
+
+  it("keeps a screenPixels-unit child's on-screen size constant across a resolution change that leaves verticalWorldUnits unchanged", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const sidebar = world.createEntity();
+
+    addPositionComponent(world, sidebar);
+    addParentComponent(world, sidebar, { parent: canvas });
+    addRectTransformComponent(world, sidebar, {
+      x: UiAxis.point(0, { pivot: 0, size: 200, sizeUnit: 'screenPixels' }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    });
+
+    const system = createUiLayoutEcsSystem(renderContext);
+
+    world.addSystem(system);
+    world.update();
+
+    // pixelsPerUnit = 1080 / 1080 = 1, so 200 screenPixels is 200 reference
+    // pixels here.
+    let rect = world.getComponent(sidebar, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBe(200);
+
+    // Rendering the same scaleWithScreenSize canvas (verticalWorldUnits
+    // stays pinned at referenceResolution.y regardless of the destination's
+    // actual pixel size) at half the physical resolution halves
+    // pixelsPerUnit to 0.5 - so the sidebar's reference-pixel width must
+    // double to keep covering the same 200 *screen* pixels.
+    renderContext.width = 960;
+    renderContext.height = 540;
+    world.update();
+
+    rect = world.getComponent(sidebar, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBe(400);
   });
 
   it('resolves a stretched child that spans the full canvas width', () => {

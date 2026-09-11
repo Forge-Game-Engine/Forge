@@ -63,6 +63,7 @@ describe('createUiSafeAreaEcsSystem', () => {
       anchorMax: 1,
       pivot: 0,
       margin: -10,
+      marginUnit: 'referencePixels',
     });
     expect(rectTransform.y).toEqual({
       kind: 'stretch',
@@ -70,6 +71,7 @@ describe('createUiSafeAreaEcsSystem', () => {
       anchorMax: 1,
       pivot: 0,
       margin: -60,
+      marginUnit: 'referencePixels',
     });
     expect(rectTransform.anchoredPosition).toEqual({ x: 5, y: 20 });
   });
@@ -104,6 +106,7 @@ describe('createUiSafeAreaEcsSystem', () => {
       anchorMax: 1,
       pivot: 0,
       margin: -40,
+      marginUnit: 'referencePixels',
     });
     expect(rectTransform.anchoredPosition).toEqual({ x: 0, y: 0 });
   });
