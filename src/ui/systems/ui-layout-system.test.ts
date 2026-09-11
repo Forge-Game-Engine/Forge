@@ -77,6 +77,27 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(1080);
   });
 
+  it('still resolves a screen-space canvas root rect when its camera entity has no CameraEcsComponent', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+
+    // A camera entity id that never gets a CameraEcsComponent attached.
+    const camera = world.createEntity();
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -960, y: -540 },
+      max: { x: 960, y: 540 },
+    });
+  });
+
   it('follows the destination aspect ratio (scaleWithScreenSize keeps height, grows width)', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1600, 800); // 2:1 aspect ratio
