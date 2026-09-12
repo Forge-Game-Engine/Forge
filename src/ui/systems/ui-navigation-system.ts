@@ -1,6 +1,5 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Axis2dAction } from '../../input/index.js';
 import { Rect, Rects, Vec2, Vector2 } from '../../math/index.js';
 import {
   CanvasEcsComponent,
@@ -164,10 +163,10 @@ function pickTopmostCandidate(
   let topmostSortDepth = Infinity;
 
   for (const candidate of candidates) {
-    const sortDepth = world.getComponent<RectTransformEcsComponent>(
+    const sortDepth = world.getComponentRequired<RectTransformEcsComponent>(
       candidate.entity,
       rectTransformId,
-    )!.sortDepth;
+    ).sortDepth;
 
     if (topmost === null || sortDepth < topmostSortDepth) {
       topmost = candidate.entity;
@@ -234,7 +233,6 @@ function applyNavigateInput(
   world: EcsWorld,
   canvas: CanvasEcsComponent,
   candidates: readonly FocusCandidate[],
-  wasBeyondThresholdByAction: WeakMap<Axis2dAction, boolean>,
 ): void {
   if (!canvas.navigateInput) {
     return;
@@ -242,10 +240,8 @@ function applyNavigateInput(
 
   const value = canvas.navigateInput.value;
   const isBeyondThreshold = Vec2.magnitude(value) >= navigationThreshold;
-  const wasBeyondThreshold =
-    wasBeyondThresholdByAction.get(canvas.navigateInput) ?? false;
 
-  if (isBeyondThreshold && !wasBeyondThreshold) {
+  if (isBeyondThreshold && !canvas.wasNavigateInputBeyondThreshold) {
     const next = resolveNextFocusTarget(
       world,
       canvas,
@@ -258,7 +254,7 @@ function applyNavigateInput(
     }
   }
 
-  wasBeyondThresholdByAction.set(canvas.navigateInput, isBeyondThreshold);
+  canvas.wasNavigateInputBeyondThreshold = isBeyondThreshold;
 }
 
 /** Applies `canvas.submitInput`: raises `onInvoke` on the focused element, if any, when it triggers. */
@@ -312,48 +308,43 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  */
 export const createUiNavigationEcsSystem = (): EcsSystem<
   [CanvasEcsComponent]
-> => {
-  const wasBeyondThresholdByAction = new WeakMap<Axis2dAction, boolean>();
+> => ({
+  name: 'uiNavigation',
+  query: [canvasId],
+  update: (world, { entities: canvasEntities, components: [canvases] }) => {
+    const {
+      entities: interactableEntities,
+      components: [interactables, rectTransforms],
+    } = world.query<[UiInteractableEcsComponent, RectTransformEcsComponent]>([
+      uiInteractableId,
+      rectTransformId,
+    ]);
 
-  return {
-    name: 'uiNavigation',
-    query: [canvasId],
-    update: (world, { entities: canvasEntities, components: [canvases] }) => {
-      const {
-        entities: interactableEntities,
-        components: [interactables, rectTransforms],
-      } = world.query<[UiInteractableEcsComponent, RectTransformEcsComponent]>([
-        uiInteractableId,
-        rectTransformId,
-      ]);
+    for (const interactable of interactables) {
+      interactable.wasInvokedThisFrame = false;
+    }
 
-      for (const interactable of interactables) {
-        interactable.wasInvokedThisFrame = false;
+    const candidatesByCanvas = groupFocusCandidatesByCanvas(
+      world,
+      interactableEntities,
+      interactables,
+      rectTransforms,
+    );
+
+    for (let c = 0; c < canvasEntities.length; c++) {
+      const canvasEntity = canvasEntities[c];
+      const canvas = canvases[c];
+
+      if (canvas.cancelInput?.isTriggered) {
+        setUiFocus(world, canvas, null);
       }
 
-      const candidatesByCanvas = groupFocusCandidatesByCanvas(
+      applyNavigateInput(
         world,
-        interactableEntities,
-        interactables,
-        rectTransforms,
+        canvas,
+        candidatesByCanvas.get(canvasEntity) ?? [],
       );
-
-      for (let c = 0; c < canvasEntities.length; c++) {
-        const canvasEntity = canvasEntities[c];
-        const canvas = canvases[c];
-
-        if (canvas.cancelInput?.isTriggered) {
-          setUiFocus(world, canvas, null);
-        }
-
-        applyNavigateInput(
-          world,
-          canvas,
-          candidatesByCanvas.get(canvasEntity) ?? [],
-          wasBeyondThresholdByAction,
-        );
-        applySubmitInput(world, canvas);
-      }
-    },
-  };
-};
+      applySubmitInput(world, canvas);
+    }
+  },
+});

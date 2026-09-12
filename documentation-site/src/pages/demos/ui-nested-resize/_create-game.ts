@@ -19,7 +19,10 @@ import {
   FontAtlas,
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
-import { createUiCanvas } from '@forge-game-engine/forge/ui';
+import {
+  createUiCanvas,
+  registerUiSystems,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createCornerDecorations } from './_create-corner-decorations';
@@ -102,10 +105,13 @@ export const createNestedResizeGame = async (
   // `_live-motion.system.ts`'s own doc comment.
   world.addSystem(createLiveMotionEcsSystem(time));
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time, {
+    pointerSource: mouseInputSource,
+  });
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
-    pointerSource: mouseInputSource,
   });
 
   const sprites = await loadDemoSprites(renderContext, renderLayers.ui);

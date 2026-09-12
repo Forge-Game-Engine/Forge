@@ -257,6 +257,31 @@ export class EcsWorld implements Updatable, Stoppable {
     return componentSet?.get(entity) ?? null;
   }
 
+  /**
+   * Reads a component the caller expects to already exist, throwing instead
+   * of returning `null` if it doesn't - for the common case of re-reading a
+   * component this same call site just attached, where a `null` would mean a
+   * broken invariant rather than a legitimate "doesn't have it" case.
+   * @param entity - The entity to read the component from.
+   * @param componentKey - The component's key.
+   * @returns The component.
+   * @throws An error if `entity` doesn't have a component for `componentKey`.
+   */
+  public getComponentRequired<T>(
+    entity: number,
+    componentKey: ComponentKey<T>,
+  ): T {
+    const component = this.getComponent(entity, componentKey);
+
+    if (component === null) {
+      throw new Error(
+        `Required component "${componentKey.toString()}" not found on entity "${entity}".`,
+      );
+    }
+
+    return component;
+  }
+
   public removeComponent<T>(
     entity: number,
     componentKey: ComponentKey<T>,

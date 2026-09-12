@@ -39,6 +39,7 @@ import {
   createLabel,
   createPanel,
   createUiCanvas,
+  registerUiSystems,
   setUiFocus,
   UiAnchor,
   UiAxis,
@@ -185,11 +186,14 @@ export const createUiMainMenuGame = async (
   // layout on whichever axis that mode doesn't pin. `fitReferenceResolution`
   // keeps both axes at least at the reference resolution always,
   // letterboxing/pillarboxing the destination's excess space instead.
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time, {
+    pointerSource: mouseInputSource,
+  });
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
     scaleMode: uiScaleModes.fitReferenceResolution,
-    pointerSource: mouseInputSource,
     submitInput,
     navigateInput,
   });

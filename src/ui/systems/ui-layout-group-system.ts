@@ -324,10 +324,10 @@ function createMeasure(
       return cached;
     }
 
-    const rectTransform = world.getComponent<RectTransformEcsComponent>(
+    const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
       entity,
       rectTransformId,
-    )!;
+    );
     const layoutElement = world.getComponent<LayoutElementEcsComponent>(
       entity,
       layoutElementId,
@@ -577,10 +577,10 @@ function arrangeAxisGroup(
   childrenByParent: Map<number, number[]>,
   measure: Measure,
 ): void {
-  const rectTransform = world.getComponent<RectTransformEcsComponent>(
+  const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
     entity,
     rectTransformId,
-  )!;
+  );
   const rectSize = Rects.size(rectTransform.rect);
   const { padding, spacing, childAlignment } = group;
   const isHorizontal = group.direction === 'horizontal';
@@ -615,7 +615,10 @@ function arrangeAxisGroup(
     : group.childForceExpandWidth;
 
   const childRects = children.map((child) =>
-    world.getComponent<RectTransformEcsComponent>(child, rectTransformId)!,
+    world.getComponentRequired<RectTransformEcsComponent>(
+      child,
+      rectTransformId,
+    ),
   );
   const measures = children.map(measure);
   const mainMeasures = measures.map((m) => (isHorizontal ? m.width : m.height));
@@ -694,10 +697,10 @@ function arrangeGrid(
   childrenByParent: Map<number, number[]>,
   measure: Measure,
 ): void {
-  const rectTransform = world.getComponent<RectTransformEcsComponent>(
+  const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
     entity,
     rectTransformId,
-  )!;
+  );
   const rectSize = Rects.size(rectTransform.rect);
   const { padding, spacing, childAlignment, cellAlignment } = grid;
 
@@ -759,10 +762,10 @@ function arrangeGrid(
         ? childMeasured.height.preferred
         : rowHeight;
 
-    const childRect = world.getComponent<RectTransformEcsComponent>(
+    const childRect = world.getComponentRequired<RectTransformEcsComponent>(
       children[i],
       rectTransformId,
-    )!;
+    );
 
     childRect.x = UiAxis.point(0, { pivot: 0, size: cellWidth });
     childRect.y = UiAxis.point(0, { pivot: 0, size: cellHeight });
@@ -796,10 +799,10 @@ function applyContentSizeFitter(
     return;
   }
 
-  const rectTransform = world.getComponent<RectTransformEcsComponent>(
+  const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
     entity,
     rectTransformId,
-  )!;
+  );
   const measured = measure(entity);
 
   if (fitter.horizontalFit === 'minSize') {

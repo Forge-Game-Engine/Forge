@@ -30,6 +30,7 @@ import {
   createLabel,
   createSlider,
   createUiCanvas,
+  registerUiSystems,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
@@ -101,10 +102,13 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
 
   const mouseInputSource = createPointerInput(world, time, game);
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time, {
+    pointerSource: mouseInputSource,
+  });
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
-    pointerSource: mouseInputSource,
   });
 
   const whiteImage = await renderContext.imageCache.getOrLoad(
