@@ -40,15 +40,15 @@ Guides in this section:
 - [Canvas Groups and Tooltips](./canvas-groups-and-tooltips.md): fading or
   disabling a whole subtree at once, and hover/focus tooltips.
 
-:::info Current scope
+:::info[Current scope]
 Layout (anchors, canvases, panels, labels), interaction (buttons,
 hover/press/drag, gamepad/keyboard focus navigation, color transitions),
 controls (toggles, sliders, progress bars, dropdowns), layout groups
 (horizontal/vertical/grid, content size fitting, aspect ratio fitting),
 world-space (diegetic) canvases, tooltips, and safe-area support for
 notched displays are implemented. Scroll views, text input, and rect
-clipping aren't yet - both are blocked on clipping
-([#583](https://github.com/Forge-Game-Engine/Forge/issues/583)).
+clipping aren't yet - all three depend on clipping support, which hasn't
+been built.
 :::
 
 ## Quick Start

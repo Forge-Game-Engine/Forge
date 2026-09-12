@@ -160,7 +160,7 @@ sibling entities' `enabled`/`interactable` state at once, which only
 `createDropdown`'s own wiring (registered as ordinary `onInvoke` listeners,
 not a polled system) knows how to reach.
 
-:::info Known limitation
+:::info[Known limitation]
 Clicking outside the open list doesn't close it - only clicking the header
 again or selecting an option does. Register your own listener (e.g. gated
 on `dropdown.isOpen`) if your game needs that.

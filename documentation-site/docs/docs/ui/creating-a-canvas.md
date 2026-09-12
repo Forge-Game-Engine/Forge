@@ -4,6 +4,23 @@ sidebar_position: 1
 
 # Creating a Canvas
 
+Every UI you build is a plain ECS entity tree, parented with the same
+`addParentComponent` any other entity uses: a canvas at the root, with
+panels, labels, and buttons as its children (and grandchildren):
+
+```mermaid
+graph TD
+    Canvas["Canvas<br/>(CanvasEcsComponent)"] --> Panel["Panel<br/>(createPanel)"]
+    Panel --> Label["Label<br/>(createLabel)"]
+    Panel --> Button["Button<br/>(createButton)"]
+    Button --> ButtonLabel["Label<br/>(createButton's own child)"]
+```
+
+Each node above is just an entity with a `RectTransformEcsComponent`,
+resolved every frame against its **parent's** resolved rect - which is why
+the canvas has to exist before anything else, and why every `create*`
+factory in this module takes a `parent` entity as its second argument.
+
 ## Registering the UI systems
 
 `registerUiSystems(world, renderContext, time, options?)` registers every

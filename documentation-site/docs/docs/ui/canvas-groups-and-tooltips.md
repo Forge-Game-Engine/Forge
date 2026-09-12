@@ -44,7 +44,7 @@ Nested groups multiply/AND together up the parent chain. Set
 fully opaque and interactive even while an ancestor group fades or disables
 the rest of the screen - useful for a modal's own close button.
 
-:::info Known limitation
+:::info[Known limitation]
 Only a label's *fill* inherits a group's alpha - its `outlineColor`/
 `shadowColor` text effects don't currently fade with it.
 :::
@@ -78,7 +78,7 @@ this module's source-agnostic interaction model - continuously for at
 least [`TooltipEcsComponent.showDelayMilliseconds`](/Forge/docs/api/interfaces/TooltipEcsComponent)
 (defaults to `400`), and hides immediately once that state ends.
 
-:::info Known limitation
+:::info[Known limitation]
 A tooltip's draw order still follows its hierarchy position like any other
 UI element (see `resolveRect`'s ordering) - for a tooltip that must always
 render above every other element regardless of where its source sits in

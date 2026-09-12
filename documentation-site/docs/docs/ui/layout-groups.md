@@ -9,6 +9,36 @@ Every element seen so far is positioned manually - an explicit anchor and
 automatically, recomputing every frame just like `createUiLayoutEcsSystem`
 itself does:
 
+<svg viewBox="0 0 640 220" role="img" aria-label="A horizontal layout group arranges its children left to right within its padded content box, with spacing between them. A vertical layout group arranges them top to bottom the same way." style={{width: '100%', height: 'auto', maxWidth: '640px'}}>
+  <defs>
+    <marker id="ui-layout-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ifm-color-emphasis-600)" />
+    </marker>
+  </defs>
+
+  {/* Horizontal group */}
+  <rect x="20" y="30" width="260" height="140" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
+  <rect x="35" y="63" width="60" height="80" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="120" y="63" width="60" height="80" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="205" y="63" width="60" height="80" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <line x1="97" y1="103" x2="118" y2="103" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-layout-arrow)" markerEnd="url(#ui-layout-arrow)" />
+  <text x="107" y="118" textAnchor="middle" fontSize="12" fill="var(--ifm-font-color-base)">spacing</text>
+  <line x1="22" y1="20" x2="35" y2="20" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-layout-arrow)" markerEnd="url(#ui-layout-arrow)" />
+  <text x="28" y="12" textAnchor="middle" fontSize="11" fill="var(--ifm-font-color-base)">padding</text>
+  <text x="150" y="195" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Horizontal group</text>
+
+  {/* Vertical group */}
+  <rect x="360" y="30" width="260" height="140" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
+  <rect x="400" y="45" width="180" height="25" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="400" y="88" width="180" height="25" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="400" y="131" width="180" height="25" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <text x="490" y="195" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Vertical group</text>
+</svg>
+
+_A horizontal group arranges its direct children left to right; a vertical
+group, top to bottom - both within the group's own padded content box, with
+`spacing` between adjacent children._
+
 ```ts
 import {
   addVerticalLayoutGroupComponent,
@@ -60,6 +90,21 @@ skipped entirely - useful for a decorative element (a background flourish, a
 badge) placed inside an otherwise-arranged panel.
 
 ## Grid layout groups
+
+<svg viewBox="0 0 320 240" role="img" aria-label="A grid layout group arranges its children into a grid of cells within its padded content box, with spacing between cells on both axes." style={{width: '100%', height: 'auto', maxWidth: '320px'}}>
+  <rect x="20" y="20" width="280" height="200" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
+  <rect x="35" y="35" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="166" y="35" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="35" y="95" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="166" y="95" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="35" y="155" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <rect x="166" y="155" width="119" height="48" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+  <text x="160" y="232" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Grid group (fixedColumnCount: 2)</text>
+</svg>
+
+_A grid group's cells fill in `startAxis` order (horizontal, here) from
+`startCorner` (upper-left, here), wrapping to the next row/column once
+`constraint`'s column/row count is reached._
 
 [`addGridLayoutGroupComponent`](/Forge/docs/api/functions/addGridLayoutGroupComponent)
 arranges direct children into cells - `constraint` picks whether the column
@@ -160,7 +205,7 @@ group, a content size fitter reacting to a resized child) arranges its
 children against a one-frame-stale box. Like the rest of this module, this
 converges within a frame or two rather than being tracked with dirty state.
 
-:::info Known limitation
+:::info[Known limitation]
 There's no per-column/row `cellAlignment` on a content-sized grid - one
 `cellAlignment` applies to every column/row in the grid, so there's no way
 to, say, left-align a label column while centering a control column in the
