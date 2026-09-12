@@ -1,184 +1,20 @@
-import { addPositionComponent, Time } from '../../common/index.js';
-import { EcsSystem } from '../../ecs/ecs-system.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { Vector2 } from '../../math/index.js';
 import {
   Color,
   createCamera,
   createRenderTarget,
   RenderContext,
-  SafeAreaInsets,
 } from '../../rendering/index.js';
 import {
   addCanvasComponent,
-  CanvasEcsComponent,
+  CanvasInputOptions,
 } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
-import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
-import { createUiCanvasGroupEcsSystem } from '../systems/ui-canvas-group-system.js';
-import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
-import { createUiLayoutGroupEcsSystem } from '../systems/ui-layout-group-system.js';
-import { createUiInteractionEcsSystem } from '../systems/ui-interaction-system.js';
-import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
-import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.js';
-import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
-import { createUiSafeAreaEcsSystem } from '../systems/ui-safe-area-system.js';
-import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
-import { createUiToggleEcsSystem } from '../systems/ui-toggle-system.js';
-import { createUiTooltipEcsSystem } from '../systems/ui-tooltip-system.js';
-import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
-import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { UiScaleMode } from '../types/ui-scale-mode.js';
-
-/**
- * Worlds that already have `createUiLayoutEcsSystem` (and
- * `createUiProgressBarEcsSystem`/`createUiAspectRatioFitterEcsSystem`/
- * `createUiLayoutGroupEcsSystem`, which must all run before it) registered,
- * so calling `createUiCanvas` more than once for the same `EcsWorld`
- * (multiple canvases sharing one game) doesn't register any of them a
- * second time redundantly resolving every canvas again.
- */
-const worldsWithUiLayoutSystem = new WeakSet<EcsWorld>();
-
-/**
- * The interaction pipeline systems already registered for a given world,
- * keyed so a second (or later) `createUiCanvas` call - for another canvas,
- * or one that supplies `pointerSource` after an earlier call didn't -
- * extends the same pipeline instead of registering duplicates. See
- * `ensureUiInteractionPipeline`.
- */
-interface UiInteractionPipeline {
-  navigation: EcsSystem<[CanvasEcsComponent]>;
-  transition: EcsSystem<readonly unknown[]>;
-  toggle: EcsSystem<readonly unknown[]>;
-  tooltip: EcsSystem<readonly unknown[]>;
-  raycast?: EcsSystem<[CanvasEcsComponent]>;
-  interaction?: EcsSystem<readonly unknown[]>;
-  slider?: EcsSystem<readonly unknown[]>;
-}
-
-const uiInteractionPipelinesByWorld = new WeakMap<
-  EcsWorld,
-  UiInteractionPipeline
->();
-
-/**
- * Registers `createUiNavigationEcsSystem`, `createUiTransitionEcsSystem`,
- * `createUiToggleEcsSystem`, and `createUiTooltipEcsSystem` unconditionally,
- * and - once a pointer source is available - `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem`, at most once
- * each per `world`. Registration order is raycast, then navigation, then
- * interaction, then toggle/transition/tooltip (order between those three
- * doesn't matter, none reads another's writes), then slider: raycast must
- * run before navigation and interaction read its hit-test result,
- * interaction must run before transition/tooltip read the interaction
- * state it just wrote, navigation must run before interaction because
- * navigation is what resets `wasInvokedThisFrame` to `false` each tick
- * before interaction conditionally sets it back to `true` for the pointer
- * path, toggle/tooltip must run after both navigation and interaction for
- * the same reason, and slider must run after interaction (it reads
- * `pressCapture`). Extends an already-registered pipeline rather than
- * duplicating it, so a canvas created without a pointer source and a later
- * one that supplies it still
- * end up with a single, correctly-ordered pipeline for the whole world.
- */
-function ensureUiInteractionPipeline(
-  world: EcsWorld,
-  renderContext: RenderContext,
-  time: Time,
-  pointerSource: UiPointerSource | undefined,
-): void {
-  let pipeline = uiInteractionPipelinesByWorld.get(world);
-
-  if (!pipeline) {
-    const navigation = createUiNavigationEcsSystem();
-
-    world.addSystem(navigation);
-
-    const transition = createUiTransitionEcsSystem(time);
-
-    world.addSystem(transition, { after: [navigation] });
-
-    const toggle = createUiToggleEcsSystem();
-
-    world.addSystem(toggle, { after: [navigation] });
-
-    const tooltip = createUiTooltipEcsSystem(time);
-
-    world.addSystem(tooltip, { after: [navigation] });
-
-    pipeline = { navigation, transition, toggle, tooltip };
-    uiInteractionPipelinesByWorld.set(world, pipeline);
-  }
-
-  if (pointerSource && !pipeline.raycast) {
-    const raycast = createUiRaycastEcsSystem(pointerSource, renderContext);
-
-    world.addSystem(raycast, { before: [pipeline.navigation] });
-    pipeline.raycast = raycast;
-
-    const interaction = createUiInteractionEcsSystem(
-      pointerSource,
-      renderContext,
-    );
-
-    world.addSystem(interaction, {
-      after: [pipeline.navigation, raycast],
-      before: [pipeline.transition, pipeline.toggle, pipeline.tooltip],
-    });
-    pipeline.interaction = interaction;
-
-    const slider = createUiSliderEcsSystem(pointerSource, renderContext);
-
-    world.addSystem(slider, { after: [interaction] });
-    pipeline.slider = slider;
-  }
-}
-
-/**
- * Interaction-related `CreateUiCanvasOptions` fields, independent of
- * `renderMode`.
- */
-export interface CanvasInteractionOptions {
-  /**
-   * The pointer source this canvas's interactables (see
-   * `UiInteractableEcsComponent`) are hit-tested and pressed/hovered/dragged
-   * against - `MouseInputSource` satisfies this without any changes, and any
-   * other device (e.g. a touchscreen) can too by exposing the same shape.
-   * Omit for a canvas with no pointer interaction at all (still fully
-   * focus-navigable if `submitInput`/`navigateInput` are given). Supply it
-   * on your first/only `createUiCanvas` call for a world to get a
-   * fully-ordered pipeline - see `ensureUiInteractionPipeline`.
-   */
-  pointerSource?: UiPointerSource;
-
-  /**
-   * The action that raises `onInvoke` on the currently focused interactable.
-   * Omitted, this canvas's focused element is only invocable by pointer.
-   */
-  submitInput?: TriggerAction;
-
-  /** The action that clears this canvas's currently focused element. */
-  cancelInput?: TriggerAction;
-
-  /** The action that moves this canvas's focus between interactable elements. */
-  navigateInput?: Axis2dAction;
-
-  /**
-   * Returns the browser viewport's current safe-area insets - supply it
-   * (`getSafeAreaInsets` from `@forge-game-engine/forge/rendering`
-   * satisfies this directly) to register `createUiSafeAreaEcsSystem`, so
-   * any `UiSafeAreaEcsComponent` element on any canvas in `world` stays
-   * clear of a notch/cutout/home indicator. Omit for a game that doesn't
-   * need safe-area support - only read on the first `createUiCanvas` call
-   * for a given `world`, since it's a page-wide browser capability rather
-   * than a per-canvas one.
-   */
-  getSafeAreaInsets?: () => SafeAreaInsets;
-}
 
 /**
  * `createUiCanvas` options for `renderMode: 'screenSpace'` (the default) -
@@ -186,7 +22,7 @@ export interface CanvasInteractionOptions {
  * `RenderTarget`, resolved every frame from the render destination's live
  * size.
  */
-export interface ScreenSpaceUiCanvasOptions extends CanvasInteractionOptions {
+export interface ScreenSpaceUiCanvasOptions extends CanvasInputOptions {
   renderMode?: typeof uiCanvasRenderModes.screenSpace;
 
   /**
@@ -232,7 +68,7 @@ export interface ScreenSpaceUiCanvasOptions extends CanvasInteractionOptions {
  * root rect is an ordinary, anchored `RectTransformEcsComponent` positioned
  * via the entity hierarchy, drawn through the caller's own `camera`.
  */
-export interface WorldSpaceUiCanvasOptions extends CanvasInteractionOptions {
+export interface WorldSpaceUiCanvasOptions extends CanvasInputOptions {
   renderMode: typeof uiCanvasRenderModes.worldSpace;
 
   /**
@@ -267,44 +103,28 @@ export type CreateUiCanvasOptions =
   ScreenSpaceUiCanvasOptions | WorldSpaceUiCanvasOptions;
 
 /**
- * Creates a fully wired UI canvas: a root entity with a `CanvasEcsComponent`
- * and `RectTransformEcsComponent`. For `renderMode: 'screenSpace'` (the
+ * Creates a UI canvas: a root entity with a `CanvasEcsComponent` and
+ * `RectTransformEcsComponent`. For `renderMode: 'screenSpace'` (the
  * default), also a dedicated, static UI camera with a transparent clear
  * color, its own off-screen `RenderTarget`, and a culling mask isolating it
  * from the world so a world camera whose own `cullingMask` still matches
  * everything doesn't draw UI content a second time. For
  * `renderMode: 'worldSpace'`, no camera is created - `options.camera` names
- * the (typically world) camera this canvas draws through instead. Also
- * registers `createUiLayoutEcsSystem`, `createUiLayoutGroupEcsSystem`,
- * `createUiAspectRatioFitterEcsSystem`, `createUiProgressBarEcsSystem`,
- * `createUiCanvasGroupEcsSystem`, `createUiNavigationEcsSystem`,
- * `createUiTransitionEcsSystem`, `createUiToggleEcsSystem`, and
- * `createUiTooltipEcsSystem` with `world` (each at most once, regardless of
- * how many canvases are created) - plus `createUiRaycastEcsSystem`/
- * `createUiInteractionEcsSystem`/`createUiSliderEcsSystem` once a pointer
- * source is supplied, and `createUiSafeAreaEcsSystem` once
- * `getSafeAreaInsets` is supplied, on this call or (for the pointer-driven
- * systems) a later one for the same world - see `ensureUiInteractionPipeline`
- * for the registration order and why it matters.
+ * the (typically world) camera this canvas draws through instead.
  *
- * The caller is still responsible for registering `createTransformEcsSystem`
- * and `createRenderEcsSystem` with `world` - **after** calling
- * `createUiCanvas`, so the layout system (which writes `position.local`)
- * runs before the transform system (which reads it to compute
- * `position.world`), which in turn must run before the render system. Both
- * are ordinary, already-existing systems a game registers once regardless
- * of UI, so `createUiCanvas` doesn't register a second instance of either.
+ * Call `registerUiSystems(world, renderContext, time)` once per `world`
+ * before (or after - registration order between the two doesn't matter,
+ * only tick order does) creating any canvases; this function only creates
+ * the canvas entity itself; it never touches system registration, so it's
+ * always safe to call once per canvas, however many canvases a world has.
  * @param world - The ECS world to create the canvas entity in.
  * @param renderContext - The render context a `'screenSpace'` canvas's UI
- * camera/render target (and the layout system's canvas-root sizing) are
- * built against. Unused for `'worldSpace'`.
- * @param time - The time instance driving `createUiTransitionEcsSystem`'s
- * tint tweens.
- * @param options - Options for configuring the canvas and its interaction
- * inputs. Which fields are available - `cullingMask`/`referenceResolution`/
- * `scaleMode`/`layer` vs. `camera`/`anchor`/`anchoredPosition` - depends on
- * `renderMode`, enforced at compile time (see
- * {@link ScreenSpaceUiCanvasOptions}/{@link WorldSpaceUiCanvasOptions}).
+ * camera/render target is built against. Unused for `'worldSpace'`.
+ * @param options - Options for configuring the canvas and its focus
+ * navigation inputs. Which fields are available - `cullingMask`/
+ * `referenceResolution`/`scaleMode`/`layer` vs. `camera`/`anchor`/
+ * `anchoredPosition` - depends on `renderMode`, enforced at compile time
+ * (see {@link ScreenSpaceUiCanvasOptions}/{@link WorldSpaceUiCanvasOptions}).
  * @returns The created canvas entity. Attach children to it with
  * `addParentComponent(world, child, { parent: canvas })`, or use
  * `createPanel`/`createLabel`/`createButton`.
@@ -312,16 +132,9 @@ export type CreateUiCanvasOptions =
 export function createUiCanvas(
   world: EcsWorld,
   renderContext: RenderContext,
-  time: Time,
   options: CreateUiCanvasOptions,
 ): number {
-  const {
-    pointerSource,
-    submitInput,
-    cancelInput,
-    navigateInput,
-    getSafeAreaInsets,
-  } = options;
+  const { submitInput, cancelInput, navigateInput } = options;
 
   const canvas = world.createEntity();
 
@@ -378,55 +191,6 @@ export function createUiCanvas(
       ...(navigateInput && { navigateInput }),
     });
   }
-
-  if (!worldsWithUiLayoutSystem.has(world)) {
-    // Progress bars have no interaction dependency at all, so - unlike
-    // toggle/slider, which need this tick's interaction-pipeline state and
-    // so can only run after it - registering this before layout lets a
-    // `value` write and the fill visual it produces land in the very same
-    // frame. The aspect ratio fitter and layout group systems likewise have
-    // no interaction dependency, and must run before layout so the
-    // size/anchoredPosition they compute get resolved into a rect the
-    // same tick, rather than lagging a frame behind.
-    const progressBar = createUiProgressBarEcsSystem();
-    const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();
-    const layoutGroup = createUiLayoutGroupEcsSystem();
-    const layout = createUiLayoutEcsSystem(renderContext);
-
-    world.addSystem(progressBar);
-    world.addSystem(aspectRatioFitter);
-    world.addSystem(layoutGroup, {
-      after: [progressBar, aspectRatioFitter],
-    });
-
-    const layoutDependencies: EcsSystem[] = [layoutGroup];
-
-    // Safe-area insets are a page-wide browser capability, not a per-canvas
-    // one, so this only needs reading on the first createUiCanvas call for
-    // `world` - same as the rest of this block.
-    if (getSafeAreaInsets) {
-      const safeArea = createUiSafeAreaEcsSystem(
-        renderContext,
-        getSafeAreaInsets,
-      );
-
-      world.addSystem(safeArea);
-      layoutDependencies.push(safeArea);
-    }
-
-    world.addSystem(layout, {
-      after: layoutDependencies,
-    });
-    // Applies CanvasGroupEcsComponent's inherited alpha to
-    // SpriteEcsComponent/TextEcsComponent.opacityMultiplier - doesn't
-    // depend on resolved rects, but runs after layout so every UI system's
-    // relative order stays predictable, and before whatever renders this
-    // frame reads the sprites/text it wrote.
-    world.addSystem(createUiCanvasGroupEcsSystem(), { after: [layout] });
-    worldsWithUiLayoutSystem.add(world);
-  }
-
-  ensureUiInteractionPipeline(world, renderContext, time, pointerSource);
 
   return canvas;
 }

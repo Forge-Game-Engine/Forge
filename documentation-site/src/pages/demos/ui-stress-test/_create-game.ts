@@ -25,6 +25,7 @@ import {
   createLabel,
   createPanel,
   createUiCanvas,
+  registerUiSystems,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
@@ -102,7 +103,9 @@ export const createUiStressTestGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time);
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
   });

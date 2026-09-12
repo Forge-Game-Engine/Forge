@@ -735,4 +735,28 @@ describe('EcsWorld', () => {
       expect(listener).not.toHaveBeenCalled();
     });
   });
+
+  describe('getComponentRequired', () => {
+    it('returns the component when the entity has it', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const position: PositionEcsComponent = {
+        local: Vec2.zero,
+        world: Vec2.zero,
+      };
+
+      world.addComponent(entity, positionId, position);
+
+      expect(world.getComponentRequired(entity, positionId)).toBe(position);
+    });
+
+    it('throws a descriptive error when the entity does not have the component', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      expect(() => world.getComponentRequired(entity, positionId)).toThrow(
+        `Required component "${positionId.toString()}" not found on entity "${entity}".`,
+      );
+    });
+  });
 });
