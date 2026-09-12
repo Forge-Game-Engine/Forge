@@ -1,0 +1,17 @@
+.input {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  padding: 0.6rem 1rem;
+  margin: 1.5rem 0;
+  font-size: 1rem;
+  border: 2px solid var(--card-highlight-color);
+  border-radius: 8px;
+  background-color: var(--card-background-color);
+  color: var(--text-color);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+}
