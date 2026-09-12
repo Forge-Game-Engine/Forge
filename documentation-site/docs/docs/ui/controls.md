@@ -122,9 +122,9 @@ health.progressBar.value = playerHealth;
 
 Unlike a slider, `createUiProgressBarEcsSystem` runs _before_
 `createUiLayoutEcsSystem` (it has no interaction dependency to wait on), so
-a `value` write is reflected the same frame. Only a linear fill is
-supported - a radial/clock-wipe fill would need a shader-level fill-amount
-uniform, not just a rect resize, and hasn't been built yet.
+a `value` write is reflected the same frame. The fill is linear (the fill
+child's rect grows/shrinks along one axis) - there's no radial/clock-wipe
+fill mode.
 
 ## Dropdowns
 
