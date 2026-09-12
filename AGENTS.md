@@ -596,6 +596,37 @@ import it, e.g. `grep -rl "/physics" documentation-site/src/pages/demos`):
 See also step 9 of `CLAUDE.md`'s verification checklist, which makes this
 mandatory before marking a task complete.
 
+### Demo Catalogue and Categories
+
+`/demos` is a landing page (`documentation-site/src/pages/demos/index.tsx`)
+showing every demo category as a card (image, title, description) plus a
+search box that filters demos by title. The navbar's "Demos" item links
+straight to it - it used to be a dropdown listing every demo, which stopped
+scaling once the catalogue passed a couple dozen entries. Each category also
+gets its own listing page under
+`documentation-site/src/pages/demos/category/<slug>/index.tsx`, a thin
+wrapper around the shared `CategoryDemosPage` component.
+
+The catalogue's data lives separately from the demo pages themselves:
+
+- `documentation-site/src/data/demo-categories.ts` - the fixed list of
+  categories (slug, title, description, card image under
+  `static/img/demos/categories/`).
+- `documentation-site/src/data/demos.ts` - one entry per demo (slug, title,
+  short description, and the category slugs it belongs to). A demo can
+  belong to more than one category - e.g. the car demo is tagged both
+  `physics` and `games` since it's a physics showcase that's also a
+  composite, multi-system demo.
+
+**When adding a new demo**, also add an entry to `demos.ts` with the
+category slugs it belongs to (adding a new category itself means adding to
+`demo-categories.ts` and a matching SVG under
+`static/img/demos/categories/`, plus a new
+`src/pages/demos/category/<slug>/index.tsx` wrapper). A demo that combines
+many engine features into a complete mini-game (like the space shooter,
+brick breaker and car demos) belongs in the `games` category regardless of
+which other categories also apply.
+
 ## Documentation Site Blog
 
 `documentation-site/blog/` is a Docusaurus blog used for marketing/announcement
