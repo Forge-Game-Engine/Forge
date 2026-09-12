@@ -92,7 +92,6 @@ const defaultCreateImageSpriteOptions = { pixelated: false, layer: 1 };
  * Creates a sprite using the provided image and render layer.
  * @param image - The image to use for the sprite.
  * @param renderContext - The render context to be used.
- * @param layer - The render layer for the sprite.
  * @param options - Optional parameters for creating the sprite.
  * @returns The created sprite.
  */
