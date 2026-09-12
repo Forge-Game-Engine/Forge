@@ -1,5 +1,5 @@
-import { EcsWorld } from '../../ecs/ecs-world.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
  * ECS-style component interface for a world-space UI canvas that tracks

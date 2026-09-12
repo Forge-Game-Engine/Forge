@@ -1,7 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Axis2dAction, TriggerAction } from '../../input/index.js';
-import { Vector2 } from '../../math/index.js';
+import { Vec2, Vector2 } from '../../math/index.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { UiScaleMode, uiScaleModes } from '../types/ui-scale-mode.js';
 
@@ -122,6 +122,17 @@ export type CanvasEcsComponent = (
      * mouse). Read-only to callers.
      */
     focusedEntity: number | null;
+
+    /**
+     * Whether `navigateInput`'s magnitude was already past
+     * `createUiNavigationEcsSystem`'s navigation threshold as of the last
+     * tick - the edge-detection state behind "a step is taken on the tick
+     * the stick first crosses the threshold, not every tick it's held past
+     * it." Lives here (rather than in the system itself) so it's ordinary,
+     * serializable component state instead of memory private to one system
+     * instance. System-owned, read-only to callers.
+     */
+    wasNavigateInputBeyondThreshold: boolean;
   };
 
 export const canvasId = createComponentId<CanvasEcsComponent>('canvas');
@@ -160,6 +171,7 @@ export function addCanvasComponent(
     isPointerOverUi: false,
     hoveredEntity: null,
     focusedEntity: null,
+    wasNavigateInputBeyondThreshold: false,
   };
 
   const component: CanvasEcsComponent =
@@ -171,6 +183,15 @@ export function addCanvasComponent(
           renderMode: uiCanvasRenderModes.screenSpace,
           ...runtimeState,
         };
+
+  if (component.renderMode === uiCanvasRenderModes.screenSpace) {
+    // `defaultScreenSpaceCanvasFields.referenceResolution` is a single,
+    // shared module-level `Vector2` - cloning it here keeps one canvas's
+    // later in-place mutation of its own `referenceResolution` from
+    // corrupting every other canvas that was created with the same default,
+    // the same reasoning `rect-transform-component.ts` documents for `x`/`y`.
+    component.referenceResolution = Vec2.clone(component.referenceResolution);
+  }
 
   return world.addComponent(entity, canvasId, component);
 }
