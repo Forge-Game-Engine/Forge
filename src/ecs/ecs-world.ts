@@ -258,6 +258,36 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
+   * Returns a fast accessor for a single component type, resolving its
+   * underlying storage once instead of on every call - useful when a
+   * system needs to look up the same optional component (one not every
+   * entity has, so it can't just be added to `query`'s required keys) for
+   * many entities in a tight loop. `getComponent` re-resolves `componentKey`
+   * to its storage on every single call; this instead does that resolution
+   * once and returns a function that goes straight to the resolved storage.
+   * @param componentKey - The component's key.
+   * @returns A function mapping an entity to its component for
+   * `componentKey`, or `null` if that entity doesn't have one. Reflects
+   * components added to `componentKey` after this call, as long as at
+   * least one entity in the world already had `componentKey` at the time
+   * this was called - so call it fresh (e.g. once per system update) rather
+   * than caching it across ticks of a world that might not have used
+   * `componentKey` yet on the first call.
+   */
+  public getComponentAccessor<T>(
+    componentKey: ComponentKey<T>,
+  ): (entity: number) => T | null {
+    const componentSet = this._componentSets.get(componentKey) as
+      SparseSet<T> | undefined;
+
+    if (!componentSet) {
+      return () => null;
+    }
+
+    return (entity: number) => componentSet.get(entity);
+  }
+
+  /**
    * Reads a component the caller expects to already exist, throwing instead
    * of returning `null` if it doesn't - for the common case of re-reading a
    * component this same call site just attached, where a `null` would mean a

@@ -33,7 +33,6 @@ import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
 import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
-import { EcsWorld } from '../../ecs/index.js';
 
 const setupInstanceAttributesAndDraw = (
   renderContext: RenderContext,
@@ -318,14 +317,22 @@ const pushSpriteRenderCommands = (
   }
 };
 
+interface OptionalSpriteComponentAccessors {
+  getRotation: (entity: number) => RotationEcsComponent | null;
+  getScale: (entity: number) => ScaleEcsComponent | null;
+  getFlip: (entity: number) => FlipEcsComponent | null;
+}
+
 function buildCameraCommands(
-  world: EcsWorld,
   sprites: SpriteEcsComponent[],
   spritePositions: PositionEcsComponent[],
   spriteEntities: readonly number[],
   cullingMask: number,
   commands: RenderCommand[],
+  optionalComponents: OptionalSpriteComponentAccessors,
 ): void {
+  const { getRotation, getScale, getFlip } = optionalComponents;
+
   for (let s = 0; s < spriteEntities.length; s++) {
     const spriteComponent = sprites[s];
 
@@ -344,9 +351,9 @@ function buildCameraCommands(
       commands,
       spriteComponent,
       entityPosition,
-      world.getComponent<RotationEcsComponent>(spriteEntity, rotationId),
-      world.getComponent<ScaleEcsComponent>(spriteEntity, scaleId),
-      world.getComponent<FlipEcsComponent>(spriteEntity, flipId),
+      getRotation(spriteEntity),
+      getScale(spriteEntity),
+      getFlip(spriteEntity),
     );
   }
 }
@@ -409,6 +416,16 @@ export const createRenderEcsSystem = (
       [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
     >([textId, textMeshId, positionId]);
 
+    // Resolved once per frame rather than once per sprite: rotation/scale/
+    // flip are optional (not every sprite has them, so they can't just be
+    // added to the query above), and `getComponentAccessor` resolves a
+    // component's storage a single time instead of on every call.
+    const optionalComponents: OptionalSpriteComponentAccessors = {
+      getRotation: world.getComponentAccessor<RotationEcsComponent>(rotationId),
+      getScale: world.getComponentAccessor<ScaleEcsComponent>(scaleId),
+      getFlip: world.getComponentAccessor<FlipEcsComponent>(flipId),
+    };
+
     for (let c = 0; c < cameras.length; c++) {
       const cameraComponent = cameras[c];
       const cameraPositionComponent = cameraPositions[c];
@@ -436,12 +453,12 @@ export const createRenderEcsSystem = (
       commands.length = 0;
 
       buildCameraCommands(
-        world,
         sprites,
         spritePositions,
         spriteEntities,
         cameraComponent.cullingMask,
         commands,
+        optionalComponents,
       );
 
       buildTextCameraCommands(

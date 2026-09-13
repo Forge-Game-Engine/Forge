@@ -759,4 +759,83 @@ describe('EcsWorld', () => {
       );
     });
   });
+
+  describe('getComponentAccessor', () => {
+    it('returns the component for an entity that has it', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const rotation: RotationEcsComponent = { local: 1, world: 1 };
+
+      world.addComponent(entity, rotationId, rotation);
+
+      const getRotation = world.getComponentAccessor(rotationId);
+
+      expect(getRotation(entity)).toBe(rotation);
+    });
+
+    it('returns null for an entity that does not have the component, even when other entities do', () => {
+      const world = new EcsWorld();
+      const withRotation = world.createEntity();
+      const withoutRotation = world.createEntity();
+
+      world.addComponent(withRotation, rotationId, { local: 1, world: 1 });
+
+      const getRotation = world.getComponentAccessor(rotationId);
+
+      expect(getRotation(withoutRotation)).toBeNull();
+    });
+
+    it('returns null for every entity when no entity has ever had the component', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const neverUsedId = createComponentId<RotationEcsComponent>('unused');
+
+      const getComponent = world.getComponentAccessor(neverUsedId);
+
+      expect(getComponent(entity)).toBeNull();
+    });
+
+    it('reflects components added after the accessor was created, for a component key already in use', () => {
+      const world = new EcsWorld();
+      const alreadyHasRotation = world.createEntity();
+      const addedLater = world.createEntity();
+
+      // A component set for rotationId must already exist for the accessor
+      // to pick up entities added to it later - see the method's own doc
+      // comment on this caveat.
+      world.addComponent(alreadyHasRotation, rotationId, {
+        local: 0,
+        world: 0,
+      });
+
+      const getRotation = world.getComponentAccessor(rotationId);
+      const laterRotation: RotationEcsComponent = { local: 2, world: 2 };
+
+      world.addComponent(addedLater, rotationId, laterRotation);
+
+      expect(getRotation(addedLater)).toBe(laterRotation);
+    });
+
+    it('matches getComponent for a mix of entities with and without the component', () => {
+      const world = new EcsWorld();
+      const entities = Array.from({ length: 20 }, () => world.createEntity());
+
+      entities.forEach((entity, index) => {
+        if (index % 3 === 0) {
+          world.addComponent(entity, rotationId, {
+            local: index,
+            world: index,
+          });
+        }
+      });
+
+      const getRotation = world.getComponentAccessor(rotationId);
+
+      for (const entity of entities) {
+        expect(getRotation(entity)).toEqual(
+          world.getComponent(entity, rotationId),
+        );
+      }
+    });
+  });
 });
