@@ -145,7 +145,7 @@ export function createProgressBar(
   });
 
   driveUiAxis(
-    world.getComponent(fill, rectTransformId)!.x,
+    world.getComponentRequired(fill, rectTransformId).x,
     normalizeUiProgressBarValue(progressBar),
   );
 

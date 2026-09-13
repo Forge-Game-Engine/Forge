@@ -235,7 +235,7 @@ export function createDropdown(
     color: labelColor,
     ...(labelCategory !== undefined && { category: labelCategory }),
   });
-  const chevronText = world.getComponent(chevron, textId)!;
+  const chevronText = world.getComponentRequired(chevron, textId);
 
   const optionButtons = optionLabels.map((label, index) =>
     createButton(world, header.entity, {
@@ -259,7 +259,7 @@ export function createDropdown(
     }),
   );
 
-  const headerLabelText = world.getComponent(header.label, textId)!;
+  const headerLabelText = world.getComponentRequired(header.label, textId);
 
   const setOpen = (isOpen: boolean): void => {
     dropdown.isOpen = isOpen;
@@ -268,11 +268,11 @@ export function createDropdown(
     for (const optionButton of optionButtons) {
       optionButton.interactable.interactable = isOpen;
       optionButton.interactable.blocksRaycasts = isOpen;
-      world.getComponent<SpriteEcsComponent>(
+      world.getComponentRequired<SpriteEcsComponent>(
         optionButton.entity,
         spriteId,
-      )!.enabled = isOpen;
-      world.getComponent(optionButton.label, textId)!.enabled = isOpen;
+      ).enabled = isOpen;
+      world.getComponentRequired(optionButton.label, textId).enabled = isOpen;
     }
   };
 

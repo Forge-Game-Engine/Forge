@@ -110,11 +110,10 @@ export type SetupInstanceAttributesCallback = (
  * const renderable = new Renderable(
  *   quadGeometry,
  *   spriteMaterial,
- *   cameraEntity,
  *   17, // floats per instance
- *   (entity, buffer, offset) => {
+ *   1, // render layer
+ *   ({ position }, buffer, offset) => {
  *     // Bind instance data for this entity
- *     const position = entity.getComponent(PositionComponent);
  *     buffer[offset] = position.x;
  *     buffer[offset + 1] = position.y;
  *   },
@@ -166,8 +165,8 @@ export class Renderable {
    *
    * @param geometry - The geometry defining the shape to be rendered
    * @param material - The material defining how to render the geometry
-   * @param cameraEntity - The camera entity for viewing this renderable
    * @param floatsPerInstance - The number of floats per instance in the instance buffer
+   * @param layer - The rendering category this renderable belongs to
    * @param bindInstanceData - Callback to bind instance data for each entity
    * @param setupInstanceAttributes - Callback to setup instance attributes in WebGL
    */

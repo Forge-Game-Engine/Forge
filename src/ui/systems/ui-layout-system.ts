@@ -255,10 +255,11 @@ export const createUiLayoutEcsSystem = (
 
       visited.add(entity);
 
-      const rectTransform = world.getComponent<RectTransformEcsComponent>(
-        entity,
-        rectTransformId,
-      )!;
+      const rectTransform =
+        world.getComponentRequired<RectTransformEcsComponent>(
+          entity,
+          rectTransformId,
+        );
       const canvasComponent = world.getComponent<CanvasEcsComponent>(
         entity,
         canvasId,
@@ -279,10 +280,10 @@ export const createUiLayoutEcsSystem = (
       const pivot = { x: rectTransform.x.pivot, y: rectTransform.y.pivot };
       const pivotPosition = pivotPositionOf(rect, pivot);
 
-      const position = world.getComponent<PositionEcsComponent>(
+      const position = world.getComponentRequired<PositionEcsComponent>(
         entity,
         positionId,
-      )!;
+      );
 
       position.local.x = pivotPosition.x - parentPivotPosition.x;
       position.local.y = pivotPosition.y - parentPivotPosition.y;

@@ -99,14 +99,31 @@ const verticalBand =
  * `addRectTransformComponent(world, entity, UiAnchor.topLeft({ x: 200, y: 60 }))`.
  */
 export const UiAnchor = {
+  /** Pins to the parent's top-left corner. `size` sets the element's literal width/height. */
   topLeft: point(0, 1),
+
+  /** Pins to the parent's top edge, horizontally centered. `size` sets the element's literal width/height. */
   topCenter: point(0.5, 1),
+
+  /** Pins to the parent's top-right corner. `size` sets the element's literal width/height. */
   topRight: point(1, 1),
+
+  /** Pins to the parent's left edge, vertically centered. `size` sets the element's literal width/height. */
   middleLeft: point(0, 0.5),
+
+  /** Centers within the parent's rect. `size` sets the element's literal width/height. */
   center: point(0.5, 0.5),
+
+  /** Pins to the parent's right edge, vertically centered. `size` sets the element's literal width/height. */
   middleRight: point(1, 0.5),
+
+  /** Pins to the parent's bottom-left corner. `size` sets the element's literal width/height. */
   bottomLeft: point(0, 0),
+
+  /** Pins to the parent's bottom edge, horizontally centered. `size` sets the element's literal width/height. */
   bottomCenter: point(0.5, 0),
+
+  /** Pins to the parent's bottom-right corner. `size` sets the element's literal width/height. */
   bottomRight: point(1, 0),
 
   /**

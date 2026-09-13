@@ -128,29 +128,31 @@ describe('addGridLayoutGroupComponent', () => {
     expect(cellAlignment).toEqual(uiAlignments.center);
   });
 
-  it("throws when columnWidthMode is 'content' and constraint is 'flexible'", () => {
+  it("rejects columnWidthMode: 'content' without a fixed count constraint at compile time", () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    expect(() =>
-      addGridLayoutGroupComponent(world, entity, {
-        columnWidthMode: 'content',
-      }),
-    ).toThrow(/flexible/);
+    // @ts-expect-error columnWidthMode: 'content' requires constraint: 'fixedColumnCount' | 'fixedRowCount'
+    const component = addGridLayoutGroupComponent(world, entity, {
+      columnWidthMode: 'content',
+    });
+
+    expect(component.constraint).toBe('flexible');
   });
 
-  it("throws when rowHeightMode is 'content' and constraint is 'flexible'", () => {
+  it("rejects rowHeightMode: 'content' without a fixed count constraint at compile time", () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    expect(() =>
-      addGridLayoutGroupComponent(world, entity, {
-        rowHeightMode: 'content',
-      }),
-    ).toThrow(/flexible/);
+    // @ts-expect-error rowHeightMode: 'content' requires constraint: 'fixedColumnCount' | 'fixedRowCount'
+    const component = addGridLayoutGroupComponent(world, entity, {
+      rowHeightMode: 'content',
+    });
+
+    expect(component.constraint).toBe('flexible');
   });
 
-  it("doesn't throw when a 'content' mode is paired with a fixed count constraint", () => {
+  it("accepts a 'content' mode paired with a fixed count constraint", () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 

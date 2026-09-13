@@ -96,8 +96,8 @@ function createBulletWithOffset(
   });
 
   addRotationComponent(world, bullet, {
-    local: degreesToRadians(270),
-    world: degreesToRadians(270),
+    local: degreesToRadians(90),
+    world: degreesToRadians(90),
   });
 
   addScaleComponent(world, bullet, {

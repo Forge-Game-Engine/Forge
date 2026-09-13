@@ -47,6 +47,26 @@ if (fire) {
 Keep components focused: prefer several small components over one large,
 monolithic component.
 
+### Reading the same component for many entities
+
+`getComponent` re-resolves `Fire`'s storage on every call, which is fine for
+a one-off lookup like the example above. A system that needs the same
+component for many entities in a loop - typically an optional one it can't
+add to its own `query`, since `query` excludes any entity missing a listed
+component - should resolve it once instead with `getComponentAccessor`:
+
+```ts
+const getFire = world.getComponentAccessor(Fire);
+
+for (const entity of entities) {
+  const fire = getFire(entity); // no per-call storage lookup
+}
+```
+
+See the System doc's ["Looking up optional components in a
+loop"](./system.md#looking-up-optional-components-in-a-loop) section for the
+full pattern and its semantics.
+
 ## Tags
 
 Tags are marker components with no payload. Use them when you need to
