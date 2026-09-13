@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-09-13
+
 #### Added
 
 - **text:** Add `@forge-game-engine/forge/text`'s font atlas pipeline (Phase 1 of MSDF text rendering, no rendering yet): `npm run generate-font-atlas` turns a `.ttf`/`.otf` font into a multi-channel signed distance field (MSDF) atlas PNG plus a versioned `FontAtlasData` JSON, and `FontAtlasCache` loads that pair into a `FontAtlas` at runtime
