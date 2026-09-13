@@ -57,7 +57,11 @@ export class Game implements Stoppable {
     this._time.update(performance.now());
 
     if (this._renderContext) {
-      this._resizeObserver = new ResizeObserver(this._resizeRenderContext);
+      const renderContext = this._renderContext;
+
+      this._resizeObserver = new ResizeObserver(() => {
+        this._resizeToContainer(renderContext);
+      });
       this._resizeObserver.observe(this.container);
     }
 
@@ -84,20 +88,15 @@ export class Game implements Stoppable {
   }
 
   /**
-   * Resizes `_renderContext` to match `container`'s current size, so the
+   * Resizes `renderContext` to match `container`'s current size, so the
    * canvas (and anything derived from `RenderContext.width`/`height`, such
    * as the camera's projection matrix) follows the container instead of
    * staying pinned to whatever size it had when the game started. Skips a
    * momentarily zero-sized container (e.g. `display: none` mid-reflow),
    * since `RenderContext.resize` requires positive dimensions.
+   * @param renderContext - The render context to resize.
    */
-  private readonly _resizeRenderContext = (): void => {
-    const renderContext = this._renderContext;
-
-    if (!renderContext) {
-      return;
-    }
-
+  private _resizeToContainer(renderContext: RenderContext): void {
     const { clientWidth, clientHeight } = this.container;
 
     if (clientWidth <= 0 || clientHeight <= 0) {
@@ -112,7 +111,7 @@ export class Game implements Stoppable {
     }
 
     renderContext.resize(clientWidth, clientHeight);
-  };
+  }
 
   private readonly _gameLoop = (): void => {
     if (!this._isRunning) {

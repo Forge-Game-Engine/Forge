@@ -180,5 +180,12 @@ describe('Game', () => {
 
       expect(FakeResizeObserver.instances[0].disconnected).toBe(true);
     });
+
+    it('stopping without having run does not throw, since there is no resize observer to disconnect', () => {
+      game = new Game(time, world, container, renderContext);
+
+      expect(() => game.stop()).not.toThrow();
+      expect(FakeResizeObserver.instances).toHaveLength(0);
+    });
   });
 });
