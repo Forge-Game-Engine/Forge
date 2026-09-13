@@ -1,0 +1,11 @@
+.container {
+  margin: 50px;
+}
+
+.categoryGrid,
+.demoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}

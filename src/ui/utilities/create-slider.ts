@@ -237,12 +237,15 @@ export function createSlider(
   });
 
   const t = normalizeUiSliderValue(slider);
-  const handleRectTransform = world.getComponent(handle, rectTransformId)!;
+  const handleRectTransform = world.getComponentRequired(
+    handle,
+    rectTransformId,
+  );
 
   driveUiAxis(handleRectTransform.x, t);
 
   if (fill !== undefined) {
-    driveUiAxis(world.getComponent(fill, rectTransformId)!.x, t);
+    driveUiAxis(world.getComponentRequired(fill, rectTransformId).x, t);
   }
 
   return {

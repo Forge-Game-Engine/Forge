@@ -30,12 +30,20 @@ const identityInheritedState: InheritedCanvasGroupState = {
   blocksRaycasts: true,
 };
 
+/** The result of combining an entity's own `CanvasGroupEcsComponent` (if any) into its inherited state. */
+interface CombinedCanvasGroupState {
+  state: InheritedCanvasGroupState;
+
+  /** Whether `entity` or any ancestor visited so far actually has a `CanvasGroupEcsComponent`. */
+  isGoverned: boolean;
+}
+
 /** Combines `inherited` with `entity`'s own `CanvasGroupEcsComponent`, if it has one. */
 function combineWithOwnGroup(
   world: EcsWorld,
   entity: number,
-  inherited: InheritedCanvasGroupState,
-): InheritedCanvasGroupState {
+  inherited: CombinedCanvasGroupState,
+): CombinedCanvasGroupState {
   const group = world.getComponent<CanvasGroupEcsComponent>(
     entity,
     canvasGroupId,
@@ -45,12 +53,17 @@ function combineWithOwnGroup(
     return inherited;
   }
 
-  const base = group.ignoreParentGroups ? identityInheritedState : inherited;
+  const base = group.ignoreParentGroups
+    ? identityInheritedState
+    : inherited.state;
 
   return {
-    alpha: base.alpha * group.alpha,
-    interactable: base.interactable && group.interactable,
-    blocksRaycasts: base.blocksRaycasts && group.blocksRaycasts,
+    state: {
+      alpha: base.alpha * group.alpha,
+      interactable: base.interactable && group.interactable,
+      blocksRaycasts: base.blocksRaycasts && group.blocksRaycasts,
+    },
+    isGoverned: true,
   };
 }
 
@@ -112,7 +125,7 @@ export const createUiCanvasGroupEcsSystem = (): EcsSystem<
 
     const visit = (
       entity: number,
-      inherited: InheritedCanvasGroupState,
+      inherited: CombinedCanvasGroupState,
     ): void => {
       if (visited.has(entity)) {
         return;
@@ -120,30 +133,34 @@ export const createUiCanvasGroupEcsSystem = (): EcsSystem<
 
       visited.add(entity);
 
-      const state = combineWithOwnGroup(world, entity, inherited);
-      const isGoverned = state !== identityInheritedState;
+      const combined = combineWithOwnGroup(world, entity, inherited);
 
-      if (isGoverned) {
+      if (combined.isGoverned) {
         const sprite = world.getComponent<SpriteEcsComponent>(entity, spriteId);
 
         if (sprite) {
-          sprite.opacityMultiplier = state.alpha;
+          sprite.opacityMultiplier = combined.state.alpha;
         }
 
         const text = world.getComponent<TextEcsComponent>(entity, textId);
 
         if (text) {
-          text.opacityMultiplier = state.alpha;
+          text.opacityMultiplier = combined.state.alpha;
         }
       }
 
       for (const child of childrenByParent.get(entity) ?? []) {
-        visit(child, state);
+        visit(child, combined);
       }
     };
 
+    const identityCombinedState: CombinedCanvasGroupState = {
+      state: identityInheritedState,
+      isGoverned: false,
+    };
+
     for (const root of roots) {
-      visit(root, identityInheritedState);
+      visit(root, identityCombinedState);
     }
   },
 });

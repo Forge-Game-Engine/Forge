@@ -1,0 +1,39 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--card-background-color);
+  color: var(--text-color);
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.title {
+  margin: 0 0 0.4rem;
+}
+
+.description {
+  margin: 0;
+  opacity: 0.85;
+}

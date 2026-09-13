@@ -157,6 +157,50 @@ describe('resolveRect', () => {
     });
   });
 
+  it('converts a screenPixels point size using pixelsPerUnit, leaving a referencePixels one untouched', () => {
+    const rectTransform = buildRectTransform({
+      x: UiAxis.point(0.5, { size: 40, sizeUnit: 'screenPixels' }),
+      y: UiAxis.point(0.5, { size: 20 }),
+    });
+
+    // pixelsPerUnit = 2, so the 40 screenPixels x-size resolves to 20
+    // reference pixels; the untagged (referencePixels) y-size is unaffected.
+    expect(resolveRect(parentRect, rectTransform, 2)).toEqual({
+      min: { x: -10, y: -10 },
+      max: { x: 10, y: 10 },
+    });
+  });
+
+  it('defaults pixelsPerUnit to 1, so screenPixels behaves like referencePixels when unset', () => {
+    const rectTransform = buildRectTransform({
+      x: UiAxis.point(0.5, { size: 40, sizeUnit: 'screenPixels' }),
+      y: UiAxis.point(0.5, { size: 40 }),
+    });
+
+    expect(resolveRect(parentRect, rectTransform)).toEqual({
+      min: { x: -20, y: -20 },
+      max: { x: 20, y: 20 },
+    });
+  });
+
+  it('converts a screenPixels stretch margin using pixelsPerUnit', () => {
+    const rectTransform = buildRectTransform({
+      x: UiAxis.stretch(
+        { min: 0, max: 1 },
+        { margin: -40, marginUnit: 'screenPixels' },
+      ),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    });
+
+    // pixelsPerUnit = 4, so the -40 screenPixels x-margin resolves to -10
+    // reference pixels (parent width 200 -> 190); the untagged
+    // (referencePixels) y-margin (0) is unaffected (parent height 100 stays 100).
+    expect(resolveRect(parentRect, rectTransform, 4)).toEqual({
+      min: { x: -95, y: -50 },
+      max: { x: 95, y: 50 },
+    });
+  });
+
   it('does not mutate its inputs', () => {
     const rectTransform = buildRectTransform(UiAnchor.center({ x: 40, y: 20 }));
     const parentRectClone: Rect = {

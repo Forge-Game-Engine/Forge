@@ -19,6 +19,7 @@ import {
   createPanel,
   createUiCanvas,
   createUiWorldSpaceFollowEcsSystem,
+  registerUiSystems,
   UiAnchor,
 } from '../../../src/ui/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
@@ -130,7 +131,9 @@ export const createScene: CreateScene = async (
   addPositionComponent(world, target, { local: { x: 0, y: 0 } });
   const targetRotation = addRotationComponent(world, target, { local: 0 });
 
-  const healthBarCanvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time);
+
+  const healthBarCanvas = createUiCanvas(world, renderContext, {
     renderMode: 'worldSpace',
     camera: cameraEntity,
     anchor: UiAnchor.center({ x: 120, y: 30 }),

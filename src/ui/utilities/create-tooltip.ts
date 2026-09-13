@@ -153,8 +153,9 @@ export function createTooltip(
     ...(category !== undefined && { category }),
   });
 
-  world.getComponent<SpriteEcsComponent>(panel, spriteId)!.enabled = false;
-  world.getComponent(label, textId)!.enabled = false;
+  world.getComponentRequired<SpriteEcsComponent>(panel, spriteId).enabled =
+    false;
+  world.getComponentRequired(label, textId).enabled = false;
 
   addTooltipComponent(world, source, {
     panel,

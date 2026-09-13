@@ -43,6 +43,10 @@ export interface UiDropdownEcsComponent
 export const uiDropdownId =
   createComponentId<UiDropdownEcsComponent>('uiDropdown');
 
+const defaultUiDropdownOptions: UiDropdownDefaultedOptions = {
+  selectedIndex: 0,
+};
+
 /**
  * Attaches a {@link UiDropdownEcsComponent} to `entity`. Prefer
  * `createDropdown`, which builds the header/option-row entities this
@@ -61,7 +65,10 @@ export function addUiDropdownComponent(
   entity: number,
   options: UiDropdownRequiredOptions & Partial<UiDropdownDefaultedOptions>,
 ): UiDropdownEcsComponent {
-  const { options: optionLabels, selectedIndex = 0 } = options;
+  const { options: optionLabels, selectedIndex } = {
+    ...defaultUiDropdownOptions,
+    ...options,
+  };
 
   if (optionLabels.length === 0) {
     throw new Error('Unable to add a UiDropdownEcsComponent with no options.');

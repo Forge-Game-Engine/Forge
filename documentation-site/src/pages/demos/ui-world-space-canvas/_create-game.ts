@@ -32,6 +32,7 @@ import {
   createPanel,
   createUiCanvas,
   createUiWorldSpaceFollowEcsSystem,
+  registerUiSystems,
   UiAnchor,
   uiCanvasRenderModes,
 } from '@forge-game-engine/forge/ui';
@@ -97,7 +98,6 @@ async function createBackdrop(
 async function createSpinningEnemyWithHealthBar(
   world: EcsWorld,
   renderContext: RenderContext,
-  time: Time,
   fontAtlas: FontAtlas,
   worldCamera: number,
   x: number,
@@ -138,7 +138,7 @@ async function createSpinningEnemyWithHealthBar(
   addParentComponent(world, marker, { parent: enemy });
   addSpriteComponent(world, marker, markerSprite);
 
-  const healthBarCanvas = createUiCanvas(world, renderContext, time, {
+  const healthBarCanvas = createUiCanvas(world, renderContext, {
     renderMode: uiCanvasRenderModes.worldSpace,
     camera: worldCamera,
     anchor: UiAnchor.center({ x: 110, y: 16 }),
@@ -229,10 +229,15 @@ export const createWorldSpaceCanvasGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
+  // Registered once for the whole world, before either
+  // createSpinningEnemyWithHealthBar call creates its own canvas below -
+  // registerUiSystems (unlike createUiCanvas) must never be called more
+  // than once per world, or every UI system would double-process each tick.
+  registerUiSystems(world, renderContext, time);
+
   await createSpinningEnemyWithHealthBar(
     world,
     renderContext,
-    time,
     fontAtlas,
     worldCamera,
     -180,
@@ -242,7 +247,6 @@ export const createWorldSpaceCanvasGame = async (
   await createSpinningEnemyWithHealthBar(
     world,
     renderContext,
-    time,
     fontAtlas,
     worldCamera,
     180,

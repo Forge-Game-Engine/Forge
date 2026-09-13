@@ -8,12 +8,16 @@ import { UiAxis } from '../types/ui-axis.js';
  * `anchor`, so `anchorSpan` collapses to `0` and `size` falls out as the
  * element's literal size; a `UiStretchAxis`'s span scales with the parent,
  * with `margin` added to it - the same formula covers both regimes.
+ *
+ * `size`/`margin` is converted from `pixelsPerUnit` first when the axis's own
+ * `sizeUnit`/`marginUnit` is `'screenPixels'` - see {@link UiAxisSizeUnit}.
  */
 function resolveAxis(
   axis: UiAxis,
   parentMin: number,
   parentSize: number,
   anchoredPositionOnAxis: number,
+  pixelsPerUnit: number,
 ): { min: number; max: number } {
   const anchorMin = axis.kind === 'point' ? axis.anchor : axis.anchorMin;
   const anchorMax = axis.kind === 'point' ? axis.anchor : axis.anchorMax;
@@ -22,7 +26,11 @@ function resolveAxis(
   const anchorSpanMax = parentMin + anchorMax * parentSize;
   const anchorSpanSize = anchorSpanMax - anchorSpanMin;
 
-  const size = axis.kind === 'point' ? axis.size : anchorSpanSize + axis.margin;
+  const rawValue = axis.kind === 'point' ? axis.size : axis.margin;
+  const unit = axis.kind === 'point' ? axis.sizeUnit : axis.marginUnit;
+  const value = unit === 'screenPixels' ? rawValue / pixelsPerUnit : rawValue;
+
+  const size = axis.kind === 'point' ? value : anchorSpanSize + value;
 
   const referencePoint = anchorSpanMin + anchorSpanSize * axis.pivot;
   const pivotPosition = referencePoint + anchoredPositionOnAxis;
@@ -46,11 +54,17 @@ function resolveAxis(
  * under its own rule.
  * @param parentRect - The parent's already-resolved rect, in UI world space.
  * @param rectTransform - The rect transform to resolve.
+ * @param pixelsPerUnit - The owning canvas's live reference-pixel-to-screen-pixel
+ * ratio (see `calculatePixelsPerUnit`), used to convert a `'screenPixels'`-unit
+ * `size`/`margin` (see {@link UiAxisSizeUnit}) into reference pixels. Defaults
+ * to `1` - a neutral value under which `'screenPixels'` behaves exactly like
+ * `'referencePixels'` - for callers that don't track a live ratio.
  * @returns The resolved rect, in the same UI world space as `parentRect`.
  */
 export function resolveRect(
   parentRect: Rect,
   rectTransform: RectTransformEcsComponent,
+  pixelsPerUnit = 1,
 ): Rect {
   const { x, y, anchoredPosition } = rectTransform;
   const parentWidth = parentRect.max.x - parentRect.min.x;
@@ -61,12 +75,14 @@ export function resolveRect(
     parentRect.min.x,
     parentWidth,
     anchoredPosition.x,
+    pixelsPerUnit,
   );
   const resolvedY = resolveAxis(
     y,
     parentRect.min.y,
     parentHeight,
     anchoredPosition.y,
+    pixelsPerUnit,
   );
 
   return {

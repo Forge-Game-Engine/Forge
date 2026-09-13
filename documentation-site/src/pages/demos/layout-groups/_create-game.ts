@@ -31,7 +31,10 @@ import {
   createTextShapingEcsSystem,
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
-import { createUiCanvas } from '@forge-game-engine/forge/ui';
+import {
+  createUiCanvas,
+  registerUiSystems,
+} from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -163,10 +166,13 @@ export const createLayoutGroupsGame = async (
     game,
   );
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time, {
+    pointerSource: mouseInputSource,
+  });
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
-    pointerSource: mouseInputSource,
     submitInput,
     navigateInput,
   });

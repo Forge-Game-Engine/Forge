@@ -41,6 +41,51 @@ const system: EcsSystem<[Camera]> = {
 
 If a system needs to run some logic exactly once per tick regardless of how many entities match (or even when nothing matches), just do that work directly in `update` rather than per matched entity - `update` already runs exactly once per tick, whether `entities` has zero, one, or many ids in it.
 
+## Looking up optional components in a loop
+
+`query` only matches entities that have *every* listed component, so a
+component only some matched entities have (for example, a sprite's optional
+rotation) can't just be added to `query` - doing so would silently exclude
+every entity that lacks it. The usual fix is to call `world.getComponent`
+for it inside the loop over `entities`:
+
+```ts
+const system: EcsSystem<[Sprite]> = {
+  query: [Sprite],
+  update(world, { entities, components: [sprites] }) {
+    for (let i = 0; i < entities.length; i++) {
+      const rotation = world.getComponent(entities[i], Rotation);
+      // ...use sprites[i] and rotation...
+    }
+  },
+};
+```
+
+This is fine for most systems, but `getComponent` re-resolves `Rotation`'s
+storage on every single call. For a system whose matched entity count runs
+into the tens of thousands or more (draw calls, particles), that per-call
+resolution adds up. `world.getComponentAccessor(componentKey)` resolves the
+storage once and returns a plain `entity => component | null` function,
+which is cheaper to call repeatedly in a tight loop - resolve it once at the
+top of `update`, not per entity:
+
+```ts
+const system: EcsSystem<[Sprite]> = {
+  query: [Sprite],
+  update(world, { entities, components: [sprites] }) {
+    const getRotation = world.getComponentAccessor(Rotation);
+
+    for (let i = 0; i < entities.length; i++) {
+      const rotation = getRotation(entities[i]);
+      // ...use sprites[i] and rotation...
+    }
+  },
+};
+```
+
+`createRenderEcsSystem` uses this for a sprite's optional rotation, scale,
+and flip components.
+
 ## Atomicity
 
 Treat each call to `update(world, queryResult)` as a single, focused update for the tick's batch of matched entities. Systems should perform short, deterministic operations and avoid long-running or blocking work inside `update`.

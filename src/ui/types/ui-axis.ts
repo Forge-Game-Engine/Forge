@@ -1,4 +1,19 @@
 /**
+ * The unit a `UiPointAxis.size`/`UiStretchAxis.margin` value is expressed
+ * in. `'referencePixels'` (the default) scales with the owning canvas's live
+ * scale factor, exactly like everything else in the anchor system -
+ * unchanged behavior. `'screenPixels'` instead stays a literal, unscaled
+ * device pixel count, converted to reference pixels fresh every frame (via
+ * `createUiLayoutEcsSystem`'s own `pixelsPerUnit`, the same conversion
+ * `calculatePixelsPerUnit` gives `createUiSafeAreaEcsSystem`) - useful for an
+ * element that should keep a constant on-screen size regardless of the
+ * canvas's `scaleMode`/reference resolution or the destination's aspect
+ * ratio, such as a fixed-width sidebar inside an otherwise `scaleWithScreenSize`/
+ * `fitReferenceResolution`-scaled canvas.
+ */
+export type UiAxisSizeUnit = 'referencePixels' | 'screenPixels';
+
+/**
  * A point-anchored axis: `anchor` is a single normalized position within the
  * parent's rect on this axis (the element's own `anchorMin`/`anchorMax` on
  * this axis coincide), so the element keeps its own literal `size` and moves
@@ -13,8 +28,11 @@ export interface UiPointAxis {
   /** Normalized origin within the element's own rect on this axis. */
   pivot: number;
 
-  /** The element's literal size on this axis, in reference pixels. */
+  /** The element's literal size on this axis, in `sizeUnit`. */
   size: number;
+
+  /** The unit `size` is expressed in. See {@link UiAxisSizeUnit}. */
+  sizeUnit?: UiAxisSizeUnit;
 }
 
 /**
@@ -34,8 +52,11 @@ export interface UiStretchAxis {
   /** Normalized origin within the element's own rect on this axis. */
   pivot: number;
 
-  /** Margin added to the anchor span's size on this axis, in reference pixels. */
+  /** Margin added to the anchor span's size on this axis, in `marginUnit`. */
   margin: number;
+
+  /** The unit `margin` is expressed in. See {@link UiAxisSizeUnit}. */
+  marginUnit?: UiAxisSizeUnit;
 }
 
 /**
@@ -60,6 +81,9 @@ export interface UiPointAxisOptions {
 
   /** Defaults to `anchor` - the common case of a preset pinned to a corner/edge/center keeping its own local origin at the same normalized point. */
   pivot?: number;
+
+  /** Defaults to `'referencePixels'`. */
+  sizeUnit?: UiAxisSizeUnit;
 }
 
 /**
@@ -72,6 +96,9 @@ export interface UiStretchAxisOptions {
 
   /** Defaults to `0.5`. */
   pivot?: number;
+
+  /** Defaults to `'referencePixels'`. */
+  marginUnit?: UiAxisSizeUnit;
 }
 
 /** The normalized `[min, max]` span a `UiStretchAxis` anchors to within the parent's rect on this axis. */
@@ -82,11 +109,13 @@ export interface UiStretchAxisRange {
 
 const defaultUiPointAxisOptions = {
   size: 100,
+  sizeUnit: 'referencePixels' as UiAxisSizeUnit,
 };
 
 const defaultUiStretchAxisOptions = {
   margin: 0,
   pivot: 0.5,
+  marginUnit: 'referencePixels' as UiAxisSizeUnit,
 };
 
 /**
@@ -102,13 +131,13 @@ export const UiAxis = {
    * @returns The point axis.
    */
   point: (anchor: number, options: UiPointAxisOptions = {}): UiPointAxis => {
-    const { size, pivot } = {
+    const { size, pivot, sizeUnit } = {
       ...defaultUiPointAxisOptions,
       pivot: anchor,
       ...options,
     };
 
-    return { kind: 'point', anchor, pivot, size };
+    return { kind: 'point', anchor, pivot, size, sizeUnit };
   },
 
   /**
@@ -121,7 +150,10 @@ export const UiAxis = {
     range: UiStretchAxisRange,
     options: UiStretchAxisOptions = {},
   ): UiStretchAxis => {
-    const { margin, pivot } = { ...defaultUiStretchAxisOptions, ...options };
+    const { margin, pivot, marginUnit } = {
+      ...defaultUiStretchAxisOptions,
+      ...options,
+    };
 
     return {
       kind: 'stretch',
@@ -129,6 +161,7 @@ export const UiAxis = {
       anchorMax: range.max,
       pivot,
       margin,
+      marginUnit,
     };
   },
 };

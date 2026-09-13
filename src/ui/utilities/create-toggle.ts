@@ -168,7 +168,10 @@ export function createToggle(
     sprite: checkmarkSprite,
   });
 
-  const checkmarkSpriteComponent = world.getComponent(checkmark, spriteId)!;
+  const checkmarkSpriteComponent = world.getComponentRequired(
+    checkmark,
+    spriteId,
+  );
   checkmarkSpriteComponent.enabled = isOn;
 
   toggle.onValueChanged.registerListener((value) => {

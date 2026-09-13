@@ -39,6 +39,7 @@ import {
   createButton,
   createLabel,
   createUiCanvas,
+  registerUiSystems,
   UiAnchor,
   UiAxis,
 } from '@forge-game-engine/forge/ui';
@@ -160,10 +161,13 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
     game,
   );
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time, {
+    pointerSource: mouseInputSource,
+  });
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
-    pointerSource: mouseInputSource,
     submitInput,
     navigateInput,
   });

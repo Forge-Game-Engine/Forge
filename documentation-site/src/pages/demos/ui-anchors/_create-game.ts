@@ -27,6 +27,7 @@ import {
   createPanel,
   createUiCanvas,
   rectTransformId,
+  registerUiSystems,
   UiAnchor,
   UiAnchorConfig,
 } from '@forge-game-engine/forge/ui';
@@ -109,7 +110,9 @@ export const createAnchorsGame = async (
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
 
-  const canvas = createUiCanvas(world, renderContext, time, {
+  registerUiSystems(world, renderContext, time);
+
+  const canvas = createUiCanvas(world, renderContext, {
     cullingMask: renderLayers.ui,
     referenceResolution: { x: 1920, y: 1080 },
   });
