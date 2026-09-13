@@ -59,8 +59,17 @@ export class Game implements Stoppable {
     if (this._renderContext) {
       const renderContext = this._renderContext;
 
+      // Deferred to the next frame rather than resizing synchronously in
+      // the observer callback: mutating the canvas's size in direct
+      // response to a ResizeObserver notification is exactly the pattern
+      // that trips the browser's "ResizeObserver loop completed with
+      // undelivered notifications" error, since it can itself affect layout
+      // before the browser has finished notifying every observer for this
+      // cycle.
       this._resizeObserver = new ResizeObserver(() => {
-        this._resizeToContainer(renderContext);
+        requestAnimationFrame(() => {
+          this._resizeToContainer(renderContext);
+        });
       });
       this._resizeObserver.observe(this.container);
     }

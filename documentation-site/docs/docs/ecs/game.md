@@ -30,6 +30,14 @@ The observer starts in `run()` and disconnects in `stop()`. Passing no
 going through `createGame`) simply skips this - useful for a `Game` that
 drives systems with no canvas of its own.
 
+The actual resize happens on the next animation frame after the
+`ResizeObserver` notification, not synchronously inside its callback:
+resizing the canvas is itself a layout-affecting DOM mutation, and doing
+that directly in response to a resize notification is what triggers the
+browser's `ResizeObserver loop completed with undelivered notifications`
+error. This adds at most one frame of latency before the canvas catches up,
+which isn't visible in practice.
+
 This only resizes the canvas and the default framebuffer's viewport. Two
 things it does *not* do for you, since the engine has no way to know they're
 meant to track the canvas:
