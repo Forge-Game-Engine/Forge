@@ -448,6 +448,65 @@ describe('createRenderEcsSystem', () => {
     expect(b.bindInstanceData).toHaveBeenCalledTimes(1);
   });
 
+  it('preserves creation order for sprites at the same depth (stable sort)', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    // All three share a depth (world Y); pivot.x is only used here as a
+    // per-sprite identity tag, unrelated to sort order (unlike tintColor,
+    // it isn't clamped, so it can carry an arbitrary id).
+    addSpriteEntity(renderable, 5, { pivot: { x: 0, y: 0 } });
+    addSpriteEntity(renderable, 5, { pivot: { x: 1, y: 0 } });
+    addSpriteEntity(renderable, 5, { pivot: { x: 2, y: 0 } });
+
+    world.update();
+
+    const drawnIds = bindInstanceData.mock.calls.map(
+      (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite.pivot.x,
+    );
+
+    expect(drawnIds).toEqual([0, 1, 2]);
+  });
+
+  it('orders many sprites across several layers and depths the same way a full comparison sort would', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable(4);
+
+    const spriteCount = 733;
+    const layers = [-2, 0, 1, 5];
+    // Deterministic pseudo-random depths/layers (no external RNG needed) -
+    // spread widely enough to exercise many depth buckets while still
+    // producing plenty of exact ties to stress stability.
+    const entities = Array.from({ length: spriteCount }, (_, i) => {
+      const depth = Math.floor(Math.sin(i * 12.9898) * 50);
+      const layer = layers[i % layers.length];
+
+      return { id: i, depth, layer };
+    });
+
+    for (const entity of entities) {
+      addSpriteEntity(renderable, entity.depth, {
+        layer: entity.layer,
+        pivot: { x: entity.id, y: 0 },
+      });
+    }
+
+    world.update();
+
+    const actualOrder = bindInstanceData.mock.calls.map(
+      (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite.pivot.x,
+    );
+
+    const expectedOrder = entities
+      .slice()
+      .sort((a, b) =>
+        a.layer !== b.layer ? a.layer - b.layer : a.depth - b.depth,
+      )
+      .map((entity) => entity.id);
+
+    expect(actualOrder).toEqual(expectedOrder);
+  });
+
   it('draws once per camera entity, using each camera projection', () => {
     addCameraEntity();
     addCameraEntity();
