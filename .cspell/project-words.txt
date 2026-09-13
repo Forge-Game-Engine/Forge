@@ -40,7 +40,6 @@ Erdokovy
 esbenp
 evented
 Fira
-firebaserc
 Flaticon
 flexbox
 fphysics
@@ -177,6 +176,7 @@ Vleugels
 WASD
 webgl
 Wenrexa
+workerd
 xadvance
 yoavbls
 Zoltan
