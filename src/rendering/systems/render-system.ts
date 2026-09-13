@@ -60,15 +60,154 @@ const ensureInstanceDataBufferCapacity = (size: number): Float32Array => {
   return instanceDataBuffer;
 };
 
+// Per-layer bucket resolution for `computeDrawOrder`'s counting sort, and a
+// hard cap on total buckets (bucketsPerLayer * distinct layer count) so a
+// scene with pathologically many distinct layers can't blow up memory -
+// see `computeDrawOrder`.
+const DEFAULT_DEPTH_BUCKETS_PER_LAYER = 4096;
+const MAX_TOTAL_DEPTH_BUCKETS = 1 << 20;
+
+let drawOrderBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
+let bucketKeysBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
+let bucketOffsetsBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
+
+const ensureUint32Capacity = (
+  buffer: Uint32Array<ArrayBufferLike>,
+  size: number,
+): Uint32Array<ArrayBufferLike> =>
+  buffer.length < size ? new Uint32Array(size) : buffer;
+
+const quantizeDepthToBucket = (
+  depth: number,
+  minDepth: number,
+  depthRange: number,
+  depthBucketsPerLayer: number,
+): number => {
+  const normalizedDepth = (depth - minDepth) / depthRange;
+
+  if (normalizedDepth <= 0) {
+    return 0;
+  }
+
+  if (normalizedDepth >= 1) {
+    return depthBucketsPerLayer - 1;
+  }
+
+  return (normalizedDepth * depthBucketsPerLayer) | 0;
+};
+
+/**
+ * Computes a draw order for `commands` - indices into `commands`, ascending
+ * by layer then depth - with a counting sort instead of a general-purpose
+ * comparison sort.
+ *
+ * `Array.prototype.sort` with a comparator costs grow sharply with sprite
+ * count for two independent reasons: it's O(n log n), and every comparison
+ * has to dereference a full `RenderCommand` object to read `layer`/`depth`.
+ * A counting sort buckets each command by a `(layer, quantized depth)` key
+ * in one linear pass instead, which is both algorithmically cheaper (O(n))
+ * and touches each command object only once. Depth is quantized per-frame,
+ * relative to the actual depth range present in `commands`, into
+ * `depthBucketsPerLayer` buckets - fine enough that any visually meaningful
+ * depth difference lands in a different bucket for any reasonably sized
+ * scene, while sidestepping the floating-point-equality comparisons a
+ * comparison sort would otherwise make on every call. Commands are stable
+ * within a bucket (original relative order preserved), matching
+ * `Array.prototype.sort`'s own stability guarantee.
+ * @param commands - The commands to order. Not reordered in place - the
+ * returned indices describe the draw order instead, so batching
+ * (`flushBatches`/`includeBatch`) never has to physically move the
+ * (potentially large) `commands` array around.
+ * @returns Indices into `commands`, in draw order. Backed by a buffer
+ * reused across calls; only valid until the next call.
+ */
+const computeDrawOrder = (
+  commands: RenderCommand[],
+): Uint32Array<ArrayBufferLike> => {
+  const commandCount = commands.length;
+
+  drawOrderBuffer = ensureUint32Capacity(drawOrderBuffer, commandCount);
+
+  if (commandCount === 0) {
+    return drawOrderBuffer.subarray(0, 0);
+  }
+
+  const layerIndexByLayer = new Map<number, number>();
+  let minDepth = Infinity;
+  let maxDepth = -Infinity;
+
+  for (const command of commands) {
+    layerIndexByLayer.set(command.layer, 0);
+
+    if (command.depth < minDepth) {
+      minDepth = command.depth;
+    }
+
+    if (command.depth > maxDepth) {
+      maxDepth = command.depth;
+    }
+  }
+
+  const sortedLayers = [...layerIndexByLayer.keys()].sort((a, b) => a - b);
+
+  sortedLayers.forEach((layer, index) => layerIndexByLayer.set(layer, index));
+
+  const depthBucketsPerLayer = Math.max(
+    1,
+    Math.min(
+      DEFAULT_DEPTH_BUCKETS_PER_LAYER,
+      Math.floor(MAX_TOTAL_DEPTH_BUCKETS / sortedLayers.length),
+    ),
+  );
+  const depthRange = maxDepth - minDepth || 1;
+  const bucketCount = sortedLayers.length * depthBucketsPerLayer;
+
+  bucketKeysBuffer = ensureUint32Capacity(bucketKeysBuffer, commandCount);
+  bucketOffsetsBuffer = ensureUint32Capacity(
+    bucketOffsetsBuffer,
+    bucketCount + 1,
+  );
+  bucketOffsetsBuffer.fill(0, 0, bucketCount + 1);
+
+  for (let i = 0; i < commandCount; i++) {
+    const command = commands[i];
+    const layerIndex = layerIndexByLayer.get(command.layer)!;
+    const depthBucket = quantizeDepthToBucket(
+      command.depth,
+      minDepth,
+      depthRange,
+      depthBucketsPerLayer,
+    );
+    const key = layerIndex * depthBucketsPerLayer + depthBucket;
+
+    bucketKeysBuffer[i] = key;
+    bucketOffsetsBuffer[key + 1] += 1;
+  }
+
+  for (let bucket = 0; bucket < bucketCount; bucket++) {
+    bucketOffsetsBuffer[bucket + 1] += bucketOffsetsBuffer[bucket];
+  }
+
+  for (let i = 0; i < commandCount; i++) {
+    const key = bucketKeysBuffer[i];
+
+    drawOrderBuffer[bucketOffsetsBuffer[key]] = i;
+    bucketOffsetsBuffer[key] += 1;
+  }
+
+  return drawOrderBuffer.subarray(0, commandCount);
+};
+
 const includeBatch = (
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
+  order: Uint32Array<ArrayBufferLike>,
   batchStart: number,
   batchEnd: number,
 ) => {
   const { gl } = renderContext;
-  const { renderable } = commands[batchStart];
+  const { renderable } = commands[order[batchStart]];
   const batchLength = batchEnd - batchStart;
 
   renderable.material.setUniform('u_projection', projectionMatrix);
@@ -81,7 +220,7 @@ const includeBatch = (
 
   for (let i = batchStart; i < batchEnd; i++) {
     renderable.bindInstanceData(
-      commands[i].components,
+      commands[order[i]].components,
       buffer,
       instanceDataOffset,
     );
@@ -216,16 +355,24 @@ function flushBatches(
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
+  order: Uint32Array<ArrayBufferLike>,
 ): void {
   let batchStart = 0;
 
-  for (let i = 1; i <= commands.length; i++) {
+  for (let i = 1; i <= order.length; i++) {
     const isBatchBoundary =
-      i === commands.length ||
-      commands[i].renderable !== commands[batchStart].renderable;
+      i === order.length ||
+      commands[order[i]].renderable !== commands[order[batchStart]].renderable;
 
     if (isBatchBoundary) {
-      includeBatch(renderContext, projectionMatrix, commands, batchStart, i);
+      includeBatch(
+        renderContext,
+        projectionMatrix,
+        commands,
+        order,
+        batchStart,
+        i,
+      );
       batchStart = i;
     }
   }
@@ -316,11 +463,9 @@ export const createRenderEcsSystem = (
         clearedDestinationsThisFrame.add(target);
       }
 
-      commands.sort((a, b) =>
-        a.layer !== b.layer ? a.layer - b.layer : a.depth - b.depth,
-      );
+      const order = computeDrawOrder(commands);
 
-      flushBatches(renderContext, projectionMatrix, commands);
+      flushBatches(renderContext, projectionMatrix, commands, order);
     }
 
     renderContext.gl.disable(renderContext.gl.BLEND);
