@@ -34,17 +34,12 @@ const menuItems = [
 ];
 
 /**
- * The left nav panel's full width, in actual on-screen (device) pixels -
- * kept fixed regardless of the canvas's live scale factor (see `UiAxis`'s
- * `sizeUnit`/`marginUnit`), unlike the rest of this demo, which scales
- * normally with `fitReferenceResolution`. `600 * (1080 / 1920)`: the
- * on-screen width the reference design's own 600-reference-pixel panel
- * already had once the canvas's aspect ratio reaches 16:9 or wider (where
- * `fitReferenceResolution` pins `verticalWorldUnits` at exactly `1080`) -
- * chosen so this fixed width matches the reference design's own look
- * exactly at that aspect ratio, rather than picking an arbitrary number.
+ * The left nav panel's full width, in reference pixels, matching the
+ * reference design's own measurement - scales normally with the rest of
+ * this demo under `fitReferenceResolution`, so the panel keeps the same
+ * proportion of the screen at any window size.
  */
-export const leftPanelWidth = 600 * (1080 / 1920);
+export const leftPanelWidth = 600;
 
 const rowWidth = 464;
 const rowHeight = 76;
@@ -122,14 +117,13 @@ export function createMainMenu(
   const { panelSprite, yellowSprite, borderSprite, rowSprite } = sprites;
 
   const panel = createPanel(world, parent, {
-    // `widthUnit: 'screenPixels'` keeps this panel a fixed on-screen width
-    // regardless of the canvas's live scale factor (see `leftPanelWidth`'s
-    // own doc comment) - a full *stretch* on the vertical axis, not a
-    // literal `1080`, so the panel always fills its parent's actual height,
-    // whatever that resolves to.
+    // A full *stretch* on the vertical axis, not a literal `1080`, so the
+    // panel always fills its parent's actual height, whatever that resolves
+    // to; `width` stays a literal `leftPanelWidth` reference pixels, which
+    // scales normally with the canvas's live scale factor like everything
+    // else in this demo.
     anchor: UiAnchor.stretchLeft({
       width: leftPanelWidth,
-      widthUnit: 'screenPixels',
     }),
     sprite: panelSprite,
   });
@@ -166,13 +160,11 @@ export function createMainMenu(
 
   // `rowWidth === leftPanelWidth's own 600-reference-pixel measurement minus
   // `2 * rowLeftInset` (464 = 600 - 2*68) - i.e. this divider (and
-  // `menuContainer` below) were always meant to span the panel's full width
-  // symmetrically inset by `rowLeftInset` on each edge. Now that the panel's
-  // own width is a fixed on-screen pixel count rather than a fixed
-  // reference-pixel one (see `leftPanelWidth`), that has to be expressed as
-  // a *percentage* of the panel's actual resolved width (a stretch anchor)
-  // instead of a literal `rowWidth`, so it keeps spanning correctly at any
-  // aspect ratio rather than overflowing or leaving a gap.
+  // `menuContainer` below) are meant to span the panel's full width
+  // symmetrically inset by `rowLeftInset` on each edge, expressed as a
+  // *percentage* of the panel's actual resolved width (a stretch anchor)
+  // rather than a literal `rowWidth`, so it keeps spanning correctly if
+  // `leftPanelWidth` itself ever changes.
   createPanel(world, panel, {
     anchor: {
       x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),

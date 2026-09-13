@@ -50,7 +50,7 @@ const mutedInk = new Color(
  * @param fontAtlas - The font atlas the tag/title/blurb labels are drawn from.
  * @param sprites - The sprites this panel is drawn with - see {@link MissionBriefSprites}.
  * @param uiCategory - The render category the canvas's camera culls to.
- * @returns The mission brief's root entity, parented to `parent` and anchored to fill everything right of the nav panel's own fixed on-screen width - other right-column content (see `createFlagshipPanel`) parents to this same entity to share its coordinate space.
+ * @returns The mission brief's root entity, parented to `parent` and anchored to fill everything right of the nav panel's own width - other right-column content (see `createFlagshipPanel`) parents to this same entity to share its coordinate space.
  */
 export function createMissionBrief(
   world: EcsWorld,
@@ -66,25 +66,18 @@ export function createMissionBrief(
   addPositionComponent(world, root);
   addParentComponent(world, root, { parent });
   addRectTransformComponent(world, root, {
-    // Fills whatever's left of `parent` after the nav panel's own on-screen
-    // width: `margin: -leftPanelWidth` shrinks the horizontal stretch span
-    // by exactly that much, and the *right*-pivoted (`pivot: 1`) anchor
-    // keeps that shrink on the *left* edge only - the right edge stays
-    // pinned to `parent`'s own right edge, with no `anchoredPosition` offset
-    // needed (see `createMainMenu`'s own left panel for the matching
-    // `widthUnit: 'screenPixels'` on the fixed-width side). `marginUnit:
-    // 'screenPixels'` matches that same panel's own on-screen width exactly,
-    // in real device pixels rather than reference pixels, so this rect's
-    // left edge always lines up with the nav panel's actual right edge
-    // regardless of the canvas's live scale factor - a plain reference-pixel
-    // margin would drift out of sync with the panel's fixed on-screen width
-    // as the destination's aspect ratio changes. The vertical axis is a
-    // plain full stretch, for the same reason `createMainMenu`'s panel needs
-    // one instead of a literal `1080`.
-    x: UiAxis.stretch(
-      { min: 0, max: 1 },
-      { pivot: 1, margin: -leftPanelWidth, marginUnit: 'screenPixels' },
-    ),
+    // Fills whatever's left of `parent` after the nav panel's own width:
+    // `margin: -leftPanelWidth` shrinks the horizontal stretch span by
+    // exactly that much, and the *right*-pivoted (`pivot: 1`) anchor keeps
+    // that shrink on the *left* edge only - the right edge stays pinned to
+    // `parent`'s own right edge, with no `anchoredPosition` offset needed.
+    // Both `leftPanelWidth` here and `createMainMenu`'s own left panel are
+    // plain reference-pixel measurements, so this rect's left edge always
+    // lines up with the nav panel's actual right edge regardless of the
+    // canvas's live scale factor. The vertical axis is a plain full stretch,
+    // for the same reason `createMainMenu`'s panel needs one instead of a
+    // literal `1080`.
+    x: UiAxis.stretch({ min: 0, max: 1 }, { pivot: 1, margin: -leftPanelWidth }),
     y: UiAxis.stretch({ min: 0, max: 1 }),
   });
 

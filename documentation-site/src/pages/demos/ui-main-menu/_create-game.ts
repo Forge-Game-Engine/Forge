@@ -322,9 +322,9 @@ export const createUiMainMenuGame = async (
   // panels". Parented to `mainMenu.panel` itself (rather than `canvas`,
   // alongside it) and pinned to its right edge (`anchorMin`/`anchorMax: 1`,
   // a zero-size anchor span, extended outward by `margin`) so it always
-  // tracks that panel's actual right edge - including its own fixed
-  // on-screen width (see `createMainMenu`'s own `leftPanelWidth`) - with no
-  // separate `leftPanelWidth`-based position math needed here. Created last
+  // tracks that panel's actual right edge - including its own width (see
+  // `createMainMenu`'s own `leftPanelWidth`) - with no separate
+  // `leftPanelWidth`-based position math needed here. Created last
   // so it draws on top of the left panel/mission brief backgrounds it
   // divides, rather than being partly covered by whichever of them is
   // created after it.
