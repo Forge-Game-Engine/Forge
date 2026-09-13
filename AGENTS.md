@@ -59,7 +59,6 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
   /utilities               # General utilities
   index.ts                 # Main exports
 
-/demo                      # Demo application
 /documentation-site        # Docusaurus documentation
 /scripts                   # Build and utility scripts
 /assets                    # Static assets (images, etc.)
@@ -73,7 +72,7 @@ of truth about what the engine does today, and don't cite one in user-facing
 documentation. Once a design ships, `documentation-site/docs/docs` becomes the
 authority and the design document stays as historical rationale.
 
-Code comments (in `/src`, `/demo`, and `/documentation-site/src`) must never
+Code comments (in `/src` and `/documentation-site/src`) must never
 reference a `/design` document, a decision-log entry (e.g. "DL-06"), a phase
 number, or an implementation backlog/roadmap either. A comment should explain
 the _why_ of the code it sits next to in a way that stands on its own - a
@@ -310,9 +309,6 @@ export * from './subfolder/index.js';
 # Install dependencies
 npm install
 
-# Run demo in development mode
-npm run dev
-
 # Build the project
 npm run build
 
@@ -321,6 +317,10 @@ npm test
 
 # Run tests with UI
 npm run test:ui
+
+# See the engine running: after a build (above), start the documentation
+# site's live demos (see "Documentation Site Demos" below)
+cd documentation-site && npm run start
 ```
 
 ### Build Process
@@ -440,11 +440,11 @@ the actual input pipeline, and a real (but manually stepped, not
 mock the WebGL context and drive systems directly - these exercise the real
 rendering and input code paths end-to-end.
 
-**These tests depend only on `/src`, never on `/demo` or
-`/documentation-site`.** Each scenario gets its own minimal, purpose-built
-scene under `e2e/fixtures/scenes/`, built directly against the engine's
-public API, so e2e stays unaffected by unrelated changes to the demo app or
-docs site (and vice versa).
+**These tests depend only on `/src`, never on `/documentation-site`.** Each
+scenario gets its own minimal, purpose-built scene under
+`e2e/fixtures/scenes/`, built directly against the engine's public API, so
+e2e stays unaffected by unrelated changes to the docs site (and vice
+versa).
 
 ### Layout
 
@@ -460,7 +460,7 @@ e2e/
     camera-pan-zoom.spec.ts
   playwright.config.ts
   tsconfig.json
-vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.demo.js is for /demo
+vite.config.e2e.js          # dev server for fixtures/
 ```
 
 ### Adding a new scenario
@@ -530,7 +530,7 @@ If you add a pixel-reading assertion:
   `webServer` config starts `npm run dev:e2e` against `vite.config.e2e.js`
   automatically).
 - `npm run check-types:e2e` - type-checks `/e2e` on its own
-  (`npm run check-types` only covers `/src` and `/demo`).
+  (`npm run check-types` only covers `/src`).
 - `@playwright/test` is pinned to an exact version (not `^`), matched to
   whatever Chromium revision is available in this repo's dev/CI
   environments, since the browser binary and the library version are
@@ -823,7 +823,6 @@ accident.
 ### Common Commands
 
 ```bash
-npm run dev          # Run demo app
 npm run build        # Build the project
 npm test             # Run tests
 npm run lint         # Run ESLint

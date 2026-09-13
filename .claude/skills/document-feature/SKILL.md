@@ -15,9 +15,9 @@ fix the JSDoc in `/src` instead.
 
 - Find what changed: `git diff main...HEAD --stat` (or ask the user) to find
   the relevant `/src/<module>` directory.
-- Read the tests (`*.test.ts`) and any usage in `/demo`. This is where the
-  "why" and "how it's actually used" lives, not just the constructor
-  signature.
+- Read the tests (`*.test.ts`) and any usage in
+  `documentation-site/src/pages/demos`. This is where the "why" and "how
+  it's actually used" lives, not just the constructor signature.
 - Check recent commit messages touching this code for context on tradeoffs,
   perf fixes, or bugs that motivated the design. These often become the best
   gotcha and performance notes.

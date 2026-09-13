@@ -5,7 +5,7 @@
  * a plain white square becomes a flat, freely re-colorable chip per sprite
  * instance - letting a scene render distinct visible shapes without any
  * static asset file (keeping `/e2e` dependent only on `/src`, not on
- * `/demo`'s or `/documentation-site`'s asset folders).
+ * `/documentation-site`'s asset folders).
  * @param size - The width and height of the generated square, in pixels.
  * @returns The loaded image.
  */

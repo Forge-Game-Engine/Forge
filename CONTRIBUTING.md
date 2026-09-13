@@ -24,10 +24,14 @@ this repo, but it's an equally good reference for human contributors.
   npm install
   ```
 
-- Run the demo app during development:
+- See the engine running in a browser: build first, then start the
+  documentation site's live demos (they consume the engine through the
+  built `/dist` output, not `/src` directly, so re-run `npm run build`
+  after every `/src` change you want to see reflected):
 
   ```sh
-  npm run dev
+  npm run build
+  cd documentation-site && npm run start
   ```
 
 ## Making a change
