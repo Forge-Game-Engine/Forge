@@ -49,6 +49,7 @@ import { createAsteroidSpawnerEcsSystem } from './_asteroid-spawner.system';
 import { createAsteroidCollisionEcsSystem } from './_collision.system';
 import { GameOverEcsComponent, gameOverId } from './_game-over.component';
 import { createGameOverEcsSystem } from './_game-over.system';
+import { createResizeRenderTargetsEcsSystem } from './_resize-render-targets.system';
 
 const renderLayers = {
   background: 1 << 0,
@@ -226,13 +227,19 @@ export const createSpaceShooterGame = async (
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
+  world.addSystem(
+    createResizeRenderTargetsEcsSystem(renderContext, [
+      backgroundRenderTarget,
+      foregroundRenderTarget,
+    ]),
+  );
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));
   world.addSystem(createToneMapEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createMovementEcsSystem(moveInput, time));
-  world.addSystem(createBackgroundEcsSystem(time));
+  world.addSystem(createBackgroundEcsSystem(time, renderContext));
   world.addSystem(createAudioEcsSystem());
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createRemoveFromWorldEcsSystem());

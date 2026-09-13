@@ -1,5 +1,6 @@
 import { Stoppable, Time } from '../common/index.js';
 import { EcsWorld } from '../ecs/ecs-world.js';
+import { RenderContext } from '../rendering/index.js';
 
 /**
  * Manages the game loop and coordinates updates between systems.
@@ -11,20 +12,29 @@ export class Game implements Stoppable {
   public readonly container: HTMLElement;
   private _isRunning = false;
   private _animationFrameId: number | null = null;
+  private _resizeObserver: ResizeObserver | null = null;
 
   private readonly _time: Time;
   private readonly _world: EcsWorld;
+  private readonly _renderContext: RenderContext | undefined;
 
   /**
    * Creates a new Game instance.
    * @param time - The Time instance for managing time-related operations.
    * @param world - The ECS world containing all entities and systems.
    * @param container - The HTML element that contains the game canvas.
+   * @param renderContext - The render context whose canvas should be kept in sync with `container`'s size while the game is running. Omit if the game has no rendering to resize.
    */
-  constructor(time: Time, world: EcsWorld, container: HTMLElement) {
+  constructor(
+    time: Time,
+    world: EcsWorld,
+    container: HTMLElement,
+    renderContext?: RenderContext,
+  ) {
     this._time = time;
     this._world = world;
     this.container = container;
+    this._renderContext = renderContext;
   }
 
   /**
@@ -46,6 +56,11 @@ export class Game implements Stoppable {
     // boundaries).
     this._time.update(performance.now());
 
+    if (this._renderContext) {
+      this._resizeObserver = new ResizeObserver(this._resizeRenderContext);
+      this._resizeObserver.observe(this.container);
+    }
+
     this._animationFrameId = requestAnimationFrame(this._gameLoop);
   }
 
@@ -60,8 +75,44 @@ export class Game implements Stoppable {
       this._animationFrameId = null;
     }
 
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
+
     this._world.stop();
   }
+
+  /**
+   * Resizes `_renderContext` to match `container`'s current size, so the
+   * canvas (and anything derived from `RenderContext.width`/`height`, such
+   * as the camera's projection matrix) follows the container instead of
+   * staying pinned to whatever size it had when the game started. Skips a
+   * momentarily zero-sized container (e.g. `display: none` mid-reflow),
+   * since `RenderContext.resize` requires positive dimensions.
+   */
+  private readonly _resizeRenderContext = (): void => {
+    const renderContext = this._renderContext;
+
+    if (!renderContext) {
+      return;
+    }
+
+    const { clientWidth, clientHeight } = this.container;
+
+    if (clientWidth <= 0 || clientHeight <= 0) {
+      return;
+    }
+
+    if (
+      renderContext.width === clientWidth &&
+      renderContext.height === clientHeight
+    ) {
+      return;
+    }
+
+    renderContext.resize(clientWidth, clientHeight);
+  };
 
   private readonly _gameLoop = (): void => {
     if (!this._isRunning) {

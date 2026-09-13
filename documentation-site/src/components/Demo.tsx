@@ -38,9 +38,10 @@ export const Demo: FC<DemoProps> = ({
   const demoBoxRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreen(demoBoxRef);
 
-  // Restarting the game on fullscreen toggle re-initializes it against the
-  // container's current size, since the game has no way to resize in place.
-  useGame(createGame, isFullscreen);
+  // `Game` keeps its render context sized to its container itself (via a
+  // `ResizeObserver`), so entering/exiting fullscreen resizes the running
+  // game in place instead of needing a restart.
+  useGame(createGame);
 
   // The category page a demo was navigated from is threaded through as a
   // `from` query param (see `DemoCard`), so the back button returns to the
