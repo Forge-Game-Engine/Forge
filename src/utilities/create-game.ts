@@ -26,11 +26,11 @@ export function createGame(containerId: string): {
     throw new Error(`No DOM element with ID "${containerId}" found.`);
   }
 
-  const game = new Game(time, world, container);
-
   const canvas = createCanvas(container);
 
   const renderContext = createRenderContext(canvas);
+
+  const game = new Game(time, world, container, renderContext);
 
   return { game, world, time, renderContext };
 }

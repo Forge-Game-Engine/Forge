@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **utilities:** `Game` now resizes its `RenderContext` to match its container whenever the container's size changes (via a `ResizeObserver`, started on `run()` and stopped on `stop()`), so a running game's canvas, camera projection, and UI layout follow a resized window/container instead of staying pinned to whatever size the container was when the game started. `createGame` wires this up automatically. The actual resize is deferred to the next animation frame rather than done synchronously in the `ResizeObserver` callback, since mutating the canvas's size directly in response to a resize notification is what triggers the browser's "ResizeObserver loop completed with undelivered notifications" error
+- **demos:** Fix the space shooter demo leaving bare canvas past the background's edges (and its bloom/blur post-processing staying at a stale resolution) after a resize, now that resizing actually reaches the demo - the background's world size and its shader's `u_resolution` uniform are recalculated whenever the render context resizes, and the demo's background/foreground `RenderTarget`s resize along with it. The documentation site's demo fullscreen toggle also no longer tears down and recreates the whole game to pick up the container's new size, since `Game` now resizes in place
+
 ## [0.25.0] - 2026-09-13
 
 #### Added

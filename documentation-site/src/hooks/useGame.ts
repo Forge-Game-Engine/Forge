@@ -1,15 +1,9 @@
 import { Game } from '@forge-game-engine/forge/utilities';
 import { useEffect, useRef } from 'react';
 
-type UseGameHook = (
-  createGame: () => Promise<Game>,
-  // Changing this value tears down the current game and creates a new one,
-  // e.g. so demos re-initialize against the container's current size when
-  // toggling fullscreen.
-  restartTrigger?: unknown,
-) => Game | undefined;
+type UseGameHook = (createGame: () => Promise<Game>) => Game | undefined;
 
-export const useGame: UseGameHook = (createGame, restartTrigger) => {
+export const useGame: UseGameHook = (createGame) => {
   const gameRef = useRef<Game | undefined>(undefined);
 
   useEffect(() => {
@@ -40,7 +34,7 @@ export const useGame: UseGameHook = (createGame, restartTrigger) => {
         gameRef.current = undefined;
       }
     };
-  }, [createGame, restartTrigger]);
+  }, [createGame]);
 
   return gameRef.current;
 };
