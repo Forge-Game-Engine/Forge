@@ -38,7 +38,11 @@ export const CategoryDemosPage: FC<CategoryDemosPageProps> = ({
         <p>{category.description}</p>
         <div className={styles.demoGrid}>
           {categoryDemos.map((demo) => (
-            <DemoCard key={demo.slug} demo={demo} />
+            <DemoCard
+              key={demo.slug}
+              demo={demo}
+              fromCategorySlug={category.slug}
+            />
           ))}
         </div>
       </div>

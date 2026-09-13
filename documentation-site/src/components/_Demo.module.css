@@ -50,6 +50,11 @@
   margin: 50px;
 }
 
+.back {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
 .wrapper {
   justify-content: start;
 }
