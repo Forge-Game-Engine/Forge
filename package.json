@@ -121,7 +121,6 @@
     "url": "git+https://github.com/forge-game-engine/Forge.git"
   },
   "scripts": {
-    "dev": "vite --config vite.config.demo.js",
     "dev:e2e": "vite --config vite.config.e2e.js --port 4300 --strictPort",
     "build": "tsc --project tsconfig.build.json && node scripts/copy-shaders.js",
     "generate-font-atlas": "node scripts/generate-font-atlas.mjs",

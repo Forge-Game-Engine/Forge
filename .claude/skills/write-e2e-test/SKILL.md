@@ -49,7 +49,7 @@ assertion (see step 3) caught it.
 
 Follow AGENTS.md's "Adding a new scenario" steps: a `createScene:
 CreateScene` in `e2e/fixtures/scenes/<name>.ts`, importing straight from
-`../../../src/index.js` (never `/demo`, never `/documentation-site`),
+`../../../src/index.js` (never `/documentation-site`),
 returning a `SceneHandle` (or an interface extending it) with a `step()`
 method and whatever getters/measurement methods your spec needs.
 

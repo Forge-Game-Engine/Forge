@@ -4,7 +4,7 @@
  * `window.__forgeTestHooks`, which specs then drive via `page.evaluate`.
  *
  * A scene builds a minimal, self-contained world directly against `/src` (no
- * dependency on `/demo` or `/documentation-site`) and exposes just enough of
+ * dependency on `/documentation-site`) and exposes just enough of
  * its internals for a spec to assert against. Individual scenes may return a
  * handle that extends this with extra fields (see `camera-pan-zoom.ts`).
  */
