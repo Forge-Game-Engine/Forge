@@ -24,9 +24,9 @@
   --text-color: #1c2541;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(11, 19, 43, 0.08);
-  /* Dark navy reads on both the light-mode teal hero and the
-   * lighter dark-mode teal hero, so one value covers both themes. */
-  --hero-font-color: #0b132b;
+  /* The hero is a fixed navy gradient in both themes (see .hero--primary),
+   * so one light text color covers both. */
+  --hero-font-color: #cfd6ea;
   --card-highlight-color: #ffbc42;
   --card-background-color: #cfd6ea;
   --ifm-footer-background-color: #0b132b;
@@ -58,9 +58,8 @@
   justify-content: center;
 }
 
-/* The hero CTA sits on a teal hero background, so it uses the amber accent
- * (with dark navy text) to stand out rather than blending into the primary
- * color like the hero itself. */
+/* The hero CTA uses the amber accent (with dark navy text) so it pops
+ * against the navy hero rather than blending into it. */
 .button--primary {
   background: #ffbc42;
   color: #1c2541;
@@ -76,17 +75,21 @@
 .button--secondary {
   background: transparent;
   color: var(--hero-font-color);
-  border: none;
+  border: 1px solid rgba(207, 214, 234, 0.4);
   transition: none;
 }
 
 .button--secondary:hover {
   background: #cfd6ea;
   color: #1c2541;
-  border: none;
+  border: 1px solid #cfd6ea;
 }
 
+/* A fixed navy gradient (not the interactive teal primary) so the hero
+ * reads as a bold brand statement in both themes, with teal and amber
+ * reserved as accents on top of it. */
 .hero--primary {
+  background: linear-gradient(160deg, #0b132b 0%, #1c2541 100%);
   color: var(--hero-font-color);
 }
 
