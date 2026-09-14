@@ -12,6 +12,15 @@ function HomepageHeader() {
 
   return (
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
+      <video
+        className={styles.heroVideo}
+        src={`${siteConfig.baseUrl}videos/Hero.mp4`}
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <div className={styles.heroVideoOverlay} />
       <div className="container">
         <img
           src={`${siteConfig.baseUrl}/img/Logo_Transparent.png`}
@@ -24,7 +33,7 @@ function HomepageHeader() {
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link className="button button--primary button--lg" to="/docs/intro">
-            Get Started! 🔥
+            Get Started!
           </Link>
           <Link
             className="button button--secondary button--lg"
