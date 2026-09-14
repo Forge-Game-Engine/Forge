@@ -15,6 +15,8 @@ backquote
 Batchable
 Baumgarte
 Beziers
+billboarded
+billboarding
 blit
 blits
 bmfont
@@ -24,6 +26,7 @@ Catmull
 charsets
 checkmark
 Chlumský
+COLLADA
 commitlint
 cooldowns
 Cousine
@@ -73,6 +76,7 @@ kernings
 keyup
 Killst
 Kryll
+Lambertian
 lerp
 letterbox
 letterboxed
@@ -103,6 +107,7 @@ perlin
 pillarbox
 pillarboxing
 pingpong
+Phong
 Pixabay
 prebuild
 prestart
@@ -129,6 +134,7 @@ rnaumovs
 rolloff
 shaderstore
 skidmark
+slerp
 slevesque
 Seidel
 Smashicons
