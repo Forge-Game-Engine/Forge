@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-09-14
+
+#### Added
+
+- **docs:** The documentation site's homepage hero now plays a looping, blurred background video
+
 #### Fixed
 
 - **utilities:** `Game` now resizes its `RenderContext` to match its container whenever the container's size changes (via a `ResizeObserver`, started on `run()` and stopped on `stop()`), so a running game's canvas, camera projection, and UI layout follow a resized window/container instead of staying pinned to whatever size the container was when the game started. `createGame` wires this up automatically. The actual resize is deferred to the next animation frame rather than done synchronously in the `ResizeObserver` callback, since mutating the canvas's size directly in response to a resize notification is what triggers the browser's "ResizeObserver loop completed with undelivered notifications" error

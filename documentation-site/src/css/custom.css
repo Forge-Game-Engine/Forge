@@ -4,37 +4,53 @@
  * work well for content-centric websites.
  */
 
-/* You can override the default Infima variables here. */
+/*
+ * Brand palette: https://coolors.co/0b132b-1c2541-cfd6ea-4e878c-ffbc42
+ * #0b132b (navy), #1c2541 (dark blue), #cfd6ea (periwinkle), #4e878c (teal),
+ * #ffbc42 (amber). Shade ramps below are the teal hue lightened/darkened
+ * to keep AA contrast against each mode's background.
+ */
 :root {
-  --ifm-color-primary: #4d4d4d;
-  --ifm-color-primary-dark: #404040;
-  --ifm-color-primary-darker: #363636;
-  --ifm-color-primary-darkest: #1a1a1a;
-  --ifm-color-primary-light: #5a5a5a;
-  --ifm-color-primary-lighter: #737373;
-  --ifm-color-primary-lightest: #a6a6a6;
-  --text-color: #3b3b3b;
+  --ifm-color-primary: #4e878c;
+  --ifm-color-primary-dark: #3f6e72;
+  --ifm-color-primary-darker: #315458;
+  --ifm-color-primary-darkest: #1b2f30;
+  --ifm-color-primary-light: #5e9fa5;
+  --ifm-color-primary-lighter: #78afb4;
+  --ifm-color-primary-lightest: #9fc6ca;
+  /* The base teal only clears ~4:1 against a white background, so links
+   * (normal-weight body text) use the darker shade for AA contrast. */
+  --ifm-link-color: var(--ifm-color-primary-dark);
+  --text-color: #1c2541;
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-  --hero-font-color: #d9d9d9;
-  --card-highlight-color: #dddddd;
-  --card-background-color: #eeeeee;
+  --docusaurus-highlighted-code-line-bg: rgba(11, 19, 43, 0.08);
+  /* The hero is a fixed navy gradient in both themes (see .hero--primary),
+   * so one light text color covers both. */
+  --hero-font-color: #cfd6ea;
+  --card-highlight-color: #ffbc42;
+  --card-background-color: #cfd6ea;
+  --ifm-footer-background-color: #0b132b;
+  --ifm-footer-color: #cfd6ea;
+  --ifm-footer-link-color: #9fc6ca;
+  --ifm-footer-link-hover-color: #ffbc42;
+  --ifm-footer-title-color: #ffffff;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #b3b3b3;
-  --ifm-color-primary-dark: #999999;
-  --ifm-color-primary-darker: #808080;
-  --ifm-color-primary-darkest: #4d4d4d;
-  --ifm-color-primary-light: #c2c2c2;
-  --ifm-color-primary-lighter: #d9d9d9;
-  --ifm-color-primary-lightest: #f2f2f2;
-  --text-color: #d9d9d9;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
-  --hero-font-color: #3b3b3b;
-  --card-highlight-color: #444444;
-  --card-background-color: #222222;
+  --ifm-color-primary: #85b7bb;
+  --ifm-color-primary-dark: #6ba7ac;
+  --ifm-color-primary-darker: #559499;
+  --ifm-color-primary-darkest: #3f6e72;
+  --ifm-color-primary-light: #9fc6ca;
+  --ifm-color-primary-lighter: #b9d6d8;
+  --ifm-color-primary-lightest: #d4e5e7;
+  --text-color: #cfd6ea;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
+  /* Amber-on-light-text fails contrast, so dark mode's highlight uses the
+   * darker teal shade instead, which stays readable with light body text. */
+  --card-highlight-color: #315458;
+  --card-background-color: #1c2541;
 }
 
 .main-wrapper {
@@ -42,32 +58,38 @@
   justify-content: center;
 }
 
+/* The hero CTA uses the amber accent (with dark navy text) so it pops
+ * against the navy hero rather than blending into it. */
 .button--primary {
-  background: #4d4d4d;
-  color: #ffffff;
+  background: #ffbc42;
+  color: #1c2541;
   border: none;
 }
 
 .button--primary:hover {
-  background: #404040;
-  color: #ffffff;
-  box-shadow: 0 0 20px #808080;
+  background: #ffa605;
+  color: #1c2541;
+  box-shadow: 0 0 20px rgba(255, 188, 66, 0.6);
 }
 
 .button--secondary {
   background: transparent;
   color: var(--hero-font-color);
-  border: none;
+  border: 1px solid rgba(207, 214, 234, 0.4);
   transition: none;
 }
 
 .button--secondary:hover {
-  background: white;
-  color: #3b3b3b;
-  border: none;
+  background: #cfd6ea;
+  color: #1c2541;
+  border: 1px solid #cfd6ea;
 }
 
+/* A fixed navy gradient (not the interactive teal primary) so the hero
+ * reads as a bold brand statement in both themes, with teal and amber
+ * reserved as accents on top of it. */
 .hero--primary {
+  background: linear-gradient(160deg, #0b132b 0%, #1c2541 100%);
   color: var(--hero-font-color);
 }
 
