@@ -12,6 +12,14 @@ function HomepageHeader() {
 
   return (
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
+      <video
+        className={styles.heroVideo}
+        src={`${siteConfig.baseUrl}videos/Hero.mp4`}
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
       <div className="container">
         <img
           src={`${siteConfig.baseUrl}/img/Logo_Transparent.png`}

@@ -7,6 +7,7 @@
   padding: 4rem 0;
   text-align: center;
   position: relative;
+  z-index: 0;
   overflow: hidden;
   height: 100%;
   flex-grow: 1;
@@ -16,6 +17,18 @@
   .heroBanner {
     padding: 2rem;
   }
+}
+
+.heroVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px);
+  transform: scale(1.05);
+  z-index: -1;
 }
 
 .buttons {
