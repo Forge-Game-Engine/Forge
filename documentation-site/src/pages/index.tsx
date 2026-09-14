@@ -20,6 +20,7 @@ function HomepageHeader() {
         muted
         playsInline
       />
+      <div className={styles.heroVideoOverlay} />
       <div className="container">
         <img
           src={`${siteConfig.baseUrl}/img/Logo_Transparent.png`}
