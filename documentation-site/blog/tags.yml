@@ -10,3 +10,9 @@ rendering:
 demos:
   label: Demos
   description: New and updated interactive demos
+ui:
+  label: UI
+  description: The retained-mode UI module - layout, anchoring, controls and interaction
+text:
+  label: Text
+  description: MSDF text rendering - shaping, layout, and outline/shadow effects

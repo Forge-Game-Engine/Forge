@@ -1,0 +1,228 @@
+---
+slug: september-2026-update
+title: 'September Update: A Retained-Mode UI System, MSDF Text Rendering, and more...'
+authors: [stormmuller]
+tags: [release, ui, text, physics]
+image: ./banner.png
+---
+
+![Feature Image](./banner.png)
+
+Since `0.24.0`, Forge has grown a whole new limb: a retained-mode UI module,
+built from the ground up on top of the ECS instead of bolted on beside it.
+Paired with a brand-new MSDF text renderer, you can now build an entire menu
+screen - buttons, sliders, dropdowns, tooltips, labels and all - without
+leaving the engine. This post rounds up everything that's shipped since the
+last update.
+
+{/* truncate */}
+
+## A UI system built for real screens
+
+![UI Main Menu](./ui-main-menu.png)
+
+The UI module (`@forge-game-engine/forge/ui`) is a full retained-mode layout
+and interaction system, wired straight into the ECS the same way everything
+else in Forge is. It starts with a layout core -
+
+<a href="/Forge/docs/docs/ui/anchors-and-layout" target="_blank" rel="noopener noreferrer">
+  <code>RectTransformEcsComponent</code>
+</a>
+, anchors, pivots and stretch - resolved every frame by
+<code>createUiLayoutEcsSystem</code> into concrete positions and sizes, so a
+panel's children always end up exactly where their anchors say they should,
+regardless of resolution or aspect ratio. A
+<a href="/Forge/docs/docs/ui/creating-a-canvas" target="_blank" rel="noopener noreferrer">
+  <code>Canvas</code>
+</a>
+gives you a dedicated UI camera isolated from the rest of the world by its own
+render category, and <code>createPanel</code>/<code>createLabel</code> get you
+building immediately.
+
+The
+<a href="/Forge/demos/ui-main-menu" target="_blank" rel="noopener noreferrer">
+  UI Main Menu demo
+</a>
+above is built entirely from this module - nested panels, layout groups, a
+left-hand navigation list, a live fleet-strength bar and a deploy button -
+with nothing hand-positioned in pixels.
+
+## Buttons, sliders, toggles, and dropdowns
+
+![UI Slider](./ui-slider.gif)
+
+On top of layout comes interaction:
+<code>UiInteractableEcsComponent</code> gives any entity pointer and
+gamepad/keyboard events - hover, press, drag, and a source-agnostic
+<code>onInvoke</code> that fires the same way whether a mouse click or a
+controller's submit button triggered it. Built on that foundation, the
+module ships a full set of ready-made controls:
+
+- **<a href="/Forge/demos/ui-button" target="_blank" rel="noopener noreferrer">Buttons</a>** with an eased color transition per interaction state (hover, press, disabled), and automatic nearest-neighbor focus navigation for gamepad/keyboard.
+- **<a href="/Forge/demos/ui-slider" target="_blank" rel="noopener noreferrer">Sliders</a>** - a click-and-drag track with a handle and fill, shown above driving a live value label. The whole track is a drag surface, not just the handle.
+- **<a href="/Forge/demos/ui-toggle" target="_blank" rel="noopener noreferrer">Toggles</a>**, including mutually-exclusive radio groups sharing one `UiToggleGroupEcsComponent`.
+- **<a href="/Forge/demos/ui-progress-bar" target="_blank" rel="noopener noreferrer">Progress bars</a>**, a read-only fill indicator that reflects a `value` write the same frame - handy for health bars and loading screens.
+- **<a href="/Forge/demos/ui-dropdown" target="_blank" rel="noopener noreferrer">Dropdowns</a>**, shown below - a header plus a click-to-open option list, each row an ordinary button under the hood.
+
+![UI Dropdown](./ui-dropdown.gif)
+
+See the UI doc's
+<a href="/Forge/docs/docs/ui/buttons-and-interaction" target="_blank" rel="noopener noreferrer">
+  Buttons and Interaction
+</a>
+and
+<a href="/Forge/docs/docs/ui/controls" target="_blank" rel="noopener noreferrer">
+  Controls
+</a>
+sections for the full API.
+
+## Layout groups, tooltips, and canvas groups
+
+Real screens are rarely made of one-off, hand-placed elements - they're rows
+and grids of controls that need to line up, resize together, and sometimes
+disappear as a unit. `HorizontalLayoutGroupEcsComponent`,
+`VerticalLayoutGroupEcsComponent` and `GridLayoutGroupEcsComponent` arrange a
+parent's children automatically (nesting freely), `ContentSizeFitterEcsComponent`
+shrink-wraps an entity to its own content, and `AspectRatioFitterEcsComponent`
+keeps an element's proportions locked as its parent resizes. See the
+<a href="/Forge/docs/docs/ui/layout-groups" target="_blank" rel="noopener noreferrer">
+  Layout Groups doc
+</a>
+for the full set, including column-aligned form layout for settings screens
+and inspectors.
+
+![UI Canvas Group](./ui-canvas-group.gif)
+
+`CanvasGroupEcsComponent` applies alpha, `interactable`, and `blocksRaycasts`
+to a whole subtree in one write - fading out and disabling an entire modal,
+like above, instead of touching every element inside it individually.
+Tooltips (`createTooltip`) attach a floating panel to any interactable
+element and show themselves automatically after a hover/focus delay. And for
+notched or rounded-corner displays, `UiSafeAreaEcsComponent` shrinks a
+full-screen element inward from the device's safe-area insets every frame.
+See the
+<a href="/Forge/docs/docs/ui/canvas-groups-and-tooltips" target="_blank" rel="noopener noreferrer">
+  Canvas Groups and Tooltips
+</a>
+and
+<a href="/Forge/docs/docs/ui/responsive-ui" target="_blank" rel="noopener noreferrer">
+  Responsive UI
+</a>
+docs for both.
+
+Canvases aren't limited to the screen either - a world-space canvas
+(`renderMode: 'worldSpace'`) puts UI content directly in the game world
+instead of overlaid on it, for diegetic UI like a health bar over an enemy's
+head. Check out the
+<a href="/Forge/demos/ui-world-space-canvas" target="_blank" rel="noopener noreferrer">
+  World-Space Canvas demo
+</a>
+to see one following a moving target.
+
+## Crisp text at any size, with outlines and glow
+
+![Text Demo](./text-demo.png)
+
+Alongside the UI module, `@forge-game-engine/forge/text` brings multi-channel
+signed distance field (MSDF) text rendering to Forge - stays crisp at any
+scale, unlike a rasterized bitmap font. `addTextComponent` shapes and lays out
+a string (kerning, word-wrap, horizontal/vertical alignment, line height) into
+cached glyph quads drawn through the same instanced sprite pipeline as
+nine-slice sprites, and outline/soft-shadow effects render in their own pass
+so they stay a uniform strength across a whole word - no gaps between
+tightly-kerned letters, no double-painted fills.
+
+Best of all, there's zero setup required to get started: Forge ships a
+pre-generated default font atlas (Liberation Sans), so `addTextComponent`
+renders text out of the box with no font file or license to manage. Bring
+your own font with the new `forge-generate-font-atlas` CLI when you need one.
+The
+<a href="/Forge/demos/text" target="_blank" rel="noopener noreferrer">
+  Text demo
+</a>
+above is an interactive playground - type your own text and tune size,
+alignment, wrap, and outline/glow live. See the
+<a href="/Forge/docs/docs/text" target="_blank" rel="noopener noreferrer">
+  Text docs
+</a>
+for the full rendering, layout, and effects reference.
+
+## Raycasting and kinematic bodies
+
+The physics engine picked up two smaller but broadly useful additions:
+`raycast(world, start, end, sort?)` casts a line segment against every
+collider in an `EcsWorld` - circles, polygons, and terrain alike - and
+returns every hit ordered by distance, for line-of-sight checks, projectile
+prediction, or a click-to-select tool. See it in action in the
+<a href="/Forge/demos/raycasting" target="_blank" rel="noopener noreferrer">
+  Raycasting demo
+</a>
+. And `RigidBodyEcsComponent.type` now lets a body be `'kinematic'` - moved
+directly by game code, still pushing dynamic bodies on contact, but unaffected
+by gravity or forces - useful for a moving platform or an elevator that
+shouldn't be shoved around by what's standing on it.
+
+## Under the hood: a leaner math API and explicit system ordering
+
+Two changes are worth calling out even though neither adds a visible
+feature, because they touch code you may already have:
+
+- **`Vector2`/`Vector3` are now plain objects, not classes.** Construct them
+  as `{ x, y }` literals and operate on them via `Vec2`/`Vec3` static methods
+  (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, ...) that mutate their first
+  argument in place instead of allocating a new vector - a meaningful win in
+  hot loops like physics integration. `Rect` made the same move, to a plain
+  `{ min, max }` object operated on via `Rects`. See the
+  <a href="/Forge/docs/docs/math/vectors" target="_blank" rel="noopener noreferrer">
+    Vectors and Rectangles doc
+  </a>
+  for the full migration guidance. **Breaking change.**
+- **`EcsWorld.addSystem` takes `before`/`after` instead of a numeric
+  priority.** Order a system relative to specific other systems - `after:
+  [gravitySystem]` - rather than picking an arbitrary number and hoping
+  nothing else already claimed it. Whole groups of systems can be ordered
+  against each other too, via `addSystemGroup`. See the ECS World doc's
+  <a href="/Forge/docs/docs/ecs/world#ordering-systems-with-beforeafter" target="_blank" rel="noopener noreferrer">
+    Ordering systems with before/after
+  </a>
+  section. **Breaking change.**
+
+## Many more smaller improvements
+
+- `MouseInputSource` now exposes raw canvas-space pointer state directly -
+  `position`, `delta`, `scroll`, `buttonsDown`/`buttonsHeld`/`buttonsUp` -
+  for code that wants device state without going through an `InputAction`
+  binding. It's also what drives the UI module's own hit-testing.
+- `SpriteEcsComponent`/`TextEcsComponent` both gained a `sortDepth` override,
+  for controlling draw order within a layer independently of world position -
+  useful for keeping a panel's own label reliably on top of it.
+- `EcsWorld.getComponentAccessor(componentKey)` resolves a component's
+  storage once and returns a fast lookup function, for a system checking the
+  same optional component on many entities in a tight loop.
+- `Game` now follows its container's size automatically via a
+  `ResizeObserver`, so a running game's canvas, camera, and UI layout stay in
+  sync with a resized window instead of staying pinned to whatever size the
+  container was when the game started.
+- `DirectedAcyclicGraph<T>` - the generic topological-ordering structure
+  behind `before`/`after` system ordering - is exported too, in case you need
+  the same kind of ordering elsewhere.
+
+## Try it out
+
+All of this is available today - the work landed in `0.24.1` through
+`0.25.1`. Grab the
+<a href="/Forge/docs/intro" target="_blank" rel="noopener noreferrer">
+  Getting Started guide
+</a>
+to add Forge to your project, or jump straight into the
+<a href="/Forge/demos/category/ui" target="_blank" rel="noopener noreferrer">
+  UI demos
+</a>
+to click, drag, and tab your way around. For the full list of changes,
+release by release, see the
+<a href="/Forge/docs/changelog" target="_blank" rel="noopener noreferrer">
+  changelog
+</a>
+.
+
+We'd love to see what you build with it!
