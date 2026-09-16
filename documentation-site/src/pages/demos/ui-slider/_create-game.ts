@@ -34,7 +34,6 @@ import {
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 const renderLayers = {
@@ -53,15 +52,6 @@ async function createBackdrop(
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
-
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
-
-  backdropSprite.width = width;
-  backdropSprite.height = height;
 
   const backdrop = world.createEntity();
 
@@ -92,7 +82,6 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
   createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.world,
-    verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
   await createBackdrop(world, renderContext);
@@ -115,11 +104,11 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
     getAssetUrl('img/White.png'),
   );
   const handleImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/kenney_puzzle-pack-2/PNG/Coins/coin_01.png'),
+    getAssetUrl('img/kenney_ui-pack/PNG/Blue/Default/button_round_gloss.png'),
   );
 
   const trackColor = new Color(0.85, 0.85, 0.88, 1);
-  const accentColor = new Color(0.35, 0.55, 0.95, 1);
+  const accentColor = new Color(0.75, 0.75, 0.15, 1);
 
   const trackSprite = createImageSprite(whiteImage, renderContext, {
     layer: renderLayers.ui,
@@ -154,7 +143,7 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
     fontAtlas,
     size: 28,
     anchor: UiAnchor.center(),
-    anchoredPosition: { x: 260, y: 60 },
+    anchoredPosition: { x: 230, y: 60 },
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: renderLayers.ui,
@@ -166,6 +155,7 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
     handleSprite: createImageSprite(handleImage, renderContext, {
       layer: renderLayers.ui,
     }),
+    handleSize: { x: 56, y: 56 },
     fillSprite,
     anchor: UiAnchor.center({ x: 500, y: 28 }),
     anchoredPosition: { x: 0, y: 0 },
