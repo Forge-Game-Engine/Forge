@@ -244,7 +244,7 @@ export const createCanvasGroupGame = async (
     sprite: toggleBoxSprite,
     checkmarkSprite: crossSprite,
     anchor: UiAnchor.topLeft({ x: 32, y: 32 }),
-    anchoredPosition: { x: 300, y: -60 },
+    anchoredPosition: { x: 300, y: -46 },
   });
 
   modalToggle.onValueChanged.registerListener((isDisabled) => {

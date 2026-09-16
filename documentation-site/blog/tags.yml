@@ -16,3 +16,7 @@ ui:
 text:
   label: Text
   description: MSDF text rendering - shaping, layout, and outline/shadow effects
+editor:
+  label: Editor
+  description: The Forge visual editor
+
