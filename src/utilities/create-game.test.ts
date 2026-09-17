@@ -7,12 +7,26 @@ vi.mock('../rendering/index.js', () => ({
   createRenderContext: vi.fn(),
 }));
 
+/**
+ * jsdom doesn't implement `ResizeObserver`, and `createGame` now wires up a
+ * `createContainerResizeSync` eagerly (not lazily on `game.run()`), so every
+ * test needs this stand-in on the global even though none of them exercise
+ * resize behavior directly.
+ */
+class NoopResizeObserver {
+  public observe(): void {}
+  public disconnect(): void {}
+  public unobserve(): void {}
+}
+
 describe('createGame', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     container.id = 'game-container';
     document.body.appendChild(container);
+
+    vi.stubGlobal('ResizeObserver', NoopResizeObserver);
   });
 
   it('returns an instance of Game', () => {
@@ -40,6 +54,11 @@ describe('createGame', () => {
     createGame('game-container');
 
     expect(createRenderContext).toHaveBeenCalled();
+  });
+
+  it('returns a resize sync', () => {
+    const { resizeSync } = createGame('game-container');
+    expect(typeof resizeSync.stop).toBe('function');
   });
 
   it('throws an error if the container element is not found', () => {

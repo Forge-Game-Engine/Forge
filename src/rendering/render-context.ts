@@ -1,4 +1,5 @@
 import { ImageCache } from '../asset-loading/index.js';
+import { Resizable } from '../common/index.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { UniformValue } from './materials/index.js';
@@ -9,7 +10,7 @@ import { createShaderCache } from './utilities/index.js';
 /**
  * The rendering context.
  */
-export class RenderContext {
+export class RenderContext implements Resizable {
   /** The strategy for clearing the render context. */
   public clearStrategy: CLEAR_STRATEGY_KEYS;
 

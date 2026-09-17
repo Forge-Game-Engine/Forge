@@ -6,6 +6,7 @@ export * from './chain.js';
 export * from './types/index.js';
 export * from './game.js';
 export * from './create-game.js';
+export * from './create-container-resize-sync.js';
 export * from './assert-never.js';
 export * from './shallow-array-equals.js';
 export * from './matches-mask.js';
