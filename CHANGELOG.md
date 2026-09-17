@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **common:** Add the `Resizable` interface (`width`, `height`, `resize(width, height)`), implemented by `RenderContext`
+- **common:** Add the `World` type (`Updatable & Stoppable`)
 
 #### Changed
 
-- **utilities:** `Game`'s constructor now takes an array of worlds and an array of resizables instead of a single `EcsWorld` and a single `RenderContext`, so one `Game` can drive more than one world (e.g. a gameplay world alongside a separate UI overlay world) and keep more than one render context in sync with its container. `Game` no longer depends on the `EcsWorld`/`RenderContext` types directly - it accepts any `Updatable & Stoppable` object as a world and any `Resizable` object as a resizable. `createGame` is unaffected and still returns a single `world`/`renderContext` pair, now passed to `Game` as one-element arrays
+- **utilities:** `Game`'s constructor now takes an array of `World`s and an array of `Resizable`s instead of a single `EcsWorld` and a single `RenderContext`, so one `Game` can drive more than one world (e.g. a gameplay world alongside a separate UI overlay world) and keep more than one render context in sync with its container. `Game` no longer depends on the `EcsWorld`/`RenderContext` types directly. `createGame` is unaffected and still returns a single `world`/`renderContext` pair, now passed to `Game` as one-element arrays
 
 ## [0.25.2] - 2026-09-15
 

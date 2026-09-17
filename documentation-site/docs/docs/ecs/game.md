@@ -5,16 +5,17 @@ sidebar_position: 1
 # Game
 
 A `Game` instance manages the game loop and coordinates updates for `Time`,
-one or more updatable/stoppable objects (typically `EcsWorld` instances), and
-any resizable objects (typically `RenderContext` instances) tied to a DOM
-container. Use `Game` when you want a continuous frame-driven update
-(requestAnimationFrame) for systems that should run each frame.
+one or more `World`s (typically `EcsWorld` instances), and any resizable
+objects (typically `RenderContext` instances) tied to a DOM container. Use
+`Game` when you want a continuous frame-driven update (requestAnimationFrame)
+for systems that should run each frame.
 
 `Game` doesn't depend on `EcsWorld` or `RenderContext` directly - it accepts
-any object implementing the `Updatable`/`Stoppable` interfaces (for worlds)
-and the `Resizable` interface (for resizables), so a single game can drive
-more than one world (e.g. a gameplay world alongside a separate UI overlay
-world) and keep more than one render context in sync with its container.
+any object matching the `World` type (an `Updatable` and `Stoppable`) for
+worlds, and any object matching the `Resizable` interface for resizables, so
+a single game can drive more than one world (e.g. a gameplay world alongside
+a separate UI overlay world) and keep more than one render context in sync
+with its container.
 
 Why use `Game` instead of only an `EcsWorld`?
 

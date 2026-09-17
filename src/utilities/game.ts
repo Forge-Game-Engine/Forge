@@ -1,4 +1,4 @@
-import { Resizable, Stoppable, Time, Updatable } from '../common/index.js';
+import { Resizable, Stoppable, Time, World } from '../common/index.js';
 
 /**
  * Manages the game loop and coordinates updates between systems.
@@ -13,19 +13,19 @@ export class Game implements Stoppable {
   private _resizeObserver: ResizeObserver | null = null;
 
   private readonly _time: Time;
-  private readonly _worlds: readonly (Updatable & Stoppable)[];
+  private readonly _worlds: readonly World[];
   private readonly _resizables: readonly Resizable[];
 
   /**
    * Creates a new Game instance.
    * @param time - The Time instance for managing time-related operations.
-   * @param worlds - The updatable, stoppable objects (e.g. `EcsWorld` instances) to update once per frame and stop when the game stops. A game can drive more than one, e.g. a gameplay world alongside a separate UI overlay world.
+   * @param worlds - The worlds (e.g. `EcsWorld` instances) to update once per frame and stop when the game stops. A game can drive more than one, e.g. a gameplay world alongside a separate UI overlay world.
    * @param container - The HTML element that contains the game canvas.
    * @param resizables - The resizable objects (e.g. `RenderContext` instances) whose canvases should be kept in sync with `container`'s size while the game is running. Omit if the game has nothing to resize.
    */
   constructor(
     time: Time,
-    worlds: readonly (Updatable & Stoppable)[],
+    worlds: readonly World[],
     container: HTMLElement,
     resizables: readonly Resizable[] = [],
   ) {
