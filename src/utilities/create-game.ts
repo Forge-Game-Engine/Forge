@@ -30,7 +30,7 @@ export function createGame(containerId: string): {
 
   const renderContext = createRenderContext(canvas);
 
-  const game = new Game(time, world, container, renderContext);
+  const game = new Game(time, [world], container, [renderContext]);
 
   return { game, world, time, renderContext };
 }

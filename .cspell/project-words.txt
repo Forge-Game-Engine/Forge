@@ -122,6 +122,7 @@ renderables
 reparenting
 requizits
 resettables
+resizables
 respawns
 retuned
 RGBA

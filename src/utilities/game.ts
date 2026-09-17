@@ -1,6 +1,4 @@
-import { Stoppable, Time } from '../common/index.js';
-import { EcsWorld } from '../ecs/ecs-world.js';
-import { RenderContext } from '../rendering/index.js';
+import { Resizable, Stoppable, Time, Updatable } from '../common/index.js';
 
 /**
  * Manages the game loop and coordinates updates between systems.
@@ -15,26 +13,26 @@ export class Game implements Stoppable {
   private _resizeObserver: ResizeObserver | null = null;
 
   private readonly _time: Time;
-  private readonly _world: EcsWorld;
-  private readonly _renderContext: RenderContext | undefined;
+  private readonly _worlds: readonly (Updatable & Stoppable)[];
+  private readonly _resizables: readonly Resizable[];
 
   /**
    * Creates a new Game instance.
    * @param time - The Time instance for managing time-related operations.
-   * @param world - The ECS world containing all entities and systems.
+   * @param worlds - The updatable, stoppable objects (e.g. `EcsWorld` instances) to update once per frame and stop when the game stops. A game can drive more than one, e.g. a gameplay world alongside a separate UI overlay world.
    * @param container - The HTML element that contains the game canvas.
-   * @param renderContext - The render context whose canvas should be kept in sync with `container`'s size while the game is running. Omit if the game has no rendering to resize.
+   * @param resizables - The resizable objects (e.g. `RenderContext` instances) whose canvases should be kept in sync with `container`'s size while the game is running. Omit if the game has nothing to resize.
    */
   constructor(
     time: Time,
-    world: EcsWorld,
+    worlds: readonly (Updatable & Stoppable)[],
     container: HTMLElement,
-    renderContext?: RenderContext,
+    resizables: readonly Resizable[] = [],
   ) {
     this._time = time;
-    this._world = world;
+    this._worlds = worlds;
     this.container = container;
-    this._renderContext = renderContext;
+    this._resizables = resizables;
   }
 
   /**
@@ -56,8 +54,8 @@ export class Game implements Stoppable {
     // boundaries).
     this._time.update(performance.now());
 
-    if (this._renderContext) {
-      const renderContext = this._renderContext;
+    if (this._resizables.length > 0) {
+      const resizables = this._resizables;
 
       // Deferred to the next frame rather than resizing synchronously in
       // the observer callback: mutating the canvas's size in direct
@@ -68,7 +66,7 @@ export class Game implements Stoppable {
       // cycle.
       this._resizeObserver = new ResizeObserver(() => {
         requestAnimationFrame(() => {
-          this._resizeToContainer(renderContext);
+          this._resizeToContainer(resizables);
         });
       });
       this._resizeObserver.observe(this.container);
@@ -93,33 +91,37 @@ export class Game implements Stoppable {
       this._resizeObserver = null;
     }
 
-    this._world.stop();
+    for (const world of this._worlds) {
+      world.stop();
+    }
   }
 
   /**
-   * Resizes `renderContext` to match `container`'s current size, so the
-   * canvas (and anything derived from `RenderContext.width`/`height`, such
-   * as the camera's projection matrix) follows the container instead of
-   * staying pinned to whatever size it had when the game started. Skips a
-   * momentarily zero-sized container (e.g. `display: none` mid-reflow),
-   * since `RenderContext.resize` requires positive dimensions.
-   * @param renderContext - The render context to resize.
+   * Resizes every resizable to match `container`'s current size, so each
+   * canvas (and anything derived from its width/height, such as a camera's
+   * projection matrix) follows the container instead of staying pinned to
+   * whatever size it had when the game started. Skips a momentarily
+   * zero-sized container (e.g. `display: none` mid-reflow), since a
+   * resizable's `resize` typically requires positive dimensions.
+   * @param resizables - The resizables to resize.
    */
-  private _resizeToContainer(renderContext: RenderContext): void {
+  private _resizeToContainer(resizables: readonly Resizable[]): void {
     const { clientWidth, clientHeight } = this.container;
 
     if (clientWidth <= 0 || clientHeight <= 0) {
       return;
     }
 
-    if (
-      renderContext.width === clientWidth &&
-      renderContext.height === clientHeight
-    ) {
-      return;
-    }
+    for (const resizable of resizables) {
+      if (
+        resizable.width === clientWidth &&
+        resizable.height === clientHeight
+      ) {
+        continue;
+      }
 
-    renderContext.resize(clientWidth, clientHeight);
+      resizable.resize(clientWidth, clientHeight);
+    }
   }
 
   private readonly _gameLoop = (): void => {
@@ -137,7 +139,10 @@ export class Game implements Stoppable {
     // block) and produces a negative delta. Reading our own clock here
     // keeps every delta relative to the same monotonic source.
     this._time.update(performance.now());
-    this._world.update();
+
+    for (const world of this._worlds) {
+      world.update(this._time.deltaTimeInMilliseconds);
+    }
 
     this._animationFrameId = requestAnimationFrame(this._gameLoop);
   };

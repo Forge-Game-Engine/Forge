@@ -4,31 +4,42 @@ sidebar_position: 1
 
 # Game
 
-A `Game` instance manages the game loop and coordinates updates for `Time`, the `EcsWorld`, and any rendering context tied to a DOM container. Use `Game` when you want a continuous frame-driven update (requestAnimationFrame) for systems that should run each frame.
+A `Game` instance manages the game loop and coordinates updates for `Time`,
+one or more updatable/stoppable objects (typically `EcsWorld` instances), and
+any resizable objects (typically `RenderContext` instances) tied to a DOM
+container. Use `Game` when you want a continuous frame-driven update
+(requestAnimationFrame) for systems that should run each frame.
+
+`Game` doesn't depend on `EcsWorld` or `RenderContext` directly - it accepts
+any object implementing the `Updatable`/`Stoppable` interfaces (for worlds)
+and the `Resizable` interface (for resizables), so a single game can drive
+more than one world (e.g. a gameplay world alongside a separate UI overlay
+world) and keep more than one render context in sync with its container.
 
 Why use `Game` instead of only an `EcsWorld`?
 
 - `EcsWorld` is solely a container for entities, components, and systems. It exposes `update()` which runs registered systems for a single tick.
-- `Game` wraps a `Time` and an `EcsWorld` and calls `world.update()` on each animation frame, handling `requestAnimationFrame`, starting and stopping the loop, and providing a convenient place to attach rendering (canvas) logic.
+- `Game` wraps a `Time` and one or more worlds, calling `update()` on each of them every animation frame, handling `requestAnimationFrame`, starting and stopping the loop, and providing a convenient place to attach rendering (canvas) logic.
 - For tests, server-side logic, or single-step updates you can call `world.update()` directly without a `Game` instance.
 
 ## Resizing
 
-If constructed with a `RenderContext` (as `createGame` does automatically),
-`Game` keeps that render context's canvas sized to its container: while the
-game is running, a `ResizeObserver` watches the container element and calls
-`RenderContext.resize()` whenever the container's size actually changes. This
-means a game embedded in a resizable page - or one whose container changes
-size for any other reason, like a fullscreen toggle - stays correctly sized
-without you writing your own resize handling, and without restarting the
-game (which would reset all engine and game state). Since the camera's
-projection matrix and the UI layout system already read `RenderContext.width`/
-`height` fresh every frame, both follow the resize automatically.
+If constructed with one or more resizables (as `createGame` does
+automatically, passing the `RenderContext` it creates), `Game` keeps each
+one's canvas sized to its container: while the game is running, a
+`ResizeObserver` watches the container element and calls `resize()` on every
+resizable whenever the container's size actually changes. This means a game
+embedded in a resizable page - or one whose container changes size for any
+other reason, like a fullscreen toggle - stays correctly sized without you
+writing your own resize handling, and without restarting the game (which
+would reset all engine and game state). Since the camera's projection matrix
+and the UI layout system already read `RenderContext.width`/`height` fresh
+every frame, both follow the resize automatically.
 
 The observer starts in `run()` and disconnects in `stop()`. Passing no
-`RenderContext` to `Game`'s constructor (or building one manually without
-going through `createGame`) simply skips this - useful for a `Game` that
-drives systems with no canvas of its own.
+resizables to `Game`'s constructor (or building a `RenderContext` manually
+without going through `createGame`) simply skips this - useful for a `Game`
+that drives systems with no canvas of its own.
 
 The actual resize happens on the next animation frame after the
 `ResizeObserver` notification, not synchronously inside its callback:
@@ -80,7 +91,7 @@ const time = new Time();
 const world = new EcsWorld();
 const container = document.getElementById('game') as HTMLElement;
 
-const game = new Game(time, world, container);
+const game = new Game(time, [world], container);
 
 // add systems, load assets, etc.
 game.run();

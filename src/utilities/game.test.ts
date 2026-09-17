@@ -52,7 +52,7 @@ describe('Game', () => {
     time = new Time();
     world = new EcsWorld();
     container = document.createElement('div');
-    game = new Game(time, world, container);
+    game = new Game(time, [world], container);
 
     rafCallbacks = [];
 
@@ -123,7 +123,7 @@ describe('Game', () => {
     });
 
     it('observes the container for size changes when constructed with a render context', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       game.run();
 
@@ -132,7 +132,7 @@ describe('Game', () => {
     });
 
     it("resizes the render context to the container's current size when the container resizes", () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       Object.defineProperty(container, 'clientWidth', { value: 800 });
       Object.defineProperty(container, 'clientHeight', { value: 600 });
@@ -148,7 +148,7 @@ describe('Game', () => {
     });
 
     it('does not resize when the container reports the render context’s current size', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       Object.defineProperty(container, 'clientWidth', {
         value: renderContext.width,
@@ -168,7 +168,7 @@ describe('Game', () => {
     });
 
     it('does not resize when the container is momentarily zero-sized', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       Object.defineProperty(container, 'clientWidth', { value: 0 });
       Object.defineProperty(container, 'clientHeight', { value: 0 });
@@ -184,7 +184,7 @@ describe('Game', () => {
     });
 
     it('defers the actual resize to the next animation frame instead of doing it synchronously in the observer callback, since mutating the canvas synchronously in response to a ResizeObserver notification is what triggers the browser’s "ResizeObserver loop completed" error', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       Object.defineProperty(container, 'clientWidth', { value: 800 });
       Object.defineProperty(container, 'clientHeight', { value: 600 });
@@ -203,7 +203,7 @@ describe('Game', () => {
     });
 
     it('disconnects the resize observer when stopped', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       game.run();
       game.stop();
@@ -212,7 +212,7 @@ describe('Game', () => {
     });
 
     it('stopping without having run does not throw, since there is no resize observer to disconnect', () => {
-      game = new Game(time, world, container, renderContext);
+      game = new Game(time, [world], container, [renderContext]);
 
       expect(() => game.stop()).not.toThrow();
       expect(FakeResizeObserver.instances).toHaveLength(0);
