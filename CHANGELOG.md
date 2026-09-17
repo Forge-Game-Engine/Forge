@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **common:** Add the `Resizable` interface (`width`, `height`, `resize(width, height)`), implemented by `RenderContext`
 - **common:** Add the `World` type (`Updatable & Stoppable`)
-- **utilities:** Add `createContainerResizeSync(container, resizables)`, watching a container element and calling `resize()` on every `Resizable` (e.g. a `RenderContext`) whenever its size changes - the container-resize handling that used to live inside `Game`, now a standalone, independently-lifecycled utility
+- **utilities:** Add `createContainerResizeSync(container, resizables)`, watching a container element and calling `resize()` on every `Resizable` (e.g. a `RenderContext`) whenever its size changes - the container-resize handling that used to live inside `Game`, now a standalone utility with its own independent lifecycle
 
 #### Changed
 
