@@ -12,6 +12,7 @@ import {
   createTextureFromImage,
   getSharedBlackTexture,
 } from '../shaders/index.js';
+import { createTextureImport } from './create-texture-import.js';
 import { combineInstanceDataSegments } from './instance-data-segment.js';
 import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
@@ -76,6 +77,16 @@ export interface CreateImageSpriteOptions {
    * The render layer for the sprite. Defaults to `1`.
    */
   layer?: number;
+
+  /**
+   * Runs the sprite's pixel dimensions (`frameDimensions`, or the full
+   * image if omitted) through `createTextureImport`, sizing the sprite in
+   * world units as `pixelWidth / pixelsPerUnit` / `pixelHeight /
+   * pixelsPerUnit` instead of using the pixel dimensions directly as world
+   * units. Omit to keep the previous behavior (equivalent to a
+   * `pixelsPerUnit` of `1`).
+   */
+  pixelsPerUnit?: number;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -147,10 +158,21 @@ export function createImageSprite(
     setupInstanceAttributes,
   );
 
+  const pixelWidth = options.frameDimensions?.x ?? image.width;
+  const pixelHeight = options.frameDimensions?.y ?? image.height;
+
+  const { worldWidth, worldHeight } = options.pixelsPerUnit
+    ? createTextureImport(image, {
+        pixelsPerUnit: options.pixelsPerUnit,
+        width: pixelWidth,
+        height: pixelHeight,
+      })
+    : { worldWidth: pixelWidth, worldHeight: pixelHeight };
+
   return {
     enabled: true,
-    width: options.frameDimensions?.x ?? image.width,
-    height: options.frameDimensions?.y ?? image.height,
+    width: worldWidth,
+    height: worldHeight,
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     renderable,
