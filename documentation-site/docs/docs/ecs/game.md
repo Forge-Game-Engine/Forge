@@ -4,43 +4,53 @@ sidebar_position: 1
 
 # Game
 
-A `Game` instance manages the game loop and coordinates updates for `Time`,
-one or more `World`s (typically `EcsWorld` instances), and any resizable
-objects (typically `RenderContext` instances) tied to a DOM container. Use
-`Game` when you want a continuous frame-driven update (requestAnimationFrame)
-for systems that should run each frame.
+A `Game` instance manages the game loop: a `Time` instance and one or more
+`World`s (typically `EcsWorld` instances), driven by `requestAnimationFrame`.
+Use `Game` when you want a continuous frame-driven update for systems that
+should run each frame.
 
-`Game` doesn't depend on `EcsWorld` or `RenderContext` directly - it accepts
-any object matching the `World` type (an `Updatable` and `Stoppable`) for
-worlds, and any object matching the `Resizable` interface for resizables, so
-a single game can drive more than one world (e.g. a gameplay world alongside
-a separate UI overlay world) and keep more than one render context in sync
-with its container.
+`Game` is a simple loop orchestrator - it has no notion of rendering or
+resizing, and doesn't depend on `EcsWorld` or `RenderContext` directly. It
+accepts any object matching the `World` type (an `Updatable` and a
+`Stoppable`) as a world, so a single game can drive more than one, e.g. a
+gameplay world alongside a separate UI overlay world.
 
 Why use `Game` instead of only an `EcsWorld`?
 
 - `EcsWorld` is solely a container for entities, components, and systems. It exposes `update()` which runs registered systems for a single tick.
-- `Game` wraps a `Time` and one or more worlds, calling `update()` on each of them every animation frame, handling `requestAnimationFrame`, starting and stopping the loop, and providing a convenient place to attach rendering (canvas) logic.
+- `Game` wraps a `Time` and one or more worlds, calling `update()` on each of them every animation frame, and handles starting and stopping the loop.
 - For tests, server-side logic, or single-step updates you can call `world.update()` directly without a `Game` instance.
+
+`Game` also exposes `container`: the HTML element associated with the game
+(e.g. the one containing its canvas), for consumers that need a DOM anchor -
+an input source, an overlay element appended alongside the canvas, etc.
+`Game` itself does nothing with it.
 
 ## Resizing
 
-If constructed with one or more resizables (as `createGame` does
-automatically, passing the `RenderContext` it creates), `Game` keeps each
-one's canvas sized to its container: while the game is running, a
-`ResizeObserver` watches the container element and calls `resize()` on every
-resizable whenever the container's size actually changes. This means a game
-embedded in a resizable page - or one whose container changes size for any
-other reason, like a fullscreen toggle - stays correctly sized without you
-writing your own resize handling, and without restarting the game (which
+Keeping a canvas sized to its container isn't `Game`'s job - it's a separate,
+optional concern handled by
+[`createContainerResizeSync`](/Forge/docs/api/functions/createContainerResizeSync),
+which `createGame` wires up automatically for the `RenderContext` it creates.
+
+`createContainerResizeSync(container, resizables)` watches `container` with a
+`ResizeObserver` and calls `resize()` on every resizable (typically a
+`RenderContext`) whenever the container's size actually changes. This means a
+game embedded in a resizable page - or one whose container changes size for
+any other reason, like a fullscreen toggle - stays correctly sized without
+you writing your own resize handling, and without restarting the game (which
 would reset all engine and game state). Since the camera's projection matrix
 and the UI layout system already read `RenderContext.width`/`height` fresh
 every frame, both follow the resize automatically.
 
-The observer starts in `run()` and disconnects in `stop()`. Passing no
-resizables to `Game`'s constructor (or building a `RenderContext` manually
-without going through `createGame`) simply skips this - useful for a `Game`
-that drives systems with no canvas of its own.
+Watching starts immediately when `createContainerResizeSync` is called, and
+runs independently of whether the `Game` it's paired with is running or even
+exists - it's plain DOM observation, nothing more. Call the returned
+`stop()` to disconnect it early, e.g. when switching to a headless mode with
+no canvas left to keep sized. It's safe to never call `stop()` at all if
+`container` is simply removed from the DOM: browsers silently drop a
+`ResizeObserver`'s registration for a target once nothing else references
+it, so it won't keep the container alive.
 
 The actual resize happens on the next animation frame after the
 `ResizeObserver` notification, not synchronously inside its callback:
@@ -74,7 +84,7 @@ Using the helper:
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities/create-game';
 
-const { game, world, time, renderContext } = createGame('game');
+const { game, world, time, renderContext, resizeSync } = createGame('game');
 
 // add systems, load assets, etc.
 
