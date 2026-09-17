@@ -27,9 +27,9 @@ const playerImage = await imageCache.getOrLoad('player.png');
 const playerSprite = createImageSprite(playerImage, renderContext, layer);
 ```
 
-By default the sprite's world-unit size comes directly from the image's
-pixel dimensions. Pass `pixelsPerUnit` to size it from a fixed pixels-per-
-world-unit scale instead - see
+The sprite's world-unit size is derived from the image's pixel dimensions
+via a `pixelsPerUnit` option (defaulting to `100`; pass `1` to size the
+sprite directly from its pixel dimensions instead) - see
 [Importing Textures at a Fixed PPU](../rendering/world-units-and-cameras.md#importing-textures-at-a-fixed-ppu).
 
 [`get(path)`](/Forge/docs/api/classes/ImageCache#get) and

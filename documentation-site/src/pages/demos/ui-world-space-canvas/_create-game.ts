@@ -57,6 +57,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -108,6 +109,7 @@ async function createSpinningEnemyWithHealthBar(
   );
 
   const enemySprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
 
@@ -125,6 +127,7 @@ async function createSpinningEnemyWithHealthBar(
   // is visible even though the square body itself looks the same at any
   // angle.
   const markerSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
 
@@ -152,6 +155,7 @@ async function createSpinningEnemyWithHealthBar(
   }
 
   const barBackgroundSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   barBackgroundSprite.tintColor = new Color(0.15, 0.15, 0.18, 1);
@@ -162,6 +166,7 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   const barFillSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   barFillSprite.tintColor = new Color(0.25, 0.85, 0.35, 1);

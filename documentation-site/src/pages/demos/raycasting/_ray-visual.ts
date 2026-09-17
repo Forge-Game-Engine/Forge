@@ -59,9 +59,11 @@ export async function createRayVisual(
   ]);
 
   const lineSprite = createImageSprite(lineImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
   const markerSprite = createImageSprite(markerImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

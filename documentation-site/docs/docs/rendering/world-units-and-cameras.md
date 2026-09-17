@@ -73,14 +73,11 @@ conversions below) do.
 
 ## Importing textures at a fixed PPU
 
-By default, [`createImageSprite`](/Forge/docs/api/functions/createImageSprite)
-sizes a sprite directly from its texture's pixel dimensions (or
-`frameDimensions`, for a sprite sheet frame), treating each pixel as one
-world unit. That's convenient for a quick demo, but it means every piece of
-art needs its sprite size hand-tuned in world-unit terms, and two textures
-authored at different pixel densities (say, 32px-per-tile terrain art next
-to a 128px-per-tile character) end up the wrong size relative to each other
-unless every call site remembers to compensate.
+Sizing a sprite directly from its texture's pixel dimensions means every
+piece of art needs its sprite size hand-tuned in world-unit terms, and two
+textures authored at different pixel densities (say, 32px-per-tile terrain
+art next to a 128px-per-tile character) end up the wrong size relative to
+each other unless every call site remembers to compensate.
 
 [`createTextureImport`](/Forge/docs/api/functions/createTextureImport) fixes
 this the way an art pipeline's per-texture import settings would: give it a
@@ -96,8 +93,9 @@ const { worldWidth, worldHeight } = createTextureImport(playerImage, {
 });
 ```
 
-Pass `pixelsPerUnit` straight to `createImageSprite` to size the sprite this
-way without calling `createTextureImport` yourself:
+[`createImageSprite`](/Forge/docs/api/functions/createImageSprite) runs its
+sprite's pixel dimensions (`frameDimensions`, or the full image) through
+this same pipeline, sized via its own `pixelsPerUnit` option:
 
 ```ts
 const playerSprite = createImageSprite(playerImage, renderContext, {
@@ -107,9 +105,10 @@ const playerSprite = createImageSprite(playerImage, renderContext, {
 
 With `pixelsPerUnit: 32`, a 64x64px image becomes a 2x2 world-unit sprite;
 a 32x64px image from the same art set becomes 1x2 world units, keeping the
-two proportional without any manual re-tuning. Omit `pixelsPerUnit` to size
-the sprite directly from its pixel dimensions instead, i.e. treating each
-pixel as one world unit (equivalent to a `pixelsPerUnit` of `1`).
+two proportional without any manual re-tuning. `pixelsPerUnit` defaults to
+`100` on both `createTextureImport` and `createImageSprite`; pass `1` to
+size a sprite directly from its pixel dimensions instead, treating each
+pixel as one world unit.
 
 This texture-import `pixelsPerUnit` is a different value from the
 camera-derived one described above: this one is a fixed, per-texture

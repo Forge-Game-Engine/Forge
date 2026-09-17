@@ -103,6 +103,7 @@ export async function createToolbar(
     addRectTransformComponent(world, icon, UiAnchor.center({ x: 70, y: 70 }));
 
     const sprite = createImageSprite(whiteImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: uiCategory,
     });
     sprite.tintColor = tintColor;

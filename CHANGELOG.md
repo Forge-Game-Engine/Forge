@@ -14,7 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
-- **rendering:** Add `createTextureImport`, a simple texture import pipeline that converts a texture's pixel dimensions into a world-unit size via a `pixelsPerUnit` setting (mirroring a per-texture "Pixels Per Unit" import setting). `createImageSprite` accepts an optional `pixelsPerUnit` to size a sprite this way directly, instead of using its pixel dimensions as world units
+- **rendering:** Add `createTextureImport`, a simple texture import pipeline that converts a texture's pixel dimensions into a world-unit size via a `pixelsPerUnit` setting (mirroring a per-texture "Pixels Per Unit" import setting)
+
+#### Changed
+
+- **rendering:** `createImageSprite` now sizes a sprite via `createTextureImport`, using its own `pixelsPerUnit` option (default `100`) instead of using the texture's pixel dimensions directly as world units. This is a behavior change: pass `pixelsPerUnit: 1` to keep a sprite's previous size
 
 ## [0.25.2] - 2026-09-15
 

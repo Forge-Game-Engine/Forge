@@ -36,6 +36,7 @@ export async function createEmberFountain(
   );
 
   const emberSprite = createImageSprite(emberImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

@@ -182,6 +182,7 @@ export async function createTerrain(
     getAssetUrl('img/physics/block_square.png'),
   );
   const groundSprite = createImageSprite(groundImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

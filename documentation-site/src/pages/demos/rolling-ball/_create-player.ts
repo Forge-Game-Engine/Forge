@@ -56,6 +56,7 @@ export async function createPlayer(
     getAssetUrl('img/physics/ball_blue_large.png'),
   );
   const ballSprite = createImageSprite(ballImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

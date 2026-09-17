@@ -79,12 +79,12 @@ export interface CreateImageSpriteOptions {
   layer?: number;
 
   /**
-   * Runs the sprite's pixel dimensions (`frameDimensions`, or the full
-   * image if omitted) through `createTextureImport`, sizing the sprite in
-   * world units as `pixelWidth / pixelsPerUnit` / `pixelHeight /
-   * pixelsPerUnit`. Omit to size the sprite directly from its pixel
-   * dimensions instead, i.e. treating each pixel as one world unit
-   * (equivalent to a `pixelsPerUnit` of `1`).
+   * How many pixels of the sprite's texture (`frameDimensions`, or the full
+   * image if omitted) span one world unit; sizes the sprite in world units
+   * as `pixelWidth / pixelsPerUnit` / `pixelHeight / pixelsPerUnit` via
+   * `createTextureImport`. Defaults to `100`. Pass `1` to size the sprite
+   * directly from its pixel dimensions instead, treating each pixel as one
+   * world unit.
    */
   pixelsPerUnit?: number;
 }
@@ -158,16 +158,11 @@ export function createImageSprite(
     setupInstanceAttributes,
   );
 
-  const pixelWidth = options.frameDimensions?.x ?? image.width;
-  const pixelHeight = options.frameDimensions?.y ?? image.height;
-
-  const { worldWidth, worldHeight } = options.pixelsPerUnit
-    ? createTextureImport(image, {
-        pixelsPerUnit: options.pixelsPerUnit,
-        width: pixelWidth,
-        height: pixelHeight,
-      })
-    : { worldWidth: pixelWidth, worldHeight: pixelHeight };
+  const { worldWidth, worldHeight } = createTextureImport(image, {
+    pixelsPerUnit: options.pixelsPerUnit,
+    width: options.frameDimensions?.x,
+    height: options.frameDimensions?.y,
+  });
 
   return {
     enabled: true,

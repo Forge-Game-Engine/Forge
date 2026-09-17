@@ -53,6 +53,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -127,11 +128,13 @@ export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
   const accentColor = new Color(0.35, 0.55, 0.95, 1);
 
   const boxSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   boxSprite.tintColor = boxColor;
 
   const crossSprite = createImageSprite(crossImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   crossSprite.tintColor = accentColor;

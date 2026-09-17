@@ -93,15 +93,19 @@ export async function spawnShapes(
     ]);
 
   const ballSprite = createImageSprite(ballImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
   const squareSprite = createImageSprite(squareImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
   const triangleSprite = createImageSprite(triangleImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
   const narrowSprite = createImageSprite(narrowImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

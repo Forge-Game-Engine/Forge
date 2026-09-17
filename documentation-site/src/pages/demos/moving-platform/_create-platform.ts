@@ -73,6 +73,7 @@ export async function createPlatform(
     getAssetUrl('img/physics/block_square.png'),
   );
   const platformSprite = createImageSprite(platformImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

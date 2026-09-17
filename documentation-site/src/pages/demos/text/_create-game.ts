@@ -70,6 +70,7 @@ export const createTextGame = async (
     getAssetUrl('img/White.png'),
   );
   const whiteSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.foreground,
   });
 

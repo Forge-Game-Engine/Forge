@@ -57,6 +57,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -114,10 +115,12 @@ export const createUiStressTestGame = async (
     getAssetUrl('img/White.png'),
   );
   const cellSprite = createImageSprite(cellImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
 
   const containerSprite = createImageSprite(cellImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   containerSprite.tintColor = new Color(0.14, 0.16, 0.22, 1);

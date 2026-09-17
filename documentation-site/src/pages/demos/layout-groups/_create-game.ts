@@ -31,10 +31,7 @@ import {
   createTextShapingEcsSystem,
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
-import {
-  createUiCanvas,
-  registerUiSystems,
-} from '@forge-game-engine/forge/ui';
+import { createUiCanvas, registerUiSystems } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -60,6 +57,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -181,6 +179,7 @@ export const createLayoutGroupsGame = async (
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = createImageSprite(panelImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
     slices: {
       left: 26,

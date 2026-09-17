@@ -115,6 +115,7 @@ export async function createEasingRows(
   );
 
   const spriteTemplate = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

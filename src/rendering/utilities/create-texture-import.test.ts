@@ -39,6 +39,20 @@ describe('createTextureImport', () => {
     expect(textureImport.worldHeight).toBe(2);
   });
 
+  it('should fall back to the default pixelsPerUnit when explicitly given as undefined', () => {
+    const image = { width: 200, height: 100 } as HTMLImageElement;
+
+    const textureImport = createTextureImport(image, {
+      pixelsPerUnit: undefined,
+      width: undefined,
+      height: undefined,
+    });
+
+    expect(textureImport.pixelsPerUnit).toBe(100);
+    expect(textureImport.width).toBe(200);
+    expect(textureImport.height).toBe(100);
+  });
+
   it('should throw when pixelsPerUnit is not positive', () => {
     const image = { width: 100, height: 100 } as HTMLImageElement;
 

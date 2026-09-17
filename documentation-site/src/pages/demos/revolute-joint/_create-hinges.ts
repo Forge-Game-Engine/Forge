@@ -60,12 +60,19 @@ async function loadHingeSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
+    ball: createImageSprite(ballImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
     door: createImageSprite(doorImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: renderLayer,
       slices: squareSlices,
     }),
-    pivot: createImageSprite(pivotImage, renderContext, { layer: renderLayer }),
+    pivot: createImageSprite(pivotImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

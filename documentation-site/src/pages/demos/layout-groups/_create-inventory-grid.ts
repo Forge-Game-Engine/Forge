@@ -62,7 +62,10 @@ export async function createInventoryGrid(
   addPositionComponent(world, group);
   addParentComponent(world, group, { parent: canvas });
   addRectTransformComponent(world, group, {
-    ...UiAnchor.bottomLeft({ x: width, y: titleHeight + titleGap + panelHeight }),
+    ...UiAnchor.bottomLeft({
+      x: width,
+      y: titleHeight + titleGap + panelHeight,
+    }),
     anchoredPosition: { x: 60, y: 60 },
   });
 
@@ -102,6 +105,7 @@ export async function createInventoryGrid(
     addRectTransformComponent(world, cell);
 
     const sprite = createImageSprite(whiteImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: uiCategory,
     });
     sprite.tintColor = new Color(0.55, 0.55, 0.6, 1);

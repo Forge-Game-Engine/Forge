@@ -31,6 +31,7 @@ export async function createSpriteSpawner(
   );
 
   const sprite = createImageSprite(image, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

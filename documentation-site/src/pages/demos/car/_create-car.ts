@@ -285,9 +285,13 @@ async function loadCarSprites(
 
   return {
     chassis: createImageSprite(chassisImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: renderLayer,
     }),
-    wheel: createImageSprite(wheelImage, renderContext, { layer: renderLayer }),
+    wheel: createImageSprite(wheelImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

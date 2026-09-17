@@ -67,7 +67,8 @@ export function createTextureImport(
   image: HTMLImageElement,
   options: Partial<TextureImportDefaultedOptions> = {},
 ): TextureImport {
-  const { pixelsPerUnit } = { ...defaultTextureImportOptions, ...options };
+  const pixelsPerUnit =
+    options.pixelsPerUnit ?? defaultTextureImportOptions.pixelsPerUnit;
   const width = options.width ?? image.width;
   const height = options.height ?? image.height;
 

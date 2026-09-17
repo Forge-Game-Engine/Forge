@@ -14,7 +14,7 @@ export async function createSprite(
       getAssetUrl('img/space-shooter/star_medium.png'),
     ),
     renderContext,
-    { layer: renderLayer },
+    { pixelsPerUnit: 1, layer: renderLayer },
   );
 
   return starSprite;
