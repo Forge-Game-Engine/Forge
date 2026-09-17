@@ -71,6 +71,52 @@ and physics shape sizes are authored in world units, not pixels; they don't
 need to know about PPU at all, only the projection step (and the coordinate
 conversions below) do.
 
+## Importing textures at a fixed PPU
+
+Sizing a sprite directly from its texture's pixel dimensions means every
+piece of art needs its sprite size hand-tuned in world-unit terms, and two
+textures authored at different pixel densities (say, 32px-per-tile terrain
+art next to a 128px-per-tile character) end up the wrong size relative to
+each other unless every call site remembers to compensate.
+
+[`importTexture`](/Forge/docs/api/functions/importTexture) fixes this the
+way an art pipeline's per-texture import settings would: give it a
+`pixelsPerUnit` and it converts a texture's pixel size into a world-unit
+size once, consistently, regardless of how many pixels the source art
+happens to have:
+
+```ts
+import { importTexture } from '@forge-game-engine/forge/rendering';
+
+const { worldWidth, worldHeight } = importTexture(playerImage, {
+  pixelsPerUnit: 32,
+});
+```
+
+[`createImageSprite`](/Forge/docs/api/functions/createImageSprite) runs its
+sprite's pixel dimensions (`frameDimensions`, or the full image) through
+this same pipeline, sized via its own `pixelsPerUnit` option:
+
+```ts
+const playerSprite = createImageSprite(playerImage, renderContext, {
+  pixelsPerUnit: 32,
+});
+```
+
+With `pixelsPerUnit: 32`, a 64x64px image becomes a 2x2 world-unit sprite;
+a 32x64px image from the same art set becomes 1x2 world units, keeping the
+two proportional without any manual re-tuning. `pixelsPerUnit` defaults to
+`100` on both `importTexture` and `createImageSprite`; pass `1` to size a
+sprite directly from its pixel dimensions instead, treating each pixel as
+one world unit.
+
+This texture-import `pixelsPerUnit` is a different value from the
+camera-derived one described above: this one is a fixed, per-texture
+authoring choice applied once when a sprite is created; the camera's is
+recomputed every frame from `verticalWorldUnits` and the render
+destination's current height, and converts world units to *screen* pixels
+at render time rather than texture pixels to world units at import time.
+
 ## Sizing and positioning things relative to what's visible
 
 Game logic that needs to know how much world is on screen right now, to

@@ -99,9 +99,11 @@ export async function createTargets(
   ]);
 
   const ballSprite = createImageSprite(ballImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
   const squareSprite = createImageSprite(squareImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

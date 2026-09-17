@@ -52,6 +52,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -128,6 +129,7 @@ export const createCanvasGroupGame = async (
 
   const boxColor = new Color(0.85, 0.85, 0.88, 1);
   const boxSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   boxSprite.tintColor = boxColor;
@@ -144,6 +146,7 @@ export const createCanvasGroupGame = async (
   });
 
   const toggleBoxSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   toggleBoxSprite.tintColor = boxColor;
@@ -152,6 +155,7 @@ export const createCanvasGroupGame = async (
     getAssetUrl('img/space-shooter/icon_crossSmall.png'),
   );
   const crossSprite = createImageSprite(crossImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   crossSprite.tintColor = new Color(0.85, 0.3, 0.3, 1);
@@ -169,6 +173,7 @@ export const createCanvasGroupGame = async (
   // to make "the whole subtree fades, not just the modal panel itself"
   // obvious at a glance.
   const cardSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   cardSprite.tintColor = new Color(0.2, 0.23, 0.32, 1);
@@ -206,6 +211,7 @@ export const createCanvasGroupGame = async (
   });
 
   const nestedButtonSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
 

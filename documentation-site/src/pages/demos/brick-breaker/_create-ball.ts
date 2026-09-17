@@ -80,6 +80,7 @@ export async function createBall(
     getAssetUrl('img/brick-breaker/ball.png'),
   );
   const ballSprite = createImageSprite(ballImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

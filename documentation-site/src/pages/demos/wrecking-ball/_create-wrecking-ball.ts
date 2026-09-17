@@ -89,9 +89,18 @@ async function loadWreckingBallSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
-    brick: createImageSprite(brickImage, renderContext, { layer: renderLayer }),
-    arm: createImageSprite(armImage, renderContext, { layer: renderLayer }),
+    ball: createImageSprite(ballImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    brick: createImageSprite(brickImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    arm: createImageSprite(armImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

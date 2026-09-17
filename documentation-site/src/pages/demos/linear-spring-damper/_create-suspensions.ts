@@ -72,9 +72,18 @@ async function loadSuspensionSprites(
   ]);
 
   return {
-    mount: createImageSprite(mountImage, renderContext, { layer: renderLayer }),
-    wheel: createImageSprite(wheelImage, renderContext, { layer: renderLayer }),
-    line: createImageSprite(lineImage, renderContext, { layer: renderLayer }),
+    mount: createImageSprite(mountImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    wheel: createImageSprite(wheelImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    line: createImageSprite(lineImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

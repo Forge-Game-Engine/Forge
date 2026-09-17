@@ -175,7 +175,9 @@ export const createScene: CreateScene = async (
   // category of `0` can never match any mask and would silently render
   // nothing.
   const squareImage = await createWhiteSquareImage();
-  const squareSprite = createImageSprite(squareImage, renderContext, 1);
+  const squareSprite = createImageSprite(squareImage, renderContext, {
+    pixelsPerUnit: 1,
+  });
 
   for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
     for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {

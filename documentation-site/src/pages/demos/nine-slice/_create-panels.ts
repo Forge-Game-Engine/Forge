@@ -71,10 +71,12 @@ export async function createPanels(
   );
 
   const naiveSprite = createImageSprite(panelImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 
   const stretchSprite = createImageSprite(panelImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
     slices: {
       left: borderInset,

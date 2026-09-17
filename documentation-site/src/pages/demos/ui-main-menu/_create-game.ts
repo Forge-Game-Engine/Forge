@@ -70,6 +70,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = fleetCommandPalette.void;
@@ -214,30 +215,36 @@ export const createUiMainMenuGame = async (
   // share a tint (e.g. `panelSprite` backs the left nav panel *and* the
   // flagship card).
   const plainSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
 
   const panelSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   panelSprite.tintColor = fleetCommandPalette.panel;
 
   const yellowSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   yellowSprite.tintColor = fleetCommandPalette.yellow;
 
   const borderSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   borderSprite.tintColor = fleetCommandPalette.border;
 
   const voidSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   voidSprite.tintColor = fleetCommandPalette.void;
 
   const blueSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   blueSprite.tintColor = fleetCommandPalette.blue;
@@ -246,6 +253,7 @@ export const createUiMainMenuGame = async (
   // not a tinted square, so it's drawn from its own plain white circle
   // image rather than reusing `panelSprite`'s square White.png source.
   const circleSprite = createImageSprite(whiteCircleImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   circleSprite.tintColor = fleetCommandPalette.panel;

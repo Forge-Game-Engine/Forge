@@ -251,14 +251,17 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
 ]);
 
 const ballSprite = createImageSprite(ballImage, renderContext, {
+  pixelsPerUnit: 1,
   frameDimensions: { x: shapeSize, y: shapeSize },
   layer: renderLayer,
 });
 const squareSprite = createImageSprite(squareImage, renderContext, {
+  pixelsPerUnit: 1,
   frameDimensions: { x: shapeSize, y: shapeSize },
   layer: renderLayer,
 });
 const triangleSprite = createImageSprite(triangleImage, renderContext, {
+  pixelsPerUnit: 1,
   frameDimensions: { x: shapeSize, y: shapeSize },
   layer: renderLayer,
 });

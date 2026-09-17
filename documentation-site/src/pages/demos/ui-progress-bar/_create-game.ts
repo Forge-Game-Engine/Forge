@@ -46,6 +46,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -105,6 +106,7 @@ export const createProgressBarGame = async (
   );
 
   const trackSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   trackSprite.tintColor = new Color(0.85, 0.85, 0.88, 1);
@@ -123,6 +125,7 @@ export const createProgressBarGame = async (
   const health = createProgressBar(world, canvas, {
     trackSprite,
     fillSprite: createImageSprite(healthFillImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: renderLayers.ui,
     }),
     anchor: UiAnchor.center({ x: 460, y: 28 }),

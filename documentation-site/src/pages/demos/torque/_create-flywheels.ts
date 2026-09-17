@@ -66,6 +66,7 @@ async function createFlywheelEntity(
     getAssetUrl('img/physics/block_square.png'),
   );
   const sprite = createImageSprite(image, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

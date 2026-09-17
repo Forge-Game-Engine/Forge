@@ -27,6 +27,11 @@ const playerImage = await imageCache.getOrLoad('player.png');
 const playerSprite = createImageSprite(playerImage, renderContext, layer);
 ```
 
+The sprite's world-unit size is derived from the image's pixel dimensions
+via a `pixelsPerUnit` option (defaulting to `100`; pass `1` to size the
+sprite directly from its pixel dimensions instead) - see
+[Importing Textures at a Fixed PPU](../rendering/world-units-and-cameras.md#importing-textures-at-a-fixed-ppu).
+
 [`get(path)`](/Forge/docs/api/classes/ImageCache#get) and
 [`load(path)`](/Forge/docs/api/classes/ImageCache#load) are the two halves
 `getOrLoad` combines, and are mostly useful if you want to load and "get"

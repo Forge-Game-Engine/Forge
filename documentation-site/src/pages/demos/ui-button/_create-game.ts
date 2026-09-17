@@ -62,6 +62,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -176,6 +177,7 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = createImageSprite(panelImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
     slices: {
       left: 26,

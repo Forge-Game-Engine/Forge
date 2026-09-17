@@ -235,4 +235,39 @@ describe('createImageSprite', () => {
 
     expect(Array.from(colorCalls[0][1] as Float32Array)).toEqual([1, 1, 1, 1]);
   });
+
+  it('defaults pixelsPerUnit to 100 when omitted', () => {
+    const sprite = createImageSprite(image, renderContext);
+
+    expect(sprite.width).toBeCloseTo(0.32);
+    expect(sprite.height).toBeCloseTo(0.32);
+  });
+
+  it('sizes the sprite in world units using pixelsPerUnit when given', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      pixelsPerUnit: 16,
+    });
+
+    expect(sprite.width).toBe(2);
+    expect(sprite.height).toBe(2);
+  });
+
+  it('sizes the sprite directly from its pixel dimensions when pixelsPerUnit is 1', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      pixelsPerUnit: 1,
+    });
+
+    expect(sprite.width).toBe(32);
+    expect(sprite.height).toBe(32);
+  });
+
+  it('applies pixelsPerUnit to frameDimensions instead of the full image size', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      frameDimensions: { x: 16, y: 8 },
+      pixelsPerUnit: 4,
+    });
+
+    expect(sprite.width).toBe(4);
+    expect(sprite.height).toBe(2);
+  });
 });
