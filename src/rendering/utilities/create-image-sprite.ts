@@ -12,6 +12,7 @@ import {
   createTextureFromImage,
   getSharedBlackTexture,
 } from '../shaders/index.js';
+import { importTexture } from './import-texture.js';
 import { combineInstanceDataSegments } from './instance-data-segment.js';
 import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
@@ -76,6 +77,12 @@ export interface CreateImageSpriteOptions {
    * The render layer for the sprite. Defaults to `1`.
    */
   layer?: number;
+
+  /**
+   * How many pixels of the sprite's texture span one world unit. Defaults
+   * to `100`.
+   */
+  pixelsPerUnit?: number;
 }
 
 // `color` isn't included here: `Color.white` can't be read at module-init
@@ -147,10 +154,16 @@ export function createImageSprite(
     setupInstanceAttributes,
   );
 
+  const { worldWidth, worldHeight } = importTexture(image, {
+    pixelsPerUnit: options.pixelsPerUnit,
+    width: options.frameDimensions?.x,
+    height: options.frameDimensions?.y,
+  });
+
   return {
     enabled: true,
-    width: options.frameDimensions?.x ?? image.width,
-    height: options.frameDimensions?.y ?? image.height,
+    width: worldWidth,
+    height: worldHeight,
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
     renderable,

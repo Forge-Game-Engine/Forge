@@ -74,9 +74,18 @@ async function loadCradleSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
-    frame: createImageSprite(frameImage, renderContext, { layer: renderLayer }),
-    arm: createImageSprite(armImage, renderContext, { layer: renderLayer }),
+    ball: createImageSprite(ballImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    frame: createImageSprite(frameImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    arm: createImageSprite(armImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

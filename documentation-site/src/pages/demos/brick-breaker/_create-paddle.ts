@@ -56,6 +56,7 @@ export async function createPaddle(
     getAssetUrl('img/brick-breaker/paddle.png'),
   );
   const paddleSprite = createImageSprite(paddleImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

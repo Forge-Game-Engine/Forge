@@ -47,6 +47,7 @@ async function createSprite(
   );
 
   return createImageSprite(image, renderContext, {
+    pixelsPerUnit: 1,
     layer: uiLayer,
     slices,
   });

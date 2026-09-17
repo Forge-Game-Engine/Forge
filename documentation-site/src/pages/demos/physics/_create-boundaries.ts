@@ -48,6 +48,7 @@ export async function createBoundaries(
     getAssetUrl('img/White.png'),
   );
   const wallSprite = createImageSprite(wallImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
   });
 

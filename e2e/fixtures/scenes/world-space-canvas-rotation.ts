@@ -143,7 +143,10 @@ export const createScene: CreateScene = async (
   addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target });
 
   const barImage = await createWhiteSquareImage();
-  const barSprite = createImageSprite(barImage, renderContext, { layer: 1 });
+  const barSprite = createImageSprite(barImage, renderContext, {
+    pixelsPerUnit: 1,
+    layer: 1,
+  });
 
   barSprite.tintColor = barColor;
 

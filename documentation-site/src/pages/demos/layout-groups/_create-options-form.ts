@@ -62,7 +62,10 @@ async function loadControlSprites(
       getAssetUrl(assetPath),
     );
 
-    return createImageSprite(image, renderContext, { layer: uiCategory });
+    return createImageSprite(image, renderContext, {
+      pixelsPerUnit: 1,
+      layer: uiCategory,
+    });
   };
 
   return {
@@ -112,7 +115,10 @@ export async function createOptionsForm(
   addPositionComponent(world, group);
   addParentComponent(world, group, { parent: canvas });
   addRectTransformComponent(world, group, {
-    ...UiAnchor.bottomRight({ x: width, y: titleHeight + titleGap + panelHeight }),
+    ...UiAnchor.bottomRight({
+      x: width,
+      y: titleHeight + titleGap + panelHeight,
+    }),
     anchoredPosition: { x: -60, y: 60 },
   });
 

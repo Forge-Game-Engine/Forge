@@ -49,6 +49,7 @@ async function createBackdrop(
     getAssetUrl('img/White.png'),
   );
   const backdropSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.world,
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
@@ -111,11 +112,13 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
   const accentColor = new Color(0.75, 0.75, 0.15, 1);
 
   const trackSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   trackSprite.tintColor = trackColor;
 
   const fillSprite = createImageSprite(whiteImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayers.ui,
   });
   fillSprite.tintColor = accentColor;
@@ -153,6 +156,7 @@ export const createSliderGame = async (fontAtlasUrl: string): Promise<Game> => {
   const slider = createSlider(world, canvas, {
     trackSprite,
     handleSprite: createImageSprite(handleImage, renderContext, {
+      pixelsPerUnit: 1,
       layer: renderLayers.ui,
     }),
     handleSize: { x: 56, y: 56 },

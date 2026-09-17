@@ -163,7 +163,9 @@ export const createScene: CreateScene = async (
   });
 
   const squareImage = await createWhiteSquareImage();
-  const squareSprite = createImageSprite(squareImage, renderContext, 1);
+  const squareSprite = createImageSprite(squareImage, renderContext, {
+    pixelsPerUnit: 1,
+  });
 
   function createSquare(
     x: number,

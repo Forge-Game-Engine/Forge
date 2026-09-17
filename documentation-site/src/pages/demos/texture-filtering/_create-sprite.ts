@@ -16,6 +16,7 @@ export async function createSprite(
     ),
     renderContext,
     {
+      pixelsPerUnit: 1,
       layer: renderLayer,
       pixelated,
     },

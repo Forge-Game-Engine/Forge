@@ -16,10 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **common:** Add the `Resizable` interface (`width`, `height`, `resize(width, height)`), implemented by `RenderContext`
 - **utilities:** Add `createContainerResizeSync(container, resizables)`, watching a container element and calling `resize()` on every `Resizable` (e.g. a `RenderContext`) whenever its size changes - the container-resize handling that used to live inside `Game`, now a standalone utility with its own independent lifecycle
+- **rendering:** Add `importTexture`, a simple texture import pipeline that converts a texture's pixel dimensions into a world-unit size via a `pixelsPerUnit` setting (mirroring a per-texture "Pixels Per Unit" import setting)
 
 #### Changed
 
 - **utilities:** `Game`'s constructor now takes an array of `EcsWorld`s instead of a single one, so one `Game` can drive more than one world, e.g. a gameplay world alongside a separate UI overlay world. `Game` is now a simple loop orchestrator with no notion of rendering or resizing at all: it no longer accepts a `RenderContext`/`Resizable`, or does any `ResizeObserver` wiring - that responsibility moved to the new `createContainerResizeSync`. `createGame` is unaffected externally and still returns a single `world`/`renderContext` pair (now passed to `Game` as a one-element array), plus a new `resizeSync` keeping the render context's canvas sized to its container
+- **rendering:** `createImageSprite` now sizes a sprite via `importTexture`, using its own `pixelsPerUnit` option (default `100`) instead of using the texture's pixel dimensions directly as world units. This is a behavior change: pass `pixelsPerUnit: 1` to keep a sprite's previous size
 
 ## [0.25.2] - 2026-09-15
 

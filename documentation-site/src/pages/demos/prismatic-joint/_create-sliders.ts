@@ -110,9 +110,18 @@ async function loadSliderSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, { layer: renderLayer }),
-    block: createImageSprite(blockImage, renderContext, { layer: renderLayer }),
-    dot: createImageSprite(dotImage, renderContext, { layer: renderLayer }),
+    ball: createImageSprite(ballImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    block: createImageSprite(blockImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
+    dot: createImageSprite(dotImage, renderContext, {
+      pixelsPerUnit: 1,
+      layer: renderLayer,
+    }),
   };
 }
 

@@ -54,6 +54,7 @@ export async function createExplosionSpawner(
   );
 
   const explosionSprite = createImageSprite(image, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
     frameDimensions: {
       x: image.width / explosionColumns,

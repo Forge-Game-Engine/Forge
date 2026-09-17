@@ -42,7 +42,7 @@ export async function loadPlayerSprites(
       getAssetUrl('img/space-shooter/Spaceship_6.png'),
     ),
     renderContext,
-    { layer: renderLayer },
+    { pixelsPerUnit: 1, layer: renderLayer },
   );
 
   // bullet-yellow.png is a solid, opaque comet shape (its own alpha
@@ -64,6 +64,7 @@ export async function loadPlayerSprites(
   );
 
   const bulletSprite = createImageSprite(bulletImage, renderContext, {
+    pixelsPerUnit: 1,
     layer: renderLayer,
     emissiveMap: {
       image: bulletEmission,
