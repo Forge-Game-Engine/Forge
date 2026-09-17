@@ -79,16 +79,16 @@ textures authored at different pixel densities (say, 32px-per-tile terrain
 art next to a 128px-per-tile character) end up the wrong size relative to
 each other unless every call site remembers to compensate.
 
-[`createTextureImport`](/Forge/docs/api/functions/createTextureImport) fixes
-this the way an art pipeline's per-texture import settings would: give it a
+[`importTexture`](/Forge/docs/api/functions/importTexture) fixes this the
+way an art pipeline's per-texture import settings would: give it a
 `pixelsPerUnit` and it converts a texture's pixel size into a world-unit
 size once, consistently, regardless of how many pixels the source art
 happens to have:
 
 ```ts
-import { createTextureImport } from '@forge-game-engine/forge/rendering';
+import { importTexture } from '@forge-game-engine/forge/rendering';
 
-const { worldWidth, worldHeight } = createTextureImport(playerImage, {
+const { worldWidth, worldHeight } = importTexture(playerImage, {
   pixelsPerUnit: 32,
 });
 ```
@@ -106,9 +106,9 @@ const playerSprite = createImageSprite(playerImage, renderContext, {
 With `pixelsPerUnit: 32`, a 64x64px image becomes a 2x2 world-unit sprite;
 a 32x64px image from the same art set becomes 1x2 world units, keeping the
 two proportional without any manual re-tuning. `pixelsPerUnit` defaults to
-`100` on both `createTextureImport` and `createImageSprite`; pass `1` to
-size a sprite directly from its pixel dimensions instead, treating each
-pixel as one world unit.
+`100` on both `importTexture` and `createImageSprite`; pass `1` to size a
+sprite directly from its pixel dimensions instead, treating each pixel as
+one world unit.
 
 This texture-import `pixelsPerUnit` is a different value from the
 camera-derived one described above: this one is a fixed, per-texture

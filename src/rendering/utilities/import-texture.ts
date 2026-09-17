@@ -1,8 +1,8 @@
 /**
- * Fields of {@link TextureImport} with a sensible default; callers may
+ * Fields of {@link ImportedTexture} with a sensible default; callers may
  * omit these.
  */
-export interface TextureImportDefaultedOptions {
+export interface ImportTextureOptions {
   /**
    * How many pixels of the texture span one world unit, mirroring a texture
    * asset's "Pixels Per Unit" import setting in engines like Unity. The
@@ -29,11 +29,11 @@ export interface TextureImportDefaultedOptions {
 }
 
 /**
- * The result of running a texture through `createTextureImport`.
+ * The result of running a texture through `importTexture`.
  */
-export interface TextureImport extends TextureImportDefaultedOptions {
+export interface ImportedTexture extends ImportTextureOptions {
   /**
-   * The source image this import was created from.
+   * The source image this texture was imported from.
    */
   image: HTMLImageElement;
 
@@ -48,7 +48,7 @@ export interface TextureImport extends TextureImportDefaultedOptions {
   worldHeight: number;
 }
 
-const defaultTextureImportOptions = { pixelsPerUnit: 100 };
+const defaultImportTextureOptions = { pixelsPerUnit: 100 };
 
 /**
  * Runs a texture through Forge's texture import pipeline, converting its
@@ -60,27 +60,27 @@ const defaultTextureImportOptions = { pixelsPerUnit: 100 };
  * @param options - Options for configuring the import. `width`/`height`
  * default to the image's own pixel dimensions; `pixelsPerUnit` defaults to
  * `100`.
- * @returns The resulting texture import.
+ * @returns The resulting imported texture.
  * @throws An error if `pixelsPerUnit`, `width`, or `height` is not positive.
  */
-export function createTextureImport(
+export function importTexture(
   image: HTMLImageElement,
-  options: Partial<TextureImportDefaultedOptions> = {},
-): TextureImport {
+  options: Partial<ImportTextureOptions> = {},
+): ImportedTexture {
   const pixelsPerUnit =
-    options.pixelsPerUnit ?? defaultTextureImportOptions.pixelsPerUnit;
+    options.pixelsPerUnit ?? defaultImportTextureOptions.pixelsPerUnit;
   const width = options.width ?? image.width;
   const height = options.height ?? image.height;
 
   if (pixelsPerUnit <= 0) {
     throw new Error(
-      `createTextureImport requires a positive pixelsPerUnit, received ${pixelsPerUnit}.`,
+      `importTexture requires a positive pixelsPerUnit, received ${pixelsPerUnit}.`,
     );
   }
 
   if (width <= 0 || height <= 0) {
     throw new Error(
-      `createTextureImport requires a positive width and height, received width=${width}, height=${height}.`,
+      `importTexture requires a positive width and height, received width=${width}, height=${height}.`,
     );
   }
 

@@ -12,7 +12,7 @@ import {
   createTextureFromImage,
   getSharedBlackTexture,
 } from '../shaders/index.js';
-import { createTextureImport } from './create-texture-import.js';
+import { importTexture } from './import-texture.js';
 import { combineInstanceDataSegments } from './instance-data-segment.js';
 import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
@@ -154,7 +154,7 @@ export function createImageSprite(
     setupInstanceAttributes,
   );
 
-  const { worldWidth, worldHeight } = createTextureImport(image, {
+  const { worldWidth, worldHeight } = importTexture(image, {
     pixelsPerUnit: options.pixelsPerUnit,
     width: options.frameDimensions?.x,
     height: options.frameDimensions?.y,
