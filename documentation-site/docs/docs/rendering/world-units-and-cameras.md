@@ -107,9 +107,9 @@ const playerSprite = createImageSprite(playerImage, renderContext, {
 
 With `pixelsPerUnit: 32`, a 64x64px image becomes a 2x2 world-unit sprite;
 a 32x64px image from the same art set becomes 1x2 world units, keeping the
-two proportional without any manual re-tuning. Omit `pixelsPerUnit` to keep
-the previous behavior (pixel dimensions used directly as world units,
-equivalent to a `pixelsPerUnit` of `1`).
+two proportional without any manual re-tuning. Omit `pixelsPerUnit` to size
+the sprite directly from its pixel dimensions instead, i.e. treating each
+pixel as one world unit (equivalent to a `pixelsPerUnit` of `1`).
 
 This texture-import `pixelsPerUnit` is a different value from the
 camera-derived one described above: this one is a fixed, per-texture

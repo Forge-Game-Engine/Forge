@@ -82,9 +82,9 @@ export interface CreateImageSpriteOptions {
    * Runs the sprite's pixel dimensions (`frameDimensions`, or the full
    * image if omitted) through `createTextureImport`, sizing the sprite in
    * world units as `pixelWidth / pixelsPerUnit` / `pixelHeight /
-   * pixelsPerUnit` instead of using the pixel dimensions directly as world
-   * units. Omit to keep the previous behavior (equivalent to a
-   * `pixelsPerUnit` of `1`).
+   * pixelsPerUnit`. Omit to size the sprite directly from its pixel
+   * dimensions instead, i.e. treating each pixel as one world unit
+   * (equivalent to a `pixelsPerUnit` of `1`).
    */
   pixelsPerUnit?: number;
 }
