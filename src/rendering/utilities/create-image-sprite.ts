@@ -79,12 +79,8 @@ export interface CreateImageSpriteOptions {
   layer?: number;
 
   /**
-   * How many pixels of the sprite's texture (`frameDimensions`, or the full
-   * image if omitted) span one world unit; sizes the sprite in world units
-   * as `pixelWidth / pixelsPerUnit` / `pixelHeight / pixelsPerUnit` via
-   * `createTextureImport`. Defaults to `100`. Pass `1` to size the sprite
-   * directly from its pixel dimensions instead, treating each pixel as one
-   * world unit.
+   * How many pixels of the sprite's texture span one world unit. Defaults
+   * to `100`.
    */
   pixelsPerUnit?: number;
 }
