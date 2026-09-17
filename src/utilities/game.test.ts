@@ -1,21 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Time, World } from '../common/index.js';
+import { Time } from '../common/index.js';
+import { EcsWorld } from '../ecs/ecs-world.js';
 import { Game } from './game.js';
 
 describe('Game', () => {
   let time: Time;
-  let world: World;
+  let world: EcsWorld;
   let container: HTMLElement;
   let game: Game;
   let rafCallbacks: FrameRequestCallback[];
 
   beforeEach(() => {
     time = new Time();
-    world = {
-      update: vi.fn(),
-      stop: vi.fn(),
-    };
+    world = new EcsWorld();
     container = document.createElement('div');
     game = new Game(time, [world], container);
 
@@ -57,11 +55,17 @@ describe('Game', () => {
     expect(updateSpy).not.toHaveBeenCalledWith(999_999);
   });
 
-  it('updates every world once per frame with the elapsed time in milliseconds', () => {
+  it('updates every world once per frame', () => {
+    const updateSpy = vi.spyOn(world, 'update');
+
     game.run();
     flushLatestAnimationFrame();
 
-    expect(world.update).toHaveBeenCalledWith(time.deltaTimeInMilliseconds);
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+
+    flushLatestAnimationFrame();
+
+    expect(updateSpy).toHaveBeenCalledTimes(2);
   });
 
   it('schedules another frame after each update', () => {
@@ -73,10 +77,12 @@ describe('Game', () => {
   });
 
   it('stops every world when the game stops', () => {
+    const stopSpy = vi.spyOn(world, 'stop');
+
     game.run();
     game.stop();
 
-    expect(world.stop).toHaveBeenCalled();
+    expect(stopSpy).toHaveBeenCalled();
   });
 
   it('cancels the scheduled frame when stopped', () => {
@@ -89,8 +95,10 @@ describe('Game', () => {
   });
 
   it('stopping without having run does not throw', () => {
+    const stopSpy = vi.spyOn(world, 'stop');
+
     expect(() => game.stop()).not.toThrow();
-    expect(world.stop).toHaveBeenCalled();
+    expect(stopSpy).toHaveBeenCalled();
   });
 
   it('running twice in a row only schedules one loop', () => {

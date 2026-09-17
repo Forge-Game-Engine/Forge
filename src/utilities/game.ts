@@ -1,10 +1,11 @@
-import { Stoppable, Time, World } from '../common/index.js';
+import { Stoppable, Time } from '../common/index.js';
+import { EcsWorld } from '../ecs/ecs-world.js';
 
 /**
- * Manages the game loop: a `Time` instance and one or more `World`s, driven
- * by `requestAnimationFrame`. `Game` is a simple loop orchestrator - it has
- * no notion of rendering, resizing, or anything else beyond updating its
- * worlds once per frame and stopping them when told to.
+ * Manages the game loop: a `Time` instance and one or more `EcsWorld`s,
+ * driven by `requestAnimationFrame`. `Game` is a simple loop orchestrator -
+ * it has no notion of rendering, resizing, or anything else beyond updating
+ * its worlds once per frame and stopping them when told to.
  */
 export class Game implements Stoppable {
   /**
@@ -17,15 +18,15 @@ export class Game implements Stoppable {
   private _animationFrameId: number | null = null;
 
   private readonly _time: Time;
-  private readonly _worlds: readonly World[];
+  private readonly _worlds: readonly EcsWorld[];
 
   /**
    * Creates a new Game instance.
    * @param time - The Time instance for managing time-related operations.
-   * @param worlds - The worlds (e.g. `EcsWorld` instances) to update once per frame and stop when the game stops. A game can drive more than one, e.g. a gameplay world alongside a separate UI overlay world.
+   * @param worlds - The ECS worlds to update once per frame and stop when the game stops. A game can drive more than one, e.g. a gameplay world alongside a separate UI overlay world.
    * @param container - The HTML element associated with the game.
    */
-  constructor(time: Time, worlds: readonly World[], container: HTMLElement) {
+  constructor(time: Time, worlds: readonly EcsWorld[], container: HTMLElement) {
     this._time = time;
     this._worlds = worlds;
     this.container = container;
@@ -86,7 +87,7 @@ export class Game implements Stoppable {
     this._time.update(performance.now());
 
     for (const world of this._worlds) {
-      world.update(this._time.deltaTimeInMilliseconds);
+      world.update();
     }
 
     this._animationFrameId = requestAnimationFrame(this._gameLoop);
