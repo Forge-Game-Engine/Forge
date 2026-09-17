@@ -92,7 +92,7 @@ game.run();
 
 #### Create a sprite
 
-We then need to create a sprite from that image, on render layer `0`:
+We then need to create a sprite from that image:
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
@@ -105,7 +105,7 @@ const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
 
 // diff-add
-const sprite = createImageSprite(image, renderContext, { layer: 0 });
+const sprite = createImageSprite(image, renderContext);
 
 game.run();
 ```
@@ -128,7 +128,7 @@ const { game, world, renderContext } = createGame('game-container');
 const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
 
-const sprite = createImageSprite(image, renderContext, { layer: 0 });
+const sprite = createImageSprite(image, renderContext);
 
 // diff-add-start
 const entity = world.createEntity();
