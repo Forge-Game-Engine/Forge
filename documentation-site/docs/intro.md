@@ -52,36 +52,23 @@ npm i @forge-game-engine/forge@latest
 You will need to initialize the game in the entry point of your app.
 This will differ depending on the toolchain you use. For example, if you use [vite](https://vite.dev/guide/) with the `vanilla-ts` template. You will have an `index.html` file in the root of your app and a `src/main.ts` file. This file will be the "entry point" of your app.
 
-Once you have identified where to initialize your game, you can simply create a new instance of the `Game` class and invoke the `run` method.`
+Once you have identified where to initialize your game, use the
+[`createGame`](./api/functions/createGame.md) helper. It builds a
+[`Game`](./api/classes/Game.md), an [`EcsWorld`](./api/classes/EcsWorld.md),
+a [`RenderContext`](./api/classes/RenderContext.md), and a
+[`Time`](./api/classes/Time.md) instance for you from a container element's
+ID, and returns all four so you can wire up your game:
 
 ```ts
-import { Game } from '@forge-game-engine/forge';
+import { createGame } from '@forge-game-engine/forge/utilities';
 
-const game = new Game();
-
-game.run();
-```
-
-Although this won't do anything just yet, we need to add a world and a
-render context to our game. [`createGame`](./api/functions/createGame.md)
-sets both up for you from a container element's ID, along with a
-[`Time`](./api/classes/Time.md) instance for the game loop.
-
-### Creating a world
-
-```ts
-// diff-remove
-import { Game } from '@forge-game-engine/forge';
-// diff-add
-import { createGame } from '@forge-game-engine/forge';
-
-// diff-remove
-const game = new Game();
-// diff-add
 const { game, world, renderContext } = createGame('game-container');
 
 game.run();
 ```
+
+Although this won't do anything just yet, `world` and `renderContext` are
+what we'll use next to get something rendering on screen.
 
 ### Render a sprite in your scene
 
@@ -91,7 +78,7 @@ We need to fetch an image for our sprite. Any [HTMLImageElement](https://develop
 `renderContext` already carries an [`ImageCache`](./api/classes/ImageCache.md) for loading and caching images.
 
 ```ts
-import { createGame } from '@forge-game-engine/forge';
+import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { game, world, renderContext } = createGame('game-container');
 
@@ -108,11 +95,9 @@ game.run();
 We then need to create a sprite from that image, on render layer `0`:
 
 ```ts
-import {
-  createGame,
-  // diff-add
-  createImageSprite,
-} from '@forge-game-engine/forge';
+import { createGame } from '@forge-game-engine/forge/utilities';
+// diff-add
+import { createImageSprite } from '@forge-game-engine/forge/rendering';
 
 const { game, world, renderContext } = createGame('game-container');
 
@@ -120,7 +105,7 @@ const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
 
 // diff-add
-const sprite = createImageSprite(image, renderContext, 0);
+const sprite = createImageSprite(image, renderContext, { layer: 0 });
 
 game.run();
 ```
@@ -129,21 +114,21 @@ Finally we need to add an entity to our world with a position and that
 sprite:
 
 ```ts
+import { createGame } from '@forge-game-engine/forge/utilities';
 import {
-  createGame,
   createImageSprite,
-  // diff-add-start
-  addPositionComponent,
+  // diff-add
   addSpriteComponent,
-  // diff-add-end
-} from '@forge-game-engine/forge';
+} from '@forge-game-engine/forge/rendering';
+// diff-add
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 
 const { game, world, renderContext } = createGame('game-container');
 
 const { imageCache } = renderContext;
 const image = await imageCache.getOrLoad('sprite.png');
 
-const sprite = createImageSprite(image, renderContext, 0);
+const sprite = createImageSprite(image, renderContext, { layer: 0 });
 
 // diff-add-start
 const entity = world.createEntity();
