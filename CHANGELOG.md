@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.3] - 2026-09-17
+
 #### Added
 
 - **common:** Add the `Resizable` interface (`width`, `height`, `resize(width, height)`), implemented by `RenderContext`
