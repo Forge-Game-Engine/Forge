@@ -41,6 +41,28 @@ export interface AirControlEcsComponent {
    * single tick.
    */
   maxTorque: number;
+
+  /**
+   * How long, in seconds, both wheels must have been continuously airborne
+   * before this system starts driving the chassis toward
+   * `maxAngularSpeed`. This course's hilly, bumpy profile briefly lifts
+   * both wheels off the ground constantly at speed, not just off deliberate
+   * jumps - without this grace period, holding the accelerate key for
+   * ordinary driving (the natural thing to do) reads every one of those
+   * brief bumps as "start a backflip," each one adding rotation the
+   * suspension/stabilizer then has too little grounded time to level back
+   * out before the next bump, compounding into an uncontrolled, ever-faster
+   * spin. Set low enough that a genuine jump (well beyond a road bump) still
+   * feels immediate.
+   */
+  minAirborneDuration: number;
+
+  /**
+   * How long, in seconds, both wheels have been continuously airborne so
+   * far - system-managed state, not configuration; reset to `0` the moment
+   * either wheel touches ground again. Starts at `0`.
+   */
+  airborneDuration: number;
 }
 
 export const airControlId =
@@ -50,14 +72,19 @@ export const airControlId =
  * Attaches an {@link AirControlEcsComponent} to `entity`.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
- * @param options - Options for configuring air control.
+ * @param options - Options for configuring air control. `airborneDuration`
+ * isn't part of this - it always starts at `0`, since it's system-managed
+ * state, not configuration.
  * @returns The attached component, for runtime changes (e.g. tuning
  * `maxAngularSpeed`).
  */
 export function addAirControlComponent(
   world: EcsWorld,
   entity: number,
-  options: AirControlEcsComponent,
+  options: Omit<AirControlEcsComponent, 'airborneDuration'>,
 ): AirControlEcsComponent {
-  return world.addComponent(entity, airControlId, { ...options });
+  return world.addComponent(entity, airControlId, {
+    ...options,
+    airborneDuration: 0,
+  });
 }

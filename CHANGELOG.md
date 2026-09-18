@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **demos:** Fix the car demo's mid-air "tilt" stunt control engaging off ordinary road bumps. Holding the accelerate key to drive (the natural thing to do) used to read every brief bump on this course's hilly profile as "start a backflip," compounding into an uncontrolled spin that could bury a wheel deep in the terrain on landing; it now waits for a short grace period of continuous airtime before engaging, so only a genuine jump triggers it
+
 ## [0.25.4] - 2026-09-18
 
 #### Changed

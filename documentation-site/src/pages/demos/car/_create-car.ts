@@ -241,6 +241,24 @@ const chassisLevelingDamping = 40_000_000;
 const airControlMaxAngularSpeed = 3.5;
 const airControlMaxTorque = 8_000_000_000;
 
+// How long both wheels must be continuously airborne before air control
+// engages (see `AirControlEcsComponent.minAirborneDuration`). This course's
+// hills are close enough together (`pointSpacing` in `_create-terrain.ts`)
+// that simply driving at speed briefly lifts both wheels off the ground
+// constantly, not just off a deliberate jump - without this grace period,
+// holding the accelerate key to drive (the natural thing to do) reads every
+// one of those brief bumps as "start a backflip," and since the
+// suspension/`ChassisStabilizerEcsComponent` only gets a few grounded
+// milliseconds between bumps to level the chassis back out, that rotation
+// compounds bump after bump into an uncontrolled, ever-faster spin -
+// confirmed empirically (hold the accelerate key from a stop for several
+// seconds straight): the chassis's rotation grew roughly linearly toward
+// `airControlMaxAngularSpeed` the whole time, rather than settling, and
+// eventually landed hard enough mid-spin to bury a wheel deep in the
+// terrain. 250ms is comfortably longer than one of this course's road
+// bumps produces, while still reading as immediate off a genuine jump.
+const airControlMinAirborneDuration = 0.25;
+
 interface CarSprites {
   chassis: SpriteEcsComponent;
   wheel: SpriteEcsComponent;
@@ -576,6 +594,7 @@ export async function createCar(
     rearWheelGroundContact: rearWheel.groundContact,
     maxAngularSpeed: airControlMaxAngularSpeed,
     maxTorque: airControlMaxTorque,
+    minAirborneDuration: airControlMinAirborneDuration,
   });
 
   const resetBodies: CarResetBody[] = [
