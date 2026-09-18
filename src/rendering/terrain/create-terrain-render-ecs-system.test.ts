@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createTerrainRenderEcsSystem } from './create-terrain-render-ecs-system';
+import { addTerrainMeshComponent } from './components/index.js';
 import type { TerrainMesh } from './create-terrain-mesh';
 import { EcsWorld } from '../../ecs/index.js';
 import { addPositionComponent } from '../../common/index.js';
 
 import { addCameraComponent, CameraEcsComponent } from '../components/index.js';
+import { CLEAR_STRATEGY } from '../enums/index.js';
 import { ImageCache } from '../../asset-loading/index.js';
 import { RenderContext } from '../render-context.js';
 import { ShaderCache } from '../shaders/index.js';
@@ -61,7 +63,7 @@ describe('createTerrainRenderEcsSystem', () => {
     terrainMesh = { geometry, material, vertexCount: 42 };
 
     world = new EcsWorld();
-    world.addSystem(createTerrainRenderEcsSystem(renderContext, terrainMesh));
+    world.addSystem(createTerrainRenderEcsSystem(renderContext));
   });
 
   const addCamera = (overrides: Partial<CameraEcsComponent> = {}): void => {
@@ -76,7 +78,23 @@ describe('createTerrainRenderEcsSystem', () => {
     });
   };
 
+  const addTerrain = (overrides: Partial<{ category: number }> = {}): void => {
+    const entity = world.createEntity();
+
+    addTerrainMeshComponent(world, entity, { mesh: terrainMesh, ...overrides });
+  };
+
   it('does not draw anything when there is no camera entity', () => {
+    addTerrain();
+
+    world.update();
+
+    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+  });
+
+  it('does not draw anything when there is no terrain mesh entity', () => {
+    addCamera();
+
     world.update();
 
     expect(mockGl.drawArrays).not.toHaveBeenCalled();
@@ -84,6 +102,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
   it('clears and draws the terrain mesh once per camera', () => {
     addCamera();
+    addTerrain();
 
     world.update();
 
@@ -95,6 +114,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
   it('sets the projection matrix uniform before binding the material', () => {
     addCamera();
+    addTerrain();
 
     world.update();
 
@@ -112,6 +132,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
   it('binds the canvas framebuffer when the camera has no render target', () => {
     addCamera();
+    addTerrain();
 
     world.update();
 
@@ -120,6 +141,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
   it('scales the projection matrix by the camera-derived pixels-per-unit', () => {
     addCamera({ verticalWorldUnits: 20 });
+    addTerrain();
 
     world.update();
 
@@ -141,9 +163,46 @@ describe('createTerrainRenderEcsSystem', () => {
   it('draws once per camera when multiple cameras are present', () => {
     addCamera();
     addCamera();
+    addTerrain();
 
     world.update();
 
     expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws once per terrain mesh entity when multiple are present', () => {
+    addCamera();
+    addTerrain();
+    addTerrain();
+
+    world.update();
+
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips a terrain mesh whose category does not match the camera cullingMask', () => {
+    addCamera({ cullingMask: 1 << 0 });
+    addTerrain({ category: 1 << 1 });
+
+    world.update();
+
+    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+  });
+
+  it('sets clearStrategy to none once a terrain mesh exists', () => {
+    addCamera();
+    addTerrain();
+
+    world.update();
+
+    expect(renderContext.clearStrategy).toBe(CLEAR_STRATEGY.none);
+  });
+
+  it('leaves clearStrategy untouched while there is no terrain mesh yet', () => {
+    addCamera();
+
+    world.update();
+
+    expect(renderContext.clearStrategy).toBe(CLEAR_STRATEGY.blank);
   });
 });

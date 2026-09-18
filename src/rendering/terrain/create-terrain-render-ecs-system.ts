@@ -1,65 +1,116 @@
 import { EcsSystem } from '../../ecs/index.js';
 import { PositionEcsComponent, positionId } from '../../common/index.js';
+import { matchesMask } from '../../utilities/matches-mask.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
+import { CLEAR_STRATEGY } from '../enums/index.js';
 import { RenderContext } from '../render-context.js';
+import { RenderTarget } from '../render-target.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
-import type { TerrainMesh } from './create-terrain-mesh.js';
+import { TerrainMeshEcsComponent, terrainMeshId } from './components/index.js';
+
+function drawTerrainMeshesForCamera(
+  renderContext: RenderContext,
+  terrainMeshComponents: readonly TerrainMeshEcsComponent[],
+  cameraComponent: CameraEcsComponent,
+  cameraPositionComponent: PositionEcsComponent,
+  clearedDestinationsThisUpdate: Set<RenderTarget | null>,
+): void {
+  const { gl } = renderContext;
+  const target = cameraComponent.renderTarget ?? null;
+
+  renderContext.bindRenderTarget(target);
+
+  if (!clearedDestinationsThisUpdate.has(target)) {
+    const { clearColor } = cameraComponent;
+
+    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    clearedDestinationsThisUpdate.add(target);
+  }
+
+  const pixelsPerUnit = calculatePixelsPerUnit(
+    renderContext.height,
+    cameraComponent.verticalWorldUnits,
+  );
+
+  const projectionMatrix = createProjectionMatrix(
+    renderContext.width,
+    renderContext.height,
+    cameraPositionComponent.world,
+    cameraComponent.zoom,
+    pixelsPerUnit,
+  );
+
+  for (const terrainMeshComponent of terrainMeshComponents) {
+    if (
+      !matchesMask(terrainMeshComponent.category, cameraComponent.cullingMask)
+    ) {
+      continue;
+    }
+
+    const { geometry, material, vertexCount } = terrainMeshComponent.mesh;
+
+    material.setUniform('u_projection', projectionMatrix);
+    material.bind(gl);
+    geometry.bind(gl, material.program);
+
+    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+  }
+}
 
 /**
- * Creates an ECS system that draws `terrainMesh` directly - a single,
- * non-instanced `gl.drawArrays` call against its own geometry and material
- * - rather than going through the sprite pipeline `createRenderEcsSystem`
- * batches (which only knows how to draw quads). Register it *before*
- * `createRenderEcsSystem`, with `renderContext.clearStrategy` set to
- * `CLEAR_STRATEGY.none`, so this system's own clear is the only one each
- * frame - `createRenderEcsSystem`'s would otherwise wipe the terrain right
- * before drawing sprites on top of it.
+ * Creates an ECS system that draws every entity with a
+ * `TerrainMeshEcsComponent` (see `addTerrainMeshComponent`) - one
+ * non-instanced `gl.drawArrays` call per mesh, against its own geometry and
+ * material - rather than going through the sprite pipeline
+ * `createRenderEcsSystem` batches (which only knows how to draw quads).
+ * Register it *before* `createRenderEcsSystem` so terrain draws underneath
+ * sprites.
  *
- * Assumes a single camera rendering straight to the canvas; a multi-camera
- * setup would need to track which destinations have already been cleared
- * this frame, the way `createRenderEcsSystem` does internally.
+ * A world can have any number of terrain mesh entities; each is matched
+ * against every camera's `cullingMask` (via `TerrainMeshEcsComponent.category`,
+ * the same convention `Renderable.category` uses for sprites) exactly like
+ * a normal renderable, so different cameras can show different terrain
+ * meshes.
+ *
+ * This system owns clearing each camera's destination for the frame:
+ * whenever there's at least one terrain mesh to draw, it sets
+ * `renderContext.clearStrategy` to `CLEAR_STRATEGY.none` so
+ * `createRenderEcsSystem`'s own clear (which would otherwise wipe the
+ * terrain right before drawing sprites on top of it) becomes a no-op, and
+ * clears each camera's destination itself instead - callers never need to
+ * touch `clearStrategy` themselves. `clearStrategy` is left untouched while
+ * no terrain mesh entities exist yet (e.g. before an async-loaded terrain
+ * mesh has resolved), so the sprite pipeline keeps clearing normally until
+ * there's terrain to draw.
  * @param renderContext - The render context to draw into.
- * @param terrainMesh - The terrain mesh built by `createTerrainMesh`.
  */
 export const createTerrainRenderEcsSystem = (
   renderContext: RenderContext,
-  terrainMesh: TerrainMesh,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
   query: [cameraId, positionId],
-  update: (_world, { components: [cameraComponents, positionComponents] }) => {
-    const { gl } = renderContext;
-    const { geometry, material, vertexCount } = terrainMesh;
+  update: (world, { components: [cameraComponents, positionComponents] }) => {
+    const {
+      components: [terrainMeshComponents],
+    } = world.query<[TerrainMeshEcsComponent]>([terrainMeshId]);
+
+    if (terrainMeshComponents.length === 0) {
+      return;
+    }
+
+    renderContext.clearStrategy = CLEAR_STRATEGY.none;
+
+    const clearedDestinationsThisUpdate = new Set<RenderTarget | null>();
 
     for (let i = 0; i < cameraComponents.length; i++) {
-      const cameraComponent = cameraComponents[i];
-      const positionComponent = positionComponents[i];
-
-      renderContext.bindRenderTarget(cameraComponent.renderTarget ?? null);
-
-      const { clearColor } = cameraComponent;
-
-      gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const pixelsPerUnit = calculatePixelsPerUnit(
-        renderContext.height,
-        cameraComponent.verticalWorldUnits,
+      drawTerrainMeshesForCamera(
+        renderContext,
+        terrainMeshComponents,
+        cameraComponents[i],
+        positionComponents[i],
+        clearedDestinationsThisUpdate,
       );
-
-      const projectionMatrix = createProjectionMatrix(
-        renderContext.width,
-        renderContext.height,
-        positionComponent.world,
-        cameraComponent.zoom,
-        pixelsPerUnit,
-      );
-
-      material.setUniform('u_projection', projectionMatrix);
-      material.bind(gl);
-      geometry.bind(gl, material.program);
-
-      gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
     }
   },
 });

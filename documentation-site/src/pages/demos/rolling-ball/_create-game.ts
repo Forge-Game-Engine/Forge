@@ -1,5 +1,4 @@
 import {
-  CLEAR_STRATEGY,
   Color,
   createCamera,
   createRenderEcsSystem,
@@ -40,12 +39,6 @@ const terrainWidth = 8000;
 
 export const createRollingBallGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
-
-  // The terrain render system draws directly, outside the sprite pipeline
-  // (see createTerrainRenderEcsSystem), and owns the frame's one real
-  // clear; without `none` here, createRenderEcsSystem's own clear would
-  // wipe the terrain right before drawing the sprites on top of it.
-  renderContext.clearStrategy = CLEAR_STRATEGY.none;
 
   const cameraEntity = createCamera(world, {
     isStatic: true,
@@ -139,7 +132,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
     ),
   );
   world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
-  world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
+  world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 

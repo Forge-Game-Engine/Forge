@@ -19,6 +19,27 @@ import {
  */
 const featureIdSegmentStride = 1_000_000;
 
+/**
+ * Two segments meeting at a shared vertex (or a locally flat/near-flat run
+ * of segments) compute mathematically near-identical depths for a polygon
+ * resting across them, but not bit-identical ones - floating-point
+ * rounding (which differs per segment, since each clips against its own
+ * vertex data) makes one of them a handful of ULPs "deeper" than the
+ * other. Requiring a challenger to be deeper by more than this tolerance -
+ * well above any plausible floating-point noise, but far below any depth
+ * difference that reflects genuinely different terrain geometry - is the
+ * same bias `b2FindMaxSeparation` (Box2D) and this engine's own
+ * `selectReferenceFace` (see polygon-faces-collision.ts) use to keep a
+ * reference-face choice from oscillating between two near-equal
+ * candidates, applied here across every segment the polygon's x-range
+ * overlaps (see `detectPolygonTerrainCollision`): candidates are always
+ * evaluated in a fixed, position-independent order (ascending segment
+ * index), so the current best is always whichever segment was found first
+ * among any near-tied group, and stays that way unless a later one is
+ * *clearly* deeper.
+ */
+const DEPTH_TIE_TOLERANCE = 1e-6;
+
 function localXRange(
   worldVertices: readonly Vector2[],
   terrainBody: CollisionBody,
@@ -46,7 +67,15 @@ function localXRange(
  * terrain-collider body, by running the same polygon-vs-polygon narrow
  * phase used for {@link detectPolygonPolygonCollision} against each of the
  * terrain's segments that overlap the polygon's local x-range, keeping the
- * deepest resulting contact.
+ * deepest resulting contact. A challenger only unseats the current best
+ * when it's deeper by more than {@link DEPTH_TIE_TOLERANCE}, which (since
+ * segments are always compared in a fixed, ascending-index order) is what
+ * keeps warm-starting stable across ticks for a body resting across
+ * multiple near-coplanar segments: two segments this close in depth are
+ * either genuinely tied (differ only by floating-point noise, in which
+ * case the first one found staying put is exactly right) or one is
+ * trivially, stably better - never a coin-flip decided by sub-ULP
+ * rounding.
  * @param polygonBody - The body with a {@link PolygonCollider}.
  * @param terrainBody - The body with a {@link TerrainCollider}.
  * @returns A collision manifold (entity ids not yet populated, normal
@@ -102,7 +131,10 @@ export function detectPolygonTerrainCollision(
 
     const contact = detectPolygonFacesCollision(polygonFaces, segmentFaces);
 
-    if (contact !== null && (best === null || contact.depth > best.depth)) {
+    if (
+      contact !== null &&
+      (best === null || contact.depth > best.depth + DEPTH_TIE_TOLERANCE)
+    ) {
       best = contact;
       bestSegmentIndex = segmentIndex;
     }

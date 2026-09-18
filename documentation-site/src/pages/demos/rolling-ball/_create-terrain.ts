@@ -10,12 +10,12 @@ import {
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
+  addTerrainMeshComponent,
   buildTerrainCurve,
   Color,
   createTerrainMesh,
   heightAtLocalX,
   RenderContext,
-  TerrainMesh,
 } from '@forge-game-engine/forge/rendering';
 
 // How far apart (in local x) the sparse control points the terrain curve is
@@ -95,9 +95,6 @@ export interface RollingBallTerrain {
    * on the ground, accounting for the terrain body's rotation (see below).
    */
   worldSurfaceYAt: (worldX: number) => number;
-
-  /** The terrain's render mesh, for `createTerrainRenderEcsSystem`. */
-  mesh: TerrainMesh;
 }
 
 function buildControlPoints(totalWidth: number): Vector2[] {
@@ -136,8 +133,10 @@ function buildControlPoints(totalWidth: number): Vector2[] {
  * `buildTerrainCurve`), rather than a jagged polyline - plus a single
  * triangulated mesh to render it (see `createTerrainMesh`), textured with a
  * tileable border layer near the surface blending into a tileable fill
- * layer below (see `CreateTerrainOptions`). Pair with
- * `createTerrainRenderEcsSystem` to draw the returned `mesh`.
+ * layer below (see `CreateTerrainOptions`). The mesh is attached to the
+ * terrain entity via `addTerrainMeshComponent`, so
+ * `createTerrainRenderEcsSystem` draws it automatically - the caller
+ * doesn't need to wire it up itself.
  * @param world - The ECS world to add the terrain entity to.
  * @param renderContext - The render context used to load the terrain's textures and build its mesh.
  * @param options - Sizing and texturing options for the terrain.
@@ -204,6 +203,8 @@ export async function createTerrain(
     borderBlend,
   });
 
+  addTerrainMeshComponent(world, terrainEntity, { mesh });
+
   const spawnX = position.x;
 
   const worldSurfaceYAt = (worldX: number): number => {
@@ -216,6 +217,5 @@ export async function createTerrain(
     entity: terrainEntity,
     spawnX,
     worldSurfaceYAt,
-    mesh,
   };
 }

@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **rendering:** `createTerrainRenderEcsSystem` no longer takes a `TerrainMesh` parameter; it now draws every entity with a new `TerrainMeshEcsComponent` (attached via `addTerrainMeshComponent`), so a world can have any number of independently culling-masked terrain meshes instead of exactly one baked into the system at creation. It also manages `RenderContext.clearStrategy` itself whenever a terrain mesh is present, so callers no longer need to set `clearStrategy = CLEAR_STRATEGY.none` by hand to avoid the sprite pipeline wiping the terrain mesh each frame
+
+#### Fixed
+
+- **physics:** `TerrainCollider` narrow-phase (`detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) no longer flips which terrain segment "wins" on sub-pixel floating-point noise when a body rests across several near-coplanar segments at once. The unstable selection used to reset `createCollisionResolutionEcsSystem`'s warm-started accumulated impulse every time it flipped, preventing the contact from ever fully converging and causing visible steady-state sinking under moderate-to-heavy loads
+
 ## [0.25.3] - 2026-09-17
 
 #### Added
