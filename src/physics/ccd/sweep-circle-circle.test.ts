@@ -66,6 +66,33 @@ describe('sweepCircleCircle', () => {
     expect(hit?.t).toBeCloseTo(1);
   });
 
+  it('returns null for a zero-length sweep that does not already overlap', () => {
+    const hit = sweepCircleCircle(
+      body(0, 0, 1),
+      body(0, 20, 1),
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+    );
+
+    expect(hit).toBeNull();
+  });
+
+  it('falls back to an arbitrary normal when the circles start exactly concentric', () => {
+    const hit = sweepCircleCircle(
+      body(0, 0, 1),
+      body(0, 0, 2),
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+    );
+
+    expect(hit).not.toBeNull();
+    expect(hit?.t).toBe(0);
+    expect(hit?.normal.x).toBe(1);
+    expect(hit?.normal.y).toBe(0);
+    expect(hit?.point.x).toBeCloseTo(2);
+    expect(hit?.point.y).toBeCloseTo(0);
+  });
+
   it('accounts for both colliders offsets', () => {
     const movingCollider = new CircleCollider(1);
     movingCollider.offset = { x: 0, y: 5 };

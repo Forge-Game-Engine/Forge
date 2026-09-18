@@ -14,6 +14,8 @@ import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
 } from '../components/rigidbody-component.js';
+import { CollisionPair } from '../types/collision-pair.js';
+import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createContinuousCollisionEcsSystem } from './continuous-collision-system.js';
 
 const fixedDeltaMilliseconds = 1000 / 60;
@@ -35,6 +37,16 @@ describe('createContinuousCollisionEcsSystem', () => {
     time.update(0);
     time.update(fixedDeltaMilliseconds);
 
+    // Registered so every entity's `AabbEcsComponent` reflects its actual
+    // current shape/position each tick (as it would in a real pipeline,
+    // where broad-phase always runs before CCD) - `createAabbComponent`
+    // alone defaults to a degenerate zero-sized box, which would make the
+    // system's own swept-AABB pre-filter (§8 Open Question 2 in the
+    // design doc) reject every candidate outside a thin sliver around the
+    // origin.
+    const collisionPairs: CollisionPair[] = [];
+
+    world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(createContinuousCollisionEcsSystem(time));
   });
 
@@ -179,5 +191,106 @@ describe('createContinuousCollisionEcsSystem', () => {
     world.update();
 
     expect(rigidBody.continuousCollisionTranslationClamp).toBeNull();
+  });
+
+  it('still clamps against a static target that has an explicit non-dynamic RigidBodyEcsComponent', () => {
+    const groundEntity = world.createEntity();
+
+    addPositionComponent(world, groundEntity, { world: { x: 0, y: 0 } });
+    addRotationComponent(world, groundEntity);
+    addColliderComponent(world, groundEntity, {
+      collider: new PolygonCollider([
+        { x: -1000, y: -GROUND_HALF_HEIGHT },
+        { x: 1000, y: -GROUND_HALF_HEIGHT },
+        { x: 1000, y: GROUND_HALF_HEIGHT },
+        { x: -1000, y: GROUND_HALF_HEIGHT },
+      ]),
+    });
+    addAabbComponent(world, groundEntity);
+    // Attaching a RigidBodyEcsComponent to a static body is legal (see
+    // `RigidBodyType`'s doc) - `isStaticTarget` must still treat it as
+    // static rather than only recognizing the "no component at all" case.
+    addRigidBodyComponent(world, groundEntity, {
+      mass: 1,
+      momentOfInertia: 1,
+      type: 'kinematic',
+    });
+
+    const radius = 50;
+    const restingHeight = GROUND_TOP_Y + radius;
+    const startY = restingHeight + 5;
+    const rigidBody = addCircle({ x: 0, y: startY }, radius, {
+      x: 0,
+      y: -1400,
+    });
+
+    world.update();
+
+    expect(rigidBody.continuousCollisionTranslationClamp).not.toBeNull();
+  });
+
+  it('does not sweep against another dynamic body', () => {
+    const radius = 50;
+    // A second dynamic circle sitting directly in the first one's path -
+    // if dynamic targets were (incorrectly) swept, this would produce a
+    // clamp; per the design's scope (dynamic-vs-dynamic sweeping isn't
+    // supported), it must not.
+    addCircle({ x: 0, y: 0 }, radius, { x: 0, y: 0 });
+
+    const rigidBody = addCircle({ x: 0, y: radius * 2 + 5 }, radius, {
+      x: 0,
+      y: -1400,
+    });
+
+    world.update();
+
+    expect(rigidBody.continuousCollisionTranslationClamp).toBeNull();
+  });
+
+  it('clamps to the earliest time of impact among several candidate static bodies', () => {
+    const radius = 50;
+
+    // A thin platform closer to the falling body than the main ground -
+    // the system must pick this nearer obstacle's TOI, not the farther
+    // ground's. Vertices are authored symmetrically around local y=0 (see
+    // `GROUND_HALF_HEIGHT`'s own comment) so `PolygonCollider`'s centroid
+    // re-centering doesn't shift them, and the entity's own position is
+    // offset instead to land the top face at exactly `platformTopY`.
+    const platformEntity = world.createEntity();
+    const platformHalfHeight = 2;
+    const platformTopY = 300;
+
+    addPositionComponent(world, platformEntity, {
+      world: { x: 0, y: platformTopY - platformHalfHeight },
+    });
+    addRotationComponent(world, platformEntity);
+    addColliderComponent(world, platformEntity, {
+      collider: new PolygonCollider([
+        { x: -1000, y: -platformHalfHeight },
+        { x: 1000, y: -platformHalfHeight },
+        { x: 1000, y: platformHalfHeight },
+        { x: -1000, y: platformHalfHeight },
+      ]),
+    });
+    addAabbComponent(world, platformEntity);
+
+    addFlatGround(1000);
+
+    const platformRestingHeight = platformTopY + radius;
+    const startY = platformRestingHeight + 5;
+    const rigidBody = addCircle({ x: 0, y: startY }, radius, {
+      x: 0,
+      y: -1400,
+    });
+
+    world.update();
+
+    expect(rigidBody.continuousCollisionTranslationClamp).not.toBeNull();
+
+    const clampedTranslation = rigidBody.continuousCollisionTranslationClamp!;
+    const clampedY = startY + clampedTranslation.y;
+
+    // Lands on the nearer platform, nowhere near the far-below main ground.
+    expect(Math.abs(clampedY - platformRestingHeight)).toBeLessThan(0.01);
   });
 });
