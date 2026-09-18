@@ -1,8 +1,10 @@
 import {
+  CLEAR_STRATEGY,
   Color,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
+  createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
@@ -40,6 +42,12 @@ const renderLayers = {
 export const createCarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
+  // The terrain render system draws directly, outside the sprite pipeline
+  // (see createTerrainRenderEcsSystem), and owns the frame's one real
+  // clear; without `none` here, createRenderEcsSystem's own clear would
+  // wipe the terrain right before drawing the car's sprites on top of it.
+  renderContext.clearStrategy = CLEAR_STRATEGY.none;
+
   // `isStatic: true` since this camera's position is driven by
   // `createCameraFollowEcsSystem` rather than `createCameraEcsSystem`'s
   // input-driven pan/zoom.
@@ -55,18 +63,13 @@ export const createCarGame = async (): Promise<Game> => {
 
   const { throttleInput, restartInput } = createInputs(world, time);
 
-  const groundPosition = await createTerrain(
-    world,
-    renderContext,
-    renderLayers.foreground,
-    random,
-  );
+  const terrain = await createTerrain(world, renderContext, random);
 
   const chassisEntity = await createCar(
     world,
     renderContext,
     renderLayers.foreground,
-    groundPosition,
+    terrain.groundPosition,
     throttleInput,
     restartInput,
   );
@@ -130,6 +133,7 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createAirControlEcsSystem(time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
+  world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 

@@ -78,4 +78,30 @@ describe('detectPolygonTerrainCollision', () => {
       manifold?.featureIds.length,
     );
   });
+
+  it('should keep picking the same segment across ties that differ only by floating-point noise', () => {
+    // A box centered directly above the shared vertex of two mirror-image
+    // slopes: both segments compute mathematically identical depths,
+    // differing only by a handful of ULPs of floating-point rounding - the
+    // exact scenario that used to flip `featureIds` between ticks and break
+    // warm-starting (see DEPTH_TIE_TOLERANCE in
+    // detect-polygon-terrain-collision.ts).
+    const terrain = new TerrainCollider(
+      [
+        { x: -100, y: -20 },
+        { x: 0, y: 0 },
+        { x: 100, y: -20 },
+      ],
+      500,
+    );
+    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, terrain);
+
+    const manifold = detectPolygonTerrainCollision(polygonBody, terrainBody);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.depth).toBeCloseTo(0.6864, 3);
+    expect(manifold?.contactPoints[0].x).toBeLessThan(0);
+    expect(manifold?.contactPoints[1].x).toBeLessThan(0);
+  });
 });

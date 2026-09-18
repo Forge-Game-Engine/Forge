@@ -7,53 +7,38 @@ import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAabbComponent,
   addColliderComponent,
-  PolygonCollider,
+  TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
-  addSpriteComponent,
-  createImageSprite,
-  NineSliceOptions,
+  Color,
+  createTerrainMesh,
   RenderContext,
-  SpriteEcsComponent,
+  TerrainCurvePoint,
+  TerrainMesh,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
-// Deliberately thinner than the wheels (`wheelRadius * 2` in
-// `_create-car.ts`), so a wheel usually rests on two or three columns at
-// once rather than one - that's fine functionally (see
-// `AirControlEcsComponent`'s ground-contact *count*, not a single flag, for
-// exactly this reason), and reads visually as finer-grained terrain instead
-// of a coarse staircase. `columnDepth` just needs to be deep enough that a
-// column's bottom edge is always well below any neighboring column's top
-// (see `heightAt` for how small those height differences are kept), so
-// there's no gap for a wheel to catch on at a step.
-const columnWidth = 60;
-const columnDepth = 500;
+// How far apart (in world x) consecutive sampled height points are. Small
+// enough, relative to the wheel radius (see `wheelRadius` in
+// `_create-car.ts`), that a wheel still rests on more than one segment at
+// once - deliberately keeping the exact multi-segment resting scenario the
+// old column-based terrain (each column its own `PolygonCollider` entity)
+// couldn't exercise, since `TerrainCollider` is a single collider whose
+// narrow phase picks one winning segment per tick (see
+// `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`).
+const pointSpacing = 60;
 
-// `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
-// rounded corners and bolt-head detail at a fixed size while the center
-// stretches, instead of smearing them across each column's tall, narrow
-// shape.
-const groundSlices: NineSliceOptions = {
-  left: 16,
-  right: 16,
-  top: 16,
-  bottom: 16,
-  nativeWidth: 64,
-  nativeHeight: 64,
-};
+// How far the solid slab extends below the lowest sampled point. A single
+// flat bottom edge for the whole course, so this only needs to cover the
+// tallest hill's height *above* the flat launch pad, not the pad's own
+// height (see `TerrainCollider`'s docs: `depth` is measured from the
+// lowest point across the whole collider).
+const terrainDepth = 500;
 
-function rectangleVertices(width: number, height: number): Vector2[] {
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
-
-  return [
-    { x: -halfWidth, y: -halfHeight },
-    { x: halfWidth, y: -halfHeight },
-    { x: halfWidth, y: halfHeight },
-    { x: -halfWidth, y: halfHeight },
-  ];
-}
+// `block_square.png` is a 64x64 rounded, bolted panel; tiled at its native
+// size it reads as a plated floor rather than smearing across the whole
+// course.
+const groundTextureUrl = getAssetUrl('img/physics/block_square.png');
 
 /**
  * How far the flat launch pad the car spawns on extends before the terrain
@@ -68,12 +53,19 @@ const flatStartLength = 400;
 const courseLength = 20000;
 
 /**
+ * How far before the flat launch pad the sampled terrain starts, so the car
+ * always has solid ground under it even while braking/reversing near the
+ * spawn point.
+ */
+const runoffLength = 500;
+
+/**
  * How far past `flatStartLength` the hills take to ramp up to full
  * amplitude. Without this, `rollingHills`/`climb`/`noise` would switch on
  * abruptly at `flatStartLength`, and since their slope there is nonzero,
- * that would make the very first column a tall step (a car arriving at
- * speed slams into it rather than climbing it). Smoothstep ramps
- * `rollingHills`/`climb`/`noise` in with a slope of zero at
+ * that would make the very first sampled point a sharp kink (a car arriving
+ * at speed would feel a sudden bump rather than easing onto a slope).
+ * Smoothstep ramps `rollingHills`/`climb`/`noise` in with a slope of zero at
  * `flatStartLength`, so the ground eases out of the flat pad instead of
  * kinking.
  */
@@ -83,16 +75,11 @@ const hillRampLength = 400;
  * Computes the ground height at `x`: flat for `flatStartLength`, then a mix
  * of two sine waves at different frequencies (rolling hills), a slow upward
  * trend (so the course is a net "climb" rather than just undulating), and
- * small per-column noise so it doesn't read as perfectly periodic - all
+ * small per-point noise so it doesn't read as perfectly periodic - all
  * ramped in smoothly over `hillRampLength` so the transition out of the
- * flat pad has no sudden change in slope. The amplitudes here are
- * deliberately gentle relative to `columnWidth`: since the terrain is built
- * from flat, unrotated columns (see `createGroundColumn`), a large height
- * change between adjacent columns reads as a hard step to drive over
- * rather than a slope, so keeping consecutive columns close in height
- * keeps the course feeling like rolling hills rather than a staircase.
+ * flat pad has no sudden change in slope.
  * @param x - The world-space x coordinate to sample.
- * @param random - The seeded random source used for per-column noise.
+ * @param random - The seeded random source used for per-point noise.
  */
 function heightAt(x: number, random: Random): number {
   if (x <= flatStartLength) {
@@ -114,97 +101,117 @@ function heightAt(x: number, random: Random): number {
 }
 
 /**
- * Creates one static ground column spanning `left` to `right`: a flat,
- * unrotated rectangle topped at `height` and extending `columnDepth` below
- * it, so consecutive columns (each independently topped at their own
- * sampled height) form a gently stepped profile rather than a smoothly
- * angled one.
- * @param world - The ECS world to add the column entity to.
- * @param groundSprite - The pre-loaded, unscaled ground sprite shared by
- * every column.
- * @param left - The world-space x coordinate of the column's left edge.
- * @param right - The world-space x coordinate of the column's right edge.
- * @param height - The world-space y coordinate of the column's top edge.
+ * Samples `heightAt` left to right across the whole course, then reverses
+ * and negates both axes into `TerrainCollider`'s local space. `TerrainCollider`
+ * always extends its solid slab `depth` units in the +y direction from its
+ * surface points (in its own local space), but this demo's gravity (the
+ * engine default) pulls bodies toward -y, so the terrain entity is rotated
+ * 180 degrees to face the right way (the same convention documented in
+ * documentation-site/docs/docs/physics/terrain.md and used by the Rolling
+ * Ball demo) - which mirrors world space into local space (`local = -world`
+ * around the terrain's own position), so the points must be authored in
+ * reverse, strictly-increasing-local-x order for that mirroring to land
+ * back in the correct left-to-right world layout.
+ * @param random - The seeded random source used for per-point noise.
  */
-function createGroundColumn(
-  world: EcsWorld,
-  groundSprite: SpriteEcsComponent,
-  left: number,
-  right: number,
-  height: number,
-): void {
-  const width = right - left;
+function buildLocalPoints(random: Random): Vector2[] {
+  const worldPoints: Vector2[] = [];
 
-  if (width <= 0) {
-    return;
+  for (
+    let x = flatStartLength - runoffLength;
+    x <= courseLength;
+    x += pointSpacing
+  ) {
+    worldPoints.push({ x, y: heightAt(x, random) });
   }
 
-  const position = { x: left + width / 2, y: height - columnDepth / 2 };
+  worldPoints.reverse();
 
-  const entity = world.createEntity();
+  return worldPoints.map((point) => ({ x: -point.x, y: -point.y }));
+}
 
-  addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
-    local: Vec2.clone(position),
-  });
-  addRotationComponent(world, entity);
-  addSpriteComponent(world, entity, {
-    ...groundSprite,
-    width,
-    height: columnDepth,
-    slices: groundSlices,
-  });
-  addColliderComponent(world, entity, {
-    collider: new PolygonCollider(rectangleVertices(width, columnDepth)),
-    friction: 1,
-  });
-  addAabbComponent(world, entity);
+function toCurvePoints(localPoints: readonly Vector2[]): TerrainCurvePoint[] {
+  const curvePoints: TerrainCurvePoint[] = [
+    { position: Vec2.clone(localPoints[0]), distance: 0 },
+  ];
+
+  for (let i = 1; i < localPoints.length; i++) {
+    const previous = curvePoints[i - 1];
+    const position = Vec2.clone(localPoints[i]);
+    const distance =
+      previous.distance + Vec2.distanceTo(position, previous.position);
+
+    curvePoints.push({ position, distance });
+  }
+
+  return curvePoints;
 }
 
 /**
- * Builds the course's terrain: a row of static, unrotated ground columns
+ * Builds the course's terrain: a single, continuous `TerrainCollider`
  * following a procedurally generated height profile, starting with a flat
- * launch pad and climbing into gently rolling hills.
- * @param world - The ECS world to add the terrain entities to.
- * @param renderContext - The render context used to load the ground sprite.
- * @param renderLayer - The render layer the terrain should be drawn on.
+ * launch pad and climbing into gently rolling hills, plus a matching mesh
+ * (see `createTerrainMesh`) built from the exact same points, so what's
+ * drawn always matches what's touched. Pair with
+ * `createTerrainRenderEcsSystem` to draw the returned `mesh`.
+ * @param world - The ECS world to add the terrain entity to.
+ * @param renderContext - The render context used to load the ground texture and build the mesh.
  * @param random - The seeded random source used to vary the terrain.
- * @returns A point on the flat launch pad, suitable for spawning the car
- * above.
+ * @returns The built `mesh` (pass to `createTerrainRenderEcsSystem`) and a
+ * point on the flat launch pad, suitable for spawning the car above.
  */
 export async function createTerrain(
   world: EcsWorld,
   renderContext: RenderContext,
-  renderLayer: number,
   random: Random,
-): Promise<Vector2> {
-  const groundImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/physics/block_square.png'),
-  );
-  const groundSprite = createImageSprite(groundImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
+): Promise<{ groundPosition: Vector2; mesh: TerrainMesh }> {
+  const localPoints = buildLocalPoints(random);
+  const terrainCollider = new TerrainCollider(localPoints, terrainDepth);
+
+  const position = Vec2.zero;
+  const angle = Math.PI;
+
+  const terrainEntity = world.createEntity();
+
+  addPositionComponent(world, terrainEntity, {
+    world: Vec2.clone(position),
+    local: Vec2.clone(position),
+  });
+  addRotationComponent(world, terrainEntity, {
+    local: angle,
+    world: angle,
+  });
+  addColliderComponent(world, terrainEntity, {
+    collider: terrainCollider,
+    friction: 1,
+  });
+  addAabbComponent(world, terrainEntity);
+
+  const groundImage =
+    await renderContext.imageCache.getOrLoad(groundTextureUrl);
+
+  const mesh = createTerrainMesh(renderContext, {
+    curvePoints: toCurvePoints(localPoints),
+    depth: terrainDepth,
+    position,
+    angle,
+    border: {
+      image: groundImage,
+      tileSize: { x: 64, y: 64 },
+      tint: Color.white,
+    },
+    fill: {
+      image: groundImage,
+      tileSize: { x: 96, y: 96 },
+      tint: new Color(0.55, 0.55, 0.55, 1),
+    },
+    borderWidth: 40,
   });
 
-  // Phased so a column boundary lands exactly on `carSpawnX`: the car's two
-  // wheels straddle that point (see `_create-car.ts`'s `frontAnchor`/
-  // `rearAnchor`), and starting a column boundary any closer to one wheel
-  // than the other would have that wheel spawn straddling the seam between
-  // two columns instead of resting near the middle of one - which, even
-  // though both columns are level with each other here, is still prone to
-  // the narrow-phase collision detector picking the shared vertex as the
-  // contact feature and returning a slightly asymmetric normal right at
-  // the moment the car first settles.
   const carSpawnX = 150;
-  const gridStart =
-    carSpawnX - columnWidth * Math.ceil((carSpawnX + 200) / columnWidth);
 
-  for (let left = gridStart; left < courseLength; left += columnWidth) {
-    const right = left + columnWidth;
-    const height = heightAt(left + columnWidth / 2, random);
-
-    createGroundColumn(world, groundSprite, left, right, height);
-  }
-
-  return { x: carSpawnX, y: heightAt(carSpawnX, random) };
+  return {
+    groundPosition: { x: carSpawnX, y: heightAt(carSpawnX, random) },
+    mesh,
+  };
 }

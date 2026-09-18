@@ -3,11 +3,10 @@ import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 /**
  * Tracks how many static (ground) bodies this entity is currently touching,
  * recomputed every tick by `createGroundContactEcsSystem` from this tick's
- * collision manifolds. A count rather than a boolean, since a wheel can
- * (and, given how wide the wheels are relative to a ground column, often
- * does) touch two neighboring ground columns at once, and a boolean would
- * flicker "airborne" as one of those two contacts ends while the wheel is
- * still resting on the other.
+ * collision manifolds. A count rather than a boolean so it generalizes to
+ * any number of static bodies a wheel might simultaneously contact, even
+ * though the course's single `TerrainCollider` means that count is
+ * currently always `0` or `1`.
  *
  * Attached directly to the wheel's own entity, so anything else on that
  * same entity (e.g. `WheelDriveEcsComponent`) can query for it jointly.

@@ -58,6 +58,34 @@ describe('detectCircleTerrainCollision', () => {
   });
 
   it('should pick the deepest contact across overlapping segments', () => {
+    // Asymmetric slopes either side of the shared vertex give the two
+    // segments genuinely different depths (well beyond DEPTH_TIE_TOLERANCE),
+    // so the steeper right-hand segment should unambiguously win.
+    const terrain = new TerrainCollider(
+      [
+        { x: -100, y: -20 },
+        { x: 0, y: 0 },
+        { x: 100, y: -50 },
+      ],
+      500,
+    );
+    const circleBody = body({ x: 0, y: -0.5 }, new CircleCollider(1));
+    const terrainBody = body(Vec2.zero, terrain);
+
+    const manifold = detectCircleTerrainCollision(circleBody, terrainBody);
+
+    expect(manifold).not.toBeNull();
+    expect(manifold?.depth).toBeCloseTo(0.5528, 3);
+    expect(manifold?.featureIds).toEqual([1]);
+  });
+
+  it('should keep picking the same segment across ties that differ only by floating-point noise', () => {
+    // The circle sits directly above the shared vertex of two mirror-image
+    // slopes, so both segments compute mathematically identical depths -
+    // differing only by a handful of ULPs of floating-point rounding, the
+    // exact scenario that used to flip `featureIds` between ticks and break
+    // warm-starting (see DEPTH_TIE_TOLERANCE in
+    // detect-circle-terrain-collision.ts).
     const terrain = new TerrainCollider(
       [
         { x: -100, y: -20 },
@@ -73,7 +101,7 @@ describe('detectCircleTerrainCollision', () => {
 
     expect(manifold).not.toBeNull();
     expect(manifold?.depth).toBeCloseTo(0.5097, 3);
-    expect(manifold?.featureIds).toEqual([1]);
+    expect(manifold?.featureIds).toEqual([0]);
   });
 
   it('should account for the terrain body rotation', () => {
