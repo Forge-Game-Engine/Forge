@@ -181,22 +181,33 @@ Since the mesh has an arbitrary vertex count - not the fixed
 six-vertices-per-quad the sprite pipeline batches -
 [`createTerrainRenderEcsSystem`](/Forge/docs/api/functions/createTerrainRenderEcsSystem)
 draws it with its own direct, non-instanced `gl.drawArrays` call instead of
-going through `createRenderEcsSystem`.
+going through `createRenderEcsSystem`. It draws every entity with a
+[`TerrainMeshEcsComponent`](/Forge/docs/api/interfaces/TerrainMeshEcsComponent)
+(attached with
+[`addTerrainMeshComponent`](/Forge/docs/api/functions/addTerrainMeshComponent)),
+so a world can have any number of terrain meshes, each matched against
+cameras via `category`/`cullingMask` exactly like a sprite's `Renderable.category`.
 
 ```ts
-import { createTerrainRenderEcsSystem } from '@forge-game-engine/forge/rendering';
+import {
+  addTerrainMeshComponent,
+  createTerrainRenderEcsSystem,
+} from '@forge-game-engine/forge/rendering';
 
-world.addSystem(createTerrainRenderEcsSystem(renderContext, mesh));
+addTerrainMeshComponent(world, groundEntity, { mesh });
+
+world.addSystem(createTerrainRenderEcsSystem(renderContext));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
 
 :::caution[Coexisting with the sprite pipeline]
 Register the terrain system _before_ `createRenderEcsSystem` so sprites
-draw on top of the terrain mesh underneath them. But `createRenderEcsSystem`
-clears its destination the first time it's used each frame (see
-`RenderContext.clearStrategy`), which would wipe out the terrain mesh drawn
-just before it. Set `renderContext.clearStrategy = CLEAR_STRATEGY.none` so
-neither system's automatic clear fires - `createTerrainRenderEcsSystem`
-does the frame's one real clear itself, first. See the Rolling Ball demo's
-`create-game.ts` for the complete setup.
+draw on top of the terrain mesh underneath them. `createTerrainRenderEcsSystem`
+manages `RenderContext.clearStrategy` itself: whenever there's at least one
+`TerrainMeshEcsComponent` to draw, it sets `clearStrategy` to
+`CLEAR_STRATEGY.none` and does the frame's one real clear itself, so
+`createRenderEcsSystem`'s own clear becomes a no-op instead of wiping out
+the terrain mesh drawn just before it. You never need to touch
+`clearStrategy` yourself. See the Rolling Ball demo's `create-game.ts` for
+the complete setup.
 :::

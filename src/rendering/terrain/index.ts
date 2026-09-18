@@ -1,3 +1,4 @@
+export * from './components/index.js';
 export * from './create-terrain-mesh.js';
 export * from './create-terrain-render-ecs-system.js';
 export * from './terrain-curve.js';

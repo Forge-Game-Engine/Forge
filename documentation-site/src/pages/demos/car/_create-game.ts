@@ -1,5 +1,4 @@
 import {
-  CLEAR_STRATEGY,
   Color,
   createCamera,
   createCameraEcsSystem,
@@ -41,12 +40,6 @@ const renderLayers = {
 
 export const createCarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
-
-  // The terrain render system draws directly, outside the sprite pipeline
-  // (see createTerrainRenderEcsSystem), and owns the frame's one real
-  // clear; without `none` here, createRenderEcsSystem's own clear would
-  // wipe the terrain right before drawing the car's sprites on top of it.
-  renderContext.clearStrategy = CLEAR_STRATEGY.none;
 
   // `isStatic: true` since this camera's position is driven by
   // `createCameraFollowEcsSystem` rather than `createCameraEcsSystem`'s
@@ -133,7 +126,7 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createAirControlEcsSystem(time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createTerrainRenderEcsSystem(renderContext, terrain.mesh));
+  world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 

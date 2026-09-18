@@ -10,11 +10,11 @@ import {
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
+  addTerrainMeshComponent,
   Color,
   createTerrainMesh,
   RenderContext,
   TerrainCurvePoint,
-  TerrainMesh,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -152,19 +152,19 @@ function toCurvePoints(localPoints: readonly Vector2[]): TerrainCurvePoint[] {
  * following a procedurally generated height profile, starting with a flat
  * launch pad and climbing into gently rolling hills, plus a matching mesh
  * (see `createTerrainMesh`) built from the exact same points, so what's
- * drawn always matches what's touched. Pair with
- * `createTerrainRenderEcsSystem` to draw the returned `mesh`.
+ * drawn always matches what's touched. The mesh is attached to the terrain
+ * entity via `addTerrainMeshComponent`, so `createTerrainRenderEcsSystem`
+ * draws it automatically - the caller doesn't need to wire it up itself.
  * @param world - The ECS world to add the terrain entity to.
  * @param renderContext - The render context used to load the ground texture and build the mesh.
  * @param random - The seeded random source used to vary the terrain.
- * @returns The built `mesh` (pass to `createTerrainRenderEcsSystem`) and a
- * point on the flat launch pad, suitable for spawning the car above.
+ * @returns A point on the flat launch pad, suitable for spawning the car above.
  */
 export async function createTerrain(
   world: EcsWorld,
   renderContext: RenderContext,
   random: Random,
-): Promise<{ groundPosition: Vector2; mesh: TerrainMesh }> {
+): Promise<{ groundPosition: Vector2 }> {
   const localPoints = buildLocalPoints(random);
   const terrainCollider = new TerrainCollider(localPoints, terrainDepth);
 
@@ -208,10 +208,11 @@ export async function createTerrain(
     borderWidth: 40,
   });
 
+  addTerrainMeshComponent(world, terrainEntity, { mesh });
+
   const carSpawnX = 150;
 
   return {
     groundPosition: { x: carSpawnX, y: heightAt(carSpawnX, random) },
-    mesh,
   };
 }
