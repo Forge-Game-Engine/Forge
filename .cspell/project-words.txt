@@ -58,6 +58,7 @@ HarfBuzz
 heightmap
 Heliagon
 highp
+hitbox
 hitscan
 hotspot
 hoverable
@@ -86,6 +87,7 @@ Menlo
 mesher
 Mertens
 minimaps
+Minkowski
 moddable
 mousedown
 mousemove
@@ -145,6 +147,11 @@ spritesheet
 stoppables
 stoppie
 stormmuller
+Substep
+substep
+Substepping
+substepping
+substeps
 swiftshader
 texel
 texels
