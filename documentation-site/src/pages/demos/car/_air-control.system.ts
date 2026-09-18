@@ -7,16 +7,18 @@ import { isGrounded } from './_ground-contact.component';
 
 /**
  * While a matched entity's `AirControlEcsComponent.frontWheelGroundContact`
- * and `rearWheelGroundContact` both report their wheel touching no ground,
- * drives the chassis's angular velocity towards
+ * and `rearWheelGroundContact` have both reported their wheel touching no
+ * ground for at least `minAirborneDuration` (tracked in
+ * `airborneDuration`), drives the chassis's angular velocity towards
  * `throttleInput.value * maxAngularSpeed`, spending no more than `maxTorque`
  * to do so - the same targetVelocity/maxTorque approach
  * `createAngularVelocityMotorEcsSystem` uses for the wheels, applied
  * directly here (rather than via `AngularVelocityMotorEcsComponent`) so it
  * only ever acts while airborne; wired onto the wheels' motors instead, a
  * target of `0` at neutral throttle would fight the chassis's ground-level
- * suspension lean too. Does nothing while grounded, leaving the chassis
- * entirely to the suspension and `ChassisStabilizerEcsComponent`.
+ * suspension lean too. Does nothing while grounded (and resets
+ * `airborneDuration` to `0`), leaving the chassis entirely to the
+ * suspension and `ChassisStabilizerEcsComponent`.
  *
  * Must run after `createGroundContactEcsSystem` in the same tick (so it
  * sees this tick's grounded state) and before whatever system integrates
@@ -32,10 +34,19 @@ export const createAirControlEcsSystem = (
     for (const airControl of airControls) {
       const { frontWheelGroundContact, rearWheelGroundContact } = airControl;
 
+      const { deltaTimeInSeconds } = time;
+
       if (
         isGrounded(frontWheelGroundContact) ||
         isGrounded(rearWheelGroundContact)
       ) {
+        airControl.airborneDuration = 0;
+        continue;
+      }
+
+      airControl.airborneDuration += deltaTimeInSeconds;
+
+      if (airControl.airborneDuration < airControl.minAirborneDuration) {
         continue;
       }
 
@@ -47,8 +58,6 @@ export const createAirControlEcsSystem = (
       if (chassisRigidBody === null) {
         continue;
       }
-
-      const { deltaTimeInSeconds } = time;
 
       const responsiveness =
         (1 / chassisRigidBody.momentOfInertia) * deltaTimeInSeconds;
