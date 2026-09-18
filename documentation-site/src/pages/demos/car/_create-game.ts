@@ -87,6 +87,24 @@ export const createCarGame = async (): Promise<Game> => {
   // tumbles and the car flies apart within the first second).
   const jointIterations = { iterations: 8 };
 
+  // `createCollisionResolutionEcsSystem`'s default `maxBiasSpeed` (3 units/
+  // second) is tuned for Box2D's own meters-scale default (its
+  // `contactPushMaxSpeed` is `3.0 * b2_lengthUnitsPerMeter`) - this course's
+  // world units are pixel-scale instead (`gravity` above is -600, roughly
+  // 60x real-world `g`, and `wheelRadius` alone is 100 units), so a wheel
+  // that lands hard after catching air off a hill can end up tens of units
+  // deep in the terrain in a single tick, and 3 units/second of correction
+  // then takes many seconds to dig it back out - long enough to read as the
+  // wheel being stuck clipped into the ground rather than momentarily
+  // compressed into it. Scaling the cap up by roughly the same ~60-100x
+  // this course's units are bigger than Box2D's assumed meters (confirmed
+  // empirically: 300 clears a hard landing within a fraction of a second,
+  // matching how quickly the suspension itself settles, without changing
+  // resting behavior on flat ground - the cap only matters once penetration
+  // is already large) restores the "quickly digs itself back out" feel
+  // `maxBiasSpeed` is meant to provide at this course's actual scale.
+  const collisionResolutionOptions = { maxBiasSpeed: 300 };
+
   // `createCarResetEcsSystem` may teleport every body back to its spawn
   // transform, so it runs first. `createGroundContactEcsSystem` recomputes
   // each wheel's grounded state from this tick's `collisionManifolds`
@@ -117,6 +135,7 @@ export const createCarGame = async (): Promise<Game> => {
       collisionManifolds,
       contactConstraints,
       time,
+      collisionResolutionOptions,
     ),
   );
   world.addSystem(createPrismaticJointEcsSystem(time, jointIterations));
