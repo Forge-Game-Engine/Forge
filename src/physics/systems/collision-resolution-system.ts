@@ -42,8 +42,17 @@ export interface CollisionResolutionOptions {
   contactDampingRatio: number;
 
   /**
-   * The maximum speed, in units/second, the penetration-correction bias is
-   * allowed to introduce in a single tick.
+   * The maximum speed, in world units/second, the penetration-correction
+   * bias is allowed to introduce in a single tick. The default mirrors
+   * Box2D's own `contactPushMaxSpeed`, which assumes meters-scale world
+   * units - at a larger scale (e.g. a world where a typical dynamic body
+   * spans hundreds of units, not roughly one), recovering from a deep
+   * penetration (a fast body landing hard after a jump, say) can take
+   * visibly long at this default, since the cap - not the soft constraint's
+   * own stiffness - is what limits how fast large penetration clears.
+   * Scale it up roughly in proportion to how much larger a "typical body"
+   * is in your world than roughly a meter (the Car demo's `_create-game.ts`
+   * has a worked example).
    */
   maxBiasSpeed: number;
 
