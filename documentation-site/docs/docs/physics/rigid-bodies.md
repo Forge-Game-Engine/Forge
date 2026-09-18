@@ -77,7 +77,12 @@ simulation:
   and collisions all affect it, and `createEulerIntegrationEcsSystem`
   integrates its `velocity`/`angularVelocity` into position/rotation every
   tick. Use this for anything that should move and react physically, such
-  as crates, characters, and projectiles.
+  as crates, characters, and projectiles. A dynamic `CircleCollider` body
+  also has `continuousDetection` (defaulting to `true`), which controls
+  whether it's eligible for the swept collision checks covered in
+  [Continuous Collision Detection](./continuous-collision-detection.md) -
+  what stops a fast-moving circle from tunneling through thin static
+  geometry in a single tick.
 - **Static**: infinite effective mass, never affected by anything, never
   integrated. The simplest way to make a body static is to give its entity
   a `ColliderEcsComponent` (plus `PositionEcsComponent`/

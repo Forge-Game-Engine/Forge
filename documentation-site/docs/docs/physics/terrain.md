@@ -65,6 +65,11 @@ natural mass distribution to simulate as a moving object; the collider's
 nothing in the engine exercises a dynamic terrain body.
 :::
 
+A fast-moving `CircleCollider` body (a vehicle wheel landing hard, say) can
+tunnel straight through a `TerrainCollider` within a single tick if nothing
+sweeps its path - see
+[Continuous Collision Detection](./continuous-collision-detection.md).
+
 ## How collision works
 
 Internally, `TerrainCollider` triangulates the heightmap into one convex

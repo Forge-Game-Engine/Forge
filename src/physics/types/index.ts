@@ -4,3 +4,4 @@ export * from './collision-manifold.js';
 export * from './collision-pair.js';
 export * from './contact-constraint.js';
 export * from './raycast-hit.js';
+export * from './sweep-hit.js';

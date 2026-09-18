@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **physics:** Add continuous collision detection for fast-moving dynamic `CircleCollider` bodies against static `CircleCollider`/`PolygonCollider`/`TerrainCollider` bodies, preventing them from tunneling through thin geometry within a single tick. Register the new `createContinuousCollisionEcsSystem` right before `createEulerIntegrationEcsSystem` to enable it; it's opt-out per body via the new `RigidBodyEcsComponent.continuousDetection` option (defaults to `true`). The underlying sweep queries (`sweepCircleCircle`, `sweepCirclePolygon`, `sweepCircleTerrain`, and the `SweepHit` result type) are also exported for standalone use
+
 ## [0.25.4] - 2026-09-18
 
 #### Changed

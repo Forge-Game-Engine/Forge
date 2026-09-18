@@ -40,6 +40,18 @@ export interface RigidBodyDefaultedOptions {
    * See {@link RigidBodyType}.
    */
   type: RigidBodyType;
+
+  /**
+   * Whether `createContinuousCollisionEcsSystem` may sweep this body against
+   * nearby static bodies when it's moving fast enough to risk tunneling
+   * through them in a single tick (see the system's own doc for the speed
+   * threshold). Defaults to `true`: an ordinary fast-moving body (a wheel
+   * landing hard, a thrown projectile) shouldn't need an explicit opt-in to
+   * avoid tunneling. Set to `false` for a body that's meant to be able to
+   * pass through geometry at speed regardless (e.g. a fast, deliberately
+   * non-solid trigger volume).
+   */
+  continuousDetection: boolean;
 }
 
 export interface RigidBodyRequiredOptions {
@@ -51,7 +63,18 @@ export interface RigidBodyRequiredOptions {
  * ECS-style component interface for a rigid body.
  */
 export interface RigidBodyEcsComponent
-  extends RigidBodyDefaultedOptions, RigidBodyRequiredOptions {}
+  extends RigidBodyDefaultedOptions, RigidBodyRequiredOptions {
+  /**
+   * This tick's translation clamp, written by
+   * `createContinuousCollisionEcsSystem` when it finds this body about to
+   * tunnel through a static body, and consumed (then reset to `null`) by
+   * `createEulerIntegrationEcsSystem` in place of this tick's full
+   * `velocity * deltaTime` translation. System-managed: never set this
+   * directly, and never rely on it persisting past the tick it was written
+   * in.
+   */
+  continuousCollisionTranslationClamp: Vector2 | null;
+}
 
 export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
@@ -73,11 +96,14 @@ export function addRigidBodyComponent(
     angularVelocity: 0,
     angularDrag: 0,
     type: 'dynamic',
+    continuousDetection: true,
   };
 
   const component: RigidBodyEcsComponent = {
     ...defaultRigidBodyOptions,
     ...options,
+    // System-managed: always starts `null`, regardless of `options`.
+    continuousCollisionTranslationClamp: null,
   };
 
   return world.addComponent(entity, rigidBodyId, component);

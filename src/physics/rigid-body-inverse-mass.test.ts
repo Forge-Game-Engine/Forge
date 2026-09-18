@@ -12,6 +12,8 @@ function createRigidBody(
     velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,
+    continuousDetection: true,
+    continuousCollisionTranslationClamp: null,
     type,
   };
 }
