@@ -13,6 +13,7 @@ import {
   createAngularVelocityMotorEcsSystem,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createLinearDamperEcsSystem,
@@ -119,7 +120,12 @@ export const createCarGame = async (): Promise<Game> => {
   // wheel mount run after it, so they get the "last word" on velocity each
   // tick. `createCameraFollowEcsSystem` only needs to run before
   // `createRenderEcsSystem`, so this tick's camera position is reflected in
-  // this tick's render.
+  // this tick's render. `createContinuousCollisionEcsSystem` must run after
+  // every system above that can still change `velocity` this tick and
+  // right before `createEulerIntegrationEcsSystem`, so it sweeps each
+  // wheel's actual, fully-resolved this-tick translation - this is what
+  // stops a wheel landing hard at speed from tunneling into the terrain in
+  // a single tick (see design/continuous-collision-detection.md).
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
@@ -147,6 +153,7 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createContinuousCollisionEcsSystem(time));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;

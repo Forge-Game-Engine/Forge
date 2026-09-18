@@ -11,6 +11,8 @@ describe('applyImpulse', () => {
       velocity: Vec2.zero,
       angularVelocity: 0,
       angularDrag: 0,
+      continuousDetection: true,
+      continuousCollisionTranslationClamp: null,
       type: 'dynamic',
     };
 
@@ -26,6 +28,8 @@ describe('applyImpulse', () => {
       velocity: Vec2.zero,
       angularVelocity: 0,
       angularDrag: 0,
+      continuousDetection: true,
+      continuousCollisionTranslationClamp: null,
       type: 'dynamic',
     };
 
@@ -43,6 +47,8 @@ describe('applyImpulse', () => {
         velocity: Vec2.zero,
         angularVelocity: 0,
         angularDrag: 0,
+        continuousDetection: true,
+        continuousCollisionTranslationClamp: null,
         type,
       };
 
