@@ -155,7 +155,7 @@
     "@types/howler": "^2.2.13",
     "@types/node": "^26.2.0",
     "@types/seedrandom": "^3.0.8",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^5.0.1",
     "@vitest/ui": "^4.0.6",
     "cspell": "^10.0.1",
     "eslint": "^10.8.1",
