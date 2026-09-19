@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.5] - 2026-09-19
+
 #### Changed
 
 - **physics:** `TerrainCollider` now models its heightmap as a continuous chain of surface edges (`surface`, replacing `segments`) rather than a row of closed quadrilaterals, following the same design as a Box2D chain shape. Narrow-phase collision runs against that chain only, so a contact normal always comes from the ground's actual surface and never from an interior boundary between two neighboring stretches of it. The solid slab is still what `computeAabb` and `raycastTerrain` see, so broad-phase culling and raycasting are unchanged. A `TerrainCollider` is now one-sided: a body underneath the terrain is pushed back up through its surface instead of out of its bottom, and one that has passed entirely out of the bottom of the slab stops colliding
