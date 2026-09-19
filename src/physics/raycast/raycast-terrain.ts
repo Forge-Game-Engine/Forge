@@ -1,5 +1,8 @@
 import { Vec2, Vector2 } from '../../math/index.js';
-import { TerrainCollider } from '../colliders/terrain-collider.js';
+import {
+  buildTerrainEdgeSlab,
+  TerrainCollider,
+} from '../colliders/terrain-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { RaycastShapeHit } from '../types/raycast-hit.js';
 import { raycastConvexPolygon } from './raycast-convex-polygon.js';
@@ -28,9 +31,16 @@ function localXRange(
 
 /**
  * Casts a ray segment against a terrain-collider body, by running the same
- * ray-vs-convex-polygon test used for {@link raycastPolygon} against each of
- * the terrain's segments that overlap the ray's local x-range, keeping the
- * intersection closest to `start`.
+ * ray-vs-convex-polygon test used for {@link raycastPolygon} against the
+ * solid slab column beneath each of the terrain's surface edges that
+ * overlaps the ray's local x-range, keeping the intersection closest to
+ * `start`.
+ *
+ * Unlike narrow-phase collision - which only ever meets the terrain's
+ * surface, so a moving body can't catch on a boundary between two
+ * neighboring columns (see {@link TerrainSurfaceEdge}) - a ray can
+ * legitimately enter the slab from any direction, including from
+ * underneath, so it is tested against the whole solid.
  * @param terrainBody - The body with a {@link TerrainCollider}.
  * @param start - The ray's world-space start point.
  * @param end - The ray's world-space end point.
@@ -47,26 +57,19 @@ export function raycastTerrain(
 
   let closest: RaycastShapeHit | null = null;
 
-  for (const segment of terrainCollider.segments) {
-    if (maxX < segment.minX || minX > segment.maxX) {
+  for (const edge of terrainCollider.surface) {
+    if (maxX < edge.start.x || minX > edge.end.x) {
       continue;
     }
 
-    // Clone before rotating: `segment.vertices`/`segment.normals` are the
-    // terrain collider's own persistent local-space segment data (its
-    // surface vertices alias `terrainCollider.points` directly), reused
-    // every tick.
-    const vertices = segment.vertices.map((vertex) =>
-      Vec2.add(
-        Vec2.rotate(Vec2.clone(vertex), terrainBody.rotation),
-        terrainBody.position,
-      ),
-    );
-    const normals = segment.normals.map((normal) =>
-      Vec2.rotate(Vec2.clone(normal), terrainBody.rotation),
+    const slab = buildTerrainEdgeSlab(
+      edge,
+      terrainCollider.bottomY,
+      terrainBody.position,
+      terrainBody.rotation,
     );
 
-    const hit = raycastConvexPolygon(vertices, normals, start, end);
+    const hit = raycastConvexPolygon(slab.vertices, slab.normals, start, end);
 
     if (hit !== null && (closest === null || hit.distance < closest.distance)) {
       closest = hit;

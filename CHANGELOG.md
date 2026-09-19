@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **physics:** `TerrainCollider` now models its heightmap as a continuous chain of surface edges (`surface`, replacing `segments`) rather than a row of closed quadrilaterals, following the same design as a Box2D chain shape. Narrow-phase collision runs against that chain only, so a contact normal always comes from the ground's actual surface and never from an interior boundary between two neighboring stretches of it. The solid slab is still what `computeAabb` and `raycastTerrain` see, so broad-phase culling and raycasting are unchanged. A `TerrainCollider` is now one-sided: a body underneath the terrain is pushed back up through its surface instead of out of its bottom, and one that has passed entirely out of the bottom of the slab stops colliding
+- **physics:** `detectCollision` now returns an array of manifolds instead of a single manifold or `null`, as do `detectCircleTerrainCollision` and `detectPolygonTerrainCollision`. A body wide enough to straddle several of a `TerrainCollider`'s surface edges gets one manifold per edge it touches, each carrying its own feature ids, so every contact warm-starts independently across ticks instead of a single contact changing hands between edges. `createNarrowPhaseEcsSystem` writes them all into `collisionManifolds`, so a single entity pair can now contribute more than one manifold per tick
+- **physics:** Add `NarrowPhaseManifold` (a `CollisionManifold` without its entity ids) and `clipAgainstReferenceFace` (the reference/incident face clipping stage `detectPolygonFacesCollision` already used internally) to the public API
+
+#### Fixed
+
+- **physics:** A body resting on or rolling across a `TerrainCollider` can no longer be pushed sideways along the ground it is resting on. Closing each stretch of ground off into its own quadrilateral gave the boundary between two neighboring stretches a face of its own to collide with, and for a body wide enough to reach past the ground beneath it that face could beat every real surface face on penetration depth - producing a fully horizontal contact normal on gently rolling ground
+
 ## [0.25.4] - 2026-09-18
 
 #### Changed

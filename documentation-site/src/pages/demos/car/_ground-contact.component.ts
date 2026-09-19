@@ -1,12 +1,13 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 
 /**
- * Tracks how many static (ground) bodies this entity is currently touching,
+ * Tracks how many static (ground) contacts this entity currently has,
  * recomputed every tick by `createGroundContactEcsSystem` from this tick's
  * collision manifolds. A count rather than a boolean so it generalizes to
- * any number of static bodies a wheel might simultaneously contact, even
- * though the course's single `TerrainCollider` means that count is
- * currently always `0` or `1`.
+ * any number of static bodies a wheel might simultaneously contact - and
+ * because a wheel wide enough to span several of the course's
+ * `TerrainCollider` surface edges gets one manifold per edge it touches, so
+ * even a single ground body can contribute more than one.
  *
  * Attached directly to the wheel's own entity, so anything else on that
  * same entity (e.g. `WheelDriveEcsComponent`) can query for it jointly.
