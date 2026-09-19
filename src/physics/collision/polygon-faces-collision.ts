@@ -9,7 +9,7 @@ const ABSOLUTE_TOLERANCE = 0.01;
  *
  * `detectPolygonFacesCollision` never mutates `vertices`/`normals` (or their
  * elements) - callers may safely reuse the same `PolygonFaces` object across
- * multiple calls (e.g. against several terrain segments).
+ * multiple calls (e.g. against several of a terrain's surface edges).
  */
 export interface PolygonFaces {
   vertices: Vector2[];
@@ -39,8 +39,8 @@ export interface PolygonFacesContact {
 
   /**
    * Identifiers for each entry in `contactPoints` (same length, same order),
-   * stable across ticks for the same reference/incident edge pairing. See
-   * {@link CollisionManifold.featureIds}.
+   * stable across ticks for the same reference/incident edge pairing, and
+   * always within `[0, 2^21)`. See {@link CollisionManifold.featureIds}.
    */
   featureIds: number[];
 }
@@ -94,7 +94,7 @@ function findAxisOfLeastPenetration(
     // Clone before negating/subtracting: `normal` is `ownNormals[i]` (read
     // again later as the reference/incident normal) and `supportPoint` is an
     // element of `otherVertices` (reused across faces and, for terrain,
-    // across every segment sharing the same `PolygonFaces`).
+    // across every surface edge sharing the same `PolygonFaces`).
     const supportPoint = getSupportPoint(
       otherVertices,
       Vec2.negate(Vec2.clone(normal)),
@@ -299,6 +299,11 @@ function findContactPoints(
  * packing which polygon is the reference face, the reference and incident
  * face indices, and the point's position within the (always
  * length-2) clipped incident edge.
+ *
+ * The packing occupies the low 21 bits, so the result is always within
+ * `[0, 2^21)` - which is what lets a caller running this against several
+ * shapes at once (see `detectPolygonTerrainCollision`) keep each shape's
+ * ids in a disjoint range simply by offsetting them.
  */
 function computeFeatureId(
   flip: boolean,
@@ -315,11 +320,97 @@ function computeFeatureId(
 }
 
 /**
+ * Resolves the contact between two convex polygons whose reference face has
+ * already been chosen, by clipping the incident polygon's most anti-parallel
+ * face against it.
+ *
+ * {@link detectPolygonFacesCollision} picks the reference face by separating
+ * axis and calls straight through to this. A caller that already knows which
+ * face the contact must resolve against - because the shape it is colliding
+ * with only has one face it is allowed to push along, as a terrain's surface
+ * edge does (see `detectPolygonTerrainCollision`) - can call this directly
+ * instead, and still get a manifold interchangeable with that function's.
+ *
+ * Never mutates `reference`/`incident` (or their `vertices`/`normals`
+ * elements).
+ * @param reference - The polygon whose face the contact resolves against.
+ * @param referenceFaceIndex - The index of that face within `reference`.
+ * @param incident - The other polygon, whose face is clipped against it.
+ * @param flip - Whether `reference` is the *second* of the two polygons the
+ * caller wants the resulting normal oriented between, i.e. whether the
+ * reference normal must be negated to point from the first toward the
+ * second.
+ * @returns A {@link PolygonFacesContact}, or `null` if nothing of the
+ * incident face survives the clip.
+ */
+export function clipAgainstReferenceFace(
+  reference: PolygonFaces,
+  referenceFaceIndex: number,
+  incident: PolygonFaces,
+  flip: boolean,
+): PolygonFacesContact | null {
+  const referenceNormal = reference.normals[referenceFaceIndex];
+  const incidentFaceIndex = findIncidentFaceIndex(
+    referenceNormal,
+    incident.normals,
+  );
+
+  const incidentV1 = incident.vertices[incidentFaceIndex];
+  const incidentV2 =
+    incident.vertices[(incidentFaceIndex + 1) % incident.vertices.length];
+
+  const referenceV1 = reference.vertices[referenceFaceIndex];
+  const referenceV2 =
+    reference.vertices[(referenceFaceIndex + 1) % reference.vertices.length];
+
+  const clippedPoints = clipIncidentEdge(
+    incidentV1,
+    incidentV2,
+    referenceV1,
+    referenceV2,
+  );
+
+  if (clippedPoints === null) {
+    return null;
+  }
+
+  const { contactPoints, featureIds, depth } = findContactPoints(
+    clippedPoints,
+    referenceNormal,
+    referenceV1,
+    (pointIndex) =>
+      computeFeatureId(flip, referenceFaceIndex, incidentFaceIndex, pointIndex),
+  );
+
+  if (contactPoints.length === 0) {
+    return null;
+  }
+
+  // Clone before negating: `referenceNormal` aliases `reference.normals`,
+  // reused across every call sharing the same `PolygonFaces`.
+  const normal = flip
+    ? Vec2.negate(Vec2.clone(referenceNormal))
+    : referenceNormal;
+
+  return {
+    normal,
+    depth,
+    contactPoints,
+    featureIds,
+  };
+}
+
+/**
  * Detects a collision between two convex polygons, given as world-space
  * {@link PolygonFaces}, using the separating axis theorem with
  * reference/incident face clipping. Never mutates `facesA`/`facesB` (or
  * their `vertices`/`normals` elements), so callers may safely reuse the
  * same `PolygonFaces` across multiple calls.
+ *
+ * A caller may deliberately pass a degenerate shape: two vertices sharing
+ * one repeated normal describe a zero-thickness, one-sided surface edge,
+ * since the separating-axis search can then only ever pick an axis on that
+ * one side of it (see `detectPolygonTerrainCollision`).
  * @param facesA - The first polygon's world-space vertices and normals.
  * @param facesB - The second polygon's world-space vertices and normals.
  * @returns A {@link PolygonFacesContact} if the polygons overlap, otherwise
@@ -356,53 +447,5 @@ export function detectPolygonFacesCollision(
     axisB,
   );
 
-  const referenceNormal = reference.normals[faceIndex];
-  const incidentFaceIndex = findIncidentFaceIndex(
-    referenceNormal,
-    incident.normals,
-  );
-
-  const incidentV1 = incident.vertices[incidentFaceIndex];
-  const incidentV2 =
-    incident.vertices[(incidentFaceIndex + 1) % incident.vertices.length];
-
-  const referenceV1 = reference.vertices[faceIndex];
-  const referenceV2 =
-    reference.vertices[(faceIndex + 1) % reference.vertices.length];
-
-  const clippedPoints = clipIncidentEdge(
-    incidentV1,
-    incidentV2,
-    referenceV1,
-    referenceV2,
-  );
-
-  if (clippedPoints === null) {
-    return null;
-  }
-
-  const { contactPoints, featureIds, depth } = findContactPoints(
-    clippedPoints,
-    referenceNormal,
-    referenceV1,
-    (pointIndex) =>
-      computeFeatureId(flip, faceIndex, incidentFaceIndex, pointIndex),
-  );
-
-  if (contactPoints.length === 0) {
-    return null;
-  }
-
-  // Clone before negating: `referenceNormal` aliases `reference.normals`,
-  // reused across every call sharing the same `PolygonFaces`.
-  const normal = flip
-    ? Vec2.negate(Vec2.clone(referenceNormal))
-    : referenceNormal;
-
-  return {
-    normal,
-    depth,
-    contactPoints,
-    featureIds,
-  };
+  return clipAgainstReferenceFace(reference, faceIndex, incident, flip);
 }

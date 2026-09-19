@@ -24,45 +24,52 @@ function body(position: Vector2, collider: Collider): CollisionBody {
 }
 
 describe('detectCollision', () => {
+  it('should return no manifolds when the bodies do not overlap', () => {
+    const bodyA = body({ x: 0, y: 0 }, new CircleCollider(1));
+    const bodyB = body({ x: 50, y: 0 }, new CircleCollider(1));
+
+    expect(detectCollision(bodyA, bodyB)).toEqual([]);
+  });
+
   it('should dispatch circle-circle collisions', () => {
     const bodyA = body({ x: 0, y: 0 }, new CircleCollider(1));
     const bodyB = body({ x: 1.5, y: 0 }, new CircleCollider(1));
 
-    expect(detectCollision(bodyA, bodyB)).not.toBeNull();
+    expect(detectCollision(bodyA, bodyB)).toHaveLength(1);
   });
 
   it('should dispatch circle-polygon collisions', () => {
     const bodyA = body({ x: 0, y: -1.5 }, new CircleCollider(1));
     const bodyB = body({ x: 0, y: 0 }, rectangle(2, 2));
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.x).toBeCloseTo(0);
-    expect(manifold?.normal.y).toBeCloseTo(1);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.x).toBeCloseTo(0);
+    expect(manifold.normal.y).toBeCloseTo(1);
   });
 
   it('should dispatch polygon-circle collisions, flipping the normal', () => {
     const bodyA = body({ x: 0, y: 0 }, rectangle(2, 2));
     const bodyB = body({ x: 0, y: -1.5 }, new CircleCollider(1));
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.x).toBeCloseTo(0);
-    expect(manifold?.normal.y).toBeCloseTo(-1);
-    expect(manifold?.depth).toBeCloseTo(0.5);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.x).toBeCloseTo(0);
+    expect(manifold.normal.y).toBeCloseTo(-1);
+    expect(manifold.depth).toBeCloseTo(0.5);
   });
 
   it('should dispatch polygon-polygon collisions', () => {
     const bodyA = body({ x: 0, y: 0 }, rectangle(2, 2));
     const bodyB = body({ x: 1.5, y: 0 }, rectangle(2, 2));
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.x).toBeCloseTo(1);
-    expect(manifold?.normal.y).toBeCloseTo(0);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.x).toBeCloseTo(1);
+    expect(manifold.normal.y).toBeCloseTo(0);
   });
 
   it('should dispatch circle-terrain collisions', () => {
@@ -76,10 +83,10 @@ describe('detectCollision', () => {
     const bodyA = body({ x: 0, y: -0.5 }, new CircleCollider(1));
     const bodyB = body(Vec2.zero, terrain);
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.y).toBeCloseTo(1);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.y).toBeCloseTo(1);
   });
 
   it('should dispatch terrain-circle collisions, flipping the normal', () => {
@@ -93,10 +100,10 @@ describe('detectCollision', () => {
     const bodyA = body(Vec2.zero, terrain);
     const bodyB = body({ x: 0, y: -0.5 }, new CircleCollider(1));
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.y).toBeCloseTo(-1);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.y).toBeCloseTo(-1);
   });
 
   it('should dispatch polygon-terrain collisions', () => {
@@ -110,10 +117,10 @@ describe('detectCollision', () => {
     const bodyA = body({ x: 0, y: -0.5 }, rectangle(2, 2));
     const bodyB = body(Vec2.zero, terrain);
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.y).toBeCloseTo(1);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.y).toBeCloseTo(1);
   });
 
   it('should dispatch terrain-polygon collisions, flipping the normal', () => {
@@ -127,10 +134,10 @@ describe('detectCollision', () => {
     const bodyA = body(Vec2.zero, terrain);
     const bodyB = body({ x: 0, y: -0.5 }, rectangle(2, 2));
 
-    const manifold = detectCollision(bodyA, bodyB);
+    const [manifold] = detectCollision(bodyA, bodyB);
 
-    expect(manifold).not.toBeNull();
-    expect(manifold?.normal.y).toBeCloseTo(-1);
+    expect(manifold).toBeDefined();
+    expect(manifold.normal.y).toBeCloseTo(-1);
   });
 
   it('should throw an error for an unregistered collider pair', () => {

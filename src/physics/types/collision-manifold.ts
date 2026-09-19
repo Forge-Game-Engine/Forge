@@ -42,3 +42,13 @@ export interface CollisionManifold {
    */
   featureIds: number[];
 }
+
+/**
+ * A {@link CollisionManifold} as produced by the narrow-phase collision
+ * detectors, before `createNarrowPhaseEcsSystem` attaches the two colliding
+ * entities' ids to it.
+ */
+export type NarrowPhaseManifold = Omit<
+  CollisionManifold,
+  'entityA' | 'entityB'
+>;

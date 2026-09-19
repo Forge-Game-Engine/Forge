@@ -4,7 +4,6 @@ import { Collider } from './collider.js';
 import {
   calculateArea,
   calculateCentroid,
-  calculateNormals,
   calculatePolygonMomentOfInertia,
 } from './polygon-math.js';
 
@@ -12,37 +11,67 @@ const EPSILON = 1e-9;
 
 /**
  * A single span of ground between two consecutive {@link TerrainCollider}
- * surface points, closed off into a convex quadrilateral by a flat bottom
- * edge. `vertices`/`normals` follow the same winding as `PolygonCollider`:
- * the two surface points followed by their corresponding points on the
- * terrain's flat bottom edge, with outward-facing normals in the same
- * order. All fields are in the terrain's local space.
+ * surface points: one link of the terrain's continuous surface chain, with
+ * no closing side or bottom faces of its own. All fields are in the
+ * terrain's local space.
+ *
+ * Narrow-phase collision treats the terrain as this chain of surface edges
+ * rather than as a row of closed quadrilaterals, so a body wide enough to
+ * span several edges only ever meets the ground's actual surface - there is
+ * no interior face between two neighboring edges for it to catch on. An
+ * edge's neighbors (the edges immediately before and after it in
+ * {@link TerrainCollider.surface}) act as its "ghost" geometry, exactly as
+ * a Box2D chain shape's neighboring segments do: they decide which of two
+ * edges sharing a vertex owns a contact clamped to it, so the same physical
+ * contact is never reported twice with two different normals.
  */
-export interface TerrainSegment {
+export interface TerrainSurfaceEdge {
   /**
-   * The segment's four vertices, in local space: the two surface points
-   * followed by their corresponding points on the terrain's flat bottom
-   * edge.
+   * The edge's left-hand endpoint, in local space. Always the lesser of the
+   * edge's two x-coordinates, since a terrain's points are ordered by
+   * strictly increasing x.
+   *
+   * This aliases the owning collider's own {@link TerrainCollider.points}
+   * entry rather than copying it, so it must never be mutated.
    */
-  vertices: readonly Vector2[];
+  start: Vector2;
 
   /**
-   * The segment's four outward-facing edge normals, in local space,
-   * corresponding to the edges between consecutive `vertices`.
+   * The edge's right-hand endpoint, in local space. Always the greater of
+   * the edge's two x-coordinates.
+   *
+   * This aliases the owning collider's own {@link TerrainCollider.points}
+   * entry rather than copying it, so it must never be mutated.
    */
-  normals: readonly Vector2[];
+  end: Vector2;
 
   /**
-   * The lesser of the segment's two surface points' x-coordinates. Used to
-   * cheaply filter candidate segments before running narrow-phase collision
-   * checks against them.
+   * The edge's unit-length outward normal, in local space: perpendicular to
+   * `start`-`end` and pointing away from the solid slab. Since the slab
+   * always extends in the collider's local +y direction, this always points
+   * broadly toward local -y.
    */
-  minX: number;
+  normal: Vector2;
+}
+
+/**
+ * The world-space faces of the solid slab column directly beneath a single
+ * {@link TerrainSurfaceEdge}, as consumed by volume queries that genuinely
+ * care about the terrain's inside (currently only `raycastTerrain`).
+ */
+export interface TerrainEdgeSlab {
+  /**
+   * The column's four vertices, in the same winding as a
+   * `PolygonCollider`'s: the edge's two surface points followed by their
+   * corresponding points on the terrain's flat bottom edge.
+   */
+  vertices: Vector2[];
 
   /**
-   * The greater of the segment's two surface points' x-coordinates.
+   * The column's four outward-facing edge normals, corresponding to the
+   * edges between consecutive `vertices`.
    */
-  maxX: number;
+  normals: Vector2[];
 }
 
 /**
@@ -57,11 +86,13 @@ export interface TerrainSegment {
  * authored directly in world coordinates).
  *
  * Narrow-phase collision against a `TerrainCollider` (see
- * `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) is
- * resolved per-segment: each pair of consecutive surface points, plus the
- * flat bottom edge, forms a convex quadrilateral ({@link segments}), and the
- * existing circle/polygon narrow-phase routines run against whichever
- * segments overlap the other body's local x-range.
+ * `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) runs
+ * against the {@link surface} chain, never against the slab: the slab only
+ * exists to give the shape a well-defined area, silhouette and bounding box
+ * (and to give `raycastTerrain` something solid to hit). Contact normals
+ * therefore always come from the ground's actual surface, and a body
+ * straddling several surface edges gets one contact per edge it genuinely
+ * touches instead of a single contact that jumps between them.
  *
  * `TerrainCollider` is intended for static bodies only - attach it with
  * `addColliderComponent` and no `RigidBodyEcsComponent`. A heightmap has no
@@ -79,10 +110,11 @@ export class TerrainCollider extends Collider {
   public readonly bottomY: number;
 
   /**
-   * The convex quadrilaterals narrow-phase collision detection tests
-   * against, one per consecutive pair of `points`.
+   * The continuous chain of surface edges narrow-phase collision detection
+   * tests against, one per consecutive pair of `points`, ordered left to
+   * right.
    */
-  public readonly segments: readonly TerrainSegment[];
+  public readonly surface: readonly TerrainSurfaceEdge[];
 
   /**
    * Creates a new TerrainCollider instance.
@@ -135,7 +167,7 @@ export class TerrainCollider extends Collider {
     this.points = clonedPoints;
     this.depth = depth;
     this.bottomY = bottomY;
-    this.segments = buildSegments(clonedPoints, bottomY);
+    this.surface = buildSurface(clonedPoints);
   }
 
   public computeAabb(position: Vector2, rotation: number): Aabb {
@@ -169,6 +201,58 @@ export class TerrainCollider extends Collider {
   }
 }
 
+/**
+ * Builds the closed, convex quadrilateral column of solid terrain directly
+ * beneath a single surface edge, transformed into world space, for volume
+ * queries that need the terrain's inside rather than just its surface.
+ *
+ * Narrow-phase collision deliberately does *not* use this: a moving body
+ * must only ever meet the terrain's surface, never the interior faces two
+ * neighboring columns share (see {@link TerrainSurfaceEdge}). A ray, by
+ * contrast, can legitimately enter the slab from any direction, so
+ * `raycastTerrain` does.
+ * @param edge - The surface edge whose column to build.
+ * @param bottomY - The terrain's {@link TerrainCollider.bottomY}.
+ * @param position - The terrain body's world position.
+ * @param rotation - The terrain body's world rotation, in radians.
+ * @returns The column's world-space vertices and outward-facing normals,
+ * freshly allocated so the caller may transform them further in place.
+ */
+export function buildTerrainEdgeSlab(
+  edge: TerrainSurfaceEdge,
+  bottomY: number,
+  position: Vector2,
+  rotation: number,
+): TerrainEdgeSlab {
+  const localVertices = [
+    edge.start,
+    edge.end,
+    { x: edge.end.x, y: bottomY },
+    { x: edge.start.x, y: bottomY },
+  ];
+
+  // The three faces closing the column off below the surface are always
+  // axis-aligned in local space - the two sides run straight down to the
+  // flat bottom edge - so they never need deriving from the vertices.
+  const localNormals = [
+    edge.normal,
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+  ];
+
+  return {
+    // Clone before transforming: `edge.start`/`edge.end`/`edge.normal` are
+    // the collider's own persistent local-space data, reused every tick.
+    vertices: localVertices.map((vertex) =>
+      Vec2.add(Vec2.rotate(Vec2.clone(vertex), rotation), position),
+    ),
+    normals: localNormals.map((normal) =>
+      Vec2.rotate(Vec2.clone(normal), rotation),
+    ),
+  };
+}
+
 function silhouetteVertices(
   points: readonly Vector2[],
   bottomY: number,
@@ -179,30 +263,23 @@ function silhouetteVertices(
   return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
 }
 
-function buildSegments(
-  points: readonly Vector2[],
-  bottomY: number,
-): TerrainSegment[] {
-  const segments: TerrainSegment[] = [];
+function buildSurface(points: readonly Vector2[]): TerrainSurfaceEdge[] {
+  const surface: TerrainSurfaceEdge[] = [];
 
   for (let i = 0; i < points.length - 1; i++) {
-    const surfaceLeft = points[i];
-    const surfaceRight = points[i + 1];
+    const start = points[i];
+    const end = points[i + 1];
 
-    const vertices: Vector2[] = [
-      surfaceLeft,
-      surfaceRight,
-      { x: surfaceRight.x, y: bottomY },
-      { x: surfaceLeft.x, y: bottomY },
-    ];
+    // Clone before subtracting: `start`/`end` are the collider's own stored
+    // points, which this must not mutate. Rotating the edge -90 degrees
+    // gives a normal pointing toward local -y (the points are ordered by
+    // increasing x), which is the side the solid slab is *not* on.
+    const normal = Vec2.normalize(
+      Vec2.perpendicular(Vec2.subtract(Vec2.clone(end), start)),
+    );
 
-    segments.push({
-      vertices,
-      normals: calculateNormals(vertices),
-      minX: surfaceLeft.x,
-      maxX: surfaceRight.x,
-    });
+    surface.push({ start, end, normal });
   }
 
-  return segments;
+  return surface;
 }

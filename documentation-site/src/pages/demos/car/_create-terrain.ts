@@ -20,12 +20,13 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 // How far apart (in world x) consecutive sampled height points are. Small
 // enough, relative to the wheel radius (see `wheelRadius` in
-// `_create-car.ts`), that a wheel still rests on more than one segment at
-// once - deliberately keeping the exact multi-segment resting scenario the
+// `_create-car.ts`), that a wheel spans more than one of the collider's
+// surface edges at once - deliberately exercising the multi-edge case the
 // old column-based terrain (each column its own `PolygonCollider` entity)
-// couldn't exercise, since `TerrainCollider` is a single collider whose
-// narrow phase picks one winning segment per tick (see
-// `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`).
+// couldn't, since `TerrainCollider` resolves a body against every stretch
+// of its surface chain the body actually reaches (see
+// `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`), rather
+// than against one column at a time.
 const pointSpacing = 60;
 
 // How far the solid slab extends below the lowest sampled point. A single

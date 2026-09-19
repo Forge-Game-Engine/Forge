@@ -11,7 +11,10 @@ import { CollisionPair } from '../types/collision-pair.js';
  * Creates an ECS system that runs narrow-phase (SAT) collision detection
  * against every pair in `collisionPairs`, using each entity's world
  * position/rotation (local values are only meaningful to the parenting
- * system), writing every actual collision into `collisionManifolds`.
+ * system), writing every actual collision into `collisionManifolds`. A
+ * single pair can contribute more than one manifold - a body straddling
+ * several of a `TerrainCollider`'s surface edges gets one per edge it
+ * touches (see `detectCollision`).
  * @param collisionPairs - The broad-phase system's output: candidate
  * entity pairs whose AABBs overlap.
  * @param collisionManifolds - The array the system clears and refills with
@@ -34,17 +37,13 @@ export const createNarrowPhaseEcsSystem = (
         continue;
       }
 
-      const manifold = detectCollision(bodyA, bodyB);
-
-      if (manifold === null) {
-        continue;
+      for (const manifold of detectCollision(bodyA, bodyB)) {
+        collisionManifolds.push({
+          entityA: pair.entityA,
+          entityB: pair.entityB,
+          ...manifold,
+        });
       }
-
-      collisionManifolds.push({
-        entityA: pair.entityA,
-        entityB: pair.entityB,
-        ...manifold,
-      });
     }
   },
 });

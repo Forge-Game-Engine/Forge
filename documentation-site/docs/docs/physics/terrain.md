@@ -67,18 +67,56 @@ nothing in the engine exercises a dynamic terrain body.
 
 ## How collision works
 
-Internally, `TerrainCollider` triangulates the heightmap into one convex
-quad per consecutive pair of points (`segments`), each spanning from the two
-surface points down to the shared flat bottom edge. `detectCollision`
-dispatches circle/polygon-vs-terrain collisions (`detectCircleTerrainCollision`/
-`detectPolygonTerrainCollision`) by running the existing circle-vs-polygon
-and polygon-vs-polygon narrow phase against whichever segments overlap the
-other body's local x-range, then keeping the deepest resulting contact. This
-means terrain collision reuses the same, already battle-tested SAT code
-paths as `CircleCollider`/`PolygonCollider` - there's no separate "terrain
-physics" to reason about, and any body that already collides correctly with
-a `PolygonCollider` floor collides correctly with a `TerrainCollider` one
-too.
+Internally, `TerrainCollider` keeps the heightmap as a continuous chain of
+**surface edges** (`surface`), one per consecutive pair of points, each with
+its own outward normal. Collision only ever happens against that chain -
+never against the solid slab underneath it, which exists purely to give the
+shape a well-defined area, silhouette and bounding box.
+
+`detectCollision` dispatches circle/polygon-vs-terrain collisions
+(`detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) by resolving
+the other body against every surface edge whose stretch of ground it
+actually reaches, and returns **one manifold per edge**. Two consequences
+worth knowing:
+
+- **Contact normals always come from the ground's surface.** A body never
+  meets an interior boundary between two neighboring stretches of ground, so
+  it can never be pushed sideways along ground it is resting on. This is the
+  same idea as a Box2D chain shape: an edge's neighbors act as its "ghost"
+  geometry, deciding which of two edges sharing a point owns a contact
+  clamped to it, so the same physical contact is never reported twice with
+  two different normals.
+- **A wide body gets a stable, multi-contact manifold.** A wheel or chassis
+  spanning several points keeps a separate contact against each stretch of
+  ground it touches, each with its own feature id, so the solver
+  warm-starts every one of them across ticks. Nothing has to pick a single
+  "deepest" edge, so near-coplanar ground can't make two edges trade places
+  from tick to tick and throw the accumulated impulses away.
+
+The polygon path still runs the engine's own reference/incident face
+clipping (the same code `detectPolygonPolygonCollision` uses), and the
+circle path the same closest-feature logic as `detectCirclePolygonCollision`
+
+- there's no separate "terrain physics" to reason about.
+
+:::caution[Terrain is one-sided]
+Because only the surface collides, a body that gets underneath the terrain
+is pushed back up through it rather than out of the bottom, and one that has
+passed entirely out of the bottom of the slab (further than `depth` below
+the surface) has fallen through and stops colliding. Don't use a
+`TerrainCollider` as a ceiling or as a platform you can hit from below - use
+a `PolygonCollider` for those. Raycasting is unaffected: `raycastTerrain`
+tests the whole solid, so a ray can still enter the slab from any direction.
+:::
+
+### Choosing a point spacing
+
+Point spacing trades detail against solver work. A body resting across _n_
+surface edges produces up to _n_ contacts (a circle produces one, or two in
+a valley), and every one of them is solved every iteration, every tick. Very
+fine spacing relative to the bodies rolling over it is the main way to make
+terrain contact expensive - space points no more finely than the detail you
+actually need, and let `buildTerrainCurve` do the visual smoothing.
 
 Broad-phase culling (`createBroadPhaseEcsSystem`'s `AabbEcsComponent`) still
 computes one AABB for the whole collider via `computeAabb`, which for a long
