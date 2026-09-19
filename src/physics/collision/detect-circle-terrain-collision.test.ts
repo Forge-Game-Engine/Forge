@@ -263,6 +263,60 @@ describe('detectCircleTerrainCollision', () => {
     expect(manifolds[0].normal.y).toBeCloseTo(Math.SQRT1_2);
   });
 
+  it('should return no manifolds when the circle is out of reach of an edge it is squarely above', () => {
+    // x = -50 puts the circle's center squarely inside the first edge's own
+    // span, so the edge is a candidate and resolves to a face contact -
+    // which still has to be rejected on the face's own separation, rather
+    // than on the circle failing to reach either of the edge's endpoints.
+    const circleBody = body({ x: -50, y: -5 }, new CircleCollider(1));
+    const terrainBody = body(Vec2.zero, flatTerrain());
+
+    expect(detectCircleTerrainCollision(circleBody, terrainBody)).toEqual([]);
+  });
+
+  it('should return no manifolds when the circle is past the end of the chain and out of reach', () => {
+    // Diagonally off the last surface point by more than a radius: the
+    // circle's center falls past the end of every edge it overlaps in x, so
+    // the only feature left to reach is that point itself.
+    const circleBody = body({ x: 101, y: -1 }, new CircleCollider(1));
+    const terrainBody = body(Vec2.zero, flatTerrain());
+
+    expect(detectCircleTerrainCollision(circleBody, terrainBody)).toEqual([]);
+  });
+
+  it('should fall back to the surface normal when the circle sits exactly on a surface point', () => {
+    // The radial direction from the point to the circle's center is what
+    // normally gives a vertex contact its normal, and here it is exactly
+    // zero-length, so the owning edge's own normal has to stand in for it.
+    const circleBody = body({ x: 100, y: 0 }, new CircleCollider(1));
+    const terrainBody = body(Vec2.zero, flatTerrain());
+
+    const manifolds = detectCircleTerrainCollision(circleBody, terrainBody);
+
+    expect(manifolds).toHaveLength(1);
+    expect(manifolds[0].normal.x).toBeCloseTo(0);
+    expect(manifolds[0].normal.y).toBeCloseTo(1);
+    expect(manifolds[0].depth).toBeCloseTo(1);
+    expect(manifolds[0].contactPoints[0]).toEqual({ x: 100, y: 0 });
+  });
+
+  it('should round the terrain off at the start of the chain too', () => {
+    // The mirror of rounding off at the end: the first edge has no
+    // neighbor to its left, so a body past that end meets the chain's first
+    // point with nothing to hand the contact off to.
+    const circleBody = body({ x: -100.5, y: -0.5 }, new CircleCollider(1));
+    const terrainBody = body(Vec2.zero, flatTerrain());
+
+    const manifolds = detectCircleTerrainCollision(circleBody, terrainBody);
+
+    expect(manifolds).toHaveLength(1);
+    expect(manifolds[0].contactPoints[0].x).toBeCloseTo(-100);
+    expect(manifolds[0].normal.x).toBeCloseTo(Math.SQRT1_2);
+    expect(manifolds[0].normal.y).toBeCloseTo(Math.SQRT1_2);
+    // `surface.length` (2) + point index 0.
+    expect(manifolds[0].featureIds).toEqual([2]);
+  });
+
   it('should account for the terrain body rotation', () => {
     // Rotating the flat terrain by PI flips its solid slab to extend in
     // -y instead of +y, so a circle resting just above it (in world space)
