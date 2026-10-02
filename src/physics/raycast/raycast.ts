@@ -6,6 +6,7 @@ import {
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
+import { getColliderRotation } from '../collider-rotation.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
 import { AabbEcsComponent, aabbId } from '../components/aabb-component.js';
 import {
@@ -78,14 +79,13 @@ export function raycast(
   sort: boolean = true,
 ): RaycastHit[] {
   const { entities, components } = world.query<
-    [
-      PositionEcsComponent,
-      RotationEcsComponent,
-      ColliderEcsComponent,
-      AabbEcsComponent,
-    ]
-  >([positionId, rotationId, colliderId, aabbId]);
-  const [positions, rotations, colliders, aabbs] = components;
+    [PositionEcsComponent, ColliderEcsComponent, AabbEcsComponent]
+  >([positionId, colliderId, aabbId]);
+  const [positions, colliders, aabbs] = components;
+  // Rotation is optional for colliders (an entity without one is treated as
+  // unrotated), so it's read per entity rather than required by the query.
+  const getRotation =
+    world.getComponentAccessor<RotationEcsComponent>(rotationId);
 
   const rayAabb = computeSegmentAabb(start, end);
   const hits: RaycastHit[] = [];
@@ -97,7 +97,7 @@ export function raycast(
 
     const body: CollisionBody = {
       position: positions[i].world,
-      rotation: rotations[i].world,
+      rotation: getColliderRotation(getRotation(entities[i])),
       collider: colliders[i].collider,
     };
     const hit = raycastBody(body, start, end);

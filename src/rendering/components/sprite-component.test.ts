@@ -109,4 +109,65 @@ describe('addSpriteComponent', () => {
       world.getComponent(second, spriteId)?.pivot,
     );
   });
+
+  it('captures an omitted nine-slice native size from the size the sprite is attached at', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const slices = { left: 8, right: 8, top: 8, bottom: 8 };
+
+    const component = addSpriteComponent(world, entity, {
+      width: 24,
+      height: 16,
+      renderable: createRenderable(),
+      slices,
+    });
+
+    component.width = 178;
+    component.height = 80;
+
+    expect(component.slices).toEqual({
+      ...slices,
+      nativeWidth: 24,
+      nativeHeight: 16,
+    });
+  });
+
+  it('keeps an explicit nine-slice native size', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+
+    const component = addSpriteComponent(world, entity, {
+      width: 178,
+      height: 80,
+      renderable: createRenderable(),
+      slices: {
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: 8,
+        nativeWidth: 32,
+        nativeHeight: 48,
+      },
+    });
+
+    expect(component.slices).toMatchObject({
+      nativeWidth: 32,
+      nativeHeight: 48,
+    });
+  });
+
+  it('does not mutate the slices object it was given', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const slices = { left: 8, right: 8, top: 8, bottom: 8 };
+
+    addSpriteComponent(world, entity, {
+      width: 24,
+      height: 24,
+      renderable: createRenderable(),
+      slices,
+    });
+
+    expect(slices).toEqual({ left: 8, right: 8, top: 8, bottom: 8 });
+  });
 });

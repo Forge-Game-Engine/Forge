@@ -1,6 +1,7 @@
 import { positionId, rotationId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { getColliderRotation } from '../collider-rotation.js';
 import { detectCollision } from '../collision/detect-collision.js';
 import { colliderId } from '../components/collider-component.js';
 import { CollisionBody } from '../types/collision-body.js';
@@ -11,7 +12,8 @@ import { CollisionPair } from '../types/collision-pair.js';
  * Creates an ECS system that runs narrow-phase (SAT) collision detection
  * against every pair in `collisionPairs`, using each entity's world
  * position/rotation (local values are only meaningful to the parenting
- * system), writing every actual collision into `collisionManifolds`. A
+ * system; an entity with no `RotationEcsComponent` is treated as unrotated),
+ * writing every actual collision into `collisionManifolds`. A
  * single pair can contribute more than one manifold - a body straddling
  * several of a `TerrainCollider`'s surface edges gets one per edge it
  * touches (see `detectCollision`).
@@ -56,13 +58,13 @@ function getCollisionBody(
   const rotation = world.getComponent(entity, rotationId);
   const collider = world.getComponent(entity, colliderId);
 
-  if (position === null || rotation === null || collider === null) {
+  if (position === null || collider === null) {
     return null;
   }
 
   return {
     position: position.world,
-    rotation: rotation.world,
+    rotation: getColliderRotation(rotation),
     collider: collider.collider,
   };
 }

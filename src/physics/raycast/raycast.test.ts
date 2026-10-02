@@ -102,4 +102,27 @@ describe('raycast', () => {
 
     expect(hits).toHaveLength(0);
   });
+
+  it('should hit an entity with no rotation component, treating it as unrotated', () => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, { world: { x: 0, y: 0 } });
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider([
+        { x: -2, y: -1 },
+        { x: 2, y: -1 },
+        { x: 2, y: 1 },
+        { x: -2, y: 1 },
+      ]),
+    });
+    addAabbComponent(world, entity);
+    world.update();
+
+    const hits = raycast(world, { x: -5, y: 0 }, { x: 5, y: 0 });
+
+    expect(hits).toHaveLength(1);
+    expect(hits[0].entity).toBe(entity);
+    expect(hits[0].point.x).toBeCloseTo(-2);
+    expect(hits[0].distance).toBeCloseTo(3);
+  });
 });
