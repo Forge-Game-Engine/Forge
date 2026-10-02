@@ -103,14 +103,18 @@ describe('createTerrainMesh', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_fillTexture', type: 0, size: 1 },
-            { name: 'u_borderTexture', type: 0, size: 1 },
-            { name: 'u_fillTileSize', type: 0, size: 1 },
-            { name: 'u_borderTileSize', type: 0, size: 1 },
-            { name: 'u_fillTint', type: 0, size: 1 },
-            { name: 'u_borderTint', type: 0, size: 1 },
-            { name: 'u_borderWidth', type: 0, size: 1 },
-            { name: 'u_borderBlend', type: 0, size: 1 },
+            { name: 'u_fillTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_borderTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_fillTileSize', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+            {
+              name: 'u_borderTileSize',
+              type: 0x8b50 /* FLOAT_VEC2 */,
+              size: 1,
+            },
+            { name: 'u_fillTint', type: 0x8b52 /* FLOAT_VEC4 */, size: 1 },
+            { name: 'u_borderTint', type: 0x8b52 /* FLOAT_VEC4 */, size: 1 },
+            { name: 'u_borderWidth', type: 0x1406 /* FLOAT */, size: 1 },
+            { name: 'u_borderBlend', type: 0x1406 /* FLOAT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi

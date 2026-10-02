@@ -59,3 +59,6 @@ renderable.material.setUniform('u_projection', projectionMatrix);
 
 You don't need to call `.matrix` yourself, `setUniform` checks `instanceof Matrix3x3`
 and extracts the array for you.
+The uniform must be declared as a `mat3` in the shader; see
+[Material Uniforms](../rendering/material-uniforms.md) for which values fit
+which uniform types.

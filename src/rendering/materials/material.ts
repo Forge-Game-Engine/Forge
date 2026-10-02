@@ -1,41 +1,33 @@
-import { Matrix3x3, Vec2, Vec3, Vector2, Vector3 } from '../../math/index.js';
-import { assertNever } from '../../utilities/index.js';
+import { Vec2, Vec3, Vector2, Vector3 } from '../../math/index.js';
 import type { Color } from '../color.js';
 import { ForgeShaderSource } from '../index.js';
+import {
+  createUniformUpload,
+  UniformDeclaration,
+  UniformUpload,
+} from './create-uniform-upload.js';
+import { getUniformType } from './uniform-types.js';
+import { UniformValue } from './uniform-value.js';
 
 /**
- * Distinguishes a `Vector2` uniform value from the rest of `UniformValue`'s
- * members. `Vector2` is a plain `{ x, y }` object rather than a class, so it
- * can't be told apart with `instanceof` the way `Matrix3x3` can.
+ * WebGL reports a uniform array under its first element's name
+ * (`u_items[0]`); stripping the suffix gives the name it's declared with.
  */
-function isVector2(value: UniformValue): value is Vector2 {
-  return (
-    typeof value === 'object' &&
-    !(value instanceof Matrix3x3) &&
-    'x' in value &&
-    'y' in value
-  );
-}
+const arrayElementZeroSuffix = '[0]';
 
-export type UniformValue =
-  | number
-  | boolean
-  | Float32Array
-  | Int32Array
-  | WebGLTexture
-  | Vector2
-  | Matrix3x3;
-
-interface UniformSpec {
-  location: WebGLUniformLocation;
-  type: GLenum;
+interface UniformSpec extends UniformDeclaration {
+  readonly location: WebGLUniformLocation;
 }
 
 export class Material {
   public readonly program: WebGLProgram;
 
+  /** Active uniforms in program order, each listed once. */
+  private readonly _uniformSpecs: UniformSpec[] = [];
+  /** Active uniforms by name; arrays are reachable as `u_items` and `u_items[0]`. */
   private readonly _uniforms: Map<string, UniformSpec> = new Map();
-  private readonly _uniformValues: Map<string, UniformValue> = new Map();
+  /** Pending uploads by uniform name (see `UniformSpec.name`). */
+  private readonly _uniformUploads: Map<string, UniformUpload> = new Map();
 
   /**
    * Constructs a new instance of the `Material` class.
@@ -57,167 +49,84 @@ export class Material {
   }
 
   /**
-   * Binds the material (program, uniforms, textures).
+   * Binds the material: uses its program, uploads every uniform that has a
+   * value, and binds its textures to consecutive texture units.
+   * @param gl - The WebGL2 rendering context.
    */
-  // eslint-disable-next-line sonarjs/cognitive-complexity
   public bind(gl: WebGL2RenderingContext): void {
-    // TODO: improvement - reduce cognitive complexity with strategy-based dispatch.
     gl.useProgram(this.program);
 
     let textureUnit = 0;
 
-    for (const [name, spec] of this._uniforms.entries()) {
-      const value = this._uniformValues.get(name);
+    for (const spec of this._uniformSpecs) {
+      const upload = this._uniformUploads.get(spec.name);
 
-      if (value === undefined) {
+      if (upload === undefined) {
         // TODO: improvement - evaluate whether uniform defaults should be provided.
         // If needed, defaults may be defined by shader conventions.
 
         continue;
       }
 
-      const { location } = spec;
-
-      if (value instanceof WebGLTexture) {
-        textureUnit = this._bindTexture(gl, location, value, textureUnit);
-
-        continue;
-      }
-
-      if (typeof value === 'number') {
-        this._setUniformNumber(gl, location, value);
-
-        continue;
-      }
-
-      if (typeof value === 'boolean') {
-        this._setUniformBoolean(gl, location, value);
-
-        continue;
-      }
-
-      if (value instanceof Matrix3x3) {
-        this._setUniformFloat32Array(gl, location, value.matrix);
-
-        continue;
-      }
-
-      if (value instanceof Int32Array) {
-        this._setUniformInt32Array(gl, location, value);
-
-        continue;
-      }
-
-      if (value instanceof Float32Array) {
-        this._setUniformFloat32Array(gl, location, value);
-
-        continue;
-      }
-
-      if (isVector2(value)) {
-        this._setUniformFloat32Array(gl, location, Vec2.toFloat32Array(value));
-
-        continue;
-      }
-
-      assertNever(value, `Unsupported uniform value type for ${name}`);
+      textureUnit = upload(gl, spec.location, textureUnit);
     }
   }
 
   /**
-   * Sets a uniform value (number, vec2, matrix, texture, etc.).
+   * Sets a uniform's value, uploaded on the next {@link Material.bind}.
+   *
+   * The GL upload is chosen from the uniform's declared GLSL type, and the
+   * value must fit that type:
+   * - `float`, `vecN`, `matN`, `matNxM`: a `Float32Array` (a `number` for
+   *   `float`, a `Vector2` for `vec2`, a `Matrix3x3` for `mat3`).
+   * - `int`, `ivecN`: an `Int32Array` (a `number` or `boolean` for `int`).
+   * - `uint`, `uvecN`: a `Uint32Array` (a `number` for `uint`).
+   * - `bool`, `bvecN`: an `Int32Array` (a `boolean` for `bool`).
+   * - samplers: a `WebGLTexture`.
+   *
+   * A typed array must hold exactly one element's worth of components (4 for
+   * a `vec4`, 16 for a `mat4`), or, for a uniform array, a whole number of
+   * elements up to the declared size; a shorter array updates only the
+   * leading elements. A uniform array can be addressed by its declared name
+   * (`u_items`) or by the name WebGL reports for it (`u_items[0]`).
+   * @param name - The uniform's name.
+   * @param value - The value to upload.
+   * @throws An error if the program has no active uniform called `name`, or
+   * if `value` doesn't fit the uniform's declared type.
    */
   public setUniform(name: string, value: UniformValue): void {
-    if (!this._uniforms.has(name)) {
+    const spec = this._uniforms.get(name);
+
+    if (spec === undefined) {
       throw new Error(
-        `Uniform "${name}" does not exist on material. Available uniforms are: ${Array.from(this._uniforms.keys()).join(', ')}.`,
+        `Uniform "${name}" does not exist on material. Available uniforms are: ${this._uniformSpecs.map((uniform) => uniform.name).join(', ')}.`,
       );
     }
 
-    this._uniformValues.set(name, value);
+    this._uniformUploads.set(spec.name, createUniformUpload(spec, value));
   }
 
   /**
-   * Sets a color uniform as a float32 array using the color's RGBA values.
+   * Sets a `vec4` uniform from the color's RGBA values.
+   * @param name - The uniform's name.
+   * @param color - The color to upload.
+   * @throws An error under the same conditions as {@link Material.setUniform}.
    */
   public setColorUniform(name: string, color: Color): void {
     this.setUniform(name, color.toFloat32Array());
   }
 
   /**
-   * Sets a vector2 or Vector3 uniform as a float32 array using the vector's elements.
+   * Sets a `vec2` or `vec3` uniform from the vector's elements.
+   * @param name - The uniform's name.
+   * @param vector - The vector to upload.
+   * @throws An error under the same conditions as {@link Material.setUniform}.
    */
   public setVectorUniform(name: string, vector: Vector2 | Vector3): void {
     this.setUniform(
       name,
       'z' in vector ? Vec3.toFloat32Array(vector) : Vec2.toFloat32Array(vector),
     );
-  }
-
-  private _bindTexture(
-    gl: WebGL2RenderingContext,
-    loc: WebGLUniformLocation,
-    texture: WebGLTexture,
-    textureUnit: number,
-  ): number {
-    gl.activeTexture(gl.TEXTURE0 + textureUnit);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(loc, textureUnit);
-
-    return textureUnit + 1;
-  }
-
-  private _setUniformNumber(
-    gl: WebGL2RenderingContext,
-    loc: WebGLUniformLocation,
-    value: number,
-  ): void {
-    gl.uniform1f(loc, value);
-  }
-
-  private _setUniformBoolean(
-    gl: WebGL2RenderingContext,
-    loc: WebGLUniformLocation,
-    value: boolean,
-  ): void {
-    gl.uniform1i(loc, value ? 1 : 0);
-  }
-
-  private _setUniformFloat32Array(
-    gl: WebGL2RenderingContext,
-    loc: WebGLUniformLocation,
-    value: Float32Array,
-  ): void {
-    switch (value.length) {
-      case 2:
-        gl.uniform2fv(loc, value);
-
-        break;
-      case 3:
-        gl.uniform3fv(loc, value);
-
-        break;
-      case 4:
-        gl.uniform4fv(loc, value);
-
-        break;
-      case 9:
-        gl.uniformMatrix3fv(loc, false, value);
-
-        break;
-      case 16:
-        gl.uniformMatrix4fv(loc, false, value);
-
-        break;
-    }
-  }
-
-  private _setUniformInt32Array(
-    gl: WebGL2RenderingContext,
-    loc: WebGLUniformLocation,
-    value: Int32Array,
-  ): void {
-    gl.uniform1iv(loc, value);
   }
 
   private _createProgram(
@@ -286,12 +195,25 @@ export class Material {
 
       const location = gl.getUniformLocation(program, info.name);
 
-      if (location !== null) {
-        this._uniforms.set(info.name, {
-          location,
-          type: info.type,
-        });
+      if (location === null) {
+        continue;
       }
+
+      const name = info.name.endsWith(arrayElementZeroSuffix)
+        ? info.name.slice(0, -arrayElementZeroSuffix.length)
+        : info.name;
+
+      const spec: UniformSpec = {
+        name,
+        location,
+        glType: info.type,
+        uniformType: getUniformType(info.type),
+        size: info.size,
+      };
+
+      this._uniformSpecs.push(spec);
+      this._uniforms.set(name, spec);
+      this._uniforms.set(info.name, spec);
     }
   }
 }

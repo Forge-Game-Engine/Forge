@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** `Material.setUniform` accepts a `Uint32Array` for `uint`/`uvecN` uniforms, and a uniform array can now be set by its declared name (`u_waves`) as well as the `u_waves[0]` name WebGL reports for it
+
+#### Changed
+
+- **rendering:** `Material.setUniform` now throws when a value doesn't fit the uniform's declared GLSL type, naming the declared type, the values it accepts and the value received. Previously a mismatched value was stored and then dropped or mis-uploaded silently when the material was bound
+
+#### Fixed
+
+- **rendering:** `Material` now chooses each uniform's upload from its declared GLSL type instead of the value's length. A 16-float `Float32Array` on a `vec4[4]` or `float[16]` uniform is no longer uploaded as a `mat4` (a GL error that left the uniform unset), `Float32Array`s of any valid length (such as a `float`, `mat2`, `mat3x2` or a uniform array) are uploaded instead of ignored, numbers set on `int`/`uint` uniforms use the integer upload, and a texture set on a `samplerCube`, `sampler3D` or `sampler2DArray` is bound to that sampler's texture target
+
 ## [0.25.5] - 2026-09-19
 
 #### Changed
