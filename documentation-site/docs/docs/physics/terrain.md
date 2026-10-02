@@ -37,8 +37,10 @@ addAabbComponent(world, groundEntity);
 ```
 
 Terrain is static, so `groundEntity` only needs `PositionEcsComponent`/
-`RotationEcsComponent` (for `computeAabb`/narrow-phase to read `.world` from),
-`ColliderEcsComponent`, and `AabbEcsComponent` - no `RigidBodyEcsComponent`,
+`RotationEcsComponent` (for `computeAabb`/narrow-phase to read `.world` from;
+the rotation component is optional, and an entity without one is treated as
+unrotated), `ColliderEcsComponent`, and `AabbEcsComponent` - no
+`RigidBodyEcsComponent`,
 the same convention every other static body (walls, ground boxes) in this
 engine follows. See the [Bodies and Shapes guide](/Forge/docs/docs/physics/rigid-bodies)
 for that static/kinematic/dynamic distinction.

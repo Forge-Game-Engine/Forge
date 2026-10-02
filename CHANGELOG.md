@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **physics:** A collider entity with no `RotationEcsComponent` now takes part in collision detection and raycasting, treated as unrotated (a rotation of `0`). Previously `createBroadPhaseEcsSystem`, `createNarrowPhaseEcsSystem` and `raycast` all required the component, so a static wall or trigger volume without one was silently skipped and never produced a collision pair, manifold or raycast hit
+
 ## [0.25.5] - 2026-09-19
 
 #### Changed

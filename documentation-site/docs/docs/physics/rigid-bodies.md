@@ -8,7 +8,11 @@ A simulated body is an entity with a `ColliderEcsComponent` (a shape) plus,
 for anything that isn't static, a `RigidBodyEcsComponent` (mass, velocity,
 and how it participates in the simulation). Both sit alongside the entity's
 `PositionEcsComponent`/`RotationEcsComponent` and an `AabbEcsComponent` used
-for broad-phase culling. This page covers the choices that aren't obvious
+for broad-phase culling. `RotationEcsComponent` is optional for collision
+detection: a collider entity without one is treated as unrotated, so a
+static, axis-aligned wall or trigger volume can leave it off. A dynamic or
+kinematic body still needs one, since `createEulerIntegrationEcsSystem` only
+integrates entities that have it. This page covers the choices that aren't obvious
 from the component options: which collider shape to use, static vs.
 kinematic vs. dynamic bodies, and how to wire up the systems that actually
 simulate them.
@@ -80,8 +84,8 @@ simulation:
   as crates, characters, and projectiles.
 - **Static**: infinite effective mass, never affected by anything, never
   integrated. The simplest way to make a body static is to give its entity
-  a `ColliderEcsComponent` (plus `PositionEcsComponent`/
-  `RotationEcsComponent`/`AabbEcsComponent`) and **no**
+  a `ColliderEcsComponent` (plus `PositionEcsComponent`/`AabbEcsComponent`,
+  and a `RotationEcsComponent` if it's rotated) and **no**
   `RigidBodyEcsComponent` at all - every static entity in the physics demos
   (floors, walls, `TerrainCollider` ground) follows this convention, and it
   still applies unchanged. Attaching a `RigidBodyEcsComponent` with
