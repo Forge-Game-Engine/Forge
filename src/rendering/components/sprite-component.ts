@@ -2,7 +2,10 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { Color } from '../color.js';
-import { NineSliceOptions } from '../nine-slice-options.js';
+import {
+  NineSliceOptions,
+  resolveNineSliceNativeSize,
+} from '../nine-slice-options.js';
 import { Renderable } from '../renderable.js';
 
 /**
@@ -91,6 +94,11 @@ export interface SpriteDefaultedOptions {
    * stretched/tiled edges, and a stretched/tiled center) instead of a single
    * stretched quad, so corner artwork keeps its size as `width`/`height`
    * change. Omit for a normal, single-quad sprite.
+   *
+   * `addSpriteComponent` fills in any omitted
+   * `nativeWidth`/`nativeHeight` from the sprite's `width`/`height` at the
+   * moment it's attached, so resizing the sprite afterwards never changes
+   * which part of the texture its borders sample.
    */
   slices?: NineSliceOptions;
 }
@@ -128,6 +136,8 @@ export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the sprite. `width`, `height`,
  * and `renderable` have no sensible default and must always be provided.
+ * If `slices` is set, any omitted `nativeWidth`/`nativeHeight` is captured
+ * from `width`/`height` here, before anything can resize the sprite.
  * @returns The attached component, for further tuning or runtime changes.
  */
 export function addSpriteComponent(
@@ -152,6 +162,14 @@ export function addSpriteComponent(
     ...defaultSpriteOptions,
     ...options,
   };
+
+  if (component.slices) {
+    component.slices = resolveNineSliceNativeSize(
+      component.slices,
+      component.width,
+      component.height,
+    );
+  }
 
   return world.addComponent(entity, spriteId, component);
 }

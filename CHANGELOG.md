@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+- **rendering:** A nine-sliced sprite's omitted `nativeWidth`/`nativeHeight` now default to the sprite's size when it's created by `createImageSprite` (the imported texture's world size) or attached by `addSpriteComponent`, instead of to its current size every frame. Previously, resizing a sliced sprite - which the UI layout system does to every `createPanel`/`createButton`/etc. element each frame - made its border insets map to a tiny sliver of the texture, smearing a texel or two across each corner. Pass `nativeWidth`/`nativeHeight` explicitly only when the insets aren't in the same units as the sprite's imported size
 - **physics:** A collider entity with no `RotationEcsComponent` now takes part in collision detection and raycasting, treated as unrotated (a rotation of `0`). Previously `createBroadPhaseEcsSystem`, `createNarrowPhaseEcsSystem` and `raycast` all required the component, so a static wall or trigger volume without one was silently skipped and never produced a collision pair, manifold or raycast hit
 
 ## [0.25.5] - 2026-09-19

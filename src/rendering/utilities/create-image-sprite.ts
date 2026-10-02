@@ -6,7 +6,10 @@ import {
   Vector2,
 } from '../../index.js';
 import { Material } from '../materials/index.js';
-import { NineSliceOptions } from '../nine-slice-options.js';
+import {
+  NineSliceOptions,
+  resolveNineSliceNativeSize,
+} from '../nine-slice-options.js';
 import { RenderContext } from '../render-context.js';
 import {
   createTextureFromImage,
@@ -69,7 +72,12 @@ export interface CreateImageSpriteOptions {
   /**
    * Nine-slice configuration, for a sprite whose corners should stay a
    * fixed size while its edges/center stretch or tile. Omit for a normal,
-   * single-quad sprite.
+   * single-quad sprite. Any omitted `nativeWidth`/`nativeHeight` defaults
+   * to the imported texture's world size (its pixel size divided by
+   * `pixelsPerUnit`), so the insets should be given in those same units -
+   * e.g. with `pixelsPerUnit: 1` (the usual choice for UI sprites, whose
+   * insets are in reference pixels), an inset of `8` covers 8 pixels of
+   * border art.
    */
   slices?: NineSliceOptions;
 
@@ -170,6 +178,8 @@ export function createImageSprite(
     uvOffset: { x: 0, y: 0 },
     uvScale: { x: 1, y: 1 },
     layer: 0,
-    slices: options.slices,
+    slices:
+      options.slices &&
+      resolveNineSliceNativeSize(options.slices, worldWidth, worldHeight),
   };
 }
