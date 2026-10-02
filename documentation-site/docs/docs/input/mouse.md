@@ -77,7 +77,7 @@ default `(0.5, 0.5)`, the center):
   cursor at the container's center is `(0, 0)`, and the edges are roughly
   `±0.5`.
 - [`cursorValueTypes.absolute`](/Forge/docs/api/variables/cursorValueTypes):
-  `value` is the cursor's position in pixels, minus `cursorOrigin *
+  `value` is the cursor's position in CSS pixels, minus `cursorOrigin *
 containerSize`. With the default origin, this is the pixel offset from the
   container's center, useful for a reticle or look-offset in screen pixels.
 
@@ -135,8 +135,12 @@ Bindings map mouse events onto named actions, but code that wants the raw
 device state directly - a UI hit-tester, a drag gesture, a debug overlay -
 can read it straight off `MouseInputSource` without an intervening action:
 
-- `position` - the cursor's current position in canvas pixels: Y-down,
-  origin at the container's top-left corner.
+- `position` - the cursor's current position in CSS pixels: Y-down,
+  origin at the container's top-left corner. On a high-DPI display this is
+  smaller than the canvas's drawing-buffer coordinates by
+  `RenderContext.pixelRatio`, so convert it against
+  `renderContext.cssWidth`/`cssHeight` (see
+  [High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
 - `delta` - how far `position` moved since the last tick.
 - `scroll` - accumulated `WheelEvent.deltaY` since the last tick.
 - `buttonsDown` / `buttonsHeld` / `buttonsUp` - `MouseButton` sets for
@@ -151,7 +155,7 @@ reset (via `MouseInputSource.reset()`, wired up automatically by
 There is no ECS component for this state - hold a reference to the
 `MouseInputSource` instance (the same way game code holds a reference to an
 `InputManager` or an `InputAction`) and read `.position`/`.delta`/etc.
-directly from a system's closure. `position` is deliberately in canvas
+directly from a system's closure. `position` is deliberately in CSS
 pixels, not world space: with more than one camera (for example a dedicated
 UI camera layered over the world camera), a single canvas position maps to
 a different world position through each camera, so converting is left to

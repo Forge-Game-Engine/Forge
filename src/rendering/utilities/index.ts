@@ -6,6 +6,7 @@ export * from './create-canvas.js';
 export * from './create-image-sprite.js';
 export * from './create-shader-cache.js';
 export * from './create-sprite.js';
+export * from './get-device-pixel-ratio.js';
 export * from './get-safe-area-insets.js';
 export * from './import-texture.js';
 export * from './instance-data-segment.js';

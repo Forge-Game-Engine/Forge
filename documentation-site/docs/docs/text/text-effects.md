@@ -38,6 +38,13 @@ exactly like the anti-aliasing band MSDF itself uses. A 2px outline stays a
 crisp 2 screen pixels whether the text renders at 12px or 400px, or whether
 the camera is zoomed in or out.
 
+"Screen pixels" here are CSS pixels, not the display's physical pixels: on
+a HiDPI display, where the canvas renders at
+[`RenderContext.pixelRatio`](/Forge/docs/api/classes/RenderContext#pixelratio)
+device pixels per CSS pixel, these sizes are multiplied by that ratio, so a
+2px outline is just as thick on a Retina laptop as on a standard monitor
+(and just sharper).
+
 ## Two draw passes: outline/shadow, then fill
 
 Every glyph's outline and shadow draw in their own pass, always completing

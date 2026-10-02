@@ -11,7 +11,10 @@ import { Vector2 } from '../../math/index.js';
  * all. `MouseInputSource` already satisfies this without any changes.
  */
 export interface UiPointerSource {
-  /** The pointer's current position, in canvas pixels, Y-down. */
+  /**
+   * The pointer's current position relative to the canvas's top-left
+   * corner, in CSS pixels, Y-down.
+   */
   readonly position: Vector2;
 
   /** Button codes that started being held down since the last reset. */

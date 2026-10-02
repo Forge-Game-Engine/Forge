@@ -3,7 +3,9 @@
  * in. `'referencePixels'` (the default) scales with the owning canvas's live
  * scale factor, exactly like everything else in the anchor system -
  * unchanged behavior. `'screenPixels'` instead stays a literal, unscaled
- * device pixel count, converted to reference pixels fresh every frame (via
+ * CSS pixel count (the same unit DOM layout uses, so it keeps the same
+ * physical size on a HiDPI display), converted to reference pixels fresh
+ * every frame (via
  * `createUiLayoutEcsSystem`'s own `pixelsPerUnit`, the same conversion
  * `calculatePixelsPerUnit` gives `createUiSafeAreaEcsSystem`) - useful for an
  * element that should keep a constant on-screen size regardless of the

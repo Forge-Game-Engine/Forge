@@ -12,7 +12,7 @@ import { CanvasEcsComponent } from '../components/canvas-component.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 
 /**
- * Converts a pointer's current position - canvas pixels, Y-down - into
+ * Converts a pointer's current position - CSS pixels, Y-down - into
  * `canvas`'s own UI world space, through its dedicated camera. Two canvases
  * with different cameras (e.g. different `verticalWorldUnits`) convert the
  * same pointer position differently, which is why this takes a specific
@@ -43,8 +43,10 @@ export function resolveCanvasPointerPosition(
     return null;
   }
 
+  // The pointer position is in CSS pixels, so it's converted against the
+  // canvas's CSS size rather than its (pixel-ratio-scaled) drawing buffer.
   const pixelsPerUnit = calculatePixelsPerUnit(
-    renderContext.height,
+    renderContext.cssHeight,
     camera.verticalWorldUnits,
   );
 
@@ -52,8 +54,8 @@ export function resolveCanvasPointerPosition(
     pointerSource.position,
     cameraPosition.world,
     camera.zoom,
-    renderContext.width,
-    renderContext.height,
+    renderContext.cssWidth,
+    renderContext.cssHeight,
     pixelsPerUnit,
   );
 }

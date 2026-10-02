@@ -74,8 +74,11 @@ export class MouseInputSource
   }
 
   /**
-   * The pointer's current position in canvas pixels: Y-down, origin at the
-   * container's top-left corner. Recomputed from a fresh
+   * The pointer's current position in CSS pixels: Y-down, origin at the
+   * container's top-left corner. On a high-DPI display this is smaller than
+   * the canvas's drawing-buffer coordinates by `RenderContext.pixelRatio`,
+   * so convert it to world space against `RenderContext.cssWidth`/
+   * `cssHeight`, not `width`/`height`. Recomputed from a fresh
    * `getBoundingClientRect()` call on every `mousemove`, so it stays correct
    * after the container is resized, scrolled, or otherwise reflowed.
    */
@@ -83,7 +86,7 @@ export class MouseInputSource
     return this._pointerPosition;
   }
 
-  /** How far `position` moved since the last `reset()`, in canvas pixels. */
+  /** How far `position` moved since the last `reset()`, in CSS pixels. */
   get delta(): Vector2 {
     return this._pointerDelta;
   }

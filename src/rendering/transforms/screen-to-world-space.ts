@@ -8,6 +8,12 @@ import { Vector2 } from '../../math/index.js';
  * The rendering projection matrix applies a negative Y scale (`-2 / height`) to
  * account for this, so this function must flip Y when converting screen → world.
  *
+ * `screenPosition`, `screenWidth`, `screenHeight` and `pixelsPerUnit` must
+ * all be in the same unit. A pointer position (e.g. `MouseInputSource.position`)
+ * is in CSS pixels, so pair it with `RenderContext.cssWidth`/`cssHeight` and
+ * a `pixelsPerUnit` computed from `cssHeight` - not `width`/`height`, which
+ * are larger by `RenderContext.pixelRatio` on a high-DPI display.
+ *
  * @param screenPosition - The position in screen space (e.g., mouse position relative to the viewport).
  * @param cameraPosition - The position of the camera in world space.
  * @param cameraZoom - The zoom level of the camera.

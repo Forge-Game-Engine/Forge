@@ -409,10 +409,7 @@ export const createRenderEcsSystem = (
       positionId,
     ]);
 
-    const {
-      entities: textEntities,
-      components: [textComponents, textMeshes, textPositions],
-    } = world.query<
+    const textQuery = world.query<
       [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
     >([textId, textMeshId, positionId]);
 
@@ -463,12 +460,10 @@ export const createRenderEcsSystem = (
 
       buildTextCameraCommands(
         world,
-        textComponents,
-        textMeshes,
-        textPositions,
-        textEntities,
+        textQuery,
         cameraComponent.cullingMask,
         commands,
+        renderContext.pixelRatio,
       );
 
       const target = cameraComponent.renderTarget ?? null;

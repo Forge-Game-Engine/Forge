@@ -27,7 +27,13 @@ import { UiAnchor } from '../types/ui-anchor.js';
 import { setUiFocus } from '../utilities/set-ui-focus.js';
 
 const buildRenderContext = (width: number, height: number): RenderContext =>
-  ({ width, height }) as RenderContext;
+  ({
+    width,
+    height,
+    cssWidth: width,
+    cssHeight: height,
+    pixelRatio: 1,
+  }) as RenderContext;
 
 interface FakeMouseInputSource {
   position: { x: number; y: number };

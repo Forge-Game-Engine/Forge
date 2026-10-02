@@ -33,7 +33,13 @@ import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { uiScaleModes } from '../types/ui-scale-mode.js';
 
 const buildRenderContext = (width: number, height: number): RenderContext =>
-  ({ width, height }) as RenderContext;
+  ({
+    width,
+    height,
+    cssWidth: width,
+    cssHeight: height,
+    pixelRatio: 1,
+  }) as RenderContext;
 
 const buildRenderable = (): Renderable => ({}) as Renderable;
 
@@ -139,7 +145,14 @@ describe('createUiLayoutEcsSystem', () => {
   it("resizes the camera's render target to match renderContext when they drift out of sync", () => {
     const world = new EcsWorld();
     const gl = {} as WebGL2RenderingContext;
-    const renderContext = { width: 1920, height: 1080, gl } as RenderContext;
+    const renderContext = {
+      width: 1920,
+      height: 1080,
+      cssWidth: 1920,
+      cssHeight: 1080,
+      pixelRatio: 1,
+      gl,
+    } as RenderContext;
     const resize = vi.fn();
     const renderTarget = {
       width: 1920,
@@ -286,6 +299,28 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(600);
   });
 
+  it('sizes the root rect in CSS pixels, not drawing-buffer pixels, in constantPixelSize mode on a HiDPI display', () => {
+    const world = new EcsWorld();
+    const renderContext = {
+      ...buildRenderContext(1600, 1200),
+      cssWidth: 800,
+      cssHeight: 600,
+      pixelRatio: 2,
+    } as RenderContext;
+    const { canvas, camera } = createTestCanvas(world, {
+      scaleMode: uiScaleModes.constantPixelSize,
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -400, y: -300 },
+      max: { x: 400, y: 300 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(600);
+  });
+
   it('resolves a point-anchored child rect and position.local relative to its parent canvas', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);
@@ -348,11 +383,41 @@ describe('createUiLayoutEcsSystem', () => {
     // double to keep covering the same 200 *screen* pixels.
     renderContext.width = 960;
     renderContext.height = 540;
+    renderContext.cssWidth = 960;
+    renderContext.cssHeight = 540;
     world.update();
 
     rect = world.getComponent(sidebar, rectTransformId)!.rect;
 
     expect(rect.max.x - rect.min.x).toBe(400);
+  });
+
+  it("measures a screenPixels-unit size in CSS pixels, so it keeps its physical size when the drawing buffer's pixel ratio changes", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+
+    const sidebar = world.createEntity();
+
+    addPositionComponent(world, sidebar);
+    addParentComponent(world, sidebar, { parent: canvas });
+    addRectTransformComponent(world, sidebar, {
+      x: UiAxis.point(0, { pivot: 0, size: 200, sizeUnit: 'screenPixels' }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+
+    // The same 1920x1080 CSS-pixel canvas on a 2x display: twice the
+    // drawing-buffer pixels, but the same CSS size.
+    renderContext.width = 3840;
+    renderContext.height = 2160;
+    renderContext.pixelRatio = 2;
+    world.update();
+
+    const { rect } = world.getComponent(sidebar, rectTransformId)!;
+
+    expect(rect.max.x - rect.min.x).toBe(200);
   });
 
   it('resolves a stretched child that spans the full canvas width', () => {

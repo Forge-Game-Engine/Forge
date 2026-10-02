@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** `RenderContext` gains `pixelRatio`, `cssWidth`/`cssHeight` (the canvas's on-page size in CSS pixels) and a `maxPixelRatio` option (also on `createRenderContext`) to cap the pixel ratio for fill-rate-heavy games. `getDevicePixelRatio()` reads the browser's current `window.devicePixelRatio`
+
+#### Changed
+
+- **rendering:** `RenderContext.width`/`height` are now the drawing buffer's size in device pixels, which is larger than the canvas's CSS size on a high-DPI display. Anything that converts a mouse position (CSS pixels) to world space, such as a `screenToWorldSpace` call, should now pass `renderContext.cssWidth`/`cssHeight` and a `pixelsPerUnit` computed from `cssHeight`. Render targets and shader resolution uniforms should keep using `width`/`height`
+- **rendering:** `RenderContext.resize(width, height, devicePixelRatio?)` now takes the canvas's CSS size and sizes the drawing buffer at that times the device pixel ratio (defaulting to the current `window.devicePixelRatio`, capped at `maxPixelRatio`). It does nothing when the size wouldn't change. `Resizable.resize` takes the same `devicePixelRatio` argument
+- **text:** `buildTextCameraCommands` takes the text query result (`entities` plus the text, text mesh and position component arrays) as one argument instead of four, followed by an optional `pixelRatio`. `pushTextRenderCommands` also takes an optional trailing `pixelRatio`
+
+#### Fixed
+
+- **rendering:** The canvas now renders at the display's native resolution on displays scaled above 100% (most laptops and every HiDPI/Retina screen) and in browser-zoomed pages, instead of rendering at CSS resolution and being upscaled (and blurred) by the browser. `createContainerResizeSync` (wired up by `createGame`) also re-sizes the canvas when the device pixel ratio changes, such as when the page is zoomed or the window moves to a monitor with a different scale factor
+- **rendering:** Built-in systems that work in CSS pixels keep their physical size and stay accurate at a pixel ratio above 1: UI pointer hit-testing and sliders, safe-area insets, `constantPixelSize` UI canvases, `'screenPixels'` UI sizes, and text outline/shadow widths
+
 ## [0.25.5] - 2026-09-19
 
 #### Changed

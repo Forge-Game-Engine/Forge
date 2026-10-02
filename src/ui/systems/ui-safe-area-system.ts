@@ -87,8 +87,10 @@ export const createUiSafeAreaEcsSystem = (
         continue;
       }
 
+      // Insets are in CSS pixels, so convert against the canvas's CSS
+      // height, not its pixel-ratio-scaled drawing buffer.
       const pixelsPerUnit = calculatePixelsPerUnit(
-        renderContext.height,
+        renderContext.cssHeight,
         camera.verticalWorldUnits,
       );
 

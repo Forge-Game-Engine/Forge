@@ -117,6 +117,40 @@ recomputed every frame from `verticalWorldUnits` and the render
 destination's current height, and converts world units to *screen* pixels
 at render time rather than texture pixels to world units at import time.
 
+## High-DPI displays
+
+On a display scaled above 100% (most laptops, every HiDPI/Retina screen) or
+a browser-zoomed page, one CSS pixel is several physical pixels. A
+`RenderContext` sizes its canvas's drawing buffer to match: the canvas keeps
+its on-page size in CSS pixels, but renders at that size times
+`window.devicePixelRatio`, so sprites and text come out at the display's
+native resolution instead of being upscaled (and blurred) by the browser.
+`createContainerResizeSync` (wired up by `createGame`) keeps both in sync as
+the container resizes or the pixel ratio changes.
+
+That gives a `RenderContext` two sizes:
+
+| Property                 | Unit                                   | Use it for                                                                                                                                         |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width` / `height`       | Device pixels (the drawing buffer)     | Anything rendered into and then shown on the canvas: sizing a `RenderTarget`, a shader uniform compared against `gl_FragCoord`, the WebGL viewport |
+| `cssWidth` / `cssHeight` | CSS pixels (the canvas's on-page size) | Anything measured by the DOM: `MouseInputSource.position`, `getSafeAreaInsets()`, element sizes                                                    |
+
+`pixelRatio` is the ratio between the two. Anything that only depends on the
+aspect ratio, like
+[`calculateVisibleWorldSize`](/Forge/docs/api/functions/calculateVisibleWorldSize)
+or the camera's projection, gives the same result with either pair.
+
+Rendering cost grows with the square of the pixel ratio, so a 3x phone
+display draws nine times as many pixels as a 1x one. A fill-rate-heavy game
+can cap it with `maxPixelRatio`:
+
+```ts
+const renderContext = createRenderContext(canvas, { maxPixelRatio: 2 });
+```
+
+Pass `maxPixelRatio: 1` to always render at CSS resolution, the engine's
+behavior before it supported high-DPI displays.
+
 ## Sizing and positioning things relative to what's visible
 
 Game logic that needs to know how much world is on screen right now, to
@@ -150,7 +184,27 @@ PPU as whatever's on screen, or they'll be off by the camera's scale factor.
 [`screenToWorldSpace`](/Forge/docs/api/functions/screenToWorldSpace) and
 [`worldToScreenSpace`](/Forge/docs/api/functions/worldToScreenSpace) both
 take an optional trailing `pixelsPerUnit` argument for this; pass the same
-value the camera used to render (typically
-`calculatePixelsPerUnit(renderContext.height, camera.verticalWorldUnits)`),
-or omit it only if that camera's `verticalWorldUnits` genuinely produces a
-PPU of `1` for your current canvas size.
+value the camera used to render, or omit it only if that camera's
+`verticalWorldUnits` genuinely produces a PPU of `1` for your current canvas
+size.
+
+Keep every size in the call in the same unit as the position. A mouse
+position is in CSS pixels, so convert it against the canvas's CSS size, not
+its drawing-buffer size, which is `pixelRatio` times larger on a high-DPI
+display (see [High-DPI displays](#high-dpi-displays)):
+
+```ts
+const pixelsPerUnit = calculatePixelsPerUnit(
+  renderContext.cssHeight,
+  camera.verticalWorldUnits,
+);
+
+const worldPosition = screenToWorldSpace(
+  mouseInputSource.position,
+  cameraPosition.world,
+  camera.zoom,
+  renderContext.cssWidth,
+  renderContext.cssHeight,
+  pixelsPerUnit,
+);
+```
