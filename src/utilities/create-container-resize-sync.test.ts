@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
@@ -40,7 +40,61 @@ class FakeResizeObserver {
   }
 }
 
+/**
+ * jsdom doesn't implement `matchMedia`, so tests that cover device pixel
+ * ratio changes install a factory producing these. `dispatchChange`
+ * simulates the browser reporting that the query stopped matching.
+ */
+class FakeMediaQueryList {
+  public readonly media: string;
+
+  private readonly _listeners = new Set<() => void>();
+  private readonly _onceWrappers = new Map<() => void, () => void>();
+
+  constructor(media: string) {
+    this.media = media;
+  }
+
+  get listenerCount(): number {
+    return this._listeners.size;
+  }
+
+  public addEventListener(
+    _type: string,
+    listener: () => void,
+    options?: AddEventListenerOptions,
+  ): void {
+    if (!options?.once) {
+      this._listeners.add(listener);
+
+      return;
+    }
+
+    const onceListener = (): void => {
+      this._listeners.delete(onceListener);
+      listener();
+    };
+
+    this._listeners.add(onceListener);
+    this._onceWrappers.set(listener, onceListener);
+  }
+
+  public removeEventListener(_type: string, listener: () => void): void {
+    this._listeners.delete(this._onceWrappers.get(listener) ?? listener);
+  }
+
+  public dispatchChange(): void {
+    for (const listener of [...this._listeners]) {
+      listener();
+    }
+  }
+}
+
 describe('createContainerResizeSync', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   let container: HTMLElement;
   let renderContext: RenderContext;
   let rafCallbacks: FrameRequestCallback[];
@@ -104,7 +158,7 @@ describe('createContainerResizeSync', () => {
     FakeResizeObserver.instances[0].trigger();
     flushLatestAnimationFrame();
 
-    expect(resizeSpy).toHaveBeenCalledWith(800, 600);
+    expect(resizeSpy).toHaveBeenCalledWith(800, 600, 1);
   });
 
   it('resizes every resizable independently, when there is more than one', () => {
@@ -124,26 +178,42 @@ describe('createContainerResizeSync', () => {
     FakeResizeObserver.instances[0].trigger();
     flushLatestAnimationFrame();
 
-    expect(resizeSpy).toHaveBeenCalledWith(800, 600);
-    expect(secondResizable.resize).toHaveBeenCalledWith(800, 600);
+    expect(resizeSpy).toHaveBeenCalledWith(800, 600, 1);
+    expect(secondResizable.resize).toHaveBeenCalledWith(800, 600, 1);
   });
 
-  it("does not resize when the container reports a resizable's current size", () => {
+  it("leaves the render context's canvas untouched when the container reports its current size", () => {
     createContainerResizeSync(container, [renderContext]);
 
     Object.defineProperty(container, 'clientWidth', {
-      value: renderContext.width,
+      value: renderContext.cssWidth,
     });
     Object.defineProperty(container, 'clientHeight', {
-      value: renderContext.height,
+      value: renderContext.cssHeight,
     });
 
-    const resizeSpy = vi.spyOn(renderContext, 'resize');
+    const widthSetter = vi.spyOn(renderContext.canvas, 'width', 'set');
 
     FakeResizeObserver.instances[0].trigger();
     flushLatestAnimationFrame();
 
-    expect(resizeSpy).not.toHaveBeenCalled();
+    expect(widthSetter).not.toHaveBeenCalled();
+  });
+
+  it("passes the display's current device pixel ratio along with the container's CSS size", () => {
+    vi.stubGlobal('devicePixelRatio', 2);
+    createContainerResizeSync(container, [renderContext]);
+
+    Object.defineProperty(container, 'clientWidth', { value: 800 });
+    Object.defineProperty(container, 'clientHeight', { value: 600 });
+
+    FakeResizeObserver.instances[0].trigger();
+    flushLatestAnimationFrame();
+
+    expect(renderContext.cssWidth).toBe(800);
+    expect(renderContext.cssHeight).toBe(600);
+    expect(renderContext.width).toBe(1600);
+    expect(renderContext.height).toBe(1200);
   });
 
   it('does not resize when the container is momentarily zero-sized', () => {
@@ -174,7 +244,68 @@ describe('createContainerResizeSync', () => {
 
     flushLatestAnimationFrame();
 
-    expect(resizeSpy).toHaveBeenCalledWith(800, 600);
+    expect(resizeSpy).toHaveBeenCalledWith(800, 600, 1);
+  });
+
+  describe('device pixel ratio changes', () => {
+    let mediaQueries: FakeMediaQueryList[];
+
+    beforeEach(() => {
+      mediaQueries = [];
+      vi.stubGlobal('matchMedia', (query: string) => {
+        const mediaQuery = new FakeMediaQueryList(query);
+
+        mediaQueries.push(mediaQuery);
+
+        return mediaQuery;
+      });
+
+      Object.defineProperty(container, 'clientWidth', { value: 800 });
+      Object.defineProperty(container, 'clientHeight', { value: 600 });
+    });
+
+    it('watches a resolution media query for the current device pixel ratio', () => {
+      vi.stubGlobal('devicePixelRatio', 1.5);
+      createContainerResizeSync(container, [renderContext]);
+
+      expect(mediaQueries).toHaveLength(1);
+      expect(mediaQueries[0].media).toBe('(resolution: 1.5dppx)');
+      expect(mediaQueries[0].listenerCount).toBe(1);
+    });
+
+    it("resizes at the new ratio when it changes, even though the container's size did not", () => {
+      createContainerResizeSync(container, [renderContext]);
+
+      vi.stubGlobal('devicePixelRatio', 2);
+      mediaQueries[0].dispatchChange();
+
+      const resizeSpy = vi.spyOn(renderContext, 'resize');
+
+      flushLatestAnimationFrame();
+
+      expect(resizeSpy).toHaveBeenCalledWith(800, 600, 2);
+      expect(renderContext.width).toBe(1600);
+    });
+
+    it('re-arms the watch for the new ratio after every change', () => {
+      createContainerResizeSync(container, [renderContext]);
+
+      vi.stubGlobal('devicePixelRatio', 2);
+      mediaQueries[0].dispatchChange();
+
+      expect(mediaQueries).toHaveLength(2);
+      expect(mediaQueries[0].listenerCount).toBe(0);
+      expect(mediaQueries[1].media).toBe('(resolution: 2dppx)');
+      expect(mediaQueries[1].listenerCount).toBe(1);
+    });
+
+    it('stops watching the ratio when stopped', () => {
+      const resizeSync = createContainerResizeSync(container, [renderContext]);
+
+      resizeSync.stop();
+
+      expect(mediaQueries[0].listenerCount).toBe(0);
+    });
   });
 
   it('disconnects the observer when stopped', () => {

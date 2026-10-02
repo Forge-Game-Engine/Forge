@@ -23,11 +23,13 @@ export const uiScaleModes = {
   matchWidth: 'matchWidth',
 
   /**
-   * The root rect matches the render destination's actual pixel dimensions
+   * The root rect matches the render destination's size in CSS pixels
    * one-to-one, ignoring `referenceResolution` entirely - 1 UI world unit is
-   * always exactly 1 screen pixel. UI elements keep a constant on-screen
-   * size regardless of resolution, at the cost of taking up a different
-   * fraction of the screen on different displays.
+   * always exactly 1 CSS pixel (so `RenderContext.pixelRatio` device pixels
+   * on a HiDPI display, keeping the same physical size as on a standard
+   * one). UI elements keep a constant on-screen size regardless of
+   * resolution, at the cost of taking up a different fraction of the screen
+   * on different displays.
    */
   constantPixelSize: 'constantPixelSize',
 

@@ -1,10 +1,14 @@
 /**
  * Creates a canvas element with the specified ID, dimensions, and appends it to the given container.
  *
+ * The canvas is sized in CSS pixels. Creating a `RenderContext` for it then
+ * resizes its drawing buffer to match the display's `devicePixelRatio`, so
+ * it renders at native resolution on a high-DPI display.
+ *
  * @param container - The HTML element to which the canvas will be appended.
  * @param id - The ID to assign to the canvas element.
- * @param width - The width of the canvas (default: container.clientWidth).
- * @param height - The height of the canvas (default: container.clientHeight).
+ * @param width - The width of the canvas, in CSS pixels (default: container.clientWidth).
+ * @param height - The height of the canvas, in CSS pixels (default: container.clientHeight).
  * @returns The created canvas element.
  */
 export function createCanvas(

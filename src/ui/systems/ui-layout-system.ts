@@ -46,7 +46,7 @@ function resolveCanvasRootRect(
   let worldHeight: number;
 
   if (canvas.scaleMode === uiScaleModes.constantPixelSize) {
-    worldHeight = renderContext.height;
+    worldHeight = renderContext.cssHeight;
   } else if (canvas.scaleMode === uiScaleModes.matchWidth) {
     worldHeight = canvas.referenceResolution.x / aspectRatio;
   } else if (canvas.scaleMode === uiScaleModes.fitReferenceResolution) {
@@ -133,7 +133,7 @@ function resolveEntityRect(
     return {
       rect: resolved.rect,
       childPixelsPerUnit: calculatePixelsPerUnit(
-        renderContext.height,
+        renderContext.cssHeight,
         resolved.worldHeight,
       ),
     };
@@ -151,7 +151,7 @@ function resolveEntityRect(
   return {
     rect,
     childPixelsPerUnit: calculatePixelsPerUnit(
-      renderContext.height,
+      renderContext.cssHeight,
       camera.verticalWorldUnits,
     ),
   };
@@ -191,7 +191,7 @@ function resolveEntityRect(
  * world-space canvas typically shares the game's own world camera.
  *
  * Also computes each canvas's current reference-pixel-to-screen-pixel ratio
- * (`calculatePixelsPerUnit(renderContext.height, verticalWorldUnits)`,
+ * (`calculatePixelsPerUnit(renderContext.cssHeight, verticalWorldUnits)`,
  * re-derived from whichever camera that canvas root just resolved) and
  * threads it down through the whole subtree, so any descendant's
  * `'screenPixels'`-unit `UiAxis` size/margin (see `UiAxisSizeUnit`) converts

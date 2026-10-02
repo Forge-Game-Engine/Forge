@@ -16,10 +16,11 @@ controls how the canvas's root rect - and its camera's
   `referenceResolution.y`; width follows the destination's aspect ratio.
 - `matchWidth` - width stays pinned to `referenceResolution.x`; height
   follows the aspect ratio instead.
-- `constantPixelSize` - the root rect matches the destination's actual
-  pixel size one-to-one (`referenceResolution` is ignored); UI elements
-  keep a constant on-screen size at the cost of covering a different
-  fraction of the screen on different displays.
+- `constantPixelSize` - the root rect matches the destination's size in CSS
+  pixels one-to-one (`referenceResolution` is ignored), so 1 UI unit is 1
+  CSS pixel - the same physical size on a high-DPI display as on a standard
+  one, just sharper; UI elements keep a constant on-screen size at the cost
+  of covering a different fraction of the screen on different displays.
 - `fitReferenceResolution` - the root rect is always at least
   `referenceResolution` on *both* axes, whichever of `scaleWithScreenSize`'s
   or `matchWidth`'s height would be larger, letterboxing/pillarboxing the

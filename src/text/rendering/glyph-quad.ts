@@ -5,7 +5,7 @@ import {
   ScaleEcsComponent,
   scaleId,
 } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { EcsWorld, QueryResult } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
@@ -49,6 +49,7 @@ function buildGlyphPosition(
  * @param entityPosition - The entity's position; each glyph is offset from it.
  * @param rotationComponent - The entity's rotation, if it has one.
  * @param scaleComponent - The entity's scale, if it has one.
+ * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`).
  */
 function pushTextEffectsRenderCommands(
   commands: RenderCommand[],
@@ -57,6 +58,7 @@ function pushTextEffectsRenderCommands(
   entityPosition: PositionEcsComponent,
   rotationComponent: RotationEcsComponent | null,
   scaleComponent: ScaleEcsComponent | null,
+  pixelRatio: number,
 ): void {
   const { effectsRenderable } = textMesh;
   const {
@@ -70,13 +72,16 @@ function pushTextEffectsRenderCommands(
   const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   // Uniform across every glyph in this entity, so built once rather than
-  // per glyph.
+  // per glyph. The effect sizes are authored in CSS pixels but the shader
+  // measures them in the destination's own (device) pixels, so they're
+  // scaled up by the pixel ratio to keep the same physical size on a HiDPI
+  // display as on a standard one.
   const textEffects: TextEffectsInstanceData = {
     outlineColor,
-    outlineWidth,
+    outlineWidth: outlineWidth * pixelRatio,
     shadowColor,
-    shadowOffset,
-    shadowSoftness,
+    shadowOffset: Vec2.multiply(Vec2.clone(shadowOffset), pixelRatio),
+    shadowSoftness: shadowSoftness * pixelRatio,
   };
 
   for (const glyph of textMesh.glyphs) {
@@ -180,6 +185,7 @@ function pushTextFillRenderCommands(
  * @param entityPosition - The entity's position; each glyph is offset from it.
  * @param rotationComponent - The entity's rotation, if it has one.
  * @param scaleComponent - The entity's scale, if it has one.
+ * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function pushTextRenderCommands(
   commands: RenderCommand[],
@@ -188,6 +194,7 @@ export function pushTextRenderCommands(
   entityPosition: PositionEcsComponent,
   rotationComponent: RotationEcsComponent | null,
   scaleComponent: ScaleEcsComponent | null,
+  pixelRatio: number = 1,
 ): void {
   const { outlineWidth, shadowColor } = textComponent;
   const hasEffects = outlineWidth > 0 || shadowColor.a > 0;
@@ -200,6 +207,7 @@ export function pushTextRenderCommands(
       entityPosition,
       rotationComponent,
       scaleComponent,
+      pixelRatio,
     );
   }
 
@@ -220,22 +228,26 @@ export function pushTextRenderCommands(
  * doesn't match `cullingMask`, then delegates to `pushTextRenderCommands`.
  * @param world - The ECS world, used to look up each entity's optional
  * rotation/scale components.
- * @param textComponents - Each queried entity's `TextEcsComponent`.
- * @param textMeshes - Each queried entity's `TextMeshEcsComponent`.
- * @param textPositions - Each queried entity's `PositionEcsComponent`.
- * @param textEntities - The queried entity ids, parallel to the arrays above.
+ * @param textQuery - The text entities to draw, and each one's
+ * `TextEcsComponent`, `TextMeshEcsComponent` and `PositionEcsComponent`.
  * @param cullingMask - The camera's culling mask.
  * @param commands - The render command buffer to push into.
+ * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function buildTextCameraCommands(
   world: EcsWorld,
-  textComponents: TextEcsComponent[],
-  textMeshes: TextMeshEcsComponent[],
-  textPositions: PositionEcsComponent[],
-  textEntities: readonly number[],
+  textQuery: QueryResult<
+    [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
+  >,
   cullingMask: number,
   commands: RenderCommand[],
+  pixelRatio: number = 1,
 ): void {
+  const {
+    entities: textEntities,
+    components: [textComponents, textMeshes, textPositions],
+  } = textQuery;
+
   for (let t = 0; t < textEntities.length; t++) {
     const textComponent = textComponents[t];
 
@@ -262,6 +274,7 @@ export function buildTextCameraCommands(
       entityPosition,
       world.getComponent<RotationEcsComponent>(textEntity, rotationId),
       world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+      pixelRatio,
     );
   }
 }

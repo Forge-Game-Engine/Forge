@@ -46,7 +46,14 @@ describe('createUiCanvas', () => {
       HALF_FLOAT: 'HALF_FLOAT',
     } as unknown as WebGL2RenderingContext;
 
-    renderContext = { width: 1920, height: 1080, gl } as RenderContext;
+    renderContext = {
+      width: 1920,
+      height: 1080,
+      cssWidth: 1920,
+      cssHeight: 1080,
+      pixelRatio: 1,
+      gl,
+    } as RenderContext;
     world = new EcsWorld();
   });
 

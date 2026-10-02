@@ -662,6 +662,26 @@ Conventions:
 
 ## Common Patterns
 
+### Device Pixels vs. CSS Pixels
+
+A `RenderContext` renders at the display's device pixel ratio, so it has two
+sizes that differ on any HiDPI display (and in Playwright only when a test
+sets `deviceScaleFactor`, since it defaults to `1`):
+
+- `width`/`height` - the drawing buffer, in device pixels. Use these for
+  anything GL sees: the viewport, `RenderTarget` sizes, shader uniforms
+  compared against `gl_FragCoord`.
+- `cssWidth`/`cssHeight` - the canvas's on-page size, in CSS pixels. Use
+  these for anything the DOM measures: `MouseInputSource.position`,
+  `getSafeAreaInsets()`, and any UI size meant to stay the same physical
+  size (`constantPixelSize`, `'screenPixels'`).
+
+`pixelRatio` is the ratio between them. Mixing the pairs (e.g. converting a
+mouse position against `width`/`height`) is off by `pixelRatio`, and Vitest
+won't catch it because jsdom's `devicePixelRatio` is `1`. Test such code
+with a mocked `RenderContext` whose two sizes differ, or a
+`deviceScaleFactor: 2` e2e test (see `e2e/specs/high-dpi-canvas.spec.ts`).
+
 ### Readonly Fields
 
 Use `readonly` for fields that shouldn't change after construction:

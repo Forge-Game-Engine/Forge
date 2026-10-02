@@ -156,6 +156,34 @@ describe('pushTextRenderCommands', () => {
     });
   });
 
+  it('scales outline/shadow sizes by the pixel ratio, so they keep the same physical size on a HiDPI display', () => {
+    const commands: RenderCommand[] = [];
+    const shadowOffset = { x: 1, y: -1 };
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({
+        outlineWidth: 2,
+        shadowColor: Color.black,
+        shadowOffset,
+        shadowSoftness: 3,
+      }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+      2,
+    );
+
+    expect(commands[0].components.textEffects).toMatchObject({
+      outlineWidth: 4,
+      shadowOffset: { x: 2, y: -2 },
+      shadowSoftness: 6,
+    });
+    // The component's own offset must not be mutated.
+    expect(shadowOffset).toEqual({ x: 1, y: -1 });
+  });
+
   it('shares the same textEffects object across every glyph in the entity', () => {
     const commands: RenderCommand[] = [];
 
@@ -337,10 +365,14 @@ describe('buildTextCameraCommands', () => {
 
     buildTextCameraCommands(
       world,
-      [buildTextComponent()],
-      [buildTextMesh([glyph, glyph])],
-      [position],
-      [entity],
+      {
+        entities: [entity],
+        components: [
+          [buildTextComponent()],
+          [buildTextMesh([glyph, glyph])],
+          [position],
+        ],
+      },
       0xffffffff,
       commands,
     );
@@ -355,10 +387,14 @@ describe('buildTextCameraCommands', () => {
 
     buildTextCameraCommands(
       world,
-      [buildTextComponent({ enabled: false })],
-      [buildTextMesh([glyph])],
-      [position],
-      [entity],
+      {
+        entities: [entity],
+        components: [
+          [buildTextComponent({ enabled: false })],
+          [buildTextMesh([glyph])],
+          [position],
+        ],
+      },
       0xffffffff,
       commands,
     );
@@ -374,22 +410,49 @@ describe('buildTextCameraCommands', () => {
 
     buildTextCameraCommands(
       world,
-      [buildTextComponent()],
-      [
-        {
-          glyphs: [glyph],
-          bounds: { width: 0, height: 0 },
-          fillRenderable: mismatchedRenderable,
-          effectsRenderable: mismatchedRenderable,
-        },
-      ],
-      [position],
-      [entity],
+      {
+        entities: [entity],
+        components: [
+          [buildTextComponent()],
+          [
+            {
+              glyphs: [glyph],
+              bounds: { width: 0, height: 0 },
+              fillRenderable: mismatchedRenderable,
+              effectsRenderable: mismatchedRenderable,
+            },
+          ],
+          [position],
+        ],
+      },
       0b0010,
       commands,
     );
 
     expect(commands).toHaveLength(0);
+  });
+
+  it('passes the pixel ratio through to the text effects', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const commands: RenderCommand[] = [];
+
+    buildTextCameraCommands(
+      world,
+      {
+        entities: [entity],
+        components: [
+          [buildTextComponent({ outlineWidth: 1.5 })],
+          [buildTextMesh([glyph])],
+          [position],
+        ],
+      },
+      0xffffffff,
+      commands,
+      2,
+    );
+
+    expect(commands[0].components.textEffects?.outlineWidth).toBe(3);
   });
 
   it("looks up the entity's rotation and scale components from the world", () => {
@@ -403,10 +466,14 @@ describe('buildTextCameraCommands', () => {
 
     buildTextCameraCommands(
       world,
-      [buildTextComponent()],
-      [buildTextMesh([glyph])],
-      [position],
-      [entity],
+      {
+        entities: [entity],
+        components: [
+          [buildTextComponent()],
+          [buildTextMesh([glyph])],
+          [position],
+        ],
+      },
       0xffffffff,
       commands,
     );

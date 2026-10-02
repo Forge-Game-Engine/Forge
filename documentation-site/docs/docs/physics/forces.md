@@ -311,8 +311,10 @@ renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     y: event.clientY - canvasBounds.top,
   };
 
+  // screenPosition is in CSS pixels, so convert it against the canvas's
+  // CSS size rather than its (pixel-ratio-scaled) drawing buffer.
   const pixelsPerUnit = calculatePixelsPerUnit(
-    renderContext.height,
+    renderContext.cssHeight,
     verticalWorldUnits,
   );
 
@@ -320,8 +322,8 @@ renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     screenPosition,
     Vec2.zero,
     1,
-    renderContext.width,
-    renderContext.height,
+    renderContext.cssWidth,
+    renderContext.cssHeight,
     pixelsPerUnit,
   );
 

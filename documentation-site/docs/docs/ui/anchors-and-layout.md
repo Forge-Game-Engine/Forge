@@ -101,8 +101,9 @@ at any resolution or aspect ratio. Sometimes that's the wrong call for one
 specific element: a fixed-width nav rail or a HUD icon that should hold a
 constant **on-screen** size instead of growing or shrinking as the window
 resizes. Pass `sizeUnit`/`marginUnit: 'screenPixels'` to keep that one axis
-in literal, unscaled device pixels, converted to reference pixels fresh
-every frame from the owning canvas's live scale factor:
+in literal, unscaled CSS pixels (the same unit DOM layout uses, so it keeps
+the same physical size on a high-DPI display), converted to reference pixels
+fresh every frame from the owning canvas's live scale factor:
 
 ```ts
 addRectTransformComponent(world, sidebar, {
@@ -110,7 +111,7 @@ addRectTransformComponent(world, sidebar, {
 });
 ```
 
-This sidebar stays exactly 320 device pixels wide at any window size or
+This sidebar stays exactly 320 CSS pixels wide at any window size or
 aspect ratio, even though the rest of the canvas keeps scaling normally with
 `referenceResolution` (see [Responsive UI](./responsive-ui.md)). `UiAnchor`'s
 edge-pinned band presets (`stretchLeft`/`stretchRight`/`stretchVertical` via

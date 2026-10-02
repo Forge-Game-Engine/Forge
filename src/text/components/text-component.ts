@@ -124,8 +124,10 @@ export interface TextDefaultedOptions {
 
   /**
    * Outline thickness, in screen-pixel-range units - a fixed number of
-   * screen pixels regardless of camera zoom or entity scale, the same
-   * scale-independent unit the MSDF anti-aliasing band itself uses. Drawn
+   * screen (CSS) pixels regardless of camera zoom or entity scale, the same
+   * scale-independent unit the MSDF anti-aliasing band itself uses, scaled
+   * by `RenderContext.pixelRatio` so it keeps the same physical thickness
+   * on a HiDPI display as on a standard one. Drawn
    * as its own pass, always before every glyph's fill (see
    * `createTextRenderable`), so an outline can safely reach past a
    * same-word neighboring glyph - even merge with that neighbor's own

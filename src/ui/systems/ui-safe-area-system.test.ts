@@ -14,7 +14,7 @@ import {
 import { addUiSafeAreaComponent } from '../components/ui-safe-area-component.js';
 
 const buildRenderContext = (height: number): RenderContext =>
-  ({ height }) as RenderContext;
+  ({ height, cssHeight: height, pixelRatio: 1 }) as RenderContext;
 
 /** Creates a canvas entity with a camera whose `verticalWorldUnits` is given, so pixels-per-unit is easy to reason about in assertions. */
 function createTestCanvas(world: EcsWorld, verticalWorldUnits: number): number {
@@ -74,6 +74,39 @@ describe('createUiSafeAreaEcsSystem', () => {
       marginUnit: 'referencePixels',
     });
     expect(rectTransform.anchoredPosition).toEqual({ x: 5, y: 20 });
+  });
+
+  it("converts CSS-pixel insets against the canvas's CSS height, not its drawing-buffer height, on a HiDPI display", () => {
+    const world = new EcsWorld();
+    // A 1080-CSS-pixel-tall canvas on a 2x display: pixelsPerUnit is still
+    // 1080 / 1080 = 1 CSS pixel per unit.
+    const renderContext = {
+      height: 2160,
+      cssHeight: 1080,
+      pixelRatio: 2,
+    } as RenderContext;
+    const canvas = createTestCanvas(world, 1080);
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addParentComponent(world, entity, { parent: canvas });
+    addRectTransformComponent(world, entity);
+    addUiSafeAreaComponent(world, entity);
+
+    world.addSystem(
+      createUiSafeAreaEcsSystem(renderContext, () => ({
+        top: 40,
+        right: 0,
+        bottom: 20,
+        left: 0,
+      })),
+    );
+    world.update();
+
+    expect(
+      world.getComponent(entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 0, y: 20 });
   });
 
   it('ignores a disabled edge, leaving it flush with the parent', () => {
