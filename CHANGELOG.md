@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **input:** `GamepadInputSource` now supports every action type, not just `Axis1dAction`. New `GamepadTriggerBinding` (fires once on a button's press or release, picked with `buttonMoments`), `GamepadHoldBinding` (held while a button is pressed) and `GamepadAxis2dBinding` (from a stick's X and Y axes, or four buttons such as the D-pad) go in the source's new `triggerBindings`, `holdBindings` and `axis2dBindings` sets. Like its axis-1d bindings, hold and axis-2d bindings that target the same action are combined, and only dispatch when the gamepad's own value changes, so they don't override the keyboard or mouse on a shared action
+- **input:** `GamepadAxis1dBinding`'s stick form takes a new `inverted` option, and `GamepadAxis2dBinding`'s stick form takes `invertX`/`invertY`. The W3C Standard Gamepad reports a stick pushed up as `-1`, so invert a stick's Y axis to drive an up-is-positive action shared with `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)` or a D-pad binding
+
 #### Changed
 
 - **input:** `InputManager.setActiveGroup` now hands input over between groups. The group being deactivated is released: its `Axis1dAction`s and `Axis2dAction`s are set to `0` and its held `HoldAction`s end. The group being activated picks up whatever is held right now: each `actionResetTypes.noReset` axis gets the latest value dispatched to it while its group was inactive (or the value it had when its group was last deactivated), and each `HoldAction` whose key or button is still down starts. Calling it with the group that is already active does nothing. Only actions added to the `InputManager` are released on deactivation
@@ -26,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **input:** `InputManager.dispatchHoldEndAction` no longer raises `holdEndEvent` for a hold that never started, such as a key pressed while the action's group was inactive
 - **rendering:** A nine-sliced sprite's omitted `nativeWidth`/`nativeHeight` now default to the sprite's size when it's created by `createImageSprite` (the imported texture's world size) or attached by `addSpriteComponent`, instead of to its current size every frame. Previously, resizing a sliced sprite - which the UI layout system does to every `createPanel`/`createButton`/etc. element each frame - made its border insets map to a tiny sliver of the texture, smearing a texel or two across each corner. Pass `nativeWidth`/`nativeHeight` explicitly only when the insets aren't in the same units as the sprite's imported size
 - **physics:** A collider entity with no `RotationEcsComponent` now takes part in collision detection and raycasting, treated as unrotated (a rotation of `0`). Previously `createBroadPhaseEcsSystem`, `createNarrowPhaseEcsSystem` and `raycast` all required the component, so a static wall or trigger volume without one was silently skipped and never produced a collision pair, manifold or raycast hit
+- **input:** Unplugging a gamepad no longer leaves the actions it was driving stuck. `GamepadInputSource` now handles `gamepaddisconnected` (and a gamepad that disappears from `navigator.getGamepads()` without one): it sets every axis it last set to a non-zero value back to `0`, and ends every hold it started. A source constructed with `gamepadIndex` `-1` then falls back to another connected gamepad, if there is one
 
 ## [0.25.5] - 2026-09-19
 
