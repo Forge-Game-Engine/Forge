@@ -30,7 +30,8 @@ Guides in this section:
   use each, and switching the active group.
 - [Keyboard Input](./keyboard.md): `KeyboardInputSource` and its bindings.
 - [Mouse Input](./mouse.md): `MouseInputSource`, cursor position, and scroll.
-- [Gamepad Input](./gamepad.md): `GamepadInputSource`, sticks, and D-pads.
+- [Gamepad Input](./gamepad.md): `GamepadInputSource`, sticks, D-pads, and
+  buttons.
 
 ## Quick Start
 

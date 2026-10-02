@@ -82,4 +82,16 @@ describe('InputAxis2d', () => {
 
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('should expose its reset type', () => {
+    expect(action.actionResetType).toBe(actionResetTypes.zero);
+
+    const noResetAction = new Axis2dAction(
+      'pan',
+      'default',
+      actionResetTypes.noReset,
+    );
+
+    expect(noResetAction.actionResetType).toBe(actionResetTypes.noReset);
+  });
 });

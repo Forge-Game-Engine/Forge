@@ -74,4 +74,38 @@ describe('InputAxis1d', () => {
 
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('should clamp the value to the range -1 to 1', () => {
+    action.set(2);
+    expect(action.value).toBe(1);
+
+    action.set(-1.5);
+    expect(action.value).toBe(-1);
+
+    action.set(0.25);
+    expect(action.value).toBe(0.25);
+  });
+
+  it('should not raise valueChangeEvent when a clamped value matches the current value', () => {
+    action.set(1);
+
+    const listener = vi.fn();
+
+    action.valueChangeEvent.registerListener(listener);
+    action.set(2);
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('should expose its reset type', () => {
+    expect(action.actionResetType).toBe(actionResetTypes.zero);
+
+    const noResetAction = new Axis1dAction(
+      'zoom',
+      'default',
+      actionResetTypes.noReset,
+    );
+
+    expect(noResetAction.actionResetType).toBe(actionResetTypes.noReset);
+  });
 });

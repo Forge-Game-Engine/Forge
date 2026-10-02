@@ -9,6 +9,30 @@ import { ForgeShaderSource } from '../index.js';
 
 globalThis.WebGLTexture = class WebGLTexture {};
 
+// GL type enums reported by `getActiveUniform`, as defined by WebGL 2.
+const glTypes = {
+  float: 0x1406,
+  vec2: 0x8b50,
+  vec3: 0x8b51,
+  vec4: 0x8b52,
+  int: 0x1404,
+  ivec2: 0x8b53,
+  uint: 0x1405,
+  uvec3: 0x8dc7,
+  bool: 0x8b56,
+  bvec2: 0x8b57,
+  mat3: 0x8b5b,
+  mat4: 0x8b5c,
+  sampler2D: 0x8b5e,
+  samplerCube: 0x8b60,
+} as const;
+
+interface MockActiveUniform {
+  name: string;
+  type: number;
+  size?: number;
+}
+
 let shaderNameCounter = 0;
 
 const createShaderSource = (source: string): ForgeShaderSource =>
@@ -35,6 +59,7 @@ describe('Material', () => {
       ACTIVE_UNIFORMS: 35718,
       TEXTURE0: 33984,
       TEXTURE_2D: 3553,
+      TEXTURE_CUBE_MAP: 34067,
       createShader: vi.fn(() => mockVertexShader),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
@@ -53,6 +78,10 @@ describe('Material', () => {
       uniform1f: vi.fn(),
       uniform1i: vi.fn(),
       uniform1iv: vi.fn(),
+      uniform1ui: vi.fn(),
+      uniform1fv: vi.fn(),
+      uniform2iv: vi.fn(),
+      uniform3uiv: vi.fn(),
       uniform2fv: vi.fn(),
       uniform3fv: vi.fn(),
       uniform4fv: vi.fn(),
@@ -144,285 +173,544 @@ describe('Material', () => {
     });
   });
 
-  describe('setUniform', () => {
-    let material: Material;
-    const mockLocation = {} as WebGLUniformLocation;
+  describe('uniforms', () => {
+    let locations: Map<string, WebGLUniformLocation>;
+
+    const createMaterial = (uniforms: MockActiveUniform[]): Material => {
+      (gl.getProgramParameter as Mock).mockImplementation(
+        (_program: WebGLProgram, parameter: GLenum) =>
+          parameter === gl.ACTIVE_UNIFORMS ? uniforms.length : true,
+      );
+      (gl.getActiveUniform as Mock).mockImplementation(
+        (_program: WebGLProgram, index: number) => {
+          const uniform = uniforms[index];
+
+          return uniform ? { size: 1, ...uniform } : null;
+        },
+      );
+      (gl.getUniformLocation as Mock).mockImplementation(
+        (_program: WebGLProgram, name: string) => locationOf(name),
+      );
+
+      return new Material(
+        createShaderSource('void main() {}'),
+        createShaderSource('void main() {}'),
+        gl,
+      );
+    };
+
+    const locationOf = (name: string): WebGLUniformLocation => {
+      const existing = locations.get(name);
+
+      if (existing) {
+        return existing;
+      }
+
+      const location = { name } as WebGLUniformLocation;
+      locations.set(name, location);
+
+      return location;
+    };
 
     beforeEach(() => {
-      (gl.getProgramParameter as Mock).mockReturnValue(1);
-      (gl.getActiveUniform as Mock).mockReturnValue({
-        name: 'uTestUniform',
-        type: 5126,
-        size: 1,
+      locations = new Map();
+    });
+
+    describe('setUniform', () => {
+      it('should throw an error when setting a non-existent uniform', () => {
+        const material = createMaterial([
+          { name: 'uTestUniform', type: glTypes.float },
+        ]);
+
+        expect(() => material.setUniform('uNonExistent', 42)).toThrow(
+          'Uniform "uNonExistent" does not exist on material. Available uniforms are: uTestUniform.',
+        );
       });
-      (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = createShaderSource('void main() {}');
-      const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
-    });
+      it('should register a uniform array under its declared name and the name WebGL reports', () => {
+        const material = createMaterial([
+          { name: 'u_waves[0]', type: glTypes.vec4, size: 4 },
+        ]);
 
-    it('should set a uniform value', () => {
-      material.setUniform('uTestUniform', 42);
-
-      // Verify the uniform was stored (we'll test binding separately)
-      expect(() => material.setUniform('uTestUniform', 42)).not.toThrow();
-    });
-
-    it('should throw an error when setting a non-existent uniform', () => {
-      expect(() => material.setUniform('uNonExistent', 42)).toThrow(
-        'Uniform "uNonExistent" does not exist on material. Available uniforms are: uTestUniform.',
-      );
-    });
-
-    it('should allow setting different types of uniform values', () => {
-      const float32Array = new Float32Array([1, 2, 3]);
-      const int32Array = new Int32Array([1, 2, 3]);
-      const vector2 = { x: 1, y: 2 };
-      const matrix = new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-
-      expect(() => material.setUniform('uTestUniform', 42)).not.toThrow();
-      expect(() => material.setUniform('uTestUniform', true)).not.toThrow();
-      expect(() =>
-        material.setUniform('uTestUniform', float32Array),
-      ).not.toThrow();
-      expect(() =>
-        material.setUniform('uTestUniform', int32Array),
-      ).not.toThrow();
-      expect(() => material.setUniform('uTestUniform', vector2)).not.toThrow();
-      expect(() => material.setUniform('uTestUniform', matrix)).not.toThrow();
-    });
-  });
-
-  describe('setColorUniform', () => {
-    let material: Material;
-    const mockLocation = {} as WebGLUniformLocation;
-
-    beforeEach(() => {
-      (gl.getProgramParameter as Mock).mockReturnValue(1);
-      (gl.getActiveUniform as Mock).mockReturnValue({
-        name: 'uColor',
-        type: 5126,
-        size: 1,
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(16)),
+        ).not.toThrow();
+        expect(() =>
+          material.setUniform('u_waves[0]', new Float32Array(16)),
+        ).not.toThrow();
+        expect(() => material.setUniform('uMissing', 1)).toThrow(
+          'Available uniforms are: u_waves.',
+        );
       });
-      (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = createShaderSource('void main() {}');
-      const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
-    });
+      it('should throw when a Float32Array does not match a non-array uniform', () => {
+        const material = createMaterial([
+          { name: 'u_color', type: glTypes.vec4 },
+        ]);
 
-    it('should set a color uniform', () => {
-      const color = new Color(1, 0, 0.5, 0.8);
-
-      expect(() => material.setColorUniform('uColor', color)).not.toThrow();
-    });
-  });
-
-  describe('setVectorUniform', () => {
-    let material: Material;
-    const mockLocation = {} as WebGLUniformLocation;
-
-    beforeEach(() => {
-      (gl.getProgramParameter as Mock).mockReturnValue(1);
-      (gl.getActiveUniform as Mock).mockReturnValue({
-        name: 'uVector',
-        type: 5126,
-        size: 1,
+        expect(() =>
+          material.setUniform('u_color', new Float32Array(8)),
+        ).toThrow(
+          'Uniform "u_color" is declared as vec4 and expects a Float32Array of length 4, but received a Float32Array of length 8.',
+        );
+        expect(() =>
+          material.setUniform('u_color', new Float32Array(3)),
+        ).toThrow();
       });
-      (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
 
-      const vertexShader = createShaderSource('void main() {}');
-      const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
+      it('should throw when a Float32Array is not a whole number of array elements or exceeds the array', () => {
+        const material = createMaterial([
+          { name: 'u_waves[0]', type: glTypes.vec4, size: 4 },
+        ]);
+
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(6)),
+        ).toThrow(
+          'Uniform "u_waves" is declared as vec4[4] and expects a Float32Array whose length is a multiple of 4, up to 16, but received a Float32Array of length 6.',
+        );
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(20)),
+        ).toThrow();
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(0)),
+        ).toThrow();
+      });
+
+      it('should throw when the value kind does not match the declared type', () => {
+        const material = createMaterial([
+          { name: 'u_float', type: glTypes.float },
+          { name: 'u_vec2', type: glTypes.vec2 },
+          { name: 'u_int', type: glTypes.int },
+          { name: 'u_bool', type: glTypes.bool },
+          { name: 'u_texture', type: glTypes.sampler2D },
+          { name: 'u_floats[0]', type: glTypes.float, size: 4 },
+        ]);
+
+        expect(() => material.setUniform('u_vec2', 1)).toThrow(
+          'Uniform "u_vec2" is declared as vec2 and expects a Vector2 or a Float32Array of length 2, but received a number.',
+        );
+        expect(() => material.setUniform('u_float', true)).toThrow(
+          'but received a boolean.',
+        );
+        expect(() => material.setUniform('u_bool', 1)).toThrow(
+          'Uniform "u_bool" is declared as bool and expects a boolean or an Int32Array of length 1, but received a number.',
+        );
+        expect(() => material.setUniform('u_int', new Float32Array(1))).toThrow(
+          'Uniform "u_int" is declared as int and expects a number or a boolean or an Int32Array of length 1, but received a Float32Array of length 1.',
+        );
+        expect(() => material.setUniform('u_float', new Int32Array(1))).toThrow(
+          'but received an Int32Array of length 1.',
+        );
+        expect(() =>
+          material.setUniform('u_float', new WebGLTexture()),
+        ).toThrow('but received a WebGLTexture.');
+        expect(() =>
+          material.setUniform('u_texture', new Float32Array(1)),
+        ).toThrow(
+          'Uniform "u_texture" is declared as sampler2D and expects a WebGLTexture, but received a Float32Array of length 1.',
+        );
+        expect(() => material.setUniform('u_floats', 1)).toThrow(
+          'Uniform "u_floats" is declared as float[4] and expects a Float32Array of length 1 to 4, but received a number.',
+        );
+      });
+
+      it('should describe a mismatched Vector2, Matrix3x3 or Uint32Array value', () => {
+        const material = createMaterial([
+          { name: 'u_projection', type: glTypes.mat3 },
+          { name: 'u_ints', type: glTypes.ivec2 },
+        ]);
+
+        expect(() =>
+          material.setUniform('u_projection', { x: 1, y: 2 }),
+        ).toThrow(
+          'Uniform "u_projection" is declared as mat3 and expects a Matrix3x3 or a Float32Array of length 9, but received a Vector2.',
+        );
+        expect(() =>
+          material.setUniform(
+            'u_ints',
+            new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]),
+          ),
+        ).toThrow('but received a Matrix3x3.');
+        expect(() => material.setUniform('u_ints', new Uint32Array(2))).toThrow(
+          'but received a Uint32Array of length 2.',
+        );
+      });
+
+      it('should throw for a sampler array', () => {
+        const material = createMaterial([
+          { name: 'u_textures[0]', type: glTypes.sampler2D, size: 2 },
+        ]);
+
+        expect(() =>
+          material.setUniform('u_textures', new WebGLTexture()),
+        ).toThrow('Material does not support sampler arrays');
+      });
+
+      it('should throw for a uniform whose GL type is not a WebGL 2 uniform type', () => {
+        const material = createMaterial([{ name: 'u_unknown', type: 0x1234 }]);
+
+        expect(() => material.setUniform('u_unknown', 1)).toThrow(
+          'Uniform "u_unknown" has GL type 0x1234, which is not a WebGL 2 uniform type Material can upload.',
+        );
+      });
+
+      it('should keep the previous value when a new value is rejected', () => {
+        const material = createMaterial([
+          { name: 'u_color', type: glTypes.vec4 },
+        ]);
+        const color = new Float32Array([1, 2, 3, 4]);
+
+        material.setUniform('u_color', color);
+
+        expect(() =>
+          material.setUniform('u_color', new Float32Array(3)),
+        ).toThrow();
+
+        material.bind(gl);
+
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_color'),
+          color,
+        );
+      });
+      it('should skip an active uniform that has no location', () => {
+        (gl.getProgramParameter as Mock).mockImplementation(
+          (_program: WebGLProgram, parameter: GLenum) =>
+            parameter === gl.ACTIVE_UNIFORMS ? 2 : true,
+        );
+        (gl.getActiveUniform as Mock).mockImplementation(
+          (_program: WebGLProgram, index: number) =>
+            [
+              { name: 'gl_DepthRange.near', type: glTypes.float, size: 1 },
+              { name: 'u_value', type: glTypes.float, size: 1 },
+            ][index] ?? null,
+        );
+        (gl.getUniformLocation as Mock).mockImplementation(
+          (_program: WebGLProgram, name: string) =>
+            name === 'u_value' ? locationOf(name) : null,
+        );
+
+        const material = new Material(
+          createShaderSource('void main() {}'),
+          createShaderSource('void main() {}'),
+          gl,
+        );
+
+        expect(() => material.setUniform('gl_DepthRange.near', 1)).toThrow(
+          'Available uniforms are: u_value.',
+        );
+      });
     });
 
-    it('should set a Vector2 uniform', () => {
-      const vector2 = { x: 1, y: 2 };
+    describe('setColorUniform', () => {
+      it('should upload a color to a vec4 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_color', type: glTypes.vec4 },
+        ]);
 
-      expect(() => material.setVectorUniform('uVector', vector2)).not.toThrow();
+        material.setColorUniform('u_color', new Color(1, 0, 0.5, 0.8));
+        material.bind(gl);
+
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_color'),
+          new Float32Array([1, 0, 0.5, 0.8]),
+        );
+      });
+
+      it('should throw for a uniform that is not a vec4', () => {
+        const material = createMaterial([
+          { name: 'u_color', type: glTypes.vec3 },
+        ]);
+
+        expect(() =>
+          material.setColorUniform('u_color', new Color(1, 0, 0.5, 0.8)),
+        ).toThrow('Uniform "u_color" is declared as vec3');
+      });
     });
 
-    it('should set a Vector3 uniform', () => {
-      const vector3 = { x: 1, y: 2, z: 3 };
+    describe('setVectorUniform', () => {
+      it('should upload a Vector2 to a vec2 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_vector', type: glTypes.vec2 },
+        ]);
 
-      expect(() => material.setVectorUniform('uVector', vector3)).not.toThrow();
-    });
-  });
+        material.setVectorUniform('u_vector', { x: 1, y: 2 });
+        material.bind(gl);
 
-  describe('bind', () => {
-    let material: Material;
-    const mockLocation = {} as WebGLUniformLocation;
+        expect(gl.uniform2fv).toHaveBeenCalledWith(
+          locationOf('u_vector'),
+          new Float32Array([1, 2]),
+        );
+      });
 
-    beforeEach(() => {
-      (gl.getProgramParameter as Mock).mockReturnValue(3);
-      (gl.getActiveUniform as Mock)
-        .mockReturnValueOnce({ name: 'uNumber', type: 5126, size: 1 })
-        .mockReturnValueOnce({ name: 'uBoolean', type: 5126, size: 1 })
-        .mockReturnValueOnce({ name: 'uTexture', type: 5126, size: 1 });
-      (gl.getUniformLocation as Mock).mockReturnValue(mockLocation);
+      it('should upload a Vector3 to a vec3 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_vector', type: glTypes.vec3 },
+        ]);
 
-      const vertexShader = createShaderSource('void main() {}');
-      const fragmentShader = createShaderSource('void main() {}');
-      material = new Material(vertexShader, fragmentShader, gl);
-    });
+        material.setVectorUniform('u_vector', { x: 1, y: 2, z: 3 });
+        material.bind(gl);
 
-    it('should use the program when binding', () => {
-      material.bind(gl);
-
-      expect(gl.useProgram).toHaveBeenCalledWith(mockProgram);
-    });
-
-    it('should bind a number uniform', () => {
-      material.setUniform('uNumber', 42.5);
-      material.bind(gl);
-
-      expect(gl.uniform1f).toHaveBeenCalledWith(mockLocation, 42.5);
+        expect(gl.uniform3fv).toHaveBeenCalledWith(
+          locationOf('u_vector'),
+          new Float32Array([1, 2, 3]),
+        );
+      });
     });
 
-    it('should bind a boolean uniform as integer', () => {
-      material.setUniform('uBoolean', true);
-      material.bind(gl);
+    describe('bind', () => {
+      it('should use the program when binding', () => {
+        const material = createMaterial([]);
 
-      expect(gl.uniform1i).toHaveBeenCalledWith(mockLocation, 1);
+        material.bind(gl);
 
-      vi.clearAllMocks();
-      material.setUniform('uBoolean', false);
-      material.bind(gl);
+        expect(gl.useProgram).toHaveBeenCalledWith(mockProgram);
+      });
 
-      expect(gl.uniform1i).toHaveBeenCalledWith(mockLocation, 0);
-    });
+      it('should skip uniforms without values', () => {
+        const material = createMaterial([
+          { name: 'u_number', type: glTypes.float },
+          { name: 'u_flag', type: glTypes.bool },
+        ]);
 
-    it('should bind a texture uniform', () => {
-      const mockTexture = new WebGLTexture();
-      material.setUniform('uTexture', mockTexture);
-      material.bind(gl);
+        material.bind(gl);
 
-      expect(gl.activeTexture).toHaveBeenCalledWith(gl.TEXTURE0);
-      expect(gl.bindTexture).toHaveBeenCalledWith(gl.TEXTURE_2D, mockTexture);
-      expect(gl.uniform1i).toHaveBeenCalledWith(mockLocation, 0);
-    });
+        expect(gl.useProgram).toHaveBeenCalledWith(mockProgram);
+        expect(gl.uniform1f).not.toHaveBeenCalled();
+        expect(gl.uniform1i).not.toHaveBeenCalled();
+      });
 
-    it('should bind multiple textures with correct texture units', () => {
-      (gl.getProgramParameter as Mock).mockReturnValue(2);
-      (gl.getActiveUniform as Mock)
-        .mockReturnValueOnce({ name: 'uTexture1', type: 5126, size: 1 })
-        .mockReturnValueOnce({ name: 'uTexture2', type: 5126, size: 1 });
+      it('should upload a number with the call matching the declared scalar type', () => {
+        const material = createMaterial([
+          { name: 'u_float', type: glTypes.float },
+          { name: 'u_int', type: glTypes.int },
+          { name: 'u_uint', type: glTypes.uint },
+        ]);
 
-      const vertexShader = createShaderSource('void main() {}');
-      const fragmentShader = createShaderSource('void main() {}');
-      const newMaterial = new Material(vertexShader, fragmentShader, gl);
+        material.setUniform('u_float', 42.5);
+        material.setUniform('u_int', 7);
+        material.setUniform('u_uint', 9);
+        material.bind(gl);
 
-      const mockTexture1 = new WebGLTexture();
-      const mockTexture2 = new WebGLTexture();
+        expect(gl.uniform1f).toHaveBeenCalledWith(locationOf('u_float'), 42.5);
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_int'), 7);
+        expect(gl.uniform1ui).toHaveBeenCalledWith(locationOf('u_uint'), 9);
+      });
 
-      newMaterial.setUniform('uTexture1', mockTexture1);
-      newMaterial.setUniform('uTexture2', mockTexture2);
+      it('should upload a boolean as an integer', () => {
+        const material = createMaterial([
+          { name: 'u_flag', type: glTypes.bool },
+          { name: 'u_intFlag', type: glTypes.int },
+        ]);
 
-      vi.clearAllMocks();
-      newMaterial.bind(gl);
+        material.setUniform('u_flag', true);
+        material.setUniform('u_intFlag', false);
+        material.bind(gl);
 
-      expect(gl.activeTexture).toHaveBeenCalledWith(gl.TEXTURE0 + 0);
-      expect(gl.bindTexture).toHaveBeenCalledWith(gl.TEXTURE_2D, mockTexture1);
-      expect(gl.activeTexture).toHaveBeenCalledWith(gl.TEXTURE0 + 1);
-      expect(gl.bindTexture).toHaveBeenCalledWith(gl.TEXTURE_2D, mockTexture2);
-    });
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_flag'), 1);
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_intFlag'), 0);
+      });
 
-    it('should bind a Float32Array vec2 uniform', () => {
-      material.setUniform('uNumber', new Float32Array([1, 2]));
-      material.bind(gl);
+      it('should bind textures to consecutive texture units', () => {
+        const material = createMaterial([
+          { name: 'u_texture1', type: glTypes.sampler2D },
+          { name: 'u_texture2', type: glTypes.sampler2D },
+        ]);
+        const texture1 = new WebGLTexture();
+        const texture2 = new WebGLTexture();
 
-      expect(gl.uniform2fv).toHaveBeenCalledWith(
-        mockLocation,
-        new Float32Array([1, 2]),
+        material.setUniform('u_texture1', texture1);
+        material.setUniform('u_texture2', texture2);
+        material.bind(gl);
+
+        expect(gl.activeTexture).toHaveBeenNthCalledWith(1, gl.TEXTURE0);
+        expect(gl.bindTexture).toHaveBeenNthCalledWith(
+          1,
+          gl.TEXTURE_2D,
+          texture1,
+        );
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_texture1'), 0);
+        expect(gl.activeTexture).toHaveBeenNthCalledWith(2, gl.TEXTURE0 + 1);
+        expect(gl.bindTexture).toHaveBeenNthCalledWith(
+          2,
+          gl.TEXTURE_2D,
+          texture2,
+        );
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_texture2'), 1);
+      });
+
+      it('should bind a texture to the target its sampler type reads from', () => {
+        const material = createMaterial([
+          { name: 'u_environment', type: glTypes.samplerCube },
+        ]);
+        const texture = new WebGLTexture();
+
+        material.setUniform('u_environment', texture);
+        material.bind(gl);
+
+        expect(gl.bindTexture).toHaveBeenCalledWith(
+          gl.TEXTURE_CUBE_MAP,
+          texture,
+        );
+      });
+
+      it.each([
+        ['vec2', glTypes.vec2, 2, 'uniform2fv'],
+        ['vec3', glTypes.vec3, 3, 'uniform3fv'],
+        ['vec4', glTypes.vec4, 4, 'uniform4fv'],
+      ] as const)(
+        'should upload a Float32Array to a %s uniform',
+        (_glslName, type, length, call) => {
+          const material = createMaterial([{ name: 'u_value', type }]);
+          const value = new Float32Array(length).fill(1);
+
+          material.setUniform('u_value', value);
+          material.bind(gl);
+
+          expect(gl[call]).toHaveBeenCalledWith(locationOf('u_value'), value);
+        },
       );
-    });
 
-    it('should bind a Float32Array vec3 uniform', () => {
-      material.setUniform('uNumber', new Float32Array([1, 2, 3]));
-      material.bind(gl);
+      it.each([
+        ['mat3', glTypes.mat3, 9, 'uniformMatrix3fv'],
+        ['mat4', glTypes.mat4, 16, 'uniformMatrix4fv'],
+      ] as const)(
+        'should upload a Float32Array to a %s uniform as a matrix',
+        (_glslName, type, length, call) => {
+          const material = createMaterial([{ name: 'u_value', type }]);
+          const value = new Float32Array(length).fill(1);
 
-      expect(gl.uniform3fv).toHaveBeenCalledWith(
-        mockLocation,
-        new Float32Array([1, 2, 3]),
+          material.setUniform('u_value', value);
+          material.bind(gl);
+
+          expect(gl[call]).toHaveBeenCalledWith(
+            locationOf('u_value'),
+            false,
+            value,
+          );
+        },
       );
-    });
 
-    it('should bind a Float32Array vec4 uniform', () => {
-      material.setUniform('uNumber', new Float32Array([1, 2, 3, 4]));
-      material.bind(gl);
+      it('should upload 16 floats by declared type rather than by length', () => {
+        const material = createMaterial([
+          { name: 'u_waves[0]', type: glTypes.vec4, size: 4 },
+          { name: 'u_weights[0]', type: glTypes.float, size: 16 },
+          { name: 'u_transform', type: glTypes.mat4 },
+        ]);
+        const waves = new Float32Array(16).fill(1);
+        const weights = new Float32Array(16).fill(2);
+        const transform = new Float32Array(16).fill(3);
 
-      expect(gl.uniform4fv).toHaveBeenCalledWith(
-        mockLocation,
-        new Float32Array([1, 2, 3, 4]),
-      );
-    });
+        material.setUniform('u_waves', waves);
+        material.setUniform('u_weights', weights);
+        material.setUniform('u_transform', transform);
+        material.bind(gl);
 
-    it('should bind a Float32Array mat3 uniform', () => {
-      const mat3 = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      material.setUniform('uNumber', mat3);
-      material.bind(gl);
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_waves[0]'),
+          waves,
+        );
+        expect(gl.uniform1fv).toHaveBeenCalledWith(
+          locationOf('u_weights[0]'),
+          weights,
+        );
+        expect(gl.uniformMatrix4fv).toHaveBeenCalledOnce();
+        expect(gl.uniformMatrix4fv).toHaveBeenCalledWith(
+          locationOf('u_transform'),
+          false,
+          transform,
+        );
+      });
 
-      expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
-        mockLocation,
-        false,
-        mat3,
-      );
-    });
+      it('should upload the leading elements of a uniform array from a shorter Float32Array', () => {
+        const material = createMaterial([
+          { name: 'u_waves[0]', type: glTypes.vec4, size: 4 },
+        ]);
+        const waves = new Float32Array(8).fill(1);
 
-    it('should bind a Float32Array mat4 uniform', () => {
-      const mat4 = new Float32Array([
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-      ]);
-      material.setUniform('uNumber', mat4);
-      material.bind(gl);
+        material.setUniform('u_waves[0]', waves);
+        material.bind(gl);
 
-      expect(gl.uniformMatrix4fv).toHaveBeenCalledWith(
-        mockLocation,
-        false,
-        mat4,
-      );
-    });
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_waves[0]'),
+          waves,
+        );
+      });
 
-    it('should bind an Int32Array uniform', () => {
-      const intArray = new Int32Array([1, 2, 3]);
-      material.setUniform('uNumber', intArray);
-      material.bind(gl);
+      it('should upload a uniform array once when set under both of its names', () => {
+        const material = createMaterial([
+          { name: 'u_waves[0]', type: glTypes.vec4, size: 4 },
+        ]);
+        const first = new Float32Array(16).fill(1);
+        const second = new Float32Array(16).fill(2);
 
-      expect(gl.uniform1iv).toHaveBeenCalledWith(mockLocation, intArray);
-    });
+        material.setUniform('u_waves', first);
+        material.setUniform('u_waves[0]', second);
+        material.bind(gl);
 
-    it('should bind a Vector2 uniform', () => {
-      const vector2 = { x: 1, y: 2 };
-      material.setUniform('uNumber', vector2);
-      material.bind(gl);
+        expect(gl.uniform4fv).toHaveBeenCalledOnce();
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_waves[0]'),
+          second,
+        );
+      });
 
-      expect(gl.uniform2fv).toHaveBeenCalledWith(
-        mockLocation,
-        new Float32Array([1, 2]),
-      );
-    });
+      it('should upload integer, unsigned integer and boolean vectors', () => {
+        const material = createMaterial([
+          { name: 'u_ints', type: glTypes.ivec2 },
+          { name: 'u_unsignedInts', type: glTypes.uvec3 },
+          { name: 'u_flags', type: glTypes.bvec2 },
+        ]);
+        const ints = new Int32Array([1, 2]);
+        const unsignedInts = new Uint32Array([1, 2, 3]);
+        const flags = new Int32Array([1, 0]);
 
-    it('should bind a Matrix3x3 uniform', () => {
-      const matrix = new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-      material.setUniform('uNumber', matrix);
-      material.bind(gl);
+        material.setUniform('u_ints', ints);
+        material.setUniform('u_unsignedInts', unsignedInts);
+        material.setUniform('u_flags', flags);
+        material.bind(gl);
 
-      expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
-        mockLocation,
-        false,
-        matrix.matrix,
-      );
-    });
+        expect(gl.uniform2iv).toHaveBeenCalledWith(locationOf('u_ints'), ints);
+        expect(gl.uniform3uiv).toHaveBeenCalledWith(
+          locationOf('u_unsignedInts'),
+          unsignedInts,
+        );
+        expect(gl.uniform2iv).toHaveBeenCalledWith(
+          locationOf('u_flags'),
+          flags,
+        );
+      });
 
-    it('should skip uniforms without values', () => {
-      // Don't set any uniforms, just bind
-      material.bind(gl);
+      it('should upload a Vector2 to a vec2 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_vector', type: glTypes.vec2 },
+        ]);
 
-      // Should only call useProgram, but not any uniform setters
-      expect(gl.useProgram).toHaveBeenCalledWith(mockProgram);
-      expect(gl.uniform1f).not.toHaveBeenCalled();
-      expect(gl.uniform1i).not.toHaveBeenCalled();
+        material.setUniform('u_vector', { x: 1, y: 2 });
+        material.bind(gl);
+
+        expect(gl.uniform2fv).toHaveBeenCalledWith(
+          locationOf('u_vector'),
+          new Float32Array([1, 2]),
+        );
+      });
+
+      it('should upload the current contents of a Matrix3x3 to a mat3 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_projection', type: glTypes.mat3 },
+        ]);
+        const matrix = new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+        material.setUniform('u_projection', matrix);
+        matrix.matrix[0] = 5;
+        material.bind(gl);
+
+        expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
+          locationOf('u_projection'),
+          false,
+          new Float32Array([5, 0, 0, 0, 1, 0, 0, 0, 1]),
+        );
+      });
     });
   });
 });

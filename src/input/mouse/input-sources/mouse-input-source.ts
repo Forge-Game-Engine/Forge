@@ -182,7 +182,7 @@ export class MouseInputSource
     this._pointerScroll += event.deltaY;
 
     for (const binding of this.axis1dBindings) {
-      binding.action.set(event.deltaY / 100);
+      this._inputManager.dispatchAxis1dAction(binding, event.deltaY / 100);
     }
   };
 
@@ -204,9 +204,14 @@ export class MouseInputSource
         binding.cursorOrigin.y * containerBoundingClientRect.height;
 
       if (cursorValueType === cursorValueTypes.absolute) {
-        binding.action.set(x - absoluteXOffset, y - absoluteYOffset);
+        this._inputManager.dispatchAxis2dAction(
+          binding,
+          x - absoluteXOffset,
+          y - absoluteYOffset,
+        );
       } else if (cursorValueType === cursorValueTypes.ratio) {
-        binding.action.set(
+        this._inputManager.dispatchAxis2dAction(
+          binding,
           normalizedX - binding.cursorOrigin.x,
           normalizedY - binding.cursorOrigin.y,
         );

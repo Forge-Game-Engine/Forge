@@ -257,4 +257,168 @@ describe('InputManager', () => {
     expect(resettable1.reset).toHaveBeenCalled();
     expect(resettable2.reset).not.toHaveBeenCalled();
   });
+
+  describe('switching the active group', () => {
+    let gameAxis1d: Axis1dAction;
+    let gameAxis2d: Axis2dAction;
+    let gameHold: HoldAction;
+
+    const bind = <T extends { name: string; inputGroup: string }>(
+      action: T,
+    ): { action: T; displayText: string } => ({
+      action,
+      displayText: 'test binding',
+    });
+
+    beforeEach(() => {
+      gameAxis1d = new Axis1dAction('axis1d', group1, actionResetTypes.noReset);
+      gameAxis2d = new Axis2dAction('axis2d', group1, actionResetTypes.noReset);
+      gameHold = new HoldAction('hold', group1);
+
+      manager.addAxis1dActions(gameAxis1d);
+      manager.addAxis2dActions(gameAxis2d);
+      manager.addHoldActions(gameHold);
+
+      manager.setActiveGroup(group1);
+    });
+
+    it("releases the outgoing group's axes and holds", () => {
+      const holdEndListener = vi.fn();
+
+      gameHold.holdEndEvent.registerListener(holdEndListener);
+
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+      manager.dispatchAxis2dAction(bind(gameAxis2d), -1, 1);
+      manager.dispatchHoldStartAction(bind(gameHold));
+
+      manager.setActiveGroup(group2);
+
+      expect(gameAxis1d.value).toBe(0);
+      expect(gameAxis2d.value.x).toBe(0);
+      expect(gameAxis2d.value.y).toBe(0);
+      expect(gameHold.isHeld).toBe(false);
+      expect(holdEndListener).toHaveBeenCalledTimes(1);
+    });
+
+    it('restores input that is still held when the group becomes active again', () => {
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+      manager.dispatchAxis2dAction(bind(gameAxis2d), -1, 1);
+      manager.dispatchHoldStartAction(bind(gameHold));
+
+      manager.setActiveGroup(group2);
+      manager.setActiveGroup(group1);
+
+      expect(gameAxis1d.value).toBe(1);
+      expect(gameAxis2d.value.x).toBe(-1);
+      expect(gameAxis2d.value.y).toBe(1);
+      expect(gameHold.isHeld).toBe(true);
+    });
+
+    it('applies the latest value dispatched while the group was inactive once it becomes active', () => {
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+      manager.dispatchAxis2dAction(bind(gameAxis2d), 1, 1);
+
+      manager.setActiveGroup(group2);
+
+      manager.dispatchAxis1dAction(bind(gameAxis1d), -0.5);
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 0);
+      manager.dispatchAxis2dAction(bind(gameAxis2d), 0, -1);
+
+      expect(gameAxis1d.value).toBe(0);
+      expect(gameAxis2d.value.y).toBe(0);
+
+      manager.setActiveGroup(group1);
+
+      expect(gameAxis1d.value).toBe(0);
+      expect(gameAxis2d.value.x).toBe(0);
+      expect(gameAxis2d.value.y).toBe(-1);
+    });
+
+    it('starts a hold pressed while its group was inactive once the group becomes active', () => {
+      const menuHold = new HoldAction('menuHold', group2);
+
+      manager.addHoldActions(menuHold);
+      manager.dispatchHoldStartAction(bind(menuHold));
+
+      expect(menuHold.isHeld).toBe(false);
+
+      manager.setActiveGroup(group2);
+
+      expect(menuHold.isHeld).toBe(true);
+    });
+
+    it('does not start a hold that was released before its group became active', () => {
+      manager.dispatchHoldStartAction(bind(gameHold));
+      manager.setActiveGroup(group2);
+      manager.dispatchHoldEndAction(bind(gameHold));
+
+      const holdStartListener = vi.fn();
+
+      gameHold.holdStartEvent.registerListener(holdStartListener);
+      manager.setActiveGroup(group1);
+
+      expect(gameHold.isHeld).toBe(false);
+      expect(holdStartListener).not.toHaveBeenCalled();
+    });
+
+    it('does not raise holdEndEvent for a hold that never started', () => {
+      const holdEndListener = vi.fn();
+
+      gameHold.holdEndEvent.registerListener(holdEndListener);
+
+      manager.setActiveGroup(group2);
+      manager.dispatchHoldStartAction(bind(gameHold));
+      manager.dispatchHoldEndAction(bind(gameHold));
+
+      expect(holdEndListener).not.toHaveBeenCalled();
+    });
+
+    it('discards values dispatched to a zero-reset axis while its group is inactive', () => {
+      const scroll = new Axis1dAction('scroll', group2);
+
+      manager.addAxis1dActions(scroll);
+      manager.dispatchAxis1dAction(bind(scroll), 1);
+      manager.setActiveGroup(group2);
+
+      expect(scroll.value).toBe(0);
+    });
+
+    it('does nothing when the group is already active', () => {
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+      manager.dispatchHoldStartAction(bind(gameHold));
+
+      manager.setActiveGroup(group1);
+
+      expect(gameAxis1d.value).toBe(1);
+      expect(gameHold.isHeld).toBe(true);
+    });
+
+    it('releases the outgoing group when no group becomes active, and restores it afterwards', () => {
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+
+      manager.setActiveGroup(null);
+      expect(gameAxis1d.value).toBe(0);
+
+      manager.setActiveGroup(group1);
+      expect(gameAxis1d.value).toBe(1);
+    });
+
+    it('forgets the held state of a removed action', () => {
+      manager.dispatchAxis1dAction(bind(gameAxis1d), 1);
+      manager.dispatchAxis2dAction(bind(gameAxis2d), 1, 1);
+      manager.dispatchHoldStartAction(bind(gameHold));
+
+      manager.setActiveGroup(group2);
+
+      manager.removeAxis1dAction(gameAxis1d);
+      manager.removeAxis2dAction(gameAxis2d);
+      manager.removeHoldAction(gameHold);
+
+      manager.setActiveGroup(group1);
+
+      expect(gameAxis1d.value).toBe(0);
+      expect(gameAxis2d.value.x).toBe(0);
+      expect(gameHold.isHeld).toBe(false);
+    });
+  });
 });

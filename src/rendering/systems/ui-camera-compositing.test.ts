@@ -87,9 +87,11 @@ describe('UI-camera compositing over the world camera', () => {
         ),
       getProgramInfoLog: vi.fn().mockReturnValue(''),
 
-      getActiveUniform: vi
-        .fn()
-        .mockReturnValue({ name: 'u_texture', type: 0, size: 1 }),
+      getActiveUniform: vi.fn().mockReturnValue({
+        name: 'u_texture',
+        type: 0x8b5e /* SAMPLER_2D */,
+        size: 1,
+      }),
       getUniformLocation: vi.fn().mockReturnValue({}),
       useProgram: vi.fn(),
       uniform1i: vi.fn(),

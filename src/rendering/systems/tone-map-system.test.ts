@@ -130,9 +130,9 @@ describe('createToneMapEcsSystem', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_texture', type: 0, size: 1 },
-            { name: 'u_exposure', type: 0, size: 1 },
-            { name: 'u_useAces', type: 0, size: 1 },
+            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_exposure', type: 0x1406 /* FLOAT */, size: 1 },
+            { name: 'u_useAces', type: 0x8b56 /* BOOL */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi

@@ -114,10 +114,17 @@ frame's reset, even while the cursor sits still.
 
 [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) (scroll
 wheel) sets the bound `Axis1dAction`'s value to `event.deltaY / 100` on each
-`wheel` event, roughly ±1 per scroll click. Unlike cursor position, this is
+`wheel` event, roughly ±1 per scroll click (clamped to `[-1, 1]`, like every
+`Axis1dAction`). Unlike cursor position, this is
 naturally a "delta this frame" value, so the default
 `actionResetTypes.zero` is correct here, the value goes back to `0` once
 scrolling stops.
+
+Like every other binding, `MouseAxis1dBinding` and `MouseAxis2dBinding`
+only reach their action while its
+[input group](./actions.md#input-groups) is active. A cursor-position action
+in an inactive group stays at `0`, and picks up the latest cursor position
+as soon as its group becomes active again.
 
 [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) calls the
 container's `getBoundingClientRect()` fresh on every `mousemove` event, so
