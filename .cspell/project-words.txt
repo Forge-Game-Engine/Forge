@@ -19,6 +19,7 @@ Beziers
 blit
 blits
 bmfont
+bvec
 cachable
 capline
 Catmull
@@ -70,6 +71,8 @@ Infima
 inigo
 interactable
 interactables
+isampler
+ivec
 Kenney
 kenneynl
 kernings
@@ -178,6 +181,7 @@ untinted
 unvalidated
 updatables
 upsamples
+usampler
 uvec
 uxml
 viewports

@@ -104,9 +104,9 @@ describe('createTextRenderable', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_atlas', type: 0, size: 1 },
-            { name: 'u_distanceRange', type: 0, size: 1 },
-            { name: 'u_atlasSize', type: 0, size: 1 },
+            { name: 'u_atlas', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_distanceRange', type: 0x1406 /* FLOAT */, size: 1 },
+            { name: 'u_atlasSize', type: 0x1406 /* FLOAT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi

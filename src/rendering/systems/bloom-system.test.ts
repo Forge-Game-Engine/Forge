@@ -141,13 +141,13 @@ describe('createBloomEcsSystem', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_texture', type: 0, size: 1 },
-            { name: 'u_direction', type: 0, size: 1 },
-            { name: 'u_texelSize', type: 0, size: 1 },
-            { name: 'u_threshold', type: 0, size: 1 },
-            { name: 'u_sceneTexture', type: 0, size: 1 },
-            { name: 'u_bloomTexture', type: 0, size: 1 },
-            { name: 'u_intensity', type: 0, size: 1 },
+            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_direction', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+            { name: 'u_texelSize', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+            { name: 'u_threshold', type: 0x1406 /* FLOAT */, size: 1 },
+            { name: 'u_sceneTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_bloomTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_intensity', type: 0x1406 /* FLOAT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi
