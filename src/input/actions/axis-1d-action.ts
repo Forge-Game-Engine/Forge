@@ -1,4 +1,5 @@
 import { ActionResetType, actionResetTypes } from '../constants/index.js';
+import { clamp } from '../../math/index.js';
 import { InputAction } from '../input-action.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { Resettable } from '../../common/index.js';
@@ -51,13 +52,23 @@ export class Axis1dAction implements InputAction, Resettable {
     return this._value;
   }
 
-  /** Sets the current value of the axis, ranging from -1 to 1. */
+  /** Gets how this action behaves when the `InputManager` resets its actions each frame. */
+  get actionResetType(): ActionResetType {
+    return this._actionResetType;
+  }
+
+  /**
+   * Sets the current value of the axis.
+   * @param value - The new value, clamped to the range -1 to 1.
+   */
   public set(value: number): void {
-    if (this._value === value) {
+    const clampedValue = clamp(value, -1, 1);
+
+    if (this._value === clampedValue) {
       return;
     }
 
-    this._value = value;
+    this._value = clampedValue;
 
     this.valueChangeEvent.raise(this._value);
   }

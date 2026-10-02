@@ -1,4 +1,6 @@
 import { Resettable, Stoppable } from '../../../common/index.js';
+import { clamp } from '../../../math/index.js';
+import { Axis1dAction, Axis2dAction } from '../../actions/index.js';
 import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding.js';
 import { buttonMoments, KeyCode } from '../../constants/index.js';
 import { InputManager } from '../../input-manager.js';
@@ -76,8 +78,8 @@ export class KeyboardInputSource
 
     this._handleTriggerBindingsOnKeyDown(keyCode);
     this._handleHoldBindingsOnKeyDown(keyCode);
-    this._handleAxis1dBindingsOnKeyDown(keyCode);
-    this._handleAxis2dBindingsOnKeyDown(keyCode);
+    this._handleAxis1dBindings(keyCode);
+    this._handleAxis2dBindings(keyCode);
   };
 
   private _handleTriggerBindingsOnKeyDown(keyCode: KeyCode): void {
@@ -99,41 +101,6 @@ export class KeyboardInputSource
     }
   }
 
-  private _handleAxis1dBindingsOnKeyDown(keyCode: KeyCode): void {
-    for (const binding of this.axis1dBindings) {
-      let value = binding.action.value;
-
-      if (binding.positiveKeyCode === keyCode) {
-        value += 1;
-      } else if (binding.negativeKeyCode === keyCode) {
-        value -= 1;
-      }
-
-      this._inputManager.dispatchAxis1dAction(binding, value);
-    }
-  }
-
-  private _handleAxis2dBindingsOnKeyDown(keyCode: KeyCode): void {
-    for (const binding of this.axis2dBindings) {
-      let x = binding.action.value.x;
-      let y = binding.action.value.y;
-
-      if (binding.northKeyCode === keyCode) {
-        y += 1;
-      } else if (binding.southKeyCode === keyCode) {
-        y -= 1;
-      }
-
-      if (binding.eastKeyCode === keyCode) {
-        x += 1;
-      } else if (binding.westKeyCode === keyCode) {
-        x -= 1;
-      }
-
-      this._inputManager.dispatchAxis2dAction(binding, x, y);
-    }
-  }
-
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
     if (event.repeat) {
@@ -147,8 +114,8 @@ export class KeyboardInputSource
 
     this._handleTriggerBindingsOnKeyUp(keyCode);
     this._handleHoldBindingsOnKeyUp(keyCode);
-    this._handleAxis1dBindingsOnKeyUp(keyCode);
-    this._handleAxis2dBindingsOnKeyUp(keyCode);
+    this._handleAxis1dBindings(keyCode);
+    this._handleAxis2dBindings(keyCode);
   };
 
   private _handleTriggerBindingsOnKeyUp(keyCode: KeyCode): void {
@@ -167,38 +134,97 @@ export class KeyboardInputSource
     }
   }
 
-  private _handleAxis1dBindingsOnKeyUp(keyCode: KeyCode): void {
-    for (const binding of this.axis1dBindings) {
-      let value = binding.action.value;
+  /**
+   * Re-dispatches every axis-1d action bound to `keyCode`, with its value
+   * derived from which of its keys are held right now rather than adjusted
+   * relative to the action's current value. A relative adjustment would
+   * leave the value permanently off whenever a key press or release didn't
+   * reach the action, for example because its input group was inactive at
+   * the time.
+   */
+  private _handleAxis1dBindings(keyCode: KeyCode): void {
+    const dispatchedActions = new Set<Axis1dAction>();
 
-      if (binding.positiveKeyCode === keyCode) {
-        value -= 1;
-      } else if (binding.negativeKeyCode === keyCode) {
-        value += 1;
+    for (const binding of this.axis1dBindings) {
+      if (
+        dispatchedActions.has(binding.action) ||
+        (binding.positiveKeyCode !== keyCode &&
+          binding.negativeKeyCode !== keyCode)
+      ) {
+        continue;
       }
 
-      this._inputManager.dispatchAxis1dAction(binding, value);
+      dispatchedActions.add(binding.action);
+
+      this._inputManager.dispatchAxis1dAction(
+        binding,
+        this._readAxis1dValue(binding.action),
+      );
     }
   }
 
-  private _handleAxis2dBindingsOnKeyUp(keyCode: KeyCode): void {
+  /** Re-dispatches every axis-2d action bound to `keyCode`, see `_handleAxis1dBindings`. */
+  private _handleAxis2dBindings(keyCode: KeyCode): void {
+    const dispatchedActions = new Set<Axis2dAction>();
+
     for (const binding of this.axis2dBindings) {
-      let x = binding.action.value.x;
-      let y = binding.action.value.y;
-
-      if (binding.northKeyCode === keyCode) {
-        y -= 1;
-      } else if (binding.southKeyCode === keyCode) {
-        y += 1;
+      if (
+        dispatchedActions.has(binding.action) ||
+        (binding.northKeyCode !== keyCode &&
+          binding.southKeyCode !== keyCode &&
+          binding.eastKeyCode !== keyCode &&
+          binding.westKeyCode !== keyCode)
+      ) {
+        continue;
       }
 
-      if (binding.eastKeyCode === keyCode) {
-        x -= 1;
-      } else if (binding.westKeyCode === keyCode) {
-        x += 1;
-      }
+      dispatchedActions.add(binding.action);
+
+      const { x, y } = this._readAxis2dValue(binding.action);
 
       this._inputManager.dispatchAxis2dAction(binding, x, y);
     }
+  }
+
+  /**
+   * Combines every axis-1d binding on this source that targets `action`
+   * (e.g. both A/D and the arrow keys), so opposite keys cancel out and two
+   * keys for the same direction don't add up past `1`.
+   */
+  private _readAxis1dValue(action: Axis1dAction): number {
+    let value = 0;
+
+    for (const binding of this.axis1dBindings) {
+      if (binding.action === action) {
+        value +=
+          this._readKey(binding.positiveKeyCode) -
+          this._readKey(binding.negativeKeyCode);
+      }
+    }
+
+    return clamp(value, -1, 1);
+  }
+
+  /** Combines every axis-2d binding on this source that targets `action`, see `_readAxis1dValue`. */
+  private _readAxis2dValue(action: Axis2dAction): { x: number; y: number } {
+    let x = 0;
+    let y = 0;
+
+    for (const binding of this.axis2dBindings) {
+      if (binding.action === action) {
+        x +=
+          this._readKey(binding.eastKeyCode) -
+          this._readKey(binding.westKeyCode);
+        y +=
+          this._readKey(binding.northKeyCode) -
+          this._readKey(binding.southKeyCode);
+      }
+    }
+
+    return { x: clamp(x, -1, 1), y: clamp(y, -1, 1) };
+  }
+
+  private _readKey(keyCode: KeyCode): number {
+    return this._keyHolds.has(keyCode) ? 1 : 0;
   }
 }
