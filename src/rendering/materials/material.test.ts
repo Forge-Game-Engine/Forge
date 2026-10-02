@@ -314,6 +314,28 @@ describe('Material', () => {
         );
       });
 
+      it('should describe a mismatched Vector2, Matrix3x3 or Uint32Array value', () => {
+        const material = createMaterial([
+          { name: 'u_projection', type: glTypes.mat3 },
+          { name: 'u_ints', type: glTypes.ivec2 },
+        ]);
+
+        expect(() =>
+          material.setUniform('u_projection', { x: 1, y: 2 }),
+        ).toThrow(
+          'Uniform "u_projection" is declared as mat3 and expects a Matrix3x3 or a Float32Array of length 9, but received a Vector2.',
+        );
+        expect(() =>
+          material.setUniform(
+            'u_ints',
+            new Matrix3x3([1, 0, 0, 0, 1, 0, 0, 0, 1]),
+          ),
+        ).toThrow('but received a Matrix3x3.');
+        expect(() => material.setUniform('u_ints', new Uint32Array(2))).toThrow(
+          'but received a Uint32Array of length 2.',
+        );
+      });
+
       it('should throw for a sampler array', () => {
         const material = createMaterial([
           { name: 'u_textures[0]', type: glTypes.sampler2D, size: 2 },
@@ -349,6 +371,33 @@ describe('Material', () => {
         expect(gl.uniform4fv).toHaveBeenCalledWith(
           locationOf('u_color'),
           color,
+        );
+      });
+      it('should skip an active uniform that has no location', () => {
+        (gl.getProgramParameter as Mock).mockImplementation(
+          (_program: WebGLProgram, parameter: GLenum) =>
+            parameter === gl.ACTIVE_UNIFORMS ? 2 : true,
+        );
+        (gl.getActiveUniform as Mock).mockImplementation(
+          (_program: WebGLProgram, index: number) =>
+            [
+              { name: 'gl_DepthRange.near', type: glTypes.float, size: 1 },
+              { name: 'u_value', type: glTypes.float, size: 1 },
+            ][index] ?? null,
+        );
+        (gl.getUniformLocation as Mock).mockImplementation(
+          (_program: WebGLProgram, name: string) =>
+            name === 'u_value' ? locationOf(name) : null,
+        );
+
+        const material = new Material(
+          createShaderSource('void main() {}'),
+          createShaderSource('void main() {}'),
+          gl,
+        );
+
+        expect(() => material.setUniform('gl_DepthRange.near', 1)).toThrow(
+          'Available uniforms are: u_value.',
         );
       });
     });

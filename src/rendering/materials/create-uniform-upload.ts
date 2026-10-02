@@ -37,15 +37,15 @@ type ScalarUpload = (
   value: number,
 ) => void;
 
-const scalarUploads: Record<
-  Exclude<UniformType['kind'], 'sampler'>,
+/** How a `number` is uploaded, by the kinds of uniform that accept one. */
+const numberUploads: ReadonlyMap<UniformType['kind'], ScalarUpload> = new Map<
+  UniformType['kind'],
   ScalarUpload
-> = {
-  float: (gl, location, value) => gl.uniform1f(location, value),
-  int: (gl, location, value) => gl.uniform1i(location, value),
-  bool: (gl, location, value) => gl.uniform1i(location, value),
-  uint: (gl, location, value) => gl.uniform1ui(location, value),
-};
+>([
+  ['float', (gl, location, value) => gl.uniform1f(location, value)],
+  ['int', (gl, location, value) => gl.uniform1i(location, value)],
+  ['uint', (gl, location, value) => gl.uniform1ui(location, value)],
+]);
 
 const typedArrayNames: Record<
   Exclude<UniformType['kind'], 'sampler'>,
@@ -56,12 +56,6 @@ const typedArrayNames: Record<
   bool: 'an Int32Array',
   uint: 'a Uint32Array',
 };
-
-const numberKinds: ReadonlySet<UniformType['kind']> = new Set([
-  'float',
-  'int',
-  'uint',
-]);
 
 const booleanKinds: ReadonlySet<UniformType['kind']> = new Set(['bool', 'int']);
 
@@ -98,8 +92,11 @@ export const createUniformUpload = (
   }
 
   if (typeof value === 'number') {
-    assertScalarAccepted(declaration, uniformType, value, numberKinds);
-    const upload = scalarUploads[uniformType.kind];
+    const upload = numberUploads.get(uniformType.kind);
+
+    if (upload === undefined || !isScalar(declaration, uniformType)) {
+      throw createMismatchError(declaration, uniformType, value);
+    }
 
     return (gl, location, textureUnit) => {
       upload(gl, location, value);
@@ -109,7 +106,12 @@ export const createUniformUpload = (
   }
 
   if (typeof value === 'boolean') {
-    assertScalarAccepted(declaration, uniformType, value, booleanKinds);
+    if (
+      !booleanKinds.has(uniformType.kind) ||
+      !isScalar(declaration, uniformType)
+    ) {
+      throw createMismatchError(declaration, uniformType, value);
+    }
 
     return (gl, location, textureUnit) => {
       gl.uniform1i(location, value ? 1 : 0);
@@ -205,18 +207,11 @@ const createTypedArrayUpload =
     return textureUnit;
   };
 
-const assertScalarAccepted = (
+/** Whether a uniform holds a single component, so a bare scalar fits it. */
+const isScalar = (
   declaration: UniformDeclaration,
   uniformType: Exclude<UniformType, SamplerUniformType>,
-  value: number | boolean,
-  acceptedKinds: ReadonlySet<UniformType['kind']>,
-): void => {
-  const isScalar = uniformType.componentCount === 1 && declaration.size === 1;
-
-  if (!isScalar || !acceptedKinds.has(uniformType.kind)) {
-    throw createMismatchError(declaration, uniformType, value);
-  }
-};
+): boolean => uniformType.componentCount === 1 && declaration.size === 1;
 
 const assertArrayLength = (
   declaration: UniformDeclaration,
@@ -262,7 +257,7 @@ const describeExpectedValue = (
   const alternatives: string[] = [];
 
   if (componentCount === 1 && size === 1) {
-    if (numberKinds.has(kind)) {
+    if (numberUploads.has(kind)) {
       alternatives.push('a number');
     }
 
