@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+- **rendering:** A nine-sliced sprite's omitted `nativeWidth`/`nativeHeight` now default to the sprite's size when it's created by `createImageSprite` (the imported texture's world size) or attached by `addSpriteComponent`, instead of to its current size every frame. Previously, resizing a sliced sprite - which the UI layout system does to every `createPanel`/`createButton`/etc. element each frame - made its border insets map to a tiny sliver of the texture, smearing a texel or two across each corner. Pass `nativeWidth`/`nativeHeight` explicitly only when the insets aren't in the same units as the sprite's imported size
+- **physics:** A collider entity with no `RotationEcsComponent` now takes part in collision detection and raycasting, treated as unrotated (a rotation of `0`). Previously `createBroadPhaseEcsSystem`, `createNarrowPhaseEcsSystem` and `raycast` all required the component, so a static wall or trigger volume without one was silently skipped and never produced a collision pair, manifold or raycast hit
 - **rendering:** `Material` now chooses each uniform's upload from its declared GLSL type instead of the value's length. A 16-float `Float32Array` on a `vec4[4]` or `float[16]` uniform is no longer uploaded as a `mat4` (a GL error that left the uniform unset), `Float32Array`s of any valid length (such as a `float`, `mat2`, `mat3x2` or a uniform array) are uploaded instead of ignored, numbers set on `int`/`uint` uniforms use the integer upload, and a texture set on a `samplerCube`, `sampler3D` or `sampler2DArray` is bound to that sampler's texture target
 
 ## [0.25.5] - 2026-09-19

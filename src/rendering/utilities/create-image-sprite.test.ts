@@ -274,4 +274,52 @@ describe('createImageSprite', () => {
     expect(sprite.width).toBe(4);
     expect(sprite.height).toBe(2);
   });
+
+  it('defaults an omitted nine-slice native size to the imported world size', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      pixelsPerUnit: 1,
+      slices: { left: 8, right: 8, top: 8, bottom: 8 },
+    });
+
+    expect(sprite.slices).toEqual({
+      left: 8,
+      right: 8,
+      top: 8,
+      bottom: 8,
+      nativeWidth: 32,
+      nativeHeight: 32,
+    });
+  });
+
+  it('applies pixelsPerUnit and frameDimensions to the default nine-slice native size', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      frameDimensions: { x: 16, y: 8 },
+      pixelsPerUnit: 4,
+      slices: { left: 1, right: 1, top: 1, bottom: 1 },
+    });
+
+    expect(sprite.slices).toMatchObject({ nativeWidth: 4, nativeHeight: 2 });
+  });
+
+  it('keeps an explicit nine-slice native size', () => {
+    const sprite = createImageSprite(image, renderContext, {
+      pixelsPerUnit: 1,
+      slices: {
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: 8,
+        nativeWidth: 96,
+        nativeHeight: 64,
+      },
+    });
+
+    expect(sprite.slices).toMatchObject({ nativeWidth: 96, nativeHeight: 64 });
+  });
+
+  it('leaves slices undefined when none are given', () => {
+    const sprite = createImageSprite(image, renderContext);
+
+    expect(sprite.slices).toBeUndefined();
+  });
 });

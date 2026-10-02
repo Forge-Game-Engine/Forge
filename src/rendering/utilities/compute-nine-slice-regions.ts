@@ -219,7 +219,11 @@ function createCellRegions(
  * `SpriteEcsComponent.pivot`.
  * @param uvOffset - The sprite's texture rect offset, 0 to 1.
  * @param uvScale - The sprite's texture rect size, 0 to 1.
- * @param slices - The nine-slice configuration.
+ * @param slices - The nine-slice configuration. `nativeWidth`/`nativeHeight`
+ * are normally already resolved by `createImageSprite`/`addSpriteComponent`;
+ * if they're still omitted (e.g. `slices` was assigned to an
+ * already-attached sprite), the current `width`/`height` is used, which only
+ * samples the intended border art while the sprite is at that size.
  * @returns Up to nine regions, each a quad to draw in place of the sprite's
  * single quad.
  */

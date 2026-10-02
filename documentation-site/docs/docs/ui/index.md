@@ -73,6 +73,9 @@ const canvas = createUiCanvas(world, renderContext, {
 });
 
 const panelSprite = createImageSprite(panelImage, renderContext, {
+  // One texture pixel per reference pixel, so the 12px slices below line up
+  // with 12px of border art in panelImage.
+  pixelsPerUnit: 1,
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
   layer: uiRenderCategory, // matches the UI camera's cullingMask above
 });
@@ -92,3 +95,11 @@ world.addSystem(createPresentEcsSystem(renderContext));
 
 See [Creating a Canvas](./creating-a-canvas.md) for what `createUiCanvas`
 builds and how render categories keep UI content separate from the world.
+
+The layout system resizes a panel's sprite to fit its rect every frame, so
+the sprite's own imported size never determines how big it's drawn. With
+nine-slice `slices`, though, that imported size is the native size the
+insets are measured against (see
+[Nine-Slice Sprites](../rendering/nine-slice-sprites.md#native-size)) -
+which is why UI sprites are imported with `pixelsPerUnit: 1`, putting the
+insets and the texture in the same reference-pixel units.
