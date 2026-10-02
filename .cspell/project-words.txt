@@ -49,6 +49,7 @@ frontmatter
 fwidth
 gamedev
 gamepadconnected
+gamepaddisconnected
 Gamepads
 GLSL
 greyscale
