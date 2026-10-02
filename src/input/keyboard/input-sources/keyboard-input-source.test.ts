@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
-import { buttonMoments, keyCodes } from '../../constants';
+import { actionResetTypes, buttonMoments, keyCodes } from '../../constants';
 import { InputManager } from '../../input-manager';
 import {
   Axis1dAction,
@@ -210,5 +210,192 @@ describe('KeyboardInputSource', () => {
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
+  });
+
+  it('combines several axis1d bindings for the same action, clamped to -1 to 1', () => {
+    const axis1dAction = new Axis1dAction(
+      'axis1dAction',
+      group,
+      actionResetTypes.noReset,
+    );
+
+    inputManager.addAxis1dActions(axis1dAction);
+    source.axis1dBindings.add(
+      new KeyboardAxis1dBinding(axis1dAction, keyCodes.d, keyCodes.a),
+    );
+    source.axis1dBindings.add(
+      new KeyboardAxis1dBinding(
+        axis1dAction,
+        keyCodes.arrowRight,
+        keyCodes.arrowLeft,
+      ),
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.arrowRight }),
+    );
+    expect(axis1dAction.value).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+    expect(axis1dAction.value).toBe(1);
+
+    window.dispatchEvent(
+      new KeyboardEvent('keyup', { code: keyCodes.arrowRight }),
+    );
+    expect(axis1dAction.value).toBe(0);
+  });
+
+  it('combines several axis2d bindings for the same action, clamped to -1 to 1', () => {
+    const axis2dAction = new Axis2dAction(
+      'axis2dAction',
+      group,
+      actionResetTypes.noReset,
+    );
+
+    inputManager.addAxis2dActions(axis2dAction);
+    source.axis2dBindings.add(
+      new KeyboardAxis2dBinding(
+        axis2dAction,
+        keyCodes.w,
+        keyCodes.s,
+        keyCodes.d,
+        keyCodes.a,
+      ),
+    );
+    source.axis2dBindings.add(
+      new KeyboardAxis2dBinding(
+        axis2dAction,
+        keyCodes.arrowUp,
+        keyCodes.arrowDown,
+        keyCodes.arrowRight,
+        keyCodes.arrowLeft,
+      ),
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.w }));
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.arrowUp }),
+    );
+    expect(axis2dAction.value.y).toBe(1);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.w }));
+    expect(axis2dAction.value.y).toBe(1);
+
+    window.dispatchEvent(
+      new KeyboardEvent('keyup', { code: keyCodes.arrowUp }),
+    );
+    expect(axis2dAction.value.y).toBe(0);
+  });
+
+  it('does not let a key up for a key it never saw pressed move an axis', () => {
+    const axis1dAction = new Axis1dAction(
+      'axis1dAction',
+      group,
+      actionResetTypes.noReset,
+    );
+
+    inputManager.addAxis1dActions(axis1dAction);
+    source.axis1dBindings.add(
+      new KeyboardAxis1dBinding(axis1dAction, keyCodes.d, keyCodes.a),
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+    expect(axis1dAction.value).toBe(0);
+  });
+
+  describe('switching the active input group', () => {
+    const menuGroup = 'menu';
+
+    let move: Axis1dAction;
+    let move2d: Axis2dAction;
+
+    beforeEach(() => {
+      move = new Axis1dAction('move', group, actionResetTypes.noReset);
+      move2d = new Axis2dAction('move2d', group, actionResetTypes.noReset);
+
+      inputManager.addAxis1dActions(move);
+      inputManager.addAxis2dActions(move2d);
+
+      source.axis1dBindings.add(
+        new KeyboardAxis1dBinding(move, keyCodes.d, keyCodes.a),
+      );
+      source.axis2dBindings.add(
+        new KeyboardAxis2dBinding(
+          move2d,
+          keyCodes.w,
+          keyCodes.s,
+          keyCodes.d,
+          keyCodes.a,
+        ),
+      );
+    });
+
+    it('does not leave an axis stuck when its key is released while the group is inactive', () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
+      expect(move.value).toBe(1);
+      expect(move2d.value.x).toBe(1);
+
+      inputManager.setActiveGroup(menuGroup);
+      expect(move.value).toBe(0);
+      expect(move2d.value.x).toBe(0);
+
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+      inputManager.setActiveGroup(group);
+
+      expect(move.value).toBe(0);
+      expect(move2d.value.x).toBe(0);
+    });
+
+    it('does not reverse an axis when its key is pressed while the group is inactive', () => {
+      inputManager.setActiveGroup(menuGroup);
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
+      inputManager.setActiveGroup(group);
+
+      // The key is still held, so the axis picks it up as soon as its group
+      // becomes active.
+      expect(move.value).toBe(1);
+      expect(move2d.value.x).toBe(1);
+
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
+
+      expect(move.value).toBe(0);
+      expect(move2d.value.x).toBe(0);
+    });
+
+    it('keeps an axis whose key stays held across a switch away and back', () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
+
+      inputManager.setActiveGroup(menuGroup);
+      inputManager.setActiveGroup(group);
+
+      expect(move.value).toBe(-1);
+      expect(move2d.value.x).toBe(-1);
+
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
+
+      expect(move.value).toBe(0);
+      expect(move2d.value.x).toBe(0);
+    });
+
+    it('ends a hold when its group is deactivated and starts it again if its key is still held', () => {
+      inputManager.addHoldActions(keyHoldAction);
+
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: keyCodes.space }),
+      );
+      expect(keyHoldAction.isHeld).toBe(true);
+
+      inputManager.setActiveGroup(menuGroup);
+      expect(keyHoldAction.isHeld).toBe(false);
+
+      inputManager.setActiveGroup(group);
+      expect(keyHoldAction.isHeld).toBe(true);
+
+      window.dispatchEvent(
+        new KeyboardEvent('keyup', { code: keyCodes.space }),
+      );
+      expect(keyHoldAction.isHeld).toBe(false);
+    });
   });
 });

@@ -116,23 +116,27 @@ describe('CameraSystem', () => {
   it('should clamp the camera zoom to the min and max zoom levels', () => {
     const entity = world.createEntity();
 
+    // A full-strength zoom input scales the zoom by the default sensitivity
+    // of 0.1 per frame (by ~0.91 one way, 1.1 the other), so these bounds
+    // are tight enough for a single frame of input to cross each of them:
+    // 1 -> ~0.91, clamped to 0.95, then 0.95 -> 1.045, clamped to 1.
     const cameraComponent = addCameraComponent(world, entity, {
       zoomInput,
       panInput,
-      minZoom: 0.000001,
-      maxZoom: 10000,
+      minZoom: 0.95,
+      maxZoom: 1,
     });
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(2000);
+    zoomInput.set(1);
 
     time.update(16.6666);
     world.update();
 
     expect(cameraComponent.zoom).toBe(cameraComponent.minZoom);
 
-    zoomInput.set(-5000);
+    zoomInput.set(-1);
 
     time.update(16.6666);
     world.update();

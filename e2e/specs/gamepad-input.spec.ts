@@ -238,11 +238,10 @@ test.describe('gamepad input', () => {
       await test.step('capture the state after the "menu"-group deflection', () =>
         stepAndReadState(page));
 
-    // The "game" action must not have picked up the new deflection - it's
-    // gated, not just quiet because nothing changed.
-    expect(afterMenuDeflection.stickPosition.x).toBe(
-      afterGameDeflection.stickPosition.x,
-    );
+    // The "game" action is released as soon as its group is deactivated,
+    // and must not have picked up the new deflection either - it's gated,
+    // not just quiet because nothing changed.
+    expect(afterMenuDeflection.stickPosition.x).toBe(initial.stickPosition.x);
     expect(afterMenuDeflection.menuStickPosition.x).toBeLessThan(
       afterGameDeflection.menuStickPosition.x,
     );
@@ -277,8 +276,9 @@ test.describe('gamepad input', () => {
     expect(afterSwitchingBack.stickPosition.x).toBeGreaterThan(
       afterGameDeflection.stickPosition.x,
     );
+    // Likewise, the "menu" action is released once "menu" is deactivated.
     expect(afterSwitchingBack.menuStickPosition.x).toBe(
-      afterMenuDeflection.menuStickPosition.x,
+      initial.menuStickPosition.x,
     );
   });
 });

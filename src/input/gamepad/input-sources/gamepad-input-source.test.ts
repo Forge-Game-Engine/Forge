@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GamepadInputSource } from './gamepad-input-source';
 import { GamepadAxis1dBinding } from '../bindings';
-import { gamepadAxes, gamepadButtons } from '../../constants';
+import { actionResetTypes, gamepadAxes, gamepadButtons } from '../../constants';
 import { Axis1dAction } from '../../actions';
 import { InputManager } from '../../input-manager';
 
@@ -455,5 +455,40 @@ describe('GamepadInputSource', () => {
     inputManager.update(16);
 
     expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it('applies a stick deflection made while its group was inactive once the group becomes active', () => {
+    const stickAction = new Axis1dAction(
+      'stick',
+      group,
+      actionResetTypes.noReset,
+    );
+
+    inputManager.addAxis1dActions(stickAction);
+    source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
+
+    source.axis1dBindings.add(
+      new GamepadAxis1dBinding(stickAction, {
+        axisIndex: gamepadAxes.leftStickX,
+      }),
+    );
+
+    source.update();
+    expect(stickAction.value).toBeCloseTo(0.8);
+
+    inputManager.setActiveGroup('menu');
+    expect(stickAction.value).toBe(0);
+
+    getGamepadsSpy.mockReturnValue([createGamepad([-0.6, 0, 0, 0], [])]);
+    source.update();
+    expect(stickAction.value).toBe(0);
+
+    // The stick doesn't move again after the switch back, so this source
+    // never dispatches again: the value has to come from what was
+    // dispatched while the group was inactive.
+    inputManager.setActiveGroup(group);
+    source.update();
+
+    expect(stickAction.value).toBeCloseTo(-0.6);
   });
 });

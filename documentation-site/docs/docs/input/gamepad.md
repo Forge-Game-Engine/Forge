@@ -95,6 +95,13 @@ way: whichever source dispatches most recently simply overwrites the
 action's value, so switching between a controller and the keyboard mid-game
 works, but holding both at once just means the last one touched wins.
 
+Because the source only dispatches on a change, a stick held still while its
+action's [input group](./actions.md#input-groups) is switched away from and
+back again sends nothing new. The `InputManager` keeps the latest value a
+binding dispatched while its group was inactive and applies it when the
+group becomes active, so the action still matches the stick without it
+having to move.
+
 Stick axis values within `±0.15` of `0` are treated as `0`, to absorb
 resting drift on analog sticks. This deadzone isn't configurable per
 binding; if a game needs a different threshold, read

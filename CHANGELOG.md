@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **input:** `InputManager.setActiveGroup` now hands input over between groups. The group being deactivated is released: its `Axis1dAction`s and `Axis2dAction`s are set to `0` and its held `HoldAction`s end. The group being activated picks up whatever is held right now: each `actionResetTypes.noReset` axis gets the latest value dispatched to it while its group was inactive (or the value it had when its group was last deactivated), and each `HoldAction` whose key or button is still down starts. Calling it with the group that is already active does nothing. Only actions added to the `InputManager` are released on deactivation
+- **input:** `Axis1dAction.set` now clamps its value to `[-1, 1]`, the range its docs already described
+- **input:** `MouseAxis1dBinding` and `MouseAxis2dBinding` now dispatch through the `InputManager`, so like every other binding they only reach actions in the active input group
+- **input:** Add `Axis1dAction.actionResetType` and `Axis2dAction.actionResetType`, exposing the reset type each action was created with
+
+#### Fixed
+
+- **input:** Switching input groups no longer leaves a keyboard-driven axis stuck or reversed. A key released while its axis's group was inactive used to leave the axis at `1` with nothing held, and a key pressed while it was inactive and released after drove it to `-1`, because `KeyboardAxis1dBinding`/`KeyboardAxis2dBinding` added to and subtracted from the action's current value. The keyboard now sets each axis from the keys held, summing every binding on the source for that action and clamping to `[-1, 1]`, so binding both WASD and the arrow keys to one action no longer reaches `2` when both are held, a key-up for a key pressed before the page had focus no longer moves the axis, and releasing a key bound to an `actionResetTypes.zero` axis no longer produces a one-frame impulse in the opposite direction
+- **input:** A gamepad stick held still across an input-group switch is now applied once its group becomes active, instead of the action staying at its old value until the stick moves
+- **input:** `InputManager.dispatchHoldEndAction` no longer raises `holdEndEvent` for a hold that never started, such as a key pressed while the action's group was inactive
+
 ## [0.25.5] - 2026-09-19
 
 #### Changed
