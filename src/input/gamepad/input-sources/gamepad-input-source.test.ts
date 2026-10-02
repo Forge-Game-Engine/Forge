@@ -1043,4 +1043,71 @@ describe('GamepadInputSource', () => {
       expect(moveAction.value).toBeCloseTo(0.8);
     });
   });
+
+  it('applies a stick deflection made while its group was inactive once the group becomes active', () => {
+    const stickAction = new Axis1dAction(
+      'stick',
+      group,
+      actionResetTypes.noReset,
+    );
+
+    inputManager.addAxis1dActions(stickAction);
+    source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
+
+    source.axis1dBindings.add(
+      new GamepadAxis1dBinding(stickAction, {
+        axisIndex: gamepadAxes.leftStickX,
+      }),
+    );
+
+    source.update();
+    expect(stickAction.value).toBeCloseTo(0.8);
+
+    inputManager.setActiveGroup('menu');
+    expect(stickAction.value).toBe(0);
+
+    getGamepadsSpy.mockReturnValue([createGamepad([-0.6, 0, 0, 0], [])]);
+    source.update();
+    expect(stickAction.value).toBe(0);
+
+    // The stick doesn't move again after the switch back, so this source
+    // never dispatches again: the value has to come from what was
+    // dispatched while the group was inactive.
+    inputManager.setActiveGroup(group);
+    source.update();
+
+    expect(stickAction.value).toBeCloseTo(-0.6);
+  });
+
+  it('starts a hold whose button went down while its group was inactive once the group becomes active', () => {
+    const shootAction = new HoldAction('shoot', group);
+    const holdEndListener = vi.fn();
+
+    shootAction.holdEndEvent.registerListener(holdEndListener);
+    inputManager.addHoldActions(shootAction);
+    inputManager.setActiveGroup('menu');
+
+    source = createSource([createGamepad([0, 0, 0, 0], pressButtons(0))]);
+    source.holdBindings.add(new GamepadHoldBinding(shootAction, 0));
+
+    source.update();
+    expect(shootAction.isHeld).toBe(false);
+
+    inputManager.setActiveGroup(group);
+    expect(shootAction.isHeld).toBe(true);
+
+    inputManager.setActiveGroup('menu');
+    expect(shootAction.isHeld).toBe(false);
+    expect(holdEndListener).toHaveBeenCalledTimes(1);
+
+    // Released while its group is inactive: the hold already ended when the
+    // group was deactivated, so it must not end a second time, nor start
+    // again once the group is active.
+    getGamepadsSpy.mockReturnValue([createGamepad([0, 0, 0, 0], [])]);
+    source.update();
+    inputManager.setActiveGroup(group);
+
+    expect(shootAction.isHeld).toBe(false);
+    expect(holdEndListener).toHaveBeenCalledTimes(1);
+  });
 });

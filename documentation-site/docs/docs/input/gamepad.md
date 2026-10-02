@@ -169,6 +169,14 @@ and trigger bindings use the button's `pressed` flag, so an analog trigger
 counts as pressed once it passes the browser's own threshold, while an
 axis binding built from buttons reads their analog `value` instead.
 
+Because the source only dispatches on a change, a stick or button held
+still while its action's [input group](./actions.md#input-groups) is
+switched away from and back again sends nothing new. The `InputManager`
+keeps the latest axis value a binding dispatched while its group was
+inactive, and which holds are still down, and applies them when the group
+becomes active, so the action still matches the gamepad without the
+player having to move the stick or press the button again.
+
 Stick axis values within `±0.15` of `0` are treated as `0`, to absorb
 resting drift on analog sticks. `GamepadAxis2dBinding` applies this to the
 stick's overall deflection (the length of its `(x, y)` vector) rather

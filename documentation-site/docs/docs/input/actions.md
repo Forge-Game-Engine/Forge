@@ -21,7 +21,8 @@ game knowing which key or button was used.
   is currently held via `isHeld`, `holdStartEvent`, and `holdEndEvent`. Use
   it for sprint, charging an attack, or aiming down sights.
 - [`Axis1dAction`](/Forge/docs/api/classes/Axis1dAction): a single `value`
-  from -1 to 1. Use it for a throttle, zoom level, or mouse wheel scroll.
+  from -1 to 1 (`set()` clamps to that range). Use it for a throttle, zoom
+  level, or mouse wheel scroll.
 - [`Axis2dAction`](/Forge/docs/api/classes/Axis2dAction): a `Vector2`
   `value` with x and y each from -1 to 1. Use it for movement, look
   direction, or cursor position.
@@ -129,10 +130,41 @@ While `activeGroup` is `'menu'`, bindings for actions with
 discarded, so the player can't move while the pause menu is open, without
 removing or re-creating any bindings.
 
+### What happens when the active group changes
+
+`setActiveGroup` also hands off whatever input is held at the moment of the
+switch, so neither group reads stale state afterwards:
+
+- **The group being deactivated is released.** Its `Axis1dAction`s and
+  `Axis2dAction`s are set to `0`, raising `valueChangeEvent` where the value
+  changes, and each of its held `HoldAction`s ends, raising `holdEndEvent`.
+  Gameplay systems that keep running behind a menu or a game-over screen
+  read neutral input rather than whatever was held when the menu opened, so
+  there's no need to gate them separately.
+- **The group being activated picks up what is held right now.** An axis
+  using `actionResetTypes.noReset` is set to the latest value its bindings
+  dispatched while the group was inactive, or, if nothing was dispatched,
+  to the value it had when its group was last deactivated. A `HoldAction`
+  whose key or button went down while its group was inactive, and is still
+  down, starts. So holding a movement key through a pause menu and back
+  carries on moving, while releasing it during the menu leaves the axis at
+  `0` once gameplay resumes.
+- **One-frame input is not replayed.** A `TriggerAction`, or an axis using
+  `actionResetTypes.zero` (such as mouse wheel scroll), dispatched while its
+  group was inactive is discarded, since it only ever described a single
+  frame.
+
+Calling `setActiveGroup` with the group that is already active does nothing.
+
 :::caution
-[`dispatchHoldEndAction`](/Forge/docs/api/classes/InputManager#dispatchholdendaction)
-runs regardless of the active group. If a `HoldAction` started while its
-group was active and the group changes before the key or button is
-released, the hold still ends correctly instead of getting stuck with
-`isHeld: true`.
+Only actions added to the `InputManager` (via
+[`registerInputs`](/Forge/docs/api/functions/registerInputs) or
+`addAxis1dActions`/`addAxis2dActions`/`addHoldActions`) are released when
+their group is deactivated. An action that is only bound to a source, but
+never added to the manager, keeps its value until its next dispatch.
 :::
+
+[`dispatchHoldEndAction`](/Forge/docs/api/classes/InputManager#dispatchholdendaction)
+runs regardless of the active group, so releasing a key or button always
+clears its hold, and only raises `holdEndEvent` if the hold had actually
+started.

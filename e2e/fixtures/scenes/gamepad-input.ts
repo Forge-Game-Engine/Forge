@@ -358,8 +358,9 @@ export const createScene: CreateScene = async (
   // action's *current* value (like a joystick-controlled reticle), not an
   // accumulation, so a square's position always reflects exactly what its
   // action currently holds - including staying frozen at its base position
-  // once "stuck at zero" (see `brokenStickAction`), or at its last position
-  // once group-gated (see `menuStickAction`), instead of drifting.
+  // once "stuck at zero" (see `brokenStickAction`), or returning to its base
+  // position once its input group is deactivated (which releases its
+  // action), instead of drifting.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
     update: () => {

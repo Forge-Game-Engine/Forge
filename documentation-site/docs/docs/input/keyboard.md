@@ -87,12 +87,22 @@ Axis bindings need `actionResetTypes.noReset` on their action, see
 pressed even though the key is still held.
 :::
 
-`KeyboardAxis1dBinding` and `KeyboardAxis2dBinding` work additively:
-pressing `positiveKeyCode` adds `1` to the current value, pressing
-`negativeKeyCode` subtracts `1`, and releasing a key undoes the same amount.
+`KeyboardAxis1dBinding` and `KeyboardAxis2dBinding` set the axis from the
+keys that are held right now: each held `positiveKeyCode` counts `+1` and
+each held `negativeKeyCode` counts `-1`, summed across every binding on the
+same `KeyboardInputSource` that targets the action and clamped to `[-1, 1]`.
 This means opposite keys held at the same time cancel out to `0`, the same
 behavior as Unity's `Input.GetAxis`, rather than the more recently pressed
-key "winning".
+key "winning", and binding both WASD and the arrow keys to one action never
+pushes it past `1` when both are held. Because the value is derived from the
+keys held, not adjusted from the action's current value, a key press or
+release that happened while the action's
+[input group](./actions.md#input-groups) was inactive can't leave the axis
+off afterwards.
+
+Bindings on a _different_ source (a gamepad, say) that target the same
+action don't combine with the keyboard's: whichever source dispatches most
+recently sets the value.
 
 Key repeat events are ignored (the browser's
 [`KeyboardEvent.repeat`](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat)

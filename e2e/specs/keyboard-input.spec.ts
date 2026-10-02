@@ -183,14 +183,11 @@ test.describe('keyboard input', () => {
       await test.step('capture the state after release', () =>
         captureState(page));
 
-    // The documented "twitch": because the value had already been reset to
-    // 0 while held, the keyup handler's delta computation starts from 0
-    // instead of the original +1, producing a compensating -1 impulse on
-    // release. Net effect over the whole press-hold-release cycle: the
-    // square ends up back where it started.
-    expect(afterRelease.impulsePosition.x).toBeCloseTo(
-      before.impulsePosition.x,
-      5,
+    // The key-up sets the axis from the keys still held (none), so it's `0`
+    // and the square stays where the key-down frame left it, rather than
+    // the release producing an impulse of its own.
+    expect(afterRelease.impulsePosition.x).toBe(
+      afterFirstFrame.impulsePosition.x,
     );
   });
 
@@ -350,5 +347,131 @@ test.describe('keyboard input', () => {
 
     expect(afterSwitchingBack.gameTriggerCount).toBe(2);
     expect(afterSwitchingBack.menuTriggerCount).toBe(1);
+  });
+
+  test('switching input groups mid-input leaves an Axis2dAction neither stuck nor reversed', async ({
+    page,
+  }) => {
+    const moverCenterX = (state: Awaited<ReturnType<typeof captureState>>) => {
+      expect(state.moverBounds).not.toBeNull();
+
+      return (state.moverBounds!.left + state.moverBounds!.right) / 2;
+    };
+
+    await test.step('hold D while the "game" group is active', async () => {
+      await page.keyboard.down('KeyD');
+      await animateFrames(page, 3);
+    });
+
+    const switchedAway =
+      await test.step('switch to "menu" while D is still held', async () => {
+        await page.evaluate(() =>
+          (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('menu'),
+        );
+
+        return captureState(page);
+      });
+
+    await test.step('advance several frames with D still held', () =>
+      animateFrames(page, 5));
+
+    const whileMenuActive =
+      await test.step('capture the state while "menu" is active', () =>
+        captureState(page));
+
+    // The "game" group's axis is released as soon as its group is
+    // deactivated, so the mover stops even though D is still held.
+    expect(whileMenuActive.moverPosition.x).toBe(switchedAway.moverPosition.x);
+
+    await test.step('release D, then switch back to "game"', async () => {
+      await page.keyboard.up('KeyD');
+      await animateFrames(page, 1);
+      await page.evaluate(() =>
+        (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('game'),
+      );
+    });
+
+    const afterSwitchingBack =
+      await test.step('capture the state right after switching back', () =>
+        captureState(page));
+
+    await test.step('advance several frames with nothing held', () =>
+      animateFrames(page, 5));
+
+    const notStuck =
+      await test.step('capture the state several frames later', () =>
+        captureState(page));
+
+    // This is the "stuck" regression: the key-up happened while "game" was
+    // inactive, and used to be dropped, leaving the axis at 1 with nothing
+    // held.
+    expect(notStuck.moverPosition.x).toBe(afterSwitchingBack.moverPosition.x);
+
+    await test.step('assert the mover square stayed put on screen', () => {
+      expect(
+        Math.abs(moverCenterX(notStuck) - moverCenterX(afterSwitchingBack)),
+      ).toBeLessThan(2);
+    });
+
+    await test.step('switch to "menu", press D, then switch back to "game"', async () => {
+      await page.evaluate(() =>
+        (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('menu'),
+      );
+      await page.keyboard.down('KeyD');
+      await animateFrames(page, 1);
+      await page.evaluate(() =>
+        (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('game'),
+      );
+    });
+
+    const pickedUp =
+      await test.step('capture the state right after switching back', () =>
+        captureState(page));
+
+    await test.step('advance several frames with D still held', () =>
+      animateFrames(page, 5));
+
+    const whilePickedUpHeld =
+      await test.step('capture the state while D is still held', () =>
+        captureState(page));
+
+    // D was pressed while "game" was inactive, but it's still held once
+    // "game" is active again, so the mover picks it up straight away.
+    expect(whilePickedUpHeld.moverPosition.x).toBeGreaterThan(
+      pickedUp.moverPosition.x,
+    );
+
+    await test.step('assert the mover square visibly moved right on screen', () => {
+      expect(moverCenterX(whilePickedUpHeld)).toBeGreaterThan(
+        moverCenterX(pickedUp),
+      );
+    });
+
+    await test.step('release D', async () => {
+      await page.keyboard.up('KeyD');
+      await animateFrames(page, 1);
+    });
+
+    const afterRelease =
+      await test.step('capture the state after releasing D', () =>
+        captureState(page));
+
+    await test.step('advance several frames with nothing held', () =>
+      animateFrames(page, 5));
+
+    const notReversed =
+      await test.step('capture the state several frames later', () =>
+        captureState(page));
+
+    // This is the "reversed" regression: the key-down was dropped while
+    // "game" was inactive but the key-up wasn't, which used to drive the
+    // axis to -1 and leave the mover drifting left with nothing held.
+    expect(notReversed.moverPosition.x).toBe(afterRelease.moverPosition.x);
+
+    await test.step('assert the mover square stayed put on screen', () => {
+      expect(
+        Math.abs(moverCenterX(notReversed) - moverCenterX(afterRelease)),
+      ).toBeLessThan(2);
+    });
   });
 });

@@ -54,6 +54,11 @@ export class Axis2dAction implements InputAction, Resettable {
     return this._value;
   }
 
+  /** Gets how this action behaves when the `InputManager` resets its actions each frame. */
+  get actionResetType(): ActionResetType {
+    return this._actionResetType;
+  }
+
   /** Sets the current value of the axis as a Vector2, where x and y range from -1 to 1. */
   public set(x: number, y: number): void {
     if (this._value.x === x && this._value.y === y) {
