@@ -87,4 +87,22 @@ describe('createNarrowPhaseEcsSystem', () => {
 
     expect(collisionManifolds).toHaveLength(0);
   });
+
+  it('should treat an entity with no rotation component as unrotated', () => {
+    const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
+    const entityB = world.createEntity();
+
+    addPositionComponent(world, entityB, { world: { x: 1, y: 0 } });
+    addColliderComponent(world, entityB, {
+      collider: new CircleCollider(1),
+    });
+
+    collisionPairs.push({ entityA, entityB });
+
+    world.update();
+
+    expect(collisionManifolds).toHaveLength(1);
+    expect(collisionManifolds[0].entityB).toBe(entityB);
+    expect(collisionManifolds[0].depth).toBeCloseTo(1);
+  });
 });
