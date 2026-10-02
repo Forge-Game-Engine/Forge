@@ -9,7 +9,11 @@ import {
 } from '../../common';
 import { Vec2 } from '../../math';
 import { addCameraComponent, CameraEcsComponent } from '../components';
-import { addSpriteComponent, SpriteEcsComponent } from '../components';
+import {
+  addSpriteComponent,
+  SpriteEcsComponent,
+  spriteId,
+} from '../components';
 import { Renderable } from '../renderable';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
@@ -757,6 +761,43 @@ describe('createRenderEcsSystem', () => {
       );
 
       expect(rotatedCorner).toBeDefined();
+    });
+
+    it('keeps sampling the same border art after a sliced sprite is resized', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      // A 24x24 sprite with 8-unit borders, the way a layout system would
+      // receive it before resizing it to its laid-out rect every frame.
+      const entity = addSpriteEntity(renderable, 0, {
+        width: 24,
+        height: 24,
+        pivot: { x: 0.5, y: 0.5 },
+        uvScale: { x: 1, y: 1 },
+        slices: { left: 8, right: 8, top: 8, bottom: 8 },
+      });
+
+      const sprite = world.getComponentRequired(entity, spriteId);
+      sprite.width = 178;
+      sprite.height = 80;
+
+      world.update();
+
+      const regionSprites = bindInstanceData.mock.calls.map(
+        (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite,
+      );
+      const corners = regionSprites.filter(
+        (regionSprite) => regionSprite.width === 8 && regionSprite.height === 8,
+      );
+
+      // Each corner still samples 8/24 of the texture, not 8/178 x 8/80 of
+      // it (a texel or two smeared across the whole corner).
+      expect(corners).toHaveLength(4);
+
+      for (const corner of corners) {
+        expect(corner.uvScale.x).toBeCloseTo(8 / 24);
+        expect(corner.uvScale.y).toBeCloseTo(8 / 24);
+      }
     });
 
     it('does not slice a sprite with no `slices` configured', () => {

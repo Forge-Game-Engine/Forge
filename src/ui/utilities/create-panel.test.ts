@@ -80,6 +80,29 @@ describe('createPanel', () => {
 
     const panel = createPanel(world, parent, { sprite, slices });
 
-    expect(world.getComponent(panel, spriteId)!.slices).toBe(slices);
+    expect(world.getComponent(panel, spriteId)!.slices).toMatchObject(slices);
+  });
+
+  it('pins an omitted nine-slice native size to the sprite size, not the laid-out size', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const sprite = { ...buildSprite(), width: 24, height: 24 };
+
+    const panel = createPanel(world, parent, {
+      sprite,
+      anchor: UiAnchor.topLeft({ x: 178, y: 80 }),
+      slices: { left: 8, right: 8, top: 8, bottom: 8 },
+    });
+
+    const panelSprite = world.getComponentRequired(panel, spriteId);
+
+    // Simulates the layout system resizing the sprite to its rect.
+    panelSprite.width = 178;
+    panelSprite.height = 80;
+
+    expect(panelSprite.slices).toMatchObject({
+      nativeWidth: 24,
+      nativeHeight: 24,
+    });
   });
 });

@@ -22,22 +22,24 @@ import {
   createImageSprite,
 } from '@forge-game-engine/forge/rendering';
 
-const panelSprite = createImageSprite(panelImage, renderContext, 0, {
+const panelSprite = createImageSprite(panelImage, renderContext, {
+  pixelsPerUnit: 1,
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
 });
 
 const panel = world.createEntity();
 addPositionComponent(world, panel, { world: { x: 400, y: 300 } });
-addSpriteComponent(world, panel, panelSprite);
+const panelSpriteComponent = addSpriteComponent(world, panel, panelSprite);
 
 // Resize the panel later (e.g. to fit dynamic text) - the 12px corners
 // stay crisp no matter how large the panel grows.
-panelSprite.width = 320;
-panelSprite.height = 200;
+panelSpriteComponent.width = 320;
+panelSpriteComponent.height = 200;
 ```
 
-Nothing else changes: `panelSprite` is still one `SpriteEcsComponent`, with
-one `width`/`height` you resize like any other sprite. The render system
+Nothing else changes: the attached sprite is still one
+`SpriteEcsComponent`, with one `width`/`height` you resize like any other
+sprite. The render system
 detects `slices` and draws it as up to nine quads instead of one, entirely
 transparently to the rest of the ECS (position, rotation, scale, flip, and
 layer/depth sorting all work exactly as they do for a normal sprite).
@@ -45,22 +47,36 @@ layer/depth sorting all work exactly as they do for a normal sprite).
 ## Choosing insets
 
 `left`/`right`/`top`/`bottom` are measured in the same world units as the
-sprite's `width`/`height` (which, for `createImageSprite`, default to the
-source image's pixel size — so for a not-yet-resized sprite, an inset of `12`
-matches 12 pixels of border art in the source texture). Pick insets that
-cover exactly the rounded corner/border artwork in your source image and no
-more: too small and the stretched center creeps into the border art; too
-large and the fixed corners eat into space that should stretch.
+sprite's `width`/`height`. For `createImageSprite`, that's the source
+image's pixel size divided by `pixelsPerUnit` — so with `pixelsPerUnit: 1`
+an inset of `12` covers 12 pixels of border art in the source texture (with
+the default `pixelsPerUnit` of `100`, the same 12 pixels would be an inset
+of `0.12`). Pick insets that cover exactly the rounded corner/border
+artwork in your source image and no more: too small and the stretched
+center creeps into the border art; too large and the fixed corners eat into
+space that should stretch.
 
-If the sprite is already a non-default size when you configure slicing
-(for example you sized it to fit a layout before slicing it), set
-`nativeWidth`/`nativeHeight` to the size the border art was authored at.
-These default to the sprite's current `width`/`height`, so a sprite that's
-never resized after slicing looks identical to before — but they anchor
-_where_ the insets fall in the texture's UV space, independent of the
-sprite's current, possibly-stretched size. Getting this wrong doesn't
-break geometry (corners still render at the fixed inset size); it only
-shifts which texture pixels land in the border vs. the center.
+## Native size
+
+`nativeWidth`/`nativeHeight` are the size, in those same units, that the
+insets were authored against. They anchor _where_ the insets fall in the
+texture: the left border samples `left / nativeWidth` of the texture,
+however wide the sprite is currently drawn. When you omit them they're
+captured once, from the sprite's size at the moment it's created by
+`createImageSprite` (the imported texture's world size) or attached by
+`addSpriteComponent` — never from its current, possibly resized size. So a
+sprite resized afterwards, whether by your own code or every frame by a
+layout system (as every [UI](../ui/index.md) element is), keeps sampling
+the same border art.
+
+Set them explicitly when that captured size isn't the size the insets were
+authored against — for example if you resized the sprite (to fit a layout,
+say) before attaching it, or if its insets are in different units from its
+imported size (e.g. a UI sprite imported with the default
+`pixelsPerUnit` of `100`, whose insets are in reference pixels). Getting
+this wrong doesn't break geometry (corners still render at the fixed inset
+size); it shifts which texture pixels land in the border vs. the center, so
+corners look smeared or cropped.
 
 ## Stretch vs. tile
 
@@ -72,7 +88,8 @@ Set the relevant mode to `'tile'` instead to repeat that region's texture
 at its native size:
 
 ```ts
-createImageSprite(panelImage, renderContext, 0, {
+createImageSprite(panelImage, renderContext, {
+  pixelsPerUnit: 1,
   slices: {
     left: 12,
     right: 12,
@@ -80,8 +97,6 @@ createImageSprite(panelImage, renderContext, 0, {
     bottom: 12,
     edgeMode: 'tile',
     centerMode: 'tile',
-    nativeWidth: panelImage.width,
-    nativeHeight: panelImage.height,
   },
 });
 ```
@@ -93,9 +108,9 @@ space evenly with no cropped partial tile at the seam. This trades
 sub-pixel size accuracy for never showing a jarring half-tile at the edge
 of a region — the same tradeoff CSS's `border-image-repeat: round` makes.
 `nativeWidth`/`nativeHeight` matter more here than for `'stretch'`, since
-they're also the reference size the repeat count is computed from: without
-them (left at their width/height defaults), a sprite tiles as a single,
-unrepeated region until you resize it.
+they're also the reference size the repeat count is computed from: a
+region repeats roughly once per native-size-worth of space, so a sprite
+drawn at its native size tiles as a single, unrepeated region.
 
 ## Performance note
 
