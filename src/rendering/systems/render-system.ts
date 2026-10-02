@@ -44,8 +44,22 @@ const setupInstanceAttributesAndDraw = (
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
   renderable.setupInstanceAttributes(gl, renderable);
 
+  // Fragment shaders output straight (non-premultiplied) alpha, and every
+  // destination - the canvas and every render target - stores
+  // premultiplied alpha. Color uses the straight-alpha "over" factors, which
+  // premultiplies it on the way in. Alpha needs `ONE` instead of `SRC_ALPHA`
+  // as its source factor: reusing the color factors would store `a * a`
+  // instead of `a`, so a translucent sprite drawn into a transparent render
+  // target would lose most of its opacity again when that target is
+  // presented, and the canvas itself would turn partially transparent
+  // behind translucent sprites, letting the page show through.
   gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.blendFuncSeparate(
+    gl.SRC_ALPHA,
+    gl.ONE_MINUS_SRC_ALPHA,
+    gl.ONE,
+    gl.ONE_MINUS_SRC_ALPHA,
+  );
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
 };
 

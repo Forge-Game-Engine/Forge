@@ -49,7 +49,13 @@ world.addSystem(createPresentEcsSystem(renderContext));
 
 `createPresentEcsSystem` skips any camera without a `renderTarget`, so it's
 safe to register once and mix cameras that render straight to the canvas
-with cameras that render off-screen.
+with cameras that render off-screen. Whatever a canvas camera drew is kept,
+and every presented render target is blended on top of it, so a camera that
+renders straight to the canvas always ends up _beneath_ every off-screen
+one. This is what lets a screen-space UI canvas (which always renders
+through its own render target, see
+[Creating a Canvas](../ui/creating-a-canvas.md)) sit on top of a world camera
+that has no render target of its own.
 
 :::caution
 `RenderContext.resize` only resizes the canvas and the default framebuffer's
@@ -66,9 +72,10 @@ Cameras that render into _different_ targets, and are all presented in the
 same frame, get layered onto the canvas in ascending
 `CameraEcsComponent.layer` order: the lowest layer clears the canvas and
 replaces it outright, and every higher layer alpha-blends on top instead of
-erasing what came before. This is how you apply an effect to only part of a
-scene, for example blurring a background layer while keeping a foreground
-layer sharp:
+erasing what came before. (If a camera also renders straight to the canvas,
+the lowest layer blends on top of that camera's output too, rather than
+replacing it.) This is how you apply an effect to only part of a scene, for
+example blurring a background layer while keeping a foreground layer sharp:
 
 ```ts
 const backgroundTarget = createRenderTarget(
@@ -102,7 +109,8 @@ world.addSystem(createPresentEcsSystem(renderContext));
 
 `layer` only matters between cameras with _different_ render targets; it has
 no effect on cameras that share one (already composited together before any
-present pass sees them, see below) or that render straight to the canvas.
+present pass sees them, see below) or that render straight to the canvas
+(always beneath every presented target, see above).
 
 Only the background camera carries a `GaussianBlurEcsComponent`, so only
 its target gets blurred; the foreground target is presented sharp, on top
@@ -114,6 +122,37 @@ post-processing pass sees the result, so an effect applied to the shared
 target affects every camera that drew into it. Give cameras separate
 targets specifically when you want a pass to affect one layer but not
 another.
+
+## Transparency
+
+A translucent sprite looks the same whether its camera renders straight to
+the canvas or into a render target that's presented afterwards: a sprite
+tinted to 50% alpha covers 50% of whatever is beneath it on screen either
+way, including when it's in a higher layer (a HUD, for example) composited
+over a lower one.
+
+To make that hold, every render target and the canvas itself store
+**premultiplied alpha**: each pixel's color is already multiplied by its
+alpha. You only need to know this if you write your own shaders or passes:
+
+- **Sprite and text shaders output straight (non-premultiplied) alpha**, as
+  usual. `createRenderEcsSystem` premultiplies color as it blends it into
+  the destination, so a custom `Material` used for sprites doesn't need to
+  do anything differently.
+- **Anything that reads a render target's `colorTexture` gets
+  premultiplied color.** A full-screen pass that filters or mixes it
+  (blurring, cross-fading) works on it as-is. A pass that needs the
+  original, straight color (for example a color-grading lookup) has to
+  divide by alpha first, and multiply it back in before writing.
+- **To blend a premultiplied texture over a destination**, the way
+  `createPresentEcsSystem` layers render targets, use
+  `gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)`. The usual
+  `gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)` would multiply the
+  texture's alpha in a second time and make translucent pixels fainter than
+  they were drawn.
+- **Clear colors are straight alpha.** `CameraEcsComponent.clearColor` and
+  `RenderContext.clear` take an ordinary `Color`, and premultiply it when
+  they clear the destination.
 
 ## Clearing
 
@@ -174,7 +213,8 @@ drawFullscreenQuad(renderContext, material);
 
 `createGaussianBlurEcsSystem` uses these for its horizontal, vertical, copy,
 and cross-fade passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
-too, but manages blending itself since layering multiple render targets onto
-the canvas needs blending enabled for every layer after the first (see
-[Layering multiple render targets](#layering-multiple-render-targets)
-above).
+too, but manages blending itself, since layering render targets onto the
+canvas needs premultiplied-alpha blending for every layer after the first,
+and for the first as well when a camera has already drawn straight onto the
+canvas (see [Layering multiple render targets](#layering-multiple-render-targets)
+and [Transparency](#transparency) above).

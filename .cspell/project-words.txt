@@ -108,6 +108,9 @@ pillarboxing
 pingpong
 Pixabay
 prebuild
+premultiplies
+premultiply
+premultiplying
 prestart
 quadtree
 quilez

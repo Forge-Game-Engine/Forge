@@ -56,6 +56,7 @@ describe('createPresentEcsSystem', () => {
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       BLEND: 'BLEND',
+      ONE: 'ONE',
       SRC_ALPHA: 'SRC_ALPHA',
       ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
 
@@ -212,10 +213,57 @@ describe('createPresentEcsSystem', () => {
 
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
     expect(mockGl.enable).toHaveBeenCalledWith(mockGl.BLEND);
+    // Render targets hold premultiplied color, so the source factor is ONE:
+    // SRC_ALPHA would multiply the layer's alpha in a second time.
     expect(mockGl.blendFunc).toHaveBeenCalledWith(
+      mockGl.ONE,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+    expect(mockGl.blendFunc).not.toHaveBeenCalledWith(
       mockGl.SRC_ALPHA,
       mockGl.ONE_MINUS_SRC_ALPHA,
     );
+  });
+
+  it('blends every layer over the canvas, without clearing it, when a camera renders straight to the canvas', () => {
+    const uiTarget = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {},
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+
+    // A world camera drawing straight onto the canvas (already cleared and
+    // drawn by the render system by the time the present pass runs), plus
+    // a UI camera with its own render target.
+    addCameraEntity(undefined, 0);
+    addCameraEntity(uiTarget, 1);
+
+    world.update();
+
+    expect(mockGl.clear).not.toHaveBeenCalled();
+    // Blending is on for the draw itself (only switched back off once the
+    // pass is done), so the UI target composites over the world instead of
+    // replacing it.
+    expect(vi.mocked(mockGl.enable).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(mockGl.drawArrays).mock.invocationCallOrder[0],
+    );
+    expect(
+      vi.mocked(mockGl.disable).mock.invocationCallOrder[0],
+    ).toBeGreaterThan(vi.mocked(mockGl.drawArrays).mock.invocationCallOrder[0]);
+    expect(mockGl.blendFunc).toHaveBeenCalledWith(
+      mockGl.ONE,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+    expect(mockGl.bindFramebuffer).toHaveBeenCalledWith(
+      mockGl.FRAMEBUFFER,
+      null,
+    );
+    expect(mockGl.bindTexture).toHaveBeenCalledWith(
+      mockGl.TEXTURE_2D,
+      uiTarget.colorTexture,
+    );
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(1);
   });
 
   it('presents in ascending layer order regardless of camera creation order', () => {
@@ -320,5 +368,41 @@ describe('createPresentEcsSystem', () => {
     world.update();
 
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
+    expect(vi.mocked(mockGl.disable).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(mockGl.drawArrays).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('leaves blending disabled once every layer has been presented', () => {
+    const targetA = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {},
+      width: 128,
+      height: 128,
+    } as RenderTarget;
+    const targetB = {
+      colorTexture: new WebGLTexture(),
+      framebuffer: {},
+      width: 64,
+      height: 64,
+    } as RenderTarget;
+
+    addCameraEntity(targetA, 0);
+    addCameraEntity(targetB, 1);
+
+    world.update();
+
+    const lastDisable = vi
+      .mocked(mockGl.disable)
+      .mock.invocationCallOrder.at(-1)!;
+    const lastEnable = vi
+      .mocked(mockGl.enable)
+      .mock.invocationCallOrder.at(-1)!;
+    const lastDraw = vi
+      .mocked(mockGl.drawArrays)
+      .mock.invocationCallOrder.at(-1)!;
+
+    expect(lastDisable).toBeGreaterThan(lastEnable);
+    expect(lastDisable).toBeGreaterThan(lastDraw);
   });
 });

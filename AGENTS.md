@@ -656,6 +656,30 @@ Conventions:
 
 ## Common Patterns
 
+### Alpha Blending (Premultiplied Alpha)
+
+Every render destination - each `RenderTarget` and the canvas itself -
+holds **premultiplied** alpha, while sprite/text fragment shaders output
+**straight** alpha. Keep both halves of that contract when touching the
+rendering pipeline:
+
+- Drawing straight-alpha fragments uses
+  `gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE,
+gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
+  `blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA)`: it stores `a * a` as the
+  destination alpha, which is how translucent UI used to reach the screen
+  at roughly `a³`.
+- Blending a premultiplied texture (a render target's `colorTexture`) over
+  another destination uses `gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)`
+  (see `present-system.ts`).
+- Clear colors are straight-alpha `Color`s and get premultiplied when
+  written (`RenderContext.clear`, `createTerrainRenderEcsSystem`).
+- Leave `gl.BLEND` disabled when a system finishes drawing - it's global
+  GL state, and the next system to draw would otherwise inherit it.
+
+`e2e/specs/translucent-ui-compositing.spec.ts` checks this end to end on
+a real canvas.
+
 ### Readonly Fields
 
 Use `readonly` for fields that shouldn't change after construction:

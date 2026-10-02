@@ -111,13 +111,22 @@ export class RenderContext implements Resizable {
 
   /**
    * Clears the currently bound framebuffer's color buffer, according to `clearStrategy`.
+   * @param color - The (straight, non-premultiplied alpha) color to clear to.
+   * Written premultiplied, matching the premultiplied-alpha color every
+   * render target and the canvas hold (see `createRenderEcsSystem`).
+   * Defaults to `Color.transparent`.
    */
   public clear(color: Color = Color.transparent): void {
     if (this.clearStrategy === CLEAR_STRATEGY.none) {
       return;
     }
 
-    this.gl.clearColor(color.r, color.g, color.b, color.a);
+    const { r, g, b, a } = color;
+
+    // Premultiplied: a translucent clear color written as-is would end up
+    // brighter than intended once presented, since the present pass treats
+    // a render target's color as already premultiplied by its alpha.
+    this.gl.clearColor(r * a, g * a, b * a, a);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 

@@ -62,7 +62,8 @@ export interface CameraDefaultedOptions {
    * thus drawn onto the canvas) first, so higher layers appear on top. Only
    * meaningful between cameras with *different* render targets; has no
    * effect on cameras that share one (they're already composited together
-   * before presenting) or that render straight to the canvas.
+   * before presenting) or that render straight to the canvas (those always
+   * end up beneath every presented render target).
    */
   layer: number;
 
