@@ -44,7 +44,11 @@ export interface CreatePanelDefaultedOptions {
 
   /**
    * Overrides `sprite.slices` for this panel, for reusing one base sprite
-   * with different nine-slice configuration across panels.
+   * with different nine-slice configuration across panels. An omitted
+   * `nativeWidth`/`nativeHeight` is taken from `sprite`'s own
+   * `width`/`height` (its imported size), not from the panel's laid-out
+   * size, so the insets should be in the same units as that imported size
+   * (reference pixels for a sprite imported with `pixelsPerUnit: 1`).
    */
   slices?: NineSliceOptions;
 }
