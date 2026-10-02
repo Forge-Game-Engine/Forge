@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **input:** `GamepadInputSource` now supports every action type, not just `Axis1dAction`. New `GamepadTriggerBinding` (fires once on a button's press or release, picked with `buttonMoments`), `GamepadHoldBinding` (held while a button is pressed) and `GamepadAxis2dBinding` (from a stick's X and Y axes, or four buttons such as the D-pad) go in the source's new `triggerBindings`, `holdBindings` and `axis2dBindings` sets. Like its axis-1d bindings, hold and axis-2d bindings that target the same action are combined, and only dispatch when the gamepad's own value changes, so they don't override the keyboard or mouse on a shared action
+- **input:** `GamepadAxis1dBinding`'s stick form takes a new `inverted` option, and `GamepadAxis2dBinding`'s stick form takes `invertX`/`invertY`. The W3C Standard Gamepad reports a stick pushed up as `-1`, so invert a stick's Y axis to drive an up-is-positive action shared with `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)` or a D-pad binding
+
+#### Fixed
+
+- **input:** Unplugging a gamepad no longer leaves the actions it was driving stuck. `GamepadInputSource` now handles `gamepaddisconnected` (and a gamepad that disappears from `navigator.getGamepads()` without one): it sets every axis it last set to a non-zero value back to `0`, and ends every hold it started. A source constructed with `gamepadIndex` `-1` then falls back to another connected gamepad, if there is one
+
 ## [0.25.5] - 2026-09-19
 
 #### Changed
