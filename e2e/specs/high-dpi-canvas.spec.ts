@@ -15,6 +15,34 @@ const containerCssWidth = 800;
 const containerCssHeight = 600;
 const deviceScaleFactor = 2;
 
+/**
+ * The page-global list `recordMediaQueryLists` collects every
+ * `MediaQueryList` the page creates into.
+ */
+interface MediaQueryListRecorder {
+  forgeMediaQueryLists: MediaQueryList[];
+}
+
+/**
+ * Runs in the page before any of its own scripts: wraps `matchMedia` so every
+ * `MediaQueryList` it returns is also recorded, letting a test reach the one
+ * the engine is listening on.
+ */
+const recordMediaQueryLists = (): void => {
+  const recorder = window as unknown as MediaQueryListRecorder;
+  const originalMatchMedia = window.matchMedia.bind(window);
+
+  recorder.forgeMediaQueryLists = [];
+
+  window.matchMedia = (query: string): MediaQueryList => {
+    const mediaQueryList = originalMatchMedia(query);
+
+    recorder.forgeMediaQueryLists.push(mediaQueryList);
+
+    return mediaQueryList;
+  };
+};
+
 const captureState = (page: Page) =>
   page.evaluate((green) => {
     const scene = window.__forgeTestHooks as unknown as Hooks;
@@ -42,6 +70,7 @@ test.describe('high-DPI canvas', () => {
         pageError = error;
       });
 
+      await page.addInitScript(recordMediaQueryLists);
       await page.goto('/?scene=high-dpi-canvas');
 
       try {
@@ -125,19 +154,36 @@ test.describe('high-DPI canvas', () => {
     const before = await test.step('capture the starting state', () =>
       captureState(page));
 
-    await test.step('drop the emulated device pixel ratio to 1', async () => {
-      const session = await page.context().newCDPSession(page);
-      const viewport = page.viewportSize();
+    await test.step('drop the device pixel ratio to 1', async () => {
+      // Simulates what the browser does when the page is zoomed or moved to
+      // a monitor with a different scale factor - `devicePixelRatio` changes
+      // and every `(resolution: ...)` media query that no longer matches
+      // fires `change` - by doing both directly. Emulating the change through
+      // a separate CDP session's `Emulation.setDeviceMetricsOverride` instead
+      // isn't reliable across Chromium versions: it can be ignored while
+      // Playwright's own session is already emulating `deviceScaleFactor`.
+      // Everything downstream of the notification (the engine's watcher, the
+      // deferred resize, the next rendered frame) still runs for real.
+      await page.evaluate(() => {
+        Object.defineProperty(window, 'devicePixelRatio', {
+          configurable: true,
+          get: () => 1,
+        });
 
-      if (!viewport) {
-        throw new Error('The page has no viewport size.');
-      }
+        const recorder = window as unknown as MediaQueryListRecorder;
+        const resolutionQueries = recorder.forgeMediaQueryLists.filter(
+          (mediaQueryList) => mediaQueryList.media.includes('resolution'),
+        );
 
-      await session.send('Emulation.setDeviceMetricsOverride', {
-        width: viewport.width,
-        height: viewport.height,
-        deviceScaleFactor: 1,
-        mobile: false,
+        if (resolutionQueries.length === 0) {
+          throw new Error(
+            'The page never created a resolution media query to watch the device pixel ratio with.',
+          );
+        }
+
+        for (const mediaQueryList of resolutionQueries) {
+          mediaQueryList.dispatchEvent(new Event('change'));
+        }
       });
 
       await page.waitForFunction(
