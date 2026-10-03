@@ -91,6 +91,25 @@ gameplay layer on top of it), give those cameras _separate_ render targets
 instead of a shared one, and attach `GaussianBlurEcsComponent` only to the
 one that should be blurred: see [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets).
 
+## Same look on every display
+
+The blur is sized in CSS pixels, not render target pixels: each tap of the
+kernel is one CSS pixel apart, so a given `passes` value spreads the same
+distance on screen at any
+[`RenderContext.pixelRatio`](/Forge/docs/api/classes/RenderContext#pixelratio)
+(see [High-DPI displays](./world-units-and-cameras.md#high-dpi-displays)). This
+assumes the camera's `renderTarget` is sized to the canvas
+(`renderContext.width`/`height`), as in the example above.
+
+On a high-DPI display (`pixelRatio` above `1`) the blur chain doesn't run on
+the full-resolution scene: it first averages the scene down to CSS-pixel
+resolution, blurs that, and the last pass scales the result back up into the
+camera's `renderTarget`. Stepping one CSS pixel across the full-resolution
+texture instead would skip the texels in between (see the caution below).
+Because the scene is already blurred by the time it's scaled back up, this
+costs no visible sharpness, and it keeps the blur's cost close to what it is
+on a standard display.
+
 ## Tuning strength: passes vs. intensity
 
 There are two, deliberately different, knobs on
@@ -118,7 +137,7 @@ entirely and behaves exactly like earlier versions of this system that only
 had `passes`.
 
 :::caution
-Each individual pass only samples 9 adjacent texels, so `passes` (or
+Each individual pass only samples 9 adjacent texels (one CSS pixel apart, see above), so `passes` (or
 blending toward the sharp image via `intensity`) are the _only_ supported
 ways to change blur strength: don't try to widen the blur by spacing the
 samples further apart (for example scaling the texel-size uniform) instead.
@@ -136,15 +155,20 @@ lets each pass cover more visual area per texel without under-sampling.
 
 ## Performance note
 
-Each pass costs two full-screen draws (`sceneTarget.width *
-sceneTarget.height` fragment shader invocations each, 9 texture samples
-per fragment), so total cost scales linearly with `passes`. A fractional
-`intensity` (anything other than exactly `0` or `1`) adds three more
-full-screen draws regardless of `passes`: one to snapshot the sharp scene
-before blurring, one to blend it against the blurred result, and one to
-copy that blend back into the camera's `renderTarget`. There's also one
+Each pass costs two full-screen draws (9 texture samples per fragment), so
+total cost scales linearly with `passes`. The blur passes run at CSS-pixel
+resolution (`sceneTarget.width / pixelRatio` by `sceneTarget.height /
+pixelRatio` fragment shader invocations each), so they cost about the same
+on a high-DPI display as on a standard one; only the last draw, which
+writes back into the full-resolution `renderTarget`, and, when `pixelRatio`
+is above `1`, one extra draw that averages the scene down first, scale with
+the display's resolution. A fractional `intensity` (anything other than
+exactly `0` or `1`) adds two more full-screen draws regardless of `passes`:
+one to blend the sharp scene against the blurred result, and one to copy
+that blend back into the camera's `renderTarget`. There's also one
 lazily-allocated internal [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
-pair (plus, for a fractional `intensity`, one more snapshot buffer) per
+pair (at CSS-pixel resolution), plus, for a fractional `intensity`, one
+full-resolution buffer for the blend, per
 distinct render target the first time it's blurred, resized (or recreated)
 automatically if that target's dimensions change, and disposed automatically
 when the world stops. Because every pass and helper draw share materials

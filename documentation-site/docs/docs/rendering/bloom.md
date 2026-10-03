@@ -25,8 +25,8 @@ Each frame, for every distinct bloomed render target:
    sharply) are kept, into a scratch buffer.
 2. **Blur** — that scratch buffer is blurred with the same two-pass
    horizontal/vertical technique as `createGaussianBlurEcsSystem`, `passes`
-   times, at a quarter of the camera's render target resolution (see
-   below).
+   times, on a downsampled copy where each texel covers a 4×4 block of CSS
+   pixels (see below).
 3. **Composite** — the blurred bright pixels are added back onto the
    original (unblurred), full-resolution scene, scaled by `intensity`.
 
@@ -34,11 +34,23 @@ The blur chain runs downsampled because the blur shader's kernel only
 samples a handful of texels per pass: at full render target resolution,
 that reach is a handful of _screen_ pixels, which on a large canvas barely
 registers as a glow no matter how many `passes` you throw at it. Running
-the same kernel and pass count on a quarter-resolution buffer instead makes
-each texel already cover several source pixels, so the glow visibly spreads
+the same kernel and pass count on a buffer downsampled by 4 in each
+direction instead makes each texel already cover several source pixels, so
+the glow visibly spreads
 well past a sprite's edges with a modest, cheap `passes` count. The
 composite pass upsamples it back implicitly, via the bloom texture's own
 linear-filtered sampling.
+
+The downsampling is measured in CSS pixels, not render target pixels, so
+bloom looks the same at any
+[`RenderContext.pixelRatio`](/Forge/docs/api/classes/RenderContext#pixelratio)
+(see [High-DPI displays](./world-units-and-cameras.md#high-dpi-displays)): at a
+pixel ratio of 2, each downsampled texel covers an 8×8 block of the
+render target, which is still 4×4 CSS pixels. Every texel in the block is
+thresholded individually and averaged, so a small bright sprite contributes
+the same share of its block, and the glow spreads the same distance on
+screen, on every display. This assumes the camera's `renderTarget` is sized
+to the canvas (`renderContext.width`/`height`).
 
 The thresholded buffer's alpha carries how strongly each pixel contributes
 to the glow, not the source pixel's original transparency, so the blur can
@@ -169,8 +181,10 @@ Bloom costs one threshold pass, two full-screen draws per blur `passes`
 one composite pass, and one final copy back into the camera's
 `renderTarget` — `2 * passes + 3` full-screen draws in total, regardless of
 `intensity`. The threshold and blur passes are far cheaper than that count
-suggests, though: they run at a quarter of the render target's resolution
-(a sixteenth of the fragment shader invocations per draw), which is also
+suggests, though: they run at a quarter of the canvas's CSS-pixel
+resolution in each direction (a sixteenth of the fragment shader invocations
+per draw on a standard display, and the same number of invocations on a
+high-DPI one, since the downsampling scales with `pixelRatio`), which is also
 why a small `passes` count already produces a wide glow (see Tuning,
 above).
 
