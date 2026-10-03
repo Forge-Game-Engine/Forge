@@ -13,8 +13,10 @@ export interface ShapeTextOptions {
   size: number;
 
   /**
-   * Extra spacing between glyphs, in world units, added to each glyph's
-   * advance. Defaults to `0`.
+   * Extra spacing between adjacent glyphs within a word, in ems (multiplied
+   * by `size`, so tracking scales with the text). Never added after a
+   * word's last glyph, so it doesn't widen the word or skew alignment.
+   * Defaults to `0`.
    */
   letterSpacing?: number;
 
@@ -113,7 +115,7 @@ interface ShapedLine {
  * @param word - The word's code points, with no whitespace.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param size - Font size, in world units.
- * @param letterSpacing - Extra spacing between glyphs, in world units.
+ * @param letterSpacing - Extra spacing between adjacent glyphs, in ems.
  * @returns The word's glyph quads (relative to the word's own start) and width.
  */
 function shapeWord(
@@ -125,6 +127,7 @@ function shapeWord(
   const glyphs: GlyphQuad[] = [];
   let penX = 0;
   let previousCodePoint: number | null = null;
+  let hasPreviousGlyph = false;
 
   for (const character of word) {
     const codePoint = character.codePointAt(0) as number;
@@ -134,6 +137,15 @@ function shapeWord(
       previousCodePoint = null;
 
       continue;
+    }
+
+    // Letter spacing goes *between* glyphs, so it's added before every
+    // glyph but the first rather than after every glyph: spacing after the
+    // last glyph would count towards the word's width, pushing centered
+    // text half a letter space left and right-aligned text a full letter
+    // space short of its edge.
+    if (hasPreviousGlyph) {
+      penX += letterSpacing * size;
     }
 
     if (previousCodePoint !== null) {
@@ -186,8 +198,9 @@ function shapeWord(
       });
     }
 
-    penX += (glyph.advance + letterSpacing) * size;
+    penX += glyph.advance * size;
     previousCodePoint = codePoint;
+    hasPreviousGlyph = true;
   }
 
   return { glyphs, width: Math.max(0, penX) };
@@ -231,7 +244,7 @@ function getWhitespaceAdvance(
  * least one (possibly empty) line.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param size - Font size, in world units.
- * @param letterSpacing - Extra spacing between glyphs, in world units.
+ * @param letterSpacing - Extra spacing between adjacent glyphs, in ems.
  * @param maxWidth - The width to wrap at, in world units, or `undefined` to
  * never wrap (the whole string becomes one line).
  * @returns The wrapped lines, each with its placed words and content width.

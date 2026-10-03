@@ -43,6 +43,11 @@ this repo, but it's an equally good reference for human contributors.
    update the corresponding page.
 5. Add a `CHANGELOG.md` entry if required — see below.
 
+Forge is pre-1.0 and doesn't keep backwards compatibility. When fixing a bug,
+change the behavior outright rather than adding an option, deprecated alias
+or fallback that preserves the old behavior. See AGENTS.md's
+[Change Philosophy](./AGENTS.md#change-philosophy).
+
 ## Verification
 
 Before opening a pull request, run the following from the repo root, in
