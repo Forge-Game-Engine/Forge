@@ -41,6 +41,26 @@ turns a `TextEcsComponent` into glyph geometry, and
 draws that geometry. A `TextEcsComponent` with no shaping system registered
 never renders, since it has nothing for the render system to draw yet.
 
+## Letter spacing
+
+`letterSpacing` (default `0`) adds extra space between adjacent letters, in
+ems: it's multiplied by `size`, so `letterSpacing: 0.1` at `size: 20` adds 2
+world units between letters, and the tracking scales along with the text.
+Negative values pull letters closer together.
+
+```ts
+addTextComponent(world, title, {
+  text: 'MAIN MENU',
+  fontAtlas,
+  size: 32,
+  letterSpacing: 0.12,
+});
+```
+
+The space only goes _between_ letters of a word: never after a word's last
+letter, and never around whitespace. So letter-spaced text still centers and
+right-aligns exactly, without needing a manual offset.
+
 ## Updating text later
 
 `text`, `size`, and every other field on the returned
