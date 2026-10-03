@@ -24,9 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **particles:** Particles spawn around the world position of the entity their emitter is on (or the world origin), within `spawnShape`. The `spawnPosition` option is removed; move the emitter entity instead
 - **particles:** `new ParticleEmitter(sprite, options)` no longer takes a `renderLayer` argument, which was never used. Drop the second argument and set the sprite's `layer` instead, since particles are drawn on it. `sprite` can now be a `SpriteEcsComponent` or a `Sprite`
 - **particles:** A particle's direction of travel now comes from the new `directionRange` option (0 degrees is up, clockwise), and `rotationRange` only sets the initial rotation of its sprite, defaulting to `{ min: 0, max: 0 }`. Rename `rotationRange` to `directionRange` where it aimed particles, and add `rotationRange: { min: 0, max: 360 }` if you also want randomly turned sprites. `ParticleEcsComponent` now holds `velocity`, `acceleration`, `drag`, `rotationSpeed`, `startOpacity`, `endOpacity` and `getVelocityOffset`, and particles no longer get a `SpeedEcsComponent`, so code that read a particle's speed should read `Vec2.magnitude(particle.velocity)` instead
-
-#### Changed
-
 - **input:** Gamepad stick Y axes (`gamepadAxes.leftStickY`/`rightStickY`) now read pushing up as positive, matching the keyboard, the D-pad's north button and world space, so a stick and a D-pad bound to the same action agree out of the box. `GamepadAxis1dBinding`'s `inverted` option and `GamepadAxis2dBinding`'s `invertX`/`invertY` options are removed: delete `inverted: true`/`invertY: true` from your stick bindings, and if you relied on the old down-is-positive reading or want inverted look controls, negate the action's value in game code
 
 #### Fixed
