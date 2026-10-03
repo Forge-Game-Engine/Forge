@@ -414,7 +414,7 @@ test.describe('gamepad input', () => {
     });
   });
 
-  test('an inverted stick Y axis and D-pad up drive an up-is-positive action the same way', async ({
+  test('a stick pushed up and D-pad up drive an up-is-positive action the same way', async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -434,7 +434,8 @@ test.describe('gamepad input', () => {
       await step(page);
     });
 
-    // The W3C Standard Gamepad reports a stick pushed up as -1.
+    // The W3C Standard Gamepad reports a stick pushed up as -1; the engine
+    // reads it as up-positive.
     await test.step('push the stick up', () => setStickY(page, -0.8));
 
     const stickUp = await test.step('capture the state with the stick up', () =>

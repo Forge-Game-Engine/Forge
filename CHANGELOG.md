@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **utilities:** `createGame` takes an optional second `options` argument whose `renderContext` field is forwarded to `createRenderContext`, so a game set up with `createGame` can cap its render resolution, e.g. `createGame('game', { renderContext: { maxPixelRatio: 1.5 } })`
 
+#### Changed
+
+- **input:** Gamepad stick Y axes (`gamepadAxes.leftStickY`/`rightStickY`) now read pushing up as positive, matching the keyboard, the D-pad's north button and world space, so a stick and a D-pad bound to the same action agree out of the box. `GamepadAxis1dBinding`'s `inverted` option and `GamepadAxis2dBinding`'s `invertX`/`invertY` options are removed: delete `inverted: true`/`invertY: true` from your stick bindings, and if you relied on the old down-is-positive reading or want inverted look controls, negate the action's value in game code
+
 #### Fixed
 
 - **text:** `letterSpacing` is no longer added after a word's last letter, so it only goes between letters. Centered text with letter spacing used to sit half a letter space left of center, and right-aligned text a full letter space short of its right edge. `letterSpacing` stays in ems (multiplied by `size`); its docs wrongly said world units. Text with letter spacing is now one letter space narrower per word, so remove any offset you added to compensate

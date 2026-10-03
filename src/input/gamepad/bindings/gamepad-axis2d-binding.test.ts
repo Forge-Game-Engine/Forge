@@ -4,7 +4,7 @@ import { Axis2dAction } from '../../actions';
 import { gamepadAxes, gamepadButtons } from '../../constants';
 
 describe('GamepadAxis2dBinding', () => {
-  it('stores a stick-based source with default inversion and describes it', () => {
+  it('stores a stick-based source and describes it', () => {
     const action = new Axis2dAction('move');
     const binding = new GamepadAxis2dBinding(action, {
       xAxisIndex: gamepadAxes.leftStickX,
@@ -15,20 +15,8 @@ describe('GamepadAxis2dBinding', () => {
     expect(binding.source).toEqual({
       xAxisIndex: gamepadAxes.leftStickX,
       yAxisIndex: gamepadAxes.leftStickY,
-      invertX: false,
-      invertY: false,
     });
     expect(binding.displayText).toBe('gamepad axes 0/1');
-  });
-
-  it('describes an inverted stick axis', () => {
-    const binding = new GamepadAxis2dBinding(new Axis2dAction('look'), {
-      xAxisIndex: gamepadAxes.rightStickX,
-      yAxisIndex: gamepadAxes.rightStickY,
-      invertY: true,
-    });
-
-    expect(binding.displayText).toBe('gamepad axes 2/3 (inverted)');
   });
 
   it('stores a button-based source and describes it', () => {
