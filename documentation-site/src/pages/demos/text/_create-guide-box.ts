@@ -42,7 +42,7 @@ export function createGuideBox(
   const entity = world.createEntity();
 
   const position = addPositionComponent(world, entity, {
-    world: { x: topLeft.x + size.x / 2, y: topLeft.y - size.y / 2 },
+    local: { x: topLeft.x + size.x / 2, y: topLeft.y - size.y / 2 },
   });
 
   const sprite = addSpriteComponent(world, entity, {

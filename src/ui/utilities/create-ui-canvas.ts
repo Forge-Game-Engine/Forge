@@ -89,9 +89,8 @@ export interface WorldSpaceUiCanvasOptions extends CanvasInputOptions {
    * its rotation (so it stays upright above the target regardless of which
    * way it's facing, instead of swinging around with it) - see
    * `UiWorldSpaceFollowEcsComponent`'s own doc comment for why that isn't
-   * expressed as a `ParentEcsComponent` option. Register
-   * `createUiWorldSpaceFollowEcsSystem()` once, after
-   * `createTransformEcsSystem()`, for any world using this.
+   * expressed as a `ParentEcsComponent` option. `registerUiSystems`
+   * registers the system that applies it.
    */
   anchor?: UiAnchorConfig;
 

@@ -20,8 +20,10 @@ import { ArmEcsComponent, armId } from './_arm.component';
  * The angle is derived so that a vertical (pointing down) sprite at
  * rotation 0 aligns with the pivot-to-ball direction, matching this
  * engine's `Vector2.rotate` convention (counter-clockwise-positive,
- * `atan2(y, x)`). Must run before `createRenderEcsSystem` so the render
- * pass sees this tick's updated arm.
+ * `atan2(y, x)`). Reads the ball's `local` position (it has no parent, so
+ * that's its current pose even before `createTransformEcsSystem` has run
+ * this tick) and writes only the arm's `local` pose, so it must run before
+ * `createTransformEcsSystem` for the render pass to see this tick's arm.
  */
 export const createArmEcsSystem = (): EcsSystem<
   [
@@ -46,8 +48,8 @@ export const createArmEcsSystem = (): EcsSystem<
         continue;
       }
 
-      const bodyPosition = targetPosition.world;
-      // clone: bodyPosition is targetPosition.world, live state, must not mutate.
+      const bodyPosition = targetPosition.local;
+      // clone: bodyPosition is targetPosition.local, live state, must not mutate.
       const delta = Vec2.subtract(Vec2.clone(bodyPosition), pivotPosition);
       const length = Vec2.magnitude(delta);
       // clone: pivotPosition is a persistent ArmEcsComponent field, reused every tick.
@@ -57,12 +59,9 @@ export const createArmEcsSystem = (): EcsSystem<
       );
       const angle = Math.atan2(delta.x, -delta.y);
 
-      positionComponent.world.x = midpoint.x;
-      positionComponent.world.y = midpoint.y;
       positionComponent.local.x = midpoint.x;
       positionComponent.local.y = midpoint.y;
 
-      rotationComponent.world = angle;
       rotationComponent.local = angle;
 
       spriteComponent.width = armWidth;

@@ -41,7 +41,7 @@ export const createPanelEcsSystem = (
       sprite.width = size;
       // sprite.height = size;
 
-      rotation.world += 0.5 * time.deltaTimeInSeconds;
+      rotation.local += 0.5 * time.deltaTimeInSeconds;
     }
   },
 });

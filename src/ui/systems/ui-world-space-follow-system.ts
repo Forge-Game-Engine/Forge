@@ -6,20 +6,21 @@ import {
 } from '../components/ui-world-space-follow-component.js';
 
 /**
- * Creates a system that overwrites every `UiWorldSpaceFollowEcsComponent`
- * entity's `PositionEcsComponent.world` with its `target`'s own world
- * position plus this entity's already-resolved local offset - the world
- * *position* only, never the target's rotation or scale, unlike an
- * ordinary `ParentEcsComponent` relationship (see that component's own
- * follow-vs-parent doc comment for why this is a separate mechanism).
+ * Creates a system that moves every `UiWorldSpaceFollowEcsComponent`
+ * entity to its `target`'s world position, offset by the entity's own
+ * layout-resolved local position. It writes `PositionEcsComponent.local`,
+ * which `createTransformEcsSystem` then turns into `world`, and reads only
+ * the target's position, never its rotation or scale, unlike an ordinary
+ * `ParentEcsComponent` relationship (see `UiWorldSpaceFollowEcsComponent`
+ * for why this is a separate mechanism).
  *
- * Must be registered after `createTransformEcsSystem` (so `target`'s world
- * position for this tick is already resolved) - unlike the rest of the UI
- * pipeline, `createUiCanvas` does not register this one for you, since its
- * one dependency runs the opposite direction from every other UI system
- * (which all run *before* `createTransformEcsSystem`). Register it
- * yourself, once, right after `createTransformEcsSystem`, for any world
- * using `renderMode: 'worldSpace'` canvases that should follow a target.
+ * `createUiLayoutEcsSystem` resets the entity's local position to its
+ * anchored offset every frame, and this system adds the target's world
+ * position on top, so it must run after layout and before the transform
+ * system. `registerUiSystems` registers it in that order for you.
+ *
+ * The target's world position is the one the transform system resolved on
+ * the previous frame, so a moving target is followed one frame behind.
  * @returns The UI world-space follow ECS system.
  * @throws An error if a `UiWorldSpaceFollowEcsComponent.target` has no
  * `PositionEcsComponent`.
@@ -44,8 +45,8 @@ export const createUiWorldSpaceFollowEcsSystem = (): EcsSystem<
 
       const position = positions[i];
 
-      position.world.x = targetPosition.world.x + position.local.x;
-      position.world.y = targetPosition.world.y + position.local.y;
+      position.local.x += targetPosition.world.x;
+      position.local.y += targetPosition.world.y;
     }
   },
 });

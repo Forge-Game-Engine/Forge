@@ -25,6 +25,7 @@ sized to the area you want to render into, and register
 draws the result:
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createCamera,
   createPresentEcsSystem,
@@ -43,6 +44,7 @@ const sceneTarget = createRenderTarget(
 
 createCamera(world, { renderTarget: sceneTarget });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
@@ -102,6 +104,7 @@ createCamera(world, {
 
 addGaussianBlurComponent(world, background, { passes: 4 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));

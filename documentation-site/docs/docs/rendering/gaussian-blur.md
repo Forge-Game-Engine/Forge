@@ -30,6 +30,7 @@ system just drew and the present system draws whatever the blur system
 leaves behind:
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   addGaussianBlurComponent,
   createCamera,
@@ -52,6 +53,7 @@ const camera = createCamera(world, { renderTarget: sceneTarget });
 
 addGaussianBlurComponent(world, camera, { passes: 4, intensity: 0.5 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));

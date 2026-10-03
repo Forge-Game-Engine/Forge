@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
@@ -30,16 +31,18 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
 
   await createSuspensions(world, renderContext, renderLayers.foreground);
 
-  // A reset (teleport) must run before gravity/spring/damper so a replayed
-  // disturbance is reflected in this same tick's forces.
-  // `createSpringLineEcsSystem` only needs to run before
-  // `createRenderEcsSystem`, so its updated line is reflected in this
-  // tick's render.
+  // A reset (teleport) and `createSpringLineEcsSystem` both write `local`
+  // positions, so they run before `createTransformEcsSystem`, which turns
+  // every entity's `local` position into the `world` position that the
+  // spring/damper and render systems read. That way a replayed disturbance
+  // is reflected in this same tick's forces, and the line spans the body's
+  // position in this tick's render.
   world.addSystem(createResetEcsSystem(time));
+  world.addSystem(createSpringLineEcsSystem());
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));
-  world.addSystem(createSpringLineEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));

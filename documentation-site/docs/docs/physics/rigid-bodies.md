@@ -33,7 +33,7 @@ import { Vec2 } from '@forge-game-engine/forge/math';
 const ball = world.createEntity();
 const collider = new CircleCollider(16);
 
-addPositionComponent(world, ball, { world: { x: 0, y: 100 } });
+addPositionComponent(world, ball, { local: { x: 0, y: 100 } });
 addRotationComponent(world, ball);
 addColliderComponent(world, ball, {
   collider,
@@ -132,7 +132,10 @@ setup (see the [Physics demo](/Forge/demos/physics)'s `_create-game.ts` for
 the full, working version):
 
 ```ts
-import { Time } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  Time,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -148,9 +151,11 @@ const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
-// Order matters: gravity/forces before collision resolution, before
-// integration, so each tick's forces are reflected in that same tick's
-// position update.
+// Order matters: the transform system first, so every system below reads
+// this tick's world transforms, then gravity/forces before collision
+// resolution, before integration, so each tick's forces are reflected in
+// that same tick's position update.
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
@@ -170,6 +175,13 @@ and force-generator (`createLinearSpringEcsSystem`/
 [Applying Forces](./forces.md), [Prismatic Joints](./joints.md), and
 [Revolute Joints](./revolute-joints.md) for their registration order
 relative to the systems above.
+
+`createEulerIntegrationEcsSystem` integrates velocity into each body's
+`local` position and rotation, and every physics system reads `world`. To
+move or teleport a body yourself, write its `local` transform too. Keep
+simulated bodies as root entities (no `ParentEcsComponent`): their
+velocities are in world space, which only matches `local` when nothing
+above them is rotated or scaled. See [Transforms](../common/transforms.md).
 
 ## Mapping collisions back to entities
 

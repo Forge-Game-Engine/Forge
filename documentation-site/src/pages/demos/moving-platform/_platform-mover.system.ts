@@ -11,7 +11,7 @@ import {
 
 /**
  * Reverses a `PlatformMoverEcsComponent` entity's kinematic `velocity.x`
- * once its `PositionEcsComponent.world.x` reaches either `leftX`/`rightX`.
+ * once its `PositionEcsComponent.local.x` reaches either `leftX`/`rightX`.
  * Nothing else drives the platform's motion - `createEulerIntegrationEcsSystem`
  * moves it every tick from `velocity` alone, exactly like a dynamic body,
  * the platform just never has gravity/impulses applied to it.
@@ -30,9 +30,9 @@ export const createPlatformMoverEcsSystem = (): EcsSystem<
         continue;
       }
 
-      if (position.world.x <= mover.leftX && rigidBody.velocity.x < 0) {
+      if (position.local.x <= mover.leftX && rigidBody.velocity.x < 0) {
         rigidBody.velocity.x = mover.speed;
-      } else if (position.world.x >= mover.rightX && rigidBody.velocity.x > 0) {
+      } else if (position.local.x >= mover.rightX && rigidBody.velocity.x > 0) {
         rigidBody.velocity.x = -mover.speed;
       }
     }

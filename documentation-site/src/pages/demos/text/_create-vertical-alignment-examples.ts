@@ -83,7 +83,7 @@ export function createVerticalAlignmentExamples(
 
     const captionEntity = world.createEntity();
     addPositionComponent(world, captionEntity, {
-      world: { x: columnLeft, y: topLeft.y },
+      local: { x: columnLeft, y: topLeft.y },
     });
     addTextComponent(world, captionEntity, {
       text: column.label,
@@ -95,7 +95,7 @@ export function createVerticalAlignmentExamples(
 
     const lineEntity = world.createEntity();
     addPositionComponent(world, lineEntity, {
-      world: { x: columnCenter, y: anchorY },
+      local: { x: columnCenter, y: anchorY },
     });
     addSpriteComponent(world, lineEntity, {
       ...whiteSprite,
@@ -107,7 +107,7 @@ export function createVerticalAlignmentExamples(
 
     const textEntity = world.createEntity();
     addPositionComponent(world, textEntity, {
-      world: { x: columnLeft, y: anchorY },
+      local: { x: columnLeft, y: anchorY },
     });
     addTextComponent(world, textEntity, {
       text: sampleText,

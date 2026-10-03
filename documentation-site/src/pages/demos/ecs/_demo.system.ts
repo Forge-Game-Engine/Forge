@@ -20,9 +20,9 @@ export const createDemoEcsSystem = (
       const position = positions[i];
       const rotation = rotations[i];
 
-      position.world.x = Math.sin(time.timeInSeconds) * 100;
-      position.world.y = Math.cos(time.timeInSeconds) * 100;
-      rotation.world = time.timeInSeconds;
+      position.local.x = Math.sin(time.timeInSeconds) * 100;
+      position.local.y = Math.cos(time.timeInSeconds) * 100;
+      rotation.local = time.timeInSeconds;
     }
   },
 });

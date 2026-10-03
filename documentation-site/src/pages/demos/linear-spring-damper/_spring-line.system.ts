@@ -15,8 +15,11 @@ import { SpringLineEcsComponent, springLineId } from './_spring-line.component';
  * the line between its `SpringLineEcsComponent.anchorPosition` and the
  * target entity's current position every tick, purely a visual aid for the
  * demo (the anchor and body are always vertically aligned here, so no
- * rotation is needed). Must run before `createRenderEcsSystem` so the
- * render pass sees this tick's updated line.
+ * rotation is needed). Reads the target's `local` position (it has no
+ * parent, so that's its current position even before
+ * `createTransformEcsSystem` has run this tick) and writes only the line's
+ * `local` position, so it must run before `createTransformEcsSystem` for the
+ * render pass to see this tick's updated line.
  */
 export const createSpringLineEcsSystem = (): EcsSystem<
   [SpringLineEcsComponent, PositionEcsComponent, SpriteEcsComponent]
@@ -35,10 +38,10 @@ export const createSpringLineEcsSystem = (): EcsSystem<
         continue;
       }
 
-      const bodyPosition = targetPosition.world;
+      const bodyPosition = targetPosition.local;
       // Clone before adding/subtracting: `anchorPosition` is a persistent
       // component field reused every tick, and `bodyPosition` is the target
-      // entity's live world position.
+      // entity's live position.
       const midpoint = Vec2.multiply(
         Vec2.add(Vec2.clone(anchorPosition), bodyPosition),
         0.5,
@@ -47,8 +50,6 @@ export const createSpringLineEcsSystem = (): EcsSystem<
         Vec2.subtract(Vec2.clone(bodyPosition), anchorPosition),
       );
 
-      positionComponent.world.x = midpoint.x;
-      positionComponent.world.y = midpoint.y;
       positionComponent.local.x = midpoint.x;
       positionComponent.local.y = midpoint.y;
 

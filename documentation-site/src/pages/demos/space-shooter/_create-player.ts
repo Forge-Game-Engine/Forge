@@ -106,7 +106,6 @@ export function spawnPlayer(
   addSpriteComponent(world, playerEntity, playerSprite);
   addPositionComponent(world, playerEntity, {
     local: { x: playerX, y: playerY },
-    world: { x: playerX, y: playerY },
   });
   world.addComponent(playerEntity, PlayerId, {
     speed: 50,
@@ -118,12 +117,10 @@ export function spawnPlayer(
 
   addScaleComponent(world, playerEntity, {
     local: { x: playerScale, y: playerScale },
-    world: { x: playerScale, y: playerScale },
   });
 
   addRotationComponent(world, playerEntity, {
     local: Math.PI,
-    world: Math.PI,
   });
 
   world.addComponent(playerEntity, gunId, {

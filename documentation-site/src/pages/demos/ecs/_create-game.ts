@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createEntity } from './_create-entity';
 import { createSprite } from './_create-sprite';
@@ -22,8 +23,11 @@ export const createEcsGame = async (): Promise<Game> => {
   createEntity(world, sprite);
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createDemoEcsSystem(time));
+  // After the demo system moves the star's `local` pose, so the render
+  // system draws this frame's `world` pose.
+  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;
 };

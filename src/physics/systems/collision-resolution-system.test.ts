@@ -54,7 +54,7 @@ describe('createCollisionResolutionEcsSystem', () => {
   ): { entity: number; rigidBody: RigidBodyEcsComponent | null } {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: position });
+    addPositionComponent(world, entity, { local: position });
     addColliderComponent(world, entity, {
       collider: new CircleCollider(radius),
       ...colliderOptions,

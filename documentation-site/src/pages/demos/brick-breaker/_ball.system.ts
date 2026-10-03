@@ -50,8 +50,7 @@ export const createBallEcsSystem = (
 
       destroyCollidedBricks(collisionManifolds, ballEntity, brickField);
 
-      if (positionComponent.world.y < missY) {
-        positionComponent.world = Vec2.clone(ballComponent.startPosition);
+      if (positionComponent.local.y < missY) {
         positionComponent.local = Vec2.clone(ballComponent.startPosition);
         launchBall(rigidBody, ballComponent.speed, random);
       }

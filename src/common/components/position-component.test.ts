@@ -36,7 +36,7 @@ describe('addPositionComponent', () => {
     const local = { x: 1, y: 2 };
     const component = addPositionComponent(world, entity, { local });
 
-    expect(component).toEqual({ local, world: Vec2.zero });
+    expect(component).toEqual({ local, world: local });
     expect(world.getComponent(entity, positionId)).toBe(component);
   });
 
@@ -51,5 +51,17 @@ describe('addPositionComponent', () => {
     expect(world.getComponent(first, positionId)?.local).not.toBe(
       world.getComponent(second, positionId)?.local,
     );
+  });
+
+  it('starts world as a copy of local, not the same vector', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+
+    const component = addPositionComponent(world, entity, {
+      local: { x: 2, y: 3 },
+    });
+
+    expect(component.world).toEqual(component.local);
+    expect(component.world).not.toBe(component.local);
   });
 });

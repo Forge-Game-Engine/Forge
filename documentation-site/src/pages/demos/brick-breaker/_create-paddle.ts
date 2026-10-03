@@ -73,14 +73,12 @@ export async function createPaddle(
 
   addPositionComponent(world, entity, {
     local: Vec2.clone(position),
-    world: Vec2.clone(position),
   });
 
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
     local: { x: paddleScaleX, y: paddleScaleY },
-    world: { x: paddleScaleX, y: paddleScaleY },
   });
 
   addSpriteComponent(world, entity, paddleSprite);

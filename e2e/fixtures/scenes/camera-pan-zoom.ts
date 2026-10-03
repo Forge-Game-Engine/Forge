@@ -1,5 +1,6 @@
 import {
   actionResetTypes,
+  addPositionComponent,
   Axis1dAction,
   Axis2dAction,
   CameraEcsComponent,
@@ -184,8 +185,7 @@ export const createScene: CreateScene = async (
       const cellEntity = world.createEntity();
       const cellPosition = { x: gridX * cellSpacing, y: gridY * cellSpacing };
 
-      world.addComponent(cellEntity, positionId, {
-        world: Vec2.clone(cellPosition),
+      addPositionComponent(world, cellEntity, {
         local: Vec2.clone(cellPosition),
       });
 

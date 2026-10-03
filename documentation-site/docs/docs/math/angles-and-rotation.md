@@ -69,9 +69,9 @@ If you need to round-trip a `RotationEcsComponent`-style angle through a
 direction vector and back, add `Math.PI / 2` after `vectorToRadians`:
 
 ```ts
-const direction = radiansToVector(rotation.world);
+const direction = radiansToVector(rotation.local);
 // ... later, recover the rotation from a direction vector:
-rotation.world = vectorToRadians(direction) + Math.PI / 2;
+rotation.local = vectorToRadians(direction) + Math.PI / 2;
 ```
 
 :::

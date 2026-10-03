@@ -39,7 +39,7 @@ describe('createBroadPhaseEcsSystem', () => {
     const entity = world.createEntity();
 
     const positionComponent = addPositionComponent(world, entity, {
-      world: position,
+      local: position,
     });
     addRotationComponent(world, entity);
     addColliderComponent(world, entity, {
@@ -102,7 +102,7 @@ describe('createBroadPhaseEcsSystem', () => {
     ): { entity: number; aabb: AabbEcsComponent } {
       const entity = world.createEntity();
 
-      addPositionComponent(world, entity, { local: position, world: position });
+      addPositionComponent(world, entity, { local: position });
       addColliderComponent(world, entity, { collider });
       const aabb = addAabbComponent(world, entity);
 
@@ -134,7 +134,6 @@ describe('createBroadPhaseEcsSystem', () => {
       addPositionComponent(world, entity);
       addRotationComponent(world, entity, {
         local: Math.PI / 2,
-        world: Math.PI / 2,
       });
       addColliderComponent(world, entity, {
         collider: new PolygonCollider([

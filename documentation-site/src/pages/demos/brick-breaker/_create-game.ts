@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -146,10 +147,16 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   const contactConstraints: ContactConstraint[] = [];
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBackgroundEcsSystem(time));
   world.addSystem(createPaddleEcsSystem(moveInput, time));
   world.addSystem(createBrickEcsSystem(time));
+  // Runs after the paddle's input-driven movement and before the physics
+  // and render systems, which all read the `world` pose it derives from
+  // each entity's `local` pose. The ball's integrated movement (and a reset
+  // after a miss) is written to `local` after this, so it reaches `world`
+  // on the next frame's transform pass.
+  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

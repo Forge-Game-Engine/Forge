@@ -28,7 +28,7 @@ const panelSprite = createImageSprite(panelImage, renderContext, {
 });
 
 const panel = world.createEntity();
-addPositionComponent(world, panel, { world: { x: 400, y: 300 } });
+addPositionComponent(world, panel, { local: { x: 400, y: 300 } });
 const panelSpriteComponent = addSpriteComponent(world, panel, panelSprite);
 
 // Resize the panel later (e.g. to fit dynamic text) - the 12px corners

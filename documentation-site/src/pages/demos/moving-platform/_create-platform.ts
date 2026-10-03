@@ -81,7 +81,6 @@ export async function createPlatform(
   const startPosition: Vector2 = { x: leftX, y: platformY };
 
   addPositionComponent(world, entity, {
-    world: { ...startPosition },
     local: { ...startPosition },
   });
   addRotationComponent(world, entity);

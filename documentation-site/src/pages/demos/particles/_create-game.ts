@@ -68,11 +68,11 @@ export const createParticlesGame = async (): Promise<Game> => {
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createAgeScaleEcsSystem());
   world.addSystem(createRemoveFromWorldEcsSystem());
-  // Particles only update their local transform, so the transform system
-  // needs to run before the camera/render systems to resolve it to the world
-  // transform the renderer reads.
-  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
+  // Particles (like every entity) only update their local transform, so the
+  // transform system runs after every system above and before the render
+  // system, resolving it to the world transform the renderer reads.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   // The camera is static at the world origin with a zoom of 1 (see

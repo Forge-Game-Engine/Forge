@@ -41,14 +41,12 @@ export const createSpriteSpawnerEcsSystem = (
 
         addPositionComponent(world, entity, {
           local: Vec2.clone(position),
-          world: Vec2.clone(position),
         });
 
         addRotationComponent(world, entity);
 
         addScaleComponent(world, entity, {
           local: { x: spawner.spriteScale, y: spawner.spriteScale },
-          world: { x: spawner.spriteScale, y: spawner.spriteScale },
         });
 
         addSpriteComponent(world, entity, spawner.sprite);

@@ -71,7 +71,7 @@ const cameraFollowSystem = {
 
       const { positionOutput, velocityOutput } = smoothDampVector2(
         camera.position,
-        position.world,
+        position.local,
         camera.velocity,
         camera.maxFollowSpeed,
         camera.followSmoothTime,

@@ -15,6 +15,7 @@ import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
 import { createUiToggleEcsSystem } from '../systems/ui-toggle-system.js';
 import { createUiTooltipEcsSystem } from '../systems/ui-tooltip-system.js';
 import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
+import { createUiWorldSpaceFollowEcsSystem } from '../systems/ui-world-space-follow-system.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 
 /** Options for {@link registerUiSystems}. */
@@ -43,8 +44,9 @@ export interface RegisterUiSystemsOptions {
 
 /**
  * Registers every system a `createUiCanvas` canvas depends on: layout,
- * layout groups, aspect ratio fitting, progress bars, canvas groups, focus
- * navigation, color transitions, toggles, and tooltips - plus, once a
+ * layout groups, aspect ratio fitting, progress bars, world-space follow,
+ * canvas groups, focus navigation, color transitions, toggles, and
+ * tooltips - plus, once a
  * `pointerSource` is supplied, pointer raycasting/interaction/sliders, and
  * once `getSafeAreaInsets` is supplied, safe-area insetting - each wired in
  * the order their cross-system reads/writes require.
@@ -70,8 +72,10 @@ export interface RegisterUiSystemsOptions {
  * slider must run after interaction (it reads `pressCapture`). Progress
  * bars/aspect ratio fitting/layout groups have no interaction dependency
  * and run before layout, so a value they write is resolved into a rect the
- * very same tick rather than lagging a frame behind; canvas groups run
- * after layout so every UI system's relative order stays predictable.
+ * very same tick rather than lagging a frame behind; world-space follow
+ * runs after layout, since it offsets the local position layout just
+ * wrote; canvas groups run after layout so every UI system's relative
+ * order stays predictable.
  *
  * The caller is still responsible for registering `createTransformEcsSystem`
  * and `createRenderEcsSystem` with `world` - **after** this call, so the
@@ -80,11 +84,6 @@ export interface RegisterUiSystemsOptions {
  * run before the render system. Both are ordinary, already-existing systems
  * a game registers once regardless of UI, so this doesn't register a second
  * instance of either.
- *
- * The transform system sets `position.world = position.local` for every
- * entity it matches that has no parent. A game that moves its own entities by
- * writing `position.world` can limit it to UI elements instead with
- * `createTransformEcsSystem({ requiredComponents: [rectTransformId] })`.
  * @param world - The ECS world to register the UI systems with.
  * @param renderContext - The render context the layout/raycast/interaction/
  * slider/safe-area systems resolve canvas roots and pointer positions
@@ -126,6 +125,9 @@ export function registerUiSystems(
   }
 
   world.addSystem(layout, { after: layoutDependencies });
+  // Adds each followed target's world position to the local offset layout
+  // just wrote, so it must run after layout and before the transform system.
+  world.addSystem(createUiWorldSpaceFollowEcsSystem(), { after: [layout] });
   // Applies CanvasGroupEcsComponent's inherited alpha to
   // SpriteEcsComponent/TextEcsComponent.opacityMultiplier - doesn't depend
   // on resolved rects, but runs after layout so every UI system's relative

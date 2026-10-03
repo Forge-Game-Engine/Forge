@@ -84,12 +84,10 @@ function placeSprite(
 
   addPositionComponent(world, entity, {
     local: Vec2.clone(position),
-    world: Vec2.clone(position),
   });
 
   addScaleComponent(world, entity, {
     local: Vec2.clone(scale),
-    world: Vec2.clone(scale),
   });
 
   addSpriteComponent(world, entity, sprite);

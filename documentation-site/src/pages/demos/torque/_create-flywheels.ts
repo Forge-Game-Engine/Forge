@@ -76,7 +76,6 @@ async function createFlywheelEntity(
   );
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);

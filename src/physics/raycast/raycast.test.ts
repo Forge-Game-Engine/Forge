@@ -26,7 +26,7 @@ describe('raycast', () => {
   ): number {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: position });
+    addPositionComponent(world, entity, { local: position });
     addRotationComponent(world, entity);
     addColliderComponent(world, entity, { collider });
     addAabbComponent(world, entity);
@@ -106,7 +106,7 @@ describe('raycast', () => {
   it('should hit an entity with no rotation component, treating it as unrotated', () => {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: { x: 0, y: 0 } });
+    addPositionComponent(world, entity, { local: { x: 0, y: 0 } });
     addColliderComponent(world, entity, {
       collider: new PolygonCollider([
         { x: -2, y: -1 },

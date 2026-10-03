@@ -6,6 +6,7 @@ import {
   screenToWorldSpace,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   applyExplosiveForce,
   CollisionManifold,
@@ -51,6 +52,11 @@ export const createPhysicsGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
+  // `createTransformEcsSystem` turns each body's `local` pose (which
+  // `createEulerIntegrationEcsSystem` moved at the end of the previous tick)
+  // into the `world` pose that the physics and render systems read, so it
+  // runs before all of them.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(

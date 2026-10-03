@@ -18,7 +18,6 @@ import {
   addUiWorldSpaceFollowComponent,
   createPanel,
   createUiCanvas,
-  createUiWorldSpaceFollowEcsSystem,
   registerUiSystems,
   UiAnchor,
 } from '../../../src/ui/index.js';
@@ -156,9 +155,6 @@ export const createScene: CreateScene = async (
   });
 
   world.addSystem(createTransformEcsSystem());
-  // After createTransformEcsSystem - see createUiWorldSpaceFollowEcsSystem's
-  // own doc comment for why.
-  world.addSystem(createUiWorldSpaceFollowEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -38,10 +39,14 @@ export const createWreckingBallGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // The revolute joint solver must run after collision resolution so the
-  // ball's hinge to the crane gets the "last word" on velocity each tick;
-  // `createArmEcsSystem` only needs to run before `createRenderEcsSystem`,
-  // so its updated arm is reflected in this tick's render.
+  // `createArmEcsSystem` writes the arm's `local` pose from the ball's
+  // current position, so it runs before `createTransformEcsSystem`, which
+  // turns every entity's `local` pose into the `world` pose that physics and
+  // rendering read. The revolute joint solver must run after collision
+  // resolution so the ball's hinge to the crane gets the "last word" on
+  // velocity each tick.
+  world.addSystem(createArmEcsSystem());
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
@@ -55,7 +60,6 @@ export const createWreckingBallGame = async (): Promise<Game> => {
     ),
   );
   world.addSystem(createRevoluteJointEcsSystem(time));
-  world.addSystem(createArmEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));

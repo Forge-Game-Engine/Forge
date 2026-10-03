@@ -117,12 +117,10 @@ export async function createTargets(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: Vec2.clone(target.position),
       local: Vec2.clone(target.position),
     });
     addRotationComponent(world, entity, {
       local: target.rotation,
-      world: target.rotation,
     });
 
     const collider: Collider =

@@ -15,7 +15,7 @@ describe('addRotationComponent', () => {
     });
   });
 
-  it('overrides only the provided options', () => {
+  it('starts the world angle equal to the local angle', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
@@ -23,7 +23,7 @@ describe('addRotationComponent', () => {
 
     expect(world.getComponent(entity, rotationId)).toEqual({
       local: Math.PI,
-      world: 0,
+      world: Math.PI,
     });
   });
 
@@ -31,12 +31,9 @@ describe('addRotationComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    const component = addRotationComponent(world, entity, {
-      local: 1,
-      world: 2,
-    });
+    const component = addRotationComponent(world, entity, { local: 1 });
 
-    expect(component).toEqual({ local: 1, world: 2 });
+    expect(component).toEqual({ local: 1, world: 1 });
     expect(world.getComponent(entity, rotationId)).toBe(component);
   });
 });

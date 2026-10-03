@@ -7,6 +7,7 @@ import {
   screenToWorldSpace,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -76,11 +77,14 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // Gravity and the platform's own mover must run before collision
-  // resolution, so this tick's velocity changes are reflected in the
-  // solver; euler integration runs last so it moves every body (dynamic
-  // crates and the kinematic platform alike) from this tick's resolved
-  // velocity.
+  // `createTransformEcsSystem` runs first so every body's `world` pose
+  // matches the `local` pose euler integration wrote at the end of the
+  // previous tick before the physics and render systems read it. Gravity and
+  // the platform's own mover must run before collision resolution, so this
+  // tick's velocity changes are reflected in the solver; euler integration
+  // runs last so it moves every body (dynamic crates and the kinematic
+  // platform alike) from this tick's resolved velocity.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createPlatformMoverEcsSystem());
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

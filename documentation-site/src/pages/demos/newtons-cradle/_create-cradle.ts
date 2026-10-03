@@ -101,10 +101,9 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
-  addRotationComponent(world, entity, { local: angle, world: angle });
+  addRotationComponent(world, entity, { local: angle });
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
@@ -173,7 +172,6 @@ export async function createCradle(
     const pivotEntity = world.createEntity();
 
     addPositionComponent(world, pivotEntity, {
-      world: Vec2.clone(pivotPosition),
       local: Vec2.clone(pivotPosition),
     });
     addRotationComponent(world, pivotEntity);
@@ -182,10 +180,9 @@ export async function createCradle(
     const ballCollider = new CircleCollider(ballRadius);
 
     addPositionComponent(world, ballEntity, {
-      world: Vec2.clone(ballPosition),
       local: Vec2.clone(ballPosition),
     });
-    addRotationComponent(world, ballEntity, { local: angle, world: angle });
+    addRotationComponent(world, ballEntity, { local: angle });
     addSpriteComponent(world, ballEntity, {
       ...sprites.ball,
       width: ballRadius * 2,
@@ -219,7 +216,6 @@ export async function createCradle(
     const armEntity = world.createEntity();
 
     addPositionComponent(world, armEntity, {
-      world: Vec2.clone(pivotPosition),
       local: Vec2.clone(pivotPosition),
     });
     addRotationComponent(world, armEntity);

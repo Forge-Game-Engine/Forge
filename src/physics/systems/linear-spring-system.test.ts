@@ -32,7 +32,6 @@ describe('createLinearSpringEcsSystem', () => {
   } {
     const entity = world.createEntity();
     addPositionComponent(world, entity, {
-      world: { x, y: 0 },
       local: { x, y: 0 },
     });
     addRotationComponent(world, entity);

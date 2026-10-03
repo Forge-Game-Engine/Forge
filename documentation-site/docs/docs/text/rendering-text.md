@@ -11,7 +11,10 @@ crisp at any size, using a loaded
 [Loading a Font Atlas](./loading-a-font-atlas.md)):
 
 ```ts
-import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  createTransformEcsSystem,
+} from '@forge-game-engine/forge/common';
 import { createRenderEcsSystem } from '@forge-game-engine/forge/rendering';
 import {
   addTextComponent,
@@ -23,13 +26,14 @@ const fontAtlasCache = new FontAtlasCache();
 const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/body.json');
 
 const label = world.createEntity();
-addPositionComponent(world, label, { world: { x: 400, y: 300 } });
+addPositionComponent(world, label, { local: { x: 400, y: 300 } });
 addTextComponent(world, label, {
   text: 'Score: 0',
   fontAtlas,
   size: 24,
 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createTextShapingEcsSystem(renderContext));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
@@ -40,6 +44,9 @@ turns a `TextEcsComponent` into glyph geometry, and
 [`createRenderEcsSystem`](/Forge/docs/api/functions/createRenderEcsSystem)
 draws that geometry. A `TextEcsComponent` with no shaping system registered
 never renders, since it has nothing for the render system to draw yet.
+`createTransformEcsSystem` is the same one every positioned entity needs:
+it turns the label's `local` position into the `world` position the
+render system draws it at (see [Transforms](../common/transforms.md)).
 
 ## Letter spacing
 

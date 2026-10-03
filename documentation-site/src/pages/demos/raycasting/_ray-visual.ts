@@ -124,9 +124,7 @@ export function updateRayVisual(
   // rotates (0, 1) onto `direction`.
   const angle = Math.atan2(-direction.x, direction.y);
 
-  ray.line.position.world = midpoint;
-  ray.line.position.local = Vec2.clone(midpoint);
-  ray.line.rotation.world = angle;
+  ray.line.position.local = midpoint;
   ray.line.rotation.local = angle;
   ray.line.sprite.height = length;
   ray.line.sprite.tintColor = hitPoint ? hitColor : missColor;
@@ -134,7 +132,6 @@ export function updateRayVisual(
   ray.marker.sprite.enabled = hitPoint !== null;
 
   if (hitPoint) {
-    ray.marker.position.world = Vec2.clone(hitPoint);
     ray.marker.position.local = Vec2.clone(hitPoint);
   }
 }

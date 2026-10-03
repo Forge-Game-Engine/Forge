@@ -3,6 +3,7 @@ import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   positionId,
   rotationId,
   Time,
@@ -30,7 +31,6 @@ describe('createEulerIntegrationEcsSystem', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: { x: 0, y: 0 },
       local: { x: 0, y: 0 },
     });
     addRotationComponent(world, entity);
@@ -54,8 +54,8 @@ describe('createEulerIntegrationEcsSystem', () => {
     const position = world.getComponent(entity, positionId)!;
     const rotation = world.getComponent(entity, rotationId)!;
 
-    expect(position.world.x).toBeGreaterThan(0);
-    expect(rotation.world).toBeGreaterThan(0);
+    expect(position.local.x).toBeGreaterThan(0);
+    expect(rotation.local).toBeGreaterThan(0);
   });
 
   it('integrates a kinematic body the same as a dynamic one', () => {
@@ -66,8 +66,8 @@ describe('createEulerIntegrationEcsSystem', () => {
     const position = world.getComponent(entity, positionId)!;
     const rotation = world.getComponent(entity, rotationId)!;
 
-    expect(position.world.x).toBeGreaterThan(0);
-    expect(rotation.world).toBeGreaterThan(0);
+    expect(position.local.x).toBeGreaterThan(0);
+    expect(rotation.local).toBeGreaterThan(0);
   });
 
   it('never moves a static body, even with a nonzero velocity', () => {
@@ -78,7 +78,27 @@ describe('createEulerIntegrationEcsSystem', () => {
     const position = world.getComponent(entity, positionId)!;
     const rotation = world.getComponent(entity, rotationId)!;
 
-    expect(position.world).toEqual({ x: 0, y: 0 });
-    expect(rotation.world).toBe(0);
+    expect(position.local).toEqual({ x: 0, y: 0 });
+    expect(rotation.local).toBe(0);
+  });
+
+  it('keeps a moving body where it integrated to when the transform system runs', () => {
+    // The transform system derives `world` from `local` every frame, so
+    // physics has to move bodies through `local` or they snap back.
+    world.addSystem(createTransformEcsSystem());
+
+    const entity = createBody('dynamic');
+
+    world.update();
+    world.update();
+    world.update();
+
+    const position = world.getComponent(entity, positionId)!;
+    const rotation = world.getComponent(entity, rotationId)!;
+
+    expect(position.world).toEqual(position.local);
+    expect(position.world.x).toBeGreaterThan(0);
+    expect(rotation.world).toBe(rotation.local);
+    expect(rotation.world).toBeGreaterThan(0);
   });
 });

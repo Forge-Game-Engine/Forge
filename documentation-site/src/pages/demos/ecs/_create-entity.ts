@@ -14,6 +14,5 @@ export function createEntity(world: EcsWorld, sprite: Sprite): void {
 
   addRotationComponent(world, starEntity, {
     local: Math.PI,
-    world: Math.PI,
   });
 }

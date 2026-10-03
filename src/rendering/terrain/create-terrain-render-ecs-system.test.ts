@@ -70,7 +70,7 @@ describe('createTerrainRenderEcsSystem', () => {
   const addCamera = (overrides: Partial<CameraEcsComponent> = {}): void => {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: { x: 10, y: 20 } });
+    addPositionComponent(world, entity, { local: { x: 10, y: 20 } });
     addCameraComponent(world, entity, {
       minZoom: 0.0001,
       maxZoom: 10000,

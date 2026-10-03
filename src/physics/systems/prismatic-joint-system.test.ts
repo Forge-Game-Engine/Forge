@@ -3,6 +3,7 @@ import { createPrismaticJointEcsSystem } from './prismatic-joint-system.js';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -24,6 +25,7 @@ describe('createPrismaticJointEcsSystem', () => {
     currentMs = 0;
     time.update(currentMs);
 
+    world.addSystem(createTransformEcsSystem());
     world.addSystem(createPrismaticJointEcsSystem(time));
     world.addSystem(createEulerIntegrationEcsSystem(time));
   });
@@ -37,14 +39,12 @@ describe('createPrismaticJointEcsSystem', () => {
   it('keeps perpendicular displacement near zero while axial displacement is free', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     const sliderPosition = addPositionComponent(world, slider, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, slider);
@@ -78,14 +78,12 @@ describe('createPrismaticJointEcsSystem', () => {
   it('locks relative rotation to the reference angle', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     addPositionComponent(world, slider, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     const sliderRotation = addRotationComponent(world, slider);
@@ -112,14 +110,12 @@ describe('createPrismaticJointEcsSystem', () => {
   it('respects a translation limit', () => {
     const anchor = world.createEntity();
     addPositionComponent(world, anchor, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, anchor);
 
     const slider = world.createEntity();
     const sliderPosition = addPositionComponent(world, slider, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, slider);

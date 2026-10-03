@@ -122,7 +122,7 @@ export function createEffectsExamples(
 
     const captionEntity = world.createEntity();
     addPositionComponent(world, captionEntity, {
-      world: { x, y: topLeft.y },
+      local: { x, y: topLeft.y },
     });
     addTextComponent(world, captionEntity, {
       text: column.label,
@@ -141,7 +141,7 @@ export function createEffectsExamples(
     );
 
     const textEntity = world.createEntity();
-    addPositionComponent(world, textEntity, { world: { x, y: boxTop } });
+    addPositionComponent(world, textEntity, { local: { x, y: boxTop } });
     addTextComponent(world, textEntity, {
       text: sampleText,
       fontAtlas,

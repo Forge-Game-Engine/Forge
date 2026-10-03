@@ -88,7 +88,7 @@ function fireBullet(
   const bullet = world.createEntity();
   const position = { x, y };
 
-  addPositionComponent(world, bullet, { local: position, world: position });
+  addPositionComponent(world, bullet, { local: position });
   addRotationComponent(world, bullet);
   addSpriteComponent(world, bullet, bulletSprite);
   addPhysicsBodyComponent(world, bullet, {
@@ -132,7 +132,7 @@ function spawnTemporaryWall(x: number, y: number, duration: number) {
   const wall = world.createEntity();
   const position = { x, y };
 
-  addPositionComponent(world, wall, { local: position, world: position });
+  addPositionComponent(world, wall, { local: position });
   addRotationComponent(world, wall);
   addSpriteComponent(world, wall, wallSprite);
   addPhysicsBodyComponent(world, wall, {

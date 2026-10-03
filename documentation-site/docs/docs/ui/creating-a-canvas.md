@@ -103,30 +103,6 @@ Register `createTransformEcsSystem`/`createRenderEcsSystem` **after**
 runs before the transform system (which reads it to compute
 `position.world`), which in turn must run before the render system.
 
-### Games that move entities in world space
-
-`createTransformEcsSystem` takes over `position.world` for every entity it
-processes: an entity without a parent gets `position.world` set to
-`position.local` every frame. If your game moves its entities by writing
-`position.world` directly, registering the plain transform system makes
-them snap back to their local positions. Limit it to UI elements instead:
-
-```ts
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
-import { rectTransformId } from '@forge-game-engine/forge/ui';
-
-world.addSystem(
-  createTransformEcsSystem({ requiredComponents: [rectTransformId] }),
-);
-```
-
-`requiredComponents` (and `tags`) narrow which entities the system computes.
-An entity it doesn't match is never written, even when a matched entity is
-parented to it: the child reads that parent's current `position.world` as
-is. If your game also parents some of its own entities with
-`addParentComponent`, give those a tag and register a second instance,
-`createTransformEcsSystem({ tags: [yourTag] })`, alongside the UI one.
-
 ## Creating a world-space canvas
 
 Pass `renderMode: 'worldSpace'` to put UI content in the game world instead
@@ -147,11 +123,6 @@ const fill = createPanel(world, healthBarCanvas, {
   anchor: UiAnchor.stretchAll(),
   sprite: fillSprite,
 });
-
-world.addSystem(createTransformEcsSystem());
-// After createTransformEcsSystem, not before like the rest of the UI
-// pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
-world.addSystem(createUiWorldSpaceFollowEcsSystem());
 ```
 
 A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
@@ -170,18 +141,19 @@ for `renderMode: 'worldSpace'` at all - the type checker rejects them,
 since there's no "destination size" for a canvas embedded in the world to
 scale against, and no dedicated UI camera for them to configure.
 
-**Following, not parenting**: `addUiWorldSpaceFollowComponent`/
-`createUiWorldSpaceFollowEcsSystem` overwrites the canvas's world position
-every frame with the target's own world position plus the canvas's local
-offset, ignoring the target's rotation entirely - unlike
+**Following, not parenting**: `addUiWorldSpaceFollowComponent` moves the
+canvas to its target's world position plus the canvas's anchored offset
+every frame, ignoring the target's rotation entirely - unlike
 `addParentComponent`, which inherits the target's full world transform
 (the ordinary case for, say, a turret mounted on a rotating tank). Use
 this so a diegetic UI canvas stays upright above its target regardless of
-which way it's facing, instead of swinging around with it. Because
-`createUiWorldSpaceFollowEcsSystem` needs the target's world position
-already resolved for the current tick, register it yourself, once, right
-after `createTransformEcsSystem` - unlike the rest of the UI pipeline,
-`registerUiSystems` doesn't register it for you.
+which way it's facing, instead of swinging around with it.
+`registerUiSystems` registers `createUiWorldSpaceFollowEcsSystem` for you,
+right after layout: it adds the target's world position to the local
+offset layout just wrote, and the transform system turns that into the
+canvas's world position. The target's world position comes from the
+previous frame's transform pass, so the canvas trails a moving target by
+one frame.
 
 A world-space canvas is created exactly like a screen-space one otherwise -
 multiple canvases (a screen-space HUD plus several world-space health

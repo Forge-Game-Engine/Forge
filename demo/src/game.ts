@@ -8,6 +8,7 @@ import {
   createGame,
   createImageSprite,
   createRenderEcsSystem,
+  createTransformEcsSystem,
   degreesToRadians,
   EcsSystem,
   EcsWorld,
@@ -118,8 +119,8 @@ function createFountainSpawnEcsSystem(
     const sprite = addSpriteComponent(world, entity, template.sprite);
     spritesByEntity.set(entity, sprite);
 
-    addPositionComponent(world, entity, { world: position });
-    addRotationComponent(world, entity, { world: 0 });
+    addPositionComponent(world, entity, { local: position });
+    addRotationComponent(world, entity, { local: 0 });
     addGravityComponent(world, entity);
     addRigidBodyComponent(world, entity, {
       mass: collider.mass,
@@ -167,7 +168,7 @@ function createDespawnFallenShapesEcsSystem(
     query: [positionId, rigidBodyId],
     update: (world, { entities, components: [positions] }) => {
       for (let i = 0; i < entities.length; i++) {
-        if (positions[i].world.y < minY) {
+        if (positions[i].local.y < minY) {
           world.removeEntity(entities[i]);
           spritesByEntity.delete(entities[i]);
         }
@@ -302,8 +303,8 @@ const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
 const groundTopY = groundPosition.y + groundHalfHeight;
 
-addPositionComponent(world, groundEntity, { world: groundPosition });
-addRotationComponent(world, groundEntity, { world: 0 });
+addPositionComponent(world, groundEntity, { local: groundPosition });
+addRotationComponent(world, groundEntity, { local: 0 });
 addSpriteComponent(world, groundEntity, {
   ...squareSprite,
   width: visibleWidth,
@@ -339,6 +340,7 @@ world.addSystem(
     fountainY,
   ),
 );
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));

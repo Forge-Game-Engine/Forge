@@ -1,3 +1,4 @@
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   calculateVisibleWorldSize,
   createCamera,
@@ -163,6 +164,10 @@ export const createTextGame = async (
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createLiveMaxWidthEcsSystem(time));
+  // After every system that writes `position.local` (the live max-width
+  // example moves its guide box each frame), so rendering sees this
+  // frame's world positions.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createTextShapingEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
 

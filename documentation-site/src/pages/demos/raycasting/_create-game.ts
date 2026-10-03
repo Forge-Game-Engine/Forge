@@ -7,6 +7,7 @@ import {
   screenToWorldSpace,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionPair,
   createBroadPhaseEcsSystem,
@@ -62,6 +63,11 @@ export const createRaycastingGame = async (): Promise<Game> => {
   // recomputing it, so the broad-phase system still needs to run every
   // tick to keep it in sync - even though nothing in this scene has a
   // `RigidBodyEcsComponent` for it to actually resolve collisions between.
+  // `createTransformEcsSystem` runs first so the targets' `world` poses (which
+  // the broad phase and `raycast` read) and the ray visual's `world` pose
+  // (which `updateRayVisual` writes as `local` from the mouse handler below)
+  // are up to date before the broad-phase and render systems read them.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));

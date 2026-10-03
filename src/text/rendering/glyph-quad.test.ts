@@ -458,9 +458,9 @@ describe('buildTextCameraCommands', () => {
   it("looks up the entity's rotation and scale components from the world", () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const rotation = addRotationComponent(world, entity, { world: 1.5 });
+    const rotation = addRotationComponent(world, entity, { local: 1.5 });
     const scale = addScaleComponent(world, entity, {
-      world: { x: 2, y: 2 },
+      local: { x: 2, y: 2 },
     });
     const commands: RenderCommand[] = [];
 

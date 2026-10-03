@@ -31,7 +31,6 @@ import {
   createLabel,
   createPanel,
   createUiCanvas,
-  createUiWorldSpaceFollowEcsSystem,
   registerUiSystems,
   UiAnchor,
   uiCanvasRenderModes,
@@ -261,9 +260,6 @@ export const createWorldSpaceCanvasGame = async (
   world.addSystem(createSpinEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  // After createTransformEcsSystem, not before like the rest of the UI
-  // pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
-  world.addSystem(createUiWorldSpaceFollowEcsSystem());
   world.addSystem(createTextShapingEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

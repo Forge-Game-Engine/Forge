@@ -72,6 +72,7 @@ before the present system, since it reads what the render system just drew
 and the present system draws whatever the bloom system leaves behind:
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   addBloomComponent,
   createBloomEcsSystem,
@@ -94,6 +95,7 @@ const camera = createCamera(world, { renderTarget: sceneTarget });
 
 addBloomComponent(world, camera, { threshold: 0.7, passes: 4, intensity: 1 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createBloomEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
@@ -209,6 +211,7 @@ own albedo isn't pure white — a neon sign's tube can stay a dim, believable
 color while still glowing brighter than the scene around it:
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   addBloomComponent,
   addToneMappingComponent,
@@ -239,6 +242,7 @@ const neonSign = createImageSprite(neonSignImage, renderContext, 0, undefined, {
   intensity: 4,
 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createBloomEcsSystem(renderContext));
 world.addSystem(createToneMapEcsSystem(renderContext));

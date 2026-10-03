@@ -17,6 +17,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
@@ -227,17 +228,6 @@ export const createSpaceShooterGame = async (
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
-  world.addSystem(
-    createResizeRenderTargetsEcsSystem(renderContext, [
-      backgroundRenderTarget,
-      foregroundRenderTarget,
-    ]),
-  );
-  world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createBloomEcsSystem(renderContext));
-  world.addSystem(createGaussianBlurEcsSystem(renderContext));
-  world.addSystem(createToneMapEcsSystem(renderContext));
-  world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createMovementEcsSystem(moveInput, time));
   world.addSystem(createBackgroundEcsSystem(time, renderContext));
   world.addSystem(createAudioEcsSystem());
@@ -250,6 +240,25 @@ export const createSpaceShooterGame = async (
   world.addSystem(
     createSpriteAnimationEcsSystem(time, explosionSpawner.animationRegistry),
   );
+  // Every system above only writes `local` poses (and spawns entities with
+  // only a `local` pose), so the transform system runs after all of them to
+  // turn this frame's poses into the `world` poses that rendering and
+  // collision detection read.
+  world.addSystem(createTransformEcsSystem());
+  // Rendering runs right after the transform pass, so it draws this frame's
+  // poses. Explosions spawned and the player reset by the collision and
+  // game-over systems below show up on the next frame.
+  world.addSystem(
+    createResizeRenderTargetsEcsSystem(renderContext, [
+      backgroundRenderTarget,
+      foregroundRenderTarget,
+    ]),
+  );
+  world.addSystem(createRenderEcsSystem(renderContext));
+  world.addSystem(createBloomEcsSystem(renderContext));
+  world.addSystem(createGaussianBlurEcsSystem(renderContext));
+  world.addSystem(createToneMapEcsSystem(renderContext));
+  world.addSystem(createPresentEcsSystem(renderContext));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

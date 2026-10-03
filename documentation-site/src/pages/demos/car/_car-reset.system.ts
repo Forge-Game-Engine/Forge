@@ -7,9 +7,9 @@ import { CarResetEcsComponent, carResetId } from './_car-reset.component';
 /**
  * Teleports every body in each matched entity's `CarResetEcsComponent.bodies`
  * back to its recorded spawn transform, with zero velocity, on the tick
- * `restartInput` fires. Must run before whatever system integrates velocity
- * into position (`createEulerIntegrationEcsSystem`), so a restart applied
- * this tick is reflected in this same tick's integration.
+ * `restartInput` fires. Writes each body's `local` pose, so it must run
+ * before `createTransformEcsSystem`, so a restart applied this tick is
+ * reflected in this same tick's physics step and render.
  */
 export const createCarResetEcsSystem = (): EcsSystem<
   [CarResetEcsComponent]
@@ -28,13 +28,11 @@ export const createCarResetEcsSystem = (): EcsSystem<
 
         if (position !== null) {
           // clone: initialPosition is the same recorded transform reused on
-          // every restart, and world/local must be independent instances.
-          position.world = Vec2.clone(initialPosition);
+          // every restart, so it must not become the body's live position.
           position.local = Vec2.clone(initialPosition);
         }
 
         if (rotation !== null) {
-          rotation.world = initialAngle;
           rotation.local = initialAngle;
         }
 

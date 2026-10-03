@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createComponentId, createTagId, EcsWorld } from '../../ecs/index.js';
+import { EcsWorld } from '../../ecs/index.js';
 
 import {
   addPositionComponent,
@@ -324,124 +324,24 @@ describe('transform-system', () => {
     expect(childScale.world.y).toBe(4);
   });
 
-  describe('when filtered', () => {
-    const ownedId = createComponentId<object>('owned');
-    const ownedTag = createTagId('owned');
+  it("keeps a root entity's world scale separate from its local scale", () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
 
-    let filteredWorld: EcsWorld;
+    addPositionComponent(world, parent);
+    addScaleComponent(world, parent, { local: { x: 3, y: 3 } });
+    addPositionComponent(world, child);
 
-    beforeEach(() => {
-      filteredWorld = new EcsWorld();
-      filteredWorld.addSystem(
-        createTransformEcsSystem({ requiredComponents: [ownedId] }),
-      );
+    const childScale = addScaleComponent(world, child, {
+      local: { x: 2, y: 2 },
     });
 
-    it('should leave the world position of an unmatched root entity alone', () => {
-      const entity = filteredWorld.createEntity();
+    world.update();
+    addParentComponent(world, child, { parent });
+    world.update();
+    world.update();
 
-      const position = addPositionComponent(filteredWorld, entity, {
-        local: { x: 0, y: 0 },
-      });
-
-      position.world.x = 50;
-      position.world.y = 60;
-
-      filteredWorld.update();
-
-      expect(position.world.x).toBe(50);
-      expect(position.world.y).toBe(60);
-    });
-
-    it('should compute the world position of a matched root entity', () => {
-      const entity = filteredWorld.createEntity();
-
-      const position = addPositionComponent(filteredWorld, entity, {
-        local: { x: 10, y: 20 },
-      });
-
-      filteredWorld.addComponent(entity, ownedId, {});
-
-      filteredWorld.update();
-
-      expect(position.world.x).toBe(10);
-      expect(position.world.y).toBe(20);
-    });
-
-    it('should compose a matched child from an unmatched parent without overwriting the parent', () => {
-      const parent = filteredWorld.createEntity();
-      const child = filteredWorld.createEntity();
-
-      const parentPosition = addPositionComponent(filteredWorld, parent, {
-        local: { x: 0, y: 0 },
-      });
-
-      parentPosition.world.x = 100;
-      parentPosition.world.y = 200;
-
-      const childPosition = addPositionComponent(filteredWorld, child, {
-        local: { x: 5, y: 5 },
-      });
-
-      addParentComponent(filteredWorld, child, { parent });
-      filteredWorld.addComponent(child, ownedId, {});
-
-      filteredWorld.update();
-
-      expect(parentPosition.world.x).toBe(100);
-      expect(parentPosition.world.y).toBe(200);
-      expect(childPosition.world.x).toBe(105);
-      expect(childPosition.world.y).toBe(205);
-    });
-
-    it('should not freeze a static child of an unmatched parent', () => {
-      const parent = filteredWorld.createEntity();
-      const child = filteredWorld.createEntity();
-
-      const parentPosition = addPositionComponent(filteredWorld, parent, {
-        local: { x: 0, y: 0 },
-        isStatic: true,
-      });
-
-      const childPosition = addPositionComponent(filteredWorld, child, {
-        local: { x: 5, y: 5 },
-        isStatic: true,
-      });
-
-      addParentComponent(filteredWorld, child, { parent });
-      filteredWorld.addComponent(child, ownedId, {});
-
-      filteredWorld.update();
-
-      parentPosition.world.x = 100;
-
-      filteredWorld.update();
-
-      expect(childPosition.world.x).toBe(105);
-    });
-
-    it('should only compute entities with the given tags', () => {
-      const taggedWorld = new EcsWorld();
-
-      taggedWorld.addSystem(createTransformEcsSystem({ tags: [ownedTag] }));
-
-      const tagged = taggedWorld.createEntity();
-      const untagged = taggedWorld.createEntity();
-
-      const taggedPosition = addPositionComponent(taggedWorld, tagged, {
-        local: { x: 1, y: 2 },
-      });
-
-      const untaggedPosition = addPositionComponent(taggedWorld, untagged, {
-        local: { x: 3, y: 4 },
-      });
-
-      taggedWorld.addTag(tagged, ownedTag);
-
-      taggedWorld.update();
-
-      expect(taggedPosition.world).toEqual({ x: 1, y: 2 });
-      expect(untaggedPosition.world).toEqual({ x: 0, y: 0 });
-    });
+    expect(childScale.local).toEqual({ x: 2, y: 2 });
+    expect(childScale.world).toEqual({ x: 6, y: 6 });
   });
 });

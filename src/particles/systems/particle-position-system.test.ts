@@ -66,12 +66,10 @@ describe('ParticlePositionSystem', () => {
 
     const pos2 = addPositionComponent(world, entity2, {
       local: { x: 10, y: 10 },
-      world: { x: 10, y: 10 },
     });
 
     addRotationComponent(world, entity2, {
       local: Math.PI / 2,
-      world: Math.PI / 2,
     });
     addSpeedComponent(world, entity2, { speed: 100 });
     addParticleComponent(world, entity2);

@@ -164,13 +164,11 @@ export async function createTerrain(
   const terrainEntity = world.createEntity();
 
   addPositionComponent(world, terrainEntity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
 
   addRotationComponent(world, terrainEntity, {
     local: angle,
-    world: angle,
   });
 
   addColliderComponent(world, terrainEntity, {

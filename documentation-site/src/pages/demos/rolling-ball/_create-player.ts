@@ -63,7 +63,6 @@ export async function createPlayer(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(spawnPosition),
     local: Vec2.clone(spawnPosition),
   });
 

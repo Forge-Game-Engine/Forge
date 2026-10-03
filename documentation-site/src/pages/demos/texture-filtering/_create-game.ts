@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createEntity } from './_create-entity';
 import { createSprite } from './_create-sprite';
@@ -32,6 +33,9 @@ export const createTextureFilteringGame = async (): Promise<Game> => {
   createEntity(world, rasterSprite, 200);
 
   world.addSystem(createCameraEcsSystem(time));
+  // Derives each sprite's `world` pose from its `local` pose for the render
+  // system to draw.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

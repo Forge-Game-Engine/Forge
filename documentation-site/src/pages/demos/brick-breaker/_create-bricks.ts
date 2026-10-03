@@ -179,14 +179,12 @@ export async function createBrickField(
 
     addPositionComponent(world, entity, {
       local: Vec2.clone(position),
-      world: Vec2.clone(position),
     });
 
     addRotationComponent(world, entity);
 
     addScaleComponent(world, entity, {
       local: { x: scale, y: scale },
-      world: { x: scale, y: scale },
     });
 
     addSpriteComponent(world, entity, sprite);

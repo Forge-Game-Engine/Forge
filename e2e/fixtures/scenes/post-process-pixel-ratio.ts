@@ -1,6 +1,7 @@
 import {
   addBloomComponent,
   addGaussianBlurComponent,
+  addPositionComponent,
   Color,
   createBloomEcsSystem,
   createCamera,
@@ -14,7 +15,6 @@ import {
   createRenderTarget,
   createTransformEcsSystem,
   EcsWorld,
-  positionId,
   spriteId,
   Time,
 } from '../../../src/index.js';
@@ -106,9 +106,8 @@ export const createScene: CreateScene = async (
   });
   const square = world.createEntity();
 
-  world.addComponent(square, positionId, {
+  addPositionComponent(world, square, {
     local: { x: 0, y: 0 },
-    world: { x: 0, y: 0 },
   });
   world.addComponent(square, spriteId, {
     ...squareSprite,
