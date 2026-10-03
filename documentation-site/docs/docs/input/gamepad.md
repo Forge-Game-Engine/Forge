@@ -81,12 +81,10 @@ const inputManager = registerInputs(world, time, {
 
 const gamepad = new GamepadInputSource(inputManager);
 
-// The W3C Standard Gamepad reports a stick pushed up as -1, so invert it
-// to make up positive, matching the D-pad binding below.
+// Pushing the stick up reads as positive, matching the D-pad binding below.
 gamepad.axis1dBindings.add(
   new GamepadAxis1dBinding(moveVertical, {
     axisIndex: gamepadAxes.leftStickY,
-    inverted: true,
   }),
 );
 
@@ -119,17 +117,19 @@ These actions can also be bound on a `KeyboardInputSource` (for example
 reads the same `moveVertical`, `shoot` and `restart` whichever device the
 player uses.
 
-## Up is negative on a stick
+## Up is positive on a stick
 
-The [W3C Standard Gamepad](https://www.w3.org/TR/gamepad/#remapping) reports
-a stick pushed up as `-1` and pushed down as `+1`, the opposite of the
-up-is-positive convention `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)`
-and `KeyboardAxis2dBinding`'s north key follow. Set `inverted: true` on a
-stick's Y axis in a `GamepadAxis1dBinding` (or `invertY: true` in a
-`GamepadAxis2dBinding`) to bring it in line. The button forms don't need
-this, since you choose which button is positive (or north) yourself.
-Without it, a stick and a D-pad bound to the same action cancel each other
-out instead of agreeing.
+A stick pushed up reads as `+1` and pushed down as `-1`, the same
+up-is-positive convention `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)`,
+`KeyboardAxis2dBinding`'s north key and world space follow. So a stick and a
+D-pad bound to the same action agree without any extra configuration. The
+[W3C Standard Gamepad](https://www.w3.org/TR/gamepad/#remapping) reports
+the opposite, so `GamepadInputSource` flips `gamepadAxes.leftStickY` and
+`gamepadAxes.rightStickY` as it reads them. Raw values from
+`navigator.getGamepads()` still use the W3C sign.
+
+To offer players inverted look controls, negate the action's value in game
+code when the setting is on.
 
 ## Gotchas
 

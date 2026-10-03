@@ -1,6 +1,10 @@
 import { Stoppable, Updatable } from '../../../common/index.js';
 import { Axis1dAction, Axis2dAction, HoldAction } from '../../actions/index.js';
-import { buttonMoments } from '../../constants/index.js';
+import {
+  buttonMoments,
+  gamepadAxes,
+  GamepadAxisIndex,
+} from '../../constants/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
@@ -31,13 +35,28 @@ const clampAxisValue = (value: number): number =>
   Math.max(-1, Math.min(1, value));
 
 /**
- * Negates `value` when `inverted` is set. Leaves `0` alone so an idle,
- * inverted axis reads `0` rather than `-0`.
+ * The W3C Standard Gamepad reports a stick pushed up as `-1`, but the engine
+ * is Y-up everywhere else (keyboard bindings, the D-pad's north button,
+ * world space). These axes are negated as they're read, so a stick and
+ * every other input agree on which way is up.
  */
-const applyInversion = (
-  value: number,
-  inverted: boolean | undefined,
-): number => (inverted && value !== 0 ? -value : value);
+const stickYAxes: ReadonlySet<GamepadAxisIndex> = new Set([
+  gamepadAxes.leftStickY,
+  gamepadAxes.rightStickY,
+]);
+
+/**
+ * Reads a stick axis with up positive. Leaves `0` alone so an idle Y axis
+ * reads `0` rather than `-0`.
+ */
+const readStickAxis = (
+  gamepad: Gamepad,
+  axisIndex: GamepadAxisIndex,
+): number => {
+  const rawValue = gamepad.axes[axisIndex] ?? 0;
+
+  return stickYAxes.has(axisIndex) && rawValue !== 0 ? -rawValue : rawValue;
+};
 
 const isButtonPressed = (gamepad: Gamepad, buttonIndex: number): boolean =>
   gamepad.buttons[buttonIndex]?.pressed ?? false;
@@ -404,13 +423,9 @@ export class GamepadInputSource
     const { source } = binding;
 
     if ('axisIndex' in source) {
-      const rawValue = gamepad.axes[source.axisIndex] ?? 0;
+      const value = readStickAxis(gamepad, source.axisIndex);
 
-      if (Math.abs(rawValue) < gamepadAxisDeadzone) {
-        return 0;
-      }
-
-      return applyInversion(rawValue, source.inverted);
+      return Math.abs(value) < gamepadAxisDeadzone ? 0 : value;
     }
 
     return (
@@ -426,17 +441,10 @@ export class GamepadInputSource
     const { source } = binding;
 
     if ('xAxisIndex' in source) {
-      const rawX = gamepad.axes[source.xAxisIndex] ?? 0;
-      const rawY = gamepad.axes[source.yAxisIndex] ?? 0;
+      const x = readStickAxis(gamepad, source.xAxisIndex);
+      const y = readStickAxis(gamepad, source.yAxisIndex);
 
-      if (Math.hypot(rawX, rawY) < gamepadAxisDeadzone) {
-        return { x: 0, y: 0 };
-      }
-
-      return {
-        x: applyInversion(rawX, source.invertX),
-        y: applyInversion(rawY, source.invertY),
-      };
+      return Math.hypot(x, y) < gamepadAxisDeadzone ? { x: 0, y: 0 } : { x, y };
     }
 
     return {

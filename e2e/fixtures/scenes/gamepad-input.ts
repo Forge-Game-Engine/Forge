@@ -178,7 +178,7 @@ export interface GamepadInputSceneHandle extends SceneHandle {
  * third stick binding on a `'menu'`-group action, to prove `InputManager`'s
  * active-group gating applies to a polled source the same way it does to
  * event-driven keyboard/mouse sources. It also exercises button-driven
- * hold and trigger bindings, an inverted stick axis sharing an
+ * hold and trigger bindings, a stick Y axis sharing an
  * up-is-positive action with the D-pad, and releasing everything the
  * gamepad was driving once it's unplugged.
  * @param container - The element to render the scene's canvas into.
@@ -251,7 +251,6 @@ export const createScene: CreateScene = async (
   gamepadInputSource.axis1dBindings.add(
     new GamepadAxis1dBinding(verticalAction, {
       axisIndex: gamepadAxes.leftStickY,
-      inverted: true,
     }),
   );
   gamepadInputSource.axis1dBindings.add(
