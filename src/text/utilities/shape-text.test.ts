@@ -181,16 +181,60 @@ describe('shapeText', () => {
     expect(glyphs[1].offset.x).toBeCloseTo(10);
   });
 
-  it('does not add letterSpacing around whitespace', () => {
-    const { glyphs, bounds } = shapeText('A A', buildFixtureFontAtlasData(), {
+  it('adds letterSpacing once across a word gap, on top of the space', () => {
+    const { glyphs, bounds } = shapeText('AA AA', buildFixtureFontAtlasData(), {
       size: 10,
       letterSpacing: 0.1,
     });
 
-    // Each one-letter word has no gap of its own, and the space between
-    // them advances by its own 3 world units only.
-    expect(glyphs[1].offset.x).toBeCloseTo(12);
-    expect(bounds.width).toBeCloseTo(15);
+    // Each "AA" is 6 + 1 + 6 = 13 wide. The word gap is the space's 3 plus
+    // one letter space of 1, so it stays wider than the 1 between letters
+    // and tracked words don't run together.
+    expect(glyphs[1].offset.x).toBeCloseTo(10);
+    expect(glyphs[2].offset.x).toBeCloseTo(13 + 3 + 1 + 3);
+    expect(glyphs[3].offset.x).toBeCloseTo(13 + 3 + 1 + 10);
+    expect(bounds.width).toBeCloseTo(13 + 3 + 1 + 13);
+  });
+
+  it('adds no letterSpacing for a word missing entirely from the atlas', () => {
+    const { glyphs, bounds } = shapeText(
+      'A ?? A ??',
+      buildFixtureFontAtlasData(),
+      {
+        size: 10,
+        letterSpacing: 0.1,
+      },
+    );
+
+    // The "??" words draw nothing, so the second "A" sits after both
+    // spaces (3 + 3) and a single letter space of 1, and the trailing "??"
+    // doesn't widen the line.
+    expect(glyphs[1].offset.x).toBeCloseTo(6 + 3 + 3 + 1 + 3);
+    expect(bounds.width).toBeCloseTo(6 + 3 + 3 + 1 + 6);
+  });
+
+  it("does not add letterSpacing before a wrapped line's first word", () => {
+    const { glyphs, bounds } = shapeText('AA AA', buildFixtureFontAtlasData(), {
+      size: 10,
+      letterSpacing: 0.1,
+      maxWidth: 20,
+    });
+
+    // Second line's "AA" starts flush at x = 0, like the first.
+    expect(glyphs[2].offset.x).toBeCloseTo(3);
+    expect(bounds.width).toBeCloseTo(13);
+  });
+
+  it('counts the word gap letterSpacing when deciding to wrap', () => {
+    const { glyphs } = shapeText('A A', buildFixtureFontAtlasData(), {
+      size: 10,
+      letterSpacing: 0.1,
+      maxWidth: 15.5,
+    });
+
+    // 6 + 3 + 6 = 15 would fit, but with the gap's letter space of 1 the
+    // line is 16 wide, so the second "A" wraps.
+    expect(glyphs[1].offset.x).toBeCloseTo(3);
   });
 
   it('returns empty glyphs and zero width for an empty string', () => {
@@ -322,6 +366,19 @@ describe('shapeText', () => {
       // right edge, the same margin on both sides.
       expect(glyphs[0].offset.x).toBeCloseTo(3 + 5);
       expect(glyphs[2].offset.x + 3).toBeCloseTo(30 - 5);
+    });
+
+    it('centers multi-word letter-spaced text on its letters', () => {
+      const { glyphs } = shapeText('A A', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        letterSpacing: 0.1,
+        horizontalAlign: 'center',
+      });
+
+      // "A A" is 6 + 3 + 1 + 6 = 16 wide, leaving 7 on each side.
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + 7);
+      expect(glyphs[1].offset.x + 3).toBeCloseTo(30 - 7);
     });
 
     it('right-aligns letter-spaced text flush with maxWidth', () => {
