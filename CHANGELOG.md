@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 
 - **rendering:** Gaussian blur and bloom are now sized in CSS pixels instead of render target (device) pixels, so the same `passes`, `threshold` and `intensity` look the same at every display pixel ratio. Since 0.25.6, a high-DPI display made the blur and the bloom halo spread less far on screen, and made bloom much brighter close to small bright sprites. Looks at a pixel ratio of 1 are unchanged. On a high-DPI display the Gaussian blur now runs at CSS-pixel resolution, which also makes it cheaper there
+- **rendering:** Bloom's glow now only adds light to whatever is presented beneath its camera's render target, such as a background camera's layer. It used to give the halo partial opacity of its own, so the glow covered part of the layer behind it and dimmed colors the glow lacks (a yellow glow over a blue background reduced the blue)
 
 ## [0.25.6] - 2026-10-03
 

@@ -33,7 +33,6 @@ void main() {
     // bullet's yellow tail, say) instead of flattening the whole block to
     // whichever single texel happened to be brightest.
     vec3 accumulatedColor = vec3(0.0);
-    float accumulatedContribution = 0.0;
     float blockSize = float(u_blockSize);
     vec2 firstOffset = vec2(0.5 - blockSize * 0.5);
 
@@ -45,16 +44,12 @@ void main() {
             float sampleContribution = smoothstep(u_threshold, u_threshold + knee, sampleBrightness);
 
             accumulatedColor += sampleColor.rgb * sampleContribution;
-            accumulatedContribution += sampleContribution;
         }
     }
 
     float sampleCount = blockSize * blockSize;
 
-    // Alpha carries the averaged contribution itself, not the source pixels'
-    // original alpha: this buffer gets blurred next, and the glow needs to
-    // spread its own opacity outward past the source sprite's silhouette
-    // (into pixels that were fully transparent) for the halo to actually
-    // show up once it's composited back with alpha blending.
-    fragColor = vec4(accumulatedColor / sampleCount, accumulatedContribution / sampleCount);
+    // The composite pass only reads the glow's color, adding it to the scene
+    // as light; the glow has no coverage of its own, so alpha stays 0.
+    fragColor = vec4(accumulatedColor / sampleCount, 0.0);
 }
