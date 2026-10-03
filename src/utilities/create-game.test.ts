@@ -56,6 +56,26 @@ describe('createGame', () => {
     expect(createRenderContext).toHaveBeenCalled();
   });
 
+  it('creates the render context with the canvas and no options by default', () => {
+    const canvas = document.createElement('canvas');
+    vi.mocked(createCanvas).mockReturnValueOnce(canvas);
+
+    createGame('game-container');
+
+    expect(createRenderContext).toHaveBeenLastCalledWith(canvas, {});
+  });
+
+  it('forwards renderContext options to createRenderContext', () => {
+    const canvas = document.createElement('canvas');
+    vi.mocked(createCanvas).mockReturnValueOnce(canvas);
+
+    createGame('game-container', { renderContext: { maxPixelRatio: 1.5 } });
+
+    expect(createRenderContext).toHaveBeenLastCalledWith(canvas, {
+      maxPixelRatio: 1.5,
+    });
+  });
+
   it('returns a resize sync', () => {
     const { resizeSync } = createGame('game-container');
     expect(typeof resizeSync.stop).toBe('function');

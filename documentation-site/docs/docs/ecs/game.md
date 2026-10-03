@@ -96,6 +96,17 @@ const { game, world, time, renderContext, resizeSync } = createGame('game');
 game.run();
 ```
 
+`createGame` takes an optional second argument. Its `renderContext` field is
+forwarded to [`createRenderContext`](/Forge/docs/api/functions/createRenderContext),
+so you can, for example, cap the render resolution on high-DPI displays (see
+[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)):
+
+```ts
+const { game, renderContext } = createGame('game', {
+  renderContext: { maxPixelRatio: 1.5 },
+});
+```
+
 Manual setup (when you need fine-grained control):
 
 ```ts
