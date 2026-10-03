@@ -148,6 +148,15 @@ can cap it with `maxPixelRatio`:
 const renderContext = createRenderContext(canvas, { maxPixelRatio: 2 });
 ```
 
+If you set up with `createGame`, pass the same options through its
+`renderContext` option:
+
+```ts
+const { renderContext } = createGame('game-container', {
+  renderContext: { maxPixelRatio: 1.5 },
+});
+```
+
 Pass `maxPixelRatio: 1` to always render at CSS resolution, the engine's
 behavior before it supported high-DPI displays.
 
