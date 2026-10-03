@@ -11,6 +11,9 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
  * Creates an ECS system to handle age-based scaling of entities.
+ *
+ * It writes the local scale; `createTransformEcsSystem` turns that into the
+ * world scale.
  * @returns An ECS system that updates the scale of entities based on their lifetime.
  */
 export const createAgeScaleEcsSystem = (): EcsSystem<

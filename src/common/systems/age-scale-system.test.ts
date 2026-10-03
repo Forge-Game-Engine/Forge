@@ -86,4 +86,27 @@ describe('AgeScaleSystem', () => {
     expect(scaleComponent.local.x).toBeCloseTo(expectedScaleX);
     expect(scaleComponent.local.y).toBeCloseTo(expectedScaleY);
   });
+
+  it('only writes the local scale, leaving world to the transform system', () => {
+    const entity = world.createEntity();
+
+    addLifetimeComponent(world, entity, {
+      elapsedSeconds: 5,
+      durationSeconds: 10,
+    });
+    addAgeScaleComponent(world, entity, {
+      originalScaleX: 4,
+      originalScaleY: 4,
+      finalLifetimeScaleX: 0,
+      finalLifetimeScaleY: 0,
+    });
+
+    const scaleComponent = addScaleComponent(world, entity);
+    const system = createAgeScaleEcsSystem();
+
+    system.update(world, world.query(system.query));
+
+    expect(scaleComponent.local).toEqual({ x: 2, y: 2 });
+    expect(scaleComponent.world).toEqual({ x: 1, y: 1 });
+  });
 });

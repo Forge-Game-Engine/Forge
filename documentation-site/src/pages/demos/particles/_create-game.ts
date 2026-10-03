@@ -17,10 +17,10 @@ import {
 import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   createParticleEcsSystem,
+  createParticleOpacityEcsSystem,
   createParticlePositionEcsSystem,
 } from '@forge-game-engine/forge/particles';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
-import { createAmbientEmitterEcsSystem } from './_ambient-emitter.system';
 import { createCursorEffects } from './_create-cursor-effects';
 import { createEmberFountain } from './_create-ember-fountain';
 
@@ -62,11 +62,11 @@ export const createParticlesGame = async (): Promise<Game> => {
     fountainPosition,
   );
 
-  world.addSystem(createAmbientEmitterEcsSystem());
   world.addSystem(createParticleEcsSystem(time, random));
   world.addSystem(createParticlePositionEcsSystem(time));
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createAgeScaleEcsSystem());
+  world.addSystem(createParticleOpacityEcsSystem());
   world.addSystem(createRemoveFromWorldEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   // Particles (like every entity) only update their local transform, so the
@@ -111,6 +111,7 @@ export const createParticlesGame = async (): Promise<Game> => {
     isDragging = true;
     cursorEffects.setCursorPosition(toWorldPosition(event));
     cursorEffects.triggerSparkBurst();
+    cursorEffects.setSmokeTrail(true);
   });
 
   renderContext.canvas.addEventListener('mousemove', (event: MouseEvent) => {
@@ -119,11 +120,11 @@ export const createParticlesGame = async (): Promise<Game> => {
     }
 
     cursorEffects.setCursorPosition(toWorldPosition(event));
-    cursorEffects.continueSmokeTrail();
   });
 
   const stopDragging = (): void => {
     isDragging = false;
+    cursorEffects.setSmokeTrail(false);
   };
 
   renderContext.canvas.addEventListener('mouseup', stopDragging);

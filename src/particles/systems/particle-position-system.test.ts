@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createParticlePositionEcsSystem } from './particle-position-system';
-import { EcsWorld } from '../../ecs';
-import { addParticleComponent } from '../components/particle-component';
+import { createParticlePositionEcsSystem } from './particle-position-system.js';
+import { EcsWorld } from '../../ecs/index.js';
+import {
+  addParticleComponent,
+  ParticleId,
+} from '../components/particle-component.js';
 import {
   addPositionComponent,
   addRotationComponent,
-  addSpeedComponent,
+  positionId,
+  rotationId,
   Time,
-} from '../../common';
+} from '../../common/index.js';
 
-describe('ParticlePositionSystem', () => {
+describe('createParticlePositionEcsSystem', () => {
   let world: EcsWorld;
   let time: Time;
 
@@ -19,68 +23,83 @@ describe('ParticlePositionSystem', () => {
     world.addSystem(createParticlePositionEcsSystem(time));
   });
 
-  it('should update particle position based on speed and rotation', () => {
+  const createParticle = (
+    options: Parameters<typeof addParticleComponent>[2] = {},
+  ): number => {
     const entity = world.createEntity();
 
-    const positionComponent = addPositionComponent(world, entity);
+    addPositionComponent(world, entity);
+    addRotationComponent(world, entity);
+    addParticleComponent(world, entity, options);
 
-    addRotationComponent(world, entity); // facing up
+    return entity;
+  };
 
-    addSpeedComponent(world, entity, { speed: 100 });
-
-    addParticleComponent(world, entity);
+  it('moves the particle by its velocity', () => {
+    const entity = createParticle({ velocity: { x: 10, y: -20 } });
+    const position = world.getComponentRequired(entity, positionId);
 
     time.update(100);
     world.update();
 
-    expect(positionComponent.local.x).toBeCloseTo(0);
-    expect(positionComponent.local.y).toBeCloseTo(-10);
+    expect(position.local.x).toBeCloseTo(1);
+    expect(position.local.y).toBeCloseTo(-2);
   });
 
-  it('should update particle rotation based on rotation speed', () => {
-    const entity = world.createEntity();
+  it('adds the acceleration to the velocity', () => {
+    const entity = createParticle({ acceleration: { x: 0, y: -10 } });
+    const particle = world.getComponentRequired(entity, ParticleId);
 
-    addPositionComponent(world, entity);
+    time.update(100);
+    world.update();
 
-    const rotationComponent = addRotationComponent(world, entity);
+    expect(particle.velocity.y).toBeCloseTo(-1);
+  });
 
-    addSpeedComponent(world, entity);
+  it('keeps the drag share of the velocity per second', () => {
+    const entity = createParticle({ velocity: { x: 8, y: 0 }, drag: 0.25 });
+    const particle = world.getComponentRequired(entity, ParticleId);
 
-    addParticleComponent(world, entity, { rotationSpeed: Math.PI });
+    // The first update's delta isn't clamped, so this is a whole second.
+    time.update(1000);
+    world.update();
+
+    expect(particle.velocity.x).toBeCloseTo(2);
+  });
+
+  it('adds the velocity offset to the movement without slowing it with drag', () => {
+    let worldSpeed = 5;
+    const entity = createParticle({
+      drag: 0,
+      getVelocityOffset: () => ({ x: -worldSpeed, y: 0 }),
+    });
+    const position = world.getComponentRequired(entity, positionId);
+
+    time.update(100);
+    world.update();
+
+    expect(position.local.x).toBeCloseTo(-0.5);
+
+    worldSpeed = 10;
+    time.update(150);
+    world.update();
+
+    expect(position.local.x).toBeCloseTo(-1);
+  });
+
+  it('spins the sprite by the rotation speed without changing the direction of travel', () => {
+    const entity = createParticle({
+      velocity: { x: 0, y: 10 },
+      rotationSpeed: Math.PI,
+    });
+    const rotation = world.getComponentRequired(entity, rotationId);
+    const position = world.getComponentRequired(entity, positionId);
 
     time.update(500);
     world.update();
 
-    expect(rotationComponent.local).toBeCloseTo(Math.PI / 2);
-  });
-
-  it('should handle multiple particles independently', () => {
-    const entity1 = world.createEntity();
-    const entity2 = world.createEntity();
-
-    const pos1 = addPositionComponent(world, entity1);
-
-    addRotationComponent(world, entity1);
-    addSpeedComponent(world, entity1, { speed: 50 });
-    addParticleComponent(world, entity1);
-
-    const pos2 = addPositionComponent(world, entity2, {
-      local: { x: 10, y: 10 },
-    });
-
-    addRotationComponent(world, entity2, {
-      local: Math.PI / 2,
-    });
-    addSpeedComponent(world, entity2, { speed: 100 });
-    addParticleComponent(world, entity2);
-
-    time.update(100);
-    world.update();
-
-    expect(pos1.local.x).toBeCloseTo(0);
-    expect(pos1.local.y).toBeCloseTo(-5);
-
-    expect(pos2.local.x).toBeCloseTo(20);
-    expect(pos2.local.y).toBeCloseTo(10);
+    expect(rotation.local).toBeCloseTo(Math.PI / 2);
+    expect(position.local.x).toBeCloseTo(0);
+    expect(position.local.y).toBeCloseTo(5);
   });
 });
