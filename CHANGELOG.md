@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.7] - 2026-10-03
+
 #### Added
 
 - **utilities:** `createGame` takes an optional second `options` argument whose `renderContext` field is forwarded to `createRenderContext`, so a game set up with `createGame` can cap its render resolution, e.g. `createGame('game', { renderContext: { maxPixelRatio: 1.5 } })`
