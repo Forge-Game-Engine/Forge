@@ -178,10 +178,11 @@ relative to the systems above.
 
 `createEulerIntegrationEcsSystem` integrates velocity into each body's
 `local` position and rotation, and every physics system reads `world`. To
-move or teleport a body yourself, write its `local` transform too. Keep
-simulated bodies as root entities (no `ParentEcsComponent`): their
-velocities are in world space, which only matches `local` when nothing
-above them is rotated or scaled. See [Transforms](../common/transforms.md).
+move or teleport a body yourself, write its `local` transform too. A
+dynamic or kinematic body must be a root entity (no `ParentEcsComponent`),
+since its velocity is in world space; integration throws otherwise. Connect
+bodies with joints or springs instead. See
+[Transforms](../common/transforms.md).
 
 ## Mapping collisions back to entities
 

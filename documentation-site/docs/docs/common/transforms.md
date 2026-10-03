@@ -83,11 +83,11 @@ cameraPosition.local.y = carPosition.local.y;
 
 ## Gotchas
 
-- **Rigid bodies should be root entities.** Physics velocities are in
+- **Moving rigid bodies must be root entities.** Physics velocities are in
   world space, and `createEulerIntegrationEcsSystem` adds them to the
-  body's `local` transform. That's only correct when the body's parent is
-  unrotated and unscaled, so don't parent simulated bodies. Connect them
-  with joints or springs instead.
+  body's `local` transform, which is only correct when the body has no
+  parent. It throws for a dynamic or kinematic body with a
+  `ParentEcsComponent`. Connect bodies with joints or springs instead.
 - **Static entities.** Set `isStatic: true` on a `PositionEcsComponent`
   whose entity and parents never move. The transform system computes its
   `world` transform once and skips it after that.

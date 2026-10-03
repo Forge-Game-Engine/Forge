@@ -117,7 +117,7 @@ const healthBarCanvas = createUiCanvas(world, renderContext, {
   anchoredPosition: { x: 0, y: 40 }, // 40 units above the enemy's own origin
 });
 
-addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target: enemy });
+addParentComponent(world, healthBarCanvas, { parent: enemy });
 
 const fill = createPanel(world, healthBarCanvas, {
   anchor: UiAnchor.stretchAll(),
@@ -128,7 +128,7 @@ const fill = createPanel(world, healthBarCanvas, {
 A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
 - sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
 options) rather than the render destination's size. Its offset from the
-entity it follows comes from `anchoredPosition` above, not from touching
+entity it's attached to comes from `anchoredPosition` above, not from touching
 `PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
 canvas's local position from its anchor every frame, so a manually-set
 `PositionEcsComponent.local` would just be overwritten on the next frame.
@@ -141,19 +141,32 @@ for `renderMode: 'worldSpace'` at all - the type checker rejects them,
 since there's no "destination size" for a canvas embedded in the world to
 scale against, and no dedicated UI camera for them to configure.
 
-**Following, not parenting**: `addUiWorldSpaceFollowComponent` moves the
-canvas to its target's world position plus the canvas's anchored offset
-every frame, ignoring the target's rotation entirely - unlike
-`addParentComponent`, which inherits the target's full world transform
-(the ordinary case for, say, a turret mounted on a rotating tank). Use
-this so a diegetic UI canvas stays upright above its target regardless of
-which way it's facing, instead of swinging around with it.
-`registerUiSystems` registers `createUiWorldSpaceFollowEcsSystem` for you,
-right after layout: it adds the target's world position to the local
-offset layout just wrote, and the transform system turns that into the
-canvas's world position. The target's world position comes from the
-previous frame's transform pass, so the canvas trails a moving target by
-one frame.
+**Keeping it upright**: a parented canvas inherits its target's full
+world transform, so it spins and scales with the target, the same as a
+turret mounted on a rotating tank. A health bar usually shouldn't. To keep
+one upright above its target, don't parent it. Write its
+`RectTransformEcsComponent.anchoredPosition` from the target's position
+every frame instead, in a system registered before `registerUiSystems` so
+layout picks it up the same frame:
+
+```ts
+const healthBarOffset = { x: 0, y: 40 };
+
+const followEnemySystem: EcsSystem<[]> = {
+  query: [],
+  update: (world) => {
+    const enemyPosition = world.getComponentRequired(enemy, positionId);
+    const rectTransform = world.getComponentRequired(
+      healthBarCanvas,
+      rectTransformId,
+    );
+
+    // The enemy has no parent, so its local position is its world position.
+    rectTransform.anchoredPosition.x = enemyPosition.local.x + healthBarOffset.x;
+    rectTransform.anchoredPosition.y = enemyPosition.local.y + healthBarOffset.y;
+  },
+};
+```
 
 A world-space canvas is created exactly like a screen-space one otherwise -
 multiple canvases (a screen-space HUD plus several world-space health

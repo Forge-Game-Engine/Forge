@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import {
+  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -100,5 +101,25 @@ describe('createEulerIntegrationEcsSystem', () => {
     expect(position.world.x).toBeGreaterThan(0);
     expect(rotation.world).toBe(rotation.local);
     expect(rotation.world).toBeGreaterThan(0);
+  });
+
+  it('throws for a moving body with a parent', () => {
+    const parent = world.createEntity();
+    const entity = createBody('dynamic');
+
+    addParentComponent(world, entity, { parent });
+
+    expect(() => world.update()).toThrow(
+      `Rigid body entity "${entity}" has a ParentEcsComponent.`,
+    );
+  });
+
+  it('allows a static body with a parent', () => {
+    const parent = world.createEntity();
+    const entity = createBody('static');
+
+    addParentComponent(world, entity, { parent });
+
+    expect(() => world.update()).not.toThrow();
   });
 });
