@@ -99,10 +99,11 @@ describe('createParticleEcsSystem', () => {
   it("spawns particles at the emitter entity's world position", () => {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, {
-      local: { x: 0, y: 0 },
-      world: { x: 4, y: -2 },
-    });
+    const emitterPosition = addPositionComponent(world, entity);
+
+    // Stands in for the transform system having placed a parented emitter,
+    // so the test tells the world position apart from the local one.
+    emitterPosition.world = { x: 4, y: -2 };
 
     const emitter = addEmitter(
       { numParticlesRange: { min: 1, max: 1 } },

@@ -6,7 +6,6 @@ import {
   ParticleId,
 } from '../components/particle-component.js';
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   positionId,
@@ -36,7 +35,7 @@ describe('createParticlePositionEcsSystem', () => {
     return entity;
   };
 
-  it('moves the particle by its velocity, in both local and world space', () => {
+  it('moves the particle by its velocity', () => {
     const entity = createParticle({ velocity: { x: 10, y: -20 } });
     const position = world.getComponentRequired(entity, positionId);
 
@@ -45,23 +44,6 @@ describe('createParticlePositionEcsSystem', () => {
 
     expect(position.local.x).toBeCloseTo(1);
     expect(position.local.y).toBeCloseTo(-2);
-    expect(position.world.x).toBeCloseTo(1);
-    expect(position.world.y).toBeCloseTo(-2);
-  });
-
-  it('leaves the world position of a parented particle to the transform system', () => {
-    const parent = world.createEntity();
-    const entity = createParticle({ velocity: { x: 10, y: 0 } });
-
-    addParentComponent(world, entity, { parent });
-
-    const position = world.getComponentRequired(entity, positionId);
-
-    time.update(100);
-    world.update();
-
-    expect(position.local.x).toBeCloseTo(1);
-    expect(position.world.x).toBe(0);
   });
 
   it('adds the acceleration to the velocity', () => {
@@ -96,13 +78,13 @@ describe('createParticlePositionEcsSystem', () => {
     time.update(100);
     world.update();
 
-    expect(position.world.x).toBeCloseTo(-0.5);
+    expect(position.local.x).toBeCloseTo(-0.5);
 
     worldSpeed = 10;
     time.update(150);
     world.update();
 
-    expect(position.world.x).toBeCloseTo(-1);
+    expect(position.local.x).toBeCloseTo(-1);
   });
 
   it('spins the sprite by the rotation speed without changing the direction of travel', () => {
@@ -117,8 +99,7 @@ describe('createParticlePositionEcsSystem', () => {
     world.update();
 
     expect(rotation.local).toBeCloseTo(Math.PI / 2);
-    expect(rotation.world).toBeCloseTo(Math.PI / 2);
-    expect(position.world.x).toBeCloseTo(0);
-    expect(position.world.y).toBeCloseTo(5);
+    expect(position.local.x).toBeCloseTo(0);
+    expect(position.local.y).toBeCloseTo(5);
   });
 });

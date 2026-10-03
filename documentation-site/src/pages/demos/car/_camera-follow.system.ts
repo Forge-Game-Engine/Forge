@@ -13,8 +13,10 @@ import {
 /**
  * Smoothly moves each matched entity's `PositionEcsComponent` towards its
  * `CameraFollowEcsComponent.targetEntity` position every tick, via
- * `smoothDampVector2`. Must run before `createRenderEcsSystem` so the render
- * pass sees this tick's updated camera position.
+ * `smoothDampVector2`. Reads the target's `local` position (it has no
+ * parent, so that's its current position whenever this runs) and writes the
+ * camera's `local` position, which `createTransformEcsSystem` turns into the
+ * `world` position the render system reads.
  * @param time - The time instance used to advance `smoothDampVector2` by
  * the tick's delta time.
  */
@@ -38,11 +40,11 @@ export const createCameraFollowEcsSystem = (
         continue;
       }
 
-      // clone: targetPosition.world is the followed entity's own live
+      // clone: targetPosition.local is the followed entity's own live
       // position field, must not be mutated by adding offset into it.
       const { positionOutput, velocityOutput } = smoothDampVector2(
         positionComponent.local,
-        Vec2.add(Vec2.clone(targetPosition.world), offset),
+        Vec2.add(Vec2.clone(targetPosition.local), offset),
         velocity,
         maxSpeed,
         smoothTime,
@@ -53,8 +55,6 @@ export const createCameraFollowEcsSystem = (
 
       positionComponent.local.x = positionOutput.x;
       positionComponent.local.y = positionOutput.y;
-      positionComponent.world.x = positionOutput.x;
-      positionComponent.world.y = positionOutput.y;
     }
   },
 });

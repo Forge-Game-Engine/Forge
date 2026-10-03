@@ -51,14 +51,12 @@ export const createAsteroidSpawnerEcsSystem = (
 
       addPositionComponent(world, asteroidEntity, {
         local: { x, y: spawnerComponent.spawnY },
-        world: { x, y: spawnerComponent.spawnY },
       });
 
       addRotationComponent(world, asteroidEntity);
 
       addScaleComponent(world, asteroidEntity, {
         local: { x: asteroidScale, y: asteroidScale },
-        world: { x: asteroidScale, y: asteroidScale },
       });
 
       world.addComponent(asteroidEntity, asteroidId, {

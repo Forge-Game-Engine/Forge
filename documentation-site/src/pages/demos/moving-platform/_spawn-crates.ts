@@ -70,7 +70,6 @@ export function spawnCrate(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: { ...position },
     local: { ...position },
   });
   addRotationComponent(world, entity);

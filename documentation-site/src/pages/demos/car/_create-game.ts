@@ -6,6 +6,7 @@ import {
   createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -106,7 +107,9 @@ export const createCarGame = async (): Promise<Game> => {
   const collisionResolutionOptions = { maxBiasSpeed: 300 };
 
   // `createCarResetEcsSystem` may teleport every body back to its spawn
-  // transform, so it runs first. `createGroundContactEcsSystem` recomputes
+  // transform, so it runs first, followed by `createTransformEcsSystem`,
+  // which turns every entity's `local` pose into the `world` pose that the
+  // physics and render systems read. `createGroundContactEcsSystem` recomputes
   // each wheel's grounded state from this tick's `collisionManifolds`
   // (populated by narrow-phase, just before it), and
   // `createWheelDriveEcsSystem` (sets each wheel's motor target from
@@ -117,10 +120,11 @@ export const createCarGame = async (): Promise<Game> => {
   // suspension's spring/damper forces run before collision resolution (like
   // gravity), and the prismatic/revolute joints that hard-constrain each
   // wheel mount run after it, so they get the "last word" on velocity each
-  // tick. `createCameraFollowEcsSystem` only needs to run before
-  // `createRenderEcsSystem`, so this tick's camera position is reflected in
-  // this tick's render.
+  // tick. `createCameraFollowEcsSystem` writes the camera's `local` position
+  // after `createTransformEcsSystem` has run, so its smoothed camera
+  // position is rendered from the next tick on.
   world.addSystem(createCarResetEcsSystem());
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(

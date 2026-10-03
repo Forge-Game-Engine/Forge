@@ -1,5 +1,6 @@
 import {
   actionResetTypes,
+  addPositionComponent,
   Axis1dAction,
   Axis2dAction,
   buttonMoments,
@@ -176,9 +177,8 @@ export const createScene: CreateScene = async (
   ): { position: PositionEcsComponent; sprite: SpriteEcsComponent } {
     const entity = world.createEntity();
 
-    const position = world.addComponent(entity, positionId, {
+    const position = addPositionComponent(world, entity, {
       local: { x, y },
-      world: { x, y },
     });
 
     const sprite = world.addComponent(entity, spriteId, {

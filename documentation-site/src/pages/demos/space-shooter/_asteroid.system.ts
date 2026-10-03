@@ -30,13 +30,13 @@ export const createAsteroidEcsSystem = (
       const positionComponent = positionComponents[i];
       const rotationComponent = rotationComponents[i];
 
-      positionComponent.world.y -=
+      positionComponent.local.y -=
         asteroidComponent.speed * time.deltaTimeInSeconds;
 
-      rotationComponent.world +=
+      rotationComponent.local +=
         asteroidComponent.rotationSpeed * time.deltaTimeInSeconds;
 
-      if (positionComponent.world.y < despawnY) {
+      if (positionComponent.local.y < despawnY) {
         world.removeEntity(entity);
       }
     }

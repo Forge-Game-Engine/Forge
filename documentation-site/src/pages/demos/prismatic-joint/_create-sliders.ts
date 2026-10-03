@@ -136,7 +136,6 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
@@ -218,7 +217,6 @@ function createSliderScenario(
   const anchorEntity = world.createEntity();
 
   addPositionComponent(world, anchorEntity, {
-    world: Vec2.clone(anchorPosition),
     local: Vec2.clone(anchorPosition),
   });
   addRotationComponent(world, anchorEntity);
@@ -226,7 +224,6 @@ function createSliderScenario(
   const sliderEntity = world.createEntity();
 
   addPositionComponent(world, sliderEntity, {
-    world: Vec2.clone(startPosition),
     local: Vec2.clone(startPosition),
   });
   addRotationComponent(world, sliderEntity);

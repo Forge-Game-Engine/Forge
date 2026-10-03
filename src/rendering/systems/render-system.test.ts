@@ -123,7 +123,6 @@ describe('createRenderEcsSystem', () => {
 
     addPositionComponent(world, entity, {
       local: { x: 0, y: worldY },
-      world: { x: 0, y: worldY },
     });
     addSpriteComponent(world, entity, createSprite(renderable, overrides));
 
@@ -140,7 +139,6 @@ describe('createRenderEcsSystem', () => {
 
     addPositionComponent(world, entity, {
       local: { x: 0, y: worldY },
-      world: { x: 0, y: worldY },
     });
 
     addTextComponent(world, entity, {
@@ -685,9 +683,8 @@ describe('createRenderEcsSystem', () => {
 
       addPositionComponent(world, entity, {
         local: { x: 50, y: 0 },
-        world: { x: 50, y: 0 },
       });
-      addRotationComponent(world, entity, { world: Math.PI });
+      addRotationComponent(world, entity, { local: Math.PI });
       addSpriteComponent(
         world,
         entity,
@@ -728,9 +725,8 @@ describe('createRenderEcsSystem', () => {
 
       addPositionComponent(world, entity, {
         local: { x: 50, y: 0 },
-        world: { x: 50, y: 0 },
       });
-      addRotationComponent(world, entity, { world: Math.PI / 2 });
+      addRotationComponent(world, entity, { local: Math.PI / 2 });
       addSpriteComponent(
         world,
         entity,

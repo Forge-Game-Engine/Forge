@@ -323,4 +323,25 @@ describe('transform-system', () => {
     expect(childScale.world.x).toBe(3);
     expect(childScale.world.y).toBe(4);
   });
+
+  it("keeps a root entity's world scale separate from its local scale", () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent);
+    addScaleComponent(world, parent, { local: { x: 3, y: 3 } });
+    addPositionComponent(world, child);
+
+    const childScale = addScaleComponent(world, child, {
+      local: { x: 2, y: 2 },
+    });
+
+    world.update();
+    addParentComponent(world, child, { parent });
+    world.update();
+    world.update();
+
+    expect(childScale.local).toEqual({ x: 2, y: 2 });
+    expect(childScale.world).toEqual({ x: 6, y: 6 });
+  });
 });

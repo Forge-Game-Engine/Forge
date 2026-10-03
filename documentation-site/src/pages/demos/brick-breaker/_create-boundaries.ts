@@ -90,7 +90,6 @@ export async function createBoundaries(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: Vec2.clone(position),
       local: Vec2.clone(position),
     });
 
@@ -98,10 +97,6 @@ export async function createBoundaries(
 
     addScaleComponent(world, entity, {
       local: {
-        x: wallWidth / wallSprite.width,
-        y: wallHeight / wallSprite.height,
-      },
-      world: {
         x: wallWidth / wallSprite.width,
         y: wallHeight / wallSprite.height,
       },

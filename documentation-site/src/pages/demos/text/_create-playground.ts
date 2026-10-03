@@ -148,7 +148,7 @@ export function createPlayground(
 ): Playground {
   const captionEntity = world.createEntity();
   addPositionComponent(world, captionEntity, {
-    world: { x: topLeft.x, y: topLeft.y },
+    local: { x: topLeft.x, y: topLeft.y },
   });
   addTextComponent(world, captionEntity, {
     text: 'Try it yourself',
@@ -170,7 +170,7 @@ export function createPlayground(
 
   const textEntity = world.createEntity();
   addPositionComponent(world, textEntity, {
-    world: { x: topLeft.x, y: boxTop },
+    local: { x: topLeft.x, y: boxTop },
   });
   const textComponent = addTextComponent(world, textEntity, {
     text: playgroundDefaults.text,

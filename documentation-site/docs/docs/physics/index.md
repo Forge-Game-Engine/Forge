@@ -54,12 +54,15 @@ Give an entity a `ColliderEcsComponent` and a `RigidBodyEcsComponent`
 alongside its position and rotation components, then register the systems
 that simulate them. Every `world.update()`, those systems apply gravity,
 detect and resolve collisions, and integrate each dynamic (or kinematic)
-body's velocity into its position/rotation.
+body's velocity into its local position/rotation. The transform system turns
+that into the world transform everything else reads (see
+[Transforms](../common/transforms.md)).
 
 ```ts
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import {
   addAabbComponent,
@@ -104,6 +107,8 @@ const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
+// Physics reads each body's world transform, so resolve it first.
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));

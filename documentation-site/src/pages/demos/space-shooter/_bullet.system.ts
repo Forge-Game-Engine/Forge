@@ -15,7 +15,7 @@ export const createBulletEcsSystem = (
       const bulletComponent = bulletComponents[i];
       const positionComponent = positionComponents[i];
 
-      positionComponent.world.y +=
+      positionComponent.local.y +=
         bulletComponent.speed * time.deltaTimeInSeconds;
     }
   },

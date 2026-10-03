@@ -307,7 +307,6 @@ function createWheel(
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
@@ -375,7 +374,6 @@ function createWheelMount(
   const uprightCollider = new CircleCollider(uprightRadius, uprightDensity);
 
   addPositionComponent(world, uprightEntity, {
-    world: Vec2.clone(uprightPosition),
     local: Vec2.clone(uprightPosition),
   });
   addRotationComponent(world, uprightEntity);
@@ -467,7 +465,6 @@ export async function createCar(
   );
 
   addPositionComponent(world, chassisEntity, {
-    world: Vec2.clone(chassisPosition),
     local: Vec2.clone(chassisPosition),
   });
   addRotationComponent(world, chassisEntity);

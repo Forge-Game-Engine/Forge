@@ -46,7 +46,7 @@ export const createAsteroidCollisionEcsSystem = (
         if (world.getComponent(otherEntity, bulletId)) {
           explosionSpawner.spawn(
             world,
-            positionComponent.world,
+            positionComponent.local,
             time.timeInSeconds,
           );
           world.removeEntity(asteroidEntity);
@@ -62,7 +62,7 @@ export const createAsteroidCollisionEcsSystem = (
         if (world.getComponent(otherEntity, PlayerId)) {
           explosionSpawner.spawn(
             world,
-            positionComponent.world,
+            positionComponent.local,
             time.timeInSeconds,
           );
           world.removeEntity(otherEntity);

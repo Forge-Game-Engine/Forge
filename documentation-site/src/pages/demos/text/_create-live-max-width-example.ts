@@ -52,7 +52,7 @@ export function createLiveMaxWidthExample(
 
   const captionEntity = world.createEntity();
   addPositionComponent(world, captionEntity, {
-    world: { x: topLeft.x, y: topLeft.y },
+    local: { x: topLeft.x, y: topLeft.y },
   });
   const liveCaption = addTextComponent(world, captionEntity, {
     text: `maxWidth: ${Math.round(usableWidth)} world units (live)`,
@@ -81,7 +81,7 @@ export function createLiveMaxWidthExample(
 
   const textEntity = world.createEntity();
   addPositionComponent(world, textEntity, {
-    world: { x: topLeft.x, y: boxTop },
+    local: { x: topLeft.x, y: boxTop },
   });
   addTextComponent(world, textEntity, {
     text: sampleText,

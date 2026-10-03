@@ -25,7 +25,7 @@ describe('addScaleComponent', () => {
 
     expect(world.getComponent(entity, scaleId)).toEqual({
       local,
-      world: Vec2.one,
+      world: local,
     });
   });
 
@@ -36,7 +36,7 @@ describe('addScaleComponent', () => {
     const local = { x: 2, y: 3 };
     const component = addScaleComponent(world, entity, { local });
 
-    expect(component).toEqual({ local, world: Vec2.one });
+    expect(component).toEqual({ local, world: local });
     expect(world.getComponent(entity, scaleId)).toBe(component);
   });
 
@@ -51,5 +51,17 @@ describe('addScaleComponent', () => {
     expect(world.getComponent(first, scaleId)?.local).not.toBe(
       world.getComponent(second, scaleId)?.local,
     );
+  });
+
+  it('starts world as a copy of local, not the same vector', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+
+    const component = addScaleComponent(world, entity, {
+      local: { x: 2, y: 3 },
+    });
+
+    expect(component.world).toEqual(component.local);
+    expect(component.world).not.toBe(component.local);
   });
 });

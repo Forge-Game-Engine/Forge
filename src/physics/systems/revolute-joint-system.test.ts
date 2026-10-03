@@ -37,14 +37,12 @@ describe('createRevoluteJointEcsSystem', () => {
   it('keeps a dynamic body pinned to a static pivot under repeated gravity-like kicks', () => {
     const pivot = world.createEntity();
     addPositionComponent(world, pivot, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, pivot);
 
     const ball = world.createEntity();
     const ballPosition = addPositionComponent(world, ball, {
-      world: { x: 0, y: -5 },
       local: { x: 0, y: -5 },
     });
     const ballRotation = addRotationComponent(world, ball);
@@ -77,7 +75,6 @@ describe('createRevoluteJointEcsSystem', () => {
   it('never lets the relative angle exceed an enabled limit', () => {
     const bodyA = world.createEntity();
     addPositionComponent(world, bodyA, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     const bodyARotation = addRotationComponent(world, bodyA);
@@ -85,7 +82,6 @@ describe('createRevoluteJointEcsSystem', () => {
 
     const bodyB = world.createEntity();
     addPositionComponent(world, bodyB, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     const bodyBRotation = addRotationComponent(world, bodyB);
@@ -120,14 +116,12 @@ describe('createRevoluteJointEcsSystem', () => {
   it('keeps accumulated point impulse bounded (does not diverge) across many ticks', () => {
     const pivot = world.createEntity();
     addPositionComponent(world, pivot, {
-      world: Vec2.zero,
       local: Vec2.zero,
     });
     addRotationComponent(world, pivot);
 
     const ball = world.createEntity();
     addPositionComponent(world, ball, {
-      world: { x: 3, y: 0 },
       local: { x: 3, y: 0 },
     });
     addRotationComponent(world, ball);

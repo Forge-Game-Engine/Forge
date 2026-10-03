@@ -5,6 +5,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createAngularVelocityMotorEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -74,7 +75,11 @@ export const createTorqueGame = async (): Promise<Game> => {
   // `RigidBodyEcsComponent.angularVelocity` directly for this tick, and
   // `createAngularVelocityMotorEcsSystem` reads/corrects it, so all three
   // must run before whatever system integrates velocity into position
-  // (`createEulerIntegrationEcsSystem`).
+  // (`createEulerIntegrationEcsSystem`). `createTransformEcsSystem` runs
+  // first so each flywheel's `world` rotation matches the `local` rotation
+  // euler integration wrote at the end of the previous tick before the
+  // render system draws it.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createThrusterEcsSystem(time));
   world.addSystem(createGustEcsSystem(time));
   world.addSystem(createAngularVelocityMotorEcsSystem(time));

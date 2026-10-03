@@ -39,7 +39,7 @@ export const createEasingRowEcsSystem = (
 
       const phase = pingPong(time.timeInSeconds);
 
-      position.world.x = lerp(minX, maxX, easingFunction(phase));
+      position.local.x = lerp(minX, maxX, easingFunction(phase));
     }
   },
 });

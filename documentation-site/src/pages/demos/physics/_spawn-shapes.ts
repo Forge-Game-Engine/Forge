@@ -152,7 +152,6 @@ export async function spawnShapes(
     const scale = size / sprite.height;
 
     addPositionComponent(world, entity, {
-      world: Vec2.clone(position),
       local: Vec2.clone(position),
     });
 
@@ -160,7 +159,6 @@ export async function spawnShapes(
 
     addScaleComponent(world, entity, {
       local: { x: scale, y: scale },
-      world: { x: scale, y: scale },
     });
 
     addSpriteComponent(world, entity, sprite);

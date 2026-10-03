@@ -6,7 +6,10 @@ import {
   screenToWorldSpace,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createAgeScaleEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createAgeScaleEcsSystem,
+  createTransformEcsSystem,
+} from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
@@ -65,9 +68,11 @@ export const createParticlesGame = async (): Promise<Game> => {
   world.addSystem(createAgeScaleEcsSystem());
   world.addSystem(createParticleOpacityEcsSystem());
   world.addSystem(createRemoveFromWorldEcsSystem());
-  // No transform system is needed: the particle systems write each
-  // particle's world position, rotation and scale themselves.
   world.addSystem(createCameraEcsSystem(time));
+  // Particles (like every entity) only update their local transform, so the
+  // transform system runs after every system above and before the render
+  // system, resolving it to the world transform the renderer reads.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   // The camera is static at the world origin with a zoom of 1 (see

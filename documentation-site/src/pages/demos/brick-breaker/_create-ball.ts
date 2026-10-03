@@ -93,14 +93,12 @@ export async function createBall(
 
   addPositionComponent(world, entity, {
     local: Vec2.clone(startPosition),
-    world: Vec2.clone(startPosition),
   });
 
   addRotationComponent(world, entity);
 
   addScaleComponent(world, entity, {
     local: { x: ballScale, y: ballScale },
-    world: { x: ballScale, y: ballScale },
   });
 
   addSpriteComponent(world, entity, ballSprite);

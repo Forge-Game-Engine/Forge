@@ -84,25 +84,22 @@ function createBulletWithOffset(
 ) {
   const bullet = world.createEntity();
   const bulletScale = 0.15;
-  // clone: positionComponent.world is the gun owner's own live position
+  // clone: positionComponent.local is the gun owner's own live position
   // field, must not be mutated by adding the muzzle offset into it.
-  const spawnPosition = Vec2.add(Vec2.clone(positionComponent.world), offset);
+  const spawnPosition = Vec2.add(Vec2.clone(positionComponent.local), offset);
 
   addSpriteComponent(world, bullet, gunComponent.bulletSprite);
 
   addPositionComponent(world, bullet, {
     local: spawnPosition,
-    world: Vec2.clone(spawnPosition),
   });
 
   addRotationComponent(world, bullet, {
     local: degreesToRadians(90),
-    world: degreesToRadians(90),
   });
 
   addScaleComponent(world, bullet, {
     local: { x: bulletScale, y: bulletScale },
-    world: { x: bulletScale, y: bulletScale },
   });
 
   world.addComponent(bullet, bulletId, {

@@ -9,6 +9,7 @@ import {
   addPositionComponent,
   addRotationComponent,
   addScaleComponent,
+  createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -46,7 +47,6 @@ export const createErosionBurnGame = async (): Promise<Game> => {
 
   addScaleComponent(world, entity, {
     local: { x: scale, y: scale },
-    world: { x: scale, y: scale },
   });
 
   addSpriteComponent(world, entity, sprite);
@@ -54,8 +54,11 @@ export const createErosionBurnGame = async (): Promise<Game> => {
   world.addTag(entity, erosionId);
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createErosionEcsSystem(time));
+  // Derives the sprite's `world` pose (including its scale) from its
+  // `local` pose for the render system to draw.
+  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;
 };

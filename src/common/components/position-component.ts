@@ -3,18 +3,15 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
- * Fields of {@link PositionEcsComponent} with a sensible default; callers
- * may omit these.
+ * Options for {@link addPositionComponent}.
  */
-export interface PositionDefaultedOptions {
+export interface PositionOptions {
+  /**
+   * The entity's position relative to its parent, or to the world when it
+   * has no parent. This is the value to write when moving the entity.
+   */
   local: Vector2;
-  world: Vector2;
-}
 
-/**
- * ECS-style component interface for position.
- */
-export interface PositionEcsComponent extends PositionDefaultedOptions {
   /**
    * When `true`, signals to `createTransformEcsSystem` that `local` will
    * never change after it is first computed, so `world` can be computed once
@@ -25,6 +22,18 @@ export interface PositionEcsComponent extends PositionDefaultedOptions {
    * Mutating `local` after `world` has been computed has no effect.
    */
   isStatic?: boolean;
+}
+
+/**
+ * ECS-style component interface for position.
+ */
+export interface PositionEcsComponent extends PositionOptions {
+  /**
+   * The entity's position in world space. Output only:
+   * `createTransformEcsSystem` writes it every frame from `local` and the
+   * parent's world transform. It starts out equal to `local`.
+   */
+  world: Vector2;
 }
 
 export const positionId = createComponentId<PositionEcsComponent>('position');
@@ -39,19 +48,21 @@ export const positionId = createComponentId<PositionEcsComponent>('position');
 export function addPositionComponent(
   world: EcsWorld,
   entity: number,
-  options: Partial<PositionEcsComponent> = {},
+  options: Partial<PositionOptions> = {},
 ): PositionEcsComponent {
-  // `local`/`world` default to fresh Vector2 instances per call (rather
-  // than a shared module-level default) since systems mutate them in place.
-  const defaultPositionOptions: PositionDefaultedOptions = {
+  // `local` defaults to a fresh Vector2 per call (rather than a shared
+  // module-level default) since systems mutate it in place.
+  const defaultPositionOptions: PositionOptions = {
     local: Vec2.zero,
-    world: Vec2.zero,
   };
 
-  const component: PositionEcsComponent = {
+  const positionOptions: PositionOptions = {
     ...defaultPositionOptions,
     ...options,
   };
 
-  return world.addComponent(entity, positionId, component);
+  return world.addComponent(entity, positionId, {
+    ...positionOptions,
+    world: Vec2.clone(positionOptions.local),
+  });
 }

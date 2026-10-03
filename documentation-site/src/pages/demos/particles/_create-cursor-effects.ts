@@ -127,12 +127,10 @@ export async function createCursorEffects(
 
   return {
     setCursorPosition: ({ x, y }) => {
-      // This demo doesn't register the transform system, so the world
-      // position the emitters read is set directly.
+      // The transform system turns this into the world position the
+      // emitters read.
       position.local.x = x;
       position.local.y = y;
-      position.world.x = x;
-      position.world.y = y;
     },
     triggerSparkBurst: () => sparkEmitter.emit(),
     setSmokeTrail: (isSmoking) =>

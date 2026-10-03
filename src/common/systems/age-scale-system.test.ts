@@ -6,7 +6,6 @@ import {
 import { EcsWorld, QueryResult } from '../../ecs/index.js';
 import {
   addAgeScaleComponent,
-  addParentComponent,
   addScaleComponent,
   AgeScaleEcsComponent,
   ScaleEcsComponent,
@@ -88,7 +87,7 @@ describe('AgeScaleSystem', () => {
     expect(scaleComponent.local.y).toBeCloseTo(expectedScaleY);
   });
 
-  it('writes the world scale too for an entity with no parent', () => {
+  it('only writes the local scale, leaving world to the transform system', () => {
     const entity = world.createEntity();
 
     addLifetimeComponent(world, entity, {
@@ -96,8 +95,8 @@ describe('AgeScaleSystem', () => {
       durationSeconds: 10,
     });
     addAgeScaleComponent(world, entity, {
-      originalScaleX: 2,
-      originalScaleY: 2,
+      originalScaleX: 4,
+      originalScaleY: 4,
       finalLifetimeScaleX: 0,
       finalLifetimeScaleY: 0,
     });
@@ -107,33 +106,7 @@ describe('AgeScaleSystem', () => {
 
     system.update(world, world.query(system.query));
 
-    expect(scaleComponent.world.x).toBeCloseTo(1);
-    expect(scaleComponent.world.y).toBeCloseTo(1);
-  });
-
-  it('leaves the world scale of a parented entity to the transform system', () => {
-    const parent = world.createEntity();
-    const entity = world.createEntity();
-
-    addParentComponent(world, entity, { parent });
-    addLifetimeComponent(world, entity, {
-      elapsedSeconds: 5,
-      durationSeconds: 10,
-    });
-    addAgeScaleComponent(world, entity, {
-      originalScaleX: 2,
-      originalScaleY: 2,
-      finalLifetimeScaleX: 0,
-      finalLifetimeScaleY: 0,
-    });
-
-    const scaleComponent = addScaleComponent(world, entity);
-    const system = createAgeScaleEcsSystem();
-
-    system.update(world, world.query(system.query));
-
-    expect(scaleComponent.local.x).toBeCloseTo(1);
-    expect(scaleComponent.world.x).toBe(1);
-    expect(scaleComponent.world.y).toBe(1);
+    expect(scaleComponent.local).toEqual({ x: 2, y: 2 });
+    expect(scaleComponent.world).toEqual({ x: 1, y: 1 });
   });
 });

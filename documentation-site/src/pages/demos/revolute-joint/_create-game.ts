@@ -4,6 +4,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -38,10 +39,14 @@ export const createRevoluteJointGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
+  // `createTransformEcsSystem` runs first so every body's `world` pose
+  // matches the `local` pose euler integration wrote at the end of the
+  // previous tick before the push, physics and render systems read it.
   // Gravity and pushes must run before collision/joint resolution, so this
   // tick's forces are reflected in the velocities those solvers see; the
   // revolute joint solver must run after collision resolution so the door's
   // hinge gets the "last word" on velocity each tick.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createPushEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

@@ -27,14 +27,14 @@ export const createMovementEcsSystem = (
         time.deltaTimeInSeconds,
       );
 
-      positionComponent.world.x = clamp(
-        positionComponent.world.x + movementVector.x,
+      positionComponent.local.x = clamp(
+        positionComponent.local.x + movementVector.x,
         minX,
         maxX,
       );
 
-      positionComponent.world.y = clamp(
-        positionComponent.world.y + movementVector.y,
+      positionComponent.local.y = clamp(
+        positionComponent.local.y + movementVector.y,
         minY,
         maxY,
       );

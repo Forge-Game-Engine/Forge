@@ -28,7 +28,7 @@ describe('createNarrowPhaseEcsSystem', () => {
   function addCircleEntity(position: Vector2, radius: number): number {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: position });
+    addPositionComponent(world, entity, { local: position });
     addRotationComponent(world, entity);
     addColliderComponent(world, entity, {
       collider: new CircleCollider(radius),
@@ -92,7 +92,7 @@ describe('createNarrowPhaseEcsSystem', () => {
     const entityA = addCircleEntity({ x: 0, y: 0 }, 1);
     const entityB = world.createEntity();
 
-    addPositionComponent(world, entityB, { world: { x: 1, y: 0 } });
+    addPositionComponent(world, entityB, { local: { x: 1, y: 0 } });
     addColliderComponent(world, entityB, {
       collider: new CircleCollider(1),
     });

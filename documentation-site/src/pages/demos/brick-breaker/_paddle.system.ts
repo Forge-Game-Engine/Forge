@@ -19,8 +19,8 @@ export const createPaddleEcsSystem = (
       const positionComponent = positionComponents[i];
       const { speed, minX, maxX } = paddleComponent;
 
-      positionComponent.world.x = clamp(
-        positionComponent.world.x +
+      positionComponent.local.x = clamp(
+        positionComponent.local.x +
           moveAction.value * speed * time.deltaTimeInSeconds,
         minX,
         maxX,

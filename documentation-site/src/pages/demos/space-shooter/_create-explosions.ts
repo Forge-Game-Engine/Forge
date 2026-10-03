@@ -96,12 +96,10 @@ export async function createExplosionSpawner(
 
       addPositionComponent(world, explosionEntity, {
         local: Vec2.clone(position),
-        world: Vec2.clone(position),
       });
 
       addScaleComponent(world, explosionEntity, {
         local: { x: explosionScale, y: explosionScale },
-        world: { x: explosionScale, y: explosionScale },
       });
 
       addSpriteAnimationComponent(world, explosionEntity, {

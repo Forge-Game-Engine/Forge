@@ -7,10 +7,12 @@ export interface CameraShakeEcsComponent {
   elapsedSeconds: number;
 
   /**
-   * The offset currently applied to the camera's world position. Held
-   * constant for a few frames at a time (see `_camera-shake.system.ts`) so
-   * the shake reads as a series of discrete jolts instead of high-frequency
-   * noise that blurs together at 60fps.
+   * The offset currently added to the camera's `local` position, kept so
+   * it can be swapped for the next one (and removed when the shake ends)
+   * without losing the camera's unshaken position. Held constant for a few
+   * frames at a time (see `_camera-shake.system.ts`) so the shake reads as a
+   * series of discrete jolts instead of high-frequency noise that blurs
+   * together at 60fps.
    */
   currentOffset: Vector2;
 

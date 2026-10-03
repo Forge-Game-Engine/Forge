@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -114,6 +115,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
+    world.addSystem(createTransformEcsSystem());
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
@@ -132,8 +134,8 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
   function addTerrainEntity(): number {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { world: { x: 0, y: 0 } });
-    addRotationComponent(world, entity, { world: terrainRotation });
+    addPositionComponent(world, entity, { local: { x: 0, y: 0 } });
+    addRotationComponent(world, entity, { local: terrainRotation });
     addColliderComponent(world, entity, {
       collider: new TerrainCollider(
         denseNoisyTerrainPoints(40, 0.3, 0.0008),
@@ -155,7 +157,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: { x: startX, y: startY },
+      local: { x: startX, y: startY },
     });
     addRotationComponent(world, entity);
     addColliderComponent(world, entity, {

@@ -54,6 +54,7 @@ you want them to shrink (or grow) over their lifetime:
 import {
   addPositionComponent,
   createAgeScaleEcsSystem,
+  createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
@@ -96,6 +97,9 @@ world.addSystem(createLifetimeTrackingEcsSystem(time));
 world.addSystem(createAgeScaleEcsSystem());
 world.addSystem(createParticleOpacityEcsSystem());
 world.addSystem(createRemoveFromWorldEcsSystem());
+// The particle systems above write each particle's local transform; the
+// transform system turns it into the world transform the renderer reads.
+world.addSystem(createTransformEcsSystem());
 
 // trigger a burst of sparks, e.g. on impact
 sparks.emitIfNotEmitting();
@@ -104,22 +108,18 @@ sparks.emitIfNotEmitting();
 Each spawned particle removes itself from the world once its lifetime
 expires, so there's nothing to clean up yourself.
 
-## You don't need the transform system
+## Transforms
 
-The particle systems write each particle's world position, rotation and
-scale themselves, as well as the local ones, so particles move, spin and
-shrink on screen whether or not `createTransformEcsSystem` is registered.
-If it is, it computes the same values, so the two agree.
+Like every system that moves entities, the particle systems only write each
+particle's `local` position, rotation and scale. Register
+`createTransformEcsSystem` after them and before rendering to turn those
+into the world transform (see [Transforms](../common/transforms.md)). That
+also covers a particle you give a
+[`ParentEcsComponent`](/Forge/docs/api/interfaces/ParentEcsComponent), for
+example from `onParticleSpawned` to make particles follow a moving ship.
 
-The one exception is a particle you give a
-[`ParentEcsComponent`](/Forge/docs/api/interfaces/ParentEcsComponent) (for
-example from `onParticleSpawned`, to make particles follow a moving ship).
-Its world transform depends on its parent's, so the particle systems only
-update its local transform and leave the rest to `createTransformEcsSystem`.
-
-The emitter reads its entity's **world** position. With the transform system
-registered, that's computed from the entity's local position. Without it,
-move the emitter entity by writing `position.world` yourself.
+The emitter reads its entity's **world** position, so move the emitter
+entity by writing its `position.local`.
 
 ## Sprites
 

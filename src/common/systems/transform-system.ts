@@ -31,7 +31,8 @@ function setLocalAsWorldIfExists(entity: number, world: EcsWorld): void {
   const scaleComponent = world.getComponent(entity, scaleId);
 
   if (scaleComponent) {
-    scaleComponent.world = scaleComponent.local;
+    scaleComponent.world.x = scaleComponent.local.x;
+    scaleComponent.world.y = scaleComponent.local.y;
   }
 }
 

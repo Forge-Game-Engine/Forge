@@ -74,6 +74,10 @@ import {
   createSpriteSheet,
   selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
+import {
+  addPositionComponent,
+  createTransformEcsSystem,
+} from '@forge-game-engine/forge/common';
 import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
@@ -84,8 +88,9 @@ import {
 
 const { imageCache } = renderContext;
 
-// 1. create the entity
+// 1. create the entity and position it
 const spriteEntity = world.createEntity();
+addPositionComponent(world, spriteEntity, { local: { x: 0, y: 0 } });
 
 // 2. load the sprite sheet
 const image = await imageCache.getOrLoad('character_sprite_sheet_32_32.png');
@@ -124,6 +129,7 @@ addSpriteAnimationComponent(world, spriteEntity, {
 
 // 9. register the systems
 world.addSystem(createCameraEcsSystem(time));
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createSpriteAnimationEcsSystem(time, animationRegistry));
 ```

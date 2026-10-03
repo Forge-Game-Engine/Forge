@@ -17,11 +17,12 @@ const followSpeed = 4;
  * `targetPosition` every tick, using exponential smoothing so it eases
  * towards the ball rather than snapping to it or lagging at a fixed offset.
  *
- * Writes `position.world` directly (rather than `position.local`, which
- * `createCameraEcsSystem`'s own pan/zoom input handling uses) since this
- * demo doesn't register `createTransformEcsSystem` to compute `world` from
- * `local` - the same convention every entity in this demo (and the other
- * physics demos) follows.
+ * Reads the ball's `local` position (it has no parent, so that's its current
+ * position whenever this runs) and writes the camera's `local` position,
+ * which `createTransformEcsSystem` turns into the `world` position the render
+ * system reads. Registered after the physics systems, so the camera's new
+ * position is rendered from the next tick on - the smoothing already eases
+ * it towards the ball over many ticks, so that tick of delay isn't visible.
  * @param targetPosition - The position component to follow, typically the ball's.
  * @param time - The time instance used to scale the follow speed by delta time.
  */
@@ -34,12 +35,10 @@ export const createCameraFollowEcsSystem = (
     for (const cameraPosition of cameraPositions) {
       const t = 1 - Math.exp(-followSpeed * time.deltaTimeInSeconds);
 
-      cameraPosition.world.x +=
-        (targetPosition.world.x - cameraPosition.world.x) * t;
-      cameraPosition.world.y +=
-        (targetPosition.world.y - cameraPosition.world.y) * t;
-      cameraPosition.local.x = cameraPosition.world.x;
-      cameraPosition.local.y = cameraPosition.world.y;
+      cameraPosition.local.x +=
+        (targetPosition.local.x - cameraPosition.local.x) * t;
+      cameraPosition.local.y +=
+        (targetPosition.local.y - cameraPosition.local.y) * t;
     }
   },
 });

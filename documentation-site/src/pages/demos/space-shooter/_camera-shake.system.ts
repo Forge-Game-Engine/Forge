@@ -25,9 +25,15 @@ export const createCameraShakeEcsSystem = (
       const shakeComponent = shakeComponents[i];
       const positionComponent = positionComponents[i];
 
+      const { currentOffset } = shakeComponent;
+
       if (shakeComponent.elapsedSeconds >= shakeComponent.durationSeconds) {
-        positionComponent.world.x = positionComponent.local.x;
-        positionComponent.world.y = positionComponent.local.y;
+        // Take back whatever offset is still applied, returning the camera
+        // to the position it had before the shake started.
+        positionComponent.local.x -= currentOffset.x;
+        positionComponent.local.y -= currentOffset.y;
+        currentOffset.x = 0;
+        currentOffset.y = 0;
 
         continue;
       }
@@ -43,19 +49,20 @@ export const createCameraShakeEcsSystem = (
         );
         const stepIntensity = shakeComponent.intensity * remainingFraction;
 
-        shakeComponent.currentOffset.x =
-          random.randomFloat(-1, 1) * stepIntensity;
-        shakeComponent.currentOffset.y =
-          random.randomFloat(-1, 1) * stepIntensity;
+        const nextOffsetX = random.randomFloat(-1, 1) * stepIntensity;
+        const nextOffsetY = random.randomFloat(-1, 1) * stepIntensity;
+
+        // The offset lives in the camera's `local` position, so swap the
+        // previously applied offset for the new one instead of adding it on
+        // top, which would make the camera drift away over the shake.
+        positionComponent.local.x += nextOffsetX - currentOffset.x;
+        positionComponent.local.y += nextOffsetY - currentOffset.y;
+        currentOffset.x = nextOffsetX;
+        currentOffset.y = nextOffsetY;
 
         shakeComponent.nextOffsetChangeSeconds =
           shakeComponent.elapsedSeconds + offsetHoldSeconds;
       }
-
-      positionComponent.world.x =
-        positionComponent.local.x + shakeComponent.currentOffset.x;
-      positionComponent.world.y =
-        positionComponent.local.y + shakeComponent.currentOffset.y;
     }
   },
 });

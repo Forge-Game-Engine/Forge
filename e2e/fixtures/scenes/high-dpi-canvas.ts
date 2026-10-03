@@ -1,4 +1,5 @@
 import {
+  addPositionComponent,
   calculatePixelsPerUnit,
   Color,
   createCamera,
@@ -121,9 +122,8 @@ export const createScene: CreateScene = async (
   });
   const square = world.createEntity();
 
-  world.addComponent(square, positionId, {
+  addPositionComponent(world, square, {
     local: { ...squareWorldCenter },
-    world: { ...squareWorldCenter },
   });
   world.addComponent(square, spriteId, {
     ...squareSprite,

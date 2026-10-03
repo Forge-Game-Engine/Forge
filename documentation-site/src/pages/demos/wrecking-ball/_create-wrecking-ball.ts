@@ -147,15 +147,13 @@ function createPhysicsSpriteEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
-  addRotationComponent(world, entity, { local: angle, world: angle });
+  addRotationComponent(world, entity, { local: angle });
 
   if (options.scale) {
     addScaleComponent(world, entity, {
       local: options.scale,
-      world: options.scale,
     });
   }
 
@@ -251,7 +249,6 @@ export async function createWreckingBall(
   const pivotEntity = world.createEntity();
 
   addPositionComponent(world, pivotEntity, {
-    world: Vec2.clone(pivotPosition),
     local: Vec2.clone(pivotPosition),
   });
   addRotationComponent(world, pivotEntity);
@@ -293,7 +290,6 @@ export async function createWreckingBall(
   const armEntity = world.createEntity();
 
   addPositionComponent(world, armEntity, {
-    world: Vec2.clone(pivotPosition),
     local: Vec2.clone(pivotPosition),
   });
   addRotationComponent(world, armEntity);

@@ -37,12 +37,10 @@ function placePanel(
 
   addPositionComponent(world, entity, {
     local: { x, y },
-    world: { x, y },
   });
 
   addRotationComponent(world, entity, {
     local: 0,
-    world: 0,
   });
 
   addSpriteComponent(world, entity, sprite);

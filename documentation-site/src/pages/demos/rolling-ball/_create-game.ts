@@ -17,6 +17,7 @@ import {
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
+  createTransformEcsSystem,
   PositionEcsComponent,
   positionId,
 } from '@forge-game-engine/forge/common';
@@ -93,7 +94,6 @@ export const createRollingBallGame = async (): Promise<Game> => {
     positionId,
   )!;
 
-  cameraPosition.world = Vec2.clone(spawnPosition);
   cameraPosition.local = Vec2.clone(spawnPosition);
 
   const collisionPairs: CollisionPair[] = [];
@@ -103,12 +103,16 @@ export const createRollingBallGame = async (): Promise<Game> => {
   // Roll input must be applied before the motor system, which must in turn
   // run before the broad/narrow-phase and resolution systems, so this
   // tick's input reaches this tick's physics step - see the Applying
-  // Forces guide's registration order caution. The jump/respawn and
-  // camera-follow systems read the resolution step's results, so they run
-  // after it instead. The terrain render system must run before
-  // createRenderEcsSystem so the ball's sprite draws on top of the terrain
-  // mesh, not underneath it.
+  // Forces guide's registration order caution. createTransformEcsSystem
+  // turns every entity's `local` pose into the `world` pose that the physics
+  // and render systems read, so it runs before all of them. The jump/respawn
+  // system reads the narrow phase's collisions, so it runs after it; it and
+  // the camera-follow system write `local` positions after the transform
+  // system has run, so their changes are rendered from the next tick on. The
+  // terrain render system must run before createRenderEcsSystem so the
+  // ball's sprite draws on top of the terrain mesh, not underneath it.
   world.addSystem(createRollEcsSystem(rollInput));
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createGravityEcsSystem(time));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

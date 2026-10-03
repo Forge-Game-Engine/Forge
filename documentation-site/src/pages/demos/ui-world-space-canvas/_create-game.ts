@@ -27,11 +27,9 @@ import {
   textVerticalAlignments,
 } from '@forge-game-engine/forge/text';
 import {
-  addUiWorldSpaceFollowComponent,
   createLabel,
   createPanel,
   createUiCanvas,
-  createUiWorldSpaceFollowEcsSystem,
   registerUiSystems,
   UiAnchor,
   uiCanvasRenderModes,
@@ -48,6 +46,8 @@ const renderLayers = {
 };
 
 const spinRadiansPerSecond = 1.4;
+
+const enemyY = -40;
 
 async function createBackdrop(
   world: EcsWorld,
@@ -88,13 +88,15 @@ async function createBackdrop(
 /**
  * Creates a spinning "enemy" (a square sprite plus a triangle-ish facing
  * marker, so the rotation is visually obvious) at `x`, and a world-space
- * health-bar canvas attached to it.
- * @param attachment - `'parent'` attaches the canvas the ordinary way
- * (`addParentComponent`), which inherits the enemy's full world transform
- * - the canvas visibly spins and swings around as the enemy rotates.
- * `'follow'` attaches it with `addUiWorldSpaceFollowComponent` instead,
- * which tracks only the enemy's world position - the canvas stays upright
- * and directly above the enemy no matter which way it's facing.
+ * health-bar canvas above it.
+ * @param attachment - `'parent'` attaches the canvas with
+ * `addParentComponent`, so it inherits the enemy's full world transform and
+ * visibly spins and swings around as the enemy rotates. `'position'` leaves
+ * the canvas without a parent and puts it above the enemy with its
+ * `anchoredPosition` instead, so it stays upright no matter which way the
+ * enemy is facing. The enemies never move, so setting `anchoredPosition`
+ * once is enough; for a moving target, write it from the target's position
+ * every frame in a system registered before `registerUiSystems`.
  */
 async function createSpinningEnemyWithHealthBar(
   world: EcsWorld,
@@ -102,7 +104,7 @@ async function createSpinningEnemyWithHealthBar(
   fontAtlas: FontAtlas,
   worldCamera: number,
   x: number,
-  attachment: 'parent' | 'follow',
+  attachment: 'parent' | 'position',
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),
@@ -119,7 +121,7 @@ async function createSpinningEnemyWithHealthBar(
 
   const enemy = world.createEntity();
 
-  addPositionComponent(world, enemy, { local: { x, y: -40 } });
+  addPositionComponent(world, enemy, { local: { x, y: enemyY } });
   addRotationComponent(world, enemy);
   addSpriteComponent(world, enemy, enemySprite);
 
@@ -141,17 +143,22 @@ async function createSpinningEnemyWithHealthBar(
   addParentComponent(world, marker, { parent: enemy });
   addSpriteComponent(world, marker, markerSprite);
 
+  // 80 units above the enemy: relative to the enemy when parented, and in
+  // world space otherwise.
+  const healthBarOffset = { x: 0, y: 80 };
+
   const healthBarCanvas = createUiCanvas(world, renderContext, {
     renderMode: uiCanvasRenderModes.worldSpace,
     camera: worldCamera,
     anchor: UiAnchor.center({ x: 110, y: 16 }),
-    anchoredPosition: { x: 0, y: 80 },
+    anchoredPosition:
+      attachment === 'parent'
+        ? healthBarOffset
+        : { x: x + healthBarOffset.x, y: enemyY + healthBarOffset.y },
   });
 
   if (attachment === 'parent') {
     addParentComponent(world, healthBarCanvas, { parent: enemy });
-  } else {
-    addUiWorldSpaceFollowComponent(world, healthBarCanvas, { target: enemy });
   }
 
   const barBackgroundSprite = createImageSprite(whiteImage, renderContext, {
@@ -179,10 +186,7 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   createLabel(world, healthBarCanvas, {
-    text:
-      attachment === 'parent'
-        ? 'addParentComponent'
-        : 'addUiWorldSpaceFollowComponent',
+    text: attachment === 'parent' ? 'addParentComponent' : 'anchoredPosition',
     fontAtlas,
     size: 20,
     anchor: UiAnchor.center({ x: 260, y: 32 }),
@@ -212,9 +216,9 @@ function createSpinEcsSystem(time: Time): EcsSystem<[RotationEcsComponent]> {
  * each with a diegetic health-bar canvas (`renderMode: 'worldSpace'`)
  * attached to it. The left enemy's health bar is attached with the
  * ordinary `addParentComponent` and visibly spins and swings around with
- * the enemy. The right enemy's is attached with
- * `addUiWorldSpaceFollowComponent` instead, and stays upright, directly
- * above, regardless of which way the enemy is facing.
+ * the enemy. The right enemy's has no parent and is placed above it with its
+ * `anchoredPosition`, so it stays upright regardless of which way the enemy
+ * is facing.
  * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
@@ -255,15 +259,12 @@ export const createWorldSpaceCanvasGame = async (
     fontAtlas,
     worldCamera,
     180,
-    'follow',
+    'position',
   );
 
   world.addSystem(createSpinEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  // After createTransformEcsSystem, not before like the rest of the UI
-  // pipeline - see createUiWorldSpaceFollowEcsSystem's own doc comment.
-  world.addSystem(createUiWorldSpaceFollowEcsSystem());
   world.addSystem(createTextShapingEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

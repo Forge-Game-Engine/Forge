@@ -1,7 +1,7 @@
 import { ageScaleId } from '../../common/components/age-scale-component.js';
-import { positionId } from '../../common/components/position-component.js';
-import { rotationId } from '../../common/components/rotation-component.js';
-import { scaleId } from '../../common/components/scale-component.js';
+import { addPositionComponent } from '../../common/components/position-component.js';
+import { addRotationComponent } from '../../common/components/rotation-component.js';
+import { addScaleComponent } from '../../common/components/scale-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { lifetimeId } from '../../lifecycle/components/lifetime-component.js';
 import { RemoveFromWorldLifetimeStrategyId } from '../../lifecycle/strategies/remove-from-world-strategy-component.js';
@@ -140,23 +140,9 @@ export function spawnParticle(
     finalLifetimeScaleY: scale * particleEmitter.lifetimeScaleReduction,
   });
 
-  // `world` is written as well as `local`, so a particle shows up in the
-  // right place, at the right size, on its very first frame, whether or not
-  // the transform system is registered.
-  world.addComponent(particle, positionId, {
-    world: Vec2.clone(spawnPosition),
-    local: spawnPosition,
-  });
-
-  world.addComponent(particle, scaleId, {
-    world: { x: scale, y: scale },
-    local: { x: scale, y: scale },
-  });
-
-  world.addComponent(particle, rotationId, {
-    world: rotation,
-    local: rotation,
-  });
+  addPositionComponent(world, particle, { local: spawnPosition });
+  addScaleComponent(world, particle, { local: { x: scale, y: scale } });
+  addRotationComponent(world, particle, { local: rotation });
 
   particleEmitter.onParticleSpawned?.(world, particle);
 

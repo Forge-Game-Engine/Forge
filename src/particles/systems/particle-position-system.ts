@@ -1,4 +1,3 @@
-import { parentId } from '../../common/components/parent-component.js';
 import {
   PositionEcsComponent,
   positionId,
@@ -9,7 +8,6 @@ import {
 } from '../../common/components/rotation-component.js';
 import { Time } from '../../common/time/Time.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   ParticleEcsComponent,
   ParticleId,
@@ -43,32 +41,14 @@ function moveParticle(
   }
 }
 
-function writeWorldTransformIfRoot(
-  world: EcsWorld,
-  entity: number,
-  position: PositionEcsComponent,
-  rotation: RotationEcsComponent,
-): void {
-  // A parented particle's world transform depends on its parent's, which
-  // only the transform system knows how to combine.
-  if (world.getComponent(entity, parentId)) {
-    return;
-  }
-
-  position.world.x = position.local.x;
-  position.world.y = position.local.y;
-  rotation.world = rotation.local;
-}
-
 /**
  * Creates an ECS system that moves and spins every particle: it applies each
  * particle's acceleration and drag to its velocity, moves it by that velocity
  * (plus its velocity offset, if any), and turns its rotation by its rotation
  * speed.
  *
- * For a particle with no `ParentEcsComponent`, the system writes the world
- * position and rotation as well as the local ones, so particles move on
- * screen without `createTransformEcsSystem`.
+ * It writes each particle's local position and rotation;
+ * `createTransformEcsSystem` turns them into the world transform.
  * @param time - The time instance used to determine how far to move and rotate particles each frame.
  * @returns The particle position ECS system.
  */
@@ -79,15 +59,14 @@ export const createParticlePositionEcsSystem = (
 > => ({
   query: [positionId, rotationId, ParticleId],
   update: (
-    world,
+    _world,
     {
-      entities,
       components: [positionComponents, rotationComponents, particleComponents],
     },
   ) => {
     const { deltaTimeInSeconds } = time;
 
-    for (let i = 0; i < entities.length; i++) {
+    for (let i = 0; i < positionComponents.length; i++) {
       const position = positionComponents[i];
       const rotation = rotationComponents[i];
       const particle = particleComponents[i];
@@ -95,8 +74,6 @@ export const createParticlePositionEcsSystem = (
       moveParticle(particle, position, deltaTimeInSeconds);
 
       rotation.local += particle.rotationSpeed * deltaTimeInSeconds;
-
-      writeWorldTransformIfRoot(world, entities[i], position, rotation);
     }
   },
 });

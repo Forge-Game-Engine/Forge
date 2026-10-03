@@ -100,10 +100,9 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
-  addRotationComponent(world, entity, { local: angle, world: angle });
+  addRotationComponent(world, entity, { local: angle });
   addSpriteComponent(world, entity, { ...sprite, width, height, slices });
 }
 
@@ -136,7 +135,6 @@ function createPivotMarker(
   const pivotEntity = world.createEntity();
 
   addPositionComponent(world, pivotEntity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
   addRotationComponent(world, pivotEntity);
@@ -180,12 +178,10 @@ function createDoorScenario(
   );
 
   addPositionComponent(world, doorEntity, {
-    world: Vec2.clone(doorPosition),
     local: Vec2.clone(doorPosition),
   });
   addRotationComponent(world, doorEntity, {
     local: doorAngle,
-    world: doorAngle,
   });
   addSpriteComponent(world, doorEntity, {
     ...sprites.door,
@@ -256,12 +252,10 @@ function createPendulumScenario(
   const bobCollider = new CircleCollider(bobRadius);
 
   addPositionComponent(world, bobEntity, {
-    world: Vec2.clone(bobPosition),
     local: Vec2.clone(bobPosition),
   });
   addRotationComponent(world, bobEntity, {
     local: startAngle,
-    world: startAngle,
   });
   addSpriteComponent(world, bobEntity, {
     ...sprites.ball,
@@ -311,7 +305,6 @@ function createWheelScenario(
   const wheelCollider = new CircleCollider(wheelRadius);
 
   addPositionComponent(world, wheelEntity, {
-    world: Vec2.clone(hubPosition),
     local: Vec2.clone(hubPosition),
   });
   addRotationComponent(world, wheelEntity);

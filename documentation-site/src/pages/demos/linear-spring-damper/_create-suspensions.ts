@@ -98,7 +98,6 @@ function createVisualEntity(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    world: Vec2.clone(position),
     local: Vec2.clone(position),
   });
   addRotationComponent(world, entity);
@@ -193,7 +192,6 @@ function createSuspensionScenario(
   const wheelEntity = world.createEntity();
 
   addPositionComponent(world, wheelEntity, {
-    world: Vec2.clone(wheelPosition),
     local: Vec2.clone(wheelPosition),
   });
   addRotationComponent(world, wheelEntity);
@@ -239,7 +237,6 @@ function createSuspensionScenario(
   const lineEntity = world.createEntity();
 
   addPositionComponent(world, lineEntity, {
-    world: Vec2.clone(mountPosition),
     local: Vec2.clone(mountPosition),
   });
   addRotationComponent(world, lineEntity);

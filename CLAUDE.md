@@ -22,6 +22,15 @@ section has the reasoning.
   removes the workaround.
 - **General-purpose only.** Game- or genre-specific code doesn't belong in
   `/src`.
+- **Right fix, idiomatic fix.** Before implementing, ask whether you're
+  fixing the cause or patching a symptom, and how established engines
+  (Unity, Godot, Bevy) solve the same problem. Implement the
+  well-understood solution. If the request only works by bending a core
+  design, raise that with the user instead of building on it.
+- **One writer per value; fixed system queries.** Each component field has
+  one owning system (e.g. only `createTransformEcsSystem` writes
+  `position.world`; everything else writes `local`). A system's `query`
+  and `tags` are never configurable.
 
 ## Skills
 
@@ -36,6 +45,13 @@ start the task:
 | Writing or updating a guide in `documentation-site/docs`   | `document-feature`       |
 | Adding a Playwright test for rendering, input or game loop | `write-e2e-test`         |
 | Designing or planning a new feature or large change        | `create-design-document` |
+
+## Before implementing
+
+For any fix or feature that's more than a one-line change, run the
+`solution-reviewer` agent (`.claude/agents/solution-reviewer.md`) on your
+plan before writing code, and act on what it flags. Include its verdict
+in your summary to the user.
 
 ## Verification
 

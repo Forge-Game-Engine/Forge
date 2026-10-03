@@ -47,7 +47,7 @@ Because these methods mutate their first argument, **clone before
 operating on any vector you still need unchanged** -
 [`Vec2.clone(v)`](/Forge/docs/api/classes/Vec2#clone) returns an
 independent copy. This matters most for two things: a component's live
-field (e.g. `entity.position.world`) that other code reads later in the
+field (e.g. `entity.position.local`) that other code reads later in the
 same tick, and a value you need for more than one computation. In the
 example above, `gravity` and `body.velocity` are cloned before being scaled,
 since scaling them in place would permanently corrupt the constant gravity
@@ -190,8 +190,8 @@ const seekSystem = {
       const target = targets[i];
 
       // Clone before subtracting: `target.value` is still needed unchanged
-      // next tick, and `position.world` is the entity's live position.
-      const toTarget = Vec2.subtract(Vec2.clone(target.value), position.world);
+      // next tick, and `position.local` is the entity's live position.
+      const toTarget = Vec2.subtract(Vec2.clone(target.value), position.local);
       const distance = Vec2.magnitude(toTarget);
 
       if (distance < 1) {
@@ -203,7 +203,7 @@ const seekSystem = {
         seekSpeed * deltaTimeInSeconds,
       );
 
-      Vec2.add(position.world, step);
+      Vec2.add(position.local, step);
     }
   },
 };

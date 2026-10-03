@@ -64,6 +64,32 @@ follows these rules:
 - **Delete what the fix made unnecessary.** Workarounds, compensating
   code in callers, and options added by earlier band-aid fixes all go in
   the same change. A good fix is often net negative in `/src`.
+- **Ask whether it's the right fix, not just a working one.** A change
+  that makes a system take on a second job, special-cases some callers, or
+  makes behavior configurable so other code doesn't have to change is
+  usually patching a symptom. Find the code that breaks the contract and
+  fix that, even when the right fix is much bigger than the patch.
+- **Solve it the way established engines do.** Most problems in a game
+  engine (transform hierarchies, physics/transform sync, fixed timesteps,
+  input mapping, UI layout) have a well-understood solution in Unity,
+  Godot, Bevy or the ECS literature. Name the problem in general terms,
+  check how those engines solve it, and implement that solution. Deviate
+  only for a reason you can state, and state it in the PR.
+- **One writer per value.** Every component field has one owner that
+  writes it; everything else reads it. When two systems write the same
+  field (e.g. physics and the transform system both writing
+  `position.world`), that's the bug, whichever one the symptom shows up in.
+  See "Transforms" under "Common Patterns".
+- **Flag designs that don't fit instead of building on them.** If a request
+  only works by bending a core part of the engine, or a relationship
+  doesn't make sense in an ECS engine, stop and raise it with the user
+  before implementing. Don't stack a workaround on top of a questionable
+  design.
+
+Before implementing any fix or feature that's more than a one-line change,
+run the `solution-reviewer` agent (`.claude/agents/solution-reviewer.md`)
+on your plan. It checks the plan against these rules and against how other
+engines solve the same problem.
 
 The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
 this step by step for bug fixes.
@@ -325,6 +351,13 @@ export const createMyEcsSystem = (): EcsSystem<[MyComponent]> => ({
 
 See `/documentation-site/docs/docs/ecs/system.md` for the full contract,
 including the optional `tags` and `cleanup` fields.
+
+A system's `query` and `tags` are fixed: a `create<Name>EcsSystem` factory
+never takes options that change which components or tags it matches. A
+system processes every entity that has its components, which is what makes
+a component mean the same thing everywhere. If a system matches entities it
+shouldn't touch, the entities' components are wrong, or another system is
+writing a value this one owns. Fix that instead.
 
 ### Index Files
 
@@ -750,6 +783,24 @@ system averages the scene down to CSS-pixel resolution before blurring,
 and bloom's downsample block is `4 * pixelRatio` render-target texels.
 Don't step a kernel `pixelRatio` texels apart on the full-resolution
 texture instead - it skips the texels in between and stripes thin details.
+
+### Transforms
+
+`PositionEcsComponent`, `RotationEcsComponent` and `ScaleEcsComponent`
+each have a `local` and a `world` value. `local` is the input: game code,
+physics integration (`createEulerIntegrationEcsSystem`), UI layout and
+every other system that moves an entity writes `local`. `world` is output:
+only `createTransformEcsSystem` writes it, composing `local` with the
+parent's `world`. Everything that draws, collides or measures reads
+`world`. Never write `world` anywhere else, including demos, e2e scenes and
+docs samples. The transform system overwrites it on its next pass. The
+`add{Position,Rotation,Scale}Component` factories only take `local`, and
+start `world` as a copy of it.
+
+The transform system runs once per frame, after the systems that write
+`local` and before physics and rendering, which read `world`.
+`documentation-site/docs/docs/common/transforms.md` covers the ordering and
+following other entities.
 
 ### Readonly Fields
 

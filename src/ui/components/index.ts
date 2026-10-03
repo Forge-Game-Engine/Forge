@@ -15,4 +15,3 @@ export * from './ui-safe-area-component.js';
 export * from './ui-slider-component.js';
 export * from './ui-toggle-component.js';
 export * from './ui-toggle-group-component.js';
-export * from './ui-world-space-follow-component.js';

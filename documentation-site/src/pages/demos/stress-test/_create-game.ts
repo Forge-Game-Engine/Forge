@@ -5,6 +5,7 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import { createSpriteSpawner } from './_create-sprite-spawner';
 import { createFpsMonitorEcsSystem } from './_fps-monitor.system';
 import { createSpriteSpawnerEcsSystem } from './_sprite-spawner.system';
@@ -28,8 +29,11 @@ export const createStressTestGame = async (): Promise<Game> => {
   const random = new Random();
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createSpriteSpawnerEcsSystem(time, random));
+  // After the spawner, so each sprite it spawns (with only a `local` pose)
+  // gets its `world` pose before the render system first draws it.
+  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createFpsMonitorEcsSystem(time));
 
   return game;

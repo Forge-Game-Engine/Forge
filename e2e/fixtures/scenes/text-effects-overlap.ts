@@ -1,4 +1,5 @@
 import {
+  addPositionComponent,
   addTextComponent,
   Color,
   createCamera,
@@ -10,7 +11,6 @@ import {
   createTransformEcsSystem,
   EcsWorld,
   FontAtlas,
-  positionId,
   Time,
 } from '../../../src/index.js';
 import {
@@ -290,9 +290,8 @@ export const createScene: CreateScene = async (
 
   const textEntity = world.createEntity();
 
-  world.addComponent(textEntity, positionId, {
+  addPositionComponent(world, textEntity, {
     local: { x: 0, y: 0 },
-    world: { x: 0, y: 0 },
   });
 
   // Distinct, saturated colors for ink vs. outline, so a same-run pixel

@@ -69,7 +69,6 @@ export async function createBoundaries(
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: Vec2.clone(position),
       local: Vec2.clone(position),
     });
 

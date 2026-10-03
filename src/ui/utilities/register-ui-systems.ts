@@ -43,8 +43,8 @@ export interface RegisterUiSystemsOptions {
 
 /**
  * Registers every system a `createUiCanvas` canvas depends on: layout,
- * layout groups, aspect ratio fitting, progress bars, canvas groups, focus
- * navigation, color transitions, toggles, and tooltips - plus, once a
+ * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles, and
+ * tooltips - plus, once a
  * `pointerSource` is supplied, pointer raycasting/interaction/sliders, and
  * once `getSafeAreaInsets` is supplied, safe-area insetting - each wired in
  * the order their cross-system reads/writes require.

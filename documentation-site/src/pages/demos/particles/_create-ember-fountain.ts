@@ -58,10 +58,7 @@ export async function createEmberFountain(
   // The emitter spawns particles around its entity's world position.
   const entity = world.createEntity();
 
-  addPositionComponent(world, entity, {
-    local: Vec2.clone(position),
-    world: Vec2.clone(position),
-  });
+  addPositionComponent(world, entity, { local: Vec2.clone(position) });
 
   addParticleEmitterComponent(world, entity, {
     emitters: new Map([['embers', emberEmitter]]),

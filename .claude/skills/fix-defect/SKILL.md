@@ -49,6 +49,22 @@ not where the symptom shows up.
   Don't pass the disagreement on to the user as an option.
 - If several call sites each work around the same bug, the fix belongs in
   the thing they all call. Then delete the workarounds.
+- List every writer of the value that goes wrong (`grep` for assignments
+  and in-place `Vec2` mutations across `/src`). Each component field has one
+  owner. If two systems write it, that's the root cause, whichever one the
+  symptom shows up in. For example, `position.world` is owned by
+  `createTransformEcsSystem`, so a system that writes it directly is the
+  bug, not the transform system overwriting it.
+- Name the problem in general terms and check how Unity, Godot and Bevy
+  solve it. Use that well-understood solution unless you can state why it
+  doesn't fit Forge.
+- If the only fix you can find bends a core engine design, or the report
+  depends on a relationship that doesn't make sense in an ECS engine, stop
+  and raise it with the user instead of building on it.
+
+Before you change any code, run the `solution-reviewer` agent
+(`.claude/agents/solution-reviewer.md`) with the report, the root cause you
+found and the fix you plan, and act on its verdict.
 
 ## 3. Change the behavior outright
 
@@ -67,6 +83,7 @@ that depended on the old behavior in the same change: `/src` callers, tests,
 | A fallback branch to the old code path ("if not set, behave like before")                   | Delete the old code path                                         |
 | A "for backwards compatibility" / "kept for existing users" comment                         | Nothing. There are no compatibility guarantees before 1.0        |
 | A runtime warning for the old usage                                                         | A type error from the changed signature, plus a changelog bullet |
+| An option that filters which entities a system processes (a configurable `query` or `tags`) | Fix whichever system is writing a value it doesn't own           |
 
 **When a new option is legitimate**: different games really do want
 different values, and none of them is "the bug". A blur radius is a real
@@ -102,6 +119,10 @@ Before running verification, read `git diff` and check for each of these:
 - The words `legacy`, `compat`, `deprecated`, `old`, `previous`, `fallback`
   or `backwards` in new code or comments.
 - Two code paths that do the same job, where one is the old way.
+- A `create*EcsSystem` factory whose `query` or `tags` depend on its
+  arguments. System queries are fixed.
+- A system that now does a second job, or special-cases some entities, so
+  that another system doesn't have to change.
 - Net line count. A root-cause fix plus deleted workarounds is often net
   negative in `/src`. If yours grew a lot, check whether you patched the
   symptom instead of the cause.

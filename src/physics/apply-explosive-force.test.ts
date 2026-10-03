@@ -16,7 +16,6 @@ describe('applyExplosiveForce', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: Vec2.clone(position),
       local: Vec2.clone(position),
     });
     addRigidBodyComponent(world, entity, { mass: 1, momentOfInertia: 1 });
@@ -53,7 +52,6 @@ describe('applyExplosiveForce', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
-      world: { x: 50, y: 0 },
       local: { x: 50, y: 0 },
     });
 

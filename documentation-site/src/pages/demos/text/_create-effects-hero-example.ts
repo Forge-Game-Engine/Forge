@@ -61,7 +61,7 @@ export function createEffectsHeroExample(
 
   const captionEntity = world.createEntity();
   addPositionComponent(world, captionEntity, {
-    world: { x: topLeft.x, y: topLeft.y },
+    local: { x: topLeft.x, y: topLeft.y },
   });
   addTextComponent(world, captionEntity, {
     text: `outline + soft shadow / glow together, at a larger size (outlineWidth: ${heroOutlineWidth}, shadowSoftness: ${heroShadowSoftness})`,
@@ -83,7 +83,7 @@ export function createEffectsHeroExample(
 
   const textEntity = world.createEntity();
   addPositionComponent(world, textEntity, {
-    world: { x: topLeft.x, y: boxTop },
+    local: { x: topLeft.x, y: boxTop },
   });
   addTextComponent(world, textEntity, {
     text: heroText,

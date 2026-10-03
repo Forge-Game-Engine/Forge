@@ -82,20 +82,18 @@ export interface WorldSpaceUiCanvasOptions extends CanvasInputOptions {
    * The anchor this canvas's own root rect resolves with. Defaults to
    * `UiAnchor.center()` (a literal `100x100` reference-pixel box) - size it
    * to fit the content you'll add as its children (a health bar background,
-   * say), and attach `addUiWorldSpaceFollowComponent(world, canvas, {
-   * target: enemy })` so it tracks the entity it should follow. That's a
-   * different relationship from `addParentComponent`: a diegetic UI canvas
-   * almost always wants to follow its target's world *position* only, never
-   * its rotation (so it stays upright above the target regardless of which
-   * way it's facing, instead of swinging around with it) - see
-   * `UiWorldSpaceFollowEcsComponent`'s own doc comment for why that isn't
-   * expressed as a `ParentEcsComponent` option. Register
-   * `createUiWorldSpaceFollowEcsSystem()` once, after
-   * `createTransformEcsSystem()`, for any world using this.
+   * say). To keep the canvas above an entity, either give it a
+   * `ParentEcsComponent` (it then also rotates and scales with that entity)
+   * or write its `RectTransformEcsComponent.anchoredPosition` from the
+   * entity's position in one of your own systems, registered before
+   * `registerUiSystems`, so it stays upright.
    */
   anchor?: UiAnchorConfig;
 
-  /** Offset of this canvas's own root rect from its anchor. See `anchor` above. */
+  /**
+   * Offset of this canvas's own root rect from its anchor, in world units.
+   * See `anchor` above.
+   */
   anchoredPosition?: Vector2;
 }
 

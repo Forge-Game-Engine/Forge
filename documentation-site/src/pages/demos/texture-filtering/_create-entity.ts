@@ -16,14 +16,13 @@ export function createEntity(
   addSpriteComponent(world, entity, sprite);
 
   addPositionComponent(world, entity, {
-    world: { x: xPosition, y: 0 },
+    local: { x: xPosition, y: 0 },
   });
   addScaleComponent(world, entity, {
-    world: { x: 4.5, y: 4.5 },
+    local: { x: 4.5, y: 4.5 },
   });
 
   addRotationComponent(world, entity, {
     local: Math.PI,
-    world: Math.PI,
   });
 }

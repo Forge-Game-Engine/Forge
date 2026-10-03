@@ -60,6 +60,7 @@ configured per camera with [`ToneMappingEcsComponent`](/Forge/docs/api/interface
 (attach one with `addToneMappingComponent`):
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   addToneMappingComponent,
   createPresentEcsSystem,
@@ -69,6 +70,7 @@ import {
 
 addToneMappingComponent(world, camera, { exposure: 1 });
 
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createToneMapEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
