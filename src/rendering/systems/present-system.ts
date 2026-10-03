@@ -27,7 +27,16 @@ interface PresentCommand {
  * target) are layered onto the canvas in ascending `CameraEcsComponent.layer`
  * order: the lowest layer clears the canvas and replaces it outright, and
  * every subsequent (higher) layer alpha-blends on top instead, so later
- * layers don't erase earlier ones.
+ * layers don't erase earlier ones. If any camera renders straight to the
+ * canvas, the canvas already holds this frame's output from that camera, so
+ * every layer (the lowest included) alpha-blends on top of it instead of
+ * replacing it: canvas cameras always end up beneath every presented render
+ * target, regardless of `layer`.
+ *
+ * Render targets hold premultiplied-alpha color (see
+ * `createRenderEcsSystem`), so layers are blended with
+ * `blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`: a translucent pixel in a target
+ * reaches the canvas at exactly the opacity it was drawn with.
  *
  * `update` first gathers each camera's `renderTarget` and `layer`, then
  * dedupes and sorts them, then does the actual presenting, since the draw
@@ -52,11 +61,18 @@ export const createPresentEcsSystem = (
     update: (_world, { components: [cameras] }) => {
       const targetsSeen = new Set<RenderTarget>();
       const presentCommands: PresentCommand[] = [];
+      let isCanvasAlreadyDrawn = false;
 
       for (const camera of cameras) {
         const { renderTarget, layer } = camera;
 
-        if (!renderTarget || targetsSeen.has(renderTarget)) {
+        if (!renderTarget) {
+          isCanvasAlreadyDrawn = true;
+
+          continue;
+        }
+
+        if (targetsSeen.has(renderTarget)) {
           continue;
         }
 
@@ -69,20 +85,31 @@ export const createPresentEcsSystem = (
       presentCommands.forEach(({ renderTarget }, index) => {
         material.setUniform('u_texture', renderTarget.colorTexture);
 
-        if (index === 0) {
+        if (index === 0 && !isCanvasAlreadyDrawn) {
           beginFullscreenReplacePass(renderContext, null);
         } else {
-          // A later layer (for example a sharp foreground on top of a
-          // blurred background): don't clear what earlier layers already
-          // drew, and blend so this layer's transparent pixels let them
-          // show through instead of overwriting them with the clear color.
+          // Either a later layer (for example a sharp foreground on top of
+          // a blurred background), or any layer once a camera without a
+          // render target has already cleared and drawn onto the canvas
+          // this frame (for example a UI canvas over a world camera that
+          // renders straight to the screen). Either way, don't clear what's
+          // already there, and blend so this layer's transparent pixels let
+          // it show through. The target's color is already premultiplied,
+          // so its source factor is `ONE`, not `SRC_ALPHA`, which would
+          // multiply its alpha in a second time.
           renderContext.bindRenderTarget(null);
           gl.enable(gl.BLEND);
-          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         }
 
         drawFullscreenQuad(renderContext, material);
       });
+
+      // Blending is global GL state: leave it off, as the render system
+      // does, so a pass that draws before the next frame's sprites (for
+      // example `createTerrainRenderEcsSystem`) never inherits this pass's
+      // premultiplied blend function.
+      gl.disable(gl.BLEND);
     },
   };
 };

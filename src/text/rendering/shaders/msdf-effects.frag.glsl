@@ -22,8 +22,8 @@ float median(float r, float g, float b) {
 
 // Standard "top over bottom" alpha compositing, both sides straight
 // (non-premultiplied) alpha - matches the layout `fragColor` itself must be
-// in, since the render pipeline blends with `gl.blendFunc(SRC_ALPHA,
-// ONE_MINUS_SRC_ALPHA)`.
+// in, since the render pipeline blends color with `SRC_ALPHA,
+// ONE_MINUS_SRC_ALPHA` (premultiplying it on the way into the destination).
 vec4 compositeOver(vec4 top, vec4 bottom) {
   float outAlpha = top.a + bottom.a * (1.0 - top.a);
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../asset-loading/index.js';
+import { Color } from './color.js';
 import { CLEAR_STRATEGY } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
@@ -351,6 +352,24 @@ describe('RenderContext', () => {
 
       expect(mockGl.clearColor).toHaveBeenCalledWith(0, 0, 0, 0);
       expect(mockGl.clear).toHaveBeenCalledWith(mockGl.COLOR_BUFFER_BIT);
+    });
+
+    it('should clear to an opaque color unchanged', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.clear(new Color(0.2, 0.4, 0.6, 1));
+
+      expect(mockGl.clearColor).toHaveBeenCalledWith(0.2, 0.4, 0.6, 1);
+    });
+
+    it('should premultiply a translucent clear color by its alpha', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.clear(new Color(1, 0.5, 0, 0.5));
+
+      // Every destination holds premultiplied alpha, so a straight
+      // (1, 0.5, 0, 0.5) is stored as (0.5, 0.25, 0, 0.5).
+      expect(mockGl.clearColor).toHaveBeenCalledWith(0.5, 0.25, 0, 0.5);
     });
 
     it('should not clear when clearStrategy is none', () => {

@@ -22,9 +22,11 @@ function drawTerrainMeshesForCamera(
   renderContext.bindRenderTarget(target);
 
   if (!clearedDestinationsThisUpdate.has(target)) {
-    const { clearColor } = cameraComponent;
+    const { r, g, b, a } = cameraComponent.clearColor;
 
-    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+    // Premultiplied, matching `RenderContext.clear`: every destination holds
+    // premultiplied-alpha color.
+    gl.clearColor(r * a, g * a, b * a, a);
     gl.clear(gl.COLOR_BUFFER_BIT);
     clearedDestinationsThisUpdate.add(target);
   }

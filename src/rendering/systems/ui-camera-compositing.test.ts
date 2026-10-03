@@ -60,12 +60,14 @@ describe('UI-camera compositing over the world camera', () => {
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       BLEND: 'BLEND',
+      ONE: 'ONE',
       SRC_ALPHA: 'SRC_ALPHA',
       ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
 
       disable: vi.fn(),
       enable: vi.fn(),
       blendFunc: vi.fn(),
+      blendFuncSeparate: vi.fn(),
       createBuffer: vi.fn().mockReturnValue({}),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
@@ -191,9 +193,34 @@ describe('UI-camera compositing over the world camera', () => {
     expect(mockGl.disable).toHaveBeenCalledWith(mockGl.BLEND);
     expect(mockGl.enable).toHaveBeenCalledWith(mockGl.BLEND);
     expect(mockGl.blendFunc).toHaveBeenCalledWith(
-      mockGl.SRC_ALPHA,
+      mockGl.ONE,
       mockGl.ONE_MINUS_SRC_ALPHA,
     );
+  });
+
+  it('composites the UI target over a world camera that renders straight to the canvas, without erasing it', () => {
+    addCameraEntity(undefined, 0, Color.black);
+    addCameraEntity(uiTarget, 1, Color.transparent);
+
+    world.update();
+
+    // Exactly two clears - the render system's clear of the canvas (for the
+    // world camera) and of the UI target. The present pass must not clear
+    // the canvas a third time, or it would erase the world camera's output
+    // before the UI is drawn over it.
+    expect(mockGl.clear).toHaveBeenCalledTimes(2);
+    expect(mockGl.clearColor).toHaveBeenNthCalledWith(1, 0, 0, 0, 1);
+    expect(mockGl.clearColor).toHaveBeenNthCalledWith(2, 0, 0, 0, 0);
+
+    expect(mockGl.bindTexture).toHaveBeenCalledWith(
+      mockGl.TEXTURE_2D,
+      uiTarget.colorTexture,
+    );
+    expect(mockGl.blendFunc).toHaveBeenCalledWith(
+      mockGl.ONE,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(1);
   });
 
   it('draws a UI sprite into the UI target without touching the world target', () => {

@@ -259,9 +259,10 @@ sprite's own soft glow was faked by painting a **low-alpha color gradient**
 into the sprite and letting normal alpha blending fade it into the
 background. That approach actively fights this pipeline: alpha blending
 scales a pixel's contribution by its alpha regardless of how vivid the
-color stored there is, so a wide, softly-fading, low-alpha "glow" gets
-crushed to near-nothing, while only the fully-opaque core still reads
-clearly.
+color stored there is, so a wide, softly-fading, low-alpha "glow" only
+ever reaches the render target as a faint wash, far too dim to clear
+bloom's brightness `threshold`, while only the fully-opaque core actually
+blooms.
 
 The fix is to stop faking the soft falloff in the source art entirely and
 let bloom's blur produce it instead:

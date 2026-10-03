@@ -82,6 +82,12 @@ matching category, a world camera whose own `cullingMask` still matches
 everything would draw the panel a second time wherever its UI-space
 position happens to land in the world.
 
+The UI is composited over the world whether the world camera renders
+straight to the canvas or through a render target of its own, and
+translucent UI shows at exactly the opacity it was drawn with: a panel
+tinted to 50% alpha lets 50% of the world through behind it (see
+[Transparency](../rendering/multipass-rendering.md#transparency)).
+
 Text works the same way: `TextEcsComponent.category` defaults to
 `TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't override
 it - not a value the engine reserves or forces, just an ordinary default,

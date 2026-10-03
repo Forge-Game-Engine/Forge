@@ -173,6 +173,7 @@ describe('createRenderEcsSystem', () => {
       enable: vi.fn(),
       disable: vi.fn(),
       blendFunc: vi.fn(),
+      blendFuncSeparate: vi.fn(),
       drawArraysInstanced: vi.fn(),
       viewport: vi.fn(),
       bindFramebuffer: vi.fn(),
@@ -181,6 +182,9 @@ describe('createRenderEcsSystem', () => {
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       BLEND: 'BLEND',
+      ONE: 'ONE',
+      SRC_ALPHA: 'SRC_ALPHA',
+      ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -402,6 +406,27 @@ describe('createRenderEcsSystem', () => {
     // Layer 0 entries (depths 10 and 2) are drawn before the layer 1 entry
     // (depth -5), even though -5 sorts lowest by depth alone.
     expect(drawnDepths).toEqual([2, 10, -5]);
+  });
+
+  it('blends color as straight alpha but accumulates alpha with ONE, so destinations store premultiplied alpha', () => {
+    addCameraEntity();
+    const { renderable } = createRenderable(4);
+
+    addSpriteEntity(renderable, 0);
+
+    world.update();
+
+    // Reusing the color factors for alpha (`blendFunc(SRC_ALPHA,
+    // ONE_MINUS_SRC_ALPHA)`) would store `a * a` in the destination, which
+    // the present pass then multiplies in a second time.
+    expect(mockGl.enable).toHaveBeenCalledWith(mockGl.BLEND);
+    expect(mockGl.blendFuncSeparate).toHaveBeenCalledWith(
+      mockGl.SRC_ALPHA,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+      mockGl.ONE,
+      mockGl.ONE_MINUS_SRC_ALPHA,
+    );
+    expect(mockGl.blendFunc).not.toHaveBeenCalled();
   });
 
   it('disables blending after drawing a camera', () => {

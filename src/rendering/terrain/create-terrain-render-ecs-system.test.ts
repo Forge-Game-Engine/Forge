@@ -7,6 +7,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { addPositionComponent } from '../../common/index.js';
 
 import { addCameraComponent, CameraEcsComponent } from '../components/index.js';
+import { Color } from '../color.js';
 import { CLEAR_STRATEGY } from '../enums/index.js';
 import { ImageCache } from '../../asset-loading/index.js';
 import { RenderContext } from '../render-context.js';
@@ -110,6 +111,17 @@ describe('createTerrainRenderEcsSystem', () => {
     expect(material.bind).toHaveBeenCalledWith(mockGl);
     expect(geometry.bind).toHaveBeenCalledWith(mockGl, material.program);
     expect(mockGl.drawArrays).toHaveBeenCalledWith('TRIANGLES', 0, 42);
+  });
+
+  it("clears to the camera's clear color, premultiplied by its alpha", () => {
+    addCamera({ clearColor: new Color(1, 0.5, 0, 0.5) });
+    addTerrain();
+
+    world.update();
+
+    // Matches `RenderContext.clear`: every destination holds premultiplied
+    // alpha, so a straight (1, 0.5, 0, 0.5) is stored as (0.5, 0.25, 0, 0.5).
+    expect(mockGl.clearColor).toHaveBeenCalledWith(0.5, 0.25, 0, 0.5);
   });
 
   it('sets the projection matrix uniform before binding the material', () => {
