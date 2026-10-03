@@ -21,10 +21,27 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
 // first means each texel already covers several source pixels, so the same
 // kernel and pass count produce a much wider, softer glow, for a fraction
 // of the fragment shader cost to boot.
+//
+// Measured in CSS pixels, not render-target (device) pixels: each
+// downsampled texel covers this many CSS pixels square, whatever the
+// display's pixel ratio. In device pixels, a small bright sprite would fill
+// more of each block on a HiDPI display (so its glow starts brighter) and
+// the blur would step half as far on screen (so the glow is shorter),
+// making the same settings look different on every display.
 const bloomDownsampleFactor = 4;
 
-const downsampledSize = (size: number): number =>
-  Math.max(1, Math.round(size / bloomDownsampleFactor));
+/**
+ * The width (and height) in render-target texels of the block each
+ * downsampled bright-pass texel covers: `bloomDownsampleFactor` CSS pixels,
+ * converted to device pixels and rounded to a whole number of texels.
+ * @param pixelRatio - The render context's device pixels per CSS pixel.
+ * @returns The block size in render-target texels, at least 1.
+ */
+const downsampleBlockSize = (pixelRatio: number): number =>
+  Math.max(1, Math.round(bloomDownsampleFactor * pixelRatio));
+
+const downsampledSize = (size: number, blockSize: number): number =>
+  Math.max(1, Math.round(size / blockSize));
 
 // Shared, read-only direction constants for the two blur passes: passed
 // straight through as the `u_direction` uniform's `Float32Array` value, so
@@ -88,9 +105,12 @@ export const createBloomEcsSystem = (
   const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
   const compositeTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
 
-  const getBrightTarget = (target: RenderTarget): RenderTarget => {
-    const width = downsampledSize(target.width);
-    const height = downsampledSize(target.height);
+  const getBrightTarget = (
+    target: RenderTarget,
+    blockSize: number,
+  ): RenderTarget => {
+    const width = downsampledSize(target.width, blockSize);
+    const height = downsampledSize(target.height, blockSize);
     const existing = brightTargetByTarget.get(target);
     const isStale =
       existing !== undefined &&
@@ -111,9 +131,12 @@ export const createBloomEcsSystem = (
     return brightTarget;
   };
 
-  const getPingPongTarget = (target: RenderTarget): PingPongTarget => {
-    const width = downsampledSize(target.width);
-    const height = downsampledSize(target.height);
+  const getPingPongTarget = (
+    target: RenderTarget,
+    blockSize: number,
+  ): PingPongTarget => {
+    const width = downsampledSize(target.width, blockSize);
+    const height = downsampledSize(target.height, blockSize);
     const existing = pingPongByTarget.get(target);
     const isStale =
       existing !== undefined &&
@@ -209,12 +232,15 @@ export const createBloomEcsSystem = (
 
         processedTargetsThisFrame.add(renderTarget);
 
-        const brightTarget = getBrightTarget(renderTarget);
+        const { pixelRatio } = renderContext;
+        const blockSize = downsampleBlockSize(pixelRatio);
+        const brightTarget = getBrightTarget(renderTarget, blockSize);
 
         beginFullscreenReplacePass(renderContext, brightTarget);
 
         thresholdMaterial.setUniform('u_texture', renderTarget.colorTexture);
         thresholdMaterial.setUniform('u_threshold', bloom.threshold);
+        thresholdMaterial.setUniform('u_blockSize', blockSize);
         thresholdMaterial.setUniform(
           'u_texelSize',
           new Float32Array([1 / renderTarget.width, 1 / renderTarget.height]),
@@ -222,10 +248,15 @@ export const createBloomEcsSystem = (
 
         drawFullscreenQuad(renderContext, thresholdMaterial);
 
-        const pingPong = getPingPongTarget(renderTarget);
+        const pingPong = getPingPongTarget(renderTarget, blockSize);
+        // One kernel step per `bloomDownsampleFactor` CSS pixels, computed
+        // from the full-resolution target rather than `brightTarget`'s own
+        // size, so rounding `blockSize` to whole texels doesn't change how
+        // far the glow reaches on screen (at a pixel ratio of 1.1, say, a
+        // block is 4 texels but `bloomDownsampleFactor` CSS pixels is 4.4).
         const texelSize = new Float32Array([
-          1 / brightTarget.width,
-          1 / brightTarget.height,
+          (bloomDownsampleFactor * pixelRatio) / renderTarget.width,
+          (bloomDownsampleFactor * pixelRatio) / renderTarget.height,
         ]);
 
         // Same two-pass separable technique as createGaussianBlurEcsSystem:

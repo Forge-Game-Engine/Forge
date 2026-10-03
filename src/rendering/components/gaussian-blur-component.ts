@@ -9,10 +9,12 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 export interface GaussianBlurEcsComponent {
   /**
    * How many times to run the horizontal+vertical blur pair. Each pass
-   * samples adjacent texels only, so increasing `passes` (rather than the
-   * distance between samples) is what makes the blur stronger: repeated
-   * narrow passes compose into a wide, smooth blur, whereas spacing samples
-   * further apart undersamples the image and produces visible banding.
+   * samples adjacent texels only, one CSS pixel apart (so the blur looks the
+   * same at any `RenderContext.pixelRatio`), so increasing `passes` (rather
+   * than the distance between samples) is what makes the blur stronger:
+   * repeated narrow passes compose into a wide, smooth blur, whereas spacing
+   * samples further apart undersamples the image and produces visible
+   * banding.
    */
   passes: number;
 
