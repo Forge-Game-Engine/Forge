@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.8] - 2026-10-03
+
 #### Fixed
 
 - **text:** Tracked text no longer runs its words together. Since 0.25.7, `letterSpacing` was left out of the gap between words, so a word gap was barely wider than a letter gap and "FLY AGAIN" read as one word. Each word gap now gets one letter space on top of the whitespace, as before 0.25.7, while a line's last letter still gets none, so centered and right-aligned text stay exact. If you widened your font's space glyph to work around this, remove that
