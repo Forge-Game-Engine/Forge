@@ -82,10 +82,14 @@ describe('createImageSprite', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_texture', type: 0, size: 1 },
-            { name: 'u_emissiveTexture', type: 0, size: 1 },
-            { name: 'u_emissiveColor', type: 0, size: 1 },
-            { name: 'u_emissiveIntensity', type: 0, size: 1 },
+            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            {
+              name: 'u_emissiveTexture',
+              type: 0x8b5e /* SAMPLER_2D */,
+              size: 1,
+            },
+            { name: 'u_emissiveColor', type: 0x8b52 /* FLOAT_VEC4 */, size: 1 },
+            { name: 'u_emissiveIntensity', type: 0x1406 /* FLOAT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi

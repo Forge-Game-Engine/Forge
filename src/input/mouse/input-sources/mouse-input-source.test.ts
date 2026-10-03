@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MouseInputSource } from './mouse-input-source';
 import { buttonMoments, cursorValueTypes, mouseButtons } from '../../constants';
 import { InputManager } from '../../input-manager';
+import { actionResetTypes } from '../../constants';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -330,5 +331,37 @@ describe('MouseInputSource', () => {
     );
 
     expect(clickDownAction.isTriggered).toBe(false);
+  });
+
+  it('does not dispatch wheel events to axis1d bindings for a group other than the active group', () => {
+    const menuScrollAction = new Axis1dAction('menuScrollAction', 'menu');
+
+    source.axis1dBindings.add(new MouseAxis1dBinding(menuScrollAction));
+
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: 50 }));
+
+    expect(menuScrollAction.value).toBe(0);
+  });
+
+  it('applies the latest cursor position to an axis2d binding once its group becomes active', () => {
+    const menuPointerAction = new Axis2dAction(
+      'menuPointerAction',
+      'menu',
+      actionResetTypes.noReset,
+    );
+
+    source.axis2dBindings.add(new MouseAxis2dBinding(menuPointerAction));
+
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 300, clientY: 150 }),
+    );
+
+    expect(menuPointerAction.value.x).toBe(0);
+    expect(menuPointerAction.value.y).toBe(0);
+
+    inputManager.setActiveGroup('menu');
+
+    expect(menuPointerAction.value.x).toBeCloseTo(0.5);
+    expect(menuPointerAction.value.y).toBeCloseTo(0.5);
   });
 });

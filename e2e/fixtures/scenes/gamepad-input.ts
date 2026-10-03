@@ -1,6 +1,7 @@
 import {
   actionResetTypes,
   Axis1dAction,
+  buttonMoments,
   Color,
   createCamera,
   createCanvas,
@@ -13,13 +14,18 @@ import {
   EcsWorld,
   gamepadAxes,
   GamepadAxis1dBinding,
+  gamepadButtons,
+  GamepadHoldBinding,
   GamepadInputSource,
+  GamepadTriggerBinding,
+  HoldAction,
   PositionEcsComponent,
   positionId,
   registerInputs,
   SpriteEcsComponent,
   spriteId,
   Time,
+  TriggerAction,
 } from '../../../src/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
@@ -38,6 +44,16 @@ const squareSize = 60;
 // at full deflection from a centered base position, so a square never
 // swings off-screen.
 const stickRangeInWorldUnits = 250;
+// How far, in world units, the vertical square travels from its base
+// position for a full +-1 value, kept within the canvas's +-300 world-unit
+// half-height.
+const verticalRangeInWorldUnits = 200;
+// How far, in world units, the trigger square steps right per trigger.
+const triggerStepInWorldUnits = 60;
+const holdSmallSize = 30;
+const holdBigSize = 80;
+// Enough buttons to cover every index in the W3C Standard Gamepad layout.
+const standardGamepadButtonCount = 17;
 
 /** Converts a plain 0-255 RGB triple (see `input-scene-colors.ts`) to a `Color`. */
 function toColor(rgb: { r: number; g: number; b: number }): Color {
@@ -45,7 +61,7 @@ function toColor(rgb: { r: number; g: number; b: number }): Color {
 }
 
 /**
- * Installs a fake single-axis gamepad at index `0` and overrides
+ * Installs a fake standard-layout gamepad at index `0` and overrides
  * `navigator.getGamepads` to return it, since Playwright/CDP has no
  * built-in gamepad emulation and CI has no real controller attached. The
  * override must run *before* `GamepadInputSource` is constructed, since it
@@ -56,12 +72,22 @@ function toColor(rgb: { r: number; g: number; b: number }): Color {
  * `navigator.getGamepads()[index]`, modeling Chrome's real behavior of
  * updating the `Gamepad` object in place (see `GamepadInputSource`'s own
  * doc comment on why it re-fetches every frame instead of caching it).
- * @returns A setter for the fake gamepad's analog stick axes.
+ * Buttons are mutated in place the same way.
+ * @returns Setters for the fake gamepad's analog stick axes and buttons,
+ * and a way to unplug it.
  */
 function installFakeGamepad(): {
   setAxis(index: number, value: number): void;
+  setButton(index: number, pressed: boolean): void;
+  disconnect(): void;
 } {
   const axes = [0, 0, 0, 0];
+  const buttons = Array.from({ length: standardGamepadButtonCount }, () => ({
+    pressed: false,
+    touched: false,
+    value: 0,
+  }));
+  let connected = true;
 
   const fakeGamepad = {
     id: 'forge-e2e-fake-gamepad',
@@ -70,17 +96,30 @@ function installFakeGamepad(): {
     timestamp: 0,
     mapping: 'standard',
     axes,
-    buttons: [],
+    buttons,
   } as unknown as Gamepad;
 
   Object.defineProperty(navigator, 'getGamepads', {
-    value: (): (Gamepad | null)[] => [fakeGamepad],
+    value: (): (Gamepad | null)[] => (connected ? [fakeGamepad] : []),
     configurable: true,
   });
 
   return {
     setAxis(index: number, value: number): void {
       axes[index] = value;
+    },
+    setButton(index: number, pressed: boolean): void {
+      buttons[index] = { pressed, touched: pressed, value: pressed ? 1 : 0 };
+    },
+    disconnect(): void {
+      // Matches the Gamepad API's ordering: the gamepad is removed from
+      // `navigator.getGamepads()` before `gamepaddisconnected` fires.
+      connected = false;
+      window.dispatchEvent(
+        Object.assign(new Event('gamepaddisconnected'), {
+          gamepad: fakeGamepad,
+        }),
+      );
     },
   };
 }
@@ -93,8 +132,24 @@ export interface GamepadInputSceneHandle extends SceneHandle {
   readonly brokenStickPosition: { x: number; y: number };
   /** The `'menu'`-group stick square's local position. */
   readonly menuStickPosition: { x: number; y: number };
+  /** The up-is-positive vertical square's local position. */
+  readonly verticalPosition: { x: number; y: number };
+  /** Whether the `shoot` hold action is currently held. */
+  readonly isShooting: boolean;
+  /** How many times the consumer system has seen `restart` triggered. */
+  readonly restartCount: number;
   /** Sets the fake gamepad's left stick X axis, in `[-1, 1]`. */
   setStickX(value: number): void;
+  /** Sets the fake gamepad's left stick Y axis, in `[-1, 1]` (W3C: up is `-1`). */
+  setStickY(value: number): void;
+  /**
+   * Presses or releases a button on the fake gamepad, by its
+   * `gamepadButtons` name (resolved here, since specs can't value-import
+   * `/src`).
+   */
+  setButton(button: keyof typeof gamepadButtons, pressed: boolean): void;
+  /** Unplugs the fake gamepad. */
+  disconnect(): void;
   /** Sets the `InputManager`'s active input group. */
   setActiveGroup(group: string | null): void;
   /**
@@ -122,7 +177,10 @@ export interface GamepadInputSceneHandle extends SceneHandle {
  * then gets stuck at `0` even though the stick stays deflected - and a
  * third stick binding on a `'menu'`-group action, to prove `InputManager`'s
  * active-group gating applies to a polled source the same way it does to
- * event-driven keyboard/mouse sources.
+ * event-driven keyboard/mouse sources. It also exercises button-driven
+ * hold and trigger bindings, an inverted stick axis sharing an
+ * up-is-positive action with the D-pad, and releasing everything the
+ * gamepad was driving once it's unplugged.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -152,8 +210,25 @@ export const createScene: CreateScene = async (
     actionResetTypes.noReset,
   );
 
+  // Up is positive, the same convention as
+  // `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)`.
+  const verticalAction = new Axis1dAction(
+    'vertical',
+    'game',
+    actionResetTypes.noReset,
+  );
+  const shootAction = new HoldAction('shoot', 'game');
+  const restartAction = new TriggerAction('restart', 'game');
+
   const inputManager = registerInputs(world, time, {
-    axis1dActions: [stickAction, brokenStickAction, menuStickAction],
+    axis1dActions: [
+      stickAction,
+      brokenStickAction,
+      menuStickAction,
+      verticalAction,
+    ],
+    holdActions: [shootAction],
+    triggerActions: [restartAction],
   });
 
   const gamepadInputSource = new GamepadInputSource(inputManager);
@@ -172,6 +247,28 @@ export const createScene: CreateScene = async (
     new GamepadAxis1dBinding(menuStickAction, {
       axisIndex: gamepadAxes.leftStickX,
     }),
+  );
+  gamepadInputSource.axis1dBindings.add(
+    new GamepadAxis1dBinding(verticalAction, {
+      axisIndex: gamepadAxes.leftStickY,
+      inverted: true,
+    }),
+  );
+  gamepadInputSource.axis1dBindings.add(
+    new GamepadAxis1dBinding(verticalAction, {
+      positiveButtonIndex: gamepadButtons.dpadUp,
+      negativeButtonIndex: gamepadButtons.dpadDown,
+    }),
+  );
+  gamepadInputSource.holdBindings.add(
+    new GamepadHoldBinding(shootAction, gamepadButtons.faceButtonBottom),
+  );
+  gamepadInputSource.triggerBindings.add(
+    new GamepadTriggerBinding(
+      restartAction,
+      gamepadButtons.start,
+      buttonMoments.down,
+    ),
   );
 
   createCamera(world, {
@@ -228,6 +325,26 @@ export const createScene: CreateScene = async (
     toColor(inputSceneColors.cyan),
   );
 
+  // Placed clear of the three stick rows above, and of each other, so no
+  // landmark ever occludes another.
+  const verticalBase = { x: 340, y: 0 };
+  const vertical = createSquare(
+    verticalBase.x,
+    verticalBase.y,
+    toColor(inputSceneColors.green),
+  );
+  const holdSquare = createSquare(-300, 100, toColor(inputSceneColors.orange));
+  const triggerSquare = createSquare(
+    -300,
+    -100,
+    toColor(inputSceneColors.magenta),
+  );
+
+  holdSquare.sprite.width = holdSmallSize;
+  holdSquare.sprite.height = holdSmallSize;
+
+  let restartCount = 0;
+
   // `update` is a single batched call per tick regardless of how many
   // entities match `query`, so this system's body runs exactly once per
   // tick without needing to anchor itself on a particular entity.
@@ -241,8 +358,9 @@ export const createScene: CreateScene = async (
   // action's *current* value (like a joystick-controlled reticle), not an
   // accumulation, so a square's position always reflects exactly what its
   // action currently holds - including staying frozen at its base position
-  // once "stuck at zero" (see `brokenStickAction`), or at its last position
-  // once group-gated (see `menuStickAction`), instead of drifting.
+  // once "stuck at zero" (see `brokenStickAction`), or returning to its base
+  // position once its input group is deactivated (which releases its
+  // action), instead of drifting.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
     update: () => {
@@ -252,6 +370,22 @@ export const createScene: CreateScene = async (
         brokenBase.x + brokenStickAction.value * stickRangeInWorldUnits;
       menuStick.position.local.x =
         menuStickBase.x + menuStickAction.value * stickRangeInWorldUnits;
+      vertical.position.local.y =
+        verticalBase.y + verticalAction.value * verticalRangeInWorldUnits;
+
+      const holdSize = shootAction.isHeld ? holdBigSize : holdSmallSize;
+
+      holdSquare.sprite.width = holdSize;
+      holdSquare.sprite.height = holdSize;
+
+      // `isTriggered` is only read here, between `registerInputs`'s
+      // input-update and reset-inputs systems, so this counts each press
+      // exactly once if the trigger survives until this system runs and is
+      // cleared before the next frame.
+      if (restartAction.isTriggered) {
+        restartCount++;
+        triggerSquare.position.local.x += triggerStepInWorldUnits;
+      }
     },
   };
 
@@ -281,8 +415,32 @@ export const createScene: CreateScene = async (
       return { x: menuStick.position.local.x, y: menuStick.position.local.y };
     },
 
+    get verticalPosition(): { x: number; y: number } {
+      return { x: vertical.position.local.x, y: vertical.position.local.y };
+    },
+
+    get isShooting(): boolean {
+      return shootAction.isHeld;
+    },
+
+    get restartCount(): number {
+      return restartCount;
+    },
+
     setStickX(value: number): void {
       fakeGamepad.setAxis(gamepadAxes.leftStickX, value);
+    },
+
+    setStickY(value: number): void {
+      fakeGamepad.setAxis(gamepadAxes.leftStickY, value);
+    },
+
+    setButton(button: keyof typeof gamepadButtons, pressed: boolean): void {
+      fakeGamepad.setButton(gamepadButtons[button], pressed);
+    },
+
+    disconnect(): void {
+      fakeGamepad.disconnect();
     },
 
     setActiveGroup(group: string | null): void {

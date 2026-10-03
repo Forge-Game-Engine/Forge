@@ -1156,7 +1156,13 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // next frame - a permanent oscillation between the corrupted and the
       // correct size, never converging, rather than a one-frame hiccup.
       const world = new EcsWorld();
-      const renderContext = { width: 1920, height: 1080 } as RenderContext;
+      const renderContext = {
+        width: 1920,
+        height: 1080,
+        cssWidth: 1920,
+        cssHeight: 1080,
+        pixelRatio: 1,
+      } as RenderContext;
 
       const canvas = world.createEntity();
 

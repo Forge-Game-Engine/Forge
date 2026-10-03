@@ -19,6 +19,7 @@ Beziers
 blit
 blits
 bmfont
+bvec
 cachable
 capline
 Catmull
@@ -36,6 +37,7 @@ desaturates
 despawn
 devcontainers
 diegetic
+dppx
 eamodio
 Erdokovy
 esbenp
@@ -49,6 +51,7 @@ frontmatter
 fwidth
 gamedev
 gamepadconnected
+gamepaddisconnected
 Gamepads
 GLSL
 greyscale
@@ -69,6 +72,8 @@ Infima
 inigo
 interactable
 interactables
+isampler
+ivec
 Kenney
 kenneynl
 kernings
@@ -175,11 +180,13 @@ unnegated
 unrepresentable
 unrotated
 unshifted
+unstub
 untextured
 untinted
 unvalidated
 updatables
 upsamples
+usampler
 uvec
 uxml
 viewports

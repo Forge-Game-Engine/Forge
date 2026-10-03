@@ -42,7 +42,7 @@ const squareSize = 60;
 const moveSpeedInWorldUnitsPerSecond = 200;
 // How far, in world units, a single non-zero `impulseAction.value` frame
 // moves the impulse square - see the scene doc comment for why this only
-// ever applies for exactly one frame per key press/release.
+// ever applies for exactly one frame per key press.
 const impulseStepInWorldUnits = 80;
 const holdSmallSize = 40;
 const holdBigSize = 90;

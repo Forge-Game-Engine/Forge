@@ -416,6 +416,12 @@ describe('MyClass', () => {
 - Mock external dependencies when needed
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
+- When a test constructs a real `Material` against a mocked WebGL context,
+  the mocked `getActiveUniform` must report each uniform's real GL type enum
+  (e.g. `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size`.
+  `Material.setUniform` picks the upload from the declared type and throws
+  for a value that doesn't fit it (or for an unknown type such as `0`), and
+  `bind` calls the matching `uniform*` method, so mock that method too
 
 ### Coverage
 
@@ -679,6 +685,26 @@ gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
 
 `e2e/specs/translucent-ui-compositing.spec.ts` checks this end to end on
 a real canvas.
+
+### Device Pixels vs. CSS Pixels
+
+A `RenderContext` renders at the display's device pixel ratio, so it has two
+sizes that differ on any HiDPI display (and in Playwright only when a test
+sets `deviceScaleFactor`, since it defaults to `1`):
+
+- `width`/`height` - the drawing buffer, in device pixels. Use these for
+  anything GL sees: the viewport, `RenderTarget` sizes, shader uniforms
+  compared against `gl_FragCoord`.
+- `cssWidth`/`cssHeight` - the canvas's on-page size, in CSS pixels. Use
+  these for anything the DOM measures: `MouseInputSource.position`,
+  `getSafeAreaInsets()`, and any UI size meant to stay the same physical
+  size (`constantPixelSize`, `'screenPixels'`).
+
+`pixelRatio` is the ratio between them. Mixing the pairs (e.g. converting a
+mouse position against `width`/`height`) is off by `pixelRatio`, and Vitest
+won't catch it because jsdom's `devicePixelRatio` is `1`. Test such code
+with a mocked `RenderContext` whose two sizes differ, or a
+`deviceScaleFactor: 2` e2e test (see `e2e/specs/high-dpi-canvas.spec.ts`).
 
 ### Readonly Fields
 

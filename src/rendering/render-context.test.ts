@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../asset-loading/index.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY } from './enums/index.js';
@@ -8,6 +8,10 @@ import { RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
 
 describe('RenderContext', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   let canvas: HTMLCanvasElement;
   let mockGl: WebGL2RenderingContext;
   let mockBuffer: WebGLBuffer;
@@ -80,6 +84,81 @@ describe('RenderContext', () => {
       expect(context.height).toBe(480);
     });
 
+    it('should treat the canvas size as CSS pixels and scale the drawing buffer by the device pixel ratio', () => {
+      vi.stubGlobal('devicePixelRatio', 2);
+      canvas.width = 640;
+      canvas.height = 480;
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.pixelRatio).toBe(2);
+      expect(context.cssWidth).toBe(640);
+      expect(context.cssHeight).toBe(480);
+      expect(context.width).toBe(1280);
+      expect(context.height).toBe(960);
+      expect(canvas.width).toBe(1280);
+      expect(canvas.height).toBe(960);
+      expect(canvas.style.width).toBe('640px');
+      expect(canvas.style.height).toBe('480px');
+    });
+
+    it("should prefer the canvas's laid-out size over its attribute size as its CSS size", () => {
+      vi.stubGlobal('devicePixelRatio', 2);
+      canvas.width = 1600;
+      canvas.height = 1200;
+      Object.defineProperty(canvas, 'clientWidth', { value: 800 });
+      Object.defineProperty(canvas, 'clientHeight', { value: 600 });
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.cssWidth).toBe(800);
+      expect(context.cssHeight).toBe(600);
+      expect(context.width).toBe(1600);
+      expect(context.height).toBe(1200);
+    });
+
+    it('should cap the pixel ratio at maxPixelRatio', () => {
+      vi.stubGlobal('devicePixelRatio', 3);
+      canvas.width = 100;
+      canvas.height = 50;
+
+      const context = new RenderContext(
+        shaderCache,
+        imageCache,
+        canvas,
+        CLEAR_STRATEGY.blank,
+        false,
+        2,
+      );
+
+      expect(context.maxPixelRatio).toBe(2);
+      expect(context.pixelRatio).toBe(2);
+      expect(context.width).toBe(200);
+      expect(context.height).toBe(100);
+    });
+
+    it('should fall back to a pixel ratio of 1 when devicePixelRatio is unusable', () => {
+      vi.stubGlobal('devicePixelRatio', 0);
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.pixelRatio).toBe(1);
+    });
+
+    it('should throw when maxPixelRatio is not positive', () => {
+      expect(
+        () =>
+          new RenderContext(
+            shaderCache,
+            imageCache,
+            canvas,
+            CLEAR_STRATEGY.blank,
+            false,
+            0,
+          ),
+      ).toThrow('maxPixelRatio must be a positive number');
+    });
+
     it('should throw an error when WebGL2 context is not available', () => {
       vi.spyOn(canvas, 'getContext').mockReturnValue(null);
 
@@ -129,6 +208,87 @@ describe('RenderContext', () => {
 
       expect(context.width).toBe(400);
       expect(context.height).toBe(300);
+    });
+
+    it('should size the drawing buffer at the device pixel ratio while keeping the CSS size', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 2);
+
+      expect(context.canvas.width).toBe(800);
+      expect(context.canvas.height).toBe(600);
+      expect(context.canvas.style.width).toBe('400px');
+      expect(context.canvas.style.height).toBe('300px');
+      expect(context.width).toBe(800);
+      expect(context.height).toBe(600);
+      expect(context.cssWidth).toBe(400);
+      expect(context.cssHeight).toBe(300);
+      expect(context.pixelRatio).toBe(2);
+      expect(mockGl.viewport).toHaveBeenCalledWith(0, 0, 800, 600);
+    });
+
+    it('should round a fractional drawing-buffer size to whole pixels', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(801, 601, 1.25);
+
+      expect(context.width).toBe(1001);
+      expect(context.height).toBe(751);
+      expect(context.cssWidth).toBe(801);
+    });
+
+    it('should default to the current window.devicePixelRatio', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      vi.stubGlobal('devicePixelRatio', 1.5);
+      context.resize(400, 300);
+
+      expect(context.pixelRatio).toBe(1.5);
+      expect(context.width).toBe(600);
+      expect(context.height).toBe(450);
+    });
+
+    it('should cap the pixel ratio at maxPixelRatio', () => {
+      const context = createRenderContext(canvas, { maxPixelRatio: 1 });
+
+      context.resize(400, 300, 3);
+
+      expect(context.pixelRatio).toBe(1);
+      expect(context.width).toBe(400);
+      expect(context.height).toBe(300);
+    });
+
+    it('should resize the drawing buffer when only the device pixel ratio changes', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 1);
+      context.resize(400, 300, 2);
+
+      expect(context.width).toBe(800);
+      expect(context.height).toBe(600);
+      expect(context.cssWidth).toBe(400);
+    });
+
+    it('should leave the canvas untouched when nothing would change, since reassigning a canvas size clears it', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 2);
+      vi.mocked(mockGl.viewport).mockClear();
+
+      const widthSetter = vi.spyOn(canvas, 'width', 'set');
+
+      context.resize(400, 300, 2);
+
+      expect(widthSetter).not.toHaveBeenCalled();
+      expect(mockGl.viewport).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the device pixel ratio is not positive', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(() => context.resize(100, 100, 0)).toThrow(
+        'devicePixelRatio must be a positive number',
+      );
     });
 
     it('should throw when width or height are not positive', () => {

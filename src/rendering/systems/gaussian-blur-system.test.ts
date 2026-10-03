@@ -134,12 +134,12 @@ describe('createGaussianBlurEcsSystem', () => {
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
-            { name: 'u_texture', type: 0, size: 1 },
-            { name: 'u_direction', type: 0, size: 1 },
-            { name: 'u_texelSize', type: 0, size: 1 },
-            { name: 'u_fromTexture', type: 0, size: 1 },
-            { name: 'u_toTexture', type: 0, size: 1 },
-            { name: 'u_factor', type: 0, size: 1 },
+            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_direction', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+            { name: 'u_texelSize', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+            { name: 'u_fromTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_toTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+            { name: 'u_factor', type: 0x1406 /* FLOAT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi

@@ -33,7 +33,14 @@ which `createGame` wires up automatically for the `RenderContext` it creates.
 
 `createContainerResizeSync(container, resizables)` watches `container` with a
 `ResizeObserver` and calls `resize()` on every resizable (typically a
-`RenderContext`) whenever the container's size actually changes. This means a
+`RenderContext`) whenever the container's size changes. It also watches the
+display's `devicePixelRatio` (via a `matchMedia('(resolution: …dppx)')`
+query) and resizes again whenever that changes - browser zoom, or dragging
+the window onto a monitor with a different scale factor - even when the
+container's CSS size stays the same, so the canvas keeps rendering at the
+display's native resolution (see
+[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
+This means a
 game embedded in a resizable page - or one whose container changes size for
 any other reason, like a fullscreen toggle - stays correctly sized without
 you writing your own resize handling, and without restarting the game (which

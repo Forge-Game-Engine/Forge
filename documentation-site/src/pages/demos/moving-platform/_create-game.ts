@@ -110,8 +110,12 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
       y: event.clientY - canvasBounds.top,
     };
 
+    // screenPosition is in CSS pixels, so convert it against the canvas's
+
+    // CSS size rather than its (pixel-ratio-scaled) drawing buffer.
+
     const pixelsPerUnit = calculatePixelsPerUnit(
-      renderContext.height,
+      renderContext.cssHeight,
       DEMO_VERTICAL_WORLD_UNITS,
     );
 
@@ -119,8 +123,8 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
       screenPosition,
       Vec2.zero,
       1,
-      renderContext.width,
-      renderContext.height,
+      renderContext.cssWidth,
+      renderContext.cssHeight,
       pixelsPerUnit,
     );
 

@@ -77,7 +77,7 @@ default `(0.5, 0.5)`, the center):
   cursor at the container's center is `(0, 0)`, and the edges are roughly
   `±0.5`.
 - [`cursorValueTypes.absolute`](/Forge/docs/api/variables/cursorValueTypes):
-  `value` is the cursor's position in pixels, minus `cursorOrigin *
+  `value` is the cursor's position in CSS pixels, minus `cursorOrigin *
 containerSize`. With the default origin, this is the pixel offset from the
   container's center, useful for a reticle or look-offset in screen pixels.
 
@@ -114,10 +114,17 @@ frame's reset, even while the cursor sits still.
 
 [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) (scroll
 wheel) sets the bound `Axis1dAction`'s value to `event.deltaY / 100` on each
-`wheel` event, roughly ±1 per scroll click. Unlike cursor position, this is
+`wheel` event, roughly ±1 per scroll click (clamped to `[-1, 1]`, like every
+`Axis1dAction`). Unlike cursor position, this is
 naturally a "delta this frame" value, so the default
 `actionResetTypes.zero` is correct here, the value goes back to `0` once
 scrolling stops.
+
+Like every other binding, `MouseAxis1dBinding` and `MouseAxis2dBinding`
+only reach their action while its
+[input group](./actions.md#input-groups) is active. A cursor-position action
+in an inactive group stays at `0`, and picks up the latest cursor position
+as soon as its group becomes active again.
 
 [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) calls the
 container's `getBoundingClientRect()` fresh on every `mousemove` event, so
@@ -135,8 +142,12 @@ Bindings map mouse events onto named actions, but code that wants the raw
 device state directly - a UI hit-tester, a drag gesture, a debug overlay -
 can read it straight off `MouseInputSource` without an intervening action:
 
-- `position` - the cursor's current position in canvas pixels: Y-down,
-  origin at the container's top-left corner.
+- `position` - the cursor's current position in CSS pixels: Y-down,
+  origin at the container's top-left corner. On a high-DPI display this is
+  smaller than the canvas's drawing-buffer coordinates by
+  `RenderContext.pixelRatio`, so convert it against
+  `renderContext.cssWidth`/`cssHeight` (see
+  [High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
 - `delta` - how far `position` moved since the last tick.
 - `scroll` - accumulated `WheelEvent.deltaY` since the last tick.
 - `buttonsDown` / `buttonsHeld` / `buttonsUp` - `MouseButton` sets for
@@ -151,7 +162,7 @@ reset (via `MouseInputSource.reset()`, wired up automatically by
 There is no ECS component for this state - hold a reference to the
 `MouseInputSource` instance (the same way game code holds a reference to an
 `InputManager` or an `InputAction`) and read `.position`/`.delta`/etc.
-directly from a system's closure. `position` is deliberately in canvas
+directly from a system's closure. `position` is deliberately in CSS
 pixels, not world space: with more than one camera (for example a dedicated
 UI camera layered over the world camera), a single canvas position maps to
 a different world position through each camera, so converting is left to
