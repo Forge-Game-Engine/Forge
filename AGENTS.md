@@ -7,6 +7,7 @@ Human contributors: see [CONTRIBUTING.md](./CONTRIBUTING.md) for a shorter, huma
 ## Table of Contents
 
 - [Project Overview](#project-overview)
+- [Change Philosophy](#change-philosophy)
 - [Repository Structure](#repository-structure)
 - [Architecture](#architecture)
 - [Coding Conventions](#coding-conventions)
@@ -34,6 +35,38 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **FSM**: Finite state machine implementation
 
 **Important**: The engine contains general-purpose game functionality. Game-specific or genre-specific code should be in separate packages.
+
+## Change Philosophy
+
+Forge is pre-1.0 (see `version` in `package.json`) and makes no backwards
+compatibility guarantees. That's on purpose. It keeps the API small while
+it's still being shaped. Every change, and every bug fix especially,
+follows these rules:
+
+- **Change behavior outright.** When something is wrong, make it right and
+  update every caller in `/src`, `/demo`, `/e2e` and `documentation-site`
+  in the same change. Don't add deprecated aliases, compatibility wrappers,
+  overloads that accept both the old and new shapes, fallback branches to
+  the old code path, or "legacy" modes. The changelog bullet tells
+  consumers what to change; that's the whole migration story.
+- **Don't add options to dodge a decision.** An option that switches
+  between the old and new behavior, or that only exists to correct a wrong
+  default, is a bug left in place for the user to find. For example,
+  `GamepadAxis1dBinding`'s `inverted` option exists because the W3C
+  gamepad reports stick-up as `-1` while the rest of the engine is Y-up.
+  The input source should translate that at the boundary so up is positive
+  for everyone. Only add an option when different games really need
+  different values (a blur radius, a gravity scale). Don't add one when the
+  user could get the variation with one line of their own code.
+- **Fix the layer that owns the behavior.** The engine has conventions (see
+  "Common Patterns" below). A defect is usually one layer breaking one of
+  them. Fix that layer, so nothing downstream has to compensate.
+- **Delete what the fix made unnecessary.** Workarounds, compensating
+  code in callers, and options added by earlier band-aid fixes all go in
+  the same change. A good fix is often net negative in `/src`.
+
+The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
+this step by step for bug fixes.
 
 ## Repository Structure
 
@@ -131,7 +164,7 @@ factory functions, not classes:
 
 ### Key Patterns
 
-- **Dependency Injection**: Systems receive dependencies via constructor (e.g., `RenderContext`)
+- **Dependency Injection**: Systems receive dependencies as arguments to their `create<Name>EcsSystem` factory (e.g., `RenderContext`); classes receive them via constructor
 - **Composition over Inheritance**: Favor components over deep class hierarchies
 - **Immutability**: Use `readonly` for fields that shouldn't change after construction
 - **Private fields**: Prefix with underscore (`_fieldName`)
@@ -734,6 +767,9 @@ export class Example {
 
 ### Optional Parameters with Defaults
 
+Before adding an optional parameter at all, check it against
+"Change Philosophy" above. Most bug fixes shouldn't add one.
+
 Defaults should be stored in an object with the word "default" in its name. Defaults should not be added when reading the value. Types should be narrowed and nullish values should be handled appropriately.
 
 ```typescript
@@ -850,11 +886,6 @@ export class Entity {
 }
 ```
 
-This keeps the cache's lifetime tied to the `RenderContext` that owns it,
-makes the dependency visible at every call site, and means two independent
-`RenderContext`s (for example in two unrelated tests) never share a cache by
-accident.
-
 ## Security Considerations
 
 ### Validation
@@ -906,10 +937,9 @@ Always use `.js` extension even when importing from `.ts` files.
 
 ### Key Classes to Know
 
-- `Entity` - Container for components
-- `Component` - Base class for all components
-- `System` - Base class for all systems
-- `World` - Container for entities and systems
+- `EcsWorld` - Holds component data and registered systems; entities are numeric ids created with `createEntity()`
+- `EcsSystem` - The plain-object system contract produced by `create<Name>EcsSystem` factories
+- `createComponentId` - Creates the key a component is stored under
 - `ForgeEvent` - Event system
 - `RenderContext` - WebGL context wrapper
 
