@@ -145,15 +145,52 @@ describe('shapeText', () => {
     expect(bounds.width).toBeCloseTo(12);
   });
 
-  it('adds letterSpacing to every glyph advance, scaled by size', () => {
-    const { bounds } = shapeText('AV', buildFixtureFontAtlasData(), {
+  it('adds letterSpacing between adjacent glyphs, in ems scaled by size', () => {
+    const { glyphs, bounds } = shapeText('AAA', buildFixtureFontAtlasData(), {
       size: 10,
       letterSpacing: 0.1,
     });
 
-    // Each advance grows by 0.1 em (1 world unit at size 10), on top of the
-    // kerned "AV" width of 11.2 from two glyphs.
-    expect(bounds.width).toBeCloseTo(13.2);
+    // Each gap grows by 0.1 em (1 world unit at size 10), and only the two
+    // gaps between the three letters count - nothing is added after the
+    // last one - so the width is 3 * 6 + 2 * 1.
+    expect(glyphs[0].offset.x).toBeCloseTo(3);
+    expect(glyphs[1].offset.x).toBeCloseTo(10);
+    expect(glyphs[2].offset.x).toBeCloseTo(17);
+    expect(bounds.width).toBeCloseTo(20);
+  });
+
+  it('adds letterSpacing on top of kerning', () => {
+    const { glyphs, bounds } = shapeText('AV', buildFixtureFontAtlasData(), {
+      size: 10,
+      letterSpacing: 0.1,
+    });
+
+    // The kerned "AV" (11.2 wide) gains one gap of 1 world unit.
+    expect(glyphs[1].offset.x).toBeCloseTo(9.2);
+    expect(bounds.width).toBeCloseTo(12.2);
+  });
+
+  it('keeps letterSpacing across a code point missing from the atlas', () => {
+    const { glyphs } = shapeText('A?V', buildFixtureFontAtlasData(), {
+      size: 10,
+      letterSpacing: 0.1,
+    });
+
+    // No kerning (the skipped "?" breaks the pair), plus one gap of 1.
+    expect(glyphs[1].offset.x).toBeCloseTo(10);
+  });
+
+  it('does not add letterSpacing around whitespace', () => {
+    const { glyphs, bounds } = shapeText('A A', buildFixtureFontAtlasData(), {
+      size: 10,
+      letterSpacing: 0.1,
+    });
+
+    // Each one-letter word has no gap of its own, and the space between
+    // them advances by its own 3 world units only.
+    expect(glyphs[1].offset.x).toBeCloseTo(12);
+    expect(bounds.width).toBeCloseTo(15);
   });
 
   it('returns empty glyphs and zero width for an empty string', () => {
@@ -270,6 +307,33 @@ describe('shapeText', () => {
 
       expect(glyphs[0].offset.x).toBeCloseTo(3 + (30 - 25.4));
       expect(glyphs[4].offset.x).toBeCloseTo(3 + (30 - 11.2));
+    });
+
+    it('centers letter-spaced text without counting space after the last letter', () => {
+      const { glyphs } = shapeText('AAA', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        letterSpacing: 0.1,
+        horizontalAlign: 'center',
+      });
+
+      // "AAA" is 20 wide (see the letterSpacing test above), so it starts
+      // 5 in from the left; its last glyph's advance ends 5 short of the
+      // right edge, the same margin on both sides.
+      expect(glyphs[0].offset.x).toBeCloseTo(3 + 5);
+      expect(glyphs[2].offset.x + 3).toBeCloseTo(30 - 5);
+    });
+
+    it('right-aligns letter-spaced text flush with maxWidth', () => {
+      const { glyphs } = shapeText('AAA', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 30,
+        letterSpacing: 0.1,
+        horizontalAlign: 'right',
+      });
+
+      // The last glyph's advance ends exactly at maxWidth.
+      expect(glyphs[2].offset.x + 3).toBeCloseTo(30);
     });
 
     it('centers a single unwrapped line within maxWidth (regression: used to no-op)', () => {
