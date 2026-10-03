@@ -64,9 +64,11 @@ addTextComponent(world, title, {
 });
 ```
 
-The space only goes _between_ letters of a word: never after a word's last
-letter, and never around whitespace. So letter-spaced text still centers and
-right-aligns exactly, without needing a manual offset.
+The space goes between every pair of adjacent letters on a line. A gap
+between words gets one letter space on top of the whitespace's own width,
+so tracked words stay clearly apart. Nothing is added after a line's last
+letter, so letter-spaced text still centers and right-aligns exactly,
+without needing a manual offset.
 
 ## Updating text later
 

@@ -38,11 +38,12 @@ export interface TextDefaultedOptions {
   color: Color;
 
   /**
-   * Extra spacing between adjacent glyphs within a word, in ems: it's
+   * Extra spacing between adjacent glyphs on a line, in ems: it's
    * multiplied by `size`, so `0.1` at size `20` adds 2 world units between
-   * letters, and tracking scales with the text. It only goes between
-   * letters, never after a word's last one, so it doesn't change how
-   * centered or right-aligned text lines up.
+   * letters, and tracking scales with the text. A word gap gets one letter
+   * space on top of the whitespace's own advance, so tracked words stay
+   * apart. It's never added after a line's last letter, so it doesn't
+   * change how centered or right-aligned text lines up.
    */
   letterSpacing: number;
 

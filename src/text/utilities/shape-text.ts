@@ -13,10 +13,10 @@ export interface ShapeTextOptions {
   size: number;
 
   /**
-   * Extra spacing between adjacent glyphs within a word, in ems (multiplied
-   * by `size`, so tracking scales with the text). Never added after a
-   * word's last glyph, so it doesn't widen the word or skew alignment.
-   * Defaults to `0`.
+   * Extra spacing between adjacent glyphs on a line, in ems (multiplied by
+   * `size`, so tracking scales with the text). A word gap gets one letter
+   * space on top of the whitespace's own advance. Never added after a
+   * line's last glyph, so it doesn't skew alignment. Defaults to `0`.
    */
   letterSpacing?: number;
 
@@ -208,8 +208,9 @@ function shapeWord(
 
 /**
  * Sums the advance of a run of whitespace characters, in world units. Never
- * kerns and never applies `letterSpacing` - whitespace is pure spacing
- * between words, not a glyph a reader perceives spacing "around".
+ * kerns and never applies `letterSpacing`: {@link wrapIntoLines} adds one
+ * letter space per word gap itself, so a gap is the whitespace's advance
+ * plus exactly one letter space however many whitespace characters it has.
  * @param whitespace - A run of whitespace characters.
  * @param fontAtlasData - The font atlas metrics to look up advances in.
  * @param size - Font size, in world units.
@@ -279,16 +280,30 @@ function wrapIntoLines(
 
     const word = shapeWord(token, fontAtlasData, size, letterSpacing);
 
+    // A word whose code points are all missing from the atlas draws nothing
+    // and takes up no space, so it mustn't add a letter space either.
+    if (word.glyphs.length === 0 && word.width === 0) {
+      continue;
+    }
+
+    // `shapeWord` only tracks between glyphs of the same word, so the
+    // letter space between the previous word's last glyph and this word's
+    // first one is added here. A line's first word gets none, and nothing
+    // follows its last word, so the line's width never includes a trailing
+    // letter space that would skew centered or right-aligned text.
+    let wordGap = currentWords.length > 0 ? letterSpacing * size : 0;
+
     if (
       maxWidth !== undefined &&
       currentWords.length > 0 &&
-      penX + word.width > maxWidth
+      penX + wordGap + word.width > maxWidth
     ) {
       commitLine();
+      wordGap = 0;
     }
 
-    currentWords.push({ word, startX: penX });
-    penX += word.width;
+    currentWords.push({ word, startX: penX + wordGap });
+    penX += wordGap + word.width;
     lineContentWidth = penX;
   }
 
