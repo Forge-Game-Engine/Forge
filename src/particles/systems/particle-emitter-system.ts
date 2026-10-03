@@ -1,137 +1,40 @@
-import {
-  ageScaleId,
-  positionId,
-  rotationId,
-  scaleId,
-  speedId,
-  Time,
-} from '../../common/index.js';
-import { spriteId } from '../../rendering/index.js';
-import { degreesToRadians, Random, Vec2 } from '../../math/index.js';
-import {
-  ParticleEmitter,
-  ParticleEmitterEcsComponent,
-  ParticleEmitterId,
-  ParticleId,
-} from '../index.js';
+import { positionId } from '../../common/components/position-component.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { Random } from '../../math/random.js';
+import { Vector2 } from '../../math/vector2.js';
+import { ParticleEmitter } from '../components/particle-emitter.js';
 import {
-  lifetimeId,
-  RemoveFromWorldLifetimeStrategyId,
-} from '../../lifecycle/index.js';
+  ParticleEmitterEcsComponent,
+  ParticleEmitterId,
+} from '../components/particle-emitter-component.js';
+import {
+  pickParticleCount,
+  spawnParticle,
+} from '../utilities/spawn-particle.js';
+
+const worldOrigin: Readonly<Vector2> = { x: 0, y: 0 };
 
 function startEmittingParticles(
   particleEmitter: ParticleEmitter,
   random: Random,
-) {
+): void {
   if (particleEmitter.startEmitting) {
     particleEmitter.currentEmitDuration = 0;
     particleEmitter.startEmitting = false;
     particleEmitter.emitCount = 0;
     particleEmitter.currentlyEmitting = true;
-    particleEmitter.totalAmountToEmit = Math.round(
-      random.randomFloat(
-        particleEmitter.numParticlesRange.min,
-        particleEmitter.numParticlesRange.max,
-      ),
+    particleEmitter.totalAmountToEmit = pickParticleCount(
+      particleEmitter,
+      random,
     );
   }
 }
 
-function getRandomValueInRangeDegrees(
-  min: number,
-  max: number,
-  random: Random,
-): number {
-  const range = (max - min) % 360;
-
-  if (range === 0 && max !== min) {
-    return random.randomFloat(0, 360);
-  }
-
-  return random.randomFloat(min, min + range);
-}
-
-function emitParticle(
+function getAmountToEmitBasedOnDuration(
   particleEmitter: ParticleEmitter,
-  random: Random,
-  world: EcsWorld,
-) {
-  const speed = random.randomFloat(
-    particleEmitter.speedRange.min,
-    particleEmitter.speedRange.max,
-  );
-
-  const originalScale = random.randomFloat(
-    particleEmitter.scaleRange.min,
-    particleEmitter.scaleRange.max,
-  );
-
-  const lifetimeSeconds = random.randomFloat(
-    particleEmitter.lifetimeSecondsRange.min,
-    particleEmitter.lifetimeSecondsRange.max,
-  );
-
-  const rotation = degreesToRadians(
-    getRandomValueInRangeDegrees(
-      particleEmitter.rotationRange.min,
-      particleEmitter.rotationRange.max,
-      random,
-    ),
-  );
-
-  const rotationSpeed = random.randomFloat(
-    particleEmitter.rotationSpeedRange.min,
-    particleEmitter.rotationSpeedRange.max,
-  );
-
-  const spawnPosition = particleEmitter.spawnPosition();
-
-  const particleEntity = world.createEntity();
-
-  world.addComponent(particleEntity, spriteId, particleEmitter.sprite);
-
-  world.addComponent(particleEntity, ParticleId, {
-    rotationSpeed,
-  });
-
-  world.addComponent(particleEntity, lifetimeId, {
-    durationSeconds: lifetimeSeconds,
-    elapsedSeconds: 0,
-    hasExpired: false,
-  });
-
-  world.addTag(particleEntity, RemoveFromWorldLifetimeStrategyId);
-
-  world.addComponent(particleEntity, ageScaleId, {
-    originalScaleX: originalScale,
-    originalScaleY: originalScale,
-    finalLifetimeScaleX: particleEmitter.lifetimeScaleReduction,
-    finalLifetimeScaleY: particleEmitter.lifetimeScaleReduction,
-  });
-
-  world.addComponent(particleEntity, positionId, {
-    world: Vec2.clone(spawnPosition),
-    local: Vec2.clone(spawnPosition),
-  });
-
-  world.addComponent(particleEntity, scaleId, {
-    world: Vec2.one,
-    local: { x: originalScale, y: originalScale },
-  });
-
-  world.addComponent(particleEntity, rotationId, {
-    world: 0,
-    local: rotation,
-  });
-
-  world.addComponent(particleEntity, speedId, {
-    speed,
-  });
-}
-
-function getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
+): number {
   if (particleEmitter.emitDurationSeconds <= 0) {
     return particleEmitter.totalAmountToEmit - particleEmitter.emitCount;
   }
@@ -149,9 +52,10 @@ function getAmountToEmitBasedOnDuration(particleEmitter: ParticleEmitter) {
 
 function emitNewParticles(
   particleEmitter: ParticleEmitter,
+  origin: Vector2,
   random: Random,
   world: EcsWorld,
-) {
+): void {
   if (
     !particleEmitter.currentlyEmitting ||
     particleEmitter.emitCount >= particleEmitter.totalAmountToEmit
@@ -164,30 +68,76 @@ function emitNewParticles(
   const currentAmountToEmit = getAmountToEmitBasedOnDuration(particleEmitter);
 
   for (let i = 0; i < currentAmountToEmit; i++) {
-    emitParticle(particleEmitter, random, world);
+    spawnParticle(world, particleEmitter, origin, random);
   }
 
   particleEmitter.emitCount += currentAmountToEmit;
 }
 
+function emitParticleStream(
+  particleEmitter: ParticleEmitter,
+  origin: Vector2,
+  deltaTimeInSeconds: number,
+  random: Random,
+  world: EcsWorld,
+): void {
+  if (particleEmitter.emissionRate <= 0) {
+    particleEmitter.emissionRemainder = 0;
+
+    return;
+  }
+
+  const due =
+    particleEmitter.emissionRemainder +
+    particleEmitter.emissionRate * deltaTimeInSeconds;
+  const amountToEmit = Math.floor(due);
+
+  particleEmitter.emissionRemainder = due - amountToEmit;
+
+  for (let i = 0; i < amountToEmit; i++) {
+    spawnParticle(world, particleEmitter, origin, random);
+  }
+}
+
 /**
- * Creates an ECS system to handle particles.
+ * Creates an ECS system that spawns particles from every
+ * `ParticleEmitterEcsComponent`'s emitters: the batches started by
+ * `emit()`/`emitIfNotEmitting()`, and the steady stream set by
+ * `emissionRate`. Particles spawn around the world position
+ * (`PositionEcsComponent.world`) of the entity the emitter is on, or the
+ * world origin if it has no position.
  * @param time - The time instance used to advance emitter timers.
  * @param random - The random instance used to pick values from emitter ranges.
+ * @returns The particle emitter ECS system.
  */
 export const createParticleEcsSystem = (
   time: Time,
   random: Random,
 ): EcsSystem<[ParticleEmitterEcsComponent]> => ({
   query: [ParticleEmitterId],
-  update: (world, { components: [particleEmitterComponents] }) => {
-    for (const particleEmitterComponent of particleEmitterComponents) {
-      for (const particleEmitter of particleEmitterComponent.emitters.values()) {
-        particleEmitter.currentEmitDuration += time.deltaTimeInSeconds;
+  update: (world, { entities, components: [particleEmitterComponents] }) => {
+    const { deltaTimeInSeconds } = time;
+
+    for (let i = 0; i < entities.length; i++) {
+      const origin =
+        world.getComponent(entities[i], positionId)?.world ?? worldOrigin;
+
+      for (const particleEmitter of particleEmitterComponents[
+        i
+      ].emitters.values()) {
+        particleEmitter.currentEmitDuration += deltaTimeInSeconds;
 
         startEmittingParticles(particleEmitter, random);
 
-        emitNewParticles(particleEmitter, random, world);
+        emitNewParticles(particleEmitter, origin, random, world);
+
+        emitParticleStream(
+          particleEmitter,
+          origin,
+          deltaTimeInSeconds,
+          random,
+          world,
+        );
       }
     }
   },
