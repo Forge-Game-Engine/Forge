@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.6] - 2026-10-03
+
 #### Added
 
 - **rendering:** `RenderContext` gains `pixelRatio`, `cssWidth`/`cssHeight` (the canvas's on-page size in CSS pixels) and a `maxPixelRatio` option (also on `createRenderContext`) to cap the pixel ratio for fill-rate-heavy games. `getDevicePixelRatio()` reads the browser's current `window.devicePixelRatio`
