@@ -680,11 +680,16 @@ gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
   (see `present-system.ts`).
 - Clear colors are straight-alpha `Color`s and get premultiplied when
   written (`RenderContext.clear`, `createTerrainRenderEcsSystem`).
+- Light that should only brighten what's beneath it (bloom's glow) is
+  added to the color and leaves alpha untouched (see
+  `bloom-composite.frag.glsl`). Giving it alpha of its own makes it cover,
+  and dim, the layers presented under it.
 - Leave `gl.BLEND` disabled when a system finishes drawing - it's global
   GL state, and the next system to draw would otherwise inherit it.
 
-`e2e/specs/translucent-ui-compositing.spec.ts` checks this end to end on
-a real canvas.
+`e2e/specs/translucent-ui-compositing.spec.ts` and
+`e2e/specs/bloom-over-background.spec.ts` check this end to end on a real
+canvas.
 
 ### Device Pixels vs. CSS Pixels
 

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **rendering:** Bloom's glow now only adds light to whatever is presented beneath its camera's render target, such as a background camera's layer. It used to give the halo partial opacity of its own, so the glow covered part of the layer behind it and dimmed colors the glow lacks (a yellow glow over a blue background reduced the blue)
+
 ## [0.25.6] - 2026-10-03
 
 #### Added

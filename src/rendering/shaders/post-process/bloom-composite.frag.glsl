@@ -15,13 +15,14 @@ void main() {
     vec4 scene = texture(u_sceneTexture, v_texCoord);
     vec4 bloom = texture(u_bloomTexture, v_texCoord);
 
-    // The blurred glow's own alpha (see bloom-threshold.frag) is folded
-    // into the result's alpha via max(), not scene.a alone: otherwise the
-    // halo would only ever appear on top of already-opaque scene pixels,
-    // and vanish the moment it blurs past the source sprite's silhouette
-    // into what was fully transparent.
+    // Render targets hold premultiplied alpha and are presented with
+    // ONE, ONE_MINUS_SRC_ALPHA, so the glow is just light added to the
+    // color: it reaches the screen past the source sprite's silhouette,
+    // over fully transparent pixels, without needing any coverage of its
+    // own. Keeping the scene's alpha means the halo only ever adds to
+    // whatever is presented beneath this target, instead of partly
+    // covering it and replacing it with glow color.
     vec3 color = scene.rgb + bloom.rgb * u_intensity;
-    float alpha = clamp(max(scene.a, bloom.a * u_intensity), 0.0, 1.0);
 
-    fragColor = vec4(color, alpha);
+    fragColor = vec4(color, scene.a);
 }

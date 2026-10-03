@@ -46,10 +46,7 @@ void main() {
         }
     }
 
-    // Alpha carries the averaged contribution itself, not the source pixels'
-    // original alpha: this buffer gets blurred next, and the glow needs to
-    // spread its own opacity outward past the source sprite's silhouette
-    // (into pixels that were fully transparent) for the halo to actually
-    // show up once it's composited back with alpha blending.
-    fragColor = vec4(accumulatedColor / sampleCount, accumulatedContribution / sampleCount);
+    // The composite pass only reads the glow's color, adding it to the scene
+    // as light; the glow has no coverage of its own, so alpha stays 0.
+    fragColor = vec4(accumulatedColor / sampleCount, 0.0);
 }

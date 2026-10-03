@@ -40,15 +40,14 @@ well past a sprite's edges with a modest, cheap `passes` count. The
 composite pass upsamples it back implicitly, via the bloom texture's own
 linear-filtered sampling.
 
-The thresholded buffer's alpha carries how strongly each pixel contributes
-to the glow, not the source pixel's original transparency, so the blur can
-spread the glow's own opacity out past a sprite's silhouette into
-previously-transparent pixels. This matters if the camera's `renderTarget`
-gets alpha-blended onto something else afterwards (for example a sharp
+The glow is purely additive light: the composite adds it to the scene's
+color and leaves the scene's alpha untouched. Because render targets hold
+premultiplied alpha, that's enough for the halo to show past a sprite's
+silhouette, over pixels that were fully transparent, when the camera's
+`renderTarget` is presented over something else (for example a sharp
 foreground layered over a background, as in
-[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)):
-without this, the glow would only ever brighten already-opaque pixels and
-never show as a soft halo bleeding past their edges.
+[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)).
+The glow only ever brightens whatever is beneath it; it never covers it.
 
 ## Wiring it up
 
