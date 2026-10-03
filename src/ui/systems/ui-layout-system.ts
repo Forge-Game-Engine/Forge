@@ -198,7 +198,10 @@ function resolveEntityRect(
  * against the ratio that's actually live for the canvas it belongs to, not
  * a stale or unrelated one.
  *
- * Must be registered before `createTransformEcsSystem`.
+ * Must be registered before `createTransformEcsSystem`. A game that writes
+ * `position.world` for its own entities can limit that system to UI
+ * elements with `createTransformEcsSystem({ requiredComponents:
+ * [rectTransformId] })`.
  * @param renderContext - The render context UI canvases resolve their root
  * rect against.
  * @returns The UI layout ECS system.

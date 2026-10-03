@@ -80,6 +80,11 @@ export interface RegisterUiSystemsOptions {
  * run before the render system. Both are ordinary, already-existing systems
  * a game registers once regardless of UI, so this doesn't register a second
  * instance of either.
+ *
+ * The transform system sets `position.world = position.local` for every
+ * entity it matches that has no parent. A game that moves its own entities by
+ * writing `position.world` can limit it to UI elements instead with
+ * `createTransformEcsSystem({ requiredComponents: [rectTransformId] })`.
  * @param world - The ECS world to register the UI systems with.
  * @param renderContext - The render context the layout/raycast/interaction/
  * slider/safe-area systems resolve canvas roots and pointer positions

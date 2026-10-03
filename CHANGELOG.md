@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
+- **common:** `createTransformEcsSystem` takes optional `requiredComponents` and `tags` to limit which entities it computes the world transform of. A game that moves its entities by writing `position.world` can now use the UI with `createTransformEcsSystem({ requiredComponents: [rectTransformId] })` instead of the plain transform system, which sets `position.world` to `position.local` for every entity without a parent each frame. An entity the filtered system doesn't match is never written, even when a matched child is parented to it
 - **utilities:** `createGame` takes an optional second `options` argument whose `renderContext` field is forwarded to `createRenderContext`, so a game set up with `createGame` can cap its render resolution, e.g. `createGame('game', { renderContext: { maxPixelRatio: 1.5 } })`
 
 #### Fixed

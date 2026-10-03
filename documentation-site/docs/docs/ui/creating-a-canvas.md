@@ -103,6 +103,30 @@ Register `createTransformEcsSystem`/`createRenderEcsSystem` **after**
 runs before the transform system (which reads it to compute
 `position.world`), which in turn must run before the render system.
 
+### Games that move entities in world space
+
+`createTransformEcsSystem` takes over `position.world` for every entity it
+processes: an entity without a parent gets `position.world` set to
+`position.local` every frame. If your game moves its entities by writing
+`position.world` directly, registering the plain transform system makes
+them snap back to their local positions. Limit it to UI elements instead:
+
+```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import { rectTransformId } from '@forge-game-engine/forge/ui';
+
+world.addSystem(
+  createTransformEcsSystem({ requiredComponents: [rectTransformId] }),
+);
+```
+
+`requiredComponents` (and `tags`) narrow which entities the system computes.
+An entity it doesn't match is never written, even when a matched entity is
+parented to it: the child reads that parent's current `position.world` as
+is. If your game also parents some of its own entities with
+`addParentComponent`, give those a tag and register a second instance,
+`createTransformEcsSystem({ tags: [yourTag] })`, alongside the UI one.
+
 ## Creating a world-space canvas
 
 Pass `renderMode: 'worldSpace'` to put UI content in the game world instead
