@@ -13,23 +13,8 @@ describe('GamepadAxis1dBinding', () => {
     expect(binding.action).toBe(action);
     expect(binding.source).toEqual({
       axisIndex: gamepadAxes.leftStickX,
-      inverted: false,
     });
     expect(binding.displayText).toBe('gamepad axis 0');
-  });
-
-  it('stores and describes an inverted axis-based source', () => {
-    const action = new Axis1dAction('moveVertical');
-    const binding = new GamepadAxis1dBinding(action, {
-      axisIndex: gamepadAxes.leftStickY,
-      inverted: true,
-    });
-
-    expect(binding.source).toEqual({
-      axisIndex: gamepadAxes.leftStickY,
-      inverted: true,
-    });
-    expect(binding.displayText).toBe('gamepad axis 1 (inverted)');
   });
 
   it('stores a button-based source and describes it', () => {

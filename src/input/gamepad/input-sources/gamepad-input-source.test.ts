@@ -518,14 +518,13 @@ describe('GamepadInputSource', () => {
 
     expect(updateSpy).not.toHaveBeenCalled();
   });
-  describe('inverted stick axis-1d bindings', () => {
-    it('negates the stick value', () => {
+  describe('stick Y axes', () => {
+    it('reports a stick pushed up as positive', () => {
       source = createSource([createGamepad([0, -0.8, 0, 0], [])]);
 
       source.axis1dBindings.add(
         new GamepadAxis1dBinding(moveAction, {
           axisIndex: gamepadAxes.leftStickY,
-          inverted: true,
         }),
       );
 
@@ -534,13 +533,39 @@ describe('GamepadInputSource', () => {
       expect(moveAction.value).toBeCloseTo(0.8);
     });
 
+    it('reports the right stick pushed up as positive and leaves X axes as reported', () => {
+      const lookAction = new Axis1dAction(
+        'look',
+        group,
+        actionResetTypes.noReset,
+      );
+
+      inputManager.addAxis1dActions(lookAction);
+      source = createSource([createGamepad([0, 0, 0.4, -0.7], [])]);
+
+      source.axis1dBindings.add(
+        new GamepadAxis1dBinding(moveAction, {
+          axisIndex: gamepadAxes.rightStickX,
+        }),
+      );
+      source.axis1dBindings.add(
+        new GamepadAxis1dBinding(lookAction, {
+          axisIndex: gamepadAxes.rightStickY,
+        }),
+      );
+
+      source.update();
+
+      expect(moveAction.value).toBeCloseTo(0.4);
+      expect(lookAction.value).toBeCloseTo(0.7);
+    });
+
     it('reads 0, not -0, within the deadzone', () => {
       source = createSource([createGamepad([0, 0.05, 0, 0], [])]);
 
       source.axis1dBindings.add(
         new GamepadAxis1dBinding(moveAction, {
           axisIndex: gamepadAxes.leftStickY,
-          inverted: true,
         }),
       );
 
@@ -558,7 +583,6 @@ describe('GamepadInputSource', () => {
       source.axis1dBindings.add(
         new GamepadAxis1dBinding(moveAction, {
           axisIndex: gamepadAxes.leftStickY,
-          inverted: true,
         }),
       );
       source.axis1dBindings.add(
@@ -570,7 +594,7 @@ describe('GamepadInputSource', () => {
 
       source.update();
 
-      // 0.5 from the inverted stick plus 1 from the D-pad, clamped.
+      // 0.5 from the stick plus 1 from the D-pad, clamped.
       expect(moveAction.value).toBe(1);
     });
   });
@@ -583,30 +607,13 @@ describe('GamepadInputSource', () => {
       inputManager.addAxis2dActions(lookAction);
     });
 
-    it('reads a stick into the bound action', () => {
+    it('reads a stick into the bound action, with up positive', () => {
       source = createSource([createGamepad([0.5, -0.6, 0, 0], [])]);
 
       source.axis2dBindings.add(
         new GamepadAxis2dBinding(lookAction, {
           xAxisIndex: gamepadAxes.leftStickX,
           yAxisIndex: gamepadAxes.leftStickY,
-        }),
-      );
-
-      source.update();
-
-      expect(lookAction.value.x).toBeCloseTo(0.5);
-      expect(lookAction.value.y).toBeCloseTo(-0.6);
-    });
-
-    it('inverts each stick axis independently', () => {
-      source = createSource([createGamepad([0.5, -0.6, 0, 0], [])]);
-
-      source.axis2dBindings.add(
-        new GamepadAxis2dBinding(lookAction, {
-          xAxisIndex: gamepadAxes.leftStickX,
-          yAxisIndex: gamepadAxes.leftStickY,
-          invertY: true,
         }),
       );
 
@@ -630,7 +637,7 @@ describe('GamepadInputSource', () => {
       source.update();
 
       expect(lookAction.value.x).toBeCloseTo(0.12);
-      expect(lookAction.value.y).toBeCloseTo(0.12);
+      expect(lookAction.value.y).toBeCloseTo(-0.12);
 
       getGamepadsSpy.mockReturnValue([createGamepad([0.05, 0.05, 0, 0], [])]);
       source.update();

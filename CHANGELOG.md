@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **utilities:** `createGame` takes an optional second `options` argument whose `renderContext` field is forwarded to `createRenderContext`, so a game set up with `createGame` can cap its render resolution, e.g. `createGame('game', { renderContext: { maxPixelRatio: 1.5 } })`
 
+#### Changed
+
+- **input:** Gamepad stick Y axes (`gamepadAxes.leftStickY`/`rightStickY`) now read pushing up as positive, matching the keyboard, the D-pad's north button and world space, so a stick and a D-pad bound to the same action agree out of the box. `GamepadAxis1dBinding`'s `inverted` option and `GamepadAxis2dBinding`'s `invertX`/`invertY` options are removed: delete `inverted: true`/`invertY: true` from your stick bindings, and if you relied on the old down-is-positive reading or want inverted look controls, negate the action's value in game code
+
 #### Fixed
 
 - **rendering:** Gaussian blur and bloom are now sized in CSS pixels instead of render target (device) pixels, so the same `passes`, `threshold` and `intensity` look the same at every display pixel ratio. Since 0.25.6, a high-DPI display made the blur and the bloom halo spread less far on screen, and made bloom much brighter close to small bright sprites. Looks at a pixel ratio of 1 are unchanged. On a high-DPI display the Gaussian blur now runs at CSS-pixel resolution, which also makes it cheaper there
