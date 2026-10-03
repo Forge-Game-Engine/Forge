@@ -1,6 +1,7 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
@@ -10,16 +11,15 @@ import {
   addParticleEmitterComponent,
   ParticleEmitter,
 } from '@forge-game-engine/forge/particles';
-import { ambientEmitterId } from './_ambient-emitter.component';
 
 const emberColor = new Color(1, 0.55, 0.15);
 const coneSpreadDegrees = 20;
 
 /**
- * Creates a fountain of embers that drifts upward from a fixed point and
- * shrinks away, forever. The entity is tagged `ambientEmitterId` so
- * `createAmbientEmitterEcsSystem` keeps re-triggering its emitter without
- * any player input, unlike the cursor's click/drag-driven effects.
+ * Creates a fountain of embers that streams upward from a fixed point,
+ * slowing as it rises, then shrinking and fading away, forever. A steady
+ * `emissionRate` keeps it running with no input and no system of its own,
+ * unlike the cursor's click/drag-driven effects.
  * @param world - The ECS world to add the fountain entity to.
  * @param renderContext - The render context used to load the ember sprite.
  * @param renderLayer - The render layer the embers should be drawn on.
@@ -42,26 +42,28 @@ export async function createEmberFountain(
 
   emberSprite.tintColor = emberColor;
 
-  const emberEmitter = new ParticleEmitter(emberSprite, renderLayer, {
-    numParticlesRange: { min: 1, max: 2 },
-    speedRange: { min: 40, max: 90 },
+  const emberEmitter = new ParticleEmitter(emberSprite, {
+    emissionRate: 40,
+    spawnShape: { type: 'box', width: 30, height: 0 },
+    speedRange: { min: 160, max: 260 },
+    // 0 degrees points straight up, so this sprays a narrow upward cone.
+    directionRange: { min: -coneSpreadDegrees, max: coneSpreadDegrees },
+    drag: 0.5,
     scaleRange: { min: 0.04, max: 0.1 },
-    rotationRange: {
-      min: -coneSpreadDegrees,
-      max: coneSpreadDegrees,
-    },
-    rotationSpeedRange: { min: -0.3, max: 0.3 },
     lifetimeSecondsRange: { min: 1.2, max: 2 },
     lifetimeScaleReduction: 0,
-    emitDurationSeconds: 0,
-    spawnPosition: () => position,
+    lifetimeOpacity: { start: 1, end: 0 },
   });
 
+  // The emitter spawns particles around its entity's world position.
   const entity = world.createEntity();
+
+  addPositionComponent(world, entity, {
+    local: Vec2.clone(position),
+    world: Vec2.clone(position),
+  });
 
   addParticleEmitterComponent(world, entity, {
     emitters: new Map([['embers', emberEmitter]]),
   });
-
-  world.addTag(entity, ambientEmitterId);
 }

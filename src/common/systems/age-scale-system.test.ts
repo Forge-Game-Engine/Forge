@@ -6,6 +6,7 @@ import {
 import { EcsWorld, QueryResult } from '../../ecs/index.js';
 import {
   addAgeScaleComponent,
+  addParentComponent,
   addScaleComponent,
   AgeScaleEcsComponent,
   ScaleEcsComponent,
@@ -85,5 +86,54 @@ describe('AgeScaleSystem', () => {
     // Assert
     expect(scaleComponent.local.x).toBeCloseTo(expectedScaleX);
     expect(scaleComponent.local.y).toBeCloseTo(expectedScaleY);
+  });
+
+  it('writes the world scale too for an entity with no parent', () => {
+    const entity = world.createEntity();
+
+    addLifetimeComponent(world, entity, {
+      elapsedSeconds: 5,
+      durationSeconds: 10,
+    });
+    addAgeScaleComponent(world, entity, {
+      originalScaleX: 2,
+      originalScaleY: 2,
+      finalLifetimeScaleX: 0,
+      finalLifetimeScaleY: 0,
+    });
+
+    const scaleComponent = addScaleComponent(world, entity);
+    const system = createAgeScaleEcsSystem();
+
+    system.update(world, world.query(system.query));
+
+    expect(scaleComponent.world.x).toBeCloseTo(1);
+    expect(scaleComponent.world.y).toBeCloseTo(1);
+  });
+
+  it('leaves the world scale of a parented entity to the transform system', () => {
+    const parent = world.createEntity();
+    const entity = world.createEntity();
+
+    addParentComponent(world, entity, { parent });
+    addLifetimeComponent(world, entity, {
+      elapsedSeconds: 5,
+      durationSeconds: 10,
+    });
+    addAgeScaleComponent(world, entity, {
+      originalScaleX: 2,
+      originalScaleY: 2,
+      finalLifetimeScaleX: 0,
+      finalLifetimeScaleY: 0,
+    });
+
+    const scaleComponent = addScaleComponent(world, entity);
+    const system = createAgeScaleEcsSystem();
+
+    system.update(world, world.query(system.query));
+
+    expect(scaleComponent.local.x).toBeCloseTo(1);
+    expect(scaleComponent.world.x).toBe(1);
+    expect(scaleComponent.world.y).toBe(1);
   });
 });

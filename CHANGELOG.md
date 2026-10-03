@@ -15,9 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **utilities:** `createGame` takes an optional second `options` argument whose `renderContext` field is forwarded to `createRenderContext`, so a game set up with `createGame` can cap its render resolution, e.g. `createGame('game', { renderContext: { maxPixelRatio: 1.5 } })`
+- **particles:** Particles can now fade out, slow down, move with the world and spawn in shapes. New `ParticleEmitter` options: `lifetimeOpacity` (fades each particle's sprite, applied by the new `createParticleOpacityEcsSystem`), `acceleration` (for gravity or drift), `drag` (the share of speed kept per second), `getVelocityOffset` (an extra velocity read every frame, for motion that follows game state), `spawnShape` (`point`, `circle`, `ring` or `box`) with `emitOutward` to aim particles away from its center, `emissionRate` (a steady stream of particles per second, no `emit()` calls needed) and `onParticleSpawned` (to add your own components to each particle)
+- **particles:** `emitParticleBurst(world, emitter, position, random, { count })` spawns a one-off burst at any world position without an emitter entity, for example where a pickup was just collected
+
+#### Changed
+
+- **particles:** Particles move, spin, shrink and fade on screen without `createTransformEcsSystem`. The particle position system and `createAgeScaleEcsSystem` now write the world position, rotation and scale as well as the local ones for any entity without a `ParentEcsComponent`, and particles spawn at their picked scale instead of 1
+- **particles:** Particles spawn around the world position of the entity their emitter is on (or the world origin), within `spawnShape`. The `spawnPosition` option is removed; move the emitter entity instead
+- **particles:** `new ParticleEmitter(sprite, options)` no longer takes a `renderLayer` argument, which was never used. Particles are drawn on the sprite's `layer`. `sprite` can now be a `SpriteEcsComponent` or a `Sprite`
+- **particles:** A particle's direction of travel now comes from the new `directionRange` option (0 degrees is up, clockwise), and `rotationRange` only sets the initial rotation of its sprite, defaulting to `{ min: 0, max: 0 }`. `ParticleEcsComponent` now holds `velocity`, `acceleration`, `drag`, `rotationSpeed`, `startOpacity`, `endOpacity` and `getVelocityOffset`, and particles no longer get a `SpeedEcsComponent`
 
 #### Fixed
 
+- **particles:** Particles from an emitter given a `Sprite` (for example from `createSprite`) now render. They used to be skipped, because a `Sprite` has no `enabled` field
+- **particles:** Each particle now gets its own copy of the emitter's sprite, so changing one particle's `tintColor` or `opacityMultiplier` no longer changes every particle from that emitter
+- **particles:** Particles moving at 0 degrees now travel up the screen, as documented. They used to travel down
+- **particles:** `lifetimeScaleReduction` now scales particles to their spawned scale times `lifetimeScaleReduction`, as documented. It used to scale them to `lifetimeScaleReduction` itself, whatever their spawned scale
 - **rendering:** Gaussian blur and bloom are now sized in CSS pixels instead of render target (device) pixels, so the same `passes`, `threshold` and `intensity` look the same at every display pixel ratio. Since 0.25.6, a high-DPI display made the blur and the bloom halo spread less far on screen, and made bloom much brighter close to small bright sprites. Looks at a pixel ratio of 1 are unchanged. On a high-DPI display the Gaussian blur now runs at CSS-pixel resolution, which also makes it cheaper there
 - **rendering:** Bloom's glow now only adds light to whatever is presented beneath its camera's render target, such as a background camera's layer. It used to give the halo partial opacity of its own, so the glow covered part of the layer behind it and dimmed colors the glow lacks (a yellow glow over a blue background reduced the blue)
 

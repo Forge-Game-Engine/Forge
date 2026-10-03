@@ -1,6 +1,10 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import {
+  addPositionComponent,
+  PositionEcsComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
+import { Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
@@ -14,6 +18,7 @@ import {
 const sparkColor = new Color(1, 0.85, 0.3);
 const smokeColor = new Color(0.55, 0.55, 0.6);
 const smokeConeSpreadDegrees = 45;
+const smokeParticlesPerSecond = 30;
 
 /**
  * Controls the cursor's two particle effects, a spark burst and a smoke
@@ -21,26 +26,27 @@ const smokeConeSpreadDegrees = 45;
  */
 export interface CursorEffects {
   /**
-   * Updates the world position the spark and smoke emitters spawn from.
+   * Moves the cursor entity, which the spark and smoke emitters spawn
+   * around.
    * @param position - The new world position.
    */
   setCursorPosition: (position: Vector2) => void;
   /**
-   * Fires a one-off burst of sparks from the current cursor position.
+   * Fires a one-off ring of sparks from the current cursor position.
    */
   triggerSparkBurst: () => void;
   /**
-   * Keeps the smoke trail emitting from the current cursor position,
-   * intended to be called every frame while the mouse is held and dragged.
+   * Starts or stops the steady stream of smoke from the cursor.
+   * @param isSmoking - Whether the cursor should be trailing smoke.
    */
-  continueSmokeTrail: () => void;
+  setSmokeTrail: (isSmoking: boolean) => void;
 }
 
 /**
  * Creates a single entity with two named particle emitters, "spark" and
- * "smoke", that both spawn from a shared, mutable cursor position. This
- * mirrors the common pattern of driving several independent effects, like an
- * attack swoosh and a footstep puff, from one entity.
+ * "smoke", that both spawn around the entity's position. This mirrors the
+ * common pattern of driving several independent effects, like an attack
+ * swoosh and a footstep puff, from one entity.
  * @param world - The ECS world to add the cursor entity to.
  * @param renderContext - The render context used to load the particle sprites.
  * @param renderLayer - The render layer the particles should be drawn on.
@@ -51,8 +57,6 @@ export async function createCursorEffects(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<CursorEffects> {
-  let cursorPosition = Vec2.zero;
-
   const [sparkImage, smokeImage] = await Promise.all([
     renderContext.imageCache.getOrLoad(
       getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/star_07.png'),
@@ -76,34 +80,43 @@ export async function createCursorEffects(
 
   smokeSprite.tintColor = smokeColor;
 
-  const sparkEmitter = new ParticleEmitter(sparkSprite, renderLayer, {
+  // Sparks fly outward from a small ring around the cursor, slow down
+  // quickly with drag, and fall under gravity as they fade out.
+  const sparkEmitter = new ParticleEmitter(sparkSprite, {
     numParticlesRange: { min: 24, max: 36 },
-    speedRange: { min: 140, max: 320 },
+    spawnShape: { type: 'ring', radius: 10 },
+    emitOutward: true,
+    speedRange: { min: 300, max: 600 },
+    drag: 0.05,
+    acceleration: { x: 0, y: -400 },
     scaleRange: { min: 0.1, max: 0.26 },
     rotationRange: { min: 0, max: 360 },
     rotationSpeedRange: { min: -4, max: 4 },
-    lifetimeSecondsRange: { min: 0.3, max: 0.6 },
-    lifetimeScaleReduction: 0,
-    emitDurationSeconds: 0,
-    spawnPosition: () => cursorPosition,
+    lifetimeSecondsRange: { min: 0.4, max: 0.8 },
+    lifetimeScaleReduction: 0.3,
+    lifetimeOpacity: { start: 1, end: 0 },
   });
 
-  const smokeEmitter = new ParticleEmitter(smokeSprite, renderLayer, {
-    numParticlesRange: { min: 1, max: 2 },
+  // Smoke drifts upward, spreads out and grows as it fades.
+  const smokeEmitter = new ParticleEmitter(smokeSprite, {
+    spawnShape: { type: 'circle', radius: 8 },
     speedRange: { min: 15, max: 35 },
-    scaleRange: { min: 0.12, max: 0.22 },
-    rotationRange: {
+    directionRange: {
       min: -smokeConeSpreadDegrees,
       max: smokeConeSpreadDegrees,
     },
+    acceleration: { x: 0, y: 40 },
+    scaleRange: { min: 0.12, max: 0.22 },
+    rotationRange: { min: 0, max: 360 },
     rotationSpeedRange: { min: -0.4, max: 0.4 },
     lifetimeSecondsRange: { min: 0.6, max: 1 },
-    lifetimeScaleReduction: 1.4,
-    emitDurationSeconds: 0,
-    spawnPosition: () => cursorPosition,
+    lifetimeScaleReduction: 2,
+    lifetimeOpacity: { start: 0.8, end: 0 },
   });
 
   const entity = world.createEntity();
+
+  const position: PositionEcsComponent = addPositionComponent(world, entity);
 
   addParticleEmitterComponent(world, entity, {
     emitters: new Map([
@@ -113,10 +126,18 @@ export async function createCursorEffects(
   });
 
   return {
-    setCursorPosition: (position) => {
-      cursorPosition = position;
+    setCursorPosition: ({ x, y }) => {
+      // This demo doesn't register the transform system, so the world
+      // position the emitters read is set directly.
+      position.local.x = x;
+      position.local.y = y;
+      position.world.x = x;
+      position.world.y = y;
     },
-    triggerSparkBurst: () => sparkEmitter.emitIfNotEmitting(),
-    continueSmokeTrail: () => smokeEmitter.emitIfNotEmitting(),
+    triggerSparkBurst: () => sparkEmitter.emit(),
+    setSmokeTrail: (isSmoking) =>
+      smokeEmitter.setOptions({
+        emissionRate: isSmoking ? smokeParticlesPerSecond : 0,
+      }),
   };
 }
