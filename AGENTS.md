@@ -711,6 +711,13 @@ won't catch it because jsdom's `devicePixelRatio` is `1`. Test such code
 with a mocked `RenderContext` whose two sizes differ, or a
 `deviceScaleFactor: 2` e2e test (see `e2e/specs/high-dpi-canvas.spec.ts`).
 
+Screen-space effect sizes (blur radii, bloom spread) are sized in CSS
+pixels too, so they look the same on every display: the Gaussian blur
+system averages the scene down to CSS-pixel resolution before blurring,
+and bloom's downsample block is `4 * pixelRatio` render-target texels.
+Don't step a kernel `pixelRatio` texels apart on the full-resolution
+texture instead - it skips the texels in between and stripes thin details.
+
 ### Readonly Fields
 
 Use `readonly` for fields that shouldn't change after construction:

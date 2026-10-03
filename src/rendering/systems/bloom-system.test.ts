@@ -38,6 +38,7 @@ describe('createBloomEcsSystem', () => {
   let sceneTextureLocation: WebGLUniformLocation;
   let bloomTextureLocation: WebGLUniformLocation;
   let intensityLocation: WebGLUniformLocation;
+  let blockSizeLocation: WebGLUniformLocation;
 
   const addCameraEntity = (
     renderTarget?: CameraEcsComponent['renderTarget'],
@@ -77,6 +78,7 @@ describe('createBloomEcsSystem', () => {
     sceneTextureLocation = {};
     bloomTextureLocation = {};
     intensityLocation = {};
+    blockSizeLocation = {};
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -129,7 +131,7 @@ describe('createBloomEcsSystem', () => {
       getProgramParameter: vi
         .fn()
         .mockImplementation((_program: unknown, pname: unknown) =>
-          pname === 'ACTIVE_UNIFORMS' ? 7 : true,
+          pname === 'ACTIVE_UNIFORMS' ? 8 : true,
         ),
       getProgramInfoLog: vi.fn().mockReturnValue(''),
 
@@ -148,6 +150,7 @@ describe('createBloomEcsSystem', () => {
             { name: 'u_sceneTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
             { name: 'u_bloomTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
             { name: 'u_intensity', type: 0x1406 /* FLOAT */, size: 1 },
+            { name: 'u_blockSize', type: 0x1404 /* INT */, size: 1 },
           ][index] ?? null,
       ),
       getUniformLocation: vi
@@ -175,6 +178,10 @@ describe('createBloomEcsSystem', () => {
 
           if (name === 'u_intensity') {
             return intensityLocation;
+          }
+
+          if (name === 'u_blockSize') {
+            return blockSizeLocation;
           }
 
           return textureLocation;
@@ -346,7 +353,7 @@ describe('createBloomEcsSystem', () => {
       ([location]) => location === texelSizeLocation,
     );
 
-    // The threshold pass samples a 4x4 block of the full-resolution source
+    // The threshold pass samples a block of the full-resolution source
     // per downsampled destination texel (see bloom-threshold.frag.glsl), so
     // it needs the full-resolution texel size, not the downsampled one the
     // blur passes use.
@@ -377,6 +384,126 @@ describe('createBloomEcsSystem', () => {
     for (const [, value] of blurTexelSizeCalls) {
       expect(Array.from(value as Float32Array)).toEqual([1 / 64, 1 / 32]);
     }
+  });
+
+  it('passes a 4x4 block size to the threshold pass at a pixel ratio of 1', () => {
+    const target = new RenderTarget(mockGl, 256, 128);
+
+    addBloomedCameraEntity(target, { passes: 1 });
+
+    world.update();
+
+    expect(mockGl.uniform1i).toHaveBeenCalledWith(blockSizeLocation, 4);
+  });
+
+  describe('pixel ratio', () => {
+    const getBlurTexelSizes = (): number[][] =>
+      (mockGl.uniform2fv as Mock).mock.calls
+        .filter(([location]) => location === texelSizeLocation)
+        .slice(1)
+        .map(([, value]) => Array.from(value as Float32Array));
+
+    it('scales the threshold block size with the pixel ratio', () => {
+      renderContext.pixelRatio = 2;
+
+      const target = new RenderTarget(mockGl, 512, 256);
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+
+      // Each bright-pass texel covers 4x4 CSS pixels, which is 8x8 device
+      // pixels at a pixel ratio of 2.
+      expect(mockGl.uniform1i).toHaveBeenCalledWith(blockSizeLocation, 8);
+    });
+
+    it('rounds a fractional block size to whole texels', () => {
+      renderContext.pixelRatio = 1.5;
+
+      const target = new RenderTarget(mockGl, 384, 192);
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+
+      expect(mockGl.uniform1i).toHaveBeenCalledWith(blockSizeLocation, 6);
+    });
+
+    it('sizes the downsampled buffers by the scaled block size', () => {
+      renderContext.pixelRatio = 2;
+
+      const target = new RenderTarget(mockGl, 512, 256);
+
+      (mockGl.texImage2D as Mock).mockClear();
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+
+      const allocatedSizes = (mockGl.texImage2D as Mock).mock.calls.map(
+        ([, , , width, height]: unknown[]) => [Number(width), Number(height)],
+      );
+
+      // brightTarget (1) + ping-pong (2) at 512/8 x 256/8, then the
+      // full-resolution compositeTarget (1).
+      expect(allocatedSizes).toEqual([
+        [64, 32],
+        [64, 32],
+        [64, 32],
+        [512, 256],
+      ]);
+    });
+
+    it('steps the blur the same number of CSS pixels at any pixel ratio', () => {
+      const cssWidth = 256;
+      const cssHeight = 128;
+
+      const blurTexelSizeInCssPixels = (pixelRatio: number): number[] => {
+        (mockGl.uniform2fv as Mock).mockClear();
+        renderContext.pixelRatio = pixelRatio;
+
+        const width = cssWidth * pixelRatio;
+        const height = cssHeight * pixelRatio;
+        const target = new RenderTarget(mockGl, width, height);
+        const entity = addBloomedCameraEntity(target, { passes: 1 });
+
+        world.update();
+        world.removeEntity(entity);
+
+        const [horizontal] = getBlurTexelSizes();
+
+        return [horizontal[0] * cssWidth, horizontal[1] * cssHeight];
+      };
+
+      for (const pixelRatio of [1, 1.1, 1.5, 2, 3]) {
+        const [x, y] = blurTexelSizeInCssPixels(pixelRatio);
+
+        expect(x).toBeCloseTo(4);
+        expect(y).toBeCloseTo(4);
+      }
+    });
+
+    it('recreates the downsampled buffers when the pixel ratio changes', () => {
+      const target = new RenderTarget(mockGl, 512, 256);
+
+      addBloomedCameraEntity(target, { passes: 1 });
+
+      world.update();
+      (mockGl.texImage2D as Mock).mockClear();
+
+      renderContext.pixelRatio = 2;
+      world.update();
+
+      const allocatedSizes = (mockGl.texImage2D as Mock).mock.calls.map(
+        ([, , , width, height]: unknown[]) => [Number(width), Number(height)],
+      );
+
+      expect(allocatedSizes).toEqual([
+        [64, 32],
+        [64, 32],
+        [64, 32],
+      ]);
+    });
   });
 
   it('blooms multiple cameras independently', () => {
