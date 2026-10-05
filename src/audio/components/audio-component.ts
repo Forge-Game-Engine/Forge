@@ -1,5 +1,6 @@
 import { Howl } from 'howler';
 import { createComponentId } from '../../ecs/ecs-component.js';
+import type { AudioBus } from '../audio-bus.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 
 /**
@@ -8,7 +9,10 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  */
 export interface AudioRequiredOptions {
   /**
-   * The Howler.js sound to play.
+   * The Howler.js sound to play. The component doesn't own it: several
+   * components can share one `Howl`, and nothing in the audio module unloads
+   * it. Set the volume with {@link AudioDefaultedOptions.volume} rather than
+   * the `Howl`'s own `volume` option, which each playback overrides.
    *
    * @see {@link https://github.com/goldfire/howler.js#documentation | Howler.js Documentation}
    */
@@ -25,6 +29,20 @@ export interface AudioDefaultedOptions {
    * The system resets this back to `false` once playback has started.
    */
   playSound: boolean;
+
+  /**
+   * How loud this component plays `sound`, from 0 (silent) to 1 (as
+   * recorded), before its `bus` scales it. Changing it also changes
+   * playbacks that have already started.
+   */
+  volume: number;
+
+  /**
+   * The {@link AudioBus} this component's sound plays through, or `null` to
+   * play at `volume` alone. Changing it also reroutes playbacks that have
+   * already started.
+   */
+  bus: AudioBus | null;
 }
 
 /**
@@ -37,6 +55,8 @@ export const audioId = createComponentId<AudioEcsComponent>('audio');
 
 const defaultAudioOptions: AudioDefaultedOptions = {
   playSound: false,
+  volume: 1,
+  bus: null,
 };
 
 /**

@@ -120,8 +120,8 @@ export async function createExplosionSpawner(
       addAudioComponent(world, explosionSoundEntity, {
         sound: new Howl({
           src: getAssetUrl('audio/explosion.mp3'),
-          volume: 0.6,
         }),
+        volume: 0.6,
         playSound: true,
       });
 

@@ -43,7 +43,7 @@ If a system needs to run some logic exactly once per tick regardless of how many
 
 ## Looking up optional components in a loop
 
-`query` only matches entities that have *every* listed component, so a
+`query` only matches entities that have _every_ listed component, so a
 component only some matched entities have (for example, a sprite's optional
 rotation) can't just be added to `query` - doing so would silently exclude
 every entity that lacks it. The usual fix is to call `world.getComponent`
@@ -96,31 +96,35 @@ Treat each call to `update(world, queryResult)` as a single, focused update for 
 
 Systems may implement an optional `cleanup(world)` method. It runs once - not per entity - both when the system is removed via `EcsWorld.removeSystem` and when the owning world is stopped via `EcsWorld.stop` (most commonly because a [`Game`](./game.md) was stopped). It's the place to release resources the system itself acquired, resources that a component's own lifecycle doesn't already handle.
 
-Since `cleanup` doesn't receive a query result, a system that needs to release a resource per matched entity should track what it acquired itself (for example in a `Map` keyed by entity id) rather than re-querying the world:
+Since `cleanup` doesn't receive a query result, a system that needs to release what it acquired should track it itself rather than re-querying the world: by the time `cleanup` runs, some of the entities it acquired things for may already have been removed. Release only what the system acquired, never resources a component merely references (a texture, a sound) that other entities may share:
 
 ```ts
-const audioSystem: EcsSystem<[AudioComponent]> = {
-  query: [Audio],
-  update(world, { components: [audioComponents] }) {
-    for (const audio of audioComponents) {
-      if (audio.playSound) {
-        audio.sound.play();
-        audio.playSound = false;
-      }
-    }
-  },
-  cleanup(world) {
-    const {
-      components: [audioComponents],
-    } = world.query<[AudioComponent]>([Audio]);
+const createAudioSystem = (): EcsSystem<[AudioComponent]> => {
+  // Every play this system started, including ones whose entity has since
+  // been removed.
+  const playing = new Set<{ sound: Howl; id: number }>();
 
-    for (const audio of audioComponents) {
-      if (audio.sound.playing()) {
-        audio.sound.stop();
-        audio.sound.unload();
+  return {
+    query: [Audio],
+    update(world, { components: [audioComponents] }) {
+      for (const audio of audioComponents) {
+        if (audio.playSound) {
+          const playback = { sound: audio.sound, id: audio.sound.play() };
+
+          playing.add(playback);
+          audio.sound.once('end', () => playing.delete(playback), playback.id);
+          audio.playSound = false;
+        }
       }
-    }
-  },
+    },
+    cleanup() {
+      for (const { sound, id } of playing) {
+        sound.stop(id);
+      }
+
+      playing.clear();
+    },
+  };
 };
 ```
 

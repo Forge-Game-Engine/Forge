@@ -30,13 +30,7 @@ export const createGunEcsSystem = (
   world: EcsWorld,
   shootAction: HoldAction,
 ): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => {
-  // Created per system instance (rather than at module scope) so each game
-  // restart gets its own Howl, since the audio system unloads any sound
-  // still playing when the world stops.
-  const sound = new Howl({
-    src: getAssetUrl('audio/laser.mp3'),
-    volume: 0.2,
-  });
+  const sound = new Howl({ src: getAssetUrl('audio/laser.mp3') });
 
   return {
     query: [gunId, positionId],
@@ -115,6 +109,7 @@ function createBulletWithOffset(
   addAudioComponent(world, bullet, {
     playSound: true,
     sound,
+    volume: 0.2,
   });
 
   const bulletRadius =

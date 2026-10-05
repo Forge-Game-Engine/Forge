@@ -10,8 +10,8 @@ export function createMusic(world: EcsWorld): void {
     sound: new Howl({
       src: getAssetUrl('audio/background-space-music.mp3'),
       loop: true,
-      volume: 0.3,
     }),
+    volume: 0.3,
     playSound: true,
   });
 }

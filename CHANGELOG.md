@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **audio:** Audio buses for mixing. `createAudioBus({ volume, muted, parent })` makes an `AudioBus`, and buses form a tree (e.g. master with music and sound effects under it), like Unity's mixer groups or Godot's buses. `AudioEcsComponent` has a new `bus` field to route its sound through one, and a `volume` field (default `1`). A sound plays at its component's `volume` times the volume of its bus and every bus above it, or silently while any of them is muted, and changes to a bus or component apply to sounds that are already playing, so a volume slider can just set `musicBus.volume`. `getEffectiveBusVolume(bus)` reads a bus's resulting volume
+
+#### Changed
+
+- **audio:** `createAudioEcsSystem` sets the volume of every sound it plays from the component's `volume` and `bus`, overriding the `Howl`'s own `volume` option. Move `volume` from your `new Howl({ ... })` options to `addAudioComponent`. When the world stops, the system now stops only the plays it started, including ones whose entity was already removed, and no longer unloads any `Howl`, so a `Howl` can be shared between components and survives a game restart. Call `sound.unload()` yourself once nothing will play it again
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

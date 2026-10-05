@@ -84,7 +84,7 @@ const volume = createSlider(world, canvas, {
 });
 
 volume.onValueChanged.registerListener((value) => {
-  audio.volume = value / 100;
+  musicBus.volume = value / 100;
 });
 ```
 

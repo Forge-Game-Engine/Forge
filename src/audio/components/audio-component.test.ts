@@ -6,7 +6,7 @@ import { EcsWorld } from '../../ecs/index.js';
 vi.mock(import('howler'), { spy: true });
 
 describe('addAudioComponent', () => {
-  it('attaches a component with default playSound', () => {
+  it('attaches a component with default playSound, volume and bus', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
     const sound = new Howl({ src: ['sound.mp3'] });
@@ -16,6 +16,8 @@ describe('addAudioComponent', () => {
     expect(world.getComponent(entity, audioId)).toEqual({
       sound,
       playSound: false,
+      volume: 1,
+      bus: null,
     });
   });
 
@@ -24,11 +26,13 @@ describe('addAudioComponent', () => {
     const entity = world.createEntity();
     const sound = new Howl({ src: ['sound.mp3'] });
 
-    addAudioComponent(world, entity, { sound, playSound: true });
+    addAudioComponent(world, entity, { sound, playSound: true, volume: 0.5 });
 
     expect(world.getComponent(entity, audioId)).toEqual({
       sound,
       playSound: true,
+      volume: 0.5,
+      bus: null,
     });
   });
 

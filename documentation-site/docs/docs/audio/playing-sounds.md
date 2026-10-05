@@ -5,11 +5,11 @@ sidebar_position: 1
 # Playing Sounds
 
 [`AudioEcsComponent`](/Forge/docs/api/interfaces/AudioEcsComponent) holds a
-Howler [`Howl`](https://github.com/goldfire/howler.js#documentation) and a
-`playSound` flag.
+Howler [`Howl`](https://github.com/goldfire/howler.js#documentation), a
+`playSound` flag, a `volume` and the [bus](./mixing.md) it plays through.
 [`createAudioEcsSystem`](/Forge/docs/api/functions/createAudioEcsSystem)
-checks that flag every tick: when it's `true`, it calls `sound.play()` and
-resets `playSound` back to `false`.
+checks the flag every tick: when it's `true`, it plays the sound and resets
+`playSound` back to `false`.
 
 ## Quick start
 
@@ -68,7 +68,8 @@ playback once:
 const music = world.createEntity();
 
 addAudioComponent(world, music, {
-  sound: new Howl({ src: ['theme.mp3'], loop: true, volume: 0.4 }),
+  sound: new Howl({ src: ['theme.mp3'], loop: true }),
+  volume: 0.4,
   playSound: true,
 });
 ```
@@ -78,18 +79,43 @@ addAudioComponent(world, music, {
 flag changes are needed. To stop it, call the `Howl` API directly (for
 example `music.sound.stop()`); the component doesn't expose a "stop" flag.
 
-## Cleanup
+## Volume
 
-`createAudioEcsSystem`'s cleanup hook stops and unloads the `Howl` for any
-matching entity whose sound is still playing, but it only runs when the
-whole [`world.stop()`](/Forge/docs/api/classes/EcsWorld#stop) (for example
-via [`Game.stop()`](/Forge/docs/api/classes/Game#stop)) runs, not when an
-individual entity or component is removed.
+Set a sound's volume on its component, from `0` (silent) to `1` (as
+recorded), not with the `Howl`'s own `volume` option: the system sets each
+play's volume from the component, overriding the `Howl`'s. The system keeps
+every play it started at the component's current `volume`, scaled by its
+`bus`, until the play finishes, so changing either fades a sound that's
+already playing. Route sounds through [audio buses](./mixing.md) for volume
+settings that apply to whole groups of sounds, such as music and sound
+effects.
 
-:::caution
-If you remove an entity with an `AudioEcsComponent` while the game keeps
-running (for example a temporary "explosion" entity), this cleanup never
-runs for it. Call `sound.stop()` and `sound.unload()` yourself before
-removing the entity or component, otherwise the loaded audio buffer stays in
-memory for the rest of the session.
-:::
+## Sharing a sound
+
+The component doesn't own its `Howl`. Many components can share one, which
+saves decoding the same file again for every bullet or footstep, and each
+play of it is tracked separately:
+
+```ts
+const laser = new Howl({ src: ['laser.mp3'] });
+
+const fireBullet = (): void => {
+  const bullet = world.createEntity();
+
+  addAudioComponent(world, bullet, { sound: laser, playSound: true });
+};
+```
+
+## Removing entities and stopping the world
+
+A play outlives the entity that started it: removing the entity (a bullet
+that hits something, an explosion whose animation finished) lets its sound
+play out instead of cutting it off. Stop it yourself first with
+`sound.stop()` if it should end with the entity.
+
+When the world stops (for example via
+[`Game.stop()`](/Forge/docs/api/classes/Game#stop)), the system's cleanup
+stops every play it started that's still going, including ones whose entity
+is gone. It never unloads a `Howl`, since other components, or another
+world, may still be using it. Call `sound.unload()` yourself once nothing
+will play the sound again.
