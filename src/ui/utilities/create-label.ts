@@ -1,8 +1,6 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { addParentComponent } from '../../ecs/parent-component.js';
 import { Vector2 } from '../../math/index.js';
 import {
   addTextComponent,

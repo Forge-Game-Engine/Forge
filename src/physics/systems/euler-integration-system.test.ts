@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -9,7 +8,7 @@ import {
   rotationId,
   Time,
 } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import {
   addRigidBodyComponent,
   RigidBodyType,

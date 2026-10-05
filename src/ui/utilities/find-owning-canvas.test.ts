@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { findOwningCanvas } from './find-owning-canvas.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addPositionComponent } from '../../common/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import { addCameraComponent } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';

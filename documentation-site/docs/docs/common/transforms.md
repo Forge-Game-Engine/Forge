@@ -18,14 +18,16 @@ Each holds two values:
 The transform system sets an entity's `world` from its `local` and, if it
 has a `ParentEcsComponent`, its parent's `world`. The parent's rotation and
 scale apply to the child's offset, the rotations add, and the scales
-multiply. An entity without a parent gets `world = local`.
+multiply. An entity without a parent gets `world = local`. Removing the
+parent removes the child too (see
+[parents and children](../ecs/entity.md#parents-and-children)).
 
 ```ts
 import {
-  addParentComponent,
   addPositionComponent,
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
+import { addParentComponent } from '@forge-game-engine/forge/ecs';
 
 const tank = world.createEntity();
 const turret = world.createEntity();

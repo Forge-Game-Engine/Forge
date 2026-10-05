@@ -1,11 +1,7 @@
-import {
-  ParentEcsComponent,
-  parentId,
-  PositionEcsComponent,
-  positionId,
-} from '../../common/index.js';
+import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { ParentEcsComponent, parentId } from '../../ecs/parent-component.js';
 import { Rect, Rects, Vector2 } from '../../math/index.js';
 import {
   calculatePixelsPerUnit,

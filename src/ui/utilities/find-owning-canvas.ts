@@ -1,5 +1,5 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { ParentEcsComponent, parentId } from '../../ecs/parent-component.js';
 import { canvasId } from '../components/canvas-component.js';
 
 /**

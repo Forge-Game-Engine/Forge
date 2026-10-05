@@ -1,8 +1,5 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
-import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+import { addParentComponent, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { ParameterizedForgeEvent } from '@forge-game-engine/forge/events';
 import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
 import {

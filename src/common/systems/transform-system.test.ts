@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EcsWorld } from '../../ecs/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 
 import {
   addPositionComponent,
   addRotationComponent,
   addScaleComponent,
 } from '../components/index.js';
-import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
 describe('transform-system', () => {

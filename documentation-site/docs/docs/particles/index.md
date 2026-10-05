@@ -117,6 +117,7 @@ into the world transform (see [Transforms](../common/transforms.md)). That
 also covers a particle you give a
 [`ParentEcsComponent`](/Forge/docs/api/interfaces/ParentEcsComponent), for
 example from `onParticleSpawned` to make particles follow a moving ship.
+Removing the ship then removes those particles with it.
 
 The emitter reads its entity's **world** position, so move the emitter
 entity by writing its `position.local`.

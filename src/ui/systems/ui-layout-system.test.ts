@@ -1,12 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-  positionId,
-} from '../../common/index.js';
+import { addPositionComponent, positionId } from '../../common/index.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
   addSpriteComponent,

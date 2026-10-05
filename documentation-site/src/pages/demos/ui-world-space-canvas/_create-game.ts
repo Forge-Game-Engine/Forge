@@ -1,5 +1,4 @@
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -7,7 +6,11 @@ import {
   rotationId,
   Time,
 } from '@forge-game-engine/forge/common';
-import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
+import {
+  addParentComponent,
+  EcsSystem,
+  EcsWorld,
+} from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,

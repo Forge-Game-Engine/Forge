@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createUiLayoutGroupEcsSystem } from './ui-layout-group-system.js';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addPositionComponent } from '../../common/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { RenderContext } from '../../rendering/index.js';
 import {

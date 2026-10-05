@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createProgressBar } from './create-progress-bar.js';
-import { parentId } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { EcsWorld, parentId } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiProgressBarId } from '../components/ui-progress-bar-component.js';

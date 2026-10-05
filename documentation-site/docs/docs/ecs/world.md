@@ -34,6 +34,14 @@ world.removeEntity(entity);
 ```
 
 This removes every component/tag the entity had and marks the id as available.
+It also removes the entity's children, their children, and so on (see
+[parents and children](entity.md#parents-and-children)), and raises
+`onEntityRemoved` once for every entity it removed. Removing an entity that
+was already removed does nothing, so it's safe for two systems to remove the
+same entity in one frame.
+
+Don't hold on to an entity's id after removing it: the next `createEntity()`
+can return the same id for a new, unrelated entity.
 
 ## Adding a component to the entity
 
@@ -53,7 +61,8 @@ See the [Component docs](component.md) for details on creating and typing compon
 ## Removing a component from the entity
 
 Remove a component with `removeComponent(entity, componentKey)`. If this was the
-last component on the entity, the entity will be removed from the world.
+last component on the entity, the entity will be removed from the world, along
+with its descendants, exactly as if you'd called `removeEntity`.
 
 ```ts
 world.removeComponent(entity, Position);

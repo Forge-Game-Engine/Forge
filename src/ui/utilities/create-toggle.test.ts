@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createToggle } from './create-toggle.js';
-import { parentId, positionId } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { positionId } from '../../common/index.js';
+import { EcsWorld, parentId } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';

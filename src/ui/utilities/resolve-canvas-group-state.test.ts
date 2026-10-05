@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveCanvasGroupState } from './resolve-canvas-group-state.js';
-import { addParentComponent } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 
 describe('resolveCanvasGroupState', () => {

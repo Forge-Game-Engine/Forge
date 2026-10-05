@@ -1,6 +1,6 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { ParentEcsComponent, parentId } from '../../ecs/parent-component.js';
 import { Rects } from '../../math/index.js';
 import {
   TextEcsComponent,

@@ -11,6 +11,7 @@ import {
   speedId,
 } from '../common/index.js';
 import { createComponentId } from './ecs-component.js';
+import { addParentComponent, parentId } from './parent-component.js';
 import { Vec2 } from '../math/index.js';
 
 const trackingSystem = (name: string, calls: string[]): EcsSystem<[]> => ({
@@ -733,6 +734,230 @@ describe('EcsWorld', () => {
       world.removeEntity(entity2);
 
       expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removing entities with children', () => {
+    const tagId = createComponentId<{ name: string }>('Tag');
+
+    const createNamedEntity = (world: EcsWorld, name: string): number => {
+      const entity = world.createEntity();
+      world.addComponent(entity, tagId, { name });
+
+      return entity;
+    };
+
+    const isAlive = (world: EcsWorld, entity: number): boolean =>
+      world.getComponent(entity, tagId) !== null;
+
+    it('removes every descendant over multiple levels', () => {
+      const world = new EcsWorld();
+      const root = createNamedEntity(world, 'root');
+      const child = createNamedEntity(world, 'child');
+      const sibling = createNamedEntity(world, 'sibling');
+      const grandchild = createNamedEntity(world, 'grandchild');
+      addParentComponent(world, child, { parent: root });
+      addParentComponent(world, sibling, { parent: root });
+      addParentComponent(world, grandchild, { parent: child });
+
+      world.removeEntity(root);
+
+      expect(isAlive(world, root)).toBe(false);
+      expect(isAlive(world, child)).toBe(false);
+      expect(isAlive(world, sibling)).toBe(false);
+      expect(isAlive(world, grandchild)).toBe(false);
+      expect(world.query([parentId]).entities).toEqual([]);
+    });
+
+    it('leaves the parent and siblings when a child is removed', () => {
+      const world = new EcsWorld();
+      const parent = createNamedEntity(world, 'parent');
+      const child = createNamedEntity(world, 'child');
+      const sibling = createNamedEntity(world, 'sibling');
+      addParentComponent(world, child, { parent });
+      addParentComponent(world, sibling, { parent });
+
+      world.removeEntity(child);
+
+      expect(isAlive(world, parent)).toBe(true);
+      expect(isAlive(world, sibling)).toBe(true);
+      expect(isAlive(world, child)).toBe(false);
+    });
+
+    it('keeps a child that was detached before its parent is removed', () => {
+      const world = new EcsWorld();
+      const parent = createNamedEntity(world, 'parent');
+      const child = createNamedEntity(world, 'child');
+      addParentComponent(world, child, { parent });
+
+      world.removeComponent(child, parentId);
+      world.removeEntity(parent);
+
+      expect(isAlive(world, child)).toBe(true);
+    });
+
+    it('moves a reparented child to its new parent', () => {
+      const world = new EcsWorld();
+      const oldParent = createNamedEntity(world, 'old parent');
+      const newParent = createNamedEntity(world, 'new parent');
+      const child = createNamedEntity(world, 'child');
+      addParentComponent(world, child, { parent: oldParent });
+
+      addParentComponent(world, child, { parent: newParent });
+      world.removeEntity(oldParent);
+
+      expect(isAlive(world, child)).toBe(true);
+      expect(world.getComponent(child, parentId)).toEqual({
+        parent: newParent,
+      });
+
+      world.removeEntity(newParent);
+
+      expect(isAlive(world, child)).toBe(false);
+    });
+
+    it("forgets a removed parent's children, so entities that reuse their ids are unrelated", () => {
+      const world = new EcsWorld();
+      const parent = createNamedEntity(world, 'parent');
+      const child = createNamedEntity(world, 'child');
+      addParentComponent(world, child, { parent });
+
+      world.removeEntity(parent);
+      const reusedIds = [
+        createNamedEntity(world, 'first'),
+        createNamedEntity(world, 'second'),
+      ];
+
+      expect(reusedIds).toEqual(expect.arrayContaining([parent, child]));
+
+      world.removeEntity(parent);
+
+      expect(isAlive(world, child)).toBe(true);
+    });
+
+    it('terminates and removes the whole cycle when parents form a cycle', () => {
+      const world = new EcsWorld();
+      const a = createNamedEntity(world, 'a');
+      const b = createNamedEntity(world, 'b');
+      const c = createNamedEntity(world, 'c');
+      addParentComponent(world, a, { parent: c });
+      addParentComponent(world, b, { parent: a });
+      addParentComponent(world, c, { parent: b });
+
+      world.removeEntity(a);
+
+      expect(isAlive(world, a)).toBe(false);
+      expect(isAlive(world, b)).toBe(false);
+      expect(isAlive(world, c)).toBe(false);
+    });
+
+    it('terminates when an entity is its own parent', () => {
+      const world = new EcsWorld();
+      const entity = createNamedEntity(world, 'entity');
+      addParentComponent(world, entity, { parent: entity });
+
+      world.removeEntity(entity);
+
+      expect(isAlive(world, entity)).toBe(false);
+    });
+
+    it('removes descendants when removeComponent removes the last component of their ancestor', () => {
+      const world = new EcsWorld();
+      const parent = createNamedEntity(world, 'parent');
+      const child = createNamedEntity(world, 'child');
+      addParentComponent(world, child, { parent });
+
+      world.removeComponent(parent, tagId);
+
+      expect(isAlive(world, child)).toBe(false);
+      expect(world.getComponent(child, parentId)).toBeNull();
+    });
+
+    it('raises onEntityRemoved once per removed entity, after all of them are removed', () => {
+      const world = new EcsWorld();
+      const root = createNamedEntity(world, 'root');
+      const child = createNamedEntity(world, 'child');
+      const grandchild = createNamedEntity(world, 'grandchild');
+      addParentComponent(world, child, { parent: root });
+      addParentComponent(world, grandchild, { parent: child });
+
+      const aliveWhenRaised: boolean[] = [];
+      const listener = vi.fn(() => {
+        aliveWhenRaised.push(
+          isAlive(world, root) ||
+            isAlive(world, child) ||
+            isAlive(world, grandchild),
+        );
+      });
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeEntity(root);
+
+      expect(listener).toHaveBeenCalledTimes(3);
+      expect(listener).toHaveBeenNthCalledWith(1, root);
+      expect(listener).toHaveBeenNthCalledWith(2, child);
+      expect(listener).toHaveBeenNthCalledWith(3, grandchild);
+      expect(aliveWhenRaised).toEqual([false, false, false]);
+    });
+  });
+
+  describe('removing an entity that is already removed', () => {
+    it('does not hand out the same id twice after a parent and child are both removed', () => {
+      const world = new EcsWorld();
+      const parent = world.createEntity();
+      const child = world.createEntity();
+      addParentComponent(world, child, { parent });
+
+      // Like a lifetime system removing every expired entity from a
+      // snapshot of the frame's matches: the child is already gone when
+      // its own turn comes.
+      world.removeEntity(parent);
+      world.removeEntity(child);
+
+      const first = world.createEntity();
+      const second = world.createEntity();
+      const third = world.createEntity();
+
+      expect(new Set([first, second, third]).size).toBe(3);
+      expect([first, second]).toEqual(expect.arrayContaining([parent, child]));
+    });
+
+    it('does nothing and raises no event', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      world.removeEntity(entity);
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeEntity(entity);
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('does nothing for an id that was never created', () => {
+      const world = new EcsWorld();
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeEntity(42);
+
+      expect(listener).not.toHaveBeenCalled();
+      expect(world.createEntity()).toBe(0);
+    });
+
+    it('does not free the id again when removeComponent is called on a removed entity', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      world.removeEntity(entity);
+
+      world.removeComponent(entity, positionId);
+
+      const first = world.createEntity();
+      const second = world.createEntity();
+
+      expect(first).not.toBe(second);
     });
   });
 

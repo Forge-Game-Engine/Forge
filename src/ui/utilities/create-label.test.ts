@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createLabel } from './create-label.js';
-import { parentId, positionId } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { positionId } from '../../common/index.js';
+import { EcsWorld, parentId } from '../../ecs/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
   TEXT_RENDER_CATEGORY,

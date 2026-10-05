@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addPositionComponent } from '../../common/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { addCameraComponent } from '../../rendering/index.js';
 import {

@@ -179,8 +179,13 @@ factory functions, not classes:
    `EcsWorld.createEntity()`. Components are attached/detached by id via the
    world (`addComponent`/`removeComponent`/`addTag`); there is no `Entity`
    object. Parent-child relationships are expressed via a
-   `ParentEcsComponent` referencing another entity's id, not object
-   containment.
+   `ParentEcsComponent` (part of `/src/ecs`, like Bevy keeps its hierarchy
+   in `bevy_ecs`) referencing another entity's id, not object containment.
+   `EcsWorld` indexes each parent's children from those components (so
+   `parent` is `readonly`: reparent by adding the component again), and
+   `removeEntity` removes an entity's whole subtree. A child that should
+   outlive its parent is detached (`removeComponent(child, parentId)`)
+   first; there's no non-recursive removal.
 
 4. **World** (`EcsWorld`): Container for component data and registered
    systems. Stores component data grouped by component key, runs each

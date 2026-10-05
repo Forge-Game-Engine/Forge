@@ -4,6 +4,7 @@ import { Stoppable, Updatable } from '../common/index.js';
 import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem } from './ecs-system.js';
+import { parentId } from './parent-component.js';
 
 export interface QueryResult<T extends readonly unknown[]> {
   entities: readonly number[];
@@ -44,11 +45,19 @@ export interface AddSystemGroupOptions {
   after?: EcsSystemGroup[];
 }
 
+const isParentKey = (key: symbol): boolean => key === parentId;
+
 export class EcsWorld implements Updatable, Stoppable {
   public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
 
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
   private readonly _freeEntityIds: number[] = [];
+  private readonly _aliveEntities = new Set<number>();
+  // Each parent's direct children, kept in sync with every entity's
+  // `ParentEcsComponent` by `addComponent`, `removeComponent` and entity
+  // removal, so removing an entity can find its descendants without
+  // scanning every `ParentEcsComponent` in the world.
+  private readonly _childrenByParent = new Map<number, Set<number>>();
   private _nextEntityId = 0;
   private readonly _systemGraphsByGroup: Map<
     EcsSystemGroup,
@@ -218,26 +227,55 @@ export class EcsWorld implements Updatable, Stoppable {
     };
   }
 
+  /**
+   * Creates a new entity. Its id may be one a removed entity used before.
+   * @returns The new entity's id.
+   */
   public createEntity(): number {
-    return this._generateEntityId();
+    const entity = this._generateEntityId();
+    this._aliveEntities.add(entity);
+
+    return entity;
   }
 
+  /**
+   * Removes `entity` and all of its descendants (every entity whose
+   * `ParentEcsComponent` chain leads back to `entity`) from the world,
+   * removing all of their components and raising `onEntityRemoved` once for
+   * each of them. To keep a child alive, remove its `ParentEcsComponent`
+   * before removing its parent. Removing an entity that has already been
+   * removed, or was never created, does nothing.
+   * @param entity - The entity to remove.
+   */
   public removeEntity(entity: number): void {
-    for (const componentSet of this._componentSets.values()) {
-      componentSet.remove(entity);
-    }
-
-    this.onEntityRemoved.raise(entity);
-    this._freeEntityIds.push(entity);
+    this._destroyEntity(entity);
   }
 
+  /**
+   * Adds a component to `entity`, replacing any component it already has
+   * for `componentKey`. Adding a `ParentEcsComponent` to an entity that
+   * already has one reparents it.
+   * @param entity - The entity to add the component to.
+   * @param componentKey - The component's key.
+   * @param componentData - The component.
+   * @returns `componentData`.
+   */
   public addComponent<T>(
     entity: number,
     componentKey: ComponentKey<T>,
     componentData: T,
   ): T {
     const componentSet = this._getComponentOrCreateSetByKey(componentKey);
+
+    if (!isParentKey(componentKey)) {
+      componentSet.add(entity, componentData);
+
+      return componentData;
+    }
+
+    this._unlinkFromParent(entity);
     componentSet.add(entity, componentData);
+    this._linkToParent(entity);
 
     return componentData;
   }
@@ -312,12 +350,24 @@ export class EcsWorld implements Updatable, Stoppable {
     return component;
   }
 
+  /**
+   * Removes `entity`'s component for `componentKey`. Removing a
+   * `ParentEcsComponent` detaches the entity from its parent, so removing
+   * that parent no longer removes it. If `entity` has no components left
+   * afterwards, it is removed as if by `removeEntity`, descendants
+   * included.
+   * @param entity - The entity to remove the component from.
+   * @param componentKey - The component's key.
+   */
   public removeComponent<T>(
     entity: number,
     componentKey: ComponentKey<T>,
   ): void {
-    const componentSet = this._componentSets.get(componentKey);
-    componentSet?.remove(entity);
+    if (isParentKey(componentKey)) {
+      this._unlinkFromParent(entity);
+    }
+
+    this._componentSets.get(componentKey)?.remove(entity);
 
     for (const set of this._componentSets.values()) {
       if (set.has(entity)) {
@@ -325,8 +375,89 @@ export class EcsWorld implements Updatable, Stoppable {
       }
     }
 
-    this.onEntityRemoved.raise(entity);
-    this._freeEntityIds.push(entity);
+    this._destroyEntity(entity);
+  }
+
+  /**
+   * Removes `root` and its descendants, if `root` is alive. Every entity is
+   * fully removed (components, hierarchy links, id freed) before any
+   * `onEntityRemoved` listener runs, so listeners see a consistent world.
+   * @param root - The entity to remove.
+   */
+  private _destroyEntity(root: number): void {
+    if (!this._aliveEntities.has(root)) {
+      return;
+    }
+
+    const removed = this._collectSubtree(root);
+
+    for (const entity of removed) {
+      this._unlinkFromParent(entity);
+      this._childrenByParent.delete(entity);
+
+      for (const componentSet of this._componentSets.values()) {
+        componentSet.remove(entity);
+      }
+
+      this._aliveEntities.delete(entity);
+      this._freeEntityIds.push(entity);
+    }
+
+    for (const entity of removed) {
+      this.onEntityRemoved.raise(entity);
+    }
+  }
+
+  /**
+   * Collects `root` and every alive entity below it, breadth-first. Each
+   * entity is visited once, so a parent cycle (which nothing prevents a
+   * caller from creating) still terminates.
+   * @param root - The entity whose subtree to collect.
+   * @returns `root` followed by its descendants.
+   */
+  private _collectSubtree(root: number): number[] {
+    const subtree = [root];
+    const visited = new Set(subtree);
+
+    for (let i = 0; i < subtree.length; i++) {
+      const children = this._childrenByParent.get(subtree[i]) ?? [];
+
+      for (const child of children) {
+        if (!visited.has(child) && this._aliveEntities.has(child)) {
+          visited.add(child);
+          subtree.push(child);
+        }
+      }
+    }
+
+    return subtree;
+  }
+
+  private _linkToParent(child: number): void {
+    const { parent } = this.getComponentRequired(child, parentId);
+    let children = this._childrenByParent.get(parent);
+
+    if (!children) {
+      children = new Set();
+      this._childrenByParent.set(parent, children);
+    }
+
+    children.add(child);
+  }
+
+  private _unlinkFromParent(child: number): void {
+    const parentComponent = this.getComponent(child, parentId);
+
+    if (!parentComponent) {
+      return;
+    }
+
+    const children = this._childrenByParent.get(parentComponent.parent);
+    children?.delete(child);
+
+    if (children?.size === 0) {
+      this._childrenByParent.delete(parentComponent.parent);
+    }
   }
 
   private _entityHasAllKeys(entity: number, keys: readonly symbol[]): boolean {

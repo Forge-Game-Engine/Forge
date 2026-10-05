@@ -168,6 +168,11 @@ const followEnemySystem: EcsSystem<[]> = {
 };
 ```
 
+An unparented health bar also outlives its enemy. Remove `healthBarCanvas`
+when you remove the enemy, which removes the panels and labels inside it too.
+A parented canvas is removed with its enemy automatically, since removing an
+entity removes its descendants.
+
 A world-space canvas is created exactly like a screen-space one otherwise -
 multiple canvases (a screen-space HUD plus several world-space health
 bars) all share the one `registerUiSystems` call for their world.

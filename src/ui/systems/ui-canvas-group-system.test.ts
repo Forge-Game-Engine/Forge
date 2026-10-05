@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createUiCanvasGroupEcsSystem } from './ui-canvas-group-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addPositionComponent } from '../../common/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import {
   addSpriteComponent,
   Color,

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **ecs:** Removing an entity now removes its children, their children and so on, the way destroying an object does in Unity, Godot and Bevy, so a removed parent no longer leaves orphans behind that jump to the wrong place or get silently attached to whichever new entity reuses the parent's id. `removeEntity`, and `removeComponent` when it removes an entity's last component, raise `onEntityRemoved` once for every entity removed. To keep a child, detach it first with `world.removeComponent(child, parentId)`; you can delete per-frame orphan checks and lists of child entities kept only to remove them with their parent. Removing an entity that was already removed (or never created) now does nothing, instead of freeing its id a second time so two later `createEntity()` calls returned the same id. `ParentEcsComponent`, `parentId` and `addParentComponent` moved from `@forge-game-engine/forge/common` to `@forge-game-engine/forge/ecs`, so update those imports. `ParentEcsComponent.parent` is now `readonly`: to reparent an entity, call `addParentComponent` again instead of assigning `parent`
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

@@ -1,8 +1,5 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
-import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+import { addParentComponent, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Color } from '@forge-game-engine/forge/rendering';
 import { FontAtlas } from '@forge-game-engine/forge/text';
 import {

@@ -7,7 +7,7 @@ import {
   rotationId,
   scaleId,
 } from '../components/index.js';
-import { parentId } from '../components/parent-component.js';
+import { parentId } from '../../ecs/parent-component.js';
 import {
   createTransformCache,
   resetTransformCache,

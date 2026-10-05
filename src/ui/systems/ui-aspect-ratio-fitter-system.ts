@@ -1,5 +1,5 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { ParentEcsComponent, parentId } from '../../ecs/parent-component.js';
 import { Rects } from '../../math/index.js';
 import {
   AspectRatioFitterEcsComponent,

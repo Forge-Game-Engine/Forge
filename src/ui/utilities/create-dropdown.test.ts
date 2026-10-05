@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createDropdown } from './create-dropdown.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { EcsWorld, parentId } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiDropdownId } from '../components/ui-dropdown-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';

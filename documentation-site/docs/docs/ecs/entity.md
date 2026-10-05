@@ -39,3 +39,41 @@ if (position) {
 
 world.removeEntity(entity);
 ```
+
+## Parents and children
+
+Give an entity a parent with `addParentComponent`. A child's transform is
+relative to its parent's (see [Transforms](../common/transforms.md)), and the
+child lives only as long as its parent: removing an entity removes all of its
+descendants too.
+
+```ts
+import {
+  addParentComponent,
+  EcsWorld,
+  parentId,
+} from '@forge-game-engine/forge/ecs';
+
+const world = new EcsWorld();
+const ship = world.createEntity();
+const flame = world.createEntity();
+
+addParentComponent(world, flame, { parent: ship });
+
+world.removeEntity(ship); // removes `flame` too
+```
+
+`ParentEcsComponent.parent` is read-only, because the world keeps track of
+each entity's children as parents are added and removed:
+
+- **Reparent** an entity by calling `addParentComponent` again with the new
+  parent. It replaces the old component.
+- **Detach** an entity with `world.removeComponent(entity, parentId)`. It
+  becomes a root entity and survives its old parent's removal. To keep a
+  child alive when its parent is removed (an attached item the player drops
+  when a ship is destroyed, say), detach it first.
+
+```ts
+world.removeComponent(flame, parentId);
+world.removeEntity(ship); // `flame` stays in the world
+```

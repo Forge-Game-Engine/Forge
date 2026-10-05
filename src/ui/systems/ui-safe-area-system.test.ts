@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createUiSafeAreaEcsSystem } from './ui-safe-area-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { addPositionComponent } from '../../common/index.js';
+import { addParentComponent, EcsWorld } from '../../ecs/index.js';
 import { addCameraComponent, RenderContext } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import {
