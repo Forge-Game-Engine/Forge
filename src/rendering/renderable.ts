@@ -8,7 +8,7 @@ import type { Vector2 } from '../math/index.js';
 import type { SpriteEcsComponent } from './components/index.js';
 import type { Color } from './color.js';
 import type { Geometry } from './geometry/index.js';
-import type { Material } from './materials/index.js';
+import type { Material, UniformValue } from './materials/index.js';
 
 /**
  * Per-glyph outline/soft-shadow parameters, bound by
@@ -160,6 +160,9 @@ export class Renderable {
    */
   public readonly setupInstanceAttributes: SetupInstanceAttributesCallback;
 
+  /** This renderable's own uniform values; see {@link Renderable.setUniform}. */
+  private readonly _uniforms = new Map<string, UniformValue>();
+
   /**
    * Creates a new Renderable.
    *
@@ -187,14 +190,36 @@ export class Renderable {
   }
 
   /**
+   * Sets a uniform for this renderable alone: it's applied to `material`
+   * every time this renderable is bound, over the material's own value. This
+   * lets renderables share one material (and its shader program) while
+   * differing in a few uniforms, the way Unity's `MaterialPropertyBlock`
+   * does. For example, text renderables for different fonts share a text
+   * material, each binding its own font's atlas texture.
+   * @param name - The uniform's name.
+   * @param value - The value to upload whenever this renderable is bound.
+   * @throws An error under the same conditions as `Material.setUniform`:
+   * checked now, rather than at the next draw.
+   */
+  public setUniform(name: string, value: UniformValue): void {
+    this.material.setUniform(name, value);
+    this._uniforms.set(name, value);
+  }
+
+  /**
    * Prepares for drawing by binding the material and geometry for rendering.
    *
-   * This method binds the shader program (material) and sets up the Vertex Array Object (VAO)
+   * This method applies this renderable's own uniforms (see `setUniform`) to the material,
+   * binds the shader program (material) and sets up the Vertex Array Object (VAO)
    * for the geometry. After calling this method, the renderable is ready to be drawn.
    *
    * @param gl - The WebGL2 rendering context
    */
   public bind(gl: WebGL2RenderingContext): void {
+    for (const [name, value] of this._uniforms) {
+      this.material.setUniform(name, value);
+    }
+
     this.material.bind(gl);
     this.geometry.bind(gl, this.material.program);
   }

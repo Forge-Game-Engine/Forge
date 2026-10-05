@@ -24,6 +24,7 @@ describe('Renderable', () => {
     // Create mock material with bind method and program property
     mockMaterial = {
       bind: vi.fn(),
+      setUniform: vi.fn(),
       program: mockProgram,
     } as unknown as Material;
 
@@ -137,6 +138,63 @@ describe('Renderable', () => {
       expect(renderable.setupInstanceAttributes).toBe(
         mockSetupInstanceAttributes,
       );
+    });
+  });
+
+  describe('setUniform', () => {
+    const createRenderable = (): Renderable =>
+      new Renderable(
+        mockGeometry,
+        mockMaterial,
+        10,
+        0,
+        mockBindInstanceData,
+        mockSetupInstanceAttributes,
+      );
+
+    it('checks the uniform against the material straight away', () => {
+      (mockMaterial.setUniform as Mock).mockImplementation(() => {
+        throw new Error('Uniform "u_missing" does not exist on material.');
+      });
+
+      expect(() => createRenderable().setUniform('u_missing', 1)).toThrow(
+        'u_missing',
+      );
+    });
+
+    it("applies its uniforms to the material every time it's bound, before binding it", () => {
+      const renderable = createRenderable();
+      const calls: string[] = [];
+
+      (mockMaterial.setUniform as Mock).mockImplementation(
+        (name: string, value: number) => calls.push(`${name}=${value}`),
+      );
+      (mockMaterial.bind as Mock).mockImplementation(() => calls.push('bind'));
+
+      renderable.setUniform('u_size', 2);
+      calls.length = 0;
+      renderable.bind(mockGl);
+      renderable.bind(mockGl);
+
+      expect(calls).toEqual(['u_size=2', 'bind', 'u_size=2', 'bind']);
+    });
+
+    it('lets renderables sharing a material each bind their own value', () => {
+      const first = createRenderable();
+      const second = createRenderable();
+      const values: number[] = [];
+
+      (mockMaterial.setUniform as Mock).mockImplementation(
+        (_name: string, value: number) => values.push(value),
+      );
+
+      first.setUniform('u_size', 1);
+      second.setUniform('u_size', 2);
+      values.length = 0;
+      second.bind(mockGl);
+      first.bind(mockGl);
+
+      expect(values).toEqual([2, 1]);
     });
   });
 

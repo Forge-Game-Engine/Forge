@@ -48,7 +48,7 @@ device pixels per CSS pixel, these sizes are multiplied by that ratio, so a
 ## Two draw passes: outline/shadow, then fill
 
 Every glyph's outline and shadow draw in their own pass, always completing
-_before_ any glyph's fill draws on top of it (see `createTextRenderable`
+_before_ any glyph's fill draws on top of it (see `createTextRenderables`
 internally, if you're curious). This is what lets an outline - or a soft
 shadow/glow - safely reach past a same-word neighboring glyph - even merge
 with that neighbor's own effect into one continuous stroke or glow, the

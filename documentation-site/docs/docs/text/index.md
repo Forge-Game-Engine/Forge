@@ -26,7 +26,11 @@ Three pieces make up the module:
 - [`addTextComponent`](/Forge/docs/api/functions/addTextComponent) and
   [`createTextShapingEcsSystem`](/Forge/docs/api/functions/createTextShapingEcsSystem),
   which draw a string from a loaded `FontAtlas` through the render system
-  (see [Rendering Text](./rendering-text.md)).
+  (see [Rendering Text](./rendering-text.md)), with an optional outline
+  and shadow ([Text Effects](./text-effects.md)) and, for a fill drawn with
+  your own shader, a material from
+  [`createTextMaterial`](/Forge/docs/api/functions/createTextMaterial)
+  ([Text Materials](./text-materials.md)).
 
 ## Quick start
 

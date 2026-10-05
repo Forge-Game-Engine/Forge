@@ -159,6 +159,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'text-materials',
+    title: 'Text Materials',
+    description:
+      'Text drawn with custom shaders: a shimmer, a dissolve and a glitch.',
+    categories: ['rendering'],
+  },
+  {
     slug: 'ui-anchors',
     title: 'UI Anchors',
     description:

@@ -4,6 +4,7 @@ import { ImageCache } from '../../asset-loading/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   ForgeShaderSource,
+  Material,
   RenderContext,
   ShaderCache,
   spriteFragmentShader,
@@ -399,5 +400,110 @@ describe('createTextShapingEcsSystem', () => {
 
     expect(meshA?.fillRenderable).not.toBe(meshB?.fillRenderable);
     expect(meshA?.effectsRenderable).not.toBe(meshB?.effectsRenderable);
+  });
+
+  const createCustomMaterial = (): Material =>
+    new Material(
+      renderContext.shaderCache.getShader('sprite.vert'),
+      renderContext.shaderCache.getShader('msdf-fill.frag'),
+      mockGl,
+    );
+
+  it('draws the fill with the text material, and the effects with the built-in one', () => {
+    const fontAtlas = buildFontAtlas();
+    const material = createCustomMaterial();
+    const plain = world.createEntity();
+    const custom = world.createEntity();
+
+    addTextComponent(world, plain, { text: 'A', fontAtlas, size: 10 });
+    addTextComponent(world, custom, {
+      text: 'A',
+      fontAtlas,
+      size: 10,
+      material,
+    });
+
+    world.update();
+
+    const plainMesh = world.getComponentRequired(plain, textMeshId);
+    const customMesh = world.getComponentRequired(custom, textMeshId);
+
+    expect(customMesh.fillRenderable.material).toBe(material);
+    expect(plainMesh.fillRenderable.material).not.toBe(material);
+    expect(customMesh.effectsRenderable.material).toBe(
+      plainMesh.effectsRenderable.material,
+    );
+  });
+
+  it('re-shapes when the material changes', () => {
+    const entity = world.createEntity();
+    const material = createCustomMaterial();
+    const text = addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+
+    world.update();
+    text.material = material;
+    world.update();
+
+    expect(
+      world.getComponentRequired(entity, textMeshId).fillRenderable.material,
+    ).toBe(material);
+  });
+
+  it('shares one material between fonts, with a renderable per font', () => {
+    const material = createCustomMaterial();
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    addTextComponent(world, entityA, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+      material,
+    });
+    addTextComponent(world, entityB, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+      material,
+    });
+
+    world.update();
+
+    const meshA = world.getComponentRequired(entityA, textMeshId);
+    const meshB = world.getComponentRequired(entityB, textMeshId);
+
+    expect(meshA.fillRenderable).not.toBe(meshB.fillRenderable);
+    expect(meshA.fillRenderable.material).toBe(meshB.fillRenderable.material);
+  });
+
+  it("uploads each font's atlas once, however many materials and categories draw it", () => {
+    const fontAtlas = buildFontAtlas();
+
+    addTextComponent(world, world.createEntity(), {
+      text: 'A',
+      fontAtlas,
+      size: 10,
+      category: 0b0001,
+    });
+    addTextComponent(world, world.createEntity(), {
+      text: 'A',
+      fontAtlas,
+      size: 10,
+      category: 0b0010,
+    });
+    addTextComponent(world, world.createEntity(), {
+      text: 'A',
+      fontAtlas,
+      size: 10,
+      material: createCustomMaterial(),
+    });
+
+    world.update();
+
+    expect(mockGl.texImage2D).toHaveBeenCalledTimes(1);
   });
 });

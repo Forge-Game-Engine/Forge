@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **text:** Text materials. `createTextMaterial(renderContext, fragmentShader)` builds a material from your own fragment shader, and `TextEcsComponent.material` (also accepted by `createLabel`) draws the text's fill with it, for gradients, dissolves, shimmers and other per-glyph effects. Shaders `#pragma forge include(msdf)` for the font atlas uniforms and `msdfCoverage(texCoord)`; the engine binds each text's font, so one material works with any font
+- **rendering:** `Renderable.setUniform(name, value)` sets a uniform for one renderable, applied over its material's own value whenever the renderable is bound, so renderables can share a material while differing in a few uniforms (like Unity's `MaterialPropertyBlock`)
+
+#### Changed
+
+- **text:** `createTextRenderable(renderContext, fontAtlas, category)` is replaced by `createTextRenderables(renderContext, { fontAtlas, atlasTexture, fillMaterial, effectsMaterial, category })`, which takes the materials and the uploaded atlas instead of making its own. `createTextShapingEcsSystem` now uploads each font's atlas once, instead of once per render category, and shares one fill and one effects material between all fonts
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

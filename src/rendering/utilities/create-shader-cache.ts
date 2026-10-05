@@ -35,6 +35,7 @@ import {
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
+  msdfShaderInclude,
   msdfVertexShader,
 } from '../../text/rendering/shaders/index.js';
 
@@ -54,6 +55,7 @@ import {
 export function createShaderCache(): ShaderCache {
   const includeMap = [
     new ForgeShaderSource(cubicShaderInclude),
+    new ForgeShaderSource(msdfShaderInclude),
     new ForgeShaderSource(perlinNoiseShaderInclude),
     new ForgeShaderSource(quinticShaderInclude),
     new ForgeShaderSource(radialGradientShaderInclude),

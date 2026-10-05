@@ -4,9 +4,7 @@
 
 precision mediump float;
 
-uniform sampler2D u_atlas;
-uniform float u_distanceRange;   // FontAtlasData.distanceRange
-uniform float u_atlasSize;       // FontAtlasData.atlasSize.height (assumes square texels)
+#pragma forge include(msdf)
 
 in vec2 v_texCoord;
 in vec4 v_outlineColor;
@@ -15,10 +13,6 @@ in vec4 v_shadowColor;
 in vec2 v_shadowOffset;
 in float v_shadowSoftness;
 out vec4 fragColor;
-
-float median(float r, float g, float b) {
-  return max(min(r, g), min(max(r, g), b));
-}
 
 // Standard "top over bottom" alpha compositing, both sides straight
 // (non-premultiplied) alpha - matches the layout `fragColor` itself must be
@@ -67,18 +61,13 @@ vec4 compositeOver(vec4 top, vec4 bottom) {
 // and by the reasoning above. See `text-effects.md`'s "Choosing a safe
 // range" for the atlas budget itself, which still bounds both effects.
 void main() {
-  vec3 msdf = texture(u_atlas, v_texCoord).rgb;
-  float signedDistance = median(msdf.r, msdf.g, msdf.b) - 0.5;
-
   // Converts the distance field's abstract units into screen pixels so the
   // effect's reach is exactly as many *screen* pixels wide as requested
-  // regardless of how much the glyph is scaled - see `msdf-fill.frag`/the
-  // engine's `text-effects.md` doc for the full derivation.
-  vec2 unitRange = vec2(u_distanceRange) / vec2(u_atlasSize);
+  // regardless of how much the glyph is scaled - see the `msdf` include and
+  // the engine's `text-effects.md` doc for the full derivation.
   vec2 uvPerScreenPx = fwidth(v_texCoord);
-  vec2 screenTexSize = vec2(1.0) / uvPerScreenPx;
-  float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
-  float screenPxDistance = signedDistance * screenPxRange;
+  float screenPxRange = msdfScreenPxRange(v_texCoord);
+  float screenPxDistance = msdfScreenPxDistance(v_texCoord);
 
   // The atlas's own encoded budget: the distance field only carries graded
   // (non-saturated) data up to roughly `screenPxRange / 2` screen pixels
@@ -101,8 +90,7 @@ void main() {
     ? v_shadowOffset * (atlasSafeDistance / shadowOffsetLength)
     : v_shadowOffset;
   vec2 shadowUv = v_texCoord - clampedShadowOffset * uvPerScreenPx;
-  vec3 shadowMsdf = texture(u_atlas, shadowUv).rgb;
-  float shadowSignedDistance = median(shadowMsdf.r, shadowMsdf.g, shadowMsdf.b) - 0.5;
+  float shadowSignedDistance = msdfMedian(texture(u_atlas, shadowUv).rgb) - 0.5;
   float shadowScreenPxDistance = shadowSignedDistance * screenPxRange;
   float shadowReach = max(min(v_shadowSoftness, atlasSafeDistance), 0.001);
   float shadowCoverage = clamp(1.0 - (-shadowScreenPxDistance) / shadowReach, 0.0, 1.0);

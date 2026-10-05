@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createLabel } from './create-label.js';
 import { parentId, positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
+import type { Material } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
   TEXT_RENDER_CATEGORY,
@@ -65,6 +66,20 @@ describe('createLabel', () => {
     });
 
     expect(world.getComponent(label, textId)!.category).toBe(0b0010);
+  });
+
+  it('passes a text material through to its TextEcsComponent', () => {
+    const world = new EcsWorld();
+    const material = {} as Material;
+
+    const label = createLabel(world, world.createEntity(), {
+      text: 'Play',
+      fontAtlas,
+      size: 32,
+      material,
+    });
+
+    expect(world.getComponent(label, textId)!.material).toBe(material);
   });
 
   it('applies the given anchor and passes through TextEcsComponent options', () => {

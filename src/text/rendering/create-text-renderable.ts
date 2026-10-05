@@ -1,7 +1,8 @@
 import {
   combineInstanceDataSegments,
   createQuadGeometry,
-  createTextureFromImage,
+  ForgeShaderSource,
+  InstanceDataSegment,
   Material,
   Renderable,
   RenderContext,
@@ -22,13 +23,66 @@ import { textEffectsInstanceDataSegment } from './text-effects-instance-data-seg
 export const TEXT_RENDER_CATEGORY = 1;
 
 /**
- * The pair of `Renderable`s a `FontAtlas`'s glyphs draw with - see
- * `createTextRenderable`'s doc comment for why glyph rendering is split
+ * Creates a material for drawing text's fill with a fragment shader of your
+ * own, for `TextEcsComponent.material`. It's drawn with the engine's
+ * `sprite.vert`, so the shader receives `v_texCoord` (the glyph's
+ * coordinates in its font's atlas) and `v_tint` (the text's color, with
+ * `opacityMultiplier` applied to its alpha), and outputs straight alpha.
+ *
+ * The shader gets its font from `#pragma forge include(msdf)`, which
+ * declares the atlas uniforms and `msdfCoverage(texCoord)`: how much of the
+ * pixel at `texCoord` the glyph's ink covers. The text renderer binds those
+ * uniforms for each font the material draws, so one material works for
+ * every font. Set the shader's own uniforms on the returned material; they
+ * apply to every text drawn with it.
+ * @param renderContext - The render context the material draws with.
+ * @param fragmentShader - The fragment shader. Added to the render context's
+ * shader cache (if a shader with its name isn't already there), so its
+ * includes are resolved.
+ * @returns The material.
+ * @example
+ * ```ts
+ * const gradient = createTextMaterial(
+ *   renderContext,
+ *   new ForgeShaderSource(`#version 300 es
+ * #pragma forge name(gradient-text.frag)
+ * precision mediump float;
+ * #pragma forge include(msdf)
+ * uniform vec4 u_bottomColor;
+ * in vec2 v_texCoord;
+ * in vec4 v_tint;
+ * out vec4 fragColor;
+ * void main() {
+ *   float t = gl_FragCoord.y / 600.0;
+ *   vec4 color = mix(u_bottomColor, v_tint, t);
+ *   fragColor = vec4(color.rgb, color.a * msdfCoverage(v_texCoord));
+ * }`),
+ * );
+ * ```
+ */
+export function createTextMaterial(
+  renderContext: RenderContext,
+  fragmentShader: ForgeShaderSource,
+): Material {
+  const { gl, shaderCache } = renderContext;
+
+  shaderCache.addShader(fragmentShader);
+
+  return new Material(
+    shaderCache.getShader('sprite.vert'),
+    shaderCache.getShader(fragmentShader.name),
+    gl,
+  );
+}
+
+/**
+ * The pair of `Renderable`s glyphs of one font are drawn with - see
+ * `createTextRenderables`'s doc comment for why glyph rendering is split
  * into two ordered draw passes instead of one.
  */
 export interface TextRenderables {
   /**
-   * Draws only a glyph's own anti-aliased ink (`msdf-fill.frag`), using the
+   * Draws only a glyph's own ink, with the text's fill material, using the
    * plain sprite vertex layout - no outline/shadow instance data. Always
    * drawn *after* `effectsRenderable` for the same glyphs (see
    * `pushTextRenderCommands` in `glyph-quad.ts`), so a glyph's fill can
@@ -46,9 +100,63 @@ export interface TextRenderables {
 }
 
 /**
- * Builds the pair of `Renderable`s a `FontAtlas`'s glyphs are drawn with:
- * the shared sprite quad geometry, paired with the MSDF fill/effects
- * fragment shaders and this atlas's texture/metrics uniforms.
+ * The materials and font a {@link TextRenderables} pair draws with.
+ */
+export interface TextRenderablesOptions {
+  /** The font whose glyphs are drawn. */
+  fontAtlas: FontAtlas;
+
+  /**
+   * `fontAtlas.image`, already uploaded. Shared by every renderable of the
+   * font, so it's uploaded once however many materials and categories
+   * draw the font.
+   */
+  atlasTexture: WebGLTexture;
+
+  /**
+   * The fill material: the built-in `msdf-fill.frag` one, or one from
+   * `createTextMaterial`.
+   */
+  fillMaterial: Material;
+
+  /** The outline/shadow material, made from `msdf.vert` and `msdf-effects.frag`. */
+  effectsMaterial: Material;
+
+  /** The render category both renderables are drawn under. */
+  category: number;
+}
+
+const createGlyphRenderable = (
+  renderContext: RenderContext,
+  material: Material,
+  { fontAtlas, atlasTexture, category }: TextRenderablesOptions,
+  instanceDataSegments: InstanceDataSegment[],
+): Renderable => {
+  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
+    combineInstanceDataSegments(...instanceDataSegments);
+
+  const renderable = new Renderable(
+    createQuadGeometry(renderContext.gl),
+    material,
+    floatsPerInstance,
+    category,
+    bindInstanceData,
+    setupInstanceAttributes,
+  );
+
+  // Bound per renderable rather than set on the shared material, so one
+  // material draws every font.
+  renderable.setUniform('u_atlas', atlasTexture);
+  renderable.setUniform('u_distanceRange', fontAtlas.data.distanceRange);
+  renderable.setUniform('u_atlasSize', fontAtlas.data.atlasSize.height);
+
+  return renderable;
+};
+
+/**
+ * Builds the pair of `Renderable`s a font's glyphs are drawn with: the
+ * shared sprite quad geometry with the fill and effects materials, each
+ * binding this font's atlas.
  *
  * Glyph rendering is split into two ordered passes - fill and
  * outline/shadow ("effects") - rather than the single combined draw a
@@ -64,84 +172,34 @@ export interface TextRenderables {
  * outline can reach.
  *
  * Callers should create (and cache) at most one pair of these per
- * `(FontAtlas, category)` pair - every `TextMeshEcsComponent` sharing a
- * `Renderable` batches into a single instanced draw call, exactly like
- * sprites sharing a texture do today. `createTextShapingEcsSystem` does this
+ * `(FontAtlas, fill material, category)` - every `TextMeshEcsComponent`
+ * sharing a `Renderable` batches into a single instanced draw call, exactly
+ * like sprites sharing a texture do. `createTextShapingEcsSystem` does this
  * caching automatically.
  * @param renderContext - The render context to build the renderables with.
- * @param fontAtlas - The loaded font atlas to draw glyphs from.
- * @param category - The render category to assign both renderables (see
- * `TEXT_RENDER_CATEGORY`).
- * @returns The renderables, ready to be shared by every `TextMeshEcsComponent`
- * using `fontAtlas` with this `category`.
+ * @param options - The font, its uploaded atlas, the two materials and the
+ * render category.
+ * @returns The renderables.
  */
-export function createTextRenderable(
+export function createTextRenderables(
   renderContext: RenderContext,
-  fontAtlas: FontAtlas,
-  category: number,
+  options: TextRenderablesOptions,
 ): TextRenderables {
-  const { gl, shaderCache } = renderContext;
-
-  // Created once and shared by both materials below - each is its own GPU
-  // texture object, so binding the same atlas image twice would otherwise
-  // double the texture memory this font atlas uses for no benefit.
-  const atlasTexture = createTextureFromImage(gl, fontAtlas.image);
-
-  const fillMaterial = new Material(
-    shaderCache.getShader('sprite.vert'),
-    shaderCache.getShader('msdf-fill.frag'),
-    gl,
-  );
-
-  fillMaterial.setUniform('u_atlas', atlasTexture);
-  fillMaterial.setUniform('u_distanceRange', fontAtlas.data.distanceRange);
-  fillMaterial.setUniform('u_atlasSize', fontAtlas.data.atlasSize.height);
-
-  const {
-    floatsPerInstance: fillFloatsPerInstance,
-    bindInstanceData: fillBindInstanceData,
-    setupInstanceAttributes: fillSetupInstanceAttributes,
-  } = combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const fillRenderable = new Renderable(
-    createQuadGeometry(gl),
-    fillMaterial,
-    fillFloatsPerInstance,
-    category,
-    fillBindInstanceData,
-    fillSetupInstanceAttributes,
-  );
-
-  // `msdf.vert` extends `sprite.vert`'s positioning/pivot/rotation/
-  // projection math verbatim, adding only the per-instance forwarding
-  // outline/shadow effects need (see `msdf.vert.glsl`).
-  const effectsMaterial = new Material(
-    shaderCache.getShader('msdf.vert'),
-    shaderCache.getShader('msdf-effects.frag'),
-    gl,
-  );
-
-  effectsMaterial.setUniform('u_atlas', atlasTexture);
-  effectsMaterial.setUniform('u_distanceRange', fontAtlas.data.distanceRange);
-  effectsMaterial.setUniform('u_atlasSize', fontAtlas.data.atlasSize.height);
-
-  const {
-    floatsPerInstance: effectsFloatsPerInstance,
-    bindInstanceData: effectsBindInstanceData,
-    setupInstanceAttributes: effectsSetupInstanceAttributes,
-  } = combineInstanceDataSegments(
-    spriteInstanceDataSegment,
-    textEffectsInstanceDataSegment,
-  );
-
-  const effectsRenderable = new Renderable(
-    createQuadGeometry(gl),
-    effectsMaterial,
-    effectsFloatsPerInstance,
-    category,
-    effectsBindInstanceData,
-    effectsSetupInstanceAttributes,
-  );
-
-  return { fillRenderable, effectsRenderable };
+  return {
+    fillRenderable: createGlyphRenderable(
+      renderContext,
+      options.fillMaterial,
+      options,
+      [spriteInstanceDataSegment],
+    ),
+    // `msdf.vert` extends `sprite.vert`'s positioning/pivot/rotation/
+    // projection math verbatim, adding only the per-instance forwarding
+    // outline/shadow effects need (see `msdf.vert.glsl`).
+    effectsRenderable: createGlyphRenderable(
+      renderContext,
+      options.effectsMaterial,
+      options,
+      [spriteInstanceDataSegment, textEffectsInstanceDataSegment],
+    ),
+  };
 }

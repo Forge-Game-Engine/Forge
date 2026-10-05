@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import type { Vector2 } from '../../math/index.js';
 import { Color } from '../../rendering/color.js';
+import type { Material } from '../../rendering/materials/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
 import {
@@ -188,6 +189,20 @@ export interface TextEcsComponent
    * see that field's own doc comment.
    */
   opacityMultiplier?: number;
+
+  /**
+   * The material this text's fill is drawn with, made by
+   * `createTextMaterial` from a fragment shader of your own (a gradient, a
+   * dissolve, a shimmer...). Left `undefined`, the fill is drawn with the
+   * built-in material, plain anti-aliased ink in `color`. The outline and
+   * shadow are always drawn with the built-in effects material.
+   *
+   * The text renderer binds `fontAtlas` to the material for this text, so
+   * one material serves any font. Its other uniforms are shared by every
+   * text drawn with it; give text that needs different values its own
+   * material.
+   */
+  material?: Material;
 }
 
 export const textId = createComponentId<TextEcsComponent>('text');

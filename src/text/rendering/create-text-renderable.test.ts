@@ -3,13 +3,18 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { ImageCache } from '../../asset-loading/index.js';
 import {
   ForgeShaderSource,
+  Material,
   RenderContext,
   ShaderCache,
   spriteFragmentShader,
   spriteVertexShader,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { createTextRenderable } from './create-text-renderable.js';
+import {
+  createTextMaterial,
+  createTextRenderables,
+  TextRenderables,
+} from './create-text-renderable.js';
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
@@ -19,7 +24,7 @@ import {
 // Mock WebGLTexture constructor for instanceof checks in Material.bind
 globalThis.WebGLTexture = class WebGLTexture {};
 
-describe('createTextRenderable', () => {
+describe('createTextRenderables', () => {
   let canvas: HTMLCanvasElement;
   let mockGl: WebGL2RenderingContext;
   let renderContext: RenderContext;
@@ -27,6 +32,28 @@ describe('createTextRenderable', () => {
   let atlasLocation: WebGLUniformLocation;
   let distanceRangeLocation: WebGLUniformLocation;
   let atlasSizeLocation: WebGLUniformLocation;
+  let fillMaterial: Material;
+  let effectsMaterial: Material;
+
+  const createRenderables = (
+    font: FontAtlas = fontAtlas,
+    atlasTexture: WebGLTexture = new WebGLTexture(),
+  ): TextRenderables =>
+    createTextRenderables(renderContext, {
+      fontAtlas: font,
+      atlasTexture,
+      fillMaterial,
+      effectsMaterial,
+      category: 1,
+    });
+
+  const uniformCalls = (
+    method: 'uniform1f' | 'uniform1i',
+    location: WebGLUniformLocation,
+  ): unknown[][] =>
+    (mockGl[method] as Mock).mock.calls.filter(
+      ([callLocation]) => callLocation === location,
+    );
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
@@ -132,6 +159,10 @@ describe('createTextRenderable', () => {
       activeTexture: vi.fn(),
 
       getAttribLocation: vi.fn().mockReturnValue(0),
+      createVertexArray: vi.fn().mockReturnValue({}),
+      bindVertexArray: vi.fn(),
+      enableVertexAttribArray: vi.fn(),
+      vertexAttribPointer: vi.fn(),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -144,58 +175,73 @@ describe('createTextRenderable', () => {
       .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
+    fillMaterial = new Material(
+      shaderCache.getShader('sprite.vert'),
+      shaderCache.getShader('msdf-fill.frag'),
+      mockGl,
+    );
+    effectsMaterial = new Material(
+      shaderCache.getShader('msdf.vert'),
+      shaderCache.getShader('msdf-effects.frag'),
+      mockGl,
+    );
   });
 
-  it('does not throw when its shaders are already registered', () => {
-    expect(() =>
-      createTextRenderable(renderContext, fontAtlas, 1),
-    ).not.toThrow();
+  it("binds the font's distance range and atlas size when each renderable is bound", () => {
+    const { fillRenderable, effectsRenderable } = createRenderables();
+
+    fillRenderable.bind(mockGl);
+    effectsRenderable.bind(mockGl);
+
+    expect(
+      uniformCalls('uniform1f', distanceRangeLocation).map(([, v]) => v),
+    ).toEqual([4, 4]);
+    expect(
+      uniformCalls('uniform1f', atlasSizeLocation).map(([, v]) => v),
+    ).toEqual([512, 512]);
   });
 
-  it("sets the distance range uniform on both renderables' materials from the font atlas's data", () => {
-    const { fillRenderable, effectsRenderable } = createTextRenderable(
-      renderContext,
-      fontAtlas,
-      1,
-    );
+  it("binds each font's own atlas to a material shared between fonts", () => {
+    const largerFont: FontAtlas = {
+      ...fontAtlas,
+      data: { ...fontAtlas.data, atlasSize: { width: 1024, height: 1024 } },
+    };
+    const first = createRenderables(fontAtlas);
+    const second = createRenderables(largerFont);
 
-    fillRenderable.material.bind(mockGl);
-    effectsRenderable.material.bind(mockGl);
+    first.fillRenderable.bind(mockGl);
+    second.fillRenderable.bind(mockGl);
+    first.fillRenderable.bind(mockGl);
 
-    const calls = (mockGl.uniform1f as Mock).mock.calls.filter(
-      ([location]) => location === distanceRangeLocation,
-    );
-
-    expect(calls).toHaveLength(2);
-    expect(calls[0][1]).toBe(4);
-    expect(calls[1][1]).toBe(4);
+    expect(first.fillRenderable.material).toBe(second.fillRenderable.material);
+    expect(
+      uniformCalls('uniform1f', atlasSizeLocation).map(([, v]) => v),
+    ).toEqual([512, 1024, 512]);
   });
 
-  it("sets the atlas size uniform on both renderables' materials from the font atlas's data", () => {
-    const { fillRenderable, effectsRenderable } = createTextRenderable(
-      renderContext,
-      fontAtlas,
-      1,
+  it('binds the given atlas texture rather than uploading its own', () => {
+    const atlasTexture = new WebGLTexture();
+    const { fillRenderable } = createRenderables(fontAtlas, atlasTexture);
+
+    fillRenderable.bind(mockGl);
+
+    expect(mockGl.createTexture).not.toHaveBeenCalled();
+    expect(mockGl.bindTexture).toHaveBeenCalledWith(
+      mockGl.TEXTURE_2D,
+      atlasTexture,
     );
+  });
 
-    fillRenderable.material.bind(mockGl);
-    effectsRenderable.material.bind(mockGl);
+  it('draws fill and effects with the given materials', () => {
+    const { fillRenderable, effectsRenderable } = createRenderables();
 
-    const calls = (mockGl.uniform1f as Mock).mock.calls.filter(
-      ([location]) => location === atlasSizeLocation,
-    );
-
-    expect(calls).toHaveLength(2);
-    expect(calls[0][1]).toBe(512);
-    expect(calls[1][1]).toBe(512);
+    expect(fillRenderable.material).toBe(fillMaterial);
+    expect(effectsRenderable.material).toBe(effectsMaterial);
+    expect(fillRenderable.category).toBe(1);
   });
 
   it('assigns the plain sprite instance data layout to fillRenderable and the combined sprite + text-effects layout to effectsRenderable', () => {
-    const { fillRenderable, effectsRenderable } = createTextRenderable(
-      renderContext,
-      fontAtlas,
-      1,
-    );
+    const { fillRenderable, effectsRenderable } = createRenderables();
 
     // Sprite: position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
     // texOffset(2) + texSize(2) + tint(4) = 17.
@@ -207,22 +253,59 @@ describe('createTextRenderable', () => {
     expect(effectsRenderable.floatsPerInstance).toBe(29);
   });
 
-  it('shares a single GPU texture between both renderables', () => {
-    const { fillRenderable, effectsRenderable } = createTextRenderable(
-      renderContext,
-      fontAtlas,
-      1,
+  it('throws when the fill material has no atlas uniforms to bind', () => {
+    (mockGl.getProgramParameter as Mock).mockImplementation(
+      (_program: unknown, pname: unknown) =>
+        pname === 'ACTIVE_UNIFORMS' ? 0 : true,
+    );
+    fillMaterial = new Material(
+      renderContext.shaderCache.getShader('sprite.vert'),
+      renderContext.shaderCache.getShader('sprite.frag'),
+      mockGl,
     );
 
-    expect(mockGl.createTexture).toHaveBeenCalledTimes(1);
+    expect(() => createRenderables()).toThrow(/u_atlas/);
+  });
+});
 
-    fillRenderable.material.bind(mockGl);
-    effectsRenderable.material.bind(mockGl);
-
-    const calls = (mockGl.uniform1i as Mock).mock.calls.filter(
-      ([location]) => location === atlasLocation,
+describe('createTextMaterial', () => {
+  it("adds the shader to the render context's cache and draws it with sprite.vert", () => {
+    const addShader = vi.fn();
+    const getShader = vi
+      .fn()
+      .mockImplementation((name: string) => ({ name, preparedSource: name }));
+    const gl = {
+      VERTEX_SHADER: 'VERTEX_SHADER',
+      FRAGMENT_SHADER: 'FRAGMENT_SHADER',
+      ACTIVE_UNIFORMS: 'ACTIVE_UNIFORMS',
+      createShader: vi.fn().mockReturnValue({}),
+      shaderSource: vi.fn(),
+      compileShader: vi.fn(),
+      getShaderParameter: vi.fn().mockReturnValue(true),
+      createProgram: vi.fn().mockReturnValue({}),
+      attachShader: vi.fn(),
+      linkProgram: vi.fn(),
+      getProgramParameter: vi
+        .fn()
+        .mockImplementation((_program: unknown, pname: unknown) =>
+          pname === 'ACTIVE_UNIFORMS' ? 0 : true,
+        ),
+    } as unknown as WebGL2RenderingContext;
+    const fragmentShader = new ForgeShaderSource(
+      '#version 300 es\n#pragma forge name(custom-text.frag)\nvoid main() {}',
     );
 
-    expect(calls).toHaveLength(2);
+    createTextMaterial(
+      { gl, shaderCache: { addShader, getShader } } as unknown as RenderContext,
+      fragmentShader,
+    );
+
+    expect(addShader).toHaveBeenCalledWith(fragmentShader);
+    expect(getShader).toHaveBeenCalledWith('sprite.vert');
+    expect(getShader).toHaveBeenCalledWith('custom-text.frag');
+    expect(gl.shaderSource).toHaveBeenCalledWith(
+      expect.anything(),
+      'custom-text.frag',
+    );
   });
 });

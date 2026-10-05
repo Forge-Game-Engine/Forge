@@ -7,6 +7,7 @@ import { Vector2 } from '../../math/index.js';
 import {
   addTextComponent,
   TextDefaultedOptions,
+  TextEcsComponent,
   TextRequiredOptions,
   textVerticalAlignments,
 } from '../../text/index.js';
@@ -15,7 +16,8 @@ import { addRectTransformComponent } from '../components/rect-transform-componen
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
-  Partial<TextDefaultedOptions> & {
+  Partial<TextDefaultedOptions> &
+  Pick<TextEcsComponent, 'material'> & {
     /**
      * The anchor to place the label with - see `UiAnchor` for common
      * presets (e.g. `UiAnchor.center({ x: 200, y: 60 })`). Defaults to
