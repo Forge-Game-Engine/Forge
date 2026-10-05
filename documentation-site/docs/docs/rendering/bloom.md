@@ -249,8 +249,7 @@ world.addSystem(createToneMapEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
-Without the emissive map, `threshold` is the only way to make part of a
-sprite glow more than the rest, and it can't distinguish "this part is
+Without the emissive map, `threshold` alone can't distinguish "this part is
 meant to be a light source" from "this part happens to be pale" — both
 read as the same brightness once clamped to `[0, 1]`. The emissive map
 sidesteps that: its contribution is added _after_ the albedo sample, so it
@@ -259,6 +258,21 @@ tint or texture color, without lightening the rest of the sprite. See [HDR
 Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render
 target and `addToneMappingComponent` work together to make this look right once
 presented.
+
+When the whole sprite should glow, an HDR tint is simpler than an emissive
+map. `Color` channels aren't capped at `1`, so a tint like
+`new Color(4, 2, 0.5)` multiplies the sprite's texture past white, and on
+an `hdr` camera it blooms more than an untinted white sprite next to it:
+
+```ts
+import { Color, createImageSprite } from '@forge-game-engine/forge/rendering';
+
+const lamp = createImageSprite(lampImage, renderContext);
+lamp.tintColor = new Color(4, 2, 0.5);
+```
+
+Unlike an emissive map, a tint scales the texture's own color, so its dark
+pixels stay dark.
 
 ### Authoring an emissive map
 

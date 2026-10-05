@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **rendering:** `Color` no longer caps `r`, `g` and `b` at `1`, so HDR tints and clear colors such as `new Color(4, 2, 0.5)` reach an `hdr` render target at full brightness for bloom and tone mapping instead of being silently clamped to white. An `ldr` render target or the canvas still saturates them to `1` on write, and `toRGBAString()` clamps them to `255`. Negative channels are still clamped to `0` and alpha to `[0, 1]`. If your code relied on the clamp (for example, darkening UI tints because brighter ones had no effect, or computing a color that can exceed `1`), clamp it yourself. A `NaN` or infinite channel now throws instead of being clamped
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

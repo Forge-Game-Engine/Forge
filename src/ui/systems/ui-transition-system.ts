@@ -29,6 +29,9 @@ function colorForState(
   return colorsByState[state];
 }
 
+// A back or elastic easing takes `t` outside `[0, 1]`, so the tint briefly
+// overshoots past either end color. `Color` keeps an overbright result and
+// only clamps negative channels and alpha.
 function lerpColor(from: Color, to: Color, t: number): Color {
   return new Color(
     from.r + (to.r - from.r) * t,

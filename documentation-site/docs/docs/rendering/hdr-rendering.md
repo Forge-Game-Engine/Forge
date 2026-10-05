@@ -51,6 +51,16 @@ target and any post-processing scratch buffers built from it, so only opt
 in where it's actually needed.
 :::
 
+## Brighter-than-white colors
+
+A [`Color`](/Forge/docs/api/classes/Color)'s red, green and blue channels
+can go above `1`, so tints and clear colors can be HDR too. A sprite tinted
+`new Color(4, 2, 0.5)`, or a camera whose `clearColor` is
+`new Color(1.5, 1.5, 2)`, writes those values into an `hdr` render target
+unchanged, where bloom and tone mapping see them. An `ldr` render target or
+the canvas saturates them to `1` when they're written. Negative channels
+are clamped to `0`, and alpha always stays in `[0, 1]`.
+
 ## Tone mapping
 
 An `hdr` render target has to be compressed back into `[0, 1]` before it's

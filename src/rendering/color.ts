@@ -2,6 +2,13 @@ import { clamp } from '../math/index.js';
 
 /**
  * The `Color` class represents a color that can be created using RGB(A) or HSL(A).
+ *
+ * Color channels are floating point. `r`, `g` and `b` have no upper bound:
+ * values above `1` are "overbright". An `ldr` render target (and the canvas)
+ * saturates them to `1` when they're written, while an `hdr` render target
+ * keeps them, so bloom and tone mapping see a tint or clear color that's
+ * brighter than white. Alpha is a coverage fraction and always lies in
+ * `[0, 1]`.
  */
 export class Color {
   private readonly _r: number;
@@ -24,15 +31,28 @@ export class Color {
 
   /**
    * Constructs a new `Color` instance using RGBA values.
-   * @param r - The red component (0-1).
-   * @param g - The green component (0-1).
-   * @param b - The blue component (0-1).
+   *
+   * `r`, `g` and `b` are clamped to `0` from below but not from above, so an
+   * HDR color such as `new Color(4, 2, 0.5)` keeps its brightness. Negative
+   * color isn't light: fed to the tone mapper's Reinhard curve `c / (c + 1)`
+   * it divides by zero at `-1`. Alpha is clamped to `[0, 1]`, since the
+   * straight-alpha blend (`SRC_ALPHA, ONE_MINUS_SRC_ALPHA`) would give the
+   * destination a negative weight for alpha above `1`.
+   * @param r - The red component (`0` and up; above `1` is overbright).
+   * @param g - The green component (`0` and up; above `1` is overbright).
+   * @param b - The blue component (`0` and up; above `1` is overbright).
    * @param a - The alpha component (0-1). Defaults to 1 (fully opaque).
+   * @throws An error if any component is `NaN` or infinite.
    */
   constructor(r: number, g: number, b: number, a: number = 1) {
-    this._r = clamp(r, 0, 1);
-    this._g = clamp(g, 0, 1);
-    this._b = clamp(b, 0, 1);
+    Color._assertFinite('r', r);
+    Color._assertFinite('g', g);
+    Color._assertFinite('b', b);
+    Color._assertFinite('a', a);
+
+    this._r = Math.max(r, 0);
+    this._g = Math.max(g, 0);
+    this._b = Math.max(b, 0);
     this._a = clamp(a, 0, 1);
   }
 
@@ -71,6 +91,14 @@ export class Color {
     }
 
     return new Color(r, g, b, a);
+  }
+
+  private static _assertFinite(channel: string, value: number): void {
+    if (!Number.isFinite(value)) {
+      throw new Error(
+        `Unable to create a Color: channel "${channel}" is ${value}, but every channel must be a finite number.`,
+      );
+    }
   }
 
   private static _hueToRGB(p: number, q: number, t: number): number {
@@ -121,10 +149,16 @@ export class Color {
 
   /**
    * Converts the color to a CSS-compatible RGBA string.
+   *
+   * CSS `rgba()` can't express overbright color, so channels above `1` are
+   * clamped to `255`.
    * @returns The RGBA string (e.g., `rgba(255, 0, 0, 1)`).
    */
   public toRGBAString(): string {
-    return `rgba(${Math.round(this._r * 255)}, ${Math.round(this._g * 255)}, ${Math.round(this._b * 255)}, ${this._a})`;
+    const toByte = (channel: number): number =>
+      Math.min(Math.round(channel * 255), 255);
+
+    return `rgba(${toByte(this._r)}, ${toByte(this._g)}, ${toByte(this._b)}, ${this._a})`;
   }
 
   /**

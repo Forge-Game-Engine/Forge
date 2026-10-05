@@ -11,12 +11,41 @@ describe('Color', () => {
     expect(color.toRGBAString()).toBe('rgba(255, 0, 128, 1)');
   });
 
-  it('should clamp RGB values to the valid range (0-1)', () => {
-    const color = new Color(1.2, -0.2, 0.5);
+  it('should keep RGB values above 1 for HDR colors', () => {
+    const color = new Color(4, 2, 0.5);
 
-    expect(color.r).toBe(1); // Clamped to 1
-    expect(color.g).toBe(0); // Clamped to 0
-    expect(color.b).toBe(0.5); // Unchanged
+    expect(color.r).toBe(4);
+    expect(color.g).toBe(2);
+    expect(color.b).toBe(0.5);
+    expect(color.toFloat32Array()).toEqual(new Float32Array([4, 2, 0.5, 1]));
+  });
+
+  it('should clamp negative RGB values to 0', () => {
+    const color = new Color(-0.2, -3, 0.5);
+
+    expect(color.r).toBe(0);
+    expect(color.g).toBe(0);
+    expect(color.b).toBe(0.5);
+  });
+
+  it('should clamp alpha to the range 0-1', () => {
+    expect(new Color(1, 1, 1, 1.5).a).toBe(1);
+    expect(new Color(1, 1, 1, -0.5).a).toBe(0);
+  });
+
+  it.each([
+    ['r', [Number.NaN, 0, 0, 1]],
+    ['g', [0, Number.POSITIVE_INFINITY, 0, 1]],
+    ['b', [0, 0, Number.NEGATIVE_INFINITY, 1]],
+    ['a', [0, 0, 0, Number.NaN]],
+  ])('should throw when channel %s is not finite', (channel, [r, g, b, a]) => {
+    expect(() => new Color(r, g, b, a)).toThrow(`channel "${channel}"`);
+  });
+
+  it('should clamp overbright channels to 255 in the CSS string', () => {
+    const color = new Color(4, 0.5, 1.2, 0.5);
+
+    expect(color.toRGBAString()).toBe('rgba(255, 128, 255, 0.5)');
   });
 
   it('should create a color using HSL values', () => {
