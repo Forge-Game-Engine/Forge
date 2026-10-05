@@ -114,7 +114,7 @@ This texture-import `pixelsPerUnit` is a different value from the
 camera-derived one described above: this one is a fixed, per-texture
 authoring choice applied once when a sprite is created; the camera's is
 recomputed every frame from `verticalWorldUnits` and the render
-destination's current height, and converts world units to *screen* pixels
+destination's current height, and converts world units to _screen_ pixels
 at render time rather than texture pixels to world units at import time.
 
 ## High-DPI displays

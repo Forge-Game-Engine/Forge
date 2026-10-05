@@ -11,6 +11,7 @@ import {
 } from '../fullscreen-pass.js';
 import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
+import { PostProcessWriter } from '../post-process-writer.js';
 import { RenderContext } from '../render-context.js';
 import { createRenderTarget, RenderTarget } from '../render-target.js';
 
@@ -89,21 +90,17 @@ export const createBloomEcsSystem = (
     shaderCache.getShader('bloom-composite.frag'),
     gl,
   );
-  const copyMaterial = new Material(
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('passthrough.frag'),
-    gl,
-  );
-
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
-  // bloomed camera, recreated on resize. `brightTarget` and `pingPong` are
-  // downsampled (see `bloomDownsampleFactor`); `compositeTarget` matches the
-  // camera's `renderTarget` resolution, since the composite pass's output
-  // replaces that target's contents. Owned by this system (not module-level
-  // state) and disposed via `cleanup` when the world stops.
-  const brightTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
-  const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
-  const compositeTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
+  // bloomed camera, recreated on resize. Both are downsampled (see
+  // `bloomDownsampleFactor`). Owned by this system (not module-level state)
+  // and disposed via `cleanup`, including entries for targets no camera
+  // uses any more.
+  const brightTargetByTarget = new Map<RenderTarget, RenderTarget>();
+  const pingPongByTarget = new Map<RenderTarget, PingPongTarget>();
+
+  // Writes the composite back into the camera's target: the composite pass
+  // reads that target's scene, so it can't also draw into it.
+  const writer = new PostProcessWriter(renderContext);
 
   const getBrightTarget = (
     target: RenderTarget,
@@ -157,32 +154,6 @@ export const createBloomEcsSystem = (
     return pingPong;
   };
 
-  const getCompositeTarget = (target: RenderTarget): RenderTarget => {
-    const existing = compositeTargetByTarget.get(target);
-    const isStale =
-      existing !== undefined &&
-      (existing.width !== target.width || existing.height !== target.height);
-
-    if (existing && !isStale) {
-      return existing;
-    }
-
-    if (existing) {
-      existing.dispose(gl);
-    }
-
-    const compositeTarget = createRenderTarget(
-      gl,
-      target.width,
-      target.height,
-      target.format,
-    );
-
-    compositeTargetByTarget.set(target, compositeTarget);
-
-    return compositeTarget;
-  };
-
   const drawBlurPass = (
     sourceTexture: WebGLTexture,
     direction: Float32Array,
@@ -196,17 +167,6 @@ export const createBloomEcsSystem = (
     blurMaterial.setUniform('u_texelSize', texelSize);
 
     drawFullscreenQuad(renderContext, blurMaterial);
-  };
-
-  const copyTexture = (
-    sourceTexture: WebGLTexture,
-    destination: RenderTarget,
-  ): void => {
-    beginFullscreenReplacePass(renderContext, destination);
-
-    copyMaterial.setUniform('u_texture', sourceTexture);
-
-    drawFullscreenQuad(renderContext, copyMaterial);
   };
 
   const processedTargetsThisFrame = new Set<RenderTarget>();
@@ -285,49 +245,30 @@ export const createBloomEcsSystem = (
 
         // The composite pass upsamples `brightTarget` back to full resolution
         // implicitly, via the bloom texture's own linear-filtered sampling.
-        // It writes into its own full-resolution scratch buffer rather than
-        // `pingPong` (now downsampled) or `renderTarget` (the scene texture
-        // it's reading from, which can't also be this draw's destination).
-        const compositeTarget = getCompositeTarget(renderTarget);
+        writer.write(renderTarget, 1, (scene) => {
+          compositeMaterial.setUniform('u_sceneTexture', scene);
+          compositeMaterial.setUniform(
+            'u_bloomTexture',
+            brightTarget.colorTexture,
+          );
+          compositeMaterial.setUniform('u_intensity', intensity);
 
-        beginFullscreenReplacePass(renderContext, compositeTarget);
-
-        compositeMaterial.setUniform(
-          'u_sceneTexture',
-          renderTarget.colorTexture,
-        );
-        compositeMaterial.setUniform(
-          'u_bloomTexture',
-          brightTarget.colorTexture,
-        );
-        compositeMaterial.setUniform('u_intensity', intensity);
-
-        drawFullscreenQuad(renderContext, compositeMaterial);
-
-        copyTexture(compositeTarget.colorTexture, renderTarget);
+          drawFullscreenQuad(renderContext, compositeMaterial);
+        });
       }
     },
-    cleanup: (world) => {
-      const {
-        components: [cameras],
-      } = world.query<[CameraEcsComponent]>([cameraId, bloomId]);
-
-      for (const camera of cameras) {
-        const { renderTarget } = camera;
-
-        if (!renderTarget) {
-          continue;
-        }
-
-        brightTargetByTarget.get(renderTarget)?.dispose(gl);
-        brightTargetByTarget.delete(renderTarget);
-
-        pingPongByTarget.get(renderTarget)?.dispose(gl);
-        pingPongByTarget.delete(renderTarget);
-
-        compositeTargetByTarget.get(renderTarget)?.dispose(gl);
-        compositeTargetByTarget.delete(renderTarget);
+    cleanup: () => {
+      for (const brightTarget of brightTargetByTarget.values()) {
+        brightTarget.dispose(gl);
       }
+
+      for (const pingPong of pingPongByTarget.values()) {
+        pingPong.dispose(gl);
+      }
+
+      brightTargetByTarget.clear();
+      pingPongByTarget.clear();
+      writer.dispose();
     },
   };
 };

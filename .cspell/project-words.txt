@@ -139,6 +139,8 @@ RGBA
 rigidbody
 rnaumovs
 rolloff
+scanline
+scanlines
 shaderstore
 skidmark
 slevesque

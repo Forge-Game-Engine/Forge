@@ -11,8 +11,9 @@ import {
 } from '../fullscreen-pass.js';
 import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
+import { PostProcessWriter } from '../post-process-writer.js';
 import { RenderContext } from '../render-context.js';
-import { createRenderTarget, RenderTarget } from '../render-target.js';
+import { RenderTarget } from '../render-target.js';
 
 // Shared, read-only direction constants for the two blur passes: passed
 // straight through as the `u_direction` uniform's `Float32Array` value, so
@@ -52,11 +53,6 @@ export const createGaussianBlurEcsSystem = (
     shaderCache.getShader('gaussian-blur.frag'),
     gl,
   );
-  const copyMaterial = new Material(
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('passthrough.frag'),
-    gl,
-  );
   const downsampleMaterial = new Material(
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('box-downsample.frag'),
@@ -69,13 +65,15 @@ export const createGaussianBlurEcsSystem = (
   );
 
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
-  // blurred camera, recreated on resize. `pingPongByTarget` holds the blur
-  // chain, at CSS-pixel resolution (see `update`); `blendTargetByTarget`
-  // matches the camera's `renderTarget` resolution, since the cross-fade's
-  // output replaces that target's contents. Owned by this system (not
-  // module-level state) and disposed via `cleanup` when the world stops.
-  const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
-  const blendTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
+  // blurred camera, recreated on resize: the blur chain, at CSS-pixel
+  // resolution (see `blurPasses`). Owned by this system (not module-level
+  // state) and disposed via `cleanup`, including entries for targets no
+  // camera uses any more.
+  const pingPongByTarget = new Map<RenderTarget, PingPongTarget>();
+
+  // Writes the cross-fade back into the camera's target: the cross-fade
+  // reads that target's sharp scene, so it can't also draw into it.
+  const writer = new PostProcessWriter(renderContext);
 
   const getPingPongTarget = (
     target: RenderTarget,
@@ -102,32 +100,6 @@ export const createGaussianBlurEcsSystem = (
     return pingPong;
   };
 
-  const getBlendTarget = (target: RenderTarget): RenderTarget => {
-    const existing = blendTargetByTarget.get(target);
-    const isStale =
-      existing !== undefined &&
-      (existing.width !== target.width || existing.height !== target.height);
-
-    if (existing && !isStale) {
-      return existing;
-    }
-
-    if (existing) {
-      existing.dispose(gl);
-    }
-
-    const blendTarget = createRenderTarget(
-      gl,
-      target.width,
-      target.height,
-      target.format,
-    );
-
-    blendTargetByTarget.set(target, blendTarget);
-
-    return blendTarget;
-  };
-
   const drawPass = (
     material: Material,
     sourceTexture: WebGLTexture,
@@ -142,17 +114,6 @@ export const createGaussianBlurEcsSystem = (
     material.setUniform('u_texelSize', texelSize);
 
     drawFullscreenQuad(renderContext, material);
-  };
-
-  const copyTexture = (
-    sourceTexture: WebGLTexture,
-    destination: RenderTarget,
-  ): void => {
-    beginFullscreenReplacePass(renderContext, destination);
-
-    copyMaterial.setUniform('u_texture', sourceTexture);
-
-    drawFullscreenQuad(renderContext, copyMaterial);
   };
 
   const downsample = (
@@ -259,9 +220,9 @@ export const createGaussianBlurEcsSystem = (
   /**
    * Cross-fades the still-sharp `renderTarget` into `blurred` (upsampled
    * implicitly by its linear-filtered sampling, if the blur ran
-   * downsampled), into a full-resolution scratch buffer, then copies that
-   * blend back into `renderTarget`, since consumers (like the present
-   * system) always read the blur's output from there.
+   * downsampled), writing the blend back into `renderTarget`, since
+   * consumers (like the present system) always read the blur's output from
+   * there.
    * @param renderTarget - The camera's render target, holding the sharp scene.
    * @param blurred - The fully-blurred scene.
    * @param intensity - How much of `blurred` to show, from `0` to `1`.
@@ -271,17 +232,13 @@ export const createGaussianBlurEcsSystem = (
     blurred: RenderTarget,
     intensity: number,
   ): void => {
-    const blendTarget = getBlendTarget(renderTarget);
+    writer.write(renderTarget, 1, (sharpScene) => {
+      crossFadeMaterial.setUniform('u_fromTexture', sharpScene);
+      crossFadeMaterial.setUniform('u_toTexture', blurred.colorTexture);
+      crossFadeMaterial.setUniform('u_factor', intensity);
 
-    beginFullscreenReplacePass(renderContext, blendTarget);
-
-    crossFadeMaterial.setUniform('u_fromTexture', renderTarget.colorTexture);
-    crossFadeMaterial.setUniform('u_toTexture', blurred.colorTexture);
-    crossFadeMaterial.setUniform('u_factor', intensity);
-
-    drawFullscreenQuad(renderContext, crossFadeMaterial);
-
-    copyTexture(blendTarget.colorTexture, renderTarget);
+      drawFullscreenQuad(renderContext, crossFadeMaterial);
+    });
   };
 
   const processedTargetsThisFrame = new Set<RenderTarget>();
@@ -316,24 +273,13 @@ export const createGaussianBlurEcsSystem = (
         }
       }
     },
-    cleanup: (world) => {
-      const {
-        components: [cameras],
-      } = world.query<[CameraEcsComponent]>([cameraId, gaussianBlurId]);
-
-      for (const camera of cameras) {
-        const { renderTarget } = camera;
-
-        if (!renderTarget) {
-          continue;
-        }
-
-        pingPongByTarget.get(renderTarget)?.dispose(gl);
-        pingPongByTarget.delete(renderTarget);
-
-        blendTargetByTarget.get(renderTarget)?.dispose(gl);
-        blendTargetByTarget.delete(renderTarget);
+    cleanup: () => {
+      for (const pingPong of pingPongByTarget.values()) {
+        pingPong.dispose(gl);
       }
+
+      pingPongByTarget.clear();
+      writer.dispose();
     },
   };
 };

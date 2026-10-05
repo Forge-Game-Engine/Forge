@@ -124,6 +124,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'post-processing',
+    title: 'Custom Post-Processing',
+    description:
+      "Custom full-screen shaders glitch a camera's image and add a vignette.",
+    categories: ['rendering'],
+  },
+  {
     slug: 'easing-functions',
     title: 'Easing Functions',
     description:

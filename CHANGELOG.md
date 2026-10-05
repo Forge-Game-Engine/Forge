@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** Custom post-processing. `addPostProcessComponent(world, camera, { materials })` lists full-screen shader passes for a camera with a render target, and `createPostProcessEcsSystem` runs them in order, each sampling the previous pass's output through `u_texture`, leaving the result in the camera's target. Set your passes' other uniforms from your own systems, and add or remove passes from `materials` at any time. `PostProcessWriter` runs passes that read a render target and write back into it, for post-processing systems of your own
+
+#### Fixed
+
+- **rendering:** The bloom, Gaussian blur and tone mapping systems now free every scratch render target they made when the world stops, including ones for cameras removed or targets replaced before then, which used to leak
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

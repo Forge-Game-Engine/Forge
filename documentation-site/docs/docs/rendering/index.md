@@ -35,6 +35,8 @@ Guides in this section:
   render target into HDR storage and compressing it back to displayable
   range, so bloom can react to true HDR brightness (including emissive
   maps) instead of an 8-bit ceiling.
+- [Custom Post-Processing](./custom-post-processing.md): running your own
+  full-screen shaders over a camera's image, chained one after another.
 - [Nine-Slice Sprites](./nine-slice-sprites.md): slicing a sprite into a 3x3
   grid so its corners keep their size while its edges/center stretch or
   tile, for UI panels and buttons that resize without distorting.
