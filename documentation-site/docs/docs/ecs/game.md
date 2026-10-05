@@ -65,20 +65,17 @@ browser's `ResizeObserver loop completed with undelivered notifications`
 error. This adds at most one frame of latency before the canvas catches up,
 which isn't visible in practice.
 
-This only resizes the canvas and the default framebuffer's viewport. Two
-things it does *not* do for you, since the engine has no way to know they're
-meant to track the canvas:
+Resizing the `RenderContext` also resizes every camera render target created
+with `renderContext.createRenderTarget()` (see
+[Multipass Rendering](../rendering/multipass-rendering.md#rendering-a-camera-off-screen)),
+in the same call, so off-screen effects like bloom and blur keep matching the
+canvas.
 
-- A camera's own [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) (used
-  for multi-pass effects like bloom or blur) is a fixed-size texture that
-  stays exactly as it was created - see the caution in
-  [Multipass Rendering](../rendering/multipass-rendering.md) for how to keep
-  one in sync.
-- Anything you sized once from `calculateVisibleWorldSize`/`RenderContext.width`/
-  `height` at startup (a background quad meant to always fill the camera's
-  view, a shader uniform driven by the canvas resolution) needs to be
-  recomputed by your own system each time those dimensions change, the same
-  way `createUiLayoutEcsSystem` already does for UI.
+Anything you sized once from `calculateVisibleWorldSize`/`RenderContext.width`/
+`height` at startup (a background quad meant to always fill the camera's
+view, a shader uniform driven by the canvas resolution) isn't resized for you:
+your own system needs to recompute it each time those dimensions change, the
+same way `createUiLayoutEcsSystem` already does for UI.
 
 :::tip
 Use the [`createGame`](/Forge/docs/api/functions/createGame) helper for quick setup.

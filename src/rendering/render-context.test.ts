@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../asset-loading/index.js';
 import { Color } from './color.js';
-import { CLEAR_STRATEGY } from './enums/index.js';
+import { CLEAR_STRATEGY, RENDER_TARGET_FORMAT } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
@@ -299,6 +299,111 @@ describe('RenderContext', () => {
       );
       expect(() => context.resize(100, -1)).toThrow(
         'Render context dimensions must be positive numbers.',
+      );
+    });
+  });
+
+  describe('render targets', () => {
+    beforeEach(() => {
+      Object.assign(mockGl, {
+        createFramebuffer: vi.fn(() => ({})),
+        createTexture: vi.fn(() => ({})),
+        bindTexture: vi.fn(),
+        texParameteri: vi.fn(),
+        texImage2D: vi.fn(),
+        framebufferTexture2D: vi.fn(),
+        checkFramebufferStatus: vi.fn().mockReturnValue(1),
+        getParameter: vi.fn().mockReturnValue(null),
+        deleteFramebuffer: vi.fn(),
+        deleteTexture: vi.fn(),
+        getExtension: vi.fn().mockReturnValue({}),
+        FRAMEBUFFER_BINDING: 'FRAMEBUFFER_BINDING',
+        FRAMEBUFFER_COMPLETE: 1,
+        COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
+        TEXTURE_2D: 'TEXTURE_2D',
+        RGBA16F: 'RGBA16F',
+        HALF_FLOAT: 'HALF_FLOAT',
+      });
+    });
+
+    it('should create a render target at the drawing-buffer size', () => {
+      vi.stubGlobal('devicePixelRatio', 2);
+      canvas.width = 400;
+      canvas.height = 300;
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const target = context.createRenderTarget();
+
+      expect(target.width).toBe(800);
+      expect(target.height).toBe(600);
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
+    });
+
+    it('should create a render target in the requested format', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const target = context.createRenderTarget(RENDER_TARGET_FORMAT.hdr);
+
+      expect(target.format).toBe(RENDER_TARGET_FORMAT.hdr);
+    });
+
+    it('should resize its render targets along with the canvas', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const targetA = context.createRenderTarget();
+      const targetB = context.createRenderTarget(RENDER_TARGET_FORMAT.hdr);
+
+      context.resize(400, 300, 2);
+
+      expect(targetA.width).toBe(800);
+      expect(targetA.height).toBe(600);
+      expect(targetB.width).toBe(800);
+      expect(targetB.height).toBe(600);
+    });
+
+    it('should not resize its render targets when the drawing-buffer size is unchanged', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 2);
+
+      const target = context.createRenderTarget();
+      const resize = vi.spyOn(target, 'resize');
+
+      context.resize(400, 300, 2);
+
+      expect(resize).not.toHaveBeenCalled();
+      expect(mockGl.deleteTexture).not.toHaveBeenCalled();
+    });
+
+    it('should stop resizing a released render target and delete its GPU resources', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 1);
+
+      const target = context.createRenderTarget();
+      const { framebuffer, colorTexture } = target;
+
+      context.releaseRenderTarget(target);
+
+      expect(mockGl.deleteFramebuffer).toHaveBeenCalledWith(framebuffer);
+      expect(mockGl.deleteTexture).toHaveBeenCalledWith(colorTexture);
+
+      context.resize(200, 100, 1);
+
+      expect(target.width).toBe(400);
+      expect(target.height).toBe(300);
+    });
+
+    it('should throw when releasing a render target it does not own', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const target = context.createRenderTarget();
+      const foreignTarget = new RenderTarget(mockGl, 10, 10);
+
+      context.releaseRenderTarget(target);
+
+      expect(() => context.releaseRenderTarget(target)).toThrow(
+        'Unable to release render target',
+      );
+      expect(() => context.releaseRenderTarget(foreignTarget)).toThrow(
+        'Unable to release render target',
       );
     });
   });

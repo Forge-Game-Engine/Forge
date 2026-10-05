@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createUiCanvas } from './create-ui-canvas.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -8,6 +8,7 @@ import {
   addCameraComponent,
   cameraId,
   Color,
+  createRenderTarget,
   RenderContext,
 } from '../../rendering/index.js';
 import { canvasId } from '../components/canvas-component.js';
@@ -53,7 +54,8 @@ describe('createUiCanvas', () => {
       cssHeight: 1080,
       pixelRatio: 1,
       gl,
-    } as RenderContext;
+      createRenderTarget: vi.fn(() => createRenderTarget(gl, 1920, 1080)),
+    } as unknown as RenderContext;
     world = new EcsWorld();
   });
 
@@ -78,9 +80,11 @@ describe('createUiCanvas', () => {
     expect(camera.cullingMask).toBe(testCullingMask);
     expect(camera.layer).toBe(1000);
     expect(camera.verticalWorldUnits).toBe(1080);
-    expect(camera.renderTarget).toBeDefined();
-    expect(camera.renderTarget?.width).toBe(1920);
-    expect(camera.renderTarget?.height).toBe(1080);
+    // The context owns the target, so it follows the canvas when it resizes.
+    expect(renderContext.createRenderTarget).toHaveBeenCalledTimes(1);
+    expect(camera.renderTarget).toBe(
+      vi.mocked(renderContext.createRenderTarget).mock.results[0].value,
+    );
   });
 
   it('honors overrides for referenceResolution, scaleMode, cullingMask, and layer', () => {

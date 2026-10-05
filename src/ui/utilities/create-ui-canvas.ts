@@ -1,12 +1,7 @@
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
-import {
-  Color,
-  createCamera,
-  createRenderTarget,
-  RenderContext,
-} from '../../rendering/index.js';
+import { Color, createCamera, RenderContext } from '../../rendering/index.js';
 import {
   addCanvasComponent,
   CanvasInputOptions,
@@ -104,9 +99,11 @@ export type CreateUiCanvasOptions =
  * Creates a UI canvas: a root entity with a `CanvasEcsComponent` and
  * `RectTransformEcsComponent`. For `renderMode: 'screenSpace'` (the
  * default), also a dedicated, static UI camera with a transparent clear
- * color, its own off-screen `RenderTarget`, and a culling mask isolating it
- * from the world so a world camera whose own `cullingMask` still matches
- * everything doesn't draw UI content a second time. For
+ * color, its own off-screen `RenderTarget` (from
+ * `renderContext.createRenderTarget`, so it follows the canvas size), and a
+ * culling mask isolating it from the world so a world camera whose own
+ * `cullingMask` still matches everything doesn't draw UI content a second
+ * time. For
  * `renderMode: 'worldSpace'`, no camera is created - `options.camera` names
  * the (typically world) camera this canvas draws through instead.
  *
@@ -160,11 +157,7 @@ export function createUiCanvas(
       layer = 1000,
     } = options;
 
-    const renderTarget = createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    );
+    const renderTarget = renderContext.createRenderTarget();
 
     const camera = createCamera(world, {
       isStatic: true,

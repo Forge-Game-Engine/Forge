@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** `renderContext.createRenderTarget(format?)` creates a render target at the canvas's drawing-buffer size and keeps it there: `RenderContext.resize` (which `createGame` calls whenever the canvas's container changes size) resizes every such target in the same call. `renderContext.releaseRenderTarget(target)` stops tracking a target and frees its GPU memory once no camera renders into it any more
+
+#### Changed
+
+- **rendering:** A camera's render target should now come from `renderContext.createRenderTarget()` instead of `createRenderTarget(renderContext.gl, renderContext.width, renderContext.height)`, which makes a fixed-size target that no longer gets resized by anything. Switch your camera targets to `renderContext.createRenderTarget()` (or `renderContext.createRenderTarget(RENDER_TARGET_FORMAT.hdr)`) and delete any system or resize handler you wrote to keep them matched to the canvas. `RenderTarget.width` and `height` are now read-only; call `resize` on a fixed-size target to change them
+- **ui:** `createUiLayoutEcsSystem` no longer resizes a screen-space canvas camera's render target. `createUiCanvas` creates that target with `renderContext.createRenderTarget()`, so it follows the canvas without the layout system's help. If you give a UI canvas camera a render target of your own, create it the same way
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

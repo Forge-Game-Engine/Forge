@@ -10,7 +10,6 @@ import {
   createGaussianBlurEcsSystem,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createRenderTarget,
   createToneMapEcsSystem,
   GaussianBlurEcsComponent,
   RENDER_TARGET_FORMAT,
@@ -50,7 +49,6 @@ import { createAsteroidSpawnerEcsSystem } from './_asteroid-spawner.system';
 import { createAsteroidCollisionEcsSystem } from './_collision.system';
 import { GameOverEcsComponent, gameOverId } from './_game-over.component';
 import { createGameOverEcsSystem } from './_game-over.system';
-import { createResizeRenderTargetsEcsSystem } from './_resize-render-targets.system';
 
 const renderLayers = {
   background: 1 << 0,
@@ -83,19 +81,13 @@ export const createSpaceShooterGame = async (
   // blur post-process pass can affect the background only: the present
   // pass then layers the sharp foreground back on top of the blurred
   // background when it draws both to the canvas.
-  const backgroundRenderTarget = createRenderTarget(
-    renderContext.gl,
-    renderContext.width,
-    renderContext.height,
-  );
+  // Both come from the render context, which keeps them sized to the canvas.
+  const backgroundRenderTarget = renderContext.createRenderTarget();
   // HDR so the bullet's emissive map (see _create-player.ts) can bloom
   // based on true brightness rather than an 8-bit white ceiling;
   // addToneMappingComponent compresses it back to displayable range before the
   // present pass draws it.
-  const foregroundRenderTarget = createRenderTarget(
-    renderContext.gl,
-    renderContext.width,
-    renderContext.height,
+  const foregroundRenderTarget = renderContext.createRenderTarget(
     RENDER_TARGET_FORMAT.hdr,
   );
 
@@ -248,12 +240,6 @@ export const createSpaceShooterGame = async (
   // Rendering runs right after the transform pass, so it draws this frame's
   // poses. Explosions spawned and the player reset by the collision and
   // game-over systems below show up on the next frame.
-  world.addSystem(
-    createResizeRenderTargetsEcsSystem(renderContext, [
-      backgroundRenderTarget,
-      foregroundRenderTarget,
-    ]),
-  );
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));

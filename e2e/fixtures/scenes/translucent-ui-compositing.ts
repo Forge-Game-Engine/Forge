@@ -12,7 +12,6 @@ import {
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
-  createRenderTarget,
   SpriteEcsComponent,
   spriteId,
 } from '../../../src/rendering/index.js';
@@ -154,11 +153,7 @@ export const createScene: CreateScene = async (
     preserveDrawingBuffer: true,
   });
 
-  const worldTarget = createRenderTarget(
-    renderContext.gl,
-    canvas.width,
-    canvas.height,
-  );
+  const worldTarget = renderContext.createRenderTarget();
 
   const worldCameraEntity = world.createEntity();
 

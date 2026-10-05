@@ -12,6 +12,7 @@ import { MouseInputSource } from '../../input/index.js';
 import {
   addCameraComponent,
   cameraId,
+  createRenderTarget,
   RenderContext,
 } from '../../rendering/index.js';
 import { canvasId } from '../components/canvas-component.js';
@@ -72,7 +73,8 @@ describe('registerUiSystems', () => {
       cssHeight: 1080,
       pixelRatio: 1,
       gl,
-    } as RenderContext;
+      createRenderTarget: () => createRenderTarget(gl, 1920, 1080),
+    } as unknown as RenderContext;
     world = new EcsWorld();
     time = new Time();
   });

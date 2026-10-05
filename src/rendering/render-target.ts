@@ -12,6 +12,12 @@ import {
  * texture attachment. Used to render a scene (or a pass over a previous
  * render target's output) into a texture instead of directly onto the
  * canvas.
+ *
+ * A camera's render target must match the canvas's drawing buffer (the
+ * camera's projection and the present pass both assume it does), so create
+ * one with `RenderContext.createRenderTarget`, which keeps it sized to the
+ * canvas. Use `createRenderTarget` only for targets with a size of their own,
+ * such as a post-processing system's downsampled scratch buffers.
  */
 export class RenderTarget {
   /**
@@ -30,15 +36,8 @@ export class RenderTarget {
    */
   public colorTexture: WebGLTexture;
 
-  /**
-   * The render target width in pixels.
-   */
-  public width: number;
-
-  /**
-   * The render target height in pixels.
-   */
-  public height: number;
+  private _width: number;
+  private _height: number;
 
   /**
    * Creates a new RenderTarget.
@@ -57,8 +56,8 @@ export class RenderTarget {
     height: number,
     format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
   ) {
-    this.width = width;
-    this.height = height;
+    this._width = width;
+    this._height = height;
     this.format = resolveRenderTargetFormat(gl, format);
     this.framebuffer = gl.createFramebuffer();
     this.colorTexture = createEmptyTexture(gl, width, height, this.format);
@@ -67,7 +66,25 @@ export class RenderTarget {
   }
 
   /**
+   * The render target width in pixels. Changed only by `resize`.
+   */
+  get width(): number {
+    return this._width;
+  }
+
+  /**
+   * The render target height in pixels. Changed only by `resize`.
+   */
+  get height(): number {
+    return this._height;
+  }
+
+  /**
    * Resizes the render target, recreating its color texture at the new dimensions.
+   *
+   * Don't call this on a target created by `RenderContext.createRenderTarget`:
+   * its context resizes it to the canvas whenever the canvas resizes, and
+   * would undo any other size on the next resize.
    * @param gl - The WebGL2 rendering context.
    * @param width - The new render target width in pixels.
    * @param height - The new render target height in pixels.
@@ -84,8 +101,8 @@ export class RenderTarget {
 
     gl.deleteTexture(this.colorTexture);
 
-    this.width = width;
-    this.height = height;
+    this._width = width;
+    this._height = height;
     this.colorTexture = createEmptyTexture(gl, width, height, this.format);
 
     this._attachColorTexture(gl);
@@ -125,7 +142,9 @@ export class RenderTarget {
 }
 
 /**
- * Creates a new RenderTarget.
+ * Creates a new fixed-size RenderTarget, which keeps its size until its
+ * owner calls `resize`. For a camera's render target, which has to follow the
+ * canvas size, use `RenderContext.createRenderTarget` instead.
  * @param gl - The WebGL2 rendering context.
  * @param width - The render target width in pixels.
  * @param height - The render target height in pixels.

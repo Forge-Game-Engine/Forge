@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
 import {
   addParentComponent,
@@ -13,7 +13,6 @@ import {
   cameraId,
   Renderable,
   RenderContext,
-  RenderTarget,
   spriteId,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
@@ -47,12 +46,11 @@ const buildRenderable = (): Renderable => ({}) as Renderable;
 const createTestCanvas = (
   world: EcsWorld,
   options: ScreenSpaceCanvasFields | WorldSpaceCanvasFields = {},
-  renderTarget?: RenderTarget,
 ): { canvas: number; camera: number } => {
   const camera = world.createEntity();
 
   addPositionComponent(world, camera);
-  addCameraComponent(world, camera, { renderTarget });
+  addCameraComponent(world, camera);
 
   const canvas = world.createEntity();
 
@@ -139,41 +137,6 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
       min: { x: -480, y: -540 },
       max: { x: 480, y: 540 },
-    });
-  });
-
-  it("resizes the camera's render target to match renderContext when they drift out of sync", () => {
-    const world = new EcsWorld();
-    const gl = {} as WebGL2RenderingContext;
-    const renderContext = {
-      width: 1920,
-      height: 1080,
-      cssWidth: 1920,
-      cssHeight: 1080,
-      pixelRatio: 1,
-      gl,
-    } as RenderContext;
-    const resize = vi.fn();
-    const renderTarget = {
-      width: 1920,
-      height: 1080,
-      resize,
-    } as unknown as RenderTarget;
-    const { canvas } = createTestCanvas(world, {}, renderTarget);
-
-    world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.update();
-
-    expect(resize).not.toHaveBeenCalled();
-
-    renderContext.width = 800;
-    renderContext.height = 600;
-    world.update();
-
-    expect(resize).toHaveBeenCalledWith(gl, 800, 600);
-    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
-      min: { x: -720, y: -540 },
-      max: { x: 720, y: 540 },
     });
   });
 

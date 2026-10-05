@@ -14,7 +14,6 @@ import {
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
-  createRenderTarget,
   spriteId,
 } from '../../../src/rendering/index.js';
 import { createWhiteSquareImage } from './create-white-square-image.js';
@@ -106,11 +105,7 @@ export const createScene: CreateScene = async (
     layer: 0,
     clearColor: backgroundColor,
     cullingMask: 0,
-    renderTarget: createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    ),
+    renderTarget: renderContext.createRenderTarget(),
   });
 
   const glowCameraEntity = world.createEntity();
@@ -122,11 +117,7 @@ export const createScene: CreateScene = async (
     clearColor: Color.transparent,
     cullingMask: glowRenderCategory,
     verticalWorldUnits: renderContext.cssHeight,
-    renderTarget: createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    ),
+    renderTarget: renderContext.createRenderTarget(),
   });
   addBloomComponent(world, glowCameraEntity, bloomSettings);
 

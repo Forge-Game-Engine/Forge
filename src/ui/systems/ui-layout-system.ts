@@ -82,8 +82,7 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
 
 /**
  * Resolves one entity's rect - a screen-space canvas root (via
- * `resolveCanvasRootRect`, also syncing its camera's `verticalWorldUnits`
- * and resizing its `renderTarget` if it has one), or, for anything else
+ * `resolveCanvasRootRect`, also syncing its camera's `verticalWorldUnits`), or, for anything else
  * (an ordinary element, or a world-space canvas root), against `parentRect`
  * via `resolveRect` - and the reference-pixel-to-screen-pixel ratio this
  * entity's own *children* should resolve a `'screenPixels'`-unit `UiAxis`
@@ -115,20 +114,6 @@ function resolveEntityRect(
     }
 
     camera.verticalWorldUnits = resolved.worldHeight;
-
-    const { renderTarget } = camera;
-
-    if (
-      renderTarget &&
-      (renderTarget.width !== renderContext.width ||
-        renderTarget.height !== renderContext.height)
-    ) {
-      renderTarget.resize(
-        renderContext.gl,
-        renderContext.width,
-        renderContext.height,
-      );
-    }
 
     return {
       rect: resolved.rect,
@@ -180,10 +165,9 @@ function resolveEntityRect(
  * automatically on the next frame with no separate resize hook - this
  * system does a full recompute every frame rather than tracking dirty
  * state, favoring correctness over the added complexity dirty-tracking a
- * retained tree would need. Its camera's `renderTarget`, if it has one (see
- * `createUiCanvas`), is resized to match `renderContext` the same way, so
- * the UI's own off-screen target never drifts out of sync with the
- * destination it's composited onto.
+ * retained tree would need. Its camera's `renderTarget` (see
+ * `createUiCanvas`) isn't this system's to size: it comes from
+ * `RenderContext.createRenderTarget`, which resizes it along with the canvas.
  *
  * A `renderMode: 'worldSpace'` canvas root is resolved exactly like any
  * other element instead - against its own parent's rect (or, with no UI

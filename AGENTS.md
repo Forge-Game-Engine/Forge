@@ -765,7 +765,9 @@ sets `deviceScaleFactor`, since it defaults to `1`):
 
 - `width`/`height` - the drawing buffer, in device pixels. Use these for
   anything GL sees: the viewport, `RenderTarget` sizes, shader uniforms
-  compared against `gl_FragCoord`.
+  compared against `gl_FragCoord`. A camera's render target comes from
+  `renderContext.createRenderTarget()`, which `RenderContext.resize` keeps
+  at this size; don't size one by hand or add a system that resizes it.
 - `cssWidth`/`cssHeight` - the canvas's on-page size, in CSS pixels. Use
   these for anything the DOM measures: `MouseInputSource.position`,
   `getSafeAreaInsets()`, and any UI size meant to stay the same physical

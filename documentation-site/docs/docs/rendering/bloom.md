@@ -79,17 +79,12 @@ import {
   createCamera,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createRenderTarget,
 } from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = renderContext.createRenderTarget();
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
@@ -220,17 +215,11 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createRenderTarget,
   createToneMapEcsSystem,
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-  RENDER_TARGET_FORMAT.hdr,
-);
+const sceneTarget = renderContext.createRenderTarget(RENDER_TARGET_FORMAT.hdr);
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 

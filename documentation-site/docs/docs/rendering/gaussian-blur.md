@@ -37,17 +37,12 @@ import {
   createGaussianBlurEcsSystem,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createRenderTarget,
 } from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = renderContext.createRenderTarget();
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
@@ -101,7 +96,8 @@ distance on screen at any
 [`RenderContext.pixelRatio`](/Forge/docs/api/classes/RenderContext#pixelratio)
 (see [High-DPI displays](./world-units-and-cameras.md#high-dpi-displays)). This
 assumes the camera's `renderTarget` is sized to the canvas
-(`renderContext.width`/`height`), as in the example above.
+(`renderContext.width`/`height`), which a target from
+`renderContext.createRenderTarget()` always is.
 
 On a high-DPI display (`pixelRatio` above `1`) the blur chain doesn't run on
 the full-resolution scene: it first averages the scene down to CSS-pixel

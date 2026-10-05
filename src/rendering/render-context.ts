@@ -1,9 +1,14 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
 import { Color } from './color.js';
-import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
+import {
+  CLEAR_STRATEGY,
+  CLEAR_STRATEGY_KEYS,
+  RENDER_TARGET_FORMAT,
+  RENDER_TARGET_FORMAT_KEYS,
+} from './enums/index.js';
 import { UniformValue } from './materials/index.js';
-import { RenderTarget } from './render-target.js';
+import { createRenderTarget, RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
 import { createShaderCache, getDevicePixelRatio } from './utilities/index.js';
 
@@ -103,6 +108,12 @@ export class RenderContext implements Resizable {
   private readonly _globalUniformValues: Map<string, UniformValue>;
 
   /**
+   * The render targets created by `createRenderTarget` and not yet released,
+   * which `resize` keeps at the drawing buffer's size.
+   */
+  private readonly _renderTargets: Set<RenderTarget>;
+
+  /**
    * Constructs a new instance of the `RenderContext` class.
    * @param shaderCache - The shader cache.
    * @param imageCache - The image cache.
@@ -154,12 +165,16 @@ export class RenderContext implements Resizable {
     this.gl = context;
     this.instanceBuffer = context.createBuffer();
     this._globalUniformValues = new Map<string, UniformValue>();
+    this._renderTargets = new Set<RenderTarget>();
   }
 
   /**
    * Resizes the canvas to `cssWidth` x `cssHeight` CSS pixels on the page,
    * with a drawing buffer of that size times `devicePixelRatio` (clamped to
-   * `maxPixelRatio`), and updates the WebGL viewport to match.
+   * `maxPixelRatio`), and updates the WebGL viewport to match. Every render
+   * target created by `createRenderTarget` (and not yet released) is resized
+   * to the new drawing-buffer size in the same call, so no frame is ever
+   * rendered with a camera target that doesn't match the canvas.
    *
    * Does nothing if neither the CSS size nor the resulting drawing-buffer
    * size would change - assigning a canvas's `width`/`height` clears its
@@ -211,6 +226,57 @@ export class RenderContext implements Resizable {
     this.cssWidth = cssWidth;
     this.cssHeight = cssHeight;
     this.pixelRatio = pixelRatio;
+
+    for (const renderTarget of this._renderTargets) {
+      renderTarget.resize(this.gl, width, height);
+    }
+  }
+
+  /**
+   * Creates a render target that matches this context's drawing buffer
+   * (`width` x `height`, in device pixels) and keeps matching it: `resize`
+   * resizes it along with the canvas. This is how a camera's render target
+   * should be created, since the camera's projection and the present pass
+   * both assume its target is the size of the canvas.
+   *
+   * The context holds on to the target until it's passed to
+   * `releaseRenderTarget`, so release a target once nothing renders into it
+   * any more.
+   * @param format - The requested color storage format (default:
+   * `RENDER_TARGET_FORMAT.ldr`). See `RenderTarget.format`.
+   * @returns The created render target.
+   */
+  public createRenderTarget(
+    format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
+  ): RenderTarget {
+    const renderTarget = createRenderTarget(
+      this.gl,
+      this.width,
+      this.height,
+      format,
+    );
+
+    this._renderTargets.add(renderTarget);
+
+    return renderTarget;
+  }
+
+  /**
+   * Stops resizing a render target created by `createRenderTarget` and
+   * deletes its GPU resources. The target can't be rendered into or sampled
+   * afterwards.
+   * @param renderTarget - The render target to release.
+   * @throws An error if `renderTarget` wasn't created by this context's
+   * `createRenderTarget`, or has already been released.
+   */
+  public releaseRenderTarget(renderTarget: RenderTarget): void {
+    if (!this._renderTargets.delete(renderTarget)) {
+      throw new Error(
+        'Unable to release render target: it was not created by this render context, or has already been released.',
+      );
+    }
+
+    renderTarget.dispose(this.gl);
   }
 
   /**

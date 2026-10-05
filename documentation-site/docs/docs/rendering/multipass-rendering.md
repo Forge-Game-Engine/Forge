@@ -20,9 +20,9 @@ the canvas exactly as before, with no extra passes or texture allocations.
 ## Rendering a camera off-screen
 
 Give the camera a [`RenderTarget`](/Forge/docs/api/classes/RenderTarget)
-sized to the area you want to render into, and register
-`createPresentEcsSystem` after your render system so there's a pass that
-draws the result:
+from [`renderContext.createRenderTarget()`](/Forge/docs/api/classes/RenderContext#createrendertarget),
+and register `createPresentEcsSystem` after your render system so there's a
+pass that draws the result:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -30,17 +30,12 @@ import {
   createCamera,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createRenderTarget,
 } from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = renderContext.createRenderTarget();
 
 createCamera(world, { renderTarget: sceneTarget });
 
@@ -59,14 +54,21 @@ through its own render target, see
 [Creating a Canvas](../ui/creating-a-canvas.md)) sit on top of a world camera
 that has no render target of its own.
 
-:::caution
-`RenderContext.resize` only resizes the canvas and the default framebuffer's
-viewport; it doesn't know about render targets owned by cameras. If you
-resize the render context (for example on a window resize), also call
-`sceneTarget.resize(renderContext.gl, renderContext.width, renderContext.height)`,
-or the off-screen texture will stay at its old resolution while the canvas
-grows or shrinks around it.
-:::
+A camera's render target has to match the canvas's drawing buffer: the
+camera's projection is built from `renderContext.width`/`height`, and the
+present pass stretches every target over the whole canvas. A target from
+`renderContext.createRenderTarget()` starts at that size and keeps it.
+`RenderContext.resize` (which [`createGame`](../ecs/game.md#resizing) calls
+whenever the canvas's container changes size) resizes every such target in
+the same call as the canvas, so there's no resize handling to write. When a
+camera stops rendering into a target for good, pass it to
+`renderContext.releaseRenderTarget(target)`, which stops resizing it and frees
+its GPU memory.
+
+The standalone `createRenderTarget(gl, width, height)` function makes a
+fixed-size target that only changes size when you call its `resize`. It's
+meant for buffers with a size of their own, such as an effect's downsampled
+scratch buffers, not for a camera.
 
 ## Layering multiple render targets
 
@@ -80,16 +82,8 @@ replacing it.) This is how you apply an effect to only part of a scene, for
 example blurring a background layer while keeping a foreground layer sharp:
 
 ```ts
-const backgroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
-const foregroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const backgroundTarget = renderContext.createRenderTarget();
+const foregroundTarget = renderContext.createRenderTarget();
 
 const background = createCamera(world, {
   cullingMask: layers.background,
