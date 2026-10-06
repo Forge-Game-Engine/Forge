@@ -65,14 +65,18 @@ each image it's given, so:
   `layer` option), so the same image shown to two cameras with different
   culling masks needs two programs. Text and terrain already have their
   own `category`.
-- **Sprites built from one template share their vectors.**
-  `addSpriteComponent` copies the options shallowly, so every entity built
-  from one `createImageSprite` result shares its `pivot`, `uvOffset` and
-  `uvScale` objects. The sprite animation system writes `uvOffset` in
-  place and the UI layout system writes `pivot` in place, so entities from
-  one template overwrite each other. The demo gives each explosion a fresh
-  `uvOffset` by hand; the particle spawner and `createPanel` clone the
-  vectors by hand.
+- **Sprites built from one template share their vectors.** The template's
+  renderable is a shared resource, and should be. Its `pivot`, `uvOffset`
+  and `uvScale` aren't: they're per-entity state that systems write per
+  entity. The sprite animation system writes each entity's current frame
+  into `uvOffset` in place, and the UI layout system writes each element's
+  `pivot` in place. `addSpriteComponent` copies the options shallowly, so
+  every entity built from one `createImageSprite` result shares those
+  objects, and two explosions from one template show whichever frame was
+  written last. `addSpriteComponent`'s own comment says each entity needs
+  its own `Vector2` for this reason, but only its defaults get one. The
+  demo gives each explosion a fresh `uvOffset` by hand; Forge's particle
+  spawner and `createPanel` clone the vectors by hand.
 - **Custom shaders need the whole pipeline by hand.** The demo's
   background and three docs-site demos build a `Renderable` from
   `createQuadGeometry`, `combineInstanceDataSegments` and
