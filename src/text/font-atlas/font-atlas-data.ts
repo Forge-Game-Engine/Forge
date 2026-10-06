@@ -90,9 +90,6 @@ export interface FontAtlasData {
   /** `'msdf'` for v1; reserved for `'mtsdf'` later. */
   type: 'msdf';
 
-  /** Atlas texture path, relative to this atlas's JSON file. */
-  atlasImage: string;
-
   /** Atlas texture pixel dimensions. */
   atlasSize: AtlasSize;
 

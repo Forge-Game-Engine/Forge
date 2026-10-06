@@ -14,9 +14,10 @@ atlas):
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 import { createLabel, UiAnchor } from '@forge-game-engine/forge/ui';
 
-const fontAtlas = await new FontAtlasCache().getOrLoad(
-  'assets/fonts/default.json',
-);
+const fontAtlas = await new FontAtlasCache().getOrLoad({
+  metricsUrl: 'assets/fonts/my-font.json',
+  imageUrl: 'assets/fonts/my-font.png',
+});
 
 createLabel(world, panel, {
   text: 'Play',

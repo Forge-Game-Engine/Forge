@@ -37,14 +37,14 @@ section has the reasoning.
 Project skills live in `.claude/skills/`. Use the matching one before you
 start the task:
 
-| Task                                                       | Skill                    |
-| ---------------------------------------------------------- | ------------------------ |
-| Fixing a bug, defect, regression or wrong behavior         | `fix-defect`             |
-| Adding an ECS component                                    | `create-component`       |
-| Adding a major feature (needs a docs-site demo)            | `add-feature-demo`       |
-| Writing or updating a guide in `documentation-site/docs`   | `document-feature`       |
-| Adding a Playwright test for rendering, input or game loop | `write-e2e-test`         |
-| Designing or planning a new feature or large change        | `create-design-document` |
+| Task                                                           | Skill                    |
+| -------------------------------------------------------------- | ------------------------ |
+| Fixing a bug, defect, regression or wrong behavior             | `fix-defect`             |
+| Adding an ECS component                                        | `create-component`       |
+| Adding a major feature (needs a docs-site demo)                | `add-feature-demo`       |
+| Writing or updating documentation in `documentation-site/docs` | `document-feature`       |
+| Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`         |
+| Designing or planning a new feature or large change            | `create-design-document` |
 
 ## Before implementing
 
