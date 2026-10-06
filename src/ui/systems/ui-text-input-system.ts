@@ -538,10 +538,10 @@ export const createUiTextInputEcsSystem = (
         current.add(textInput);
         entries.set(textInput, entry);
 
-        entry.setAttributes({
-          ...textInput.attributes,
-          maxLength: textInput.maxLength,
-        });
+        // `maxLength` isn't passed on as the input's `maxlength`: the
+        // browser would count characters the filters are about to remove,
+        // so the field applies it itself, after filtering.
+        entry.setAttributes(textInput.attributes);
 
         updateEditing(world, entity, textInput, interactables[i]);
 

@@ -8,8 +8,8 @@ import type {
 
 /**
  * The HTML attributes a text field's hidden input carries (see
- * `TextEntryAttributes`), except `maxLength`, which is the field's own
- * {@link TextInputDefaultedOptions.maxLength}.
+ * `TextEntryAttributes`), except `maxLength`: a field applies its own
+ * {@link TextInputDefaultedOptions.maxLength} after filtering.
  */
 export type TextInputAttributes = Omit<TextEntryAttributes, 'maxLength'>;
 

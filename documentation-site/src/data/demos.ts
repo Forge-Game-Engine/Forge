@@ -187,6 +187,13 @@ export const demos: Demo[] = [
     categories: ['ui'],
   },
   {
+    slug: 'ui-text-input',
+    title: 'UI Text Input',
+    description:
+      'A name entry form: typing, filtering, submit and cancel in text fields.',
+    categories: ['ui'],
+  },
+  {
     slug: 'ui-button',
     title: 'UI Buttons',
     description:
