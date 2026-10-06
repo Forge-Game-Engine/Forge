@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ForgeShaderSource } from './forge-shader-source';
+import { ShaderPreProcessor } from './shader-pre-processor';
 
 describe('ForgeShaderSource', () => {
   it('should parse shader with valid name property', () => {
@@ -171,5 +172,38 @@ describe('ForgeShaderSource', () => {
     expect(shader.getPragmas('name')[0].values[0]).toBe('testShader');
     expect(shader.getPragmas('version')).toHaveLength(1);
     expect(shader.getPragmas('version')[0].values[0]).toBe('1.0');
+  });
+
+  describe('uniformDeclarations', () => {
+    it('should read the uniforms the prepared source declares', () => {
+      const shader = new ForgeShaderSource(
+        '#pragma forge name(test)\nuniform float u_time;\nuniform vec4 u_waves[4];',
+      );
+
+      expect([...shader.uniformDeclarations.values()]).toEqual([
+        { name: 'u_time', glslTypeName: 'float', isArray: false, size: 1 },
+        { name: 'u_waves', glslTypeName: 'vec4', isArray: true, size: 4 },
+      ]);
+    });
+
+    it('should cache the declarations until a pre-processor changes the source', () => {
+      const shader = new ForgeShaderSource(
+        '#pragma forge name(test)\nuniform float u_time;',
+      );
+      const declarations = shader.uniformDeclarations;
+
+      expect(shader.uniformDeclarations).toBe(declarations);
+
+      const addColor: ShaderPreProcessor = {
+        process: (source) => `${source.rawSource}\nuniform vec4 u_color;`,
+      };
+
+      shader.applyPreProcessor(addColor);
+
+      expect([...shader.uniformDeclarations.keys()]).toEqual([
+        'u_time',
+        'u_color',
+      ]);
+    });
   });
 });
