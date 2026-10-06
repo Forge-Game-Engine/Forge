@@ -1,7 +1,10 @@
 import { Time } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { clamp } from '@forge-game-engine/forge/math';
-import { applyTorque, rigidBodyId } from '@forge-game-engine/forge/physics';
+import {
+  applyTorque,
+  getRigidBodyMassData,
+} from '@forge-game-engine/forge/physics';
 import { AirControlEcsComponent, airControlId } from './_air-control.component';
 import { isGrounded } from './_ground-contact.component';
 
@@ -42,7 +45,10 @@ export const createAirControlEcsSystem = (
       const { chassisEntity, throttleInput, maxAngularSpeed, maxTorque } =
         airControl;
 
-      const chassisRigidBody = world.getComponent(chassisEntity, rigidBodyId);
+      const { rigidBody: chassisRigidBody, invInertia } = getRigidBodyMassData(
+        world,
+        chassisEntity,
+      );
 
       if (chassisRigidBody === null) {
         continue;
@@ -50,8 +56,7 @@ export const createAirControlEcsSystem = (
 
       const { deltaTimeInSeconds } = time;
 
-      const responsiveness =
-        (1 / chassisRigidBody.momentOfInertia) * deltaTimeInSeconds;
+      const responsiveness = invInertia * deltaTimeInSeconds;
 
       if (responsiveness <= 0) {
         continue;
@@ -65,7 +70,7 @@ export const createAirControlEcsSystem = (
 
       const torque = clamp(desiredTorque, -maxTorque, maxTorque);
 
-      applyTorque(torque, deltaTimeInSeconds, chassisRigidBody);
+      applyTorque(world, chassisEntity, torque, deltaTimeInSeconds);
     }
   },
 });

@@ -1,12 +1,12 @@
 # Design: Surviving a Lost WebGL Context
 
-|                                       |                                                                                                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                         |
-| **Kind**                              | Feature                                                                                                                                                                   |
-| **Found in**                          | Galactic Journey demo: `src/graphics/recover-from-context-loss.ts` (saves a lower quality and reloads the page)                                                           |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                  |
-| **Related**                           | [`sprite-textures.md`](./sprite-textures.md) (prerequisite), [`render-resolution.md`](./render-resolution.md), [`persistent-preferences.md`](./persistent-preferences.md) |
+|                                       |                                                                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                               |
+| **Kind**                              | Feature                                                                                                         |
+| **Found in**                          | Galactic Journey demo: `src/graphics/recover-from-context-loss.ts` (saves a lower quality and reloads the page) |
+| **Engine version at time of writing** | `0.25.8`                                                                                                        |
+| **Related**                           | [`sprite-textures.md`](./sprite-textures.md) (prerequisite), [`render-resolution.md`](./render-resolution.md)   |
 
 ## 0. Targeted modules
 

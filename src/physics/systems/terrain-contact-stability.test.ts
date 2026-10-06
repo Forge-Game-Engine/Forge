@@ -141,7 +141,6 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     collider: CircleCollider | PolygonCollider,
     startX: number,
     startY: number,
-    momentOfInertia: number,
   ): {
     entity: number;
     position: PositionEcsComponent;
@@ -159,10 +158,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       restitution: 0,
     });
 
-    const rigidBody = addRigidBodyComponent(world, entity, {
-      mass: 300,
-      momentOfInertia,
-    });
+    const rigidBody = addRigidBodyComponent(world, entity);
 
     const gravity = addGravityComponent(world, entity);
 
@@ -177,10 +173,10 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     radius: number,
   ) {
     return addHeavyBody(
-      new CircleCollider(radius),
+      // A density that gives every circle a mass of 300.
+      new CircleCollider(radius, 300 / (Math.PI * radius * radius)),
       startX,
       startY,
-      (300 * radius * radius) / 2,
     );
   }
 
@@ -194,15 +190,18 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const halfHeight = height / 2;
 
     return addHeavyBody(
-      new PolygonCollider([
-        { x: -halfWidth, y: -halfHeight },
-        { x: halfWidth, y: -halfHeight },
-        { x: halfWidth, y: halfHeight },
-        { x: -halfWidth, y: halfHeight },
-      ]),
+      new PolygonCollider(
+        [
+          { x: -halfWidth, y: -halfHeight },
+          { x: halfWidth, y: -halfHeight },
+          { x: halfWidth, y: halfHeight },
+          { x: -halfWidth, y: halfHeight },
+        ],
+        // A density that gives every box a mass of 300.
+        300 / (width * height),
+      ),
       startX,
       startY,
-      (300 * (width * width + height * height)) / 12,
     );
   }
 

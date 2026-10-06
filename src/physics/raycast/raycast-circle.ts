@@ -17,11 +17,9 @@ export function raycastCircle(
   end: Vector2,
 ): RaycastShapeHit | null {
   const circleCollider = circleBody.collider as CircleCollider;
-  // Clone before adding: `circleBody.position` is the entity's live world
-  // position, so this must not mutate it.
-  const center = Vec2.add(
-    Vec2.clone(circleBody.position),
-    circleCollider.offset,
+  const center = circleCollider.getWorldCenter(
+    circleBody.position,
+    circleBody.rotation,
   );
   const direction = Vec2.subtract(Vec2.clone(end), start);
   const a = Vec2.dot(direction, direction);

@@ -9,6 +9,23 @@ function circleBody(position: Vector2, radius: number): CollisionBody {
 }
 
 describe('detectCircleCircleCollision', () => {
+  it("should collide at each circle's center rotated with its entity", () => {
+    // B's local center (0, 5), turned a quarter turn, sits 5 units left of
+    // its origin: at (1.5, 0), overlapping A by 0.5.
+    const bodyA = circleBody({ x: 0, y: 0 }, 1);
+    const bodyB: CollisionBody = {
+      position: { x: 6.5, y: 0 },
+      rotation: Math.PI / 2,
+      collider: new CircleCollider(1, 1, { x: 0, y: 5 }),
+    };
+
+    const manifold = detectCircleCircleCollision(bodyA, bodyB);
+
+    expect(manifold?.depth).toBeCloseTo(0.5);
+    expect(manifold?.normal.x).toBeCloseTo(1);
+    expect(manifold?.contactPoints[0].x).toBeCloseTo(1);
+  });
+
   it('should return null when the circles do not overlap', () => {
     const bodyA = circleBody({ x: 0, y: 0 }, 1);
     const bodyB = circleBody({ x: 3, y: 0 }, 1);

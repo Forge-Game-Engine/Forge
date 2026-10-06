@@ -28,15 +28,6 @@ const minSize = 30;
 const maxSize = 60;
 const gravity = { x: 0, y: -300 };
 
-/**
- * `block_corner_large.png` is a right triangle with its right angle at the
- * bottom-left of the image. `PolygonCollider` re-centers vertices around
- * their centroid (a third of the way across, two thirds of the way down), so
- * the sprite's pivot is moved to match - keeping the rendered triangle
- * aligned with its physics shape as it rotates.
- */
-const trianglePivot = { x: 1 / 3, y: 2 / 3 };
-
 function rectangleVertices(width: number, height: number): Vector2[] {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
@@ -52,7 +43,8 @@ function rectangleVertices(width: number, height: number): Vector2[] {
 /**
  * Creates a right-triangle collider matching the visual shape of
  * `block_corner_large.png`: right angle at the bottom-left, hypotenuse from
- * top-left to bottom-right.
+ * top-left to bottom-right, drawn around the sprite's default (centered)
+ * pivot. The body turns about the triangle's centroid.
  * @param width - The width of the triangle's bounding box.
  * @param height - The height of the triangle's bounding box.
  * @returns A new PolygonCollider representing the triangle.
@@ -108,8 +100,6 @@ export async function spawnShapes(
     pixelsPerUnit: 1,
     layer: renderLayer,
   });
-
-  triangleSprite.pivot = Vec2.clone(trianglePivot);
 
   // One spawner per shape: pairs the sprite to render with the physics
   // collider to simulate, both sized relative to the sprite's height.
@@ -168,10 +158,7 @@ export async function spawnShapes(
       restitution: 0.6,
       friction: 0.4,
     });
-    addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
-    });
+    addRigidBodyComponent(world, entity);
     addGravityComponent(world, entity, { amount: gravity });
   };
 

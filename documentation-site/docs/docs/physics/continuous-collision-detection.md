@@ -34,9 +34,11 @@ world.addSystem(createEulerIntegrationEcsSystem(time));
 world.addSystem(createContinuousCollisionEcsSystem());
 ```
 
-It sweeps from `position.world` (where this tick's collision detection saw
-the body) to `position.local` (where integration moved it), so it has to run
-after integration and before the next tick's `createTransformEcsSystem`.
+It sweeps the circle's center in a straight line from where this tick's
+collision detection saw it (placed by `position.world` and `rotation.world`)
+to where integration moved it (placed by `position.local` and
+`rotation.local`), so it has to run after integration and before the next
+tick's `createTransformEcsSystem`.
 See [Bodies and Shapes](./rigid-bodies.md) for the full registration order.
 
 ## What it does
@@ -55,10 +57,10 @@ See [Bodies and Shapes](./rigid-bodies.md) for the full registration order.
   tenth of its radius inside a surface. Shallower contacts are left to
   collision resolution, which pushes them out within a tick or two. A body
   rolling fast over bumpy ground therefore isn't slowed down at every bend.
-- **What it changes**: the body's `local` position, which it moves back to
-  the point of first contact, plus a hundredth of the radius into the
-  surface so that the next tick's narrow phase reports the contact.
-  Velocity is left alone: collision resolution handles that contact on the
+- **What it changes**: the body's `local` position, which it moves back so
+  the circle's center is at the point of first contact, plus a hundredth of
+  the radius into the surface so that the next tick's narrow phase reports
+  the contact. Rotation and velocity are left alone: collision resolution handles that contact on the
   next tick (friction, restitution and so on) like any other.
 
 A stopped body covers less ground than its velocity says it should that
@@ -88,8 +90,9 @@ runs (the Car demo's reset system does this).
 The sweeps the system uses are public, for gameplay questions like "will
 this projectile hit that wall before the end of the tick?":
 `sweepCircleCircle`, `sweepCirclePolygon` and `sweepCircleTerrain`. Each
-takes the moving circle's collider, the target body, and the start and end
-positions of the move, and returns a `SweepHit` (the first contact's
+takes the moving circle's collider (for its radius), the target body, and
+the circle's world center at the start and end of the move (see
+`CircleCollider.getWorldCenter`), and returns a `SweepHit` (the first contact's
 `point`, the target's surface `normal` there, and `t`, how far along the
 move it happened, from `0` to `1`) or `null`.
 
@@ -97,11 +100,15 @@ move it happened, from `0` to `1`) or `null`.
 import { Vec2 } from '@forge-game-engine/forge/math';
 import { sweepCirclePolygon } from '@forge-game-engine/forge/physics';
 
+const start = projectileCollider.getWorldCenter(
+  projectilePosition,
+  projectileRotation,
+);
 const hit = sweepCirclePolygon(
   projectileCollider,
   { position: wallPosition, rotation: wallRotation, collider: wallCollider },
-  projectilePosition,
-  Vec2.add(Vec2.clone(projectilePosition), plannedMove),
+  start,
+  Vec2.add(Vec2.clone(start), plannedMove),
 );
 
 if (hit !== null) {
