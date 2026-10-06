@@ -33,12 +33,10 @@ switch. The switch happens at the start of the next tick, not when `set` is
 called, so every system of a tick sees the same state. If `set` is called
 more than once in a tick, the last call wins.
 
-Pass the `GameState` to the systems that read or change it, the same way
-`Time` is passed.
-
 ## Running systems only in some states
 
-Register a system with `runIf: inState(...)` to run it only in those
+A system registered without `runIf` runs on every tick, whatever the
+state. Register it with `runIf: inState(...)` to run it only in those
 states:
 
 ```ts
