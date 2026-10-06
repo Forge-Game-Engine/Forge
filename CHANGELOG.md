@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **math:** Every angle and direction now follows one convention: radians, `0` along `+X`, positive turning towards `+Y` (counter-clockwise, since the world is Y-up). `Vec2.up` is now `(0, 1)` and `Vec2.down` is `(0, -1)`; if you used `Vec2.up` to mean "down the screen", use `Vec2.down`. `radiansToVector(angle)` now returns `(cos angle, sin angle)`, so `radiansToVector(0)` is `(1, 0)` and it's the inverse of `vectorToRadians`; drop any `+ Math.PI / 2` you added to round-trip between them, and add `- Math.PI / 2` when facing a direction with art drawn facing up. `applyExplosiveForce` and circle-circle collisions now push coincident bodies up rather than down
+- **particles:** `ParticleEmitter`'s `directionRange` and `rotationRange` are now in radians, following the same convention (`directionRange` defaults to `{ min: 0, max: 2 * Math.PI }`). Convert an old `directionRange` (degrees clockwise from up) as `{ min: Math.PI / 2 - degreesToRadians(oldMax), max: Math.PI / 2 - degreesToRadians(oldMin) }` (note that `min` and `max` swap), and an old `rotationRange` with `degreesToRadians`. An emitter's spawn shape and `directionRange` now turn with the world rotation of the entity it's on, so an emitter on a child entity follows its parent; if an emitter's entity has a rotation and you want world-space directions, move the emitter to an unrotated entity. `emitParticleBurst` takes a `rotation` option to turn a burst the same way
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

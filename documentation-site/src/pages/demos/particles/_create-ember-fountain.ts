@@ -1,7 +1,7 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
@@ -13,7 +13,7 @@ import {
 } from '@forge-game-engine/forge/particles';
 
 const emberColor = new Color(1, 0.55, 0.15);
-const coneSpreadDegrees = 20;
+const coneSpread = degreesToRadians(20);
 
 /**
  * Creates a fountain of embers that streams upward from a fixed point,
@@ -46,8 +46,11 @@ export async function createEmberFountain(
     emissionRate: 40,
     spawnShape: { type: 'box', width: 30, height: 0 },
     speedRange: { min: 160, max: 260 },
-    // 0 degrees points straight up, so this sprays a narrow upward cone.
-    directionRange: { min: -coneSpreadDegrees, max: coneSpreadDegrees },
+    // Math.PI / 2 points straight up, so this sprays a narrow upward cone.
+    directionRange: {
+      min: Math.PI / 2 - coneSpread,
+      max: Math.PI / 2 + coneSpread,
+    },
     drag: 0.5,
     scaleRange: { min: 0.04, max: 0.1 },
     lifetimeSecondsRange: { min: 1.2, max: 2 },

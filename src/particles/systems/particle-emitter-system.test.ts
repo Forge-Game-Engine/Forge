@@ -9,13 +9,14 @@ import {
 } from '../components/index.js';
 import {
   addPositionComponent,
+  addRotationComponent,
   ageScaleId,
   positionId,
   rotationId,
   scaleId,
   Time,
 } from '../../common/index.js';
-import { degreesToRadians, Random, Vec2, Vector2 } from '../../math/index.js';
+import { Random, Vec2, Vector2 } from '../../math/index.js';
 import { Renderable, Sprite, spriteId } from '../../rendering/index.js';
 
 describe('createParticleEcsSystem', () => {
@@ -156,11 +157,11 @@ describe('createParticleEcsSystem', () => {
     expect(scale.local).toEqual({ x: 2, y: 2 });
   });
 
-  it('sets the velocity from the picked speed and direction, with 0 degrees pointing up', () => {
+  it('sets the velocity from the picked speed and direction, with 0 pointing along +X', () => {
     const emitter = addEmitter({
       numParticlesRange: { min: 2, max: 2 },
       speedRange: { min: 5, max: 5 },
-      directionRange: { min: 90, max: 90 },
+      directionRange: { min: Math.PI / 2, max: Math.PI / 2 },
     });
 
     emitter.emit();
@@ -171,8 +172,8 @@ describe('createParticleEcsSystem', () => {
     for (const particle of getParticles()) {
       const { velocity } = world.getComponentRequired(particle, ParticleId);
 
-      expect(velocity.x).toBeCloseTo(5);
-      expect(velocity.y).toBeCloseTo(0);
+      expect(velocity.x).toBeCloseTo(0);
+      expect(velocity.y).toBeCloseTo(5);
     }
 
     emitter.setOptions({ directionRange: { min: 0, max: 0 } });
@@ -182,8 +183,31 @@ describe('createParticleEcsSystem', () => {
     const newest = getParticles().at(-1) ?? -1;
     const { velocity } = world.getComponentRequired(newest, ParticleId);
 
-    expect(velocity.x).toBeCloseTo(0);
-    expect(velocity.y).toBeCloseTo(5);
+    expect(velocity.x).toBeCloseTo(5);
+    expect(velocity.y).toBeCloseTo(0);
+  });
+
+  it('picks from the whole circle for a full-turn range centered off 0', () => {
+    addEmitter({
+      numParticlesRange: { min: 200, max: 200 },
+      directionRange: {
+        min: Math.PI / 2 - Math.PI,
+        max: Math.PI / 2 + Math.PI,
+      },
+    }).emit();
+
+    time.update(100);
+    world.update();
+
+    const quadrants = new Set(
+      getParticles().map((particle) => {
+        const { velocity } = world.getComponentRequired(particle, ParticleId);
+
+        return `${Math.sign(velocity.x)},${Math.sign(velocity.y)}`;
+      }),
+    );
+
+    expect(quadrants).toEqual(new Set(['1,1', '-1,1', '-1,-1', '1,-1']));
   });
 
   it('keeps the sprite rotation separate from the direction of travel', () => {
@@ -191,7 +215,7 @@ describe('createParticleEcsSystem', () => {
       numParticlesRange: { min: 1, max: 1 },
       speedRange: { min: 1, max: 1 },
       directionRange: { min: 0, max: 0 },
-      rotationRange: { min: 180, max: 180 },
+      rotationRange: { min: Math.PI, max: Math.PI },
     });
 
     emitter.emit();
@@ -203,9 +227,94 @@ describe('createParticleEcsSystem', () => {
     const rotation = world.getComponentRequired(particle, rotationId);
     const { velocity } = world.getComponentRequired(particle, ParticleId);
 
-    expect(rotation.local).toBeCloseTo(degreesToRadians(180));
-    expect(rotation.world).toBeCloseTo(degreesToRadians(180));
-    expect(velocity.y).toBeCloseTo(1);
+    expect(rotation.local).toBeCloseTo(Math.PI);
+    expect(rotation.world).toBeCloseTo(Math.PI);
+    expect(velocity.x).toBeCloseTo(1);
+  });
+
+  describe('on a rotated emitter entity', () => {
+    const addRotatedEmitter = (
+      options: Partial<ParticleEmitterOptions>,
+    ): ParticleEmitter => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: { x: 10, y: 20 } });
+
+      const emitterRotation = addRotationComponent(world, entity);
+
+      // Stands in for the transform system having turned a parented
+      // emitter, so the test tells the world rotation apart from the local
+      // one.
+      emitterRotation.world = Math.PI / 2;
+
+      return addEmitter(
+        { numParticlesRange: { min: 1, max: 1 }, ...options },
+        entity,
+      );
+    };
+
+    const spawnOne = (): {
+      position: Vector2;
+      velocity: Vector2;
+      rotation: number;
+    } => {
+      time.update(100);
+      world.update();
+
+      const [particle] = getParticles();
+
+      return {
+        position: world.getComponentRequired(particle, positionId).world,
+        velocity: world.getComponentRequired(particle, ParticleId).velocity,
+        rotation: world.getComponentRequired(particle, rotationId).world,
+      };
+    };
+
+    it("turns the direction by the entity's world rotation", () => {
+      addRotatedEmitter({
+        speedRange: { min: 5, max: 5 },
+        directionRange: { min: 0, max: 0 },
+      }).emit();
+
+      const { velocity } = spawnOne();
+
+      expect(velocity.x).toBeCloseTo(0);
+      expect(velocity.y).toBeCloseTo(5);
+    });
+
+    it("turns the spawn shape by the entity's world rotation", () => {
+      addRotatedEmitter({
+        spawnShape: { type: 'box', width: 8, height: 0 },
+      }).emit();
+
+      const { position } = spawnOne();
+
+      // A flat box along the emitter's local X lies along the world's Y.
+      expect(position.x).toBeCloseTo(10);
+      expect(Math.abs(position.y - 20)).toBeLessThanOrEqual(4);
+    });
+
+    it('aims emitOutward particles away from the turned spawn point', () => {
+      addRotatedEmitter({
+        spawnShape: { type: 'ring', radius: 2 },
+        emitOutward: true,
+        speedRange: { min: 3, max: 3 },
+      }).emit();
+
+      const { position, velocity } = spawnOne();
+      const offset = Vec2.subtract(Vec2.clone(position), { x: 10, y: 20 });
+
+      expect(velocity.x).toBeCloseTo((offset.x / 2) * 3);
+      expect(velocity.y).toBeCloseTo((offset.y / 2) * 3);
+    });
+
+    it("leaves the sprite's rotation in world space", () => {
+      addRotatedEmitter({
+        rotationRange: { min: 0.25, max: 0.25 },
+      }).emit();
+
+      expect(spawnOne().rotation).toBeCloseTo(0.25);
+    });
   });
 
   it('copies acceleration, drag, opacity and the velocity offset onto each particle', () => {
