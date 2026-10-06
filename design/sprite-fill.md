@@ -212,6 +212,23 @@ option.
 1. **Should linear fills support a "both edges" method** (filling out from
    the center, Godot's bilinear)? Nothing needs it.
    - (a) Not now (proposed). (b) Add a centered origin.
+2. **Masks instead of fill?** A linear fill is a rect mask whose edge
+   moves, and a radial fill is a sector mask. Masking is needed anyway for
+   scroll rects ([#583](https://github.com/Forge-Game-Engine/Forge/issues/583),
+   which lists health bars that fill by revealing as a use case), so
+   having both would give Forge two mechanisms for one effect.
+   - (a) Rework this design as masks (proposed). A mask component on an
+     entity clips its descendants, sprites and text alike, to the entity's
+     rect, part of it from one edge (`origin`, `amount`), or a sector
+     around its center (`startAngle`, `sweep`, `amount`). Rendering stays
+     per instance, as #583 proposes: an axis-aligned clip rect that nested
+     rect masks intersect, plus at most one shape mask in its entity's
+     local space, with anti-aliased edges. Progress bars and sliders mask
+     a full-size fill, so nine-slice caps can't squash and a label inside
+     the fill is revealed with it. `SpriteEcsComponent.fill` goes.
+   - (b) Keep fill on the sprite and design masks separately; Unity and
+     Godot have both (Filled images and `TextureProgressBar` beside their
+     masks).
 
 ---
 
