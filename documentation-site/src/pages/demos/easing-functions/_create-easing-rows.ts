@@ -15,13 +15,12 @@ import {
 } from '@forge-game-engine/forge/animations';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createImageSprite,
+  getCameraView,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { easingRowId } from './_easing-row.component';
 
 interface EasingRowConfig {
@@ -100,11 +99,13 @@ function placeSprite(
  * sweeps back and forth across it, so all the easing curves can be compared
  * side by side.
  * @param world - The ECS world to add the row entities to.
+ * @param camera - The camera entity whose visible area the rows are laid out across.
  * @param renderContext - The render context used to load and size sprites.
  * @param renderLayer - The render layer the rows should be drawn on.
  */
 export async function createEasingRows(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -117,11 +118,11 @@ export async function createEasingRows(
     layer: renderLayer,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const trackHalfWidth = width / 2 - horizontalMarginPixels;
   const minX = -trackHalfWidth * (1 - overshootMarginFraction);
   const maxX = trackHalfWidth * (1 - overshootMarginFraction);

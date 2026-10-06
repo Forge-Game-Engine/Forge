@@ -22,7 +22,7 @@ import {
   registerUiSystems,
   UiAxis,
 } from '../../../src/ui/index.js';
-import { createWhiteSquareImage } from './create-white-square-image.js';
+import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -178,7 +178,7 @@ export const createScene: CreateScene = async (
     referenceResolution: { x: canvas.width, y: canvas.height },
   });
 
-  const panelImage = await createWhiteSquareImage();
+  const panelImage = await createSquareImage('#fff');
 
   const panelEntities = panelAlphas.map((alpha, index) => {
     const panelSprite = createImageSprite(panelImage, renderContext, {

@@ -190,13 +190,24 @@ export const createSpaceShooterGame = async (
     game,
   );
 
-  await createBackground(world, renderContext, renderLayers.background);
+  await createBackground(
+    world,
+    backgroundCameraEntity,
+    renderContext,
+    renderLayers.background,
+  );
   const playerSprites = await createPlayer(
     renderContext,
     world,
+    foregroundCameraEntity,
     renderLayers.foreground,
   );
-  await createAsteroidSpawner(world, renderContext, renderLayers.foreground);
+  await createAsteroidSpawner(
+    world,
+    foregroundCameraEntity,
+    renderContext,
+    renderLayers.foreground,
+  );
   const explosionSpawner = await createExplosionSpawner(
     renderContext,
     renderLayers.foreground,
@@ -232,7 +243,13 @@ export const createSpaceShooterGame = async (
   });
 
   const respawnPlayer = (): void => {
-    spawnPlayer(renderContext, world, renderLayers.foreground, playerSprites);
+    spawnPlayer(
+      renderContext,
+      world,
+      foregroundCameraEntity,
+      renderLayers.foreground,
+      playerSprites,
+    );
   };
 
   const onPlayerDeath = (): void => {
@@ -254,7 +271,9 @@ export const createSpaceShooterGame = async (
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
   world.addSystem(createMovementEcsSystem(moveInput, time));
-  world.addSystem(createBackgroundEcsSystem(time, renderContext));
+  world.addSystem(
+    createBackgroundEcsSystem(time, backgroundCameraEntity, renderContext),
+  );
   world.addSystem(createSoundEcsSystem());
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createRemoveFromWorldEcsSystem());

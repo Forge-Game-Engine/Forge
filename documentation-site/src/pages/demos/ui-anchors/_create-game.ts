@@ -5,13 +5,13 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  getCameraView,
   RenderContext,
   spriteId,
 } from '@forge-game-engine/forge/rendering';
@@ -53,6 +53,7 @@ const textColor = new Color(0.12, 0.12, 0.16, 1);
 
 async function createBackdrop(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
@@ -64,11 +65,11 @@ async function createBackdrop(
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
 
   backdropSprite.width = width;
   backdropSprite.height = height;

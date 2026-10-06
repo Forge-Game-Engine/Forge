@@ -1,12 +1,12 @@
 import { EcsSystem } from '../../ecs/index.js';
 import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
+import { computeCameraView } from '../camera-view.js';
 import { CameraEcsComponent, cameraId } from '../components/index.js';
 import { CLEAR_STRATEGY } from '../enums/index.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
 import { createProjectionMatrix } from '../shaders/index.js';
-import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import { TerrainMeshEcsComponent, terrainMeshId } from './components/index.js';
 
 function drawTerrainMeshesForCamera(
@@ -31,18 +31,12 @@ function drawTerrainMeshesForCamera(
     clearedDestinationsThisUpdate.add(target);
   }
 
-  const pixelsPerUnit = calculatePixelsPerUnit(
-    renderContext.height,
-    cameraComponent.verticalWorldUnits,
+  const { bounds } = computeCameraView(
+    cameraComponent,
+    cameraPositionComponent,
+    renderContext,
   );
-
-  const projectionMatrix = createProjectionMatrix(
-    renderContext.width,
-    renderContext.height,
-    cameraPositionComponent.world,
-    cameraComponent.zoom,
-    pixelsPerUnit,
-  );
+  const projectionMatrix = createProjectionMatrix(bounds);
 
   for (const terrainMeshComponent of terrainMeshComponents) {
     if (
