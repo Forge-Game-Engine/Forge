@@ -122,6 +122,18 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
       expect(contacts?.touching).toEqual([]);
     });
 
+    it('should list every entity it touches in the same tick', () => {
+      const { contacts } = addCircle({ x: 0, y: 0 }, { contacts: true });
+      const { entity: left } = addCircle({ x: -1, y: 0 });
+      const { entity: right } = addCircle({ x: 1, y: 0 });
+
+      world.update();
+
+      expect(contacts?.touching).toHaveLength(2);
+      expect(contacts?.touching).toEqual(expect.arrayContaining([left, right]));
+      expect(contacts?.started).toHaveLength(2);
+    });
+
     it('should fill contacts on both entities of a pair that has them', () => {
       const { entity: a, contacts: contactsA } = addCircle(
         { x: 0, y: 0 },
@@ -290,6 +302,19 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
       expect(collisionManifolds).toHaveLength(0);
       expect(contacts?.touching).toEqual([b]);
       expect(a).not.toBe(b);
+    });
+
+    it('should report nothing for a sensor pair where neither entity records contacts', () => {
+      addCircle({ x: 0, y: 0 }, { sensor: true });
+      addCircle({ x: 1, y: 0 });
+
+      const { contacts } = addCircle({ x: 10, y: 0 }, { contacts: true });
+
+      world.update();
+
+      expect(collisionPairs).toHaveLength(1);
+      expect(collisionManifolds).toHaveLength(0);
+      expect(contacts?.touching).toEqual([]);
     });
 
     it('should still produce manifolds for solid pairs alongside a sensor', () => {
