@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLocalStorageBackend } from './create-local-storage-backend';
 import {
   StorageBlockedError,
+  StorageError,
   StorageFullError,
   StorageUnavailableError,
 } from './storage-errors';
@@ -108,5 +109,21 @@ describe('createLocalStorageBackend', () => {
     const backend = createLocalStorageBackend();
 
     await expect(backend.get('key')).rejects.toBe(otherError);
+  });
+
+  it('rejects with a StorageError caused by a thrown value that is not an Error', async () => {
+    const thrown = 'not an error';
+
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      // The test is about a thrown value that isn't an Error.
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw thrown;
+    });
+    const backend = createLocalStorageBackend();
+
+    const error: unknown = await backend.get('key').catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(StorageError);
+    expect((error as StorageError).cause).toBe(thrown);
   });
 });

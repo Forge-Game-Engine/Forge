@@ -46,7 +46,7 @@ when storage fails. The error that caused it is its `cause`. The
 - [`StorageFullError`](/Forge/docs/api/classes/StorageFullError):
   `localStorage` is full.
 
-Any other error is rejected with as it is.
+Any other `Error` is rejected with as it is.
 
 ## Implementing a backend
 

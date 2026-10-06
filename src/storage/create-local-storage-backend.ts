@@ -1,6 +1,7 @@
 import { StorageBackend } from './storage-backend.js';
 import {
   StorageBlockedError,
+  StorageError,
   StorageFullError,
   StorageUnavailableError,
 } from './storage-errors.js';
@@ -24,10 +25,12 @@ const hasErrorName = (error: unknown, names: Set<string>): boolean =>
 const securityErrorNames = new Set(['SecurityError']);
 
 /**
- * Turns an error thrown by `localStorage` into the matching `StorageError`,
- * and returns anything else as it is.
+ * Turns an error thrown by `localStorage` into the matching `StorageError`.
+ * Any other `Error` is returned as it is, and a thrown value that isn't an
+ * `Error` becomes the `cause` of a `StorageError`, so the backend always
+ * rejects with an `Error`.
  */
-const toStorageError = (error: unknown, action: string): unknown => {
+const toStorageError = (error: unknown, action: string): Error => {
   if (hasErrorName(error, securityErrorNames)) {
     return new StorageBlockedError(
       `Unable to ${action}: localStorage is blocked.`,
@@ -42,7 +45,11 @@ const toStorageError = (error: unknown, action: string): unknown => {
     );
   }
 
-  return error;
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new StorageError(`Unable to ${action}.`, error);
 };
 
 /**
@@ -66,7 +73,6 @@ const withLocalStorage = <T>(
 
     return Promise.resolve(operation(storage));
   } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
     return Promise.reject(toStorageError(error, action));
   }
 };
@@ -82,7 +88,7 @@ const withLocalStorage = <T>(
  * `StorageUnavailableError` when there's no `localStorage`, a
  * `StorageBlockedError` when it's blocked (a `SecurityError`), and a
  * `StorageFullError` when it's full (a `QuotaExceededError`). Any other
- * error is rejected with as it is.
+ * `Error` is rejected with as it is.
  * @returns The `localStorage` backend.
  */
 export function createLocalStorageBackend(): StorageBackend {
