@@ -104,6 +104,29 @@ describe('createUiLayoutEcsSystem', () => {
     });
   });
 
+  it("still resolves a screen-space canvas root rect centered at the origin when its camera has no position, and syncs the camera's verticalWorldUnits", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const camera = world.createEntity();
+
+    addCameraComponent(world, camera);
+
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -960, y: -540 },
+      max: { x: 960, y: 540 },
+    });
+    expect(world.getComponent(camera, cameraId)!.verticalWorldUnits).toBe(1080);
+  });
+
   it('follows the destination aspect ratio (scaleWithScreenSize keeps height, grows width)', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1600, 800); // 2:1 aspect ratio

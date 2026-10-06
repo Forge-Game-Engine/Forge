@@ -241,4 +241,45 @@ describe('createUiSafeAreaEcsSystem', () => {
     expect(rectTransform.x).toEqual(originalX);
     expect(rectTransform.y).toEqual(originalY);
   });
+
+  it('leaves the rect untouched when the owning canvas camera has no position to take a view from', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1080);
+    const camera = world.createEntity();
+
+    addCameraComponent(world, camera, { verticalWorldUnits: 1080 });
+
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera });
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addParentComponent(world, entity, { parent: canvas });
+    addRectTransformComponent(world, entity);
+    addUiSafeAreaComponent(world, entity);
+
+    const { x: originalX, y: originalY } = world.getComponent(
+      entity,
+      rectTransformId,
+    )!;
+
+    world.addSystem(
+      createUiSafeAreaEcsSystem(renderContext, () => ({
+        top: 40,
+        right: 5,
+        bottom: 20,
+        left: 5,
+      })),
+    );
+    world.update();
+
+    const rectTransform = world.getComponent(entity, rectTransformId)!;
+
+    expect(rectTransform.x).toBe(originalX);
+    expect(rectTransform.y).toBe(originalY);
+  });
 });
