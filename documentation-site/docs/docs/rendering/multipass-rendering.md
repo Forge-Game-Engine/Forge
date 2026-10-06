@@ -214,10 +214,60 @@ material.setUniform('u_texture', sourceTexture);
 drawFullscreenQuad(renderContext, material);
 ```
 
-`createGaussianBlurEcsSystem` uses these for its horizontal, vertical, copy,
-and cross-fade passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
+`createGaussianBlurEcsSystem` uses these for its downsample and blur
+passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
 too, but manages blending itself, since layering render targets onto the
 canvas needs premultiplied-alpha blending for every layer after the first,
 and for the first as well when a camera has already drawn straight onto the
 canvas (see [Layering multiple render targets](#layering-multiple-render-targets)
 and [Transparency](#transparency) above).
+
+A pass like this can't use the same render target as both its source and
+its destination, because a draw can't sample the texture it writes. To
+process a camera's own target, use `beginPostProcessPass` instead (see
+below).
+
+## Writing a post-processing effect
+
+A post-processing effect reads a camera's render target and writes the
+result back into the same target. `beginPostProcessPass` does this without
+an intermediate copy: each [`RenderTarget`](/Forge/docs/api/classes/RenderTarget)
+has two color buffers, and every post-processing pass reads one and writes
+the other.
+
+```ts
+import {
+  beginPostProcessPass,
+  drawFullscreenQuad,
+} from '@forge-game-engine/forge/rendering';
+
+const source = beginPostProcessPass(renderContext, camera.renderTarget);
+
+effectMaterial.setUniform('u_texture', source);
+drawFullscreenQuad(renderContext, effectMaterial);
+```
+
+[`beginPostProcessPass`](/Forge/docs/api/functions/beginPostProcessPass)
+makes the target's other buffer current, binds and clears it, disables
+blending, and returns the texture that held the target's contents before
+the call. The target allocates its second buffer the first time this runs
+on it, and resizes and disposes it together with the first.
+
+The material samples the returned texture. `camera.renderTarget.colorTexture`
+is already the buffer being drawn into, so sampling it reads the cleared
+destination instead of the scene. The pass has to write every pixel: a pixel
+the draw doesn't cover stays cleared.
+
+Sprites drawn into the target on the next frame, the next effect, and
+`createPresentEcsSystem` all use the buffer the last pass wrote, so effects
+chain in system registration order. Register an effect system after the
+render system and before `createPresentEcsSystem`, the same as the built-in
+effects. When several cameras share one render target, process it once per
+frame: a second pass over the same target applies the effect twice.
+
+:::note
+`RenderTarget.colorTexture` and `RenderTarget.framebuffer` change every
+time a post-processing pass runs on the target. Read them when drawing,
+not once at setup: a material that keeps a target's `colorTexture` from an
+earlier frame samples the wrong buffer.
+:::

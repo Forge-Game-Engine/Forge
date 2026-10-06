@@ -103,15 +103,18 @@ export function createMissionBrief(
     sprite: tagSprite,
   });
 
+  // `'middle'` centers the label's cap height on its rect's pivot line (the
+  // top edge, for a `topLeft` anchor), so the label sits half the tag's
+  // height below the tag's own top to land in its middle.
   createLabel(world, root, {
     text: 'CONTINUE - ACT II',
     fontAtlas,
     size: 14,
     letterSpacing: 0.06,
     anchor: UiAnchor.topLeft({ x: 222, y: 28 }),
-    anchoredPosition: { x: 86, y: -90 },
+    anchoredPosition: { x: 86, y: -90 - 28 / 2 },
     horizontalAlign: textHorizontalAlignments.center,
-    verticalAlign: textVerticalAlignments.capline,
+    verticalAlign: textVerticalAlignments.middle,
     maxWidth: 222,
     color: fleetCommandPalette.void,
     category: uiCategory,
