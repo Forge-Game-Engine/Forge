@@ -51,7 +51,8 @@ save system will share, with `localStorage` as its first implementation.
 - `createPreferences`: a named set of flat values with defaults,
   per-field validation, persistence through a `StorageBackend`, and a
   change event.
-- Graceful failure when storage is unavailable, blocked or full.
+- Specific errors when storage is unavailable, blocked or full, which the
+  game handles as it sees fit.
 
 ### Out of scope
 
@@ -99,15 +100,26 @@ changes in an update reaches every player who never changed it.
  * endpoints can implement it as well as `localStorage`.
  */
 interface StorageBackend {
-  /** The string stored under `key`, or `null`. Rejects if storage can't be read. */
+  /** The string stored under `key`, or `null`. Rejects with a `StorageError` if storage can't be read. */
   get(key: string): Promise<string | null>;
-  /** Stores `value` under `key`. Rejects if it can't be stored (full, blocked). */
+  /** Stores `value` under `key`. Rejects with a `StorageError` if it can't be stored. */
   set(key: string, value: string): Promise<void>;
-  /** Removes whatever is stored under `key`. */
+  /** Removes whatever is stored under `key`. Rejects with a `StorageError` if it can't. */
   remove(key: string): Promise<void>;
 }
 
+/** What every backend rejects with when storage fails. The original error is its `cause`. */
+class StorageError extends Error {}
+/** There's no storage to use: no `localStorage` in this environment, an unreachable endpoint. */
+class StorageUnavailableError extends StorageError {}
+/** Storage exists but is blocked: by the browser's settings, a frame denied storage, private browsing. */
+class StorageBlockedError extends StorageError {}
+/** Storage is full. */
+class StorageFullError extends StorageError {}
+
 function createLocalStorageBackend(): StorageBackend;
+/** Keeps values in memory only: for tests, or for a game that chooses to carry on without storage. */
+function createMemoryStorageBackend(): StorageBackend;
 ```
 
 Values are strings, the format every candidate backend can hold
@@ -119,9 +131,12 @@ argument, not its game code.
 
 The `localStorage` backend touches `localStorage` only inside `try` blocks
 (even reading the property throws a `SecurityError` where storage is
-blocked) and turns failures into rejections. It does its work inside the
-call and returns a settled promise, so its writes land straight away, as
-the demo's do today, and aren't lost if the page closes right after.
+blocked) and turns each failure into the matching error: no
+`localStorage` is `StorageUnavailableError`, a `SecurityError` is
+`StorageBlockedError`, and a `QuotaExceededError` is `StorageFullError`.
+Anything else is rethrown as it is. It does its work inside the call and
+returns a settled promise, so its writes land straight away, as the
+demo's do today, and aren't lost if the page closes right after.
 
 ### 4.2 Preferences
 
@@ -135,14 +150,16 @@ interface Preferences<T extends { [K in keyof T]: PreferenceValue }> {
    * preferences object rather than keeping a reference.
    */
   readonly values: Readonly<T>;
-  /** Applies `changes` and saves them. Never throws because storage failed. */
-  set(changes: Partial<T>): void;
-  /** Forgets everything stored, so every value is its default again. */
-  reset(): void;
+  /**
+   * Applies `changes` at once and stores them. Resolves once they're
+   * stored; rejects with the backend's `StorageError` if they can't be.
+   * @throws if a value fails validation; nothing is applied then.
+   */
+  set(changes: Partial<T>): Promise<void>;
+  /** Makes every value its default again and removes the stored entry. Settles like `set`. */
+  reset(): Promise<void>;
   /** Raised after `set` or `reset` with the new values. */
   readonly onChange: ParameterizedForgeEvent<Readonly<T>>;
-  /** Resolves once every change so far has been stored, or failed to be. */
-  flush(): Promise<void>;
 }
 
 interface PreferencesOptions<T> {
@@ -162,6 +179,9 @@ function createPreferences<T extends { [K in keyof T]: PreferenceValue }>(
   defaults: T,
   options: Partial<PreferencesOptions<T>> = {},
 ): Promise<Preferences<T>>;
+
+/** The stored entry isn't a JSON object: something else wrote it, or it's damaged. */
+class PreferencesFormatError extends Error {}
 ```
 
 The constraint is written as a mapped type, not
@@ -174,23 +194,35 @@ The constraint is written as a mapped type, not
   `PlayerPrefs` and Godot's `user://` behave on the web. A stored field is used
   if it has the same type as its default (numbers must also be finite) and
   passes its validator; otherwise the default is used, independently of
-  the other fields. Unreadable storage or malformed data gives the
-  defaults. An out-of-range stored value (a volume of `-0.1`) therefore
-  becomes the default, not the nearest valid value.
+  the other fields. That's how a game update adds or retypes a setting
+  without resetting the others (DL-2), not a failure. An out-of-range
+  stored value (a volume of `-0.1`) therefore becomes the default, not the
+  nearest valid value.
 - **Saving** stores only the keys that have been `set`, as JSON under
   `name`. Defaults are never written, so changing a default in a game
   update reaches every player who hadn't changed that setting. `reset`
   removes the stored entry.
-- **Write order.** At most one write is in flight. A change made while
-  one is in flight is written when it settles, latest state only, so a
-  slow backend can't apply an older write after a newer one.
-- **Failures.** A read that rejects gives the defaults. A failed write
-  (quota, blocked storage, an unreachable endpoint) is swallowed and the
-  values still apply for the session; a backend that can recover, such as
-  a remote one retrying, does that itself. `set`
-  with a value that fails validation, including `NaN` or `Infinity`,
-  throws: that's a programming error, and `JSON.stringify` would turn a
-  non-finite number into `null` and quietly lose it on reload.
+- **Write order.** At most one write is in flight. Every write stores
+  all the keys set so far, or removes the entry if there are none. Changes
+  made while a write is in flight go out together in the next one, and
+  their promises settle with it, so a slow backend can't apply an older
+  write after a newer one.
+- **Failures are the game's to handle.** Nothing falls back silently:
+  - `createPreferences` rejects with the backend's `StorageError` if the
+    stored entry can't be read, and with `PreferencesFormatError` if it
+    isn't a JSON object (written by something else, or damaged).
+  - `set` and `reset` reject with the backend's `StorageError` if the
+    change can't be stored. The values stay applied in memory, and the
+    next write that succeeds stores them, since every write stores all
+    set keys. The game decides what a failed save means: tell the player,
+    retry, or carry on for the session.
+  - A game that wants to carry on without storage creates its preferences
+    on `createMemoryStorageBackend()` after catching the error, which makes
+    that choice visible in its code.
+  - `set` with a value that fails validation, including `NaN` or
+    `Infinity`, throws before applying anything: that's a programming
+    error, and `JSON.stringify` would turn a non-finite number into `null`
+    and quietly lose it on reload.
 - **One set per name.** Creating two preferences with the same `name` on
   the same backend throws, since each would overwrite the other's stored
   keys. The check runs before the first `await`, so two calls in the same
@@ -218,9 +250,12 @@ const audioPreferences = await createPreferences(
 ```
 
 and its graphics settings pass a validator for the quality names, in the
-async function that already creates the game. The graphics "trial" logic
-(falling back to a known-good quality after a crash) stays in the game:
-it's policy, built on top.
+async function that already creates the game. Today the demo carries on
+with defaults when storage is blocked; with this design it does so
+explicitly, catching `StorageError` and creating its preferences on a
+memory backend for the session. The graphics "trial" logic (falling back
+to a known-good quality after a crash) stays in the game: it's policy,
+built on top.
 
 ---
 
@@ -228,13 +263,13 @@ it's policy, built on top.
 
 ### Phase 1: Preferences
 
-| #   | Task                                                                                                              | Size |
-| --- | ----------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | `src/storage`: `StorageBackend`, `createLocalStorageBackend` with blocked and full storage turned into rejections | S    |
-| 1.2 | `createPreferences`: per-field loading, storing only set keys, `reset`, `onChange`, the write queue, `flush`      | M    |
-| 1.3 | Failure handling (rejected reads and writes, malformed data); duplicate-name check                                | S    |
-| 1.4 | Module wiring for both modules (`src/index.ts`, `package.json` exports)                                           | S    |
-| 1.5 | Guide; a settings panel in a docs demo; changelog under `#### Added`                                              | M    |
+| #   | Task                                                                                                                                                                         | Size |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | `src/storage`: `StorageBackend`, the `StorageError` classes, `createLocalStorageBackend` mapping unavailable, blocked and full storage to them, `createMemoryStorageBackend` | S    |
+| 1.2 | `createPreferences`: per-field loading, storing only set keys, `reset`, `onChange`, the write queue, promises from `set` and `reset`                                         | M    |
+| 1.3 | Failures surfaced (rejected reads and writes, `PreferencesFormatError`); duplicate-name check                                                                                | S    |
+| 1.4 | Module wiring for both modules (`src/index.ts`, `package.json` exports)                                                                                                      | S    |
+| 1.5 | Guide; a settings panel in a docs demo; changelog under `#### Added`                                                                                                         | M    |
 
 **Definition of done:** a docs demo's settings survive a reload; a
 corrupted stored value falls back to its default without affecting the
@@ -310,6 +345,21 @@ reads from memory, as Unity and Godot do over IndexedDB on the web. The
 cost is `await createPreferences(...)`, made where a game already awaits
 its assets.
 
+### DL-7: Storage failures are errors the game handles
+
+**Options.** (a) Swallow them: defaults when storage can't be read,
+values kept for the session when it can't be written. (b) Specific errors
+the game catches.
+
+**Decision: (b)**, decided in review.
+
+**Rationale.** Only the game knows what a failure means for it: telling
+the player their settings won't be kept, retrying a remote save, or
+carrying on without storage. Swallowing hides the failure from the one
+place that can act on it. Godot's `ConfigFile.load` and `save` return an
+error for the game to check, and Unity's web player threw
+`PlayerPrefsException` when a write exceeded its storage.
+
 ---
 
 ## 7. Open questions
@@ -319,29 +369,43 @@ its assets.
    over.
    - (a) No migrations until a game needs one (proposed). (b) A
      `migrate(storedObject)` option.
-2. **Should a failed write be reported?** A blocked `localStorage` write
-   has nothing to tell the player, but a remote backend's might.
-   - (a) Not by preferences; a backend that can recover does it itself
-     (proposed). (b) An `onSaveFailed` event on the preferences.
+2. **Persisted state in the world, or beside it?** Preferences are one
+   case of state kept outside the game (in `localStorage`, behind an API)
+   and mirrored into it, so they could be a component that a system loads
+   and writes back, rather than an object.
+   - (a) A persisted record beside the world, named for what it is rather
+     than for player preferences, and passed to the systems that need it
+     as `Time` and `InputManager` are (proposed). Settings are needed
+     before the world exists (the render quality picks the render
+     context's options), writes go through `set` rather than needing
+     change detection, which Forge doesn't have, and the record stays the
+     one owner of its values (§4.3).
+   - (b) A persisted component, loaded when it's added and written back
+     by a system that diffs it every frame.
 
 ---
 
 ## 8. Testing considerations
 
-- Loading: missing storage, a `SecurityError` on access, malformed JSON, a
-  wrong-typed field, a non-finite number, a field failing its validator,
-  extra fields; each falls back per field. A backend whose `get` rejects
-  gives the defaults.
+- Loading: a wrong-typed field, a non-finite number, a field failing its
+  validator and extra fields each fall back per field; a rejected read
+  rejects `createPreferences` with the backend's error; malformed JSON
+  rejects it with `PreferencesFormatError`.
 - Saving: only set keys are written; `reset` removes the entry; a
-  rejecting write leaves values applied; `onChange` raised; writes are
+  rejected write rejects that `set`'s promise, leaves the values applied,
+  and a later successful write stores them; `onChange` raised; writes are
   serialized and the latest state wins against a backend that settles out
-  of order; `flush` resolves after the last write.
+  of order.
 - `set` with an invalid or non-finite value throws; a second
   `createPreferences` with the same name on the same backend throws.
-- The `localStorage` backend: a blocked `localStorage` and a full one
-  reject; writes land before the call returns.
-- jsdom provides `localStorage`; preferences tests also use a stub backend
-  to control timing.
+- The `localStorage` backend: no `localStorage`, a `SecurityError` and a
+  `QuotaExceededError` reject with `StorageUnavailableError`,
+  `StorageBlockedError` and `StorageFullError`, with the original as
+  `cause`; writes land before the call returns.
+- The memory backend: values round-trip; nothing is shared between two
+  backends.
+- jsdom provides `localStorage`; preferences tests use the memory backend,
+  and a stub backend to control timing.
 
 ## 9. Documentation and demo follow-up
 
