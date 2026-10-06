@@ -7,7 +7,6 @@ import {
   RenderContext,
   ShaderCache,
   spriteFragmentShader,
-  spriteVertexShader,
 } from '../../rendering/index.js';
 import { addTextComponent } from '../components/text-component.js';
 import {
@@ -18,6 +17,7 @@ import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
+  msdfFillVertexShader,
   msdfVertexShader,
 } from '../rendering/shaders/index.js';
 import { createTextShapingEcsSystem } from './text-shaping-system.js';
@@ -139,9 +139,9 @@ describe('createTextShapingEcsSystem', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(spriteVertexShader))
       .addShader(new ForgeShaderSource(spriteFragmentShader))
       .addShader(new ForgeShaderSource(msdfVertexShader))
+      .addShader(new ForgeShaderSource(msdfFillVertexShader))
       .addShader(new ForgeShaderSource(msdfFillFragmentShader))
       .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
 

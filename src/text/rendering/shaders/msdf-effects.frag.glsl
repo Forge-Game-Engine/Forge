@@ -9,6 +9,7 @@ uniform float u_distanceRange;   // FontAtlasData.distanceRange
 uniform float u_atlasSize;       // FontAtlasData.atlasSize.height (assumes square texels)
 
 in vec2 v_texCoord;
+in float v_embolden;
 in vec4 v_outlineColor;
 in float v_outlineWidth;
 in vec4 v_shadowColor;
@@ -78,7 +79,6 @@ void main() {
   vec2 uvPerScreenPx = fwidth(v_texCoord);
   vec2 screenTexSize = vec2(1.0) / uvPerScreenPx;
   float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
-  float screenPxDistance = signedDistance * screenPxRange;
 
   // The atlas's own encoded budget: the distance field only carries graded
   // (non-saturated) data up to roughly `screenPxRange / 2` screen pixels
@@ -90,7 +90,15 @@ void main() {
   // doesn't need anything more than this either.
   float atlasSafeDistance = max(screenPxRange * 0.5 - 0.5, 0.0);
 
-  float clampedOutlineWidth = min(v_outlineWidth, atlasSafeDistance);
+  // A faux-bold (`<b>`) glyph's edge sits `emboldenPx` further out, clamped
+  // exactly as `msdf-fill.frag` clamps it. Both effects are measured from
+  // that bold edge, so the outline wraps the thickened ink, and the bold
+  // shift spends part of the atlas budget the effects have left.
+  float emboldenPx = min(v_embolden * screenPxRange, atlasSafeDistance);
+  float screenPxDistance = signedDistance * screenPxRange + emboldenPx;
+  float effectsSafeDistance = atlasSafeDistance - emboldenPx;
+
+  float clampedOutlineWidth = min(v_outlineWidth, effectsSafeDistance);
   float outlineCoverage = v_outlineWidth > 0.0
     ? clamp(screenPxDistance + 0.5 + clampedOutlineWidth, 0.0, 1.0)
     : 0.0;
@@ -103,8 +111,8 @@ void main() {
   vec2 shadowUv = v_texCoord - clampedShadowOffset * uvPerScreenPx;
   vec3 shadowMsdf = texture(u_atlas, shadowUv).rgb;
   float shadowSignedDistance = median(shadowMsdf.r, shadowMsdf.g, shadowMsdf.b) - 0.5;
-  float shadowScreenPxDistance = shadowSignedDistance * screenPxRange;
-  float shadowReach = max(min(v_shadowSoftness, atlasSafeDistance), 0.001);
+  float shadowScreenPxDistance = shadowSignedDistance * screenPxRange + emboldenPx;
+  float shadowReach = max(min(v_shadowSoftness, effectsSafeDistance), 0.001);
   float shadowCoverage = clamp(1.0 - (-shadowScreenPxDistance) / shadowReach, 0.0, 1.0);
   vec4 shadowLayer = vec4(v_shadowColor.rgb, shadowCoverage * v_shadowColor.a);
 

@@ -111,6 +111,7 @@ function pushTextEffectsRenderCommands(
         sprite: glyphSprite,
         flip: null,
         textEffects,
+        textEmbolden: glyph.embolden,
       },
     });
   }
@@ -122,7 +123,7 @@ function pushTextEffectsRenderCommands(
  * entity (see `pushTextRenderCommands`) so a glyph's fill can never be
  * painted over by a neighboring glyph's outline/shadow.
  * @param commands - The render command buffer to push into.
- * @param textComponent - The entity's `TextEcsComponent` (for `layer` and `color`).
+ * @param textComponent - The entity's `TextEcsComponent` (for `layer`, and `color` for glyphs outside a `<color>` tag).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param entityPosition - The entity's position; each glyph is offset from it.
  * @param rotationComponent - The entity's rotation, if it has one.
@@ -147,7 +148,7 @@ function pushTextFillRenderCommands(
       pivot: { x: 0.5, y: 0.5 },
       uvOffset: glyph.uvOffset,
       uvScale: glyph.uvScale,
-      tintColor: color,
+      tintColor: glyph.color ?? color,
       opacityMultiplier: textComponent.opacityMultiplier,
       renderable: fillRenderable,
       enabled: true,
@@ -164,6 +165,7 @@ function pushTextFillRenderCommands(
         scale: scaleComponent,
         sprite: glyphSprite,
         flip: null,
+        textEmbolden: glyph.embolden,
       },
     });
   }
