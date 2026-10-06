@@ -125,8 +125,49 @@ export const parseUniformDeclarations = (
   return declarations;
 };
 
-const stripComments = (source: string): string =>
-  source.replaceAll(/\/\*[\s\S]*?\*\//g, ' ').replaceAll(/\/\/[^\n]*/g, '');
+/**
+ * Replaces each `/* *\/` comment with a space and removes each `//` comment,
+ * in one pass over the source, so an unterminated `/*` can't make it
+ * scan the rest of the source again (it comments out everything after it, as
+ * it does in GLSL).
+ */
+const stripComments = (source: string): string => {
+  const parts: string[] = [];
+  let copiedUpTo = 0;
+  let index = source.indexOf('/', copiedUpTo);
+
+  while (index !== -1) {
+    const next = source.charAt(index + 1);
+
+    if (next !== '*' && next !== '/') {
+      index = source.indexOf('/', index + 1);
+
+      continue;
+    }
+
+    parts.push(source.slice(copiedUpTo, index));
+
+    const isBlock = next === '*';
+    const end = isBlock
+      ? source.indexOf('*/', index + 2)
+      : source.indexOf('\n', index + 2);
+
+    if (isBlock) {
+      parts.push(' ');
+    }
+
+    if (end === -1) {
+      return parts.join('');
+    }
+
+    copiedUpTo = isBlock ? end + 2 : end;
+    index = source.indexOf('/', copiedUpTo);
+  }
+
+  parts.push(source.slice(copiedUpTo));
+
+  return parts.join('');
+};
 
 const collectIntegerConstants = (code: string): Map<string, number> => {
   const constants = new Map<string, number>();

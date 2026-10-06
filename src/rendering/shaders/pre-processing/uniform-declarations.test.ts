@@ -122,6 +122,26 @@ describe('parseUniformDeclarations', () => {
     ).toEqual([scalar('u_real', 'float')]);
   });
 
+  it('should treat an unterminated block comment as commenting out the rest', () => {
+    expect(parse('uniform float u_a;\n/* uniform float u_b;')).toEqual([
+      scalar('u_a', 'float'),
+    ]);
+  });
+
+  it('should strip pathological comment sequences in linear time', () => {
+    const source = `/*${'a/*'.repeat(200_000)}`;
+    const start = performance.now();
+
+    expect(parse(source)).toEqual([]);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('should keep a division that is not a comment', () => {
+    expect(parse('const int N = 8 / 2;\nuniform float u_a; // c')).toEqual([
+      scalar('u_a', 'float'),
+    ]);
+  });
+
   it('should skip uniform blocks and inline struct declarations', () => {
     expect(
       parse(`
