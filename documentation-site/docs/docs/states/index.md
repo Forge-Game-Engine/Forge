@@ -6,8 +6,8 @@ sidebar_position: 1
 
 Most games move between a few top-level states: a menu, playing, paused,
 game over. Most of their systems only make sense in some of them, and each
-state has setup and teardown work: spawning the player when a round starts,
-clearing the board when it ends.
+state has setup and teardown work, such as spawning the player when playing
+starts and removing it when playing ends.
 
 The `@forge-game-engine/forge/states` module covers both halves:
 
@@ -50,11 +50,11 @@ world.addSystem(createMenuInputEcsSystem(gameState), {
 });
 ```
 
-A system isn't queried or updated while its run condition is false, so a
-`paused` state that leaves gameplay systems out stops them where they are.
-`Time` keeps running during the pause: a system that steps with
-`time.deltaTimeInSeconds` resumes where it stopped, but one that compares
-against `time.timeInSeconds` counts the pause as elapsed time.
+A system isn't queried or updated while its run condition is false. In a
+`paused` state that leaves out the gameplay systems, the components those
+systems write keep their values until the systems run again. `Time` keeps
+running during a pause, so `time.timeInSeconds` includes the time spent
+paused.
 
 `addSystemGroup` takes a `runIf` too, for a whole group of systems.
 See [System](../ecs/system.md#run-conditions) for how run conditions work.
@@ -103,7 +103,7 @@ seen what they set up.
 
 Setting the current state again re-enters it: its exit systems run, its
 scoped entities are removed, and its enter systems run. `gameState.set('playing')`
-while playing restarts the round without a detour through another state.
+while in `playing` restarts it without switching to another state first.
 
 ## Input and the start of the tick
 
@@ -139,6 +139,6 @@ update: (world, result) => {
 The system is still queried every tick, and the check is hidden inside it.
 Register it with `runIf: inState(gameState, 'playing')` instead.
 
-Removing a round's entities kind by kind in an `onExit` system: scope them
-to the state instead, so every entity a round creates goes with it,
-including kinds added later.
+Removing a state's entities in an `onExit` system, one query at a time: give
+them a [`StateScopedEcsComponent`](./state-scoped-entities.md) instead, so
+every entity created for the state is removed, including ones added later.

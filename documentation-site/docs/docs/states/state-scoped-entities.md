@@ -4,8 +4,8 @@ sidebar_position: 2
 
 # State-Scoped Entities
 
-An entity that belongs to a state, such as a menu's labels or the enemies of
-a round, gets a
+An entity that belongs to a state, such as a menu's labels or the enemies
+spawned while playing, gets a
 [`StateScopedEcsComponent`](/Forge/docs/api/interfaces/StateScopedEcsComponent).
 When its state ends, the transition removes it, so no system has to find
 and remove each kind of entity a state created.
@@ -31,20 +31,19 @@ Removal happens between the state's `exitGroup` and `enterGroup`, so
 `removeOnExit` is the common case: the menu's labels go when the menu is
 left.
 
-`removeOnEnter` is for content that should outlive its state. A round's
-leftovers often stay on screen behind the game-over screen, and go when the
-next round or the menu starts:
+`removeOnEnter` is for entities that stay after their state ends. Enemies
+left over from `playing` can stay on screen during `gameOver`, and be removed
+when `playing` or `menu` is entered:
 
 ```ts
-addStateScopedComponent(world, star, {
+addStateScopedComponent(world, enemy, {
   state: gameState,
   removeOnEnter: ['playing', 'menu'],
 });
 ```
 
-Because re-entering a state counts as entering it, `removeOnEnter:
-['playing']` also clears the previous round when `gameState.set('playing')`
-restarts it.
+Re-entering a state counts as entering it, so `removeOnEnter: ['playing']`
+also removes the entity when `gameState.set('playing')` restarts `playing`.
 
 An entity scoped with `removeOnEnter` on the initial state and created
 before the first tick is removed on that tick, since the initial state is
