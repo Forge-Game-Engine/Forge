@@ -75,6 +75,12 @@
         "default": "./dist/rendering/index.js"
       }
     },
+    "./states": {
+      "import": {
+        "types": "./dist/states/index.d.ts",
+        "default": "./dist/states/index.js"
+      }
+    },
     "./text": {
       "import": {
         "types": "./dist/text/index.d.ts",
