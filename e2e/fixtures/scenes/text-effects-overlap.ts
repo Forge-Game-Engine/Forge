@@ -47,6 +47,14 @@ const glyphBounds = {
   top: 0.5 + glyphHalfWidthEm,
 };
 
+// The synthetic glyph's ink top, in em above its baseline: its quad (and
+// ink) is centered half an em above the baseline.
+const syntheticCapHeightEm = 0.5 + inkHalfFraction;
+
+// World Y of every glyph's center under `verticalAlign: 'middle'`, which
+// centers the band from the baseline to `syntheticCapHeightEm` on y = 0.
+const glyphCenterWorldY = (0.5 - syntheticCapHeightEm / 2) * SIZE;
+
 // The advance (in em) between the two glyphs is chosen so that their
 // *padded quads* (ink + the atlas's own baked-in padding on each side)
 // overlap by 11 world units while their *ink* stays a real, positive 5
@@ -247,15 +255,15 @@ export const createScene: CreateScene = async (
         height: SYNTHETIC_GLYPH_TILE_SIZE,
       },
       distanceRange: SYNTHETIC_GLYPH_DISTANCE_RANGE,
-      // Sum to 1.0 so `verticalAlign: 'middle'` centers this glyph's own
-      // ink (which spans exactly 1 em vertically around its own center, by
-      // construction) on the entity's position - see the derivation this
-      // module's own doc comment gives for `advanceEm`.
+      // `capHeight` is the synthetic glyph's ink top, the way a real
+      // atlas measures it on "H". `verticalAlign: 'middle'` centers the
+      // band from the baseline to it, which puts the glyph's center at
+      // `glyphCenterWorldY`.
       metrics: {
         lineHeight: 1,
-        ascender: 0.5,
-        descender: 0.5,
-        capHeight: 0.5,
+        ascender: glyphBounds.top,
+        descender: glyphBounds.bottom,
+        capHeight: syntheticCapHeightEm,
       },
       glyphs: new Map([
         [
@@ -354,7 +362,7 @@ export const createScene: CreateScene = async (
     glyphACenterWorldX: 0.5 * SIZE,
     glyphCOuterEdgeWorldX,
     glyphCCenterWorldX,
-    glyphCenterWorldY: 0,
+    glyphCenterWorldY,
 
     sampleColorAt(
       worldX: number,
