@@ -127,20 +127,20 @@ function composeWithParent(
 function computeWorld(
   entity: number,
   cache: TransformCache,
-  frozen: Set<number>,
+  frozen: WeakSet<PositionEcsComponent>,
   world: EcsWorld,
 ): void {
-  // Static entities (and their static ancestors) have their world transform
-  // computed once and then skipped on every subsequent frame. Re-check
-  // `isStatic` here in case the entity's id was recycled for a new entity.
-  if (frozen.has(entity)) {
-    const positionComponent = world.getComponent(entity, positionId);
+  const positionComponent = world.getComponent(entity, positionId);
 
-    if (positionComponent?.isStatic) {
+  // Static entities (and their static ancestors) have their world transform
+  // computed once and then skipped on every subsequent frame. Re-checking
+  // `isStatic` unfreezes an entity whose `isStatic` has been cleared.
+  if (positionComponent && frozen.has(positionComponent)) {
+    if (positionComponent.isStatic) {
       return;
     }
 
-    frozen.delete(entity);
+    frozen.delete(positionComponent);
   }
 
   if (cache.computed.has(entity)) {
@@ -157,11 +157,10 @@ function computeWorld(
 
   cache.visiting.add(entity);
 
-  const hasPosition = world.getComponent(entity, positionId);
   const hasRotation = world.getComponent(entity, rotationId);
   const hasScale = world.getComponent(entity, scaleId);
 
-  if (!hasPosition && !hasRotation && !hasScale) {
+  if (!positionComponent && !hasRotation && !hasScale) {
     cache.visiting.delete(entity);
 
     return;
@@ -174,8 +173,8 @@ function computeWorld(
     cache.visiting.delete(entity);
     cache.computed.add(entity);
 
-    if (hasPosition?.isStatic) {
-      frozen.add(entity);
+    if (positionComponent?.isStatic) {
+      frozen.add(positionComponent);
     }
 
     return;
@@ -190,8 +189,14 @@ function computeWorld(
   cache.visiting.delete(entity);
   cache.computed.add(entity);
 
-  if (hasPosition?.isStatic && frozen.has(parentEntity)) {
-    frozen.add(entity);
+  const parentPosition = world.getComponent(parentEntity, positionId);
+
+  if (
+    positionComponent?.isStatic &&
+    parentPosition &&
+    frozen.has(parentPosition)
+  ) {
+    frozen.add(positionComponent);
   }
 }
 
@@ -210,9 +215,12 @@ export const createTransformEcsSystem = (): EcsSystem<
 > => {
   const cache = createTransformCache();
 
-  // Entities whose world transform is static and has already been computed,
-  // so `computeWorld` can skip them entirely. Persists across frames.
-  const frozen = new Set<number>();
+  // The position components of entities whose world transform is static and
+  // has already been computed, so `computeWorld` can skip them entirely.
+  // Persists across frames. Keyed by component rather than entity, so
+  // removing the entity (or its position) drops it from the set, and a
+  // position added later starts unfrozen.
+  const frozen = new WeakSet<PositionEcsComponent>();
 
   return {
     query: [positionId],
