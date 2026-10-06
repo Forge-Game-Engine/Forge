@@ -4,12 +4,16 @@ sidebar_position: 1
 
 # Game States
 
-A [`GameState`](/Forge/docs/api/interfaces/GameState) holds one value from a
-fixed set of state names and changes it at the start of a tick. Run
-conditions created from a `GameState` decide which systems run in each
-state, and which run on the tick a state is entered or left.
+A game state is one value from a fixed set of state names, such as `menu`,
+`playing` and `paused`, that changes at the start of a tick. Systems can be
+registered to run only in some states, or only on the tick a state is
+entered or left, and entities can be removed when a state changes.
 
 ## Creating a game state
+
+[`createGameState`](/Forge/docs/api/functions/createGameState) creates a
+[`GameState`](/Forge/docs/api/interfaces/GameState) for a world, starting in
+the given state:
 
 ```ts
 import { createGameState } from '@forge-game-engine/forge/states';
@@ -19,44 +23,43 @@ type GameStateName = 'menu' | 'playing' | 'paused';
 const gameState = createGameState<GameStateName>(world, 'menu');
 ```
 
-`createGameState` registers the systems and groups that apply transitions in
-`world`. `gameState.current` is the current state.
+`gameState.current` is the current state.
 
 ## Changing state
 
-`gameState.set(name)` requests a transition. The transition is applied at
-the start of the next tick, in `world.firstSystemGroup`, which runs before
-every other group, so every system in a tick reads the same `current`. When `set` is called more than once in a
-tick, the last call is applied.
+`set` requests a transition:
 
-Calling `set` with the current state re-enters it. The transition runs the
-same steps as a transition to another state.
+```ts
+gameState.set('playing');
+```
 
-## Running a system in some states
+The transition is applied at the start of the next tick, before any other
+system runs, so every system in a tick reads the same `current`. Calling
+`set` with the current state leaves and re-enters it.
 
-`inState(gameState, ...names)` returns a run condition that is `true` while
-`current` is one of `names`. Pass it as `runIf`:
+## Running systems in some states
+
+[`inState`](/Forge/docs/api/functions/inState) creates a run condition that
+is true while the game state is one of the given states. Pass it as `runIf`
+when registering a system:
 
 ```ts
 import { inState } from '@forge-game-engine/forge/states';
 
 world.addSystem(enemyAiSystem, { runIf: inState(gameState, 'playing') });
-world.addSystem(menuInputSystem, {
-  runIf: inState(gameState, 'menu', 'paused'),
-});
 ```
 
-A system registered without `runIf` runs on every tick in every state. While
-its run condition returns `false`, a system isn't queried and its `update`
-isn't called. `addSystemGroup` takes `runIf` in the same way. See
+The system runs only on ticks where `current` is `playing`. A system
+registered without `runIf` runs in every state. See
 [Run conditions](../ecs/system.md#run-conditions).
 
-## Running a system when a state is entered or left
+## Running systems when a state is entered or left
 
-`onEnter(gameState, ...names)` returns a run condition that is `true` only on
-the tick one of `names` is entered. `onExit(gameState, ...names)` is `true`
-only on the tick one of `names` is left. Register these systems in
-`gameState.enterGroup` and `gameState.exitGroup`:
+[`onEnter`](/Forge/docs/api/functions/onEnter) and
+[`onExit`](/Forge/docs/api/functions/onExit) create run conditions that are
+true only on the tick the game state enters or leaves one of the given
+states. Register these systems in the game state's `enterGroup` and
+`exitGroup`:
 
 ```ts
 import { onEnter, onExit } from '@forge-game-engine/forge/states';
@@ -65,25 +68,50 @@ world.addSystem(spawnPlayerSystem, {
   group: gameState.enterGroup,
   runIf: onEnter(gameState, 'playing'),
 });
+
 world.addSystem(saveHighScoreSystem, {
   group: gameState.exitGroup,
   runIf: onExit(gameState, 'playing'),
 });
 ```
 
-On the tick of a transition:
+On the tick of a transition, the world runs:
 
-1. `current` changes. `exited` is set to the previous state and `entered` to
-   the new one. Both are `null` on every other tick.
-2. `exitGroup` runs.
-3. [State-scoped entities](./state-scoped-entities.md) of the transition are
-   removed.
-4. `enterGroup` runs.
-5. All other groups run.
+1. the transition: `current` changes, `exited` is the state left and
+   `entered` the state entered;
+2. `exitGroup`;
+3. the removal of state-scoped entities (see below);
+4. `enterGroup`;
+5. every other group.
 
-`exitGroup` and `enterGroup` run before every other group of the world. An
-`onEnter` or `onExit` system registered in another group runs on the same
-tick, after the systems of every group ordered before it.
+On the first tick, the initial state is entered, so its `onEnter` systems
+run.
 
-On the first tick, the initial state is entered: `entered` is the initial
-state, `exited` is `null`, and its `onEnter` systems run.
+## Removing entities when a state changes
+
+[`addStateScopedComponent`](/Forge/docs/api/functions/addStateScopedComponent)
+marks an entity to be removed when the game state leaves or enters given
+states:
+
+```ts
+import { addStateScopedComponent } from '@forge-game-engine/forge/states';
+
+addStateScopedComponent(world, enemy, {
+  state: gameState,
+  removeOnExit: ['playing'],
+});
+```
+
+This entity is removed when the game state leaves `playing`.
+`removeOnEnter` removes an entity when the game state enters one of the
+listed states instead. With `removeOnEnter: ['playing', 'menu']`, an entity
+created while playing is kept after `playing` is left, and removed when
+`playing` or `menu` is next entered.
+
+Removal happens between `exitGroup` and `enterGroup`, so `onExit` systems
+can still read the entity.
+
+:::note
+Only the entity itself is removed. Entities parented to it aren't removed,
+so give each child its own state-scoped component.
+:::
