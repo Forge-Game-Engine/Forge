@@ -6,7 +6,7 @@
 | **Kind**                              | Missing feature                                                                                                                                                                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts`, `src/speed/create-speed-sounds.ts`, `src/explosions/create-explosions.ts`, `src/gun/gun.system.ts`, `src/enemy/enemy.system.ts`, `src/music/create-music.ts`, `src/main-menu/create-settings-panel.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                  |
-| **Related**                           | [`demo-findings.md`](./demo-findings.md), [`persistent-preferences.md`](./persistent-preferences.md), [`generational-entity-ids.md`](./generational-entity-ids.md)                                                                                        |
+| **Related**                           | [`demo-findings.md`](./demo-findings.md), [`persistent-preferences.md`](./persistent-preferences.md)                                                                                                                                                      |
 
 ## 0. Targeted modules
 

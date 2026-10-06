@@ -23,8 +23,10 @@ Godot, Bevy (or, for browser-specific problems, web engines) solve the
 same problem. Each was then reviewed against those rules and against the
 code, and revised (§3).
 
-These are proposals. None of them describes current behavior, and each
-needs review before it's implemented.
+These are proposals. Findings marked "implemented" have shipped: their
+design documents were removed, and `documentation-site/docs/docs`
+describes the current behavior. The rest don't describe current behavior,
+and each needs review before it's implemented.
 
 ---
 
@@ -35,24 +37,24 @@ needs review before it's implemented.
 | 1   | [Shader uniform declarations](./shader-uniform-declarations.md)   | Defect             | Keeps uniforms alive with `highp` so `setUniform` doesn't throw on mobile                                            | Materials only know the uniforms the driver kept                                                              |
 | 2   | [Sound mixer](./audio-mixer.md)                                   | Feature            | Its own mixer, buses, one-shots on entities with guessed lifetimes, synthesized WAVs as data URLs, a Howl per system | No buses, volumes, one-shots or procedural sounds; removal doesn't stop sounds; no completion report          |
 | 3   | [Text input field](./text-input-field.md)                         | Feature            | Its own text field on a hidden DOM input, keys swallowed while typing                                                | No text field; the keyboard source reads keys typed into inputs                                               |
-| 4   | [Generational entity ids](./generational-entity-ids.md)           | Defect             | "Id can be reused" checks, `removed`/`usedBullets` sets                                                              | Ids reused immediately with no generation; double removal; removing the last component removes the entity     |
+| 4   | Generational entity ids (implemented)                             | Defect             | "Id can be reused" checks, `removed`/`usedBullets` sets                                                              | Ids reused immediately with no generation; double removal; removing the last component removes the entity     |
 | 5   | [Hierarchy removal](./hierarchy-removal.md)                       | Defect             | Orphaned flame cleanup; `removeWithHealthBar`, `removePowerUp`                                                       | Removing a parent leaves its children; no children index                                                      |
 | 6   | [Input action state](./input-action-state.md)                     | Defect             | `noReset` on every axis; `shootInput.endHold()` after a group switch                                                 | Axes reset every frame by default; holds carried across group switches; sources overwrite each other          |
-| 7   | [Angle conventions](./angle-conventions.md)                       | Defect             | Converts the exhaust direction by hand, once                                                                         | Particles use degrees clockwise from up; `Vec2.up` points down; emitters ignore rotation; Y-down terrain slab |
-| 8   | [HDR colors](./hdr-colors.md)                                     | Defect             | Buttons dimmed at rest so hover can brighten                                                                         | `Color` clamps to `1`                                                                                         |
+| 7   | Angle conventions (implemented)                                   | Defect             | Converts the exhaust direction by hand, once                                                                         | Particles use degrees clockwise from up; `Vec2.up` points down; emitters ignore rotation; Y-down terrain slab |
+| 8   | HDR colors (implemented)                                          | Defect             | Buttons dimmed at rest so hover can brighten                                                                         | `Color` clamps to `1`                                                                                         |
 | 9   | [Sprite textures](./sprite-textures.md)                           | Defect and feature | Renderable swaps, raw GL textures, a white SVG, fresh `uvOffset`s, hand-built renderables                            | A sprite is a whole pipeline per image; textures have no owner; shared vectors                                |
-| 10  | [Camera views](./camera-views.md)                                 | Feature and defect | A mirrored `verticalWorldUnits`, visible-size calls in 16 files, unit conversion constants, manual culling           | No camera view or conversions; `worldToScreenSpace` doesn't flip Y; no culling                                |
+| 10  | Camera views (implemented)                                        | Feature and defect | A mirrored `verticalWorldUnits`, visible-size calls in 16 files, unit conversion constants, manual culling           | No camera view or conversions; `worldToScreenSpace` doesn't flip Y; no culling                                |
 | 11  | [Render resolution](./render-resolution.md)                       | Defect and feature | Writes `maxPixelRatio` through a cast; resizes camera targets every frame                                            | `maxPixelRatio` is read-only; camera targets don't follow the canvas                                          |
 | 12  | [Post-processing effects](./post-processing-effects.md)           | Feature and defect | Scratch targets and copy-backs in each effect; bloom off via intensity                                               | Each pass copies back; bloom at `passes: 0` still draws                                                       |
 | 13  | [WebGL context loss](./webgl-context-loss.md)                     | Feature            | Reloads the page                                                                                                     | Context loss isn't handled; GPU resources can't be rebuilt                                                    |
 | 14  | [Sprite draw order](./sprite-draw-order.md)                       | Defect             | `sortDepth = ship.y - offset` every frame; `-1e6`-style depths                                                       | Absolute, Y-based, quantized sorting; nothing relative to the parent                                          |
 | 15  | [Sprite fill](./sprite-fill.md)                                   | Feature            | 32 pre-rendered drain images; a progress fill held at a minimum width                                                | No linear or radial reveal                                                                                    |
 | 16  | [Hierarchical visibility](./hierarchical-visibility.md)           | Feature            | `setShown` (alpha, interactable, raycasts) in five files; buttons moved by hand                                      | No subtree hide affecting rendering, layout and input                                                         |
-| 17  | [Collision events](./collision-events.md)                         | Feature            | Four systems scanning every manifold; `addAabbComponent` everywhere                                                  | No layers, masks, sensors or per-entity contacts                                                              |
+| 17  | Collision events (implemented)                                    | Feature            | Four systems scanning every manifold; `addAabbComponent` everywhere                                                  | No layers, masks, sensors or per-entity contacts                                                              |
 | 18  | [Polygon collider local space](./polygon-collider-local-space.md) | Defect             | A symmetric collider so re-centering doesn't move it                                                                 | Polygons re-centered because the solver assumes origin = center of mass                                       |
-| 19  | [Game states](./game-states.md)                                   | Feature            | A phase machine with entered/left flags, 15 state checks in 9 files, a clear-run system                              | No states, run conditions or state-scoped entities                                                            |
+| 19  | Game states (implemented)                                         | Feature            | A phase machine with entered/left flags, 15 state checks in 9 files, a clear-run system                              | No states, run conditions or state-scoped entities                                                            |
 | 20  | [Text cap-height centering](./text-cap-height-centering.md)       | Defect             | Baselines computed from cap height; a rebuilt button                                                                 | `'middle'` centers each string's own ink; the stored cap height includes glyph padding                        |
-| 21  | [Font atlas loading](./font-atlas-loading.md)                     | Defect             | Fonts served from `public/`                                                                                          | The atlas image is resolved next to the JSON, which bundlers rename                                           |
+| 21  | Font atlas loading (implemented)                                  | Defect             | Fonts served from `public/`                                                                                          | The atlas image is resolved next to the JSON, which bundlers rename                                           |
 | 22  | [Persistent state](./persistent-preferences.md)                   | Feature            | Two copies of load/validate/save around `localStorage`                                                               | No persistent state                                                                                           |
 
 ---
@@ -104,8 +106,6 @@ These are recorded as open questions in their designs, with a proposal:
   emissive maps on the sprite rather than the material.
 - **Polygon collider local space:** derive rigid-body mass data from the
   collider instead of copying it in.
-- **Angle conventions:** fold the terrain fix in, or give it its own
-  design.
 - **Text input field:** keep hover-driven focus with a separate editing
   state, or remove hover focus from the UI.
 - **Hierarchy removal:** wait before adding a lifetime link that isn't a
@@ -117,41 +117,33 @@ These are recorded as open questions in their designs, with a proposal:
 
 Most designs are independent. These aren't:
 
-- [Hierarchy removal](./hierarchy-removal.md) needs
-  [generational entity ids](./generational-entity-ids.md).
 - [Sprite draw order](./sprite-draw-order.md) needs hierarchy removal's
   children index and sibling order;
   [hierarchical visibility](./hierarchical-visibility.md) needs draw
   order's per-frame resolution pass.
-- [Game states](./game-states.md) relies on generational ids and
-  hierarchy removal for scoped removal.
 - [Sprite textures](./sprite-textures.md) needs
   [shader uniform declarations](./shader-uniform-declarations.md);
   [WebGL context loss](./webgl-context-loss.md) needs both;
   [sprite fill](./sprite-fill.md) Phase 2 lands after sprite textures.
 - [Render resolution](./render-resolution.md) lands after
   [post-processing effects](./post-processing-effects.md).
-- [Collision events](./collision-events.md) Phase 2 uses `isAlive` from
-  generational entity ids.
 - [Text input field](./text-input-field.md) Phase 1 and
   [input action state](./input-action-state.md) both change the keyboard
   source; either can land first.
-- Polygon collider local space and collision events both touch what
-  `continuous-collision-detection.md` plans; whichever lands second
-  adapts.
+- [Polygon collider local space](./polygon-collider-local-space.md)
+  changes where continuous collision detection sweeps circles from.
 
 A suggested order, small and independent first:
 
-1. **Small defects**: HDR colors, text cap-height centering, font atlas
-   loading, angle conventions, shader uniform declarations.
-2. **ECS foundations**: generational entity ids, hierarchy removal, run
-   conditions (game states Phase 1), then game states.
+1. **Small defects**: text cap-height centering, shader uniform
+   declarations.
+2. **ECS foundations**: hierarchy removal.
 3. **Input**: input action state, then the text input field.
-4. **Rendering**: sprite textures (Phase 0 can land any time), camera
-   views, post-processing effects, render resolution, sprite draw order,
+4. **Rendering**: sprite textures (Phase 0 can land any time),
+   post-processing effects, render resolution, sprite draw order,
    hierarchical visibility, sprite fill, then WebGL context loss.
-5. **Features**: the sound mixer, collision events, polygon collider
-   local space, persistent state.
+5. **Features**: the sound mixer, polygon collider local space,
+   persistent state.
 
 ---
 

@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Found in**                          | Galactic Journey demo: `setShown` helpers in `src/game-over/create-stats-panel.ts`, `create-flight-history-page.ts`, `pilot-panel.system.ts`, `src/leaderboard/create-leaderboard-page.ts`, `src/main-menu/create-main-menu.ts`; the stats panel's button repositioned by hand when the one above it is hidden; `src/speed/create-hud.ts` (the speed HUD's ring hidden segment by segment) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                                                                                   |
-| **Related**                           | [`ui-system.md`](./ui-system.md), [`hierarchy-removal.md`](./hierarchy-removal.md), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite), [`game-states.md`](./game-states.md)                                                                                                                                                                                                  |
+| **Related**                           | [`ui-system.md`](./ui-system.md), [`hierarchy-removal.md`](./hierarchy-removal.md), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite)                                                                                                                                                                                                                                        |
 
 ## 0. Targeted modules
 
@@ -78,7 +78,8 @@ groups for what they're for: fading and disabling interaction.
 
 - **Disabling a subtree's logic** (Unity's inactive GameObjects stop their
   scripts). Systems decide for themselves what a hidden entity means;
-  pausing whole groups of systems is [`game-states.md`](./game-states.md).
+  pausing whole groups of systems is what run conditions and game states
+  (`/src/states`) are for.
 - **Hiding across canvases.** A canvas is a root, so a canvas shown along
   with a page on another canvas (the demo's title) is hidden with its own
   `visible`, one line instead of a group.

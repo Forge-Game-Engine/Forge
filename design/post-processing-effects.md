@@ -1,12 +1,12 @@
 # Design: Post-Processing Passes Without Copy-Back
 
-|                                       |                                                                                                                                        |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                      |
-| **Kind**                              | Feature and defect                                                                                                                     |
-| **Found in**                          | Galactic Journey demo: `src/shockwave/refraction.system.ts`, `src/glitch/glitch.system.ts`, `src/graphics/graphics-quality.system.ts`  |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                               |
-| **Related**                           | [`render-resolution.md`](./render-resolution.md), [`camera-views.md`](./camera-views.md), [`sprite-textures.md`](./sprite-textures.md) |
+|                                       |                                                                                                                                       |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                                                     |
+| **Kind**                              | Feature and defect                                                                                                                    |
+| **Found in**                          | Galactic Journey demo: `src/shockwave/refraction.system.ts`, `src/glitch/glitch.system.ts`, `src/graphics/graphics-quality.system.ts` |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                              |
+| **Related**                           | [`render-resolution.md`](./render-resolution.md), [`sprite-textures.md`](./sprite-textures.md)                                        |
 
 ## 0. Targeted modules
 
@@ -61,7 +61,7 @@ buffer and writes the other, with no copy back.
 
 - **Shared per-view uniforms** (resolution, view bounds, time) bound to
   every effect material automatically. An effect calls
-  [`getCameraView`](./camera-views.md) and sets what it needs.
+  `getCameraView` and sets what it needs.
 - **An effect stack object or volume system** (Unity's Volume framework).
   Effects stay components on the camera, ordered by system registration.
 - **Effects that need their own intermediate resolutions** (bloom's

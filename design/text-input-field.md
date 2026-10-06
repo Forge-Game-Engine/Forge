@@ -1,12 +1,12 @@
 # Design: Text Input Field
 
-|                                       |                                                                                                                                                                                                                                                                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                                                                                |
-| **Kind**                              | Missing feature                                                                                                                                                                                                                                                                                                                                                  |
-| **Found in**                          | Galactic Journey demo: `src/ui/create-text-input.ts`, `src/ui/text-input.component.ts`, `src/ui/text-input.system.ts`, `src/game-over/pilot-panel*.ts`                                                                                                                                                                                                           |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                                                         |
-| **Related**                           | [#586](https://github.com/Forge-Game-Engine/Forge/issues/586) (this design answers its open questions), `ui-system.md` DL-10, [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) (clipping), [`input-action-state.md`](./input-action-state.md), [`camera-views.md`](./camera-views.md), [`hierarchical-visibility.md`](./hierarchical-visibility.md) |
+|                                       |                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                                        |
+| **Kind**                              | Missing feature                                                                                                                                                                                                                                                                                                          |
+| **Found in**                          | Galactic Journey demo: `src/ui/create-text-input.ts`, `src/ui/text-input.component.ts`, `src/ui/text-input.system.ts`, `src/game-over/pilot-panel*.ts`                                                                                                                                                                   |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                 |
+| **Related**                           | [#586](https://github.com/Forge-Game-Engine/Forge/issues/586) (this design answers its open questions), `ui-system.md` DL-10, [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) (clipping), [`input-action-state.md`](./input-action-state.md), [`hierarchical-visibility.md`](./hierarchical-visibility.md) |
 
 ## 0. Targeted modules
 
@@ -336,9 +336,8 @@ canvas parent):
    and writes `isEditing`.
 2. **Placement.** Every tick, the editing field's resolved rect is
    converted from UI world space to a `CssRect` through the canvas's
-   camera (the inverse of `resolveCanvasPointerPosition`, and
-   `worldToViewport` once [`camera-views.md`](./camera-views.md) lands).
-   Not `worldToScreenSpace`, which doesn't flip Y.
+   camera (the inverse of `resolveCanvasPointerPosition`, through the camera
+   view's `worldToViewport`).
 3. **Value.** On `changed` outside a composition (or on `compositionend`),
    the entry's value is run through the font filter (drop characters the
    field's `FontAtlas` has no glyph for), then `filter`, then `maxLength`;

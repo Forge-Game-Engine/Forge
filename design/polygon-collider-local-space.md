@@ -6,7 +6,6 @@
 | **Kind**                              | Defect                                                                                                                                                                                                                                                                                      |
 | **Found in**                          | Galactic Journey demo: `src/grabber/create-grabbers.ts` (collider drawn symmetric about the image center so re-centering doesn't move it); in this repository, the triangle sprite-pivot workaround in `demo/src/game.ts` and `documentation-site/src/pages/demos/physics/_spawn-shapes.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                    |
-| **Related**                           | [`collision-events.md`](./collision-events.md), `continuous-collision-detection.md`                                                                                                                                                                                                         |
 
 ## 0. Targeted modules
 
@@ -154,9 +153,9 @@ shape stays where it was authored.
 
 ### 4.5 Other designs
 
-`continuous-collision-detection.md` also edits integration and sweeps
-circles from the entity's position; whichever lands second sweeps from
-the world center of mass and the circle's rotated `center`.
+Continuous collision detection (`createContinuousCollisionEcsSystem`)
+sweeps circles from the entity's position; this design changes it to
+sweep from the world center of mass and the circle's rotated `center`.
 
 ---
 

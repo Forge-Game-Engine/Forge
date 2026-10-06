@@ -6,7 +6,7 @@
 | **Kind**                              | Defect                                                                                                                                                                                                                                                                              |
 | **Found in**                          | Galactic Journey demo: `src/ui/create-menu-button.ts` (label placed by hand "centered on its cap height"), `src/main-menu/create-controls-diagram.ts` (`textCenteredAt`), `titleBaseline` formulas in six panels (stats, flight history, pilot, leaderboard, how-to-play, settings) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                            |
-| **Related**                           | [`ui-system.md`](./ui-system.md), [`font-atlas-loading.md`](./font-atlas-loading.md)                                                                                                                                                                                                |
+| **Related**                           | [`ui-system.md`](./ui-system.md)                                                                                                                                                                                                                                                    |
 
 ## 0. Targeted modules
 
