@@ -19,6 +19,7 @@ import {
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
+import { asteroidCategory, playerCategory } from './_collision-categories';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -131,6 +132,8 @@ export function spawnPlayer(
 
   addColliderComponent(world, playerEntity, {
     collider: new CircleCollider(playerRadius),
+    category: playerCategory,
+    mask: asteroidCategory,
   });
 }
 

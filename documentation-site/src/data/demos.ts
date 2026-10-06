@@ -55,6 +55,13 @@ export const demos: Demo[] = [
     categories: ['physics'],
   },
   {
+    slug: 'sensors',
+    title: 'Sensors and Contacts',
+    description:
+      'Trigger zones that detect bodies passing through without blocking them.',
+    categories: ['physics'],
+  },
+  {
     slug: 'raycasting',
     title: 'Raycasting',
     description:

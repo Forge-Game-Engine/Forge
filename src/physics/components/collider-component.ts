@@ -41,6 +41,14 @@ export interface ColliderDefaultedOptions {
    * {@link allCollisionCategories}.
    */
   mask: number;
+
+  /**
+   * When `true`, overlaps with this collider are detected and reported
+   * through `ContactsEcsComponent`, but never resolved: nothing bounces off
+   * or is pushed by it. Use it for trigger zones and pickups. Defaults to
+   * `false`.
+   */
+  sensor: boolean;
 }
 
 export interface ColliderRequiredOptions {
@@ -70,6 +78,7 @@ export function addColliderComponent(
     restitution: 0.05,
     category: 1,
     mask: allCollisionCategories,
+    sensor: false,
   };
 
   const component: ColliderEcsComponent = {

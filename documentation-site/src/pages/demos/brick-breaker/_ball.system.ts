@@ -5,7 +5,8 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Random, Vec2 } from '@forge-game-engine/forge/math';
 import {
-  CollisionManifold,
+  ContactsEcsComponent,
+  contactsId,
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '@forge-game-engine/forge/physics';
@@ -15,14 +16,13 @@ import { BrickField } from './_create-bricks';
 
 /**
  * Creates an ECS system that destroys any brick the ball is touching this
- * tick (via `collisionManifolds`, populated by `createNarrowPhaseEcsSystem`)
+ * tick (via the ball's `ContactsEcsComponent`, filled by
+ * `createNarrowPhaseEcsSystem`)
  * and resets the ball back to its start position - relaunching it - once it
  * falls below `missY`.
  *
- * Must run after `createNarrowPhaseEcsSystem`, so this tick's collisions are
+ * Must run after `createNarrowPhaseEcsSystem`, so this tick's contacts are
  * available before this system checks them.
- * @param collisionManifolds - The narrow-phase system's output: this tick's
- * confirmed collisions.
  * @param random - The random source used to vary the relaunch angle.
  * @param missY - The world-space y coordinate below which the ball is
  * considered to have missed the paddle.
@@ -30,25 +30,35 @@ import { BrickField } from './_create-bricks';
  * ball is touching.
  */
 export const createBallEcsSystem = (
-  collisionManifolds: CollisionManifold[],
   random: Random,
   missY: number,
   brickField: BrickField,
 ): EcsSystem<
-  [BallEcsComponent, PositionEcsComponent, RigidBodyEcsComponent]
+  [
+    BallEcsComponent,
+    PositionEcsComponent,
+    RigidBodyEcsComponent,
+    ContactsEcsComponent,
+  ]
 > => ({
-  query: [ballId, positionId, rigidBodyId],
+  query: [ballId, positionId, rigidBodyId, contactsId],
   update: (
     _world,
-    { entities, components: [ballComponents, positionComponents, rigidBodies] },
+    {
+      entities,
+      components: [ballComponents, positionComponents, rigidBodies, contacts],
+    },
   ) => {
     for (let i = 0; i < entities.length; i++) {
-      const ballEntity = entities[i];
       const ballComponent = ballComponents[i];
       const positionComponent = positionComponents[i];
       const rigidBody = rigidBodies[i];
 
-      destroyCollidedBricks(collisionManifolds, ballEntity, brickField);
+      for (const otherEntity of contacts[i].touching) {
+        if (brickField.has(otherEntity)) {
+          brickField.destroy(otherEntity);
+        }
+      }
 
       if (positionComponent.local.y < missY) {
         positionComponent.local = Vec2.clone(ballComponent.startPosition);
@@ -57,21 +67,3 @@ export const createBallEcsSystem = (
     }
   },
 });
-
-const destroyCollidedBricks = (
-  collisionManifolds: CollisionManifold[],
-  ballEntity: number,
-  brickField: BrickField,
-): void => {
-  for (const { entityA, entityB } of collisionManifolds) {
-    if (entityA !== ballEntity && entityB !== ballEntity) {
-      continue;
-    }
-
-    const otherEntity = entityA === ballEntity ? entityB : entityA;
-
-    if (brickField.has(otherEntity)) {
-      brickField.destroy(otherEntity);
-    }
-  }
-};

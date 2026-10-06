@@ -17,11 +17,14 @@ Core concepts:
   collision shape (`CircleCollider`,
   `PolygonCollider`, or
   `TerrainCollider`), plus friction,
-  restitution, and the collision `category`/`mask` that filter which
-  colliders it's tested against.
+  restitution, the collision `category`/`mask` that filter which
+  colliders it's tested against, and whether it's a `sensor` (detected,
+  never resolved).
 - `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
   `createCollisionResolutionEcsSystem`: detect and resolve collisions
   between collider entities each tick.
+- `ContactsEcsComponent`: which entities a collider entity is touching,
+  and which contacts started or ended this tick.
 - `raycast`: casts a ray against every
   collider entity in an `EcsWorld`.
 - `PrismaticJointEcsComponent`: a
@@ -38,8 +41,9 @@ Core concepts:
 Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes,
-  static/kinematic/dynamic bodies, collision filtering, and ECS
-  integration.
+  static/kinematic/dynamic bodies, and ECS integration.
+- [Collisions](./collisions.md): filtering which colliders collide, sensor
+  colliders for trigger zones, and reading what an entity touched.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against colliders.

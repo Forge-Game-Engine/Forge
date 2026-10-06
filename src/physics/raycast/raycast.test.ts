@@ -168,4 +168,27 @@ describe('raycast', () => {
 
     expect(hits).toHaveLength(1);
   });
+
+  it('should pass through sensors unless asked to include them', () => {
+    const sensor = world.createEntity();
+
+    addPositionComponent(world, sensor, { local: { x: -3, y: 0 } });
+    addColliderComponent(world, sensor, {
+      collider: new CircleCollider(1),
+      sensor: true,
+    });
+
+    const wall = addEntity({ x: 3, y: 0 }, new CircleCollider(1));
+    world.update();
+
+    const start = { x: -10, y: 0 };
+    const end = { x: 10, y: 0 };
+
+    expect(raycast(world, start, end).map((hit) => hit.entity)).toEqual([wall]);
+    expect(
+      raycast(world, start, end, { includeSensors: true }).map(
+        (hit) => hit.entity,
+      ),
+    ).toEqual([sensor, wall]);
+  });
 });

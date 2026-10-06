@@ -264,12 +264,7 @@ export const createSpaceShooterGame = async (
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
   );
   world.addSystem(
-    createAsteroidCollisionEcsSystem(
-      collisionManifolds,
-      time,
-      explosionSpawner,
-      onPlayerDeath,
-    ),
+    createAsteroidCollisionEcsSystem(time, explosionSpawner, onPlayerDeath),
   );
   world.addSystem(createGameOverEcsSystem(restartInput, respawnPlayer));
 

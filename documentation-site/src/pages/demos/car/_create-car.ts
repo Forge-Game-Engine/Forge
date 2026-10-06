@@ -8,6 +8,7 @@ import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
   addColliderComponent,
+  addContactsComponent,
   addGravityComponent,
   addLinearDamperComponent,
   addLinearSpringComponent,
@@ -338,6 +339,8 @@ function createWheel(
     maxTorque: motorMaxTorque * maxTorqueMultiplier,
   });
 
+  // Lets the ground-contact system see what this wheel is touching.
+  addContactsComponent(world, entity);
   const groundContact = addGroundContactComponent(world, entity);
 
   return { entity, groundContact };

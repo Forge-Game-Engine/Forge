@@ -7,6 +7,7 @@ import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addAngularVelocityMotorComponent,
   addColliderComponent,
+  addContactsComponent,
   addGravityComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -80,6 +81,8 @@ export async function createPlayer(
     friction: 0.9,
     restitution: 0.15,
   });
+  // Lets the jump system check whether the ball is touching the terrain.
+  addContactsComponent(world, entity);
   addRigidBodyComponent(world, entity, {
     mass: collider.mass,
     momentOfInertia: collider.momentOfInertia,

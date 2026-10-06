@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **physics:** Collision filtering. `addColliderComponent` takes a `category` (the bits a collider belongs to, default `1`) and a `mask` (the categories it collides with, default `allCollisionCategories`). Two colliders are tested only when each one's category is in the other's mask, so pairs your game would ignore, such as bullets against bullets, never reach the narrow phase
 - **physics:** `raycast` takes a `mask` option, so a ray only hits colliders whose `category` is in it
+- **physics:** Sensor colliders. `addColliderComponent(world, entity, { collider, sensor: true })` makes a collider that's detected but never resolved, so bodies pass through it, for trigger zones and pickups. Sensor overlaps never appear in `collisionManifolds`, and `raycast` passes through sensors unless you pass `includeSensors: true`
+- **physics:** Per-entity contacts. Give an entity `addContactsComponent(world, entity)` and `createNarrowPhaseEcsSystem` fills its `ContactsEcsComponent` every tick with the entities it's `touching` (each listed once), the ones it `started` touching and the ones it `ended` touching, sensor overlaps included. A system can ask what its entities touched without scanning `collisionManifolds`
 
 #### Changed
 

@@ -168,9 +168,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
       time,
     ),
   );
-  world.addSystem(
-    createBallEcsSystem(collisionManifolds, random, missY, brickField),
-  );
+  world.addSystem(createBallEcsSystem(random, missY, brickField));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;

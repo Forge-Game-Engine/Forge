@@ -13,6 +13,7 @@ import {
 } from '@forge-game-engine/forge/math';
 import {
   addColliderComponent,
+  addContactsComponent,
   addRigidBodyComponent,
   CircleCollider,
   RigidBodyEcsComponent,
@@ -114,6 +115,8 @@ export async function createBall(
     restitution: 1,
     friction: 0,
   });
+  // Lets the ball system see which bricks the ball hit this tick.
+  addContactsComponent(world, entity);
 
   const rigidBody = addRigidBodyComponent(world, entity, {
     mass: collider.mass,

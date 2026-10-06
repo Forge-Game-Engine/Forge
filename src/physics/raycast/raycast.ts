@@ -70,11 +70,18 @@ export interface RaycastOptions {
    * {@link allCollisionCategories}.
    */
   mask: number;
+
+  /**
+   * When `true`, the ray also hits sensor colliders. Defaults to `false`,
+   * so a ray aimed at walls passes through trigger zones.
+   */
+  includeSensors: boolean;
 }
 
 const defaultRaycastOptions: RaycastOptions = {
   sort: true,
   mask: allCollisionCategories,
+  includeSensors: false,
 };
 
 /**
@@ -102,7 +109,7 @@ export function raycast(
   end: Vector2,
   options: Partial<RaycastOptions> = {},
 ): RaycastHit[] {
-  const { sort, mask } = {
+  const { sort, mask, includeSensors } = {
     ...defaultRaycastOptions,
     ...options,
   };
@@ -123,6 +130,7 @@ export function raycast(
 
     if (
       (collider.category & mask) === 0 ||
+      (collider.sensor && !includeSensors) ||
       !aabbsOverlap(rayAabb, collider.aabb)
     ) {
       continue;

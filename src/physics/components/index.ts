@@ -1,5 +1,6 @@
 export * from './angular-velocity-motor-component.js';
 export * from './collider-component.js';
+export * from './contacts-component.js';
 export * from './gravity-component.js';
 export * from './linear-damper-component.js';
 export * from './linear-spring-component.js';

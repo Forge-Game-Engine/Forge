@@ -39,7 +39,7 @@ is nearest, pass `{ sort: false }` to skip the sort.
 
 `mask` limits the ray to colliders whose `category` shares a bit with it,
 the same categories colliders filter each other by (see
-[Collision filtering](./rigid-bodies.md#collision-filtering)). It defaults
+[Collision filtering](./collisions.md#collision-filtering)). It defaults
 to every category.
 
 ```ts
@@ -49,6 +49,10 @@ const ENEMIES = 1 << 1;
 // A line-of-sight check that looks through enemies and stops at walls.
 const blocked = raycast(world, eye, target, { sort: false, mask: WALLS });
 ```
+
+Rays pass through [sensor colliders](./collisions.md#sensors), so a trigger
+zone doesn't block line of sight. Pass `includeSensors: true` to hit them
+too, for example to ask which zone the cursor is over.
 
 `raycast` works against every collider shape - `CircleCollider`,
 `PolygonCollider`, and `TerrainCollider` - dispatching to the appropriate

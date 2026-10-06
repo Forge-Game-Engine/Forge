@@ -121,43 +121,6 @@ by the solver (its effective mass is always treated as infinite). Pass its
 collider's `mass`/`momentOfInertia` the same as for a dynamic body.
 :::
 
-## Collision filtering
-
-By default every collider is tested against every other. Give colliders a
-`category` and a `mask` to say which pairs matter: two colliders are tested
-only when each one's `category` shares a bit with the other's `mask`. A pair
-either mask excludes never reaches the narrow phase, so filtering also saves
-the work of testing pairs your game would ignore anyway.
-
-```ts
-const PLAYER = 1 << 0;
-const ENEMY = 1 << 1;
-const PLAYER_BULLET = 1 << 2;
-const WALL = 1 << 3;
-
-// Player bullets hit enemies and walls, never the player or each other.
-addColliderComponent(world, bullet, {
-  collider: bulletCollider,
-  category: PLAYER_BULLET,
-  mask: ENEMY | WALL,
-});
-
-// Enemies collide with everything except other enemies.
-addColliderComponent(world, enemy, {
-  collider: enemyCollider,
-  category: ENEMY,
-  mask: allCollisionCategories & ~ENEMY,
-});
-```
-
-`category` defaults to `1` and `mask` to `allCollisionCategories` (every
-bit), so colliders that set neither collide with everything. Categories are
-32 bits, as JavaScript's bitwise operators allow. The test is symmetric:
-either collider can rule a pair out, and both have to accept it.
-
-The broad phase writes each collider's world-space bounds to its `aabb`
-field every tick. It's output only; read it, but don't write it.
-
 ## ECS integration
 
 There's no single "physics world" object to step - each concern is its own
@@ -218,22 +181,9 @@ since its velocity is in world space; integration throws otherwise. Connect
 bodies with joints or springs instead. See
 [Transforms](../common/transforms.md).
 
-## Mapping collisions back to entities
+## Reacting to collisions
 
-Because everything is ECS-native, there's no separate body object or
-`userData` mapping to bridge: `collisionManifolds` (populated by
-`createNarrowPhaseEcsSystem`) already holds the raw `entityA`/`entityB`
-entity ids for every confirmed collision each tick.
-
-```ts
-for (const manifold of collisionManifolds) {
-  // check tags/components on manifold.entityA and manifold.entityB to
-  // award a pickup, apply damage, play a sound, etc.
-}
-```
-
-Read `collisionManifolds` after `createCollisionResolutionEcsSystem` has run
-(later in the same tick, or at the start of the next one) if you need it to
-reflect this tick's resolved contacts; the array is cleared and refilled by
-`createNarrowPhaseEcsSystem` every tick, so hold onto anything you need
-before that system runs again.
+To find out what an entity touched, give it a `ContactsEcsComponent` and
+read its `touching`, `started` and `ended` lists in your own system. See
+[Collisions](./collisions.md), which also covers filtering which colliders
+collide and sensor colliders for trigger zones.
