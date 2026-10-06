@@ -130,7 +130,7 @@ export const createTextShapingEcsSystem = (
           continue;
         }
 
-        const { glyphs, bounds } = shapeText(
+        const { glyphs, bounds, caretStops } = shapeText(
           textComponent.text,
           textComponent.fontAtlas.data,
           {
@@ -152,6 +152,7 @@ export const createTextShapingEcsSystem = (
         world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
           glyphs,
           bounds,
+          caretStops,
           fillRenderable,
           effectsRenderable,
         });
