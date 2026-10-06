@@ -4,7 +4,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiDropdownId } from '../components/ui-dropdown-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
@@ -181,7 +181,7 @@ describe('createDropdown', () => {
       labelCategory: 0b0100,
     });
 
-    expect(world.getComponent(dropdown.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(dropdown.entity)).toBe(parent);
     expect(world.getComponent(dropdown.entity, positionId)).not.toBeNull();
     expect(
       world.getComponent(dropdown.entity, rectTransformId)!.anchoredPosition,

@@ -1,4 +1,3 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
@@ -50,15 +49,15 @@ function isIgnored(world: EcsWorld, entity: number): boolean {
   );
 }
 
-/** A group's (or fitter's) direct children, in query order, minus any `ignoreLayout` ones. */
+/** A group's (or fitter's) direct UI element children, in sibling order, minus any `ignoreLayout` ones. */
 function arrangeableChildrenOf(
   world: EcsWorld,
-  childrenByParent: Map<number, number[]>,
+  elements: ReadonlySet<number>,
   entity: number,
 ): number[] {
-  return (childrenByParent.get(entity) ?? []).filter(
-    (child) => !isIgnored(world, child),
-  );
+  return world
+    .getChildren(entity)
+    .filter((child) => elements.has(child) && !isIgnored(world, child));
 }
 
 /**
@@ -106,7 +105,7 @@ function measureAxisGroupContent(
   world: EcsWorld,
   entity: number,
   group: UiAxisLayoutGroupEcsComponent,
-  childrenByParent: Map<number, number[]>,
+  elements: ReadonlySet<number>,
   measure: Measure,
 ): Measured {
   const { padding } = group;
@@ -118,7 +117,7 @@ function measureAxisGroupContent(
     ? padding.top + padding.bottom
     : padding.left + padding.right;
 
-  const children = arrangeableChildrenOf(world, childrenByParent, entity);
+  const children = arrangeableChildrenOf(world, elements, entity);
 
   if (children.length === 0) {
     const mainAxis: AxisMeasure = {
@@ -314,7 +313,7 @@ function measureGridContent(
  */
 function createMeasure(
   world: EcsWorld,
-  childrenByParent: Map<number, number[]>,
+  elements: ReadonlySet<number>,
 ): Measure {
   const cache = new Map<number, Measured>();
 
@@ -349,13 +348,13 @@ function createMeasure(
         world,
         entity,
         axisGroup,
-        childrenByParent,
+        elements,
         measure,
       );
     } else if (gridGroup) {
       base = measureGridContent(
         gridGroup,
-        arrangeableChildrenOf(world, childrenByParent, entity),
+        arrangeableChildrenOf(world, elements, entity),
         measure,
       );
     } else if (layoutElement?.sizeToText) {
@@ -575,7 +574,7 @@ function arrangeAxisGroup(
   world: EcsWorld,
   entity: number,
   group: UiAxisLayoutGroupEcsComponent,
-  childrenByParent: Map<number, number[]>,
+  elements: ReadonlySet<number>,
   measure: Measure,
 ): void {
   const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
@@ -586,7 +585,7 @@ function arrangeAxisGroup(
   const { padding, spacing, childAlignment } = group;
   const isHorizontal = group.direction === 'horizontal';
 
-  const children = arrangeableChildrenOf(world, childrenByParent, entity);
+  const children = arrangeableChildrenOf(world, elements, entity);
 
   if (children.length === 0) {
     return;
@@ -695,7 +694,7 @@ function arrangeGrid(
   world: EcsWorld,
   entity: number,
   grid: GridLayoutGroupEcsComponent,
-  childrenByParent: Map<number, number[]>,
+  elements: ReadonlySet<number>,
   measure: Measure,
 ): void {
   const rectTransform = world.getComponentRequired<RectTransformEcsComponent>(
@@ -705,7 +704,7 @@ function arrangeGrid(
   const rectSize = Rects.size(rectTransform.rect);
   const { padding, spacing, childAlignment, cellAlignment } = grid;
 
-  const children = arrangeableChildrenOf(world, childrenByParent, entity);
+  const children = arrangeableChildrenOf(world, elements, entity);
 
   if (children.length === 0) {
     return;
@@ -850,33 +849,9 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
   name: 'uiLayoutGroup',
   query: [rectTransformId],
   update: (world, { entities }) => {
-    const rectTransformEntities = new Set(entities);
-    const childrenByParent = new Map<number, number[]>();
+    const elements = new Set(entities);
 
-    for (const entity of entities) {
-      const parentComponent = world.getComponent<ParentEcsComponent>(
-        entity,
-        parentId,
-      );
-
-      if (
-        !parentComponent ||
-        !rectTransformEntities.has(parentComponent.parent)
-      ) {
-        continue;
-      }
-
-      let children = childrenByParent.get(parentComponent.parent);
-
-      if (!children) {
-        children = [];
-        childrenByParent.set(parentComponent.parent, children);
-      }
-
-      children.push(entity);
-    }
-
-    const measure = createMeasure(world, childrenByParent);
+    const measure = createMeasure(world, elements);
 
     // Measuring is a pure, read-only pass; arranging mutates the child's size -
     // the very field a plain (non-group) entity's own measure() falls back
@@ -903,7 +878,7 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
       );
 
       if (axisGroup) {
-        arrangeAxisGroup(world, entity, axisGroup, childrenByParent, measure);
+        arrangeAxisGroup(world, entity, axisGroup, elements, measure);
 
         continue;
       }
@@ -914,7 +889,7 @@ export const createUiLayoutGroupEcsSystem = (): EcsSystem<
       );
 
       if (gridGroup) {
-        arrangeGrid(world, entity, gridGroup, childrenByParent, measure);
+        arrangeGrid(world, entity, gridGroup, elements, measure);
       }
     }
 

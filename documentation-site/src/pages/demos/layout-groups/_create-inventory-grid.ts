@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
@@ -60,7 +57,7 @@ export async function createInventoryGrid(
   const group = world.createEntity();
 
   addPositionComponent(world, group);
-  addParentComponent(world, group, { parent: canvas });
+  world.setParent(group, canvas);
   addRectTransformComponent(world, group, {
     ...UiAnchor.bottomLeft({
       x: width,
@@ -101,7 +98,7 @@ export async function createInventoryGrid(
     const cell = world.createEntity();
 
     addPositionComponent(world, cell);
-    addParentComponent(world, cell, { parent: panel });
+    world.setParent(cell, panel);
     addRectTransformComponent(world, cell);
 
     const sprite = createImageSprite(whiteImage, renderContext, {

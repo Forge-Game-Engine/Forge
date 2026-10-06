@@ -5,7 +5,7 @@ sidebar_position: 1
 # Creating a Canvas
 
 Every UI you build is a plain ECS entity tree, parented with the same
-`addParentComponent` any other entity uses: a canvas at the root, with
+`world.setParent` any other entity uses: a canvas at the root, with
 panels, labels, and buttons as its children (and grandchildren):
 
 ```mermaid
@@ -20,6 +20,11 @@ Each node above is just an entity with a `RectTransformEcsComponent`,
 resolved every frame against its **parent's** resolved rect - which is why
 the canvas has to exist before anything else, and why every `create*`
 factory in this module takes a `parent` entity as its second argument.
+
+Siblings are laid out, drawn and navigated in the order they were parented,
+and keep that order when other entities are removed. Removing an element
+with `world.removeEntity` removes everything under it too, so removing a
+page's root panel removes all of its labels, buttons and nested panels.
 
 ## Registering the UI systems
 
@@ -117,7 +122,7 @@ const healthBarCanvas = createUiCanvas(world, renderContext, {
   anchoredPosition: { x: 0, y: 40 }, // 40 units above the enemy's own origin
 });
 
-addParentComponent(world, healthBarCanvas, { parent: enemy });
+world.setParent(healthBarCanvas, enemy);
 
 const fill = createPanel(world, healthBarCanvas, {
   anchor: UiAnchor.stretchAll(),

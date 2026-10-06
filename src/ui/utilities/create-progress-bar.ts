@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import {
@@ -120,7 +117,7 @@ export function createProgressBar(
   const fill = world.createEntity();
 
   addPositionComponent(world, fill);
-  addParentComponent(world, fill, { parent: entity });
+  world.setParent(fill, entity);
   addRectTransformComponent(world, fill, {
     // A stretch axis rather than a point one even though it starts at zero
     // width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax` is

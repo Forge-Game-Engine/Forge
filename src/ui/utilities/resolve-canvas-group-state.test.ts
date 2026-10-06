@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { resolveCanvasGroupState } from './resolve-canvas-group-state.js';
-import { addParentComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 
@@ -49,8 +48,8 @@ describe('resolveCanvasGroupState', () => {
       interactable: false,
       blocksRaycasts: true,
     });
-    addParentComponent(world, parent, { parent: grandparent });
-    addParentComponent(world, child, { parent });
+    world.setParent(parent, grandparent);
+    world.setParent(child, parent);
 
     const state = resolveCanvasGroupState(world, child);
 
@@ -70,8 +69,8 @@ describe('resolveCanvasGroupState', () => {
       alpha: 0.5,
       ignoreParentGroups: true,
     });
-    addParentComponent(world, parent, { parent: grandparent });
-    addParentComponent(world, child, { parent });
+    world.setParent(parent, grandparent);
+    world.setParent(child, parent);
 
     expect(resolveCanvasGroupState(world, child).alpha).toBeCloseTo(0.5);
   });

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createUiCanvasGroupEcsSystem } from './ui-canvas-group-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   addSpriteComponent,
@@ -26,7 +23,7 @@ function createElement(world: EcsWorld, parent?: number): number {
   addRectTransformComponent(world, entity);
 
   if (parent !== undefined) {
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
   }
 
   return entity;

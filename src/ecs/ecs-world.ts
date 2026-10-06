@@ -6,6 +6,7 @@ import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js'
 import { EcsSystem } from './ecs-system.js';
 import { entityGeneration, entityIndex, formatEntity } from './entity.js';
 import { createEntityHandle, maxEntities } from './entity-layout.js';
+import { ParentEcsComponent, parentId } from './hierarchy.js';
 import { RunCondition } from './run-condition.js';
 
 export interface QueryResult<T extends readonly unknown[]> {
@@ -60,6 +61,12 @@ export interface AddSystemGroupOptions {
   runIf?: RunCondition;
 }
 
+const noChildren: readonly number[] = Object.freeze([]);
+
+// Only `setParent`/`removeParent` may write the parent component, so the
+// children index can't go stale.
+const isParentKey = (key: symbol): boolean => key === parentId;
+
 export class EcsWorld implements Updatable, Stoppable {
   /**
    * Raised by `removeEntity` with the removed entity, once its components
@@ -69,6 +76,10 @@ export class EcsWorld implements Updatable, Stoppable {
   public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
 
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
+
+  // Each parent's children, in sibling order. The reverse direction (each
+  // child's parent) is the child's `ParentEcsComponent`.
+  private readonly _childrenByParent: Map<number, number[]> = new Map();
 
   // The handle of the entity in each slot, or -1 while the slot is free.
   private readonly _liveHandles: number[] = [];
@@ -377,9 +388,16 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
-   * Removes an entity and all of its components and tags, then raises
-   * `onEntityRemoved`. Does nothing if the entity isn't alive, e.g. it was
-   * already removed earlier this tick.
+   * Removes an entity, its descendants, and all of their components and
+   * tags. Children are removed first, depth first and in sibling order, so
+   * `onEntityRemoved` is raised for every descendant before the entity
+   * itself. Does nothing if the entity isn't alive, e.g. it was already
+   * removed earlier this tick.
+   *
+   * The entity stops being alive before its children are removed, but keeps
+   * its components until they're gone, so an `onEntityRemoved` listener for
+   * a descendant can still read its ancestors' components. To keep a child,
+   * call `removeParent` (or `setParent` with another parent) first.
    * @param entity - The entity to remove.
    * @returns `true` if the entity was removed, `false` if it wasn't alive.
    */
@@ -390,10 +408,13 @@ export class EcsWorld implements Updatable, Stoppable {
 
     const index = entityIndex(entity);
 
-    // Dead before its components go and its event is raised, so removing it
+    // Dead before its children, components and event go, so removing it
     // again from anywhere in between does nothing rather than freeing the
-    // slot twice.
+    // slot twice, and nothing can be parented to it meanwhile.
     this._liveHandles[index] = -1;
+
+    this._removeChildren(entity);
+    this._detachFromParent(entity);
 
     for (const componentSet of this._componentSets.values()) {
       componentSet.remove(entity);
@@ -411,19 +432,107 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
+   * Makes `child` a child of `parent`, replacing any parent it has: it's
+   * appended to `parent`'s children, removed along with `parent`, and its
+   * transform follows `parent`'s. Its local transform is kept as it is, so
+   * it takes the same offset under its new parent. Setting its current
+   * parent again does nothing, and keeps its place among its siblings.
+   * @param child - The entity to parent.
+   * @param parent - Its new parent.
+   * @throws An error if either entity isn't alive, or if `parent` is `child`
+   * or one of its descendants.
+   */
+  public setParent(child: number, parent: number): void {
+    this._requireAliveFor(child, 'set the parent of');
+    this._requireAliveFor(parent, `parent ${formatEntity(child)} to`);
+
+    if (this.getParent(child) === parent) {
+      return;
+    }
+
+    for (
+      let ancestor: number | null = parent;
+      ancestor !== null;
+      ancestor = this.getParent(ancestor)
+    ) {
+      if (ancestor === child) {
+        throw new Error(
+          `Unable to parent entity ${formatEntity(child)} to ${formatEntity(parent)}, ${formatEntity(parent)} is ${formatEntity(child)} itself or one of its descendants.`,
+        );
+      }
+    }
+
+    this._detachFromParent(child);
+
+    let siblings = this._childrenByParent.get(parent);
+
+    if (!siblings) {
+      siblings = [];
+      this._childrenByParent.set(parent, siblings);
+    }
+
+    siblings.push(child);
+
+    const component: ParentEcsComponent = { parent };
+    this._getComponentOrCreateSetByKey<ParentEcsComponent>(parentId).add(
+      child,
+      component,
+    );
+  }
+
+  /**
+   * Makes `child` a root entity again. Its local transform is kept as it
+   * is, so it's now relative to the world. Does nothing if it has no parent.
+   * @param child - The entity to unparent.
+   */
+  public removeParent(child: number): void {
+    this._detachFromParent(child);
+    this._componentSets.get(parentId)?.remove(child);
+  }
+
+  /**
+   * Reads an entity's parent.
+   * @param child - The entity.
+   * @returns Its parent, or `null` if it's a root entity or isn't alive.
+   */
+  public getParent(child: number): number | null {
+    return this.getComponent(child, parentId)?.parent ?? null;
+  }
+
+  /**
+   * Reads an entity's children, in sibling order: the order they were
+   * parented to it in. Removing a child, or moving it to another parent,
+   * keeps its siblings in order.
+   * @param parent - The entity.
+   * @returns A read-only view of the world's own list, which changes as
+   * children are added or removed, so copy it before removing or reparenting
+   * children in a loop. Empty if the entity has no children.
+   */
+  public getChildren(parent: number): readonly number[] {
+    return this._childrenByParent.get(parent) ?? noChildren;
+  }
+
+  /**
    * Adds a component to an entity, replacing any it already has for
    * `componentKey`.
    * @param entity - The entity to add the component to.
    * @param componentKey - The component's key.
    * @param componentData - The component.
    * @returns `componentData`.
-   * @throws An error if `entity` isn't alive.
+   * @throws An error if `entity` isn't alive, or if `componentKey` is
+   * `parentId` (use `setParent`).
    */
   public addComponent<T>(
     entity: number,
     componentKey: ComponentKey<T>,
     componentData: T,
   ): T {
+    if (isParentKey(componentKey)) {
+      throw new Error(
+        `Unable to add a ParentEcsComponent to entity ${formatEntity(entity)} with addComponent, use setParent so the world's children index stays in step.`,
+      );
+    }
+
     this._requireAlive(entity, componentKey, 'component');
 
     const componentSet = this._getComponentOrCreateSetByKey(componentKey);
@@ -523,11 +632,18 @@ export class EcsWorld implements Updatable, Stoppable {
    * nothing if the entity doesn't have the component or isn't alive.
    * @param entity - The entity to remove the component from.
    * @param componentKey - The component's key.
+   * @throws An error if `componentKey` is `parentId` (use `removeParent`).
    */
   public removeComponent<T>(
     entity: number,
     componentKey: ComponentKey<T>,
   ): void {
+    if (isParentKey(componentKey)) {
+      throw new Error(
+        `Unable to remove the ParentEcsComponent of entity ${formatEntity(entity)} with removeComponent, use removeParent so the world's children index stays in step.`,
+      );
+    }
+
     this._componentSets.get(componentKey)?.remove(entity);
   }
 
@@ -540,6 +656,57 @@ export class EcsWorld implements Updatable, Stoppable {
       throw new Error(
         `Unable to add ${kind} "${key.toString()}" to entity ${formatEntity(entity)}, it isn't alive: it was removed, or wasn't created by this world.`,
       );
+    }
+  }
+
+  private _requireAliveFor(entity: number, action: string): void {
+    if (!this.isAlive(entity)) {
+      throw new Error(
+        `Unable to ${action} entity ${formatEntity(entity)}, it isn't alive: it was removed, or wasn't created by this world.`,
+      );
+    }
+  }
+
+  // Removes a dying entity's children, in sibling order. Iterates a copy:
+  // a listener for an earlier child's removal can reparent or unparent a
+  // later one, which then isn't removed.
+  private _removeChildren(entity: number): void {
+    const children = this._childrenByParent.get(entity);
+
+    if (!children) {
+      return;
+    }
+
+    for (const child of [...children]) {
+      if (this.getParent(child) === entity) {
+        this.removeEntity(child);
+      }
+    }
+
+    this._childrenByParent.delete(entity);
+  }
+
+  // Takes `child` out of its parent's children, keeping the siblings'
+  // order. A parent that's being removed drops its whole list once its
+  // children are gone, so it's skipped here rather than spliced one child
+  // at a time.
+  private _detachFromParent(child: number): void {
+    const parent = this.getParent(child);
+
+    if (parent === null || !this.isAlive(parent)) {
+      return;
+    }
+
+    const siblings = this._childrenByParent.get(parent);
+
+    if (!siblings) {
+      return;
+    }
+
+    siblings.splice(siblings.indexOf(child), 1);
+
+    if (siblings.length === 0) {
+      this._childrenByParent.delete(parent);
     }
   }
 

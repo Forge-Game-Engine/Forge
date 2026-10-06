@@ -1,5 +1,8 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { RenderContext, RenderTarget } from '@forge-game-engine/forge/rendering';
+import {
+  RenderContext,
+  RenderTarget,
+} from '@forge-game-engine/forge/rendering';
 
 /**
  * Creates a system that keeps `renderTargets` sized to `renderContext`.

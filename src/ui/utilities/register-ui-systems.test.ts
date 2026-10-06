@@ -2,11 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerUiSystems } from './register-ui-systems.js';
 import { createUiCanvas } from './create-ui-canvas.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-  Time,
-} from '../../common/index.js';
+import { addPositionComponent, Time } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { MouseInputSource } from '../../input/index.js';
 import {
@@ -145,7 +141,7 @@ describe('registerUiSystems', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity);
-    addParentComponent(world, entity, { parent: canvas });
+    world.setParent(entity, canvas);
     addRectTransformComponent(world, entity);
     addUiSafeAreaComponent(world, entity);
 
@@ -160,7 +156,7 @@ describe('registerUiSystems', () => {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity);
-    addParentComponent(world, entity, { parent: canvas });
+    world.setParent(entity, canvas);
     addRectTransformComponent(
       world,
       entity,
