@@ -3,6 +3,7 @@ import { createRevoluteJointEcsSystem } from './revolute-joint-system.js';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -10,6 +11,19 @@ import { Vec2 } from '../../math/index.js';
 import { addRigidBodyComponent } from '../components/rigidbody-component.js';
 import { addRevoluteJointComponent } from '../components/revolute-joint-component.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
+import { CircleCollider } from '../colliders/circle-collider.js';
+import { addColliderComponent } from '../components/collider-component.js';
+
+/**
+ * A circle with a mass and moment of inertia of 1, for a dynamic body to
+ * take its mass data from. Its mask of `0` keeps it out of collisions.
+ */
+function addUnitMassCollider(world: EcsWorld, entity: number): void {
+  addColliderComponent(world, entity, {
+    collider: new CircleCollider(Math.SQRT2, 1 / (2 * Math.PI)),
+    mask: 0,
+  });
+}
 
 describe('createRevoluteJointEcsSystem', () => {
   let world: EcsWorld;
@@ -34,6 +48,47 @@ describe('createRevoluteJointEcsSystem', () => {
     world.update();
   }
 
+  it("swings a body about a pivot at its entity's origin, away from its center of mass", () => {
+    world.addSystem(createTransformEcsSystem());
+
+    const pivot = world.createEntity();
+    addPositionComponent(world, pivot);
+    addRotationComponent(world, pivot);
+
+    // A pendulum whose bob is the circle 5 units below the entity's origin,
+    // pinned to the pivot at that origin: the joint anchor is 5 units from
+    // the body's center of mass.
+    const pendulum = world.createEntity();
+    const pendulumPosition = addPositionComponent(world, pendulum);
+    const pendulumRotation = addRotationComponent(world, pendulum);
+    addColliderComponent(world, pendulum, {
+      collider: new CircleCollider(1, 1, { x: 0, y: -5 }),
+    });
+    const rigidBody = addRigidBodyComponent(world, pendulum, {
+      velocity: { x: 3, y: 0 },
+    });
+
+    const jointEntity = world.createEntity();
+    addRevoluteJointComponent(world, jointEntity, {
+      entityA: pivot,
+      entityB: pendulum,
+    });
+
+    let maxRotation = 0;
+
+    for (let i = 0; i < 60; i++) {
+      Vec2.add(rigidBody.velocity, { x: 0, y: -9.8 * (1 / 60) });
+      tick();
+      maxRotation = Math.max(maxRotation, pendulumRotation.local);
+
+      expect(Vec2.magnitude(pendulumPosition.local)).toBeLessThan(0.1);
+    }
+
+    // The bob swung up to the right: the body turned about the pivot rather
+    // than sliding its origin away from it.
+    expect(maxRotation).toBeGreaterThan(0.3);
+  });
+
   it('keeps a dynamic body pinned to a static pivot under repeated gravity-like kicks', () => {
     const pivot = world.createEntity();
     addPositionComponent(world, pivot, {
@@ -46,10 +101,8 @@ describe('createRevoluteJointEcsSystem', () => {
       local: { x: 0, y: -5 },
     });
     const ballRotation = addRotationComponent(world, ball);
-    const ballRigidBody = addRigidBodyComponent(world, ball, {
-      mass: 1,
-      momentOfInertia: 1,
-    });
+    addUnitMassCollider(world, ball);
+    const ballRigidBody = addRigidBodyComponent(world, ball);
 
     const jointEntity = world.createEntity();
     addRevoluteJointComponent(world, jointEntity, {
@@ -78,16 +131,16 @@ describe('createRevoluteJointEcsSystem', () => {
       local: Vec2.zero,
     });
     const bodyARotation = addRotationComponent(world, bodyA);
-    addRigidBodyComponent(world, bodyA, { mass: 1, momentOfInertia: 1 });
+    addUnitMassCollider(world, bodyA);
+    addRigidBodyComponent(world, bodyA);
 
     const bodyB = world.createEntity();
     addPositionComponent(world, bodyB, {
       local: Vec2.zero,
     });
     const bodyBRotation = addRotationComponent(world, bodyB);
+    addUnitMassCollider(world, bodyB);
     addRigidBodyComponent(world, bodyB, {
-      mass: 1,
-      momentOfInertia: 1,
       angularVelocity: 3,
     });
 
@@ -125,7 +178,8 @@ describe('createRevoluteJointEcsSystem', () => {
       local: { x: 3, y: 0 },
     });
     addRotationComponent(world, ball);
-    addRigidBodyComponent(world, ball, { mass: 1, momentOfInertia: 1 });
+    addUnitMassCollider(world, ball);
+    addRigidBodyComponent(world, ball);
 
     const jointEntity = world.createEntity();
     const joint = addRevoluteJointComponent(world, jointEntity, {

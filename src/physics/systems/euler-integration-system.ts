@@ -13,6 +13,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
 
 /**
  * Creates an ECS system to Euler integration of rigid body entities.
@@ -23,7 +24,10 @@ import {
  * as `'dynamic'` ones, since a kinematic body's `velocity` is expected to be
  * driven directly by game code.
  *
- * Velocities are in world space and are integrated into the body's
+ * Velocities are in world space. `velocity` is the velocity of the body's
+ * center of mass, and a body turns about its center of mass (see
+ * `getRigidBodyMassData`; for a `'kinematic'` body that's the entity's
+ * origin). Both are integrated into the body's
  * `local` position and rotation, which `createTransformEcsSystem` turns
  * into `world`. Register the transform system before the physics systems,
  * which read `world`, so they see every entity's current pose, including
@@ -64,17 +68,29 @@ export const createEulerIntegrationEcsSystem = (
 
       const positionComponent = positions[i];
       const rotationComponent = rotations[i];
+      const { localCenterOfMass } = getRigidBodyMassData(world, entities[i]);
+      const startRotation = rotationComponent.local;
 
       rotationComponent.local +=
         rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;
 
-      // Clone before scaling: `rigidBodyComponent.velocity` is the body's
-      // live velocity state, not a disposable value.
+      // The position is moved by an increment, not set from the center of
+      // mass, so a teleport written to `local` after this tick's transform
+      // pass survives. Moving the origin by how far turning swings the
+      // center of mass around it, the other way, keeps the center of mass
+      // exactly where `velocity` puts it. Clone before scaling/rotating:
+      // `velocity` is live state and `localCenterOfMass` is the collider's.
       Vec2.add(
         positionComponent.local,
-        Vec2.multiply(
-          Vec2.clone(rigidBodyComponent.velocity),
-          time.deltaTimeInSeconds,
+        Vec2.add(
+          Vec2.multiply(
+            Vec2.clone(rigidBodyComponent.velocity),
+            time.deltaTimeInSeconds,
+          ),
+          Vec2.subtract(
+            Vec2.rotate(Vec2.clone(localCenterOfMass), startRotation),
+            Vec2.rotate(Vec2.clone(localCenterOfMass), rotationComponent.local),
+          ),
         ),
       );
 

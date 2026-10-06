@@ -194,10 +194,7 @@ export async function createCradle(
       restitution: 0.92,
       friction: 0.05,
     });
-    addRigidBodyComponent(world, ballEntity, {
-      mass: ballCollider.mass,
-      momentOfInertia: ballCollider.momentOfInertia,
-    });
+    addRigidBodyComponent(world, ballEntity);
     addGravityComponent(world, ballEntity, { amount: gravity });
 
     const jointEntity = world.createEntity();

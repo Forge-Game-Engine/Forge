@@ -203,8 +203,6 @@ function createSuspensionScenario(
     restitution: 0,
   });
   addRigidBodyComponent(world, wheelEntity, {
-    mass: wheelCollider.mass,
-    momentOfInertia: wheelCollider.momentOfInertia,
     velocity: Vec2.clone(bumpVelocity),
   });
   addGravityComponent(world, wheelEntity, { amount: gravity });

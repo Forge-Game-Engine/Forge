@@ -38,23 +38,57 @@ describe('PolygonCollider', () => {
       ).toThrow();
     });
 
-    it('should re-center vertices around their centroid', () => {
+    it('should keep its vertices where they were authored', () => {
       const triangle = new PolygonCollider([
         { x: 0, y: 0 },
         { x: 4, y: 0 },
         { x: 0, y: 4 },
       ]);
 
-      let sumX = 0;
-      let sumY = 0;
+      expect(triangle.vertices).toEqual([
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 0, y: 4 },
+      ]);
+    });
 
-      for (const vertex of triangle.vertices) {
-        sumX += vertex.x;
-        sumY += vertex.y;
-      }
+    it('should report its centroid as its local center of mass', () => {
+      const triangle = new PolygonCollider([
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 0, y: 4 },
+      ]);
 
-      expect(sumX / triangle.vertices.length).toBeCloseTo(0);
-      expect(sumY / triangle.vertices.length).toBeCloseTo(0);
+      expect(triangle.localCenterOfMass.x).toBeCloseTo(4 / 3);
+      expect(triangle.localCenterOfMass.y).toBeCloseTo(4 / 3);
+    });
+
+    it('should compute its moment of inertia about its centroid, wherever it is authored', () => {
+      const vertices = [
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 0, y: 4 },
+      ];
+      const authored = new PolygonCollider(vertices);
+      const shifted = new PolygonCollider(
+        vertices.map((vertex) => ({ x: vertex.x + 10, y: vertex.y - 7 })),
+      );
+
+      expect(shifted.mass).toBeCloseTo(authored.mass);
+      expect(shifted.momentOfInertia).toBeCloseTo(authored.momentOfInertia);
+    });
+
+    it('should not keep references to the vertices it was given', () => {
+      const vertices = [
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 0, y: 4 },
+      ];
+      const triangle = new PolygonCollider(vertices);
+
+      vertices[1].x = 100;
+
+      expect(triangle.vertices[1]).toEqual({ x: 4, y: 0 });
     });
 
     it('should have type "polygon"', () => {
@@ -83,6 +117,33 @@ describe('PolygonCollider', () => {
       expect(worldVertices[0].x).toBeCloseTo(4);
       expect(worldVertices[0].y).toBeCloseTo(4);
     });
+
+    it.each([0, Math.PI / 3, Math.PI, -2])(
+      'should place an asymmetric shape at its authored vertices transformed by the entity (rotation %f)',
+      (rotation) => {
+        const authored = [
+          { x: 1, y: 0 },
+          { x: 5, y: 0 },
+          { x: 1, y: 2 },
+        ];
+        const polygon = new PolygonCollider(authored);
+        const position = { x: -3, y: 7 };
+        const worldVertices = polygon.getWorldVertices(position, rotation);
+
+        authored.forEach((vertex, i) => {
+          expect(worldVertices[i].x).toBeCloseTo(
+            position.x +
+              vertex.x * Math.cos(rotation) -
+              vertex.y * Math.sin(rotation),
+          );
+          expect(worldVertices[i].y).toBeCloseTo(
+            position.y +
+              vertex.x * Math.sin(rotation) +
+              vertex.y * Math.cos(rotation),
+          );
+        });
+      },
+    );
 
     it('should rotate local vertices before translating', () => {
       const square = new PolygonCollider([

@@ -44,26 +44,28 @@ if (gravity !== null) {
 
 ## Impulses: instantaneous pushes
 
-`applyImpulse(impulse, worldPoint, entityPosition, rigidBody)`
-changes a `RigidBodyEcsComponent`'s velocity (and, if `worldPoint` is
-off-center, its angular velocity) immediately. Use it for jumps, recoil, and
-reactions to a single event:
+`applyImpulse(world, entity, impulse, worldPoint)` changes an entity's
+`RigidBodyEcsComponent` velocity immediately, and its angular velocity too
+unless `worldPoint` is the body's center of mass. It finds the center of
+mass from the entity's collider and current transform (see
+[Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)). Use
+it for jumps, recoil, and reactions to a single event:
 
 ```ts
-import { applyImpulse, rigidBodyId } from '@forge-game-engine/forge/physics';
+import { applyImpulse } from '@forge-game-engine/forge/physics';
 import { positionId } from '@forge-game-engine/forge/common';
-import { Vec2 } from '@forge-game-engine/forge/math';
 
 const position = world.getComponent(playerEntity, positionId);
-const rigidBody = world.getComponent(playerEntity, rigidBodyId);
 
-if (position !== null && rigidBody !== null) {
-  // A straight-up jump through the center of mass: no spin.
-  applyImpulse({ x: 0, y: 500 }, position.world, position.world, rigidBody);
+if (position !== null) {
+  // The player's collider is centered on its position, so this jump
+  // passes through its center of mass: no spin.
+  applyImpulse(world, playerEntity, { x: 0, y: 500 }, position.world);
 }
 ```
 
-The velocity change is `impulse * (1 / rigidBody.mass)`, so the same impulse
+The velocity change is `impulse / mass`, with the mass of the entity's
+collider, so the same impulse
 moves a light, low-density body much further than a heavy one. If a jump
 feels too weak or too strong after changing a body's density, that's
 usually why; tune the impulse magnitude alongside density rather than in
@@ -77,10 +79,10 @@ integrated:
 
 ```ts
 applyImpulse(
-  wind.multiply(deltaTimeInSeconds),
+  world,
+  entity,
+  Vec2.multiply(Vec2.clone(wind), deltaTimeInSeconds),
   position.world,
-  position.world,
-  rigidBody,
 );
 ```
 
@@ -93,23 +95,20 @@ workaround for spin.
 
 ## Torque: spinning a body
 
-`applyTorque(torque, deltaTimeInSeconds, rigidBody)`
-changes a `RigidBodyEcsComponent`'s `angularVelocity` by `torque /
-momentOfInertia * deltaTimeInSeconds`, the rotational equivalent of
+`applyTorque(world, entity, torque, deltaTimeInSeconds)` changes an
+entity's `RigidBodyEcsComponent` `angularVelocity` by `torque /
+momentOfInertia * deltaTimeInSeconds`, with the moment of inertia of the
+entity's collider, the rotational equivalent of
 gravity's linear acceleration. Unlike `applyImpulse`, it already takes
 `deltaTimeInSeconds`, so call it every tick with the same torque value for
 a continuous spin (a thruster, a fan, a car engine), or once for an
 instantaneous twist:
 
 ```ts
-import { applyTorque, rigidBodyId } from '@forge-game-engine/forge/physics';
+import { applyTorque } from '@forge-game-engine/forge/physics';
 
 // A continuous thruster torque, called every tick while held.
-const rigidBody = world.getComponent(spaceshipEntity, rigidBodyId);
-
-if (rigidBody !== null) {
-  applyTorque(50, deltaTimeInSeconds, rigidBody);
-}
+applyTorque(world, spaceshipEntity, 50, deltaTimeInSeconds);
 ```
 
 The angular velocity change is `torque / momentOfInertia`, scaled by time,
@@ -126,8 +125,6 @@ bearing:
 
 ```ts
 addRigidBodyComponent(world, wheelEntity, {
-  mass: wheelCollider.mass,
-  momentOfInertia: wheelCollider.momentOfInertia,
   angularDrag: 1.5,
 });
 ```
@@ -285,9 +282,10 @@ force applied this tick isn't reflected until the next one.
 `applyExplosiveForce(world, center, force, radius)`
 applies a radial impulse to every entity with a `RigidBodyEcsComponent`
 within `radius` of `center`, strongest at `center` and falling off linearly
-to zero at `radius`. The impulse passes through each body's center of mass,
-so it never imparts spin. Entities with no `RigidBodyEcsComponent` (static
-geometry) and bodies at or beyond `radius` are untouched.
+to zero at `radius`. Distance is measured to each body's center of mass and
+the impulse passes through it, so it never imparts spin. Entities with no
+`RigidBodyEcsComponent` (static geometry), kinematic and static bodies, and
+bodies whose center of mass is at or beyond `radius` are untouched.
 
 A common use case is triggering an explosion at a clicked point. The physics
 demo converts the mouse position to world space through the camera's view
