@@ -1,4 +1,5 @@
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   actionResetTypes,
   Axis1dAction,
@@ -54,12 +55,9 @@ import {
  * enter group, gameplay systems only run while `playing`, and every entity
  * is removed by its state-scoped component, so no system checks the state
  * or cleans up after a round.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createGameStatesGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createGameStatesGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   const camera = createCamera(world, {
@@ -69,7 +67,15 @@ export const createGameStatesGame = async (
 
   const fontAtlas = await new FontAtlasCache(
     renderContext.imageCache,
-  ).getOrLoad(fontAtlasUrl);
+  ).getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const starSprite = createImageSprite(
     await renderContext.imageCache.getOrLoad(getAssetUrl('img/star_large.png')),

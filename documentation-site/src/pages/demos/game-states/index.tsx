@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createGameStatesGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import demoStateCode from '!!raw-loader!./_demo-state';
@@ -15,13 +14,6 @@ import { InteractionInstruction } from '@site/src/components/_InteractionInstruc
 import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 
 export default function GameStates(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createGameStatesGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -31,7 +23,7 @@ export default function GameStates(): JSX.Element {
       }}
       header="Game States"
       blurb="A menu, a round and a game-over screen, switched with a GameState. Each state's setup runs once when it's entered, gameplay systems only run while playing, and state-scoped entities are removed on the transitions that end them: the menu's text when it's left, and a round's stars and basket when the next round or the menu starts, so they stay behind the game-over screen. No system checks the state or cleans up after a round."
-      createGame={createGame}
+      createGame={createGameStatesGame}
       interactions={
         <>
           <InteractionInstruction
