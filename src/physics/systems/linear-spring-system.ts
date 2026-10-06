@@ -6,7 +6,10 @@ import {
   linearSpringId,
 } from '../components/linear-spring-component.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
-import { resolveJointBody } from '../joints/resolve-joint-body.js';
+import {
+  getJointLeverArm,
+  resolveJointBody,
+} from '../joints/resolve-joint-body.js';
 
 const minAnchorDistance = 1e-6;
 
@@ -39,15 +42,13 @@ export const createLinearSpringEcsSystem = (
         continue;
       }
 
-      // Clone before rotating: `spring.localAnchorA`/`localAnchorB` are
-      // persistent component fields reused every tick.
-      const rA = Vec2.rotate(Vec2.clone(spring.localAnchorA), bodyA.rotation);
-      const rB = Vec2.rotate(Vec2.clone(spring.localAnchorB), bodyB.rotation);
+      const rA = getJointLeverArm(bodyA, spring.localAnchorA);
+      const rB = getJointLeverArm(bodyB, spring.localAnchorB);
 
-      // Clone before adding: `bodyA.position`/`bodyB.position` are the
-      // entities' live world position.
-      const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
-      const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
+      // Clone before adding: the bodies' `centerOfMass` is read again by
+      // later solve steps.
+      const worldAnchorA = Vec2.add(Vec2.clone(bodyA.centerOfMass), rA);
+      const worldAnchorB = Vec2.add(Vec2.clone(bodyB.centerOfMass), rB);
 
       const delta = Vec2.subtract(worldAnchorB, worldAnchorA);
       const length = Vec2.magnitude(delta);

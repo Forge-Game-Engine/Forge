@@ -1,7 +1,7 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { positionId, Time } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
-import { applyImpulse, rigidBodyId } from '@forge-game-engine/forge/physics';
+import { applyImpulse } from '@forge-game-engine/forge/physics';
 import { PumpEcsComponent, pumpId } from './_pump.component';
 
 export const createPumpEcsSystem = (
@@ -26,10 +26,9 @@ export const createPumpEcsSystem = (
           : Vec2.negate(Vec2.clone(pump.impulse));
 
       const position = world.getComponent(pump.entity, positionId);
-      const rigidBody = world.getComponent(pump.entity, rigidBodyId);
 
-      if (position !== null && rigidBody !== null) {
-        applyImpulse(impulse, position.world, position.world, rigidBody);
+      if (position !== null) {
+        applyImpulse(world, pump.entity, impulse, position.world);
       }
 
       if (pump.alternate) {

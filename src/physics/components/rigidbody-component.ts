@@ -23,10 +23,19 @@ import { Vec2, Vector2 } from '../../math/index.js';
 export type RigidBodyType = 'dynamic' | 'kinematic' | 'static';
 
 /**
- * Fields of {@link RigidBodyEcsComponent} with a sensible default; callers
- * may omit these.
+ * ECS-style component interface for a rigid body.
+ *
+ * A body's mass, moment of inertia and center of mass aren't stored here: a
+ * `'dynamic'` body takes them from the `Collider` in its entity's
+ * `ColliderEcsComponent` (see `getRigidBodyMassData`), which computes them from
+ * the shape and its density.
  */
-export interface RigidBodyDefaultedOptions {
+export interface RigidBodyEcsComponent {
+  /**
+   * The world-space velocity of the body's center of mass. For a
+   * `'dynamic'` body that's its collider's centroid, which needn't be the
+   * entity's origin; for every other body it's the entity's origin.
+   */
   velocity: Vector2;
   angularVelocity: number;
   /**
@@ -42,17 +51,6 @@ export interface RigidBodyDefaultedOptions {
   type: RigidBodyType;
 }
 
-export interface RigidBodyRequiredOptions {
-  mass: number;
-  momentOfInertia: number;
-}
-
-/**
- * ECS-style component interface for a rigid body.
- */
-export interface RigidBodyEcsComponent
-  extends RigidBodyDefaultedOptions, RigidBodyRequiredOptions {}
-
 export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
 
@@ -66,9 +64,9 @@ export const rigidBodyId =
 export function addRigidBodyComponent(
   world: EcsWorld,
   entity: number,
-  options: RigidBodyRequiredOptions & Partial<RigidBodyEcsComponent>,
+  options: Partial<RigidBodyEcsComponent> = {},
 ): RigidBodyEcsComponent {
-  const defaultRigidBodyOptions: RigidBodyDefaultedOptions = {
+  const defaultRigidBodyOptions: RigidBodyEcsComponent = {
     velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,

@@ -25,8 +25,6 @@ describe('createGravityEcsSystem', () => {
     const entity = world.createEntity();
 
     const rigidBody = addRigidBodyComponent(world, entity, {
-      mass: 1,
-      momentOfInertia: 1,
       type,
     });
     addGravityComponent(world, entity, { amount: { x: 0, y: -10 } });

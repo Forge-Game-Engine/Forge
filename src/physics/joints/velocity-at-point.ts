@@ -2,7 +2,7 @@ import { Vec2, Vector2 } from '../../math/index.js';
 import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
 
 /**
- * The velocity of the point `r` (relative to `rigidBody`'s position) on a
+ * The velocity of the point `r` (relative to `rigidBody`'s center of mass) on a
  * rotating, translating body: `velocity + angularVelocity × r`. Bodies with
  * no rigid body (static geometry) have no velocity anywhere. A
  * `'kinematic'` body's `velocity`/`angularVelocity` (set directly by game
@@ -11,7 +11,7 @@ import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
  * body it contacts.
  * @param rigidBody - The rigid body, or `null` for static geometry.
  * @param r - The point to sample velocity at, relative to `rigidBody`'s
- * position.
+ * center of mass.
  * @returns The velocity of the point `r`.
  */
 export function velocityAtPoint(

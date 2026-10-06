@@ -1,16 +1,26 @@
-import { PositionEcsComponent, positionId } from '../common/index.js';
+import {
+  PositionEcsComponent,
+  positionId,
+  rotationId,
+} from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
 import { Vec2, Vector2 } from '../math/index.js';
-import { applyImpulse } from './apply-impluse.js';
+import { getColliderRotation } from './collider-rotation.js';
 import { RigidBodyEcsComponent, rigidBodyId } from './components/index.js';
+import { applyPointImpulse } from './joints/apply-point-impulse.js';
+import {
+  getRigidBodyMassData,
+  getWorldCenterOfMass,
+} from './rigid-body-mass-data.js';
 
 /**
  * Applies a radial impulse to every dynamic body within `radius` of
  * `center`, strongest at `center` and falling off linearly to zero at
- * `radius`. The impulse passes through each body's center of mass, so it
- * never imparts spin. Bodies with no `RigidBodyEcsComponent`,
- * `'static'`/`'kinematic'` bodies (see {@link RigidBodyType}; `applyImpulse`
- * no-ops for them), and bodies at or beyond `radius` are untouched.
+ * `radius`. Distance and direction are measured to each body's center of
+ * mass, and the impulse passes through it, so it never imparts spin.
+ * Bodies with no `RigidBodyEcsComponent`, `'static'`/`'kinematic'` bodies
+ * (see {@link RigidBodyType}), and bodies whose center of mass is at or
+ * beyond `radius` are untouched.
  * @param world - The ECS world to search for dynamic bodies in.
  * @param center - The explosion's world-space origin.
  * @param force - The impulse magnitude at `center`.
@@ -25,15 +35,22 @@ export function applyExplosiveForce(
   const { entities, components } = world.query<
     [PositionEcsComponent, RigidBodyEcsComponent]
   >([positionId, rigidBodyId]);
-  const [positions, rigidBodies] = components;
+  const [positions] = components;
 
   for (let i = 0; i < entities.length; i++) {
-    const position = positions[i].world;
-    const rigidBody = rigidBodies[i];
+    const massData = getRigidBodyMassData(world, entities[i]);
 
-    // Clone before subtracting: `position` is the entity's live world
-    // position, so this must not mutate it.
-    const offset = Vec2.subtract(Vec2.clone(position), center);
+    if (massData.invMass === 0) {
+      continue;
+    }
+
+    const centerOfMass = getWorldCenterOfMass(
+      positions[i].world,
+      getColliderRotation(world.getComponent(entities[i], rotationId)),
+      massData.localCenterOfMass,
+    );
+    // `centerOfMass` is freshly allocated, so subtracting in place is safe.
+    const offset = Vec2.subtract(centerOfMass, center);
     const distance = Vec2.magnitude(offset);
 
     if (distance >= radius) {
@@ -43,11 +60,13 @@ export function applyExplosiveForce(
     const direction = distance === 0 ? Vec2.up : Vec2.divide(offset, distance);
     const magnitude = force * (1 - distance / radius);
 
-    applyImpulse(
+    // Applied at the center of mass, so there's no lever arm.
+    applyPointImpulse(
+      massData.rigidBody,
+      Vec2.zero,
+      massData.invMass,
+      massData.invInertia,
       Vec2.multiply(direction, magnitude),
-      position,
-      position,
-      rigidBody,
     );
   }
 }

@@ -83,10 +83,7 @@ export async function createPlayer(
   });
   // Lets the jump system check whether the ball is touching the terrain.
   addContactsComponent(world, entity);
-  addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
 
   addAngularVelocityMotorComponent(world, entity, {

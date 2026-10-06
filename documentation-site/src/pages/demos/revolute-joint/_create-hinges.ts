@@ -191,10 +191,7 @@ function createDoorScenario(
     collider: doorCollider,
     restitution: 0,
   });
-  addRigidBodyComponent(world, doorEntity, {
-    mass: doorCollider.mass,
-    momentOfInertia: doorCollider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, doorEntity);
   addGravityComponent(world, doorEntity, { amount: gravity });
 
   // referenceAngle is captured as doorAngle here, so the joint's own
@@ -263,10 +260,7 @@ function createPendulumScenario(
     collider: bobCollider,
     restitution: 0,
   });
-  addRigidBodyComponent(world, bobEntity, {
-    mass: bobCollider.mass,
-    momentOfInertia: bobCollider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, bobEntity);
   addGravityComponent(world, bobEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();
@@ -314,8 +308,6 @@ function createWheelScenario(
     restitution: 0,
   });
   addRigidBodyComponent(world, wheelEntity, {
-    mass: wheelCollider.mass,
-    momentOfInertia: wheelCollider.momentOfInertia,
     angularVelocity: 5,
   });
   addGravityComponent(world, wheelEntity, { amount: gravity });
