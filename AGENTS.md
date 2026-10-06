@@ -113,6 +113,7 @@ this step by step for bug fixes.
   /pooling                 # Object pooling
   /rendering               # Rendering system
   /states                  # Game states (createGameState), inState/onEnter/onExit run conditions, state-scoped entities
+  /storage                 # StorageBackend (localStorage, memory) and createPersistentState: typed records kept outside the game
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
   /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, layout groups, content size/aspect ratio fitters)
