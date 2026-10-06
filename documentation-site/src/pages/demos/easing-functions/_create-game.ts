@@ -16,13 +16,13 @@ const renderLayers = {
 export const createEasingFunctionsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createEasingRows(world, renderContext, renderLayers.foreground);
+  await createEasingRows(world, camera, renderContext, renderLayers.foreground);
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createEasingRowEcsSystem(time));

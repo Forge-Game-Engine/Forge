@@ -1,9 +1,9 @@
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   combineInstanceDataSegments,
   createQuadGeometry,
   ForgeShaderSource,
+  getCameraView,
   Material,
   Renderable,
   RenderContext,
@@ -11,7 +11,6 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { addPositionComponent } from '@forge-game-engine/forge/common';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { backgroundShader } from './_background.shader';
 import { backgroundId } from './_background.component';
 
@@ -19,11 +18,13 @@ import { backgroundId } from './_background.component';
  * Creates a full-screen, shader-driven gradient sprite that sits behind the
  * play area, so the backdrop doesn't need a static image asset.
  * @param world - The ECS world to add the background entity to.
+ * @param camera - The camera entity whose visible area the background fills.
  * @param renderContext - The render context used to build the material.
  * @param renderLayer - The render layer the background should be drawn on.
  */
 export function createBackground(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): void {
@@ -50,11 +51,7 @@ export function createBackground(
 
   const backgroundEntity = world.createEntity();
 
-  const visibleWorldSize = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const visibleWorldSize = getCameraView(world, camera, renderContext).size;
 
   addSpriteComponent(world, backgroundEntity, {
     width: visibleWorldSize.x,

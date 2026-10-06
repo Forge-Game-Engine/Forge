@@ -1,6 +1,5 @@
 import {
   addPositionComponent,
-  calculatePixelsPerUnit,
   Color,
   createCamera,
   createCanvas,
@@ -11,10 +10,9 @@ import {
   createRenderEcsSystem,
   createTransformEcsSystem,
   EcsWorld,
+  getCameraView,
   MouseInputSource,
-  positionId,
   registerInputs,
-  screenToWorldSpace,
   spriteId,
   Time,
   Vector2,
@@ -69,8 +67,7 @@ export interface HighDpiCanvasSceneHandle extends SceneHandle {
   readonly devicePixelsPerUnit: number;
   /**
    * The mouse's position as of the last `step()`, converted to world space
-   * from `MouseInputSource.position` (CSS pixels) against the render
-   * context's CSS size.
+   * from `MouseInputSource.position` (CSS pixels) through the camera's view.
    */
   readonly pointerWorldPosition: Vector2;
   /**
@@ -145,20 +142,11 @@ export const createScene: CreateScene = async (
       time.update(clockInMilliseconds);
       world.update();
 
-      const cameraPosition = world.getComponent(cameraEntity, positionId);
-
-      if (!cameraPosition) {
-        throw new Error('The scene camera has no position component.');
-      }
-
-      pointerWorldPosition = screenToWorldSpace(
-        mouseInputSource.position,
-        cameraPosition.world,
-        1,
-        renderContext.cssWidth,
-        renderContext.cssHeight,
-        calculatePixelsPerUnit(renderContext.cssHeight, verticalWorldUnits),
-      );
+      pointerWorldPosition = getCameraView(
+        world,
+        cameraEntity,
+        renderContext,
+      ).viewportToWorld(mouseInputSource.position);
     },
 
     get canvasMetrics(): HighDpiCanvasMetrics {
@@ -175,7 +163,7 @@ export const createScene: CreateScene = async (
     squareWorldSize,
 
     get devicePixelsPerUnit(): number {
-      return calculatePixelsPerUnit(renderContext.height, verticalWorldUnits);
+      return renderContext.height / verticalWorldUnits;
     },
 
     get pointerWorldPosition(): Vector2 {

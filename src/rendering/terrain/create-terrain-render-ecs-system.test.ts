@@ -14,8 +14,8 @@ import { RenderContext } from '../render-context.js';
 import { ShaderCache } from '../shaders/index.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
-import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import { createProjectionMatrix } from '../shaders/index.js';
+import { Matrix3x3 } from '../../math/index.js';
 
 describe('createTerrainRenderEcsSystem', () => {
   let world: EcsWorld;
@@ -151,25 +151,27 @@ describe('createTerrainRenderEcsSystem', () => {
     expect(mockGl.bindFramebuffer).toHaveBeenCalledWith('FRAMEBUFFER', null);
   });
 
-  it('scales the projection matrix by the camera-derived pixels-per-unit', () => {
+  it("projects the camera's view: verticalWorldUnits tall, the canvas's aspect wide, centered on the camera", () => {
     addCamera({ verticalWorldUnits: 20 });
     addTerrain();
 
     world.update();
 
-    const expectedPixelsPerUnit = calculatePixelsPerUnit(600, 20);
-    const expectedMatrix = createProjectionMatrix(
-      800,
-      600,
-      { x: 10, y: 20 },
-      1,
-      expectedPixelsPerUnit,
-    );
+    const halfWidth = (20 * (800 / 600)) / 2;
+    const expectedMatrix = createProjectionMatrix({
+      min: { x: 10 - halfWidth, y: 10 },
+      max: { x: 10 + halfWidth, y: 30 },
+    });
 
-    expect(material.setUniform).toHaveBeenCalledWith(
-      'u_projection',
-      expectedMatrix,
-    );
+    const [, projection] = (material.setUniform as Mock).mock.calls[0] as [
+      string,
+      Matrix3x3,
+    ];
+
+    expect(projection.matrix).toHaveLength(expectedMatrix.matrix.length);
+    expectedMatrix.matrix.forEach((value, index) => {
+      expect(projection.matrix[index]).toBeCloseTo(value);
+    });
   });
 
   it('draws once per camera when multiple cameras are present', () => {

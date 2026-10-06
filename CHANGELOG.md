@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** `getCameraView(world, camera, renderContext)` (and `computeCameraView(camera, position, renderContext)` for systems that already hold the camera's components) returns what a camera sees: the world area it shows (`bounds`, `size`, accounting for its position and zoom), its `pixelsPerUnit` in CSS pixels, and `worldToViewport`/`viewportToWorld` conversions to and from CSS pixels on the canvas. To place something drawn by one camera over something drawn by another, convert through the viewport: `hudView.viewportToWorld(gameView.worldToViewport(position))`
+
+#### Changed
+
+- **rendering:** The render system no longer draws sprites, nine-slice regions or text glyphs whose quads are entirely outside a camera's view. Code that disabled sprites only to save drawing them while off screen can be deleted. A material with a custom vertex shader that moves vertices beyond the sprite's quad may be skipped while partly visible
+- **rendering:** `createProjectionMatrix` now takes the world-space `Rect` to show, such as `getCameraView(...).bounds`, instead of `(width, height, cameraPosition, zoom, pixelsPerUnit)`
+- **ui:** A `'screenPixels'`-unit size or margin, and `UiSafeAreaEcsComponent` insets, now follow the canvas camera's `zoom`, so they keep their on-screen size on a world-space canvas whose camera zooms. A screen-space canvas's root rect now fills its camera's view, so it follows a moved or zoomed UI camera
+
+#### Removed
+
+- **rendering:** `calculateVisibleWorldSize`, `calculatePixelsPerUnit`, `screenToWorldSpace`, `worldToScreenSpace` and `canvasToWorldSpace` are removed; use the camera's view instead. `calculateVisibleWorldSize(width, height, verticalWorldUnits)` becomes `getCameraView(world, camera, renderContext).size`, which also accounts for zoom; `screenToWorldSpace(pointer, ...)` becomes `view.viewportToWorld(pointer)`; `worldToScreenSpace(...)` becomes `view.worldToViewport(position)`, which unlike the old function flips Y to the Y-down viewport; `calculatePixelsPerUnit(...)` becomes `view.pixelsPerUnit`. Constants that mirrored a camera's `verticalWorldUnits` for these calls can be deleted
+- **rendering:** `CameraEcsComponent.scissorRect`, which nothing read, is removed
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

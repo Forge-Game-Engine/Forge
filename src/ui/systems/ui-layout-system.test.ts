@@ -420,6 +420,59 @@ describe('createUiLayoutEcsSystem', () => {
     expect(rect.max.x - rect.min.x).toBe(200);
   });
 
+  it("keeps a world-space canvas's screenPixels-unit child the same size on screen as its camera zooms", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas, camera } = createTestCanvas(world, {
+      renderMode: uiCanvasRenderModes.worldSpace,
+    });
+    const cameraComponent = world.getComponent(camera, cameraId)!;
+
+    cameraComponent.verticalWorldUnits = 10;
+    addRectTransformComponent(world, canvas, UiAnchor.center({ x: 4, y: 2 }));
+
+    const label = world.createEntity();
+
+    addPositionComponent(world, label);
+    addParentComponent(world, label, { parent: canvas });
+    addRectTransformComponent(world, label, {
+      x: UiAxis.point(0, { pivot: 0, size: 216, sizeUnit: 'screenPixels' }),
+      y: UiAxis.stretch({ min: 0, max: 1 }),
+    });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    // 1080 CSS pixels over 10 world units: 216 screen pixels is 2 units.
+    let rect = world.getComponent(label, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBeCloseTo(2);
+
+    cameraComponent.zoom = 2;
+    world.update();
+
+    rect = world.getComponent(label, rectTransformId)!.rect;
+
+    expect(rect.max.x - rect.min.x).toBeCloseTo(1);
+  });
+
+  it("fills its camera's view: a screen-space canvas root follows a moved camera", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas, camera } = createTestCanvas(world);
+    const cameraPosition = world.getComponent(camera, positionId)!;
+
+    cameraPosition.world = { x: 100, y: -50 };
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
+      min: { x: -860, y: -590 },
+      max: { x: 1060, y: 490 },
+    });
+  });
+
   it('resolves a stretched child that spans the full canvas width', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);

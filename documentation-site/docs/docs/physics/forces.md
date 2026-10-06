@@ -290,42 +290,29 @@ so it never imparts spin. Entities with no `RigidBodyEcsComponent` (static
 geometry) and bodies at or beyond `radius` are untouched.
 
 A common use case is triggering an explosion at a clicked point. The physics
-demo converts the screen-space mouse position to world space and calls
+demo converts the mouse position to world space through the camera's view
+(see [World Units and Cameras](../rendering/world-units-and-cameras.md)) and calls
 `applyExplosiveForce` on click:
 
 ```ts
-import { Vec2 } from '@forge-game-engine/forge/math';
-import {
-  calculatePixelsPerUnit,
-  screenToWorldSpace,
-} from '@forge-game-engine/forge/rendering';
+import { getCameraView } from '@forge-game-engine/forge/rendering';
 import { applyExplosiveForce } from '@forge-game-engine/forge/physics';
 
-// world and renderContext come from your game setup; verticalWorldUnits
-// matches whatever was passed to createCamera.
+// world and renderContext come from your game setup; camera is the entity
+// createCamera returned.
 renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
-  const screenPosition = {
+  const viewportPosition = {
     x: event.clientX - canvasBounds.left,
     y: event.clientY - canvasBounds.top,
   };
 
-  // screenPosition is in CSS pixels, so convert it against the canvas's
-  // CSS size rather than its (pixel-ratio-scaled) drawing buffer.
-  const pixelsPerUnit = calculatePixelsPerUnit(
-    renderContext.cssHeight,
-    verticalWorldUnits,
-  );
-
-  const worldPosition = screenToWorldSpace(
-    screenPosition,
-    Vec2.zero,
-    1,
-    renderContext.cssWidth,
-    renderContext.cssHeight,
-    pixelsPerUnit,
-  );
+  const worldPosition = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).viewportToWorld(viewportPosition);
 
   applyExplosiveForce(world, worldPosition, 1_000_000, 600);
 });
