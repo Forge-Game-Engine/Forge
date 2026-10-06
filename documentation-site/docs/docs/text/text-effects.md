@@ -103,6 +103,13 @@ merged stroke or glow; see
 "outline + soft shadow / glow together, at a larger size" example for what
 a properly bold effect looks like at a size that has room for it.
 
+Bold text spends part of the same budget. A `<b>` glyph (see
+[Rich text tags](./rendering-text.md#rich-text-tags)) is drawn by pushing
+its edge outwards through the distance field, and its outline and shadow
+are measured from that thicker edge, so they wrap the bold ink. What the
+bold edge uses is no longer available to the outline and shadow on that
+glyph.
+
 ## A note on extreme values and unusual glyphs
 
 Multi-channel signed distance fields are a lossy, low-resolution encoding of

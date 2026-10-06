@@ -1,6 +1,6 @@
 #version 300 es
 
-#pragma forge name(msdf.vert)
+#pragma forge name(msdf-fill.vert)
 
 in vec2 a_position;      // Vertex position (e.g., quad corners)
 in vec2 a_texCoord;      // Texture coordinate
@@ -13,20 +13,12 @@ in vec2 a_instanceSize;       // Glyph width/height, in world units
 in vec2 a_instancePivot;      // Glyph pivot (origin offset)
 in vec2 a_instanceTexOffset;  // Texture region offset (UV)
 in vec2 a_instanceTexSize;    // Texture region size (UV)
-in vec4 a_instanceTint;       // tint color
+in vec4 a_instanceTint;       // Fill color
 
 // Per-instance attribute (text embolden segment, see
 // `textEmboldenInstanceDataSegment`): the faux-bold edge shift, in
 // distance-field units.
 in float a_instanceEmbolden;
-
-// Per-instance attributes (text effects segment, see
-// `textEffectsInstanceDataSegment`):
-in vec4 a_instanceOutlineColor;
-in float a_instanceOutlineWidth;
-in vec4 a_instanceShadowColor;
-in vec2 a_instanceShadowOffset;
-in float a_instanceShadowSoftness;
 
 // Uniforms for projection/camera:
 uniform mat3 u_projection; // 2D projection/camera matrix
@@ -34,11 +26,6 @@ uniform mat3 u_projection; // 2D projection/camera matrix
 out vec2 v_texCoord;
 out vec4 v_tint;
 out float v_embolden;
-out vec4 v_outlineColor;
-out float v_outlineWidth;
-out vec4 v_shadowColor;
-out vec2 v_shadowOffset;
-out float v_shadowSoftness;
 
 void main() {
     // Identical to `sprite.vert` - glyph quads are positioned, pivoted,
@@ -67,13 +54,4 @@ void main() {
     v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;
     v_tint = a_instanceTint;
     v_embolden = a_instanceEmbolden;
-
-    // Passed through unchanged - every vertex of a glyph's quad shares the
-    // same per-instance effect parameters, so no per-vertex computation is
-    // needed here; `msdf-effects.frag` does all the actual effect work.
-    v_outlineColor = a_instanceOutlineColor;
-    v_outlineWidth = a_instanceOutlineWidth;
-    v_shadowColor = a_instanceShadowColor;
-    v_shadowOffset = a_instanceShadowOffset;
-    v_shadowSoftness = a_instanceShadowSoftness;
 }

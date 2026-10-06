@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { Color } from '../../rendering/color.js';
 import type { FontAtlasData } from '../font-atlas/font-atlas-data.js';
-import { shapeText } from './shape-text.js';
+import { FAUX_BOLD_EMBOLDEN, shapeText } from './shape-text.js';
 
 const A_CODE_POINT = 65;
 const V_CODE_POINT = 86;
@@ -646,6 +647,127 @@ describe('shapeText', () => {
       expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
       expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24 - 9);
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48 - 9);
+    });
+  });
+
+  describe('rich text tags', () => {
+    const red = new Color(1, 0, 0, 1);
+
+    it('leaves untagged glyphs without a color or embolden', () => {
+      const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      expect(glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        undefined,
+      ]);
+      expect(glyphs.map((glyph) => glyph.embolden)).toEqual([0, 0]);
+    });
+
+    it('colors the glyphs inside a color tag without moving any glyph', () => {
+      const untagged = shapeText('AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const tagged = shapeText(
+        'A<color=#ff0000>V A</color>V',
+        buildFixtureFontAtlasData(),
+        { size: 10 },
+      );
+
+      expect(tagged.glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        red,
+        red,
+        undefined,
+      ]);
+      expect(tagged.glyphs.map((glyph) => glyph.offset)).toEqual(
+        untagged.glyphs.map((glyph) => glyph.offset),
+      );
+      expect(tagged.bounds).toEqual(untagged.bounds);
+    });
+
+    it('kerns across a tag boundary exactly as without the tag', () => {
+      const untagged = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const tagged = shapeText(
+        'A<color=#ff0000>V</color>',
+        buildFixtureFontAtlasData(),
+        { size: 10 },
+      );
+
+      expect(tagged.glyphs[1].offset.x).toBeCloseTo(
+        untagged.glyphs[1].offset.x,
+      );
+    });
+
+    it("wraps a tagged string as if its tags weren't there", () => {
+      const options = { size: 10, maxWidth: 20 };
+      const untagged = shapeText(
+        'AV AV AV',
+        buildFixtureFontAtlasData(),
+        options,
+      );
+      const tagged = shapeText(
+        'AV <color=#ff0000>AV AV</color>',
+        buildFixtureFontAtlasData(),
+        options,
+      );
+
+      expect(tagged.glyphs.map((glyph) => glyph.offset)).toEqual(
+        untagged.glyphs.map((glyph) => glyph.offset),
+      );
+      expect(tagged.glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        undefined,
+        red,
+        red,
+        red,
+        red,
+      ]);
+    });
+
+    it('emboldens bold glyphs in the distance field units of the atlas', () => {
+      const { glyphs } = shapeText('<b>A</b>V', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "A"'s atlas rect is 0.1 * 256 = 25.6 atlas pixels wide for 0.5em of
+      // plane bounds, so 51.2 atlas pixels per em, over a 4 pixel range.
+      expect(glyphs[0].embolden).toBeCloseTo((FAUX_BOLD_EMBOLDEN * 51.2) / 4);
+      expect(glyphs[1].embolden).toBe(0);
+    });
+
+    it('widens a bold glyph by the embolden on both sides', () => {
+      const regular = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const bold = shapeText('<b>A</b>V', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const emboldenWidth = FAUX_BOLD_EMBOLDEN * 10;
+
+      expect(bold.glyphs[0].offset.x).toBeCloseTo(
+        regular.glyphs[0].offset.x + emboldenWidth,
+      );
+      expect(bold.glyphs[1].offset.x).toBeCloseTo(
+        regular.glyphs[1].offset.x + 2 * emboldenWidth,
+      );
+      expect(bold.bounds.width).toBeCloseTo(
+        regular.bounds.width + 2 * emboldenWidth,
+      );
+    });
+
+    it('shapes markup it does not recognize as literal text', () => {
+      const { glyphs } = shapeText('<i>A</i>', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "<", "i", ">" and "/" aren't in the fixture atlas, so only "A" draws -
+      // and it isn't styled.
+      expect(glyphs).toHaveLength(1);
+      expect(glyphs[0].color).toBeUndefined();
     });
   });
 });

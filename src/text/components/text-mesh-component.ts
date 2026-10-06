@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import type { Vector2 } from '../../math/index.js';
+import type { Color } from '../../rendering/color.js';
 import type { Renderable } from '../../rendering/renderable.js';
 
 /**
@@ -23,6 +24,21 @@ export interface GlyphQuad {
 
   /** The width/height of this glyph's texture rect in the atlas, 0 to 1. */
   uvScale: Vector2;
+
+  /**
+   * This glyph's fill color from a `<color=...>` rich text tag, replacing
+   * `TextEcsComponent.color` (alpha included). `undefined` outside a
+   * `<color>` tag, where the glyph draws in `TextEcsComponent.color`.
+   */
+  color?: Color;
+
+  /**
+   * How far this glyph's ink is thickened by a `<b>` rich text tag (faux
+   * bold), as a shift of the distance field's edge threshold in the
+   * field's own units (`0.5` is the field's full encoded range). `0` for
+   * regular-weight glyphs.
+   */
+  embolden: number;
 }
 
 /**

@@ -169,7 +169,7 @@ export const demos: Demo[] = [
     slug: 'text',
     title: 'Text Rendering',
     description:
-      'MSDF text rendering: alignment, line height, live reflow and outline/shadow effects.',
+      'MSDF text rendering: alignment, line height, live reflow, rich text tags and outline/shadow effects.',
     categories: ['rendering'],
   },
   {
