@@ -59,25 +59,22 @@ export interface TextDefaultedOptions {
   horizontalAlign: TextHorizontalAlign;
 
   /**
-   * Vertical alignment of the shaped block's visible ink relative to the
-   * entity's position - not the font's line-height box, which typically
-   * doesn't match the ink's own extent.
+   * Vertical alignment of the shaped block relative to the entity's
+   * position. Every mode anchors to the font's metrics (and the line
+   * count), never to the glyphs this string contains, so a label doesn't
+   * move when its text changes:
    *
-   * `'top'`, `'bottom'`, `'capline'`, and `'baseline'` all anchor to a
-   * fixed reference that doesn't depend on this specific string's rendered
-   * bounds, so a line's position stays stable as its text is edited:
-   * `'top'` anchors the font's ascender (so text hangs *below* the
-   * entity's position), `'bottom'` anchors the font's descender (so text
-   * sits *above* it), `'capline'` anchors the font's cap height - the top
-   * of a capital letter like "H", shorter than `ascender`'s "tallest glyph
-   * including ascenders like b/d/h" - and `'baseline'` anchors the first
-   * line's own baseline directly (most useful for single-line text).
-   *
-   * `'middle'` instead centers this exact string's *actual* rendered ink,
-   * since a font's ascender is typically taller than its descender is
-   * deep - most glyphs have no descender at all - so centering on the
-   * font's metrics would bias every descender-less string (numbers,
-   * titles, most short UI labels) above the true visual center of its box.
+   * - `'top'` anchors the first line's ascender (the top of the font's
+   *   tallest glyphs), so text hangs below the position.
+   * - `'bottom'` anchors the last line's descender, so text sits above it.
+   * - `'capline'` anchors the first line's cap height (the top of a capital
+   *   like "H"), lower than the ascender of "b"/"d"/"h". Use it to put the
+   *   top of a title set in caps exactly on the position.
+   * - `'baseline'` anchors the first line's baseline.
+   * - `'middle'` centers the band from the first line's cap height to the
+   *   last line's baseline on the position, which is where a designer
+   *   centers a label in a button. Lowercase descenders hang below the
+   *   band.
    */
   verticalAlign: TextVerticalAlign;
 
