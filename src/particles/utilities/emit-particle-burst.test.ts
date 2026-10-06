@@ -79,4 +79,32 @@ describe('emitParticleBurst', () => {
       expect(velocity.y).toBeCloseTo((offset.y / 2) * 3);
     }
   });
+
+  it('emits in the frame turned by the given rotation', () => {
+    const world = new EcsWorld();
+    const emitter = new ParticleEmitter(sprite, {
+      speedRange: { min: 2, max: 2 },
+      directionRange: { min: 0, max: 0 },
+      spawnShape: { type: 'box', width: 6, height: 0 },
+    });
+    const origin = { x: 1, y: 1 };
+
+    const particles = emitParticleBurst(
+      world,
+      emitter,
+      origin,
+      new Random('rotated-burst-seed'),
+      { count: 10, rotation: -Math.PI / 2 },
+    );
+
+    for (const particle of particles) {
+      const position = world.getComponentRequired(particle, positionId).world;
+      const { velocity } = world.getComponentRequired(particle, ParticleId);
+
+      expect(position.x).toBeCloseTo(1);
+      expect(Math.abs(position.y - 1)).toBeLessThanOrEqual(3);
+      expect(velocity.x).toBeCloseTo(0);
+      expect(velocity.y).toBeCloseTo(-2);
+    }
+  });
 });

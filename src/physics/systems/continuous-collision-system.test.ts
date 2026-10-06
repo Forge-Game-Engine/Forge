@@ -32,13 +32,6 @@ import { createNarrowPhaseEcsSystem } from './narrow-phase-system.js';
 
 const fixedDeltaMilliseconds = 1000 / 60;
 
-/**
- * Terrain is rotated half a turn throughout this file, so its surface faces
- * +y, the way a world with gravity pulling toward -y uses it (see
- * documentation-site/docs/docs/physics/terrain.md).
- */
-const terrainRotation = Math.PI;
-
 interface Body {
   entity: number;
   position: PositionEcsComponent;
@@ -127,7 +120,7 @@ describe('createContinuousCollisionEcsSystem', () => {
   }
 
   it('should stop a fast circle just inside the surface it would pass through', () => {
-    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 }, terrainRotation);
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
 
     // 6000 units/second is 100 units this tick: far past the surface.
     const ball = addBody(
@@ -199,7 +192,7 @@ describe('createContinuousCollisionEcsSystem', () => {
   });
 
   it('should not move kinematic circles or polygon bodies', () => {
-    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 }, terrainRotation);
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
 
     const kinematicBall = addBody(
       world,
@@ -222,7 +215,7 @@ describe('createContinuousCollisionEcsSystem', () => {
   });
 
   it('should leave a shallow landing to the discrete pipeline', () => {
-    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 }, terrainRotation);
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
 
     // 1.4 units this tick, ending 0.9 units (under a tenth of the radius)
     // into the surface.
@@ -239,7 +232,7 @@ describe('createContinuousCollisionEcsSystem', () => {
   });
 
   it('should not slow a fast circle rolling along the surface', () => {
-    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 }, terrainRotation);
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
 
     const ball = addBody(
       world,
@@ -318,12 +311,10 @@ describe('continuous collision in the full physics pipeline', () => {
       world.addSystem(createContinuousCollisionEcsSystem());
     }
 
-    addStaticCollider(
-      world,
-      new TerrainCollider(hillPoints(), 500),
-      { x: 0, y: 0 },
-      terrainRotation,
-    );
+    addStaticCollider(world, new TerrainCollider(hillPoints(), 500), {
+      x: 0,
+      y: 0,
+    });
 
     const wheel = addBody(
       world,

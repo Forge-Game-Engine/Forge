@@ -117,10 +117,13 @@ export interface ParticleEmitterOptions {
   speedRange: Range;
   /**
    * The range for the direction particles move in when they spawn, in
-   * degrees. 0 points up and angles increase clockwise (90 is right). Ignored
-   * when `emitOutward` is `true`, except for particles spawned at the shape's
-   * exact center.
-   * @default { min: 0, max: 360 }
+   * radians, in the emitter's frame: `0` points along the emitter's local
+   * `+X` and angles increase counter-clockwise (`Math.PI / 2` is its local
+   * up). The emitter's frame is the world rotation of the entity it's on, or
+   * the world's own when the entity has no rotation. A range spanning a full
+   * turn picks from the whole circle. Ignored when `emitOutward` is `true`,
+   * except for particles spawned at the shape's exact center.
+   * @default { min: 0, max: 2π }
    */
   directionRange: Range;
   /**
@@ -129,9 +132,10 @@ export interface ParticleEmitterOptions {
    */
   scaleRange: Range;
   /**
-   * The range for the initial rotation of each particle's sprite, in
-   * degrees, counter-clockwise. This only turns the sprite; it doesn't change
-   * the direction the particle moves in.
+   * The range for the initial world rotation of each particle's sprite, in
+   * radians, counter-clockwise. This only turns the sprite; it doesn't change
+   * the direction the particle moves in, and it doesn't follow the emitter's
+   * rotation.
    * @default { min: 0, max: 0 }
    */
   rotationRange: Range;
@@ -160,7 +164,8 @@ export interface ParticleEmitterOptions {
   lifetimeOpacity: ParticleLifetimeOpacity;
   /**
    * A constant acceleration, in world units per second squared, applied to
-   * every particle. For example `{ x: 0, y: -9.8 }` for gravity.
+   * every particle. It's in world space, so it doesn't turn with the
+   * emitter. For example `{ x: 0, y: -9.8 }` for gravity.
    * @default { x: 0, y: 0 }
    */
   acceleration: Vector2;
@@ -173,7 +178,8 @@ export interface ParticleEmitterOptions {
   /**
    * The area, centered on the emitter's origin, that particles spawn in. The
    * origin is the world position of the entity the emitter is on, or the
-   * position passed to `emitParticleBurst`.
+   * position passed to `emitParticleBurst`. The shape turns with the
+   * emitter's frame (see `directionRange`).
    * @default { type: 'point' }
    */
   spawnShape: ParticleSpawnShape;
@@ -212,7 +218,7 @@ export interface ParticleEmitterOptions {
 const defaultOptions: ParticleEmitterOptions = {
   numParticlesRange: { min: 5, max: 10 },
   speedRange: { min: 10, max: 20 },
-  directionRange: { min: 0, max: 360 },
+  directionRange: { min: 0, max: Math.PI * 2 },
   scaleRange: { min: 1, max: 1 },
   rotationRange: { min: 0, max: 0 },
   rotationSpeedRange: { min: 0, max: 0 },

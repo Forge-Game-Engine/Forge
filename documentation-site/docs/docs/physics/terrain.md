@@ -54,8 +54,11 @@ as authored, in the collider's own local space, so the easiest way to work
 with terrain is to author points directly in world coordinates and leave the
 owning entity's `PositionEcsComponent` at `Vec2.zero`.
 
-`depth` sets how far the solid slab extends below the lowest of `points`,
-closing the heightmap into a shape with well-defined area/collision volume.
+`depth` sets how far the solid slab extends below (toward `-y`) the lowest
+of `points`, closing the heightmap into a shape with well-defined
+area/collision volume. Points authored as the ground's surface in world
+coordinates, on an unrotated entity, give ground underneath them with no
+rotation or flipping needed.
 It only needs to be deep enough that nothing can tunnel through the bottom;
 a few hundred units is typically more than enough headroom.
 
