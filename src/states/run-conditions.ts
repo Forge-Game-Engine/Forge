@@ -3,8 +3,7 @@ import { GameState } from './game-state.js';
 
 /**
  * Creates a run condition that is true while `state` is in one of `names`.
- * Gate a system or system group on it with `runIf` to run it only in those
- * states.
+ * Pass it as `runIf` to run a system or system group only in those states.
  * @param state - The game state to read.
  * @param names - The states in which the condition is true.
  * @returns The run condition.

@@ -102,7 +102,7 @@ The world calls the condition each tick, just before the system would
 run, so it sees what earlier systems of the same tick changed. When it
 returns `false`, the system isn't queried and `update` isn't called.
 
-`addSystemGroup` takes a `runIf` too. A system in a gated group runs only
+`addSystemGroup` takes a `runIf` too. A system in a group with one runs only
 when the group's condition is true and then its own, and the group's
 condition is checked once per tick for all of its systems.
 
@@ -111,8 +111,8 @@ The most common run conditions come from [game states](../states/index.md):
 
 A run condition decides when a system runs, never which entities it sees:
 the system's `query` and `tags` stay the same. Keep conditions to cheap
-reads (a flag, a state), since they run every tick. A gated system's
-`cleanup` still runs when it's removed or the world stops.
+reads (a flag, a state), since they run every tick. A system's `cleanup`
+runs when it's removed or the world stops, whatever its run condition.
 
 Prefer a run condition to an early `return` at the top of `update`. The
 condition skips the query, and it shows when the system runs where the

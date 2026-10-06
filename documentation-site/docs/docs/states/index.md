@@ -50,20 +50,20 @@ world.addSystem(createMenuInputEcsSystem(gameState), {
 });
 ```
 
-A gated system isn't queried or updated while its condition is false, so a
+A system isn't queried or updated while its run condition is false, so a
 `paused` state that leaves gameplay systems out stops them where they are.
 `Time` keeps running during the pause: a system that steps with
 `time.deltaTimeInSeconds` resumes where it stopped, but one that compares
 against `time.timeInSeconds` counts the pause as elapsed time.
 
-Gate a whole system group the same way, with `addSystemGroup`'s `runIf`.
+`addSystemGroup` takes a `runIf` too, for a whole group of systems.
 See [System](../ecs/system.md#run-conditions) for how run conditions work.
 
 ## Setting up and tearing down a state
 
 Work that happens once per transition (spawning the player, saving a high
 score, showing a screen) goes in a system registered in the state's
-`enterGroup` or `exitGroup`, gated with `onEnter` or `onExit`:
+`enterGroup` or `exitGroup`, with `runIf: onEnter(...)` or `runIf: onExit(...)`:
 
 ```ts
 import { onEnter, onExit } from '@forge-game-engine/forge/states';
@@ -118,7 +118,7 @@ transition follows on the next tick.
 
 A `GameState` belongs to the world passed to `createGameState`, which
 switches it and runs its exit and enter groups. A system in another world,
-such as a UI overlay world, can still be gated on it with `inState`, since a
+such as a UI overlay world, can still use `inState` on it, since a
 run condition only reads the state. A world that `Game` updates after the
 owning world sees each transition in the same frame.
 
@@ -136,7 +136,7 @@ update: (world, result) => {
 },
 ```
 
-The system is still queried every tick, and the gate is hidden inside it.
+The system is still queried every tick, and the check is hidden inside it.
 Register it with `runIf: inState(gameState, 'playing')` instead.
 
 Removing a round's entities kind by kind in an `onExit` system: scope them

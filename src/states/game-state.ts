@@ -8,7 +8,7 @@ import {
 /**
  * A named top-level state of a game (loading, menu, playing, paused, game
  * over, ...), switched at the start of a tick. Create one with
- * {@link createGameState}, gate systems on it with `inState`, and set up or
+ * {@link createGameState}, run systems only in some states with `inState`, and set up or
  * tear down a state with `onEnter`/`onExit` systems in its `enterGroup` and
  * `exitGroup`.
  *

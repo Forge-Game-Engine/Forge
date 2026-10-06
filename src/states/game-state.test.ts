@@ -226,7 +226,7 @@ describe('createGameState', () => {
     expect(calls).toEqual(['enter menu']);
   });
 
-  it('gates systems on the current state with inState', () => {
+  it('runs systems only in the states inState names', () => {
     const world = new EcsWorld();
     const state = createGameState<Name>(world, 'menu');
     const calls: string[] = [];
