@@ -6,11 +6,10 @@ import {
 } from './systems/state-transition-system.js';
 
 /**
- * A named top-level state of a game (loading, menu, playing, paused, game
- * over, ...), switched at the start of a tick. Create one with
- * {@link createGameState}, run systems only in some states with `inState`,
- * and run systems when a state is entered or left with `onEnter`/`onExit` in
- * its `enterGroup` and `exitGroup`.
+ * One value from a fixed set of state names, changed at the start of a
+ * tick. Create one with {@link createGameState}. `inState` runs a system only
+ * in some states; `onEnter`/`onExit` systems in `enterGroup`/`exitGroup` run
+ * on the tick a state is entered or left.
  *
  * @typeParam TName - The names of the states.
  */
@@ -47,10 +46,10 @@ export interface GameState<TName extends string> {
   readonly enterGroup: EcsSystemGroup;
 
   /**
-   * Requests a transition, applied at the start of the next tick. If it's
-   * called more than once in a tick, the last call wins. Requesting the
-   * current state re-enters it: its exit and enter systems run again and
-   * its scoped entities are removed, which restarts it.
+   * Requests a transition, applied at the start of the next tick. When it's
+   * called more than once in a tick, the last call is applied. Requesting
+   * the current state re-enters it: its exit systems, scoped-entity removal
+   * and enter systems run as for any other transition.
    * @param next - The state to switch to.
    */
   set(next: TName): void;
@@ -64,7 +63,7 @@ export interface GameState<TName extends string> {
  * previous tick; the state's `exitGroup`; a system that removes the
  * entities whose `StateScopedEcsComponent` matches the transition; and the
  * state's `enterGroup`. Every other group of the world runs after them, so
- * every system sees the same state for the whole tick.
+ * every system in a tick reads the same `current`.
  *
  * On the first tick, `initial` counts as entered, so its `onEnter` systems
  * run.

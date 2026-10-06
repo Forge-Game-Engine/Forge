@@ -208,19 +208,16 @@ used to serve.
 group; ordering systems across different groups is done by ordering their
 groups against each other instead.
 
-### The first group and the start of the tick
+### The first group
 
-Every `EcsWorld` also has a `firstSystemGroup`, which runs before every other
-group of the tick, however the other groups are ordered. Game state
-transitions run there (see [Game States](../states/index.md)), so every
-system of a tick sees the same state. Ordering a group `before` it throws.
+`world.firstSystemGroup` runs before every other group on every tick.
+Ordering a group `before` it throws.
 
-A group ordered `after: [world.firstSystemGroup]`, or after another group
-that is, joins the start of the tick: it runs after the first group and
-before every group that isn't there, including groups added earlier or
-later. A game state's exit and enter groups are placed this way, so they
-run before any other system, even the input update group `registerInputs`
-orders before the default group.
+A group registered with `after` containing `firstSystemGroup`, or containing
+another group registered that way, is a start-of-tick group. Start-of-tick
+groups run after the first group and before every other group, including
+groups registered earlier or later. A `GameState`'s `exitGroup` and
+`enterGroup` are start-of-tick groups.
 
 ```ts
 const loadLevelGroup = createSystemGroup('load-level');
@@ -228,8 +225,9 @@ const loadLevelGroup = createSystemGroup('load-level');
 world.addSystemGroup(loadLevelGroup, { after: [world.firstSystemGroup] });
 ```
 
-A start-of-tick group can't be ordered after a group that isn't at the start
-of the tick, and no other group can be ordered before it. Both throw.
+Registering a start-of-tick group with `after` containing a group that isn't
+a start-of-tick group throws. Registering any other group with `before`
+containing a start-of-tick group throws.
 
 ### Run conditions
 

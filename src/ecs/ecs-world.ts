@@ -121,13 +121,13 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * The group that runs before every other group of the tick, however the
-   * other groups are ordered. Game state transitions run here, so every
-   * system of a tick sees the same state. Ordering a group `before` it
-   * throws.
+   * other groups are ordered. Game state transitions run in it. Ordering a
+   * group `before` it throws.
    *
-   * A group ordered `after` it (or after another group that is) joins the
-   * start of the tick: it runs before every group that isn't, including
-   * groups added later. A game state's exit and enter groups work this way.
+   * A group ordered `after` it, or after another group ordered that way, is
+   * a start-of-tick group: it runs before every other group, including
+   * groups registered later. A game state's exit and enter groups are
+   * start-of-tick groups.
    */
   get firstSystemGroup(): EcsSystemGroup {
     return this._firstSystemGroup;

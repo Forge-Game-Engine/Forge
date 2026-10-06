@@ -4,11 +4,10 @@ sidebar_position: 2
 
 # State-Scoped Entities
 
-An entity that belongs to a state, such as a menu's labels or the enemies
-spawned while playing, gets a
-[`StateScopedEcsComponent`](/Forge/docs/api/interfaces/StateScopedEcsComponent).
-When its state ends, the transition removes it, so no system has to find
-and remove each kind of entity a state created.
+A
+[`StateScopedEcsComponent`](/Forge/docs/api/interfaces/StateScopedEcsComponent)
+removes its entity when a [`GameState`](./index.md) leaves or enters given
+states.
 
 ```ts
 import { addStateScopedComponent } from '@forge-game-engine/forge/states';
@@ -19,44 +18,30 @@ addStateScopedComponent(world, enemy, {
 });
 ```
 
-The entity is removed when `gameState` leaves one of `removeOnExit`, or enters
-one of `removeOnEnter`. At least one of the two lists has to name a state,
-or `addStateScopedComponent` throws.
+- `removeOnExit`: the entity is removed on a transition that leaves one of
+  these states.
+- `removeOnEnter`: the entity is removed on a transition that enters one of
+  these states.
 
-Removal happens between the state's `exitGroup` and `enterGroup`, so
-`onExit` systems still see the entities, and `onEnter` systems don't.
+Both default to `[]`. `addStateScopedComponent` throws when both are empty.
+An entity is only removed by transitions of the `GameState` in its `state`
+field.
 
-## Removing on exit or on enter
+## When an entity is removed
 
-`removeOnExit` is the common case: the menu's labels go when the menu is
-left.
+Removal happens on the tick of the transition, after `exitGroup` runs and
+before `enterGroup` runs. Systems in `exitGroup` can read the entity;
+systems in `enterGroup` can't.
 
-`removeOnEnter` is for entities that stay after their state ends. Enemies
-left over from `playing` can stay on screen during `gameOver`, and be removed
-when `playing` or `menu` is entered:
+Calling `set` with the current state leaves and enters that state, so both
+lists are checked against it.
 
-```ts
-addStateScopedComponent(world, enemy, {
-  state: gameState,
-  removeOnEnter: ['playing', 'menu'],
-});
-```
-
-Re-entering a state counts as entering it, so `removeOnEnter: ['playing']`
-also removes the entity when `gameState.set('playing')` restarts `playing`.
-
-An entity scoped with `removeOnEnter` on the initial state and created
-before the first tick is removed on that tick, since the initial state is
-entered then.
-
-## Entities created at runtime
-
-Scope an entity where it's created. For particles, which their emitter
-creates, add the component in the emitter's `onParticleSpawned` callback.
+On the first tick, the initial state is entered. An entity that exists
+before the first tick and lists the initial state in `removeOnEnter` is
+removed on that tick.
 
 ## Children
 
-Removing a scoped entity removes that entity only. Removing an entity
-doesn't remove the entities parented to it with `addParentComponent` (see
-[World](../ecs/world.md#removing-an-entity-from-the-world)), so give each
-child its own `StateScopedEcsComponent` with the same lists.
+The entity is removed with `world.removeEntity`, which removes only that
+entity. Entities parented to it with `addParentComponent` aren't removed.
+Give each child its own `StateScopedEcsComponent`.
