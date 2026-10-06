@@ -3,6 +3,7 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   addSpriteComponent,
   Color,
@@ -86,12 +87,9 @@ async function createBackdrop(
  * 100, 60, and 30 FPS - this is `createUiLayoutEcsSystem`/
  * `createUiLayoutGroupEcsSystem`'s own full-recompute-every-frame design
  * (DL-12 in `design/ui-system.md`) under load, with no dirty tracking.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load, for the status label.
  * @returns The created game.
  */
-export const createUiStressTestGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createUiStressTestGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   const camera = createCamera(world, {
@@ -103,7 +101,15 @@ export const createUiStressTestGame = async (
   await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   registerUiSystems(world, renderContext, time);
 

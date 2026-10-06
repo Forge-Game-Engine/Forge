@@ -30,7 +30,6 @@ function buildFontAtlas(): FontAtlas {
     data: {
       formatVersion: 2,
       type: 'msdf',
-      atlasImage: 'fixture.png',
       atlasSize: { width: 256, height: 256 },
       distanceRange: 4,
       metrics: {

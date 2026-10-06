@@ -43,10 +43,6 @@ export function validateFontAtlasFileData(
     fail(`unsupported type "${String(data.type)}", expected "msdf".`);
   }
 
-  if (typeof data.atlasImage !== 'string' || data.atlasImage.length === 0) {
-    fail('atlasImage must be a non-empty string.');
-  }
-
   validateAtlasSize(data.atlasSize, fail);
   validateDistanceRange(data.distanceRange, fail);
   validateMetrics(data.metrics, fail);

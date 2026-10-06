@@ -41,7 +41,6 @@ describe('createTextRenderable', () => {
       data: {
         formatVersion: 2,
         type: 'msdf',
-        atlasImage: 'fixture.png',
         atlasSize: { width: 512, height: 512 },
         distanceRange: 4,
         metrics: {

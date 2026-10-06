@@ -11,7 +11,6 @@ function buildFixtureFontAtlasData(): FontAtlasData {
   return {
     formatVersion: 2,
     type: 'msdf',
-    atlasImage: 'fixture.png',
     atlasSize: { width: 256, height: 256 },
     distanceRange: 4,
     // `capHeight: 0.7` intentionally matches "A"/"V"'s own `planeBounds.top`
