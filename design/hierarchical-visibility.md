@@ -1,12 +1,12 @@
 # Design: Hiding an Entity Hides Its Subtree
 
-|                                       |                                                                                                                                                                                                                                                                                                                |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                              |
-| **Kind**                              | Feature                                                                                                                                                                                                                                                                                                        |
-| **Found in**                          | Galactic Journey demo: `setShown` helpers in `src/game-over/create-stats-panel.ts`, `create-flight-history-page.ts`, `pilot-panel.system.ts`, `src/leaderboard/create-leaderboard-page.ts`, `src/main-menu/create-main-menu.ts`; the stats panel's button repositioned by hand when the one above it is hidden |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                       |
-| **Related**                           | [`ui-system.md`](./ui-system.md), [`hierarchy-removal.md`](./hierarchy-removal.md), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite), [`game-states.md`](./game-states.md)                                                                                                                      |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                                                                                                          |
+| **Kind**                              | Feature                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Found in**                          | Galactic Journey demo: `setShown` helpers in `src/game-over/create-stats-panel.ts`, `create-flight-history-page.ts`, `pilot-panel.system.ts`, `src/leaderboard/create-leaderboard-page.ts`, `src/main-menu/create-main-menu.ts`; the stats panel's button repositioned by hand when the one above it is hidden; `src/speed/create-hud.ts` (the speed HUD's ring hidden segment by segment) |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Related**                           | [`ui-system.md`](./ui-system.md), [`hierarchy-removal.md`](./hierarchy-removal.md), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite), [`game-states.md`](./game-states.md)                                                                                                                                                                                                  |
 
 ## 0. Targeted modules
 
@@ -52,11 +52,16 @@ Forge's own controls do the same by hand: the dropdown's `setOpen` writes
 `interactable`, `blocksRaycasts`, `sprite.enabled` and `text.enabled` on
 every option, and the tooltip system does the same for its panel.
 
+The gap isn't only in UI. The speed HUD's ring is a set of world sprites
+around the ship, and to hide it while the ship is destroyed,
+`createHudAnchorEcsSystem` sets `sprite.enabled` on every one of its
+segments, every frame.
+
 Unity and Godot have one subtree switch that removes the subtree from
 rendering, layout and input together; Bevy has inherited visibility for
 rendering and a separate `Display::None` for layout. This design adds one
-switch, and leaves canvas groups for what they're for: fading and
-disabling interaction.
+switch for any entity, world sprites as much as UI, and leaves canvas
+groups for what they're for: fading and disabling interaction.
 
 ---
 
@@ -120,7 +125,7 @@ so nothing stores a derived value and nothing has to keep one in sync.
 ### 4.2 What respects it
 
 - **Rendering**: sprites and text hidden in the hierarchy produce no draw
-  commands.
+  commands, in the world and in UI alike.
 - **UI layout**: layout groups and content size fitters treat hidden
   children as absent, as they treat `ignoreLayout` children today. The
   rect transforms of hidden elements are still resolved, so showing one
@@ -243,4 +248,6 @@ to focus next.
 - `ui/` guides: "Hiding and fading", contrasting `visible` with canvas
   group `alpha`.
 - Demo: the five `setShown` helpers become `visible` assignments; the
-  manual button repositioning goes once the buttons sit in a layout group.
+  manual button repositioning goes once the buttons sit in a layout group;
+  the speed HUD's ring segments become children of one anchor entity,
+  which the anchor system moves, turns and hides.
