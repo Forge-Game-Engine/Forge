@@ -7,7 +7,7 @@ import {
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { getColliderRotation } from '../collider-rotation.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
-import { AabbEcsComponent, aabbId } from '../components/aabb-component.js';
+import { collidersCanCollide } from '../collision/collision-filter.js';
 import {
   ColliderEcsComponent,
   colliderId,
@@ -15,11 +15,13 @@ import {
 import { CollisionPair } from '../types/collision-pair.js';
 
 /**
- * Creates an ECS system that recomputes each collider entity's
- * {@link AabbEcsComponent} from its world position/rotation and performs a
- * broad-phase, all-pairs AABB overlap test, writing every overlapping pair
- * into `collisionPairs`. A collider entity needs a `PositionEcsComponent`,
- * `ColliderEcsComponent`, and `AabbEcsComponent` to take part;
+ * Creates an ECS system that recomputes each collider's
+ * {@link ColliderEcsComponent.aabb} from its entity's world
+ * position/rotation and performs a broad-phase, all-pairs AABB overlap
+ * test, writing every overlapping pair into `collisionPairs`. Pairs whose
+ * categories and masks exclude each other (see `collidersCanCollide`) are
+ * skipped before the AABB test. A collider entity needs a
+ * `PositionEcsComponent` and a `ColliderEcsComponent` to take part;
  * `RotationEcsComponent` is optional, and an entity without one is treated
  * as unrotated. Must run after whatever system computes
  * `PositionEcsComponent.world`/`RotationEcsComponent.world` (e.g.
@@ -31,31 +33,33 @@ import { CollisionPair } from '../types/collision-pair.js';
  */
 export const createBroadPhaseEcsSystem = (
   collisionPairs: CollisionPair[],
-): EcsSystem<
-  [PositionEcsComponent, ColliderEcsComponent, AabbEcsComponent]
-> => ({
-  query: [positionId, colliderId, aabbId],
-  update: (world, { entities, components: [positions, colliders, aabbs] }) => {
+): EcsSystem<[PositionEcsComponent, ColliderEcsComponent]> => ({
+  query: [positionId, colliderId],
+  update: (world, { entities, components: [positions, colliders] }) => {
     // Rotation is optional for colliders, so it can't be part of the query
     // above; resolving its storage once per tick avoids a lookup per entity.
     const getRotation =
       world.getComponentAccessor<RotationEcsComponent>(rotationId);
 
     for (let i = 0; i < entities.length; i++) {
-      const aabb = colliders[i].collider.computeAabb(
+      const collider = colliders[i];
+      const aabb = collider.collider.computeAabb(
         positions[i].world,
         getColliderRotation(getRotation(entities[i])),
       );
 
-      aabbs[i].min = aabb.min;
-      aabbs[i].max = aabb.max;
+      collider.aabb.min = aabb.min;
+      collider.aabb.max = aabb.max;
     }
 
     collisionPairs.length = 0;
 
     for (let i = 0; i < entities.length; i++) {
       for (let j = i + 1; j < entities.length; j++) {
-        if (aabbsOverlap(aabbs[i], aabbs[j])) {
+        if (
+          collidersCanCollide(colliders[i], colliders[j]) &&
+          aabbsOverlap(colliders[i].aabb, colliders[j].aabb)
+        ) {
           collisionPairs.push({ entityA: entities[i], entityB: entities[j] });
         }
       }

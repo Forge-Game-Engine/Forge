@@ -1,4 +1,4 @@
-import { positionId, Time } from '../../common/index.js';
+import { positionId, rotationId, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
@@ -7,13 +7,14 @@ import {
   ColliderEcsComponent,
   colliderId,
 } from '../components/collider-component.js';
-import {
-  RigidBodyEcsComponent,
-  rigidBodyId,
-} from '../components/rigidbody-component.js';
+import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
+import { getColliderRotation } from '../collider-rotation.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
-import { getRigidBodyInverseMass } from '../rigid-body-inverse-mass.js';
+import {
+  getRigidBodyMassData,
+  getWorldCenterOfMass,
+} from '../rigid-body-mass-data.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
@@ -253,10 +254,11 @@ function buildContactConstraints(
 
 /**
  * Looks up the current tick's bodies for a contact constraint, computing
- * the (inverse) mass/inertia and contact-point offsets the solver needs. An
- * entity with no `RigidBodyEcsComponent`, or one whose
- * `RigidBodyEcsComponent.type` is `'static'`/`'kinematic'`, is treated as
- * having infinite mass (see {@link getRigidBodyInverseMass}).
+ * the (inverse) mass/inertia and the contact point's lever arms from each
+ * body's world center of mass. An entity with no `RigidBodyEcsComponent`,
+ * or one whose `RigidBodyEcsComponent.type` is `'static'`/`'kinematic'`, is
+ * treated as having infinite mass and turning about its origin (see
+ * {@link getRigidBodyMassData}).
  */
 function prepareContact(
   world: EcsWorld,
@@ -269,19 +271,34 @@ function prepareContact(
     return null;
   }
 
-  const rigidBodyA = world.getComponent(constraint.entityA, rigidBodyId);
-  const rigidBodyB = world.getComponent(constraint.entityB, rigidBodyId);
+  const massA = getRigidBodyMassData(world, constraint.entityA);
+  const massB = getRigidBodyMassData(world, constraint.entityB);
+  const {
+    rigidBody: rigidBodyA,
+    invMass: invMassA,
+    invInertia: invInertiaA,
+  } = massA;
+  const {
+    rigidBody: rigidBodyB,
+    invMass: invMassB,
+    invInertia: invInertiaB,
+  } = massB;
 
-  const { invMass: invMassA, invInertia: invInertiaA } =
-    getRigidBodyInverseMass(rigidBodyA);
-  const { invMass: invMassB, invInertia: invInertiaB } =
-    getRigidBodyInverseMass(rigidBodyB);
+  const centerOfMassA = getWorldCenterOfMass(
+    positionA.world,
+    getColliderRotation(world.getComponent(constraint.entityA, rotationId)),
+    massA.localCenterOfMass,
+  );
+  const centerOfMassB = getWorldCenterOfMass(
+    positionB.world,
+    getColliderRotation(world.getComponent(constraint.entityB, rotationId)),
+    massB.localCenterOfMass,
+  );
 
   // Clone before subtracting: `constraint.point` is used for both `rA` and
-  // `rB` here, and `positionA.world`/`positionB.world` are the entities'
-  // live world position.
-  const rA = Vec2.subtract(Vec2.clone(constraint.point), positionA.world);
-  const rB = Vec2.subtract(Vec2.clone(constraint.point), positionB.world);
+  // `rB` here.
+  const rA = Vec2.subtract(Vec2.clone(constraint.point), centerOfMassA);
+  const rB = Vec2.subtract(Vec2.clone(constraint.point), centerOfMassB);
 
   const relativeVelocity = Vec2.subtract(
     velocityAtPoint(rigidBodyB, rB),

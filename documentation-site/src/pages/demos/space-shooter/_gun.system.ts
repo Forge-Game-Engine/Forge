@@ -20,11 +20,11 @@ import {
   SoundAsset,
 } from '@forge-game-engine/forge/audio';
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
+import { asteroidCategory, bulletCategory } from './_collision-categories';
 import { GunEcsComponent, gunId } from './_gun.component';
 
 export const createGunEcsSystem = (
@@ -111,6 +111,7 @@ function createBulletWithOffset(
 
   addColliderComponent(world, bullet, {
     collider: new CircleCollider(bulletRadius),
+    category: bulletCategory,
+    mask: asteroidCategory,
   });
-  addAabbComponent(world, bullet);
 }

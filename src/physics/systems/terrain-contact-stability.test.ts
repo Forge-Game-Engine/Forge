@@ -11,7 +11,6 @@ import { Random, Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
-import { addAabbComponent } from '../components/aabb-component.js';
 import { addColliderComponent } from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
@@ -134,7 +133,6 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       ),
       friction: 0.8,
     });
-    addAabbComponent(world, entity);
 
     return entity;
   }
@@ -143,7 +141,6 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     collider: CircleCollider | PolygonCollider,
     startX: number,
     startY: number,
-    momentOfInertia: number,
   ): {
     entity: number;
     position: PositionEcsComponent;
@@ -160,12 +157,8 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       friction: 0.8,
       restitution: 0,
     });
-    addAabbComponent(world, entity);
 
-    const rigidBody = addRigidBodyComponent(world, entity, {
-      mass: 300,
-      momentOfInertia,
-    });
+    const rigidBody = addRigidBodyComponent(world, entity);
 
     const gravity = addGravityComponent(world, entity);
 
@@ -180,10 +173,10 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     radius: number,
   ) {
     return addHeavyBody(
-      new CircleCollider(radius),
+      // A density that gives every circle a mass of 300.
+      new CircleCollider(radius, 300 / (Math.PI * radius * radius)),
       startX,
       startY,
-      (300 * radius * radius) / 2,
     );
   }
 
@@ -197,15 +190,18 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const halfHeight = height / 2;
 
     return addHeavyBody(
-      new PolygonCollider([
-        { x: -halfWidth, y: -halfHeight },
-        { x: halfWidth, y: -halfHeight },
-        { x: halfWidth, y: halfHeight },
-        { x: -halfWidth, y: halfHeight },
-      ]),
+      new PolygonCollider(
+        [
+          { x: -halfWidth, y: -halfHeight },
+          { x: halfWidth, y: -halfHeight },
+          { x: halfWidth, y: halfHeight },
+          { x: -halfWidth, y: halfHeight },
+        ],
+        // A density that gives every box a mass of 300.
+        300 / (width * height),
+      ),
       startX,
       startY,
-      (300 * (width * width + height * height)) / 12,
     );
   }
 

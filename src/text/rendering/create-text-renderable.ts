@@ -9,6 +9,7 @@ import {
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { textEffectsInstanceDataSegment } from './text-effects-instance-data-segment.js';
+import { textEmboldenInstanceDataSegment } from './text-embolden-instance-data-segment.js';
 
 /**
  * The default rendering category a text entity's glyphs are drawn with when
@@ -29,7 +30,8 @@ export const TEXT_RENDER_CATEGORY = 1;
 export interface TextRenderables {
   /**
    * Draws only a glyph's own anti-aliased ink (`msdf-fill.frag`), using the
-   * plain sprite vertex layout - no outline/shadow instance data. Always
+   * sprite vertex layout plus the glyph's faux-bold embolden - no
+   * outline/shadow instance data. Always
    * drawn *after* `effectsRenderable` for the same glyphs (see
    * `pushTextRenderCommands` in `glyph-quad.ts`), so a glyph's fill can
    * never be painted over by a neighboring glyph's outline/shadow.
@@ -88,7 +90,7 @@ export function createTextRenderable(
   const atlasTexture = createTextureFromImage(gl, fontAtlas.image);
 
   const fillMaterial = new Material(
-    shaderCache.getShader('sprite.vert'),
+    shaderCache.getShader('msdf-fill.vert'),
     shaderCache.getShader('msdf-fill.frag'),
     gl,
   );
@@ -101,7 +103,10 @@ export function createTextRenderable(
     floatsPerInstance: fillFloatsPerInstance,
     bindInstanceData: fillBindInstanceData,
     setupInstanceAttributes: fillSetupInstanceAttributes,
-  } = combineInstanceDataSegments(spriteInstanceDataSegment);
+  } = combineInstanceDataSegments(
+    spriteInstanceDataSegment,
+    textEmboldenInstanceDataSegment,
+  );
 
   const fillRenderable = new Renderable(
     createQuadGeometry(gl),
@@ -112,9 +117,9 @@ export function createTextRenderable(
     fillSetupInstanceAttributes,
   );
 
-  // `msdf.vert` extends `sprite.vert`'s positioning/pivot/rotation/
-  // projection math verbatim, adding only the per-instance forwarding
-  // outline/shadow effects need (see `msdf.vert.glsl`).
+  // `msdf.vert` extends `msdf-fill.vert` verbatim, adding only the
+  // per-instance forwarding outline/shadow effects need (see
+  // `msdf.vert.glsl`).
   const effectsMaterial = new Material(
     shaderCache.getShader('msdf.vert'),
     shaderCache.getShader('msdf-effects.frag'),
@@ -131,6 +136,7 @@ export function createTextRenderable(
     setupInstanceAttributes: effectsSetupInstanceAttributes,
   } = combineInstanceDataSegments(
     spriteInstanceDataSegment,
+    textEmboldenInstanceDataSegment,
     textEffectsInstanceDataSegment,
   );
 

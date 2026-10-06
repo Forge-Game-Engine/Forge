@@ -16,12 +16,12 @@ import {
   positionId,
   Random,
   SpriteEcsComponent,
+  spriteId,
   Time,
-  Vec2,
 } from '../../src';
 import {
-  addAabbComponent,
   addColliderComponent,
+  addContactsComponent,
   addGravityComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -29,8 +29,11 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  ContactsEcsComponent,
+  contactsId,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -123,13 +126,11 @@ function createFountainSpawnEcsSystem(
     addRotationComponent(world, entity, { local: 0 });
     addGravityComponent(world, entity);
     addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
       velocity,
       angularVelocity,
     });
     addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
+    addContactsComponent(world, entity);
   };
 
   return {
@@ -178,32 +179,19 @@ function createDespawnFallenShapesEcsSystem(
 }
 
 /**
- * Creates a system that tints every tracked sprite red while its entity is
- * involved in a collision this tick, and white otherwise, so collision
+ * Creates a system that tints every sprite with a `ContactsEcsComponent` red
+ * while its entity is touching something, and white otherwise, so collision
  * detection is visible without needing collision resolution.
  */
-function createCollisionTintEcsSystem(
-  collisionManifolds: CollisionManifold[],
-  spritesByEntity: Map<number, SpriteEcsComponent>,
-): EcsSystem<[]> {
+function createCollisionTintEcsSystem(): EcsSystem<
+  [SpriteEcsComponent, ContactsEcsComponent]
+> {
   return {
-    query: [],
-    update: () => {
-      for (const sprite of spritesByEntity.values()) {
-        sprite.tintColor = Color.white;
-      }
-
-      for (const manifold of collisionManifolds) {
-        const spriteA = spritesByEntity.get(manifold.entityA);
-        const spriteB = spritesByEntity.get(manifold.entityB);
-
-        if (spriteA) {
-          spriteA.tintColor = Color.red;
-        }
-
-        if (spriteB) {
-          spriteB.tintColor = Color.red;
-        }
+    query: [spriteId, contactsId],
+    update: (_world, { components: [sprites, contacts] }) => {
+      for (let i = 0; i < sprites.length; i++) {
+        sprites[i].tintColor =
+          contacts[i].touching.length > 0 ? Color.red : Color.white;
       }
     },
   };
@@ -222,13 +210,9 @@ function createSquareCollider(): PolygonCollider {
 
 /**
  * `Triangle.png` is a right triangle with its right angle at the
- * bottom-left of the image. `PolygonCollider` re-centers vertices around
- * their centroid (a third of the way across, two thirds of the way down),
- * so the sprite's pivot is moved to match in `trianglePivot`, keeping the
- * rendered triangle aligned with its collider as it rotates.
+ * bottom-left of the image, drawn around the sprite's default (centered)
+ * pivot. The body turns about the triangle's centroid.
  */
-const trianglePivot = { x: 1 / 3, y: 2 / 3 };
-
 function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
@@ -266,8 +250,6 @@ const triangleSprite = createImageSprite(triangleImage, renderContext, {
   frameDimensions: { x: shapeSize, y: shapeSize },
   layer: renderLayer,
 });
-
-triangleSprite.pivot = Vec2.clone(trianglePivot);
 
 const shapeTemplates: ShapeTemplate[] = [
   {
@@ -318,7 +300,6 @@ addColliderComponent(world, groundEntity, {
     { x: -groundHalfWidth, y: groundHalfHeight },
   ]),
 });
-addAabbComponent(world, groundEntity);
 
 const random = new Random();
 const fountainLeftX = -halfWidth + fountainMarginFromEdge;
@@ -352,15 +333,14 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createContinuousCollisionEcsSystem());
 world.addSystem(
   createDespawnFallenShapesEcsSystem(
     spritesByEntity,
     -halfHeight - despawnMarginBelowGround,
   ),
 );
-world.addSystem(
-  createCollisionTintEcsSystem(collisionManifolds, spritesByEntity),
-);
+world.addSystem(createCollisionTintEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

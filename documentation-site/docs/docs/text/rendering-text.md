@@ -95,7 +95,8 @@ wrapping, alignment) when `text`, `fontAtlas`, `size`, `letterSpacing`,
 `lineHeight`, `horizontalAlign`, `verticalAlign`, `maxWidth`, or
 `horizontalAlignPivot` actually changed since the last tick it ran against
 this entity. Changing `color`, `layer`, or `enabled` alone never triggers a
-re-shape, they're read directly by the render system each frame.
+re-shape, they're read directly by the render system each frame. A
+`<color>` tag is part of `text`, so changing one re-shapes the string.
 
 ## Multi-line layout
 
@@ -131,32 +132,81 @@ addTextComponent(world, label, {
   [UI: Labels and Text](../ui/labels-and-text.md), which sets this
   automatically for its own stretch-anchored labels).
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
-  `'capline'`, default `'top'`) positions the shaped block's visible ink
-  relative to the entity's position, not its line-height box (which
-  typically doesn't match the ink's own extent).
-  - `'top'`, `'bottom'`, `'baseline'`, and `'capline'` all anchor to a
-    fixed reference that doesn't depend on this specific string's rendered
-    bounds, so a line's position stays stable as its text is edited:
-    `'top'` anchors the font's ascender, so text hangs _below_ the
-    entity's position; `'bottom'` anchors the font's descender, so text
-    sits _above_ it; `'capline'` is `'top'` but anchored to the font's cap
-    height (the top of a capital letter like "H") instead of its ascender
-    (the top of the font's _tallest_ glyphs, including ascenders like
-    "b"/"d"/"h" that reach higher than a flat capital) - useful for a
-    title or label set in caps, where anchoring to the taller ascender
-    would leave a visible gap above the text; `'baseline'` anchors the
-    first line's own baseline directly, most useful for single-line text.
-  - `'middle'` instead centers this exact string's _actual_ rendered ink: a
-    font's ascender is typically taller than its descender is deep (most
-    glyphs have no descender at all), so centering on the font's metrics
-    would bias every descender-less string (numbers, titles, most short UI
-    labels) above the true visual center of its box.
+  `'capline'`, default `'top'`) positions the shaped block relative to the
+  entity's position. Every value anchors to the font's metrics and the
+  number of lines, never to the glyphs the string happens to contain, so a
+  label doesn't move when its text changes, and two labels aligned to the
+  same point share a baseline.
+  - `'top'` anchors the first line's ascender (the top of the font's
+    tallest glyphs, such as "b"/"d"/"h"), so text hangs _below_ the
+    entity's position.
+  - `'bottom'` anchors the last line's descender, so text sits _above_ it.
+  - `'capline'` anchors the first line's cap height, the top of a capital
+    letter like "H", so the top of a title set in caps touches the
+    position.
+  - `'baseline'` anchors the first line's baseline.
+  - `'middle'` centers the band from the first line's cap height to the last
+    line's baseline on the position. That's where a designer centers a
+    label in a button: capitals and digits sit exactly in the middle, and
+    descenders like "g"/"y" hang below the band. `createButton`,
+    `createDropdown` and `createTooltip` center their labels this way.
 - `lineHeight` (default `1`) multiplies the font atlas's own authored line
   height to control the vertical distance between line baselines.
 
 A single word wider than `maxWidth` on its own is never split mid-word - it
 simply overflows its own line, the same as any other greedy word-wrapping
 implementation.
+
+## Rich text tags
+
+Tags inside `text` style part of a string. Two are supported:
+
+- `<b>...</b>` draws its text bold.
+- `<color=#rrggbb>...</color>` draws its text in a color. `#rgb`, `#rgba`
+  and `#rrggbbaa` work too. The color replaces `color` for those
+  characters, alpha included, so `<color=#ff000080>` is half transparent.
+
+```ts
+addTextComponent(world, label, {
+  text: 'Press <b>A</b> to <color=#ffcc00>continue</color>',
+  fontAtlas,
+  size: 24,
+});
+```
+
+Tags nest. When colors nest, the innermost one wins. `<b>` and `<color>`
+are independent, so their ranges can overlap without nesting cleanly.
+
+Tags are stripped before the string is shaped. Kerning, wrapping and
+alignment see only the visible text, so a tagged string lays out exactly as
+the same string without tags would. Bold glyphs are the one exception: they
+take up a little more room (see below). `shapeText` parses tags too, so
+bounds you measure with it match what's drawn.
+
+### Bold without a bold font
+
+A font atlas holds one weight. `<b>` draws a synthetic bold, the same thing
+a browser does when a page asks for bold and only the regular font is
+installed: each glyph's edge is pushed out by
+[`FAUX_BOLD_EMBOLDEN`](/Forge/docs/api/variables/FAUX_BOLD_EMBOLDEN) ems on
+every side, and its advance grows by the added width so bold letters don't
+run into each other. It reads well at body and heading sizes, but it isn't a
+real bold cut: letter shapes are only thickened, not redrawn. An outline on
+bold text wraps the thickened ink (see [Text Effects](./text-effects.md)).
+
+### Literal `<`
+
+A `<` only starts a tag when it begins a complete `<b>`, `</b>`,
+`<color=...>` or `</color>` tag. Anything else is drawn as written, never
+an error, since text often comes from players or translations:
+
+- a `<` that doesn't start a complete tag: `HP < 50%`, `a<3`
+- an unknown tag, such as `<i>`
+- a tag with an invalid value, such as `<color=red>`
+- a closing tag with no matching open tag
+
+A tag that's never closed runs to the end of the string. There's no escape
+syntax, so the exact text `<b>` can't be displayed.
 
 ## Positioning and scale
 

@@ -6,13 +6,13 @@ import {
   RenderContext,
   ShaderCache,
   spriteFragmentShader,
-  spriteVertexShader,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { createTextRenderable } from './create-text-renderable.js';
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
+  msdfFillVertexShader,
   msdfVertexShader,
 } from './shaders/index.js';
 
@@ -136,9 +136,9 @@ describe('createTextRenderable', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
     const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(spriteVertexShader))
       .addShader(new ForgeShaderSource(spriteFragmentShader))
       .addShader(new ForgeShaderSource(msdfVertexShader))
+      .addShader(new ForgeShaderSource(msdfFillVertexShader))
       .addShader(new ForgeShaderSource(msdfFillFragmentShader))
       .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
 
@@ -189,7 +189,7 @@ describe('createTextRenderable', () => {
     expect(calls[1][1]).toBe(512);
   });
 
-  it('assigns the plain sprite instance data layout to fillRenderable and the combined sprite + text-effects layout to effectsRenderable', () => {
+  it('assigns the sprite + embolden instance data layout to fillRenderable and the sprite + embolden + text-effects layout to effectsRenderable', () => {
     const { fillRenderable, effectsRenderable } = createTextRenderable(
       renderContext,
       fontAtlas,
@@ -197,13 +197,13 @@ describe('createTextRenderable', () => {
     );
 
     // Sprite: position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
-    // texOffset(2) + texSize(2) + tint(4) = 17.
-    expect(fillRenderable.floatsPerInstance).toBe(17);
+    // texOffset(2) + texSize(2) + tint(4) = 17, plus embolden(1) = 18.
+    expect(fillRenderable.floatsPerInstance).toBe(18);
 
-    // Sprite (17) + text effects: outlineColor(4) + outlineWidth(1) +
-    // shadowColor(4) + shadowOffset(2) + shadowSoftness(1) = 12, for a
-    // total of 29.
-    expect(effectsRenderable.floatsPerInstance).toBe(29);
+    // Sprite + embolden (18) + text effects: outlineColor(4) +
+    // outlineWidth(1) + shadowColor(4) + shadowOffset(2) +
+    // shadowSoftness(1) = 12, for a total of 30.
+    expect(effectsRenderable.floatsPerInstance).toBe(30);
   });
 
   it('shares a single GPU texture between both renderables', () => {

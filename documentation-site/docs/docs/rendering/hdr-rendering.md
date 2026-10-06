@@ -117,11 +117,8 @@ off correctly, matching the frame order in
 
 ## Performance note
 
-Tone mapping costs one full-screen pass plus one copy back into the
-camera's `renderTarget` (it can't write directly into the same texture it's
-reading from), regardless of `exposure` or `operator`. There's one
-lazily-allocated internal scratch render target per distinct render target
-the first time it's tone-mapped, matching that target's format and
-resolution; it's resized (or recreated) automatically if the render
-target's dimensions change, and disposed automatically when the world
-stops.
+Tone mapping costs one full-screen draw per distinct render target,
+regardless of `exposure` or `operator`. It runs as a
+[post-processing pass](./multipass-rendering.md#writing-a-post-processing-effect),
+so the first time a render target is tone-mapped, that target allocates its
+second color buffer, at its own format and resolution.

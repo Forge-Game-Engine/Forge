@@ -1,8 +1,18 @@
+import type { Color } from '../../rendering/color.js';
 import type { GlyphQuad } from '../components/text-mesh-component.js';
 import {
   type FontAtlasData,
   getKerningPairKey,
 } from '../font-atlas/font-atlas-data.js';
+import { parseRichText } from './parse-rich-text.js';
+
+/**
+ * How far a `<b>` glyph's ink is thickened on every side, in ems - the
+ * same synthetic ("faux") bold browsers and FreeType apply when a font has
+ * no bold cut: the glyph's edge is pushed outwards, and its advance grows
+ * by the added width so bold letters don't run into each other.
+ */
+export const FAUX_BOLD_EMBOLDEN = 0.02;
 
 /**
  * Options for {@link shapeText}. Mirrors the shape-relevant subset of
@@ -32,8 +42,8 @@ export interface ShapeTextOptions {
   horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
 
   /**
-   * Vertical alignment of the shaped block's visible ink relative to its
-   * anchor (the origin every glyph offset is relative to) - see
+   * Vertical alignment of the shaped block relative to its anchor (the
+   * origin every glyph offset is relative to) - see
    * `TextDefaultedOptions.verticalAlign` for the precise semantics.
    * Defaults to `'top'`.
    */
@@ -83,6 +93,86 @@ const defaultShapeTextOptions = {
   horizontalAlignPivot: 0,
 };
 
+/**
+ * The style each character of the shaped (tag-free) string is drawn with,
+ * indexed by UTF-16 code unit.
+ */
+interface CharacterStyles {
+  /** The `<color>` color of each character, or `undefined` outside one. */
+  colors: (Color | undefined)[];
+
+  /** Whether each character is inside a `<b>` tag. */
+  bold: boolean[];
+
+  /**
+   * The `GlyphQuad.embolden` of a bold glyph (see
+   * {@link getFauxBoldEmbolden}), or `0` if the string has no bold text.
+   */
+  boldEmbolden: number;
+}
+
+/**
+ * Parses `text`'s rich text tags into the plain string that's shaped and
+ * the style of each of its characters.
+ * @param text - The string to parse.
+ * @param fontAtlasData - The font atlas the string is shaped against.
+ * @returns The plain string and its per-character styles.
+ */
+function resolveCharacterStyles(
+  text: string,
+  fontAtlasData: FontAtlasData,
+): {
+  plainText: string;
+  styles: CharacterStyles;
+} {
+  const { text: plainText, colorRuns, boldRuns } = parseRichText(text);
+  const colors = new Array<Color | undefined>(plainText.length);
+  const bold = new Array<boolean>(plainText.length).fill(false);
+
+  for (const { start, end, color } of colorRuns) {
+    colors.fill(color, start, end);
+  }
+
+  for (const { start, end } of boldRuns) {
+    bold.fill(true, start, end);
+  }
+
+  const boldEmbolden =
+    boldRuns.length > 0 ? getFauxBoldEmbolden(fontAtlasData) : 0;
+
+  return { plainText, styles: { colors, bold, boldEmbolden } };
+}
+
+/**
+ * Converts {@link FAUX_BOLD_EMBOLDEN} into the distance field's own units:
+ * how far the MSDF shaders shift a bold glyph's edge threshold. The field
+ * spans `distanceRange` atlas pixels, and the generator bakes every glyph
+ * at the same size, so any glyph's atlas rect against its plane bounds
+ * gives the atlas's pixels per em.
+ * @param fontAtlasData - The font atlas to convert for.
+ * @returns The threshold shift for a bold glyph, or `0` if the atlas has
+ * no glyph with ink to measure it from.
+ */
+function getFauxBoldEmbolden(fontAtlasData: FontAtlasData): number {
+  for (const { planeBounds, atlasBounds } of fontAtlasData.glyphs.values()) {
+    const planeWidth = planeBounds ? planeBounds.right - planeBounds.left : 0;
+
+    if (!atlasBounds || planeWidth <= 0) {
+      continue;
+    }
+
+    const atlasPixelsPerEm =
+      ((atlasBounds.right - atlasBounds.left) * fontAtlasData.atlasSize.width) /
+      planeWidth;
+
+    return (
+      (FAUX_BOLD_EMBOLDEN * atlasPixelsPerEm) / fontAtlasData.distanceRange
+    );
+  }
+
+  return 0;
+}
+
 /** A single word's shaped glyphs, positioned relative to the word's own start (x = 0). */
 interface ShapedWord {
   glyphs: GlyphQuad[];
@@ -112,7 +202,15 @@ interface ShapedLine {
  * what lets {@link wrapIntoLines} reuse this same walk for both the
  * word-wrap width check and the glyphs it ultimately emits, with no second
  * measurement pass.
+ *
+ * Each glyph takes its style from the character it was shaped from:
+ * kerning and measurement only ever see the tag-free string, so a tag
+ * boundary inside a word changes how a glyph is drawn, never where it
+ * sits - except that a bold glyph is widened by {@link FAUX_BOLD_EMBOLDEN}
+ * on both sides.
  * @param word - The word's code points, with no whitespace.
+ * @param wordStart - The index of the word's first character in the shaped string, to look its style up by.
+ * @param styles - The style of every character in the shaped string.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param size - Font size, in world units.
  * @param letterSpacing - Extra spacing between adjacent glyphs, in ems.
@@ -120,6 +218,8 @@ interface ShapedLine {
  */
 function shapeWord(
   word: string,
+  wordStart: number,
+  styles: CharacterStyles,
   fontAtlasData: FontAtlasData,
   size: number,
   letterSpacing: number,
@@ -128,16 +228,23 @@ function shapeWord(
   let penX = 0;
   let previousCodePoint: number | null = null;
   let hasPreviousGlyph = false;
+  let characterIndex = wordStart;
 
   for (const character of word) {
     const codePoint = character.codePointAt(0) as number;
     const glyph = fontAtlasData.glyphs.get(codePoint);
+    const styleIndex = characterIndex;
+
+    characterIndex += character.length;
 
     if (!glyph) {
       previousCodePoint = null;
 
       continue;
     }
+
+    const isBold = styles.bold[styleIndex];
+    const emboldenWidth = isBold ? FAUX_BOLD_EMBOLDEN * size : 0;
 
     // Letter spacing goes *between* glyphs, so it's added before every
     // glyph but the first rather than after every glyph: spacing after the
@@ -179,9 +286,12 @@ function shapeWord(
       const atlasBottom = atlasBounds.bottom + insetY;
       const atlasTop = atlasBounds.top - insetY;
 
+      // The quad doesn't grow with the bold ink: plane bounds already
+      // include `distanceRange / 2` atlas pixels of padding around the ink,
+      // which is where the thickened edge is drawn.
       glyphs.push({
         offset: {
-          x: penX + (planeBounds.left * size + glyphWidth / 2),
+          x: penX + emboldenWidth + (planeBounds.left * size + glyphWidth / 2),
           y: planeBounds.bottom * size + glyphHeight / 2,
         },
         size: { x: glyphWidth, y: glyphHeight },
@@ -195,10 +305,12 @@ function shapeWord(
           x: atlasRight - atlasLeft,
           y: atlasTop - atlasBottom,
         },
+        color: styles.colors[styleIndex],
+        embolden: isBold ? styles.boldEmbolden : 0,
       });
     }
 
-    penX += glyph.advance * size;
+    penX += glyph.advance * size + 2 * emboldenWidth;
     previousCodePoint = codePoint;
     hasPreviousGlyph = true;
   }
@@ -241,8 +353,9 @@ function getWhitespaceAdvance(
  * already has at least one word, in which case a new line starts with that
  * word instead. A single word wider than `maxWidth` on its own is never
  * split mid-word - it simply overflows its own line.
- * @param text - The full string to wrap. A single call always returns at
- * least one (possibly empty) line.
+ * @param text - The full, tag-free string to wrap. A single call always
+ * returns at least one (possibly empty) line.
+ * @param styles - The style of every character in `text`.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param size - Font size, in world units.
  * @param letterSpacing - Extra spacing between adjacent glyphs, in ems.
@@ -252,6 +365,7 @@ function getWhitespaceAdvance(
  */
 function wrapIntoLines(
   text: string,
+  styles: CharacterStyles,
   fontAtlasData: FontAtlasData,
   size: number,
   letterSpacing: number,
@@ -271,14 +385,27 @@ function wrapIntoLines(
     lineContentWidth = 0;
   };
 
+  let tokenStart = 0;
+
   for (const token of tokens) {
+    const wordStart = tokenStart;
+
+    tokenStart += token.length;
+
     if (/^\s/.test(token)) {
       penX += getWhitespaceAdvance(token, fontAtlasData, size);
 
       continue;
     }
 
-    const word = shapeWord(token, fontAtlasData, size, letterSpacing);
+    const word = shapeWord(
+      token,
+      wordStart,
+      styles,
+      fontAtlasData,
+      size,
+      letterSpacing,
+    );
 
     // A word whose code points are all missing from the atlas draws nothing
     // and takes up no space, so it mustn't add a letter space either.
@@ -345,81 +472,29 @@ function getJustifyGapStretch(
 }
 
 /**
- * The vertical extent actually covered by a set of positioned glyphs, used
- * to center `'middle'`-aligned text on what's actually rendered (see
- * {@link getVerticalAlignOffset}).
- */
-interface InkBounds {
-  /** The highest point covered by any glyph's quad. */
-  top: number;
-
-  /** The lowest point covered by any glyph's quad. */
-  bottom: number;
-}
-
-/**
- * Computes the vertical extent `glyphs` actually covers - the highest and
- * lowest point of any glyph's quad - or `null` if `glyphs` is empty (e.g. an
- * empty or all-whitespace string, which has no ink to center on).
- * @param glyphs - Every glyph in the shaped block, already positioned with
- * each line's un-offset baseline (line `0` at `y = 0`; see {@link shapeText}).
- * @returns The block's actual ink extent, or `null` if `glyphs` is empty.
- */
-function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
-  if (glyphs.length === 0) {
-    return null;
-  }
-
-  let top = -Infinity;
-  let bottom = Infinity;
-
-  for (const glyph of glyphs) {
-    const glyphTop = glyph.offset.y + glyph.size.y / 2;
-    const glyphBottom = glyph.offset.y - glyph.size.y / 2;
-
-    top = Math.max(top, glyphTop);
-    bottom = Math.min(bottom, glyphBottom);
-  }
-
-  return { top, bottom };
-}
-
-/**
  * Computes the offset added to the whole shaped block to realize
- * `verticalAlign`, rather than the line-height box `actualLineHeight`
- * implies. Anchoring to the line-height box instead of the ink is the more
- * obvious thing to try, but it's wrong: a capital letter's ink sits almost
- * entirely *above* its baseline, so a `'top'` alignment built from "line 0's
- * unshifted baseline sits at the box's top" would place most of the text
- * *above* the anchor, the opposite of what `'top'` is supposed to mean, and
- * `'middle'` would never actually cross through the visible glyphs.
+ * `verticalAlign`. Every mode anchors to the font's own metrics and the line
+ * count, never to the glyphs this string happens to contain, so a label
+ * stays put when its text changes and two labels aligned to the same point
+ * share a baseline.
  *
- * `'top'`/`'bottom'`/`'capline'`/`'baseline'` all anchor to the font's own
- * metrics (or, for `'baseline'`, to nothing at all - see below) rather than
- * this specific string's actual rendered bounds, so that (e.g.) a
- * multi-line paragraph's line positions - and a single label's position as
- * its text is edited - stay stable instead of shifting by a fraction of a
- * line every time the tallest/lowest glyph currently present happens to
- * change. `'middle'`, however, centers on `inkBounds` - the *actual*
- * rendered extent of this exact string - since a font's ascender is
- * typically taller than its descender is deep (most glyphs have no
- * descender at all), so centering on the font's metrics instead would
- * systematically bias every descender-less string (numbers, titles, most
- * short UI labels) above the true visual center of its box; `inkBounds`
- * doesn't have this bias, and a `'middle'`-aligned string being fully
- * replaced is already exactly the kind of content change a UI expects to
- * reflow around, unlike `'top'`/`'bottom'`/`'capline'`/`'baseline'`'s
- * "editing this line" case.
+ * The line-height box isn't used as the reference: a capital letter's ink
+ * sits almost entirely above its baseline, so a `'top'` built from "line 0's
+ * baseline sits at the box's top" would put most of the text above the
+ * anchor.
  *
- * `'capline'` is `'top'` with the font's `capHeight` (the top of a capital
- * letter like "H") in place of its `ascender` (the top of the font's
- * *tallest* glyphs, including ascenders like "b"/"d"/"h" that reach higher
- * than a flat capital) - useful for a title or label set in caps, where
- * anchoring to the taller `ascender` would leave a visible gap above the
- * text's actual top. `'baseline'` anchors line `0`'s own baseline, which
- * (per the paragraph below) is already sitting at `y = 0` before this
- * offset is applied - so, uniquely among every mode, it's *always* `0`,
- * regardless of `lineCount`/`actualLineHeight`/the font's metrics.
+ * - `'top'` anchors the first line's ascender (the top of the font's
+ *   tallest glyphs), and `'bottom'` the last line's descender, so no glyph
+ *   crosses the anchor.
+ * - `'capline'` anchors the first line's cap height (the top of a flat
+ *   capital like "H"), which sits lower than the ascender of "b"/"d"/"h".
+ * - `'baseline'` anchors the first line's baseline, which already sits at
+ *   `y = 0` before this offset, so it's always `0`.
+ * - `'middle'` centers the band from the first line's cap line to the last
+ *   line's baseline - the box designers center text in (TextMesh Pro's
+ *   `Capline`, CSS `text-box-edge: cap alphabetic`). Centering the
+ *   ascender-to-descender box instead would sit too high for the many
+ *   strings with no descenders.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
  * following line's baseline is `actualLineHeight` further in the negative
@@ -429,9 +504,6 @@ function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
  * @param size - Font size, in world units.
  * @param lineCount - The number of lines in the shaped block.
  * @param actualLineHeight - The distance between two lines' baselines, in world units.
- * @param inkBounds - The block's actual rendered vertical extent (see
- * {@link getInkBounds}), or `null` if it has no visible glyphs. Only read
- * for `'middle'`; every other mode always uses the font's own metrics.
  * @returns The Y offset to add to every glyph.
  */
 function getVerticalAlignOffset(
@@ -440,34 +512,27 @@ function getVerticalAlignOffset(
   size: number,
   lineCount: number,
   actualLineHeight: number,
-  inkBounds: InkBounds | null,
 ): number {
+  const { ascender, descender, capHeight } = fontAtlasData.metrics;
+  const lastBaseline = -(lineCount - 1) * actualLineHeight;
+
   if (verticalAlign === 'baseline') {
     return 0;
   }
 
   if (verticalAlign === 'capline') {
-    return -(fontAtlasData.metrics.capHeight * size);
-  }
-
-  const inkTop = fontAtlasData.metrics.ascender * size;
-  const inkBottom =
-    -(lineCount - 1) * actualLineHeight +
-    fontAtlasData.metrics.descender * size;
-
-  if (verticalAlign === 'bottom') {
-    return -inkBottom;
+    return -(capHeight * size);
   }
 
   if (verticalAlign === 'middle') {
-    if (inkBounds !== null) {
-      return -(inkBounds.top + inkBounds.bottom) / 2;
-    }
-
-    return -(inkTop + inkBottom) / 2;
+    return -(capHeight * size + lastBaseline) / 2;
   }
 
-  return -inkTop;
+  if (verticalAlign === 'bottom') {
+    return -(lastBaseline + descender * size);
+  }
+
+  return -(ascender * size);
 }
 
 /**
@@ -483,14 +548,20 @@ function getVerticalAlignOffset(
  * single word (nothing to stretch). It has no effect when `maxWidth` is
  * unset, since every line is then already exactly as wide as the block.
  *
+ * `text` may contain rich text tags - `<b>...</b>` and
+ * `<color=#rrggbb>...</color>`, see {@link parseRichText} - which are
+ * stripped before shaping, so they never affect kerning or wrapping, and
+ * set the style of the glyphs between them.
+ *
  * Code points not present in `fontAtlasData.glyphs` are silently skipped
  * (no glyph quad, no advance) rather than throwing - a missing glyph in
  * player-supplied or localized text is a content problem, not a programming
  * error.
- * @param text - The string to shape.
+ * @param text - The string to shape, which may contain rich text tags.
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param options - Shaping options.
  * @returns The shaped glyph quads and the block's bounds.
+ * @throws An error if `text` contains a malformed tag (see {@link parseRichText}).
  */
 export function shapeText(
   text: string,
@@ -507,8 +578,10 @@ export function shapeText(
     horizontalAlignPivot,
   } = { ...defaultShapeTextOptions, ...options };
 
+  const { plainText, styles } = resolveCharacterStyles(text, fontAtlasData);
   const lines = wrapIntoLines(
-    text,
+    plainText,
+    styles,
     fontAtlasData,
     size,
     letterSpacing,
@@ -536,9 +609,8 @@ export function shapeText(
   // existing behavior before this field was added.
   const boxLeftOffset = -horizontalAlignPivot * alignmentWidth;
 
-  // Built first with each line's *un-offset* baseline (line 0 at y = 0), so
-  // `'middle'` can measure this exact block's actual rendered ink before
-  // `verticalOffset` (which depends on that measurement) is applied below.
+  // Built with each line's un-offset baseline (line 0 at y = 0);
+  // `verticalOffset` is applied to every glyph afterwards.
   const glyphs: GlyphQuad[] = [];
 
   lines.forEach((line, lineIndex) => {
@@ -583,7 +655,6 @@ export function shapeText(
     size,
     lines.length,
     actualLineHeight,
-    verticalAlign === 'middle' ? getInkBounds(glyphs) : null,
   );
 
   for (const glyph of glyphs) {

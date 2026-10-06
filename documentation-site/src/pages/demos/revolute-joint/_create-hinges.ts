@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRevoluteJointComponent,
@@ -192,11 +191,7 @@ function createDoorScenario(
     collider: doorCollider,
     restitution: 0,
   });
-  addRigidBodyComponent(world, doorEntity, {
-    mass: doorCollider.mass,
-    momentOfInertia: doorCollider.momentOfInertia,
-  });
-  addAabbComponent(world, doorEntity);
+  addRigidBodyComponent(world, doorEntity);
   addGravityComponent(world, doorEntity, { amount: gravity });
 
   // referenceAngle is captured as doorAngle here, so the joint's own
@@ -265,11 +260,7 @@ function createPendulumScenario(
     collider: bobCollider,
     restitution: 0,
   });
-  addRigidBodyComponent(world, bobEntity, {
-    mass: bobCollider.mass,
-    momentOfInertia: bobCollider.momentOfInertia,
-  });
-  addAabbComponent(world, bobEntity);
+  addRigidBodyComponent(world, bobEntity);
   addGravityComponent(world, bobEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();
@@ -317,11 +308,8 @@ function createWheelScenario(
     restitution: 0,
   });
   addRigidBodyComponent(world, wheelEntity, {
-    mass: wheelCollider.mass,
-    momentOfInertia: wheelCollider.momentOfInertia,
     angularVelocity: 5,
   });
-  addAabbComponent(world, wheelEntity);
   addGravityComponent(world, wheelEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();

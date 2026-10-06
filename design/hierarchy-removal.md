@@ -6,7 +6,7 @@
 | **Kind**                              | Defect                                                                                                                                                                                                                 |
 | **Found in**                          | Galactic Journey demo: `src/engine-flame/engine-flame.system.ts`, `src/engine-flame/engine-flame.component.ts`, `src/health/health.component.ts`, `src/power-ups/power-up.component.ts`, `src/run/clear-run.system.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                               |
-| **Related**                           | [`generational-entity-ids.md`](./generational-entity-ids.md) (prerequisite), [`sprite-draw-order.md`](./sprite-draw-order.md), [`game-states.md`](./game-states.md)                                                    |
+| **Related**                           | [`sprite-draw-order.md`](./sprite-draw-order.md)                                                                                                                                                                       |
 
 ## 0. Targeted modules
 
@@ -27,9 +27,9 @@
 An entity can have a parent (`ParentEcsComponent`), and the transform
 system composes a child's transform with its parent's. But removing a
 parent does nothing to its children: they stay in the world, still
-pointing at the removed parent's id. With ids reused immediately (see
-[`generational-entity-ids.md`](./generational-entity-ids.md)), that id
-soon belongs to an unrelated entity, and the orphan starts following it.
+pointing at the removed parent's id. Generational handles stop that stale id from matching a new entity, but
+the orphan is still left behind, following a parent that no longer
+exists.
 
 The demo has to clean up after this, or avoid parenting altogether:
 
@@ -88,9 +88,8 @@ through world methods so the index can't go stale.
   `removeParent` keep the child's local transform (DL-4). A helper that
   converts the local transform so the child stays put on screen belongs in
   the transform module, not the ECS, and can be added when needed.
-- **Removing entities when a game state ends.** That's
-  [`game-states.md`](./game-states.md), which relies on this design for
-  the subtrees of what it removes.
+- **Removing entities when a game state ends.** Game states (`/src/states`) already remove state-scoped entities; with
+  this design they take those entities' subtrees with them.
 
 ---
 
@@ -233,8 +232,8 @@ is small except for very wide UI lists.
 code outside the world writes `ParentEcsComponent`; sibling order survives
 unrelated removals; every docs demo works with `setParent`.
 
-Depends on [`generational-entity-ids.md`](./generational-entity-ids.md):
-its explicit lifetime (today, removing an entity's last component frees
+Builds on generational entity handles, which have landed: their explicit
+lifetime (today, removing an entity's last component frees
 it without touching anything that refers to it), its idempotent
 `removeEntity` (a descendant removed earlier in the same tick), and
 `isAlive`, which `setParent` checks.
@@ -300,7 +299,7 @@ in the world.
 1. **Linked lifetime without transform inheritance.** The demo's health
    bars live in another camera's units, so they can't be children of their
    enemy, and its halos copy their orb's position instead of being
-   children. [`camera-views.md`](./camera-views.md) and
+   children. Camera views (`getCameraView`) and
    [`sprite-draw-order.md`](./sprite-draw-order.md) remove those reasons;
    cases may remain. Unity DOTS (`LinkedEntityGroup`) and Bevy
    (`linked_spawn` relationships) both offer a lifetime link separate from

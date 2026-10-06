@@ -8,14 +8,19 @@ import {
 import { Random } from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
-  addAabbComponent,
   addColliderComponent,
+  addContactsComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import {
   AsteroidSpawnerEcsComponent,
   asteroidSpawnerId,
 } from './_asteroid-spawner.component';
+import {
+  asteroidCategory,
+  bulletCategory,
+  playerCategory,
+} from './_collision-categories';
 import { asteroidId } from './_asteroid.component';
 
 const asteroidScale = 0.1;
@@ -72,8 +77,11 @@ export const createAsteroidSpawnerEcsSystem = (
 
       addColliderComponent(world, asteroidEntity, {
         collider: new CircleCollider(asteroidRadius),
+        category: asteroidCategory,
+        mask: bulletCategory | playerCategory,
       });
-      addAabbComponent(world, asteroidEntity);
+      // Asteroids are the only entities that check what they touch.
+      addContactsComponent(world, asteroidEntity);
     }
   },
 });

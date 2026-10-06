@@ -15,10 +15,10 @@ import {
 } from '@forge-game-engine/forge/common';
 
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
+import { asteroidCategory, playerCategory } from './_collision-categories';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -128,8 +128,9 @@ export function spawnPlayer(
 
   addColliderComponent(world, playerEntity, {
     collider: new CircleCollider(playerRadius),
+    category: playerCategory,
+    mask: asteroidCategory,
   });
-  addAabbComponent(world, playerEntity);
 }
 
 export async function createPlayer(

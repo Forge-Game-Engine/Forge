@@ -11,6 +11,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
@@ -173,10 +174,9 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
       time,
     ),
   );
-  world.addSystem(
-    createBallEcsSystem(collisionManifolds, random, missY, brickField),
-  );
+  world.addSystem(createBallEcsSystem(random, missY, brickField));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

@@ -6,7 +6,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRevoluteJointComponent,
@@ -165,13 +164,9 @@ function createPhysicsSpriteEntity(
     }),
     ...(options.friction !== undefined && { friction: options.friction }),
   });
-  addAabbComponent(world, entity);
 
   if (!options.isStatic) {
-    addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
-    });
+    addRigidBodyComponent(world, entity);
     addGravityComponent(world, entity, { amount: gravity });
   }
 

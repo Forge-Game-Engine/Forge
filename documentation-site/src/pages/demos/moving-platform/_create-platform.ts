@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addRigidBodyComponent,
   PolygonCollider,
@@ -96,10 +95,7 @@ export async function createPlatform(
   );
 
   addColliderComponent(world, entity, { collider, friction: 0.8 });
-  addAabbComponent(world, entity);
   addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
     type: 'kinematic',
     velocity: { x: platformSpeed, y: 0 },
   });

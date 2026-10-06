@@ -34,6 +34,13 @@ export const demos: Demo[] = [
     categories: ['physics', 'games'],
   },
   {
+    slug: 'game-states',
+    title: 'Game States',
+    description:
+      'A menu, a round and a game-over screen, switched with a game state, run conditions and state-scoped entities.',
+    categories: ['ecs', 'games'],
+  },
+  {
     slug: 'ecs',
     title: 'ECS',
     description:
@@ -52,6 +59,13 @@ export const demos: Demo[] = [
     title: 'Moving Platform',
     description:
       'A kinematic platform that carries and pushes dynamic crates without being affected by them.',
+    categories: ['physics'],
+  },
+  {
+    slug: 'sensors',
+    title: 'Sensors and Contacts',
+    description:
+      'Trigger zones that detect bodies passing through without blocking them.',
     categories: ['physics'],
   },
   {
@@ -155,7 +169,7 @@ export const demos: Demo[] = [
     slug: 'text',
     title: 'Text Rendering',
     description:
-      'MSDF text rendering: alignment, line height, live reflow and outline/shadow effects.',
+      'MSDF text rendering: alignment, line height, live reflow, rich text tags and outline/shadow effects.',
     categories: ['rendering'],
   },
   {
@@ -191,6 +205,13 @@ export const demos: Demo[] = [
     title: 'UI Toggles',
     description:
       'A standalone toggle plus a grouped set that behaves like radio buttons.',
+    categories: ['ui'],
+  },
+  {
+    slug: 'persistent-state',
+    title: 'Persistent State',
+    description:
+      'A settings panel whose values are stored with createPersistentState and survive a reload.',
     categories: ['ui'],
   },
   {

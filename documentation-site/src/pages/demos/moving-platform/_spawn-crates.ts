@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRigidBodyComponent,
@@ -82,10 +81,6 @@ export function spawnCrate(
   const collider = new PolygonCollider(rectangleVertices(crateSize, crateSize));
 
   addColliderComponent(world, entity, { collider, friction: 0.6 });
-  addAabbComponent(world, entity);
-  addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
 }

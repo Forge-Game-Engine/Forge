@@ -1,6 +1,7 @@
 export * from './angular-velocity-motor-system.js';
 export * from './broad-phase-system.js';
 export * from './collision-resolution-system.js';
+export * from './continuous-collision-system.js';
 export * from './euler-integration-system.js';
 export * from './gravity-system.js';
 export * from './linear-damper-system.js';

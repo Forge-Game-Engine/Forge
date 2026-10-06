@@ -16,11 +16,17 @@ Core concepts:
 - `ColliderEcsComponent`: an entity's
   collision shape (`CircleCollider`,
   `PolygonCollider`, or
-  `TerrainCollider`), plus friction and
-  restitution.
+  `TerrainCollider`), plus friction,
+  restitution, the collision `category`/`mask` that filter which
+  colliders it's tested against, and whether it's a `sensor` (detected,
+  never resolved).
 - `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
   `createCollisionResolutionEcsSystem`: detect and resolve collisions
   between collider entities each tick.
+- `createContinuousCollisionEcsSystem`: stops fast dynamic circles from
+  sinking into or passing through static colliders between two ticks.
+- `ContactsEcsComponent`: which entities a collider entity is touching,
+  and which contacts started or ended this tick.
 - `raycast`: casts a ray against every
   collider entity in an `EcsWorld`.
 - `PrismaticJointEcsComponent`: a
@@ -38,9 +44,14 @@ Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes,
   static/kinematic/dynamic bodies, and ECS integration.
+- [Collisions](./collisions.md): filtering which colliders collide, sensor
+  colliders for trigger zones, and reading what an entity touched.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against colliders.
+- [Continuous Collision Detection](./continuous-collision-detection.md):
+  keeping fast circles from sinking into or tunneling through static
+  colliders.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
 - [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
@@ -65,7 +76,6 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRigidBodyComponent,
@@ -74,6 +84,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -84,8 +95,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 const { world, time } = createGame('game-container');
 
 const box = world.createEntity();
-// PolygonCollider re-centers vertices around their centroid, so this 32x32
-// square's own position is its center.
+// A 32x32 square, drawn around the entity's position.
 const collider = new PolygonCollider([
   { x: -16, y: -16 },
   { x: 16, y: -16 },
@@ -96,11 +106,7 @@ const collider = new PolygonCollider([
 addPositionComponent(world, box);
 addRotationComponent(world, box);
 addColliderComponent(world, box, { collider });
-addAabbComponent(world, box);
-addRigidBodyComponent(world, box, {
-  mass: collider.mass,
-  momentOfInertia: collider.momentOfInertia,
-});
+addRigidBodyComponent(world, box);
 addGravityComponent(world, box, { amount: { x: 0, y: -300 } });
 
 const collisionPairs: CollisionPair[] = [];
@@ -120,6 +126,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createContinuousCollisionEcsSystem());
 ```
 
 See [Bodies and Shapes](./rigid-bodies.md) for static and kinematic bodies,

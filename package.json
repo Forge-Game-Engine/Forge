@@ -75,6 +75,18 @@
         "default": "./dist/rendering/index.js"
       }
     },
+    "./states": {
+      "import": {
+        "types": "./dist/states/index.d.ts",
+        "default": "./dist/states/index.js"
+      }
+    },
+    "./storage": {
+      "import": {
+        "types": "./dist/storage/index.d.ts",
+        "default": "./dist/storage/index.js"
+      }
+    },
     "./text": {
       "import": {
         "types": "./dist/text/index.d.ts",

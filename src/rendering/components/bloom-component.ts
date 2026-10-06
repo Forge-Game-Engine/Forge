@@ -18,7 +18,7 @@ export interface BloomEcsComponent {
    * How many times to run the horizontal+vertical blur pair over the
    * bright pixels above `threshold` before adding them back onto the
    * scene. Works the same as `GaussianBlurEcsComponent.passes`: higher
-   * values produce a wider, softer glow.
+   * values produce a wider, softer glow, and `0` turns bloom off.
    */
   passes: number;
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { Color } from '../../rendering/color.js';
 import type { FontAtlasData } from '../font-atlas/font-atlas-data.js';
-import { shapeText } from './shape-text.js';
+import { FAUX_BOLD_EMBOLDEN, shapeText } from './shape-text.js';
 
 const A_CODE_POINT = 65;
 const V_CODE_POINT = 86;
@@ -53,10 +54,9 @@ function buildFixtureFontAtlasData(): FontAtlasData {
       ],
       [
         X_CODE_POINT,
-        // An x-height glyph: unlike "A"/"V" it reaches neither the font's
-        // ascender (0.9) nor its descender (-0.2), so it's the fixture
-        // `'middle'` uses to tell "centered on this string's actual ink"
-        // apart from "centered on the font's ascender/descender metrics".
+        // An x-height glyph: it reaches neither the cap height (0.7) nor
+        // the ascender (0.9), so `'middle'` tests use it to check a line's
+        // position doesn't depend on how tall its glyphs are.
         {
           codePoint: X_CODE_POINT,
           advance: 0.5,
@@ -511,8 +511,7 @@ describe('shapeText', () => {
   });
 
   describe('vertical alignment', () => {
-    // Anchored to the block's visible ink (ascender/descender), not its
-    // line-height box: fixture metrics are `ascender: 0.9`, `descender:
+    // Anchored to the font's metrics, not the line-height box: fixture metrics are `ascender: 0.9`, `descender:
     // -0.2`, so at size 10, `inkTop = 9` and (for a 3-line, `actualLineHeight:
     // 12` block) `inkBottom = -(3 - 1) * 12 + -0.2 * 10 = -26`.
 
@@ -538,51 +537,58 @@ describe('shapeText', () => {
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 26);
     });
 
-    it('anchors the block by the vertical center of its own rendered ink', () => {
+    it('centers a single line on the band from its cap height to its baseline', () => {
+      const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'middle',
+      });
+
+      // The band spans the baseline (0) to the cap line (0.7 * 10 = 7);
+      // shifting by `-7 / 2` puts its center at y = 0. "A" fills the band
+      // exactly, so its own center lands there too.
+      expect(glyphs[0].offset.y).toBeCloseTo(0);
+    });
+
+    it("centers a multi-line block on the band from the first line's cap height to the last line's baseline", () => {
       const { glyphs } = shapeText('AV AV AV', buildFixtureFontAtlasData(), {
         size: 10,
         maxWidth: 20,
         verticalAlign: 'middle',
       });
 
-      // "A"/"V" both reach exactly the fixture's ascender/descender (0.7 top
-      // vs ascender 0.9, 0 bottom vs descender -0.2 - each 0.2em short by
-      // design, so this case can't tell "centered on rendered ink" apart
-      // from "centered on the font's ascender/descender metrics"; see the
-      // "centers on this string's own ink, not the font's ascender/
-      // descender" test below for that). The block's actual rendered ink
-      // spans from the first line's top (0.7 * 10 = 7) to the last line's
-      // bottom (-(3 - 1) * 12 + 0 * 10 = -24); shifting by
-      // `-(7 + -24) / 2` = 8.5 centers that (not the line-height box) on
-      // y = 0.
+      // The band runs from the first line's cap line (7) to the last
+      // line's baseline (-(3 - 1) * 12 = -24); shifting by `-(7 - 24) / 2`
+      // = 8.5 centers it on y = 0.
       expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 8.5);
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 8.5);
     });
 
-    it("centers on this string's own ink, not the font's ascender/descender", () => {
-      const { glyphs } = shapeText('x', buildFixtureFontAtlasData(), {
+    it("doesn't move a line when its glyphs reach different heights", () => {
+      const capital = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        verticalAlign: 'middle',
+      });
+      const xHeight = shapeText('x', buildFixtureFontAtlasData(), {
         size: 10,
         verticalAlign: 'middle',
       });
 
-      // "x"'s baseline-relative center is `0 * 10 + 5 / 2` = 2.5 - well
-      // short of the fixture's ascender (0.9) and descender (-0.2).
-      // Centering on the font's metrics would shift by `-(9 + -2) / 2` =
-      // -3.5, landing at `2.5 - 3.5` = -1; centering on "x"'s own rendered
-      // ink instead shifts by `-(5 + 0) / 2` = -2.5, putting its actual
-      // (not the font's nominal) vertical center at y = 0.
-      expect(glyphs[0].offset.y).toBeCloseTo(0);
+      // "A" reaches the cap line and "x" only half as high, but both sit
+      // on the same baseline, so their quads' bottoms (the baseline, as
+      // neither glyph has a descender) line up.
+      const capitalBottom = capital.glyphs[0].offset.y - 3.5;
+      const xHeightBottom = xHeight.glyphs[0].offset.y - 2.5;
+
+      expect(xHeightBottom).toBeCloseTo(capitalBottom);
+      expect(capitalBottom).toBeCloseTo(-3.5);
     });
 
-    it('falls back to the font metrics when there is no visible ink to center on', () => {
+    it('shapes a string with no visible glyphs', () => {
       const { glyphs, bounds } = shapeText(' ', buildFixtureFontAtlasData(), {
         size: 10,
         verticalAlign: 'middle',
       });
 
-      // A single space has no glyph quads at all, so there's no rendered
-      // ink for `'middle'` to measure - this must not throw or divide by
-      // an empty extent, and still shapes (an invisible, but valid) block.
       expect(glyphs).toHaveLength(0);
       expect(bounds.height).toBeCloseTo(12);
     });
@@ -641,6 +647,127 @@ describe('shapeText', () => {
       expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
       expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24 - 9);
       expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48 - 9);
+    });
+  });
+
+  describe('rich text tags', () => {
+    const red = new Color(1, 0, 0, 1);
+
+    it('leaves untagged glyphs without a color or embolden', () => {
+      const { glyphs } = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      expect(glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        undefined,
+      ]);
+      expect(glyphs.map((glyph) => glyph.embolden)).toEqual([0, 0]);
+    });
+
+    it('colors the glyphs inside a color tag without moving any glyph', () => {
+      const untagged = shapeText('AV AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const tagged = shapeText(
+        'A<color=#ff0000>V A</color>V',
+        buildFixtureFontAtlasData(),
+        { size: 10 },
+      );
+
+      expect(tagged.glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        red,
+        red,
+        undefined,
+      ]);
+      expect(tagged.glyphs.map((glyph) => glyph.offset)).toEqual(
+        untagged.glyphs.map((glyph) => glyph.offset),
+      );
+      expect(tagged.bounds).toEqual(untagged.bounds);
+    });
+
+    it('kerns across a tag boundary exactly as without the tag', () => {
+      const untagged = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const tagged = shapeText(
+        'A<color=#ff0000>V</color>',
+        buildFixtureFontAtlasData(),
+        { size: 10 },
+      );
+
+      expect(tagged.glyphs[1].offset.x).toBeCloseTo(
+        untagged.glyphs[1].offset.x,
+      );
+    });
+
+    it("wraps a tagged string as if its tags weren't there", () => {
+      const options = { size: 10, maxWidth: 20 };
+      const untagged = shapeText(
+        'AV AV AV',
+        buildFixtureFontAtlasData(),
+        options,
+      );
+      const tagged = shapeText(
+        'AV <color=#ff0000>AV AV</color>',
+        buildFixtureFontAtlasData(),
+        options,
+      );
+
+      expect(tagged.glyphs.map((glyph) => glyph.offset)).toEqual(
+        untagged.glyphs.map((glyph) => glyph.offset),
+      );
+      expect(tagged.glyphs.map((glyph) => glyph.color)).toEqual([
+        undefined,
+        undefined,
+        red,
+        red,
+        red,
+        red,
+      ]);
+    });
+
+    it('emboldens bold glyphs in the distance field units of the atlas', () => {
+      const { glyphs } = shapeText('<b>A</b>V', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "A"'s atlas rect is 0.1 * 256 = 25.6 atlas pixels wide for 0.5em of
+      // plane bounds, so 51.2 atlas pixels per em, over a 4 pixel range.
+      expect(glyphs[0].embolden).toBeCloseTo((FAUX_BOLD_EMBOLDEN * 51.2) / 4);
+      expect(glyphs[1].embolden).toBe(0);
+    });
+
+    it('widens a bold glyph by the embolden on both sides', () => {
+      const regular = shapeText('AV', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const bold = shapeText('<b>A</b>V', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+      const emboldenWidth = FAUX_BOLD_EMBOLDEN * 10;
+
+      expect(bold.glyphs[0].offset.x).toBeCloseTo(
+        regular.glyphs[0].offset.x + emboldenWidth,
+      );
+      expect(bold.glyphs[1].offset.x).toBeCloseTo(
+        regular.glyphs[1].offset.x + 2 * emboldenWidth,
+      );
+      expect(bold.bounds.width).toBeCloseTo(
+        regular.bounds.width + 2 * emboldenWidth,
+      );
+    });
+
+    it('shapes markup it does not recognize as literal text', () => {
+      const { glyphs } = shapeText('<i>A</i>', buildFixtureFontAtlasData(), {
+        size: 10,
+      });
+
+      // "<", "i", ">" and "/" aren't in the fixture atlas, so only "A" draws -
+      // and it isn't styled.
+      expect(glyphs).toHaveLength(1);
+      expect(glyphs[0].color).toBeUndefined();
     });
   });
 });

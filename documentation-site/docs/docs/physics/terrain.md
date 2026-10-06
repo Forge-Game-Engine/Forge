@@ -14,7 +14,6 @@ slope.
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
@@ -33,24 +32,22 @@ addColliderComponent(world, groundEntity, {
     200, // depth: how far the solid slab extends below the lowest point
   ),
 });
-addAabbComponent(world, groundEntity);
 ```
 
 Terrain is static, so `groundEntity` only needs `PositionEcsComponent`/
 `RotationEcsComponent` (for `computeAabb`/narrow-phase to read `.world` from;
 the rotation component is optional, and an entity without one is treated as
-unrotated), `ColliderEcsComponent`, and `AabbEcsComponent` - no
-`RigidBodyEcsComponent`,
-the same convention every other static body (walls, ground boxes) in this
+unrotated) and `ColliderEcsComponent` - no `RigidBodyEcsComponent`, the
+same convention every other static body (walls, ground boxes) in this
 engine follows. See the [Bodies and Shapes guide](/Forge/docs/docs/physics/rigid-bodies)
 for that static/kinematic/dynamic distinction.
 
 ## Authoring points
 
 `points` must have at least 2 entries and be ordered by strictly increasing
-`x` - `TerrainCollider` throws otherwise. Unlike `PolygonCollider`, it does
-**not** re-center vertices around their centroid: `points` are used exactly
-as authored, in the collider's own local space, so the easiest way to work
+`x` - `TerrainCollider` throws otherwise. Like every collider's shape,
+`points` are used exactly as authored, in the entity's local space, so the
+easiest way to work
 with terrain is to author points directly in world coordinates and leave the
 owning entity's `PositionEcsComponent` at `Vec2.zero`.
 
@@ -66,8 +63,8 @@ a few hundred units is typically more than enough headroom.
 `TerrainCollider` is intended for **static** bodies only - attach it with
 `addColliderComponent` and no `RigidBodyEcsComponent`. A heightmap has no
 natural mass distribution to simulate as a moving object; the collider's
-`mass`/`momentOfInertia` fields are computed for interface-completeness, but
-nothing in the engine exercises a dynamic terrain body.
+mass data is computed from its slab for interface-completeness, but nothing
+in the engine exercises a dynamic terrain body.
 :::
 
 ## How collision works
@@ -114,6 +111,11 @@ a `PolygonCollider` for those. Raycasting is unaffected: `raycastTerrain`
 tests the whole solid, so a ray can still enter the slab from any direction.
 :::
 
+A fast circle landing on terrain can still sink into it, or pass through it,
+within a single tick, before narrow-phase collision sees the contact.
+[Continuous Collision Detection](./continuous-collision-detection.md) stops
+it at the surface.
+
 ### Choosing a point spacing
 
 Point spacing trades detail against solver work. A body resting across _n_
@@ -123,8 +125,8 @@ fine spacing relative to the bodies rolling over it is the main way to make
 terrain contact expensive - space points no more finely than the detail you
 actually need, and let `buildTerrainCurve` do the visual smoothing.
 
-Broad-phase culling (`createBroadPhaseEcsSystem`'s `AabbEcsComponent`) still
-computes one AABB for the whole collider via `computeAabb`, which for a long
+Broad-phase culling (the `aabb` that `createBroadPhaseEcsSystem` writes onto
+each collider) still computes one AABB for the whole collider via `computeAabb`, which for a long
 terrain strip produces a large bounding box around the whole shape (the same
 simplification a very wide/tall `PolygonCollider` makes). This doesn't
 affect correctness, only how many pairs reach the narrow phase - for very
