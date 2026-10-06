@@ -103,14 +103,6 @@ Setting the current state again re-enters it: its exit systems run, its
 scoped entities are removed, and its enter systems run. `gameState.set('playing')`
 while in `playing` restarts it without switching to another state first.
 
-## Several worlds
-
-A `GameState` belongs to the world passed to `createGameState`, which
-switches it and runs its exit and enter groups. A system in another world,
-such as a UI overlay world, can still use `inState` on it, since a
-run condition only reads the state. A world that `Game` updates after the
-owning world sees each transition in the same frame.
-
 ## Mistakes to avoid
 
 Checking the state at the top of `update`:
