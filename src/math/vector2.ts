@@ -38,19 +38,19 @@ export class Vec2 {
   }
 
   /**
-   * A unit vector pointing upward (0, -1). A fresh vector is created on
-   * every access, so it's always safe to mutate.
+   * A unit vector pointing upward (0, 1), since the world is Y-up. A fresh
+   * vector is created on every access, so it's always safe to mutate.
    */
   static get up(): Vector2 {
-    return { x: 0, y: -1 };
+    return { x: 0, y: 1 };
   }
 
   /**
-   * A unit vector pointing downward (0, 1). A fresh vector is created on
-   * every access, so it's always safe to mutate.
+   * A unit vector pointing downward (0, -1), since the world is Y-up. A
+   * fresh vector is created on every access, so it's always safe to mutate.
    */
   static get down(): Vector2 {
-    return { x: 0, y: 1 };
+    return { x: 0, y: -1 };
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
+  PositionEcsComponent,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -27,18 +28,6 @@ import { ContactConstraint } from '../types/contact-constraint.js';
 import { CollisionPair } from '../types/collision-pair.js';
 
 const fixedDeltaMilliseconds = 1000 / 60;
-
-/**
- * The terrain entity is rotated 180 degrees throughout this file:
- * `TerrainCollider` always extends its solid slab in the +y direction from
- * its surface points (in its own local space), but these tests' gravity (the
- * engine default) pulls bodies toward -y, so the terrain is flipped to face
- * the right way - the same convention documented in
- * documentation-site/docs/docs/physics/terrain.md and used by the Rolling
- * Ball demo. With the terrain flipped, a contact normal pointing from the
- * body toward the terrain points broadly *down* in world space.
- */
-const terrainRotation = Math.PI;
 
 /**
  * A long run of closely-spaced points whose height only wobbles by a tiny,
@@ -134,8 +123,10 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
   function addTerrainEntity(): number {
     const entity = world.createEntity();
 
+    // Authored as the ground's surface in world coordinates, unrotated: the
+    // slab extends below the points, and the bodies dropped onto it from
+    // above fall toward it under the engine's default gravity (toward -y).
     addPositionComponent(world, entity, { local: { x: 0, y: 0 } });
-    addRotationComponent(world, entity, { local: terrainRotation });
     addColliderComponent(world, entity, {
       collider: new TerrainCollider(
         denseNoisyTerrainPoints(40, 0.3, 0.0008),
@@ -153,10 +144,14 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     startX: number,
     startY: number,
     momentOfInertia: number,
-  ): { entity: number; rigidBody: RigidBodyEcsComponent } {
+  ): {
+    entity: number;
+    position: PositionEcsComponent;
+    rigidBody: RigidBodyEcsComponent;
+  } {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, {
+    const position = addPositionComponent(world, entity, {
       local: { x: startX, y: startY },
     });
     addRotationComponent(world, entity);
@@ -176,7 +171,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
     expect(gravity.amount.y).toBeLessThan(0);
 
-    return { entity, rigidBody };
+    return { entity, position, rigidBody };
   }
 
   function addHeavyCircleEntity(
@@ -235,7 +230,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const radius = 2.5;
 
     addTerrainEntity();
-    addHeavyCircleEntity(0, radius + 0.05, radius);
+    const { position } = addHeavyCircleEntity(0, radius + 0.05, radius);
 
     const settledDepths: number[] = [];
 
@@ -250,6 +245,10 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     }
 
     expect(settledDepths.length).toBeGreaterThan(0);
+    // Resting on top of the ground, whose surface is within a thousandth
+    // of a unit of y = 0, rather than having fallen into or through it.
+    expect(position.world.y).toBeGreaterThan(radius - 0.05);
+    expect(position.world.y).toBeLessThan(radius + 0.05);
 
     for (const depth of settledDepths) {
       // The soft contact constraint's `slop` (0.002, the default) is the
@@ -264,7 +263,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
   it('settles a heavy box spanning many surface edges to a bounded penetration depth', () => {
     addTerrainEntity();
-    addHeavyBoxEntity(0, 1.05, 4, 2);
+    const { position } = addHeavyBoxEntity(0, 1.05, 4, 2);
 
     const settledDepths: number[] = [];
 
@@ -278,6 +277,11 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
         );
       }
     }
+
+    // Resting on top of the ground (its half-height, 1, above y = 0)
+    // rather than having fallen into or through it.
+    expect(position.world.y).toBeGreaterThan(1 - 0.05);
+    expect(position.world.y).toBeLessThan(1 + 0.05);
 
     for (const depth of settledDepths) {
       expect(depth).toBeLessThan(0.05);

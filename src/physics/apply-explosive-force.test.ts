@@ -37,6 +37,17 @@ describe('applyExplosiveForce', () => {
     expect(nearRigidBody.velocity.x).toBeGreaterThan(farRigidBody.velocity.x);
   });
 
+  it('pushes a body at the exact center upwards', () => {
+    const centered = createBody(Vec2.zero);
+
+    applyExplosiveForce(world, Vec2.zero, 1000, 200);
+
+    const rigidBody = world.getComponent(centered, rigidBodyId)!;
+
+    expect(rigidBody.velocity.x).toBeCloseTo(0);
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+  });
+
   it('does not affect bodies at or beyond the radius', () => {
     const outside = createBody({ x: 200, y: 0 });
 

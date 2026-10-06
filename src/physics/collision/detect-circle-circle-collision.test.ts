@@ -49,7 +49,9 @@ describe('detectCircleCircleCollision', () => {
     const manifold = detectCircleCircleCollision(bodyA, bodyB);
 
     expect(manifold).not.toBeNull();
-    expect(Vec2.equals(manifold!.normal, Vec2.up)).toBe(true);
+    expect(Vec2.equals(manifold!.normal, { x: 0, y: 1 })).toBe(true);
     expect(manifold?.depth).toBeCloseTo(2);
+    expect(manifold?.contactPoints[0].x).toBeCloseTo(2);
+    expect(manifold?.contactPoints[0].y).toBeCloseTo(3);
   });
 });

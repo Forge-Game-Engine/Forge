@@ -74,7 +74,7 @@ into a brand new vector).
 `rotate`/`dot`/`cross`/`perpendicular`/`negate`/`distanceTo` - those are
 `Vec2`-only.
 
-## Static directions and the y-down convention
+## Static directions and the Y-up convention
 
 [`Vec2.up`](/Forge/docs/api/classes/Vec2#up),
 [`Vec2.down`](/Forge/docs/api/classes/Vec2#down),
@@ -83,15 +83,13 @@ into a brand new vector).
 [`Vec2.zero`](/Forge/docs/api/classes/Vec2#zero), and
 [`Vec2.one`](/Forge/docs/api/classes/Vec2#one) are convenience getters -
 each access returns a **fresh vector**, not a shared instance, so it's
-always safe to mutate the result. Forge's y-axis points **down** the screen
-(matching canvas coordinates), so `Vec2.up` is `(0, -1)` and `Vec2.down` is
-`(0, 1)`. Keep this in mind whenever "up" means "toward the top of the
-screen" - for example, gravity that pulls things down the screen is a
-_positive_ y value.
+always safe to mutate the result. Forge's world is **Y-up**, so `Vec2.up` is
+`(0, 1)` and `Vec2.down` is `(0, -1)`. Gravity that pulls things down the
+screen is a _negative_ y value, and a positive angle turns counter-clockwise
+(see [Angles and Rotation](./angles-and-rotation.md)).
 
-`Vec3` has the same `zero`/`one` getters plus
-`up`/`down`/`left`/`right`/`forward`/`backward` for the z-axis, but does not
-use the y-down convention since it isn't tied to screen space.
+`Vec3` has the same getters, with the same Y-up directions, plus
+`forward`/`backward` along the z-axis.
 
 ## Length, direction, and normalization
 
