@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Draft |
+| **Status** | Implemented — [#630](https://github.com/Forge-Game-Engine/Forge/pull/630), released in `0.25.0`. See §7 for where the shipped code differs from this draft. |
 | **Engine version at time of writing** | `0.24.2` |
 
 | Module | Change |
@@ -526,3 +526,39 @@ section already uses. "Known limitations" doesn't need a new bullet removed
 (this design doesn't touch scroll views/clipping), but should gain a note
 if Open Question 2 (per-column alignment) or 4 (flexible + content) is
 resolved as "not supported yet" rather than "not applicable."
+
+## 7. Implementation notes
+
+This design shipped in [#630](https://github.com/Forge-Game-Engine/Forge/pull/630)
+and was released in `0.25.0`. The guides at
+`documentation-site/docs/docs/ui/layout-groups.md` and
+`documentation-site/docs/docs/ui/labels-and-text.md` describe the current
+behavior. The rest of this document is kept as the original rationale. The
+shipped code differs from the draft above in these places:
+
+- **DL-02 and open question 4, `'flexible'` + `'content'`:** resolved at
+  the type level, not with a runtime error. `addGridLayoutGroupComponent`'s
+  options are a union keyed on `constraint` (`UiGridLayoutGroupConstraintFields`),
+  so `columnWidthMode`/`rowHeightMode: 'content'` with `'flexible'` is a
+  compile-time error and nothing throws.
+- **DL-04, what `sizeToText` requires:** it requires a `TextEcsComponent`,
+  not a `TextMeshEcsComponent`. The layout group system throws when the
+  entity has no `TextEcsComponent`. When the text hasn't been shaped yet
+  (no `TextMeshEcsComponent` on the first tick), it measures as `0` and
+  corrects itself on the next tick.
+- **§6.1, seeding a `'content'` axis:** a `'content'` column/row starts at
+  `0`, not `cellSize`. Seeding with `cellSize`, as the pseudocode does,
+  would stop a column from ever shrinking below `cellSize` (100 by default).
+- **`createLabel`'s `sizeToText` option** also defaults `verticalAlign` to
+  `'bottom'`. Layout groups give the children they arrange a bottom-left
+  pivot, and the default `'top'` would draw the text a line-height below
+  its measured box.
+- **Open question 1:** `sizeToText` lives on `LayoutElementEcsComponent`,
+  as proposed.
+- **Open question 2:** one `cellAlignment` per grid. Per-column alignment
+  is listed under "Known limitations" in `layout-groups.md`.
+- **Open question 3:** the `layout-groups` demo gained an options-form
+  panel (`_create-options-form.ts`) beside its existing panels.
+- **Docs location:** the UI guide was split into several pages after this
+  was written. The feature is documented in `layout-groups.md` and
+  `labels-and-text.md`, not `ui/index.md`.
