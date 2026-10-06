@@ -1,5 +1,3 @@
-import { Entity } from './entity.js';
-
 // How an entity handle is packed: the low 20 bits are its slot index, the
 // next 10 its slot's generation. 30 bits in all, so every handle stays below
 // 2^30 and V8 keeps it a small integer rather than a heap number, which
@@ -21,5 +19,5 @@ export const maxEntities = entityIndexMask + 1;
  * @param generation - The slot's generation.
  * @returns The entity handle.
  */
-export const createEntityHandle = (index: number, generation: number): Entity =>
+export const createEntityHandle = (index: number, generation: number): number =>
   ((generation & entityGenerationMask) << entityIndexBits) | index;

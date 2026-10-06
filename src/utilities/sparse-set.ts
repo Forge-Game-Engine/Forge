@@ -1,4 +1,4 @@
-import { Entity, entityIndex } from '../ecs/entity.js';
+import { entityIndex } from '../ecs/entity.js';
 
 /**
  * A sparse set implementation for efficient storage of components in an ECS architecture.
@@ -8,7 +8,7 @@ import { Entity, entityIndex } from '../ecs/entity.js';
  */
 export class SparseSet<T> {
   public readonly sparseArray: Array<number>;
-  public readonly denseEntities: Array<Entity>;
+  public readonly denseEntities: Array<number>;
   public readonly denseComponents: Array<T>;
   public readonly isTag: boolean;
 
@@ -28,7 +28,7 @@ export class SparseSet<T> {
    * @param entity - The entity handle to check.
    * @returns True if the entity has a component in the set, false otherwise.
    */
-  public has(entity: Entity): boolean {
+  public has(entity: number): boolean {
     const index = this.sparseArray[entityIndex(entity)];
 
     return (
@@ -41,7 +41,7 @@ export class SparseSet<T> {
    * @param entity - The entity handle to get the component for.
    * @returns The component if the entity has one in the set, null otherwise.
    */
-  public get(entity: Entity): T | null {
+  public get(entity: number): T | null {
     return this.has(entity)
       ? this.denseComponents[this.sparseArray[entityIndex(entity)]]
       : null;
@@ -52,7 +52,7 @@ export class SparseSet<T> {
    * @param entity - The entity handle to add the component for.
    * @param component - The component to add.
    */
-  public add(entity: Entity, component: T): void {
+  public add(entity: number, component: T): void {
     if (this.has(entity)) {
       this.denseComponents[this.sparseArray[entityIndex(entity)]] = component;
 
@@ -69,7 +69,7 @@ export class SparseSet<T> {
    * Removes the component for the specified entity.
    * @param entity - The entity handle to remove the component for.
    */
-  public remove(entity: Entity): void {
+  public remove(entity: number): void {
     if (!this.has(entity)) {
       return;
     }

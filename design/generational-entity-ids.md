@@ -12,7 +12,7 @@
 
 | Path                                                     | Change   | Notes                                                                                       |
 | -------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| `src/ecs/entity.ts`                                      | **New**  | `Entity` type alias, handle packing (`entityIndex`, `entityGeneration`), `formatEntity`     |
+| `src/ecs/entity.ts`                                      | **New**  | Handle packing (`entityIndex`, `entityGeneration`), `formatEntity`; entities stay `number`  |
 | `src/ecs/ecs-world.ts`                                   | Modified | Slot table with generations, `isAlive`, idempotent `removeEntity`, explicit entity lifetime |
 | `src/utilities/sparse-set.ts`                            | Modified | Indexes its sparse array by the handle's index; membership compares the full handle         |
 | `src/common/systems/transform-system.ts`                 | Modified | Prunes its frozen set when entities are removed                                             |
@@ -142,12 +142,10 @@ generation = handle >>> 20      (0 .. 1,023, then wraps)
 ```
 
 ```ts
-export type Entity = number;
-
-export const entityIndex = (entity: Entity): number => entity & 0xfffff;
-export const entityGeneration = (entity: Entity): number => entity >>> 20;
+export const entityIndex = (entity: number): number => entity & 0xfffff;
+export const entityGeneration = (entity: number): number => entity >>> 20;
 /** "12v3": index 12, generation 3. For error messages and debugging. */
-export const formatEntity = (entity: Entity): string =>
+export const formatEntity = (entity: number): string =>
   `${entityIndex(entity)}v${entityGeneration(entity)}`;
 ```
 
@@ -369,6 +367,9 @@ The benchmark in task 1.7 checks the cost to locality.
    games.
    - (a) Plain alias now, brand later if misuse shows up (proposed).
      (b) Brand in Phase 1.
+   - Resolved in implementation: neither. A plain alias adds no type
+     safety (the linter flags it as redundant), so entities stay
+     `number`. Branding stays open for later.
 2. **Generation overflow.** After 1,024 reuses of one slot, its generation
    wraps and a handle held across all of them would match again. With
    oldest-first reuse that takes 1,024 times as many removals as there are
