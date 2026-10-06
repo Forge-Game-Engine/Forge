@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **rendering:** `Color`'s red, green and blue are no longer clamped to `1`, so a tint can make a sprite brighter than its texture: a button can rest at `Color.white` and brighten on hover with a `hoverColor` such as `new Color(1.2, 1.2, 1.2)`, and on an `hdr` camera a sprite tinted `new Color(3, 3, 3)` blooms more than a white-tinted one. On the canvas or an 8-bit render target, each channel of the result still stops at full brightness. Negative channels are still clamped to `0` and alpha to `[0, 1]`, and `toRGBAString` writes channels above `1` as `255`. If you dimmed sprites below `1` at rest so they could brighten, tint them `Color.white` at rest and above `1` when brightened instead. If you relied on values above `1` being clamped (for example a color eased with an overshooting easing), clamp them yourself. `Color.fromHSLA` now throws for a saturation or lightness outside `0`-`100`
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed
