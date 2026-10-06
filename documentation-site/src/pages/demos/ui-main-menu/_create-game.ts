@@ -4,6 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   actionResetTypes,
   Axis2dAction,
@@ -151,12 +152,9 @@ function createUiInputs(
  * label, and the first row ("Campaign") starts focused - matching the
  * reference design, where it's highlighted at rest rather than only once
  * the player has moved focus onto it.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createUiMainMenuGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createUiMainMenuGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   const camera = createCamera(world, {
@@ -168,7 +166,15 @@ export const createUiMainMenuGame = async (
   await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
     world,

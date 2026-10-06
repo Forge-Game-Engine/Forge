@@ -3,6 +3,7 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   addSpriteComponent,
   Color,
@@ -73,12 +74,9 @@ async function createBackdrop(
  * player input, since a progress bar reports state rather than accepting
  * it) - `createUiProgressBarEcsSystem` picks up the write the same frame
  * it's made, unlike a slider, which has no such guarantee.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createProgressBarGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createProgressBarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   const camera = createCamera(world, {
@@ -90,7 +88,15 @@ export const createProgressBarGame = async (
   await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   registerUiSystems(world, renderContext, time);
 

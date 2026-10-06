@@ -19,10 +19,8 @@ Three pieces make up the module:
   file, sized to your game's actual `charset`.
 - [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache), which loads
   that JSON/image pair at runtime into a
-  [`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas), following the same
-  [`AssetCache`](/Forge/docs/api/interfaces/AssetCache) contract as the
-  rest of the engine's asset loading (see
-  [Asset Loading](../asset-loading/index.md)).
+  [`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas) (see
+  [Loading a Font Atlas](./loading-a-font-atlas.md)).
 - [`addTextComponent`](/Forge/docs/api/functions/addTextComponent) and
   [`createTextShapingEcsSystem`](/Forge/docs/api/functions/createTextShapingEcsSystem),
   which draw a string from a loaded `FontAtlas` through the render system
@@ -31,34 +29,44 @@ Three pieces make up the module:
 ## Quick start
 
 The engine ships a pre-generated default atlas (Liberation Sans, SIL Open
-Font License 1.1) at `assets/fonts/default/` (`default.json`, `default.png`,
-and a `License.txt` with the font's attribution) inside the
-`@forge-game-engine/forge` package itself, so you can render text with zero
-font setup - no `.ttf`, no `forge-generate-font-atlas` run, nothing to
-license or commit yourself. `FontAtlasCache.getOrLoad` just needs those
-three files reachable at a URL, the same as any atlas you generate
-yourself, so copy (or have your build script copy) them from
-`node_modules/@forge-game-engine/forge/assets/fonts/default/` into your
-project's own served assets directory - most bundlers don't serve
-`node_modules` directly:
+Font License 1.1) inside the `@forge-game-engine/forge` package, so you can
+render text with zero font setup - no `.ttf`, no `forge-generate-font-atlas`
+run. Import its two files through the package's `fonts/default` exports and
+pass the URLs your bundler gives you (this is Vite; see
+[Loading a Font Atlas](./loading-a-font-atlas.md#importing-atlases-through-a-bundler)
+for webpack):
 
 ```ts
+import defaultFontMetricsUrl from '@forge-game-engine/forge/fonts/default/default.json?url';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
 const fontAtlasCache = new FontAtlasCache();
-const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/default.json');
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: defaultFontMetricsUrl,
+  imageUrl: defaultFontImageUrl,
+});
 ```
+
+The font's attribution is in `assets/fonts/default/License.txt` in the
+package.
 
 When you need your own font (a different look, or characters the default
 atlas's ASCII charset doesn't cover), generate one:
 
 ```bash
 npm install --save-dev msdf-bmfont-xml
-npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out assets/fonts/my-font
+npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out src/fonts/my-font
 ```
 
 ```ts
-const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
+import myFontMetricsUrl from './fonts/my-font.json?url';
+import myFontImageUrl from './fonts/my-font.png';
+
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: myFontMetricsUrl,
+  imageUrl: myFontImageUrl,
+});
 
 console.log(fontAtlas.data.glyphs.get('A'.codePointAt(0)!));
 ```

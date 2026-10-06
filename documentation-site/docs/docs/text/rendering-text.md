@@ -23,7 +23,10 @@ import {
 } from '@forge-game-engine/forge/text';
 
 const fontAtlasCache = new FontAtlasCache();
-const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/body.json');
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: 'assets/fonts/body.json',
+  imageUrl: 'assets/fonts/body.png',
+});
 
 const label = world.createEntity();
 addPositionComponent(world, label, { local: { x: 400, y: 300 } });

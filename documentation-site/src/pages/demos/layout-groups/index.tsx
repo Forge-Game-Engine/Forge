@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createLayoutGroupsGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import menuCode from '!!raw-loader!./_create-menu';
@@ -10,13 +9,6 @@ import optionsFormCode from '!!raw-loader!./_create-options-form';
 import { Demo } from '@site/src/components/Demo';
 
 export default function LayoutGroups(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createLayoutGroupsGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -26,7 +18,7 @@ export default function LayoutGroups(): JSX.Element {
       }}
       header="Layout Groups"
       blurb="Four panels, each arranged automatically instead of by hand. 'Menu' stacks three buttons with a VerticalLayoutGroupEcsComponent, and shrink-wraps its own size to fit them via a ContentSizeFitterEcsComponent - resize a button and the panel follows. 'Toolbar' spaces a row of icons evenly with a HorizontalLayoutGroupEcsComponent. 'Inventory' places eight cells into a fixed 4-column grid with a GridLayoutGroupEcsComponent. 'Options' uses that same component with columnWidthMode: 'content' instead - the label column sizes itself to whichever of 'Music'/'Fullscreen' is widest, so both rows' controls line up on the same left edge. None of the arranged children set their own anchoredPosition or size - createUiLayoutGroupEcsSystem computes all of it, every frame."
-      createGame={createGame}
+      createGame={createLayoutGroupsGame}
       codeFiles={[
         { name: 'game.ts', content: gameCode },
         { name: 'create-menu.ts', content: menuCode },

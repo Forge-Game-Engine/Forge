@@ -7,8 +7,8 @@ import {
 } from './font-atlas-data.js';
 
 /**
- * The on-disk, JSON-serializable shape of a committed font atlas asset
- * (`<name>.json`, sitting alongside `<name>.png`). This is the same data as
+ * The on-disk, JSON-serializable shape of a font atlas's metrics file
+ * (`<name>.json`, generated together with its `<name>.png` image). This is the same data as
  * `FontAtlasData`, except `glyphs`/`kerning` use JSON-safe arrays/records
  * instead of `Map`s. `toFontAtlasData` converts one into the other.
  */
@@ -18,9 +18,6 @@ export interface FontAtlasFileData {
 
   /** `'msdf'` for v1; reserved for `'mtsdf'` later. */
   type: 'msdf';
-
-  /** Atlas texture path, relative to this JSON file. */
-  atlasImage: string;
 
   /** Atlas texture pixel dimensions. */
   atlasSize: AtlasSize;
@@ -48,7 +45,6 @@ export function toFontAtlasData(fileData: FontAtlasFileData): FontAtlasData {
   return {
     formatVersion: fileData.formatVersion,
     type: fileData.type,
-    atlasImage: fileData.atlasImage,
     atlasSize: fileData.atlasSize,
     distanceRange: fileData.distanceRange,
     metrics: fileData.metrics,

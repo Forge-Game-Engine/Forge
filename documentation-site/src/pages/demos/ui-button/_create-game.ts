@@ -4,6 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   actionResetTypes,
   Axis2dAction,
@@ -140,10 +141,9 @@ function createUiInputs(
  * path, updating a status label with which one was last invoked. Hovering
  * a button also focuses it, so the highlight follows the mouse the same
  * way it follows the keyboard.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
+export const createButtonGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   const camera = createCamera(world, {
@@ -155,7 +155,15 @@ export const createButtonGame = async (fontAtlasUrl: string): Promise<Game> => {
   await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
     world,
