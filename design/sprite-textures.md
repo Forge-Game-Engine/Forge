@@ -29,21 +29,27 @@
 
 ## 1. Summary
 
-A sprite today holds a `Renderable`: a geometry, a material (a compiled
-and linked shader program plus its uniform values), the instance layout,
-and the render category cameras cull by. `createImageSprite(image, ...)`
-builds all of that for each image it's given, so:
+A sprite today holds a `Renderable`: a geometry, a material, the instance
+layout, and the render category cameras cull by. A `Material` is what
+other engines call a material instance: a compiled and linked shader
+program plus its uniform values, textures included, with no shared
+program underneath. `createImageSprite(image, ...)` builds all of that for
+each image it's given, so:
 
-- **Every image compiles and links the sprite shaders again.** The demo's
-  HUD alone calls `createImageSprite` for 47 images, and its UI for dozens
-  of icons. Each is a new program, a new quad geometry and a new texture,
-  and none of them is ever freed.
-- **Sprites of the same image don't batch unless they share one
-  `createImageSprite` result**, because the batch key is the `Renderable`.
-- **An image is welded to a pipeline.** To show a different image on an
-  entity, the demo swaps `sprite.renderable` for another prebuilt one (the
-  how-to-play pages, the boosted engine flames, the HUD's speed meter). To
-  show an image made at runtime (the leaderboard's QR code), it creates a
+- **Every image is its own material, and every material compiles and
+  links its shaders.** The image is the material's `u_texture` uniform, so
+  `createImageSprite` creates a new `Material` per call, and `Material`'s
+  constructor compiles and links a new program (a TODO in `material.ts`
+  notes the missing cache), along with a new quad geometry and a new
+  texture. None of them is ever freed. Sprites showing the same image can
+  share one result, and the demo's do; what they can't share is a program
+  across images. The demo's HUD alone has 47 images, and its UI dozens of
+  icons.
+- **An image made at runtime needs raw GL.** Changing an entity's image by
+  swapping `sprite.renderable` for another prebuilt one (the how-to-play
+  pages, the boosted engine flames, the HUD's speed meter) works, but every
+  image it can swap to is a full pipeline built up front. An image made at
+  runtime (the leaderboard's QR code) has no such path: the demo creates a
   texture with `createTextureFromImage`, sets it on a renderable's
   material, and deletes the previous texture with raw GL.
 - **Textures have no owner.** `createTextureFromImage` accepts any
