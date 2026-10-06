@@ -4,6 +4,7 @@ import { Stoppable, Updatable } from '../common/index.js';
 import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem } from './ecs-system.js';
+import { RunCondition } from './run-condition.js';
 
 export interface QueryResult<T extends readonly unknown[]> {
   entities: readonly number[];
@@ -28,6 +29,13 @@ export interface AddSystemOptions {
    * already be registered (via `addSystem`) in the same group as this one.
    */
   after?: EcsSystem[];
+
+  /**
+   * Runs the system only on ticks where this returns `true`. Checked each
+   * tick just before the system would run, after its group's own `runIf`.
+   * A system that doesn't run isn't queried.
+   */
+  runIf?: RunCondition;
 }
 
 export interface AddSystemGroupOptions {
@@ -42,6 +50,12 @@ export interface AddSystemGroupOptions {
    * already be registered via `addSystemGroup`.
    */
   after?: EcsSystemGroup[];
+
+  /**
+   * Runs the group's systems only on ticks where this returns `true`.
+   * Checked each tick just before the group would run.
+   */
+  runIf?: RunCondition;
 }
 
 export class EcsWorld implements Updatable, Stoppable {
@@ -59,7 +73,15 @@ export class EcsWorld implements Updatable, Stoppable {
     EcsSystemGroup
   >;
   private readonly _groupGraph: DirectedAcyclicGraph<EcsSystemGroup>;
+  private readonly _firstSystemGroup: EcsSystemGroup;
   private readonly _defaultSystemGroup: EcsSystemGroup;
+  private readonly _startOfTickGroups: Set<EcsSystemGroup>;
+  private readonly _restOfTickGroups: Set<EcsSystemGroup>;
+  private readonly _systemRunConditions: Map<
+    EcsSystem<readonly unknown[]>,
+    RunCondition
+  >;
+  private readonly _groupRunConditions: Map<EcsSystemGroup, RunCondition>;
 
   constructor() {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
@@ -69,8 +91,31 @@ export class EcsWorld implements Updatable, Stoppable {
     this._groupGraph = new DirectedAcyclicGraph<EcsSystemGroup>(
       (group) => group.name,
     );
+    this._startOfTickGroups = new Set();
+    this._restOfTickGroups = new Set();
+    this._systemRunConditions = new Map();
+    this._groupRunConditions = new Map();
+
+    this._firstSystemGroup = createSystemGroup('first');
+    this._groupGraph.addNode(this._firstSystemGroup);
+    this._startOfTickGroups.add(this._firstSystemGroup);
+
     this._defaultSystemGroup = createSystemGroup('default');
-    this._groupGraph.addNode(this._defaultSystemGroup);
+    this.addSystemGroup(this._defaultSystemGroup);
+  }
+
+  /**
+   * The group that runs before every other group of the tick, however the
+   * other groups are ordered. Game state transitions run here, so every
+   * system of a tick sees the same state. Ordering a group `before` it
+   * throws.
+   *
+   * A group ordered `after` it (or after another group that is) joins the
+   * start of the tick: it runs before every group that isn't, including
+   * groups added later. A game state's exit and enter groups work this way.
+   */
+  get firstSystemGroup(): EcsSystemGroup {
+    return this._firstSystemGroup;
   }
 
   /**
@@ -90,16 +135,43 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
-   * Registers a system group, ordering it relative to other groups.
+   * Registers a system group, ordering it relative to other groups. Every
+   * group runs after `firstSystemGroup`. A group ordered `after` the first
+   * group, or after another group that is, runs at the start of the tick,
+   * before every other group.
    * @param group - The group to register.
-   * @param options - `before`/`after` groups to order this group against.
-   * Every referenced group must already be registered.
+   * @param options - `before`/`after` groups to order this group against,
+   * and a `runIf` condition. Every referenced group must already be
+   * registered.
+   * @throws An error if `group` is the first group, if it's ordered before
+   * the first group, if a start-of-tick group is ordered after a group
+   * that isn't, or if a group that isn't is ordered before one that is.
    */
   public addSystemGroup(
     group: EcsSystemGroup,
     options: AddSystemGroupOptions = {},
   ): void {
-    const { before = [], after = [] } = options;
+    const { before = [], after = [], runIf } = options;
+
+    if (group === this._firstSystemGroup) {
+      throw new Error(
+        `Unable to add system group "${group.name}", it's the world's built-in first group.`,
+      );
+    }
+
+    if (before.includes(this._firstSystemGroup)) {
+      throw new Error(
+        `Unable to order system group "${group.name}" before the first group, every group runs after it.`,
+      );
+    }
+
+    // A registered group keeps its place in the tick; a new one joins the
+    // start of the tick when it's ordered after a group that's there.
+    const isStartOfTick = this._groupGraph.has(group)
+      ? this._startOfTickGroups.has(group)
+      : after.some((afterGroup) => this._startOfTickGroups.has(afterGroup));
+
+    this._requireTickPosition(group, isStartOfTick, before, after);
 
     this._groupGraph.addNode(group);
 
@@ -109,6 +181,12 @@ export class EcsWorld implements Updatable, Stoppable {
 
     for (const afterGroup of after) {
       this._groupGraph.addEdge(afterGroup, group);
+    }
+
+    this._placeGroupInTick(group, isStartOfTick);
+
+    if (runIf) {
+      this._groupRunConditions.set(group, runIf);
     }
   }
 
@@ -127,6 +205,7 @@ export class EcsWorld implements Updatable, Stoppable {
       group = this._defaultSystemGroup,
       before = [],
       after = [],
+      runIf,
     } = options;
 
     if (!this._groupGraph.has(group)) {
@@ -146,6 +225,10 @@ export class EcsWorld implements Updatable, Stoppable {
 
     systemGraph.addNode(system);
     this._groupBySystem.set(system, group);
+
+    if (runIf) {
+      this._systemRunConditions.set(system, runIf);
+    }
 
     for (const beforeSystem of before) {
       this._requireSameGroup(system, beforeSystem, group);
@@ -170,13 +253,31 @@ export class EcsWorld implements Updatable, Stoppable {
       this._groupBySystem.delete(system);
     }
 
+    this._systemRunConditions.delete(system);
+
     system.cleanup?.(this);
   }
 
+  /**
+   * Runs one tick: every group in order, and every system of each group in
+   * order. A group or system whose `runIf` returns `false` is skipped
+   * without being queried. Conditions are checked just before the group or
+   * system would run, so they see what earlier systems of the tick did.
+   */
   public update(): void {
-    for (const system of this._getOrderedSystems()) {
-      const results = this.query(system.query, system.tags);
-      system.update(this, results);
+    for (const { group, systems } of this._getOrderedGroups()) {
+      if (!this._shouldRun(this._groupRunConditions.get(group))) {
+        continue;
+      }
+
+      for (const system of systems) {
+        if (!this._shouldRun(this._systemRunConditions.get(system))) {
+          continue;
+        }
+
+        const results = this.query(system.query, system.tags);
+        system.update(this, results);
+      }
     }
   }
 
@@ -416,18 +517,74 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
+  private _getOrderedGroups(): {
+    group: EcsSystemGroup;
+    systems: EcsSystem<readonly unknown[]>[];
+  }[] {
+    return this._groupGraph.topologicalSort().map((group) => ({
+      group,
+      systems: this._systemGraphsByGroup.get(group)?.topologicalSort() ?? [],
+    }));
+  }
+
   private _getOrderedSystems(): EcsSystem<readonly unknown[]>[] {
-    const orderedSystems: EcsSystem<readonly unknown[]>[] = [];
+    return this._getOrderedGroups().flatMap(({ systems }) => systems);
+  }
 
-    for (const group of this._groupGraph.topologicalSort()) {
-      const systemGraph = this._systemGraphsByGroup.get(group);
+  private _shouldRun(runIf: RunCondition | undefined): boolean {
+    return runIf === undefined || runIf(this);
+  }
 
-      if (systemGraph) {
-        orderedSystems.push(...systemGraph.topologicalSort());
+  private _requireTickPosition(
+    group: EcsSystemGroup,
+    isStartOfTick: boolean,
+    before: readonly EcsSystemGroup[],
+    after: readonly EcsSystemGroup[],
+  ): void {
+    if (isStartOfTick) {
+      const laterGroup = after.find(
+        (afterGroup) => !this._startOfTickGroups.has(afterGroup),
+      );
+
+      if (laterGroup) {
+        throw new Error(
+          `Unable to order system group "${group.name}" after "${laterGroup.name}", "${group.name}" runs at the start of the tick (after the first group) and "${laterGroup.name}" doesn't.`,
+        );
       }
+
+      return;
     }
 
-    return orderedSystems;
+    const earlierGroup = before.find((beforeGroup) =>
+      this._startOfTickGroups.has(beforeGroup),
+    );
+
+    if (earlierGroup) {
+      throw new Error(
+        `Unable to order system group "${group.name}" before "${earlierGroup.name}", "${earlierGroup.name}" runs at the start of the tick (after the first group) and "${group.name}" doesn't.`,
+      );
+    }
+  }
+
+  private _placeGroupInTick(
+    group: EcsSystemGroup,
+    isStartOfTick: boolean,
+  ): void {
+    if (isStartOfTick) {
+      this._startOfTickGroups.add(group);
+
+      for (const laterGroup of this._restOfTickGroups) {
+        this._groupGraph.addEdge(group, laterGroup);
+      }
+
+      return;
+    }
+
+    this._restOfTickGroups.add(group);
+
+    for (const earlierGroup of this._startOfTickGroups) {
+      this._groupGraph.addEdge(earlierGroup, group);
+    }
   }
 
   private _generateEntityId(): number {

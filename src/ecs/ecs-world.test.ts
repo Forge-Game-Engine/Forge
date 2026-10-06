@@ -665,6 +665,272 @@ describe('EcsWorld', () => {
     });
   });
 
+  describe('run conditions', () => {
+    it('skips a system whose condition is false, without querying it', () => {
+      const world = new EcsWorld();
+      const update = vi.fn();
+      const querySpy = vi.spyOn(world, 'query');
+
+      world.addSystem(
+        { name: 'gated', query: [positionId], update },
+        { runIf: () => false },
+      );
+
+      world.update();
+
+      expect(update).not.toHaveBeenCalled();
+      expect(querySpy).not.toHaveBeenCalled();
+    });
+
+    it('runs a system whose condition is true', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+
+      world.addSystem(trackingSystem('gated', calls), { runIf: () => true });
+
+      world.update();
+
+      expect(calls).toEqual(['gated']);
+    });
+
+    it('passes the world to the condition', () => {
+      const world = new EcsWorld();
+      const runIf = vi.fn(() => true);
+
+      world.addSystem(trackingSystem('gated', []), { runIf });
+
+      world.update();
+
+      expect(runIf).toHaveBeenCalledWith(world);
+    });
+
+    it('checks the condition every tick', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      let enabled = false;
+
+      world.addSystem(trackingSystem('gated', calls), {
+        runIf: () => enabled,
+      });
+
+      world.update();
+      enabled = true;
+      world.update();
+
+      expect(calls).toEqual(['gated']);
+    });
+
+    it('checks the condition just before the system runs, after earlier systems of the tick', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      let enabled = false;
+
+      world.addSystem({
+        name: 'enabler',
+        query: [],
+        update: () => {
+          enabled = true;
+        },
+      });
+      world.addSystem(trackingSystem('gated', calls), {
+        runIf: () => enabled,
+      });
+
+      world.update();
+
+      expect(calls).toEqual(['gated']);
+    });
+
+    it('skips every system of a group whose condition is false, without checking their own', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const systemRunIf = vi.fn(() => true);
+      const group = createSystemGroup('gated');
+
+      world.addSystemGroup(group, { runIf: () => false });
+      world.addSystem(trackingSystem('a', calls), {
+        group,
+        runIf: systemRunIf,
+      });
+      world.addSystem(trackingSystem('b', calls), { group });
+
+      world.update();
+
+      expect(calls).toEqual([]);
+      expect(systemRunIf).not.toHaveBeenCalled();
+    });
+
+    it('runs a system only when both its group condition and its own are true', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('gated');
+
+      world.addSystemGroup(group, { runIf: () => true });
+      world.addSystem(trackingSystem('on', calls), {
+        group,
+        runIf: () => true,
+      });
+      world.addSystem(trackingSystem('off', calls), {
+        group,
+        runIf: () => false,
+      });
+
+      world.update();
+
+      expect(calls).toEqual(['on']);
+    });
+
+    it('still calls cleanup for a gated system when it is removed', () => {
+      const world = new EcsWorld();
+      const cleanup = vi.fn();
+      const system: EcsSystem<[]> = { query: [], update: () => {}, cleanup };
+
+      world.addSystem(system, { runIf: () => false });
+      world.update();
+      world.removeSystem(system);
+
+      expect(cleanup).toHaveBeenCalledWith(world);
+    });
+
+    it('still calls cleanup for a gated system when the world stops', () => {
+      const world = new EcsWorld();
+      const cleanup = vi.fn();
+      const group = createSystemGroup('gated');
+
+      world.addSystemGroup(group, { runIf: () => false });
+      world.addSystem({ query: [], update: () => {}, cleanup }, { group });
+      world.stop();
+
+      expect(cleanup).toHaveBeenCalledWith(world);
+    });
+
+    it('forgets the condition of a removed system', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const system = trackingSystem('system', calls);
+
+      world.addSystem(system, { runIf: () => false });
+      world.removeSystem(system);
+      world.addSystem(system);
+      world.update();
+
+      expect(calls).toEqual(['system']);
+    });
+  });
+
+  describe('first system group', () => {
+    it('runs before a group added earlier and ordered before the default group', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const early = createSystemGroup('early');
+
+      world.addSystemGroup(early, { before: [world.defaultSystemGroup] });
+      world.addSystem(trackingSystem('early', calls), { group: early });
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystem(trackingSystem('first', calls), {
+        group: world.firstSystemGroup,
+      });
+
+      world.update();
+
+      expect(calls).toEqual(['first', 'early', 'default']);
+    });
+
+    it('throws when a group is ordered before it', () => {
+      const world = new EcsWorld();
+
+      expect(() =>
+        world.addSystemGroup(createSystemGroup('too-early'), {
+          before: [world.firstSystemGroup],
+        }),
+      ).toThrow(/before the first group/);
+    });
+
+    it('throws when it is added as a group', () => {
+      const world = new EcsWorld();
+
+      expect(() => world.addSystemGroup(world.firstSystemGroup)).toThrow(
+        /built-in first group/,
+      );
+    });
+
+    it('runs groups ordered after it before every other group, including ones added earlier or later', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const input = createSystemGroup('input');
+      const start = createSystemGroup('start');
+      const startAfter = createSystemGroup('start-after');
+      const late = createSystemGroup('late');
+
+      world.addSystemGroup(input, { before: [world.defaultSystemGroup] });
+      world.addSystemGroup(start, { after: [world.firstSystemGroup] });
+      world.addSystemGroup(startAfter, { after: [start] });
+      world.addSystemGroup(late);
+
+      world.addSystem(trackingSystem('late', calls), { group: late });
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystem(trackingSystem('input', calls), { group: input });
+      world.addSystem(trackingSystem('start-after', calls), {
+        group: startAfter,
+      });
+      world.addSystem(trackingSystem('start', calls), { group: start });
+      world.addSystem(trackingSystem('first', calls), {
+        group: world.firstSystemGroup,
+      });
+
+      world.update();
+
+      expect(calls).toEqual([
+        'first',
+        'start',
+        'start-after',
+        'input',
+        'default',
+        'late',
+      ]);
+    });
+
+    it('throws when a start-of-tick group is ordered after a group that is not', () => {
+      const world = new EcsWorld();
+
+      expect(() =>
+        world.addSystemGroup(createSystemGroup('start'), {
+          after: [world.firstSystemGroup, world.defaultSystemGroup],
+        }),
+      ).toThrow(/runs at the start of the tick/);
+    });
+
+    it('throws when a group is ordered before a start-of-tick group', () => {
+      const world = new EcsWorld();
+      const start = createSystemGroup('start');
+
+      world.addSystemGroup(start, { after: [world.firstSystemGroup] });
+
+      expect(() =>
+        world.addSystemGroup(createSystemGroup('other'), { before: [start] }),
+      ).toThrow(/runs at the start of the tick/);
+    });
+
+    it('keeps a registered group in its place when it is added again', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const start = createSystemGroup('start');
+      const other = createSystemGroup('other');
+
+      world.addSystemGroup(other);
+      world.addSystemGroup(start, { after: [world.firstSystemGroup] });
+      world.addSystemGroup(other, { after: [start] });
+
+      world.addSystem(trackingSystem('other', calls), { group: other });
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystem(trackingSystem('start', calls), { group: start });
+
+      world.update();
+
+      expect(calls).toEqual(['start', 'default', 'other']);
+    });
+  });
+
   describe('onEntityRemoved', () => {
     it('raises onEntityRemoved with the entity id when removeEntity is called', () => {
       const world = new EcsWorld();

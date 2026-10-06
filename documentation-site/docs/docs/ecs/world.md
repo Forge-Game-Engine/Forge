@@ -34,6 +34,7 @@ world.removeEntity(entity);
 ```
 
 This removes every component/tag the entity had and marks the id as available.
+Entities parented to it (with `addParentComponent`) aren't removed with it.
 
 ## Adding a component to the entity
 
@@ -198,6 +199,35 @@ used to serve.
 group; ordering systems across different groups is done by ordering their
 groups against each other instead.
 
+### The first group and the start of the tick
+
+Every `EcsWorld` also has a `firstSystemGroup`, which runs before every other
+group of the tick, however the other groups are ordered. Game state
+transitions run there (see [Game States](../states/index.md)), so every
+system of a tick sees the same state. Ordering a group `before` it throws.
+
+A group ordered `after: [world.firstSystemGroup]`, or after another group
+that is, joins the start of the tick: it runs after the first group and
+before every group that isn't there, including groups added earlier or
+later. A game state's exit and enter groups are placed this way, so a
+state is set up before any other system runs, even the input update group
+`registerInputs` orders before the default group.
+
+```ts
+const loadLevelGroup = createSystemGroup('load-level');
+
+world.addSystemGroup(loadLevelGroup, { after: [world.firstSystemGroup] });
+```
+
+A start-of-tick group can't be ordered after a group that isn't at the start
+of the tick, and no other group can be ordered before it. Both throw.
+
+### Run conditions
+
+`addSystem` and `addSystemGroup` take a `runIf` function that decides, each
+tick, whether the system or group runs. See
+[System](./system.md#run-conditions).
+
 ## Remove a system
 
 Remove a system with `removeSystem(system)`.
@@ -216,7 +246,8 @@ it will still run as part of the current tick. The removal is only committed at 
 Call `world.update()` to run the registered systems for a single frame. For
 each registered system, the world queries `query` (and `tags`) and invokes the
 system's `update` exactly once with the batch of matches, regardless of how
-many entities matched (including zero).
+many entities matched (including zero). A system or group whose `runIf`
+returns `false` is skipped, and the skipped system isn't queried.
 
 In normal usage you don't call `update()` manually. The main loop in `Game` calls it for you every frame. Calling `update()` directly is useful for unit tests.
 

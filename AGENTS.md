@@ -112,6 +112,7 @@ this step by step for bug fixes.
   /physics                 # Physics integration
   /pooling                 # Object pooling
   /rendering               # Rendering system
+  /states                  # Game states (createGameState), inState/onEnter/onExit run conditions, state-scoped entities
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
   /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, layout groups, content size/aspect ratio fitters)

@@ -34,6 +34,13 @@ export const demos: Demo[] = [
     categories: ['physics', 'games'],
   },
   {
+    slug: 'game-states',
+    title: 'Game States',
+    description:
+      'A menu, a round and a game-over screen, switched with a game state, run conditions and state-scoped entities.',
+    categories: ['ecs', 'games'],
+  },
+  {
     slug: 'ecs',
     title: 'ECS',
     description:

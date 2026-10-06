@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **ecs:** Systems and system groups can run conditionally. Pass a `runIf` function of the world to `addSystem` or `addSystemGroup`, and the world checks it each tick just before the system or group would run, skipping it (and its query) when it returns `false`. `EcsWorld` also gains a built-in `firstSystemGroup` that runs before every other group of the tick. A group ordered `after` it joins the start of the tick, before every other group. Ordering a group `before` the first group throws, and so does ordering a group before a start-of-tick group, or a start-of-tick group after one that isn't
+- **states:** New `@forge-game-engine/forge/states` module for a game's top-level states (menu, playing, paused, game over). `createGameState(world, initial)` returns a `GameState` whose `set` switches state at the start of the next tick. Its `exitGroup` and `enterGroup` run once per transition, before any other system, holding systems gated with `onExit`/`onEnter`; `inState` gates a system to some states. The initial state is entered on the first tick, and setting the current state again restarts it. `addStateScopedComponent` removes an entity when its state leaves one of `removeOnExit` or enters one of `removeOnEnter`. See the new Game States guide and demo
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed
