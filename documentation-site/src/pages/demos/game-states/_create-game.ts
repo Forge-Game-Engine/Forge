@@ -12,10 +12,10 @@ import {
 } from '@forge-game-engine/forge/input';
 import { Random } from '@forge-game-engine/forge/math';
 import {
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,
+  getCameraView,
   createImageSprite,
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
@@ -62,7 +62,7 @@ export const createGameStatesGame = async (
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
@@ -86,11 +86,7 @@ export const createGameStatesGame = async (
   basketSprite.height = 16;
   basketSprite.tintColor = new Color(0.3, 0.75, 1, 1);
 
-  const visibleSize = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const visibleSize = getCameraView(world, camera, renderContext).size;
   const playArea = {
     halfWidth: visibleSize.x / 2,
     halfHeight: visibleSize.y / 2,

@@ -18,13 +18,18 @@ const renderLayers = {
 export const createStressTestGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createSpriteSpawner(world, renderContext, renderLayers.foreground);
+  await createSpriteSpawner(
+    world,
+    camera,
+    renderContext,
+    renderLayers.foreground,
+  );
 
   const random = new Random();
 

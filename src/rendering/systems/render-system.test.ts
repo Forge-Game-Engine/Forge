@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs';
 import {
   addPositionComponent,
   addRotationComponent,
+  addScaleComponent,
   PositionEcsComponent,
 } from '../../common';
 import { Vec2 } from '../../math';
@@ -23,12 +24,12 @@ import { Material } from '../materials/material';
 import { ShaderCache } from '../shaders';
 import { ImageCache } from '../../asset-loading';
 import { createProjectionMatrix } from '../shaders';
-import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit';
 import {
   addTextComponent,
   TextEcsComponent,
 } from '../../text/components/text-component.js';
 import {
+  GlyphQuad,
   TextMeshEcsComponent,
   textMeshId,
 } from '../../text/components/text-mesh-component.js';
@@ -107,6 +108,9 @@ describe('createRenderEcsSystem', () => {
       isStatic: true,
       cullingMask,
       renderTarget,
+      // Wide enough that tests about anything other than view culling
+      // never place a sprite outside the view.
+      verticalWorldUnits: 10000,
     });
 
     addPositionComponent(world, entity);
@@ -265,19 +269,15 @@ describe('createRenderEcsSystem', () => {
 
     world.update();
 
-    const expectedPixelsPerUnit = calculatePixelsPerUnit(200, 10);
-    const expected = createProjectionMatrix(
-      400,
-      200,
-      Vec2.zero,
-      1,
-      expectedPixelsPerUnit,
-    );
+    const expected = createProjectionMatrix({
+      min: { x: -10000, y: -5000 },
+      max: { x: 10000, y: 5000 },
+    });
 
     expect(material.setUniform).toHaveBeenCalledWith('u_projection', expected);
   });
 
-  it('scales the projection matrix by the camera-derived pixels-per-unit', () => {
+  it("projects the camera's verticalWorldUnits over the canvas's height", () => {
     const entity = world.createEntity();
 
     addCameraComponent(world, entity, {
@@ -295,14 +295,10 @@ describe('createRenderEcsSystem', () => {
     renderContext.resize(400, 200);
     world.update();
 
-    const expectedPixelsPerUnit = calculatePixelsPerUnit(200, 20);
-    const expected = createProjectionMatrix(
-      400,
-      200,
-      Vec2.zero,
-      1,
-      expectedPixelsPerUnit,
-    );
+    const expected = createProjectionMatrix({
+      min: { x: -20, y: -10 },
+      max: { x: 20, y: 10 },
+    });
 
     expect(material.setUniform).toHaveBeenCalledWith('u_projection', expected);
   });
@@ -870,6 +866,243 @@ describe('createRenderEcsSystem', () => {
 
       expect(bindInstanceData).toHaveBeenCalledTimes(2);
       expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('view culling', () => {
+    // An 800x600 canvas and a camera at the origin showing 10 world units
+    // vertically: the view spans x in [-6.67, 6.67] and y in [-5, 5].
+    const addNarrowCamera = (): void => {
+      const entity = world.createEntity();
+
+      addCameraComponent(world, entity, {
+        isStatic: true,
+        verticalWorldUnits: 10,
+      });
+      addPositionComponent(world, entity);
+    };
+
+    const addSpriteAt = (
+      renderable: Renderable,
+      position: { x: number; y: number },
+      overrides: Partial<SpriteEcsComponent> = {},
+    ): number => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: position });
+      addSpriteComponent(
+        world,
+        entity,
+        createSprite(renderable, { pivot: { x: 0.5, y: 0.5 }, ...overrides }),
+      );
+
+      return entity;
+    };
+
+    const drawnSprites = (bindInstanceData: Mock): SpriteEcsComponent[] =>
+      bindInstanceData.mock.calls.map(
+        (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite,
+      );
+
+    it('skips a sprite just outside the top edge', () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteAt(renderable, { x: 0, y: 5.51 });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+      expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+    });
+
+    it('draws a sprite overlapping the top edge by a sliver', () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteAt(renderable, { x: 0, y: 5.49 });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips only the sprites outside the view, keeping the rest in draw order', () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteAt(renderable, { x: 0, y: 2 }, { sortDepth: 2 });
+      addSpriteAt(renderable, { x: -20, y: 0 }, { sortDepth: 0 });
+      addSpriteAt(renderable, { x: 0, y: -2 }, { sortDepth: 1 });
+      addSpriteAt(renderable, { x: 0, y: -20 }, { sortDepth: 3 });
+
+      world.update();
+
+      expect(
+        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+      ).toEqual([1, 2]);
+    });
+
+    it("respects the sprite's rotation", () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      // A 4x0.2 bar centered at x = 8 reaches x = 6 lying flat, inside the
+      // view, but only x = 7.9 standing upright.
+      addSpriteAt(renderable, { x: 8, y: 0 }, { width: 4, height: 0.2 });
+      const upright = addSpriteAt(
+        renderable,
+        { x: 8, y: 0 },
+        { width: 4, height: 0.2, sortDepth: 1 },
+      );
+
+      addRotationComponent(world, upright, { local: Math.PI / 2 });
+
+      world.update();
+
+      expect(
+        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+      ).toEqual([undefined]);
+    });
+
+    it("respects the sprite's scale", () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteAt(renderable, { x: 7.5, y: 0 });
+      const scaled = addSpriteAt(
+        renderable,
+        { x: 7.5, y: 0 },
+        { sortDepth: 1 },
+      );
+
+      addScaleComponent(world, scaled, { local: { x: 4, y: 4 } });
+
+      world.update();
+
+      expect(
+        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+      ).toEqual([1]);
+    });
+
+    it('culls against a moved, zoomed camera', () => {
+      const camera = world.createEntity();
+
+      addCameraComponent(world, camera, {
+        isStatic: true,
+        verticalWorldUnits: 10,
+        zoom: 2,
+      });
+      addPositionComponent(world, camera, { local: { x: 100, y: 0 } });
+
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      // The view spans x in [96.67, 103.33] and y in [-2.5, 2.5].
+      addSpriteAt(renderable, { x: 0, y: 0 });
+      addSpriteAt(renderable, { x: 100, y: 3.1 });
+      addSpriteAt(renderable, { x: 103.5, y: 0 }, { sortDepth: 1 });
+
+      world.update();
+
+      expect(
+        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+      ).toEqual([1]);
+    });
+
+    it('culls each camera against its own view', () => {
+      addNarrowCamera();
+      const farCamera = world.createEntity();
+
+      addCameraComponent(world, farCamera, {
+        isStatic: true,
+        verticalWorldUnits: 10,
+      });
+      addPositionComponent(world, farCamera, { local: { x: 50, y: 0 } });
+
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addSpriteAt(renderable, { x: 0, y: 0 });
+      addSpriteAt(renderable, { x: 50, y: 0 });
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
+      expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(2);
+    });
+
+    it('draws only the nine-slice regions inside the view', () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      // Spans x in [6, 16]: only its 1-unit-wide left column reaches into
+      // the view.
+      addSpriteAt(
+        renderable,
+        { x: 11, y: 0 },
+        {
+          width: 10,
+          height: 6,
+          slices: { left: 1, right: 1, top: 1, bottom: 1 },
+        },
+      );
+
+      world.update();
+
+      expect(bindInstanceData).toHaveBeenCalledTimes(3);
+      expect(
+        drawnSprites(bindInstanceData).every((sprite) => sprite.width === 1),
+      ).toBe(true);
+    });
+
+    it('draws only the glyphs of a text inside the view', () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+      const glyph = (x: number): GlyphQuad => ({
+        offset: { x, y: 0 },
+        size: { x: 1, y: 1 },
+        uvOffset: Vec2.zero,
+        uvScale: Vec2.one,
+      });
+
+      addTextEntity(renderable, 0, {
+        glyphs: [glyph(5), glyph(6.5), glyph(7.5)],
+      });
+
+      world.update();
+
+      expect(
+        bindInstanceData.mock.calls.map(
+          (call) =>
+            (call[0] as { position: PositionEcsComponent }).position.world.x,
+        ),
+      ).toEqual([5, 6.5]);
+    });
+
+    it("draws an off-screen text's outline and shadow with its visible glyphs", () => {
+      addNarrowCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(
+        renderable,
+        0,
+        {
+          glyphs: [
+            {
+              offset: { x: 6.9, y: 0 },
+              size: { x: 1, y: 1 },
+              uvOffset: Vec2.zero,
+              uvScale: Vec2.one,
+            },
+          ],
+        },
+        { outlineWidth: 2, shadowColor: new Color(0, 0, 0, 1) },
+      );
+
+      world.update();
+
+      // The effects pass draws inside the same glyph quad as the fill, so
+      // a glyph reaching into the view keeps both.
+      expect(bindInstanceData).toHaveBeenCalledTimes(2);
     });
   });
 });

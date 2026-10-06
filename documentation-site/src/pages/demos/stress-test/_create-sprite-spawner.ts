@@ -1,10 +1,9 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
-  calculateVisibleWorldSize,
   createImageSprite,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import {
   SpriteSpawnerEcsComponent,
@@ -18,11 +17,13 @@ const spriteScale = 0.25;
 /**
  * Creates the entity that drives the stress test's sprite batch spawner.
  * @param world - The ECS world to add the spawner entity to.
+ * @param camera - The camera entity whose visible area sprites are spawned within.
  * @param renderContext - The render context used to load the sprite.
  * @param renderLayer - The render layer spawned sprites should be drawn on.
  */
 export async function createSpriteSpawner(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -35,11 +36,11 @@ export async function createSpriteSpawner(
     layer: renderLayer,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

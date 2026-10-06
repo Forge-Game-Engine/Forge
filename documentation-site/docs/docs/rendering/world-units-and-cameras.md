@@ -48,23 +48,19 @@ its sprite sizes and physics shapes re-tuned in world-unit terms.
 ## Pixels per unit
 
 The number of screen pixels one world unit occupies (its "pixels per unit",
-or PPU) is derived, not configured directly: it's recomputed every frame
-from the camera's `verticalWorldUnits` and the current render destination's
-height, via
-[`calculatePixelsPerUnit`](/Forge/docs/api/functions/calculatePixelsPerUnit):
+or PPU) is derived, not configured directly. It follows from the camera's
+`verticalWorldUnits`, its `zoom` and the canvas's current height:
 
 ```
-pixelsPerUnit = canvasHeight / verticalWorldUnits
+pixelsPerUnit = canvasHeight * zoom / verticalWorldUnits
 ```
 
-For example, a camera with `verticalWorldUnits: 10` rendering to a 1080px-tall
-canvas gets `1080 / 10 = 108` pixels per unit; the same camera rendering to a
-540px-tall canvas gets `54` pixels per unit, half as many, so the same 10
-world units still fill the whole vertical extent of a shorter canvas. This
-is why resizing the window doesn't need any manual handling: on the next
-frame, `RenderContext.height` reflects the new size and the projection
-matrix's scale updates with it, whether the render system is drawing sprites
-or `createTerrainRenderEcsSystem` is drawing terrain geometry.
+For example, a camera with `verticalWorldUnits: 10` on a 1080px-tall canvas
+gets `1080 / 10 = 108` pixels per unit; the same camera on a 540px-tall
+canvas gets `54`, half as many, so the same 10 world units still fill the
+canvas vertically. Resizing the window needs no handling of your own: the
+render system and `createTerrainRenderEcsSystem` recompute every camera's
+projection each frame.
 
 [`SpriteEcsComponent.width`/`height`](/Forge/docs/api/interfaces/SpriteEcsComponent)
 and physics shape sizes are authored in world units, not pixels; they don't
@@ -135,10 +131,9 @@ That gives a `RenderContext` two sizes:
 | `width` / `height`       | Device pixels (the drawing buffer)     | Anything rendered into and then shown on the canvas: sizing a `RenderTarget`, a shader uniform compared against `gl_FragCoord`, the WebGL viewport |
 | `cssWidth` / `cssHeight` | CSS pixels (the canvas's on-page size) | Anything measured by the DOM: `MouseInputSource.position`, `getSafeAreaInsets()`, element sizes                                                    |
 
-`pixelRatio` is the ratio between the two. Anything that only depends on the
-aspect ratio, like
-[`calculateVisibleWorldSize`](/Forge/docs/api/functions/calculateVisibleWorldSize)
-or the camera's projection, gives the same result with either pair.
+`pixelRatio` is the ratio between the two. A camera's view (see
+[What a camera sees](#what-a-camera-sees)) measures its viewport and its
+`pixelsPerUnit` in CSS pixels, so it pairs with pointer positions directly.
 
 Rendering cost grows with the square of the pixel ratio, so a 3x phone
 display draws nine times as many pixels as a 1x one. A fill-rate-heavy game
@@ -160,60 +155,109 @@ const { renderContext } = createGame('game-container', {
 Pass `maxPixelRatio: 1` to always render at CSS resolution, the engine's
 behavior before it supported high-DPI displays.
 
-## Sizing and positioning things relative to what's visible
+## What a camera sees
 
-Game logic that needs to know how much world is on screen right now, to
-keep a background covering the full view, spawn things across the visible
-width, or clamp movement to the screen's edges, should use
-[`calculateVisibleWorldSize`](/Forge/docs/api/functions/calculateVisibleWorldSize)
-instead of reading `RenderContext.width`/`height` (raw pixels) directly:
+[`getCameraView`](/Forge/docs/api/functions/getCameraView) returns a camera
+entity's [`CameraView`](/Forge/docs/api/interfaces/CameraView): the world
+area it shows (`bounds` and `size`), its `pixelsPerUnit`, and conversions
+between world positions and viewport positions. A viewport position is in
+CSS pixels from the canvas's top-left corner, Y-down, the same space
+`MouseInputSource.position` and other DOM measurements use.
 
-```ts
-import { calculateVisibleWorldSize } from '@forge-game-engine/forge/rendering';
-
-const visibleSize = calculateVisibleWorldSize(
-  renderContext.width,
-  renderContext.height,
-  camera.verticalWorldUnits,
-);
-
-const halfVisibleWidth = visibleSize.x / 2;
-```
-
-`visibleSize.y` always equals `verticalWorldUnits`; `visibleSize.x` follows
-the destination's current aspect ratio, so a spawn range or background quad
-sized from it always exactly matches the edges of the screen, on any
-resolution or aspect ratio, without needing to re-derive the calculation by
-hand each time.
-
-## Converting screen and world positions manually
-
-Mouse input and other screen-space coordinates need to go through the same
-PPU as whatever's on screen, or they'll be off by the camera's scale factor.
-[`screenToWorldSpace`](/Forge/docs/api/functions/screenToWorldSpace) and
-[`worldToScreenSpace`](/Forge/docs/api/functions/worldToScreenSpace) both
-take an optional trailing `pixelsPerUnit` argument for this; pass the same
-value the camera used to render, or omit it only if that camera's
-`verticalWorldUnits` genuinely produces a PPU of `1` for your current canvas
-size.
-
-Keep every size in the call in the same unit as the position. A mouse
-position is in CSS pixels, so convert it against the canvas's CSS size, not
-its drawing-buffer size, which is `pixelRatio` times larger on a high-DPI
-display (see [High-DPI displays](#high-dpi-displays)):
+The view is `verticalWorldUnits / zoom` world units tall, as wide as the
+canvas's aspect ratio makes it, and centered on the camera's
+`position.world`. A camera that renders into a `RenderTarget` gets the same
+view, since the target is presented over the whole canvas.
 
 ```ts
-const pixelsPerUnit = calculatePixelsPerUnit(
-  renderContext.cssHeight,
-  camera.verticalWorldUnits,
-);
+import {
+  createCamera,
+  getCameraView,
+} from '@forge-game-engine/forge/rendering';
 
-const worldPosition = screenToWorldSpace(
-  mouseInputSource.position,
-  cameraPosition.world,
-  camera.zoom,
-  renderContext.cssWidth,
-  renderContext.cssHeight,
-  pixelsPerUnit,
+const camera = createCamera(world, { verticalWorldUnits: 20 });
+
+const view = getCameraView(world, camera, renderContext);
+```
+
+The view is computed when you ask for it, from the camera's components at
+that moment, so it's never stale and there's nothing to keep in sync. It
+does reflect the order systems run in: a system registered before
+`createTransformEcsSystem` sees the camera where it was last frame, and a
+UI canvas's camera has its `verticalWorldUnits` written by
+`createUiLayoutEcsSystem`. A system that already holds the camera's
+components can call
+[`computeCameraView`](/Forge/docs/api/functions/computeCameraView) with
+them instead of looking the entity up.
+
+### Sizing and positioning things relative to what's visible
+
+Game logic that needs to know how much world is on screen, to keep a
+background covering the full view, spawn things across the visible width,
+or clamp movement to the screen's edges, should read the view rather than
+`RenderContext.width`/`height` (raw pixels):
+
+```ts
+const { bounds, size } = getCameraView(world, camera, renderContext);
+
+// Spawn just above the top edge, anywhere across the visible width.
+const spawnPosition = {
+  x: bounds.min.x + Math.random() * size.x,
+  y: bounds.max.y + 1,
+};
+```
+
+`bounds` already accounts for where the camera is and how far it's zoomed,
+so it stays right for a camera that moves or zooms. Compute it where you
+use it rather than once at startup: the canvas's aspect ratio changes with
+the window, and a value saved at startup goes stale.
+
+### Converting between the viewport and the world
+
+Pointer input arrives as a viewport position. Convert it with
+`viewportToWorld`, and place DOM elements or check whether something is on
+screen with `worldToViewport`:
+
+```ts
+const view = getCameraView(world, camera, renderContext);
+
+const pointerWorldPosition = view.viewportToWorld(mouseInputSource.position);
+const enemyOnCanvas = view.worldToViewport(enemyPosition.world);
+```
+
+Both return new vectors, so they're safe to call on an entity's live
+position.
+
+### Converting between cameras
+
+Two cameras that draw onto the same canvas, such as a game camera and a HUD
+camera with its own units, share the viewport. To put a HUD element over a
+world entity, go through it:
+
+```ts
+const gameView = getCameraView(world, gameCamera, renderContext);
+const hudView = getCameraView(world, hudCamera, renderContext);
+
+const hudPosition = hudView.viewportToWorld(
+  gameView.worldToViewport(shipPosition.world),
 );
 ```
+
+This stays right whichever camera moves or zooms. Deriving a fixed
+"HUD units per world unit" constant from the two cameras' settings breaks as
+soon as either one does.
+
+## Off-screen sprites aren't drawn
+
+The render system skips every sprite, nine-slice region and text glyph whose
+quad lies entirely outside a camera's view, before uploading anything to
+the GPU. A game with a large world doesn't need to disable sprites while
+they're off screen to save rendering time; leave them enabled and let the
+camera skip them.
+
+The test uses the quad the sprite shader draws: the sprite's
+`width`/`height` around its `pivot`, scaled, flipped and rotated by the
+entity's world transform. A custom vertex shader that moves vertices outside
+that quad can be skipped while part of it would still be on screen. Text
+outlines and shadows are drawn inside their glyph quads, so they never are.
+Terrain meshes are always drawn.

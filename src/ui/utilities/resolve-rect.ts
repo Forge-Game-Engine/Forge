@@ -55,7 +55,7 @@ function resolveAxis(
  * @param parentRect - The parent's already-resolved rect, in UI world space.
  * @param rectTransform - The rect transform to resolve.
  * @param pixelsPerUnit - The owning canvas's live reference-pixel-to-screen-pixel
- * ratio (see `calculatePixelsPerUnit`), used to convert a `'screenPixels'`-unit
+ * ratio (see `CameraView.pixelsPerUnit`), used to convert a `'screenPixels'`-unit
  * `size`/`margin` (see {@link UiAxisSizeUnit}) into reference pixels. Defaults
  * to `1` - a neutral value under which `'screenPixels'` behaves exactly like
  * `'referencePixels'` - for callers that don't track a live ratio.
