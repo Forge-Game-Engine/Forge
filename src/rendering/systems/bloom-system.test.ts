@@ -105,7 +105,7 @@ describe('createBloomEcsSystem', () => {
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createFramebuffer: vi.fn().mockReturnValue({}),
+      createFramebuffer: vi.fn().mockImplementation(() => ({})),
       bindFramebuffer: vi.fn(),
       framebufferTexture2D: vi.fn(),
       checkFramebufferStatus: vi.fn().mockReturnValue(1),
@@ -114,7 +114,7 @@ describe('createBloomEcsSystem', () => {
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
 
-      createTexture: vi.fn().mockReturnValue(new WebGLTexture()),
+      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
@@ -236,15 +236,48 @@ describe('createBloomEcsSystem', () => {
     expect(mockGl.drawArrays).not.toHaveBeenCalled();
   });
 
-  it('draws threshold, blur, composite, and copy passes for a single configured pass', () => {
+  it('draws threshold, blur, and composite passes for a single configured pass', () => {
     const target = new RenderTarget(mockGl, 256, 256);
 
     addBloomedCameraEntity(target, { passes: 1 });
 
     world.update();
 
-    // 1 threshold + 2 blur (horizontal + vertical) + 1 composite + 1 copy.
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
+    // 1 threshold + 2 blur (horizontal + vertical) + 1 composite, with no
+    // copy back into the camera's target.
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
+  });
+
+  it("composites from the target's previous buffer into its other one", () => {
+    const target = new RenderTarget(mockGl, 256, 256);
+    const sceneTexture = target.colorTexture;
+
+    addBloomedCameraEntity(target, { passes: 1 });
+
+    world.update();
+
+    const compositeBindOrder = Math.max(
+      ...(mockGl.bindFramebuffer as Mock).mock.calls
+        .map((call, index) => ({
+          call,
+          order: (mockGl.bindFramebuffer as Mock).mock.invocationCallOrder[
+            index
+          ],
+        }))
+        .filter(({ call }) => call[1] === target.framebuffer)
+        .map(({ order }) => order),
+    );
+    const texturesBoundForComposite = (mockGl.bindTexture as Mock).mock.calls
+      .filter(
+        (_call, index) =>
+          (mockGl.bindTexture as Mock).mock.invocationCallOrder[index] >
+          compositeBindOrder,
+      )
+      .map(([, texture]) => texture as WebGLTexture);
+
+    expect(target.colorTexture).not.toBe(sceneTexture);
+    expect(texturesBoundForComposite).toContain(sceneTexture);
+    expect(texturesBoundForComposite).not.toContain(target.colorTexture);
   });
 
   it('runs a horizontal blur pass followed by a vertical blur pass', () => {
@@ -270,8 +303,8 @@ describe('createBloomEcsSystem', () => {
 
     world.update();
 
-    // 1 threshold + (3 passes * 2 draws) + 1 composite + 1 copy.
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(9);
+    // 1 threshold + (3 passes * 2 draws) + 1 composite.
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(8);
 
     const directionCalls = (mockGl.uniform2fv as Mock).mock.calls.filter(
       ([location]) => location === directionLocation,
@@ -316,7 +349,7 @@ describe('createBloomEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
 
     (mockGl.drawArrays as Mock).mockClear();
 
@@ -326,7 +359,17 @@ describe('createBloomEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(9);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(8);
+  });
+
+  it('draws nothing when passes is 0', () => {
+    const target = new RenderTarget(mockGl, 128, 128);
+
+    addBloomedCameraEntity(target, { passes: 0, intensity: 1 });
+
+    world.update();
+
+    expect(mockGl.drawArrays).not.toHaveBeenCalled();
   });
 
   it('writes the final pass back into the camera render target', () => {
@@ -515,7 +558,7 @@ describe('createBloomEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(10);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(8);
   });
 
   it('blooms a render target shared by multiple cameras only once', () => {
@@ -526,7 +569,7 @@ describe('createBloomEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
   });
 
   it('blooms again on the next frame', () => {
@@ -537,7 +580,7 @@ describe('createBloomEcsSystem', () => {
     world.update();
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(10);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(8);
   });
 
   it('disables blending before drawing so each pass replaces its destination', () => {
@@ -585,8 +628,8 @@ describe('createBloomEcsSystem', () => {
 
       world.update();
 
-      // brightTarget (1) + ping-pong (2) + compositeTarget (1) all inherit
-      // the source render target's hdr format.
+      // brightTarget (1) + ping-pong (2) + the camera target's second
+      // buffer (1) all inherit the source render target's hdr format.
       const hdrTexImageCalls = (mockGl.texImage2D as Mock).mock.calls.filter(
         ([, , internalFormat]) => internalFormat === mockGl.RGBA16F,
       );
@@ -596,7 +639,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   describe('cleanup', () => {
-    it('disposes the scratch bright, ping-pong, and composite targets when the world stops', () => {
+    it('disposes the scratch bright and ping-pong targets when the world stops', () => {
       const target = new RenderTarget(mockGl, 128, 128);
 
       addBloomedCameraEntity(target, { passes: 1 });
@@ -607,10 +650,11 @@ describe('createBloomEcsSystem', () => {
 
       world.stop();
 
-      // Bright target (1) + ping-pong target (2) + composite target (1),
-      // each with 1 framebuffer and 1 color texture.
-      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(4);
-      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(4);
+      // Bright target (1) + ping-pong target (2), each with 1 framebuffer
+      // and 1 color texture. The camera's own target isn't the system's to
+      // dispose.
+      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(3);
+      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(3);
     });
 
     it('does not throw for a bloomed camera that never got a render target', () => {
@@ -665,7 +709,7 @@ describe('createBloomEcsSystem', () => {
       });
 
       world.update();
-      expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
 
       (mockGl.drawArrays as Mock).mockClear();
 
