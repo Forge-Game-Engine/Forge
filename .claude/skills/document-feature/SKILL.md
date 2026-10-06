@@ -1,165 +1,158 @@
 ---
 name: document-feature
-description: Write or update a conceptual guide page in documentation-site/docs/docs for a new or changed Forge feature, focused on practical usage (common use cases, gotchas, performance notes, code smells to avoid) rather than restating the API surface. Also makes sure the public API has JSDoc for the auto-generated API reference. Use when a component, system, class, or module has been added or changed and needs user-facing documentation.
+description: Write or update technical documentation in documentation-site/docs/docs for a Forge concept (a component, system, class, module or ECS mechanism). Produces correct, literal, to-the-point reference prose that documents one concept in isolation, with no flowery language, no sales pitch, no game- or demo-specific detail and no asides about other concepts. Also makes sure the public API has JSDoc for the generated API reference. Use whenever writing or editing any page or section under documentation-site/docs/docs, including JSDoc prose that ends up in the API reference.
 ---
 
-# Document a feature
+# Write technical documentation
 
-Produces a handwritten guide page under `documentation-site/docs/docs/`.
-These guides are a practical companion to the auto-generated API reference
-(`documentation-site/docs/api/`, gitignored, built by typedoc from source
-JSDoc), not a restatement of it. Never hand-edit anything under `docs/api/`,
-fix the JSDoc in `/src` instead.
+A guide page under `documentation-site/docs/docs/` explains one concept: what
+it is, how to use it, and how it behaves. It sits next to the generated API
+reference (`documentation-site/docs/api/`, built by typedoc from JSDoc, never
+hand-edited), so it doesn't restate signatures.
 
-## 1. Scope the feature
+The bar is **correct, to the point, technical**. Every sentence states a fact
+about the concept that a reader needs in order to use it. Anything else is
+removed.
 
-- Find what changed: `git diff main...HEAD --stat` (or ask the user) to find
-  the relevant `/src/<module>` directory.
-- Read the tests (`*.test.ts`) and any usage in `/demo`. This is where the
-  "why" and "how it's actually used" lives, not just the constructor
-  signature.
-- Check recent commit messages touching this code for context on tradeoffs,
-  perf fixes, or bugs that motivated the design. These often become the best
-  gotcha and performance notes.
+## 1. Learn the concept before writing
 
-## 2. Ensure JSDoc exists (this feeds the API reference, not the guide)
+- Read the source, the tests (`*.test.ts`) and the JSDoc of the concept you
+  are documenting. The tests are the specification of its behavior.
+- Write down, for yourself, the facts a user needs: what it is, how to create
+  or register it, its options and their defaults, what happens when an option
+  is omitted, when it runs or takes effect (order, timing), what it reads and
+  writes, what throws, and its limits.
+- Every claim in the page must be one of these facts, checked against the
+  code. If you can't point to the code or test that makes a sentence true,
+  don't write it.
 
-Per AGENTS.md, every public class/method/property needs a JSDoc comment with
-`@param`, `@returns`, `@throws` as applicable. If the new API is missing
-JSDoc, add it now, this is what `docs/api/` is generated from. If you edit
-`/src`, follow CLAUDE.md verification (`npm run check-types`, `npm test`,
-`npm run lint`) before finishing.
+## 2. Ensure JSDoc exists
 
-The guide page in step 3 should assume this reference exists and link to it
-rather than duplicating it.
+Every public class, function, property and option needs JSDoc with `@param`,
+`@returns` and `@throws` as applicable (see AGENTS.md). The same writing rules
+below apply to JSDoc. Fixing a reference entry means fixing the JSDoc in
+`/src`; after editing `/src`, run the CLAUDE.md verification steps.
 
-## 3. What belongs in the guide
+## 3. Writing rules
 
-The guide's job is to help someone use the feature correctly and avoid
-mistakes, not to enumerate its API surface (the generated reference already
-does that). Favor:
+### Document the concept in isolation
 
-- **Common use cases**: the problem the feature solves, framed around a
-  realistic scenario, e.g. "use `applyForce` for a continuous push like
-  wind or thrust, use `applyImpulse` for an instantaneous hit like a
-  collision or jump."
-- **Gotchas**: non-obvious behavior the reader's own code must account for,
-  e.g. ordering requirements (system registration order), units and
-  coordinate conventions, what a lookup returns at edge values (a miss
-  returns `undefined` rather than throwing; a disabled entity is skipped).
-  The test is whether it changes what code the reader writes, not whether
-  it's interesting.
-- **Performance notes**: anything that affects cost at scale and changes
-  what the reader should do, e.g. "preload up front, not mid-gameplay."
-  Mine recent perf-related commits and code comments for this, but state
-  the actionable consequence, not the mechanism.
-- **Common mistakes / code smells**: a short "don't do this" example paired
-  with "do this instead" and a one-line reason.
-- **A realistic worked example**: the feature used in context (inside a
-  system, alongside related components), not just a bare constructor call.
+- The page is about one concept. Don't explain neighboring concepts (time,
+  input, worlds, rendering, dependency injection, general programming
+  practice) or how they interact with this one, unless the concept's own
+  behavior can't be stated without them. When the reader needs another
+  concept, link its page in one clause; don't summarize it.
+- Don't describe a particular game, demo or genre. Examples use generic,
+  self-explanatory names. "A round", "the game-over screen", "the star
+  catcher" are implementation details of someone's game, not of the engine.
+- Don't open with, promote or narrate a demo. A demo is linked, if at all,
+  once, where the text refers to a specific piece of its code.
+- Don't compare the concept to other engines, earlier versions or
+  alternatives. History and rationale belong in `/design` and the changelog.
 
-### Tone: factual, not narrative
+### Be literal and correct
 
-Write declarative sentences a reader can scan for the fact they need, not
-prose that reassures or editorializes. Cut adjectives/adverbs that describe
-quality rather than behavior ("gracefully", "cleanly", "nicely",
-"powerful", "simply", "just") — if a sentence still means the same thing
-with the adjective removed, remove it. State what happens; don't comment on
-how good the way it happens is.
+- State behavior as plain fact in the present tense: "`update` isn't called
+  while the run condition returns `false`."
+- Use the operation's real name: "is removed", "is not queried", "is set to
+  `null`", "runs before". Don't use metaphors or figurative verbs: no
+  "gated", "stops them where they are", "hands off", "lives in", "sees",
+  "wakes up", "takes care of", "under the hood".
+- Describe things as what they are in the ECS model. Systems are stateless:
+  they don't pause, resume, stop "where they are" or remember anything.
+  Components hold data. A state value doesn't need "setting up"; systems run
+  when it changes. Don't attribute state, location, intent or feelings to
+  code.
+- No marketing or filler: no "powerful", "seamless", "simply", "just",
+  "easily", "elegant", "out of the box", "puts it all together", no
+  rhetorical questions, no exclamations, no "Note that" or "It's worth
+  mentioning". Don't vouch for quality ("handles this gracefully").
+- No en-dashes or em-dashes.
 
-### Document the interface, not the internals
+### Be to the point
 
-The reader needs to know what the feature does from the outside: inputs,
-outputs, return values, when a promise rejects, what triggers a thrown
-error. They do not need _how_ it's implemented internally, and they do not
-need reassurance about implementation quality:
+- Open with one or two sentences that define the concept in technical terms:
+  what it is and what it does. No scene-setting, no list of what the page
+  will cover.
+- One fact per sentence where possible. Cut a sentence if the reader can use
+  the concept correctly without it.
+- State defaults and omissions explicitly: what happens when an option, a
+  `runIf`, a group or a field is left out.
+- State ordering and timing exactly when the concept has any: in which order
+  things run, on which tick a change takes effect, what is visible to whom
+  and when.
+- State error conditions the caller must handle or avoid.
+- Don't add an example for something that isn't specific to the concept
+  (passing a value to a factory, importing a module, writing a lambda).
 
-- Wrong: "`load` rejects with a descriptive error if the JSON is malformed,
-  so a broken file never surfaces as a confusing `NaN` downstream." (this
-  narrates an internal design decision and vouches for its own quality)
-- Right: nothing at all, if the mere fact that malformed input throws isn't
-  something the reader has to code around. If it genuinely changes what the
-  reader should do (e.g. "wrap `load` in try/catch when the source isn't
-  your own build output"), say that specific, actionable thing and stop.
+### Examples
 
-The same applies to caching mechanics, internal data structures, or how an
-error is caught and re-thrown: these are implementation facts you likely
-learned while building the feature, not things the reader needs.
+- Minimal: only the code needed to show the concept, with real imports from
+  the published package path (`@forge-game-engine/forge/<module>`, no
+  relative paths, no `.js`).
+- Names say what the value is: `gameState` and `GameStateName`, not `screen`
+  and `Screen`; `enemy`, not `star`.
+- Show the call, then state its effect in prose. Don't narrate the example
+  line by line.
+- A "don't do this" example is allowed only for a misuse of this concept's
+  own API that compiles and silently does the wrong thing. Show it, say what
+  goes wrong, show the fix.
 
-### Only cross-link genuine is-a relationships
+### What never goes in a page
 
-Link to a shared parent concept the feature is a real instance of (a
-specific `AssetCache` implementation → the `AssetCache` doc), since the
-reader benefits from knowing the general contract once. Do **not** link to
-or mention a sibling/adjacent feature just because it's similar, reuses the
-same pattern, or was what you read as an implementation reference while
-building this one (e.g. don't mention `ImageCache` while documenting a new,
-unrelated cache just because you modeled the new cache's code after it).
-Citing a sibling assumes the reader already knows that sibling — usually
-false — and adds cognitive load for no payoff. Before adding any
-cross-reference, ask: would a reader who has never seen the other thing
-still get full value from this link? If the answer is "they'd have to go
-learn the other thing first," cut it.
+- Full signatures, parameter lists, property lists or method-by-method
+  walkthroughs (link the API reference:
+  `[RigidBody](/Forge/docs/api/classes/RigidBody)`).
+- Implementation narration: internal data structures, caching, how errors
+  are produced.
+- Content about another concept (see "in isolation" above).
+- A "Guides in this section" list on an `index.md` (the sidebar lists them).
 
-### What does NOT belong in the guide
+## 4. Page structure
 
-- Full constructor signatures, parameter lists, or return types. Link to the
-  API reference instead.
-- A "Properties" section that just restates field declarations.
-- Method-by-method walkthroughs that mirror the class's public interface.
-- Implementation narration: how errors are caught internally, how caching
-  is implemented under the hood, why an internal design choice was made.
-- A "Guides in this section" list on a module's `index.md` if the sidebar
-  nav already lists those same pages — it's pure duplication.
-- Reassurance that the engine does its job well ("fails descriptively",
-  "handles this gracefully"). State the observable behavior; skip the
-  editorializing about how well it's done.
+1. `# Title`: the concept's name in Title Case (`# Game States`,
+   `# Run Conditions`), not a use-case slogan.
+2. Definition: one or two sentences.
+3. One `##` section per thing the reader does, in the order they do it:
+   create it, use it, configure it. Each section states the rule, shows a
+   minimal example, then states the resulting behavior (order, timing,
+   defaults, errors).
+4. Constraints and limits, if any, in their own section.
 
-If you find yourself transcribing JSDoc into the guide, stop, that
-information already lives in the generated reference. Link to it using the
-site's base URL, following the existing pattern in
-`docs/ecs/game.md`:
-`[RigidBody](/Forge/docs/api/classes/RigidBody)`,
-`[applyForce](/Forge/docs/api/classes/RigidBody#applyforce)`.
+Sections that don't apply are left out. A short page is fine.
 
-## 4. Find or create the guide page
+## 5. Final pass
 
-Guide pages live at `documentation-site/docs/docs/<module>/<topic>.md`, where
-`<module>` matches the `/src/<module>` folder name (`ecs`, `physics`,
-`lifecycle`, `animations`, `common`, `utils`, ...).
+Read the page sentence by sentence and delete or rewrite each one that fails
+any of these:
 
-- **Module folder already exists** (e.g. `physics/`): add a new
-  `kebab-case.md` file for the feature, or extend an existing page if the
-  feature is a small addition to a concept already documented there.
-- **Module folder doesn't exist yet**: create it with:
-  - `_category_.json`
-  - `index.md`, a short overview of the module (1+ paragraphs). Don't add a
-    "Guides in this section" list of links to the other pages in the
-    folder — the sidebar nav already lists them; a manual list is pure
-    duplication that goes stale the moment a page is renamed.
-  - the new topic page(s)
+- **True?** You've checked it against the code or tests.
+- **About this concept?** Not about time, input, worlds, a demo or a game.
+- **Literal?** No metaphor, personification or adjective that judges quality.
+- **Needed?** A reader can't use the concept correctly without it.
+- **Precise?** Names the exact API, value, order or condition.
+
+## 6. Mechanics
+
+### Location
+
+Pages live at `documentation-site/docs/docs/<module>/<topic>.md`, where
+`<module>` matches the `/src/<module>` folder name. Add a section to an
+existing page when the concept is part of one already documented there
+(e.g. run conditions in `ecs/system.md`). A new module folder gets a
+`_category_.json` and an `index.md`.
 
 ### Page conventions
 
-- Optional frontmatter `sidebar_position: N` to order pages within a folder
-  (used in `ecs`, `lifecycle`, `common`), pick a number after the existing
-  siblings.
-- `# Title` in Title Case, naming the use case or concept (not necessarily
-  the class name), e.g. `# Applying Forces`, not `# RigidBody`.
-- Code blocks use ` ```ts ` or ` ```typescript ` and import from the
-  **published package path** (no relative paths, no `.js`), e.g.:
+- Optional frontmatter `sidebar_position: N` orders pages within a folder;
+  pick a number after the existing siblings.
+- Cross-link guide pages with relative markdown links
+  (`[World](../ecs/world.md)`), and API reference and demo pages with the
+  `/Forge` base URL (`/Forge/docs/api/...`, `/Forge/demos/...`).
 
-  ```ts
-  import { RigidBody } from '@forge-game-engine/forge/physics';
-  ```
+### `_category_.json`
 
-- Cross-link related guide pages with relative markdown links, e.g.
-  `[World docs](./world.md)`.
-- Do not use any en-dashes or em-dashes.
-
-### `_category_.json` shapes
-
-For a module with an `index.md` overview page:
+With an `index.md` overview page:
 
 ```json
 {
@@ -169,7 +162,7 @@ For a module with an `index.md` overview page:
 }
 ```
 
-For a module without one yet (sidebar lists pages directly):
+Without one:
 
 ```json
 {
@@ -178,18 +171,13 @@ For a module without one yet (sidebar lists pages directly):
 }
 ```
 
-Check sibling `_category_.json` files under `documentation-site/docs/docs/`
-to pick a `position` that doesn't collide.
+Pick a `position` that no sibling `_category_.json` under
+`documentation-site/docs/docs/` uses.
 
-## 5. Wire it up
+### Verify
 
-- Double-check the new page's filename/heading reads sensibly in the
-  autogenerated sidebar (`docsSidebar` uses `{ type: 'autogenerated', dirName: '.' }`).
-
-## 6. Verify
-
-- `cd documentation-site && npm run start` and visit the new page, confirm
-  it renders, the sidebar entry appears in the right place, and any internal
-  links resolve.
-- If `/src` was edited in step 2, run the full CLAUDE.md verification suite
-  (`npm run check-types`, `npm test`, `npm run lint`) from the repo root.
+- `npx prettier --check` and `npm run cspell` on the changed files.
+- From `documentation-site/`, `npm run build`: it fails on broken links.
+- `npm run start` and open the page: it renders and sits in the right place
+  in the sidebar.
+- If `/src` was edited, run the full CLAUDE.md verification suite.
