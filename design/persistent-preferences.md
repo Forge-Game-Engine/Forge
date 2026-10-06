@@ -1,4 +1,4 @@
-# Design: Persistent Player Preferences
+# Design: Persistent State
 
 |                                       |                                                                                                                                                                          |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -10,21 +10,20 @@
 
 ## 0. Targeted modules
 
-| Path                                        | Change   | Notes                                                                                  |
-| ------------------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `src/storage/`                              | **New**  | `StorageBackend`, the interface #567's save system shares; `createLocalStorageBackend` |
-| `src/preferences/`                          | **New**  | `createPreferences`: typed, defaulted, validated values persisted per device           |
-| `src/index.ts`, `package.json` exports      | Modified | New modules                                                                            |
-| `documentation-site/docs/docs/preferences/` | **New**  | Guide                                                                                  |
-| `documentation-site/docs/docs/storage/`     | **New**  | `StorageBackend`, the `localStorage` backend, implementing another backend             |
+| Path                                    | Change   | Notes                                                                                                                                                       |
+| --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/storage/`                          | **New**  | `StorageBackend` (shared with #567's save system), the `localStorage` and memory backends, and `createPersistentState`: typed records kept outside the game |
+| `src/index.ts`, `package.json` exports  | Modified | New module                                                                                                                                                  |
+| `documentation-site/docs/docs/storage/` | **New**  | Guide: persistent state, writing it into the world, backends, implementing another backend                                                                  |
 
 ---
 
 ## 1. Summary
 
-Every game has settings that should survive a reload: volumes, mute,
-graphics quality, input preferences. Forge has nothing for this, so the
-demo writes it twice. Its audio mixer and its graphics settings each:
+Games keep state that has to outlive the page: settings such as volumes
+and graphics quality, and also achievements, unlocked levels and account
+details. Forge has nothing for this, so the demo writes its own, twice.
+Its audio mixer and its graphics settings each:
 
 - pick a `localStorage` key under the game's name,
 - parse the stored JSON in a `try`, because storage can be unavailable,
@@ -35,10 +34,13 @@ demo writes it twice. Its audio mixer and its graphics settings each:
   session.
 
 None of that is specific to the game. Unity has `PlayerPrefs` and Godot
-has `ConfigFile` for exactly this, separate from saving game progress.
-This design adds the equivalent to Forge, stored through a storage
-interface that [#567](https://github.com/Forge-Game-Engine/Forge/issues/567)'s
-save system will share, with `localStorage` as its first implementation.
+has `ConfigFile` for exactly this, separate from saving a world. This
+design adds persistent state to Forge: typed records kept outside the
+game, stored through a storage interface that
+[#567](https://github.com/Forge-Game-Engine/Forge/issues/567)'s save
+system will share, with `localStorage` as its first implementation. A
+record lives above the world, not in it, and writes its values into the
+world as component values.
 
 ---
 
@@ -46,18 +48,20 @@ save system will share, with `localStorage` as its first implementation.
 
 ### In scope
 
-- `StorageBackend`: the interface every storage implementation satisfies,
-  and `createLocalStorageBackend`, its first implementation.
-- `createPreferences`: a named set of flat values with defaults,
-  per-field validation, persistence through a `StorageBackend`, and a
-  change event.
-- Specific errors when storage is unavailable, blocked or full, which the
-  game handles as it sees fit.
+- `StorageBackend`: the interface every storage implementation satisfies;
+  `createLocalStorageBackend`, its first implementation, and
+  `createMemoryStorageBackend`.
+- `createPersistentState`: a named record of flat values with defaults,
+  validation, persistence through a `StorageBackend`, and a change event.
+- Writing a record's values into the world as component values.
+- Specific errors when storage is unavailable, blocked or full, and when
+  stored data doesn't match the record.
 
 ### Out of scope
 
-- **Saving game state** (worlds, entities, progress). That's
-  [#567](https://github.com/Forge-Game-Engine/Forge/issues/567).
+- **Serializing worlds** (entities and their components). That's
+  [#567](https://github.com/Forge-Game-Engine/Forge/issues/567), which
+  stores what it serializes through the same backends.
 - **Other backends' implementations.** IndexedDB, a remote endpoint or a
   desktop wrapper's file system implement `StorageBackend` later, with
   #567 or when a game needs one. #567 is expected to extend the interface
@@ -83,10 +87,11 @@ save system will share, with `localStorage` as its first implementation.
 - **Bevy**: no built-in. `bevy_pkv` is a key-value store
   (`get::<T>(key)`, `set(key, &value)`) meant for settings and saves; in
   the browser it uses `localStorage`, chosen to keep its API synchronous.
-  `bevy-persistent` persists a whole typed resource.
+  `bevy-persistent` persists a whole typed resource, which game code
+  changes through its own API.
 
 The key-value stores keep only the keys a game set and apply defaults when
-reading, so a missing or new setting just works, and a default the game
+reading, so a missing or new field just works, and a default the game
 changes in an update reaches every player who never changed it.
 
 ---
@@ -124,11 +129,10 @@ function createMemoryStorageBackend(): StorageBackend;
 ```
 
 Values are strings, the format every candidate backend can hold
-(`localStorage` holds nothing else); callers serialize. The interface
-lives in its own `src/storage` module because preferences are its first
-user, not its only one: #567's save system stores serialized worlds
-through the same interface, so a game that switches backends changes one
-argument, not its game code.
+(`localStorage` holds nothing else); callers serialize. Persistent state
+is the interface's first user, not its only one: #567's save system
+stores serialized worlds through it, so a game that switches backends
+changes one argument, not its game code.
 
 The contract every backend keeps:
 
@@ -149,22 +153,22 @@ Anything else is rethrown as it is. It does its work inside the call and
 returns a settled promise, so its writes land straight away, as the
 demo's do today, and aren't lost if the page closes right after.
 
-### 4.2 Preferences
+### 4.2 Persistent state
 
 ```ts
-type PreferenceValue = number | string | boolean;
+type PersistentValue = number | string | boolean;
 
-interface Preferences<T extends { [K in keyof T]: PreferenceValue }> {
+interface PersistentState<T extends { [K in keyof T]: PersistentValue }> {
   /**
    * The current values: the stored ones, and defaults for fields that
    * aren't stored. Replaced (not mutated) on every change, so read it from
-   * the preferences object rather than keeping a reference.
+   * the record rather than keeping a reference.
    */
   readonly values: Readonly<T>;
   /**
    * Applies `changes` at once and stores them. Resolves once they're
    * stored; rejects with the backend's `StorageError` if they can't be.
-   * @throws `PreferencesValueError` if a value fails validation; nothing is applied then.
+   * @throws `PersistentStateValueError` if a value fails validation; nothing is applied then.
    */
   set(changes: Partial<T>): Promise<void>;
   /** Makes every value its default again and removes the stored entry. Settles like `set`. */
@@ -173,29 +177,29 @@ interface Preferences<T extends { [K in keyof T]: PreferenceValue }> {
   readonly onChange: ParameterizedForgeEvent<Readonly<T>>;
 }
 
-interface PreferencesOptions<T> {
+interface PersistentStateOptions<T> {
   /** Per-field checks beyond "same type as the default", e.g. one of a set of strings. */
   validators: { [K in keyof T]?: (value: unknown) => value is T[K] };
-  /** Where the preferences are stored. */
+  /** Where the record is stored. */
   storage: StorageBackend;
 }
 
-const defaultPreferencesOptions = {
+const defaultPersistentStateOptions = {
   validators: {},
   storage: createLocalStorageBackend(),
 };
 
-function createPreferences<T extends { [K in keyof T]: PreferenceValue }>(
+function createPersistentState<T extends { [K in keyof T]: PersistentValue }>(
   name: string,
   defaults: T,
-  options: Partial<PreferencesOptions<T>> = {},
-): Promise<Preferences<T>>;
+  options: Partial<PersistentStateOptions<T>> = {},
+): Promise<PersistentState<T>>;
 
 /** The stored entry isn't a JSON object: something else wrote it, or it's damaged. */
-class PreferencesFormatError extends Error {}
+class PersistentStateFormatError extends Error {}
 
 /** A value doesn't have its default's type, or fails its validator. */
-class PreferencesValueError extends Error {
+class PersistentStateValueError extends Error {
   /** The field the value is for. */
   readonly field: string;
   /** The value, as stored or as passed to `set`. */
@@ -204,24 +208,24 @@ class PreferencesValueError extends Error {
 ```
 
 The constraint is written as a mapped type, not
-`Record<string, PreferenceValue>`, so interfaces such as the demo's
+`Record<string, PersistentValue>`, so interfaces such as the demo's
 `AudioSettings` are accepted.
 
-- **Loading** happens once, in `createPreferences`, which resolves once
-  the stored entry has been read. After that, `values` is read from memory
-  and `set` applies synchronously, whatever the backend, as Unity's
+- **Loading** happens once, in `createPersistentState`, which resolves
+  once the stored entry has been read. After that, `values` is read from
+  memory and `set` applies synchronously, whatever the backend, as Unity's
   `PlayerPrefs` and Godot's `user://` behave on the web once their stores
   are loaded. A field that isn't stored takes its default, which is how a
   game update adds one. A stored field must have its default's type
   (numbers must also be finite) and pass its validator; otherwise
-  `createPreferences` rejects with `PreferencesValueError`, naming the
-  field (DL-2). A stored volume of `-0.1` is an error, not a default.
+  `createPersistentState` rejects with `PersistentStateValueError`, naming
+  the field (DL-2). A stored volume of `-0.1` is an error, not a default.
 - **Saving** writes the entry as it was loaded, with the keys `set` since
   then applied, as JSON under `name`. Fields this version doesn't know
   stay as they were stored, so nothing set in an earlier session, or by a
-  newer version of the game, is lost. Defaults are never written,
-  so changing a default in a game update reaches every player who hadn't
-  changed that setting. `reset` empties the entry, which removes it.
+  newer version of the game, is lost. Defaults are never written, so
+  changing a default in a game update reaches every player who hadn't
+  changed that field. `reset` empties the entry, which removes it.
 - **Write order.** One queue does every write, for `set` and `reset`
   alike, with at most one write in flight: it stores the current entry, or
   removes it when it's empty. Changes made while a write is in flight go
@@ -233,100 +237,136 @@ The constraint is written as a mapped type, not
   waits on a timer, so with the `localStorage` backend a change is stored
   by the end of the task that made it.
 - **Failures are the game's to handle.** Nothing falls back silently:
-  - `createPreferences` rejects with the backend's `StorageError` if the
-    stored entry can't be read, with `PreferencesFormatError` if it isn't
-    a JSON object (written by something else, or damaged), and with
-    `PreferencesValueError` if a stored field has the wrong type or fails
-    its validator.
+  - `createPersistentState` rejects with the backend's `StorageError` if
+    the stored entry can't be read, with `PersistentStateFormatError` if it
+    isn't a JSON object (written by something else, or damaged), and with
+    `PersistentStateValueError` if a stored field has the wrong type or
+    fails its validator.
   - `set` and `reset` reject with the backend's `StorageError` if the
     change can't be stored. The values stay applied in memory, and the
     next write that succeeds stores them, since every write stores the
     whole entry. The game decides what a failed save means: tell the
     player, retry, or carry on for the session.
   - A backend that throws instead of rejecting is treated the same.
-  - A game that wants to carry on without storage creates its preferences
-    on `createMemoryStorageBackend()` after catching the error, which makes
+  - A game that wants to carry on without storage creates its record on
+    `createMemoryStorageBackend()` after catching the error, which makes
     that choice visible in its code.
   - `set` with a value that fails validation, including `NaN` or
-    `Infinity`, throws `PreferencesValueError` before applying anything:
-    that's a programming error, and `JSON.stringify` would turn a
-    non-finite number into `null` and quietly lose it on reload.
-- **Names.** Use one preferences object per `name`; two would overwrite
-  each other's writes. Nothing enforces it: a registry of names would
-  make re-creating preferences throw, and docs demos and single-page apps
-  create their games again on every visit. `localStorage` keys are shared
-  by every page of an origin, and some hosts serve many games from one
-  origin (itch.io's HTML5 games, an organization's GitHub Pages sites), so
-  a name carries a game prefix, as the demo's `galactic-journey.` does.
+    `Infinity`, throws `PersistentStateValueError` before applying
+    anything: that's a programming error, and `JSON.stringify` would turn
+    a non-finite number into `null` and quietly lose it on reload.
+- **Names.** Use one record per `name`; two would overwrite each other's
+  writes. Nothing enforces it: a registry of names would make re-creating
+  a record throw, and docs demos and single-page apps create their games
+  again on every visit. `localStorage` keys are shared by every page of an
+  origin, and some hosts serve many games from one origin (itch.io's HTML5
+  games, an organization's GitHub Pages sites), so a name carries a game
+  prefix, as the demo's `galactic-journey.` does.
 
-### 4.3 Who owns the values
+### 4.3 The state lives above the world
 
-The preferences object is the single owner of persisted settings. Other
-state derived from them (a graphics settings component, the audio mixer's
-bus volumes in [`audio-mixer.md`](./audio-mixer.md)) is initialized from
-`values` once `createPreferences` resolves and updated from `onChange`
-(which is raised only by changes), and changes go through `set`, so
-nothing keeps a second copy that drifts from what's stored.
+A record isn't part of any world, and no system loads or saves it. It's
+external state: loaded before a world exists (the demo's graphics quality
+picks a render-context option, so it's read before `createGame`), it
+outlives the worlds that read it, and its loads and saves are
+asynchronous, which systems aren't.
 
-The demo's audio settings become:
+The game's setup code writes a record's values into the world as
+component values, once the world exists and again on every `onChange`
+(raised only by changes). Systems read that component like any other.
+Changes go through `set`, never through the component, so the record is
+the one writer of the fields it mirrors, and nothing keeps a second copy
+that drifts from what's stored. State outside any world, such as the audio
+mixer's bus volumes in [`audio-mixer.md`](./audio-mixer.md), follows
+`onChange` the same way.
+
+The demo already has this shape: it reads its graphics settings before
+`createGame` and adds them as a component (`addGraphicsSettingsComponent`).
+With this design:
+
+```ts
+const graphics = await createPersistentState(
+  'galactic-journey.graphics',
+  { quality: 'high' },
+  { validators: { quality: isGraphicsQuality } },
+);
+
+const { world } = createGame('demo-game', {
+  renderContext: {
+    maxPixelRatio: graphicsPresets[graphics.values.quality].maxPixelRatio,
+  },
+});
+
+const settings = world.createEntity();
+
+world.addComponent(settings, graphicsSettingsId, { ...graphics.values });
+graphics.onChange.registerListener((values) => {
+  Object.assign(
+    world.getComponentRequired(settings, graphicsSettingsId),
+    values,
+  );
+});
+```
+
+Its audio settings become another record:
 
 ```ts
 const isVolume = (value: unknown): value is number =>
   typeof value === 'number' && value >= 0 && value <= 1;
 
-const audioPreferences = await createPreferences(
+const audioSettings = await createPersistentState(
   'galactic-journey.audio-settings',
   { master: 1, music: 1, sfx: 1, muted: false },
   { validators: { master: isVolume, music: isVolume, sfx: isVolume } },
 );
 ```
 
-and its graphics settings pass a validator for the quality names, in the
-async function that already creates the game. Today the demo carries on
-with defaults when storage is blocked; with this design it does so
-explicitly, catching `StorageError` and creating its preferences on a
-memory backend for the session. A `PreferencesValueError` (settings an
-older version stored in another format) it handles by removing the entry
-through the backend and creating its preferences again: the demo's policy,
-not the engine's. The graphics "trial" logic (falling back
-to a known-good quality after a crash) stays in the game: it's policy,
-built on top.
+Today the demo carries on with defaults when storage is blocked; with this
+design it does so explicitly, catching `StorageError` and creating its
+records on a memory backend for the session. A `PersistentStateValueError`
+(settings an older version stored in another format) it handles by
+removing the entry through the backend and creating the record again: the
+demo's policy, not the engine's. The graphics "trial" logic (falling back
+to a known-good quality after a crash) stays in the game too.
 
 ---
 
 ## 5. Phases
 
-### Phase 1: Storage and preferences
+### Phase 1: Storage and persistent state
 
-| #   | Task                                                                                                                                                                         | Size |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | `src/storage`: `StorageBackend`, the `StorageError` classes, `createLocalStorageBackend` mapping unavailable, blocked and full storage to them, `createMemoryStorageBackend` | S    |
-| 1.2 | `createPreferences`: per-field loading, storing only set keys, `reset`, `onChange`, the write queue, promises from `set` and `reset`                                         | M    |
-| 1.3 | Failures surfaced (rejected and throwing reads and writes, `PreferencesFormatError`)                                                                                         | S    |
-| 1.4 | Module wiring for both modules (`src/index.ts`, `package.json` exports)                                                                                                      | S    |
-| 1.5 | Guides (`preferences/`, `storage/`); a settings panel in a docs demo; changelog bullets for both modules under `#### Added`                                                  | M    |
+| #   | Task                                                                                                                                                          | Size |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | `StorageBackend`, the `StorageError` classes, `createLocalStorageBackend` mapping unavailable, blocked and full storage to them, `createMemoryStorageBackend` | S    |
+| 1.2 | `createPersistentState`: per-field loading, storing only set keys, `reset`, `onChange`, the write queue, promises from `set` and `reset`                      | M    |
+| 1.3 | Failures surfaced (rejected and throwing reads and writes, `PersistentStateFormatError`, `PersistentStateValueError`)                                         | S    |
+| 1.4 | Module wiring (`src/index.ts`, `package.json` exports)                                                                                                        | S    |
+| 1.5 | `storage/` guide, including writing a record into the world; a settings panel in a docs demo; changelog under `#### Added`                                    | M    |
 
 **Definition of done:** a docs demo's settings survive a reload and a
 second visit to its page; a stored value of the wrong type rejects with
 an error naming its field; a field that isn't stored takes its default,
-and changing a default reaches a player who never set it; keys set in an earlier session survive a write in
-the next; a test backend that resolves writes out of order still ends with
-the latest values stored, and with nothing stored after a `reset`.
+and changing a default reaches a player who never set it; keys set in an
+earlier session survive a write in the next; a test backend that resolves
+writes out of order still ends with the latest values stored, and with
+nothing stored after a `reset`.
 
 ---
 
 ## 6. Decision log
 
-### DL-1: A preferences store separate from save games
+### DL-1: Persistent state separate from world serialization
 
-**Options.** (a) A small preferences API now. (b) Wait for #567's world
-serialization and store settings as entities.
+**Options.** (a) Typed records now. (b) Wait for #567's world
+serialization and store this state as entities.
 
 **Decision: (a).**
 
-**Rationale.** Settings are read before any world exists (the demo picks
-its render quality before creating its render pipeline), are tiny, and
-aren't entities. Unity and Godot keep them separate for the same reasons.
+**Rationale.** Some of this state is read before any world exists (the
+demo picks its render quality before creating its render pipeline), it's
+small and flat, and it isn't entities. Unity and Godot keep settings
+separate from saves for the same reasons. #567's serialized worlds go
+through the same backends.
 
 ### DL-2: A stored value of the wrong type is an error
 
@@ -335,18 +375,18 @@ stores do. (b) Reject with an error naming the field.
 
 **Decision: (b)**, decided in review.
 
-**Rationale.** The same record holds more than settings: achievements,
-account details and other data where quietly replacing a stored value
-with its default loses it. A value of the wrong type is a bug, or a
-change of format the game has to handle itself (migrating the entry or
-resetting it), so it's an error, at `set` as much as at load. A field
-that isn't stored at all is different: it takes its default, which is how
-a game update adds one.
+**Rationale.** A record holds more than settings: achievements, account
+details and other data where quietly replacing a stored value with its
+default loses it. A value of the wrong type is a bug, or a change of
+format the game has to handle itself (migrating the entry or resetting
+it), so it's an error, at `set` as much as at load. A field that isn't
+stored at all is different: it takes its default, which is how a game
+update adds one.
 
 ### DL-3: Store only what was set
 
-**Options.** (a) Store the whole set on every change, as the demo does.
-(b) Store only the keys that were set.
+**Options.** (a) Store the whole record on every change, as the demo
+does. (b) Store only the keys that were set.
 
 **Decision: (b).**
 
@@ -357,25 +397,26 @@ quality, say) never reaches them. Every key-value store in §3 works like
 
 ### DL-4: Flat values only
 
-**Rationale.** Every setting in the demo and in typical options menus is
-a number, string or boolean. Flat values make the type check against the
-default sufficient for most fields, and keep the stored format readable.
+**Rationale.** Every setting in the demo and in typical options menus,
+and most achievement and profile fields, is a number, string or boolean.
+Flat values make the type check against the default sufficient for most
+fields, and keep the stored format readable.
 
 ### DL-5: A storage interface now, with `localStorage` its first implementation
 
-**Options.** (a) Preferences use `localStorage` directly; #567 designs
-storage later. (b) A `StorageBackend` interface now, which #567's save
-system shares, with `localStorage` its only implementation for now.
+**Options.** (a) Use `localStorage` directly; #567 designs storage later.
+(b) A `StorageBackend` interface now, which #567's save system shares,
+with `localStorage` its only implementation for now.
 
 **Decision: (b)**, decided in review.
 
 **Rationale.** #567 calls for a storage-backend abstraction so a game can
 choose `localStorage`, IndexedDB or a remote endpoint without changing
-its code. Preferences are the first code that needs storage, so they set
-the interface, and later backends implement it without touching
-preferences or the games using them (#567 is expected to add listing to
-it). Unity's `PlayerPrefs` and Godot's `user://` are likewise one API over
-per-platform storage.
+its code. Persistent state is the first code that needs storage, so it
+sets the interface, and later backends implement it without touching
+persistent state or the games using it (#567 is expected to add listing
+to it). Unity's `PlayerPrefs` and Godot's `user://` are likewise one API
+over per-platform storage.
 
 ### DL-6: The interface is asynchronous
 
@@ -392,10 +433,10 @@ its own to do that in (`createGame` is synchronous, and games await their
 assets before calling it), and #567's saves shouldn't all be loaded into
 memory up front, and need a result for each write. Web key-value
 libraries such as localForage are asynchronous for the same reasons.
-Preferences, which are small, do the one load themselves: they're awaited
-at creation and then read from memory, Unity's and Godot's model one
-level up. The cost is `await createPreferences(...)`, where a game
-already awaits its assets.
+Records, which are small, do the one load themselves: they're awaited at
+creation and then read from memory, Unity's and Godot's model one level
+up. The cost is `await createPersistentState(...)`, where a game already
+awaits its assets.
 
 ### DL-7: Storage failures are errors the game handles
 
@@ -412,6 +453,34 @@ place that can act on it. Godot's `ConfigFile.load` and `save` return an
 error for the game to check, and Unity's web player threw
 `PlayerPrefsException` when a write exceeded its storage.
 
+### DL-8: The state lives above the world and writes into it
+
+**Options.** (a) An object passed to the systems that need it, as `Time`
+and `InputManager` are. (b) A component that a system loads and writes
+back. (c) A record above the world that writes its values into the world
+as component values.
+
+**Decision: (c)**, decided in review.
+
+**Rationale.** The world can't manage external state: it's needed before
+the world exists, it outlives it, and loading and saving are
+asynchronous, which systems aren't. (b) would also need change detection,
+which Forge doesn't have, to know when to write back. With (c), systems
+read components as they read everything else, and the record is the one
+writer of the fields it mirrors. `bevy-persistent` is the same idea: a
+persisted value that game code changes through its own API. In Bevy that
+value is a resource; Forge has no resources, so the world-side copy is a
+component.
+
+### DL-9: Named for what it holds
+
+**Decision:** persistent state, not player preferences, decided in
+review.
+
+**Rationale.** The same record holds achievements, unlocked levels and
+account details as well as settings, and the validation, write and
+failure rules above are written for all of them.
+
 ---
 
 ## 7. Open questions
@@ -424,30 +493,22 @@ error for the game to check, and Unity's web player threw
    versioning and migration story for saved data.
    - (a) No migration hook until a game needs one, then adopt #567's
      (proposed). (b) A `migrate(storedObject)` option now.
-2. **Persisted state in the world, or beside it?** Preferences are one
-   case of state kept outside the game (in `localStorage`, behind an API)
-   and mirrored into it, so they could be a component that a system loads
-   and writes back, rather than an object.
-   - (a) A persisted record beside the world, named for what it is rather
-     than for player preferences, and passed to the systems that need it
-     as `Time` and `InputManager` are (proposed). Settings are needed
-     before the world exists (the render quality picks the render
-     context's options), writes go through `set` rather than needing
-     change detection, which Forge doesn't have, and the record stays the
-     one owner of its values (§4.3).
-   - (b) A persisted component, loaded when it's added and written back
-     by a system that diffs it every frame.
+2. **Should Forge write records into components for the game?** §4.3's
+   setup code is a few lines per record.
+   - (a) Not now; it stays setup code, and a helper comes if games keep
+     writing the same lines (proposed). (b) A helper that adds the
+     component from `values` and updates it on every `onChange`.
 
 ---
 
 ## 8. Testing considerations
 
 - Loading: a wrong-typed field, a non-finite number and a field failing
-  its validator each reject `createPreferences` with a
-  `PreferencesValueError` naming the field and value; a field that isn't
-  stored takes its default; extra fields survive the next write; a
+  its validator each reject `createPersistentState` with a
+  `PersistentStateValueError` naming the field and value; a field that
+  isn't stored takes its default; extra fields survive the next write; a
   rejected or throwing read rejects with the backend's error; malformed
-  JSON rejects with `PreferencesFormatError`.
+  JSON rejects with `PersistentStateFormatError`.
 - Saving: defaults are never written; keys set in an earlier session
   survive a write in the next; `reset` removes the entry, and a `reset`
   while a write is in flight ends with nothing stored; a rejected write
@@ -456,9 +517,9 @@ error for the game to check, and Unity's web player threw
   and the latest state wins against a backend that settles out of order;
   with the `localStorage` backend, a change is stored by the end of the
   task.
-- `set` with an invalid or non-finite value throws `PreferencesValueError`
-  and applies nothing;
-  creating preferences again under the same name works.
+- `set` with an invalid or non-finite value throws
+  `PersistentStateValueError` and applies nothing; creating a record again
+  under the same name works.
 - The `localStorage` backend: no `localStorage`, a `SecurityError` and a
   `QuotaExceededError` reject with `StorageUnavailableError`,
   `StorageBlockedError` and `StorageFullError`, with the original as
@@ -466,16 +527,16 @@ error for the game to check, and Unity's web player threw
   where there's no `window` doesn't throw.
 - The memory backend: values round-trip; nothing is shared between two
   backends.
-- jsdom provides `localStorage`; preferences tests use the memory backend,
-  and a stub backend to control timing.
+- jsdom provides `localStorage`; persistent state tests use the memory
+  backend, and a stub backend to control timing.
 
 ## 9. Documentation and demo follow-up
 
-- New `preferences/` guide.
-- New `storage/` page: `StorageBackend` and its contract, the
-  `localStorage` backend (keys are shared across the origin, so prefix
-  them), and how to implement another backend.
+- New `storage/` guide: persistent state and writing it into the world;
+  `StorageBackend` and its contract; the `localStorage` backend (keys are
+  shared across the origin, so prefix them); implementing another
+  backend.
 - Demo: the load/validate/save code in the audio mixer and the graphics
-  settings store is replaced by two awaited `createPreferences` calls; the
-  graphics settings component and the mixer's buses are initialized from
-  `values` and updated from `onChange`.
+  settings store is replaced by two awaited `createPersistentState` calls;
+  the graphics settings component and the mixer's buses are initialized
+  from `values` and updated from `onChange`.
