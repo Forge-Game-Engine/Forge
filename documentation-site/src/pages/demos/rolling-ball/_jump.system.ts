@@ -55,11 +55,13 @@ export const createJumpEcsSystem = (
     const isGrounded = contacts.touching.includes(terrainEntity);
 
     if (jumpInput.isTriggered && isGrounded) {
+      // The ball's circle is centered on its entity, so its position is
+      // its center of mass: a jump through it adds no spin.
       applyImpulse(
+        world,
+        playerEntity,
         { x: 0, y: jumpImpulse },
-        position.local,
-        position.local,
-        rigidBody,
+        position.world,
       );
     }
 

@@ -55,14 +55,18 @@ describe('sweepCircleCircle', () => {
     ).toBeNull();
   });
 
-  it("should account for both circles' offsets", () => {
-    const offsetTarget = new CircleCollider(20);
-
-    offsetTarget.offset = { x: 0, y: 50 };
+  it("should sweep against the target's rotated center", () => {
+    // A local center of (50, 0), turned a quarter turn to (0, 50), puts the
+    // target circle at the world origin.
+    const offsetTarget = new CircleCollider(20, 1, { x: 50, y: 0 });
 
     const hit = sweepCircleCircle(
       circle,
-      { position: { x: 0, y: -50 }, rotation: 0, collider: offsetTarget },
+      {
+        position: { x: 0, y: -50 },
+        rotation: Math.PI / 2,
+        collider: offsetTarget,
+      },
       { x: -100, y: 0 },
       { x: 0, y: 0 },
     );

@@ -31,20 +31,21 @@ function validateConvexity(vertices: readonly Vector2[]): void {
 }
 
 /**
- * A convex polygon collider, defined by a set of local-space vertices.
- * Vertices are re-centered around the polygon's centroid (so the entity's
- * position represents the center of mass) and normalized to a consistent
- * winding order.
+ * A convex polygon collider, defined by a set of vertices in the entity's
+ * local space. The vertices are kept where they're authored (only their
+ * winding order is normalized to counter-clockwise), so a shape drawn
+ * around a sprite's pivot lines up with the sprite. The polygon's centroid
+ * is its {@link localCenterOfMass}, which needn't be the entity's origin.
  */
 export class PolygonCollider extends Collider {
   public readonly type = 'polygon';
-  public offset: Vector2 = Vec2.zero;
   public readonly vertices: readonly Vector2[];
   public readonly normals: readonly Vector2[];
 
   /**
    * Creates a new PolygonCollider instance.
-   * @param vertices - The local-space vertices of the polygon, in order.
+   * @param vertices - The vertices of the polygon, in order, in the
+   * entity's local space.
    * Must describe a convex polygon with at least 3 vertices. Vertices may
    * be supplied in either winding order.
    * @param density - The density used to derive mass from the polygon's
@@ -74,23 +75,24 @@ export class PolygonCollider extends Collider {
 
     validateConvexity(orderedVertices);
 
-    const centroid = calculateCentroid(orderedVertices);
-    // Clone before subtracting: `orderedVertices` holds the same vertex
-    // objects the caller passed in, so this must not mutate them.
-    const centeredVertices = orderedVertices.map((vertex) =>
+    // Clone: `orderedVertices` holds the same vertex objects the caller
+    // passed in, which the caller may reuse or mutate.
+    const localVertices = orderedVertices.map((vertex) => Vec2.clone(vertex));
+    const centroid = calculateCentroid(localVertices);
+    const verticesAboutCentroid = localVertices.map((vertex) =>
       Vec2.subtract(Vec2.clone(vertex), centroid),
     );
 
-    const mass = density * calculateArea(centeredVertices);
+    const mass = density * calculateArea(localVertices);
     const momentOfInertia = calculatePolygonMomentOfInertia(
       mass,
-      centeredVertices,
+      verticesAboutCentroid,
     );
 
-    super(momentOfInertia, mass);
+    super(mass, momentOfInertia, centroid);
 
-    this.vertices = centeredVertices;
-    this.normals = calculateNormals(centeredVertices);
+    this.vertices = localVertices;
+    this.normals = calculateNormals(localVertices);
   }
 
   /**
@@ -103,10 +105,7 @@ export class PolygonCollider extends Collider {
     // Clone before transforming: `this.vertices` is reused every call, so
     // this must not mutate the collider's own stored vertices.
     return this.vertices.map((vertex) =>
-      Vec2.add(
-        Vec2.rotate(Vec2.add(Vec2.clone(vertex), this.offset), rotation),
-        position,
-      ),
+      Vec2.add(Vec2.rotate(Vec2.clone(vertex), rotation), position),
     );
   }
 

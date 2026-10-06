@@ -17,10 +17,8 @@ export function detectCircleCircleCollision(
   const colliderA = bodyA.collider as CircleCollider;
   const colliderB = bodyB.collider as CircleCollider;
 
-  // Clone before adding: `bodyA.position`/`bodyB.position` are the entities'
-  // live world position, so this must not mutate them.
-  const centerA = Vec2.add(Vec2.clone(bodyA.position), colliderA.offset);
-  const centerB = Vec2.add(Vec2.clone(bodyB.position), colliderB.offset);
+  const centerA = colliderA.getWorldCenter(bodyA.position, bodyA.rotation);
+  const centerB = colliderB.getWorldCenter(bodyB.position, bodyB.rotation);
 
   const delta = Vec2.subtract(centerB, centerA);
   const distance = Vec2.magnitude(delta);

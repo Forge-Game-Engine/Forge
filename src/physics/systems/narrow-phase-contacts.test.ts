@@ -343,12 +343,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
       addCircle({ x: 0, y: 0 }, { sensor: true });
 
       const { entity: body } = addCircle({ x: 0.5, y: 0 });
-      const collider = new CircleCollider(1);
-
-      addRigidBodyComponent(world, body, {
-        mass: collider.mass,
-        momentOfInertia: collider.momentOfInertia,
-      });
+      addRigidBodyComponent(world, body);
 
       for (let i = 0; i < 10; i++) {
         time.update(i * 16);

@@ -102,7 +102,7 @@ describe('detectPolygonPolygonCollision', () => {
   it('should detect an overlap between an arbitrary convex polygon and a box', () => {
     const bodyA = body({ x: 0, y: 0 }, rectangle(4, 4));
     const bodyB = body(
-      { x: 2, y: 0 },
+      { x: 1, y: 0 },
       new PolygonCollider([
         { x: 0, y: 0 },
         { x: 2, y: 0 },

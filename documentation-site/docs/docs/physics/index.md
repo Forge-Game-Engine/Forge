@@ -95,8 +95,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 const { world, time } = createGame('game-container');
 
 const box = world.createEntity();
-// PolygonCollider re-centers vertices around their centroid, so this 32x32
-// square's own position is its center.
+// A 32x32 square, drawn around the entity's position.
 const collider = new PolygonCollider([
   { x: -16, y: -16 },
   { x: 16, y: -16 },
@@ -107,10 +106,7 @@ const collider = new PolygonCollider([
 addPositionComponent(world, box);
 addRotationComponent(world, box);
 addColliderComponent(world, box, { collider });
-addRigidBodyComponent(world, box, {
-  mass: collider.mass,
-  momentOfInertia: collider.momentOfInertia,
-});
+addRigidBodyComponent(world, box);
 addGravityComponent(world, box, { amount: { x: 0, y: -300 } });
 
 const collisionPairs: CollisionPair[] = [];
