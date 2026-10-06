@@ -2,11 +2,10 @@ import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
 import {
-  calculatePixelsPerUnit,
   CameraEcsComponent,
   cameraId,
+  computeCameraView,
   RenderContext,
-  screenToWorldSpace,
 } from '../../rendering/index.js';
 import { CanvasEcsComponent } from '../components/canvas-component.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
@@ -43,19 +42,9 @@ export function resolveCanvasPointerPosition(
     return null;
   }
 
-  // The pointer position is in CSS pixels, so it's converted against the
-  // canvas's CSS size rather than its (pixel-ratio-scaled) drawing buffer.
-  const pixelsPerUnit = calculatePixelsPerUnit(
-    renderContext.cssHeight,
-    camera.verticalWorldUnits,
-  );
-
-  return screenToWorldSpace(
-    pointerSource.position,
-    cameraPosition.world,
-    camera.zoom,
-    renderContext.cssWidth,
-    renderContext.cssHeight,
-    pixelsPerUnit,
-  );
+  return computeCameraView(
+    camera,
+    cameraPosition,
+    renderContext,
+  ).viewportToWorld(pointerSource.position);
 }

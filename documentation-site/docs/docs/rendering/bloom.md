@@ -163,16 +163,17 @@ addBloomComponent(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
 By default, [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) uses an
 8-bit-per-channel color texture, so scene colors are clamped to `[0, 1]`
 before bloom ever sees them: `threshold` is comparing against already-clamped
-brightness, and there's no way to make one white sprite bloom more than
-another equally white sprite by giving it a brighter-than-white color.
-`threshold` and `intensity` are still enough to make specific bright
-elements (lasers, explosions, magic effects) pop against a duller
-background within that constraint — but if you want a sprite to bloom
-based on true HDR brightness (for example an emissive map on an otherwise
-unlit surface, see [Emissive-driven bloom](#emissive-driven-bloom) below),
-give the camera's render target `RENDER_TARGET_FORMAT.hdr` instead and pair
-it with `addToneMappingComponent`. See [HDR Rendering &
-Tone Mapping](./hdr-rendering.md).
+brightness, and a white sprite tinted brighter than white blooms no more
+than one tinted `Color.white`. `threshold` and `intensity` are still enough
+to make specific bright elements (lasers, explosions, magic effects) pop
+against a duller background within that constraint — but if you want a
+sprite to bloom based on true HDR brightness, give the camera's render
+target `RENDER_TARGET_FORMAT.hdr` instead and pair it with
+`addToneMappingComponent`. There, a sprite's `tintColor` can go above `1`
+to make it glow: a sprite tinted `new Color(3, 3, 3)` blooms more than one
+tinted `Color.white`. See [HDR Rendering & Tone
+Mapping](./hdr-rendering.md), and [Emissive-driven
+bloom](#emissive-driven-bloom) below for making only part of a sprite glow.
 :::
 
 ## Performance note
@@ -249,13 +250,14 @@ world.addSystem(createToneMapEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
-Without the emissive map, `threshold` is the only way to make part of a
-sprite glow more than the rest, and it can't distinguish "this part is
-meant to be a light source" from "this part happens to be pale" — both
-read as the same brightness once clamped to `[0, 1]`. The emissive map
-sidesteps that: its contribution is added _after_ the albedo sample, so it
-can push specific pixels arbitrarily bright regardless of the sprite's own
-tint or texture color, without lightening the rest of the sprite. See [HDR
+A tint above `1` brightens the whole sprite. Without the emissive map,
+`threshold` is the only way to make part of a sprite glow more than the
+rest, and it can't distinguish "this part is meant to be a light source"
+from "this part happens to be pale" — both read as the same brightness.
+The emissive map sidesteps that: its contribution is added _after_ the
+albedo sample, so it can push specific pixels arbitrarily bright
+regardless of the sprite's own tint or texture color, without lightening
+the rest of the sprite. See [HDR
 Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render
 target and `addToneMappingComponent` work together to make this look right once
 presented.

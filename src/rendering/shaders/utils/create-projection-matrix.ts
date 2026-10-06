@@ -1,40 +1,27 @@
-import { Matrix3x3, Vector2 } from '../../../math/index.js';
+import { Matrix3x3, Rect } from '../../../math/index.js';
 
 /**
- * Creates a projection matrix for rendering with a camera.
- * The projection matrix is centered on the camera position and applies zoom.
+ * Creates the projection matrix that maps a world-space area onto clip
+ * space, filling the destination it's drawn into.
  *
- * @param width - The width of the viewport.
- * @param height - The height of the viewport.
- * @param cameraPosition - The position of the camera in world coordinates.
- * @param zoom - The zoom level to apply to the projection.
- * @param pixelsPerUnit - The number of pixels one world unit occupies (see
- * `calculatePixelsPerUnit`). Defaults to `1`.
+ * @param bounds - The world-space area to show, such as a camera's
+ * `CameraView.bounds` (see `computeCameraView`).
  * @returns A 3x3 projection matrix that can be used for rendering.
  */
-export function createProjectionMatrix(
-  width: number,
-  height: number,
-  cameraPosition: Vector2,
-  zoom: number,
-  pixelsPerUnit: number = 1,
-): Matrix3x3 {
+export function createProjectionMatrix(bounds: Rect): Matrix3x3 {
   const projectionMatrix = Matrix3x3.identity;
+  const width = bounds.max.x - bounds.min.x;
+  const height = bounds.max.y - bounds.min.y;
 
-  // Centered projection: (0,0) is center of screen. World units are
-  // converted to pixels before pixels are converted to clip space.
-  projectionMatrix.scale(
-    (2 / width) * pixelsPerUnit,
-    (-2 / height) * pixelsPerUnit,
-  );
+  projectionMatrix.scale(2 / width, -2 / height);
 
-  // Apply zoom around the center
-  projectionMatrix.scale(zoom, zoom);
-
-  // Center cameraPos on screen. Sprite instance data negates world.y before
+  // Center the area on screen. Sprite instance data negates world.y before
   // it reaches the shader (see bindSpriteInstanceData), so unlike x, the
-  // camera's y must be translated unnegated to land back on the same sprite.
-  projectionMatrix.translate(-cameraPosition.x, cameraPosition.y);
+  // center's y must be translated unnegated to land back on the same sprite.
+  projectionMatrix.translate(
+    -(bounds.min.x + width / 2),
+    bounds.min.y + height / 2,
+  );
 
   return projectionMatrix;
 }

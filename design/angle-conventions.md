@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                         |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                       |
+| **Status**                            | Implemented (both phases; open questions resolved as proposed)                                                          |
 | **Kind**                              | Defect                                                                                                                  |
 | **Found in**                          | Galactic Journey demo: `src/engine-flame/create-engine-flames.ts` (exhaust direction converted by hand, fixed at spawn) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                |
@@ -143,6 +143,10 @@ are radians, positive turns `+X` towards `+Y` (counter-clockwise, since
 - A range spanning a full turn picks from the whole circle. In radians a
   computed span such as `π/2 ± π` can miss `2π` by a rounding step, so the
   check is `span >= 2π - ε`, not exact equality.
+  _Implementation note:_ no check was needed. The old special case only
+  existed because `(max - min) % 360` turned a full-turn span into `0`;
+  picking uniformly from `[min, max]` already covers the whole circle for
+  any full-turn span, so it was deleted rather than replaced.
 
 The demo's flame then sets `directionRange` to the backwards direction in
 the flame's own frame plus or minus the spread, once, and the exhaust

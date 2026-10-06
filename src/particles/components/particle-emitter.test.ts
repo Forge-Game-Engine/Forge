@@ -12,7 +12,7 @@ describe('ParticleEmitter', () => {
   it('uses the defaults for options that are left out', () => {
     const emitter = new ParticleEmitter(sprite);
 
-    expect(emitter.directionRange).toEqual({ min: 0, max: 360 });
+    expect(emitter.directionRange).toEqual({ min: 0, max: Math.PI * 2 });
     expect(emitter.rotationRange).toEqual({ min: 0, max: 0 });
     expect(emitter.lifetimeOpacity).toEqual({ start: 1, end: 1 });
     expect(emitter.acceleration).toEqual({ x: 0, y: 0 });

@@ -10,7 +10,10 @@ import {
 } from '../../rendering/index.js';
 import { addUiColorTransitionComponent } from '../components/ui-color-transition-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
-import { linear } from '../../animations/easing-functions/index.js';
+import {
+  easeInOutBack,
+  linear,
+} from '../../animations/easing-functions/index.js';
 
 const buildRenderable = (): Renderable => ({}) as Renderable;
 
@@ -77,6 +80,40 @@ describe('createUiTransitionEcsSystem', () => {
     expect(done.r).toBeCloseTo(1);
     expect(done.g).toBeCloseTo(1);
     expect(done.b).toBeCloseTo(1);
+  });
+
+  it('brightens the tint past white, and past hoverColor while an easing overshoots', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const hoverColor = new Color(1.2, 1.2, 1.2, 1);
+
+    const interactable = addUiInteractableComponent(world, entity);
+    addSpriteComponent(world, entity, {
+      width: 1,
+      height: 1,
+      renderable: buildRenderable(),
+    });
+    addUiColorTransitionComponent(world, entity, {
+      hoverColor,
+      duration: 100,
+      easing: easeInOutBack,
+    });
+
+    interactable.isHovered = true;
+
+    world.addSystem(createUiTransitionEcsSystem(buildTime(80)));
+    world.update();
+
+    const overshooting = world.getComponent(entity, spriteId)!.tintColor;
+
+    expect(overshooting.r).toBeCloseTo(1 + 0.2 * easeInOutBack(0.8));
+    expect(overshooting.r).toBeGreaterThan(hoverColor.r);
+
+    world.update();
+
+    expect(world.getComponent(entity, spriteId)!.tintColor.r).toBeCloseTo(
+      hoverColor.r,
+    );
   });
 
   it('restarts the tween from the color actually on screen when the state changes mid-tween', () => {

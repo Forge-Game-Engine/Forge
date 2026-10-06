@@ -1,11 +1,11 @@
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
-  calculateVisibleWorldSize,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
+  getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import {
   createTextShapingEcsSystem,
@@ -57,7 +57,7 @@ export const createTextGame = async (
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
@@ -82,11 +82,11 @@ export const createTextGame = async (
     layer: renderLayers.foreground,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const usableWidth = width - margin * 2;
   const left = -usableWidth / 2;
   let y = height / 2 - margin;

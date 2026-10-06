@@ -1,18 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { createProjectionMatrix } from './create-projection-matrix';
-import { Matrix3x3 } from '../../../math';
+import { Matrix3x3, Rect } from '../../../math';
+
+const centeredRect = (width: number, height: number): Rect => ({
+  min: { x: -width / 2, y: -height / 2 },
+  max: { x: width / 2, y: height / 2 },
+});
+
+const project = (
+  matrix: Matrix3x3,
+  x: number,
+  y: number,
+): { x: number; y: number } => {
+  const m = matrix.matrix;
+
+  // Sprite instance data negates world y before it reaches the shader.
+  return {
+    x: m[0] * x + m[3] * -y + m[6],
+    y: m[1] * x + m[4] * -y + m[7],
+  };
+};
 
 describe('createProjectionMatrix', () => {
   it.each([
-    { description: 'given width and height', width: 800, height: 600 },
+    { description: 'a wide area', width: 800, height: 600 },
     { description: 'a very small area', width: 1, height: 1 },
     { description: 'a very large area', width: 10000, height: 10000 },
   ])(
-    'should create a correct projection matrix for $description',
+    'should scale $description centered on the origin to clip space',
     ({ width, height }) => {
-      const cameraPosition = { x: 0, y: 0 };
-      const zoom = 1;
-
       const expectedMatrix = new Matrix3x3([
         2 / width,
         0,
@@ -25,220 +41,26 @@ describe('createProjectionMatrix', () => {
         1,
       ]);
 
-      const result = createProjectionMatrix(
-        width,
-        height,
-        cameraPosition,
-        zoom,
-      );
+      const result = createProjectionMatrix(centeredRect(width, height));
 
       expect(result).toEqual(expectedMatrix);
     },
   );
 
-  it('should create a correct projection matrix for a square area', () => {
-    const size = 500;
-    const cameraPosition = { x: 0, y: 0 };
-    const zoom = 1;
-    const expectedMatrix = new Matrix3x3([
-      2 / size,
-      0,
-      0,
-      -0,
-      -2 / size,
-      0,
-      0,
-      0,
-      1,
-    ]);
+  it('should map the corners of an off-center area to the corners of clip space', () => {
+    const bounds: Rect = { min: { x: 10, y: -20 }, max: { x: 50, y: 0 } };
 
-    const result = createProjectionMatrix(size, size, cameraPosition, zoom);
+    const result = createProjectionMatrix(bounds);
 
-    expect(result).toEqual(expectedMatrix);
-  });
+    const bottomLeft = project(result, bounds.min.x, bounds.min.y);
+    const topRight = project(result, bounds.max.x, bounds.max.y);
+    const center = project(result, 30, -10);
 
-  it('should apply zoom correctly', () => {
-    const width = 800;
-    const height = 600;
-    const cameraPosition = { x: 0, y: 0 };
-    const zoom = 2;
-
-    const expectedMatrix = new Matrix3x3([
-      (2 / width) * zoom,
-      0,
-      0,
-      -0,
-      (-2 / height) * zoom,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
-
-    expect(result).toEqual(expectedMatrix);
-  });
-
-  it('should translate the camera position correctly', () => {
-    const width = 800;
-    const height = 600;
-    const cameraPosition = { x: 100, y: 50 };
-    const zoom = 1;
-
-    // The matrix should include translation by -cameraPosition.x and
-    // +cameraPosition.y (sprite y is pre-negated, so the camera's y must
-    // translate unnegated to land back on the same sprite).
-    const scaleX = 2 / width;
-    const scaleY = -2 / height;
-    const tx = -cameraPosition.x * scaleX;
-    const ty = cameraPosition.y * scaleY;
-
-    const expectedMatrix = new Matrix3x3([
-      scaleX,
-      0,
-      0,
-      -0,
-      scaleY,
-      0,
-      tx,
-      ty,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
-
-    expect(result).toEqual(expectedMatrix);
-  });
-
-  it('should apply both zoom and camera translation', () => {
-    const width = 400;
-    const height = 200;
-    const cameraPosition = { x: 10, y: -20 };
-    const zoom = 0.5;
-
-    const scaleX = (2 / width) * zoom;
-    const scaleY = (-2 / height) * zoom;
-    const tx = -cameraPosition.x * scaleX;
-    const ty = cameraPosition.y * scaleY;
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
-
-    // Use toBeCloseTo for floating-point comparisons to handle Float32Array precision
-    // values used in the test are of type `number` which is a double-precision floats
-    // but the matrix is stored as `Float32Array` which are single-precision floats
-    // we use single-precision floats in the implementation for performance reasons
-    // and because we send these matrices to the GPU which typically uses single-precision floats
-    expect(result.matrix[0]).toBeCloseTo(scaleX);
-    expect(result.matrix[1]).toBeCloseTo(0);
-    expect(result.matrix[2]).toBeCloseTo(0);
-    expect(result.matrix[3]).toBeCloseTo(0);
-    expect(result.matrix[4]).toBeCloseTo(scaleY);
-    expect(result.matrix[5]).toBeCloseTo(0);
-    expect(result.matrix[6]).toBeCloseTo(tx);
-    expect(result.matrix[7]).toBeCloseTo(ty);
-    expect(result.matrix[8]).toBeCloseTo(1);
-  });
-
-  it('should apply pixelsPerUnit as an additional scale factor', () => {
-    const width = 800;
-    const height = 600;
-    const cameraPosition = { x: 0, y: 0 };
-    const zoom = 1;
-    const pixelsPerUnit = 100;
-
-    const expectedMatrix = new Matrix3x3([
-      (2 / width) * pixelsPerUnit,
-      0,
-      0,
-      -0,
-      (-2 / height) * pixelsPerUnit,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(
-      width,
-      height,
-      cameraPosition,
-      zoom,
-      pixelsPerUnit,
-    );
-
-    expect(result).toEqual(expectedMatrix);
-  });
-
-  it('should combine pixelsPerUnit with zoom and camera translation', () => {
-    const width = 400;
-    const height = 200;
-    const cameraPosition = { x: 10, y: -20 };
-    const zoom = 0.5;
-    const pixelsPerUnit = 20;
-
-    const scaleX = (2 / width) * pixelsPerUnit * zoom;
-    const scaleY = (-2 / height) * pixelsPerUnit * zoom;
-    const tx = -cameraPosition.x * scaleX;
-    const ty = cameraPosition.y * scaleY;
-
-    const result = createProjectionMatrix(
-      width,
-      height,
-      cameraPosition,
-      zoom,
-      pixelsPerUnit,
-    );
-
-    expect(result.matrix[0]).toBeCloseTo(scaleX);
-    expect(result.matrix[4]).toBeCloseTo(scaleY);
-    expect(result.matrix[6]).toBeCloseTo(tx);
-    expect(result.matrix[7]).toBeCloseTo(ty);
-  });
-
-  it('should default pixelsPerUnit to 1 when omitted', () => {
-    const width = 800;
-    const height = 600;
-    const cameraPosition = { x: 0, y: 0 };
-    const zoom = 1;
-
-    const withDefault = createProjectionMatrix(
-      width,
-      height,
-      cameraPosition,
-      zoom,
-    );
-    const withExplicitOne = createProjectionMatrix(
-      width,
-      height,
-      cameraPosition,
-      zoom,
-      1,
-    );
-
-    expect(withDefault).toEqual(withExplicitOne);
-  });
-
-  it('should handle negative zoom (flipping)', () => {
-    const width = 100;
-    const height = 100;
-    const cameraPosition = { x: 0, y: 0 };
-    const zoom = -1;
-
-    const expectedMatrix = new Matrix3x3([
-      (2 / width) * zoom,
-      -0,
-      0,
-      0,
-      (-2 / height) * zoom,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    const result = createProjectionMatrix(width, height, cameraPosition, zoom);
-
-    expect(result).toEqual(expectedMatrix);
+    expect(bottomLeft.x).toBeCloseTo(-1);
+    expect(bottomLeft.y).toBeCloseTo(-1);
+    expect(topRight.x).toBeCloseTo(1);
+    expect(topRight.y).toBeCloseTo(1);
+    expect(center.x).toBeCloseTo(0);
+    expect(center.y).toBeCloseTo(0);
   });
 });

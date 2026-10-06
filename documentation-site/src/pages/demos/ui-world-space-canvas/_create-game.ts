@@ -11,13 +11,13 @@ import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -52,6 +52,7 @@ const enemyY = -40;
 
 async function createBackdrop(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
@@ -71,11 +72,11 @@ async function createBackdrop(
   // the very back explicitly instead.
   backdropSprite.sortDepth = -10000;
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
 
   backdropSprite.width = width;
   backdropSprite.height = height;
@@ -231,7 +232,7 @@ export const createWorldSpaceCanvasGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createBackdrop(world, renderContext);
+  await createBackdrop(world, worldCamera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
