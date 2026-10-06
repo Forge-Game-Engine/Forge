@@ -174,8 +174,8 @@ test.describe('camera pan/zoom', () => {
         (whileHeld.bounds!.left + whileHeld.bounds!.right) / 2;
       const actualShift = centerWhileHeld - centerBefore;
 
-      // Panning the camera right moves world content left on screen (see
-      // createProjectionMatrix's `translate(-cameraPosition.x, ...)`); world
+      // Panning the camera right moves world content left on screen (the
+      // camera's view, and so its projection, is centered on it); world
       // units map 1:1 to pixels at zoom 1, scaling with zoom otherwise.
       const expectedShift =
         -(whileHeld.position.x - before.position.x) * whileHeld.zoom;
@@ -205,6 +205,66 @@ test.describe('camera pan/zoom', () => {
       expect(afterRelease.bounds).not.toBeNull();
       expect(oneMoreStepLater.bounds).not.toBeNull();
       expect(oneMoreStepLater.bounds).toEqual(afterRelease.bounds);
+    });
+  });
+
+  test('converts the pointer to world space through the moved, zoomed camera', async ({
+    page,
+  }) => {
+    await test.step('zoom in and pan right over several frames', async () => {
+      await animateFrames(page, 4, () =>
+        page.locator('canvas').dispatchEvent('wheel', { deltaY: -100 }),
+      );
+      await page.keyboard.down('ArrowRight');
+      await animateFrames(page, 4);
+      await page.keyboard.up('ArrowRight');
+      await animateFrames(page, 1);
+    });
+
+    const state =
+      await test.step('capture the camera and the rendered green square', () =>
+        captureState(page));
+
+    expect(state.zoom).toBeGreaterThan(1);
+    expect(state.position.x).toBeGreaterThan(0);
+    expect(state.bounds).not.toBeNull();
+
+    await test.step('move the mouse onto the rendered green square', async () => {
+      const canvasBox = await page.locator('canvas').boundingBox();
+      const drawingBufferWidth = await page.evaluate(
+        () => document.querySelector('canvas')!.width,
+      );
+
+      expect(canvasBox).not.toBeNull();
+
+      // `bounds` is measured in drawing-buffer pixels along the canvas's
+      // vertical center, where the origin square sits.
+      const squareCenterX =
+        (state.bounds!.left + state.bounds!.right) / 2 / drawingBufferWidth;
+
+      await page.mouse.move(
+        canvasBox!.x + squareCenterX * canvasBox!.width,
+        canvasBox!.y + canvasBox!.height / 2,
+      );
+      await step(page);
+    });
+
+    const pointer = await test.step('read the pointer world position', () =>
+      page.evaluate(() => {
+        const scene = window.__forgeTestHooks as unknown as Hooks;
+
+        return {
+          position: scene.pointerWorldPosition,
+          squareSize: scene.greenSquareWorldSize,
+        };
+      }));
+
+    await test.step('assert the pointer lands on the green square in world space', () => {
+      // The pixel the pointer is on shows the green square, so the view
+      // must map it back inside the square, which is centered on the
+      // origin.
+      expect(Math.abs(pointer.position.x)).toBeLessThan(pointer.squareSize / 2);
+      expect(Math.abs(pointer.position.y)).toBeLessThan(pointer.squareSize / 2);
     });
   });
 });

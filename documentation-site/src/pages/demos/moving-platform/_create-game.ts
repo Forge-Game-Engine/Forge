@@ -1,10 +1,8 @@
 import {
-  calculatePixelsPerUnit,
-  calculateVisibleWorldSize,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
-  screenToWorldSpace,
+  getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -18,7 +16,6 @@ import {
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { Vec2 } from '@forge-game-engine/forge/math';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createBoundaries } from './_create-boundaries';
 import { createPlatform, platformHeight } from './_create-platform';
@@ -32,22 +29,22 @@ const renderLayers = {
 export const createMovingPlatformGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const platformY = -height * 0.15;
   const leftX = -width * 0.25;
   const rightX = width * 0.25;
 
-  await createBoundaries(world, renderContext, renderLayers.foreground);
+  await createBoundaries(world, camera, renderContext, renderLayers.foreground);
   await createPlatform(
     world,
     renderContext,
@@ -102,10 +99,7 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 
-  // Click anywhere to drop another crate at that position - the camera is
-  // static at the world origin with a zoom of 1 (see `createCamera` above),
-  // so screen coordinates can be converted to world coordinates directly,
-  // once scaled by the camera's pixels-per-unit.
+  // Click anywhere to drop another crate at that position.
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();
 
@@ -114,23 +108,11 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
       y: event.clientY - canvasBounds.top,
     };
 
-    // screenPosition is in CSS pixels, so convert it against the canvas's
-
-    // CSS size rather than its (pixel-ratio-scaled) drawing buffer.
-
-    const pixelsPerUnit = calculatePixelsPerUnit(
-      renderContext.cssHeight,
-      DEMO_VERTICAL_WORLD_UNITS,
-    );
-
-    const worldPosition = screenToWorldSpace(
-      screenPosition,
-      Vec2.zero,
-      1,
-      renderContext.cssWidth,
-      renderContext.cssHeight,
-      pixelsPerUnit,
-    );
+    const worldPosition = getCameraView(
+      world,
+      camera,
+      renderContext,
+    ).viewportToWorld(screenPosition);
 
     spawnCrate(world, crateSprite, worldPosition);
   });

@@ -6,8 +6,8 @@
  * CSS pixel count (the same unit DOM layout uses, so it keeps the same
  * physical size on a HiDPI display), converted to reference pixels fresh
  * every frame (via
- * `createUiLayoutEcsSystem`'s own `pixelsPerUnit`, the same conversion
- * `calculatePixelsPerUnit` gives `createUiSafeAreaEcsSystem`) - useful for an
+ * the canvas camera's `CameraView.pixelsPerUnit`, the same conversion
+ * `createUiSafeAreaEcsSystem` uses) - useful for an
  * element that should keep a constant on-screen size regardless of the
  * canvas's `scaleMode`/reference resolution or the destination's aspect
  * ratio, such as a fixed-width sidebar inside an otherwise `scaleWithScreenSize`/
