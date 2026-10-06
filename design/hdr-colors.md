@@ -1,20 +1,21 @@
 # Design: Colors Brighter Than White
 
-|                                       |                                                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                     |
-| **Kind**                              | Defect                                                                                                |
+|                                       |                                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                    |
+| **Kind**                              | Defect                                                                                               |
 | **Found in**                          | Galactic Journey demo: `src/ui/create-menu-button.ts` (buttons dimmed at rest so hover can brighten) |
-| **Engine version at time of writing** | `0.25.8`                                                                                              |
-| **Related**                           | [`demo-findings.md`](./demo-findings.md)                                                              |
+| **Engine version at time of writing** | `0.25.8`                                                                                             |
+| **Related**                           | [`demo-findings.md`](./demo-findings.md)                                                             |
 
 ## 0. Targeted modules
 
-| Path                                            | Change   | Notes                                                                    |
-| ----------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| `src/rendering/color.ts`                        | Modified | Red, green and blue have no upper bound; alpha stays in `[0, 1]`         |
-| `documentation-site/docs/docs/rendering/*.md`   | Modified | Tints above `1` brighten; bloom's "can't be brighter than white" tip     |
-| `documentation-site/docs/docs/ui/` (transitions) | Modified | Hover brightening with a tint above `1`                                  |
+| Path                                                                  | Change   | Notes                                                            |
+| --------------------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
+| `src/rendering/color.ts`, `color.test.ts`                             | Modified | Red, green and blue have no upper bound; alpha stays in `[0, 1]` |
+| `documentation-site/docs/docs/rendering/bloom.md`, `hdr-rendering.md` | Modified | Tints above `1` as a way to bloom on an HDR camera               |
+| `documentation-site/docs/docs/ui/` (transitions)                      | Modified | Hover brightening with a tint above `1`                          |
+| `documentation-site/src/pages/demos/easing-functions/index.tsx`       | Modified | Uses `toRGBAString`; checked for colors above `1`                |
 
 ---
 
@@ -31,9 +32,9 @@ The demo's menu buttons hit this. A button's color transition should
 brighten the art on hover. With tints capped at `1`, the art's own
 brightness is the most hover can show, so the demo tints every button to
 `0.8` at rest and `1` on hover, and has to author the art brighter than it
-should look. The bloom guide has a tip explaining the same limit ("there's
-no way to make one white sprite bloom more than another equally white
-sprite by giving it a brighter-than-white color").
+should look. The rendering guides have the same gap: the bloom and HDR
+guides present an emissive map as the only way to push a sprite past `1`
+on an HDR camera, because a tint can't.
 
 Every engine's color type is unclamped for exactly these uses. This design
 removes the upper bound on red, green and blue.
@@ -98,11 +99,11 @@ since CSS colors can't be brighter than white.
 
 ### Phase 1: Unclamped colors
 
-| #   | Task                                                                              | Size |
-| --- | --------------------------------------------------------------------------------- | ---- |
-| 1.1 | Remove the upper clamp on red, green and blue; keep alpha and the lower clamp     | S    |
-| 1.2 | Tests: values above `1` kept; negatives clamped; `toRGBAString` stays valid CSS   | S    |
-| 1.3 | Guides: tinting, color transitions, bloom tip; changelog under `#### Changed`     | S    |
+| #   | Task                                                                            | Size |
+| --- | ------------------------------------------------------------------------------- | ---- |
+| 1.1 | Remove the upper clamp on red, green and blue; keep alpha and the lower clamp   | S    |
+| 1.2 | Tests: values above `1` kept; negatives clamped; `toRGBAString` stays valid CSS | S    |
+| 1.3 | Guides: tinting, color transitions, bloom tip; changelog under `#### Changed`   | S    |
 
 **Definition of done:** a sprite tinted `(1.5, 1.5, 1.5)` draws brighter
 than its texture, and blooms more than a white-tinted one on an HDR
@@ -140,7 +141,11 @@ None.
 
 ## 9. Documentation and demo follow-up
 
-- `rendering/bloom.md`: the tip becomes "tint above `1` on an `hdr`
-  camera".
+- `rendering/bloom.md`: the tip about 8-bit targets clamping stays (it's
+  still true on LDR targets) and gains the HDR case: on an `hdr` camera, a
+  tint above `1` blooms more. The emissive-map section and the opening of
+  `rendering/hdr-rendering.md` stop presenting emissive maps as the only
+  way past `1`.
+- `Color`'s JSDoc stops saying each channel is `0-1`.
 - Demo: buttons rest at white and brighten on hover; the art is authored at
   its intended brightness and the comment goes.

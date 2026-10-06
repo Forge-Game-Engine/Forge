@@ -1,27 +1,27 @@
 # Design: Persistent Player Preferences
 
-|                                       |                                                                                                                            |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                          |
-| **Kind**                              | Feature                                                                                                                    |
-| **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts` and `src/graphics/graphics-settings-store.ts` (two copies of the same load/validate/save code) |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                   |
+|                                       |                                                                                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**                            | Draft, for review                                                                                                                                                        |
+| **Kind**                              | Feature                                                                                                                                                                  |
+| **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts` and `src/graphics/graphics-settings-store.ts` (two copies of the same load/validate/save code)                         |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                 |
 | **Related**                           | [#567](https://github.com/Forge-Game-Engine/Forge/issues/567) (save/load epic), [`audio-mixer.md`](./audio-mixer.md), [`webgl-context-loss.md`](./webgl-context-loss.md) |
 
 ## 0. Targeted modules
 
-| Path                                   | Change   | Notes                                                                             |
-| -------------------------------------- | -------- | --------------------------------------------------------------------------------- |
-| `src/preferences/`                     | **New**  | `createPreferences`: typed, defaulted, validated values persisted per device      |
-| `src/index.ts`, `package.json` exports | Modified | New module                                                                        |
-| `documentation-site/docs/docs/preferences/` | **New** | Guide                                                                        |
+| Path                                        | Change   | Notes                                                                        |
+| ------------------------------------------- | -------- | ---------------------------------------------------------------------------- |
+| `src/preferences/`                          | **New**  | `createPreferences`: typed, defaulted, validated values persisted per device |
+| `src/index.ts`, `package.json` exports      | Modified | New module                                                                   |
+| `documentation-site/docs/docs/preferences/` | **New**  | Guide                                                                        |
 
 ---
 
 ## 1. Summary
 
 Every game has settings that should survive a reload: volumes, mute,
-graphics quality, control preferences. Forge has nothing for this, so the
+graphics quality, input preferences. Forge has nothing for this, so the
 demo writes it twice. Its audio mixer and its graphics settings each:
 
 - pick a `localStorage` key under the game's name,
@@ -43,18 +43,22 @@ This design adds the equivalent to Forge.
 ### In scope
 
 - `createPreferences`: a named set of flat values with defaults,
-  per-field validation, persistence, and a change event.
-- Graceful failure when storage is unavailable or full.
-- A pluggable storage backend, with `localStorage` as the default.
+  per-field validation, persistence in `localStorage`, and a change event.
+- Graceful failure when storage is unavailable, blocked or full.
 
 ### Out of scope
 
 - **Saving game state** (worlds, entities, progress). That's
-  [#567](https://github.com/Forge-Game-Engine/Forge/issues/567), which
-  also plans storage backends; preferences can move onto those backends
-  when they exist.
+  [#567](https://github.com/Forge-Game-Engine/Forge/issues/567).
+- **Other storage backends.** #567 plans a storage abstraction covering
+  IndexedDB and remote saves, which are asynchronous. Preferences are read
+  synchronously before any world exists, so they use `localStorage`, as
+  Unity's `PlayerPrefs` and `bevy_pkv` do in the browser. Whether they
+  should later share #567's backends is open question 1.
 - **Nested values and migrations.** Values are flat numbers, strings and
-  booleans; a field that changes meaning gets a new name (open question 1).
+  booleans. Structured data such as key bindings can be stored as a JSON
+  string, the way Unity stores input binding overrides in `PlayerPrefs`. A
+  field that changes meaning gets a new name (open question 2).
 - **Syncing across devices.**
 
 ---
@@ -66,10 +70,14 @@ This design adds the equivalent to Forge.
   save games.
 - **Godot**: `ConfigFile` with sections and keys, saved under `user://`,
   read with `get_value(section, key, default)`.
-- **Bevy**: no built-in; community crates (`bevy_pkv`,
-  `bevy-persistent`) store typed resources the same way.
+- **Bevy**: no built-in. `bevy_pkv` is a key-value store
+  (`get::<T>(key)`, `set(key, &value)`) meant for settings and saves; in
+  the browser it uses `localStorage`, chosen to keep its API synchronous.
+  `bevy-persistent` persists a whole typed resource.
 
-All of them read with a default, so a missing or new setting just works.
+The key-value stores keep only the keys a game set and apply defaults when
+reading, so a missing or new setting just works, and a default the game
+changes in an update reaches every player who never changed it.
 
 ---
 
@@ -78,46 +86,66 @@ All of them read with a default, so a missing or new setting just works.
 ```ts
 type PreferenceValue = number | string | boolean;
 
-interface Preferences<T extends Record<string, PreferenceValue>> {
-  /** The current values: saved ones that passed validation, defaults otherwise. */
+interface Preferences<T extends { [K in keyof T]: PreferenceValue }> {
+  /**
+   * The current values: stored ones that passed validation, defaults for
+   * the rest. Replaced (not mutated) on every change, so read it from the
+   * preferences object rather than keeping a reference.
+   */
   readonly values: Readonly<T>;
-  /** Applies `changes` and saves. Never throws because storage failed. */
+  /** Applies `changes` and saves them. Never throws because storage failed. */
   set(changes: Partial<T>): void;
-  /** Back to the defaults, and saved. */
+  /** Forgets everything stored, so every value is its default again. */
   reset(): void;
   /** Raised after `set` or `reset` with the new values. */
   readonly onChange: ParameterizedForgeEvent<Readonly<T>>;
 }
 
-function createPreferences<T extends Record<string, PreferenceValue>>(
-  name: string,
-  defaults: T,
-  options?: Partial<PreferencesOptions<T>>,
-): Preferences<T>;
-
 interface PreferencesOptions<T> {
   /** Per-field checks beyond "same type as the default", e.g. one of a set of strings. */
   validators: { [K in keyof T]?: (value: unknown) => value is T[K] };
-  /** Where values are kept. Defaults to `localStorage`. */
-  storage: PreferenceStorage;
 }
 
-interface PreferenceStorage {
-  read(name: string): string | null;
-  write(name: string, data: string): void;
-}
+const defaultPreferencesOptions = { validators: {} };
+
+function createPreferences<T extends { [K in keyof T]: PreferenceValue }>(
+  name: string,
+  defaults: T,
+  options: Partial<PreferencesOptions<T>> = {},
+): Preferences<T>;
 ```
 
-- **Loading** happens once, in `createPreferences`. Each field is taken
-  from storage if it has the same type as its default and passes its
-  validator, and from the defaults otherwise, independently of the other
-  fields. Unreadable storage or malformed data gives the defaults.
-- **Saving** writes the whole set as JSON under `name`. A failed write
-  (quota, blocked storage) is swallowed: the values still apply for the
-  session, which is all a game can do anyway. `set` with a value that
-  fails validation throws, since that's a programming error.
-- **Values outside the defaults' keys** in storage are dropped on the next
-  save.
+The constraint is written as a mapped type, not
+`Record<string, PreferenceValue>`, so interfaces such as the demo's
+`AudioSettings` are accepted.
+
+- **Loading** happens once, in `createPreferences`. A stored field is used
+  if it has the same type as its default (numbers must also be finite) and
+  passes its validator; otherwise the default is used, independently of
+  the other fields. Unreadable storage or malformed data gives the
+  defaults. An out-of-range stored value (a volume of `-0.1`) therefore
+  becomes the default, not the nearest valid value.
+- **Saving** stores only the keys that have been `set`, as JSON under
+  `name`. Defaults are never written, so changing a default in a game
+  update reaches every player who hadn't changed that setting. `reset`
+  removes the stored entry.
+- **Failures.** `localStorage` is accessed only inside `try` blocks: even
+  reading the property throws a `SecurityError` where storage is blocked.
+  A failed write (quota, blocked storage) is swallowed and the values
+  still apply for the session, which is all a game can do anyway. `set`
+  with a value that fails validation, including `NaN` or `Infinity`,
+  throws: that's a programming error, and `JSON.stringify` would turn a
+  non-finite number into `null` and quietly lose it on reload.
+- **One set per name.** Creating two preferences with the same `name`
+  throws, since each would overwrite the other's stored keys.
+
+### 4.1 Who owns the values
+
+The preferences object is the single owner of persisted settings. Other
+state derived from them (a graphics settings component, the audio mixer's
+bus volumes in [`audio-mixer.md`](./audio-mixer.md)) is written from
+`onChange`, and changes go through `set`, so nothing keeps a second copy
+that drifts from what's stored.
 
 The demo's audio settings become:
 
@@ -142,16 +170,16 @@ stays in the game: it's policy, built on top.
 
 ### Phase 1: Preferences
 
-| #   | Task                                                                                 | Size |
-| --- | ------------------------------------------------------------------------------------ | ---- |
-| 1.1 | `createPreferences`, per-field loading, saving, `onChange`                           | M    |
-| 1.2 | `localStorage` backend with failure handling; an in-memory backend for tests         | S    |
-| 1.3 | Module wiring (`src/index.ts`, `package.json` exports)                               | S    |
-| 1.4 | Guide; a settings panel in a docs demo; changelog under `#### Added`                 | M    |
+| #   | Task                                                                               | Size |
+| --- | ---------------------------------------------------------------------------------- | ---- |
+| 1.1 | `createPreferences`: per-field loading, storing only set keys, `reset`, `onChange` | M    |
+| 1.2 | `localStorage` failure handling (blocked, full, malformed); duplicate-name check   | S    |
+| 1.3 | Module wiring (`src/index.ts`, `package.json` exports)                             | S    |
+| 1.4 | Guide; a settings panel in a docs demo; changelog under `#### Added`               | M    |
 
-**Definition of done:** a docs demo's settings survive a reload, and a
+**Definition of done:** a docs demo's settings survive a reload; a
 corrupted stored value falls back to its default without affecting the
-other fields.
+other fields; changing a default reaches a player who never set it.
 
 ---
 
@@ -165,16 +193,28 @@ serialization and store settings as entities.
 **Decision: (a).**
 
 **Rationale.** Settings are read before any world exists (the demo picks
-its render quality before creating its render pipeline), are tiny, and
-have different failure rules from a save game. Unity and Godot keep them
-separate for the same reasons.
+its render quality before creating its render pipeline), are tiny, aren't
+entities, and need per-field fallback rather than migrations. Unity and
+Godot keep them separate for the same reasons.
 
 ### DL-2: Validation per field, not per object
 
 **Rationale.** A game update that adds or retypes one setting shouldn't
 reset the player's others. Both demo stores already do it per field.
 
-### DL-3: Flat values only
+### DL-3: Store only what was set
+
+**Options.** (a) Store the whole set on every change, as the demo does.
+(b) Store only the keys that were set.
+
+**Decision: (b).**
+
+**Rationale.** (a) pins every default the first time a player changes
+anything, so a later change to a default (the demo's starting graphics
+quality, say) never reaches them. Every key-value store in §3 works like
+(b).
+
+### DL-4: Flat values only
 
 **Rationale.** Every setting in the demo and in typical options menus is
 a number, string or boolean. Flat values make the type check against the
@@ -184,7 +224,12 @@ default sufficient for most fields, and keep the stored format readable.
 
 ## 7. Open questions
 
-1. **Renamed or reinterpreted settings.** With per-field fallback, a
+1. **Should preferences share #567's storage backends** once they exist?
+   They're asynchronous (IndexedDB, remote), and preferences are read
+   synchronously at startup, so sharing them would make loading async.
+   - (a) Keep preferences on `localStorage` (proposed). (b) Design one
+     storage abstraction for both as part of #567.
+2. **Renamed or reinterpreted settings.** With per-field fallback, a
    renamed field resets to its default. A migration hook could carry it
    over.
    - (a) No migrations until a game needs one (proposed). (b) A
@@ -194,13 +239,19 @@ default sufficient for most fields, and keep the stored format readable.
 
 ## 8. Testing considerations
 
-- Loading: missing storage, malformed JSON, a wrong-typed field, a field
-  failing its validator, extra fields; each falls back per field.
-- Saving: a throwing backend leaves values applied; `onChange` raised.
-- `set` with an invalid value throws.
+- Loading: missing storage, a `SecurityError` on access, malformed JSON, a
+  wrong-typed field, a non-finite number, a field failing its validator,
+  extra fields; each falls back per field.
+- Saving: only set keys are written; `reset` removes the entry; a throwing
+  `setItem` leaves values applied; `onChange` raised.
+- `set` with an invalid or non-finite value throws; a second
+  `createPreferences` with the same name throws.
+- jsdom provides `localStorage` for the unit tests.
 
 ## 9. Documentation and demo follow-up
 
 - New `preferences/` guide.
 - Demo: the load/validate/save code in the audio mixer and the graphics
-  settings store is replaced by two `createPreferences` calls.
+  settings store is replaced by two `createPreferences` calls; the
+  graphics settings component and the mixer's buses are updated from
+  `onChange`.

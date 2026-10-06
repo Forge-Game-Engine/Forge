@@ -6,6 +6,7 @@ adreno
 affordances
 afterrun
 agnostically
+analyser
 Aoboshi
 Arimo
 artboard
@@ -29,6 +30,7 @@ charsets
 checkmark
 Chlumský
 commitlint
+compositionend
 cooldowns
 Cousine
 Cramer
@@ -50,11 +52,13 @@ Erdokovy
 esbenp
 evented
 Fira
+firewheel
 Flaticon
 flecs
 flexbox
 fphysics
 fract
+framebuffers
 frontmatter
 fwidth
 gamedev
@@ -188,6 +192,7 @@ tweens
 ultrawide
 unblurred
 undersamples
+unedit
 unflipped
 unmarks
 unnegated

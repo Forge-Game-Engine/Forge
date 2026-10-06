@@ -1,25 +1,25 @@
 # Design: Input Actions Read Their Sources' State
 
-|                                       |                                                                                                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                     |
-| **Kind**                              | Defect                                                                                                                                                |
+|                                       |                                                                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                                                                   |
+| **Kind**                              | Defect                                                                                                                                              |
 | **Found in**                          | Galactic Journey demo: `src/input/create-inputs.ts` (three `actionResetTypes.noReset` axes), `src/run/run-input.system.ts` (`shootInput.endHold()`) |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                              |
-| **Related**                           | [`text-input-field.md`](./text-input-field.md) (keyboard source changes), [`game-states.md`](./game-states.md)                                        |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                                            |
+| **Related**                           | [`text-input-field.md`](./text-input-field.md) (keyboard source changes), [`game-states.md`](./game-states.md)                                      |
 
 ## 0. Targeted modules
 
-| Path                                                   | Change   | Notes                                                                                              |
-| ------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| Path                                                   | Change   | Notes                                                                                             |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------- |
 | `src/input/input-manager.ts`                           | Modified | Keeps each source's input per action and derives action state from it; the only writer of actions |
-| `src/input/actions/*.ts`                               | Modified | Read-only to game code; reset type removed; axes no longer `Resettable`                            |
-| `src/input/constants/action-reset-types.ts`            | Removed  | `actionResetTypes` and `ActionResetType`                                                           |
-| `src/input/keyboard/input-sources/`                    | Modified | Reports key state through the new manager methods                                                  |
-| `src/input/mouse/input-sources/`                       | Modified | Wheel input lasts one frame because the mouse source withdraws it, not because the action resets   |
-| `src/input/gamepad/input-sources/`                     | Modified | Reports every poll; the dispatch-on-change workaround and the disconnect release loop are deleted  |
-| `documentation-site/docs/docs/input/*.md`              | Modified | Reset-behavior section removed; group switching rewritten                                          |
-| `documentation-site/src/pages/demos/*`, `e2e/fixtures` | Modified | Drop `actionResetTypes.noReset` and the scenes kept only to demonstrate the wrong default          |
+| `src/input/actions/*.ts`                               | Modified | Read-only to game code; reset type removed; axes no longer `Resettable`                           |
+| `src/input/constants/action-reset-types.ts`            | Removed  | `actionResetTypes` and `ActionResetType`                                                          |
+| `src/input/keyboard/input-sources/`                    | Modified | Reports key state through the new manager methods                                                 |
+| `src/input/mouse/input-sources/`                       | Modified | Wheel input lasts one frame because the mouse source withdraws it, not because the action resets  |
+| `src/input/gamepad/input-sources/`                     | Modified | Reports every poll; the dispatch-on-change workaround and the disconnect release loop are deleted |
+| `documentation-site/docs/docs/input/*.md`              | Modified | Reset-behavior section removed; group switching rewritten                                         |
+| `documentation-site/src/pages/demos/*`, `e2e/fixtures` | Modified | Drop `actionResetTypes.noReset` and the scenes kept only to demonstrate the wrong default         |
 
 ---
 
@@ -36,9 +36,11 @@ changes it. Three things do, and each is a defect the demo works around:
    `0` at the end of every frame. Every source except the mouse wheel only
    sends on a change, so a held key or stick reads correctly for one frame
    and `0` after that. The demo passes `actionResetTypes.noReset` to all
-   three of its axes. So does every docs-site demo, every guide sample and
-   every e2e scene except the two that keep a broken action to demonstrate
-   the pitfall. The guides carry a caution about it.
+   three of its axes. So does every axis driven by keys, sticks or the
+   cursor in the docs-site demos, the guides and the e2e scenes, apart from
+   two e2e actions kept broken on purpose to demonstrate the pitfall. Only
+   mouse-wheel axes use the default, correctly. The guides carry a caution
+   about it.
 2. **A hold carries over a group switch.** When the active input group
    changes, `InputManager` starts the new group's holds whose buttons are
    already down. The demo binds the controller's A button to both "submit"
@@ -84,7 +86,9 @@ those reports and the active group.
   everything on `blur`), worth its own small fix.
 - **Rebinding UI, binding composites, processors (dead zones, scaling) and
   interactions (tap, double tap).** None are needed by the demo.
-- **The wheel's scale** (`deltaY / 100`, clamped to `[-1, 1]`). Unchanged.
+- **The wheel's scale** (`deltaY / 100`, clamped to `[-1, 1]`). Unchanged,
+  though a frame's wheel events are now summed rather than the last one
+  winning (§4.2).
 
 ---
 
@@ -119,28 +123,55 @@ it. Sources report through four methods, which replace the
 ```ts
 class InputManager {
   /** Records `source`'s current value for `action`. */
-  setAxis1dInput(source: InputSource, action: Axis1dAction, value: number): void;
-  setAxis2dInput(source: InputSource, action: Axis2dAction, x: number, y: number): void;
-  /** Records whether `source` is holding a button bound to `action`. */
+  setAxis1dInput(
+    source: InputSource,
+    action: Axis1dAction,
+    value: number,
+  ): void;
+  setAxis2dInput(
+    source: InputSource,
+    action: Axis2dAction,
+    x: number,
+    y: number,
+  ): void;
+  /** Records whether `source` is holding any button bound to `action`. */
   setHoldInput(source: InputSource, action: HoldAction, isDown: boolean): void;
-  /** Fires `action` if its group is active. */
-  fireTrigger(action: TriggerAction): void;
+  /** Records a trigger binding's button going down or up. */
+  setTriggerInput(
+    source: InputSource,
+    binding: TriggerInputBinding,
+    isDown: boolean,
+  ): void;
   /** Forgets everything `source` reported, e.g. when it's stopped or unplugged. */
   removeSourceInput(source: InputSource): void;
 }
 ```
 
+`TriggerInputBinding` is the shape the keyboard, mouse and gamepad trigger
+bindings already share: an `action` and the `moment` (down or up) it fires
+on.
+
 The reported state is kept whether or not the action's group is active.
-Derived state:
+Reporting for an action that was never added to the manager throws, which
+replaces the guide's caution that such actions are silently never
+released. Derived state:
 
 - **Axes**: in the active group, the reported value with the largest
-  magnitude (Unity's conflict resolution). Outside it, `0`. A source still
-  combines its own bindings as it does today (W and Up arrow on the same
-  action don't add up past `1`).
+  magnitude (Unity's conflict resolution); for 2D axes, the largest vector
+  length, with one source supplying both components. On a tie the source
+  already driving the action keeps it, as in Unity. Outside the active
+  group, `0`. A source still combines its own bindings for an action as it
+  does today (W and Up arrow on the same action don't add up past `1`).
 - **Holds**: held while any source holds it, provided the hold started with
-  a press made while its group was active (§4.3).
-- **Triggers**: unchanged. A trigger fires on a press while its group is
-  active and reads `isTriggered` for that frame.
+  a fresh press (§4.3). Each source combines its own bindings for a hold
+  (OR), so Space and Enter bound to one hold don't cancel each other within
+  the keyboard, as the gamepad source already does.
+- **Triggers**: a down-moment trigger fires when a binding's button goes
+  down while its group is active. An up-moment trigger fires when it comes
+  up while the group is active, and only if the same source pressed it
+  while the group was active, so a release can't carry a press over from
+  another group any more than a hold can. `isTriggered` reads `true` for
+  that frame.
 
 `valueChangeEvent`, `holdStartEvent` and `holdEndEvent` are raised when the
 derived state changes, so reporting the same state again raises nothing,
@@ -155,8 +186,9 @@ its sources report a different one.
 
 The mouse wheel is the only source whose input describes a single frame,
 so the mouse source owns that: it sums the frame's wheel events into its
-report, and withdraws it (reports `0`) in its own `reset` at the end of
-the frame. The cursor-position binding reports the position on every
+report (today the last event of a frame wins; summing is what Unity does,
+and the changelog says so), and withdraws it (reports `0`) in its own
+`reset` at the end of the frame. The cursor-position binding reports the position on every
 `mousemove` and keeps it, so it no longer needs `noReset` either.
 
 ### 4.3 Switching groups
@@ -168,14 +200,16 @@ the frame. The cursor-position binding reports the position on every
 - **Activated group**: its axes read the sources' current input straight
   away (Unity's initial state check for value actions). A movement key held
   through a pause menu keeps moving once the game resumes.
-- **Holds need a fresh press.** A button that is already down when its
-  group becomes active doesn't start a hold. The hold starts the next time
-  any of its sources reports a press. This is
+- **Holds need a fresh press.** A fresh press is a source's report for
+  the hold going from up to down while the group is active. A button that
+  is already down when its group becomes active doesn't start a hold, and
+  a gamepad reporting "down" again every poll isn't a new press. This is
   Unity's behavior for button actions, and it's what the demo needs: one
   physical button usually means different things in different groups, and
   carrying its press over turns "submit" into "shoot".
-- **Triggers**: unchanged. They fire on a press or release event, and one
-  that happens while the group is inactive is dropped.
+- **Triggers**: as in §4.1. A press or release while the group is inactive
+  is dropped, and a release only counts for a press made while the group
+  was active.
 
 The manager no longer needs the suspended values it keeps today
 (`_suspendedAxis1dValues`, `_suspendedAxis2dValues`, `_suspendedHolds`):
@@ -189,7 +223,8 @@ wrong. With the manager deriving state, a second writer would be
 overwritten or would put the derived state out of step with the reports.
 
 The actions keep their read API (`value`, `isHeld`, `isTriggered`, the
-events, `name`, `inputGroup`). Their state is written through functions
+events, `name`, `inputGroup`). `inputGroup` becomes `readonly`: derived
+state depends on it, and only constructors set it today. Their state is written through functions
 internal to the input module (not exported from
 `@forge-game-engine/forge/input`), which only the manager calls. Unit tests
 that set an action directly (`ui-navigation-system.test.ts`,
@@ -199,15 +234,19 @@ instead.
 ### 4.5 Sources
 
 - **Keyboard**: reports each axis action from the keys held (as it does
-  today) and each hold's key state, on key down and up. `stop` calls
-  `removeSourceInput`.
-- **Mouse**: reports buttons and cursor position as they change, and the
-  wheel as in §4.2.
+  today), each hold from whether any of its keys is held, and trigger
+  bindings' keys going down and up. Its `_keyPressesDown` and
+  `_keyPressesUps` sets are written but never read; they're deleted, and
+  the source stops being `Resettable`.
+- **Mouse**: reports buttons (combined per hold, like the keyboard) and
+  cursor position as they change, and the wheel as in §4.2.
 - **Gamepad**: reports every poll. The `_lastDispatched*` maps exist only
   to stop an idle gamepad overwriting the keyboard every frame; with
   reports combined per source they're deleted, and so is the loop that
   sends zeros and hold ends on disconnect (it becomes one
   `removeSourceInput` call).
+- **Every source's `stop()`** calls `removeSourceInput`, so stopping a
+  source releases whatever it held. Today none of them does.
 
 ---
 
@@ -215,16 +254,16 @@ instead.
 
 ### Phase 1: State-derived actions
 
-| #   | Task                                                                                                          | Size |
-| --- | ------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | Per-source input store in `InputManager`; derived axes (largest magnitude) and holds (any source)             | M    |
-| 1.2 | `setActiveGroup` per §4.3; remove the suspended-state maps                                                    | S    |
-| 1.3 | Remove `actionResetTypes`, `ActionResetType` and the axis reset; mouse source withdraws wheel input per frame | S    |
-| 1.4 | Actions read-only to game code; internal write functions used only by the manager                             | S    |
-| 1.5 | Migrate keyboard, mouse and gamepad sources; delete the gamepad's dispatch-on-change and disconnect loop      | M    |
-| 1.6 | Unit tests (§8); migrate tests that set actions directly                                                      | M    |
-| 1.7 | e2e: delete the "broken" reset-type actions in the keyboard and gamepad scenes; add the group-switch case     | S    |
-| 1.8 | Migrate docs-site demos (seven `noReset` call sites) and guides; changelog under `#### Changed`               | S    |
+| #   | Task                                                                                                                                                                                                             | Size |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | Per-source input store in `InputManager`; derived axes (largest magnitude, ties keep the current source), holds and triggers; unregistered actions throw                                                         | M    |
+| 1.2 | `setActiveGroup` per §4.3; remove the suspended-state maps                                                                                                                                                       | S    |
+| 1.3 | Remove `actionResetTypes`, `ActionResetType` and the axis reset; mouse source sums and withdraws wheel input per frame                                                                                           | S    |
+| 1.4 | Actions read-only to game code (`inputGroup` included); internal write functions used only by the manager                                                                                                        | S    |
+| 1.5 | Migrate keyboard, mouse and gamepad sources (per-action hold combining, `removeSourceInput` in `stop()`); delete the gamepad's dispatch-on-change and disconnect loop and the keyboard's unused press sets       | M    |
+| 1.6 | Unit tests (§8); migrate tests that set actions directly and tests that assert holds resume on activation                                                                                                        | M    |
+| 1.7 | e2e: delete the "broken" reset-type actions in the keyboard and gamepad scenes; drop `actionResetTypes` from the mouse and camera-pan-zoom scenes and the spec titles that mention it; add the group-switch case | S    |
+| 1.8 | Migrate docs-site demos (seven `noReset` call sites) and guides, including `events/custom-events.md`'s mention of `Axis2dAction.set()`; changelog under `#### Changed`                                           | S    |
 
 **Definition of done:** no `actionResetTypes` anywhere; every axis
 created with the two-argument constructor reads a held key, stick or
@@ -298,12 +337,15 @@ second only has ways to break it.
 ## 8. Testing considerations
 
 - Manager: a held key reads its value every frame; two sources on one
-  axis, largest magnitude wins, and releasing one leaves the other's
-  value; two sources on one hold, releasing one keeps it held and the
-  start event is raised once; wheel input reads for one frame.
+  axis, largest magnitude wins, ties keep the current source, and
+  releasing one leaves the other's value; two sources on one hold,
+  releasing one keeps it held and the start event is raised once; two
+  keys on one hold within the keyboard; wheel input summed for one frame;
+  reporting for an unregistered action throws.
 - Group switching: axes read current input on activation and `0` on
   deactivation; a hold whose button is down at activation doesn't start
-  until a new press; triggers pressed while inactive are dropped.
+  until a new press; triggers pressed while inactive are dropped; an
+  up-moment trigger pressed in another group doesn't fire on release.
 - Gamepad: an idle gamepad doesn't override a held key; unplugging
   releases what it held.
 - e2e: `keyboard-input` and `gamepad-input` lose their deliberately broken
