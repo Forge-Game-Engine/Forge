@@ -91,6 +91,7 @@ describe('createSoundMixer', () => {
       music.volume = 0.5;
       music.muted = true;
 
+      expect(music.muted).toBe(true);
       expect(musicGain.gain.value).toBe(0);
       expect(music.volume).toBe(0.5);
 
@@ -132,6 +133,23 @@ describe('createSoundMixer', () => {
       expect(context.resumeCalls).toBe(1);
     });
 
+    it('keeps listening after the browser refuses a resume', async () => {
+      context.resume = (): Promise<void> => {
+        context.resumeCalls++;
+
+        return Promise.reject(new Error('Not allowed to start'));
+      };
+
+      window.dispatchEvent(new Event('pointerup'));
+      // Lets the refused resume settle before the next gesture.
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      window.dispatchEvent(new Event('pointerup'));
+
+      expect(context.resumeCalls).toBe(2);
+    });
+
     it('keeps listening until the context runs', () => {
       window.dispatchEvent(new Event('pointerup'));
       window.dispatchEvent(new Event('pointerup'));
@@ -151,6 +169,13 @@ describe('createSoundMixer', () => {
 
       expect(context.resumeCalls).toBe(1);
       expect(mixer.state).toBe('interrupted');
+    });
+
+    it("doesn't add its listeners twice when the state changes before audio runs", () => {
+      context.setState('interrupted');
+      window.dispatchEvent(new Event('pointerup'));
+
+      expect(context.resumeCalls).toBe(1);
     });
 
     it("doesn't resume on gestures while the game has suspended audio", async () => {

@@ -64,6 +64,14 @@ describe('SoundAssetCache', () => {
     );
   });
 
+  it("throws for a mixer that wasn't made by createSoundMixer", () => {
+    const mixerCopy: SoundMixer = { ...mixer };
+
+    expect(() => new SoundAssetCache(mixerCopy)).toThrow(
+      /not made by `createSoundMixer`/,
+    );
+  });
+
   it('rejects with the URL when the file fails to load', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
 

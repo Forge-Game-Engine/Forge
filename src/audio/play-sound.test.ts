@@ -143,6 +143,17 @@ describe('playSound', () => {
       }).not.toThrow();
     });
 
+    it('keeps the volume set on a dropped sound', () => {
+      const sound = playSound(lockedMixer.master, createFakeSoundAsset());
+
+      sound.volume = 0.3;
+
+      expect(sound.volume).toBeCloseTo(0.3);
+      expect(() => {
+        sound.volume = -1;
+      }).toThrow(/volume/);
+    });
+
     it('starts a looping sound', () => {
       const sound = playSound(lockedMixer.master, createFakeSoundAsset(), {
         loop: true,
