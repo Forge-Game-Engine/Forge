@@ -103,15 +103,6 @@ Setting the current state again re-enters it: its exit systems run, its
 scoped entities are removed, and its enter systems run. `gameState.set('playing')`
 while in `playing` restarts it without switching to another state first.
 
-## Input and the start of the tick
-
-The state's transition and its exit and enter groups run before every other
-group of the world, including the input update group `registerInputs` adds.
-An `onEnter` or `onExit` system reads the previous tick's input. Act on
-input in an ordinary system that calls `set`, as the
-[game states demo](/Forge/demos/game-states)'s input systems do, and the
-transition follows on the next tick.
-
 ## Several worlds
 
 A `GameState` belongs to the world passed to `createGameState`, which
