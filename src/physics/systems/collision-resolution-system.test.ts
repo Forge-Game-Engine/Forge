@@ -65,8 +65,6 @@ describe('createCollisionResolutionEcsSystem', () => {
     }
 
     const rigidBody = addRigidBodyComponent(world, entity, {
-      mass: 1,
-      momentOfInertia: 1,
       ...rigidBodyOptions,
     });
 
@@ -170,6 +168,38 @@ describe('createCollisionResolutionEcsSystem', () => {
     world.update();
 
     expect(rigidBody!.velocity.y).toBeGreaterThan(4);
+  });
+
+  it("should take lever arms from the body's center of mass, not its origin", () => {
+    addSystem({ restitutionThreshold: 100 });
+
+    // A circle centered 5 units right of its entity's origin, landing on the
+    // ground directly beneath its center: the contact pushes straight
+    // through the center of mass, so the body mustn't start spinning.
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, { local: { x: 0, y: 1 } });
+    addColliderComponent(world, entity, {
+      collider: new CircleCollider(1, 1, { x: 5, y: 0 }),
+      restitution: 0,
+      friction: 0,
+    });
+    const rigidBody = addRigidBodyComponent(world, entity, {
+      velocity: { x: 0, y: -5 },
+    });
+    const { entity: ground } = addCircleEntity({ x: 5, y: -100 }, 100, false, {
+      restitution: 0,
+      friction: 0,
+    });
+
+    pushManifold(ground, entity, { x: 0, y: 1 }, 0.01, { x: 5, y: 0 });
+
+    world.update();
+
+    // Most of the fall is stopped (the soft contact leaves a little), and
+    // none of it was turned into spin.
+    expect(rigidBody.velocity.y).toBeGreaterThan(-0.5);
+    expect(rigidBody.angularVelocity).toBeCloseTo(0);
   });
 
   it('should not re-apply restitution to a contact reused from the previous tick', () => {

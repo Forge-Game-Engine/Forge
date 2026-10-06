@@ -75,10 +75,7 @@ export const createBallSpawnerEcsSystem = (
         restitution: 0.5,
         category: ballCategory,
       });
-      addRigidBodyComponent(world, entity, {
-        mass: collider.mass,
-        momentOfInertia: collider.momentOfInertia,
-      });
+      addRigidBodyComponent(world, entity);
       addGravityComponent(world, entity, { amount: { x: 0, y: -600 } });
     },
   };

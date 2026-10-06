@@ -12,6 +12,19 @@ import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
 } from '../components/rigidbody-component.js';
+import { CircleCollider } from '../colliders/circle-collider.js';
+import { addColliderComponent } from '../components/collider-component.js';
+
+/**
+ * A circle with a mass and moment of inertia of 1, for a dynamic body to
+ * take its mass data from. Its mask of `0` keeps it out of collisions.
+ */
+function addUnitMassCollider(world: EcsWorld, entity: number): void {
+  addColliderComponent(world, entity, {
+    collider: new CircleCollider(Math.SQRT2, 1 / (2 * Math.PI)),
+    mask: 0,
+  });
+}
 
 describe('createLinearSpringEcsSystem', () => {
   let world: EcsWorld;
@@ -35,10 +48,8 @@ describe('createLinearSpringEcsSystem', () => {
       local: { x, y: 0 },
     });
     addRotationComponent(world, entity);
-    const rigidBody = addRigidBodyComponent(world, entity, {
-      mass: 1,
-      momentOfInertia: 1,
-    });
+    addUnitMassCollider(world, entity);
+    const rigidBody = addRigidBodyComponent(world, entity);
 
     return { entity, rigidBody };
   }

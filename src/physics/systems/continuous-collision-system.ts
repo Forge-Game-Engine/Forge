@@ -50,16 +50,18 @@ const contactDepthRatio = 0.01;
  * Narrow-phase collision only tests where each body is at the start of a
  * tick, so a body that integration then moves further than the gap to a
  * surface ends up deep inside it, or out the other side, before the next
- * tick's test runs. This system sweeps each dynamic body with a
- * {@link CircleCollider} from where this tick's collision detection saw it
- * (`position.world`) to where integration just moved it (`position.local`)
- * against every static collider (an entity with no
+ * tick's test runs. This system sweeps the center of each dynamic body's
+ * {@link CircleCollider} (which is the body's center of mass) from where
+ * this tick's collision detection saw it (`position.world` and
+ * `rotation.world`) to where integration just moved it (`position.local`
+ * and `rotation.local`) in a straight line, against every static collider (an entity with no
  * `RigidBodyEcsComponent`, or a `'static'` one) its path overlaps and its
  * category and mask let it collide with. Sensors are never swept and never
  * stop anything, since nothing is resolved against them. If it
  * would sink more than a tenth of its radius into one, the system moves
- * `position.local` back to where the circle first touched that collider,
- * leaving it just inside the surface. Velocity is left alone: the next
+ * `position.local` back so the circle's center is where the circle first
+ * touched that collider, leaving it just inside the surface. Rotation and
+ * velocity are left alone: the next
  * tick's narrow phase reports that contact and collision resolution
  * responds to it (friction, restitution) as it does for any other.
  *
@@ -114,13 +116,32 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
         continue;
       }
 
-      const start = positions[i].world;
-      const end = positions[i].local;
-      const stopT = findStopT(mover, mover.collider, start, end, targets);
+      const circle = mover.collider;
+      const position = positions[i];
+      const rotation = getRotation(entities[i]);
+      const start = circle.getWorldCenter(
+        position.world,
+        getColliderRotation(rotation),
+      );
+      const endRotation = rotation === null ? 0 : rotation.local;
+      const end = circle.getWorldCenter(position.local, endRotation);
+      const stopT = findStopT(mover, circle, start, end, targets);
 
       if (stopT < 1) {
-        end.x = start.x + (end.x - start.x) * stopT;
-        end.y = start.y + (end.y - start.y) * stopT;
+        // Move the origin so the circle's center lands at the stop point,
+        // keeping the rotation integration produced.
+        const stopCenter = Vec2.add(
+          Vec2.multiply(Vec2.subtract(end, start), stopT),
+          start,
+        );
+        const centerOffset = Vec2.subtract(
+          circle.getWorldCenter(position.local, endRotation),
+          position.local,
+        );
+
+        Vec2.subtract(stopCenter, centerOffset);
+        position.local.x = stopCenter.x;
+        position.local.y = stopCenter.y;
       }
     }
   },
@@ -141,8 +162,8 @@ interface SweepTarget {
  * @param mover - The moving circle's collider component, for its category
  * and mask.
  * @param collider - The moving circle.
- * @param start - Where the circle's body was at the start of the tick.
- * @param end - Where integration moved the circle's body this tick.
+ * @param start - The circle's world center at the start of the tick.
+ * @param end - The circle's world center after this tick's integration.
  * @param targets - Every static collider in the world.
  * @returns The fraction of the motion to keep; `1` keeps all of it.
  */
@@ -153,7 +174,7 @@ function findStopT(
   end: Vector2,
   targets: readonly SweepTarget[],
 ): number {
-  // Clone before subtracting: `end` is the entity's live local position.
+  // Clone before subtracting: `end` is read again below.
   const translation = Vec2.subtract(Vec2.clone(end), start);
   const maxDiscretePenetration = maxDiscretePenetrationRatio * collider.radius;
 
@@ -203,17 +224,16 @@ function computeSweptAabb(
   start: Vector2,
   end: Vector2,
 ): Aabb {
-  const startAabb = collider.computeAabb(start);
-  const endAabb = collider.computeAabb(end);
+  const { radius } = collider;
 
   return {
     min: {
-      x: Math.min(startAabb.min.x, endAabb.min.x),
-      y: Math.min(startAabb.min.y, endAabb.min.y),
+      x: Math.min(start.x, end.x) - radius,
+      y: Math.min(start.y, end.y) - radius,
     },
     max: {
-      x: Math.max(startAabb.max.x, endAabb.max.x),
-      y: Math.max(startAabb.max.y, endAabb.max.y),
+      x: Math.max(start.x, end.x) + radius,
+      y: Math.max(start.y, end.y) + radius,
     },
   };
 }

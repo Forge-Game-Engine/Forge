@@ -50,7 +50,7 @@ export const createChassisStabilizerEcsSystem = (
         -chassisRotation.world * levelingStiffness -
         chassisRigidBody.angularVelocity * levelingDamping;
 
-      applyTorque(torque, deltaTimeInSeconds, chassisRigidBody);
+      applyTorque(world, chassisEntity, torque, deltaTimeInSeconds);
     }
   },
 });

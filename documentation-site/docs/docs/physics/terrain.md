@@ -45,9 +45,9 @@ for that static/kinematic/dynamic distinction.
 ## Authoring points
 
 `points` must have at least 2 entries and be ordered by strictly increasing
-`x` - `TerrainCollider` throws otherwise. Unlike `PolygonCollider`, it does
-**not** re-center vertices around their centroid: `points` are used exactly
-as authored, in the collider's own local space, so the easiest way to work
+`x` - `TerrainCollider` throws otherwise. Like every collider's shape,
+`points` are used exactly as authored, in the entity's local space, so the
+easiest way to work
 with terrain is to author points directly in world coordinates and leave the
 owning entity's `PositionEcsComponent` at `Vec2.zero`.
 
@@ -63,8 +63,8 @@ a few hundred units is typically more than enough headroom.
 `TerrainCollider` is intended for **static** bodies only - attach it with
 `addColliderComponent` and no `RigidBodyEcsComponent`. A heightmap has no
 natural mass distribution to simulate as a moving object; the collider's
-`mass`/`momentOfInertia` fields are computed for interface-completeness, but
-nothing in the engine exercises a dynamic terrain body.
+mass data is computed from its slab for interface-completeness, but nothing
+in the engine exercises a dynamic terrain body.
 :::
 
 ## How collision works

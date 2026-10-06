@@ -18,7 +18,6 @@ import {
   SpriteEcsComponent,
   spriteId,
   Time,
-  Vec2,
 } from '../../src';
 import {
   addColliderComponent,
@@ -127,8 +126,6 @@ function createFountainSpawnEcsSystem(
     addRotationComponent(world, entity, { local: 0 });
     addGravityComponent(world, entity);
     addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
       velocity,
       angularVelocity,
     });
@@ -213,13 +210,9 @@ function createSquareCollider(): PolygonCollider {
 
 /**
  * `Triangle.png` is a right triangle with its right angle at the
- * bottom-left of the image. `PolygonCollider` re-centers vertices around
- * their centroid (a third of the way across, two thirds of the way down),
- * so the sprite's pivot is moved to match in `trianglePivot`, keeping the
- * rendered triangle aligned with its collider as it rotates.
+ * bottom-left of the image, drawn around the sprite's default (centered)
+ * pivot. The body turns about the triangle's centroid.
  */
-const trianglePivot = { x: 1 / 3, y: 2 / 3 };
-
 function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
@@ -257,8 +250,6 @@ const triangleSprite = createImageSprite(triangleImage, renderContext, {
   frameDimensions: { x: shapeSize, y: shapeSize },
   layer: renderLayer,
 });
-
-triangleSprite.pivot = Vec2.clone(trianglePivot);
 
 const shapeTemplates: ShapeTemplate[] = [
   {
