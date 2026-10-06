@@ -5,26 +5,80 @@ sidebar_position: 2
 # Loading a Font Atlas
 
 [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) loads a
-generated atlas's JSON metrics and PNG texture into a
-[`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas).
+generated atlas's metrics JSON and PNG image into a
+[`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas). Pass it the URL of
+each file:
 
 ```ts
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
 const fontAtlasCache = new FontAtlasCache();
-const fontAtlas = await fontAtlasCache.getOrLoad('assets/fonts/my-font.json');
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: 'assets/fonts/my-font.json',
+  imageUrl: 'assets/fonts/my-font.png',
+});
 ```
 
-Any atlas works here, including the default one the engine ships at
-`assets/fonts/default/default.json` (see [Text](./index.md)'s Quick start) -
-there's nothing default-atlas-specific about loading it.
+The two URLs are independent: the image doesn't have to be in the same
+directory as the JSON, or keep its original file name.
 
-## Cache keys point at the JSON file
+## Importing atlases through a bundler
 
-`getOrLoad('assets/fonts/my-font.json')` fetches that file, then loads
-whatever image its `atlasImage` field names, resolved relative to the JSON
-file itself (so the `.png` doesn't have to share the exact base name,
-though `forge-generate-font-atlas` always names them to match).
+Bundlers rename the assets they emit (`my-font.png` becomes something like
+`my-font-3f2a9c.png`), so import both files and pass the URLs the bundler
+gives you rather than writing paths by hand.
+
+With Vite, import the PNG directly and the JSON with `?url`, which gives
+its URL instead of its parsed contents:
+
+```ts
+import { FontAtlasCache } from '@forge-game-engine/forge/text';
+import myFontMetricsUrl from './fonts/my-font.json?url';
+import myFontImageUrl from './fonts/my-font.png';
+
+const fontAtlasCache = new FontAtlasCache();
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: myFontMetricsUrl,
+  imageUrl: myFontImageUrl,
+});
+```
+
+With webpack 5, use `new URL(path, import.meta.url)` for both files. The
+path must be a string literal for webpack to find the file:
+
+```ts
+const fontAtlas = await fontAtlasCache.getOrLoad({
+  metricsUrl: new URL('./fonts/my-font.json', import.meta.url).href,
+  imageUrl: new URL('./fonts/my-font.png', import.meta.url).href,
+});
+```
+
+If your webpack config runs `file-loader` or `url-loader` on images
+(Docusaurus does), those loaders also process `new URL` image requests, and
+the emitted `.png` contains JavaScript instead of the image, so it fails to
+load. Import the PNG instead (`import myFontImageUrl from
+'./fonts/my-font.png'`) and keep `new URL` for the JSON.
+
+The engine's default font (see [Text](./index.md)'s Quick start) is
+imported the same way, from the package's `fonts/default` exports:
+
+```ts
+import defaultFontMetricsUrl from '@forge-game-engine/forge/fonts/default/default.json?url';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
+```
+
+## Gotchas
+
+- **Keep the JSON and PNG from the same generator run.** `getOrLoad`
+  rejects if the image's size doesn't match the JSON's `atlasSize`. Two
+  different atlases generated at the same texture size still pass that
+  check, and render garbled glyphs, so regenerate and replace both files
+  together.
+- **One image per metrics URL.** The cache is keyed by `metricsUrl`.
+  Requesting the same `metricsUrl` with a different `imageUrl` rejects.
+- **Requesting an atlas again doesn't reload it.** Repeated and concurrent
+  `getOrLoad` calls for the same `metricsUrl` share one load, so the
+  `Promise.all` pattern in the worked example below fetches each file once.
 
 ## Reading glyph metrics
 
@@ -73,8 +127,14 @@ import { FontAtlasCache } from '@forge-game-engine/forge/text';
 const fontAtlasCache = new FontAtlasCache();
 
 const [headingAtlas, bodyAtlas] = await Promise.all([
-  fontAtlasCache.getOrLoad('assets/fonts/heading.json'),
-  fontAtlasCache.getOrLoad('assets/fonts/body.json'),
+  fontAtlasCache.getOrLoad({
+    metricsUrl: 'assets/fonts/heading.json',
+    imageUrl: 'assets/fonts/heading.png',
+  }),
+  fontAtlasCache.getOrLoad({
+    metricsUrl: 'assets/fonts/body.json',
+    imageUrl: 'assets/fonts/body.png',
+  }),
 ]);
 
 const capitalA = bodyAtlas.data.glyphs.get('A'.codePointAt(0)!);

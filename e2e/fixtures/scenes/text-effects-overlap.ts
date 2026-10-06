@@ -9,6 +9,7 @@ import {
   createRenderEcsSystem,
   createTextShapingEcsSystem,
   createTransformEcsSystem,
+  CURRENT_FONT_ATLAS_FORMAT_VERSION,
   EcsWorld,
   FontAtlas,
   Time,
@@ -239,9 +240,8 @@ export const createScene: CreateScene = async (
 
   const fontAtlas: FontAtlas = {
     data: {
-      formatVersion: 1,
+      formatVersion: CURRENT_FONT_ATLAS_FORMAT_VERSION,
       type: 'msdf',
-      atlasImage: 'synthetic.png',
       atlasSize: {
         width: SYNTHETIC_GLYPH_TILE_SIZE,
         height: SYNTHETIC_GLYPH_TILE_SIZE,
@@ -251,7 +251,12 @@ export const createScene: CreateScene = async (
       // ink (which spans exactly 1 em vertically around its own center, by
       // construction) on the entity's position - see the derivation this
       // module's own doc comment gives for `advanceEm`.
-      metrics: { lineHeight: 1, ascender: 0.5, descender: 0.5 },
+      metrics: {
+        lineHeight: 1,
+        ascender: 0.5,
+        descender: 0.5,
+        capHeight: 0.5,
+      },
       glyphs: new Map([
         [
           ATLAS_A_CODE_POINT,

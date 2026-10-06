@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createSliderGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
@@ -18,13 +17,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiSlider(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createSliderGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -34,7 +26,7 @@ export default function UiSlider(): JSX.Element {
       }}
       header="UI Slider"
       blurb="createSlider builds a track with a draggable handle and a fill sprite that tracks the current value. The whole track is the drag surface - clicking anywhere on it, not just the handle, jumps the handle there - and dragging keeps tracking even if the pointer strays outside the track's vertical bounds. The value label updates live via onValueChanged."
-      createGame={createGame}
+      createGame={createSliderGame}
       interactions={
         <InteractionInstruction
           displayElement={

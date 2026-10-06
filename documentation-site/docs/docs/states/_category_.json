@@ -1,0 +1,8 @@
+{
+  "label": "Game States",
+  "position": 13,
+  "link": {
+    "type": "doc",
+    "id": "docs/states/index"
+  }
+}

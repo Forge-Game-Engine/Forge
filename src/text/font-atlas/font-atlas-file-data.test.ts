@@ -11,7 +11,6 @@ import {
 const buildFileData = (): FontAtlasFileData => ({
   formatVersion: CURRENT_FONT_ATLAS_FORMAT_VERSION,
   type: 'msdf',
-  atlasImage: 'my-font.png',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
   metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
@@ -40,7 +39,6 @@ describe('toFontAtlasData', () => {
 
     expect(result.formatVersion).toBe(CURRENT_FONT_ATLAS_FORMAT_VERSION);
     expect(result.type).toBe('msdf');
-    expect(result.atlasImage).toBe('my-font.png');
     expect(result.atlasSize).toEqual({ width: 512, height: 512 });
     expect(result.distanceRange).toBe(4);
     expect(result.metrics).toEqual({

@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                                                                          |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                        |
+| **Status**                            | Implemented (Phases 1 and 2); the Galactic Journey migration (§9) follows the next release                                                                                                                                                               |
 | **Kind**                              | Feature                                                                                                                                                                                                                                                  |
 | **Found in**                          | Galactic Journey demo: `src/run/*` (`run.component.ts`'s `enteredPhase`/`leftPhase`, `run.system.ts`, `run-phases.ts`, `clear-run.system.ts`, `run-reset.system.ts`, `run-screens.system.ts`), and 15 `isInMenu`/`hasEntered`/`hasLeft` calls in 9 files |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                 |
@@ -135,6 +135,26 @@ default group (as `registerInputs` does) could run before a state
 transition. The first group makes "every system of the tick sees the same
 state" true.
 
+"Every group runs after the first group" isn't enough for the state's exit
+and enter groups (§4.3), though. They have to run right after the
+transition and before every other group, but a group's order among groups
+with no edge between them is insertion order, so `registerInputs`'
+`input-update` group, added before the state, would run before the enter
+group. So a group ordered `after` the first group (or after another group
+that is) joins the **start of the tick**: the world orders it before every
+group that isn't there, including groups added earlier or later. A
+start-of-tick group ordered after a group that isn't at the start of the
+tick throws, and so does a group ordered before a start-of-tick group it
+isn't part of. That's the same layering Bevy gets from its fixed list of
+main schedules, expressed with the group graph Forge already has.
+
+One consequence: start-of-tick groups run before `input-update`, so
+`onEnter`/`onExit` systems read the previous tick's input. In Bevy,
+`PreUpdate` (input) runs before `StateTransition`. Here the transition
+comes first so that every system of the tick, input systems included, sees
+the same state; a transition is requested by a system reacting to input,
+so it applies on the next tick either way.
+
 ### 4.3 States
 
 ```ts
@@ -183,10 +203,15 @@ start of each tick, in this order:
    wins), setting `entered` and `exited` for this tick.
 2. The `exitGroup` runs, so `onExit` systems can still read what the state
    is about to tear down.
-3. State-scoped entities are removed (§4.4).
+3. State-scoped entities are removed (§4.4), in a start-of-tick group of
+   their own between the exit and enter groups, so an exit system added
+   later can't end up after the removal.
 4. The `enterGroup` runs, so `onEnter` systems set the new state up
    before any gameplay system sees it.
 5. The rest of the tick.
+
+The exit, removal and enter groups are start-of-tick groups (§4.2), gated
+so they only run on ticks with a transition.
 
 On the first tick, the initial state counts as entered: `entered` is
 `initial` and `onEnter` systems run, as Bevy runs the initial state's
@@ -205,13 +230,14 @@ addStateScopedComponent(world, entity, {
 });
 ```
 
-The transition system removes every entity whose state left one of its
+The transition removes every entity whose state left one of its
 `removeOnExit` states, or entered one of its `removeOnEnter` states, at
-step 3 above. Removal takes the entity's descendants with it
-([`hierarchy-removal.md`](./hierarchy-removal.md)); removing a descendant
-that was already removed is a no-op
-([`generational-entity-ids.md`](./generational-entity-ids.md)). At least
-one of the two lists must be non-empty.
+step 3 above, with `world.removeEntity`. Removing an entity that was
+already removed is a no-op
+([`generational-entity-ids.md`](./generational-entity-ids.md)). Once
+[`hierarchy-removal.md`](./hierarchy-removal.md) ships, removal takes the
+entity's descendants with it. Until then, it takes only the scoped entity,
+as `removeEntity` does everywhere else. At least one of the two lists must be non-empty.
 
 The demo's run leftovers stay on screen behind the end-of-run panels and
 are cleared when a new run starts or the menu comes up, so they use
@@ -296,8 +322,12 @@ transition, holding systems with those conditions.
 **Rationale.** With (a), setup for a new state would interleave with
 gameplay systems in the same tick (a player spawned after the systems
 that should see it). Bevy runs its enter and exit schedules at the
-transition, before any `Update` system, for that reason. Groups give
-Forge the same order without a second scheduling concept.
+transition, before any `Update` system, for that reason. Groups placed at
+the start of the tick (§4.2) give Forge the same order without a second
+scheduling concept. Bevy runs `OnEnter`/`OnExit` as schedules run on
+demand from the transition; Forge's groups run in the world's normal order
+and are skipped by a run condition on ticks without a transition, so no
+"registered but not run by the loop" kind of group is needed.
 
 ### DL-3: Scoped removal on enter as well as on exit
 

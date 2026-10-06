@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createUiMainMenuGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import mainMenuCode from '!!raw-loader!./_create-main-menu';
@@ -23,13 +22,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiMainMenu(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createUiMainMenuGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -39,7 +31,7 @@ export default function UiMainMenu(): JSX.Element {
       }}
       header="UI Main Menu"
       blurb="A complete main-menu screen, built entirely from the ui module against a flat sci-fi reference design. The left nav panel (createMainMenu) stacks six hand-composed rows - a button only supports one centered label, but a row needs a left border accent, a dim index, and a bright title - with a VerticalLayoutGroupEcsComponent inside a ContentSizeFitterEcsComponent container; each row's own tint is fully transparent until it's hovered or focused (UiColorTransitionEcsComponent), so the first row reads as solid blue at rest simply because it starts focused. Beside it, createMissionBrief lays out a decorative backdrop circle (drawn first, so later siblings composite on top of it), a title, and a wrapped blurb, and createFlagshipPanel adds a bordered ship-render placeholder, a createProgressBar fleet-strength meter, and a createButton Deploy call to action. Click a row, or use the arrow keys to move focus (the first row starts focused, matching the reference) and Enter/Space to invoke - either path updates the status line above the menu, and Deploy updates it too."
-      createGame={createGame}
+      createGame={createUiMainMenuGame}
       interactions={
         <>
           <InteractionInstruction
