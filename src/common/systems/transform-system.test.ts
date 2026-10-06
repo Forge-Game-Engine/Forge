@@ -5,6 +5,7 @@ import {
   addPositionComponent,
   addRotationComponent,
   addScaleComponent,
+  positionId,
 } from '../components/index.js';
 import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
@@ -149,7 +150,7 @@ describe('transform-system', () => {
     expect(childPosition.world.x).toBe(15);
   });
 
-  it('should not skip a recycled entity id that is no longer static', () => {
+  it("should compute a new entity that reuses a removed static entity's slot", () => {
     const staticEntity = world.createEntity();
 
     addPositionComponent(world, staticEntity, {
@@ -161,16 +162,59 @@ describe('transform-system', () => {
 
     world.removeEntity(staticEntity);
 
-    const recycledEntity = world.createEntity();
+    const reusedEntity = world.createEntity();
 
-    const recycledPosition = addPositionComponent(world, recycledEntity, {
+    const reusedPosition = addPositionComponent(world, reusedEntity, {
       local: { x: 50, y: 60 },
     });
 
     world.update();
 
-    expect(recycledPosition.world.x).toBe(50);
-    expect(recycledPosition.world.y).toBe(60);
+    expect(reusedPosition.world.x).toBe(50);
+    expect(reusedPosition.world.y).toBe(60);
+  });
+
+  it('should compute a static position re-added to an entity under a parent', () => {
+    const parent = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, parent, { local: { x: 100, y: 0 } });
+    addPositionComponent(world, child, {
+      local: { x: 5, y: 0 },
+      isStatic: true,
+    });
+
+    world.update();
+
+    world.removeComponent(child, positionId);
+    addParentComponent(world, child, { parent });
+
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 5, y: 0 },
+      isStatic: true,
+    });
+
+    world.update();
+
+    expect(childPosition.world.x).toBe(105);
+  });
+
+  it('should recompute an entity whose isStatic has been cleared', () => {
+    const entity = world.createEntity();
+
+    const position = addPositionComponent(world, entity, {
+      local: { x: 10, y: 0 },
+      isStatic: true,
+    });
+
+    world.update();
+
+    position.isStatic = false;
+    position.local.x = 20;
+
+    world.update();
+
+    expect(position.world.x).toBe(20);
   });
 
   it('should rotate a child position offset by the parent rotation', () => {

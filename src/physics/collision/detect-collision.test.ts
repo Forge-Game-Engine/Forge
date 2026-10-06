@@ -80,13 +80,13 @@ describe('detectCollision', () => {
       ],
       50,
     );
-    const bodyA = body({ x: 0, y: -0.5 }, new CircleCollider(1));
+    const bodyA = body({ x: 0, y: 0.5 }, new CircleCollider(1));
     const bodyB = body(Vec2.zero, terrain);
 
     const [manifold] = detectCollision(bodyA, bodyB);
 
     expect(manifold).toBeDefined();
-    expect(manifold.normal.y).toBeCloseTo(1);
+    expect(manifold.normal.y).toBeCloseTo(-1);
   });
 
   it('should dispatch terrain-circle collisions, flipping the normal', () => {
@@ -98,12 +98,12 @@ describe('detectCollision', () => {
       50,
     );
     const bodyA = body(Vec2.zero, terrain);
-    const bodyB = body({ x: 0, y: -0.5 }, new CircleCollider(1));
+    const bodyB = body({ x: 0, y: 0.5 }, new CircleCollider(1));
 
     const [manifold] = detectCollision(bodyA, bodyB);
 
     expect(manifold).toBeDefined();
-    expect(manifold.normal.y).toBeCloseTo(-1);
+    expect(manifold.normal.y).toBeCloseTo(1);
   });
 
   it('should dispatch polygon-terrain collisions', () => {
@@ -114,13 +114,13 @@ describe('detectCollision', () => {
       ],
       50,
     );
-    const bodyA = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const bodyA = body({ x: 0, y: 0.5 }, rectangle(2, 2));
     const bodyB = body(Vec2.zero, terrain);
 
     const [manifold] = detectCollision(bodyA, bodyB);
 
     expect(manifold).toBeDefined();
-    expect(manifold.normal.y).toBeCloseTo(1);
+    expect(manifold.normal.y).toBeCloseTo(-1);
   });
 
   it('should dispatch terrain-polygon collisions, flipping the normal', () => {
@@ -132,12 +132,12 @@ describe('detectCollision', () => {
       50,
     );
     const bodyA = body(Vec2.zero, terrain);
-    const bodyB = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const bodyB = body({ x: 0, y: 0.5 }, rectangle(2, 2));
 
     const [manifold] = detectCollision(bodyA, bodyB);
 
     expect(manifold).toBeDefined();
-    expect(manifold.normal.y).toBeCloseTo(-1);
+    expect(manifold.normal.y).toBeCloseTo(1);
   });
 
   it('should throw an error for an unregistered collider pair', () => {

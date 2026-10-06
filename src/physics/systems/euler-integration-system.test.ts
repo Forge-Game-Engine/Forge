@@ -9,7 +9,7 @@ import {
   rotationId,
   Time,
 } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { EcsWorld, formatEntity } from '../../ecs/index.js';
 import {
   addRigidBodyComponent,
   RigidBodyType,
@@ -110,7 +110,7 @@ describe('createEulerIntegrationEcsSystem', () => {
     addParentComponent(world, entity, { parent });
 
     expect(() => world.update()).toThrow(
-      `Rigid body entity "${entity}" has a ParentEcsComponent.`,
+      `Rigid body entity ${formatEntity(entity)} has a ParentEcsComponent.`,
     );
   });
 

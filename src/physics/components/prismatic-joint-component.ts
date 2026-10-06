@@ -1,6 +1,7 @@
 import { rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
@@ -87,13 +88,13 @@ export function addPrismaticJointComponent(
 
   if (Vec2.magnitudeSquared(merged.axis) === 0) {
     throw new Error(
-      `Unable to add prismatic joint to entity "${entity}": axis must not be the zero vector.`,
+      `Unable to add prismatic joint to entity ${formatEntity(entity)}: axis must not be the zero vector.`,
     );
   }
 
   if (merged.lowerTranslation > merged.upperTranslation) {
     throw new Error(
-      `Unable to add prismatic joint to entity "${entity}": lowerTranslation (${merged.lowerTranslation}) must be <= upperTranslation (${merged.upperTranslation}).`,
+      `Unable to add prismatic joint to entity ${formatEntity(entity)}: lowerTranslation (${merged.lowerTranslation}) must be <= upperTranslation (${merged.upperTranslation}).`,
     );
   }
 
@@ -102,7 +103,7 @@ export function addPrismaticJointComponent(
 
   if (rotationA === null || rotationB === null) {
     throw new Error(
-      `Unable to add prismatic joint to entity "${entity}": entityA and entityB must both have a RotationEcsComponent.`,
+      `Unable to add prismatic joint to entity ${formatEntity(entity)}: entityA and entityB must both have a RotationEcsComponent.`,
     );
   }
 

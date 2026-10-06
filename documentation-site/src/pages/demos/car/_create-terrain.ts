@@ -102,43 +102,33 @@ function heightAt(x: number, random: Random): number {
 }
 
 /**
- * Samples `heightAt` left to right across the whole course, then reverses
- * and negates both axes into `TerrainCollider`'s local space. `TerrainCollider`
- * always extends its solid slab `depth` units in the +y direction from its
- * surface points (in its own local space), but this demo's gravity (the
- * engine default) pulls bodies toward -y, so the terrain entity is rotated
- * 180 degrees to face the right way (the same convention documented in
- * documentation-site/docs/docs/physics/terrain.md and used by the Rolling
- * Ball demo) - which mirrors world space into local space (`local = -world`
- * around the terrain's own position), so the points must be authored in
- * reverse, strictly-increasing-local-x order for that mirroring to land
- * back in the correct left-to-right world layout.
+ * Samples `heightAt` left to right across the whole course, as the
+ * terrain's surface points in world coordinates (the terrain entity sits at
+ * the origin, unrotated, and its solid slab extends below the points).
  * @param random - The seeded random source used for per-point noise.
  */
-function buildLocalPoints(random: Random): Vector2[] {
-  const worldPoints: Vector2[] = [];
+function buildSurfacePoints(random: Random): Vector2[] {
+  const points: Vector2[] = [];
 
   for (
     let x = flatStartLength - runoffLength;
     x <= courseLength;
     x += pointSpacing
   ) {
-    worldPoints.push({ x, y: heightAt(x, random) });
+    points.push({ x, y: heightAt(x, random) });
   }
 
-  worldPoints.reverse();
-
-  return worldPoints.map((point) => ({ x: -point.x, y: -point.y }));
+  return points;
 }
 
-function toCurvePoints(localPoints: readonly Vector2[]): TerrainCurvePoint[] {
+function toCurvePoints(points: readonly Vector2[]): TerrainCurvePoint[] {
   const curvePoints: TerrainCurvePoint[] = [
-    { position: Vec2.clone(localPoints[0]), distance: 0 },
+    { position: Vec2.clone(points[0]), distance: 0 },
   ];
 
-  for (let i = 1; i < localPoints.length; i++) {
+  for (let i = 1; i < points.length; i++) {
     const previous = curvePoints[i - 1];
-    const position = Vec2.clone(localPoints[i]);
+    const position = Vec2.clone(points[i]);
     const distance =
       previous.distance + Vec2.distanceTo(position, previous.position);
 
@@ -166,20 +156,18 @@ export async function createTerrain(
   renderContext: RenderContext,
   random: Random,
 ): Promise<{ groundPosition: Vector2 }> {
-  const localPoints = buildLocalPoints(random);
-  const terrainCollider = new TerrainCollider(localPoints, terrainDepth);
+  const surfacePoints = buildSurfacePoints(random);
+  const terrainCollider = new TerrainCollider(surfacePoints, terrainDepth);
 
   const position = Vec2.zero;
-  const angle = Math.PI;
+  const angle = 0;
 
   const terrainEntity = world.createEntity();
 
   addPositionComponent(world, terrainEntity, {
     local: Vec2.clone(position),
   });
-  addRotationComponent(world, terrainEntity, {
-    local: angle,
-  });
+  addRotationComponent(world, terrainEntity);
   addColliderComponent(world, terrainEntity, {
     collider: terrainCollider,
     friction: 1,
@@ -190,7 +178,7 @@ export async function createTerrain(
     await renderContext.imageCache.getOrLoad(groundTextureUrl);
 
   const mesh = createTerrainMesh(renderContext, {
-    curvePoints: toCurvePoints(localPoints),
+    curvePoints: toCurvePoints(surfacePoints),
     depth: terrainDepth,
     position,
     angle,
