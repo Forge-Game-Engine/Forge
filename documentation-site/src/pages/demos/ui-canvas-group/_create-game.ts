@@ -4,6 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   MouseInputSource,
   registerInputs,
@@ -93,12 +94,9 @@ function createPointerInput(
  * just direct children - the "Confirm" button becomes genuinely
  * unable to be clicked while disabled, not just dimmed. The toggle itself lives
  * outside the group, so it stays fully opaque and clickable throughout.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createCanvasGroupGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createCanvasGroupGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
@@ -110,7 +108,15 @@ export const createCanvasGroupGame = async (
   await createBackdrop(world, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const mouseInputSource = createPointerInput(world, time, game);
 

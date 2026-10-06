@@ -4,6 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   MouseInputSource,
   registerInputs,
@@ -84,12 +85,9 @@ function createPointerInput(
  * option in its header, with a click-to-open list of option rows below it -
  * each an ordinary `createButton`. Selecting an option updates the header's
  * label, raises `onValueChanged`, and closes the list.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createDropdownGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createDropdownGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
@@ -101,7 +99,15 @@ export const createDropdownGame = async (
   await createBackdrop(world, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const mouseInputSource = createPointerInput(world, time, game);
 

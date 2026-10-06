@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createCanvasGroupGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
@@ -18,13 +17,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiCanvasGroup(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createCanvasGroupGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -34,7 +26,7 @@ export default function UiCanvasGroup(): JSX.Element {
       }}
       header="UI Canvas Group"
       blurb="A single CanvasGroupEcsComponent lives on the outer modal panel. Toggling 'Disable modal' fades and disables everything under it in one write - the nested card, its label, its long description, and its 'Confirm' button (a real createButton) - two and three levels down in the tree. createUiCanvasGroupEcsSystem walks the whole subtree, not just direct children, so alpha/interactable/blocksRaycasts propagate arbitrarily deep: 'Confirm' becomes genuinely unable to be clicked while disabled, not just dimmed. The toggle itself lives outside the group, so it stays fully opaque and clickable the whole time."
-      createGame={createGame}
+      createGame={createCanvasGroupGame}
       interactions={
         <InteractionInstruction
           displayElement={

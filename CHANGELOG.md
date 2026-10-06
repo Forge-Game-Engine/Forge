@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **text:** The engine's default font can be imported through a bundler from `@forge-game-engine/forge/fonts/default/default.json` and `@forge-game-engine/forge/fonts/default/default.png`, so you no longer need to copy it out of `node_modules`
+
+#### Changed
+
+- **text:** `FontAtlasCache.getOrLoad` takes the URL of both atlas files, `getOrLoad({ metricsUrl, imageUrl })`, instead of finding the image next to the JSON, so atlases imported through Vite, webpack or another bundler that renames files now load. Pass the URLs your bundler gives you for the `.json` and `.png` (with Vite, `import metricsUrl from './my-font.json?url'` and `import imageUrl from './my-font.png'`), and look loaded atlases up with `get(metricsUrl)`. `getOrLoad` rejects if the image's size doesn't match the JSON's `atlasSize`, or if one `metricsUrl` is requested with two different image URLs. Concurrent calls for the same atlas now share one load. `FontAtlasCache` no longer implements `AssetCache` and its `load` method and `assets` map are no longer public; call `getOrLoad` instead. `FontAtlasData` and `FontAtlasFileData` no longer have an `atlasImage` field and `forge-generate-font-atlas` no longer writes one; existing JSON files that have it still load
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

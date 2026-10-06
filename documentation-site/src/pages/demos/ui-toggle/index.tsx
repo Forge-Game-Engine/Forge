@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createToggleGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
@@ -18,13 +17,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiToggle(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createToggleGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -34,7 +26,7 @@ export default function UiToggle(): JSX.Element {
       }}
       header="UI Toggles"
       blurb="The 'Mute' toggle (createToggle, no group) flips freely, checkbox-style. The three 'Difficulty' toggles share a UiToggleGroupEcsComponent (addUiToggleGroupComponent), making them a radio group - clicking one turns the others off, since a group always has exactly one selection by default (allowSwitchOff: false). Both are the same createToggle/UiToggleEcsComponent underneath; a shared group is the only thing that turns a set of checkboxes into radio buttons."
-      createGame={createGame}
+      createGame={createToggleGame}
       interactions={
         <InteractionInstruction
           displayElement={

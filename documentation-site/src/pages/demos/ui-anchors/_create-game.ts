@@ -3,6 +3,7 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   addSpriteComponent,
   calculateVisibleWorldSize,
@@ -91,13 +92,11 @@ const playgroundTintColor = new Color(0.95, 0.55, 0.2, 1);
  * aspect ratio, so toggling fullscreen (or dragging the playground's
  * controls) keeps each one exactly where its anchor says it should be, at
  * any window shape.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @param onPlaygroundReady - Called once the playground panel's live
  * components exist, so the page can wire its controls up to them.
  * @returns The created game.
  */
 export const createAnchorsGame = async (
-  fontAtlasUrl: string,
   onPlaygroundReady?: (playground: AnchorPlayground) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -109,7 +108,15 @@ export const createAnchorsGame = async (
   });
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   registerUiSystems(world, renderContext, time);
 

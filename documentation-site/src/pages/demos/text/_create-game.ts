@@ -1,4 +1,5 @@
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   calculateVisibleWorldSize,
   createCamera,
@@ -43,9 +44,8 @@ const sectionGap = 16;
  * paragraph whose `maxWidth` oscillates every frame to show
  * `createTextShapingEcsSystem` reflowing text live, an interactive
  * playground, and an outline/soft-shadow showcase, all drawn from one
- * shared `FontAtlas` loaded from `fontAtlasUrl`.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load (see
- * `index.tsx`, which resolves this against the site's configured base URL).
+ * shared `FontAtlas`: the engine's default font, imported through the
+ * package's `fonts/default` exports so webpack serves both files.
  * @param onPlaygroundReady - Called once the playground's live
  * `TextEcsComponent` exists, so `index.tsx`'s controls can mutate it
  * directly (mirroring how other demos hand a live component back to React,
@@ -53,7 +53,6 @@ const sectionGap = 16;
  * @returns The created game.
  */
 export const createTextGame = async (
-  fontAtlasUrl: string,
   onPlaygroundReady: (playground: Playground) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -65,7 +64,15 @@ export const createTextGame = async (
   });
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const whiteImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White.png'),

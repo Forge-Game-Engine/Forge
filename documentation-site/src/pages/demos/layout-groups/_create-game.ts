@@ -4,6 +4,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   actionResetTypes,
   Axis2dAction,
@@ -139,12 +140,9 @@ function createUiInputs(
  * (the Menu's buttons, the Options panel's Music slider and Fullscreen
  * toggle) is clickable and keyboard/gamepad-focus-navigable via
  * `createUiInputs`.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createLayoutGroupsGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createLayoutGroupsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
@@ -156,7 +154,15 @@ export const createLayoutGroupsGame = async (
   await createBackdrop(world, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const { mouseInputSource, submitInput, navigateInput } = createUiInputs(
     world,

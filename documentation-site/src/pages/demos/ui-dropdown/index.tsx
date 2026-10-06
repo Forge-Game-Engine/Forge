@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createDropdownGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
@@ -18,13 +17,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiDropdown(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createDropdownGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -34,7 +26,7 @@ export default function UiDropdown(): JSX.Element {
       }}
       header="UI Dropdown"
       blurb="createDropdown builds a header (an ordinary createButton showing the currently-selected option) with a UiDropdownEcsComponent, plus one option-row button per entry - stacked below the header and hidden until it's clicked open. A chevron on the header's right edge flips between v (closed) and ^ (open) as the list toggles. Selecting an option updates the header's label, raises onValueChanged, and closes the list. Clicking outside the open list doesn't close it - only clicking the header again or selecting an option does."
-      createGame={createGame}
+      createGame={createDropdownGame}
       interactions={
         <InteractionInstruction
           displayElement={

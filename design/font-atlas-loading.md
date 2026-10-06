@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                  |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                                                |
+| **Status**                            | Implemented. `documentation-site/docs/docs/text` describes current behavior                      |
 | **Kind**                              | Defect                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/ui/create-ui.ts` (fonts served from `public/` to avoid hashed names) |
 | **Engine version at time of writing** | `0.25.8`                                                                                         |
