@@ -144,7 +144,7 @@ export const createTextShapingEcsSystem = (
             verticalAlign: textComponent.verticalAlign,
             maxWidth: textComponent.maxWidth,
             horizontalAlignPivot: textComponent.horizontalAlignPivot,
-          richText: textComponent.richText,
+            richText: textComponent.richText,
           },
         );
 
