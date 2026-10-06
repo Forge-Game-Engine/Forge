@@ -131,26 +131,24 @@ addTextComponent(world, label, {
   [UI: Labels and Text](../ui/labels-and-text.md), which sets this
   automatically for its own stretch-anchored labels).
 - `verticalAlign` (`'top'` | `'middle'` | `'bottom'` | `'baseline'` |
-  `'capline'`, default `'top'`) positions the shaped block's visible ink
-  relative to the entity's position, not its line-height box (which
-  typically doesn't match the ink's own extent).
-  - `'top'`, `'bottom'`, `'baseline'`, and `'capline'` all anchor to a
-    fixed reference that doesn't depend on this specific string's rendered
-    bounds, so a line's position stays stable as its text is edited:
-    `'top'` anchors the font's ascender, so text hangs _below_ the
-    entity's position; `'bottom'` anchors the font's descender, so text
-    sits _above_ it; `'capline'` is `'top'` but anchored to the font's cap
-    height (the top of a capital letter like "H") instead of its ascender
-    (the top of the font's _tallest_ glyphs, including ascenders like
-    "b"/"d"/"h" that reach higher than a flat capital) - useful for a
-    title or label set in caps, where anchoring to the taller ascender
-    would leave a visible gap above the text; `'baseline'` anchors the
-    first line's own baseline directly, most useful for single-line text.
-  - `'middle'` instead centers this exact string's _actual_ rendered ink: a
-    font's ascender is typically taller than its descender is deep (most
-    glyphs have no descender at all), so centering on the font's metrics
-    would bias every descender-less string (numbers, titles, most short UI
-    labels) above the true visual center of its box.
+  `'capline'`, default `'top'`) positions the shaped block relative to the
+  entity's position. Every value anchors to the font's metrics and the
+  number of lines, never to the glyphs the string happens to contain, so a
+  label doesn't move when its text changes, and two labels aligned to the
+  same point share a baseline.
+  - `'top'` anchors the first line's ascender (the top of the font's
+    tallest glyphs, such as "b"/"d"/"h"), so text hangs _below_ the
+    entity's position.
+  - `'bottom'` anchors the last line's descender, so text sits _above_ it.
+  - `'capline'` anchors the first line's cap height, the top of a capital
+    letter like "H", so the top of a title set in caps touches the
+    position.
+  - `'baseline'` anchors the first line's baseline.
+  - `'middle'` centers the band from the first line's cap height to the last
+    line's baseline on the position. That's where a designer centers a
+    label in a button: capitals and digits sit exactly in the middle, and
+    descenders like "g"/"y" hang below the band. `createButton`,
+    `createDropdown` and `createTooltip` center their labels this way.
 - `lineHeight` (default `1`) multiplies the font atlas's own authored line
   height to control the vertical distance between line baselines.
 

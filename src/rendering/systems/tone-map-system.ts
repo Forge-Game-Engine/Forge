@@ -7,12 +7,12 @@ import {
 } from '../components/index.js';
 import { TONE_MAPPING_OPERATOR } from '../enums/index.js';
 import {
-  beginFullscreenReplacePass,
+  beginPostProcessPass,
   drawFullscreenQuad,
 } from '../fullscreen-pass.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
-import { createRenderTarget, RenderTarget } from '../render-target.js';
+import { RenderTarget } from '../render-target.js';
 
 /**
  * Creates a tone mapping post-processing system: compresses a camera's HDR
@@ -20,8 +20,8 @@ import { createRenderTarget, RenderTarget } from '../render-target.js';
  *
  * For each camera with both a `renderTarget` and a
  * `ToneMappingEcsComponent`, applies the configured exposure and operator
- * (see `TONE_MAPPING_OPERATOR`) and writes the result back into that same
- * `renderTarget`. Cameras without a `renderTarget`, or without a
+ * (see `TONE_MAPPING_OPERATOR`) in one post-processing pass over that
+ * `renderTarget` (see `beginPostProcessPass`). Cameras without a `renderTarget`, or without a
  * `ToneMappingEcsComponent` (attach one with `addToneMappingComponent`), are left
  * untouched.
  *
@@ -42,57 +42,6 @@ export const createToneMapEcsSystem = (
     shaderCache.getShader('tone-mapping.frag'),
     gl,
   );
-  const copyMaterial = new Material(
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('passthrough.frag'),
-    gl,
-  );
-
-  // Scratch GPU resource, one entry per distinct `renderTarget` in use by a
-  // tone-mapped camera, recreated on resize. A full-screen pass can't read
-  // and write the same texture in one draw, so the tone-mapped result is
-  // written here first, then copied back into `renderTarget` (the same
-  // technique `createBloomEcsSystem` uses for its composite pass). Owned by
-  // this system (not module-level state) and disposed via `cleanup`
-  // when the world stops.
-  const scratchTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
-
-  const getScratchTarget = (target: RenderTarget): RenderTarget => {
-    const existing = scratchTargetByTarget.get(target);
-    const isStale =
-      existing !== undefined &&
-      (existing.width !== target.width || existing.height !== target.height);
-
-    if (existing && !isStale) {
-      return existing;
-    }
-
-    if (existing) {
-      existing.dispose(gl);
-    }
-
-    const scratchTarget = createRenderTarget(
-      gl,
-      target.width,
-      target.height,
-      target.format,
-    );
-
-    scratchTargetByTarget.set(target, scratchTarget);
-
-    return scratchTarget;
-  };
-
-  const copyTexture = (
-    sourceTexture: WebGLTexture,
-    destination: RenderTarget,
-  ): void => {
-    beginFullscreenReplacePass(renderContext, destination);
-
-    copyMaterial.setUniform('u_texture', sourceTexture);
-
-    drawFullscreenQuad(renderContext, copyMaterial);
-  };
 
   const processedTargetsThisFrame = new Set<RenderTarget>();
 
@@ -112,11 +61,9 @@ export const createToneMapEcsSystem = (
 
         processedTargetsThisFrame.add(renderTarget);
 
-        const scratchTarget = getScratchTarget(renderTarget);
+        const source = beginPostProcessPass(renderContext, renderTarget);
 
-        beginFullscreenReplacePass(renderContext, scratchTarget);
-
-        toneMapMaterial.setUniform('u_texture', renderTarget.colorTexture);
+        toneMapMaterial.setUniform('u_texture', source);
         toneMapMaterial.setUniform('u_exposure', toneMapping.exposure);
         toneMapMaterial.setUniform(
           'u_useAces',
@@ -124,24 +71,6 @@ export const createToneMapEcsSystem = (
         );
 
         drawFullscreenQuad(renderContext, toneMapMaterial);
-
-        copyTexture(scratchTarget.colorTexture, renderTarget);
-      }
-    },
-    cleanup: (world) => {
-      const {
-        components: [cameras],
-      } = world.query<[CameraEcsComponent]>([cameraId, toneMappingId]);
-
-      for (const camera of cameras) {
-        const { renderTarget } = camera;
-
-        if (!renderTarget) {
-          continue;
-        }
-
-        scratchTargetByTarget.get(renderTarget)?.dispose(gl);
-        scratchTargetByTarget.delete(renderTarget);
       }
     },
   };
