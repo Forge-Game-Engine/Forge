@@ -33,8 +33,8 @@ export interface ShapeTextOptions {
   horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
 
   /**
-   * Vertical alignment of the shaped block's visible ink relative to its
-   * anchor (the origin every glyph offset is relative to) - see
+   * Vertical alignment of the shaped block relative to its anchor (the
+   * origin every glyph offset is relative to) - see
    * `TextDefaultedOptions.verticalAlign` for the precise semantics.
    * Defaults to `'top'`.
    */
@@ -452,81 +452,29 @@ function getJustifyGapStretch(
 }
 
 /**
- * The vertical extent actually covered by a set of positioned glyphs, used
- * to center `'middle'`-aligned text on what's actually rendered (see
- * {@link getVerticalAlignOffset}).
- */
-interface InkBounds {
-  /** The highest point covered by any glyph's quad. */
-  top: number;
-
-  /** The lowest point covered by any glyph's quad. */
-  bottom: number;
-}
-
-/**
- * Computes the vertical extent `glyphs` actually covers - the highest and
- * lowest point of any glyph's quad - or `null` if `glyphs` is empty (e.g. an
- * empty or all-whitespace string, which has no ink to center on).
- * @param glyphs - Every glyph in the shaped block, already positioned with
- * each line's un-offset baseline (line `0` at `y = 0`; see {@link shapeText}).
- * @returns The block's actual ink extent, or `null` if `glyphs` is empty.
- */
-function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
-  if (glyphs.length === 0) {
-    return null;
-  }
-
-  let top = -Infinity;
-  let bottom = Infinity;
-
-  for (const glyph of glyphs) {
-    const glyphTop = glyph.offset.y + glyph.size.y / 2;
-    const glyphBottom = glyph.offset.y - glyph.size.y / 2;
-
-    top = Math.max(top, glyphTop);
-    bottom = Math.min(bottom, glyphBottom);
-  }
-
-  return { top, bottom };
-}
-
-/**
  * Computes the offset added to the whole shaped block to realize
- * `verticalAlign`, rather than the line-height box `actualLineHeight`
- * implies. Anchoring to the line-height box instead of the ink is the more
- * obvious thing to try, but it's wrong: a capital letter's ink sits almost
- * entirely *above* its baseline, so a `'top'` alignment built from "line 0's
- * unshifted baseline sits at the box's top" would place most of the text
- * *above* the anchor, the opposite of what `'top'` is supposed to mean, and
- * `'middle'` would never actually cross through the visible glyphs.
+ * `verticalAlign`. Every mode anchors to the font's own metrics and the line
+ * count, never to the glyphs this string happens to contain, so a label
+ * stays put when its text changes and two labels aligned to the same point
+ * share a baseline.
  *
- * `'top'`/`'bottom'`/`'capline'`/`'baseline'` all anchor to the font's own
- * metrics (or, for `'baseline'`, to nothing at all - see below) rather than
- * this specific string's actual rendered bounds, so that (e.g.) a
- * multi-line paragraph's line positions - and a single label's position as
- * its text is edited - stay stable instead of shifting by a fraction of a
- * line every time the tallest/lowest glyph currently present happens to
- * change. `'middle'`, however, centers on `inkBounds` - the *actual*
- * rendered extent of this exact string - since a font's ascender is
- * typically taller than its descender is deep (most glyphs have no
- * descender at all), so centering on the font's metrics instead would
- * systematically bias every descender-less string (numbers, titles, most
- * short UI labels) above the true visual center of its box; `inkBounds`
- * doesn't have this bias, and a `'middle'`-aligned string being fully
- * replaced is already exactly the kind of content change a UI expects to
- * reflow around, unlike `'top'`/`'bottom'`/`'capline'`/`'baseline'`'s
- * "editing this line" case.
+ * The line-height box isn't used as the reference: a capital letter's ink
+ * sits almost entirely above its baseline, so a `'top'` built from "line 0's
+ * baseline sits at the box's top" would put most of the text above the
+ * anchor.
  *
- * `'capline'` is `'top'` with the font's `capHeight` (the top of a capital
- * letter like "H") in place of its `ascender` (the top of the font's
- * *tallest* glyphs, including ascenders like "b"/"d"/"h" that reach higher
- * than a flat capital) - useful for a title or label set in caps, where
- * anchoring to the taller `ascender` would leave a visible gap above the
- * text's actual top. `'baseline'` anchors line `0`'s own baseline, which
- * (per the paragraph below) is already sitting at `y = 0` before this
- * offset is applied - so, uniquely among every mode, it's *always* `0`,
- * regardless of `lineCount`/`actualLineHeight`/the font's metrics.
+ * - `'top'` anchors the first line's ascender (the top of the font's
+ *   tallest glyphs), and `'bottom'` the last line's descender, so no glyph
+ *   crosses the anchor.
+ * - `'capline'` anchors the first line's cap height (the top of a flat
+ *   capital like "H"), which sits lower than the ascender of "b"/"d"/"h".
+ * - `'baseline'` anchors the first line's baseline, which already sits at
+ *   `y = 0` before this offset, so it's always `0`.
+ * - `'middle'` centers the band from the first line's cap line to the last
+ *   line's baseline - the box designers center text in (TextMesh Pro's
+ *   `Capline`, CSS `text-box-edge: cap alphabetic`). Centering the
+ *   ascender-to-descender box instead would sit too high for the many
+ *   strings with no descenders.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
  * following line's baseline is `actualLineHeight` further in the negative
@@ -536,9 +484,6 @@ function getInkBounds(glyphs: GlyphQuad[]): InkBounds | null {
  * @param size - Font size, in world units.
  * @param lineCount - The number of lines in the shaped block.
  * @param actualLineHeight - The distance between two lines' baselines, in world units.
- * @param inkBounds - The block's actual rendered vertical extent (see
- * {@link getInkBounds}), or `null` if it has no visible glyphs. Only read
- * for `'middle'`; every other mode always uses the font's own metrics.
  * @returns The Y offset to add to every glyph.
  */
 function getVerticalAlignOffset(
@@ -547,34 +492,27 @@ function getVerticalAlignOffset(
   size: number,
   lineCount: number,
   actualLineHeight: number,
-  inkBounds: InkBounds | null,
 ): number {
+  const { ascender, descender, capHeight } = fontAtlasData.metrics;
+  const lastBaseline = -(lineCount - 1) * actualLineHeight;
+
   if (verticalAlign === 'baseline') {
     return 0;
   }
 
   if (verticalAlign === 'capline') {
-    return -(fontAtlasData.metrics.capHeight * size);
-  }
-
-  const inkTop = fontAtlasData.metrics.ascender * size;
-  const inkBottom =
-    -(lineCount - 1) * actualLineHeight +
-    fontAtlasData.metrics.descender * size;
-
-  if (verticalAlign === 'bottom') {
-    return -inkBottom;
+    return -(capHeight * size);
   }
 
   if (verticalAlign === 'middle') {
-    if (inkBounds !== null) {
-      return -(inkBounds.top + inkBounds.bottom) / 2;
-    }
-
-    return -(inkTop + inkBottom) / 2;
+    return -(capHeight * size + lastBaseline) / 2;
   }
 
-  return -inkTop;
+  if (verticalAlign === 'bottom') {
+    return -(lastBaseline + descender * size);
+  }
+
+  return -(ascender * size);
 }
 
 /**
@@ -643,9 +581,8 @@ export function shapeText(
   // existing behavior before this field was added.
   const boxLeftOffset = -horizontalAlignPivot * alignmentWidth;
 
-  // Built first with each line's *un-offset* baseline (line 0 at y = 0), so
-  // `'middle'` can measure this exact block's actual rendered ink before
-  // `verticalOffset` (which depends on that measurement) is applied below.
+  // Built with each line's un-offset baseline (line 0 at y = 0);
+  // `verticalOffset` is applied to every glyph afterwards.
   const glyphs: GlyphQuad[] = [];
   const lineOffsets: { x: number; y: number; justifyGapStretch: number }[] = [];
 
@@ -697,7 +634,6 @@ export function shapeText(
     size,
     lines.length,
     actualLineHeight,
-    verticalAlign === 'middle' ? getInkBounds(glyphs) : null,
   );
 
   for (const glyph of glyphs) {

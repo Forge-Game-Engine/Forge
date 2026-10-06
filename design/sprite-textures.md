@@ -6,7 +6,7 @@
 | **Kind**                              | Defect and feature                                                                                                                                                                                                                                                                               |
 | **Found in**                          | Galactic Journey demo: `src/ui/create-qr-code.ts`, `src/main-menu/create-how-to-play-panel.ts`, `src/speed/create-hud.ts`, `src/engine-flame/*`, `src/shockwave/create-displacement-map.ts`, `src/ui/create-ui.ts`, `src/background/create-background.ts`, `src/explosions/create-explosions.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                         |
-| **Related**                           | [`shader-uniform-declarations.md`](./shader-uniform-declarations.md) (prerequisite), [`sprite-fill.md`](./sprite-fill.md), [`webgl-context-loss.md`](./webgl-context-loss.md), [`post-processing-effects.md`](./post-processing-effects.md)                                                      |
+| **Related**                           | [`shader-uniform-declarations.md`](./shader-uniform-declarations.md) (prerequisite), [`sprite-fill.md`](./sprite-fill.md), [`webgl-context-loss.md`](./webgl-context-loss.md)                                                                                                                    |
 
 ## 0. Targeted modules
 

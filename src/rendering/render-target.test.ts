@@ -3,17 +3,27 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderTarget, RenderTarget } from './render-target';
 import { RENDER_TARGET_FORMAT } from './enums/index.js';
 
+// Identity, not deep equality: every mocked GL object is an empty `{}`.
+const calledWith = (fn: unknown): unknown[] =>
+  (fn as Mock).mock.calls.map(([argument]: unknown[]) => argument);
+
 describe('RenderTarget', () => {
   let gl: WebGL2RenderingContext;
-  let framebuffer: WebGLFramebuffer;
+  let framebuffers: WebGLFramebuffer[];
   let textures: WebGLTexture[];
 
   beforeEach(() => {
-    framebuffer = {};
+    framebuffers = [];
     textures = [];
 
     gl = {
-      createFramebuffer: vi.fn().mockReturnValue(framebuffer),
+      createFramebuffer: vi.fn().mockImplementation(() => {
+        const framebuffer = {} as WebGLFramebuffer;
+
+        framebuffers.push(framebuffer);
+
+        return framebuffer;
+      }),
       createTexture: vi.fn().mockImplementation(() => {
         const texture = {} as WebGLTexture;
 
@@ -46,7 +56,7 @@ describe('RenderTarget', () => {
       const target = new RenderTarget(gl, 256, 128);
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(1);
-      expect(target.framebuffer).toBe(framebuffer);
+      expect(target.framebuffer).toBe(framebuffers[0]);
       expect(target.colorTexture).toBe(textures[0]);
       expect(target.width).toBe(256);
       expect(target.height).toBe(128);
@@ -150,14 +160,104 @@ describe('RenderTarget', () => {
     });
   });
 
+  describe('swapBuffers', () => {
+    it('allocates the second buffer only on first use', () => {
+      const target = new RenderTarget(gl, 256, 128);
+
+      expect(gl.createFramebuffer).toHaveBeenCalledTimes(1);
+
+      target.swapBuffers(gl);
+
+      expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
+      expect(gl.framebufferTexture2D).toHaveBeenLastCalledWith(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        textures[1],
+        0,
+      );
+
+      target.swapBuffers(gl);
+
+      expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
+      expect(gl.createTexture).toHaveBeenCalledTimes(2);
+    });
+
+    it('allocates the second buffer at the same size and format', () => {
+      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+
+      (gl.texImage2D as Mock).mockClear();
+
+      target.swapBuffers(gl);
+
+      expect(gl.texImage2D).toHaveBeenCalledWith(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA16F,
+        256,
+        128,
+        0,
+        gl.RGBA,
+        gl.HALF_FLOAT,
+        null,
+      );
+    });
+
+    it('returns the previous color texture and makes the other buffer current', () => {
+      const target = new RenderTarget(gl, 256, 128);
+
+      const first = target.swapBuffers(gl);
+
+      expect(first).toBe(textures[0]);
+      expect(target.colorTexture).toBe(textures[1]);
+      expect(target.framebuffer).toBe(framebuffers[1]);
+
+      const second = target.swapBuffers(gl);
+
+      expect(second).toBe(textures[1]);
+      expect(target.colorTexture).toBe(textures[0]);
+      expect(target.framebuffer).toBe(framebuffers[0]);
+    });
+
+    it('resizes both buffers once the second is allocated', () => {
+      const target = new RenderTarget(gl, 256, 128);
+
+      target.swapBuffers(gl);
+      target.resize(gl, 512, 256);
+
+      expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
+      expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
+      expect(target.colorTexture).toBe(textures[2]);
+
+      const other = target.swapBuffers(gl);
+
+      expect(other).toBe(textures[2]);
+      expect(target.colorTexture).toBe(textures[3]);
+      expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('dispose', () => {
     it('should delete the framebuffer and color texture', () => {
       const target = new RenderTarget(gl, 256, 128);
 
       target.dispose(gl);
 
-      expect(gl.deleteFramebuffer).toHaveBeenCalledWith(framebuffer);
+      expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(1);
+      expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[0]);
       expect(gl.deleteTexture).toHaveBeenCalledWith(target.colorTexture);
+    });
+
+    it('deletes both buffers once the second is allocated', () => {
+      const target = new RenderTarget(gl, 256, 128);
+
+      target.swapBuffers(gl);
+      target.dispose(gl);
+
+      expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[0]);
+      expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[1]);
+      expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
+      expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
     });
   });
 });

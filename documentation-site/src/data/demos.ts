@@ -215,6 +215,13 @@ export const demos: Demo[] = [
     categories: ['ui'],
   },
   {
+    slug: 'persistent-state',
+    title: 'Persistent State',
+    description:
+      'A settings panel whose values are stored with createPersistentState and survive a reload.',
+    categories: ['ui'],
+  },
+  {
     slug: 'ui-slider',
     title: 'UI Slider',
     description:
