@@ -155,8 +155,8 @@ export const createToggleGame = async (): Promise<Game> => {
     disabledColor: new Color(0.6, 0.6, 0.6, 0.6),
   };
 
-  // A topLeft-anchored label's `verticalAlign: middle` centers its ink on
-  // the rect's pivot line - its `anchoredPosition.y` itself, not the middle
+  // A topLeft-anchored label's `verticalAlign: middle` centers its cap
+  // height on the rect's pivot line - its `anchoredPosition.y` itself, not the middle
   // of its (otherwise-unused, for a caption) rect. So to land a
   // caption's vertical center on a same-row toggle's center, its y must be
   // offset down by half the toggle's height, not simply match the toggle's

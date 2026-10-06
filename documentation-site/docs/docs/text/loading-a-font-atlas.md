@@ -94,6 +94,12 @@ const glyph = fontAtlas.data.glyphs.get('A'.codePointAt(0)!);
   your desired render size to get world/screen units. `planeBounds` is
   **Y-up**, relative to the glyph's baseline, matching the rest of Forge's
   Y-up conventions.
+- `planeBounds` include the distance field's padding around the glyph's
+  ink (half the `distanceRange`), because outlines and glows draw into
+  it. `ascender` and `descender` are measured from those padded bounds, so
+  they're safe outer bounds for everything a glyph renders. `capHeight` is
+  measured on the letter itself (a flat capital like "H"), without the
+  padding.
 - `atlasBounds` is the glyph's texture rect, normalized `0` to `1`, with
   `top` closer to the top of the atlas image than `bottom`.
 - Both `planeBounds` and `atlasBounds` are `null` for glyphs with no visible
