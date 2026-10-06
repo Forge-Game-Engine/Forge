@@ -1,7 +1,6 @@
 {
   "formatVersion": 2,
   "type": "msdf",
-  "atlasImage": "default.png",
   "atlasSize": {
     "width": 512,
     "height": 512

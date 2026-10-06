@@ -57,7 +57,7 @@ Give the scene something visible to look at. A flat clear color or a
 plain, uncolored sprite looks identical whether the feature under test
 worked or not, both on screen and in the recorded video. `camera-pan-zoom.ts`'s
 pattern - a tinted checkerboard grid built from one generated white-square
-image (`create-white-square-image.ts`), recolored per instance via
+image (`create-square-image.ts`), recolored per instance via
 `SpriteEcsComponent.tintColor`, with one distinctly colored marker - is the
 reusable template: cheap (no static asset files, keeping `/e2e` dependent
 only on `/src`), and gives you a landmark to measure against.

@@ -3,6 +3,7 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   MouseInputSource,
   registerInputs,
@@ -19,10 +20,7 @@ import {
   FontAtlas,
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
-import {
-  createUiCanvas,
-  registerUiSystems,
-} from '@forge-game-engine/forge/ui';
+import { createUiCanvas, registerUiSystems } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createCornerDecorations } from './_create-corner-decorations';
@@ -79,12 +77,9 @@ function createPointerInput(
  *   directly to the window panel: its own size never changes, but
  *   `createUiLayoutEcsSystem` still repositions it every frame to stay
  *   pinned to its corner as the window's edges move.
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createNestedResizeGame = async (
-  fontAtlasUrl: string,
-): Promise<Game> => {
+export const createNestedResizeGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
@@ -94,7 +89,15 @@ export const createNestedResizeGame = async (
   });
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const mouseInputSource = createPointerInput(world, time, game);
 

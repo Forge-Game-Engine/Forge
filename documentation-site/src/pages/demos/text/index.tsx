@@ -1,5 +1,4 @@
 import React, { JSX, useCallback, useRef, useState } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { createTextGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createGuideBoxCode from '!!raw-loader!./_create-guide-box';
@@ -25,9 +24,6 @@ import {
 import { PlaygroundControls } from './_PlaygroundControls';
 
 export default function Text(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-
   const playgroundRef = useRef<Playground | null>(null);
   const [text, setText] = useState(playgroundDefaults.text);
   const [size, setSize] = useState(playgroundDefaults.size);
@@ -59,10 +55,10 @@ export default function Text(): JSX.Element {
 
   const createGame = useCallback(
     () =>
-      createTextGame(fontAtlasUrl, (playground) => {
+      createTextGame((playground) => {
         playgroundRef.current = playground;
       }),
-    [fontAtlasUrl],
+    [],
   );
 
   const handleTextChange = (value: string) => {
