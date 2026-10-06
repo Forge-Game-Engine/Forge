@@ -6,7 +6,7 @@
 | **Kind**                              | Defect                                                                                                                                              |
 | **Found in**                          | Galactic Journey demo: `src/input/create-inputs.ts` (three `actionResetTypes.noReset` axes), `src/run/run-input.system.ts` (`shootInput.endHold()`) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                            |
-| **Related**                           | [`text-input-field.md`](./text-input-field.md) (keyboard source changes), [`game-states.md`](./game-states.md)                                      |
+| **Related**                           | [`text-input-field.md`](./text-input-field.md) (keyboard source changes)                                                                            |
 
 ## 0. Targeted modules
 

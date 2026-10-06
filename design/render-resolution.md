@@ -6,7 +6,7 @@
 | **Kind**                              | Defect and feature                                                                                                                                                                                 |
 | **Found in**                          | Galactic Journey demo: `src/graphics/graphics-quality.system.ts` (`maxPixelRatio` written through a cast), `src/rendering/resize-render-targets.system.ts`, `src/systems/register-draw-systems.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                           |
-| **Related**                           | [`post-processing-effects.md`](./post-processing-effects.md) (lands first), [`camera-views.md`](./camera-views.md), [`webgl-context-loss.md`](./webgl-context-loss.md)                             |
+| **Related**                           | [`post-processing-effects.md`](./post-processing-effects.md) (lands first), [`webgl-context-loss.md`](./webgl-context-loss.md)                                                                     |
 
 ## 0. Targeted modules
 

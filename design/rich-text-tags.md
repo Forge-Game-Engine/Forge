@@ -48,8 +48,8 @@ that are each individually non-trivial:
 
 This document exists to answer these questions before backlog 5.7 is
 implemented, not to implement it - no code changes ship with this
-document, matching how `design/msdf-text-rendering.md` and
-`design/form-layout-columns.md` were written before their own
+document, matching how the MSDF text rendering and
+column-aligned form layout designs were written before their own
 implementation phases.
 
 ---

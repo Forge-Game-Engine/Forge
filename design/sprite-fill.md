@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                                               |
 | **Found in**                          | Galactic Journey demo: `src/speed/create-hud.ts` (32 pre-rendered "drain" images for one ring segment), `src/game-over/create-stats-panel.ts` (progress fill held at a minimum width, hidden at zero) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                              |
-| **Related**                           | [`ui-system.md`](./ui-system.md) backlog 3.7 (radial fill deferred), [`sprite-textures.md`](./sprite-textures.md) (Phase 2 lands after it), [`angle-conventions.md`](./angle-conventions.md)          |
+| **Related**                           | [`ui-system.md`](./ui-system.md) backlog 3.7 (radial fill deferred), [`sprite-textures.md`](./sprite-textures.md) (Phase 2 lands after it)                                                            |
 
 ## 0. Targeted modules
 
@@ -96,7 +96,7 @@ type SpriteFill =
     }
   | {
       method: 'radial';
-      /** Where the fill starts, in radians (angle-conventions.md: counter-clockwise from +X). */
+      /** Where the fill starts, in radians (counter-clockwise from +X). */
       startAngle: number;
       /** The full extent at `amount: 1`, in radians; negative fills clockwise. A full turn is `2π`. */
       sweep: number;
