@@ -50,7 +50,7 @@ const toStorageError = (error: unknown, action: string): unknown => {
  * settled promise. Reading the `localStorage` property itself throws a
  * `SecurityError` where storage is blocked, so it's read here too.
  */
-const useLocalStorage = <T>(
+const withLocalStorage = <T>(
   action: string,
   operation: (storage: Storage) => T,
 ): Promise<T> => {
@@ -88,13 +88,13 @@ const useLocalStorage = <T>(
 export function createLocalStorageBackend(): StorageBackend {
   return {
     get: (key) =>
-      useLocalStorage(`read "${key}"`, (storage) => storage.getItem(key)),
+      withLocalStorage(`read "${key}"`, (storage) => storage.getItem(key)),
     set: (key, value) =>
-      useLocalStorage(`store "${key}"`, (storage) => {
+      withLocalStorage(`store "${key}"`, (storage) => {
         storage.setItem(key, value);
       }),
     remove: (key) =>
-      useLocalStorage(`remove "${key}"`, (storage) => {
+      withLocalStorage(`remove "${key}"`, (storage) => {
         storage.removeItem(key);
       }),
   };
