@@ -10,7 +10,6 @@ import {
 } from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,

@@ -13,7 +13,19 @@ export interface EmitParticleBurstOptions {
    * emitter's `numParticlesRange`.
    */
   count?: number;
+
+  /**
+   * The world rotation, in radians, counter-clockwise, of the frame the
+   * burst emits in: the emitter's spawn shape and `directionRange` turn by
+   * it, the same as they turn with the entity an emitter is on.
+   * @default 0
+   */
+  rotation?: number;
 }
+
+const defaultEmitParticleBurstOptions = {
+  rotation: 0,
+};
 
 /**
  * Spawns a burst of particles from `particleEmitter` straight away, with its
@@ -36,12 +48,18 @@ export function emitParticleBurst(
   random: Random,
   options: EmitParticleBurstOptions = {},
 ): number[] {
-  const count = options.count ?? pickParticleCount(particleEmitter, random);
+  const { count, rotation } = {
+    ...defaultEmitParticleBurstOptions,
+    ...options,
+  };
+  const particleCount = count ?? pickParticleCount(particleEmitter, random);
 
   const particles: number[] = [];
 
-  for (let i = 0; i < count; i++) {
-    particles.push(spawnParticle(world, particleEmitter, position, random));
+  for (let i = 0; i < particleCount; i++) {
+    particles.push(
+      spawnParticle(world, particleEmitter, position, rotation, random),
+    );
   }
 
   return particles;

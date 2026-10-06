@@ -15,6 +15,7 @@ import {
   createRenderEcsSystem,
   createTransformEcsSystem,
   EcsWorld,
+  getCameraView,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
   keyCodes,
@@ -81,6 +82,14 @@ export interface CameraSceneHandle extends SceneHandle {
   readonly zoom: number;
   /** The camera's current local position. */
   readonly position: { x: number; y: number };
+  /**
+   * The mouse's position as of the last `step()`, converted to world space
+   * from `MouseInputSource.position` through the camera's view (see
+   * `getCameraView`).
+   */
+  readonly pointerWorldPosition: { x: number; y: number };
+  /** The green origin square's side length, in world units. */
+  readonly greenSquareWorldSize: number;
 
   /**
    * Scans a horizontal line through the vertical center of the canvas's
@@ -210,13 +219,26 @@ export const createScene: CreateScene = async (
   world.addSystem(createPresentEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;
+  let pointerWorldPosition = { x: 0, y: 0 };
 
   return {
     step(deltaMilliseconds: number = defaultStepDeltaMilliseconds): void {
       clockInMilliseconds += deltaMilliseconds;
       time.update(clockInMilliseconds);
       world.update();
+
+      pointerWorldPosition = getCameraView(
+        world,
+        cameraEntity,
+        renderContext,
+      ).viewportToWorld(mouseInputSource.position);
     },
+
+    get pointerWorldPosition(): { x: number; y: number } {
+      return pointerWorldPosition;
+    },
+
+    greenSquareWorldSize: cellSize,
 
     get zoom(): number {
       return world.getComponent<CameraEcsComponent>(cameraEntity, cameraId)!

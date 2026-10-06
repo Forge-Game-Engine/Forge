@@ -27,13 +27,13 @@ const renderLayers = {
 export const createPrismaticJointGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createSliders(world, renderContext, renderLayers.foreground);
+  await createSliders(world, camera, renderContext, renderLayers.foreground);
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

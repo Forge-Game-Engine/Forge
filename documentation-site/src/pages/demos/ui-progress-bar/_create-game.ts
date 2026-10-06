@@ -5,13 +5,13 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -40,6 +40,7 @@ const renderLayers = {
 
 async function createBackdrop(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
@@ -51,11 +52,11 @@ async function createBackdrop(
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
 
   backdropSprite.width = width;
   backdropSprite.height = height;
@@ -80,13 +81,13 @@ export const createProgressBarGame = async (
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.world,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createBackdrop(world, renderContext);
+  await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);

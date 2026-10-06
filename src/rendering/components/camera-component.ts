@@ -1,5 +1,4 @@
 import { Axis1dAction, Axis2dAction } from '../../input/index.js';
-import { Rect } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { RenderTarget } from '../render-target.js';
@@ -77,18 +76,12 @@ export interface CameraDefaultedOptions {
    * Horizontal extent follows automatically from the destination's aspect
    * ratio, so the same `verticalWorldUnits` shows the same amount of the
    * world vertically regardless of window size/shape (see
-   * `calculatePixelsPerUnit`). Defaults to `10`.
+   * `computeCameraView`). Defaults to `10`.
    */
   verticalWorldUnits: number;
 }
 
 export interface CameraEcsComponent extends CameraDefaultedOptions {
-  /**
-   * When set, restricts this camera's draw output to the given rectangular
-   * region instead of its full destination.
-   */
-  scissorRect?: Rect;
-
   /**
    * The 1D input action that drives `zoom` changes, if any. Ignored while
    * `isStatic` is `true`.

@@ -8,9 +8,10 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vector2 } from '../../math/index.js';
 import {
-  calculatePixelsPerUnit,
   CameraEcsComponent,
   cameraId,
+  CameraView,
+  computeCameraView,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -31,8 +32,8 @@ import { resolveRect } from '../utilities/resolve-rect.js';
 /**
  * Resolves a canvas's root rect (and the world height its dedicated camera
  * should show) from the render destination's live size, per `scaleMode`.
- * Centered at the origin, matching the world camera's own projection
- * convention.
+ * Centered at the origin; the rect is only used as is when the canvas's
+ * camera can't provide a view (see `resolveEntityRect`).
  */
 function resolveCanvasRootRect(
   renderContext: RenderContext,
@@ -81,9 +82,9 @@ function pivotPositionOf(rect: Rect, pivot: Vector2): Vector2 {
 }
 
 /**
- * Resolves one entity's rect - a screen-space canvas root (via
- * `resolveCanvasRootRect`, also syncing its camera's `verticalWorldUnits`
- * and resizing its `renderTarget` if it has one), or, for anything else
+ * Resolves one entity's rect - a screen-space canvas root (its camera's
+ * view, after syncing the camera's `verticalWorldUnits` from
+ * `resolveCanvasRootRect` and resizing its `renderTarget` if it has one), or, for anything else
  * (an ordinary element, or a world-space canvas root), against `parentRect`
  * via `resolveRect` - and the reference-pixel-to-screen-pixel ratio this
  * entity's own *children* should resolve a `'screenPixels'`-unit `UiAxis`
@@ -130,31 +131,55 @@ function resolveEntityRect(
       );
     }
 
-    return {
-      rect: resolved.rect,
-      childPixelsPerUnit: calculatePixelsPerUnit(
-        renderContext.cssHeight,
-        resolved.worldHeight,
-      ),
-    };
+    const view = computeCanvasCameraView(
+      world,
+      renderContext,
+      canvasComponent,
+      camera,
+    );
+
+    if (!view) {
+      return { rect: resolved.rect, childPixelsPerUnit: pixelsPerUnit };
+    }
+
+    // The canvas fills what its camera shows, wherever the camera is and
+    // however it's zoomed.
+    return { rect: view.bounds, childPixelsPerUnit: view.pixelsPerUnit };
   }
 
   const rect = resolveRect(parentRect, rectTransform, pixelsPerUnit);
   const camera = canvasComponent
     ? world.getComponent<CameraEcsComponent>(canvasComponent.camera, cameraId)
     : null;
-
-  if (!camera) {
-    return { rect, childPixelsPerUnit: pixelsPerUnit };
-  }
+  const view =
+    canvasComponent && camera
+      ? computeCanvasCameraView(world, renderContext, canvasComponent, camera)
+      : null;
 
   return {
     rect,
-    childPixelsPerUnit: calculatePixelsPerUnit(
-      renderContext.cssHeight,
-      camera.verticalWorldUnits,
-    ),
+    childPixelsPerUnit: view ? view.pixelsPerUnit : pixelsPerUnit,
   };
+}
+
+/**
+ * The view of a canvas's camera, or `null` if the camera entity has no
+ * position to center a view on.
+ */
+function computeCanvasCameraView(
+  world: EcsWorld,
+  renderContext: RenderContext,
+  canvasComponent: CanvasEcsComponent,
+  camera: CameraEcsComponent,
+): CameraView | null {
+  const cameraPosition = world.getComponent<PositionEcsComponent>(
+    canvasComponent.camera,
+    positionId,
+  );
+
+  return cameraPosition
+    ? computeCameraView(camera, cameraPosition, renderContext)
+    : null;
 }
 
 /**
@@ -191,8 +216,8 @@ function resolveEntityRect(
  * world-space canvas typically shares the game's own world camera.
  *
  * Also computes each canvas's current reference-pixel-to-screen-pixel ratio
- * (`calculatePixelsPerUnit(renderContext.cssHeight, verticalWorldUnits)`,
- * re-derived from whichever camera that canvas root just resolved) and
+ * (its camera's `CameraView.pixelsPerUnit`, which follows the camera's
+ * zoom, re-derived from whichever camera that canvas root just resolved) and
  * threads it down through the whole subtree, so any descendant's
  * `'screenPixels'`-unit `UiAxis` size/margin (see `UiAxisSizeUnit`) converts
  * against the ratio that's actually live for the canvas it belongs to, not
