@@ -4,11 +4,11 @@ import { Vec2, Vector2 } from './vector2';
 describe('Vector2', () => {
   describe('constants', () => {
     it('should return correct up vector', () => {
-      expect(Vec2.equals(Vec2.up, { x: 0, y: -1 })).toBe(true);
+      expect(Vec2.equals(Vec2.up, { x: 0, y: 1 })).toBe(true);
     });
 
     it('should return correct down vector', () => {
-      expect(Vec2.equals(Vec2.down, { x: 0, y: 1 })).toBe(true);
+      expect(Vec2.equals(Vec2.down, { x: 0, y: -1 })).toBe(true);
     });
 
     it('should return correct left vector', () => {

@@ -22,18 +22,23 @@ and lifetime. Set `min` equal to `max` for a fixed value, for example
 ## Direction and rotation are separate
 
 `directionRange` picks the direction a particle starts moving in, in
-degrees. 0 degrees points up and angles increase clockwise (90 = right, 180
-= down, 270 = left). For example, `{ min: 135, max: 225 }` sprays particles
-in a 90 degree cone centered on straight down, useful for a dust puff under
-a character's feet. A range spanning a full 360 degrees, including the
-default `{ min: 0, max: 360 }`, sends particles in any direction. Keep `min`
-less than `max`; ranges that wrap past 360 back to 0 aren't supported.
+radians, following the engine's [angle
+convention](../math/angles-and-rotation.md#the-convention): `0` points
+along `+X` and angles increase counter-clockwise (`Math.PI / 2` = up,
+`Math.PI` = left, `-Math.PI / 2` = down). For example,
+`{ min: -Math.PI / 2 - Math.PI / 4, max: -Math.PI / 2 + Math.PI / 4 }`
+sprays particles in a quarter-turn cone centered on straight down, useful
+for a dust puff under a character's feet. A range spanning a full turn,
+including the default `{ min: 0, max: 2 * Math.PI }`, sends particles in any
+direction. Keep `min` less than `max`. Use `degreesToRadians` if you'd
+rather author the angles in degrees.
 
-`rotationRange` (in degrees, counter-clockwise) and `rotationSpeedRange` (in
+`rotationRange` (in radians, counter-clockwise) and `rotationSpeedRange` (in
 radians per second) only turn the particle's sprite. They never change the
 direction it moves in, so a spinning star still flies in a straight line.
-`rotationRange` defaults to `{ min: 0, max: 0 }`; use `{ min: 0, max: 360 }`
-to give round or symmetrical sprites some variety.
+`rotationRange` defaults to `{ min: 0, max: 0 }`; use
+`{ min: 0, max: 2 * Math.PI }` to give round or symmetrical sprites some
+variety.
 
 ## Motion: velocity, acceleration and drag
 
@@ -82,6 +87,53 @@ with no per-emitter closure needed.
   origin. A `height` of `0` gives a line, for a fountain or a row of
   burners.
 
+## Emitters turn with their entity
+
+The spawn shape and `directionRange` are in the **emitter's frame**: they
+turn with the world rotation (`RotationEcsComponent.world`) of the entity
+the emitter is on. An emitter on a child entity, such as a ship's exhaust
+or a gun's muzzle flash, keeps pointing the same way relative to its parent
+as the parent turns, with no code to update its range:
+
+```ts
+const exhaust = world.createEntity();
+
+addParentComponent(world, exhaust, { parent: ship });
+addPositionComponent(world, exhaust, { local: { x: -40, y: 0 } });
+addRotationComponent(world, exhaust);
+addParticleEmitterComponent(world, exhaust, {
+  emitters: new Map([
+    [
+      'exhaust',
+      new ParticleEmitter(smokeSprite, {
+        emissionRate: 30,
+        // Out of the back of the ship, whichever way it's facing.
+        directionRange: {
+          min: Math.PI - Math.PI / 12,
+          max: Math.PI + Math.PI / 12,
+        },
+      }),
+    ],
+  ]),
+});
+```
+
+A few things don't turn with the entity:
+
+- An entity with no `RotationEcsComponent` emits in the world's frame. Put
+  an emitter that should always spray the same way in the world, like a
+  fountain, on an entity without a rotation.
+- The world rotation comes from the transform system, which only updates
+  entities with a `PositionEcsComponent`, so a turning emitter needs a
+  position as well as a rotation.
+- `acceleration` and `getVelocityOffset` stay in world space, since they
+  model forces like gravity and wind.
+- `rotationRange` is the particle sprite's world rotation, not one relative
+  to the emitter.
+- Spawn shapes don't scale or mirror with the entity's scale.
+- Particles move in world space once they've spawned, so they don't follow
+  the emitter afterwards.
+
 Set `emitOutward: true` to send each particle away from the shape's center,
 through the point it spawned at, instead of in a direction from
 `directionRange`. With a ring, that gives a burst that radiates out from an
@@ -121,7 +173,10 @@ emitParticleBurst(world, pickupSparks, pickupPosition, random, {
 ```
 
 `emitParticleBurst` picks the count from `numParticlesRange` unless you pass
-`count`, and returns the new particle entities.
+`count`, and returns the new particle entities. It has no entity to turn
+with, so it emits in the world's frame unless you pass a `rotation` (in
+radians) to turn the spawn shape and `directionRange` by, for example the
+rotation of the thing that just exploded.
 
 ## Fading, shrinking and growing over a lifetime
 

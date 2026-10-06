@@ -5,7 +5,7 @@ import { addScaleComponent } from '../../common/components/scale-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { lifetimeId } from '../../lifecycle/components/lifetime-component.js';
 import { RemoveFromWorldLifetimeStrategyId } from '../../lifecycle/strategies/remove-from-world-strategy-component.js';
-import { degreesToRadians } from '../../math/degrees-to-radians.js';
+import { radiansToVector } from '../../math/radians-to-vector.js';
 import { Random } from '../../math/random.js';
 import { Vec2, Vector2 } from '../../math/vector2.js';
 import { addSpriteComponent } from '../../rendering/components/sprite-component.js';
@@ -18,39 +18,21 @@ function randomInRange(range: Range, random: Random): number {
 }
 
 /**
- * Picks an angle, in degrees, from `range`. A range spanning a whole number
- * of full turns (such as the default `0` to `360`) picks from the full
- * circle.
+ * Picks the direction a particle starts moving in, in radians, in the
+ * emitter's frame: counter-clockwise from the frame's `+X`.
  */
-function randomAngleInRangeDegrees(range: Range, random: Random): number {
-  const { min, max } = range;
-  const span = (max - min) % 360;
-
-  if (span === 0 && max !== min) {
-    return random.randomFloat(0, 360);
-  }
-
-  return random.randomFloat(min, min + span);
-}
-
-/**
- * Picks the direction a particle starts moving in, in radians, measured
- * clockwise from straight up.
- */
-function pickDirection(
+function pickLocalDirection(
   particleEmitter: ParticleEmitter,
-  spawnOffset: Vector2,
+  localSpawnOffset: Vector2,
   random: Random,
 ): number {
-  const isAtCenter = spawnOffset.x === 0 && spawnOffset.y === 0;
+  const isAtCenter = localSpawnOffset.x === 0 && localSpawnOffset.y === 0;
 
   if (particleEmitter.emitOutward && !isAtCenter) {
-    return Math.atan2(spawnOffset.x, spawnOffset.y);
+    return Math.atan2(localSpawnOffset.y, localSpawnOffset.x);
   }
 
-  return degreesToRadians(
-    randomAngleInRangeDegrees(particleEmitter.directionRange, random),
-  );
+  return randomInRange(particleEmitter.directionRange, random);
 }
 
 /**
@@ -68,11 +50,15 @@ export function pickParticleCount(
 
 /**
  * Spawns one particle from `particleEmitter`, somewhere in its spawn shape
- * centered on `origin`.
+ * centered on `origin`. The spawn shape and the direction picked from
+ * `directionRange` are in the emitter's frame, which is turned `rotation`
+ * radians from the world's.
  * @param world - The ECS world to create the particle in.
  * @param particleEmitter - The emitter describing the particle.
  * @param origin - The world position the emitter's spawn shape is centered
  * on.
+ * @param rotation - The emitter frame's world rotation, in radians,
+ * counter-clockwise.
  * @param random - The random instance used to pick values from the emitter's
  * ranges.
  * @returns The particle entity.
@@ -81,17 +67,22 @@ export function spawnParticle(
   world: EcsWorld,
   particleEmitter: ParticleEmitter,
   origin: Vector2,
+  rotation: number,
   random: Random,
 ): number {
-  const spawnOffset = sampleSpawnShape(particleEmitter.spawnShape, random);
-  const direction = pickDirection(particleEmitter, spawnOffset, random);
+  const localSpawnOffset = sampleSpawnShape(particleEmitter.spawnShape, random);
+  const direction =
+    pickLocalDirection(particleEmitter, localSpawnOffset, random) + rotation;
   const speed = randomInRange(particleEmitter.speedRange, random);
   const scale = randomInRange(particleEmitter.scaleRange, random);
-  const rotation = degreesToRadians(
-    randomAngleInRangeDegrees(particleEmitter.rotationRange, random),
-  );
+  const spriteRotation = randomInRange(particleEmitter.rotationRange, random);
 
-  const spawnPosition = Vec2.add(spawnOffset, origin);
+  // `localSpawnOffset` is a fresh vector, so it's turned into the world's
+  // frame in place.
+  const spawnPosition = Vec2.add(
+    Vec2.rotate(localSpawnOffset, rotation),
+    origin,
+  );
   const { lifetimeOpacity } = particleEmitter;
 
   const particle = world.createEntity();
@@ -110,10 +101,7 @@ export function spawnParticle(
   sprite.opacityMultiplier = lifetimeOpacity.start;
 
   world.addComponent(particle, ParticleId, {
-    velocity: {
-      x: Math.sin(direction) * speed,
-      y: Math.cos(direction) * speed,
-    },
+    velocity: Vec2.multiply(radiansToVector(direction), speed),
     acceleration: Vec2.clone(particleEmitter.acceleration),
     drag: particleEmitter.drag,
     rotationSpeed: randomInRange(particleEmitter.rotationSpeedRange, random),
@@ -142,7 +130,7 @@ export function spawnParticle(
 
   addPositionComponent(world, particle, { local: spawnPosition });
   addScaleComponent(world, particle, { local: { x: scale, y: scale } });
-  addRotationComponent(world, particle, { local: rotation });
+  addRotationComponent(world, particle, { local: spriteRotation });
 
   particleEmitter.onParticleSpawned?.(world, particle);
 

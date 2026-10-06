@@ -4,7 +4,7 @@ import {
   PositionEcsComponent,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
+import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
@@ -17,7 +17,7 @@ import {
 
 const sparkColor = new Color(1, 0.85, 0.3);
 const smokeColor = new Color(0.55, 0.55, 0.6);
-const smokeConeSpreadDegrees = 45;
+const smokeConeSpread = degreesToRadians(45);
 const smokeParticlesPerSecond = 30;
 
 /**
@@ -90,7 +90,7 @@ export async function createCursorEffects(
     drag: 0.05,
     acceleration: { x: 0, y: -400 },
     scaleRange: { min: 0.1, max: 0.26 },
-    rotationRange: { min: 0, max: 360 },
+    rotationRange: { min: 0, max: Math.PI * 2 },
     rotationSpeedRange: { min: -4, max: 4 },
     lifetimeSecondsRange: { min: 0.4, max: 0.8 },
     lifetimeScaleReduction: 0.3,
@@ -102,12 +102,12 @@ export async function createCursorEffects(
     spawnShape: { type: 'circle', radius: 8 },
     speedRange: { min: 15, max: 35 },
     directionRange: {
-      min: -smokeConeSpreadDegrees,
-      max: smokeConeSpreadDegrees,
+      min: Math.PI / 2 - smokeConeSpread,
+      max: Math.PI / 2 + smokeConeSpread,
     },
     acceleration: { x: 0, y: 40 },
     scaleRange: { min: 0.12, max: 0.22 },
-    rotationRange: { min: 0, max: 360 },
+    rotationRange: { min: 0, max: Math.PI * 2 },
     rotationSpeedRange: { min: -0.4, max: 0.4 },
     lifetimeSecondsRange: { min: 0.6, max: 1 },
     lifetimeScaleReduction: 2,
