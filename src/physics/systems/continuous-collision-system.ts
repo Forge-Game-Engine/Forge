@@ -10,7 +10,7 @@ import { circleSweepHitFinders } from '../ccd/circle-sweep-hits.js';
 import { getColliderRotation } from '../collider-rotation.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
-import { AabbEcsComponent, aabbId } from '../components/aabb-component.js';
+import { collidersCanCollide } from '../collision/collision-filter.js';
 import {
   ColliderEcsComponent,
   colliderId,
@@ -54,7 +54,9 @@ const contactDepthRatio = 0.01;
  * {@link CircleCollider} from where this tick's collision detection saw it
  * (`position.world`) to where integration just moved it (`position.local`)
  * against every static collider (an entity with no
- * `RigidBodyEcsComponent`, or a `'static'` one) its path overlaps. If it
+ * `RigidBodyEcsComponent`, or a `'static'` one) its path overlaps and its
+ * category and mask let it collide with. Sensors are never swept and never
+ * stop anything, since nothing is resolved against them. If it
  * would sink more than a tenth of its radius into one, the system moves
  * `position.local` back to where the circle first touched that collider,
  * leaving it just inside the surface. Velocity is left alone: the next
@@ -70,10 +72,10 @@ const contactDepthRatio = 0.01;
  * @returns The ECS system.
  */
 export const createContinuousCollisionEcsSystem = (): EcsSystem<
-  [PositionEcsComponent, ColliderEcsComponent, AabbEcsComponent]
+  [PositionEcsComponent, ColliderEcsComponent]
 > => ({
-  query: [positionId, colliderId, aabbId],
-  update: (world, { entities, components: [positions, colliders, aabbs] }) => {
+  query: [positionId, colliderId],
+  update: (world, { entities, components: [positions, colliders] }) => {
     // Rigid body and rotation are both optional for colliders (a collider
     // with no rigid body is static), so neither can be part of the query.
     const getRigidBody =
@@ -86,9 +88,12 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
     for (let i = 0; i < entities.length; i++) {
       const rigidBody = getRigidBody(entities[i]);
 
-      if (rigidBody === null || rigidBody.type === 'static') {
+      if (
+        !colliders[i].sensor &&
+        (rigidBody === null || rigidBody.type === 'static')
+      ) {
         targets.push({
-          aabb: aabbs[i],
+          collider: colliders[i],
           body: {
             position: positions[i].world,
             rotation: getColliderRotation(getRotation(entities[i])),
@@ -99,18 +104,19 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
     }
 
     for (let i = 0; i < entities.length; i++) {
-      const { collider } = colliders[i];
+      const mover = colliders[i];
 
       if (
+        mover.sensor ||
         getRigidBody(entities[i])?.type !== 'dynamic' ||
-        !(collider instanceof CircleCollider)
+        !(mover.collider instanceof CircleCollider)
       ) {
         continue;
       }
 
       const start = positions[i].world;
       const end = positions[i].local;
-      const stopT = findStopT(collider, start, end, targets);
+      const stopT = findStopT(mover, mover.collider, start, end, targets);
 
       if (stopT < 1) {
         end.x = start.x + (end.x - start.x) * stopT;
@@ -124,7 +130,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
  * A static collider a swept circle may hit.
  */
 interface SweepTarget {
-  aabb: AabbEcsComponent;
+  collider: ColliderEcsComponent;
   body: CollisionBody;
 }
 
@@ -132,6 +138,8 @@ interface SweepTarget {
  * Finds how far along this tick's motion, from `0` to `1`, a circle should
  * stop so that it ends up just inside the first static collider it would
  * otherwise sink deeply into.
+ * @param mover - The moving circle's collider component, for its category
+ * and mask.
  * @param collider - The moving circle.
  * @param start - Where the circle's body was at the start of the tick.
  * @param end - Where integration moved the circle's body this tick.
@@ -139,6 +147,7 @@ interface SweepTarget {
  * @returns The fraction of the motion to keep; `1` keeps all of it.
  */
 function findStopT(
+  mover: ColliderEcsComponent,
   collider: CircleCollider,
   start: Vector2,
   end: Vector2,
@@ -156,7 +165,10 @@ function findStopT(
   let stopT = 1;
 
   for (const target of targets) {
-    if (!aabbsOverlap(sweptAabb, target.aabb)) {
+    if (
+      !collidersCanCollide(mover, target.collider) ||
+      !aabbsOverlap(sweptAabb, target.collider.aabb)
+    ) {
       continue;
     }
 

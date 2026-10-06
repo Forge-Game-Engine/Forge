@@ -4,7 +4,7 @@ import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import { TriggerAction } from '@forge-game-engine/forge/input';
 import {
   applyImpulse,
-  CollisionManifold,
+  contactsId,
   rigidBodyId,
 } from '@forge-game-engine/forge/physics';
 
@@ -19,38 +19,24 @@ const jumpImpulse = 500_000;
  */
 const respawnFallDistance = 2000;
 
-function involvesBoth(
-  manifold: CollisionManifold,
-  entityA: number,
-  entityB: number,
-): boolean {
-  return (
-    (manifold.entityA === entityA && manifold.entityB === entityB) ||
-    (manifold.entityA === entityB && manifold.entityB === entityA)
-  );
-}
-
 /**
  * Creates an ECS system that tracks whether the ball is currently touching
- * the terrain (via `collisionManifolds`, which `createNarrowPhaseEcsSystem`
- * populates every tick), applies an upward impulse when `jumpInput` triggers
+ * the terrain (via the ball's `ContactsEcsComponent`, which
+ * `createNarrowPhaseEcsSystem` fills every tick), applies an upward impulse when `jumpInput` triggers
  * while grounded, and resets the ball back to `spawnPosition` if it ever
  * falls `respawnFallDistance` below it (for example off the end of the
  * terrain).
  *
- * Must run after `createNarrowPhaseEcsSystem`, so this tick's collisions are
+ * Must run after `createNarrowPhaseEcsSystem`, so this tick's contacts are
  * available before this system checks them, and before
  * `createEulerIntegrationEcsSystem`, so a jump/respawn applied this tick is
  * reflected in this same tick's integration.
- * @param collisionManifolds - The narrow-phase system's output: this tick's
- * confirmed collisions.
  * @param playerEntity - The ball's entity id.
  * @param terrainEntity - The terrain's entity id.
  * @param jumpInput - The jump trigger action.
  * @param spawnPosition - The world-space position to reset the ball to if it falls too far.
  */
 export const createJumpEcsSystem = (
-  collisionManifolds: CollisionManifold[],
   playerEntity: number,
   terrainEntity: number,
   jumpInput: TriggerAction,
@@ -60,14 +46,13 @@ export const createJumpEcsSystem = (
   update: (world) => {
     const position = world.getComponent(playerEntity, positionId);
     const rigidBody = world.getComponent(playerEntity, rigidBodyId);
+    const contacts = world.getComponent(playerEntity, contactsId);
 
-    if (position === null || rigidBody === null) {
+    if (position === null || rigidBody === null || contacts === null) {
       return;
     }
 
-    const isGrounded = collisionManifolds.some((manifold) =>
-      involvesBoth(manifold, playerEntity, terrainEntity),
-    );
+    const isGrounded = contacts.touching.includes(terrainEntity);
 
     if (jumpInput.isTriggered && isGrounded) {
       applyImpulse(

@@ -5,7 +5,6 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
   Collider,
@@ -79,8 +78,7 @@ function buildTargets(width: number): TargetSpec[] {
  * Creates a fixed arrangement of static circle and square "targets" for the
  * raycasting demo's ray to be cast against. None have a
  * `RigidBodyEcsComponent` - they're immovable scenery, not simulated bodies,
- * so a plain `ColliderEcsComponent` plus `AabbEcsComponent` is all `raycast`
- * needs to see them.
+ * so a plain `ColliderEcsComponent` is all `raycast` needs to see them.
  * @param world - The ECS world to add the target entities to.
  * @param camera - The camera entity whose visible width the targets are spread across.
  * @param renderContext - The render context used to load target sprites.
@@ -131,6 +129,5 @@ export async function createTargets(
       height: target.size,
     });
     addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
   }
 }

@@ -129,7 +129,6 @@ export const createRollingBallGame = async (): Promise<Game> => {
   );
   world.addSystem(
     createJumpEcsSystem(
-      collisionManifolds,
       player.entity,
       terrain.entity,
       jumpInput,

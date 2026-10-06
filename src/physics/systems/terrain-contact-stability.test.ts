@@ -11,7 +11,6 @@ import { Random, Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
-import { addAabbComponent } from '../components/aabb-component.js';
 import { addColliderComponent } from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
@@ -134,7 +133,6 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       ),
       friction: 0.8,
     });
-    addAabbComponent(world, entity);
 
     return entity;
   }
@@ -160,7 +158,6 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       friction: 0.8,
       restitution: 0,
     });
-    addAabbComponent(world, entity);
 
     const rigidBody = addRigidBodyComponent(world, entity, {
       mass: 300,

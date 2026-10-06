@@ -111,8 +111,8 @@ export const createCarGame = async (): Promise<Game> => {
   // transform, so it runs first, followed by `createTransformEcsSystem`,
   // which turns every entity's `local` pose into the `world` pose that the
   // physics and render systems read. `createGroundContactEcsSystem` recomputes
-  // each wheel's grounded state from this tick's `collisionManifolds`
-  // (populated by narrow-phase, just before it), and
+  // each wheel's grounded state from the wheel's contacts (filled by
+  // narrow-phase, just before it), and
   // `createWheelDriveEcsSystem` (sets each wheel's motor target from
   // `throttleInput`, but only requests full speed while that wheel's own
   // ground contact says it's grounded) / `createChassisStabilizerEcsSystem`
@@ -134,7 +134,7 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
   );
-  world.addSystem(createGroundContactEcsSystem(collisionManifolds));
+  world.addSystem(createGroundContactEcsSystem());
   world.addSystem(createWheelDriveEcsSystem());
   world.addSystem(createLinearSpringEcsSystem(time));
   world.addSystem(createLinearDamperEcsSystem(time));

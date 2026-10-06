@@ -12,8 +12,10 @@ import { CircleCollider } from '../colliders/circle-collider.js';
 import { Collider } from '../colliders/collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
-import { addAabbComponent } from '../components/aabb-component.js';
-import { addColliderComponent } from '../components/collider-component.js';
+import {
+  addColliderComponent,
+  ColliderDefaultedOptions,
+} from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
   addRigidBodyComponent,
@@ -43,13 +45,17 @@ function addStaticCollider(
   collider: Collider,
   position: Vector2,
   rotation: number = 0,
+  colliderOptions: Partial<ColliderDefaultedOptions> = {},
 ): number {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, { local: position });
   addRotationComponent(world, entity, { local: rotation });
-  addColliderComponent(world, entity, { collider, restitution: 0 });
-  addAabbComponent(world, entity);
+  addColliderComponent(world, entity, {
+    collider,
+    restitution: 0,
+    ...colliderOptions,
+  });
 
   return entity;
 }
@@ -60,6 +66,7 @@ function addBody(
   position: Vector2,
   velocity: Vector2,
   type: RigidBodyType = 'dynamic',
+  colliderOptions: Partial<ColliderDefaultedOptions> = {},
 ): Body {
   const entity = world.createEntity();
   const positionComponent = addPositionComponent(world, entity, {
@@ -67,8 +74,11 @@ function addBody(
   });
 
   addRotationComponent(world, entity);
-  addColliderComponent(world, entity, { collider, restitution: 0 });
-  addAabbComponent(world, entity);
+  addColliderComponent(world, entity, {
+    collider,
+    restitution: 0,
+    ...colliderOptions,
+  });
 
   const rigidBody = addRigidBodyComponent(world, entity, {
     mass: collider.mass,
@@ -178,6 +188,56 @@ describe('createContinuousCollisionEcsSystem', () => {
   it('should not sweep against kinematic or dynamic bodies', () => {
     addBody(world, box(10), { x: 0, y: -20 }, { x: 0, y: 0 }, 'kinematic');
     addBody(world, box(10), { x: 0, y: -60 }, { x: 0, y: 0 });
+
+    const ball = addBody(
+      world,
+      new CircleCollider(5),
+      { x: 0, y: 30 },
+      { x: 0, y: -6000 },
+    );
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-70);
+  });
+
+  it('should not sweep against sensors', () => {
+    addStaticCollider(world, box(10), { x: 0, y: -20 }, 0, { sensor: true });
+
+    const ball = addBody(
+      world,
+      new CircleCollider(5),
+      { x: 0, y: 30 },
+      { x: 0, y: -6000 },
+    );
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-70);
+  });
+
+  it('should not stop a sensor circle', () => {
+    addStaticCollider(world, box(10), { x: 0, y: -20 });
+
+    const ball = addBody(
+      world,
+      new CircleCollider(5),
+      { x: 0, y: 30 },
+      { x: 0, y: -6000 },
+      'dynamic',
+      { sensor: true },
+    );
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-70);
+  });
+
+  it("should not sweep against colliders the circle's category and mask exclude", () => {
+    addStaticCollider(world, box(10), { x: 0, y: -20 }, 0, {
+      category: 1 << 1,
+      mask: 1 << 1,
+    });
 
     const ball = addBody(
       world,

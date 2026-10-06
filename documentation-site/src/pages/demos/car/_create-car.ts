@@ -6,9 +6,9 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
 import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addAngularVelocityMotorComponent,
   addColliderComponent,
+  addContactsComponent,
   addGravityComponent,
   addLinearDamperComponent,
   addLinearSpringComponent,
@@ -325,7 +325,6 @@ function createWheel(
     mass: wheelCollider.mass,
     momentOfInertia: wheelCollider.momentOfInertia,
   });
-  addAabbComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
@@ -340,6 +339,8 @@ function createWheel(
     maxTorque: motorMaxTorque * maxTorqueMultiplier,
   });
 
+  // Lets the ground-contact system see what this wheel is touching.
+  addContactsComponent(world, entity);
   const groundContact = addGroundContactComponent(world, entity);
 
   return { entity, groundContact };
@@ -489,7 +490,6 @@ export async function createCar(
     // instead of persisting indefinitely.
     angularDrag: 0.5,
   });
-  addAabbComponent(world, chassisEntity);
   addGravityComponent(world, chassisEntity, { amount: gravity });
 
   // Offset along the same tilted axis each wheel's mount constrains it to

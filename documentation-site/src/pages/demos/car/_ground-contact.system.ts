@@ -1,6 +1,7 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
-  CollisionManifold,
+  ContactsEcsComponent,
+  contactsId,
   rigidBodyId,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -10,41 +11,22 @@ import {
 
 /**
  * Recomputes each matched entity's `GroundContactEcsComponent.groundContacts`
- * from this tick's `collisionManifolds`, counting how many of the entity's
- * current contacts are against a static (no `RigidBodyEcsComponent`) body.
- * Must run after whatever system populates `collisionManifolds`
- * (`createNarrowPhaseEcsSystem`), and before any system that reads a
- * `GroundContactEcsComponent` this same tick (`createWheelDriveEcsSystem`,
- * `createChassisStabilizerEcsSystem`, `createAirControlEcsSystem`).
- * @param collisionManifolds - The narrow-phase system's output: this tick's
- * confirmed collisions.
+ * from its `ContactsEcsComponent`, counting how many of the entities it's
+ * touching are static (no `RigidBodyEcsComponent`) bodies. Must run after
+ * `createNarrowPhaseEcsSystem`, which fills the contacts, and before any
+ * system that reads a `GroundContactEcsComponent` this same tick
+ * (`createWheelDriveEcsSystem`, `createChassisStabilizerEcsSystem`,
+ * `createAirControlEcsSystem`).
  */
-export const createGroundContactEcsSystem = (
-  collisionManifolds: CollisionManifold[],
-): EcsSystem<[GroundContactEcsComponent]> => ({
-  query: [groundContactId],
-  update: (world, { entities, components: [groundContacts] }) => {
+export const createGroundContactEcsSystem = (): EcsSystem<
+  [GroundContactEcsComponent, ContactsEcsComponent]
+> => ({
+  query: [groundContactId, contactsId],
+  update: (world, { entities, components: [groundContacts, contacts] }) => {
     for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
-      let count = 0;
-
-      for (const manifold of collisionManifolds) {
-        let other: number;
-
-        if (manifold.entityA === entity) {
-          other = manifold.entityB;
-        } else if (manifold.entityB === entity) {
-          other = manifold.entityA;
-        } else {
-          continue;
-        }
-
-        if (world.getComponent(other, rigidBodyId) === null) {
-          count++;
-        }
-      }
-
-      groundContacts[i].groundContacts = count;
+      groundContacts[i].groundContacts = contacts[i].touching.filter(
+        (other) => world.getComponent(other, rigidBodyId) === null,
+      ).length;
     }
   },
 });

@@ -41,12 +41,14 @@ See [Bodies and Shapes](./rigid-bodies.md) for the full registration order.
 
 ## What it does
 
-- **Which bodies are swept**: `'dynamic'` bodies with a `CircleCollider`.
-  Kinematic bodies follow the velocity your code gives them and aren't
-  stopped.
+- **Which bodies are swept**: `'dynamic'` bodies with a `CircleCollider`
+  that isn't a sensor. Kinematic bodies follow the velocity your code gives
+  them and aren't stopped.
 - **What they're swept against**: static colliders, meaning collider
   entities with no `RigidBodyEcsComponent` or a `'static'` one, of every
-  shape (`CircleCollider`, `PolygonCollider` and `TerrainCollider`). Against
+  shape (`CircleCollider`, `PolygonCollider` and `TerrainCollider`), as
+  long as the two colliders' `category` and `mask` let them collide.
+  Sensors are skipped, since nothing is ever resolved against them. Against
   a terrain, the sweep only meets the surface, the same as
   [narrow-phase collision](./terrain.md#how-collision-works).
 - **When it steps in**: only when the circle would end the tick more than a

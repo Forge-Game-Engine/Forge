@@ -171,7 +171,7 @@ Each phase is independently completable and releasable, per this engine's own `f
 | Task | Description | Size |
 | --- | --- | --- |
 | `RigidBodyEcsComponent.continuousDetection` | New field on `RigidBodyDefaultedOptions` (default `true` for dynamic bodies against static bodies - matches "the reported bug is an ordinary wheel, not something a demo author should have to know to flag," §7 DL-4); settable `false` per body to opt out | S |
-| `createContinuousCollisionEcsSystem` | The system itself: threshold check (§5.3), candidate-end-position computation, nearby-static-body query (reusing `AabbEcsComponent`/`aabbsOverlap` over a swept AABB spanning start→end), sweep dispatch, clamp write-back | L |
+| `createContinuousCollisionEcsSystem` | The system itself: threshold check (§5.3), candidate-end-position computation, nearby-static-body query (reusing `ColliderEcsComponent.aabb`/`aabbsOverlap` over a swept AABB spanning start→end), sweep dispatch, clamp write-back | L |
 | `createEulerIntegrationEcsSystem` clamp support | The small addition in §5.4 | S |
 | Integration regression test | Full-pipeline test reproducing the diagnosed scenario | M |
 | Car demo wiring + manual verification | Register the system; browser-verify per AGENTS.md's "Documentation Site Demos" process | S |
@@ -242,9 +242,10 @@ describes the shipped behavior.
   would give the next tick's narrow phase nothing to report and would be
   swept and stopped again every tick.
 - **DL-4 replaced: no per-body flag and no configurable threshold.** The
-  engine has no sensors, so opting a body out could only let it tunnel, and
-  "force it on below the threshold" is by definition a case discrete
-  detection handles. Revisit when sensors exist.
+  sweep follows the same rules as discrete collision: it skips sensors and
+  pairs whose `category`/`mask` exclude each other. Any other opt-out could
+  only let a body tunnel, and "force it on below the threshold" is by
+  definition a case discrete detection handles.
 - **Threshold (§8 Q1): a tenth of the radius, not half.** The diagnosed wheel
   moves 0.2-0.25 of its radius per tick, so `0.5` would never have fired for
   the reported bug. A hit is acted on only when the unclamped step would end
