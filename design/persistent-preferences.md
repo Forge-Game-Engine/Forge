@@ -60,12 +60,13 @@ save system will share, with `localStorage` as its first implementation.
   [#567](https://github.com/Forge-Game-Engine/Forge/issues/567).
 - **Other backends' implementations.** IndexedDB, a remote endpoint or a
   desktop wrapper's file system implement `StorageBackend` later, with
-  #567 or when a game needs one. This design only fixes the interface they
-  implement.
+  #567 or when a game needs one. #567 is expected to extend the interface
+  too (listing what's stored, for a load menu), which custom backends then
+  implement as well; that's acceptable before 1.0.
 - **Nested values and migrations.** Values are flat numbers, strings and
   booleans. Structured data such as key bindings can be stored as a JSON
   string, the way Unity stores input binding overrides in `PlayerPrefs`. A
-  field that changes meaning gets a new name (open question 2).
+  field that changes meaning gets a new name (open question 1).
 - **Syncing across devices.**
 
 ---
@@ -129,6 +130,16 @@ user, not its only one: #567's save system stores serialized worlds
 through the same interface, so a game that switches backends changes one
 argument, not its game code.
 
+The contract every backend keeps:
+
+- Every promise it returns settles. A backend that talks to a network
+  applies its own timeouts, so a hung request can't stall its callers.
+- `remove` resolves once nothing is stored under the key, whether or not
+  anything was.
+- Creating a backend touches nothing; only its methods touch storage. The
+  docs site imports engine modules during its server-side build, where
+  there's no `window`.
+
 The `localStorage` backend touches `localStorage` only inside `try` blocks
 (even reading the property throws a `SecurityError` where storage is
 blocked) and turns each failure into the matching error: no
@@ -191,31 +202,40 @@ The constraint is written as a mapped type, not
 - **Loading** happens once, in `createPreferences`, which resolves once
   the stored entry has been read. After that, `values` is read from memory
   and `set` applies synchronously, whatever the backend, as Unity's
-  `PlayerPrefs` and Godot's `user://` behave on the web. A stored field is used
+  `PlayerPrefs` and Godot's `user://` behave on the web once their stores
+  are loaded. A stored field is used
   if it has the same type as its default (numbers must also be finite) and
   passes its validator; otherwise the default is used, independently of
   the other fields. That's how a game update adds or retypes a setting
   without resetting the others (DL-2), not a failure. An out-of-range
   stored value (a volume of `-0.1`) therefore becomes the default, not the
   nearest valid value.
-- **Saving** stores only the keys that have been `set`, as JSON under
-  `name`. Defaults are never written, so changing a default in a game
-  update reaches every player who hadn't changed that setting. `reset`
-  removes the stored entry.
-- **Write order.** At most one write is in flight. Every write stores
-  all the keys set so far, or removes the entry if there are none. Changes
-  made while a write is in flight go out together in the next one, and
-  their promises settle with it, so a slow backend can't apply an older
-  write after a newer one.
+- **Saving** writes the entry as it was loaded, with the keys `set` since
+  then applied, as JSON under `name`. Fields this version doesn't know or
+  rejects stay as they were stored, so nothing set in an earlier session,
+  or by a newer version of the game, is lost. Defaults are never written,
+  so changing a default in a game update reaches every player who hadn't
+  changed that setting. `reset` empties the entry, which removes it.
+- **Write order.** One queue does every write, for `set` and `reset`
+  alike, with at most one write in flight: it stores the current entry, or
+  removes it when it's empty. Changes made while a write is in flight go
+  out together in the next one, and their promises settle with it, so a
+  slow backend can't apply an older write after a newer one, nor bring
+  values back after a `reset`. Godot's web build syncs IndexedDB the same
+  way: one sync at a time, and another after it if anything changed. An
+  idle queue starts its write without awaiting anything first and never
+  waits on a timer, so with the `localStorage` backend a change is stored
+  by the end of the task that made it.
 - **Failures are the game's to handle.** Nothing falls back silently:
   - `createPreferences` rejects with the backend's `StorageError` if the
     stored entry can't be read, and with `PreferencesFormatError` if it
     isn't a JSON object (written by something else, or damaged).
   - `set` and `reset` reject with the backend's `StorageError` if the
     change can't be stored. The values stay applied in memory, and the
-    next write that succeeds stores them, since every write stores all
-    set keys. The game decides what a failed save means: tell the player,
-    retry, or carry on for the session.
+    next write that succeeds stores them, since every write stores the
+    whole entry. The game decides what a failed save means: tell the
+    player, retry, or carry on for the session.
+  - A backend that throws instead of rejecting is treated the same.
   - A game that wants to carry on without storage creates its preferences
     on `createMemoryStorageBackend()` after catching the error, which makes
     that choice visible in its code.
@@ -223,18 +243,22 @@ The constraint is written as a mapped type, not
     `Infinity`, throws before applying anything: that's a programming
     error, and `JSON.stringify` would turn a non-finite number into `null`
     and quietly lose it on reload.
-- **One set per name.** Creating two preferences with the same `name` on
-  the same backend throws, since each would overwrite the other's stored
-  keys. The check runs before the first `await`, so two calls in the same
-  tick can't both pass it.
+- **Names.** Use one preferences object per `name`; two would overwrite
+  each other's writes. Nothing enforces it: a registry of names would
+  make re-creating preferences throw, and docs demos and single-page apps
+  create their games again on every visit. `localStorage` keys are shared
+  by every page of an origin, and some hosts serve many games from one
+  origin (itch.io's HTML5 games, an organization's GitHub Pages sites), so
+  a name carries a game prefix, as the demo's `galactic-journey.` does.
 
 ### 4.3 Who owns the values
 
 The preferences object is the single owner of persisted settings. Other
 state derived from them (a graphics settings component, the audio mixer's
-bus volumes in [`audio-mixer.md`](./audio-mixer.md)) is written from
-`onChange`, and changes go through `set`, so nothing keeps a second copy
-that drifts from what's stored.
+bus volumes in [`audio-mixer.md`](./audio-mixer.md)) is initialized from
+`values` once `createPreferences` resolves and updated from `onChange`
+(which is raised only by changes), and changes go through `set`, so
+nothing keeps a second copy that drifts from what's stored.
 
 The demo's audio settings become:
 
@@ -261,21 +285,22 @@ built on top.
 
 ## 5. Phases
 
-### Phase 1: Preferences
+### Phase 1: Storage and preferences
 
 | #   | Task                                                                                                                                                                         | Size |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 1.1 | `src/storage`: `StorageBackend`, the `StorageError` classes, `createLocalStorageBackend` mapping unavailable, blocked and full storage to them, `createMemoryStorageBackend` | S    |
 | 1.2 | `createPreferences`: per-field loading, storing only set keys, `reset`, `onChange`, the write queue, promises from `set` and `reset`                                         | M    |
-| 1.3 | Failures surfaced (rejected reads and writes, `PreferencesFormatError`); duplicate-name check                                                                                | S    |
+| 1.3 | Failures surfaced (rejected and throwing reads and writes, `PreferencesFormatError`)                                                                                         | S    |
 | 1.4 | Module wiring for both modules (`src/index.ts`, `package.json` exports)                                                                                                      | S    |
-| 1.5 | Guide; a settings panel in a docs demo; changelog under `#### Added`                                                                                                         | M    |
+| 1.5 | Guides (`preferences/`, `storage/`); a settings panel in a docs demo; changelog bullets for both modules under `#### Added`                                                  | M    |
 
-**Definition of done:** a docs demo's settings survive a reload; a
-corrupted stored value falls back to its default without affecting the
-other fields; changing a default reaches a player who never set it; a
-test backend that resolves writes out of order still ends with the latest
-values stored.
+**Definition of done:** a docs demo's settings survive a reload and a
+second visit to its page; a corrupted stored value falls back to its
+default without affecting the other fields; changing a default reaches a
+player who never set it; keys set in an earlier session survive a write in
+the next; a test backend that resolves writes out of order still ends with
+the latest values stored, and with nothing stored after a `reset`.
 
 ---
 
@@ -328,8 +353,9 @@ system shares, with `localStorage` its only implementation for now.
 choose `localStorage`, IndexedDB or a remote endpoint without changing
 its code. Preferences are the first code that needs storage, so they set
 the interface, and later backends implement it without touching
-preferences or the games using them. Unity's `PlayerPrefs` and Godot's
-`user://` are likewise one API over per-platform storage.
+preferences or the games using them (#567 is expected to add listing to
+it). Unity's `PlayerPrefs` and Godot's `user://` are likewise one API over
+per-platform storage.
 
 ### DL-6: The interface is asynchronous
 
@@ -337,13 +363,19 @@ preferences or the games using them. Unity's `PlayerPrefs` and Godot's
 
 **Decision: (b).**
 
-**Rationale.** IndexedDB and remote endpoints are asynchronous, so with
-(a) each of them would have to preload everything and write behind on its
-own, and a remote backend couldn't report a failed write to its caller.
-Preferences do the waiting once: they load at creation and serve
-reads from memory, as Unity and Godot do over IndexedDB on the web. The
-cost is `await createPreferences(...)`, made where a game already awaits
-its assets.
+**Rationale.** IndexedDB and remote endpoints are asynchronous. A
+synchronous interface only works over a store that's loaded before the
+game starts, which is what Unity's WebGL player and Godot's web build do
+in their own startup: Unity loads its IndexedDB file system before the
+game's code runs, and Godot loads `user://`. Forge has no startup step of
+its own to do that in (`createGame` is synchronous, and games await their
+assets before calling it), and #567's saves shouldn't all be loaded into
+memory up front, and need a result for each write. Web key-value
+libraries such as localForage are asynchronous for the same reasons.
+Preferences, which are small, do the one load themselves: they're awaited
+at creation and then read from memory, Unity's and Godot's model one
+level up. The cost is `await createPreferences(...)`, where a game
+already awaits its assets.
 
 ### DL-7: Storage failures are errors the game handles
 
@@ -387,21 +419,26 @@ error for the game to check, and Unity's web player threw
 
 ## 8. Testing considerations
 
-- Loading: a wrong-typed field, a non-finite number, a field failing its
-  validator and extra fields each fall back per field; a rejected read
-  rejects `createPreferences` with the backend's error; malformed JSON
-  rejects it with `PreferencesFormatError`.
-- Saving: only set keys are written; `reset` removes the entry; a
-  rejected write rejects that `set`'s promise, leaves the values applied,
-  and a later successful write stores them; `onChange` raised; writes are
-  serialized and the latest state wins against a backend that settles out
-  of order.
-- `set` with an invalid or non-finite value throws; a second
-  `createPreferences` with the same name on the same backend throws.
+- Loading: a wrong-typed field, a non-finite number and a field failing
+  its validator each fall back per field and stay as stored until set;
+  extra fields survive the next write; a rejected or throwing read rejects
+  `createPreferences` with the backend's error; malformed JSON rejects it
+  with `PreferencesFormatError`.
+- Saving: defaults are never written; keys set in an earlier session
+  survive a write in the next; `reset` removes the entry, and a `reset`
+  while a write is in flight ends with nothing stored; a rejected write
+  rejects that `set`'s promise, leaves the values applied, and a later
+  successful write stores them; `onChange` raised; writes are serialized
+  and the latest state wins against a backend that settles out of order;
+  with the `localStorage` backend, a change is stored by the end of the
+  task.
+- `set` with an invalid or non-finite value throws and applies nothing;
+  creating preferences again under the same name works.
 - The `localStorage` backend: no `localStorage`, a `SecurityError` and a
   `QuotaExceededError` reject with `StorageUnavailableError`,
   `StorageBlockedError` and `StorageFullError`, with the original as
-  `cause`; writes land before the call returns.
+  `cause`; its writes land before the call returns; importing the module
+  where there's no `window` doesn't throw.
 - The memory backend: values round-trip; nothing is shared between two
   backends.
 - jsdom provides `localStorage`; preferences tests use the memory backend,
@@ -410,9 +447,10 @@ error for the game to check, and Unity's web player threw
 ## 9. Documentation and demo follow-up
 
 - New `preferences/` guide.
-- New `storage/` page: `StorageBackend`, the `localStorage` backend, and
-  how to implement another backend.
+- New `storage/` page: `StorageBackend` and its contract, the
+  `localStorage` backend (keys are shared across the origin, so prefix
+  them), and how to implement another backend.
 - Demo: the load/validate/save code in the audio mixer and the graphics
   settings store is replaced by two awaited `createPreferences` calls; the
-  graphics settings component and the mixer's buses are updated from
-  `onChange`.
+  graphics settings component and the mixer's buses are initialized from
+  `values` and updated from `onChange`.
