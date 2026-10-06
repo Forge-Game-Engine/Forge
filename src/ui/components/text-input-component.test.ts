@@ -35,6 +35,24 @@ describe('TextInputEcsComponent', () => {
     expect(entry.value).toBe('start');
   });
 
+  it("starts from the entry's own value when no value is given", () => {
+    const world = new EcsWorld();
+    const entry = createTextEntry(document.createElement('div'));
+
+    entry.setValue('kept');
+
+    const component = addTextInputComponent(world, world.createEntity(), {
+      entry,
+      textLabel: world.createEntity(),
+      placeholderLabel: world.createEntity(),
+      caret: world.createEntity(),
+      selection: world.createEntity(),
+      compositionUnderline: world.createEntity(),
+    });
+
+    expect(component.value).toBe('kept');
+  });
+
   it("setTextInputValue writes the field's entry", () => {
     const { world, entity, entry, component } = build();
 

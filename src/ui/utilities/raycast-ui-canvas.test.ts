@@ -70,6 +70,19 @@ describe('raycastUiCanvas', () => {
     ).toBeNull();
   });
 
+  it("returns null when the canvas's camera can't convert the position", () => {
+    const world = new EcsWorld();
+    const canvas = world.createEntity();
+
+    addPositionComponent(world, canvas);
+    addRectTransformComponent(world, canvas);
+    addCanvasComponent(world, canvas, { camera: world.createEntity() });
+
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+    ).toBeNull();
+  });
+
   it("ignores another canvas's elements", () => {
     const world = new EcsWorld();
     const canvas = buildCanvas(world);

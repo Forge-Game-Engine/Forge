@@ -166,6 +166,34 @@ describe('createTextEntry', () => {
     expect(keyDown('KeyA', { repeat: true }).defaultPrevented).toBe(false);
   });
 
+  it('stops letting a key auto-repeat once it is released', () => {
+    entry.focus();
+    keyDown('KeyA');
+    entry.element.dispatchEvent(
+      new KeyboardEvent('keyup', { code: 'KeyA', bubbles: true }),
+    );
+
+    expect(keyDown('KeyA', { repeat: true }).defaultPrevented).toBe(true);
+  });
+
+  it('starts a composition from an update that arrives without a start', () => {
+    entry.setValue('ab');
+    entry.setSelection(1, 1);
+    entry.element.dispatchEvent(
+      new CompositionEvent('compositionupdate', { data: 'x' }),
+    );
+
+    expect(entry.composition).toEqual({ start: 1, end: 2 });
+  });
+
+  it('ends a composition when the input loses focus', () => {
+    entry.focus();
+    entry.element.dispatchEvent(new CompositionEvent('compositionstart'));
+    entry.blur();
+
+    expect(entry.composition).toBeNull();
+  });
+
   it('tracks the IME composition range and reports its end as a change', () => {
     entry.setValue('ab');
     entry.setSelection(2, 2);

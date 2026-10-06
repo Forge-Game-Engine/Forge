@@ -12,6 +12,7 @@ import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
+import { rectTransformId } from '../components/rect-transform-component.js';
 import { textInputId } from '../components/text-input-component.js';
 
 const fontAtlas = {
@@ -96,6 +97,29 @@ describe('createTextInput', () => {
     ]) {
       expect(world.getComponent(part, spriteId)!.enabled).toBe(false);
     }
+  });
+
+  it('passes the anchored position, filter and category through', () => {
+    const world = new EcsWorld();
+    const filter = (text: string): string => text.toUpperCase();
+
+    const field = createTextInput(world, world.createEntity(), {
+      renderContext,
+      sprite: buildSprite(),
+      fillSprite: buildSprite(),
+      fontAtlas,
+      size: 20,
+      anchoredPosition: { x: 10, y: 20 },
+      filter,
+      category: 4,
+    });
+
+    expect(
+      world.getComponent(field.entity, rectTransformId)!.anchoredPosition,
+    ).toEqual({ x: 10, y: 20 });
+    expect(field.textInput.filter).toBe(filter);
+    expect(field.textInput.maxLength).toBe(Number.POSITIVE_INFINITY);
+    expect(world.getComponent(field.textLabel, textId)!.category).toBe(4);
   });
 
   it('throws when the render context canvas has no parent element', () => {

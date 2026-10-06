@@ -205,6 +205,28 @@ describe('createUiTextInputEcsSystem', () => {
     expect(textInput.value).toBe('a');
   });
 
+  it('raises no change when every typed character is filtered out', () => {
+    const listener = vi.fn();
+
+    field.onValueChanged.registerListener(listener);
+    type('é');
+    world.update();
+
+    expect(textInput.value).toBe('');
+    expect(textInput.entry.value).toBe('');
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('stops editing a field that becomes non-interactable', () => {
+    editTextInput(world, field.entity);
+    world.update();
+
+    field.interactable.interactable = false;
+    world.update();
+
+    expect(textInput.isEditing).toBe(false);
+  });
+
   it('starts editing when the field is invoked', () => {
     field.interactable.wasInvokedThisFrame = true;
     world.update();
@@ -360,6 +382,69 @@ describe('createUiTextInputEcsSystem', () => {
     expect(style.top).toBe('280px');
     expect(style.width).toBe('200px');
     expect(style.height).toBe('40px');
+  });
+
+  it('does not move the hidden input for a field on a world-space canvas', () => {
+    const worldCanvas = world.createEntity();
+
+    addPositionComponent(world, worldCanvas);
+    addRectTransformComponent(world, worldCanvas);
+    addCanvasComponent(world, worldCanvas, {
+      renderMode: 'worldSpace',
+      camera: world.createEntity(),
+    });
+
+    const worldField = createTextInput(world, worldCanvas, {
+      renderContext,
+      sprite: buildSprite(),
+      fillSprite: buildSprite(),
+      fontAtlas,
+      size: 20,
+    });
+
+    world.update();
+
+    expect(worldField.textInput.entry.element.style.left).toBe('0px');
+  });
+
+  it("does not move the hidden input when the canvas's camera is missing", () => {
+    const canvasWithoutCamera = world.createEntity();
+
+    addPositionComponent(world, canvasWithoutCamera);
+    addRectTransformComponent(world, canvasWithoutCamera);
+    addCanvasComponent(world, canvasWithoutCamera, {
+      camera: world.createEntity(),
+    });
+
+    const orphan = createTextInput(world, canvasWithoutCamera, {
+      renderContext,
+      sprite: buildSprite(),
+      fillSprite: buildSprite(),
+      fontAtlas,
+      size: 20,
+    });
+
+    world.update();
+
+    expect(orphan.textInput.entry.element.style.left).toBe('0px');
+  });
+
+  it('ignores presses that are not on a field, or not with the primary button', () => {
+    world.update();
+
+    const mouseDown = pointer('mousedown', 10, 10);
+
+    container.dispatchEvent(mouseDown);
+    expect(mouseDown.defaultPrevented).toBe(false);
+
+    container.dispatchEvent(
+      new MouseEvent('pointerdown', { clientX: 400, clientY: 300, button: 2 }),
+    );
+    container.dispatchEvent(
+      new MouseEvent('pointerup', { clientX: 400, clientY: 300, button: 2 }),
+    );
+
+    expect(document.activeElement).not.toBe(textInput.entry.element);
   });
 
   it('focuses the field inside the tap that lands on it', () => {
