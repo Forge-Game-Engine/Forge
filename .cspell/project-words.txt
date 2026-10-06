@@ -99,6 +99,7 @@ letterbox
 letterboxed
 letterboxing
 lifecycles
+lowp
 matterjs
 mediump
 Menlo

@@ -52,6 +52,53 @@ const createShockwaveMaterial = (
 };
 ```
 
+## Which uniforms you can set
+
+A material's uniforms are the ones its two shaders declare. `Material` reads
+the `uniform` declarations from the shader sources (after `#include`s are
+resolved), so you can set any declared uniform:
+
+- If the linked program uses the uniform, its value is uploaded every time
+  the material is bound.
+- If the GLSL compiler removed the uniform because nothing it can prove
+  affects the output reads it, the value is still checked against the
+  declared type and stored, and there's nothing to upload. Which uniforms a
+  compiler removes depends on the GPU and driver, so this keeps the same
+  code working on every device. It also means commenting out the code that
+  reads a uniform doesn't break the systems that set it.
+
+Setting a name that neither shader declares throws, listing the declared
+uniforms and naming both shaders, so a typo fails on the first call:
+
+```txt
+Uniform "u_tme" is not declared in material "sprite.vert" + "shockwave.frag".
+Declared uniforms: u_projection, u_texture, u_time, u_waves.
+```
+
+To check whether a uniform actually reaches the GPU while debugging a
+shader, ask the program for its location:
+
+```ts
+const isActive = gl.getUniformLocation(material.program, 'u_time') !== null;
+```
+
+`Material` reads declarations of the form
+`uniform [precision] <type> <name>[<size>], ...;` (or `<type>[<size>] <name>`),
+with an optional `layout(...)` qualifier. An array's size must be an integer
+literal, a `#define NAME <integer>`, or a `const int NAME = <integer>;`;
+anything else, such as `u_waves[COUNT * 2]`, throws when the material is
+created. Two declarations of the same name must agree on the type and size,
+in one shader and across the two. `#if`/`#ifdef` blocks aren't evaluated, so
+a uniform declared in a branch that's compiled out is still settable, and
+behaves like one the compiler removed.
+
+Uniform blocks (`uniform Block { ... };`) aren't supported. A struct uniform
+(`uniform Light u_light;`) can't be set by its own name; set its members
+(`u_light.color`) instead, which works only while the program uses them.
+The same applies to a uniform whose type is spelled with a macro
+(`uniform TINT_TYPE u_tint;`): write the GLSL type out so `Material` can
+read it.
+
 ## Which value fits which uniform
 
 The upload is chosen from the type the uniform is declared with in GLSL, so
@@ -106,10 +153,6 @@ Sampler arrays (`uniform sampler2D u_textures[4]`) can't be set through a
 
 ## Gotchas
 
-- **Unused uniforms don't exist.** The GLSL compiler removes any uniform the
-  shader never reads, and `setUniform` throws for a name the linked program
-  doesn't have. Comment out the code that reads a uniform, and the
-  `setUniform` call for it starts throwing too.
 - **Values are read when the material is bound, not when they're set.** A
   `Float32Array`, `Matrix3x3`, or `Vector2` you keep and mutate after
   `setUniform` uploads its current contents on the next draw. That lets you
