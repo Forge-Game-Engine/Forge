@@ -40,9 +40,10 @@ const columns: {
  * block of text against a shared, highlighted anchor line at the same
  * entity position, so the difference between them is exactly what moves
  * relative to that line - `top` hangs below it, `bottom` sits above it,
- * `middle` straddles it on this exact text's own rendered ink, `baseline`
- * puts the first line's baseline directly on it, and `capline` hangs below
- * it like `top` but from the shorter cap height instead of the ascender.
+ * `middle` centers the band from the first line's cap height to the last
+ * line's baseline on it, `baseline` puts the first line's baseline
+ * directly on it, and `capline` hangs below it like `top` but from the
+ * shorter cap height instead of the ascender.
  * @param world - The ECS world to add label entities to.
  * @param fontAtlas - The font atlas every label draws from.
  * @param whiteSprite - A plain white sprite template for the anchor lines.
