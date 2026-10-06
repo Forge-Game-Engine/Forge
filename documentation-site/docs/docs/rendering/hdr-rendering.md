@@ -9,9 +9,11 @@ stores 8-bit-per-channel color: every value gets clamped to `[0, 1]` the
 moment a fragment shader writes it, regardless of what the shader actually
 computed. `RENDER_TARGET_FORMAT.hdr` switches a render target to half-float
 (`RGBA16F`) storage instead, so values above `1` survive intermediate
-passes — which matters for [Bloom](./bloom.md#emissive-driven-bloom): an
-emissive-mapped light source can genuinely be brighter than white, instead
-of just hitting the same `1.0` ceiling as a plain white sprite.
+passes — which matters for [Bloom](./bloom.md): a sprite tinted brighter
+than white (e.g. `new Color(3, 3, 3)`), or one with an
+[emissive map](./bloom.md#emissive-driven-bloom), can genuinely be brighter
+than white, instead of hitting the same `1.0` ceiling as a plain white
+sprite.
 `createToneMapEcsSystem` then compresses that HDR range back into
 displayable `[0, 1]` before the camera is presented.
 
