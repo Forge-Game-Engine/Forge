@@ -110,8 +110,3 @@ created while playing is kept after `playing` is left, and removed when
 
 Removal happens between `exitGroup` and `enterGroup`, so `onExit` systems
 can still read the entity.
-
-:::note
-Only the entity itself is removed. Entities parented to it aren't removed,
-so give each child its own state-scoped component.
-:::

@@ -99,6 +99,11 @@ For an event system, the outline is:
   input, worlds, rendering) or general programming (dependency injection,
   closures). When the reader needs another feature, link its guide in one
   clause.
+- Behavior that belongs to another feature is documented once, in that
+  feature's guide, even when this feature triggers it. A game state removes
+  entities; what removing an entity does (to its components, its children)
+  is the World's and parenting's behavior, so the game state guide doesn't
+  describe it.
 - Use cases can be named as possibilities ("for example, a pause menu or
   a game over screen"), but no single scenario is presented as the use case,
   and no one game runs through the page. Don't describe a demo's mechanics.
