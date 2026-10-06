@@ -96,8 +96,6 @@ export async function createPlatform(
 
   addColliderComponent(world, entity, { collider, friction: 0.8 });
   addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
     type: 'kinematic',
     velocity: { x: platformSpeed, y: 0 },
   });

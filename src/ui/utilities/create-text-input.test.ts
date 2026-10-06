@@ -83,6 +83,10 @@ describe('createTextInput', () => {
     expect(field.textInput.entry.value).toBe('hi');
 
     expect(world.getComponent(field.textLabel, textId)!.text).toBe('hi');
+    expect(world.getComponent(field.textLabel, textId)!.richText).toBe(false);
+    expect(world.getComponent(field.placeholderLabel, textId)!.richText).toBe(
+      false,
+    );
     expect(world.getComponent(field.placeholderLabel, textId)!.text).toBe(
       'Name',
     );

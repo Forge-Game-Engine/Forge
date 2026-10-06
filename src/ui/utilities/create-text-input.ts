@@ -293,6 +293,9 @@ export function createTextInput(
     anchor: originAnchor({ x: 0, y: 0 }, { x: 0, y: 0 }),
     horizontalAlign: textHorizontalAlignments.left,
     verticalAlign: textVerticalAlignments.baseline,
+    // A player's text is drawn as typed: `<b>` typed into a field isn't
+    // markup, and the caret stops must line up with the input's value.
+    richText: false,
     ...(category !== undefined && { category }),
   };
 

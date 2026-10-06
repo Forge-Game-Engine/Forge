@@ -101,6 +101,7 @@ letterbox
 letterboxed
 letterboxing
 lifecycles
+lowp
 matterjs
 maxlength
 mediump
@@ -224,3 +225,5 @@ winit
 xadvance
 yoavbls
 Zoltan
+rrggbb
+rrggbbaa

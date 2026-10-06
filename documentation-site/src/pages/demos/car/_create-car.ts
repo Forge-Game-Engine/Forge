@@ -321,10 +321,7 @@ function createWheel(
     friction: wheelFriction,
     restitution: 0.1,
   });
-  addRigidBodyComponent(world, entity, {
-    mass: wheelCollider.mass,
-    momentOfInertia: wheelCollider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
@@ -378,10 +375,13 @@ function createWheelMount(
     local: Vec2.clone(uprightPosition),
   });
   addRotationComponent(world, uprightEntity);
-  addRigidBodyComponent(world, uprightEntity, {
-    mass: uprightCollider.mass,
-    momentOfInertia: uprightCollider.momentOfInertia,
+  // The upright takes its mass from this collider, whose mask of 0 keeps it
+  // from colliding with anything.
+  addColliderComponent(world, uprightEntity, {
+    collider: uprightCollider,
+    mask: 0,
   });
+  addRigidBodyComponent(world, uprightEntity);
   addGravityComponent(world, uprightEntity, { amount: gravity });
 
   const prismaticEntity = world.createEntity();
@@ -480,8 +480,6 @@ export async function createCar(
     restitution: 0.1,
   });
   addRigidBodyComponent(world, chassisEntity, {
-    mass: chassisCollider.mass,
-    momentOfInertia: chassisCollider.momentOfInertia,
     // Each wheel mount's prismatic joint hard-constrains it against
     // swinging (see the module doc comment above), so this isn't
     // compensating for that the way it originally was - it's just a

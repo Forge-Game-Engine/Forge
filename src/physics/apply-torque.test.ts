@@ -1,35 +1,53 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { applyTorque } from './apply-torque.js';
-import { RigidBodyEcsComponent } from './components/index.js';
-import { Vec2 } from '../math/index.js';
+import { EcsWorld } from '../ecs/index.js';
+import { CircleCollider } from './colliders/index.js';
+import {
+  addColliderComponent,
+  addRigidBodyComponent,
+  RigidBodyEcsComponent,
+  RigidBodyType,
+} from './components/index.js';
 
 describe('applyTorque', () => {
-  it('should change angularVelocity by torque * deltaTime / momentOfInertia', () => {
-    const rigidBody: RigidBodyEcsComponent = {
-      mass: 1,
-      momentOfInertia: 2,
-      velocity: Vec2.zero,
-      angularVelocity: 0,
-      angularDrag: 0,
-      type: 'dynamic',
-    };
+  let world: EcsWorld;
 
-    applyTorque(4, 0.5, rigidBody);
+  beforeEach(() => {
+    world = new EcsWorld();
+  });
+
+  function createBody(
+    type: RigidBodyType,
+    angularVelocity: number = 0,
+  ): { entity: number; rigidBody: RigidBodyEcsComponent } {
+    const entity = world.createEntity();
+
+    // A circle with a moment of inertia of 2 (mass 2, radius sqrt(2)).
+    addColliderComponent(world, entity, {
+      collider: new CircleCollider(Math.SQRT2, 1 / Math.PI),
+    });
+
+    return {
+      entity,
+      rigidBody: addRigidBodyComponent(world, entity, {
+        type,
+        angularVelocity,
+      }),
+    };
+  }
+
+  it('should change angularVelocity by torque * deltaTime / momentOfInertia', () => {
+    const { entity, rigidBody } = createBody('dynamic');
+
+    applyTorque(world, entity, 4, 0.5);
 
     expect(rigidBody.angularVelocity).toBeCloseTo(1);
   });
 
   it('should accumulate onto an existing angularVelocity', () => {
-    const rigidBody: RigidBodyEcsComponent = {
-      mass: 1,
-      momentOfInertia: 1,
-      velocity: Vec2.zero,
-      angularVelocity: 2,
-      angularDrag: 0,
-      type: 'dynamic',
-    };
+    const { entity, rigidBody } = createBody('dynamic', 2);
 
-    applyTorque(-1, 1, rigidBody);
+    applyTorque(world, entity, -2, 1);
 
     expect(rigidBody.angularVelocity).toBeCloseTo(1);
   });
@@ -37,18 +55,17 @@ describe('applyTorque', () => {
   it.each(['static', 'kinematic'] as const)(
     'should not change angularVelocity for a %s body',
     (type) => {
-      const rigidBody: RigidBodyEcsComponent = {
-        mass: 1,
-        momentOfInertia: 2,
-        velocity: Vec2.zero,
-        angularVelocity: 0,
-        angularDrag: 0,
-        type,
-      };
+      const { entity, rigidBody } = createBody(type);
 
-      applyTorque(4, 0.5, rigidBody);
+      applyTorque(world, entity, 4, 0.5);
 
       expect(rigidBody.angularVelocity).toBe(0);
     },
   );
+
+  it('should do nothing for an entity with no rigid body', () => {
+    const entity = world.createEntity();
+
+    expect(() => applyTorque(world, entity, 4, 0.5)).not.toThrow();
+  });
 });

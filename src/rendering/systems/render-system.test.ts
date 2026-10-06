@@ -817,12 +817,14 @@ describe('createRenderEcsSystem', () => {
             size: { x: 1, y: 1 },
             uvOffset: { x: 0, y: 0 },
             uvScale: { x: 0.1, y: 0.1 },
+            embolden: 0,
           },
           {
             offset: { x: 1, y: 0 },
             size: { x: 1, y: 1 },
             uvOffset: { x: 0.1, y: 0 },
             uvScale: { x: 0.1, y: 0.1 },
+            embolden: 0,
           },
         ],
       });
@@ -859,6 +861,7 @@ describe('createRenderEcsSystem', () => {
             size: { x: 1, y: 1 },
             uvOffset: Vec2.zero,
             uvScale: Vec2.one,
+            embolden: 0,
           },
         ],
       });
@@ -1063,6 +1066,7 @@ describe('createRenderEcsSystem', () => {
         size: { x: 1, y: 1 },
         uvOffset: Vec2.zero,
         uvScale: Vec2.one,
+        embolden: 0,
       });
 
       addTextEntity(renderable, 0, {
@@ -1093,6 +1097,7 @@ describe('createRenderEcsSystem', () => {
               size: { x: 1, y: 1 },
               uvOffset: Vec2.zero,
               uvScale: Vec2.one,
+              embolden: 0,
             },
           ],
         },

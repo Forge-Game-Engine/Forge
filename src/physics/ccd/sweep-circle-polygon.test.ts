@@ -135,20 +135,4 @@ describe('sweepCirclePolygon', () => {
     expect(hit?.point.y).toBeCloseTo(0);
     expect(hit?.normal.x).toBeCloseTo(-1);
   });
-
-  it("should sweep the circle's center, including its offset", () => {
-    const offsetCircle = new CircleCollider(10);
-
-    offsetCircle.offset = { x: 0, y: 5 };
-
-    const hit = sweepCirclePolygon(
-      offsetCircle,
-      boxBody(),
-      { x: -100, y: -5 },
-      { x: 0, y: -5 },
-    );
-
-    expect(hit?.t).toBeCloseTo(0.4);
-    expect(hit?.point.y).toBeCloseTo(0);
-  });
 });

@@ -38,10 +38,13 @@ describe('raycastCircle', () => {
     expect(hit?.distance).toBeCloseTo(4);
   });
 
-  it('should account for the circle collider offset', () => {
-    const collider = new CircleCollider(1);
-    collider.offset = { x: 0, y: 3 };
-    const circleBody = body({ x: 0, y: 0 }, collider);
+  it("should cast against the circle's rotated center", () => {
+    // A local center of (3, 0), turned a quarter turn to (0, 3).
+    const collider = new CircleCollider(1, 1, { x: 3, y: 0 });
+    const circleBody = {
+      ...body({ x: 0, y: 0 }, collider),
+      rotation: Math.PI / 2,
+    };
 
     const hit = raycastCircle(circleBody, { x: -5, y: 3 }, { x: 5, y: 3 });
 

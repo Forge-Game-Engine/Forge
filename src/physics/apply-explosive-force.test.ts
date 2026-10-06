@@ -3,7 +3,12 @@ import { applyExplosiveForce } from './apply-explosive-force.js';
 import { addPositionComponent } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
 import { Vec2, Vector2 } from '../math/index.js';
-import { addRigidBodyComponent, rigidBodyId } from './components/index.js';
+import { CircleCollider } from './colliders/index.js';
+import {
+  addColliderComponent,
+  addRigidBodyComponent,
+  rigidBodyId,
+} from './components/index.js';
 
 describe('applyExplosiveForce', () => {
   let world: EcsWorld;
@@ -12,13 +17,16 @@ describe('applyExplosiveForce', () => {
     world = new EcsWorld();
   });
 
-  function createBody(position: Vector2): number {
+  function createBody(position: Vector2, center: Vector2 = Vec2.zero): number {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, {
       local: Vec2.clone(position),
     });
-    addRigidBodyComponent(world, entity, { mass: 1, momentOfInertia: 1 });
+    addColliderComponent(world, entity, {
+      collider: new CircleCollider(1, 1, center),
+    });
+    addRigidBodyComponent(world, entity);
 
     return entity;
   }
@@ -57,6 +65,20 @@ describe('applyExplosiveForce', () => {
 
     expect(rigidBody.velocity.x).toBe(0);
     expect(rigidBody.velocity.y).toBe(0);
+  });
+
+  it('measures from the center of mass and imparts no spin', () => {
+    // The origin is outside the radius, but the center of mass is inside,
+    // directly above the explosion.
+    const entity = createBody({ x: 0, y: 250 }, { x: 0, y: -100 });
+
+    applyExplosiveForce(world, Vec2.zero, 1000, 200);
+
+    const rigidBody = world.getComponent(entity, rigidBodyId)!;
+
+    expect(rigidBody.velocity.x).toBeCloseTo(0);
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+    expect(rigidBody.angularVelocity).toBe(0);
   });
 
   it('does not affect static bodies (no RigidBodyEcsComponent)', () => {

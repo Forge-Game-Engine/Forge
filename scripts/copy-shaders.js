@@ -125,6 +125,7 @@ function parseIndexMatches(originalContent) {
   const IMPORT_REGEX = /import\s+(\w+)\s+from\s+['"](.+?)['"]/g;
   const EXPORT_FROM_REGEX = /export\s+\{([^}]+)\}\s+from\s+['"](.+?)['"]/g;
   const EXPORT_CONST_REGEX = /export\s+const\s+(\w+)\s*=\s*(\w+)/g;
+  const EXPORT_STAR_REGEX = /export\s+\*\s+from\s+['"](.+?)['"];?/g;
 
   const rawImportMatches = [...originalContent.matchAll(IMPORT_REGEX)];
   const rawExportFromMatches = [...originalContent.matchAll(EXPORT_FROM_REGEX)];
@@ -132,7 +133,13 @@ function parseIndexMatches(originalContent) {
     ...originalContent.matchAll(EXPORT_CONST_REGEX),
   ];
 
+  const rawExportStarMatches = [...originalContent.matchAll(EXPORT_STAR_REGEX)];
+
   const importMatches = [];
+
+  for (const m of rawExportStarMatches) {
+    importMatches.push({ kind: 'export_star', full: m[0] });
+  }
 
   for (const m of rawImportMatches) {
     importMatches.push({
@@ -196,6 +203,8 @@ function buildNewIndexContent(importMatches, originalContent) {
       } else {
         parts.push(m.full + '\n');
       }
+    } else if (m.kind === 'export_star') {
+      parts.push(m.full + '\n');
     } else if (m.kind === 'export_from') {
       if (!m.exportPath || !m.exportPath.endsWith('.glsl?raw')) {
         parts.push(m.full + '\n');

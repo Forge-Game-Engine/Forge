@@ -101,6 +101,9 @@ editable element, so the canvas's keyboard-bound `navigateInput` and
 `submitInput` don't trigger while the player types. Tab does nothing inside
 a field. A gamepad still navigates UI focus.
 
+The text label and placeholder have `richText` set to `false`, so text the
+player types is drawn as written: typing `<b>` doesn't make the text bold.
+
 ## Reading the value
 
 `value` holds the field's text. It's updated by the text input system, once

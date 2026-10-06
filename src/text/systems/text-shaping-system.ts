@@ -33,6 +33,7 @@ interface ShapeSnapshot {
   verticalAlign: TextEcsComponent['verticalAlign'];
   maxWidth: number | undefined;
   horizontalAlignPivot: number;
+  richText: boolean;
   category: number;
 }
 
@@ -47,6 +48,7 @@ function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
     a.verticalAlign === b.verticalAlign &&
     a.maxWidth === b.maxWidth &&
     a.horizontalAlignPivot === b.horizontalAlignPivot &&
+    a.richText === b.richText &&
     a.category === b.category
   );
 }
@@ -115,6 +117,7 @@ export const createTextShapingEcsSystem = (
           verticalAlign: textComponent.verticalAlign,
           maxWidth: textComponent.maxWidth,
           horizontalAlignPivot: textComponent.horizontalAlignPivot,
+          richText: textComponent.richText,
           category: textComponent.category,
         };
 
@@ -141,6 +144,7 @@ export const createTextShapingEcsSystem = (
             verticalAlign: textComponent.verticalAlign,
             maxWidth: textComponent.maxWidth,
             horizontalAlignPivot: textComponent.horizontalAlignPivot,
+          richText: textComponent.richText,
           },
         );
 
