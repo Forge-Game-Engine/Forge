@@ -45,13 +45,15 @@ each image it's given, so:
   share one result, and the demo's do; what they can't share is a program
   across images. The demo's HUD alone has 47 images, and its UI dozens of
   icons.
-- **An image made at runtime needs raw GL.** Changing an entity's image by
-  swapping `sprite.renderable` for another prebuilt one (the how-to-play
-  pages, the boosted engine flames, the HUD's speed meter) works, but every
-  image it can swap to is a full pipeline built up front. An image made at
-  runtime (the leaderboard's QR code) has no such path: the demo creates a
-  texture with `createTextureFromImage`, sets it on a renderable's
-  material, and deletes the previous texture with raw GL.
+- **An image that changes at runtime needs raw GL.** Changing an
+  entity's image by swapping `sprite.renderable` for another prebuilt one
+  (the how-to-play pages, the boosted engine flames, the HUD's speed
+  meter) works, but every image it can swap to is a full pipeline built up
+  front. The leaderboard's QR code can't be built up front, and a
+  renderable per code would compile a program per code and free nothing.
+  So the demo builds one renderable for the first code, and for each new
+  code creates a texture with `createTextureFromImage`, sets it on that
+  renderable's material, and deletes the previous texture with raw GL.
 - **Textures have no owner.** `createTextureFromImage` accepts any
   `TexImageSource` (`ImageData` included), but returns a raw
   `WebGLTexture` with no way to update or dispose it, and
