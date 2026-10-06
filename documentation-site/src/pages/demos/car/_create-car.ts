@@ -6,7 +6,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
 import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addAngularVelocityMotorComponent,
   addColliderComponent,
   addGravityComponent,
@@ -325,7 +324,6 @@ function createWheel(
     mass: wheelCollider.mass,
     momentOfInertia: wheelCollider.momentOfInertia,
   });
-  addAabbComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
   addAngularVelocityMotorComponent(world, entity, {
     targetVelocity: 0,
@@ -489,7 +487,6 @@ export async function createCar(
     // instead of persisting indefinitely.
     angularDrag: 0.5,
   });
-  addAabbComponent(world, chassisEntity);
   addGravityComponent(world, chassisEntity, { amount: gravity });
 
   // Offset along the same tilted axis each wheel's mount constrains it to

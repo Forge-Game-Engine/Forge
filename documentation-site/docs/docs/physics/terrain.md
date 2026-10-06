@@ -14,7 +14,6 @@ slope.
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
@@ -33,15 +32,13 @@ addColliderComponent(world, groundEntity, {
     200, // depth: how far the solid slab extends below the lowest point
   ),
 });
-addAabbComponent(world, groundEntity);
 ```
 
 Terrain is static, so `groundEntity` only needs `PositionEcsComponent`/
 `RotationEcsComponent` (for `computeAabb`/narrow-phase to read `.world` from;
 the rotation component is optional, and an entity without one is treated as
-unrotated), `ColliderEcsComponent`, and `AabbEcsComponent` - no
-`RigidBodyEcsComponent`,
-the same convention every other static body (walls, ground boxes) in this
+unrotated) and `ColliderEcsComponent` - no `RigidBodyEcsComponent`, the
+same convention every other static body (walls, ground boxes) in this
 engine follows. See the [Bodies and Shapes guide](/Forge/docs/docs/physics/rigid-bodies)
 for that static/kinematic/dynamic distinction.
 
@@ -120,8 +117,8 @@ fine spacing relative to the bodies rolling over it is the main way to make
 terrain contact expensive - space points no more finely than the detail you
 actually need, and let `buildTerrainCurve` do the visual smoothing.
 
-Broad-phase culling (`createBroadPhaseEcsSystem`'s `AabbEcsComponent`) still
-computes one AABB for the whole collider via `computeAabb`, which for a long
+Broad-phase culling (the `aabb` that `createBroadPhaseEcsSystem` writes onto
+each collider) still computes one AABB for the whole collider via `computeAabb`, which for a long
 terrain strip produces a large bounding box around the whole shape (the same
 simplification a very wide/tall `PolygonCollider` makes). This doesn't
 affect correctness, only how many pairs reach the narrow phase - for very

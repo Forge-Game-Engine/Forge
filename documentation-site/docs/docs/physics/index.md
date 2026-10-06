@@ -16,8 +16,9 @@ Core concepts:
 - `ColliderEcsComponent`: an entity's
   collision shape (`CircleCollider`,
   `PolygonCollider`, or
-  `TerrainCollider`), plus friction and
-  restitution.
+  `TerrainCollider`), plus friction,
+  restitution, and the collision `category`/`mask` that filter which
+  colliders it's tested against.
 - `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
   `createCollisionResolutionEcsSystem`: detect and resolve collisions
   between collider entities each tick.
@@ -37,7 +38,8 @@ Core concepts:
 Guides in this section:
 
 - [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes,
-  static/kinematic/dynamic bodies, and ECS integration.
+  static/kinematic/dynamic bodies, collision filtering, and ECS
+  integration.
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against colliders.
@@ -65,7 +67,6 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRigidBodyComponent,
@@ -96,7 +97,6 @@ const collider = new PolygonCollider([
 addPositionComponent(world, box);
 addRotationComponent(world, box);
 addColliderComponent(world, box, { collider });
-addAabbComponent(world, box);
 addRigidBodyComponent(world, box, {
   mass: collider.mass,
   momentOfInertia: collider.momentOfInertia,

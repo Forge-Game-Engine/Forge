@@ -5,7 +5,6 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
@@ -184,7 +183,6 @@ export async function createTerrain(
     collider: terrainCollider,
     friction: 1,
   });
-  addAabbComponent(world, terrainEntity);
 
   const groundImage =
     await renderContext.imageCache.getOrLoad(groundTextureUrl);

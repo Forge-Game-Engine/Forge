@@ -1,4 +1,3 @@
-export * from './aabb-component.js';
 export * from './angular-velocity-motor-component.js';
 export * from './collider-component.js';
 export * from './gravity-component.js';

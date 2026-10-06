@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { clamp, Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
@@ -175,7 +174,6 @@ export async function createTerrain(
     collider: terrainCollider,
     friction: 0.9,
   });
-  addAabbComponent(world, terrainEntity);
 
   const [borderImage, fillImage] = await Promise.all([
     renderContext.imageCache.getOrLoad(border.textureUrl),

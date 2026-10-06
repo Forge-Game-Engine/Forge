@@ -7,9 +7,8 @@ sidebar_position: 1
 A simulated body is an entity with a `ColliderEcsComponent` (a shape) plus,
 for anything that isn't static, a `RigidBodyEcsComponent` (mass, velocity,
 and how it participates in the simulation). Both sit alongside the entity's
-`PositionEcsComponent`/`RotationEcsComponent` and an `AabbEcsComponent` used
-for broad-phase culling. `RotationEcsComponent` is optional for collision
-detection: a collider entity without one is treated as unrotated, so a
+`PositionEcsComponent`/`RotationEcsComponent`. `RotationEcsComponent` is
+optional for collision detection: a collider entity without one is treated as unrotated, so a
 static, axis-aligned wall or trigger volume can leave it off. A dynamic or
 kinematic body still needs one, since `createEulerIntegrationEcsSystem` only
 integrates entities that have it. This page covers the choices that aren't obvious
@@ -23,7 +22,6 @@ import {
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
 import {
-  addAabbComponent,
   addColliderComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -40,7 +38,6 @@ addColliderComponent(world, ball, {
   restitution: 0.6,
   friction: 0.4,
 });
-addAabbComponent(world, ball);
 addRigidBodyComponent(world, ball, {
   mass: collider.mass,
   momentOfInertia: collider.momentOfInertia,
@@ -84,8 +81,8 @@ simulation:
   as crates, characters, and projectiles.
 - **Static**: infinite effective mass, never affected by anything, never
   integrated. The simplest way to make a body static is to give its entity
-  a `ColliderEcsComponent` (plus `PositionEcsComponent`/`AabbEcsComponent`,
-  and a `RotationEcsComponent` if it's rotated) and **no**
+  a `ColliderEcsComponent` (plus `PositionEcsComponent`, and a
+  `RotationEcsComponent` if it's rotated) and **no**
   `RigidBodyEcsComponent` at all - every static entity in the physics demos
   (floors, walls, `TerrainCollider` ground) follows this convention, and it
   still applies unchanged. Attaching a `RigidBodyEcsComponent` with
@@ -123,6 +120,43 @@ A `'kinematic'` body still needs `mass`/`momentOfInertia` values to satisfy
 by the solver (its effective mass is always treated as infinite). Pass its
 collider's `mass`/`momentOfInertia` the same as for a dynamic body.
 :::
+
+## Collision filtering
+
+By default every collider is tested against every other. Give colliders a
+`category` and a `mask` to say which pairs matter: two colliders are tested
+only when each one's `category` shares a bit with the other's `mask`. A pair
+either mask excludes never reaches the narrow phase, so filtering also saves
+the work of testing pairs your game would ignore anyway.
+
+```ts
+const PLAYER = 1 << 0;
+const ENEMY = 1 << 1;
+const PLAYER_BULLET = 1 << 2;
+const WALL = 1 << 3;
+
+// Player bullets hit enemies and walls, never the player or each other.
+addColliderComponent(world, bullet, {
+  collider: bulletCollider,
+  category: PLAYER_BULLET,
+  mask: ENEMY | WALL,
+});
+
+// Enemies collide with everything except other enemies.
+addColliderComponent(world, enemy, {
+  collider: enemyCollider,
+  category: ENEMY,
+  mask: allCollisionCategories & ~ENEMY,
+});
+```
+
+`category` defaults to `1` and `mask` to `allCollisionCategories` (every
+bit), so colliders that set neither collide with everything. Categories are
+32 bits, as JavaScript's bitwise operators allow. The test is symmetric:
+either collider can rule a pair out, and both have to accept it.
+
+The broad phase writes each collider's world-space bounds to its `aabb`
+field every tick. It's output only; read it, but don't write it.
 
 ## ECS integration
 

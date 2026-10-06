@@ -5,7 +5,6 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addLinearDamperComponent,
@@ -209,7 +208,6 @@ function createSuspensionScenario(
     momentOfInertia: wheelCollider.momentOfInertia,
     velocity: Vec2.clone(bumpVelocity),
   });
-  addAabbComponent(world, wheelEntity);
   addGravityComponent(world, wheelEntity, { amount: gravity });
   addResetComponent(world, wheelEntity, {
     entity: wheelEntity,

@@ -12,7 +12,6 @@ import {
   Vector2,
 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -115,7 +114,6 @@ export async function createBall(
     restitution: 1,
     friction: 0,
   });
-  addAabbComponent(world, entity);
 
   const rigidBody = addRigidBodyComponent(world, entity, {
     mass: collider.mass,

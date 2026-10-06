@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **physics:** Collision filtering. `addColliderComponent` takes a `category` (the bits a collider belongs to, default `1`) and a `mask` (the categories it collides with, default `allCollisionCategories`). Two colliders are tested only when each one's category is in the other's mask, so pairs your game would ignore, such as bullets against bullets, never reach the narrow phase
+- **physics:** `raycast` takes a `mask` option, so a ray only hits colliders whose `category` is in it
+
+#### Changed
+
+- **physics:** `raycast`'s fourth argument is now an options object. Replace `raycast(world, start, end, false)` with `raycast(world, start, end, { sort: false })`
+
+#### Removed
+
+- **physics:** `AabbEcsComponent`, `aabbId` and `addAabbComponent`. A collider no longer needs a separate AABB component to take part in collision detection or raycasts: the broad phase writes its bounds to the collider's new `aabb` field. Delete your `addAabbComponent` calls, and read `collider.aabb` where you read the AABB component
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

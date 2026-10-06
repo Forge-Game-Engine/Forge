@@ -17,7 +17,6 @@ import {
 } from '@forge-game-engine/forge/lifecycle';
 import { addAudioComponent } from '@forge-game-engine/forge/audio';
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
@@ -125,5 +124,4 @@ function createBulletWithOffset(
   addColliderComponent(world, bullet, {
     collider: new CircleCollider(bulletRadius),
   });
-  addAabbComponent(world, bullet);
 }

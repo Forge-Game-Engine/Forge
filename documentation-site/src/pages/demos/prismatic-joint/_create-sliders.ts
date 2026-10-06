@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { lerp, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addPrismaticJointComponent,
@@ -244,7 +243,6 @@ function createSliderScenario(
     mass: sliderCollider.mass,
     momentOfInertia: sliderCollider.momentOfInertia,
   });
-  addAabbComponent(world, sliderEntity);
   addGravityComponent(world, sliderEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();

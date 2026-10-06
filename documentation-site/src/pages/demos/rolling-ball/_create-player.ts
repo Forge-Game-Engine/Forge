@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addAngularVelocityMotorComponent,
   addColliderComponent,
   addGravityComponent,
@@ -81,7 +80,6 @@ export async function createPlayer(
     friction: 0.9,
     restitution: 0.15,
   });
-  addAabbComponent(world, entity);
   addRigidBodyComponent(world, entity, {
     mass: collider.mass,
     momentOfInertia: collider.momentOfInertia,

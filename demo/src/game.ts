@@ -20,7 +20,6 @@ import {
   Vec2,
 } from '../../src';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRigidBodyComponent,
@@ -129,7 +128,6 @@ function createFountainSpawnEcsSystem(
       angularVelocity,
     });
     addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
   };
 
   return {
@@ -318,7 +316,6 @@ addColliderComponent(world, groundEntity, {
     { x: -groundHalfWidth, y: groundHalfHeight },
   ]),
 });
-addAabbComponent(world, groundEntity);
 
 const random = new Random();
 const fountainLeftX = -halfWidth + fountainMarginFromEdge;

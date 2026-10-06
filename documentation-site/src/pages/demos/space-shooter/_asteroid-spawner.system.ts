@@ -8,7 +8,6 @@ import {
 import { Random } from '@forge-game-engine/forge/math';
 import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
@@ -73,7 +72,6 @@ export const createAsteroidSpawnerEcsSystem = (
       addColliderComponent(world, asteroidEntity, {
         collider: new CircleCollider(asteroidRadius),
       });
-      addAabbComponent(world, asteroidEntity);
     }
   },
 });

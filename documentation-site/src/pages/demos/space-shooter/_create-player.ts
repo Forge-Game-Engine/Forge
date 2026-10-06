@@ -15,7 +15,6 @@ import {
 } from '@forge-game-engine/forge/common';
 
 import {
-  addAabbComponent,
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
@@ -133,7 +132,6 @@ export function spawnPlayer(
   addColliderComponent(world, playerEntity, {
     collider: new CircleCollider(playerRadius),
   });
-  addAabbComponent(world, playerEntity);
 }
 
 export async function createPlayer(
