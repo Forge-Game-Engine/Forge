@@ -4,14 +4,14 @@ import { addSoundComponent, soundId } from '../components/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { createSoundMixer, SoundMixer } from '../sound-mixer.js';
 import { MixerBus } from '../mixer-bus.js';
-import { toAudioBus } from '../internal/audio-bus.js';
+import { toAudioBus } from '../audio-bus.js';
 import {
   createFakeSound,
   FakeAudioBufferSourceNode,
   FakeAudioContext,
   FakeGainNode,
   setUserActivation,
-} from '../internal/fake-audio-context.test-helper.js';
+} from '../fake-audio-context.test-helper.js';
 
 const gainOf = (source: FakeAudioBufferSourceNode): FakeGainNode => {
   const [gain] = source.connections;

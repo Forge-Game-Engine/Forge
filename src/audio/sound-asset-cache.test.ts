@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FakeAudioBuffer,
   FakeAudioContext,
-} from './internal/fake-audio-context.test-helper.js';
+} from './fake-audio-context.test-helper.js';
 import { createSoundMixer } from './sound-mixer.js';
 import { SoundAssetCache } from './sound-asset-cache.js';
 

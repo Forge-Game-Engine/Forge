@@ -1,5 +1,5 @@
-import type { MixerBus } from '../mixer-bus.js';
-import type { Voice } from './voice.js';
+import type { MixerBus } from './mixer-bus.js';
+import type { SoundPlayback } from './sound-playback.js';
 
 /**
  * The time constant, in seconds, of every gain change the audio module
@@ -21,8 +21,8 @@ export const gainRampSettleSeconds = gainRampTimeConstantSeconds * 5;
 export interface MixerState {
   readonly context: AudioContext;
 
-  /** Every voice that has started and not yet stopped or ended. */
-  readonly voices: Set<Voice>;
+  /** Every playback that has started and not yet stopped or ended. */
+  readonly playbacks: Set<SoundPlayback>;
 
   /**
    * Whether the page can play sound now, or will as soon as the context

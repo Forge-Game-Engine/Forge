@@ -4,10 +4,10 @@ import {
   FakeAudioContext,
   FakeGainNode,
   setUserActivation,
-} from './internal/fake-audio-context.test-helper.js';
+} from './fake-audio-context.test-helper.js';
 import { createSoundMixer } from './sound-mixer.js';
 import { playSound } from './play-sound.js';
-import { toAudioBus } from './internal/audio-bus.js';
+import { toAudioBus } from './audio-bus.js';
 
 const gainOf = (node: GainNode): number =>
   (node as unknown as FakeGainNode).gain.value;

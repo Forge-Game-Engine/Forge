@@ -5,7 +5,7 @@ import { createSoundMixer } from '../sound-mixer.js';
 import {
   createFakeSound,
   FakeAudioContext,
-} from '../internal/fake-audio-context.test-helper.js';
+} from '../fake-audio-context.test-helper.js';
 
 describe('addSoundComponent', () => {
   const mixer = createSoundMixer(new FakeAudioContext().asAudioContext());

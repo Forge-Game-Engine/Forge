@@ -3,11 +3,11 @@ import {
   createFakeSound,
   FakeAudioContext,
   setUserActivation,
-} from './internal/fake-audio-context.test-helper.js';
+} from './fake-audio-context.test-helper.js';
 import { createSoundMixer, SoundMixer } from './sound-mixer.js';
 import { playSound } from './play-sound.js';
 import { MixerBus } from './mixer-bus.js';
-import { toAudioBus } from './internal/audio-bus.js';
+import { toAudioBus } from './audio-bus.js';
 
 describe('playSound', () => {
   let context: FakeAudioContext;

@@ -1,6 +1,6 @@
-import { AudioBus, MixerState, toAudioBus } from './internal/audio-bus.js';
+import { AudioBus, MixerState, toAudioBus } from './audio-bus.js';
 import type { MixerBus } from './mixer-bus.js';
-import type { Voice } from './internal/voice.js';
+import type { SoundPlayback } from './sound-playback.js';
 
 /**
  * The state of a {@link SoundMixer}'s `AudioContext`. `'interrupted'` is
@@ -86,14 +86,14 @@ const unlockEvents = ['pointerup', 'touchend', 'click', 'keydown'] as const;
 export function createSoundMixer(
   context: AudioContext = new AudioContext(),
 ): SoundMixer {
-  const voices = new Set<Voice>();
+  const playbacks = new Set<SoundPlayback>();
   const buses = new Map<string, AudioBus>();
   let isSuspendedByGame = false;
   let isListening = false;
 
   const state: MixerState = {
     context,
-    voices,
+    playbacks,
     // The browser's own record of whether the page has had user
     // activation (the same "sticky activation" its autoplay policy
     // checks), so a sound triggered by the input that unlocks audio plays,
@@ -207,8 +207,8 @@ export function createSoundMixer(
       await context.resume();
     },
     stop: async () => {
-      for (const voice of [...voices]) {
-        voice.stop();
+      for (const playback of [...playbacks]) {
+        playback.stop();
       }
 
       stopListening();

@@ -1,7 +1,7 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { SoundEcsComponent, soundId } from '../components/index.js';
-import { toAudioBus } from '../internal/audio-bus.js';
-import { Voice } from '../internal/voice.js';
+import { toAudioBus } from '../audio-bus.js';
+import { SoundPlayback } from '../sound-playback.js';
 
 /**
  * Creates an ECS system that plays every entity's {@link SoundEcsComponent}.
@@ -22,16 +22,19 @@ import { Voice } from '../internal/voice.js';
  * @returns The ECS system.
  */
 export const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
-  const voices = new Map<SoundEcsComponent, Voice>();
+  const playbacks = new Map<SoundEcsComponent, SoundPlayback>();
 
-  const createVoice = (component: SoundEcsComponent): Voice =>
-    new Voice(toAudioBus(component.bus), component.sound, component);
+  const createPlayback = (component: SoundEcsComponent): SoundPlayback =>
+    new SoundPlayback(toAudioBus(component.bus), component.sound, component);
 
-  const reconcile = (component: SoundEcsComponent, voice: Voice): Voice => {
-    if (voice.sound !== component.sound) {
-      voice.stop();
+  const reconcile = (
+    component: SoundEcsComponent,
+    playback: SoundPlayback,
+  ): SoundPlayback => {
+    if (playback.sound !== component.sound) {
+      playback.stop();
 
-      const replacement = createVoice(component);
+      const replacement = createPlayback(component);
 
       if (!component.paused) {
         replacement.start();
@@ -42,29 +45,29 @@ export const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
 
     const bus = toAudioBus(component.bus);
 
-    if (voice.bus !== bus) {
-      voice.bus = bus;
+    if (playback.bus !== bus) {
+      playback.bus = bus;
     }
 
-    if (voice.volume !== component.volume) {
-      voice.volume = component.volume;
+    if (playback.volume !== component.volume) {
+      playback.volume = component.volume;
     }
 
-    if (voice.rate !== component.rate) {
-      voice.rate = component.rate;
+    if (playback.rate !== component.rate) {
+      playback.rate = component.rate;
     }
 
-    if (voice.loop !== component.loop) {
-      voice.loop = component.loop;
+    if (playback.loop !== component.loop) {
+      playback.loop = component.loop;
     }
 
     if (component.paused) {
-      voice.pause();
+      playback.pause();
     } else {
-      voice.resume();
+      playback.resume();
     }
 
-    return voice;
+    return playback;
   };
 
   return {
@@ -72,10 +75,10 @@ export const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
     update: (_world, { components: [soundComponents] }) => {
       const present = new Set(soundComponents);
 
-      for (const [component, voice] of voices) {
+      for (const [component, playback] of playbacks) {
         if (!present.has(component)) {
-          voice.stop();
-          voices.delete(component);
+          playback.stop();
+          playbacks.delete(component);
         }
       }
 
@@ -84,35 +87,35 @@ export const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
           continue;
         }
 
-        const existing = voices.get(component);
-        let voice: Voice;
+        const existing = playbacks.get(component);
+        let playback: SoundPlayback;
 
         if (existing) {
-          voice = reconcile(component, existing);
+          playback = reconcile(component, existing);
         } else {
-          voice = createVoice(component);
+          playback = createPlayback(component);
 
           if (!component.paused) {
-            voice.start();
+            playback.start();
           }
         }
 
-        if (voice.hasEnded) {
+        if (playback.hasEnded) {
           component.hasFinished = true;
-          voices.delete(component);
+          playbacks.delete(component);
 
           continue;
         }
 
-        voices.set(component, voice);
+        playbacks.set(component, playback);
       }
     },
     cleanup: () => {
-      for (const voice of voices.values()) {
-        voice.stop();
+      for (const playback of playbacks.values()) {
+        playback.stop();
       }
 
-      voices.clear();
+      playbacks.clear();
     },
   };
 };

@@ -1,4 +1,4 @@
-import type { SoundAsset } from '../sound-asset.js';
+import type { SoundAsset } from './sound-asset.js';
 import {
   AudioBus,
   gainRampSettleSeconds,
@@ -6,9 +6,9 @@ import {
 } from './audio-bus.js';
 
 /**
- * How a voice plays its sound.
+ * How a playback plays its sound.
  */
-export interface VoiceSettings {
+export interface SoundPlaybackSettings {
   volume: number;
   rate: number;
   loop: boolean;
@@ -18,9 +18,12 @@ export interface VoiceSettings {
  * One playback of a sound asset: an `AudioBufferSourceNode` feeding a
  * `GainNode` that feeds a bus. A source node can only be started once, so
  * pausing stops it and resuming starts a new one at the paused position.
- * The voice tracks that position itself from the context's clock.
+ * The playback tracks that position itself from the context's clock.
+ *
+ * `playSound` and `createSoundEcsSystem` both play sounds through this
+ * class. It isn't exported from the audio module: games use those two.
  */
-export class Voice {
+export class SoundPlayback {
   public readonly sound: SoundAsset;
   private _bus: AudioBus;
   private _volume: number;
@@ -39,12 +42,16 @@ export class Voice {
   private _anchorTime = 0;
 
   /**
-   * Creates a voice. It's silent until {@link Voice.play} is called.
+   * Creates a playback. It's silent until {@link SoundPlayback.play} is called.
    * @param bus - The bus to play through.
    * @param sound - The sound to play.
-   * @param settings - The voice's volume, rate and looping.
+   * @param settings - The playback's volume, rate and looping.
    */
-  constructor(bus: AudioBus, sound: SoundAsset, settings: VoiceSettings) {
+  constructor(
+    bus: AudioBus,
+    sound: SoundAsset,
+    settings: SoundPlaybackSettings,
+  ) {
     this._bus = bus;
     this.sound = sound;
     this._volume = settings.volume;
@@ -52,12 +59,12 @@ export class Voice {
     this._loop = settings.loop;
   }
 
-  /** Whether the voice's sound is currently playing (not paused, stopped or ended). */
+  /** Whether the playback's sound is currently playing (not paused, stopped or ended). */
   get isPlaying(): boolean {
     return this._source !== null;
   }
 
-  /** Whether a non-looping voice has played to the end of its sound. */
+  /** Whether a non-looping playback has played to the end of its sound. */
   get hasEnded(): boolean {
     return this._hasEnded;
   }
@@ -161,7 +168,7 @@ export class Voice {
   }
 
   /**
-   * Stops the sound and keeps its position for {@link Voice.resume}.
+   * Stops the sound and keeps its position for {@link SoundPlayback.resume}.
    */
   public pause(): void {
     if (!this._source) {
@@ -173,9 +180,9 @@ export class Voice {
   }
 
   /**
-   * Starts the sound again from where {@link Voice.pause} left it, fading
+   * Starts the sound again from where {@link SoundPlayback.pause} left it, fading
    * in so the cut into the middle of the waveform doesn't click. Starts a
-   * voice that was never started, the same way {@link Voice.start} does.
+   * playback that was never started, the same way {@link SoundPlayback.start} does.
    */
   public resume(): void {
     if (!this._hasStarted) {
@@ -193,7 +200,7 @@ export class Voice {
 
   /**
    * Fades the sound out over a few milliseconds and stops it. A stopped
-   * voice can't be played again.
+   * playback can't be played again.
    */
   public stop(): void {
     this._isStopped = true;
@@ -240,7 +247,7 @@ export class Voice {
     this._gain = gain;
     this._anchorPosition = position;
     this._anchorTime = now;
-    this._bus.mixer.voices.add(this);
+    this._bus.mixer.playbacks.add(this);
   }
 
   private _end(): void {
@@ -277,7 +284,7 @@ export class Voice {
 
     this._source = null;
     this._gain = null;
-    this._bus.mixer.voices.delete(this);
+    this._bus.mixer.playbacks.delete(this);
   }
 
   private _disconnect(): void {
@@ -285,6 +292,6 @@ export class Voice {
     this._gain?.disconnect();
     this._source = null;
     this._gain = null;
-    this._bus.mixer.voices.delete(this);
+    this._bus.mixer.playbacks.delete(this);
   }
 }

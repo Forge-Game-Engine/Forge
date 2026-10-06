@@ -1,10 +1,13 @@
-import type { SoundMixerState } from '../sound-mixer.js';
+import type { SoundMixerState } from './sound-mixer.js';
 
 /**
  * A minimal stand-in for the Web Audio API, which jsdom doesn't have. Nodes
  * record their connections, parameters record their latest target value,
  * and source nodes record when they were started and stopped. Tests drive
  * the clock (`currentTime`) and the context's state themselves.
+ *
+ * Shared by the audio module's unit tests. `*.test-helper.ts` files are
+ * excluded from the build and from coverage, like `*.test.ts` files.
  */
 
 export class FakeAudioParam {

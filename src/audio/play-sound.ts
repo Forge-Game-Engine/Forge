@@ -1,7 +1,7 @@
 import type { MixerBus } from './mixer-bus.js';
 import type { SoundAsset } from './sound-asset.js';
-import { toAudioBus } from './internal/audio-bus.js';
-import { Voice } from './internal/voice.js';
+import { toAudioBus } from './audio-bus.js';
+import { SoundPlayback } from './sound-playback.js';
 
 /**
  * Options for {@link playSound}.
@@ -66,22 +66,22 @@ export function playSound(
   options: Partial<PlaySoundOptions> = {},
 ): PlayingSound {
   const settings: PlaySoundOptions = { ...defaultPlaySoundOptions, ...options };
-  const voice = new Voice(toAudioBus(bus), sound, settings);
+  const playback = new SoundPlayback(toAudioBus(bus), sound, settings);
 
-  voice.start();
+  playback.start();
 
   return {
     get volume(): number {
-      return voice.volume;
+      return playback.volume;
     },
     set volume(value: number) {
-      voice.volume = value;
+      playback.volume = value;
     },
     get isPlaying(): boolean {
-      return voice.isPlaying;
+      return playback.isPlaying;
     },
     stop: () => {
-      voice.stop();
+      playback.stop();
     },
   };
 }

@@ -1,7 +1,7 @@
 import type { AssetCache } from '../asset-loading/index.js';
 import type { SoundAsset } from './sound-asset.js';
 import type { SoundMixer } from './sound-mixer.js';
-import { toAudioBus } from './internal/audio-bus.js';
+import { toAudioBus } from './audio-bus.js';
 
 /**
  * Loads sound files and keeps each decoded {@link SoundAsset}, keyed by

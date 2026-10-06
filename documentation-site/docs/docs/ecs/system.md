@@ -126,23 +126,23 @@ Since `cleanup` doesn't receive a query result, a system that needs to release a
 
 ```ts
 const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
-  const voices = new Map<SoundEcsComponent, Voice>();
+  const playbacks = new Map<SoundEcsComponent, SoundPlayback>();
 
   return {
     query: [soundId],
     update(world, { components: [sounds] }) {
       for (const sound of sounds) {
-        if (!voices.has(sound)) {
-          voices.set(sound, startVoice(sound));
+        if (!playbacks.has(sound)) {
+          playbacks.set(sound, startPlayback(sound));
         }
       }
     },
     cleanup(world) {
-      for (const voice of voices.values()) {
-        voice.stop();
+      for (const playback of playbacks.values()) {
+        playback.stop();
       }
 
-      voices.clear();
+      playbacks.clear();
     },
   };
 };
