@@ -57,7 +57,7 @@ between an angle and a unit `Vector2`, and they're inverses of each other:
   `radiansToVector(0)` is `Vec2.right` and `radiansToVector(Math.PI / 2)` is
   `Vec2.up`.
 - `vectorToRadians(vector)` is `Math.atan2(vector.y, vector.x)`, so
-  `vectorToRadians(Vec2.right)` is `0`. It returns an angle in `(-π, π]`.
+  `vectorToRadians(Vec2.right)` is `0`. It returns an angle from `-π` to `π`.
 
 ```ts
 const angle = Math.PI / 3;

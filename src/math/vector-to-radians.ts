@@ -6,7 +6,7 @@ import { Vector2 } from './vector2.js';
  * world is Y-up). This is the inverse of `radiansToVector`.
  *
  * @param vector - The 2D vector to convert.
- * @returns The angle in radians, in `(-π, π]`.
+ * @returns The angle in radians, from `-π` to `π`.
  */
 export const vectorToRadians = (vector: Vector2): number => {
   return Math.atan2(vector.y, vector.x);
