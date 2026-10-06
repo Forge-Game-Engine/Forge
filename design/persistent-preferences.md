@@ -156,15 +156,15 @@ type PreferenceValue = number | string | boolean;
 
 interface Preferences<T extends { [K in keyof T]: PreferenceValue }> {
   /**
-   * The current values: stored ones that passed validation, defaults for
-   * the rest. Replaced (not mutated) on every change, so read it from the
-   * preferences object rather than keeping a reference.
+   * The current values: the stored ones, and defaults for fields that
+   * aren't stored. Replaced (not mutated) on every change, so read it from
+   * the preferences object rather than keeping a reference.
    */
   readonly values: Readonly<T>;
   /**
    * Applies `changes` at once and stores them. Resolves once they're
    * stored; rejects with the backend's `StorageError` if they can't be.
-   * @throws if a value fails validation; nothing is applied then.
+   * @throws `PreferencesValueError` if a value fails validation; nothing is applied then.
    */
   set(changes: Partial<T>): Promise<void>;
   /** Makes every value its default again and removes the stored entry. Settles like `set`. */
@@ -193,6 +193,14 @@ function createPreferences<T extends { [K in keyof T]: PreferenceValue }>(
 
 /** The stored entry isn't a JSON object: something else wrote it, or it's damaged. */
 class PreferencesFormatError extends Error {}
+
+/** A value doesn't have its default's type, or fails its validator. */
+class PreferencesValueError extends Error {
+  /** The field the value is for. */
+  readonly field: string;
+  /** The value, as stored or as passed to `set`. */
+  readonly value: unknown;
+}
 ```
 
 The constraint is written as a mapped type, not
@@ -203,17 +211,15 @@ The constraint is written as a mapped type, not
   the stored entry has been read. After that, `values` is read from memory
   and `set` applies synchronously, whatever the backend, as Unity's
   `PlayerPrefs` and Godot's `user://` behave on the web once their stores
-  are loaded. A stored field is used
-  if it has the same type as its default (numbers must also be finite) and
-  passes its validator; otherwise the default is used, independently of
-  the other fields. That's how a game update adds or retypes a setting
-  without resetting the others (DL-2), not a failure. An out-of-range
-  stored value (a volume of `-0.1`) therefore becomes the default, not the
-  nearest valid value.
+  are loaded. A field that isn't stored takes its default, which is how a
+  game update adds one. A stored field must have its default's type
+  (numbers must also be finite) and pass its validator; otherwise
+  `createPreferences` rejects with `PreferencesValueError`, naming the
+  field (DL-2). A stored volume of `-0.1` is an error, not a default.
 - **Saving** writes the entry as it was loaded, with the keys `set` since
-  then applied, as JSON under `name`. Fields this version doesn't know or
-  rejects stay as they were stored, so nothing set in an earlier session,
-  or by a newer version of the game, is lost. Defaults are never written,
+  then applied, as JSON under `name`. Fields this version doesn't know
+  stay as they were stored, so nothing set in an earlier session, or by a
+  newer version of the game, is lost. Defaults are never written,
   so changing a default in a game update reaches every player who hadn't
   changed that setting. `reset` empties the entry, which removes it.
 - **Write order.** One queue does every write, for `set` and `reset`
@@ -228,8 +234,10 @@ The constraint is written as a mapped type, not
   by the end of the task that made it.
 - **Failures are the game's to handle.** Nothing falls back silently:
   - `createPreferences` rejects with the backend's `StorageError` if the
-    stored entry can't be read, and with `PreferencesFormatError` if it
-    isn't a JSON object (written by something else, or damaged).
+    stored entry can't be read, with `PreferencesFormatError` if it isn't
+    a JSON object (written by something else, or damaged), and with
+    `PreferencesValueError` if a stored field has the wrong type or fails
+    its validator.
   - `set` and `reset` reject with the backend's `StorageError` if the
     change can't be stored. The values stay applied in memory, and the
     next write that succeeds stores them, since every write stores the
@@ -240,9 +248,9 @@ The constraint is written as a mapped type, not
     on `createMemoryStorageBackend()` after catching the error, which makes
     that choice visible in its code.
   - `set` with a value that fails validation, including `NaN` or
-    `Infinity`, throws before applying anything: that's a programming
-    error, and `JSON.stringify` would turn a non-finite number into `null`
-    and quietly lose it on reload.
+    `Infinity`, throws `PreferencesValueError` before applying anything:
+    that's a programming error, and `JSON.stringify` would turn a
+    non-finite number into `null` and quietly lose it on reload.
 - **Names.** Use one preferences object per `name`; two would overwrite
   each other's writes. Nothing enforces it: a registry of names would
   make re-creating preferences throw, and docs demos and single-page apps
@@ -277,7 +285,10 @@ and its graphics settings pass a validator for the quality names, in the
 async function that already creates the game. Today the demo carries on
 with defaults when storage is blocked; with this design it does so
 explicitly, catching `StorageError` and creating its preferences on a
-memory backend for the session. The graphics "trial" logic (falling back
+memory backend for the session. A `PreferencesValueError` (settings an
+older version stored in another format) it handles by removing the entry
+through the backend and creating its preferences again: the demo's policy,
+not the engine's. The graphics "trial" logic (falling back
 to a known-good quality after a crash) stays in the game: it's policy,
 built on top.
 
@@ -296,9 +307,9 @@ built on top.
 | 1.5 | Guides (`preferences/`, `storage/`); a settings panel in a docs demo; changelog bullets for both modules under `#### Added`                                                  | M    |
 
 **Definition of done:** a docs demo's settings survive a reload and a
-second visit to its page; a corrupted stored value falls back to its
-default without affecting the other fields; changing a default reaches a
-player who never set it; keys set in an earlier session survive a write in
+second visit to its page; a stored value of the wrong type rejects with
+an error naming its field; a field that isn't stored takes its default,
+and changing a default reaches a player who never set it; keys set in an earlier session survive a write in
 the next; a test backend that resolves writes out of order still ends with
 the latest values stored, and with nothing stored after a `reset`.
 
@@ -314,14 +325,23 @@ serialization and store settings as entities.
 **Decision: (a).**
 
 **Rationale.** Settings are read before any world exists (the demo picks
-its render quality before creating its render pipeline), are tiny, aren't
-entities, and need per-field fallback rather than migrations. Unity and
-Godot keep them separate for the same reasons.
+its render quality before creating its render pipeline), are tiny, and
+aren't entities. Unity and Godot keep them separate for the same reasons.
 
-### DL-2: Validation per field, not per object
+### DL-2: A stored value of the wrong type is an error
 
-**Rationale.** A game update that adds or retypes one setting shouldn't
-reset the player's others. Both demo stores already do it per field.
+**Options.** (a) Fall back to the default for that field, as both demo
+stores do. (b) Reject with an error naming the field.
+
+**Decision: (b)**, decided in review.
+
+**Rationale.** The same record holds more than settings: achievements,
+account details and other data where quietly replacing a stored value
+with its default loses it. A value of the wrong type is a bug, or a
+change of format the game has to handle itself (migrating the entry or
+resetting it), so it's an error, at `set` as much as at load. A field
+that isn't stored at all is different: it takes its default, which is how
+a game update adds one.
 
 ### DL-3: Store only what was set
 
@@ -396,11 +416,14 @@ error for the game to check, and Unity's web player threw
 
 ## 7. Open questions
 
-1. **Renamed or reinterpreted settings.** With per-field fallback, a
-   renamed field resets to its default. A migration hook could carry it
-   over.
-   - (a) No migrations until a game needs one (proposed). (b) A
-     `migrate(storedObject)` option.
+1. **Renamed or retyped fields.** A renamed field reads as not stored and
+   takes its default; a retyped one is an error (DL-2), which the game
+   handles by rewriting or removing the entry through the backend. A
+   migration hook would transform the stored entry before it's validated.
+   [#567](https://github.com/Forge-Game-Engine/Forge/issues/567) plans a
+   versioning and migration story for saved data.
+   - (a) No migration hook until a game needs one, then adopt #567's
+     (proposed). (b) A `migrate(storedObject)` option now.
 2. **Persisted state in the world, or beside it?** Preferences are one
    case of state kept outside the game (in `localStorage`, behind an API)
    and mirrored into it, so they could be a component that a system loads
@@ -420,10 +443,11 @@ error for the game to check, and Unity's web player threw
 ## 8. Testing considerations
 
 - Loading: a wrong-typed field, a non-finite number and a field failing
-  its validator each fall back per field and stay as stored until set;
-  extra fields survive the next write; a rejected or throwing read rejects
-  `createPreferences` with the backend's error; malformed JSON rejects it
-  with `PreferencesFormatError`.
+  its validator each reject `createPreferences` with a
+  `PreferencesValueError` naming the field and value; a field that isn't
+  stored takes its default; extra fields survive the next write; a
+  rejected or throwing read rejects with the backend's error; malformed
+  JSON rejects with `PreferencesFormatError`.
 - Saving: defaults are never written; keys set in an earlier session
   survive a write in the next; `reset` removes the entry, and a `reset`
   while a write is in flight ends with nothing stored; a rejected write
@@ -432,7 +456,8 @@ error for the game to check, and Unity's web player threw
   and the latest state wins against a backend that settles out of order;
   with the `localStorage` backend, a change is stored by the end of the
   task.
-- `set` with an invalid or non-finite value throws and applies nothing;
+- `set` with an invalid or non-finite value throws `PreferencesValueError`
+  and applies nothing;
   creating preferences again under the same name works.
 - The `localStorage` backend: no `localStorage`, a `SecurityError` and a
   `QuotaExceededError` reject with `StorageUnavailableError`,
