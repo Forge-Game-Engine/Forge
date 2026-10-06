@@ -24,7 +24,10 @@
 Most games move between a few top-level states (loading, menu, playing,
 paused, game over) and most of their systems only make sense in some of
 them. Forge has no notion of this. Its finite state machine is a general
-predicate-driven utility, and systems run every tick.
+predicate-driven utility, and systems run every tick. A game can run
+several `EcsWorld`s, but `Game` updates every one of them every frame, and
+worlds keep separate content apart rather than switch between states
+(DL-4).
 
 The demo builds the missing pieces itself:
 
@@ -84,14 +87,24 @@ or entered. This design gives Forge the same.
   that); `run_if(in_state(...))` gates systems; entities with
   `DespawnOnExit`/`DespawnOnEnter` (formerly `StateScoped`) are despawned,
   with their descendants, on the matching transition.
-- **Godot**: no built-in state, but scenes swap wholesale
-  (`change_scene_to_file`), freeing the old tree, and `process_mode`
-  pauses subtrees.
-- **Unity**: scenes play the same role (loading a scene destroys the
-  previous one's objects); systems in DOTS can be gated with
-  `RequireForUpdate` or disabled.
+- **Godot**: no built-in state. Games change scenes
+  (`change_scene_to_file`), which frees the current scene's node tree and
+  loads the next, and pause subtrees with `SceneTree.paused` and each
+  node's `process_mode`. Content shared between scenes goes in an
+  autoload, which outlives scene changes.
+- **Unity**: scenes play the same role. Loading a scene destroys the
+  previous scene's objects, unless they're marked to survive scene loads
+  or the new scene is loaded additively. In DOTS, systems are gated with
+  `RequireForUpdate` or `Enabled`, and several `World`s keep separate
+  simulations apart (Netcode's client and server worlds) rather than
+  switch between states.
 
-Bevy is the ECS reference and the model here.
+A Godot node or a Unity object carries its own logic, so swapping the
+content swaps the logic with it. In an ECS, systems are separate from
+entities, so a state needs both halves: which systems run (run
+conditions) and which entities go (state-scoped entities). Bevy, whose
+states work inside an app's one main world, is the ECS reference and the
+model here.
 
 ---
 
@@ -216,6 +229,14 @@ Run conditions and the first group are scheduling, so they're in
 `src/states` module with the usual `components`/`systems` layout, as Bevy
 keeps `bevy_state` apart from `bevy_ecs`.
 
+### 4.6 Several worlds
+
+A `GameState` belongs to the world it's created with, which applies its
+transitions and runs its enter and exit groups. Systems in another world,
+such as a UI overlay world, can still be gated on it with `inState`,
+since a run condition only reads the state. A world that `Game` updates
+after the owning one sees each transition in the same frame.
+
 ---
 
 ## 5. Phases
@@ -284,6 +305,37 @@ Forge the same order without a second scheduling concept.
 demo's run shows the other one: what a run leaves behind stays visible on
 the end screens and goes when the next state that starts fresh is
 entered. Bevy has both for the same reason.
+
+### DL-4: States inside one world, not a world per state
+
+**Options.** (a) States, run conditions and state-scoped entities inside
+one world. (b) A world per state, the ECS form of a Unity or Godot scene
+change: `Game` updates only the current state's worlds, and changing
+state swaps them.
+
+**Decision: (a).**
+
+**Rationale.** A game's states share most of what's on screen. The
+demo's background keeps streaming past behind the main menu, its journey
+HUD fades out when the menu comes up and back in when a run starts, and a
+run's asteroids and enemies stay on screen behind the end-of-run panels.
+With (b), that content would have to live in a world updated in several
+states, or be rebuilt in each, and entity ids are per world: a parent or
+a joint's other body is always looked up in the entity's own world. Each
+world also needs its own cameras and its own transform, render, UI and
+input systems, and worlds that share a canvas don't compose today: each
+world's render system clears the canvas before its first camera draws,
+so a second world erases the first one's frame unless the render
+context's `clearStrategy` is `'none'`. And (b) still needs what this
+design adds: something has to decide when to swap, and the work done on
+entering and leaving a state (spawning the player, logging the flight)
+still has to run once, at the switch.
+
+Several worlds stay the tool for content that doesn't interact, like the
+UI overlay world in the `Game` guide (§4.6 covers gating its systems on a
+state). Loading and unloading a level's content as a unit, as Unity's
+scenes and Godot's packed scenes do, is a separate feature that this
+design neither needs nor blocks.
 
 ---
 
