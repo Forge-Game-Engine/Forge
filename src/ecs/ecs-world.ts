@@ -4,9 +4,16 @@ import { Stoppable, Updatable } from '../common/index.js';
 import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem } from './ecs-system.js';
+import {
+  Entity,
+  entityGeneration,
+  entityIndex,
+  formatEntity,
+} from './entity.js';
+import { createEntityHandle, maxEntities } from './entity-layout.js';
 
 export interface QueryResult<T extends readonly unknown[]> {
-  entities: readonly number[];
+  entities: readonly Entity[];
   components: { [K in keyof T]: T[K][] };
 }
 
@@ -45,11 +52,24 @@ export interface AddSystemGroupOptions {
 }
 
 export class EcsWorld implements Updatable, Stoppable {
-  public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
+  /**
+   * Raised by `removeEntity` with the removed entity, once its components
+   * and tags are gone. The entity is no longer alive by then, so removing it
+   * again from a listener does nothing.
+   */
+  public readonly onEntityRemoved: ParameterizedForgeEvent<Entity>;
 
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
-  private readonly _freeEntityIds: number[] = [];
-  private _nextEntityId = 0;
+
+  // The handle of the entity in each slot, or -1 while the slot is free.
+  private readonly _liveHandles: Entity[] = [];
+
+  // The handles free slots will be reused with (their next generation), in
+  // the order the slots were freed. Read from `_freeHandlesHead` onwards, so
+  // the least recently freed slot is reused first and no single slot's
+  // generation climbs much faster than the rest.
+  private readonly _freeHandles: Entity[] = [];
+  private _freeHandlesHead = 0;
   private readonly _systemGraphsByGroup: Map<
     EcsSystemGroup,
     DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>
@@ -195,7 +215,7 @@ export class EcsWorld implements Updatable, Stoppable {
       };
     }
 
-    const matchedEntities: number[] = [];
+    const matchedEntities: Entity[] = [];
     const allKeys: readonly symbol[] = [...componentKeys, ...tags];
 
     for (let i = 0; i < driver.size; i++) {
@@ -218,37 +238,126 @@ export class EcsWorld implements Updatable, Stoppable {
     };
   }
 
-  public createEntity(): number {
-    return this._generateEntityId();
+  /**
+   * Creates an entity. It stays alive, with or without components, until
+   * `removeEntity` removes it.
+   * @returns The new entity's handle.
+   * @throws An error if the world already holds the maximum number of
+   * entities.
+   */
+  public createEntity(): Entity {
+    if (this._freeHandlesHead < this._freeHandles.length) {
+      const entity = this._freeHandles[this._freeHandlesHead];
+      this._freeHandlesHead += 1;
+      this._compactFreeHandles();
+      this._liveHandles[entityIndex(entity)] = entity;
+
+      return entity;
+    }
+
+    const index = this._liveHandles.length;
+
+    if (index >= maxEntities) {
+      throw new Error(
+        `Unable to create an entity, the world already holds the maximum of ${maxEntities} entities.`,
+      );
+    }
+
+    const entity = createEntityHandle(index, 0);
+    this._liveHandles.push(entity);
+
+    return entity;
   }
 
-  public removeEntity(entity: number): void {
+  /**
+   * Whether `entity` was created by this world and hasn't been removed
+   * since. A handle to a removed entity stays not alive even once a new
+   * entity has reused its slot.
+   * @param entity - The entity handle.
+   * @returns `true` if the entity is alive.
+   */
+  public isAlive(entity: Entity): boolean {
+    return entity >= 0 && this._liveHandles[entityIndex(entity)] === entity;
+  }
+
+  /**
+   * Removes an entity and all of its components and tags, then raises
+   * `onEntityRemoved`. Does nothing if the entity isn't alive, e.g. it was
+   * already removed earlier this tick.
+   * @param entity - The entity to remove.
+   * @returns `true` if the entity was removed, `false` if it wasn't alive.
+   */
+  public removeEntity(entity: Entity): boolean {
+    if (!this.isAlive(entity)) {
+      return false;
+    }
+
+    const index = entityIndex(entity);
+
+    // Dead before its components go and its event is raised, so removing it
+    // again from anywhere in between does nothing rather than freeing the
+    // slot twice.
+    this._liveHandles[index] = -1;
+
     for (const componentSet of this._componentSets.values()) {
       componentSet.remove(entity);
     }
 
+    // Queued before the event, so a listener that throws can't leak the
+    // slot. The slot's next handle is a new generation, so reusing it from a
+    // listener can't be mistaken for this entity.
+    this._freeHandles.push(
+      createEntityHandle(index, entityGeneration(entity) + 1),
+    );
     this.onEntityRemoved.raise(entity);
-    this._freeEntityIds.push(entity);
+
+    return true;
   }
 
+  /**
+   * Adds a component to an entity, replacing any it already has for
+   * `componentKey`.
+   * @param entity - The entity to add the component to.
+   * @param componentKey - The component's key.
+   * @param componentData - The component.
+   * @returns `componentData`.
+   * @throws An error if `entity` isn't alive.
+   */
   public addComponent<T>(
-    entity: number,
+    entity: Entity,
     componentKey: ComponentKey<T>,
     componentData: T,
   ): T {
+    this._requireAlive(entity, componentKey, 'component');
+
     const componentSet = this._getComponentOrCreateSetByKey(componentKey);
     componentSet.add(entity, componentData);
 
     return componentData;
   }
 
-  public addTag(entity: number, tagKey: TagKey): void {
+  /**
+   * Adds a tag to an entity.
+   * @param entity - The entity to tag.
+   * @param tagKey - The tag's key.
+   * @throws An error if `entity` isn't alive.
+   */
+  public addTag(entity: Entity, tagKey: TagKey): void {
+    this._requireAlive(entity, tagKey, 'tag');
+
     const componentSet = this._getComponentOrCreateSetByKey(tagKey, true);
     componentSet.add(entity, true);
   }
 
+  /**
+   * Reads one of an entity's components.
+   * @param entity - The entity to read the component from.
+   * @param componentKey - The component's key.
+   * @returns The component, or `null` if the entity doesn't have one for
+   * `componentKey` or isn't alive.
+   */
   public getComponent<T>(
-    entity: number,
+    entity: Entity,
     componentKey: ComponentKey<T>,
   ): T | null {
     const componentSet = this._componentSets.get(componentKey) as
@@ -276,7 +385,7 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public getComponentAccessor<T>(
     componentKey: ComponentKey<T>,
-  ): (entity: number) => T | null {
+  ): (entity: Entity) => T | null {
     const componentSet = this._componentSets.get(componentKey) as
       SparseSet<T> | undefined;
 
@@ -284,7 +393,7 @@ export class EcsWorld implements Updatable, Stoppable {
       return () => null;
     }
 
-    return (entity: number) => componentSet.get(entity);
+    return (entity: Entity) => componentSet.get(entity);
   }
 
   /**
@@ -298,38 +407,59 @@ export class EcsWorld implements Updatable, Stoppable {
    * @throws An error if `entity` doesn't have a component for `componentKey`.
    */
   public getComponentRequired<T>(
-    entity: number,
+    entity: Entity,
     componentKey: ComponentKey<T>,
   ): T {
     const component = this.getComponent(entity, componentKey);
 
     if (component === null) {
       throw new Error(
-        `Required component "${componentKey.toString()}" not found on entity "${entity}".`,
+        `Required component "${componentKey.toString()}" not found on entity ${formatEntity(entity)}.`,
       );
     }
 
     return component;
   }
 
+  /**
+   * Removes one of an entity's components. The entity stays alive, whether
+   * or not it has any components left; remove it with `removeEntity`. Does
+   * nothing if the entity doesn't have the component or isn't alive.
+   * @param entity - The entity to remove the component from.
+   * @param componentKey - The component's key.
+   */
   public removeComponent<T>(
-    entity: number,
+    entity: Entity,
     componentKey: ComponentKey<T>,
   ): void {
-    const componentSet = this._componentSets.get(componentKey);
-    componentSet?.remove(entity);
-
-    for (const set of this._componentSets.values()) {
-      if (set.has(entity)) {
-        return;
-      }
-    }
-
-    this.onEntityRemoved.raise(entity);
-    this._freeEntityIds.push(entity);
+    this._componentSets.get(componentKey)?.remove(entity);
   }
 
-  private _entityHasAllKeys(entity: number, keys: readonly symbol[]): boolean {
+  private _requireAlive(
+    entity: Entity,
+    key: symbol,
+    kind: 'component' | 'tag',
+  ): void {
+    if (!this.isAlive(entity)) {
+      throw new Error(
+        `Unable to add ${kind} "${key.toString()}" to entity ${formatEntity(entity)}, it isn't alive: it was removed, or wasn't created by this world.`,
+      );
+    }
+  }
+
+  // Drops the free handles already reused once they make up half the
+  // queue, so it doesn't grow forever while entities are being created and
+  // removed every frame.
+  private _compactFreeHandles(): void {
+    if (this._freeHandlesHead * 2 < this._freeHandles.length) {
+      return;
+    }
+
+    this._freeHandles.splice(0, this._freeHandlesHead);
+    this._freeHandlesHead = 0;
+  }
+
+  private _entityHasAllKeys(entity: Entity, keys: readonly symbol[]): boolean {
     for (const key of keys) {
       if (!this._componentSets.get(key)?.has(entity)) {
         return false;
@@ -428,16 +558,5 @@ export class EcsWorld implements Updatable, Stoppable {
     }
 
     return orderedSystems;
-  }
-
-  private _generateEntityId(): number {
-    if (this._freeEntityIds.length > 0) {
-      return this._freeEntityIds.pop()!;
-    }
-
-    const id = this._nextEntityId;
-    this._nextEntityId += 1;
-
-    return id;
   }
 }

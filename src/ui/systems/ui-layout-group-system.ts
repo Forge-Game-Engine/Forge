@@ -1,5 +1,6 @@
 import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rects } from '../../math/index.js';
 import {
@@ -365,7 +366,7 @@ function createMeasure(
 
       if (!textComponent) {
         throw new Error(
-          `Entity "${entity}" has LayoutElementEcsComponent.sizeToText set but no TextEcsComponent - sizeToText only applies to text entities (e.g. a label created via createLabel).`,
+          `Entity ${formatEntity(entity)} has LayoutElementEcsComponent.sizeToText set but no TextEcsComponent - sizeToText only applies to text entities (e.g. a label created via createLabel).`,
         );
       }
 

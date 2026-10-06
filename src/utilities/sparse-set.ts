@@ -1,9 +1,14 @@
+import { Entity, entityIndex } from '../ecs/entity.js';
+
 /**
  * A sparse set implementation for efficient storage of components in an ECS architecture.
+ * The sparse array is indexed by each entity handle's slot index, and the dense
+ * array holds full handles, so a handle to a removed entity (same slot, older
+ * generation) is never a member, even once a new entity has taken its slot.
  */
 export class SparseSet<T> {
   public readonly sparseArray: Array<number>;
-  public readonly denseEntities: Array<number>;
+  public readonly denseEntities: Array<Entity>;
   public readonly denseComponents: Array<T>;
   public readonly isTag: boolean;
 
@@ -20,11 +25,11 @@ export class SparseSet<T> {
 
   /**
    * Checks if the set contains a component for the specified entity.
-   * @param entity - The entity ID to check.
+   * @param entity - The entity handle to check.
    * @returns True if the entity has a component in the set, false otherwise.
    */
-  public has(entity: number): boolean {
-    const index = this.sparseArray[entity];
+  public has(entity: Entity): boolean {
+    const index = this.sparseArray[entityIndex(entity)];
 
     return (
       index != undefined && index !== -1 && this.denseEntities[index] === entity
@@ -33,23 +38,23 @@ export class SparseSet<T> {
 
   /**
    * Gets the component for the specified entity.
-   * @param entity - The entity ID to get the component for.
+   * @param entity - The entity handle to get the component for.
    * @returns The component if the entity has one in the set, null otherwise.
    */
-  public get(entity: number): T | null {
+  public get(entity: Entity): T | null {
     return this.has(entity)
-      ? this.denseComponents[this.sparseArray[entity]]
+      ? this.denseComponents[this.sparseArray[entityIndex(entity)]]
       : null;
   }
 
   /**
    * Adds a component for the specified entity.
-   * @param entity - The entity ID to add the component for.
+   * @param entity - The entity handle to add the component for.
    * @param component - The component to add.
    */
-  public add(entity: number, component: T): void {
+  public add(entity: Entity, component: T): void {
     if (this.has(entity)) {
-      this.denseComponents[this.sparseArray[entity]] = component;
+      this.denseComponents[this.sparseArray[entityIndex(entity)]] = component;
 
       return;
     }
@@ -57,29 +62,29 @@ export class SparseSet<T> {
     const index = this.denseEntities.length;
     this.denseEntities.push(entity);
     this.denseComponents.push(component);
-    this.sparseArray[entity] = index;
+    this.sparseArray[entityIndex(entity)] = index;
   }
 
   /**
    * Removes the component for the specified entity.
-   * @param entity - The entity ID to remove the component for.
+   * @param entity - The entity handle to remove the component for.
    */
-  public remove(entity: number): void {
+  public remove(entity: Entity): void {
     if (!this.has(entity)) {
       return;
     }
 
-    const index = this.sparseArray[entity];
+    const index = this.sparseArray[entityIndex(entity)];
     const lastIndex = this.denseEntities.length - 1;
     const lastEntity = this.denseEntities[lastIndex];
 
     this.denseEntities[index] = lastEntity;
     this.denseComponents[index] = this.denseComponents[lastIndex];
-    this.sparseArray[lastEntity] = index;
+    this.sparseArray[entityIndex(lastEntity)] = index;
 
     this.denseEntities.pop();
     this.denseComponents.pop();
-    this.sparseArray[entity] = -1;
+    this.sparseArray[entityIndex(entity)] = -1;
   }
 
   get size(): number {

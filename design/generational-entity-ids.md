@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                  |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                                                                                                                                                |
+| **Status**                            | Implemented (Phase 1)                                                                                                                                                                            |
 | **Kind**                              | Defect                                                                                                                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/engine-flame/engine-flame.system.ts`, `src/engine-flame/engine-flame.component.ts`, `src/enemy/enemy-collision.system.ts`, `src/grabber/grabber-collision.system.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                         |
@@ -189,8 +189,11 @@ slot indices:
   return its handle for the slot's current generation.
 - `removeEntity`: if the handle's generation doesn't match its slot's, or
   the slot is free, return `false`. Otherwise mark the slot dead first
-  (increment its generation), then remove every component and tag, raise
-  `onEntityRemoved`, and queue the slot. Marking it dead before the event
+  (increment its generation), then remove every component and tag, queue
+  the slot, and raise `onEntityRemoved`. Queuing it before the event means
+  a listener that throws can't leak the slot; the queued handle is already
+  the next generation, so a listener that creates an entity in it can't be
+  confused with the removed one. Marking it dead before the event
   means a listener that removes the same entity again (directly, or
   through a hierarchy) gets `false` instead of recursing or freeing the
   slot twice.
@@ -228,9 +231,13 @@ says it re-checks `isStatic` "in case the entity's id was recycled";
 with generations that reason goes, but the check stays, because it's also
 how an entity whose `isStatic` was cleared gets unfrozen. What changes is
 cleanup: today slot reuse bounds the set's size, and with fresh handles a
-removed static entity would stay in it forever. The system subscribes to
-`onEntityRemoved` in `onRegister` (unsubscribing in `cleanup`) and drops
-removed entities from the set.
+removed static entity would stay in it forever. The set holds the
+entities' `PositionEcsComponent` objects in a `WeakSet` rather than their
+handles, so removing the entity, or just its position, drops it with no
+subscription to keep in step. That also covers a case an
+`onEntityRemoved` subscription would miss now that `removeComponent` keeps
+the entity alive: a static position removed and re-added under a parent is
+a new object, so it starts unfrozen and gets composed with its parent.
 
 ### 4.5 Errors
 

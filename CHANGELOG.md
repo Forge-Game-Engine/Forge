@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **ecs:** Entities are now generational handles, so a reference to a removed entity can never point at an unrelated entity that took its place. A handle packs a slot index and a generation into the same `number`; a reused slot gets a new handle, so the removed entity's handle stops matching anything: `getComponent` returns `null` for it, the new `EcsWorld.isAlive(entity)` returns `false`, and `removeEntity` on it does nothing and returns `false` (it now returns `true` when it removes an entity). Removing the same entity twice in a tick no longer hands its id to two later entities, and the least recently freed slot is reused first. An entity now stays alive until `removeEntity`: `removeComponent` no longer removes an entity whose last component it removed, so call `removeEntity` yourself if you relied on that. `addComponent` and `addTag` now throw for a removed entity (or a handle the world didn't create) instead of silently writing to it. Entities of reused slots are no longer small numbers, so don't do arithmetic on handles or use them as array indices. New exports from `ecs`: the `Entity` type, and `entityIndex`, `entityGeneration` and `formatEntity` for debugging; error messages that name an entity now print its index and generation (e.g. `12v3`)
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed
