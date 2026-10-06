@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                  |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                                                                                                                                                |
+| **Status**                            | Implemented (Phase 1)                                                                                                                                                                            |
 | **Kind**                              | Defect                                                                                                                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/engine-flame/engine-flame.system.ts`, `src/engine-flame/engine-flame.component.ts`, `src/enemy/enemy-collision.system.ts`, `src/grabber/grabber-collision.system.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                         |
@@ -12,7 +12,7 @@
 
 | Path                                                     | Change   | Notes                                                                                       |
 | -------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| `src/ecs/entity.ts`                                      | **New**  | `Entity` type alias, handle packing (`entityIndex`, `entityGeneration`), `formatEntity`     |
+| `src/ecs/entity.ts`                                      | **New**  | Handle packing (`entityIndex`, `entityGeneration`), `formatEntity`; entities stay `number`  |
 | `src/ecs/ecs-world.ts`                                   | Modified | Slot table with generations, `isAlive`, idempotent `removeEntity`, explicit entity lifetime |
 | `src/utilities/sparse-set.ts`                            | Modified | Indexes its sparse array by the handle's index; membership compares the full handle         |
 | `src/common/systems/transform-system.ts`                 | Modified | Prunes its frozen set when entities are removed                                             |
@@ -142,12 +142,10 @@ generation = handle >>> 20      (0 .. 1,023, then wraps)
 ```
 
 ```ts
-export type Entity = number;
-
-export const entityIndex = (entity: Entity): number => entity & 0xfffff;
-export const entityGeneration = (entity: Entity): number => entity >>> 20;
+export const entityIndex = (entity: number): number => entity & 0xfffff;
+export const entityGeneration = (entity: number): number => entity >>> 20;
 /** "12v3": index 12, generation 3. For error messages and debugging. */
-export const formatEntity = (entity: Entity): string =>
+export const formatEntity = (entity: number): string =>
   `${entityIndex(entity)}v${entityGeneration(entity)}`;
 ```
 
@@ -189,8 +187,11 @@ slot indices:
   return its handle for the slot's current generation.
 - `removeEntity`: if the handle's generation doesn't match its slot's, or
   the slot is free, return `false`. Otherwise mark the slot dead first
-  (increment its generation), then remove every component and tag, raise
-  `onEntityRemoved`, and queue the slot. Marking it dead before the event
+  (increment its generation), then remove every component and tag, queue
+  the slot, and raise `onEntityRemoved`. Queuing it before the event means
+  a listener that throws can't leak the slot; the queued handle is already
+  the next generation, so a listener that creates an entity in it can't be
+  confused with the removed one. Marking it dead before the event
   means a listener that removes the same entity again (directly, or
   through a hierarchy) gets `false` instead of recursing or freeing the
   slot twice.
@@ -228,9 +229,13 @@ says it re-checks `isStatic` "in case the entity's id was recycled";
 with generations that reason goes, but the check stays, because it's also
 how an entity whose `isStatic` was cleared gets unfrozen. What changes is
 cleanup: today slot reuse bounds the set's size, and with fresh handles a
-removed static entity would stay in it forever. The system subscribes to
-`onEntityRemoved` in `onRegister` (unsubscribing in `cleanup`) and drops
-removed entities from the set.
+removed static entity would stay in it forever. The set holds the
+entities' `PositionEcsComponent` objects in a `WeakSet` rather than their
+handles, so removing the entity, or just its position, drops it with no
+subscription to keep in step. That also covers a case an
+`onEntityRemoved` subscription would miss now that `removeComponent` keeps
+the entity alive: a static position removed and re-added under a parent is
+a new object, so it starts unfrozen and gets composed with its parent.
 
 ### 4.5 Errors
 
@@ -362,6 +367,9 @@ The benchmark in task 1.7 checks the cost to locality.
    games.
    - (a) Plain alias now, brand later if misuse shows up (proposed).
      (b) Brand in Phase 1.
+   - Resolved in implementation: neither. A plain alias adds no type
+     safety (the linter flags it as redundant), so entities stay
+     `number`. Branding stays open for later.
 2. **Generation overflow.** After 1,024 reuses of one slot, its generation
    wraps and a handle held across all of them would match again. With
    oldest-first reuse that takes 1,024 times as many removals as there are

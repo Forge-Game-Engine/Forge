@@ -1,5 +1,6 @@
 import { positionId, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import {
@@ -175,7 +176,7 @@ function getRequiredCollider(
 
   if (collider === null) {
     throw new Error(
-      `Unable to resolve collision for entity "${entity}", it no longer has a collider component.`,
+      `Unable to resolve collision for entity ${formatEntity(entity)}, it no longer has a collider component.`,
     );
   }
 
