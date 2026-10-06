@@ -52,9 +52,7 @@ world.addSystem(createMenuInputEcsSystem(gameState), {
 
 A system isn't queried or updated while its run condition is false. In a
 `paused` state that leaves out the gameplay systems, the components those
-systems write keep their values until the systems run again. `Time` keeps
-running during a pause, so `time.timeInSeconds` includes the time spent
-paused.
+systems write keep their values until the systems run again.
 
 `addSystemGroup` takes a `runIf` too, for a whole group of systems.
 See [System](../ecs/system.md#run-conditions) for how run conditions work.
