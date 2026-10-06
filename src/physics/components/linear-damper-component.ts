@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
@@ -48,7 +49,7 @@ export function addLinearDamperComponent(
 ): LinearDamperEcsComponent {
   if (options.dampingCoefficient < 0) {
     throw new Error(
-      `Unable to add linear damper to entity "${entity}": dampingCoefficient must be >= 0.`,
+      `Unable to add linear damper to entity ${formatEntity(entity)}: dampingCoefficient must be >= 0.`,
     );
   }
 

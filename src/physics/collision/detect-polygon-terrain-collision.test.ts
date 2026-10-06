@@ -51,25 +51,25 @@ function edgeIndicesOf(manifolds: NarrowPhaseManifold[]): number[] {
 }
 
 /**
- * How far a contact normal tilts away from straight out of the ground.
+ * How far a contact normal tilts away from straight into the ground.
  * Contact normals point from the polygon toward the terrain, and a terrain's
- * solid slab always extends toward its own local +y, so straight out is
- * `(0, 1)` for an unrotated terrain body.
+ * solid slab always extends below its surface, toward its own local -y, so
+ * straight in is `(0, -1)` for an unrotated terrain body.
  */
 function tiltFromVertical(manifold: NarrowPhaseManifold): number {
-  return Math.abs(Math.atan2(manifold.normal.x, manifold.normal.y));
+  return Math.abs(Math.atan2(manifold.normal.x, -manifold.normal.y));
 }
 
 describe('detectPolygonTerrainCollision', () => {
   it('should return no manifolds when the polygon is above the terrain with a gap', () => {
-    const polygonBody = body({ x: 0, y: -1.5 }, rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: 1.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toEqual([]);
   });
 
   it('should return no manifolds when the polygon is outside the terrain x-range', () => {
-    const polygonBody = body({ x: 500, y: -0.5 }, rectangle(2, 2));
+    const polygonBody = body({ x: 500, y: 0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toEqual([]);
@@ -77,17 +77,18 @@ describe('detectPolygonTerrainCollision', () => {
 
   it('should detect a collision resting on a flat surface edge', () => {
     // Mirrors detectCircleTerrainCollision's tests: the terrain's solid
-    // slab extends in +y locally, so a polygon resting "above" the surface
-    // in world space (unrotated) sits at a smaller y than the surface.
-    // x = -50 keeps the box within a single edge's span.
-    const polygonBody = body({ x: -50, y: -0.5 }, rectangle(2, 2));
+    // slab extends below its surface (toward -y), so a polygon resting on
+    // the surface sits at a greater y than it, and the contact normal (from
+    // the polygon toward the terrain) points straight down. x = -50 keeps
+    // the box within a single edge's span.
+    const polygonBody = body({ x: -50, y: 0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
 
     expect(manifolds).toHaveLength(1);
     expect(manifolds[0].normal.x).toBeCloseTo(0);
-    expect(manifolds[0].normal.y).toBeCloseTo(1);
+    expect(manifolds[0].normal.y).toBeCloseTo(-1);
     expect(manifolds[0].depth).toBeCloseTo(0.5);
     expect(manifolds[0].contactPoints).toHaveLength(2);
   });
@@ -97,7 +98,7 @@ describe('detectPolygonTerrainCollision', () => {
     // contact against each, each clipped to its own edge's stretch of
     // ground - rather than one contact on whichever edge happened to come
     // out deepest.
-    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: 0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
@@ -105,7 +106,7 @@ describe('detectPolygonTerrainCollision', () => {
     expect(edgeIndicesOf(manifolds)).toEqual([0, 1]);
 
     for (const manifold of manifolds) {
-      expect(manifold.normal.y).toBeCloseTo(1);
+      expect(manifold.normal.y).toBeCloseTo(-1);
       expect(manifold.depth).toBeCloseTo(0.5);
     }
 
@@ -118,7 +119,7 @@ describe('detectPolygonTerrainCollision', () => {
   });
 
   it('should keep every contact point of a straddling body on a distinct feature id', () => {
-    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: 0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, flatTerrain());
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
@@ -131,13 +132,13 @@ describe('detectPolygonTerrainCollision', () => {
   it('should report one contact per side of a valley the polygon is wedged into', () => {
     const terrain = new TerrainCollider(
       [
-        { x: -100, y: -20 },
+        { x: -100, y: 20 },
         { x: 0, y: 0 },
-        { x: 100, y: -20 },
+        { x: 100, y: 20 },
       ],
       500,
     );
-    const polygonBody = body({ x: 0, y: -0.5 }, rectangle(2, 2));
+    const polygonBody = body({ x: 0, y: 0.5 }, rectangle(2, 2));
     const terrainBody = body(Vec2.zero, terrain);
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
@@ -147,6 +148,10 @@ describe('detectPolygonTerrainCollision', () => {
     // sign - there is no tie for floating-point noise to break.
     expect(manifolds[0].depth).toBeCloseTo(manifolds[1].depth, 12);
     expect(manifolds[0].normal.x).toBeCloseTo(-manifolds[1].normal.x, 12);
+    // Each slope pushes the box up and away from itself.
+    expect(manifolds[0].normal.x).toBeLessThan(0);
+    expect(manifolds[0].normal.y).toBeLessThan(0);
+    expect(manifolds[1].normal.y).toBeLessThan(0);
     expect(manifolds[0].contactPoints.every((point) => point.x <= 0)).toBe(
       true,
     );
@@ -158,15 +163,16 @@ describe('detectPolygonTerrainCollision', () => {
   it('should take the normal from the surface gradient on a slope', () => {
     const terrain = new TerrainCollider(
       [
-        { x: -100, y: 100 },
-        { x: 100, y: -100 },
+        { x: -100, y: -100 },
+        { x: 100, y: 100 },
       ],
       500,
     );
+    // Turned to lie flat against the 45 degree slope rising to the right.
     const polygonBody = body(
-      { x: 0, y: -Math.SQRT1_2 },
+      { x: 0, y: Math.SQRT1_2 },
       rectangle(2, 2),
-      -Math.PI / 4,
+      Math.PI / 4,
     );
     const terrainBody = body(Vec2.zero, terrain);
 
@@ -174,7 +180,7 @@ describe('detectPolygonTerrainCollision', () => {
 
     expect(manifolds).toHaveLength(1);
     expect(manifolds[0].normal.x).toBeCloseTo(Math.SQRT1_2);
-    expect(manifolds[0].normal.y).toBeCloseTo(Math.SQRT1_2);
+    expect(manifolds[0].normal.y).toBeCloseTo(-Math.SQRT1_2);
   });
 
   it('should never push a body sideways along ground it is resting on', () => {
@@ -190,16 +196,16 @@ describe('detectPolygonTerrainCollision', () => {
     const maxSlopeAngle = Math.atan(0.3);
     const terrain = new TerrainCollider(
       [
-        { x: 0, y: -0.2 },
-        { x: 1, y: -0.2 },
-        { x: 2, y: -0.3 },
+        { x: 0, y: 0.2 },
+        { x: 1, y: 0.2 },
+        { x: 2, y: 0.3 },
         { x: 3, y: 0 },
-        { x: 4, y: 0.3 },
-        { x: 5, y: 0.1 },
+        { x: 4, y: -0.3 },
+        { x: 5, y: -0.1 },
       ],
       500,
     );
-    const polygonBody = body({ x: 4, y: -0.65 }, rectangle(3, 2));
+    const polygonBody = body({ x: 4, y: 0.65 }, rectangle(3, 2));
     const terrainBody = body(Vec2.zero, terrain);
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
@@ -210,7 +216,7 @@ describe('detectPolygonTerrainCollision', () => {
       expect(tiltFromVertical(manifold)).toBeLessThanOrEqual(
         maxSlopeAngle + 1e-6,
       );
-      expect(manifold.normal.y).toBeGreaterThan(0);
+      expect(manifold.normal.y).toBeLessThan(0);
     }
   });
 
@@ -224,7 +230,7 @@ describe('detectPolygonTerrainCollision', () => {
     const points: Vector2[] = [];
 
     for (let i = -8; i <= 8; i++) {
-      points.push({ x: i * 3, y: Math.sin(i * 0.7) * 0.4 + i * 0.01 });
+      points.push({ x: i * 3, y: -(Math.sin(i * 0.7) * 0.4 + i * 0.01) });
     }
 
     const terrain = new TerrainCollider(points, 500);
@@ -246,22 +252,68 @@ describe('detectPolygonTerrainCollision', () => {
     expect(featureIds.size).toBe(1);
   });
 
+  it('should push a polygon sunk into the slab, but not out of its bottom, back up', () => {
+    // A slab only 1 unit thick, from its surface at y = 0 down to y = -1,
+    // and a diamond (a 2x2 box turned 45 degrees, reaching sqrt(2) from its
+    // center) whose top corner is still just inside it. It is buried, not
+    // fallen through, so it is pushed back up out of the surface.
+    const terrain = new TerrainCollider(
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      1,
+    );
+    const polygonBody = body({ x: 0, y: -2 }, rectangle(2, 2), Math.PI / 4);
+    const terrainBody = body(Vec2.zero, terrain);
+
+    const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
+
+    expect(manifolds).toHaveLength(1);
+    expect(manifolds[0].normal.x).toBeCloseTo(0);
+    expect(manifolds[0].normal.y).toBeCloseTo(-1);
+    expect(manifolds[0].depth).toBeCloseTo(2 + Math.SQRT2);
+  });
+
   it('should ignore a polygon that has passed out of the bottom of the slab', () => {
-    const polygonBody = body({ x: -50, y: 60 }, rectangle(2, 2));
-    const terrainBody = body(Vec2.zero, flatTerrain());
+    // The same diamond as above, half a unit lower: its top corner is now
+    // below the slab's bottom edge at y = -1, so it has fallen through,
+    // even though it is still well within reach of the surface's span.
+    const terrain = new TerrainCollider(
+      [
+        { x: -100, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      1,
+    );
+    const polygonBody = body({ x: 0, y: -2.5 }, rectangle(2, 2), Math.PI / 4);
+    const terrainBody = body(Vec2.zero, terrain);
 
     expect(detectPolygonTerrainCollision(polygonBody, terrainBody)).toEqual([]);
   });
 
   it('should account for the terrain body rotation', () => {
-    const polygonBody = body({ x: -50, y: 0.5 }, rectangle(2, 2));
-    const terrainBody = body(Vec2.zero, flatTerrain(), Math.PI);
+    // Rotating the flat terrain a quarter turn counter-clockwise stands it
+    // up as a wall along x = 0: its surface runs from (0, -100) to
+    // (0, 100), and its local "down" (-y), where the slab is, becomes world
+    // +x. A box just to the left of the wall therefore pushes into it
+    // along +x, against the middle of the first edge.
+    const polygonBody = body({ x: -0.5, y: -50 }, rectangle(2, 2));
+    const terrainBody = body(Vec2.zero, flatTerrain(), Math.PI / 2);
 
     const manifolds = detectPolygonTerrainCollision(polygonBody, terrainBody);
 
     expect(manifolds).toHaveLength(1);
-    expect(manifolds[0].normal.y).toBeCloseTo(-1);
+    expect(edgeIndicesOf(manifolds)).toEqual([0]);
+    expect(manifolds[0].normal.x).toBeCloseTo(1);
+    expect(manifolds[0].normal.y).toBeCloseTo(0);
     expect(manifolds[0].depth).toBeCloseTo(0.5);
+    expect(manifolds[0].contactPoints).toHaveLength(2);
+
+    for (const point of manifolds[0].contactPoints) {
+      expect(point.y).toBeGreaterThanOrEqual(-51 - 1e-9);
+      expect(point.y).toBeLessThanOrEqual(-49 + 1e-9);
+    }
   });
 
   it('should never tilt a normal further than the ground and the body it was found between', () => {
@@ -292,7 +344,7 @@ describe('detectPolygonTerrainCollision', () => {
     for (let step = 0; step < 300; step++) {
       const x = -8 + step * 0.05;
       const polygonBody = body(
-        { x, y: surfaceY(x) - 1 + 0.05 },
+        { x, y: surfaceY(x) + 1 - 0.05 },
         rectangle(5, 2),
         bodyTilt,
       );

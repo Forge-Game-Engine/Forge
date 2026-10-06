@@ -140,8 +140,8 @@ function buildTerrainMeshData(
 
     const bottomLeft = { x: left.position.x, y: bottomY };
     const bottomRight = { x: right.position.x, y: bottomY };
-    const depthLeft = bottomY - left.position.y;
-    const depthRight = bottomY - right.position.y;
+    const depthLeft = left.position.y - bottomY;
+    const depthRight = right.position.y - bottomY;
 
     pushVertex(left.position, left.distance, 0);
     pushVertex(right.position, right.distance, 0);
@@ -212,7 +212,7 @@ export function createTerrainMesh(
   const { gl, shaderCache } = renderContext;
 
   const bottomY =
-    Math.max(...curvePoints.map((curvePoint) => curvePoint.position.y)) + depth;
+    Math.min(...curvePoints.map((curvePoint) => curvePoint.position.y)) - depth;
 
   const meshData = buildTerrainMeshData(curvePoints, bottomY, angle, position);
   const geometry = createTerrainGeometry(gl, meshData);

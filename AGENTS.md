@@ -802,6 +802,22 @@ The transform system runs once per frame, after the systems that write
 `documentation-site/docs/docs/common/transforms.md` covers the ordering and
 following other entities.
 
+### Angles and Directions
+
+The world is Y-up, and every angle follows one convention: **radians, angle
+`0` points along `+X`, and a positive angle turns `+X` towards `+Y`**
+(counter-clockwise on screen). `Vec2.up` is `(0, 1)`, `radiansToVector(θ)`
+is `(cos θ, sin θ)` and `vectorToRadians` is its inverse. Particle emitter
+`directionRange`/`rotationRange`, `RotationEcsComponent`, `Vec2.rotate` and
+physics all use it. Don't add an API that measures angles from up, clockwise,
+or in degrees; callers who author degrees use `degreesToRadians`.
+
+Something that emits or aims relative to an entity (a particle emitter's
+spawn shape and direction) works in that entity's frame, turned by its
+`rotation.world`, the way Unity and Godot emitters follow their transform.
+`documentation-site/docs/docs/math/angles-and-rotation.md` covers the
+convention and which way a sprite faces.
+
 ### Readonly Fields
 
 Use `readonly` for fields that shouldn't change after construction:

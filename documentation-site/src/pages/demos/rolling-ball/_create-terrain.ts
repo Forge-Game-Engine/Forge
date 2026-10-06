@@ -91,7 +91,7 @@ export interface RollingBallTerrain {
   /**
    * Returns the world-space y coordinate of the terrain's surface at a
    * given world-space x. Used to place the ball (and anything else) exactly
-   * on the ground, accounting for the terrain body's rotation (see below).
+   * on the ground.
    */
   worldSurfaceYAt: (worldX: number) => number;
 }
@@ -153,11 +153,7 @@ export async function createTerrain(
 
   const terrainCollider = new TerrainCollider(points, terrainDepth);
 
-  // Rotated 180 degrees, same as the Physics demo's terrain: `TerrainCollider`
-  // always extends its solid slab `depth` units in the +y direction from
-  // its surface points (in its own local space), but this demo's gravity
-  // pulls bodies toward -y, so the body is flipped to face the right way.
-  const angle = Math.PI;
+  const angle = 0;
   const position = Vec2.zero;
 
   const terrainEntity = world.createEntity();
@@ -166,9 +162,7 @@ export async function createTerrain(
     local: Vec2.clone(position),
   });
 
-  addRotationComponent(world, terrainEntity, {
-    local: angle,
-  });
+  addRotationComponent(world, terrainEntity);
 
   addColliderComponent(world, terrainEntity, {
     collider: terrainCollider,
@@ -203,11 +197,8 @@ export async function createTerrain(
 
   const spawnX = position.x;
 
-  const worldSurfaceYAt = (worldX: number): number => {
-    const localX = position.x - worldX;
-
-    return position.y - heightAtLocalX(curvePoints, localX);
-  };
+  const worldSurfaceYAt = (worldX: number): number =>
+    position.y + heightAtLocalX(curvePoints, worldX - position.x);
 
   return {
     entity: terrainEntity,

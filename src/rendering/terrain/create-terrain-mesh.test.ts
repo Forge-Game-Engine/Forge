@@ -160,6 +160,34 @@ describe('createTerrainMesh', () => {
     expect(mesh.vertexCount).toBe((curvePoints.length - 1) * 6);
   });
 
+  it('extends the mesh below its surface, toward -y, by depth below the lowest point', () => {
+    const curvePoints = buildTerrainCurve(
+      [
+        { x: 0, y: 10 },
+        { x: 10, y: 20 },
+      ],
+      1,
+    );
+
+    createTerrainMesh(renderContext, createOptions({ curvePoints, depth: 50 }));
+
+    const [positions, , depths] = (mockGl.bufferData as Mock).mock.calls.map(
+      ([, data]) => data as Float32Array,
+    );
+
+    // Each pair is (x, -y): the mesh hands the GPU the negated world y, as
+    // the sprite pipeline does.
+    const worldYs = Array.from(
+      { length: positions.length / 2 },
+      (_, index) => -positions[index * 2 + 1],
+    );
+
+    // Surface left, surface right, bottom left; surface right, bottom
+    // right, bottom left.
+    expect(worldYs).toEqual([10, 20, -40, 20, -40, -40]);
+    expect(Array.from(depths)).toEqual([0, 0, 50, 0, 60, 50]);
+  });
+
   it('binds the configured border width uniform', () => {
     const mesh = createTerrainMesh(
       renderContext,

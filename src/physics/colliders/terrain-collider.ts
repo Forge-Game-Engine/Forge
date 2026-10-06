@@ -48,8 +48,8 @@ export interface TerrainSurfaceEdge {
   /**
    * The edge's unit-length outward normal, in local space: perpendicular to
    * `start`-`end` and pointing away from the solid slab. Since the slab
-   * always extends in the collider's local +y direction, this always points
-   * broadly toward local -y.
+   * always extends below the surface, toward the collider's local -y, this
+   * always points broadly toward local +y.
    */
   normal: Vector2;
 }
@@ -61,9 +61,10 @@ export interface TerrainSurfaceEdge {
  */
 export interface TerrainEdgeSlab {
   /**
-   * The column's four vertices, in the same winding as a
-   * `PolygonCollider`'s: the edge's two surface points followed by their
-   * corresponding points on the terrain's flat bottom edge.
+   * The column's four vertices, counter-clockwise like a
+   * `PolygonCollider`'s: the edge's two surface points, right to left,
+   * followed by their corresponding points on the terrain's flat bottom
+   * edge.
    */
   vertices: Vector2[];
 
@@ -77,7 +78,9 @@ export interface TerrainEdgeSlab {
 /**
  * A static, non-convex 2D ground collider defined by a heightmap: a chain of
  * surface points, ordered left to right, closed off into a solid slab by a
- * flat bottom edge `depth` units below the lowest surface point.
+ * flat bottom edge `depth` units below (toward local -y) the lowest surface
+ * point. Author the points as the ground's surface in world coordinates,
+ * with the entity unrotated, and the ground is below them.
  *
  * Unlike {@link PolygonCollider}, `TerrainCollider` does not re-center its
  * vertices around their centroid - `points` are used exactly as authored, in
@@ -105,7 +108,7 @@ export class TerrainCollider extends Collider {
 
   /**
    * The flat bottom edge's y-coordinate, in local space: `depth` units below
-   * the lowest of `points`.
+   * the lowest of `points` (`min(points.y) - depth`).
    */
   public readonly bottomY: number;
 
@@ -147,7 +150,7 @@ export class TerrainCollider extends Collider {
     }
 
     const clonedPoints = points.map((point) => Vec2.clone(point));
-    const bottomY = Math.max(...clonedPoints.map((point) => point.y)) + depth;
+    const bottomY = Math.min(...clonedPoints.map((point) => point.y)) - depth;
     const silhouette = silhouetteVertices(clonedPoints, bottomY);
     const centroid = calculateCentroid(silhouette);
     // Clone before subtracting: `silhouette`'s surface vertices are the same
@@ -225,10 +228,10 @@ export function buildTerrainEdgeSlab(
   rotation: number,
 ): TerrainEdgeSlab {
   const localVertices = [
-    edge.start,
     edge.end,
-    { x: edge.end.x, y: bottomY },
+    edge.start,
     { x: edge.start.x, y: bottomY },
+    { x: edge.end.x, y: bottomY },
   ];
 
   // The three faces closing the column off below the surface are always
@@ -236,9 +239,9 @@ export function buildTerrainEdgeSlab(
   // flat bottom edge - so they never need deriving from the vertices.
   const localNormals = [
     edge.normal,
-    { x: 1, y: 0 },
-    { x: 0, y: 1 },
     { x: -1, y: 0 },
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
   ];
 
   return {
@@ -260,7 +263,13 @@ function silhouetteVertices(
   const first = points[0];
   const last = points[points.length - 1];
 
-  return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
+  // Counter-clockwise: along the bottom left to right, then back along the
+  // surface right to left.
+  return [
+    { x: first.x, y: bottomY },
+    { x: last.x, y: bottomY },
+    ...[...points].reverse(),
+  ];
 }
 
 function buildSurface(points: readonly Vector2[]): TerrainSurfaceEdge[] {
@@ -271,11 +280,11 @@ function buildSurface(points: readonly Vector2[]): TerrainSurfaceEdge[] {
     const end = points[i + 1];
 
     // Clone before subtracting: `start`/`end` are the collider's own stored
-    // points, which this must not mutate. Rotating the edge -90 degrees
-    // gives a normal pointing toward local -y (the points are ordered by
+    // points, which this must not mutate. Rotating the edge +90 degrees
+    // gives a normal pointing toward local +y (the points are ordered by
     // increasing x), which is the side the solid slab is *not* on.
     const normal = Vec2.normalize(
-      Vec2.perpendicular(Vec2.subtract(Vec2.clone(end), start)),
+      Vec2.negate(Vec2.perpendicular(Vec2.subtract(Vec2.clone(end), start))),
     );
 
     surface.push({ start, end, normal });
