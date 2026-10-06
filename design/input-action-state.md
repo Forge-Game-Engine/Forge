@@ -191,6 +191,23 @@ and the changelog says so), and withdraws it (reports `0`) in its own
 `reset` at the end of the frame. The cursor-position binding reports the position on every
 `mousemove` and keeps it, so it no longer needs `noReset` either.
 
+Reset types aren't what makes an input discrete or held. The action's
+kind and the source are:
+
+| Behavior                                         | Action                  | What provides it                                                                   |
+| ------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------------- |
+| Once per press ("press space to jump")           | `TriggerAction`         | `isTriggered` for the frame the key goes down, as today                            |
+| While held (movement, charging)                  | `HoldAction` or an axis | The source's report, kept from keydown to keyup (auto-repeats are already ignored) |
+| One step per press on an axis (menu navigation)  | An axis                 | Edge detection on its value, as `ui-navigation-system` already does                |
+| One frame, from an input with no release (wheel) | An axis                 | The mouse source withdrawing its report after the frame                            |
+
+Whether a value lasts one frame depends on the input, not the action: a
+zoom axis bound to the wheel and to `+`/`-` needs the wheel's contribution
+to last a frame and the keys' to last while they're held, which a reset
+on the action can't express. Unity resets delta controls on the device,
+and Godot sends a wheel turn as a press and a release; neither has a reset
+on the action.
+
 ### 4.3 Switching groups
 
 `setActiveGroup(group)`:
