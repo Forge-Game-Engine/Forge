@@ -7,6 +7,7 @@ import {
 } from '../components/index.js';
 import {
   beginFullscreenReplacePass,
+  beginPostProcessPass,
   drawFullscreenQuad,
 } from '../fullscreen-pass.js';
 import { Material } from '../materials/index.js';
@@ -58,8 +59,11 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  * extracts the pixels brighter than `threshold` into a downsampled scratch
  * buffer, blurs them with the same separable technique as
  * `createGaussianBlurEcsSystem`, then adds the blurred result back onto the
- * camera's `renderTarget`. Cameras without a `renderTarget`, or without a
- * `BloomEcsComponent` (attach one with `addBloomComponent`), are left untouched.
+ * camera's `renderTarget` in a post-processing pass (see
+ * `beginPostProcessPass`). Cameras without a `renderTarget`, or without a
+ * `BloomEcsComponent` (attach one with `addBloomComponent`), are left
+ * untouched, and so are cameras whose bloom has `passes` or `intensity` at
+ * `0` or below.
  *
  * Must be registered after the render system (so there's a scene to bloom)
  * and before the present system (so the result gets drawn to the canvas).
@@ -89,21 +93,15 @@ export const createBloomEcsSystem = (
     shaderCache.getShader('bloom-composite.frag'),
     gl,
   );
-  const copyMaterial = new Material(
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('passthrough.frag'),
-    gl,
-  );
 
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
-  // bloomed camera, recreated on resize. `brightTarget` and `pingPong` are
-  // downsampled (see `bloomDownsampleFactor`); `compositeTarget` matches the
-  // camera's `renderTarget` resolution, since the composite pass's output
-  // replaces that target's contents. Owned by this system (not module-level
-  // state) and disposed via `cleanup` when the world stops.
+  // bloomed camera, recreated on resize. Both are downsampled (see
+  // `bloomDownsampleFactor`); the composite pass writes into the camera's
+  // own `renderTarget` through `beginPostProcessPass`. Owned by this system
+  // (not module-level state) and disposed via `cleanup` when the world
+  // stops.
   const brightTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
   const pingPongByTarget = new WeakMap<RenderTarget, PingPongTarget>();
-  const compositeTargetByTarget = new WeakMap<RenderTarget, RenderTarget>();
 
   const getBrightTarget = (
     target: RenderTarget,
@@ -157,32 +155,6 @@ export const createBloomEcsSystem = (
     return pingPong;
   };
 
-  const getCompositeTarget = (target: RenderTarget): RenderTarget => {
-    const existing = compositeTargetByTarget.get(target);
-    const isStale =
-      existing !== undefined &&
-      (existing.width !== target.width || existing.height !== target.height);
-
-    if (existing && !isStale) {
-      return existing;
-    }
-
-    if (existing) {
-      existing.dispose(gl);
-    }
-
-    const compositeTarget = createRenderTarget(
-      gl,
-      target.width,
-      target.height,
-      target.format,
-    );
-
-    compositeTargetByTarget.set(target, compositeTarget);
-
-    return compositeTarget;
-  };
-
   const drawBlurPass = (
     sourceTexture: WebGLTexture,
     direction: Float32Array,
@@ -196,17 +168,6 @@ export const createBloomEcsSystem = (
     blurMaterial.setUniform('u_texelSize', texelSize);
 
     drawFullscreenQuad(renderContext, blurMaterial);
-  };
-
-  const copyTexture = (
-    sourceTexture: WebGLTexture,
-    destination: RenderTarget,
-  ): void => {
-    beginFullscreenReplacePass(renderContext, destination);
-
-    copyMaterial.setUniform('u_texture', sourceTexture);
-
-    drawFullscreenQuad(renderContext, copyMaterial);
   };
 
   const processedTargetsThisFrame = new Set<RenderTarget>();
@@ -225,6 +186,7 @@ export const createBloomEcsSystem = (
         if (
           !renderTarget ||
           intensity <= 0 ||
+          bloom.passes <= 0 ||
           processedTargetsThisFrame.has(renderTarget)
         ) {
           continue;
@@ -285,17 +247,9 @@ export const createBloomEcsSystem = (
 
         // The composite pass upsamples `brightTarget` back to full resolution
         // implicitly, via the bloom texture's own linear-filtered sampling.
-        // It writes into its own full-resolution scratch buffer rather than
-        // `pingPong` (now downsampled) or `renderTarget` (the scene texture
-        // it's reading from, which can't also be this draw's destination).
-        const compositeTarget = getCompositeTarget(renderTarget);
+        const scene = beginPostProcessPass(renderContext, renderTarget);
 
-        beginFullscreenReplacePass(renderContext, compositeTarget);
-
-        compositeMaterial.setUniform(
-          'u_sceneTexture',
-          renderTarget.colorTexture,
-        );
+        compositeMaterial.setUniform('u_sceneTexture', scene);
         compositeMaterial.setUniform(
           'u_bloomTexture',
           brightTarget.colorTexture,
@@ -303,8 +257,6 @@ export const createBloomEcsSystem = (
         compositeMaterial.setUniform('u_intensity', intensity);
 
         drawFullscreenQuad(renderContext, compositeMaterial);
-
-        copyTexture(compositeTarget.colorTexture, renderTarget);
       }
     },
     cleanup: (world) => {
@@ -324,9 +276,6 @@ export const createBloomEcsSystem = (
 
         pingPongByTarget.get(renderTarget)?.dispose(gl);
         pingPongByTarget.delete(renderTarget);
-
-        compositeTargetByTarget.get(renderTarget)?.dispose(gl);
-        compositeTargetByTarget.delete(renderTarget);
       }
     },
   };
