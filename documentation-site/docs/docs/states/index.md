@@ -18,10 +18,6 @@ The `@forge-game-engine/forge/states` module covers both halves:
 - [state-scoped entities](./state-scoped-entities.md), removed when the
   state that owns them ends.
 
-The [game states demo](/Forge/demos/game-states) puts them together: a menu,
-a round and a game-over screen with no state checks inside its systems and
-no cleanup code.
-
 ## Creating a state
 
 ```ts
@@ -116,7 +112,8 @@ while playing restarts the round without a detour through another state.
 The state's transition and its exit and enter groups run before every other
 group of the world, including the input update group `registerInputs` adds.
 An `onEnter` or `onExit` system reads the previous tick's input. Act on
-input in an ordinary system that calls `set`, as in the demo, and the
+input in an ordinary system that calls `set`, as the
+[game states demo](/Forge/demos/game-states)'s input systems do, and the
 transition follows on the next tick.
 
 ## Several worlds
