@@ -6,12 +6,7 @@ import {
   GamepadHoldBinding,
   GamepadTriggerBinding,
 } from '../bindings';
-import {
-  actionResetTypes,
-  buttonMoments,
-  gamepadAxes,
-  gamepadButtons,
-} from '../../constants';
+import { buttonMoments, gamepadAxes, gamepadButtons } from '../../constants';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -19,6 +14,10 @@ import {
   TriggerAction,
 } from '../../actions';
 import { InputManager } from '../../input-manager';
+import { InputSource } from '../../input-source';
+
+/** Another source (e.g. the keyboard) bound to the same actions. */
+const otherSource: InputSource = { name: 'other' };
 
 const createGamepad = (
   axes: number[],
@@ -213,7 +212,7 @@ describe('GamepadInputSource', () => {
     expect(moveAction.value).toBe(1);
   });
 
-  it('does not re-dispatch an unchanged idle value, leaving another source in control of the action', () => {
+  it('does not let an idle gamepad override another source on the same action', () => {
     source = createSource([createGamepad([0, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
@@ -225,19 +224,17 @@ describe('GamepadInputSource', () => {
     source.update();
     expect(moveAction.value).toBe(0);
 
-    // Simulate another source (e.g. KeyboardInputSource) dispatching on a
-    // key event, independent of the gamepad's per-frame poll.
-    moveAction.set(1);
+    inputManager.setAxis1dInput(otherSource, moveAction, 1);
     expect(moveAction.value).toBe(1);
 
-    // The idle gamepad polls again with the exact same value as before, so
-    // it must not re-dispatch and stomp the other source's value.
+    // The idle gamepad reports `0` again, which is weaker than the other
+    // source's input, so it doesn't take the action over.
     source.update();
 
     expect(moveAction.value).toBe(1);
   });
 
-  it('re-dispatches once the gamepad value actually changes, taking back control', () => {
+  it('reads a fresh gamepad snapshot every poll', () => {
     source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
@@ -305,11 +302,7 @@ describe('GamepadInputSource', () => {
   });
 
   it('releases an axis it was driving once the gamepad disappears from navigator.getGamepads()', () => {
-    const noResetAction = new Axis1dAction(
-      'noResetMove',
-      group,
-      actionResetTypes.noReset,
-    );
+    const noResetAction = new Axis1dAction('noResetMove', group);
 
     inputManager.addAxis1dActions(noResetAction);
 
@@ -333,7 +326,7 @@ describe('GamepadInputSource', () => {
     expect(noResetAction.value).toBe(0);
   });
 
-  it('does not keep dispatching once the gamepad has disappeared and been released', () => {
+  it('does not override another source once the gamepad has disappeared and been released', () => {
     source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
@@ -348,7 +341,7 @@ describe('GamepadInputSource', () => {
     expect(moveAction.value).toBe(0);
 
     // Another source takes over the action after the gamepad is gone.
-    moveAction.set(0.3);
+    inputManager.setAxis1dInput(otherSource, moveAction, 0.3);
 
     source.update();
 
@@ -534,11 +527,7 @@ describe('GamepadInputSource', () => {
     });
 
     it('reports the right stick pushed up as positive and leaves X axes as reported', () => {
-      const lookAction = new Axis1dAction(
-        'look',
-        group,
-        actionResetTypes.noReset,
-      );
+      const lookAction = new Axis1dAction('look', group);
 
       inputManager.addAxis1dActions(lookAction);
       source = createSource([createGamepad([0, 0, 0.4, -0.7], [])]);
@@ -569,10 +558,9 @@ describe('GamepadInputSource', () => {
         }),
       );
 
-      moveAction.set(1);
       source.update();
 
-      expect(moveAction.value).toBe(0);
+      expect(Object.is(moveAction.value, 0)).toBe(true);
     });
 
     it('agrees with a D-pad bound to the same up-is-positive action', () => {
@@ -603,7 +591,7 @@ describe('GamepadInputSource', () => {
     let lookAction: Axis2dAction;
 
     beforeEach(() => {
-      lookAction = new Axis2dAction('look', group, actionResetTypes.noReset);
+      lookAction = new Axis2dAction('look', group);
       inputManager.addAxis2dActions(lookAction);
     });
 
@@ -695,7 +683,7 @@ describe('GamepadInputSource', () => {
       expect(lookAction.value.y).toBe(0);
     });
 
-    it('does not re-dispatch an unchanged idle value, leaving another source in control of the action', () => {
+    it('does not let an idle gamepad override another source on the same action', () => {
       source = createSource([createGamepad([0, 0, 0, 0], [])]);
 
       source.axis2dBindings.add(
@@ -706,7 +694,7 @@ describe('GamepadInputSource', () => {
       );
 
       source.update();
-      lookAction.set(1, 1);
+      inputManager.setAxis2dInput(otherSource, lookAction, 1, 1);
       source.update();
 
       expect(lookAction.value.x).toBe(1);
@@ -809,8 +797,7 @@ describe('GamepadInputSource', () => {
         new GamepadHoldBinding(shootAction, gamepadButtons.faceButtonBottom),
       );
 
-      // Simulate another source (e.g. KeyboardInputSource) starting a hold.
-      shootAction.startHold();
+      inputManager.setHoldInput(otherSource, shootAction, true);
       source.update();
 
       expect(shootAction.isHeld).toBe(true);
@@ -1033,7 +1020,7 @@ describe('GamepadInputSource', () => {
       expect(moveAction.value).toBeCloseTo(0.3);
     });
 
-    it('stops listening for disconnects once stopped', () => {
+    it('releases what it held when stopped, and stops listening for disconnects', () => {
       const gamepad = createGamepad([0.8, 0, 0, 0], []);
 
       source = createSource([gamepad]);
@@ -1045,52 +1032,43 @@ describe('GamepadInputSource', () => {
 
       source.update();
       source.stop();
+      expect(moveAction.value).toBe(0);
+
+      const removeSourceInputSpy = vi.spyOn(inputManager, 'removeSourceInput');
+
       dispatchGamepadEvent('gamepaddisconnected', gamepad);
 
-      expect(moveAction.value).toBeCloseTo(0.8);
+      expect(removeSourceInputSpy).not.toHaveBeenCalled();
     });
   });
 
-  it('applies a stick deflection made while its group was inactive once the group becomes active', () => {
-    const stickAction = new Axis1dAction(
-      'stick',
-      group,
-      actionResetTypes.noReset,
-    );
-
-    inputManager.addAxis1dActions(stickAction);
+  it('reads a stick deflection made while its group was inactive once the group becomes active', () => {
     source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
-      new GamepadAxis1dBinding(stickAction, {
+      new GamepadAxis1dBinding(moveAction, {
         axisIndex: gamepadAxes.leftStickX,
       }),
     );
 
     source.update();
-    expect(stickAction.value).toBeCloseTo(0.8);
+    expect(moveAction.value).toBeCloseTo(0.8);
 
     inputManager.setActiveGroup('menu');
-    expect(stickAction.value).toBe(0);
+    expect(moveAction.value).toBe(0);
 
     getGamepadsSpy.mockReturnValue([createGamepad([-0.6, 0, 0, 0], [])]);
     source.update();
-    expect(stickAction.value).toBe(0);
+    expect(moveAction.value).toBe(0);
 
-    // The stick doesn't move again after the switch back, so this source
-    // never dispatches again: the value has to come from what was
-    // dispatched while the group was inactive.
     inputManager.setActiveGroup(group);
-    source.update();
 
-    expect(stickAction.value).toBeCloseTo(-0.6);
+    expect(moveAction.value).toBeCloseTo(-0.6);
   });
 
-  it('starts a hold whose button went down while its group was inactive once the group becomes active', () => {
+  it('does not start a hold whose button is already down when its group becomes active', () => {
     const shootAction = new HoldAction('shoot', group);
-    const holdEndListener = vi.fn();
 
-    shootAction.holdEndEvent.registerListener(holdEndListener);
     inputManager.addHoldActions(shootAction);
     inputManager.setActiveGroup('menu');
 
@@ -1098,23 +1076,17 @@ describe('GamepadInputSource', () => {
     source.holdBindings.add(new GamepadHoldBinding(shootAction, 0));
 
     source.update();
-    expect(shootAction.isHeld).toBe(false);
-
     inputManager.setActiveGroup(group);
-    expect(shootAction.isHeld).toBe(true);
-
-    inputManager.setActiveGroup('menu');
+    source.update();
     expect(shootAction.isHeld).toBe(false);
-    expect(holdEndListener).toHaveBeenCalledTimes(1);
 
-    // Released while its group is inactive: the hold already ended when the
-    // group was deactivated, so it must not end a second time, nor start
-    // again once the group is active.
     getGamepadsSpy.mockReturnValue([createGamepad([0, 0, 0, 0], [])]);
     source.update();
-    inputManager.setActiveGroup(group);
+    getGamepadsSpy.mockReturnValue([
+      createGamepad([0, 0, 0, 0], pressButtons(0)),
+    ]);
+    source.update();
 
-    expect(shootAction.isHeld).toBe(false);
-    expect(holdEndListener).toHaveBeenCalledTimes(1);
+    expect(shootAction.isHeld).toBe(true);
   });
 });

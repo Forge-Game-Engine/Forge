@@ -1,5 +1,4 @@
 import {
-  actionResetTypes,
   addPositionComponent,
   Axis1dAction,
   Axis2dAction,
@@ -134,12 +133,10 @@ export const createScene: CreateScene = async (
   });
 
   const zoomInput = new Axis1dAction('zoom');
-  // Arrow keys are held down for the duration of a pan, so the action must
-  // keep its value between frames instead of the default reset-to-zero.
   // `inputGroup` is left undefined (-> the InputManager's default 'game'
-  // group) so real keyboard events actually reach it - the InputManager
-  // only dispatches to actions whose group matches its active group.
-  const panInput = new Axis2dAction('pan', undefined, actionResetTypes.noReset);
+  // group) so real keyboard events actually reach it - an action only reads
+  // its sources' input while its group is the InputManager's active group.
+  const panInput = new Axis2dAction('pan');
 
   const inputManager = registerInputs(world, time, {
     axis1dActions: [zoomInput],

@@ -1,7 +1,6 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Time } from '@forge-game-engine/forge/common';
 import {
-  actionResetTypes,
   Axis2dAction,
   buttonMoments,
   HoldAction,
@@ -27,7 +26,7 @@ export function createInputs(
   shootInput: HoldAction;
   restartInput: TriggerAction;
 } {
-  const moveInput = new Axis2dAction('move', null, actionResetTypes.noReset);
+  const moveInput = new Axis2dAction('move');
   const shootInput = new HoldAction('shoot');
   const restartInput = new TriggerAction('restart');
 

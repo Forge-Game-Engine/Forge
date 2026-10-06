@@ -1,12 +1,12 @@
 # Design: Text Input Field
 
-|                                       |                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                                        |
-| **Kind**                              | Missing feature                                                                                                                                                                                                                                                                                                          |
-| **Found in**                          | Galactic Journey demo: `src/ui/create-text-input.ts`, `src/ui/text-input.component.ts`, `src/ui/text-input.system.ts`, `src/game-over/pilot-panel*.ts`                                                                                                                                                                   |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                 |
-| **Related**                           | [#586](https://github.com/Forge-Game-Engine/Forge/issues/586) (this design answers its open questions), `ui-system.md` DL-10, [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) (clipping), [`input-action-state.md`](./input-action-state.md), [`hierarchical-visibility.md`](./hierarchical-visibility.md) |
+|                                       |                                                                                                                                                                                                                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                                                                                                                                                                                    |
+| **Kind**                              | Missing feature                                                                                                                                                                                                                                                      |
+| **Found in**                          | Galactic Journey demo: `src/ui/create-text-input.ts`, `src/ui/text-input.component.ts`, `src/ui/text-input.system.ts`, `src/game-over/pilot-panel*.ts`                                                                                                               |
+| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                             |
+| **Related**                           | [#586](https://github.com/Forge-Game-Engine/Forge/issues/586) (this design answers its open questions), `ui-system.md` DL-10, [#583](https://github.com/Forge-Game-Engine/Forge/issues/583) (clipping), [`hierarchical-visibility.md`](./hierarchical-visibility.md) |
 
 ## 0. Targeted modules
 
@@ -261,8 +261,8 @@ Rules the primitive enforces:
 - Events accumulate between ticks and are drained by `takeEvents()`.
 
 `KeyboardInputSource` gains one rule, which applies whether or not a
-Forge text field exists, stated in terms of the source's own state so it
-holds before or after [`input-action-state.md`](./input-action-state.md):
+Forge text field exists, stated in terms of the source's own state (the
+keys it holds, which it reports to the `InputManager`):
 
 > A key whose `keydown` targets an editable element (`<input>`,
 > `<textarea>`, `<select>`, or `isContentEditable`) never enters the

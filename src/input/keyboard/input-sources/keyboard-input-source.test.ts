@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
-import { actionResetTypes, buttonMoments, keyCodes } from '../../constants';
+import { buttonMoments, keyCodes } from '../../constants';
 import { InputManager } from '../../input-manager';
 import {
   Axis1dAction,
@@ -33,8 +33,8 @@ describe('KeyboardInputSource', () => {
     keyDownAction = new TriggerAction('keyDownAction', group);
     keyHoldAction = new HoldAction('holdAction', group);
 
-    inputManager.addResettable(keyUpAction);
-    inputManager.addResettable(keyDownAction);
+    inputManager.addTriggerActions(keyUpAction, keyDownAction);
+    inputManager.addHoldActions(keyHoldAction);
 
     source.triggerBindings.add(
       new KeyboardTriggerBinding(keyUpAction, keyCodes.a, buttonMoments.up),
@@ -50,6 +50,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('dispatches key up trigger actions', () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
@@ -206,18 +207,43 @@ describe('KeyboardInputSource', () => {
   });
 
   it('stops dispatching after stop is called', () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     source.stop();
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
   });
 
-  it('combines several axis1d bindings for the same action, clamped to -1 to 1', () => {
-    const axis1dAction = new Axis1dAction(
-      'axis1dAction',
-      group,
-      actionResetTypes.noReset,
+  it('releases the keys it was holding when stopped', () => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.space }),
     );
+    expect(keyHoldAction.isHeld).toBe(true);
+
+    source.stop();
+    expect(keyHoldAction.isHeld).toBe(false);
+  });
+
+  it('holds an action while any of its keys is held', () => {
+    source.holdBindings.add(
+      new KeyboardHoldBinding(keyHoldAction, keyCodes.enter),
+    );
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.space }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.enter }),
+    );
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.space }));
+    expect(keyHoldAction.isHeld).toBe(true);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.enter }));
+    expect(keyHoldAction.isHeld).toBe(false);
+  });
+
+  it('combines several axis1d bindings for the same action, clamped to -1 to 1', () => {
+    const axis1dAction = new Axis1dAction('axis1dAction', group);
 
     inputManager.addAxis1dActions(axis1dAction);
     source.axis1dBindings.add(
@@ -247,11 +273,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('combines several axis2d bindings for the same action, clamped to -1 to 1', () => {
-    const axis2dAction = new Axis2dAction(
-      'axis2dAction',
-      group,
-      actionResetTypes.noReset,
-    );
+    const axis2dAction = new Axis2dAction('axis2dAction', group);
 
     inputManager.addAxis2dActions(axis2dAction);
     source.axis2dBindings.add(
@@ -289,11 +311,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('does not let a key up for a key it never saw pressed move an axis', () => {
-    const axis1dAction = new Axis1dAction(
-      'axis1dAction',
-      group,
-      actionResetTypes.noReset,
-    );
+    const axis1dAction = new Axis1dAction('axis1dAction', group);
 
     inputManager.addAxis1dActions(axis1dAction);
     source.axis1dBindings.add(
@@ -311,8 +329,8 @@ describe('KeyboardInputSource', () => {
     let move2d: Axis2dAction;
 
     beforeEach(() => {
-      move = new Axis1dAction('move', group, actionResetTypes.noReset);
-      move2d = new Axis2dAction('move2d', group, actionResetTypes.noReset);
+      move = new Axis1dAction('move', group);
+      move2d = new Axis2dAction('move2d', group);
 
       inputManager.addAxis1dActions(move);
       inputManager.addAxis2dActions(move2d);
@@ -378,9 +396,7 @@ describe('KeyboardInputSource', () => {
       expect(move2d.value.x).toBe(0);
     });
 
-    it('ends a hold when its group is deactivated and starts it again if its key is still held', () => {
-      inputManager.addHoldActions(keyHoldAction);
-
+    it('ends a hold when its group is deactivated, and waits for a fresh press once it is active again', () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { code: keyCodes.space }),
       );
@@ -390,12 +406,15 @@ describe('KeyboardInputSource', () => {
       expect(keyHoldAction.isHeld).toBe(false);
 
       inputManager.setActiveGroup(group);
-      expect(keyHoldAction.isHeld).toBe(true);
+      expect(keyHoldAction.isHeld).toBe(false);
 
       window.dispatchEvent(
         new KeyboardEvent('keyup', { code: keyCodes.space }),
       );
-      expect(keyHoldAction.isHeld).toBe(false);
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: keyCodes.space }),
+      );
+      expect(keyHoldAction.isHeld).toBe(true);
     });
   });
 });

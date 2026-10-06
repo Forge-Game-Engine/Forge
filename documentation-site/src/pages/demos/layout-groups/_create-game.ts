@@ -6,7 +6,6 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
-  actionResetTypes,
   Axis2dAction,
   buttonMoments,
   KeyboardAxis2dBinding,
@@ -96,11 +95,7 @@ function createUiInputs(
   navigateInput: Axis2dAction;
 } {
   const submitInput = new TriggerAction('ui-submit');
-  const navigateInput = new Axis2dAction(
-    'ui-navigate',
-    undefined,
-    actionResetTypes.noReset,
-  );
+  const navigateInput = new Axis2dAction('ui-navigate');
 
   const inputManager = registerInputs(world, time, {
     triggerActions: [submitInput],

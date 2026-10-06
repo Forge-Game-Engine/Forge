@@ -5,6 +5,7 @@ export * from './actions/index.js';
 export * from './input-sources/index.js';
 export * from './input-action.js';
 export * from './input-binding.js';
+export * from './trigger-input-binding.js';
 export * from './input-manager.js';
 export * from './input-source.js';
 export * from './mouse/index.js';
