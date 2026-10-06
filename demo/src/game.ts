@@ -31,6 +31,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -352,6 +353,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createContinuousCollisionEcsSystem());
 world.addSystem(
   createDespawnFallenShapesEcsSystem(
     spritesByEntity,

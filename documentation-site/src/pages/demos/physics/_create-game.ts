@@ -14,6 +14,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -72,6 +73,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   // The camera is static at the world origin with a zoom of 1 (see
   // `createCamera` above), so screen coordinates can be converted to world

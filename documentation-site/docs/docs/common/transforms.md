@@ -58,7 +58,8 @@ before the systems that read `world`:
 1. Your game logic, and `registerUiSystems` if you use the UI.
 2. `createTransformEcsSystem()`.
 3. Physics: gravity, broad phase, narrow phase, collision resolution,
-   joints and springs, then `createEulerIntegrationEcsSystem`.
+   joints and springs, then `createEulerIntegrationEcsSystem` and
+   `createContinuousCollisionEcsSystem`.
 4. Rendering.
 
 Physics reads `world` and integrates velocity into `local`, so running the

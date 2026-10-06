@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **physics:** Continuous collision detection. Register the new `createContinuousCollisionEcsSystem()` directly after `createEulerIntegrationEcsSystem` and a fast dynamic `CircleCollider` body no longer sinks deep into, or passes through, a static collider (polygon, circle or terrain) between two ticks. A wheel coming down from a jump, for example, now stops at the terrain's surface instead of sinking 25-30 units into it in a single tick. Write teleports to `position.local` before `createTransformEcsSystem` runs, or the sweep treats the jump as motion. The sweeps it uses are public too: `sweepCircleCircle`, `sweepCirclePolygon` and `sweepCircleTerrain` return the first `SweepHit` (`point`, `normal`, `t`) of a circle moving from one position to another
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

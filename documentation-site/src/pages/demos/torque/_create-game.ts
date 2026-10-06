@@ -8,6 +8,7 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createAngularVelocityMotorEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -86,6 +87,7 @@ export const createTorqueGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

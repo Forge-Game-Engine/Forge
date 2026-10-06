@@ -14,6 +14,7 @@ import {
   createAngularVelocityMotorEcsSystem,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createLinearDamperEcsSystem,
@@ -94,10 +95,10 @@ export const createCarGame = async (): Promise<Game> => {
   // world units are pixel-scale instead (`gravity` above is -600, roughly
   // 60x real-world `g`, and `wheelRadius` alone is 100 units), so a wheel
   // that lands hard after catching air off a hill can end up tens of units
-  // deep in the terrain in a single tick, and 3 units/second of correction
-  // then takes many seconds to dig it back out - long enough to read as the
-  // wheel being stuck clipped into the ground rather than momentarily
-  // compressed into it. Scaling the cap up by roughly the same ~60-100x
+  // deep in the terrain, and 3 units/second of correction then takes many
+  // seconds to dig it back out - long enough to read as the wheel being
+  // stuck clipped into the ground rather than momentarily compressed into
+  // it. Scaling the cap up by roughly the same ~60-100x
   // this course's units are bigger than Box2D's assumed meters (confirmed
   // empirically: 300 clears a hard landing within a fraction of a second,
   // matching how quickly the suspension itself settles, without changing
@@ -120,7 +121,10 @@ export const createCarGame = async (): Promise<Game> => {
   // suspension's spring/damper forces run before collision resolution (like
   // gravity), and the prismatic/revolute joints that hard-constrain each
   // wheel mount run after it, so they get the "last word" on velocity each
-  // tick. `createCameraFollowEcsSystem` writes the camera's `local` position
+  // tick. `createContinuousCollisionEcsSystem` runs right after
+  // `createEulerIntegrationEcsSystem`, so it can stop a wheel that this
+  // tick's integration would sink deep into the terrain at the surface
+  // instead. `createCameraFollowEcsSystem` writes the camera's `local` position
   // after `createTransformEcsSystem` has run, so its smoothed camera
   // position is rendered from the next tick on.
   world.addSystem(createCarResetEcsSystem());
@@ -152,6 +156,7 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

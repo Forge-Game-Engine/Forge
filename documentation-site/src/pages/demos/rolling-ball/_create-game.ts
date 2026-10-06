@@ -12,6 +12,7 @@ import {
   createAngularVelocityMotorEcsSystem,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -139,6 +140,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };
