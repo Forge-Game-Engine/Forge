@@ -23,12 +23,12 @@ The `@forge-game-engine/forge/states` module covers both halves:
 ```ts
 import { createGameState } from '@forge-game-engine/forge/states';
 
-type Screen = 'menu' | 'playing' | 'paused' | 'gameOver';
+type GameStateName = 'menu' | 'playing' | 'paused' | 'gameOver';
 
-const screen = createGameState<Screen>(world, 'menu');
+const gameState = createGameState<GameStateName>(world, 'menu');
 ```
 
-`screen.current` is the current state. Call `screen.set('playing')` to
+`gameState.current` is the current state. Call `gameState.set('playing')` to
 switch. The switch happens at the start of the next tick, not when `set` is
 called, so every system of a tick sees the same state. If `set` is called
 more than once in a tick, the last call wins.
@@ -45,10 +45,10 @@ states:
 import { inState } from '@forge-game-engine/forge/states';
 
 world.addSystem(createEnemyAiEcsSystem(time), {
-  runIf: inState(screen, 'playing'),
+  runIf: inState(gameState, 'playing'),
 });
-world.addSystem(createMenuInputEcsSystem(screen), {
-  runIf: inState(screen, 'menu', 'paused'),
+world.addSystem(createMenuInputEcsSystem(gameState), {
+  runIf: inState(gameState, 'menu', 'paused'),
 });
 ```
 
@@ -71,19 +71,19 @@ score, showing a screen) goes in a system registered in the state's
 import { onEnter, onExit } from '@forge-game-engine/forge/states';
 
 world.addSystem(createSpawnPlayerEcsSystem(), {
-  group: screen.enterGroup,
-  runIf: onEnter(screen, 'playing'),
+  group: gameState.enterGroup,
+  runIf: onEnter(gameState, 'playing'),
 });
 world.addSystem(createSaveHighScoreEcsSystem(scores), {
-  group: screen.exitGroup,
-  runIf: onExit(screen, 'playing'),
+  group: gameState.exitGroup,
+  runIf: onExit(gameState, 'playing'),
 });
 ```
 
 A transition runs at the start of a tick, in this order:
 
-1. The state switches. `screen.exited` is the state left and
-   `screen.entered` the state entered, for this tick only.
+1. The state switches. `gameState.exited` is the state left and
+   `gameState.entered` the state entered, for this tick only.
 2. The `exitGroup` runs. Its systems can still read the entities of the
    state being left.
 3. [State-scoped entities](./state-scoped-entities.md) whose state ended are
@@ -104,7 +104,7 @@ seen what they set up.
 ### Restarting a state
 
 Setting the current state again re-enters it: its exit systems run, its
-scoped entities are removed, and its enter systems run. `screen.set('playing')`
+scoped entities are removed, and its enter systems run. `gameState.set('playing')`
 while playing restarts the round without a detour through another state.
 
 ## Input and the start of the tick
@@ -131,7 +131,7 @@ Checking the state at the top of `update`:
 ```ts
 // Don't
 update: (world, result) => {
-  if (screen.current !== 'playing') {
+  if (gameState.current !== 'playing') {
     return;
   }
   // ...
@@ -139,7 +139,7 @@ update: (world, result) => {
 ```
 
 The system is still queried every tick, and the gate is hidden inside it.
-Register it with `runIf: inState(screen, 'playing')` instead.
+Register it with `runIf: inState(gameState, 'playing')` instead.
 
 Removing a round's entities kind by kind in an `onExit` system: scope them
 to the state instead, so every entity a round creates goes with it,

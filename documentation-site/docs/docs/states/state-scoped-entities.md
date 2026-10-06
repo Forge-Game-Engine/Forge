@@ -14,12 +14,12 @@ and remove each kind of entity a state created.
 import { addStateScopedComponent } from '@forge-game-engine/forge/states';
 
 addStateScopedComponent(world, enemy, {
-  state: screen,
+  state: gameState,
   removeOnExit: ['playing'],
 });
 ```
 
-The entity is removed when `screen` leaves one of `removeOnExit`, or enters
+The entity is removed when `gameState` leaves one of `removeOnExit`, or enters
 one of `removeOnEnter`. At least one of the two lists has to name a state,
 or `addStateScopedComponent` throws.
 
@@ -37,13 +37,13 @@ next round or the menu starts:
 
 ```ts
 addStateScopedComponent(world, star, {
-  state: screen,
+  state: gameState,
   removeOnEnter: ['playing', 'menu'],
 });
 ```
 
 Because re-entering a state counts as entering it, `removeOnEnter:
-['playing']` also clears the previous round when `screen.set('playing')`
+['playing']` also clears the previous round when `gameState.set('playing')`
 restarts it.
 
 An entity scoped with `removeOnEnter` on the initial state and created
