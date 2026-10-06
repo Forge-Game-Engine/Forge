@@ -24,10 +24,12 @@
 ## 1. Summary
 
 An entity in Forge is a plain number, and `EcsWorld` reuses a removed
-entity's number for the next entity it creates, immediately and with
-nothing to tell the two apart. Any reference to an entity that outlives
+entity's number for the next entity it creates. Reusing numbers is
+normal, and every ECS does it, but Forge has nothing to tell the old
+entity and the new one apart. Any reference to an entity that outlives
 it, such as a component field holding another entity's id, a collision
-pair, or a closure, silently starts pointing at an unrelated entity.
+pair, or a closure, silently starts pointing at an unrelated entity, and
+whatever holds it can't find out that its entity is gone.
 
 Four behaviors in `src/ecs/ecs-world.ts` combine into this:
 
@@ -35,6 +37,8 @@ Four behaviors in `src/ecs/ecs-world.ts` combine into this:
    onto `_freeEntityIds`, and `createEntity` pops from it (lines 225-232,
    433-442). The most recently removed id is the next one handed out, so
    reuse can happen within the same tick, often within the same system.
+   Reuse stays (§4.2); this order is why a stale reference turns into a
+   wrong one almost at once.
 2. **No generation.** Nothing distinguishes the old entity from the new
    one: `getComponent(oldId, key)` returns the new entity's component.
 3. **Double removal frees an id twice.** `removeEntity` doesn't check that
@@ -101,9 +105,14 @@ until `removeEntity`, whatever components they have.
 
 Every mainstream ECS uses generational handles for exactly this reason:
 
-- **Bevy**: `Entity` is an index plus a generation. A despawned entity's
-  index is reused with a new generation, and queries and `World::get` on
-  the old handle find nothing.
+- **Bevy**: `Entity` is an index plus a generation. When an entity is
+  despawned, its index's generation increments, and the index is reused
+  by a later spawn. Every lookup compares generations, so
+  `World::get_entity` and `Query::get` on the old handle find nothing
+  rather than the new entity. `Entity` is meant to be stored (Bevy's own
+  `ChildOf` holds one), and Bevy's docs advise dropping a handle once you
+  know its entity was despawned, since generations eventually wrap. The
+  generation is how the holder finds out.
 - **Unity DOTS**: `Entity` is `Index` plus `Version`; `EntityManager.Exists`
   checks both.
 - **flecs**: entity ids carry a generation in their upper bits;
@@ -209,6 +218,10 @@ now safe: once the referenced entity is removed, `getComponent` on the
 handle returns `null` and `isAlive` returns `false`, until its slot's
 generation wraps (§4.1, open question 2). The demo's flame system can check
 `world.isAlive(flame.ship)` instead of searching its ship's flame list.
+As Bevy advises, code that finds its entity gone should drop the handle
+rather than keep it. [`hierarchy-removal.md`](./hierarchy-removal.md)
+takes the most common holders, children and their parent, off game
+code's hands.
 
 The transform system keeps a set of frozen (static) entities. Its comment
 says it re-checks `isStatic` "in case the entity's id was recycled";
