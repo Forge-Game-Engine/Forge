@@ -9,7 +9,6 @@ import { validateFontAtlasFileData } from './validate-font-atlas-data.js';
 const buildValidJson = (): FontAtlasFileData => ({
   formatVersion: CURRENT_FONT_ATLAS_FORMAT_VERSION,
   type: 'msdf',
-  atlasImage: 'my-font.png',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
   metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
@@ -64,12 +63,10 @@ describe('validateFontAtlasFileData', () => {
     );
   });
 
-  it('should throw when atlasImage is missing or empty', () => {
-    const json = { ...buildValidJson(), atlasImage: '' };
+  it('should accept a file that still names its atlas image', () => {
+    const json = { ...buildValidJson(), atlasImage: 'my-font.png' };
 
-    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
-      /atlasImage must be a non-empty string/,
-    );
+    expect(validateFontAtlasFileData(json, 'fixture.json')).toBe(json);
   });
 
   it('should throw when atlasSize is non-positive', () => {

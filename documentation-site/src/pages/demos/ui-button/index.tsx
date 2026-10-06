@@ -1,5 +1,4 @@
-import React, { JSX, useCallback } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { JSX } from 'react';
 import { createButtonGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
@@ -19,13 +18,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiButton(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-  const createGame = useCallback(
-    () => createButtonGame(fontAtlasUrl),
-    [fontAtlasUrl],
-  );
-
   return (
     <Demo
       metaData={{
@@ -35,7 +27,7 @@ export default function UiButton(): JSX.Element {
       }}
       header="UI Buttons"
       blurb="Three buttons (createButton), each hoverable, clickable, and keyboard/gamepad-focus-navigable. Click one, or use the arrow keys to move focus between them and Enter/Space to activate the focused one - either path raises the same onInvoke, updating the status text above. Hovering a button also focuses it, so the highlight follows the mouse the same way it follows the keyboard, and each button's color eases between normal/hover/pressed tints via createUiTransitionEcsSystem."
-      createGame={createGame}
+      createGame={createButtonGame}
       interactions={
         <>
           <InteractionInstruction
