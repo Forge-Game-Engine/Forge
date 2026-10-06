@@ -5,7 +5,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRevoluteJointComponent,
@@ -199,7 +198,6 @@ export async function createCradle(
       mass: ballCollider.mass,
       momentOfInertia: ballCollider.momentOfInertia,
     });
-    addAabbComponent(world, ballEntity);
     addGravityComponent(world, ballEntity, { amount: gravity });
 
     const jointEntity = world.createEntity();

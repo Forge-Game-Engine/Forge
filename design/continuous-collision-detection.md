@@ -171,7 +171,7 @@ Each phase is independently completable and releasable, per this engine's own `f
 | Task | Description | Size |
 | --- | --- | --- |
 | `RigidBodyEcsComponent.continuousDetection` | New field on `RigidBodyDefaultedOptions` (default `true` for dynamic bodies against static bodies - matches "the reported bug is an ordinary wheel, not something a demo author should have to know to flag," §7 DL-4); settable `false` per body to opt out | S |
-| `createContinuousCollisionEcsSystem` | The system itself: threshold check (§5.3), candidate-end-position computation, nearby-static-body query (reusing `AabbEcsComponent`/`aabbsOverlap` over a swept AABB spanning start→end), sweep dispatch, clamp write-back | L |
+| `createContinuousCollisionEcsSystem` | The system itself: threshold check (§5.3), candidate-end-position computation, nearby-static-body query (reusing `ColliderEcsComponent.aabb`/`aabbsOverlap` over a swept AABB spanning start→end), sweep dispatch, clamp write-back | L |
 | `createEulerIntegrationEcsSystem` clamp support | The small addition in §5.4 | S |
 | Integration regression test | Full-pipeline test reproducing the diagnosed scenario | M |
 | Car demo wiring + manual verification | Register the system; browser-verify per AGENTS.md's "Documentation Site Demos" process | S |

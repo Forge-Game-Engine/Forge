@@ -7,9 +7,8 @@ sidebar_position: 1
 A simulated body is an entity with a `ColliderEcsComponent` (a shape) plus,
 for anything that isn't static, a `RigidBodyEcsComponent` (mass, velocity,
 and how it participates in the simulation). Both sit alongside the entity's
-`PositionEcsComponent`/`RotationEcsComponent` and an `AabbEcsComponent` used
-for broad-phase culling. `RotationEcsComponent` is optional for collision
-detection: a collider entity without one is treated as unrotated, so a
+`PositionEcsComponent`/`RotationEcsComponent`. `RotationEcsComponent` is
+optional for collision detection: a collider entity without one is treated as unrotated, so a
 static, axis-aligned wall or trigger volume can leave it off. A dynamic or
 kinematic body still needs one, since `createEulerIntegrationEcsSystem` only
 integrates entities that have it. This page covers the choices that aren't obvious
@@ -23,7 +22,6 @@ import {
   addRotationComponent,
 } from '@forge-game-engine/forge/common';
 import {
-  addAabbComponent,
   addColliderComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -40,7 +38,6 @@ addColliderComponent(world, ball, {
   restitution: 0.6,
   friction: 0.4,
 });
-addAabbComponent(world, ball);
 addRigidBodyComponent(world, ball, {
   mass: collider.mass,
   momentOfInertia: collider.momentOfInertia,
@@ -84,8 +81,8 @@ simulation:
   as crates, characters, and projectiles.
 - **Static**: infinite effective mass, never affected by anything, never
   integrated. The simplest way to make a body static is to give its entity
-  a `ColliderEcsComponent` (plus `PositionEcsComponent`/`AabbEcsComponent`,
-  and a `RotationEcsComponent` if it's rotated) and **no**
+  a `ColliderEcsComponent` (plus `PositionEcsComponent`, and a
+  `RotationEcsComponent` if it's rotated) and **no**
   `RigidBodyEcsComponent` at all - every static entity in the physics demos
   (floors, walls, `TerrainCollider` ground) follows this convention, and it
   still applies unchanged. Attaching a `RigidBodyEcsComponent` with
@@ -184,22 +181,9 @@ since its velocity is in world space; integration throws otherwise. Connect
 bodies with joints or springs instead. See
 [Transforms](../common/transforms.md).
 
-## Mapping collisions back to entities
+## Reacting to collisions
 
-Because everything is ECS-native, there's no separate body object or
-`userData` mapping to bridge: `collisionManifolds` (populated by
-`createNarrowPhaseEcsSystem`) already holds the raw `entityA`/`entityB`
-entity ids for every confirmed collision each tick.
-
-```ts
-for (const manifold of collisionManifolds) {
-  // check tags/components on manifold.entityA and manifold.entityB to
-  // award a pickup, apply damage, play a sound, etc.
-}
-```
-
-Read `collisionManifolds` after `createCollisionResolutionEcsSystem` has run
-(later in the same tick, or at the start of the next one) if you need it to
-reflect this tick's resolved contacts; the array is cleared and refilled by
-`createNarrowPhaseEcsSystem` every tick, so hold onto anything you need
-before that system runs again.
+To find out what an entity touched, give it a `ContactsEcsComponent` and
+read its `touching`, `started` and `ended` lists in your own system. See
+[Collisions](./collisions.md), which also covers filtering which colliders
+collide and sensor colliders for trigger zones.

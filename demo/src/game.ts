@@ -16,12 +16,13 @@ import {
   positionId,
   Random,
   SpriteEcsComponent,
+  spriteId,
   Time,
   Vec2,
 } from '../../src';
 import {
-  addAabbComponent,
   addColliderComponent,
+  addContactsComponent,
   addGravityComponent,
   addRigidBodyComponent,
   CircleCollider,
@@ -29,6 +30,8 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  ContactsEcsComponent,
+  contactsId,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -129,7 +132,7 @@ function createFountainSpawnEcsSystem(
       angularVelocity,
     });
     addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
+    addContactsComponent(world, entity);
   };
 
   return {
@@ -178,32 +181,19 @@ function createDespawnFallenShapesEcsSystem(
 }
 
 /**
- * Creates a system that tints every tracked sprite red while its entity is
- * involved in a collision this tick, and white otherwise, so collision
+ * Creates a system that tints every sprite with a `ContactsEcsComponent` red
+ * while its entity is touching something, and white otherwise, so collision
  * detection is visible without needing collision resolution.
  */
-function createCollisionTintEcsSystem(
-  collisionManifolds: CollisionManifold[],
-  spritesByEntity: Map<number, SpriteEcsComponent>,
-): EcsSystem<[]> {
+function createCollisionTintEcsSystem(): EcsSystem<
+  [SpriteEcsComponent, ContactsEcsComponent]
+> {
   return {
-    query: [],
-    update: () => {
-      for (const sprite of spritesByEntity.values()) {
-        sprite.tintColor = Color.white;
-      }
-
-      for (const manifold of collisionManifolds) {
-        const spriteA = spritesByEntity.get(manifold.entityA);
-        const spriteB = spritesByEntity.get(manifold.entityB);
-
-        if (spriteA) {
-          spriteA.tintColor = Color.red;
-        }
-
-        if (spriteB) {
-          spriteB.tintColor = Color.red;
-        }
+    query: [spriteId, contactsId],
+    update: (_world, { components: [sprites, contacts] }) => {
+      for (let i = 0; i < sprites.length; i++) {
+        sprites[i].tintColor =
+          contacts[i].touching.length > 0 ? Color.red : Color.white;
       }
     },
   };
@@ -318,7 +308,6 @@ addColliderComponent(world, groundEntity, {
     { x: -groundHalfWidth, y: groundHalfHeight },
   ]),
 });
-addAabbComponent(world, groundEntity);
 
 const random = new Random();
 const fountainLeftX = -halfWidth + fountainMarginFromEdge;
@@ -358,9 +347,7 @@ world.addSystem(
     -halfHeight - despawnMarginBelowGround,
   ),
 );
-world.addSystem(
-  createCollisionTintEcsSystem(collisionManifolds, spritesByEntity),
-);
+world.addSystem(createCollisionTintEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

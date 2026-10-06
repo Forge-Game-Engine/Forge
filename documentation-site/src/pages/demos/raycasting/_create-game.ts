@@ -53,9 +53,9 @@ export const createRaycastingGame = async (): Promise<Game> => {
 
   const collisionPairs: CollisionPair[] = [];
 
-  // `raycast` reads each entity's `AabbEcsComponent` directly rather than
-  // recomputing it, so the broad-phase system still needs to run every
-  // tick to keep it in sync - even though nothing in this scene has a
+  // `raycast` reads each collider's `aabb` directly rather than recomputing
+  // it, so the broad-phase system still needs to run every tick to keep it
+  // in sync - even though nothing in this scene has a
   // `RigidBodyEcsComponent` for it to actually resolve collisions between.
   // `createTransformEcsSystem` runs first so the targets' `world` poses (which
   // the broad phase and `raycast` read) and the ray visual's `world` pose

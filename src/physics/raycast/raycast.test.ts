@@ -8,7 +8,6 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
-import { addAabbComponent } from '../components/aabb-component.js';
 import { addColliderComponent } from '../components/collider-component.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
 
@@ -29,7 +28,6 @@ describe('raycast', () => {
     addPositionComponent(world, entity, { local: position });
     addRotationComponent(world, entity);
     addColliderComponent(world, entity, { collider });
-    addAabbComponent(world, entity);
 
     return entity;
   }
@@ -80,8 +78,15 @@ describe('raycast', () => {
     addEntity({ x: -3, y: 0 }, new CircleCollider(1));
     world.update();
 
-    const sorted = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 }, true);
-    const unsorted = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 }, false);
+    const sorted = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+    const unsorted = raycast(
+      world,
+      { x: -10, y: 0 },
+      { x: 10, y: 0 },
+      {
+        sort: false,
+      },
+    );
 
     const byEntity = (a: number, b: number): number => a - b;
 
@@ -115,7 +120,6 @@ describe('raycast', () => {
         { x: -2, y: 1 },
       ]),
     });
-    addAabbComponent(world, entity);
     world.update();
 
     const hits = raycast(world, { x: -5, y: 0 }, { x: 5, y: 0 });
@@ -124,5 +128,67 @@ describe('raycast', () => {
     expect(hits[0].entity).toBe(entity);
     expect(hits[0].point.x).toBeCloseTo(-2);
     expect(hits[0].distance).toBeCloseTo(3);
+  });
+
+  it('should only hit colliders whose category is in the mask', () => {
+    const wall = world.createEntity();
+    const window = world.createEntity();
+
+    addPositionComponent(world, wall, { local: { x: 3, y: 0 } });
+    addColliderComponent(world, wall, {
+      collider: new CircleCollider(1),
+      category: 0b01,
+    });
+    addPositionComponent(world, window, { local: { x: -3, y: 0 } });
+    addColliderComponent(world, window, {
+      collider: new CircleCollider(1),
+      category: 0b10,
+    });
+    world.update();
+
+    const hits = raycast(
+      world,
+      { x: -10, y: 0 },
+      { x: 10, y: 0 },
+      {
+        mask: 0b01,
+      },
+    );
+
+    expect(hits.map((hit) => hit.entity)).toEqual([wall]);
+  });
+
+  it('should not hit a collider whose bounds the broad phase has not computed yet', () => {
+    addEntity({ x: 3, y: 0 }, new CircleCollider(1));
+    world.update();
+    // Added after the broad phase ran, at the origin the ray passes through.
+    addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits).toHaveLength(1);
+  });
+
+  it('should pass through sensors unless asked to include them', () => {
+    const sensor = world.createEntity();
+
+    addPositionComponent(world, sensor, { local: { x: -3, y: 0 } });
+    addColliderComponent(world, sensor, {
+      collider: new CircleCollider(1),
+      sensor: true,
+    });
+
+    const wall = addEntity({ x: 3, y: 0 }, new CircleCollider(1));
+    world.update();
+
+    const start = { x: -10, y: 0 };
+    const end = { x: 10, y: 0 };
+
+    expect(raycast(world, start, end).map((hit) => hit.entity)).toEqual([wall]);
+    expect(
+      raycast(world, start, end, { includeSensors: true }).map(
+        (hit) => hit.entity,
+      ),
+    ).toEqual([sensor, wall]);
   });
 });

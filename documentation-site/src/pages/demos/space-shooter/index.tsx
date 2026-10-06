@@ -33,6 +33,7 @@ import asteroidSpawnerComponentCode from '!!raw-loader!./_asteroid-spawner.compo
 import asteroidSpawnerSystemCode from '!!raw-loader!./_asteroid-spawner.system';
 import createAsteroidsCode from '!!raw-loader!./_create-asteroids';
 import collisionSystemCode from '!!raw-loader!./_collision.system';
+import collisionCategoriesCode from '!!raw-loader!./_collision-categories';
 import gameOverComponentCode from '!!raw-loader!./_game-over.component';
 import gameOverSystemCode from '!!raw-loader!./_game-over.system';
 
@@ -185,6 +186,10 @@ export default function Rendering(): JSX.Element {
         {
           name: 'camera-shake.system.ts',
           content: cameraShakeSystemCode,
+        },
+        {
+          name: 'collision-categories.ts',
+          content: collisionCategoriesCode,
         },
         {
           name: 'collision.system.ts',

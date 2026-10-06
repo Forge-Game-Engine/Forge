@@ -10,10 +10,10 @@ import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import {
-  AabbEcsComponent,
-  addAabbComponent,
-} from '../components/aabb-component.js';
-import { addColliderComponent } from '../components/collider-component.js';
+  addColliderComponent,
+  ColliderEcsComponent,
+} from '../components/collider-component.js';
+import { Aabb } from '../types/aabb.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { createNarrowPhaseEcsSystem } from './narrow-phase-system.js';
@@ -34,7 +34,7 @@ describe('createBroadPhaseEcsSystem', () => {
   ): {
     entity: number;
     position: PositionEcsComponent;
-    aabb: AabbEcsComponent;
+    collider: ColliderEcsComponent;
   } {
     const entity = world.createEntity();
 
@@ -42,16 +42,17 @@ describe('createBroadPhaseEcsSystem', () => {
       local: position,
     });
     addRotationComponent(world, entity);
-    addColliderComponent(world, entity, {
+    const collider = addColliderComponent(world, entity, {
       collider: new CircleCollider(radius),
     });
-    const aabb = addAabbComponent(world, entity);
 
-    return { entity, position: positionComponent, aabb };
+    return { entity, position: positionComponent, collider };
   }
 
-  it('should update the AABB component from the collider', () => {
-    const { aabb } = addCircleEntity({ x: 2, y: 3 }, 1);
+  it("should update the collider's AABB from its shape and position", () => {
+    const {
+      collider: { aabb },
+    } = addCircleEntity({ x: 2, y: 3 }, 1);
 
     world.update();
 
@@ -99,17 +100,16 @@ describe('createBroadPhaseEcsSystem', () => {
     function addUnrotatedEntity(
       position: Vector2,
       collider: CircleCollider | PolygonCollider,
-    ): { entity: number; aabb: AabbEcsComponent } {
+    ): { entity: number; aabb: Aabb } {
       const entity = world.createEntity();
 
       addPositionComponent(world, entity, { local: position });
-      addColliderComponent(world, entity, { collider });
-      const aabb = addAabbComponent(world, entity);
+      const { aabb } = addColliderComponent(world, entity, { collider });
 
       return { entity, aabb };
     }
 
-    it('should still update the AABB component, treating rotation as 0', () => {
+    it("should still update the collider's AABB, treating rotation as 0", () => {
       const { aabb } = addUnrotatedEntity(
         { x: 0, y: 0 },
         new PolygonCollider([
@@ -135,7 +135,7 @@ describe('createBroadPhaseEcsSystem', () => {
       addRotationComponent(world, entity, {
         local: Math.PI / 2,
       });
-      addColliderComponent(world, entity, {
+      const { aabb } = addColliderComponent(world, entity, {
         collider: new PolygonCollider([
           { x: -2, y: -1 },
           { x: 2, y: -1 },
@@ -143,7 +143,6 @@ describe('createBroadPhaseEcsSystem', () => {
           { x: -2, y: 1 },
         ]),
       });
-      const aabb = addAabbComponent(world, entity);
 
       world.update();
 
@@ -185,6 +184,81 @@ describe('createBroadPhaseEcsSystem', () => {
       expect(collisionManifolds).toHaveLength(1);
       expect(collisionManifolds[0].entityA).toBe(ship);
       expect(collisionManifolds[0].entityB).toBe(trigger);
+    });
+  });
+
+  describe('collision filtering', () => {
+    function addFilteredEntity(
+      x: number,
+      category: number,
+      mask: number,
+    ): number {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: { x, y: 0 } });
+      addColliderComponent(world, entity, {
+        collider: new CircleCollider(1),
+        category,
+        mask,
+      });
+
+      return entity;
+    }
+
+    it('should pair colliders whose categories are in both masks', () => {
+      const entityA = addFilteredEntity(0, 0b01, 0b10);
+      const entityB = addFilteredEntity(1, 0b10, 0b01);
+
+      world.update();
+
+      expect(collisionPairs).toEqual([{ entityA, entityB }]);
+    });
+
+    it('should skip a pair when the first mask excludes the second category', () => {
+      addFilteredEntity(0, 0b01, 0b01);
+      addFilteredEntity(1, 0b10, 0b11);
+
+      world.update();
+
+      expect(collisionPairs).toHaveLength(0);
+    });
+
+    it('should skip a pair when the second mask excludes the first category', () => {
+      addFilteredEntity(0, 0b01, 0b11);
+      addFilteredEntity(1, 0b10, 0b10);
+
+      world.update();
+
+      expect(collisionPairs).toHaveLength(0);
+    });
+
+    it('should pair colliders in the 32nd category bit', () => {
+      const highBit = 1 << 31;
+      const entityA = addFilteredEntity(0, highBit, highBit);
+      const entityB = addFilteredEntity(1, highBit, highBit);
+
+      world.update();
+
+      expect(collisionPairs).toEqual([{ entityA, entityB }]);
+    });
+
+    it('should pair every collider by default', () => {
+      const entityA = world.createEntity();
+      const entityB = world.createEntity();
+
+      addPositionComponent(world, entityA);
+      addColliderComponent(world, entityA, {
+        collider: new CircleCollider(1),
+      });
+      addPositionComponent(world, entityB);
+      addColliderComponent(world, entityB, {
+        collider: new CircleCollider(1),
+        category: 1 << 5,
+      });
+
+      world.update();
+
+      expect(collisionPairs).toEqual([{ entityA, entityB }]);
     });
   });
 });

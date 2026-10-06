@@ -6,7 +6,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Random, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   addGravityComponent,
   addRigidBodyComponent,
@@ -169,7 +168,6 @@ export async function spawnShapes(
       restitution: 0.6,
       friction: 0.4,
     });
-    addAabbComponent(world, entity);
     addRigidBodyComponent(world, entity, {
       mass: collider.mass,
       momentOfInertia: collider.momentOfInertia,

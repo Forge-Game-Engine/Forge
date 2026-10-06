@@ -7,7 +7,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   PolygonCollider,
 } from '@forge-game-engine/forge/physics';
@@ -196,7 +195,6 @@ export async function createBrickField(
       restitution: 1,
       friction: 0,
     });
-    addAabbComponent(world, entity);
 
     liveBricks.add(entity);
   };

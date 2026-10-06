@@ -6,7 +6,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
-  addAabbComponent,
   addColliderComponent,
   PolygonCollider,
 } from '@forge-game-engine/forge/physics';
@@ -109,7 +108,6 @@ export async function createBoundaries(
       restitution: 1,
       friction: 0,
     });
-    addAabbComponent(world, entity);
   };
 
   createWall({ x: 0, y: halfHeight - wallThickness / 2 }, width, wallThickness);
