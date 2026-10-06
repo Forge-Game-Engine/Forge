@@ -6,7 +6,7 @@
 | **Kind**                              | Missing feature                                                                                                                                                                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts`, `src/speed/create-speed-sounds.ts`, `src/explosions/create-explosions.ts`, `src/gun/gun.system.ts`, `src/enemy/enemy.system.ts`, `src/music/create-music.ts`, `src/main-menu/create-settings-panel.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                  |
-| **Related**                           | [`demo-findings.md`](./demo-findings.md), [`persistent-preferences.md`](./persistent-preferences.md)                                                                                                                                                      |
+| **Related**                           | [`demo-findings.md`](./demo-findings.md)                                                                                                                                                                                                                  |
 
 ## 0. Targeted modules
 
@@ -95,8 +95,8 @@ Howler is removed as a dependency.
 ### Out of scope
 
 - **Saving the player's volume settings.** The mixer exposes the values; a
-  game stores them with its other settings
-  ([`persistent-preferences.md`](./persistent-preferences.md)).
+  game stores them with its other settings in a persistent state
+  (`createPersistentState` in `@forge-game-engine/forge/storage`).
 - **Positional (panned or attenuated) audio.** A follow-up once sounds are
   entity-bound (Phase 2), not needed by the demo.
 - **Effects on buses** (filters, reverb, compression, ducking). A bus is
