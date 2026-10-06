@@ -1,6 +1,7 @@
 import { positionId, rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
@@ -55,7 +56,7 @@ export function addLinearSpringComponent(
 ): LinearSpringEcsComponent {
   if (options.stiffness < 0) {
     throw new Error(
-      `Unable to add linear spring to entity "${entity}": stiffness must be >= 0.`,
+      `Unable to add linear spring to entity ${formatEntity(entity)}: stiffness must be >= 0.`,
     );
   }
 

@@ -7,6 +7,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2 } from '../../math/index.js';
 import {
   RigidBodyEcsComponent,
@@ -57,7 +58,7 @@ export const createEulerIntegrationEcsSystem = (
 
       if (world.getComponent(entities[i], parentId)) {
         throw new Error(
-          `Rigid body entity "${entities[i]}" has a ParentEcsComponent. A ${rigidBodyComponent.type} body must be a root entity, since its velocity is in world space. Connect bodies with joints or springs instead.`,
+          `Rigid body entity ${formatEntity(entities[i])} has a ParentEcsComponent. A ${rigidBodyComponent.type} body must be a root entity, since its velocity is in world space. Connect bodies with joints or springs instead.`,
         );
       }
 
