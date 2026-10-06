@@ -49,18 +49,14 @@ export const createGunEcsSystem = (
           continue;
         }
 
-        createBulletWithOffset(
-          world,
-          gunComponent,
-          positionComponent,
-          { x: 20, y: 20 },
-        );
-        createBulletWithOffset(
-          world,
-          gunComponent,
-          positionComponent,
-          { x: -20, y: 20 },
-        );
+        createBulletWithOffset(world, gunComponent, positionComponent, {
+          x: 20,
+          y: 20,
+        });
+        createBulletWithOffset(world, gunComponent, positionComponent, {
+          x: -20,
+          y: 20,
+        });
         playSound(sfxBus, laserSound, { volume: 0.3 });
 
         gunComponent.nextAllowedShotTime =
