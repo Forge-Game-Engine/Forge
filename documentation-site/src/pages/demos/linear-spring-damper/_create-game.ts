@@ -6,6 +6,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createLinearDamperEcsSystem,
@@ -51,6 +52,7 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

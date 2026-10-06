@@ -139,6 +139,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -151,7 +152,8 @@ const contactConstraints: ContactConstraint[] = [];
 // Order matters: the transform system first, so every system below reads
 // this tick's world transforms, then gravity/forces before collision
 // resolution, before integration, so each tick's forces are reflected in
-// that same tick's position update.
+// that same tick's position update. Continuous collision detection checks
+// integration's result, so it runs right after it.
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
@@ -164,6 +166,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createContinuousCollisionEcsSystem());
 ```
 
 Add joint (`createRevoluteJointEcsSystem`/`createPrismaticJointEcsSystem`)

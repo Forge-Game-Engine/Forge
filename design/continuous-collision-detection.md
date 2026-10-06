@@ -2,7 +2,7 @@
 
 |                                        |                                                                                                                                                                                                                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                             | Proposed                                                                                                                                                                                                                                              |
+| **Status**                             | Implemented (Phases 1-2)                                                                                                                                                                                                                                 |
 | **Target module**                      | `/src/physics` → `@forge-game-engine/forge/physics`                                                                                                                                                                                                  |
 | **Engine version at time of writing**  | `0.25.4`                                                                                                                                                                                                                                              |
 | **Modules**                            | See §1 table below                                                                                                                                                                                                                                   |
@@ -218,3 +218,70 @@ Nothing in this design forecloses substepping being added later. If it is, the t
 - **Full-pipeline level** (Phase 2): an integration test in the style of `src/physics/systems/terrain-resting-contact.test.ts` - real `EcsWorld`, real gravity/broad-phase/narrow-phase/resolution/CCD/integration systems, a `CircleCollider` body given a velocity and starting position chosen to reproduce the diagnosed tunneling geometry against a `TerrainCollider`, asserting the body's final penetration stays bounded (near the solver's existing `slop`) rather than reaching the previously-measured tens of units.
 - **Demo-level** (Phase 2, manual): per AGENTS.md's "Documentation Site Demos" process - rebuild, browser-verify the Car demo under the same sustained-throttle/highish-speed conditions that originally reproduced the bug, confirming no visible wheel/chassis embedding on a hard, wheel-first landing.
 - **Regression guard for §8 Open Question 3** (once resolved): a wide-body-across-many-segments jitter test mirroring `detect-circle-terrain-collision.test.ts`'s own "should never flip feature ids for a wide body..." test, applied to the sweep path.
+
+---
+
+## 11. Implementation notes
+
+Phases 1 and 2 shipped with these deviations from the plan above. The physics
+guide (`documentation-site/docs/docs/physics/continuous-collision-detection.md`)
+describes the shipped behavior.
+
+- **DL-3 replaced: rewind after integration instead of a clamp field.**
+  `createContinuousCollisionEcsSystem` registers directly *after*
+  `createEulerIntegrationEcsSystem`, sweeps from `position.world` (where this
+  tick's broad/narrow phase saw the body) to `position.local` (where
+  integration moved it), and on a hit moves `position.local` back to the time
+  of impact. No field is added to `RigidBodyEcsComponent` and
+  `createEulerIntegrationEcsSystem` is unchanged. A field written by one
+  system and cleared by another has two writers; the rewind matches how
+  Box2D's `b2SolveContinuous` (after body finalization) and Avian's swept CCD
+  (after the solver) are structured.
+- **The body is left slightly inside the surface, not just short of it** (1%
+  of its radius). Forge has no speculative contacts, so a body stopped short
+  would give the next tick's narrow phase nothing to report and would be
+  swept and stopped again every tick.
+- **DL-4 replaced: no per-body flag and no configurable threshold.** The
+  sweep follows the same rules as discrete collision: it skips sensors and
+  pairs whose `category`/`mask` exclude each other. Any other opt-out could
+  only let a body tunnel, and "force it on below the threshold" is by
+  definition a case discrete detection handles.
+- **Threshold (§8 Q1): a tenth of the radius, not half.** The diagnosed wheel
+  moves 0.2-0.25 of its radius per tick, so `0.5` would never have fired for
+  the reported bug. A hit is acted on only when the unclamped step would end
+  more than `0.1 * radius` inside the surface; the same value is the
+  per-body speed pre-filter. This doubles as Box2D's "prevent pausing" rule:
+  grazes and slight bends in the ground are left to the solver rather than
+  cutting short every tick of a fast roll.
+- **Targets are static colliders only.** §2 counted `'kinematic'` as static;
+  a kinematic body moves during the tick, so a sweep against its start pose
+  gives the wrong time of impact. Box2D's non-bullet CCD likewise only sweeps
+  against static bodies.
+- **Dedicated sweep math instead of reusing `raycastConvexPolygon`/
+  `raycastCircle`.** Those test both crossing directions, and `raycastCircle`
+  returns the exit point for a ray starting inside. The sweeps only count
+  entering hits on the true boundary of the Minkowski sum (front faces
+  within their span, corner rounds within their normal cone).
+- **Terrain is swept against the surface chain, not the slab** (§8 Q3). Each
+  edge is tested on its own and corners only exist where the surface bends
+  away from the circle, so a fast wheel rolling along the ground doesn't
+  catch on the tops of neighboring columns. The sweep only decides where to
+  stop the body; the next tick's contacts (and their feature ids) still come
+  from narrow phase, so no extra tie-break was needed.
+- **§8 Q6: the sweeps are public** (`sweepCircleCircle`,
+  `sweepCirclePolygon`, `sweepCircleTerrain`), mirroring `raycast`.
+- **Registered in every pipeline**, not only the Car demo: every demo that
+  registers `createEulerIntegrationEcsSystem`, `/demo`, and the physics
+  guides' system listings.
+- **Car demo finding: most of its visible wheel embedding is not
+  tunneling.** Probing the live demo under sustained throttle, CCD removes
+  every "no contact to deep" landing (without it: 11-19 units at 750-1500
+  units/second downward, matching §1). But the demo's deepest penetrations
+  (50-80 units) come from wheels that are *already* in contact sinking
+  further over several ticks, which CCD deliberately leaves alone. The
+  cause is solver ordering: the prismatic/revolute joint systems run after
+  `createCollisionResolutionEcsSystem` and get the last word on velocity,
+  so they drive a wheel back into the ground after its contact was solved.
+  Running contact resolution after the joints, as an experiment, dropped
+  the worst depth to about 12 units. The fix is solving contacts and joints
+  in one iteration loop, as Box2D does, which needs its own design.

@@ -23,6 +23,8 @@ Core concepts:
 - `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
   `createCollisionResolutionEcsSystem`: detect and resolve collisions
   between collider entities each tick.
+- `createContinuousCollisionEcsSystem`: stops fast dynamic circles from
+  sinking into or passing through static colliders between two ticks.
 - `ContactsEcsComponent`: which entities a collider entity is touching,
   and which contacts started or ended this tick.
 - `raycast`: casts a ray against every
@@ -47,6 +49,9 @@ Guides in this section:
 - [Applying Forces](./forces.md): gravity, impulses, torque, springs and
   dampers, and explosions.
 - [Raycasting](./raycasting.md): casting rays against colliders.
+- [Continuous Collision Detection](./continuous-collision-detection.md):
+  keeping fast circles from sinking into or tunneling through static
+  colliders.
 - [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
   along a single axis.
 - [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
@@ -79,6 +84,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -124,6 +130,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createContinuousCollisionEcsSystem());
 ```
 
 See [Bodies and Shapes](./rigid-bodies.md) for static and kinematic bodies,

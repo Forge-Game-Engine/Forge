@@ -13,6 +13,7 @@ import {
   ContactConstraint,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
+  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
@@ -70,6 +71,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createContinuousCollisionEcsSystem());
 
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();

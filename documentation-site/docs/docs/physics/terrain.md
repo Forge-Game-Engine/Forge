@@ -111,6 +111,11 @@ a `PolygonCollider` for those. Raycasting is unaffected: `raycastTerrain`
 tests the whole solid, so a ray can still enter the slab from any direction.
 :::
 
+A fast circle landing on terrain can still sink into it, or pass through it,
+within a single tick, before narrow-phase collision sees the contact.
+[Continuous Collision Detection](./continuous-collision-detection.md) stops
+it at the surface.
+
 ### Choosing a point spacing
 
 Point spacing trades detail against solver work. A body resting across _n_

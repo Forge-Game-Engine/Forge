@@ -1,6 +1,7 @@
 export * from './apply-explosive-force.js';
 export * from './apply-impluse.js';
 export * from './apply-torque.js';
+export * from './ccd/index.js';
 export * from './colliders/index.js';
 export * from './collision/index.js';
 export * from './components/index.js';
