@@ -531,15 +531,16 @@ describe('createGaussianBlurEcsSystem', () => {
 
       world.update();
 
-      // Downsampled ping-pong pair, then a full-resolution blend target.
+      // Downsampled ping-pong pair, then the camera target's second,
+      // full-resolution buffer for the cross-fade.
       expect(getAllocatedSizes()).toEqual([
         [256, 128],
         [256, 128],
         [512, 256],
       ]);
 
-      // Downsample + 2 blur draws + mix + copy-back.
-      expect(mockGl.drawArrays).toHaveBeenCalledTimes(5);
+      // Downsample + 2 blur draws + mix, with no copy back.
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
       expect(mockGl.bindFramebuffer).toHaveBeenLastCalledWith(
         mockGl.FRAMEBUFFER,
         target.framebuffer,
@@ -628,7 +629,7 @@ describe('createGaussianBlurEcsSystem', () => {
       expect(mockGl.deleteTexture).toHaveBeenCalledTimes(2);
     });
 
-    it('also disposes the blend target when intensity is fractional', () => {
+    it('disposes only the ping-pong target when intensity is fractional', () => {
       const target = new RenderTarget(mockGl, 128, 128);
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
@@ -639,9 +640,10 @@ describe('createGaussianBlurEcsSystem', () => {
 
       world.stop();
 
-      // Ping-pong target (2 render targets) + blend target (1 render target).
-      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(3);
-      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(3);
+      // The cross-fade writes the camera's own target, which isn't the
+      // system's to dispose: only the ping-pong pair's 2 render targets go.
+      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(2);
+      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(2);
     });
 
     it('does not throw for a blurred camera that never got a render target', () => {
@@ -688,8 +690,8 @@ describe('createGaussianBlurEcsSystem', () => {
 
       world.update();
 
-      // 1 pass (2 draws) + mix + final copy-back = 4.
-      expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
+      // 1 pass (2 draws) + mix = 3.
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(3);
 
       const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
         ([location]) => location === factorLocation,
@@ -697,6 +699,31 @@ describe('createGaussianBlurEcsSystem', () => {
 
       expect(intensityCalls).toHaveLength(1);
       expect(intensityCalls[0][1]).toBeCloseTo(0.35);
+    });
+
+    it("cross-fades from the target's previous buffer into its other one", () => {
+      (mockGl.createFramebuffer as Mock).mockImplementation(() => ({}));
+      (mockGl.createTexture as Mock).mockImplementation(
+        () => new WebGLTexture(),
+      );
+
+      const target = new RenderTarget(mockGl, 128, 128);
+      const sharpTexture = target.colorTexture;
+
+      addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
+
+      world.update();
+
+      // The cross-fade binds its two samplers last: the sharp scene, read
+      // from the buffer that was current before the pass, and the blur.
+      const boundTextures = (mockGl.bindTexture as Mock).mock.calls.map(
+        ([, texture]) => texture as WebGLTexture,
+      );
+      const crossFadeTextures = boundTextures.slice(-2);
+
+      expect(target.colorTexture).not.toBe(sharpTexture);
+      expect(crossFadeTextures).toContain(sharpTexture);
+      expect(crossFadeTextures).not.toContain(target.colorTexture);
     });
 
     it('ends by writing back into the camera render target', () => {
@@ -754,8 +781,8 @@ describe('createGaussianBlurEcsSystem', () => {
 
       world.update();
 
-      // Dropping below 1 adds the mix and copy-back draws.
-      expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
+      // Dropping below 1 adds the mix draw.
+      expect(mockGl.drawArrays).toHaveBeenCalledTimes(3);
     });
   });
 });
