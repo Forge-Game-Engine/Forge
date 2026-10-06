@@ -15,12 +15,11 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   createImageSprite,
+  getCameraView,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { wallThickness } from './_create-boundaries';
 
@@ -73,11 +72,13 @@ function createTriangleCollider(width: number, height: number): Collider {
  * Spawns a pile of dynamic circle, square, triangle and plank bodies above
  * the visible area, which then fall, bounce and rest under gravity.
  * @param world - The ECS world to add the shape entities to.
+ * @param camera - The camera entity whose visible area shapes are spawned within.
  * @param renderContext - The render context used to load the shape sprites.
  * @param renderLayer - The render layer the shapes should be drawn on.
  */
 export async function spawnShapes(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -133,11 +134,11 @@ export async function spawnShapes(
 
   const random = new Random();
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

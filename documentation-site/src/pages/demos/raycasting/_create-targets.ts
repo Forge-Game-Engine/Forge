@@ -12,11 +12,10 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   createImageSprite,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 interface TargetSpec {
@@ -81,11 +80,13 @@ function buildTargets(width: number): TargetSpec[] {
  * `RigidBodyEcsComponent` - they're immovable scenery, not simulated bodies,
  * so a plain `ColliderEcsComponent` is all `raycast` needs to see them.
  * @param world - The ECS world to add the target entities to.
+ * @param camera - The camera entity whose visible width the targets are spread across.
  * @param renderContext - The render context used to load target sprites.
  * @param renderLayer - The render layer targets should be drawn on.
  */
 export async function createTargets(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -105,11 +106,7 @@ export async function createTargets(
     layer: renderLayer,
   });
 
-  const { x: width } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width } = getCameraView(world, camera, renderContext).size;
 
   for (const target of buildTargets(width)) {
     const entity = world.createEntity();

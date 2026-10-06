@@ -10,11 +10,11 @@ import {
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
-  calculateVisibleWorldSize,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
+  getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
@@ -31,13 +31,13 @@ const renderLayers = {
 export const createSensorsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createScene(world, renderContext, renderLayers.foreground);
+  await createScene(world, camera, renderContext, renderLayers.foreground);
 
   const ballImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White_Circle.png'),
@@ -46,11 +46,11 @@ export const createSensorsGame = async (): Promise<Game> => {
     pixelsPerUnit: 1,
     layer: renderLayers.foreground,
   });
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

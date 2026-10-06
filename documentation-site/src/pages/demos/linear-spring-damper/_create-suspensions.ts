@@ -14,13 +14,12 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   createImageSprite,
+  getCameraView,
   NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addResetComponent } from './_reset.component';
 import { addSpringLineComponent } from './_spring-line.component';
@@ -256,20 +255,22 @@ function createSuspensionScenario(
  * `LinearSpringEcsComponent`, the right pairs it with a
  * `LinearDamperEcsComponent`.
  * @param world - The ECS world to add the scenarios' entities to.
+ * @param camera - The camera entity whose visible area the scenarios are laid out across.
  * @param renderContext - The render context used to load sprites.
  * @param renderLayer - The render layer the scenarios should be drawn on.
  */
 export async function createSuspensions(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
   const sprites = await loadSuspensionSprites(renderContext, renderLayer);
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const columnWidth = width / 2;
   const mountY = height * 0.25;
   const stiffness = 30_000;

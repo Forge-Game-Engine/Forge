@@ -18,7 +18,7 @@ import {
   spriteId,
   Time,
 } from '../../../src/index.js';
-import { createWhiteSquareImage } from './create-white-square-image.js';
+import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -100,7 +100,7 @@ export const createScene: CreateScene = async (
     renderTarget: sceneTarget,
   });
 
-  const squareImage = await createWhiteSquareImage();
+  const squareImage = await createSquareImage('#fff');
   const squareSprite = createImageSprite(squareImage, renderContext, {
     pixelsPerUnit: 1,
   });

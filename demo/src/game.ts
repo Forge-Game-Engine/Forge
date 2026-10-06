@@ -2,7 +2,6 @@ import {
   addPositionComponent,
   addRotationComponent,
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createGame,
@@ -12,6 +11,7 @@ import {
   degreesToRadians,
   EcsSystem,
   EcsWorld,
+  getCameraView,
   PositionEcsComponent,
   positionId,
   Random,
@@ -231,7 +231,7 @@ function createTriangleCollider(): PolygonCollider {
 
 const { game, world, renderContext, time } = createGame('demo-container');
 
-createCamera(world, { verticalWorldUnits });
+const camera = createCamera(world, { verticalWorldUnits });
 
 const { imageCache } = renderContext;
 
@@ -277,11 +277,11 @@ const shapeTemplates: ShapeTemplate[] = [
   },
 ];
 
-const { x: visibleWidth, y: visibleHeight } = calculateVisibleWorldSize(
-  renderContext.width,
-  renderContext.height,
-  verticalWorldUnits,
-);
+const { x: visibleWidth, y: visibleHeight } = getCameraView(
+  world,
+  camera,
+  renderContext,
+).size;
 const halfWidth = visibleWidth / 2;
 const halfHeight = visibleHeight / 2;
 

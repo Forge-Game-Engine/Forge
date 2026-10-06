@@ -10,11 +10,10 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   createImageSprite,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const wallThickness = 40;
@@ -36,11 +35,13 @@ function rectangleVertices(width: number, height: number): Vector2[] {
  * safety net that catches any crate that slides off the platform's edge,
  * and keeps everything within the visible area.
  * @param world - The ECS world to add the boundary entities to.
+ * @param camera - The camera entity whose visible area the boundaries enclose.
  * @param renderContext - The render context used to load the wall sprite.
  * @param renderLayer - The render layer the boundaries should be drawn on.
  */
 export async function createBoundaries(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -52,11 +53,11 @@ export async function createBoundaries(
     layer: renderLayer,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 

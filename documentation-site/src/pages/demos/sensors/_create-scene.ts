@@ -12,13 +12,12 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createImageSprite,
+  getCameraView,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { drainId } from './_drain.system';
 import { addTriggerZoneComponent } from './_trigger-zone.component';
@@ -57,11 +56,13 @@ function rectangleVertices(width: number, height: number): Vector2[] {
  * balls bounce off, two sensor trigger zones that balls fall straight
  * through, and a sensor drain below the bottom edge that removes them.
  * @param world - The ECS world to add the entities to.
+ * @param camera - The camera whose view the scene fills.
  * @param renderContext - The render context used to load the sprites.
  * @param renderLayer - The render layer to draw the scene on.
  */
 export async function createScene(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
@@ -73,11 +74,11 @@ export async function createScene(
     layer: renderLayer,
   });
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
