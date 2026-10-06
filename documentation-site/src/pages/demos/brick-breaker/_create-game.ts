@@ -53,7 +53,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   // The background sits on its own static camera, added before the
   // foreground camera, so it always renders first and stays behind the
   // gameplay sprites.
-  createCamera(world, {
+  const backgroundCamera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.background,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
@@ -65,7 +65,12 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  createBackground(world, renderContext, renderLayers.background);
+  createBackground(
+    world,
+    backgroundCamera,
+    renderContext,
+    renderLayers.background,
+  );
 
   const moveInput = new Axis1dAction(
     'paddleMove',

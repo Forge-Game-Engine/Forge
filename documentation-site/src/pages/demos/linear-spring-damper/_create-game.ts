@@ -24,13 +24,18 @@ const renderLayers = {
 export const createLinearSpringDamperGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createSuspensions(world, renderContext, renderLayers.foreground);
+  await createSuspensions(
+    world,
+    camera,
+    renderContext,
+    renderLayers.foreground,
+  );
 
   // A reset (teleport) and `createSpringLineEcsSystem` both write `local`
   // positions, so they run before `createTransformEcsSystem`, which turns

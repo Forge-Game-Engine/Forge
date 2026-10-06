@@ -1,5 +1,4 @@
 import React, { JSX, useCallback, useRef, useState } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { createAnchorsGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createAnchorPlaygroundCode from '!!raw-loader!./_create-anchor-playground';
@@ -30,9 +29,6 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export default function UiAnchors(): JSX.Element {
-  const { siteConfig } = useDocusaurusContext();
-  const fontAtlasUrl = `${siteConfig.baseUrl}fonts/default/default.json`;
-
   const playgroundRef = useRef<AnchorPlayground | null>(null);
   const [presetName, setPresetName] = useState<AnchorPlaygroundPresetName>(
     anchorPlaygroundDefaults.presetName,
@@ -52,10 +48,10 @@ export default function UiAnchors(): JSX.Element {
 
   const createGame = useCallback(
     () =>
-      createAnchorsGame(fontAtlasUrl, (playground) => {
+      createAnchorsGame((playground) => {
         playgroundRef.current = playground;
       }),
-    [fontAtlasUrl],
+    [],
   );
 
   const handlePresetNameChange = (value: AnchorPlaygroundPresetName) => {

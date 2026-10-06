@@ -8,7 +8,7 @@ import {
   ScaleEcsComponent,
   scaleId,
 } from '../../common/index.js';
-import { Matrix3x3, Vec2 } from '../../math/index.js';
+import { Matrix3x3, Rect, Rects, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
@@ -26,13 +26,14 @@ import {
   SpriteEcsComponent,
   spriteId,
 } from '../components/index.js';
+import { computeCameraView } from '../camera-view.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
 import { Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/index.js';
 import { RenderCommand } from '../render-command.js';
-import { calculatePixelsPerUnit } from '../utilities/calculate-pixels-per-unit.js';
 import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
+import { computeSpriteInstanceBounds } from '../utilities/sprite-instance-data-segment.js';
 
 const setupInstanceAttributesAndDraw = (
   renderContext: RenderContext,
@@ -372,6 +373,35 @@ function buildCameraCommands(
   }
 }
 
+const commandBounds: Rect = Rects.zero;
+
+/**
+ * Removes the commands whose quads don't overlap `viewBounds`, keeping the
+ * rest in order, so nothing a camera can't see is uploaded or drawn. Every
+ * command - a sprite, a nine-slice region or a glyph - is a quad drawn from
+ * the same instance components, so one bounds test covers them all. Quads
+ * touching the view's edge are kept.
+ * @param commands - The camera's commands, compacted in place.
+ * @param viewBounds - The world-space area the camera shows.
+ */
+function cullCommandsOutsideView(
+  commands: RenderCommand[],
+  viewBounds: Rect,
+): void {
+  let visibleCount = 0;
+
+  for (const command of commands) {
+    computeSpriteInstanceBounds(command.components, commandBounds);
+
+    if (Rects.intersects(commandBounds, viewBounds)) {
+      commands[visibleCount] = command;
+      visibleCount++;
+    }
+  }
+
+  commands.length = visibleCount;
+}
+
 function flushBatches(
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
@@ -403,7 +433,10 @@ const commandBuffersByCameraIndex: RenderCommand[][] = [];
 const clearedDestinationsThisFrame = new Set<RenderTarget | null>();
 
 /**
- * Creates a render system that batches and renders sprites based on the camera view.
+ * Creates a render system that draws every camera's sprites and text,
+ * batched by renderable. Each camera is projected from its view (see
+ * `computeCameraView`), and sprites, nine-slice regions and glyphs whose
+ * quads are outside that view are skipped before anything is uploaded.
  *
  * @param renderContext The rendering context
  * @returns The render ECS system
@@ -441,18 +474,12 @@ export const createRenderEcsSystem = (
       const cameraComponent = cameras[c];
       const cameraPositionComponent = cameraPositions[c];
 
-      const pixelsPerUnit = calculatePixelsPerUnit(
-        renderContext.height,
-        cameraComponent.verticalWorldUnits,
+      const view = computeCameraView(
+        cameraComponent,
+        cameraPositionComponent,
+        renderContext,
       );
-
-      const projectionMatrix = createProjectionMatrix(
-        renderContext.width,
-        renderContext.height,
-        cameraPositionComponent.world,
-        cameraComponent.zoom,
-        pixelsPerUnit,
-      );
+      const projectionMatrix = createProjectionMatrix(view.bounds);
 
       let commands = commandBuffersByCameraIndex[c];
 
@@ -479,6 +506,8 @@ export const createRenderEcsSystem = (
         commands,
         renderContext.pixelRatio,
       );
+
+      cullCommandsOutsideView(commands, view.bounds);
 
       const target = cameraComponent.renderTarget ?? null;
 

@@ -86,6 +86,32 @@ const system: EcsSystem<[Sprite]> = {
 `createRenderEcsSystem` uses this for a sprite's optional rotation, scale,
 and flip components.
 
+## Run conditions
+
+A run condition is a function `(world: EcsWorld) => boolean`. Passed as
+`runIf` to `addSystem`, it decides on each tick whether the system runs:
+
+```ts
+world.addSystem(spawnerSystem, { runIf: () => !settings.isPaused });
+```
+
+- The world calls the condition each tick, immediately before the system
+  would run, so it reads values written by earlier systems in the same tick.
+- When it returns `false`, the system isn't queried and `update` isn't
+  called.
+- A system registered without `runIf` runs on every tick.
+
+`addSystemGroup` also takes `runIf`. The group's condition is called once
+per tick, before the group runs. When it returns `false`, none of the
+group's systems run and their own conditions aren't called. A system in a
+group runs when both conditions return `true`.
+
+A run condition doesn't change a system's `query` or `tags`. `cleanup` runs
+when the system is removed or the world stops, whatever its run condition.
+
+`inState`, `onEnter` and `onExit` create run conditions from a
+[game state](../states/index.md).
+
 ## Atomicity
 
 Treat each call to `update(world, queryResult)` as a single, focused update for the tick's batch of matched entities. Systems should perform short, deterministic operations and avoid long-running or blocking work inside `update`.

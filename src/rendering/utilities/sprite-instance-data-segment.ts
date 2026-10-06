@@ -1,3 +1,4 @@
+import type { Rect } from '../../math/index.js';
 import type { InstanceComponents, Renderable } from '../renderable.js';
 import type { InstanceDataSegment } from './instance-data-segment.js';
 import { setupInstanceAttribute } from './setup-instance-attribute.js';
@@ -72,6 +73,59 @@ function bindSpriteInstanceData(
   instanceDataBufferArray[offset + TINT_COLOR_B_OFFSET] = sprite.tintColor.b;
   instanceDataBufferArray[offset + TINT_COLOR_A_OFFSET] =
     sprite.tintColor.a * (sprite.opacityMultiplier ?? 1);
+}
+
+/**
+ * Computes the world-space axis-aligned bounds of the quad `sprite.vert`
+ * draws for one instance: `sprite`'s `width`/`height` around its `pivot`,
+ * scaled (and flipped), rotated and placed at `position.world`, matching
+ * the instance data `spriteInstanceDataSegment` binds. The render system
+ * skips instances whose bounds are outside a camera's view.
+ * @param components - The instance's components.
+ * @param result - The rect to write the bounds into, so a caller testing
+ * many instances can reuse one.
+ * @returns `result`.
+ */
+export function computeSpriteInstanceBounds(
+  components: InstanceComponents,
+  result: Rect,
+): Rect {
+  const { position, rotation, scale, sprite, flip } = components;
+  const scaleX = (scale?.world.x ?? 1) * (flip?.flipX ? -1 : 1);
+  const scaleY = (scale?.world.y ?? 1) * (flip?.flipY ? -1 : 1);
+  const width = sprite.width * scaleX;
+  const height = sprite.height * scaleY;
+  // The quad's center and half extents, relative to the pivot, before
+  // rotation. A negative scale flips the quad around the pivot, which
+  // moves its center but not its extents.
+  const centerX = (0.5 - sprite.pivot.x) * width;
+  const centerY = (0.5 - sprite.pivot.y) * height;
+  const halfWidth = Math.abs(width) / 2;
+  const halfHeight = Math.abs(height) / 2;
+  const radians = rotation?.world ?? 0;
+
+  if (radians === 0) {
+    result.min.x = position.world.x + centerX - halfWidth;
+    result.min.y = position.world.y + centerY - halfHeight;
+    result.max.x = position.world.x + centerX + halfWidth;
+    result.max.y = position.world.y + centerY + halfHeight;
+
+    return result;
+  }
+
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const rotatedCenterX = position.world.x + centerX * cos - centerY * sin;
+  const rotatedCenterY = position.world.y + centerX * sin + centerY * cos;
+  const extentX = halfWidth * Math.abs(cos) + halfHeight * Math.abs(sin);
+  const extentY = halfWidth * Math.abs(sin) + halfHeight * Math.abs(cos);
+
+  result.min.x = rotatedCenterX - extentX;
+  result.min.y = rotatedCenterY - extentY;
+  result.max.x = rotatedCenterX + extentX;
+  result.max.y = rotatedCenterY + extentY;
+
+  return result;
 }
 
 function setupSpriteInstanceAttributes(

@@ -2,9 +2,9 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createImageSprite,
+  getCameraView,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -19,7 +19,6 @@ import {
   addColliderComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { PlayerId } from './_player.component';
 import { gunId } from './_gun.component';
 
@@ -82,6 +81,7 @@ export async function loadPlayerSprites(
 export function spawnPlayer(
   renderContext: RenderContext,
   world: EcsWorld,
+  camera: number,
   renderLayer: number,
   playerSprites: PlayerSprites,
 ): void {
@@ -95,11 +95,7 @@ export function spawnPlayer(
   const playerRadius =
     (playerSprite.width * playerScale + playerSprite.height * playerScale) / 4;
 
-  const visibleWorldSize = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const visibleWorldSize = getCameraView(world, camera, renderContext).size;
   const halfVisibleWidth = visibleWorldSize.x / 2;
   const halfVisibleHeight = visibleWorldSize.y / 2;
 
@@ -139,11 +135,12 @@ export function spawnPlayer(
 export async function createPlayer(
   renderContext: RenderContext,
   world: EcsWorld,
+  camera: number,
   renderLayer: number,
 ): Promise<PlayerSprites> {
   const playerSprites = await loadPlayerSprites(renderContext, renderLayer);
 
-  spawnPlayer(renderContext, world, renderLayer, playerSprites);
+  spawnPlayer(renderContext, world, camera, renderLayer, playerSprites);
 
   return playerSprites;
 }

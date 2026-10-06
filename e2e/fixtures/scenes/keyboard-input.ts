@@ -29,7 +29,7 @@ import {
   Time,
   TriggerAction,
 } from '../../../src/index.js';
-import { createWhiteSquareImage } from './create-white-square-image.js';
+import { createSquareImage } from './create-square-image.js';
 import {
   matchesColor,
   PixelBounds,
@@ -165,7 +165,7 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: canvas.height,
   });
 
-  const squareImage = await createWhiteSquareImage();
+  const squareImage = await createSquareImage('#fff');
   const squareSprite = createImageSprite(squareImage, renderContext, {
     pixelsPerUnit: 1,
   });

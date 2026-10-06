@@ -192,7 +192,7 @@ function computeCapHeight(glyphs, fallback) {
  * versioned `FontAtlasFileData` schema (see `src/text/font-atlas`), so
  * runtime consumers never depend on a third-party generator's own format.
  */
-function normalizeBmfontJson(raw, atlasImageFilename) {
+function normalizeBmfontJson(raw) {
   if (raw.distanceField?.fieldType !== 'msdf') {
     throw new Error(
       `Expected a "msdf" distance field, got "${raw.distanceField?.fieldType}". Forge's text renderer only supports MSDF atlases.`,
@@ -229,7 +229,6 @@ function normalizeBmfontJson(raw, atlasImageFilename) {
   return {
     formatVersion: CURRENT_FONT_ATLAS_FORMAT_VERSION,
     type: 'msdf',
-    atlasImage: atlasImageFilename,
     atlasSize: { width: scaleW, height: scaleH },
     distanceRange: raw.distanceField.distanceRange,
     metrics: {
@@ -318,8 +317,7 @@ async function main() {
   }
 
   const raw = JSON.parse(font.data);
-  const atlasImageFilename = `${resolveOutBasename(resolvedOutPath)}.png`;
-  const fileData = normalizeBmfontJson(raw, atlasImageFilename);
+  const fileData = normalizeBmfontJson(raw);
 
   writeFileSync(`${resolvedOutPath}.png`, textures[0].texture);
   writeFileSync(`${resolvedOutPath}.json`, JSON.stringify(fileData, null, 2));
@@ -327,14 +325,6 @@ async function main() {
   console.log(
     `> Generated font atlas: ${resolvedOutPath}.png + ${resolvedOutPath}.json (${fileData.glyphs.length} glyphs, ${Object.keys(fileData.kerning).length} kerning pairs)`,
   );
-}
-
-function resolveOutBasename(resolvedOutPath) {
-  const separatorIndex = resolvedOutPath.lastIndexOf('/');
-
-  return separatorIndex === -1
-    ? resolvedOutPath
-    : resolvedOutPath.slice(separatorIndex + 1);
 }
 
 try {

@@ -12,10 +12,12 @@ and [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) (see
 [Text](../text/index.md)), plus two supporting building blocks:
 
 - [`AssetCache`](/Forge/docs/api/interfaces/AssetCache): the common
-  `get` / `load` / `getOrLoad` contract that asset caches implement.
-  `ImageCache` and `FontAtlasCache` both implement it; if you add a cache
-  for another asset type (audio buffers, arbitrary JSON data), implement
+  `get` / `load` / `getOrLoad` contract for caches that load an asset from
+  a single URL, such as `ImageCache`. If you add a cache for another
+  single-file asset type (audio buffers, arbitrary JSON data), implement
   this interface so it behaves consistently with the rest of the engine.
+  `FontAtlasCache` loads each atlas from two URLs, so it has its own
+  `getOrLoad({ metricsUrl, imageUrl })` instead.
 - [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry): maps
   human-readable string IDs to compact numeric IDs, so hot-path code (like a
   per-frame animation system) can look up an asset by index instead of by

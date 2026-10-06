@@ -41,8 +41,10 @@ npm install -g msdf-bmfont-xml
 npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out assets/fonts/my-font
 ```
 
-This writes `assets/fonts/my-font.png` and `assets/fonts/my-font.json`, which
-[`FontAtlasCache`](./loading-a-font-atlas.md) loads together at runtime.
+This writes `assets/fonts/my-font.png` and `assets/fonts/my-font.json`.
+Load them with [`FontAtlasCache`](./loading-a-font-atlas.md), passing the
+URL of each. Always replace both files together: the JSON's glyph
+positions only match the image from the same run.
 
 | Flag                             | Default  | Meaning                                                                                                           |
 | -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |

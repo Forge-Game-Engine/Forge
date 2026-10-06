@@ -28,13 +28,13 @@ const renderLayers = {
 export const createRevoluteJointGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createHinges(world, renderContext, renderLayers.foreground);
+  await createHinges(world, camera, renderContext, renderLayers.foreground);
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

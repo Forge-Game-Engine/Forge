@@ -4,19 +4,20 @@ import {
   Time,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   MouseInputSource,
   registerInputs,
 } from '@forge-game-engine/forge/input';
 import {
   addSpriteComponent,
-  calculateVisibleWorldSize,
   Color,
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -47,6 +48,7 @@ const textColor = new Color(0.12, 0.12, 0.16, 1);
 
 async function createBackdrop(
   world: EcsWorld,
+  camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
   const whiteImage = await renderContext.imageCache.getOrLoad(
@@ -58,11 +60,11 @@ async function createBackdrop(
   });
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
-  const { x: width, y: height } = calculateVisibleWorldSize(
-    renderContext.width,
-    renderContext.height,
-    DEMO_VERTICAL_WORLD_UNITS,
-  );
+  const { x: width, y: height } = getCameraView(
+    world,
+    camera,
+    renderContext,
+  ).size;
 
   backdropSprite.width = width;
   backdropSprite.height = height;
@@ -89,22 +91,29 @@ function createPointerInput(
  * (`addUiToggleGroupComponent` shared across three toggles) - clicking one
  * radio option turns off whichever was previously on, since a group always
  * has exactly one selection (`allowSwitchOff: false`, the default).
- * @param fontAtlasUrl - The URL of the font atlas JSON to load.
  * @returns The created game.
  */
-export const createToggleGame = async (fontAtlasUrl: string): Promise<Game> => {
+export const createToggleGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, {
+  const camera = createCamera(world, {
     isStatic: true,
     cullingMask: renderLayers.world,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createBackdrop(world, renderContext);
+  await createBackdrop(world, camera, renderContext);
 
   const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
-  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad(fontAtlasUrl);
+  const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
+    // Importing the JSON would give its parsed contents, so `new URL` asks
+    // webpack for its URL instead.
+    metricsUrl: new URL(
+      '@forge-game-engine/forge/fonts/default/default.json',
+      import.meta.url,
+    ).href,
+    imageUrl: defaultFontImageUrl,
+  });
 
   const mouseInputSource = createPointerInput(world, time, game);
 

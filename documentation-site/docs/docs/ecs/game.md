@@ -74,9 +74,10 @@ meant to track the canvas:
   stays exactly as it was created - see the caution in
   [Multipass Rendering](../rendering/multipass-rendering.md) for how to keep
   one in sync.
-- Anything you sized once from `calculateVisibleWorldSize`/`RenderContext.width`/
-  `height` at startup (a background quad meant to always fill the camera's
-  view, a shader uniform driven by the canvas resolution) needs to be
+- Anything you sized once from a camera's view (`getCameraView(...).size`)
+  or `RenderContext.width`/`height` at startup (a background quad meant to
+  always fill the camera's view, a shader uniform driven by the canvas
+  resolution) needs to be
   recomputed by your own system each time those dimensions change, the same
   way `createUiLayoutEcsSystem` already does for UI.
 

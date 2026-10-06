@@ -11,12 +11,39 @@ describe('Color', () => {
     expect(color.toRGBAString()).toBe('rgba(255, 0, 128, 1)');
   });
 
-  it('should clamp RGB values to the valid range (0-1)', () => {
-    const color = new Color(1.2, -0.2, 0.5);
+  it('keeps RGB values above 1, for colors brighter than white', () => {
+    const color = new Color(1.5, 3, 0.5);
 
-    expect(color.r).toBe(1); // Clamped to 1
-    expect(color.g).toBe(0); // Clamped to 0
-    expect(color.b).toBe(0.5); // Unchanged
+    expect(color.r).toBe(1.5);
+    expect(color.g).toBe(3);
+    expect(color.b).toBe(0.5);
+    expect(color.toFloat32Array()).toEqual(new Float32Array([1.5, 3, 0.5, 1]));
+  });
+
+  it('clamps negative RGB values to 0', () => {
+    const color = new Color(-0.2, -1, 0.5);
+
+    expect(color.r).toBe(0);
+    expect(color.g).toBe(0);
+    expect(color.b).toBe(0.5);
+  });
+
+  it('clamps alpha to [0, 1]', () => {
+    expect(new Color(1, 1, 1, 1.5).a).toBe(1);
+    expect(new Color(1, 1, 1, -0.5).a).toBe(0);
+  });
+
+  it('clamps RGB values above 1 to 255 in its CSS string', () => {
+    const color = new Color(1.5, 0.5, 2, 0.5);
+
+    expect(color.toRGBAString()).toBe('rgba(255, 128, 255, 0.5)');
+  });
+
+  it('throws for an HSL saturation or lightness outside 0-100', () => {
+    expect(() => Color.fromHSLA(0, 120, 50)).toThrow();
+    expect(() => Color.fromHSLA(0, -1, 50)).toThrow();
+    expect(() => Color.fromHSLA(0, 100, 150)).toThrow();
+    expect(() => Color.fromHSLA(0, 100, -1)).toThrow();
   });
 
   it('should create a color using HSL values', () => {

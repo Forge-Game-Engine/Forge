@@ -43,6 +43,30 @@ piece is independently useful: add `UiInteractableEcsComponent` to any rect
 (a toggle, a list row, a close icon) to make it clickable, hoverable, and
 focus-navigable without it being a "button" at all.
 
+## Hover and press colors
+
+`UiColorTransitionEcsComponent` eases the sprite's `tintColor` towards
+`normalColor`, `hoverColor`, `pressedColor` or `disabledColor` as the
+element's state changes. Tints multiply the sprite's texture, and a
+[`Color`](/Forge/docs/api/classes/Color) channel can go above `1`, so a
+button can rest at `Color.white` (its art as authored) and brighten on
+hover:
+
+```ts
+const play = createButton(world, canvas, {
+  // ...
+  transition: {
+    hoverColor: new Color(1.2, 1.2, 1.2),
+    pressedColor: new Color(0.8, 0.8, 0.8),
+  },
+});
+```
+
+On the canvas or an 8-bit render target, each channel of the result stops
+at full brightness, so a hover color above `1` only brightens art that
+isn't already white there. An `easing` that overshoots (`easeInOutBack`,
+`easeInOutElastic`) briefly passes the target color, including above `1`.
+
 ## Source-agnostic invocation
 
 `onInvoke` is raised the same way whether a pointer click, a gamepad/

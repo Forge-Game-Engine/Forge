@@ -15,6 +15,7 @@ import {
   createRenderEcsSystem,
   createTransformEcsSystem,
   EcsWorld,
+  getCameraView,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
   keyCodes,
@@ -28,7 +29,7 @@ import {
   Vec2,
 } from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
-import { createWhiteSquareImage } from './create-white-square-image.js';
+import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -41,7 +42,7 @@ const clearColor = new Color(
   1,
 );
 
-// A checkerboard of tinted squares (see `createWhiteSquareImage`), spanning
+// A checkerboard of tinted squares (see `createSquareImage`), spanning
 // world coordinates [-300, 300] on both axes, with a distinct green marker
 // at the origin. This is what makes a recording of the suite (`video: 'on'`
 // in playwright.config.ts) actually show the camera panning/zooming,
@@ -81,6 +82,14 @@ export interface CameraSceneHandle extends SceneHandle {
   readonly zoom: number;
   /** The camera's current local position. */
   readonly position: { x: number; y: number };
+  /**
+   * The mouse's position as of the last `step()`, converted to world space
+   * from `MouseInputSource.position` through the camera's view (see
+   * `getCameraView`).
+   */
+  readonly pointerWorldPosition: { x: number; y: number };
+  /** The green origin square's side length, in world units. */
+  readonly greenSquareWorldSize: number;
 
   /**
    * Scans a horizontal line through the vertical center of the canvas's
@@ -175,7 +184,7 @@ export const createScene: CreateScene = async (
   // camera's `cullingMask` via bitwise AND), not a draw-order layer - a
   // category of `0` can never match any mask and would silently render
   // nothing.
-  const squareImage = await createWhiteSquareImage();
+  const squareImage = await createSquareImage('#fff');
   const squareSprite = createImageSprite(squareImage, renderContext, {
     pixelsPerUnit: 1,
   });
@@ -210,13 +219,26 @@ export const createScene: CreateScene = async (
   world.addSystem(createPresentEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;
+  let pointerWorldPosition = { x: 0, y: 0 };
 
   return {
     step(deltaMilliseconds: number = defaultStepDeltaMilliseconds): void {
       clockInMilliseconds += deltaMilliseconds;
       time.update(clockInMilliseconds);
       world.update();
+
+      pointerWorldPosition = getCameraView(
+        world,
+        cameraEntity,
+        renderContext,
+      ).viewportToWorld(mouseInputSource.position);
     },
+
+    get pointerWorldPosition(): { x: number; y: number } {
+      return pointerWorldPosition;
+    },
+
+    greenSquareWorldSize: cellSize,
 
     get zoom(): number {
       return world.getComponent<CameraEcsComponent>(cameraEntity, cameraId)!
