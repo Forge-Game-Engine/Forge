@@ -218,9 +218,9 @@ system of a tick sees the same state. Ordering a group `before` it throws.
 A group ordered `after: [world.firstSystemGroup]`, or after another group
 that is, joins the start of the tick: it runs after the first group and
 before every group that isn't there, including groups added earlier or
-later. A game state's exit and enter groups are placed this way, so a
-state is set up before any other system runs, even the input update group
-`registerInputs` orders before the default group.
+later. A game state's exit and enter groups are placed this way, so they
+run before any other system, even the input update group `registerInputs`
+orders before the default group.
 
 ```ts
 const loadLevelGroup = createSystemGroup('load-level');

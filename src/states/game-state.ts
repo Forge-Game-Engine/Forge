@@ -8,9 +8,9 @@ import {
 /**
  * A named top-level state of a game (loading, menu, playing, paused, game
  * over, ...), switched at the start of a tick. Create one with
- * {@link createGameState}, run systems only in some states with `inState`, and set up or
- * tear down a state with `onEnter`/`onExit` systems in its `enterGroup` and
- * `exitGroup`.
+ * {@link createGameState}, run systems only in some states with `inState`,
+ * and run systems when a state is entered or left with `onEnter`/`onExit` in
+ * its `enterGroup` and `exitGroup`.
  *
  * @typeParam TName - The names of the states.
  */
@@ -34,15 +34,15 @@ export interface GameState<TName extends string> {
 
   /**
    * Runs right after a transition, before the state's scoped entities are
-   * removed. Register `onExit` systems in it, so they can still read what
-   * the state is about to tear down.
+   * removed. Register `onExit` systems in it, so they can still read the
+   * entities that are about to be removed.
    */
   readonly exitGroup: EcsSystemGroup;
 
   /**
    * Runs right after the state's scoped entities are removed, before every
-   * other system of the tick. Register `onEnter` systems in it, so a new
-   * state is set up before any gameplay system sees it.
+   * other system of the tick. Register `onEnter` systems in it, so what
+   * they create exists before any other system runs.
    */
   readonly enterGroup: EcsSystemGroup;
 

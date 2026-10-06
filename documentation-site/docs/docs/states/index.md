@@ -5,9 +5,9 @@ sidebar_position: 1
 # Game States
 
 Most games move between a few top-level states: a menu, playing, paused,
-game over. Most of their systems only make sense in some of them, and each
-state has setup and teardown work, such as spawning the player when playing
-starts and removing it when playing ends.
+game over. Most of their systems only make sense in some of them, and some
+work happens only when the game enters or leaves a state, such as spawning
+the player when `playing` is entered.
 
 The `@forge-game-engine/forge/states` module covers both halves:
 
@@ -57,7 +57,7 @@ systems write keep their values until the systems run again.
 `addSystemGroup` takes a `runIf` too, for a whole group of systems.
 See [System](../ecs/system.md#run-conditions) for how run conditions work.
 
-## Setting up and tearing down a state
+## Running systems when a state is entered or left
 
 Work that happens once per transition (spawning the player, saving a high
 score, showing a screen) goes in a system registered in the state's
@@ -84,18 +84,18 @@ A transition runs at the start of a tick, in this order:
    state being left.
 3. [State-scoped entities](./state-scoped-entities.md) whose state ended are
    removed.
-4. The `enterGroup` runs, so the new state is set up before any other
-   system sees it.
+4. The `enterGroup` runs, so what its systems create exists before any
+   other system runs.
 5. Every other group of the world runs.
 
 On the first tick, the initial state counts as entered: `entered` is the
-initial state and its `onEnter` systems run. Build a state's content in its
-`onEnter` system rather than in setup code, and it's built the same way the
-first time and every time after.
+initial state and its `onEnter` systems run. Create the entities a state
+needs in an `onEnter` system rather than before the first tick, and they're
+created the same way every time the state is entered.
 
 Keep `onEnter` and `onExit` systems in the state's groups. In any other
 group, they'd run later in the tick, after gameplay systems that should have
-seen what they set up.
+seen what they created.
 
 ### Restarting a state
 
