@@ -67,6 +67,14 @@ buffer and writes the other, with no copy back.
 - **Effects that need their own intermediate resolutions** (bloom's
   downsampled chain, the blur's averaged copy). Those keep their own
   targets, sized from the target they process, as today.
+- **Moving the effects out of Forge.** Bloom, blur and tone mapping are
+  expected to move to their own package. The engine's share of this
+  design is the part every effect needs, built in, extracted or a game's
+  own: the second buffer on `RenderTarget` and `beginPostProcessPass`.
+  The effects only call exported API (`beginPostProcessPass`,
+  `drawFullscreenQuad`, `Material`, `createRenderTarget`,
+  `PingPongTarget`), so tasks 1.3 and 1.4 move with them, and nothing here
+  makes the move harder.
 
 ---
 
