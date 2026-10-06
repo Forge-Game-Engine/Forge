@@ -7,12 +7,13 @@ import type {
 import { isVector2, UniformValue } from './uniform-value.js';
 
 /**
- * An active uniform of a linked program, as reported by `getActiveUniform`.
+ * A uniform's type and size: from its declaration in the shader source, or,
+ * for a member of a struct uniform, as reported by `getActiveUniform`.
  */
 export interface UniformDeclaration {
   /** The uniform's name, without the `[0]` suffix WebGL gives arrays. */
   readonly name: string;
-  /** The GL type enum reported for the uniform. */
+  /** The GL type enum of the uniform's type. */
   readonly glType: GLenum;
   /** The uniform's declared type, or `null` if it isn't a known WebGL 2 type. */
   readonly uniformType: UniformType | null;

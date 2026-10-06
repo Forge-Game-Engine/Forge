@@ -484,11 +484,15 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 - When a test constructs a real `Material` against a mocked WebGL context,
-  the mocked `getActiveUniform` must report each uniform's real GL type enum
-  (e.g. `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size`.
-  `Material.setUniform` picks the upload from the declared type and throws
-  for a value that doesn't fit it (or for an unknown type such as `0`), and
-  `bind` calls the matching `uniform*` method, so mock that method too
+  declare each uniform the test sets in the shader source it passes
+  (`uniform vec4 u_color;`): `Material` takes a uniform's type and array
+  size from its declaration and throws for a name neither shader declares.
+  The mocked `getActiveUniform` decides which declared uniforms are active,
+  and so uploaded on `bind`; leave one out to test a uniform the compiler
+  stripped. Report the real GL type enum (e.g. `0x8b5e /* SAMPLER_2D */`,
+  `0x1406 /* FLOAT */`) and array `size` for what it does return, since
+  undeclared active uniforms (struct members) are typed from it, and mock
+  the `uniform*` method `bind` calls for the declared type
 
 ### Coverage
 
