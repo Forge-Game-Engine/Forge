@@ -1,17 +1,23 @@
-import { Howl } from 'howler';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { addAudioComponent } from '@forge-game-engine/forge/audio';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import {
+  addSoundComponent,
+  MixerBus,
+  SoundAsset,
+} from '@forge-game-engine/forge/audio';
 
-export function createMusic(world: EcsWorld): void {
+export function createMusic(
+  world: EcsWorld,
+  music: SoundAsset,
+  musicBus: MixerBus,
+): void {
   const musicEntity = world.createEntity();
 
-  addAudioComponent(world, musicEntity, {
-    sound: new Howl({
-      src: getAssetUrl('audio/background-space-music.mp3'),
-      loop: true,
-      volume: 0.3,
-    }),
-    playSound: true,
+  // Looping, so it starts even before the player has pressed a key, and is
+  // heard as soon as the browser lets the page play audio.
+  addSoundComponent(world, musicEntity, {
+    sound: music,
+    bus: musicBus,
+    loop: true,
+    volume: 0.3,
   });
 }

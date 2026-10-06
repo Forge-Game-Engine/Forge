@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                  |
 | **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts` and `src/graphics/graphics-settings-store.ts` (two copies of the same load/validate/save code)                         |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                 |
-| **Related**                           | [#567](https://github.com/Forge-Game-Engine/Forge/issues/567) (save/load epic), [`audio-mixer.md`](./audio-mixer.md), [`webgl-context-loss.md`](./webgl-context-loss.md) |
+| **Related**                           | [#567](https://github.com/Forge-Game-Engine/Forge/issues/567) (save/load epic), the audio module's `SoundMixer`, [`webgl-context-loss.md`](./webgl-context-loss.md)      |
 
 ## 0. Targeted modules
 
@@ -276,8 +276,8 @@ component values, once the world exists and again on every `onChange`
 (raised only by changes). Systems read that component like any other.
 Changes go through `set`, never through the component, so the record is
 the one writer of the fields it mirrors, and nothing keeps a second copy
-that drifts from what's stored. State outside any world, such as the audio
-mixer's bus volumes in [`audio-mixer.md`](./audio-mixer.md), follows
+that drifts from what's stored. State outside any world, such as the sound
+mixer's bus volumes (`MixerBus.volume` and `muted`), follows
 `onChange` the same way.
 
 The demo already has this shape: it reads its graphics settings before

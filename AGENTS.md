@@ -27,7 +27,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **ECS (Entity-Component-System)**: Core architecture pattern
 - **Rendering**: WebGL2-based rendering system
 - **Physics**: Native 2D physics engine (rigid bodies, collision detection/resolution, gravity)
-- **Audio**: Sound management via Howler.js
+- **Audio**: Sound mixer with buses, sound assets and playback on the Web Audio API
 - **Animations**: Robust animation system
 - **Input**: Keyboard, mouse, and gamepad input handling
 - **Particles**: Particle system
@@ -100,7 +100,7 @@ this step by step for bug fixes.
 /src                        # Source code organized by feature modules
   /animations              # Animation system
   /asset-loading           # Asset loading utilities
-  /audio                   # Audio system
+  /audio                   # Sound mixer and buses, sound assets, playSound, SoundEcsComponent
   /common                  # Shared components and utilities
   /ecs                     # Entity-Component-System core
   /events                  # Event system
@@ -970,7 +970,7 @@ export class Entity {
 
 ### Dependencies
 
-- Peer dependencies: `howler`
+- Optional peer dependency: `msdf-bmfont-xml` (font atlas generation)
 - Keep dependencies minimal and well-maintained
 
 ## Additional Resources

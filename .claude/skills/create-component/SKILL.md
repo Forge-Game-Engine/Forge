@@ -134,7 +134,7 @@ Notes:
     defaulted ones into a `<PascalCaseName>DefaultedOptions` interface so
     `default<PascalCaseName>Options` can be typed as that (not the whole
     component, which would wrongly force the required fields into the
-    defaults object too) — see `audio-component.ts`, `lifetime-component.ts`,
+    defaults object too) — see `sound-component.ts`, `lifetime-component.ts`,
     or `sprite-animation-component.ts`. `sprite-component.ts` shows the same
     shape with more fields.
   - **Has no required fields, only defaulted fields**: no interface split

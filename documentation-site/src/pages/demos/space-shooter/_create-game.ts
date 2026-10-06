@@ -16,7 +16,7 @@ import {
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
+import { createSoundEcsSystem } from '@forge-game-engine/forge/audio';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
@@ -40,6 +40,7 @@ import {
 import { createCameraShakeEcsSystem } from './_camera-shake.system';
 import { createExplosionSpawner } from './_create-explosions';
 import { createMusic } from './_create-music';
+import { createAudio, loadSounds, SpaceShooterAudio } from './_create-audio';
 import { createInputs } from './_create-inputs';
 import { createPlayer, spawnPlayer } from './_create-player';
 import { createBulletEcsSystem } from './_bullet.system';
@@ -74,10 +75,23 @@ export const blurDefaults: GaussianBlurEcsComponent = {
 };
 
 export const createSpaceShooterGame = async (
+  signal: AbortSignal,
   onBloomReady?: (bloom: BloomEcsComponent) => void,
   onBlurReady?: (blur: GaussianBlurEcsComponent) => void,
+  onAudioReady?: (audio: SpaceShooterAudio) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
+
+  // The mixer owns the page's AudioContext, which `game.stop()` doesn't
+  // close, so it's stopped when the page is left. The listener is added
+  // before the first `await`, so leaving while assets load also stops it.
+  const audio = createAudio();
+
+  signal.addEventListener('abort', () => {
+    void audio.mixer.stop();
+  });
+
+  onAudioReady?.(audio);
 
   // Background and foreground each get their own off-screen target, so the
   // blur post-process pass can affect the background only: the present
@@ -185,12 +199,15 @@ export const createSpaceShooterGame = async (
     renderContext,
     renderLayers.foreground,
   );
+  const sounds = await loadSounds(audio.sounds);
   const explosionSpawner = await createExplosionSpawner(
     renderContext,
     renderLayers.foreground,
     triggerCameraShake,
+    sounds.explosion,
+    audio.sfxBus,
   );
-  createMusic(world);
+  createMusic(world, sounds.music, audio.musicBus);
 
   const gameOverEntity = world.createEntity();
   const gameOverMessageElement = document.createElement('div');
@@ -249,10 +266,12 @@ export const createSpaceShooterGame = async (
   world.addSystem(
     createBackgroundEcsSystem(time, backgroundCameraEntity, renderContext),
   );
-  world.addSystem(createAudioEcsSystem());
+  world.addSystem(createSoundEcsSystem());
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createRemoveFromWorldEcsSystem());
-  world.addSystem(createGunEcsSystem(time, world, shootInput));
+  world.addSystem(
+    createGunEcsSystem(time, world, shootInput, sounds.laser, audio.sfxBus),
+  );
   world.addSystem(createBulletEcsSystem(time));
   world.addSystem(createAsteroidSpawnerEcsSystem(time, random));
   world.addSystem(createAsteroidEcsSystem(time));

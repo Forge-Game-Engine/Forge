@@ -10,6 +10,8 @@ import {
 } from './_create-game';
 import { BloomControls } from './_BloomControls';
 import { GaussianBlurControls } from './_GaussianBlurControls';
+import { AudioControls } from './_AudioControls';
+import { SpaceShooterAudio } from './_create-audio';
 import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
@@ -21,6 +23,7 @@ import backgroundSystemCode from '!!raw-loader!./_background.system';
 import backgroundComponentCode from '!!raw-loader!./_background.component';
 import backgroundShaderCode from '!!raw-loader!./_background.shader';
 import createMusicCode from '!!raw-loader!./_create-music';
+import createAudioCode from '!!raw-loader!./_create-audio';
 import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import bulletComponentCode from '!!raw-loader!./_bullet.component';
@@ -53,18 +56,51 @@ export default function Rendering(): JSX.Element {
   const [blurIntensity, setBlurIntensity] = useState(blurDefaults.intensity);
   const [blurEnabled, setBlurEnabled] = useState(true);
 
+  const audioRef = useRef<SpaceShooterAudio | null>(null);
+  const [musicVolume, setMusicVolume] = useState(1);
+  const [sfxVolume, setSfxVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+
   const createGame = useCallback(
-    () =>
+    (signal: AbortSignal) =>
       createSpaceShooterGame(
+        signal,
         (bloom) => {
           bloomRef.current = bloom;
         },
         (blur) => {
           blurRef.current = blur;
         },
+        (audio) => {
+          audioRef.current = audio;
+        },
       ),
     [],
   );
+
+  const handleMusicVolumeChange = (value: number) => {
+    setMusicVolume(value);
+
+    if (audioRef.current) {
+      audioRef.current.musicBus.volume = value;
+    }
+  };
+
+  const handleSfxVolumeChange = (value: number) => {
+    setSfxVolume(value);
+
+    if (audioRef.current) {
+      audioRef.current.sfxBus.volume = value;
+    }
+  };
+
+  const handleMutedChange = (value: boolean) => {
+    setMuted(value);
+
+    if (audioRef.current) {
+      audioRef.current.mixer.master.muted = value;
+    }
+  };
 
   const handleThresholdChange = (value: number) => {
     setThreshold(value);
@@ -142,6 +178,10 @@ export default function Rendering(): JSX.Element {
         {
           name: 'game.ts',
           content: gameCode,
+        },
+        {
+          name: 'create-audio.ts',
+          content: createAudioCode,
         },
         {
           name: 'asteroid-spawner.component.ts',
@@ -283,6 +323,15 @@ export default function Rendering(): JSX.Element {
             onEnabledChange={handleBlurEnabledChange}
             onPassesChange={handleBlurPassesChange}
             onIntensityChange={handleBlurIntensityChange}
+          />
+
+          <AudioControls
+            musicVolume={musicVolume}
+            sfxVolume={sfxVolume}
+            muted={muted}
+            onMusicVolumeChange={handleMusicVolumeChange}
+            onSfxVolumeChange={handleSfxVolumeChange}
+            onMutedChange={handleMutedChange}
           />
         </>
       }
