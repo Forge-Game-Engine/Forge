@@ -167,11 +167,18 @@ const CAP_HEIGHT_REFERENCE_CHARACTERS = ['H', 'I', 'E', 'F', 'L', 'T'];
  * contains none of them - e.g. a numbers-only or symbols-only atlas - since
  * that's the same "safe outer bound" fallback `ascender`/`descender`
  * themselves use when there's no ink to measure at all.
+ *
+ * A glyph's plane bounds include the distance field's padding around its
+ * ink, so the reference capital's `top` sits `padding` above the letter's
+ * real top. `capHeight` is a typographic metric (`'capline'` puts the top
+ * of an "H" on the anchor, `'middle'` centers the band from it to the
+ * baseline), so the padding is subtracted.
  * @param glyphs - Every normalized glyph in this atlas.
+ * @param padding - The distance field padding around every glyph, in em units.
  * @param fallback - The value to use when no reference capital is present.
  * @returns The measured (or fallback) cap height, in em units.
  */
-function computeCapHeight(glyphs, fallback) {
+function computeCapHeight(glyphs, padding, fallback) {
   const glyphsByCodePoint = new Map(
     glyphs.map((glyph) => [glyph.codePoint, glyph]),
   );
@@ -180,7 +187,7 @@ function computeCapHeight(glyphs, fallback) {
     const glyph = glyphsByCodePoint.get(character.codePointAt(0));
 
     if (glyph?.planeBounds) {
-      return glyph.planeBounds.top;
+      return glyph.planeBounds.top - padding;
     }
   }
 
@@ -220,6 +227,10 @@ function normalizeBmfontJson(raw) {
     .map((glyph) => glyph.planeBounds.bottom);
   const ascender = inkTops.length > 0 ? Math.max(...inkTops) : base / fontSize;
 
+  // msdf-bmfont-xml pads every glyph by `distanceRange >> 1` pixels on each
+  // side and includes that padding in the glyph's offsets and size.
+  const padding = Math.floor(raw.distanceField.distanceRange / 2) / fontSize;
+
   const kerning = {};
 
   for (const pair of raw.kernings) {
@@ -238,21 +249,19 @@ function normalizeBmfontJson(raw) {
       // metrics, but they routinely undershoot the font's actually rendered
       // ink - e.g. this engine's shipped default font renders "b"/"d"/"h"/
       // "i"/"l" taller than `base` accounts for, and "("/")"/"j" lower than
-      // `lineHeight - base` accounts for. `ascender`/`descender` exist
-      // specifically to bound the block's *visible* ink for `verticalAlign`
-      // (see `getVerticalAlignOffset` in `shape-text.ts`), so a metric that
-      // undershoots real ink makes every alignment sit off by the shortfall
-      // - `'top'`/`'bottom'`-anchored glyphs poke past the anchor, and
-      // `'middle'` centers on the wrong point. Deriving them from the
-      // actual rendered bounds of every glyph in this charset instead
-      // guarantees no glyph ever pokes past a `'top'`/`'bottom'`-aligned
-      // anchor.
+      // `lineHeight - base` accounts for. `ascender`/`descender` are the
+      // outer bounds `'top'`/`'bottom'` anchor to (see
+      // `getVerticalAlignOffset` in `shape-text.ts`), so they're taken from
+      // every glyph's plane bounds *including* the distance field padding:
+      // outlines, glows and shadows draw into that padding, so nothing a
+      // glyph renders pokes past a `'top'`/`'bottom'`-aligned anchor.
+      // `capHeight`, by contrast, is a typographic metric and excludes it.
       ascender,
       descender:
         inkBottoms.length > 0
           ? Math.min(...inkBottoms)
           : (base - lineHeight) / fontSize,
-      capHeight: computeCapHeight(glyphs, ascender),
+      capHeight: computeCapHeight(glyphs, padding, ascender),
     },
     glyphs,
     kerning,
