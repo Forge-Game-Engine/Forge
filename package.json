@@ -152,7 +152,6 @@
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.62.1",
-    "@types/howler": "^2.2.13",
     "@types/node": "^26.2.0",
     "@types/seedrandom": "^3.0.8",
     "@vitest/coverage-v8": "^4.1.10",
@@ -177,7 +176,6 @@
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
-    "howler": "^2.2.4",
     "msdf-bmfont-xml": "^2.8.0"
   },
   "peerDependenciesMeta": {

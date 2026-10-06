@@ -195,6 +195,7 @@ undersamples
 unedit
 unflipped
 unmarks
+unmuting
 unnegated
 unrepresentable
 unrotated
@@ -212,6 +213,7 @@ viewports
 Viktor
 visibilitychange
 Vleugels
+Vorbis
 WASD
 webgl
 webglcontextlost

@@ -99,28 +99,37 @@ Systems may implement an optional `cleanup(world)` method. It runs once - not pe
 Since `cleanup` doesn't receive a query result, a system that needs to release a resource per matched entity should track what it acquired itself (for example in a `Map` keyed by entity id) rather than re-querying the world:
 
 ```ts
-const audioSystem: EcsSystem<[AudioComponent]> = {
-  query: [Audio],
-  update(world, { components: [audioComponents] }) {
-    for (const audio of audioComponents) {
-      if (audio.playSound) {
-        audio.sound.play();
-        audio.playSound = false;
-      }
-    }
-  },
-  cleanup(world) {
-    const {
-      components: [audioComponents],
-    } = world.query<[AudioComponent]>([Audio]);
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
 
-    for (const audio of audioComponents) {
-      if (audio.sound.playing()) {
-        audio.sound.stop();
-        audio.sound.unload();
+// Shows each player's name in an HTML label over the game.
+const createNameplateEcsSystem = (
+  container: HTMLElement,
+): EcsSystem<[NameplateEcsComponent]> => {
+  const labels = new Map<number, HTMLElement>();
+
+  return {
+    query: [nameplateId],
+    update(_world, { entities, components: [nameplates] }) {
+      for (let i = 0; i < entities.length; i++) {
+        let label = labels.get(entities[i]);
+
+        if (!label) {
+          label = document.createElement('div');
+          container.appendChild(label);
+          labels.set(entities[i], label);
+        }
+
+        label.textContent = nameplates[i].name;
       }
-    }
-  },
+    },
+    cleanup() {
+      for (const label of labels.values()) {
+        label.remove();
+      }
+
+      labels.clear();
+    },
+  };
 };
 ```
 

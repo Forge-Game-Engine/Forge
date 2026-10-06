@@ -37,6 +37,7 @@ import gameOverComponentCode from '!!raw-loader!./_game-over.component';
 import gameOverSystemCode from '!!raw-loader!./_game-over.system';
 
 import { Demo } from '@site/src/components/Demo';
+import type { CreateDemoGame } from '@site/src/hooks/useGame';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
 import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 
@@ -52,9 +53,10 @@ export default function Rendering(): JSX.Element {
   const [blurIntensity, setBlurIntensity] = useState(blurDefaults.intensity);
   const [blurEnabled, setBlurEnabled] = useState(true);
 
-  const createGame = useCallback(
-    () =>
+  const createGame = useCallback<CreateDemoGame>(
+    (stopWithGame) =>
       createSpaceShooterGame(
+        stopWithGame,
         (bloom) => {
           bloomRef.current = bloom;
         },

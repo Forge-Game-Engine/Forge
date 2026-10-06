@@ -1,95 +1,127 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 # Playing Sounds
 
-[`AudioEcsComponent`](/Forge/docs/api/interfaces/AudioEcsComponent) holds a
-Howler [`Howl`](https://github.com/goldfire/howler.js#documentation) and a
-`playSound` flag.
-[`createAudioEcsSystem`](/Forge/docs/api/functions/createAudioEcsSystem)
-checks that flag every tick: when it's `true`, it calls `sound.play()` and
-resets `playSound` back to `false`.
+There are two ways to play a sound:
 
-## Quick start
+- [`playSound`](/Forge/docs/api/functions/playSound) for a sound that's
+  an event: a shot, an explosion, a button click. It needs no entity.
+- A [`SoundEcsComponent`](/Forge/docs/api/interfaces/SoundEcsComponent)
+  for a sound that belongs to an entity: an engine's hum, an alarm on a
+  pickup, the music of a level. It stops when its entity (or the
+  component) is removed.
 
-Create the `Howl` once, store it in the component, and register the system:
+Both take the bus to play through. There is no default bus, so every
+sound follows the volume setting it belongs under.
+
+## One-shots with playSound
+
+```ts
+import { playSound } from '@forge-game-engine/forge/audio';
+
+playSound(sfx, explosion, { volume: 0.6 });
+
+// The same sound, lower and quieter, for enemy fire.
+playSound(sfx, laser, { volume: 0.3, rate: 0.6 });
+```
+
+Sounds overlap freely, including several copies of the same sound.
+`rate` changes the speed and the pitch together: 2 is twice as fast and an
+octave higher.
+
+`playSound` returns a
+[`PlayingSound`](/Forge/docs/api/interfaces/PlayingSound) for sounds the
+game controls itself:
+
+```ts
+const siren = playSound(sfx, sirenSound, { loop: true });
+
+siren.volume = 0.3;
+siren.stop();
+```
+
+`isPlaying` is `false` once the sound has ended or was stopped. A looping
+sound started with `playSound` plays until `stop()` is called, even after
+the world stops, so keep its handle.
+
+## Sounds that belong to an entity
+
+[`addSoundComponent`](/Forge/docs/api/functions/addSoundComponent) attaches
+a sound to an entity, and
+[`createSoundEcsSystem`](/Forge/docs/api/functions/createSoundEcsSystem)
+plays it:
 
 ```ts
 import {
-  addAudioComponent,
-  audioId,
-  createAudioEcsSystem,
+  addSoundComponent,
+  createSoundEcsSystem,
 } from '@forge-game-engine/forge/audio';
-import { createGame } from '@forge-game-engine/forge/utilities';
-import { Howl } from 'howler';
 
-const { world } = createGame('game-container');
+world.addSystem(createSoundEcsSystem());
 
-world.addSystem(createAudioEcsSystem());
-
-const player = world.createEntity();
-
-addAudioComponent(world, player, {
-  sound: new Howl({ src: ['jump.mp3'] }),
+const hum = addSoundComponent(world, ship, {
+  sound: engineHum,
+  bus: sfx,
+  loop: true,
+  volume: 0.4,
 });
 ```
 
-## Triggering playback
+The system starts the sound on its next update and keeps it in step with
+the component:
 
-Flip `playSound` to `true` from any other system or event handler when the
-sound should play, for example on a rising edge of a jump input:
+- `volume`, `rate` and `loop` changes apply to the playing sound, so the
+  hum can follow the ship's speed: `hum.rate = 0.8 + speed / maxSpeed`.
+- `paused` pauses the sound where it is; clearing it resumes from there.
+- Changing `bus` moves the playing sound to another bus of the same mixer.
+- Changing `sound` starts the new sound from the beginning.
+- Removing the component or the entity stops the sound.
+- Stopping the world stops every sound the system started.
+
+### Knowing when a sound has finished
+
+`hasFinished` becomes `true` once a non-looping sound has played to its
+end. Use it instead of guessing the sound's length with a timer, for
+example to remove an entity once its sound is over:
 
 ```ts
-const audio = world.getComponent(player, audioId);
-
-if (audio && justPressedJump) {
-  audio.playSound = true;
+for (let i = 0; i < entities.length; i++) {
+  if (sounds[i].hasFinished) {
+    world.removeEntity(entities[i]);
+  }
 }
 ```
 
-The next `world.update()` plays the sound and resets `playSound` back to
-`false` for you, so this is a one-shot trigger; you don't need to reset it
-yourself.
+Only the system writes `hasFinished`. A finished component plays nothing
+more; to play the sound again, remove the component and add a new one.
 
-:::caution
-Setting `playSound = true` on every tick that a condition holds (for example
-"the player is moving") re-triggers playback every frame, stacking
-overlapping copies of the same sound. Trigger it on the transition into the
-condition (the rising edge), not while it remains true.
-:::
+## Before the first click
 
-## Background music and looping sounds
+Until the player has clicked, tapped or pressed a key, a non-looping sound
+is dropped: `playSound` returns a handle whose `isPlaying` is `false`, and
+a component reports `hasFinished`. Looping sounds start and are heard once
+audio runs. See [The first click](./mixer-and-buses.md#the-first-click).
 
-For music or ambience, configure looping on the `Howl` itself and trigger
-playback once:
+## Common mistakes
+
+**Loading a sound every time it plays.** A new cache per shot fetches
+and decodes the file every time:
 
 ```ts
-const music = world.createEntity();
+// Don't
+playSound(sfx, await new SoundAssetCache(mixer).getOrLoad('audio/laser.mp3'));
 
-addAudioComponent(world, music, {
-  sound: new Howl({ src: ['theme.mp3'], loop: true, volume: 0.4 }),
-  playSound: true,
-});
+// Do: load once, up front, and reuse the asset
+const laser = await sounds.getOrLoad('audio/laser.mp3');
+playSound(sfx, laser);
 ```
 
-`createAudioEcsSystem` resets `playSound` to `false` after the first
-`update()`, but `loop: true` keeps Howler playing the sound, so no further
-flag changes are needed. To stop it, call the `Howl` API directly (for
-example `music.sound.stop()`); the component doesn't expose a "stop" flag.
+**An entity just to play a one-shot.** An entity that only carries a sound
+and a lifetime long enough for it to finish is what `playSound` replaces.
 
-## Cleanup
-
-`createAudioEcsSystem`'s cleanup hook stops and unloads the `Howl` for any
-matching entity whose sound is still playing, but it only runs when the
-whole [`world.stop()`](/Forge/docs/api/classes/EcsWorld#stop) (for example
-via [`Game.stop()`](/Forge/docs/api/classes/Game#stop)) runs, not when an
-individual entity or component is removed.
-
-:::caution
-If you remove an entity with an `AudioEcsComponent` while the game keeps
-running (for example a temporary "explosion" entity), this cleanup never
-runs for it. Call `sound.stop()` and `sound.unload()` yourself before
-removing the entity or component, otherwise the loaded audio buffer stays in
-memory for the rest of the session.
-:::
+**Playing a sound every frame a condition holds.** `playSound` in an
+`update` loop while "the player is moving" starts a new copy every frame.
+Play on the change into the condition, or use a looping
+`SoundEcsComponent` and set `paused` from the condition.

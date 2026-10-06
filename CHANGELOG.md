@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **audio:** A sound mixer built on the Web Audio API. `createSoundMixer()` owns the game's audio output and starts it on the player's first click, tap or key press (and again after Safari interrupts it). `mixer.createBus(name, parent?)` creates nestable buses whose `volume` and `muted` apply to every sound played through them, including sounds already playing. `mixer.suspend()`/`resume()` pause all audio, and `mixer.stop()` releases it when the game is torn down
+- **audio:** `SoundAssetCache` loads and decodes each sound file once and shares concurrent loads, and `createSoundAsset({ sampleRate, channels })` makes a sound from samples, for audio generated at runtime. Sounds stay usable after the world that played them stops
+- **audio:** `playSound(bus, sound, { volume, rate, loop })` plays a sound without an entity and returns a handle to change its volume or stop it. Any number of sounds, including copies of the same one, can play at once
+- **audio:** `SoundEcsComponent` (`addSoundComponent`, `soundId`) with `createSoundEcsSystem()` plays a sound that belongs to an entity. Changes to its `volume`, `rate`, `loop`, `bus`, `sound` and `paused` apply while it plays, removing the component or the entity stops it, and `hasFinished` reports when a non-looping sound has played to its end
+- **audio:** A non-looping sound requested before the player's first interaction with the page is dropped rather than played late on the first click; looping sounds start and are heard once audio runs
+
+#### Removed
+
+- **audio:** `AudioEcsComponent`, `audioId`, `addAudioComponent` and `createAudioEcsSystem`, along with the Howler.js peer dependency, so you can uninstall `howler` and `@types/howler`. Create one mixer with `createSoundMixer()` and buses for your volume settings, load sounds with `new SoundAssetCache(mixer).getOrLoad(url)` instead of creating `Howl`s, replace `playSound: true` one-shots with `playSound(bus, sound, options)`, and replace sounds that belong to an entity (music, loops) with `addSoundComponent(world, entity, { sound, bus, loop })` and `createSoundEcsSystem()`. Removing an entity now stops its sound, so drop any code that stopped or unloaded sounds before removing entities
+
 ## [0.25.8] - 2026-10-03
 
 #### Fixed

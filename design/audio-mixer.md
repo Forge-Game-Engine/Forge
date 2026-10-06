@@ -2,7 +2,7 @@
 
 |                                       |                                                                                                                                                                                                                                                           |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                         |
+| **Status**                            | Phase 1 implemented; the engine behaves as documented in `documentation-site/docs/docs/audio` (see §11 for where it differs from this draft)                                                                                                              |
 | **Kind**                              | Missing feature                                                                                                                                                                                                                                           |
 | **Found in**                          | Galactic Journey demo: `src/audio/audio-mixer.ts`, `src/speed/create-speed-sounds.ts`, `src/explosions/create-explosions.ts`, `src/gun/gun.system.ts`, `src/enemy/enemy.system.ts`, `src/music/create-music.ts`, `src/main-menu/create-settings-panel.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                  |
@@ -671,3 +671,30 @@ writer per field, like `LifetimeEcsComponent.hasExpired`.
   dependency, so games can uninstall it.
 - The demo's own `audio-mixer.ts` keeps only its saved-settings code;
   `create-speed-sounds.ts` drops its WAV encoder.
+
+## 11. Implementation notes
+
+Phase 1 shipped with these differences from the draft above, each settled
+during review of the implementation plan:
+
+- **The gesture rule also checks the context's state.** A non-looping
+  sound is dropped only if no gesture has happened _and_ the context isn't
+  running. A browser that already allows the page to play audio (for
+  example after client-side navigation within a site the player has
+  interacted with, as on the docs site) creates the context `'running'`,
+  and the literal §5.4 rule would have dropped every sound effect until the
+  next click there. The stale-burst problem DL-5 avoids only exists while
+  the context can't play.
+- **`hasFinished` isn't `readonly` in the type**, because the system has to
+  write it without a cast. `addSoundComponent` doesn't accept it, so game
+  code can't set it.
+- **Edge cases the draft left open:** changing a component's `bus` to a bus
+  of a different mixer throws (Web Audio can't connect nodes across
+  contexts), and a sound whose mixer is stopped while its world keeps
+  running reports `hasFinished` instead of being restarted.
+- **The docs site's `useGame`** passes each demo's `createGame` a
+  `stopWithGame(resource)` callback; the space shooter registers its mixer
+  with it.
+- **Open questions** all took the proposed answer: no streaming, no
+  decibel helpers, no voice limiting, and no automatic suspend while the
+  page is hidden (the audio guide shows the `visibilitychange` snippet).
