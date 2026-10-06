@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { GameState } from '../game-state.js';
 
 /**
@@ -77,7 +78,7 @@ export function addStateScopedComponent<TName extends string>(
     component.removeOnEnter.length === 0
   ) {
     throw new Error(
-      `Unable to add a state-scoped component to entity "${entity}", neither "removeOnExit" nor "removeOnEnter" lists a state, so it would never be removed.`,
+      `Unable to add a state-scoped component to entity ${formatEntity(entity)}, neither "removeOnExit" nor "removeOnEnter" lists a state, so it would never be removed.`,
     );
   }
 

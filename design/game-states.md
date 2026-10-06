@@ -232,13 +232,12 @@ addStateScopedComponent(world, entity, {
 
 The transition removes every entity whose state left one of its
 `removeOnExit` states, or entered one of its `removeOnEnter` states, at
-step 3 above, with `world.removeEntity`. Once
-[`hierarchy-removal.md`](./hierarchy-removal.md) ships, that takes the
-entity's descendants with it, and removing a descendant that was already
-removed is a no-op
-([`generational-entity-ids.md`](./generational-entity-ids.md)). Until
-then, removal takes only the scoped entity, as `removeEntity` does
-everywhere else. At least one of the two lists must be non-empty.
+step 3 above, with `world.removeEntity`. Removing an entity that was
+already removed is a no-op
+([`generational-entity-ids.md`](./generational-entity-ids.md)). Once
+[`hierarchy-removal.md`](./hierarchy-removal.md) ships, removal takes the
+entity's descendants with it. Until then, it takes only the scoped entity,
+as `removeEntity` does everywhere else. At least one of the two lists must be non-empty.
 
 The demo's run leftovers stay on screen behind the end-of-run panels and
 are cleared when a new run starts or the menu comes up, so they use

@@ -10,7 +10,8 @@ import {
   SpeedEcsComponent,
   speedId,
 } from '../common/index.js';
-import { createComponentId } from './ecs-component.js';
+import { createComponentId, createTagId } from './ecs-component.js';
+import { entityGeneration, entityIndex, formatEntity } from './entity.js';
 import { Vec2 } from '../math/index.js';
 
 const trackingSystem = (name: string, calls: string[]): EcsSystem<[]> => ({
@@ -950,7 +951,7 @@ describe('EcsWorld', () => {
       expect(listener).toHaveBeenCalledWith(entity);
     });
 
-    it('raises onEntityRemoved when removeComponent removes the last remaining component', () => {
+    it('does not raise onEntityRemoved when removeComponent removes the last remaining component', () => {
       const world = new EcsWorld();
       const entity = world.createEntity();
 
@@ -964,8 +965,76 @@ describe('EcsWorld', () => {
 
       world.removeComponent(entity, positionId);
 
+      expect(listener).not.toHaveBeenCalled();
+      expect(world.isAlive(entity)).toBe(true);
+    });
+
+    it('raises onEntityRemoved once when the same entity is removed twice', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      const listener = vi.fn();
+      world.onEntityRemoved.registerListener(listener);
+
+      world.removeEntity(entity);
+      world.removeEntity(entity);
+
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith(entity);
+    });
+
+    it('raises onEntityRemoved after the entity is no longer alive and its components are gone', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.addComponent(entity, positionId, {
+        local: Vec2.zero,
+        world: Vec2.zero,
+      });
+
+      let wasAlive: boolean | null = null;
+      let position: PositionEcsComponent | null = null;
+
+      world.onEntityRemoved.registerListener((removed) => {
+        wasAlive = world.isAlive(removed);
+        position = world.getComponent(removed, positionId);
+      });
+
+      world.removeEntity(entity);
+
+      expect(wasAlive).toBe(false);
+      expect(position).toBeNull();
+    });
+
+    it('does nothing when a listener removes the entity being removed again', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const removals: boolean[] = [];
+
+      world.onEntityRemoved.registerListener((removed) => {
+        removals.push(world.removeEntity(removed));
+      });
+
+      expect(world.removeEntity(entity)).toBe(true);
+      expect(removals).toEqual([false]);
+
+      const first = world.createEntity();
+      const second = world.createEntity();
+
+      expect(first).not.toBe(second);
+      expect(entityIndex(first)).not.toBe(entityIndex(second));
+    });
+
+    it('still frees the slot when a listener throws', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.onEntityRemoved.registerListener(() => {
+        throw new Error('listener failed');
+      });
+
+      expect(() => world.removeEntity(entity)).toThrow('listener failed');
+      expect(world.isAlive(entity)).toBe(false);
+      expect(entityIndex(world.createEntity())).toBe(entityIndex(entity));
     });
 
     it('does not raise onEntityRemoved when removeComponent leaves other components on the entity', () => {
@@ -1002,6 +1071,211 @@ describe('EcsWorld', () => {
     });
   });
 
+  describe('entity lifetime', () => {
+    const tagId = createTagId('tag');
+
+    const addPosition = (
+      world: EcsWorld,
+      entity: number,
+      x: number,
+    ): PositionEcsComponent =>
+      world.addComponent(entity, positionId, {
+        local: { x, y: 0 },
+        world: { x, y: 0 },
+      });
+
+    it('numbers the first entity in each slot 0, 1, 2, ...', () => {
+      const world = new EcsWorld();
+
+      expect([
+        world.createEntity(),
+        world.createEntity(),
+        world.createEntity(),
+      ]).toEqual([0, 1, 2]);
+    });
+
+    it('keeps an entity alive from createEntity until removeEntity, with or without components', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      expect(world.isAlive(entity)).toBe(true);
+
+      addPosition(world, entity, 1);
+      world.removeComponent(entity, positionId);
+
+      expect(world.isAlive(entity)).toBe(true);
+      expect(() => addPosition(world, entity, 2)).not.toThrow();
+
+      world.removeEntity(entity);
+
+      expect(world.isAlive(entity)).toBe(false);
+    });
+
+    it('is not alive for a handle the world never created', () => {
+      const world = new EcsWorld();
+      world.createEntity();
+
+      expect(world.isAlive(1)).toBe(false);
+      expect(world.isAlive(-1)).toBe(false);
+      expect(world.isAlive(1.5)).toBe(false);
+    });
+
+    it('gives an entity that reuses a removed slot a new handle', () => {
+      const world = new EcsWorld();
+      const removed = world.createEntity();
+
+      world.removeEntity(removed);
+
+      const reused = world.createEntity();
+
+      expect(entityIndex(reused)).toBe(entityIndex(removed));
+      expect(entityGeneration(reused)).toBe(entityGeneration(removed) + 1);
+      expect(reused).not.toBe(removed);
+      expect(world.isAlive(removed)).toBe(false);
+      expect(world.isAlive(reused)).toBe(true);
+    });
+
+    it("never resolves a removed entity's handle to the entity that reused its slot", () => {
+      const world = new EcsWorld();
+      const removed = world.createEntity();
+      addPosition(world, removed, 1);
+      world.addTag(removed, tagId);
+      world.removeEntity(removed);
+
+      const reused = world.createEntity();
+      const position = addPosition(world, reused, 2);
+      world.addTag(reused, tagId);
+
+      expect(world.getComponent(removed, positionId)).toBeNull();
+      expect(world.getComponentAccessor(positionId)(removed)).toBeNull();
+      expect(() => world.getComponentRequired(removed, positionId)).toThrow(
+        formatEntity(removed),
+      );
+      expect(world.getComponent(reused, positionId)).toBe(position);
+      expect(world.query([positionId], [tagId]).entities).toEqual([reused]);
+    });
+
+    it("leaves the entity that reused a slot alone when the old handle's component is removed", () => {
+      const world = new EcsWorld();
+      const removed = world.createEntity();
+      world.removeEntity(removed);
+
+      const reused = world.createEntity();
+      const position = addPosition(world, reused, 2);
+
+      world.removeComponent(removed, positionId);
+
+      expect(world.getComponent(reused, positionId)).toBe(position);
+    });
+
+    it('returns true from removeEntity once, then false for the same handle', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      expect(world.removeEntity(entity)).toBe(true);
+      expect(world.removeEntity(entity)).toBe(false);
+    });
+
+    it('ignores removing a handle whose slot has been reused', () => {
+      const world = new EcsWorld();
+      const removed = world.createEntity();
+      world.removeEntity(removed);
+
+      const reused = world.createEntity();
+      addPosition(world, reused, 2);
+
+      expect(world.removeEntity(removed)).toBe(false);
+      expect(world.isAlive(reused)).toBe(true);
+      expect(world.getComponent(reused, positionId)).not.toBeNull();
+    });
+
+    it('gives two entities created after a double removal different handles and separate components', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.removeEntity(entity);
+      world.removeEntity(entity);
+
+      const first = world.createEntity();
+      const second = world.createEntity();
+      const firstPosition = addPosition(world, first, 1);
+      const secondPosition = addPosition(world, second, 2);
+
+      expect(first).not.toBe(second);
+      expect(world.getComponent(first, positionId)).toBe(firstPosition);
+      expect(world.getComponent(second, positionId)).toBe(secondPosition);
+    });
+
+    it('reuses the least recently freed slot first', () => {
+      const world = new EcsWorld();
+      const a = world.createEntity();
+      const b = world.createEntity();
+      const c = world.createEntity();
+
+      world.removeEntity(b);
+      world.removeEntity(a);
+      world.removeEntity(c);
+
+      expect(
+        [world.createEntity(), world.createEntity(), world.createEntity()].map(
+          entityIndex,
+        ),
+      ).toEqual([b, a, c].map(entityIndex));
+      expect(entityIndex(world.createEntity())).toBe(3);
+    });
+
+    it('throws when adding a component or tag to a removed entity', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      world.removeEntity(entity);
+
+      expect(() => addPosition(world, entity, 1)).toThrow(
+        `Unable to add component "${positionId.toString()}" to entity ${formatEntity(entity)}, it isn't alive`,
+      );
+      expect(() => world.addTag(entity, tagId)).toThrow(
+        `Unable to add tag "${tagId.toString()}" to entity ${formatEntity(entity)}, it isn't alive`,
+      );
+    });
+
+    it('throws when adding a component to a handle the world never created', () => {
+      const world = new EcsWorld();
+
+      expect(() => addPosition(world, 0, 1)).toThrow(/isn't alive/);
+    });
+
+    it('does not attach a component added to a removed handle to the entity that reuses its slot', () => {
+      const world = new EcsWorld();
+      const removed = world.createEntity();
+      world.removeEntity(removed);
+
+      expect(() => addPosition(world, removed, 1)).toThrow();
+
+      const reused = world.createEntity();
+
+      expect(world.getComponent(reused, positionId)).toBeNull();
+    });
+
+    it("wraps a slot's generation after 1,024 reuses", () => {
+      const world = new EcsWorld();
+      const first = world.createEntity();
+      let entity = first;
+
+      for (let i = 0; i < 1023; i++) {
+        world.removeEntity(entity);
+        entity = world.createEntity();
+      }
+
+      expect(entityGeneration(entity)).toBe(1023);
+      expect(world.isAlive(first)).toBe(false);
+
+      world.removeEntity(entity);
+      entity = world.createEntity();
+
+      expect(entity).toBe(first);
+      expect(entity).toBeLessThan(2 ** 30);
+    });
+  });
+
   describe('getComponentRequired', () => {
     it('returns the component when the entity has it', () => {
       const world = new EcsWorld();
@@ -1021,7 +1295,7 @@ describe('EcsWorld', () => {
       const entity = world.createEntity();
 
       expect(() => world.getComponentRequired(entity, positionId)).toThrow(
-        `Required component "${positionId.toString()}" not found on entity "${entity}".`,
+        `Required component "${positionId.toString()}" not found on entity ${formatEntity(entity)}.`,
       );
     });
   });

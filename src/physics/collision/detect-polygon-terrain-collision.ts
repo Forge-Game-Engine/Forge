@@ -45,11 +45,11 @@ interface LocalBounds {
   maxX: number;
 
   /**
-   * The polygon's least local y - the point furthest along the terrain's
+   * The polygon's greatest local y - the point furthest along the terrain's
    * outward direction, since a terrain's solid slab always extends toward
-   * local +y.
+   * local -y.
    */
-  minY: number;
+  maxY: number;
 }
 
 function localBounds(
@@ -58,7 +58,7 @@ function localBounds(
 ): LocalBounds {
   let minX = Infinity;
   let maxX = -Infinity;
-  let minY = Infinity;
+  let maxY = -Infinity;
 
   for (const vertex of worldVertices) {
     // Clone before subtracting: `worldVertices` (`polygonFaces.vertices`) is
@@ -70,10 +70,10 @@ function localBounds(
 
     minX = Math.min(minX, local.x);
     maxX = Math.max(maxX, local.x);
-    minY = Math.min(minY, local.y);
+    maxY = Math.max(maxY, local.y);
   }
 
-  return { minX, maxX, minY };
+  return { minX, maxX, maxY };
 }
 
 /**
@@ -142,18 +142,18 @@ function isWithinEdgeNormalRange(
   const previous = edgeIndex > 0 ? surface[edgeIndex - 1] : null;
   const next = edgeIndex < surface.length - 1 ? surface[edgeIndex + 1] : null;
 
-  // Walking the chain left to right, the outward normal turns
-  // counter-clockwise across a vertex the ground bulges outward at, and
-  // clockwise across one it folds inward at - so a positive cross product
-  // between two consecutive normals is exactly "this vertex bulges
-  // outward", and the neighbor's normal is the far side of the fan it
-  // opens up.
-  const clockwiseLimit =
-    previous !== null && Vec2.cross(previous.normal, edge.normal) > 0
+  // Walking the chain left to right, the outward normal turns clockwise
+  // across a vertex the ground bulges outward at (a ridge), and
+  // counter-clockwise across one it folds inward at (a valley) - so a
+  // negative cross product between two consecutive normals is exactly "this
+  // vertex bulges outward", and the neighbor's normal is the far side of the
+  // fan it opens up.
+  const counterClockwiseLimit =
+    previous !== null && Vec2.cross(previous.normal, edge.normal) < 0
       ? previous.normal
       : edge.normal;
-  const counterClockwiseLimit =
-    next !== null && Vec2.cross(edge.normal, next.normal) > 0
+  const clockwiseLimit =
+    next !== null && Vec2.cross(edge.normal, next.normal) < 0
       ? next.normal
       : edge.normal;
 
@@ -257,12 +257,12 @@ export function detectPolygonTerrainCollision(
     normals: polygonCollider.getWorldNormals(polygonBody.rotation),
   };
 
-  const { minX, maxX, minY } = localBounds(polygonFaces.vertices, terrainBody);
+  const { minX, maxX, maxY } = localBounds(polygonFaces.vertices, terrainBody);
 
   // A polygon that has passed out of the bottom of the terrain's slab has
   // fallen through it, exactly as it would have with a closed slab, rather
   // than being dragged all the way back up to the surface.
-  if (minY > terrainCollider.bottomY) {
+  if (maxY < terrainCollider.bottomY) {
     return [];
   }
 

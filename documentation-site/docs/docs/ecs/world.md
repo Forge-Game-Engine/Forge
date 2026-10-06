@@ -13,7 +13,9 @@ sidebar_position: 2
 
 ## Creating a new entity in the world
 
-Creating an entity returns a numeric id that you use when adding components or tags.
+Creating an entity returns a handle (a number) that you use when adding components or tags.
+The entity stays alive until you remove it with `removeEntity`, whether or not it has
+any components.
 
 ```ts
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
@@ -21,25 +23,32 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 const world = new EcsWorld();
 const entity = world.createEntity();
 
-// entity is a number (e.g. 0)
+// entity is a number (the first one is 0)
 ```
 
 ## Removing an entity from the world
 
 To remove an entity and all of its component data, call `removeEntity(entity)`.
-The world will free the entity id for reuse.
 
 ```ts
 world.removeEntity(entity);
 ```
 
-This removes every component/tag the entity had and marks the id as available.
+This removes every component/tag the entity had, then raises `onEntityRemoved`
+with the entity. The world reuses the entity's slot for a later entity, under a
+new handle, so the removed entity's handle never refers to the new one.
 Entities parented to it (with `addParentComponent`) aren't removed with it.
+
+Removing an entity that's already been removed does nothing, and
+`removeEntity` returns `false` instead of `true`. Use `isAlive(entity)` to check
+whether an entity you're holding on to is still there. See
+[Entity](entity.md#holding-on-to-other-entities).
 
 ## Adding a component to the entity
 
 Components are identified by component keys (symbols) created with `createComponentId`.
 Use `addComponent(entity, componentKey, data)` to attach component data to an entity.
+Adding a component (or tag) to an entity that's been removed throws.
 
 ```ts
 import { createComponentId } from '@forge-game-engine/forge/ecs';
@@ -53,8 +62,8 @@ See the [Component docs](component.md) for details on creating and typing compon
 
 ## Removing a component from the entity
 
-Remove a component with `removeComponent(entity, componentKey)`. If this was the
-last component on the entity, the entity will be removed from the world.
+Remove a component with `removeComponent(entity, componentKey)`. The entity stays
+alive even if it has no components left; call `removeEntity` to remove it.
 
 ```ts
 world.removeComponent(entity, Position);

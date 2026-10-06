@@ -1,6 +1,7 @@
 import { rotationId } from '../../common/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
@@ -81,7 +82,7 @@ export function addRevoluteJointComponent(
 
   if (merged.lowerAngle > merged.upperAngle) {
     throw new Error(
-      `Unable to add revolute joint to entity "${entity}": lowerAngle (${merged.lowerAngle}) must be <= upperAngle (${merged.upperAngle}).`,
+      `Unable to add revolute joint to entity ${formatEntity(entity)}: lowerAngle (${merged.lowerAngle}) must be <= upperAngle (${merged.upperAngle}).`,
     );
   }
 
@@ -90,7 +91,7 @@ export function addRevoluteJointComponent(
 
   if (rotationA === null || rotationB === null) {
     throw new Error(
-      `Unable to add revolute joint to entity "${entity}": entityA and entityB must both have a RotationEcsComponent.`,
+      `Unable to add revolute joint to entity ${formatEntity(entity)}: entityA and entityB must both have a RotationEcsComponent.`,
     );
   }
 

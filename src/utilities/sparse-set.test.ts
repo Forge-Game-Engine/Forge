@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SparseSet } from './sparse-set';
+import { createEntityHandle } from '../ecs/entity-layout.js';
 
 describe('SparseSet', () => {
   let set: SparseSet<string>;
@@ -104,5 +105,32 @@ describe('SparseSet', () => {
     expect(set.size).toBe(1);
     set.remove(0);
     expect(set.size).toBe(0);
+  });
+
+  it('does not treat a handle from an older generation of the same slot as a member', () => {
+    const stale = createEntityHandle(5, 0);
+    const current = createEntityHandle(5, 1);
+
+    set.add(current, 'current');
+
+    expect(set.has(stale)).toBe(false);
+    expect(set.get(stale)).toBeNull();
+    expect(set.get(current)).toBe('current');
+
+    set.remove(stale);
+
+    expect(set.get(current)).toBe('current');
+  });
+
+  it('keeps swapped entries reachable by their full handle after a removal', () => {
+    const a = createEntityHandle(1, 3);
+    const b = createEntityHandle(2, 7);
+
+    set.add(a, 'a');
+    set.add(b, 'b');
+    set.remove(a);
+
+    expect(set.get(b)).toBe('b');
+    expect(set.has(createEntityHandle(2, 6))).toBe(false);
   });
 });

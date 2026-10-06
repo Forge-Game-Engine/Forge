@@ -300,7 +300,7 @@ export function detectCircleTerrainCollision(
     -terrainBody.rotation,
   );
 
-  if (localCenter.y - radius > terrainCollider.bottomY) {
+  if (localCenter.y + radius < terrainCollider.bottomY) {
     return [];
   }
 

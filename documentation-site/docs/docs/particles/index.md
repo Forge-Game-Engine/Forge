@@ -118,8 +118,10 @@ also covers a particle you give a
 [`ParentEcsComponent`](/Forge/docs/api/interfaces/ParentEcsComponent), for
 example from `onParticleSpawned` to make particles follow a moving ship.
 
-The emitter reads its entity's **world** position, so move the emitter
-entity by writing its `position.local`.
+The emitter reads its entity's **world** position and rotation, so move or
+turn the emitter entity by writing its `position.local` and
+`rotation.local` (see
+[Emitters turn with their entity](./emitters.md#emitters-turn-with-their-entity)).
 
 ## Sprites
 

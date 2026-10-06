@@ -1,4 +1,5 @@
 import { positionId } from '../../common/components/position-component.js';
+import { rotationId } from '../../common/components/rotation-component.js';
 import { Time } from '../../common/time/Time.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
@@ -53,6 +54,7 @@ function getAmountToEmitBasedOnDuration(
 function emitNewParticles(
   particleEmitter: ParticleEmitter,
   origin: Vector2,
+  rotation: number,
   random: Random,
   world: EcsWorld,
 ): void {
@@ -68,7 +70,7 @@ function emitNewParticles(
   const currentAmountToEmit = getAmountToEmitBasedOnDuration(particleEmitter);
 
   for (let i = 0; i < currentAmountToEmit; i++) {
-    spawnParticle(world, particleEmitter, origin, random);
+    spawnParticle(world, particleEmitter, origin, rotation, random);
   }
 
   particleEmitter.emitCount += currentAmountToEmit;
@@ -77,6 +79,7 @@ function emitNewParticles(
 function emitParticleStream(
   particleEmitter: ParticleEmitter,
   origin: Vector2,
+  rotation: number,
   deltaTimeInSeconds: number,
   random: Random,
   world: EcsWorld,
@@ -95,7 +98,7 @@ function emitParticleStream(
   particleEmitter.emissionRemainder = due - amountToEmit;
 
   for (let i = 0; i < amountToEmit; i++) {
-    spawnParticle(world, particleEmitter, origin, random);
+    spawnParticle(world, particleEmitter, origin, rotation, random);
   }
 }
 
@@ -105,7 +108,9 @@ function emitParticleStream(
  * `emit()`/`emitIfNotEmitting()`, and the steady stream set by
  * `emissionRate`. Particles spawn around the world position
  * (`PositionEcsComponent.world`) of the entity the emitter is on, or the
- * world origin if it has no position.
+ * world origin if it has no position. Each emitter's spawn shape and
+ * `directionRange` turn with the entity's world rotation
+ * (`RotationEcsComponent.world`), or don't turn if it has no rotation.
  * @param time - The time instance used to advance emitter timers.
  * @param random - The random instance used to pick values from emitter ranges.
  * @returns The particle emitter ECS system.
@@ -121,6 +126,7 @@ export const createParticleEcsSystem = (
     for (let i = 0; i < entities.length; i++) {
       const origin =
         world.getComponent(entities[i], positionId)?.world ?? worldOrigin;
+      const rotation = world.getComponent(entities[i], rotationId)?.world ?? 0;
 
       for (const particleEmitter of particleEmitterComponents[
         i
@@ -129,11 +135,12 @@ export const createParticleEcsSystem = (
 
         startEmittingParticles(particleEmitter, random);
 
-        emitNewParticles(particleEmitter, origin, random, world);
+        emitNewParticles(particleEmitter, origin, rotation, random, world);
 
         emitParticleStream(
           particleEmitter,
           origin,
+          rotation,
           deltaTimeInSeconds,
           random,
           world,
