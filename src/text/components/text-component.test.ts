@@ -69,29 +69,6 @@ describe('addTextComponent', () => {
     expect(world.getComponent(entity, textId)).toBe(component);
   });
 
-  it('leaves sortDepth undefined by default', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-
-    addTextComponent(world, entity, { text: 'Play', fontAtlas, size: 32 });
-
-    expect(world.getComponent(entity, textId)?.sortDepth).toBeUndefined();
-  });
-
-  it('accepts an explicit sortDepth override', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-
-    addTextComponent(world, entity, {
-      text: 'Play',
-      fontAtlas,
-      size: 32,
-      sortDepth: 7,
-    });
-
-    expect(world.getComponent(entity, textId)?.sortDepth).toBe(7);
-  });
-
   it('defaults category to TEXT_RENDER_CATEGORY', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();

@@ -12,7 +12,6 @@ const buildRectTransform = (
 ): RectTransformEcsComponent => ({
   anchoredPosition: { x: 0, y: 0 },
   rect: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } },
-  sortDepth: 0,
   ...overrides,
 });
 

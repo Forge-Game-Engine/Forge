@@ -8,8 +8,6 @@ import type { Texture } from './texture.js';
  * `texture` and `emissiveTexture` draw as one instanced batch.
  */
 export interface RenderCommand {
-  layer: number;
-  depth: number;
   renderable: Renderable;
   /** The texture the quad samples: a sprite's texture or a font atlas's. */
   texture: Texture;

@@ -27,7 +27,7 @@ A `SpriteEcsComponent` holds:
   [Drawing sprites with a custom shader](#drawing-sprites-with-a-custom-shader)).
 - `category`: which cameras draw the sprite (see
   [Choosing which cameras draw a sprite](#choosing-which-cameras-draw-a-sprite)).
-- `layer` and `sortDepth`: the sprite's draw order (see
+- `layer`: the sprite's draw order (see
   [Setting the draw order](#setting-the-draw-order)).
 - `enabled`: whether the sprite is drawn.
 
@@ -164,9 +164,11 @@ The health bar is drawn only by the second camera.
 ## Setting the draw order
 
 A camera draws its sprites sorted by `layer`, lower layers first, so sprites
-in a higher layer are drawn on top. Within a layer, sprites are sorted by
-depth, lower depth first. A sprite's depth is its world Y position, unless
-its `sortDepth` is set.
+in a higher layer are drawn on top. Within a layer, sprites draw by their
+entity's [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
+and then in hierarchy order: entities created earlier first, and children
+after their parents. [Draw Order](./draw-order.md) covers ordering a child
+relative to its parent and sorting by height on screen.
 
 `layer` orders sprites drawn by the same camera. The order in which cameras
 are composited is the camera's own `layer` (see

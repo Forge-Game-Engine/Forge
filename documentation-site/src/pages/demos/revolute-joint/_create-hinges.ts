@@ -72,11 +72,14 @@ async function loadHingeSprites(
       }),
       category: renderLayer,
     },
+    // On a layer above the bodies, so a pivot shows on top of what turns
+    // around it.
     pivot: {
       ...createImageSprite(createTexture(renderContext, pivotImage), {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
+      layer: 1,
     },
   };
 }

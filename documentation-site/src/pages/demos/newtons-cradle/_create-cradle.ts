@@ -80,11 +80,13 @@ async function loadCradleSprites(
       }),
       category: renderLayer,
     },
+    // On a layer above the arms, so the frame covers their tops.
     frame: {
       ...createImageSprite(createTexture(renderContext, frameImage), {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
+      layer: 1,
     },
     arm: {
       ...createImageSprite(createTexture(renderContext, armImage), {
