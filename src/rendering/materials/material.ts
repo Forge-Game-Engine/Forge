@@ -7,11 +7,28 @@ import type { ShaderProgram } from './shader-program.js';
 import { UniformValue } from './uniform-value.js';
 
 /**
- * A shader program plus the uniform values to draw with: what other engines
- * call a material instance. Materials made from the same two shaders share
- * one linked program (see `RenderContext.getShaderProgram`), so creating a
- * material is cheap; each material keeps its own uniform values, and binding
- * it uploads them.
+ * A shader program plus the uniform values to draw with. Materials made
+ * from the same two shaders share one linked program (see
+ * `RenderContext.getShaderProgram`), so creating a material is cheap; each
+ * material keeps its own uniform values, and binding it uploads them.
+ *
+ * A material's uniforms are the ones its shaders' sources declare, read
+ * after `#pragma forge include(...)`s are resolved, from declarations of
+ * the form `uniform [precision] <type> <name>[<size>], ...;` (or
+ * `<type>[<size>] <name>`), with an optional `layout(...)` qualifier:
+ * - An array's size is an integer literal, a `#define NAME <integer>` or a
+ *   `const int NAME = <integer>;`. Any other size expression throws when
+ *   the material is created.
+ * - Two declarations of the same name, in one shader or across the two,
+ *   must agree on type and size.
+ * - `#if`/`#ifdef` blocks aren't evaluated, so a uniform declared in a
+ *   branch that's compiled out can still be set, and is treated like a
+ *   uniform the compiler removed.
+ * - Uniform blocks (`uniform Block { ... };`) aren't supported.
+ * - A struct uniform (`uniform Light u_light;`) can't be set by its own
+ *   name; its members (`u_light.color`) can be set while the program uses
+ *   them. The same applies to a uniform whose type is a macro
+ *   (`uniform TINT_TYPE u_tint;`).
  */
 export class Material {
   private readonly _shaderProgram: ShaderProgram;

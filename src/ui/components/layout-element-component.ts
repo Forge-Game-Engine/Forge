@@ -11,9 +11,8 @@ export interface LayoutElementDefaultedOptions {
    * group neither measures it (its size doesn't count toward the group's
    * own preferred/min size) nor arranges it (its `RectTransformEcsComponent`
    * is left untouched). Useful for a decorative child (a background flourish,
-   * a badge overlay) placed inside a panel a `HorizontalLayoutGroupEcsComponent`/
-   * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent` also
-   * arranges. Defaults to `false`.
+   * a badge overlay) placed inside a panel a `UiAxisLayoutGroupEcsComponent`/
+   * `GridLayoutGroupEcsComponent` also arranges. Defaults to `false`.
    */
   ignoreLayout: boolean;
 }

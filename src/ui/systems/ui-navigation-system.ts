@@ -298,7 +298,7 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * for the pointer path and relies on this system having already cleared
  * it this tick). Always register this system - even on a canvas with no
  * `submitInput`/`cancelInput`/`navigateInput` configured - or
- * `wasInvokedThisFrame` never clears; `createUiCanvas` does this for you.
+ * `wasInvokedThisFrame` never clears; `registerUiSystems` registers it.
  *
  * Must be registered after `createUiRaycastEcsSystem` (if present) and
  * before `createUiInteractionEcsSystem`.

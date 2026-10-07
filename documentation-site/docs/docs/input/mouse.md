@@ -5,21 +5,25 @@ sidebar_position: 3
 # Mouse Input
 
 [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) listens for
-`mousedown`, `mouseup`, `wheel`, and `mousemove` events on a container
+`mousedown`, `mouseup`, `wheel` and `mousemove` events on a container
 element and reports the state of the matching bindings to its
-`InputManager`. Pass the render canvas
-as the container so cursor positions are measured relative to it:
+`InputManager`. It also keeps the raw pointer state (position, movement,
+scroll and buttons) for code that reads the mouse directly.
+
+## Creating a mouse source
+
+Pass the render canvas as the container, so cursor positions are measured
+relative to it:
 
 ```ts
 import { MouseInputSource } from '@forge-game-engine/forge/input';
 
-const { renderContext } = createGame('game-container');
-
 const mouse = new MouseInputSource(inputManager, renderContext.canvas);
 ```
 
-Then add bindings to the matching set on the source. There is one binding
-type per action type:
+## Binding mouse input to actions
+
+Add a binding to the source's set for the action's type:
 
 | Binding                                                              | Set               | Action                           |
 | -------------------------------------------------------------------- | ----------------- | -------------------------------- |
@@ -28,141 +32,107 @@ type per action type:
 | [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding)   | `axis1dBindings`  | `Axis1dAction` (scroll wheel)    |
 | [`MouseAxis2dBinding`](/Forge/docs/api/classes/MouseAxis2dBinding)   | `axis2dBindings`  | `Axis2dAction` (cursor position) |
 
-Mouse buttons use [`MouseButton`](/Forge/docs/api/type-aliases/MouseButton)
-values from
-[`mouseButtons`](/Forge/docs/api/variables/mouseButtons) (`left`, `middle`,
-`right`, `extra1`, `extra2`), matching
+Buttons are [`MouseButton`](/Forge/docs/api/type-aliases/MouseButton)
+values from [`mouseButtons`](/Forge/docs/api/variables/mouseButtons)
+(`left`, `middle`, `right`, `extra1`, `extra2`), which match
 [`MouseEvent.button`](https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value).
-
-## Worked example: aim and fire
 
 ```ts
 import {
-  Axis2dAction,
-  TriggerAction,
+  MouseHoldBinding,
+  MouseTriggerBinding,
   buttonMoments,
   mouseButtons,
-  MouseAxis2dBinding,
-  MouseInputSource,
-  MouseTriggerBinding,
 } from '@forge-game-engine/forge/input';
-
-const aim = new Axis2dAction('aim');
-const fire = new TriggerAction('fire');
-
-const inputManager = registerInputs(world, time, {
-  axis2dActions: [aim],
-  triggerActions: [fire],
-});
-
-const mouse = new MouseInputSource(inputManager, renderContext.canvas);
-
-mouse.axis2dBindings.add(new MouseAxis2dBinding(aim));
 
 mouse.triggerBindings.add(
   new MouseTriggerBinding(fire, mouseButtons.left, buttonMoments.down),
 );
+
+mouse.holdBindings.add(new MouseHoldBinding(aim, mouseButtons.right));
 ```
 
-## Cursor position: `cursorValueType` and `cursorOrigin`
+Several hold bindings on one action hold it while any of their buttons is
+held.
 
-[`MouseAxis2dBinding`](/Forge/docs/api/classes/MouseAxis2dBinding) converts
-the cursor's pixel position within the container into the bound action's
-`value`, relative to `cursorOrigin` (a ratio of the container's width/height,
-default `(0.5, 0.5)`, the center):
+## Binding the cursor position
 
-- [`cursorValueTypes.ratio`](/Forge/docs/api/variables/cursorValueTypes)
-  (default): `value` is the cursor's position as a fraction of the
-  container's size, minus `cursorOrigin`. With the default origin, the
-  cursor at the container's center is `(0, 0)`, and the edges are roughly
-  `±0.5`.
-- [`cursorValueTypes.absolute`](/Forge/docs/api/variables/cursorValueTypes):
-  `value` is the cursor's position in CSS pixels, minus `cursorOrigin *
-containerSize`. With the default origin, this is the pixel offset from the
-  container's center, useful for a reticle or look-offset in screen pixels.
+A [`MouseAxis2dBinding`](/Forge/docs/api/classes/MouseAxis2dBinding) sets
+its `Axis2dAction` to the cursor's position on every `mousemove`, and the
+action keeps that value until the cursor moves again. By default the value
+is the position as a fraction of the container's size, measured from its
+center: `(0, 0)` at the center and about `±0.5` at the edges.
 
 ```ts
-import { cursorValueTypes } from '@forge-game-engine/forge/input';
+import { MouseAxis2dBinding } from '@forge-game-engine/forge/input';
 
-// Pixel offset from the center of the canvas, e.g. for an aim reticle.
-const reticle = new Axis2dAction('reticle');
-
-mouse.axis2dBindings.add(
-  new MouseAxis2dBinding(reticle, {
-    cursorValueType: cursorValueTypes.absolute,
-  }),
-);
+mouse.axis2dBindings.add(new MouseAxis2dBinding(cursor));
 ```
 
+The `cursorValueType` option
+([`cursorValueTypes.absolute`](/Forge/docs/api/variables/cursorValueTypes))
+reports CSS pixels instead, and `cursorOrigin` moves the point the position
+is measured from.
+
 :::caution
-Both axes follow screen coordinates: y increases **downward**, so moving the
-mouse toward the top of the container produces a negative y. If you're using
-the value to drive a Y-up world (as Forge's physics does), negate y before
-applying it.
+The cursor position is in screen coordinates: `y` increases downward, so
+the cursor above the origin reads a negative `y`. Negate `y` to use the
+value in the Y-up world.
 :::
 
-## Gotchas
+The source reads the container's bounds on every `mousemove`, so positions
+stay correct after the container is resized, moved or scrolled.
 
-`MouseAxis2dBinding` reports the cursor position on every `mousemove`, and
-the bound action keeps that value until the cursor moves again.
+## Binding the scroll wheel
 
-[`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) (scroll
-wheel) reports the sum of the vertical wheel delta, in CSS pixels, divided
-by `100` over the frame's `wheel` events, roughly ±1 per scroll click (the action clamps it to `[-1, 1]`,
-like every `Axis1dAction`). The input lasts one frame: the source reports
-`0` again in its `reset()` at the end of the frame, so the action reads
-`0` once scrolling stops.
+A [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) sets
+its `Axis1dAction` to the frame's wheel movement: the sum of the vertical
+wheel delta, in CSS pixels, divided by `100` over the frame's `wheel`
+events, clamped to `-1` to `1`. The value lasts one frame: the source reports `0` in its `reset()`
+at the end of the frame, so the action reads `0` once the wheel stops.
 
-Like every other binding, `MouseAxis1dBinding` and `MouseAxis2dBinding`
-only affect their action while its
-[input group](./actions.md#input-groups) is active. A cursor-position action
-in an inactive group reads `0`, and reads the latest cursor position as soon
-as its group becomes active again.
+```ts
+import { MouseAxis1dBinding } from '@forge-game-engine/forge/input';
 
-Several `MouseHoldBinding`s on one action hold it while any of their buttons
-is held.
+mouse.axis1dBindings.add(new MouseAxis1dBinding(zoom));
+```
 
-[`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) calls the
-container's `getBoundingClientRect()` fresh on every `mousemove` event, so
-cursor positions stay correct after the container is resized, scrolled, or
-otherwise reflowed (a responsive canvas, a window resize) - no need to
-recreate the source afterward.
+## Reading the pointer state
 
-[`MouseInputSource.stop()`](/Forge/docs/api/classes/MouseInputSource#stop)
-removes its event listeners from the container and releases everything it
-was holding: buttons, cursor position and wheel input. Call it when the source is no longer needed.
+Code that reads the mouse without an action, such as a drag gesture or a
+debug overlay, reads these properties of the source:
 
-## Raw pointer state: position, delta, scroll, and buttons
-
-Bindings map mouse events onto named actions, but code that wants the raw
-device state directly - a UI hit-tester, a drag gesture, a debug overlay -
-can read it straight off `MouseInputSource` without an intervening action:
-
-- `position` - the cursor's current position in CSS pixels: Y-down,
-  origin at the container's top-left corner. On a high-DPI display this is
+- `position`: the cursor's position in CSS pixels, from the container's
+  top-left corner, with `y` increasing downward. On a high-DPI display it's
   smaller than the canvas's drawing-buffer coordinates by
   `RenderContext.pixelRatio`, so convert it against
-  `renderContext.cssWidth`/`cssHeight` (see
+  `renderContext.cssWidth` and `cssHeight` (see
   [High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
-- `delta` - how far `position` moved since the last tick.
-- `scroll` - the wheel scroll since the last tick, in CSS pixels: `x` is
+- `delta`: how far the cursor moved since the last frame.
+- `scroll`: the wheel movement since the last frame, in CSS pixels: `x` is
   positive scrolling right and `y` positive scrolling down. A wheel that
-  reports lines counts 40 pixels per line, and one that reports pages counts
-  the container's width or height per page.
-- `buttonsDown` / `buttonsHeld` / `buttonsUp` - `MouseButton` sets for
-  buttons that started being held down this tick, are currently held, and
-  stopped being held down this tick, respectively.
+  reports lines counts 40 pixels per line, and one that reports pages
+  counts the container's width or height per page.
+- `buttonsDown`, `buttonsHeld` and `buttonsUp`: the
+  [`MouseButton`](/Forge/docs/api/type-aliases/MouseButton)s that went down
+  this frame, are held, and came up this frame.
 
-`delta`, `scroll`, `buttonsDown`, and `buttonsUp` are per-tick edges that
-reset (via `MouseInputSource.reset()`, wired up automatically by
-`registerInputs`) once the frame that observed them ends; `position` and
-`buttonsHeld` persist across ticks until they next change.
+`delta`, `scroll`, `buttonsDown` and `buttonsUp` are cleared by the
+source's `reset()` at the end of each frame. `position` and `buttonsHeld`
+keep their values until they change.
 
-There is no ECS component for this state - hold a reference to the
-`MouseInputSource` instance (the same way game code holds a reference to an
-`InputManager` or an `InputAction`) and read `.position`/`.delta`/etc.
-directly from a system's closure. `position` is deliberately in CSS
-pixels, not world space: with more than one camera (for example a dedicated
-UI camera layered over the world camera), a single canvas position maps to
-a different world position through each camera, so converting is left to
-the reader.
+```ts
+if (mouse.buttonsHeld.has(mouseButtons.left)) {
+  console.log('dragged by', mouse.delta.x, mouse.delta.y);
+}
+```
+
+## Stopping the source
+
+[`stop()`](/Forge/docs/api/classes/MouseInputSource#stop) removes the
+source's event listeners from the container and releases everything it was
+holding: buttons, cursor position and wheel input.
+
+```ts
+mouse.stop();
+```

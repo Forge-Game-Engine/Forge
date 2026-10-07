@@ -46,7 +46,7 @@ function sampleCubicBezier(
  * the curve passes exactly through every control point with a continuous
  * tangent, rather than a straight-line polyline between them. Densely
  * sampling that curve turns a handful of sparse control points into a long,
- * natural-looking silhouette suitable for both a `TerrainShape`'s collision
+ * natural-looking silhouette suitable for both a `TerrainCollider`'s collision
  * points and a matching render mesh (see `createTerrainMesh`) - the same
  * points can drive both, so what's drawn always matches what's touched.
  * @param controlPoints - The sparse anchor points the curve passes through,

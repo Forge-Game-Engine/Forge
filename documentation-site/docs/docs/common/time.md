@@ -4,94 +4,102 @@ sidebar_position: 1
 
 # Time
 
-The `Time` class manages and tracks time-related information for your ECS world. It is responsible for frame counting, delta time calculation, time scaling, and FPS measurement.
+[`Time`](/Forge/docs/api/classes/Time) holds the timing of the current
+frame: the time since the previous frame (delta time), the total elapsed
+time, the frame count and the frame rate. Its `timeScale` multiplies the
+delta time, for slow motion or pausing.
 
-## Accessing Time
+## Creating and updating time
 
-A `Time` instance is available on every `World` instance as the `time` property:
+[`createGame`](/Forge/docs/api/functions/createGame) creates a `Time` and
+returns it, and its [`Game`](/Forge/docs/api/classes/Game) calls
+`time.update(performance.now())` at the start of every frame, before it
+updates its worlds (see [Game](../ecs/game.md)):
 
 ```ts
-const world = new World('main');
-const time = world.time;
+import { createGame } from '@forge-game-engine/forge/utilities';
+
+const { game, world, time } = createGame('game');
 ```
 
-## Milliseconds vs. seconds API
-
-The `Time` instance provides a milliseconds and seconds API.
-
-### Milliseconds API
-
-- `rawTimeInMilliseconds`: The current raw time in milliseconds.
-- `rawDeltaTimeInMilliseconds`: The time difference (delta) between the current and previous frame in milliseconds.
-- `deltaTimeInMilliseconds`: The scaled delta time in milliseconds (affected by `timeScale`).
-- `timeInMilliseconds`: The accumulated scaled time in milliseconds (affected by `timeScale`).
-- `previousTimeInMilliseconds`: The raw time of the previous frame in milliseconds.
-
-### Seconds API
-
-- `rawTimeInSeconds`: The current raw time in seconds (not affected by `timeScale`).
-- `rawDeltaTimeInSeconds`: The time difference (delta) between the current and previous frame in seconds (not affected by `timeScale`).
-- `deltaTimeInSeconds`: The scaled delta time in seconds (affected by `timeScale`).
-- `timeInSeconds`: The accumulated scaled time in seconds (affected by `timeScale`).
-- `previousTimeInSeconds`: The raw time of the previous frame in seconds.
-
-## Other Properties
-
-- `frames`: The number of frames since the `Time` instance was created.
-- `timeScale`: A multiplier for scaling the passage of time (e.g., for slow motion or pausing) (Default: 1).
-- `fps`: The current frames per second, calculated as the number of frames in the last second.
-- `times`: An array of timestamps (in milliseconds) for recent frames, used for FPS calculation.
-
-## Examples
-
-### Using deltaTime to make your game frame independent
-
-If you have an entity (let's call it the "player") that you wanted to move at rate of 10 units per second on the x-axis. You wouldn't be able to simply add the speed to the position in a system.
-This would introduce 2 issues:
-
-1. The entity would move 10 units per frame not per second. This is because the `run` method on the system executes _every frame_. That's way too fast!
-2. The player's hardware (including the monitor's refresh rate) would cause the number of frames executed in a second (frames-per-second or FPS) to vary. Meaning that the entity would change speed as the FPS changes!
-
-The solution is to use deltaTime (the time it took to render the last frame)
-
-❌ You should not do this:
+Without a `Game`, create a `Time` and call `update` with the current time in
+milliseconds before each `world.update()`:
 
 ```ts
-...
-public void run(entity: Entity) {
-  const positionComponent = entity.getComponentRequired(PositionComponent);
-  const playerComponent = entity.getComponentRequired(PlayerComponent);
+import { Time } from '@forge-game-engine/forge/common';
 
-  positionComponent.x += playerComponent.speed;
-}
-...
+const time = new Time();
+
+time.update(performance.now());
+world.update();
 ```
 
-✅ The correct way would be to use the delta time to smooth the movement:
+## Using delta time in a system
+
+A system that receives the `Time` in its factory reads it on each update.
+Multiplying a per-second rate by `deltaTimeInSeconds` makes a change happen
+at the same speed whatever the frame rate:
 
 ```ts
-...
-public void run(entity: Entity) {
-  const positionComponent = entity.getComponentRequired(PositionComponent);
-  const playerComponent = entity.getComponentRequired(PlayerComponent);
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import {
+  PositionEcsComponent,
+  positionId,
+  Time,
+} from '@forge-game-engine/forge/common';
 
-  positionComponent.x += playerComponent.speed * time.deltaTimeInSeconds;
-}
-...
+const unitsPerSecond = 10;
+
+const createDriftEcsSystem = (
+  time: Time,
+): EcsSystem<[PositionEcsComponent]> => ({
+  query: [positionId],
+  update: (_world, { components: [positions] }) => {
+    for (const position of positions) {
+      position.local.x += unitsPerSecond * time.deltaTimeInSeconds;
+    }
+  },
+});
+
+world.addSystem(createDriftEcsSystem(time));
 ```
 
-### Slow motion
+`deltaTimeInMilliseconds` holds the same value in milliseconds.
 
-You can achieve a slow motion effect by setting the `timeScale` to a number below `1`.
+:::note
+The delta time is limited to the range `0` to `1/15` of a second, so a frame
+that takes longer (for example, after the browser tab was in the background)
+moves things by at most `1/15` of a second. `rawDeltaTimeInSeconds` and
+`rawDeltaTimeInMilliseconds` hold the unlimited, unscaled delta time.
+:::
+
+## Reading elapsed time and frame count
+
+`timeInSeconds` and `timeInMilliseconds` are the sum of every frame's delta
+time, so they follow `timeScale` and the delta time limit. `rawTimeInSeconds`
+and `rawTimeInMilliseconds` are the timestamp passed to the latest `update`.
+`frames` is the number of times `update` has been called.
+
+## Scaling time
+
+Set `timeScale` to change how fast time passes for everything that reads the
+delta time. `1` is normal speed, values below `1` slow time down, and `0`
+pauses it:
 
 ```ts
-world.time.timeScale = 0.5;
+time.timeScale = 0.5; // half speed
+time.timeScale = 0; // paused
 ```
 
-### Pausing the world
+At `timeScale = 0`, `deltaTimeInSeconds` is `0`. Systems still run each
+frame; anything they change by the delta time doesn't change. The raw
+values aren't scaled.
 
-You can implement features like a game pause menu by setting the `timeScale` to `0`.
+## Measuring the frame rate
+
+`fps` is the number of `update` calls whose timestamp is within the last
+second:
 
 ```ts
-world.time.timeScale = 0;
+const framesPerSecond = time.fps;
 ```

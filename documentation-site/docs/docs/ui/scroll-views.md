@@ -106,7 +106,7 @@ scrolls it by:
   the content, and moving the pointer past the pressed element's
   `dragThreshold` drags the content with the pointer. A button that is
   dragged this way isn't invoked. Sliders keep their own drags (see
-  [Hit testing and drag](./buttons-and-interaction.md#hit-testing-and-drag)).
+  [Dragging](./buttons-and-interaction.md#dragging)).
 - **Turning the mouse wheel** while the pointer is over the viewport. The
   content moves as many screen pixels as the wheel reports, and stops at
   its edges. When the content only scrolls horizontally, the vertical wheel

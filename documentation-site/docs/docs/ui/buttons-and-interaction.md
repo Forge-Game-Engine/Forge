@@ -4,56 +4,100 @@ sidebar_position: 5
 
 # Buttons and Interaction
 
-Two calls put a working, clickable, gamepad/keyboard-navigable button on
-screen:
+A [`UiInteractableEcsComponent`](/Forge/docs/api/interfaces/UiInteractableEcsComponent)
+makes a UI element respond to the pointer and to focus navigation with a
+gamepad or keyboard. A button is a panel with an interactable, a color
+transition and a centered label.
+
+## Creating a button
+
+[`createButton`](/Forge/docs/api/functions/createButton) creates a button
+under a parent element:
 
 ```ts
-registerUiSystems(world, renderContext, time, {
-  // Pointer interaction needs a pointer source; omit it for a
-  // gamepad/keyboard-only canvas. MouseInputSource satisfies this directly.
-  pointerSource: new MouseInputSource(inputManager, game.container),
-});
+import { createButton } from '@forge-game-engine/forge/ui';
 
-const canvas = createUiCanvas(world, renderContext, {
-  cullingMask: uiRenderCategory,
-  // Optional - both InputActions the same way CameraEcsComponent takes
-  // zoomInput/panInput. Omitted, the canvas is still fully clickable, just
-  // not focus-navigable.
-  submitInput: inputManager.getTriggerAction('ui-submit'),
-  navigateInput: inputManager.getAxis2dAction('ui-navigate'),
-});
-
-const play = createButton(world, canvas, {
-  sprite: panelSprite,
+const playButton = createButton(world, canvas, {
+  sprite: buttonSprite,
   label: 'Play',
   fontAtlas,
   labelSize: 32,
   labelCategory: uiRenderCategory,
 });
-
-play.onInvoke.registerListener(startGame);
 ```
 
-`createButton` assembles a panel (`createPanel`) with a
-[`UiInteractableEcsComponent`](/Forge/docs/api/interfaces/UiInteractableEcsComponent)
-and a
-[`UiColorTransitionEcsComponent`](/Forge/docs/api/interfaces/UiColorTransitionEcsComponent)
-added, plus a centered child label - there's no `ButtonEcsComponent`. Every
-piece is independently useful: add `UiInteractableEcsComponent` to any rect
-(a toggle, a list row, a close icon) to make it clickable, hoverable, and
-focus-navigable without it being a "button" at all.
+It returns the button's `entity`, its `label` entity, its `interactable`
+component and its `onInvoke` event.
+
+:::caution
+The label is centered within the width of the button's `anchor.x` size.
+With a stretch `x` axis, that value is a margin, not a width, so pass the
+button's width as `labelMaxWidth`.
+:::
+
+## Reacting to a button press
+
+An interactable's `onInvoke` is raised when the element is invoked: the
+pointer is pressed and released on it without dragging, or the canvas's
+`submitInput` triggers while the element has focus. It's the same event
+either way:
+
+```ts
+playButton.onInvoke.registerListener(() => {
+  startGame();
+});
+```
+
+To poll instead of listening, read the interactable's
+`wasInvokedThisFrame`, which is `true` for the tick `onInvoke` was raised.
+
+## Making any element interactable
+
+[`addUiInteractableComponent`](/Forge/docs/api/functions/addUiInteractableComponent)
+makes any element with a rect transform interactable, for example a list
+row or a close icon:
+
+```ts
+import { addUiInteractableComponent } from '@forge-game-engine/forge/ui';
+
+const closeIcon = addUiInteractableComponent(world, closeIconEntity);
+
+closeIcon.onInvoke.registerListener(closeWindow);
+```
+
+The element is hit-tested against its rectangle. Besides `onInvoke`, an
+interactable raises `onPointerEnter`, `onPointerExit`, `onPointerDown`,
+`onPointerUp`, and the [drag](#dragging) events.
+
+## Reading interaction state
+
+The UI systems write an interactable's state every tick:
+
+- `isHovered`: the pointer is over the element.
+- `isFocused`: the element is its canvas's focused element (see
+  [Focus navigation](#focus-navigation)).
+- `isPressed`: a press started on the element and the pointer is still
+  over it.
+- `isDragging`: a press on the element has become a drag.
+
+[`deriveUiInteractionVisualState`](/Forge/docs/api/functions/deriveUiInteractionVisualState)
+combines them into one of `'normal'`, `'hover'` (hovered or focused),
+`'pressed'` or `'disabled'`, so an element looks the same when the mouse
+is over it as when a gamepad has focused it.
 
 ## Hover and press colors
 
-`UiColorTransitionEcsComponent` eases the sprite's `tintColor` towards
-`normalColor`, `hoverColor`, `pressedColor` or `disabledColor` as the
-element's state changes. Tints multiply the sprite's texture, and a
-[`Color`](/Forge/docs/api/classes/Color) channel can go above `1`, so a
-button can rest at `Color.white` (its art as authored) and brighten on
-hover:
+A [`UiColorTransitionEcsComponent`](/Forge/docs/api/interfaces/UiColorTransitionEcsComponent)
+eases the element's sprite `tintColor` to `normalColor`, `hoverColor`,
+`pressedColor` or `disabledColor` when its visual state changes.
+`createButton` adds one, configured by its `transition` option;
+`addUiColorTransitionComponent` adds one to any interactable element with a
+sprite:
 
 ```ts
-const play = createButton(world, canvas, {
+import { Color } from '@forge-game-engine/forge/rendering';
+
+const playButton = createButton(world, canvas, {
   // ...
   transition: {
     hoverColor: new Color(1.2, 1.2, 1.2),
@@ -62,58 +106,129 @@ const play = createButton(world, canvas, {
 });
 ```
 
-On the canvas or an 8-bit render target, each channel of the result stops
-at full brightness, so a hover color above `1` only brightens art that
-isn't already white there. An `easing` that overshoots (`easeInOutBack`,
-`easeInOutElastic`) briefly passes the target color, including above `1`.
+Every color defaults to `Color.white`, which draws the sprite as authored.
+A tint multiplies the sprite's texture, so a channel above `1` brightens
+it, up to full brightness.
 
-## Source-agnostic invocation
+## Disabling an element
 
-`onInvoke` is raised the same way whether a pointer click, a gamepad/
-keyboard submit, or a script (`interactable.onInvoke.raise()`, or
-triggering `submitInput` directly) caused it - the listener can't tell
-which. `isHovered` (pointer-only) and `isFocused` (source-agnostic - set by
-directional navigation, and by the pointer hovering an element, so the
-highlight follows the mouse) stay deliberately distinct; a `wasInvokedThisFrame`
-flag is available for polling instead of registering a listener.
+Set the interactable's `interactable` to `false` to disable it: it can't
+be pressed, invoked or focused, and its visual state is `'disabled'`. It
+still blocks the pointer from the elements under it. Set `blocksRaycasts`
+to `false` to make the pointer pass through an element. To disable a panel
+and everything in it at once, use a
+[canvas group](canvas-groups-and-tooltips.md).
+
+```ts
+playButton.interactable.interactable = false;
+```
 
 ## Focus navigation
 
-Every `interactable: true` element is automatically focus-navigable unless
-its `focusable` is `false`: on the
-tick `navigateInput`'s magnitude first crosses a threshold, focus moves to
-the nearest candidate on the same canvas in that direction. Add a
-[`UiFocusEcsComponent`](/Forge/docs/api/interfaces/UiFocusEcsComponent) to
-override the search on specific sides (e.g. to wrap focus from the last
-item in a row back to the first). `cancelInput` clears focus; register your
-own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
+Each canvas has at most one focused element, its
+`CanvasEcsComponent.focusedEntity`. Give the canvas input actions to move
+focus and invoke the focused element:
+
+```ts
+const canvas = createUiCanvas(world, renderContext, {
+  cullingMask: uiRenderCategory,
+  submitInput: inputManager.getTriggerAction('ui-submit'),
+  cancelInput: inputManager.getTriggerAction('ui-cancel'),
+  navigateInput: inputManager.getAxis2dAction('ui-navigate'),
+});
+```
+
+- `navigateInput`: when its value first reaches a magnitude of `0.5`, focus
+  moves in its main direction to the nearest interactable element on the
+  canvas. Holding it moves focus once. With nothing focused, it focuses the
+  interactable element drawn first.
+- `submitInput`: invokes the focused element.
+- `cancelInput`: clears focus. Register a listener on
+  `cancelInput.triggerEvent` to close a menu.
+
 An element [hidden](../rendering/visibility.md#hiding-ui-elements) by its
-own or an ancestor's `VisibilityEcsComponent` isn't a candidate, and focus
-on an element that becomes hidden is cleared.
+own or an ancestor's `VisibilityEcsComponent` can't be focused, and focus
+on an element that becomes hidden is cleared. Neither can an element whose
+`focusable` is `false`, such as a scroll view's viewport. The pointer moving
+onto an interactable element also focuses it, unless its `focusable` is
+`false`. See
+[Actions and Input Groups](../input/actions.md) for creating and binding
+the actions.
 
-## Hit testing and drag
+To choose the element focus moves to in a direction, add a
+[`UiFocusEcsComponent`](/Forge/docs/api/interfaces/UiFocusEcsComponent) to
+the element focus moves from. Directions it doesn't set use the nearest
+element:
 
-`createUiRaycastEcsSystem` scans interactables topmost-first (reverse
-[draw order](../rendering/draw-order.md)) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
-`isPointerOverUi` - read the latter to gate world interaction ("don't fire
-the weapon when the click landed on the pause button"). An element with
-`blocksRaycasts: false` is transparent to the scan, and so is a hidden
-element. A press or drag on an element that becomes hidden is cancelled:
-`onEndDrag` (if it was dragging) and `onPointerUp` are raised, and
-`onInvoke` isn't. A captured press that
-moves beyond `dragThreshold` (measured in reference pixels) raises
-`onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
-building a slider handle or a scrollbar thumb.
+```ts
+import { addUiFocusComponent } from '@forge-game-engine/forge/ui';
 
-A drag goes to the nearest element, the pressed one or one of its
+addUiFocusComponent(world, lastButton.entity, { down: firstButton.entity });
+```
+
+To focus an element from code, for example the first button when a menu
+opens, call [`setUiFocus`](/Forge/docs/api/functions/setUiFocus) with the
+canvas's component:
+
+```ts
+import { canvasId, setUiFocus } from '@forge-game-engine/forge/ui';
+
+setUiFocus(
+  world,
+  world.getComponentRequired(canvas, canvasId),
+  playButton.entity,
+);
+```
+
+## Hit testing
+
+Every tick, the UI finds the interactable element under the pointer on
+each canvas: of the interactables whose rectangle contains the pointer, the
+one drawn on top (see [Draw Order](../rendering/draw-order.md)). Elements
+with `blocksRaycasts` set to `false`, hidden elements, and elements whose
+sprite the canvas's camera doesn't draw, are skipped, and so is the part of
+an element that a rect [mask](../rendering/masks.md) on it or on an
+ancestor clips away. The result is written to the
+canvas's `hoveredEntity`, and `isPointerOverUi` is `true` while there is
+one. Read it to ignore a click in the game world that landed on the UI:
+
+```ts
+const canvasComponent = world.getComponentRequired(canvas, canvasId);
+
+if (selectAction.isTriggered && !canvasComponent.isPointerOverUi) {
+  // ...
+}
+```
+
+:::note
+Only interactable elements are hit-tested. A panel without a
+`UiInteractableEcsComponent` doesn't stop the pointer from reaching an
+interactable element under it.
+:::
+
+## Dragging
+
+A press that moves `dragThreshold` reference pixels or more from where it
+started becomes a drag. `onBeginDrag` is raised when it starts,
+`onDrag` every tick while it lasts and `onEndDrag` when the pointer is
+released. A drag doesn't raise `onInvoke`. A press or drag on an element
+that becomes hidden is cancelled: `onEndDrag` (if it was dragging) and
+`onPointerUp` are raised, and `onInvoke` isn't. Read the pointer's position from
+the pointer source.
+
+```ts
+const handle = addUiInteractableComponent(world, handleEntity);
+
+handle.onDrag.registerListener(() => {
+  // Move the element to follow the pointer.
+});
+```
+
+A drag is raised on the nearest element, the pressed one or one of its
 ancestors, whose `receivesDrag` is `true`. When that is an ancestor, the
-pressed element's press ends (`onPointerUp`, and no `onInvoke` on release)
-and the ancestor raises `onBeginDrag`, `onDrag` and `onEndDrag`. A
-[scroll view](./scroll-views.md) receives drags this way, so dragging a
-button in its list scrolls the list. Set `receivesDrag: true` on an element
-that reacts to its own drags, such as a draggable item, so a drag that
-starts on it stays on it. `createSlider` sets it on its track.
-
-The raycast skips the part of an element that a rect
-[mask](../rendering/masks.md) on it or on an ancestor clips away, so an
-element can only be clicked where it's drawn.
+pressed element's press ends (`onPointerUp` is raised, and `onInvoke`
+isn't) and the ancestor raises `onBeginDrag`, `onDrag` and `onEndDrag`. A
+[scroll view](scroll-views.md) receives drags, so a drag that starts on a
+button in its list scrolls the list. Set `receivesDrag` to `true` on an
+element that reacts to its own drags, such as a draggable item, so a drag
+that starts on it stays on it. `createSlider` sets it on its track.

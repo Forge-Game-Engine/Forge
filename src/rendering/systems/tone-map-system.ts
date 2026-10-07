@@ -29,6 +29,10 @@ import { RenderTarget } from '../render-target.js';
  * and before the present system, since anything left un-tone-mapped is
  * presented as-is and hard-clips at `[0, 1]` instead of rolling off
  * smoothly.
+ *
+ * Costs one full-screen draw per tone-mapped render target a frame. The
+ * first time a render target is tone-mapped, it allocates its second color
+ * buffer, at its own format and size.
  * @param renderContext The rendering context
  * @returns The tone mapping ECS system
  */

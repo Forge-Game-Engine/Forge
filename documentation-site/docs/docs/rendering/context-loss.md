@@ -4,22 +4,22 @@ sidebar_position: 10
 
 # Context loss
 
-A browser can take a page's WebGL context away: when the GPU is reset, when
+A browser can lose a page's WebGL context: when the GPU is reset, when
 the device runs low on memory, or when too many pages hold contexts. Mobile
 browsers do it more often than desktop ones. Every texture, program, render
 target and vertex buffer on the GPU is lost with the context.
 
-[`RenderContext`](/Forge/docs/api/classes/RenderContext) handles this
-itself. It asks the browser to give the context back, keeps the game
-running while it's gone, and rebuilds every GPU resource the engine created
-when it returns. The next frame draws what it drew before the loss, without
+When the context is lost, [`RenderContext`](/Forge/docs/api/classes/RenderContext)
+asks the browser to restore it, and the game keeps running. When the
+context is restored, the render context recreates every GPU resource the
+engine created. The next frame draws what it drew before the loss, without
 reloading the page.
 
 ## While the context is lost
 
 [`isContextLost`](/Forge/docs/api/classes/RenderContext#iscontextlost) is
-`true` from the moment the browser takes the context until the engine has
-rebuilt its resources after the browser restores it.
+`true` from the moment the context is lost until the engine has recreated
+its resources after the browser restores it.
 
 While it's `true`:
 
@@ -32,16 +32,13 @@ While it's `true`:
   members of a struct uniform (`u_light.color`) can't be set on it until the
   context is restored. Every other declared uniform can be set.
 
-The context usually comes back within a moment. A game that would rather
-stop while it's gone pauses itself in its `onContextLost` listener.
-
 ## Reacting to a lost context
 
 [`onContextLost`](/Forge/docs/api/classes/RenderContext#oncontextlost) is
-raised when the browser takes the context away, and
+raised when the context is lost, and
 [`onContextRestored`](/Forge/docs/api/classes/RenderContext#oncontextrestored)
-once the engine has rebuilt everything and `isContextLost` is `false`
-again. Both are [`ForgeEvent`](../events/custom-events.md)s.
+once the engine has recreated its resources and `isContextLost` is `false`
+again. Both are [`ForgeEvent`](../events/index.md)s.
 
 A game that loses its context because it uses too much GPU memory can
 lower its graphics settings when the context is lost, for example by
@@ -56,7 +53,7 @@ renderContext.onContextLost.registerListener(() => {
 The new resolution applies to the canvas and every canvas-sized render
 target when the context is restored.
 
-## What is rebuilt
+## What is recreated
 
 When the context is restored, the render context:
 
@@ -84,4 +81,4 @@ is disposed, together with the source each texture keeps, so dispose the
 ones you stop using (see [Disposing a texture](./textures.md#disposing-a-texture)).
 
 WebGL objects a game creates itself through `renderContext.gl` aren't
-rebuilt. Recreate them in an `onContextRestored` listener.
+recreated. Recreate them in an `onContextRestored` listener.

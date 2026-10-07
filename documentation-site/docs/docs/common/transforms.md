@@ -4,96 +4,142 @@ sidebar_position: 2
 
 # Transforms
 
-An entity's place in the world is three components:
-`PositionEcsComponent`, `RotationEcsComponent` and `ScaleEcsComponent`.
-Each holds two values:
+An entity's transform is three components:
+[`PositionEcsComponent`](/Forge/docs/api/interfaces/PositionEcsComponent),
+[`RotationEcsComponent`](/Forge/docs/api/interfaces/RotationEcsComponent)
+and [`ScaleEcsComponent`](/Forge/docs/api/interfaces/ScaleEcsComponent).
+[`createTransformEcsSystem`](/Forge/docs/api/functions/createTransformEcsSystem)
+computes each entity's world transform from its local transform and its
+parent's world transform.
 
-- `local`: the entity's transform relative to its parent, or relative to
-  the world when it has no parent. **This is the value you write.**
-- `world`: the entity's final transform in world space. **This is
-  output.** Only `createTransformEcsSystem` writes it, every frame.
-  `addPositionComponent`, `addRotationComponent` and `addScaleComponent`
-  only take `local`, and start `world` as a copy of it.
+## Local and world values
 
-The transform system sets an entity's `world` from its `local` and, if it
-has a parent, its parent's `world`. Give an entity a parent with
-`world.setParent(child, parent)` (see
-[Parenting entities](../ecs/world.md#parenting-entities)). The parent's rotation and
-scale apply to the child's offset, the rotations add, and the scales
-multiply. An entity without a parent gets `world = local`.
+Each transform component holds two values:
+
+- `local`: the transform relative to the entity's parent, or to the world
+  when it has no parent. Game code and every system that moves an entity
+  writes `local`.
+- `world`: the transform in world space. Only `createTransformEcsSystem`
+  writes it. Rendering, physics, cameras and UI hit testing read it.
+
+A value written to `world` anywhere else is replaced from `local` on the
+transform system's next update.
+
+## Adding a transform
+
+[`addPositionComponent`](/Forge/docs/api/functions/addPositionComponent),
+[`addRotationComponent`](/Forge/docs/api/functions/addRotationComponent) and
+[`addScaleComponent`](/Forge/docs/api/functions/addScaleComponent) take the
+`local` value and set `world` to a copy of it. Position defaults to
+`(0, 0)`, rotation to `0` radians and scale to `(1, 1)`:
 
 ```ts
 import {
   addPositionComponent,
-  createTransformEcsSystem,
+  addRotationComponent,
+  addScaleComponent,
 } from '@forge-game-engine/forge/common';
 
-const tank = world.createEntity();
-const turret = world.createEntity();
+const entity = world.createEntity();
 
-const tankPosition = addPositionComponent(world, tank, {
-  local: { x: 100, y: 0 },
-});
-addPositionComponent(world, turret, { local: { x: 0, y: 12 } });
-world.setParent(turret, tank);
-
-world.addSystem(createTransformEcsSystem());
-
-// Later, in one of your systems: move the tank by writing its local
-// position. The turret follows.
-tankPosition.local.x += speed * time.deltaTimeInSeconds;
+addPositionComponent(world, entity, { local: { x: 100, y: 50 } });
+addRotationComponent(world, entity, { local: Math.PI / 4 });
+addScaleComponent(world, entity, { local: { x: 2, y: 2 } });
 ```
 
-Setting or removing a parent keeps the child's `local` transform as it is,
-so the child takes the same offset under its new parent (or from the world
-origin, once it has none). Removing a parent removes its children with it.
+Rotation is in radians (see [Angles and Rotation](../math/angles-and-rotation.md)).
 
-Everything that reads a transform to draw, collide or measure, such as
-rendering, physics, cameras and UI hit testing, reads `world`. Everything that
-moves an entity, such as your own systems, physics integration and UI
-layout, writes `local`. Writing `world` yourself doesn't work: the
-transform system overwrites it from `local` on its next pass.
+## Registering the transform system
 
-## Registration order
-
-Register `createTransformEcsSystem` once per world. Systems run in
-registration order, so put it after the systems that write `local` and
-before the systems that read `world`:
-
-1. Your game logic, and `registerUiSystems` if you use the UI.
-2. `createTransformEcsSystem()`.
-3. Physics: gravity, broad phase, narrow phase, collision resolution,
-   joints and springs, then `createEulerIntegrationEcsSystem` and
-   `createContinuousCollisionEcsSystem`.
-4. Rendering.
-
-Physics reads `world` and integrates velocity into `local`, so running the
-transform system before it means collisions see every entity where it is
-this frame, including entities you just created or teleported. The
-movement physics integrates reaches `world` on the next frame's transform
-pass, so bodies are drawn where collisions were resolved.
-
-## Following another entity
-
-A system that positions one entity from another's transform (a camera
-following the player, a line drawn between two bodies) reads the
-target's `world` from the last transform pass, which can be a frame old.
-When the target has no parent, its `local` _is_ its world transform and is
-always current, so read that instead:
+Register one transform system per world:
 
 ```ts
-// The camera follows the car, which has no parent.
-cameraPosition.local.x = carPosition.local.x;
-cameraPosition.local.y = carPosition.local.y;
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+
+world.addSystem(createTransformEcsSystem());
 ```
 
-## Gotchas
+The system updates every entity that has a `PositionEcsComponent`, and the
+ancestors of those entities. Systems run in registration order, so register it
+after the systems that write `local` and before the systems that read
+`world`:
 
-- **Moving rigid bodies must be root entities.** Physics velocities are in
-  world space, and `createEulerIntegrationEcsSystem` adds them to the
-  body's `local` transform, which is only correct when the body has no
-  parent. It throws for a dynamic or kinematic body with a
-  `ParentEcsComponent`. Connect bodies with joints or springs instead.
-- **Static entities.** Set `isStatic: true` on a `PositionEcsComponent`
-  whose entity and parents never move. The transform system computes its
-  `world` transform once and skips it after that.
+1. Game logic, and `registerUiSystems` when the world has UI.
+2. `createTransformEcsSystem()`.
+3. Physics (see [Physics](../physics/index.md)).
+4. Rendering.
+
+Physics reads `world` and writes the movement it integrates to `local`.
+That movement reaches `world` on the next frame's transform update.
+
+## Moving an entity
+
+Write the entity's `local` value:
+
+```ts
+const position = addPositionComponent(world, entity);
+
+position.local.x += unitsPerSecond * time.deltaTimeInSeconds;
+```
+
+## Parenting a transform
+
+An entity with a parent (set with `world.setParent(child, parent)`, see
+[Parenting entities](../ecs/world.md#parenting-entities)) has its `local`
+transform applied on top of its parent's `world` transform:
+
+- the child's local position is scaled by the parent's world scale, rotated
+  by the parent's world rotation, and added to the parent's world position;
+- the rotations add;
+- the scales multiply.
+
+```ts
+const parent = world.createEntity();
+const child = world.createEntity();
+
+addPositionComponent(world, parent, { local: { x: 100, y: 0 } });
+addPositionComponent(world, child, { local: { x: 0, y: 12 } });
+world.setParent(child, parent);
+// After the transform system updates, the child's world position is (100, 12).
+```
+
+Moving the parent's `local` moves the child with it. Setting or removing a
+parent keeps the child's `local` value, so the child keeps the same offset
+under its new parent, or from the world origin when it has no parent.
+
+:::caution
+A dynamic or kinematic rigid body can't have a parent:
+`createEulerIntegrationEcsSystem` throws for one. Connect bodies with joints
+or springs instead (see [Joints](../physics/joints.md)).
+:::
+
+## Reading another entity's transform
+
+A system that positions one entity from another (for example, a camera that
+follows a target) and runs before the transform system reads a `world` value
+from the previous frame. When the other entity has no parent, its `local`
+value equals its world transform and is always current, so read `local`:
+
+```ts
+cameraPosition.local.x = targetPosition.local.x;
+cameraPosition.local.y = targetPosition.local.y;
+```
+
+## Marking a transform static
+
+Set `isStatic: true` on a `PositionEcsComponent` whose entity never moves.
+The transform system computes its `world` transform once and skips it after
+that, as long as every parent in its chain is also static:
+
+```ts
+addPositionComponent(world, entity, {
+  local: { x: 0, y: -200 },
+  isStatic: true,
+});
+```
+
+:::caution
+Changes to the `local` value of a static entity have no effect once its
+`world` transform is computed. Set `isStatic` back to `false`, or reparent
+the entity, to have it computed again.
+:::

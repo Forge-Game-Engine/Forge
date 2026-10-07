@@ -10,9 +10,8 @@ import { Vector2 } from '../../math/index.js';
 export type UiAlignment = Vector2;
 
 /**
- * Common `childAlignment` presets for `HorizontalLayoutGroupEcsComponent`/
- * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent`, named the
- * same way as `UiAnchor`'s nine point presets. These are shared, module-level
+ * Common `childAlignment` presets for `UiAxisLayoutGroupEcsComponent`/
+ * `GridLayoutGroupEcsComponent`, named the same way as `UiAnchor`'s nine point presets. These are shared, module-level
  * objects - safe to reference directly, since nothing in this module mutates
  * a `childAlignment` value after reading it.
  */

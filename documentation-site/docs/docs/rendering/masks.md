@@ -47,7 +47,8 @@ world.setParent(listItem, viewport);
 ```
 
 Every sprite and text on `viewport` and its descendants draws only inside
-the 200 by 120 rect. A mask's entity needs a position.
+the 200 by 120 rect. The render system throws for a mask whose entity has
+no position.
 
 ## Revealing part of a sprite
 
@@ -93,8 +94,8 @@ This ring shows the quarter clockwise from its top.
 
 Content under several masks is clipped by all of them. Rect masks
 intersect, and content can be under any number of them. Content can be
-under at most one linear or radial mask: the render system throws when it
-finds two on one entity's chain of ancestors.
+under at most one linear or radial mask: the render system throws when an
+entity and its ancestors have two between them.
 
 :::note
 A rect mask clips to its rect's world-space bounds, which is the rect
@@ -104,7 +105,7 @@ clips to the rotated rect.
 
 ## Masks in custom shaders
 
-The masks are applied in the sprite and text fragment shaders. A sprite
+Masks are applied in the sprite and text fragment shaders. A sprite
 material's own fragment shader (see
 [Drawing sprites with a custom shader](./sprites.md#drawing-sprites-with-a-custom-shader))
 includes `spriteMask` and multiplies its output alpha by
@@ -114,5 +115,5 @@ doesn't.
 ## Removing a mask
 
 Remove the `MaskEcsComponent` with `world.removeComponent(entity, maskId)`.
-The entity's content and its descendants' content draw without clipping from the
-next frame.
+The sprites and text of the entity and its descendants draw without that
+mask from the next frame.

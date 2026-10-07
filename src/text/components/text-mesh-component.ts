@@ -53,8 +53,8 @@ export interface TextMeshEcsComponent {
   readonly glyphs: readonly GlyphQuad[];
 
   /**
-   * The shaped block's own bounds, in world units, for layout callers (e.g.
-   * a future UI content-size fitter).
+   * The shaped block's own bounds, in world units, for layout callers such
+   * as a UI content size fitter.
    */
   readonly bounds: { width: number; height: number };
 

@@ -1,33 +1,20 @@
-# Entity Lifetime Management
+# Entity Lifetimes
 
-Forge provides a component and systems for expiring entities after a set
-duration. Give an entity a `LifetimeEcsComponent`, tag it with a disposal
-strategy, and register the two systems below to track and act on expiration.
+The lifecycle module marks an entity as expired a set number of seconds
+after it's given a lifetime, and can remove it from the world when it
+expires, for example an explosion effect, a projectile or a temporary
+obstacle. It's made of:
 
-## Quick Start
+- [`LifetimeEcsComponent`](./components.md#giving-an-entity-a-lifetime): an
+  entity's duration, the seconds counted so far, and whether it has expired.
+- [`createLifetimeTrackingEcsSystem`](./systems.md#tracking-lifetimes): the
+  system that counts each lifetime's seconds and marks it expired.
+- A disposal strategy: a tag that says what happens to an entity when it
+  expires, and the system that does it.
+  [`RemoveFromWorldLifetimeStrategyId`](./components.md#removing-an-entity-when-it-expires)
+  and [`createRemoveFromWorldEcsSystem`](./systems.md#removing-expired-entities)
+  remove the entity from the world.
 
-To use lifetime management, you need to:
-
-1. Add `createLifetimeTrackingEcsSystem` to your world to track elapsed time.
-2. Add a disposal system, such as `createRemoveFromWorldEcsSystem`, to act on
-   expired entities.
-3. Give entities that should expire a `LifetimeEcsComponent` and the
-   matching disposal tag.
-
-```ts
-import {
-  addLifetimeComponent,
-  createLifetimeTrackingEcsSystem,
-  createRemoveFromWorldEcsSystem,
-  RemoveFromWorldLifetimeStrategyId,
-} from '@forge-game-engine/forge/lifecycle';
-
-const entity = world.createEntity();
-
-addLifetimeComponent(world, entity, { durationSeconds: 3 }); // expires in 3 seconds
-world.addTag(entity, RemoveFromWorldLifetimeStrategyId); // remove it from the world once it expires
-
-// Add systems to your world
-world.addSystem(createLifetimeTrackingEcsSystem(time));
-world.addSystem(createRemoveFromWorldEcsSystem());
-```
+An expired entity without a disposal tag stays in the world, and game code
+can read its `hasExpired` (see
+[Reacting to an expired lifetime](./components.md#reacting-to-an-expired-lifetime)).

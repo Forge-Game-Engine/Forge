@@ -1,5 +1,6 @@
 {
   "label": "Utilities",
+  "position": 18,
   "link": {
     "type": "doc",
     "id": "docs/utils/index"

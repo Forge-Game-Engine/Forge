@@ -4,22 +4,24 @@ sidebar_position: 2
 
 # Sprites
 
-A sprite is a textured, rectangular quad drawn at an entity's position. An
-entity becomes a sprite when it has a
+A sprite is a textured rectangle drawn at an entity's position. An entity
+is drawn as a sprite when it has a
 [`SpriteEcsComponent`](/Forge/docs/api/interfaces/SpriteEcsComponent) and a
-position; `createRenderEcsSystem` draws it for every camera whose
-`cullingMask` matches its `category`.
+position. [`createRenderEcsSystem`](/Forge/docs/api/functions/createRenderEcsSystem)
+draws it for every camera whose `cullingMask` matches its `category`.
 
-## Sprite components
+## The sprite component
 
 A `SpriteEcsComponent` holds:
 
 - `texture`: the [texture](./textures.md) the sprite draws.
 - `width` and `height`: the sprite's size in
   [world units](./world-units-and-cameras.md).
-- `pivot`, `uvOffset`, `uvScale` and `tintColor`: where the sprite's origin
-  is, which part of the texture it draws, and the color the texture is
-  multiplied by.
+- `pivot`: the point of the sprite placed at the entity's position, from
+  `(0, 0)` (bottom-left) to `(1, 1)` (top-right). The sprite rotates and
+  scales around it.
+- `uvOffset` and `uvScale`: the region of the texture the sprite draws.
+- `tintColor`: the color the texture is multiplied by.
 - `emissive`: an optional emissive map (see
   [Adding an emissive map](#adding-an-emissive-map)).
 - `material`: the material the sprite draws with, or `null` for the render
@@ -27,21 +29,24 @@ A `SpriteEcsComponent` holds:
   [Drawing sprites with a custom shader](#drawing-sprites-with-a-custom-shader)).
 - `category`: which cameras draw the sprite (see
   [Choosing which cameras draw a sprite](#choosing-which-cameras-draw-a-sprite)).
-- `layer`: the sprite's draw order (see
+- `layer`: the sprite's place in the draw order (see
   [Setting the draw order](#setting-the-draw-order)).
 
 To hide a sprite, hide its entity with a `VisibilityEcsComponent` (see
 [Visibility](./visibility.md)).
 
-The render system reads the entity's world position, rotation and scale, and
-its [`FlipEcsComponent`](/Forge/docs/api/interfaces/FlipEcsComponent) if it
-has one.
+The render system places the sprite with the entity's world position,
+rotation and scale, and mirrors it with the entity's
+[`FlipEcsComponent`](/Forge/docs/api/interfaces/FlipEcsComponent) if it has
+one.
 
 ## Creating a sprite from a texture
 
 [`createImageSprite`](/Forge/docs/api/functions/createImageSprite) returns
 the options for a sprite that draws a texture, sized from the texture's
-texels and `pixelsPerUnit`. Pass them to
+texels and `pixelsPerUnit` (see
+[Importing textures at a fixed PPU](./world-units-and-cameras.md#importing-textures-at-a-fixed-ppu)).
+Pass them to
 [`addSpriteComponent`](/Forge/docs/api/functions/addSpriteComponent):
 
 ```ts
@@ -52,18 +57,18 @@ import {
   createTexture,
 } from '@forge-game-engine/forge/rendering';
 
-const playerTexture = createTexture(renderContext, playerImage);
-const playerSprite = createImageSprite(playerTexture, { pixelsPerUnit: 32 });
+const texture = createTexture(renderContext, image);
+const spriteOptions = createImageSprite(texture, { pixelsPerUnit: 32 });
 
-const player = world.createEntity();
+const entity = world.createEntity();
 
-addPositionComponent(world, player);
-addSpriteComponent(world, player, playerSprite);
+addPositionComponent(world, entity);
+addSpriteComponent(world, entity, spriteOptions);
 ```
 
-`createImageSprite` does no GPU work; it only computes the sprite's options.
-`addSpriteComponent` copies `pivot`, `uvOffset`, `uvScale` and `slices`, so
-one `createImageSprite` result can be added to any number of entities, and
+`createImageSprite` does no GPU work. `addSpriteComponent` copies the
+options' `pivot`, `uvOffset`, `uvScale` and `slices`, so one
+`createImageSprite` result can be added to any number of entities, and
 changing one entity's sprite doesn't change the others.
 
 To override a field, spread the result and set it:
@@ -71,10 +76,9 @@ To override a field, spread the result and set it:
 ```ts
 import { Color } from '@forge-game-engine/forge/rendering';
 
-addSpriteComponent(world, player, {
-  ...playerSprite,
+addSpriteComponent(world, entity, {
+  ...spriteOptions,
   tintColor: Color.red,
-  layer: 2,
 });
 ```
 
@@ -87,20 +91,21 @@ For a texture that holds several frames, pass the size of one frame in
 texels as `frameDimensions`:
 
 ```ts
-const runTexture = createTexture(renderContext, runSheetImage, {
+const sheetTexture = createTexture(renderContext, sheetImage, {
   filter: 'nearest',
 });
 
-const runSprite = createImageSprite(runTexture, {
+const frameSpriteOptions = createImageSprite(sheetTexture, {
   frameDimensions: { x: 32, y: 32 },
   pixelsPerUnit: 32,
 });
 ```
 
 The sprite is sized to one frame, and its `uvScale` is set to the share of
-the texture one frame covers. `uvOffset` selects which frame is drawn; the
-[sprite animation system](../animations/sprite-animations.md) writes it to
-play an animation.
+the texture one frame covers. `uvOffset` is the top-left corner of the
+drawn frame, as a fraction of the texture's size. The
+[sprite animation system](../animations/sprite-animations.md) writes
+`uvOffset` to play an animation.
 
 ## Drawing a solid-color sprite
 
@@ -111,7 +116,7 @@ color with `tintColor`:
 ```ts
 import { Color } from '@forge-game-engine/forge/rendering';
 
-addSpriteComponent(world, wall, {
+addSpriteComponent(world, entity, {
   texture: renderContext.whiteTexture,
   width: 4,
   height: 1,
@@ -125,14 +130,13 @@ To change the image a sprite draws, assign another texture to its
 `texture`:
 
 ```ts
-const doorSprite = addSpriteComponent(
+const sprite = addSpriteComponent(
   world,
-  door,
-  createImageSprite(closedDoorTexture),
+  entity,
+  createImageSprite(firstTexture),
 );
 
-// Later:
-doorSprite.texture = openDoorTexture;
+sprite.texture = secondTexture;
 ```
 
 The sprite's `width`, `height`, `uvOffset` and `uvScale` don't change. Set
@@ -143,8 +147,8 @@ them as well if the new texture has a different size or layout.
 A camera draws a sprite when the sprite's `category` and the camera's
 `cullingMask` share at least one bit (`(category & cullingMask) !== 0`).
 `category` defaults to `1`, and a camera's `cullingMask` defaults to every
-bit, so every camera draws every sprite until you set them. Text uses the
-same `category` convention.
+bit, so every camera draws every sprite until you set them. Text has a
+`category` too, and matches the same way.
 
 ```ts
 const renderCategories = {
@@ -155,56 +159,57 @@ const renderCategories = {
 createCamera(world, { cullingMask: renderCategories.world });
 createCamera(world, { cullingMask: renderCategories.ui });
 
-addSpriteComponent(world, healthBar, {
-  ...healthBarSprite,
+addSpriteComponent(world, entity, {
+  ...spriteOptions,
   category: renderCategories.ui,
 });
 ```
 
-The health bar is drawn only by the second camera.
+The sprite is drawn only by the second camera.
 
 ## Setting the draw order
 
-A camera draws its sprites sorted by `layer`, lower layers first, so sprites
-in a higher layer are drawn on top. Within a layer, sprites draw by their
-entity's [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
-and then in hierarchy order: entities created earlier first, and children
-after their parents. [Draw Order](./draw-order.md) covers ordering a child
-relative to its parent and sorting by height on screen.
+A camera draws sprites with a lower `layer` first, so sprites with a higher
+`layer` are drawn on top:
 
-`layer` orders sprites drawn by the same camera. The order in which cameras
-are composited is the camera's own `layer` (see
-[Multipass Rendering](./multipass-rendering.md)).
+```ts
+addSpriteComponent(world, entity, { ...spriteOptions, layer: 1 });
+```
+
+Within a layer, sprites draw in hierarchy order unless a
+`DrawOrderEcsComponent` moves them. [Draw Order](./draw-order.md) covers
+hierarchy order, ordering a child relative to its parent, and sorting by
+height on screen.
 
 ## Adding an emissive map
 
 An emissive map is light a sprite gives off: a texture sampled at the same
-UVs as the sprite's `texture`, multiplied by a color, and added on top of
-the tinted texture. `tintColor` doesn't affect it. Set the sprite's
-`emissive` to a texture and a color:
+UVs as the sprite's `texture`, multiplied by a color, and added to the
+tinted texture. `tintColor` doesn't affect it. Set the sprite's `emissive`
+to a texture and a color:
 
 ```ts
 import { Color, createTexture } from '@forge-game-engine/forge/rendering';
 
-addSpriteComponent(world, neonSign, {
-  ...neonSignSprite,
+addSpriteComponent(world, entity, {
+  ...spriteOptions,
   emissive: {
-    texture: createTexture(renderContext, neonSignGlowImage),
+    texture: createTexture(renderContext, emissiveImage),
     color: new Color(4, 1.2, 3, 1),
   },
 });
 ```
 
-The emissive color isn't limited to `1`. Channels above `1` make the glow
-brighter than white, which an [HDR](./hdr-rendering.md) camera keeps and
+Color channels above `1` make the emitted light brighter than white, which
+an [HDR](./hdr-rendering.md) camera keeps and
 [bloom](./bloom.md#emissive-driven-bloom) spreads into a halo. The emissive
-map's alpha is ignored: the sprite's opacity comes from its `texture` alone.
-`emissive` defaults to `null`, for no glow.
+map's alpha isn't used: the sprite's opacity comes from its `texture` and
+`tintColor` alone.
 
 ## Drawing sprites with a custom shader
 
 A [`SpriteMaterial`](/Forge/docs/api/classes/SpriteMaterial) draws sprites
-with a fragment shader of your own, paired with the engine's sprite vertex
+with your own fragment shader, paired with the engine's sprite vertex
 shader. Register the shader in the render context's `shaderCache`, create
 the material with
 [`createSpriteMaterial`](/Forge/docs/api/functions/createSpriteMaterial),
@@ -216,13 +221,13 @@ import {
   ForgeShaderSource,
 } from '@forge-game-engine/forge/rendering';
 
-const dissolveShader = `#version 300 es
-#pragma forge name(dissolve.frag)
+const fadeShader = `#version 300 es
+#pragma forge name(fade.frag)
 
 precision mediump float;
 
 uniform sampler2D u_texture;
-uniform float u_progress;
+uniform float u_fade;
 
 in vec2 v_texCoord;
 in vec4 v_tint;
@@ -236,63 +241,72 @@ void main() {
 
   fragColor = vec4(
     color.rgb,
-    color.a * (1.0 - u_progress) * spriteMaskCoverage()
+    color.a * (1.0 - u_fade) * spriteMaskCoverage()
   );
 }
 `;
 
-renderContext.shaderCache.addShader(new ForgeShaderSource(dissolveShader));
+renderContext.shaderCache.addShader(new ForgeShaderSource(fadeShader));
 
-const dissolveMaterial = createSpriteMaterial(renderContext, 'dissolve.frag');
+const fadeMaterial = createSpriteMaterial(renderContext, 'fade.frag');
 
-dissolveMaterial.setUniform('u_progress', 0.5);
+fadeMaterial.setUniform('u_fade', 0.5);
 
-addSpriteComponent(world, enemy, {
-  ...enemySprite,
-  material: dissolveMaterial,
+addSpriteComponent(world, entity, {
+  ...spriteOptions,
+  material: fadeMaterial,
 });
 ```
 
 The fragment shader receives three inputs from the sprite vertex shader:
 
-- `v_texCoord`: the UV within the sprite's frame of its texture.
-- `v_tint`: the sprite's `tintColor`, with its `opacityMultiplier` applied
-  to alpha.
+- `v_texCoord`: the UV within the sprite's region of its texture.
+- `v_tint`: the sprite's `tintColor`, with its alpha multiplied by the
+  sprite's `opacityMultiplier` when that's set.
 - `v_emissive`: the RGB of the sprite's emissive color (black without an
   emissive map).
 
 Every sprite fragment shader must include `spriteMask` and multiply its
 output alpha by `spriteMaskCoverage()`, which is how much of the fragment
 the sprite's [masks](./masks.md) let through (`1` for an unmasked sprite).
-`createSpriteMaterial` throws for a shader that doesn't include it, so a
-custom material never ignores a mask.
+`createSpriteMaterial` throws for a shader that doesn't include it.
 
 If the shader declares `uniform sampler2D u_texture`, the render system
-binds each sprite's `texture` to it; if it declares
-`uniform sampler2D u_emissiveTexture`, it binds the sprite's emissive map,
-or the render context's `blackTexture` for a sprite without one. Sprites
-with different textures can therefore share one material. Setting either
-of these two uniforms on a sprite material throws; change the sprite's
-`texture` or `emissive` instead. Set every other uniform with
-[`setUniform`](./material-uniforms.md).
+binds each sprite's `texture` to it. If it declares
+`uniform sampler2D u_emissiveTexture`, the render system binds the
+sprite's emissive map, or the render context's `blackTexture` for a sprite
+without one. Sprites with different textures can therefore share one
+material. Setting either of these two uniforms on a sprite material
+throws; change the sprite's `texture` or `emissive` instead. Set every
+other uniform with [`setUniform`](./material-uniforms.md).
 
-A procedural shader that computes its color without sampling the sprite's
-texture doesn't need to declare `u_texture`. Give its sprites the render
-context's `whiteTexture`, so they batch together.
-
-Sprites whose `material` is `null` draw with the render context's
-[`spriteMaterial`](/Forge/docs/api/classes/RenderContext#spritematerial),
-which samples `u_texture` and `u_emissiveTexture` as described above.
+A shader that computes its color without sampling the sprite's texture
+doesn't need to declare `u_texture`. Give its sprites the render context's
+`whiteTexture`, so they batch together.
 
 ## Batching
 
 The render system draws consecutive sprites (in draw order) that have the
 same material, texture and emissive map texture in one instanced draw call.
-Sprites created from the same texture batch with each other wherever they
-were created; their tint, size, frame and emissive color can all differ.
+Their tint, size, frame and emissive color can differ.
 
 A sprite with a different material or texture between two sprites in the
 draw order splits them into separate draw calls. To draw many sprites in
 few draw calls, give the sprites in a layer the same texture, for example
 by packing their images into one sprite sheet and selecting each image with
 `uvOffset` and `uvScale`.
+
+## Hiding and removing a sprite
+
+To stop drawing a sprite and keep its component, hide its entity with a
+`VisibilityEcsComponent` (see [Visibility](./visibility.md)).
+
+To remove the sprite from the entity, remove its component:
+
+```ts
+import { spriteId } from '@forge-game-engine/forge/rendering';
+
+world.removeComponent(entity, spriteId);
+```
+
+Removing the sprite doesn't dispose its texture or material.

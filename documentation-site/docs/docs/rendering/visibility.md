@@ -20,9 +20,8 @@ ancestor's is):
   by the pointer and can't be focused (see
   [Hiding UI elements](#hiding-ui-elements)).
 
-Everything else about the entity keeps going. Its components stay, and
-systems that don't draw, lay out or take input (physics, animation, timers,
-your own systems) still process it. To stop a group of systems, use
+Its components stay, and systems that don't draw, lay out or take input
+(physics, animation, timers and game systems) still process it. To stop a group of systems, use
 [run conditions and game states](../states/index.md) instead.
 
 An entity without a `VisibilityEcsComponent` is visible unless an ancestor
@@ -35,24 +34,17 @@ Add the component with
 and set `visible`:
 
 ```ts
-const ship = world.createEntity();
+import { addVisibilityComponent } from '@forge-game-engine/forge/rendering';
 
-addPositionComponent(world, ship);
-addSpriteComponent(world, ship, shipSprite);
+world.setParent(child, parent);
 
-const shield = world.createEntity();
+const parentVisibility = addVisibilityComponent(world, parent);
 
-addPositionComponent(world, shield);
-addSpriteComponent(world, shield, shieldSprite);
-world.setParent(shield, ship);
-
-const shipVisibility = addVisibilityComponent(world, ship);
-
-// Hides the ship and its shield.
-shipVisibility.visible = false;
+// Hides the parent and its child.
+parentVisibility.visible = false;
 
 // Shows both again.
-shipVisibility.visible = true;
+parentVisibility.visible = true;
 ```
 
 A descendant can't show itself while an ancestor is hidden: its own
@@ -61,13 +53,12 @@ A descendant can't show itself while an ancestor is hidden: its own
 `visible` is read every frame, so a change shows on the next frame. No
 system writes it unless you hand the entity to one that does, like a
 tooltip's panel (see
-[Tooltips](../ui/canvas-groups-and-tooltips.md#tooltips)).
+[Tooltips](../ui/canvas-groups-and-tooltips.md#adding-a-tooltip)).
 
 ## Hiding one part of an entity
 
 Visibility hides a whole entity. To hide one part of a composite object
-on its own (a ship's thruster flame, a toggle's checkmark, a text field's
-caret), give that part its own entity, parented to the object, and hide
+on its own (a toggle's checkmark, a text field's caret), give that part its own entity, parented to the object, and hide
 that entity.
 
 ## Checking whether an entity is visible
@@ -76,7 +67,9 @@ that entity.
 returns `false` if the entity or any of its ancestors is hidden:
 
 ```ts
-if (isVisibleInHierarchy(world, enemy)) {
+import { isVisibleInHierarchy } from '@forge-game-engine/forge/rendering';
+
+if (isVisibleInHierarchy(world, entity)) {
   // ...
 }
 ```

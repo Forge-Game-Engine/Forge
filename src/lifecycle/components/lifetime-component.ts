@@ -6,6 +6,10 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  * must always provide these.
  */
 export interface LifetimeRequiredOptions {
+  /**
+   * How long the entity lives, in seconds. The entity expires once
+   * `elapsedSeconds` reaches it.
+   */
   durationSeconds: number;
 }
 
@@ -14,16 +18,32 @@ export interface LifetimeRequiredOptions {
  * may omit these.
  */
 export interface LifetimeDefaultedOptions {
+  /**
+   * The seconds counted so far. `createLifetimeTrackingEcsSystem` adds the
+   * frame's delta time to it every tick. Defaults to `0`.
+   */
   elapsedSeconds: number;
+
+  /**
+   * Whether the lifetime has ended. `createLifetimeTrackingEcsSystem` sets
+   * it to `true` once `elapsedSeconds` reaches `durationSeconds`, and never
+   * sets it back to `false`. Defaults to `false`.
+   */
   hasExpired: boolean;
 }
 
 /**
- * ECS-style component interface for managing entity lifetime.
+ * ECS-style component interface for an entity that expires after a
+ * duration. `createLifetimeTrackingEcsSystem` counts its time and sets
+ * `hasExpired`; a disposal system, such as `createRemoveFromWorldEcsSystem`,
+ * acts on expired entities.
  */
 export interface LifetimeEcsComponent
   extends LifetimeRequiredOptions, LifetimeDefaultedOptions {}
 
+/**
+ * The key of {@link LifetimeEcsComponent}.
+ */
 export const lifetimeId = createComponentId<LifetimeEcsComponent>('lifetime');
 
 const defaultLifetimeOptions: LifetimeDefaultedOptions = {

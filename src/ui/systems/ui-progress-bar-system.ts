@@ -13,7 +13,7 @@ import { driveUiFillMask } from '../utilities/drive-ui-fill-mask.js';
  * full size (a nine-slice fill keeps its end caps) and only the part the
  * value covers shows. It's the only writer of that `amount`.
  *
- * `createUiCanvas` registers this once per world, before
+ * `registerUiSystems` registers this once per world, before
  * `createUiLayoutEcsSystem`, so a `value` write and the fill visual it
  * produces land in the same frame - unlike `createUiSliderEcsSystem`, which
  * has to run after the interaction pipeline and so lags a frame.

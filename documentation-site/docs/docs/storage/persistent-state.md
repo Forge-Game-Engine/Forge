@@ -67,7 +67,7 @@ The same checks apply to the defaults and to every value passed to `set`.
 ## Changing values
 
 [`set`](/Forge/docs/api/interfaces/PersistentState#set) applies the given
-fields to `values` straight away, raises `onChange` and stores them:
+fields to `values` immediately, raises `onChange` and stores them:
 
 ```ts
 await audioSettings.set({ volume: 0.5 });
@@ -82,8 +82,8 @@ set keeps taking its default, so a default changed in a later version of
 the game applies to every player who never changed that field. Stored
 fields that the current defaults don't list are kept.
 
-Writes are stored one at a time and in order. Changes made while a write is
-in flight are stored together by the next write.
+Writes are stored one at a time and in order. Changes made before the
+current write settles are stored together by the next write.
 
 ## Resetting to the defaults
 
@@ -121,7 +121,7 @@ the fields it mirrors and every change is stored.
 
 ## Handling storage failures
 
-Nothing falls back silently. `createPersistentState` rejects with:
+`createPersistentState` rejects with:
 
 - the backend's [`StorageError`](/Forge/docs/api/classes/StorageError) if
   the stored entry can't be read, for example because storage is blocked;

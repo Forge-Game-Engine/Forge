@@ -32,8 +32,9 @@ export interface ScreenSpaceUiCanvasOptions extends CanvasInputOptions {
    * doesn't reserve or suggest any particular bit for UI - pick any value
    * your game isn't already using for another camera, and reuse that same
    * value for every UI visual's own category (`createLabel`'s `category`
-   * option, the `layer` you build UI sprites with) so this canvas draws
-   * them and no other camera's `cullingMask` also matches them. A
+   * option, each UI sprite's `category`) so this canvas draws them. Leave
+   * that bit out of every other camera's `cullingMask`, or those cameras
+   * draw the UI too. A
    * hardcoded "UI" bit baked into this module would only work by
    * coincidence once more than one Forge-based package picks its own
    * default independently - explicit, caller-owned values avoid that

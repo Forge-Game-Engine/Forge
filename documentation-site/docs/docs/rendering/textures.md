@@ -7,8 +7,8 @@ sidebar_position: 1
 A [`Texture`](/Forge/docs/api/classes/Texture) is an image on the GPU that a
 shader samples: the image a sprite draws, a font atlas, a terrain layer, or
 the color of a render target. A texture is created from an image, canvas,
-`ImageData`, `ImageBitmap` or video frame, and whoever creates it owns it and
-disposes it.
+`ImageData`, `ImageBitmap` or video frame. The code that creates a texture
+owns it and disposes it.
 
 ## Creating a texture
 
@@ -18,8 +18,8 @@ to a new texture in the render context:
 ```ts
 import { createTexture } from '@forge-game-engine/forge/rendering';
 
-const playerImage = await renderContext.imageCache.getOrLoad(playerImageUrl);
-const playerTexture = createTexture(renderContext, playerImage);
+const image = await renderContext.imageCache.getOrLoad(imageUrl);
+const texture = createTexture(renderContext, image);
 ```
 
 The texture's `width` and `height` are the source's size in texels (an
@@ -30,21 +30,19 @@ To create a texture from raw pixels, wrap them in an `ImageData`:
 
 ```ts
 const pixels = new Uint8ClampedArray([255, 0, 0, 255, 0, 0, 255, 255]);
-const stripeTexture = createTexture(renderContext, new ImageData(pixels, 2, 1));
+const pixelTexture = createTexture(renderContext, new ImageData(pixels, 2, 1));
 ```
 
-Creating a texture does nothing else: it isn't drawn until a sprite, a
-material or another API that takes a `Texture` uses it. Any number of
-sprites and materials can use one texture.
+Any number of sprites and materials can use one texture.
 
 ## Sampling options
 
 The third argument to `createTexture` sets how the texture is sampled:
 
-- `filter` is how a texel is chosen between texels. `'linear'` (the
+- `filter` sets how a texel is chosen between texels. `'linear'` (the
   default) blends neighboring texels, for smooth edges. `'nearest'` picks
   the closest texel, for crisp pixel art.
-- `wrap` is what the texture returns outside `[0, 1]`. `'clamp'` (the
+- `wrap` sets what the texture returns outside `[0, 1]`. `'clamp'` (the
   default) repeats the edge texels, so a frame of a sprite sheet never
   samples its neighbor. `'repeat'` tiles the texture, for a texture repeated
   across a surface such as a [terrain layer](../physics/terrain.md).
@@ -54,7 +52,7 @@ const pixelArtTexture = createTexture(renderContext, pixelArtImage, {
   filter: 'nearest',
 });
 
-const groundTexture = createTexture(renderContext, groundImage, {
+const tiledTexture = createTexture(renderContext, tileImage, {
   wrap: 'repeat',
 });
 ```
@@ -68,18 +66,31 @@ image two ways, create two textures from it.
 contents, and its size, with a new source:
 
 ```ts
-const minimapTexture = createTexture(renderContext, minimapCanvas);
+const canvasTexture = createTexture(renderContext, sourceCanvas);
 
-// After drawing into minimapCanvas:
-minimapTexture.update(minimapCanvas);
+// After drawing into sourceCanvas:
+canvasTexture.update(sourceCanvas);
 ```
 
 Every sprite and material that uses the texture draws the new contents from
 then on. A sprite's `width` and `height` don't change when its texture's
-size does; set them yourself if the sprite should follow the new size.
+size does.
 
 To show a video, call `update` with the `<video>` element or a `VideoFrame`
 each frame the video advances.
+
+## The white and black textures
+
+The render context owns two 1x1 opaque textures:
+
+- [`whiteTexture`](/Forge/docs/api/classes/RenderContext#whitetexture) is
+  for a sprite drawn as a solid color. The sprite shader multiplies the
+  texture by the sprite's `tintColor`, so a white texture draws the tint
+  unchanged (see
+  [Drawing a solid-color sprite](./sprites.md#drawing-a-solid-color-sprite)).
+- [`blackTexture`](/Forge/docs/api/classes/RenderContext#blacktexture) is
+  what a material's sampler uniform samples when the material hasn't set
+  it, and the emissive map of a sprite without one.
 
 ## Disposing a texture
 
@@ -87,7 +98,7 @@ each frame the video advances.
 Call it once nothing uses the texture any more:
 
 ```ts
-playerTexture.dispose();
+texture.dispose();
 ```
 
 Using a disposed texture throws: drawing a sprite with it, binding a
@@ -98,27 +109,14 @@ A texture keeps the source it was last updated from until it's disposed,
 so that it can upload it again if the WebGL context is lost (see
 [Context loss](./context-loss.md)).
 
-A texture created with `createTexture` belongs to the code that created it.
 Some textures belong to the engine object that created them, and calling
 `update` or `dispose` on them throws:
 
 - `renderContext.whiteTexture` and `renderContext.blackTexture` belong to
   the render context.
-- A render target's [`colorTexture`](./multipass-rendering.md) belongs to
-  the render target, which frees it in its own `dispose`.
+- A render target's `colorTexture` belongs to the render target, which
+  frees it in its own `dispose` (see
+  [Render Targets](./multipass-rendering.md)).
 
 A [font atlas](../text/loading-a-font-atlas.md)'s `texture` belongs to the
-`FontAtlasCache` that loaded it, so don't update or dispose it.
-
-## The white and black textures
-
-The render context has two 1x1 opaque textures that it owns:
-
-- [`whiteTexture`](/Forge/docs/api/classes/RenderContext#whitetexture) is
-  for a sprite drawn as a solid color. The sprite shader multiplies the
-  texture by the sprite's `tintColor`, so a white texture draws the tint
-  unchanged (see
-  [Drawing a solid-color sprite](./sprites.md#drawing-a-solid-color-sprite)).
-- [`blackTexture`](/Forge/docs/api/classes/RenderContext#blacktexture) is
-  what a material's sampler uniform samples when the material hasn't set it,
-  and the emissive map of a sprite without one.
+`FontAtlasCache` that loaded it. Don't update or dispose it.
