@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * ECS-style component interface for flipping sprites.
@@ -30,10 +31,7 @@ export function addFlipComponent(
   entity: number,
   options: Partial<FlipEcsComponent> = {},
 ): FlipEcsComponent {
-  const component: FlipEcsComponent = {
-    ...defaultFlipOptions,
-    ...options,
-  };
+  const component: FlipEcsComponent = withDefaults(defaultFlipOptions, options);
 
   return world.addComponent(entity, flipId, component);
 }

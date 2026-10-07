@@ -132,13 +132,14 @@ import {
   addSpriteComponent,
   Color,
   createImageSprite,
-  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
+const { textureCache } = renderContext;
+
 addSpriteComponent(world, entity, {
-  ...createImageSprite(createTexture(renderContext, image)),
+  ...createImageSprite(await textureCache.getOrLoad('orb.png')),
   emissive: {
-    texture: createTexture(renderContext, emissiveImage),
+    texture: await textureCache.getOrLoad('orb-emissive.png'),
     color: new Color(3, 3, 3, 1),
   },
 });

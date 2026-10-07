@@ -22,10 +22,9 @@ import { addPositionComponent } from '@forge-game-engine/forge/common';
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
-const panelTexture = createTexture(renderContext, panelImage);
+const panelTexture = await renderContext.textureCache.getOrLoad('panel.png');
 
 const panelSprite = createImageSprite(panelTexture, {
   pixelsPerUnit: 1,

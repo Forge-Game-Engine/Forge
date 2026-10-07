@@ -8,6 +8,7 @@ import {
 import { SoundInstance } from './internal/sound-instance.js';
 import type { MixerBus } from './mixer-bus.js';
 import type { SoundAsset } from './sound-asset.js';
+import { withDefaults } from '../utilities/with-defaults.js';
 
 /**
  * How {@link playSound} plays a sound.
@@ -70,7 +71,7 @@ export function playSound(
   sound: SoundAsset,
   options: Partial<PlaySoundOptions> = {},
 ): PlayingSound {
-  const { volume, rate, loop } = { ...defaultPlaySoundOptions, ...options };
+  const { volume, rate, loop } = withDefaults(defaultPlaySoundOptions, options);
   const busInternals = getBusInternals(bus);
 
   assertMixerNotStopped(busInternals.mixer);

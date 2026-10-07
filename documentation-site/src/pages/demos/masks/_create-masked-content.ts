@@ -81,12 +81,11 @@ async function createLinearFill(
   renderContext: RenderContext,
   position: Vector2,
 ): Promise<void> {
-  const barImage = await renderContext.imageCache.getOrLoad(
+  const barTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl(
       'img/kenney_ui-pack/PNG/Green/Default/button_rectangle_flat.png',
     ),
   );
-  const barTexture = createTexture(renderContext, barImage);
   const slices = { left: 16, right: 16, top: 16, bottom: 16 };
   const barSize = { x: 200, y: 48 };
 

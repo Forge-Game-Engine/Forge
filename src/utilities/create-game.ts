@@ -11,6 +11,7 @@ import {
   createContainerResizeSync,
 } from './create-container-resize-sync.js';
 import { Game } from './game.js';
+import { withDefaults } from './with-defaults.js';
 
 /**
  * Options for `createGame`.
@@ -45,10 +46,10 @@ export function createGame(
   time: Time;
   resizeSync: ContainerResizeSync;
 } {
-  const { renderContext: renderContextOptions } = {
-    ...defaultCreateGameOptions,
-    ...options,
-  };
+  const { renderContext: renderContextOptions } = withDefaults(
+    defaultCreateGameOptions,
+    options,
+  );
 
   const time = new Time();
   const world = new EcsWorld();

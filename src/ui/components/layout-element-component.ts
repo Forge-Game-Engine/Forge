@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link LayoutElementEcsComponent} with a sensible default;
@@ -100,10 +101,10 @@ export function addLayoutElementComponent(
   entity: number,
   options: Partial<LayoutElementEcsComponent> = {},
 ): LayoutElementEcsComponent {
-  const component: LayoutElementEcsComponent = {
-    ...defaultLayoutElementOptions,
-    ...options,
-  };
+  const component: LayoutElementEcsComponent = withDefaults(
+    defaultLayoutElementOptions,
+    options,
+  );
 
   return world.addComponent(entity, layoutElementId, component);
 }

@@ -1,3 +1,4 @@
+import { withDefaults } from '../utilities/with-defaults.js';
 /**
  * How a nine-slice region behaves when the sprite is resized: `'stretch'`
  * scales the region's texture to fill the available space, while `'tile'`
@@ -98,5 +99,5 @@ export function resolveNineSliceNativeSize(
 ): NineSliceOptions {
   const defaultNativeSize = { nativeWidth: width, nativeHeight: height };
 
-  return { ...defaultNativeSize, ...slices };
+  return withDefaults(defaultNativeSize, slices);
 }

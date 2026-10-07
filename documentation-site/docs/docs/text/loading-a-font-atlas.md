@@ -24,9 +24,9 @@ The two URLs are independent: the image doesn't have to be in the same
 directory as the JSON, or keep its original file name.
 
 The cache loads the image through the render context's
-[`imageCache`](../asset-loading/loading-images.md) and uploads it to a
-linear-filtered [texture](../rendering/textures.md), `fontAtlas.texture`.
-The cache owns that texture, so don't update or dispose it.
+[`textureCache`](../rendering/textures.md#loading-a-texture-from-an-image-file)
+into a linear-filtered texture, `fontAtlas.texture`. The texture cache owns
+that texture, so don't update or dispose it.
 
 `getOrLoad` rejects if either file fails to load, if the JSON isn't a
 supported atlas, or if the image's size doesn't match the JSON's

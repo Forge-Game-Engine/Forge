@@ -3,7 +3,6 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import {
   createImageSprite,
   createSpriteMaterial,
-  createTexture,
   ForgeShaderSource,
   RenderContext,
   SpriteEcsComponent,
@@ -24,31 +23,25 @@ export async function createErosionSprite(
   renderContext: RenderContext,
   layer: number,
 ): Promise<SpriteEcsComponent> {
-  const { shaderCache, imageCache } = renderContext;
+  const { shaderCache, textureCache } = renderContext;
 
-  const [logoImage, noiseImage, gradientImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/forge-logo.png')),
-    imageCache.getOrLoad(getAssetUrl('img/perlin_noise_2d.png')),
-    imageCache.getOrLoad(getAssetUrl('img/Burn_Gradient.png')),
+  const [logoTexture, noiseTexture, gradientTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/forge-logo.png')),
+    textureCache.getOrLoad(getAssetUrl('img/perlin_noise_2d.png')),
+    textureCache.getOrLoad(getAssetUrl('img/Burn_Gradient.png')),
   ]);
 
   shaderCache.addShader(new ForgeShaderSource(erosionShader));
 
   const material = createSpriteMaterial(renderContext, 'erosion.frag');
 
-  material.setUniform(
-    'u_noiseTexture',
-    createTexture(renderContext, noiseImage),
-  );
-  material.setUniform(
-    'u_burnGradient',
-    createTexture(renderContext, gradientImage),
-  );
+  material.setUniform('u_noiseTexture', noiseTexture);
+  material.setUniform('u_burnGradient', gradientTexture);
   material.setUniform('u_burnProgress', 0);
   material.setUniform('u_edgeWidth', initialEdgeWidth);
 
   return {
-    ...createImageSprite(createTexture(renderContext, logoImage), {
+    ...createImageSprite(logoTexture, {
       pixelsPerUnit: 1,
     }),
     material,

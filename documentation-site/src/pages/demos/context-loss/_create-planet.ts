@@ -7,7 +7,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -21,10 +20,10 @@ export async function createPlanet(
   world: EcsWorld,
   renderContext: RenderContext,
 ): Promise<void> {
-  const image = await renderContext.imageCache.getOrLoad(
+  const texture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/pixel-planet.png'),
+    { filter: 'nearest' },
   );
-  const texture = createTexture(renderContext, image, { filter: 'nearest' });
   const entity = world.createEntity();
 
   addSpriteComponent(

@@ -3,6 +3,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { RenderTarget } from '../render-target.js';
 import { Color } from '../color.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CameraEcsComponent} with a sensible default; callers may
@@ -154,10 +155,10 @@ export function addCameraComponent(
   entity: number,
   options: Partial<CameraEcsComponent> = {},
 ): CameraEcsComponent {
-  const component: CameraEcsComponent = {
-    ...defaultCameraOptions,
-    ...options,
-  };
+  const component: CameraEcsComponent = withDefaults(
+    defaultCameraOptions,
+    options,
+  );
 
   return world.addComponent(entity, cameraId, component);
 }

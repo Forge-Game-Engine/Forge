@@ -3,12 +3,13 @@ import {
   RENDER_TARGET_FORMAT_KEYS,
 } from './enums/index.js';
 import type { RenderContext } from './render-context.js';
-import { Texture } from './texture.js';
+import { Texture, TextureOptions } from './texture.js';
 
 /**
  * A texture that belongs to the engine object that created it (a render
- * target's color attachment, or one of the render context's white and black
- * textures) rather than to whoever samples it. It samples like any other
+ * target's color attachment, one of the render context's white and black
+ * textures, or a texture in its `textureCache`) rather than to whoever
+ * samples it. It samples like any other
  * `Texture`, but its contents and lifetime are its owner's: `update` and
  * `dispose` throw, and the owner frees it with `release`.
  */
@@ -16,13 +17,40 @@ export class OwnedTexture extends Texture {
   private readonly _owner: string;
 
   /**
-   * Creates an empty, linear-filtered, edge-clamped texture.
+   * Creates an empty texture.
    * @param renderContext - The render context to create the texture in.
    * @param owner - What owns the texture, for error messages.
+   * @param options - How the texture is sampled.
    */
-  constructor(renderContext: RenderContext, owner: string) {
-    super(renderContext);
+  constructor(
+    renderContext: RenderContext,
+    owner: string,
+    options: Partial<TextureOptions> = {},
+  ) {
+    super(renderContext, options);
     this._owner = owner;
+  }
+
+  /**
+   * Creates a texture from an image, canvas, `ImageData`, `ImageBitmap` or
+   * video frame, like `createTexture`, for an owner that shares it.
+   * @param renderContext - The render context to create the texture in.
+   * @param owner - What owns the texture, for error messages.
+   * @param source - The texture's contents, uploaded as 8-bit RGBA.
+   * @param options - How the texture is sampled.
+   * @returns The texture.
+   */
+  public static createFromSource(
+    renderContext: RenderContext,
+    owner: string,
+    source: TexImageSource,
+    options: Partial<TextureOptions> = {},
+  ): OwnedTexture {
+    const texture = new OwnedTexture(renderContext, owner, options);
+
+    texture._setSource(source);
+
+    return texture;
   }
 
   /**
@@ -96,5 +124,9 @@ export class OwnedTexture extends Texture {
   /** Frees the GPU texture. Called by the texture's owner. */
   public release(): void {
     this.deleteStorage();
+  }
+
+  private _setSource(source: TexImageSource): void {
+    super.update(source);
   }
 }

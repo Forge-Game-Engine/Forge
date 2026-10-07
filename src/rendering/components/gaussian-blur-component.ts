@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Configures the two-pass separable Gaussian blur post-process effect for
@@ -50,10 +51,10 @@ export function addGaussianBlurComponent(
   entity: number,
   options: Partial<GaussianBlurEcsComponent> = {},
 ): GaussianBlurEcsComponent {
-  const component: GaussianBlurEcsComponent = {
-    ...defaultGaussianBlurOptions,
-    ...options,
-  };
+  const component: GaussianBlurEcsComponent = withDefaults(
+    defaultGaussianBlurOptions,
+    options,
+  );
 
   return world.addComponent(entity, gaussianBlurId, component);
 }

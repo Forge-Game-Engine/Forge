@@ -64,6 +64,13 @@ const audioSettings = await createPersistentState(
 
 The same checks apply to the defaults and to every value passed to `set`.
 
+A stored value that fails its checks is ignored, and its field takes its
+default. That happens when a stored record was written by an earlier
+version of the game with other defaults or validators, or edited by hand.
+The record's other fields still load. The stored value is replaced the next
+time its field is set. A stored entry that isn't a JSON object loads as
+nothing stored, and the first write replaces it.
+
 ## Changing values
 
 [`set`](/Forge/docs/api/interfaces/PersistentState#set) applies the given
@@ -121,15 +128,11 @@ the fields it mirrors and every change is stored.
 
 ## Handling storage failures
 
-`createPersistentState` rejects with:
-
-- the backend's [`StorageError`](/Forge/docs/api/classes/StorageError) if
-  the stored entry can't be read, for example because storage is blocked;
-- a [`PersistentStateFormatError`](/Forge/docs/api/classes/PersistentStateFormatError)
-  if the stored entry isn't a JSON object;
-- a [`PersistentStateValueError`](/Forge/docs/api/classes/PersistentStateValueError)
-  if a stored value fails its checks. Its `field` and `value` name the
-  value.
+`createPersistentState` rejects with the backend's
+[`StorageError`](/Forge/docs/api/classes/StorageError) if the stored entry
+can't be read, for example because storage is blocked, and with a
+[`PersistentStateValueError`](/Forge/docs/api/classes/PersistentStateValueError)
+if a default fails its checks. Its `field` and `value` name the value.
 
 To carry on without storage when it can't be read, catch the error and
 create the record on a memory backend:

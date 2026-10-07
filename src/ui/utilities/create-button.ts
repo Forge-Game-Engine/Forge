@@ -21,6 +21,7 @@ import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { uiAxisValue } from '../types/ui-axis.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateButtonOptions} with no sensible default; callers
@@ -166,11 +167,11 @@ export function createButton(
     labelCategory,
     interactable: interactableOptions,
     transition: transitionOptions,
-  } = { ...defaultCreateButtonOptions, ...options };
+  } = withDefaults(defaultCreateButtonOptions, options);
 
   const entity = createPanel(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     sprite,
     slices,
   });
@@ -203,7 +204,7 @@ export function createButton(
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
     color: labelColor,
-    ...(labelCategory !== undefined && { category: labelCategory }),
+    category: labelCategory,
   });
 
   return {

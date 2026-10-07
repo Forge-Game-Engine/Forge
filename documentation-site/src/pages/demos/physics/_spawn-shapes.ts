@@ -16,7 +16,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   getCameraView,
   RenderContext,
   SpriteEcsComponent,
@@ -75,36 +74,36 @@ export async function spawnShapes(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [ballImage, squareImage, triangleImage, narrowImage] =
+  const [ballTexture, squareTexture, triangleTexture, narrowTexture] =
     await Promise.all([
-      imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-      imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-      imageCache.getOrLoad(getAssetUrl('img/physics/block_corner_large.png')),
-      imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+      textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+      textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+      textureCache.getOrLoad(getAssetUrl('img/physics/block_corner_large.png')),
+      textureCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
     ]);
 
   const ballSprite = {
-    ...createImageSprite(createTexture(renderContext, ballImage), {
+    ...createImageSprite(ballTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,
   };
   const squareSprite = {
-    ...createImageSprite(createTexture(renderContext, squareImage), {
+    ...createImageSprite(squareTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,
   };
   const triangleSprite = {
-    ...createImageSprite(createTexture(renderContext, triangleImage), {
+    ...createImageSprite(triangleTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,
   };
   const narrowSprite = {
-    ...createImageSprite(createTexture(renderContext, narrowImage), {
+    ...createImageSprite(narrowTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

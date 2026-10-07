@@ -1,6 +1,5 @@
 import {
   createImageSprite,
-  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -43,12 +42,12 @@ async function createSprite(
   assetPath: string,
   slices?: typeof panelBorderSlices,
 ): Promise<SpriteEcsComponent> {
-  const image = await renderContext.imageCache.getOrLoad(
+  const texture = await renderContext.textureCache.getOrLoad(
     getAssetUrl(assetPath),
   );
 
   return {
-    ...createImageSprite(createTexture(renderContext, image), {
+    ...createImageSprite(texture, {
       pixelsPerUnit: 1,
       slices,
     }),

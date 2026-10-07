@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiToggleEcsComponent} with a sensible default; callers
@@ -64,8 +65,7 @@ export function addUiToggleComponent(
   options: Partial<UiToggleDefaultedOptions> = {},
 ): UiToggleEcsComponent {
   const component: UiToggleEcsComponent = {
-    ...defaultUiToggleOptions,
-    ...options,
+    ...withDefaults(defaultUiToggleOptions, options),
 
     onValueChanged: new ParameterizedForgeEvent('uiToggle.onValueChanged'),
   };

@@ -2,7 +2,6 @@ import {
   addSpriteComponent,
   Color,
   createSpriteMaterial,
-  createTexture,
   ForgeShaderSource,
   getCameraView,
   RenderContext,
@@ -38,11 +37,8 @@ export async function createBackground(
 
   backgroundMaterial.setUniform(
     'u_bgTexture',
-    createTexture(
-      renderContext,
-      await renderContext.imageCache.getOrLoad(
-        getAssetUrl('img/space-shooter/nebula.png'),
-      ),
+    await renderContext.textureCache.getOrLoad(
+      getAssetUrl('img/space-shooter/nebula.png'),
     ),
   );
 

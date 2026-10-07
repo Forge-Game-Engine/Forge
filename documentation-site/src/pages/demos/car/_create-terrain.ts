@@ -12,7 +12,6 @@ import {
   addTerrainMeshComponent,
   Color,
   createTerrainMesh,
-  createTexture,
   RenderContext,
   TerrainCurvePoint,
 } from '@forge-game-engine/forge/rendering';
@@ -173,11 +172,10 @@ export async function createTerrain(
     friction: 1,
   });
 
-  const groundImage =
-    await renderContext.imageCache.getOrLoad(groundTextureUrl);
-  const groundTexture = createTexture(renderContext, groundImage, {
-    wrap: 'repeat',
-  });
+  const groundTexture = await renderContext.textureCache.getOrLoad(
+    groundTextureUrl,
+    { wrap: 'repeat' },
+  );
 
   const mesh = createTerrainMesh(renderContext, {
     curvePoints: toCurvePoints(surfacePoints),

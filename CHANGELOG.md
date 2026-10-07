@@ -12,6 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.1] - 2026-10-07
+
+#### Added
+
+- **rendering:** `DrawOrderEcsComponent.behindParent` draws a child just behind its parent, and in front of everything its parent is in front of, like Godot's `show_behind_parent`. Use it for an engine flame behind its ship or a glow behind its orb, where `order: -1` also put the child behind every other entity at its parent's level. The child's whole subtree moves with it, and the render order and UI hit testing both follow it
+- **rendering:** `renderContext.textureCache` (a `TextureCache`) loads each image file into a texture once: `await renderContext.textureCache.getOrLoad(url, { filter, wrap })` returns the same texture for every request for that URL and those options, including requests made while it's loading, so sprites drawn from one file share a texture and batch into one draw call. The cache owns its textures, so their `update` and `dispose` throw. Replace `createTexture(renderContext, await renderContext.imageCache.getOrLoad(url))` with it, and delete any URL-to-texture cache of your own. `FontAtlasCache` loads atlas textures through it
+- **input:** `Axis2dAction.presses` lists the value the axis had each time its length reached `axisPressThreshold` (`0.5`) during the frame, and is cleared by `InputManager.reset`, like `TriggerAction.isTriggered`. Read it to act on presses rather than on the axis's current value
+- **utilities:** `withDefaults(defaults, options)` applies an options object over its defaults, giving an option that's `undefined` its default
+
+#### Changed
+
+- **storage:** A stored persistent-state field that fails its checks (wrong type, not a finite number, or rejected by its validator), for example one written by an earlier version of the game with other defaults or validators, now takes its default instead of making `createPersistentState` reject. The record's other fields still load, and the stored value is replaced the next time its field is set. A stored entry that isn't a JSON object loads as nothing stored. `PersistentStateFormatError` is removed, and `PersistentStateValueError` is now only thrown for a default or a value passed to `set`: delete any code that catches them on load, removes the stored entry and loads again
+- **ui:** `CanvasEcsComponent.wasNavigateInputBeyondThreshold` is removed. Focus navigation now steps once for each of `navigateInput.presses`
+
+#### Fixed
+
+- Options passed as `undefined` now take their defaults everywhere, the same as options left out. `createPersistentState(name, defaults, { validators: undefined })` used to reject with a `TypeError`, and other factories stored the `undefined`
+- **ui:** UI focus navigation no longer drops a key or d-pad press that starts and ends between two frames. Each press moves focus one step, even at low frame rates, and two presses in one frame move it two steps
+
 ## [0.26.0] - 2026-10-07
 
 #### Added

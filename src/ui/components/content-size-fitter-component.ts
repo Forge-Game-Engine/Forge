@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * How `ContentSizeFitterEcsComponent` sizes one axis of its own
@@ -52,10 +53,10 @@ export function addContentSizeFitterComponent(
   entity: number,
   options: Partial<ContentSizeFitterEcsComponent> = {},
 ): ContentSizeFitterEcsComponent {
-  const component: ContentSizeFitterEcsComponent = {
-    ...defaultContentSizeFitterOptions,
-    ...options,
-  };
+  const component: ContentSizeFitterEcsComponent = withDefaults(
+    defaultContentSizeFitterOptions,
+    options,
+  );
 
   return world.addComponent(entity, contentSizeFitterId, component);
 }

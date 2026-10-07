@@ -1,6 +1,7 @@
 import { Vec2, Vector2 } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Options for {@link addScaleComponent}.
@@ -45,10 +46,7 @@ export function addScaleComponent(
     local: Vec2.one,
   };
 
-  const scaleOptions: ScaleOptions = {
-    ...defaultScaleOptions,
-    ...options,
-  };
+  const scaleOptions: ScaleOptions = withDefaults(defaultScaleOptions, options);
 
   return world.addComponent(entity, scaleId, {
     ...scaleOptions,

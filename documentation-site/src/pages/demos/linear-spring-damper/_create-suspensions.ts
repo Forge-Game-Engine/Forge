@@ -15,7 +15,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -62,29 +61,29 @@ async function loadSuspensionSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<SuspensionSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [mountImage, wheelImage, lineImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+  const [mountTexture, wheelTexture, lineTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     mount: {
-      ...createImageSprite(createTexture(renderContext, mountImage), {
+      ...createImageSprite(mountTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     wheel: {
-      ...createImageSprite(createTexture(renderContext, wheelImage), {
+      ...createImageSprite(wheelTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     line: {
-      ...createImageSprite(createTexture(renderContext, lineImage), {
+      ...createImageSprite(lineTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import type { MixerBus } from '../mixer-bus.js';
 import type { SoundAsset } from '../sound-asset.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link SoundEcsComponent} with no sensible default; callers must
@@ -77,8 +78,7 @@ export function addSoundComponent(
   options: SoundRequiredOptions & Partial<SoundDefaultedOptions>,
 ): SoundEcsComponent {
   const component: SoundEcsComponent = {
-    ...defaultSoundOptions,
-    ...options,
+    ...withDefaults(defaultSoundOptions, options),
     hasFinished: false,
   };
 

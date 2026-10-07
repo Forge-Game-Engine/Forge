@@ -6,6 +6,7 @@ import {
 } from './actions/axis-1d-action.js';
 import {
   Axis2dAction,
+  clearAxis2dActionPresses,
   setAxis2dActionValue,
 } from './actions/axis-2d-action.js';
 import { HoldAction, setHoldActionHeld } from './actions/hold-action.js';
@@ -518,13 +519,17 @@ export class InputManager implements Updatable {
   }
 
   /**
-   * Ends the frame: clears every trigger action's `isTriggered`, and resets
-   * every resettable source, so input that only describes one frame (a
-   * mouse wheel turn) is withdrawn.
+   * Ends the frame: clears every trigger action's `isTriggered` and every
+   * 2D axis action's `presses`, and resets every resettable source, so
+   * input that only describes one frame (a mouse wheel turn) is withdrawn.
    */
   public reset(): void {
     for (const action of this._triggerActions) {
       clearTriggerAction(action);
+    }
+
+    for (const action of this._axis2dInputs.keys()) {
+      clearAxis2dActionPresses(action);
     }
 
     for (const resettable of this._resettables) {

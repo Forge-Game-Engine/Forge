@@ -2,10 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createLocalStorageBackend } from './create-local-storage-backend';
 import { createMemoryStorageBackend } from './create-memory-storage-backend';
 import { createPersistentState } from './create-persistent-state';
-import {
-  PersistentStateFormatError,
-  PersistentStateValueError,
-} from './persistent-state-errors';
+import { PersistentStateValueError } from './persistent-state-errors';
 import { StorageBackend } from './storage-backend';
 import { StorageFullError } from './storage-errors';
 
@@ -110,24 +107,53 @@ describe('createPersistentState', () => {
     });
 
     it.each([
-      ['a wrong type', { volume: 'loud' }, 'volume', 'loud'],
-      ['a non-finite number', { volume: null }, 'volume', null],
-      ['a failing validator', { volume: -0.1 }, 'volume', -0.1],
+      ['a wrong type', 'loud'],
+      ['a non-finite number', null],
+      ['a failing validator', -0.1],
     ])(
-      'rejects a stored field with %s, naming the field and value',
-      async (_, stored, field, value) => {
-        const error = await valueError(
-          createPersistentState(name, defaults, {
-            storage: await backendWith(stored),
-            validators: { volume: isVolume },
-          }),
-        );
+      'gives a stored field with %s its default, keeping the valid fields',
+      async (_, volume) => {
+        const state = await createPersistentState(name, defaults, {
+          storage: await backendWith({ volume, muted: true }),
+          validators: { volume: isVolume },
+        });
 
-        expect(error.field).toBe(field);
-        expect(error.value).toBe(value);
-        expect(error.stateName).toBe(name);
+        expect(state.values).toEqual({ ...defaults, muted: true });
       },
     );
+
+    it('keeps an invalid stored field until it is set, without writing on load', async () => {
+      const storage = await backendWith({ volume: 'loud', muted: true });
+      const set = vi.spyOn(storage, 'set');
+      const state = await createPersistentState(name, defaults, { storage });
+
+      expect(set).not.toHaveBeenCalled();
+
+      await state.set({ quality: 'low' });
+
+      expect(await storedEntry(storage)).toEqual({
+        volume: 'loud',
+        muted: true,
+        quality: 'low',
+      });
+
+      await state.set({ volume: 0.5 });
+
+      expect(await storedEntry(storage)).toEqual({
+        volume: 0.5,
+        muted: true,
+        quality: 'low',
+      });
+    });
+
+    it('treats options passed as undefined like options left out', async () => {
+      const state = await createPersistentState(name, defaults, {
+        storage: await backendWith({ volume: 0.5 }),
+        validators: undefined,
+      });
+
+      expect(state.values).toEqual({ ...defaults, volume: 0.5 });
+    });
 
     it('rejects a default that fails its validator', async () => {
       const error = await valueError(
@@ -154,15 +180,22 @@ describe('createPersistentState', () => {
     });
 
     it.each(['not json', '[1, 2]', '42', 'null'])(
-      'rejects an entry that is not a JSON object (%s) with PersistentStateFormatError',
+      'takes the defaults for an entry that is not a JSON object (%s), and replaces it on the first write',
       async (stored) => {
         const backend = createMemoryStorageBackend();
 
         await backend.set(name, stored);
 
-        await expect(
-          createPersistentState(name, defaults, { storage: backend }),
-        ).rejects.toBeInstanceOf(PersistentStateFormatError);
+        const state = await createPersistentState(name, defaults, {
+          storage: backend,
+        });
+
+        expect(state.values).toEqual(defaults);
+        expect(await backend.get(name)).toBe(stored);
+
+        await state.set({ muted: true });
+
+        expect(await storedEntry(backend)).toEqual({ muted: true });
       },
     );
 

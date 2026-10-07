@@ -8,6 +8,7 @@ import {
 } from '../../rendering/index.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreatePanelOptions} with no sensible default; callers
@@ -74,10 +75,10 @@ export function createPanel(
   parent: number,
   options: CreatePanelOptions,
 ): number {
-  const { anchor, anchoredPosition, sprite, slices } = {
-    ...defaultCreatePanelOptions,
-    ...options,
-  };
+  const { anchor, anchoredPosition, sprite, slices } = withDefaults(
+    defaultCreatePanelOptions,
+    options,
+  );
 
   const entity = world.createEntity();
 
@@ -85,7 +86,7 @@ export function createPanel(
   world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     ...anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
   });
   addSpriteComponent(world, entity, {
     ...sprite,

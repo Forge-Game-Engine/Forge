@@ -16,6 +16,7 @@ import { UiAnchor } from '../types/ui-anchor.js';
 import { UiAxis } from '../types/ui-axis.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateTooltipOptions} with no sensible default; callers
@@ -128,7 +129,7 @@ export function createTooltip(
     showDelayMilliseconds,
     textColor,
     category,
-  } = { ...defaultCreateTooltipOptions, ...options };
+  } = withDefaults(defaultCreateTooltipOptions, options);
 
   if (!world.getComponent(source, uiInteractableId)) {
     throw new Error(
@@ -153,7 +154,7 @@ export function createTooltip(
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,
-    ...(category !== undefined && { category }),
+    category,
   });
 
   addVisibilityComponent(world, panel, { visible: false });

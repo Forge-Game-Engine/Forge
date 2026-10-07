@@ -1,6 +1,7 @@
 import { Transition } from '../../finite-state-machine/index.js';
 import { Predicate } from '../../utilities/index.js';
 import { AnimationInputs } from './AnimationInputs.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 export type AnimationExitType = 'immediate' | 'atEndOfAnimation';
 
@@ -21,7 +22,10 @@ export class AnimationTransition extends Transition<AnimationInputs> {
   ) {
     super(...predicates);
 
-    const { exitType } = { ...defaultAnimationTransitionOptions, ...options };
+    const { exitType } = withDefaults(
+      defaultAnimationTransitionOptions,
+      options,
+    );
 
     this.exitType = exitType;
   }

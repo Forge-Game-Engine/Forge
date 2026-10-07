@@ -1,7 +1,6 @@
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   createImageSprite,
-  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -28,12 +27,12 @@ export async function createSpriteSpawner(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  const image = await renderContext.imageCache.getOrLoad(
+  const texture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/star_small.png'),
   );
 
   const sprite = {
-    ...createImageSprite(createTexture(renderContext, image), {
+    ...createImageSprite(texture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

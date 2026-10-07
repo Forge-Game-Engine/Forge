@@ -12,7 +12,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   NineSliceOptions,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -69,11 +68,11 @@ export async function createPlatform(
   rightX: number,
   platformY: number,
 ): Promise<void> {
-  const platformImage = await renderContext.imageCache.getOrLoad(
+  const platformTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
   const platformSprite = {
-    ...createImageSprite(createTexture(renderContext, platformImage), {
+    ...createImageSprite(platformTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

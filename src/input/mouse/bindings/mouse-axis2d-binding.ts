@@ -2,6 +2,7 @@ import { Vector2 } from '../../../math/index.js';
 import { Axis2dAction } from '../../actions/index.js';
 import { CursorValueType, cursorValueTypes } from '../../constants/index.js';
 import { InputBinding } from '../../input-binding.js';
+import { withDefaults } from '../../../utilities/with-defaults.js';
 
 /** Options for the MouseAxis2dBinding. */
 interface MouseAxis2dBindingOptions {
@@ -49,10 +50,10 @@ export class MouseAxis2dBinding implements InputBinding<Axis2dAction> {
     this.action = action;
     this.displayText = 'mouse position';
 
-    const { cursorValueType, cursorOrigin } = {
-      ...defaultMouseAxis2dBindingOptions,
-      ...options,
-    };
+    const { cursorValueType, cursorOrigin } = withDefaults(
+      defaultMouseAxis2dBindingOptions,
+      options,
+    );
 
     this.cursorValueType = cursorValueType;
     this.cursorOrigin = cursorOrigin;

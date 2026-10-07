@@ -3,7 +3,6 @@ import {
   createLocalStorageBackend,
   createPersistentState,
   PersistentState,
-  PersistentStateValueError,
   StorageError,
 } from '@forge-game-engine/forge/storage';
 
@@ -38,21 +37,15 @@ export interface LoadedSettings {
 }
 
 /**
- * Loads the demo's settings from `localStorage`. Stored settings that don't
- * pass validation are removed and the defaults are used. When storage can't
- * be read, the settings are kept in memory for this visit.
+ * Loads the demo's settings from `localStorage`. A stored setting that
+ * doesn't pass validation takes its default. When storage can't be read,
+ * the settings are kept in memory for this visit.
  * @returns The settings, and whether they're kept in `localStorage`.
  */
 export const loadSettings = async (): Promise<LoadedSettings> => {
   try {
     return { settings: await createSettings(), isStored: true };
   } catch (error) {
-    if (error instanceof PersistentStateValueError) {
-      await createLocalStorageBackend().remove(settingsName);
-
-      return { settings: await createSettings(), isStored: true };
-    }
-
     if (error instanceof StorageError) {
       return {
         settings: await createSettings(createMemoryStorageBackend()),

@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiSafeAreaEcsComponent} with a sensible default; callers
@@ -58,10 +59,10 @@ export function addUiSafeAreaComponent(
   entity: number,
   options: Partial<UiSafeAreaDefaultedOptions> = {},
 ): UiSafeAreaEcsComponent {
-  const component: UiSafeAreaEcsComponent = {
-    ...defaultUiSafeAreaOptions,
-    ...options,
-  };
+  const component: UiSafeAreaEcsComponent = withDefaults(
+    defaultUiSafeAreaOptions,
+    options,
+  );
 
   return world.addComponent(entity, uiSafeAreaId, component);
 }

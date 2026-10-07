@@ -24,7 +24,6 @@ import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 
@@ -51,22 +50,26 @@ export async function createExplosionSpawner(
   sfxBus: MixerBus,
   explosionSound: SoundAsset,
 ): Promise<ExplosionSpawner> {
-  const image = await renderContext.imageCache.getOrLoad(
+  const texture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/Effect_Explosion_1_517x517.png'),
   );
 
   const explosionSprite = {
-    ...createImageSprite(createTexture(renderContext, image), {
+    ...createImageSprite(texture, {
       pixelsPerUnit: 1,
       frameDimensions: {
-        x: image.width / explosionColumns,
-        y: image.height / explosionRows,
+        x: texture.width / explosionColumns,
+        y: texture.height / explosionRows,
       },
     }),
     category: renderLayer,
   };
 
-  const spriteSheet = createSpriteSheet(image, explosionRows, explosionColumns);
+  const spriteSheet = createSpriteSheet(
+    texture,
+    explosionRows,
+    explosionColumns,
+  );
 
   const animationClip = new AnimationClip(
     selectAnimationFrames(

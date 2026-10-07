@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link TooltipEcsComponent} with no sensible default; callers
@@ -70,10 +71,10 @@ export function addTooltipComponent(
   entity: number,
   options: TooltipRequiredOptions & Partial<TooltipDefaultedOptions>,
 ): TooltipEcsComponent {
-  const component: TooltipEcsComponent = {
-    ...defaultTooltipOptions,
-    ...options,
-  };
+  const component: TooltipEcsComponent = withDefaults(
+    defaultTooltipOptions,
+    options,
+  );
 
   return world.addComponent(entity, tooltipId, component);
 }

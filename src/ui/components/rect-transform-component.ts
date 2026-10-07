@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vec2, Vector2 } from '../../math/index.js';
 import { UiAxis } from '../types/ui-axis.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link RectTransformEcsComponent} with a sensible default;
@@ -63,7 +64,7 @@ export function addRectTransformComponent(
     rect: Rects.zero,
   };
 
-  const merged = { ...defaultRectTransformOptions, ...options };
+  const merged = withDefaults(defaultRectTransformOptions, options);
 
   const component: RectTransformEcsComponent = {
     // `x`/`y` are shallow-cloned (rather than referenced directly) since a

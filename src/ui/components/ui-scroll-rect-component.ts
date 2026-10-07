@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { Rect, Rects, Vec2, Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * How a {@link UiScrollRectEcsComponent} treats the content's edges.
@@ -199,10 +200,8 @@ export function addUiScrollRectComponent(
   entity: number,
   options: UiScrollRectRequiredOptions & Partial<UiScrollRectDefaultedOptions>,
 ): UiScrollRectEcsComponent {
-  const { horizontalScrollbar, verticalScrollbar, offset, ...rest } = {
-    ...defaultUiScrollRectOptions,
-    ...options,
-  };
+  const { horizontalScrollbar, verticalScrollbar, offset, ...rest } =
+    withDefaults(defaultUiScrollRectOptions, options);
 
   const component: UiScrollRectEcsComponent = {
     ...rest,

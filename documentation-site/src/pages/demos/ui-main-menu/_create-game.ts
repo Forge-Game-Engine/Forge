@@ -23,7 +23,6 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -199,7 +198,7 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
     navigateInput,
   });
 
-  const whiteCircleImage = await renderContext.imageCache.getOrLoad(
+  const whiteCircleTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/White_Circle.png'),
   );
 
@@ -250,7 +249,7 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
   // not a tinted square, so it's drawn from its own plain white circle
   // image rather than reusing `panelSprite`'s square white texture.
   const circleSprite = {
-    ...createImageSprite(createTexture(renderContext, whiteCircleImage), {
+    ...createImageSprite(whiteCircleTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayers.ui,

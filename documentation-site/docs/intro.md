@@ -72,47 +72,37 @@ what we'll use next to get something rendering on screen.
 
 ### Render a sprite in your scene
 
-#### Load an image
+#### Load a texture
 
-We need to fetch an image for our sprite. Any [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement) will do.
-`renderContext` already carries an [`ImageCache`](./api/classes/ImageCache.md) for loading and caching images.
+A sprite draws a texture: an image on the GPU. `renderContext` carries a
+[`TextureCache`](./api/classes/TextureCache.md) that loads an image file
+into a texture, once per file.
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { game, world, renderContext } = createGame('game-container');
 
-// diff-add-start
-const { imageCache } = renderContext;
-const image = await imageCache.getOrLoad('sprite.png');
-// diff-add-end
+// diff-add
+const texture = await renderContext.textureCache.getOrLoad('sprite.png');
 
 game.run();
 ```
 
 #### Create a sprite
 
-We then need to upload that image to a texture, and create a sprite that
-draws it:
+We then need to create a sprite that draws the texture:
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
-// diff-add-start
-import {
-  createImageSprite,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
-// diff-add-end
+// diff-add
+import { createImageSprite } from '@forge-game-engine/forge/rendering';
 
 const { game, world, renderContext } = createGame('game-container');
 
-const { imageCache } = renderContext;
-const image = await imageCache.getOrLoad('sprite.png');
-
-// diff-add-start
-const texture = createTexture(renderContext, image);
+const texture = await renderContext.textureCache.getOrLoad('sprite.png');
+// diff-add
 const sprite = createImageSprite(texture);
-// diff-add-end
 
 game.run();
 ```
@@ -124,7 +114,6 @@ sprite:
 import { createGame } from '@forge-game-engine/forge/utilities';
 import {
   createImageSprite,
-  createTexture,
   // diff-add
   addSpriteComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -133,10 +122,7 @@ import { addPositionComponent } from '@forge-game-engine/forge/common';
 
 const { game, world, renderContext } = createGame('game-container');
 
-const { imageCache } = renderContext;
-const image = await imageCache.getOrLoad('sprite.png');
-
-const texture = createTexture(renderContext, image);
+const texture = await renderContext.textureCache.getOrLoad('sprite.png');
 const sprite = createImageSprite(texture);
 
 // diff-add-start

@@ -1,10 +1,8 @@
 import { ParameterizedForgeEvent } from '../events/index.js';
 import { createLocalStorageBackend } from './create-local-storage-backend.js';
-import {
-  PersistentStateFormatError,
-  PersistentStateValueError,
-} from './persistent-state-errors.js';
+import { PersistentStateValueError } from './persistent-state-errors.js';
 import { StorageBackend } from './storage-backend.js';
+import { withDefaults } from '../utilities/with-defaults.js';
 
 /**
  * A value a persistent state can hold. Structured data can be stored as a
@@ -73,8 +71,9 @@ export interface PersistentState<T extends PersistentValues<T>> {
  */
 export interface PersistentStateOptions<T extends PersistentValues<T>> {
   /**
-   * Per-field checks beyond "same type as the default". A stored value or
-   * a value passed to `set` that fails its field's validator is an error.
+   * Per-field checks beyond "same type as the default". A value passed to
+   * `set` that fails its field's validator is an error, and a stored value
+   * that fails it is ignored, so its field takes its default.
    */
   validators: { [K in keyof T]?: PersistentValueValidator<T[K]> };
 
@@ -108,17 +107,21 @@ const callBackend = <TResult>(
     resolve(operation());
   });
 
-const parseEntry = (name: string, stored: string): StoredEntry => {
+/**
+ * Reads a stored entry, or an empty one if it isn't a JSON object: then
+ * every field takes its default, and the first write replaces it.
+ */
+const parseEntry = (stored: string): StoredEntry => {
   let parsed: unknown;
 
   try {
     parsed = JSON.parse(stored);
-  } catch (error) {
-    throw new PersistentStateFormatError(name, error);
+  } catch {
+    return {};
   }
 
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new PersistentStateFormatError(name);
+    return {};
   }
 
   return parsed as StoredEntry;
@@ -130,7 +133,11 @@ const parseEntry = (name: string, stored: string): StoredEntry => {
  * `StorageBackend`, `localStorage` by default.
  *
  * The stored entry is read once, here. A field that isn't stored takes its
- * default. Only fields passed to `set` are stored, as a JSON object under
+ * default, and so does a stored field that fails the checks a value passed
+ * to `set` must pass (written by an earlier version of the game with other
+ * defaults or validators, or edited by hand), or every field when the entry
+ * isn't a JSON object. A stored value that fails its checks stays stored
+ * until its field is set. Only fields passed to `set` are stored, as a JSON object under
  * `name`, so a default changed in a later version of the game reaches
  * everyone who never set that field. Stored fields this version doesn't
  * know are kept. Use one record per `name`, prefixed with the game's name:
@@ -146,21 +153,19 @@ const parseEntry = (name: string, stored: string): StoredEntry => {
  * it isn't stored.
  * @param options - The validators and the storage backend.
  * @returns A promise that resolves with the record once its entry is
- * read. Rejects with the backend's error if the entry can't be read, with
- * a `PersistentStateFormatError` if it isn't a JSON object, and with a
- * `PersistentStateValueError` if a default or a stored field isn't a
- * finite number where it should be, fails its validator, or (for a stored
- * field) doesn't have its default's type.
+ * read. Rejects with the backend's error if the entry can't be read, and
+ * with a `PersistentStateValueError` if a default isn't a finite number
+ * where it should be or fails its validator.
  */
 export async function createPersistentState<T extends PersistentValues<T>>(
   name: string,
   defaults: T,
   options: Partial<PersistentStateOptions<T>> = {},
 ): Promise<PersistentState<T>> {
-  const { validators, storage }: PersistentStateOptions<T> = {
-    ...defaultPersistentStateOptions,
-    ...options,
-  };
+  const { validators, storage }: PersistentStateOptions<T> = withDefaults(
+    defaultPersistentStateOptions,
+    options,
+  );
 
   const isValid = (field: string, value: unknown): boolean => {
     if (!Object.hasOwn(defaults, field)) {
@@ -189,7 +194,7 @@ export async function createPersistentState<T extends PersistentValues<T>>(
   }
 
   const stored = await callBackend(() => storage.get(name));
-  let entry: StoredEntry = stored === null ? {} : parseEntry(name, stored);
+  let entry: StoredEntry = stored === null ? {} : parseEntry(stored);
   const loaded: Partial<T> = {};
 
   for (const field of Object.keys(defaults)) {
@@ -199,11 +204,9 @@ export async function createPersistentState<T extends PersistentValues<T>>(
 
     const value = entry[field];
 
-    if (!isValid(field, value)) {
-      throw new PersistentStateValueError(name, field, value);
+    if (isValid(field, value)) {
+      loaded[field as keyof T] = value as T[keyof T];
     }
-
-    loaded[field as keyof T] = value as T[keyof T];
   }
 
   let values: Readonly<T> = Object.freeze({ ...defaults, ...loaded });

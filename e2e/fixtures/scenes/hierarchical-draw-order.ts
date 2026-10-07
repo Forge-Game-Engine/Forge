@@ -33,12 +33,15 @@ export interface HierarchicalDrawOrderMeasurement {
 
   /** The flame's own `DrawOrderEcsComponent.order`, read back from the ECS. */
   flameOrder: number;
+
+  /** The flame's own `DrawOrderEcsComponent.behindParent`, read back from the ECS. */
+  flameBehindParent: boolean;
 }
 
 /** The handle `hierarchical-draw-order.spec.ts` drives and asserts against. */
 export interface HierarchicalDrawOrderSceneHandle extends SceneHandle {
-  /** Sets the flame's `DrawOrderEcsComponent.order`. */
-  setFlameOrder(order: number): void;
+  /** Sets the flame's `DrawOrderEcsComponent.order` and `behindParent`. */
+  setFlameDrawOrder(order: number, behindParent: boolean): void;
 
   /**
    * Samples the overlaps from the canvas's displayed bitmap. Must be called
@@ -65,7 +68,8 @@ const classify = (r: number, g: number, b: number): SampledSprite => {
  * overlaps both. With an `order` of `-1`, the flame draws behind every
  * entity at its ship's level, so both overlaps show the other sprite. With
  * `0`, it draws after its parent, and after the rock created before it, so
- * it covers both overlaps.
+ * it covers both overlaps. With `0` and `behindParent`, it draws just
+ * behind the ship, still in front of the rock.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -134,8 +138,9 @@ export const createScene: CreateScene = async (
       world.update();
     },
 
-    setFlameOrder(order: number): void {
+    setFlameDrawOrder(order: number, behindParent: boolean): void {
       flameOrder.order = order;
+      flameOrder.behindParent = behindParent;
     },
 
     measure(): HierarchicalDrawOrderMeasurement {
@@ -168,6 +173,7 @@ export const createScene: CreateScene = async (
         shipAndFlame: sampleAtWorldX(-0.5),
         rockAndFlame: sampleAtWorldX(-1.5),
         flameOrder: flameOrder.order,
+        flameBehindParent: flameOrder.behindParent,
       };
     },
   };

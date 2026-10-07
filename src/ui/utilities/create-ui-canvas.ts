@@ -144,14 +144,14 @@ export function createUiCanvas(
 
     addRectTransformComponent(world, canvas, {
       ...anchor,
-      ...(anchoredPosition && { anchoredPosition }),
+      anchoredPosition,
     });
     addCanvasComponent(world, canvas, {
       camera,
       renderMode: uiCanvasRenderModes.worldSpace,
-      ...(submitInput && { submitInput }),
-      ...(cancelInput && { cancelInput }),
-      ...(navigateInput && { navigateInput }),
+      submitInput,
+      cancelInput,
+      navigateInput,
     });
   } else {
     const {
@@ -182,11 +182,11 @@ export function createUiCanvas(
     addCanvasComponent(world, canvas, {
       camera,
       renderMode: uiCanvasRenderModes.screenSpace,
-      ...(referenceResolution && { referenceResolution }),
-      ...(scaleMode && { scaleMode }),
-      ...(submitInput && { submitInput }),
-      ...(cancelInput && { cancelInput }),
-      ...(navigateInput && { navigateInput }),
+      referenceResolution,
+      scaleMode,
+      submitInput,
+      cancelInput,
+      navigateInput,
     });
   }
 

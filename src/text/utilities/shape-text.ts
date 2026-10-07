@@ -6,6 +6,7 @@ import {
   getKerningPairKey,
 } from '../font-atlas/font-atlas-data.js';
 import { parseRichText } from './parse-rich-text.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * How far a `<b>` glyph's ink is thickened on every side, in ems - the
@@ -681,7 +682,7 @@ export function shapeText(
     maxWidth,
     horizontalAlignPivot,
     richText,
-  } = { ...defaultShapeTextOptions, ...options };
+  } = withDefaults(defaultShapeTextOptions, options);
 
   const { plainText, styles } = resolveCharacterStyles(
     text,

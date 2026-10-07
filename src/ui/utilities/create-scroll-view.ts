@@ -26,6 +26,7 @@ import {
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { UiAxis } from '../types/ui-axis.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateScrollViewOptions} with a sensible default, or that
@@ -120,7 +121,7 @@ function createViewport(
   if (sprite) {
     return createPanel(world, parent, {
       anchor,
-      ...(anchoredPosition && { anchoredPosition }),
+      anchoredPosition,
       sprite,
       slices,
     });
@@ -132,7 +133,7 @@ function createViewport(
   world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     ...anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
   });
 
   return entity;
@@ -216,7 +217,7 @@ export function createScrollView(
     scrollbarHandleSprite,
     scrollbarWidth,
     scrollRect: scrollRectOptions,
-  } = { ...defaultCreateScrollViewOptions, ...options };
+  } = withDefaults(defaultCreateScrollViewOptions, options);
 
   const entity = createViewport(
     world,
@@ -272,7 +273,7 @@ export function createScrollView(
     content,
     horizontal: false,
     ...scrollRectOptions,
-    ...(verticalScrollbar && { verticalScrollbar }),
+    verticalScrollbar,
   });
 
   return {
@@ -280,6 +281,6 @@ export function createScrollView(
     content,
     scrollRect,
     interactable,
-    ...(verticalScrollbar && { verticalScrollbar }),
+    verticalScrollbar,
   };
 }

@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * ECS-style component interface for speed.
@@ -27,10 +28,10 @@ export function addSpeedComponent(
   entity: number,
   options: Partial<SpeedEcsComponent> = {},
 ): SpeedEcsComponent {
-  const component: SpeedEcsComponent = {
-    ...defaultSpeedOptions,
-    ...options,
-  };
+  const component: SpeedEcsComponent = withDefaults(
+    defaultSpeedOptions,
+    options,
+  );
 
   return world.addComponent(entity, speedId, component);
 }

@@ -106,9 +106,30 @@ state.
 [`registerInputs`](/Forge/docs/api/functions/registerInputs) adds a system
 that calls [`inputManager.reset()`](/Forge/docs/api/classes/InputManager#reset)
 after the game's systems run. It sets every `TriggerAction`'s `isTriggered`
-back to `false`, and calls `reset` on each source added with
-`inputManager.addResettable`. A source's `reset` reports `0` for input that
-only lasts one frame, such as a mouse wheel turn.
+back to `false`, clears every `Axis2dAction`'s `presses`, and calls `reset`
+on each source added with `inputManager.addResettable`. A source's `reset`
+reports `0` for input that only lasts one frame, such as a mouse wheel
+turn.
+
+### Reading presses of an axis
+
+`value` is the axis's state when it's read, so a key pressed and released
+between two frames never shows in it. To act on presses rather than on
+state, such as moving through a menu one step per press, read an
+`Axis2dAction`'s
+[`presses`](/Forge/docs/api/classes/Axis2dAction#presses): the value the
+axis had each time its length reached
+[`axisPressThreshold`](/Forge/docs/api/variables/axisPressThreshold) (`0.5`)
+this frame, oldest first.
+
+```ts
+for (const press of move.presses) {
+  stepMenuSelection(press);
+}
+```
+
+Holding the axis past the threshold is one press, on the frame it crossed.
+A tap shorter than a frame is one press, and two taps in one frame are two.
 
 ## Combining input from several sources
 

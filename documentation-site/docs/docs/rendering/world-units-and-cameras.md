@@ -56,12 +56,9 @@ texture's pixels per unit (PPU) is how many texels span one world unit.
 texture's size to world units at a given `pixelsPerUnit`:
 
 ```ts
-import {
-  createTexture,
-  importTexture,
-} from '@forge-game-engine/forge/rendering';
+import { importTexture } from '@forge-game-engine/forge/rendering';
 
-const texture = createTexture(renderContext, image);
+const texture = await renderContext.textureCache.getOrLoad('ship.png');
 
 const { worldWidth, worldHeight } = importTexture(texture, {
   pixelsPerUnit: 32,

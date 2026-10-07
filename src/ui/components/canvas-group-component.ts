@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CanvasGroupEcsComponent} with a sensible default; callers
@@ -87,10 +88,10 @@ export function addCanvasGroupComponent(
   entity: number,
   options: Partial<CanvasGroupDefaultedOptions> = {},
 ): CanvasGroupEcsComponent {
-  const component: CanvasGroupEcsComponent = {
-    ...defaultCanvasGroupOptions,
-    ...options,
-  };
+  const component: CanvasGroupEcsComponent = withDefaults(
+    defaultCanvasGroupOptions,
+    options,
+  );
 
   return world.addComponent(entity, canvasGroupId, component);
 }
