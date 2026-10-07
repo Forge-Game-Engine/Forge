@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createProgressBar } from './create-progress-bar.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import { Color, maskId, spriteId, Texture } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiProgressBarId } from '../components/ui-progress-bar-component.js';
-import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
+import { UiAnchor } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -39,7 +40,7 @@ describe('createProgressBar', () => {
     expect(world.getComponent(progressBar.fill, spriteId)).not.toBeNull();
   });
 
-  it('anchors the fill to the initial value', () => {
+  it('covers the whole bar with the fill and reveals the initial value with a linear mask from the left', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -51,12 +52,33 @@ describe('createProgressBar', () => {
       value: 3,
     });
 
-    expect(
-      (
-        world.getComponent(progressBar.fill, rectTransformId)!
-          .x as UiStretchAxis
-      ).anchorMax,
-    ).toBeCloseTo(0.75);
+    expect(world.getComponent(progressBar.fill, rectTransformId)!.x).toEqual(
+      UiAnchor.stretchAll().x,
+    );
+    expect(world.getComponent(progressBar.fill, maskId)!.shape).toEqual({
+      kind: 'linear',
+      origin: 'left',
+      amount: 0.75,
+    });
+  });
+
+  it('reveals the fill with fillShape', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const progressBar = createProgressBar(world, parent, {
+      trackSprite: buildSprite(),
+      fillSprite: buildSprite(),
+      value: 0.5,
+      fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -Math.PI },
+    });
+
+    expect(world.getComponent(progressBar.fill, maskId)!.shape).toEqual({
+      kind: 'radial',
+      startAngle: Math.PI / 2,
+      sweep: -Math.PI,
+      amount: 0.5,
+    });
   });
 
   it('passes through anchoredPosition', () => {

@@ -505,7 +505,9 @@ describe('MyClass', () => {
   what it does return, since undeclared active uniforms (struct members)
   are typed from it. Sampler values are `Texture`s
   (`new Texture(renderContext)`), and `bindTexture` receives
-  `texture.glTexture`
+  `texture.glTexture`. A `SpriteMaterial`'s fragment shader must include
+  `spriteMask` (`createSpriteMaterial` throws otherwise), so a test's sprite
+  fragment shader includes it too
 - A mocked WebGL context behind a real `RenderContext` needs
   `getExtension` (the render context requests `EXT_color_buffer_float` when
   it's created) and `isContextLost` (returning `false`; GPU resources check

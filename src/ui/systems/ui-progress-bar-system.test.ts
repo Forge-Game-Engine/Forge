@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { createUiProgressBarEcsSystem } from './ui-progress-bar-system.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { addUiProgressBarComponent } from '../components/ui-progress-bar-component.js';
+import { addMaskComponent, maskId, MaskShape } from '../../rendering/index.js';
 import {
-  addRectTransformComponent,
-  rectTransformId,
-} from '../components/rect-transform-component.js';
-import { UiStretchAxis } from '../types/ui-axis.js';
+  addUiProgressBarComponent,
+  UiProgressBarEcsComponent,
+} from '../components/ui-progress-bar-component.js';
 
 describe('createUiProgressBarEcsSystem', () => {
-  it("drives the fill entity's x.anchorMax from value", () => {
+  const createProgressBarWithFillMask = (
+    shape: MaskShape,
+  ): {
+    world: EcsWorld;
+    fill: number;
+    progressBar: UiProgressBarEcsComponent;
+  } => {
     const world = new EcsWorld();
     const entity = world.createEntity();
     const fill = world.createEntity();
 
-    addRectTransformComponent(world, fill, {
-      x: { kind: 'stretch', anchorMin: 0, anchorMax: 0, pivot: 0, margin: 0 },
-    });
+    addMaskComponent(world, fill, { width: 10, height: 1, shape });
     const progressBar = addUiProgressBarComponent(world, entity, {
       fill,
       minValue: 0,
@@ -25,29 +28,58 @@ describe('createUiProgressBarEcsSystem', () => {
     });
 
     world.addSystem(createUiProgressBarEcsSystem());
+
+    return { world, fill, progressBar };
+  };
+
+  it("sets the amount of the fill's mask from value", () => {
+    const { world, fill } = createProgressBarWithFillMask({
+      kind: 'radial',
+      startAngle: 0,
+      sweep: Math.PI,
+      amount: 0,
+    });
+
     world.update();
 
-    expect(
-      (world.getComponent(fill, rectTransformId)!.x as UiStretchAxis).anchorMax,
-    ).toBeCloseTo(0.5);
+    expect(world.getComponent(fill, maskId)!.shape).toEqual({
+      kind: 'radial',
+      startAngle: 0,
+      sweep: Math.PI,
+      amount: 0.5,
+    });
+  });
 
+  it('follows value changes', () => {
+    const { world, fill, progressBar } = createProgressBarWithFillMask({
+      kind: 'linear',
+      origin: 'left',
+      amount: 0,
+    });
+
+    world.update();
     progressBar.value = 10;
     world.update();
 
-    expect(
-      (world.getComponent(fill, rectTransformId)!.x as UiStretchAxis).anchorMax,
-    ).toBe(1);
+    expect(world.getComponent(fill, maskId)!.shape).toMatchObject({
+      amount: 1,
+    });
   });
 
-  it('does nothing when the fill entity has no rect transform', () => {
+  it('throws when the fill has a rect mask', () => {
+    const { world } = createProgressBarWithFillMask({ kind: 'rect' });
+
+    expect(() => world.update()).toThrow('linear or radial MaskEcsComponent');
+  });
+
+  it('throws when the fill has no mask', () => {
     const world = new EcsWorld();
-    const entity = world.createEntity();
-    const fill = world.createEntity();
 
-    addUiProgressBarComponent(world, entity, { fill, value: 0.5 });
-
+    addUiProgressBarComponent(world, world.createEntity(), {
+      fill: world.createEntity(),
+    });
     world.addSystem(createUiProgressBarEcsSystem());
 
-    expect(() => world.update()).not.toThrow();
+    expect(() => world.update()).toThrow('linear or radial MaskEcsComponent');
   });
 });

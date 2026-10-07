@@ -7,6 +7,8 @@ import {
   cameraId,
   CameraView,
   computeCameraView,
+  MaskEcsComponent,
+  maskId,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -172,7 +174,8 @@ function computeCanvasCameraView(
  * `position.world`), and `RectTransformEcsComponent.sortDepth` - and, for
  * elements that also carry a `SpriteEcsComponent` and/or a
  * `TextEcsComponent`, their `sortDepth` too (plus, for a sprite, its
- * `width`/`height`/`pivot`) - all set to the element's hierarchy pre-order
+ * `width`/`height`/`pivot`, which a `MaskEcsComponent` also gets, so it
+ * clips to the element's rect) - all set to the element's hierarchy pre-order
  * index, so draw order follows hierarchy order within a canvas regardless
  * of whether a panel and its label happen to share a world Y (draw order
  * otherwise ties on `position.world.y`, which a panel and a centered child
@@ -285,6 +288,17 @@ export const createUiLayoutEcsSystem = (
         sprite.pivot.x = pivot.x;
         sprite.pivot.y = pivot.y;
         sprite.sortDepth = sortDepth;
+      }
+
+      const mask = world.getComponent<MaskEcsComponent>(entity, maskId);
+
+      if (mask) {
+        const size = Rects.size(rect);
+
+        mask.width = size.x;
+        mask.height = size.y;
+        mask.pivot.x = pivot.x;
+        mask.pivot.y = pivot.y;
       }
 
       const text = world.getComponent<TextEcsComponent>(entity, textId);

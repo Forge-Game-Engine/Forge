@@ -11,6 +11,8 @@ uniform float u_time;
 
 out vec4 fragColor;
 
+#pragma forge include(spriteMask)
+
 uint hash2(uvec2 v) {
     v = v * 1664525u + 1013904223u;
     v.x ^= v.y >> 16;
@@ -71,5 +73,5 @@ void main() {
   vec3 bgTex = texture(u_bgTexture, uvTex).rgb;
   color += bgTex;
 
-  fragColor = vec4(color, u_color.a);
+  fragColor = vec4(color, u_color.a * spriteMaskCoverage());
 }`;

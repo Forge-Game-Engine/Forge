@@ -17,7 +17,15 @@ precision mediump float;
 uniform float u_time;
 in vec4 v_tint;
 out vec4 fragColor;
-void main() { fragColor = v_tint * u_time; }`;
+#pragma forge include(spriteMask)
+void main() { fragColor = v_tint * u_time * spriteMaskCoverage(); }`;
+
+const unmaskedFragmentShader = `#version 300 es
+#pragma forge name(unmasked.frag)
+precision mediump float;
+in vec4 v_tint;
+out vec4 fragColor;
+void main() { fragColor = v_tint; }`;
 
 describe('SpriteMaterial', () => {
   let gl: WebGL2RenderingContext;
@@ -71,9 +79,16 @@ describe('SpriteMaterial', () => {
     const shaderCache = new ShaderCache([])
       .addShader(new ForgeShaderSource(spriteVertexShader))
       .addShader(new ForgeShaderSource(spriteFragmentShader))
-      .addShader(new ForgeShaderSource(proceduralFragmentShader));
+      .addShader(new ForgeShaderSource(proceduralFragmentShader))
+      .addShader(new ForgeShaderSource(unmaskedFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
+  });
+
+  it("throws for a fragment shader that doesn't include spriteMask", () => {
+    expect(() => createSpriteMaterial(renderContext, 'unmasked.frag')).toThrow(
+      'must include "spriteMask"',
+    );
   });
 
   it('pairs sprite.vert with the named fragment shader, sharing one program', () => {

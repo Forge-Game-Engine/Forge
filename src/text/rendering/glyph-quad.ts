@@ -10,6 +10,10 @@ import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { TextEffectsInstanceData } from '../../rendering/renderable.js';
+import type {
+  InstanceMask,
+  InstanceMaskResolver,
+} from '../../rendering/utilities/resolve-instance-mask.js';
 import type { TextRenderables } from './create-text-renderables.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
@@ -30,6 +34,9 @@ export interface TextTransform {
 
   /** The entity's scale, if it has one. */
   scale: ScaleEcsComponent | null;
+
+  /** The masks the entity's glyphs are drawn through, or `null` for none. */
+  mask: InstanceMask | null;
 }
 
 /**
@@ -84,7 +91,7 @@ function pushTextEffectsRenderCommands(
     shadowOffset,
     shadowSoftness,
   } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
+  const { position: entityPosition, rotation, scale, mask } = transform;
   const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   // Uniform across every glyph in this entity, so built once rather than
@@ -132,6 +139,7 @@ function pushTextEffectsRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEffects,
         textEmbolden: glyph.embolden,
       },
@@ -159,7 +167,7 @@ function pushTextFillRenderCommands(
 ): void {
   const { fillRenderable } = renderables;
   const { layer, category, fontAtlas, color } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
+  const { position: entityPosition, rotation, scale, mask } = transform;
   const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   for (const glyph of textMesh.glyphs) {
@@ -192,6 +200,7 @@ function pushTextFillRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEmbolden: glyph.embolden,
       },
     });
@@ -259,6 +268,8 @@ export function pushTextRenderCommands(
  * @param commands - The render command buffer to push into.
  * @param getRenderables - Returns the renderables glyphs draw with; only
  * called when there's text to draw.
+ * @param getMask - Returns the masks an entity's glyphs are drawn through;
+ * text hidden entirely by its masks is skipped.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function buildTextCameraCommands(
@@ -269,6 +280,7 @@ export function buildTextCameraCommands(
   cullingMask: number,
   commands: RenderCommand[],
   getRenderables: () => TextRenderables,
+  getMask: InstanceMaskResolver,
   pixelRatio: number = 1,
 ): void {
   const {
@@ -291,6 +303,11 @@ export function buildTextCameraCommands(
 
     const textEntity = textEntities[t];
     const entityPosition = textPositions[t];
+    const mask = getMask(textEntity);
+
+    if (mask && !mask.visible) {
+      continue;
+    }
 
     pushTextRenderCommands(
       commands,
@@ -304,6 +321,7 @@ export function buildTextCameraCommands(
           rotationId,
         ),
         scale: world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+        mask,
       },
       pixelRatio,
     );

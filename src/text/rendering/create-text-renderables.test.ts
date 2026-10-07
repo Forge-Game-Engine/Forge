@@ -211,17 +211,18 @@ describe('createTextRenderables', () => {
     );
   });
 
-  it('assigns the sprite + embolden instance data layout to fillRenderable and the sprite + embolden + text-effects layout to effectsRenderable', () => {
+  it('assigns the sprite + embolden + mask instance data layout to fillRenderable and the sprite + embolden + text-effects + mask layout to effectsRenderable', () => {
     const { fillRenderable, effectsRenderable } =
       createTextRenderables(renderContext);
 
-    // Sprite: position(2) + rotation(1) + scale(2) + size(2) + pivot(2) +
-    // texOffset(2) + texSize(2) + tint(4) = 17, plus embolden(1) = 18.
-    expect(fillRenderable.floatsPerInstance).toBe(18);
+    // Sprite: position(2) + scale(2) + rotation(1) + size(2) + pivot(2) +
+    // texOffset(2) + texSize(2) + tint(4) = 17, plus embolden(1) and the
+    // mask (14) = 32.
+    expect(fillRenderable.floatsPerInstance).toBe(32);
 
     // Sprite + embolden (18) + text effects: outlineColor(4) +
-    // outlineWidth(1) + shadowColor(4) + shadowOffset(2) +
-    // shadowSoftness(1) = 12, for a total of 30.
-    expect(effectsRenderable.floatsPerInstance).toBe(30);
+    // shadowColor(4) + outlineWidth(1) + shadowOffset(2) +
+    // shadowSoftness(1) = 12, plus the mask (14), for a total of 44.
+    expect(effectsRenderable.floatsPerInstance).toBe(44);
   });
 });

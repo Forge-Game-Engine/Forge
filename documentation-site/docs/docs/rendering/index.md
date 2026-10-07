@@ -18,6 +18,9 @@ Rendering is made of these parts:
   an entity's position, with its draw order, camera category, emissive map
   and material, and [nine-slice sprites](./nine-slice-sprites.md) that
   resize without stretching their corners.
+- [Masks](./masks.md): clipping sprites and text to a rect, or revealing
+  part of them from an edge or around a center, for scroll views, filling
+  bars and draining rings.
 - [Cameras and world units](./world-units-and-cameras.md): how a camera maps
   world units to the screen, and how a texture's texels map to world units.
 - [Materials](./material-uniforms.md): shader programs and the uniform
