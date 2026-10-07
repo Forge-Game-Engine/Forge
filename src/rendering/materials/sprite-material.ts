@@ -10,6 +10,18 @@ export const spriteTextureUniformName = 'u_texture';
 export const spriteEmissiveTextureUniformName = 'u_emissiveTexture';
 
 /**
+ * The shader include every sprite fragment shader applies masks with: its
+ * `spriteMaskCoverage()` is how much of the fragment the sprite's masks let
+ * through.
+ */
+export const spriteMaskShaderIncludeName = 'spriteMask';
+
+const includesSpriteMask = (preparedSource: string): boolean =>
+  new RegExp(
+    String.raw`#pragma\s+forge\s+(?:name|include)\s*\(\s*${spriteMaskShaderIncludeName}\s*\)`,
+  ).test(preparedSource);
+
+/**
  * A material that draws sprites: `sprite.vert`, which positions each
  * sprite's quad from its instance data, paired with a fragment shader. Give
  * one to `SpriteEcsComponent.material` to draw a sprite with a custom
@@ -19,6 +31,11 @@ export const spriteEmissiveTextureUniformName = 'u_emissiveTexture';
  * emissive map (or `renderContext.blackTexture`) to `u_emissiveTexture`,
  * if the fragment shader declares them, so sprites with different textures
  * share one material. Those two uniforms can't be set on the material.
+ *
+ * The fragment shader must include `spriteMask`
+ * (`#pragma forge include(spriteMask)`) and multiply its output alpha by
+ * `spriteMaskCoverage()`, so the sprite is clipped by the masks above it
+ * (see `MaskEcsComponent`).
  */
 export class SpriteMaterial extends Material {
   private readonly _declaresTexture: boolean;
@@ -30,16 +47,20 @@ export class SpriteMaterial extends Material {
    * @param fragmentShaderName - The name of the fragment shader in
    * `renderContext.shaderCache`, from its `#pragma forge name(...)`.
    * @throws An error under the same conditions as `Material`'s constructor,
-   * or if the shader cache has no shader called `fragmentShaderName`.
+   * if the shader cache has no shader called `fragmentShaderName`, or if
+   * that shader doesn't include `spriteMask`.
    */
   constructor(renderContext: RenderContext, fragmentShaderName: string) {
     const { shaderCache } = renderContext;
+    const fragmentShader = shaderCache.getShader(fragmentShaderName);
 
-    super(
-      renderContext,
-      shaderCache.getShader('sprite.vert'),
-      shaderCache.getShader(fragmentShaderName),
-    );
+    if (!includesSpriteMask(fragmentShader.preparedSource)) {
+      throw new Error(
+        `Sprite fragment shader "${fragmentShaderName}" must include "${spriteMaskShaderIncludeName}" (#pragma forge include(${spriteMaskShaderIncludeName})) and multiply its output alpha by spriteMaskCoverage(), so masks clip the sprites it draws.`,
+      );
+    }
+
+    super(renderContext, shaderCache.getShader('sprite.vert'), fragmentShader);
 
     this._declaresTexture = this.hasUniform(spriteTextureUniformName);
     this._declaresEmissiveTexture = this.hasUniform(
@@ -99,12 +120,16 @@ export class SpriteMaterial extends Material {
  * paired with `sprite.vert`. The shader receives `v_texCoord` (the sprite's
  * frame UVs), `v_tint` (its tint, with `opacityMultiplier` in alpha) and
  * `v_emissive` (its emissive color), and can declare `u_texture` and
- * `u_emissiveTexture` to sample the sprite's texture and emissive map.
- * Declare and set any other uniforms it needs on the returned material.
+ * `u_emissiveTexture` to sample the sprite's texture and emissive map. It
+ * must include `spriteMask` and multiply its output alpha by
+ * `spriteMaskCoverage()`. Declare and set any other uniforms it needs on
+ * the returned material.
  * @param renderContext - The render context to draw with.
  * @param fragmentShaderName - The name of the fragment shader, registered
  * in `renderContext.shaderCache`.
  * @returns The material. Materials from the same shader share one program.
+ * @throws An error if the fragment shader doesn't include `spriteMask`, and
+ * under the same conditions as `SpriteMaterial`'s constructor.
  */
 export function createSpriteMaterial(
   renderContext: RenderContext,

@@ -7,6 +7,8 @@ import {
   cameraId,
   CameraView,
   computeCameraView,
+  MaskEcsComponent,
+  maskId,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -169,8 +171,9 @@ function computeCanvasCameraView(
  * `CanvasEcsComponent`'s root. For each element it writes the resolved
  * `RectTransformEcsComponent.rect`, the entity's `PositionEcsComponent.local`
  * (so the existing `createTransformEcsSystem` composes the correct
- * `position.world`), and, for an element with a `SpriteEcsComponent`, the
- * sprite's `width`/`height`/`pivot`. It doesn't order anything: the render
+ * `position.world`), and, for an element with a `SpriteEcsComponent` or a
+ * `MaskEcsComponent`, its `width`/`height`/`pivot`, so a mask clips to the
+ * element's rect. It doesn't order anything: the render
  * system draws a UI tree in hierarchy order like any other, and the UI's
  * raycasts and navigation use that same draw order.
  *
@@ -275,6 +278,17 @@ export const createUiLayoutEcsSystem = (
         sprite.height = size.y;
         sprite.pivot.x = pivot.x;
         sprite.pivot.y = pivot.y;
+      }
+
+      const mask = world.getComponent<MaskEcsComponent>(entity, maskId);
+
+      if (mask) {
+        const size = Rects.size(rect);
+
+        mask.width = size.x;
+        mask.height = size.y;
+        mask.pivot.x = pivot.x;
+        mask.pivot.y = pivot.y;
       }
 
       const text = world.getComponent<TextEcsComponent>(entity, textId);

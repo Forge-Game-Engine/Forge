@@ -44,11 +44,16 @@ import { createQuadGeometry, Geometry } from '../geometry/index.js';
 import { SpriteMaterial } from '../materials/sprite-material.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
-import { Renderable } from '../renderable.js';
+import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/utils/create-projection-matrix.js';
 import { RenderCommand } from '../render-command.js';
 import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
 import { combineInstanceDataSegments } from '../utilities/instance-data-segment.js';
+import { maskInstanceDataSegment } from '../utilities/mask-instance-data-segment.js';
+import {
+  createInstanceMaskResolver,
+  InstanceMaskResolver,
+} from '../utilities/resolve-instance-mask.js';
 import { spriteEmissiveInstanceDataSegment } from '../utilities/sprite-emissive-instance-data-segment.js';
 import {
   computeSpriteInstanceBounds,
@@ -59,6 +64,7 @@ import {
 const spriteInstanceLayout = combineInstanceDataSegments(
   spriteInstanceDataSegment,
   spriteEmissiveInstanceDataSegment,
+  maskInstanceDataSegment,
 );
 
 /**
@@ -199,12 +205,16 @@ function includeBatch(
 function pushSpriteRenderCommands(
   commands: RenderCommand[],
   renderable: Renderable,
-  spriteComponent: SpriteEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
-  flipComponent: FlipEcsComponent | null,
+  components: InstanceComponents,
 ): void {
+  const {
+    sprite: spriteComponent,
+    position: entityPosition,
+    rotation: rotationComponent,
+    scale: scaleComponent,
+    flip: flipComponent,
+    mask,
+  } = components;
   const { texture, slices } = spriteComponent;
   const emissiveTexture = spriteComponent.emissive?.texture ?? null;
 
@@ -213,13 +223,7 @@ function pushSpriteRenderCommands(
       renderable,
       texture,
       emissiveTexture,
-      components: {
-        position: entityPosition,
-        rotation: rotationComponent,
-        scale: scaleComponent,
-        sprite: spriteComponent,
-        flip: flipComponent,
-      },
+      components,
     });
 
     return;
@@ -276,6 +280,7 @@ function pushSpriteRenderCommands(
         scale: scaleComponent,
         sprite: regionSprite,
         flip: flipComponent,
+        mask,
       },
     });
   }
@@ -284,11 +289,12 @@ function pushSpriteRenderCommands(
 const commandBounds: Rect = Rects.zero;
 
 /**
- * Removes the commands whose quads don't overlap `viewBounds`, keeping the
- * rest in order, so nothing a camera can't see is uploaded or drawn. Every
- * command - a sprite, a nine-slice region or a glyph - is a quad drawn from
- * the same instance components, so one bounds test covers them all. Quads
- * touching the view's edge are kept.
+ * Removes the commands whose quads don't overlap `viewBounds`, or the
+ * bounds of the masks they're drawn through, keeping the rest in order, so
+ * nothing a camera can't see is uploaded or drawn. Every command - a
+ * sprite, a nine-slice region or a glyph - is a quad drawn from the same
+ * instance components, so one bounds test covers them all. Quads touching
+ * the view's edge are kept.
  * @param commands - The camera's commands, compacted in place.
  * @param viewBounds - The world-space area the camera shows.
  */
@@ -301,7 +307,12 @@ function cullCommandsOutsideView(
   for (const command of commands) {
     computeSpriteInstanceBounds(command.components, commandBounds);
 
-    if (Rects.intersects(commandBounds, viewBounds)) {
+    const { mask } = command.components;
+
+    if (
+      Rects.intersects(commandBounds, viewBounds) &&
+      (!mask || Rects.intersects(commandBounds, mask.bounds))
+    ) {
       commands[visibleCount] = command;
       visibleCount++;
     }
@@ -517,6 +528,13 @@ function pushDrawItemCommands(
   resources: RenderResources,
 ): void {
   const { entity, sprite, text, textMesh, position } = item;
+  const mask = optionalComponents.getMask(entity);
+
+  // Hidden entirely by its masks, so nothing to draw.
+  if (mask && !mask.visible) {
+    return;
+  }
+
   const rotation = optionalComponents.getRotation(entity);
   const scale = optionalComponents.getScale(entity);
 
@@ -526,11 +544,14 @@ function pushDrawItemCommands(
       resources.getSpriteRenderable(
         sprite.material ?? renderContext.spriteMaterial,
       ),
-      sprite,
-      position,
-      rotation,
-      scale,
-      optionalComponents.getFlip(entity),
+      {
+        position,
+        rotation,
+        scale,
+        sprite,
+        flip: optionalComponents.getFlip(entity),
+        mask,
+      },
     );
 
     return;
@@ -541,7 +562,7 @@ function pushDrawItemCommands(
     text!,
     textMesh!,
     resources.getTextRenderables(),
-    { position, rotation, scale },
+    { position, rotation, scale, mask },
     renderContext.pixelRatio,
   );
 }
@@ -550,6 +571,7 @@ interface OptionalComponentAccessors {
   getRotation: (entity: number) => RotationEcsComponent | null;
   getScale: (entity: number) => ScaleEcsComponent | null;
   getFlip: (entity: number) => FlipEcsComponent | null;
+  getMask: InstanceMaskResolver;
 }
 
 const commandBuffersByCameraIndex: RenderCommand[][] = [];
@@ -618,12 +640,14 @@ export const createRenderEcsSystem = (
       // Resolved once per frame rather than once per sprite: rotation/scale/
       // flip are optional (not every sprite has them, so they can't just be
       // added to the query above), and `getComponentAccessor` resolves a
-      // component's storage a single time instead of on every call.
+      // component's storage a single time instead of on every call. Masks
+      // are resolved for each entity once per frame, shared by every camera.
       const optionalComponents: OptionalComponentAccessors = {
         getRotation:
           world.getComponentAccessor<RotationEcsComponent>(rotationId),
         getScale: world.getComponentAccessor<ScaleEcsComponent>(scaleId),
         getFlip: world.getComponentAccessor<FlipEcsComponent>(flipId),
+        getMask: createInstanceMaskResolver(world),
       };
 
       for (let c = 0; c < cameras.length; c++) {

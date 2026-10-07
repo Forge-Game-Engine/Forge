@@ -12,6 +12,7 @@ import { Vec2 } from '../../math';
 import {
   addCameraComponent,
   addDrawOrderComponent,
+  addMaskComponent,
   CameraEcsComponent,
   maxDrawOrder,
 } from '../components';
@@ -24,7 +25,9 @@ import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { Color } from '../color';
 import type { SpriteMaterial } from '../materials/sprite-material';
+import type { InstanceComponents } from '../renderable';
 import type { Texture } from '../texture';
+import type { InstanceMask } from '../utilities/resolve-instance-mask';
 import { spriteInstanceDataSegment } from '../utilities/sprite-instance-data-segment';
 import { ShaderCache } from '../shaders';
 import { ImageCache } from '../../asset-loading';
@@ -83,8 +86,8 @@ vi.mock('../../text/rendering/create-text-renderables.js', async () => {
   };
 });
 
-/** The floats `sprite.vert` reads per instance: the sprite data and its emissive color. */
-const spriteFloatsPerInstance = 20;
+/** The floats `sprite.vert` reads per instance: the sprite data, its emissive color and its mask. */
+const spriteFloatsPerInstance = 34;
 
 describe('createRenderEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -1416,6 +1419,109 @@ describe('createRenderEcsSystem', () => {
       // The effects pass draws inside the same glyph quad as the fill, so
       // a glyph reaching into the view keeps both.
       expect(bindInstanceData).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('masks', () => {
+    /** The masks the first instance `bindInstanceData` bound was drawn through. */
+    const boundMask = (bindInstanceData: Mock): InstanceMask | null =>
+      (bindInstanceData.mock.calls[0][0] as InstanceComponents).mask;
+
+    const addMaskedParent = (
+      shape: Parameters<typeof addMaskComponent>[2]['shape'] = {
+        kind: 'rect',
+      },
+    ): number => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity);
+      addMaskComponent(world, entity, { width: 4, height: 4, shape });
+
+      return entity;
+    };
+
+    it("binds a descendant sprite's instance with its masks", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+      const parent = addMaskedParent();
+      const child = addSpriteEntity(renderable, 0);
+
+      world.setParent(child, parent);
+      world.update();
+
+      expect(boundMask(bindInstanceData)).toMatchObject({
+        visible: true,
+        clip: { min: { x: -2, y: -2 }, max: { x: 2, y: 2 } },
+      });
+    });
+
+    it('binds an unmasked sprite with no masks', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+
+      addMaskedParent();
+      addSpriteEntity(renderable, 0);
+      world.update();
+
+      expect(boundMask(bindInstanceData)).toBeNull();
+    });
+
+    it('skips sprites a mask hides entirely', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+      const parent = addMaskedParent({
+        kind: 'linear',
+        origin: 'left',
+        amount: 0,
+      });
+      const child = addSpriteEntity(renderable, 0);
+
+      world.setParent(child, parent);
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it("skips sprites outside their masks' bounds", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+      const parent = addMaskedParent();
+      const child = addSpriteEntity(renderable, 10);
+
+      world.setParent(child, parent);
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it("binds a descendant text's glyphs with its masks", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+      const parent = addMaskedParent({
+        kind: 'radial',
+        startAngle: 0,
+        sweep: Math.PI,
+        amount: 0.5,
+      });
+      const text = addTextEntity(renderable, 0, {
+        glyphs: [
+          {
+            offset: Vec2.zero,
+            size: { x: 1, y: 1 },
+            uvOffset: Vec2.zero,
+            uvScale: Vec2.one,
+            embolden: 0,
+          },
+        ],
+      });
+
+      world.setParent(text, parent);
+      world.update();
+
+      expect(boundMask(bindInstanceData)?.shape).toMatchObject({
+        kind: 'radial',
+        filledSweep: Math.PI / 2,
+      });
     });
   });
 });

@@ -22,6 +22,7 @@ import {
 import { Rect } from '../../math/index.js';
 import { driveUiAxis } from '../types/ui-axis.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
+import { driveUiFillMask } from '../utilities/drive-ui-fill-mask.js';
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
 import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointer-position.js';
 
@@ -78,7 +79,10 @@ function applyActiveDrag(
   setSliderValue(slider, denormalizeUiSliderValue(slider, t));
 }
 
-/** Drives the handle's (and, if present, the fill's) rect transform anchors from `slider.value`. */
+/**
+ * Drives the handle's rect transform anchor, and the amount of the fill's
+ * mask if there's a fill, from `slider.value`.
+ */
 function applySliderVisuals(
   world: EcsWorld,
   slider: UiSliderEcsComponent,
@@ -95,14 +99,7 @@ function applySliderVisuals(
   }
 
   if (slider.fill !== undefined) {
-    const fillRectTransform = world.getComponent<RectTransformEcsComponent>(
-      slider.fill,
-      rectTransformId,
-    );
-
-    if (fillRectTransform) {
-      driveUiAxis(fillRectTransform.x, t);
-    }
+    driveUiFillMask(world, slider.fill, t, 'slider');
   }
 }
 
@@ -115,9 +112,10 @@ function applySliderVisuals(
  * horizontal position within the track's resolved rect is normalized to
  * `[0, 1]` and denormalized back into `[minValue, maxValue]` (rounded when
  * `wholeNumbers` is set). Every tick, regardless of dragging, also re-derives
- * the handle's (and, if present, the fill's) rect transform anchors from the
- * current `value`, so an external `slider.value =` write is reflected the
- * same way a drag is.
+ * the handle's rect transform anchor (and, if there's a fill, the amount of
+ * its linear `MaskEcsComponent`, which this system is the only writer of)
+ * from the current `value`, so an external `slider.value =` write is
+ * reflected the same way a drag is.
  *
  * Because `createUiLayoutEcsSystem` runs before the interaction pipeline
  * each tick (it must, so raycasting has this tick's resolved rects to test
@@ -133,6 +131,8 @@ function applySliderVisuals(
  * @param renderContext - The render context canvases' cameras render
  * through, used to convert the pointer position.
  * @returns The UI slider ECS system.
+ * @throws From `update`: an error if a slider's fill has no linear or
+ * radial mask.
  */
 export const createUiSliderEcsSystem = (
   pointerSource: UiPointerSource,

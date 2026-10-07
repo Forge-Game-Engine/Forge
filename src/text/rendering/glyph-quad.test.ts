@@ -76,6 +76,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -94,7 +95,7 @@ describe('pushTextRenderCommands', () => {
       buildTextComponent(),
       buildTextMesh([glyph]),
       renderables,
-      { position: entityPosition, rotation: null, scale: null },
+      { position: entityPosition, rotation: null, scale: null, mask: null },
     );
 
     expect(commands[0].components.position.world).toEqual({ x: 13, y: 24 });
@@ -115,6 +116,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -144,6 +146,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -163,6 +166,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -191,6 +195,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -221,6 +226,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
       2,
     );
@@ -246,6 +252,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -269,6 +276,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -301,6 +309,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -325,6 +334,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -346,6 +356,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -370,6 +381,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: rotation,
         scale: null,
+        mask: null,
       },
     );
 
@@ -390,6 +402,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 

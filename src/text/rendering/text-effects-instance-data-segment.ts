@@ -5,15 +5,18 @@ import type {
 import type { InstanceDataSegment } from '../../rendering/utilities/instance-data-segment.js';
 import { setupInstanceAttribute } from '../../rendering/utilities/setup-instance-attribute.js';
 
+// Read as three attributes - the two colors and `a_instanceEffectParams`
+// (outline width, shadow offset, shadow softness) - since `msdf.vert` is
+// close to WebGL2's guaranteed 16 vertex attributes.
 const OUTLINE_COLOR_R_OFFSET = 0;
 const OUTLINE_COLOR_G_OFFSET = 1;
 const OUTLINE_COLOR_B_OFFSET = 2;
 const OUTLINE_COLOR_A_OFFSET = 3;
-const OUTLINE_WIDTH_OFFSET = 4;
-const SHADOW_COLOR_R_OFFSET = 5;
-const SHADOW_COLOR_G_OFFSET = 6;
-const SHADOW_COLOR_B_OFFSET = 7;
-const SHADOW_COLOR_A_OFFSET = 8;
+const SHADOW_COLOR_R_OFFSET = 4;
+const SHADOW_COLOR_G_OFFSET = 5;
+const SHADOW_COLOR_B_OFFSET = 6;
+const SHADOW_COLOR_A_OFFSET = 7;
+const OUTLINE_WIDTH_OFFSET = 8;
 const SHADOW_OFFSET_X_OFFSET = 9;
 const SHADOW_OFFSET_Y_OFFSET = 10;
 const SHADOW_SOFTNESS_OFFSET = 11;
@@ -77,14 +80,6 @@ function setupTextEffectsInstanceAttributes(
   );
 
   setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceOutlineWidth'),
-    gl,
-    1,
-    stride,
-    (offset + OUTLINE_WIDTH_OFFSET) * 4,
-  );
-
-  setupInstanceAttribute(
     gl.getAttribLocation(program, 'a_instanceShadowColor'),
     gl,
     4,
@@ -93,19 +88,11 @@ function setupTextEffectsInstanceAttributes(
   );
 
   setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceShadowOffset'),
+    gl.getAttribLocation(program, 'a_instanceEffectParams'),
     gl,
-    2,
+    4,
     stride,
-    (offset + SHADOW_OFFSET_X_OFFSET) * 4,
-  );
-
-  setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceShadowSoftness'),
-    gl,
-    1,
-    stride,
-    (offset + SHADOW_SOFTNESS_OFFSET) * 4,
+    (offset + OUTLINE_WIDTH_OFFSET) * 4,
   );
 }
 
@@ -115,8 +102,8 @@ function setupTextEffectsInstanceAttributes(
  *
  * Binds `InstanceComponents.textEffects` (set by `pushTextRenderCommands`
  * for every glyph instance) and wires it up to the `a_instanceOutlineColor`,
- * `a_instanceOutlineWidth`, `a_instanceShadowColor`, `a_instanceShadowOffset`,
- * and `a_instanceShadowSoftness` attributes - all uniform across a whole
+ * `a_instanceShadowColor` and `a_instanceEffectParams` (outline width,
+ * shadow offset, shadow softness) attributes - all uniform across a whole
  * `TextEcsComponent`, so every glyph instance of the same text entity binds
  * the same values.
  *

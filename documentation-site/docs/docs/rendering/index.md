@@ -23,6 +23,9 @@ Rendering is made of these parts:
 - [Draw order](./draw-order.md): which sprite or text is drawn on top
   where they overlap, drawing a child relative to its parent, and sorting
   by height on screen for top-down views.
+- [Masks](./masks.md): clipping sprites and text to a rect, or revealing
+  part of them from an edge or around a center, for scroll views, filling
+  bars and draining rings.
 - [Cameras and world units](./world-units-and-cameras.md): how a camera maps
   world units to the screen, and how a texture's texels map to world units.
 - [Materials](./material-uniforms.md): shader programs and the uniform

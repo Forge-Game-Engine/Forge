@@ -7,6 +7,7 @@ import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { TextEffectsInstanceData } from '../../rendering/renderable.js';
+import type { InstanceMask } from '../../rendering/utilities/resolve-instance-mask.js';
 import type { TextRenderables } from './create-text-renderables.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import {
@@ -26,6 +27,9 @@ export interface TextTransform {
 
   /** The entity's scale, if it has one. */
   scale: ScaleEcsComponent | null;
+
+  /** The masks the entity's glyphs are drawn through, or `null` for none. */
+  mask: InstanceMask | null;
 }
 
 /**
@@ -80,7 +84,7 @@ function pushTextEffectsRenderCommands(
     shadowOffset,
     shadowSoftness,
   } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
+  const { position: entityPosition, rotation, scale, mask } = transform;
 
   // Uniform across every glyph in this entity, so built once rather than
   // per glyph. The effect sizes are authored in CSS pixels but the shader
@@ -125,6 +129,7 @@ function pushTextEffectsRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEffects,
         textEmbolden: glyph.embolden,
       },
@@ -152,7 +157,7 @@ function pushTextFillRenderCommands(
 ): void {
   const { fillRenderable } = renderables;
   const { layer, category, fontAtlas, color } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
+  const { position: entityPosition, rotation, scale, mask } = transform;
 
   for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
@@ -182,6 +187,7 @@ function pushTextFillRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEmbolden: glyph.embolden,
       },
     });
