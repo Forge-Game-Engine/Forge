@@ -44,6 +44,7 @@ describe('createUiCanvas', () => {
       TEXTURE_2D: 'TEXTURE_2D',
       RGBA16F: 'RGBA16F',
       HALF_FLOAT: 'HALF_FLOAT',
+      isContextLost: () => false,
     } as unknown as WebGL2RenderingContext;
 
     renderContext = {

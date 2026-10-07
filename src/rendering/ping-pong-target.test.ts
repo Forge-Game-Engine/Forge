@@ -29,8 +29,9 @@ describe('PingPongTarget', () => {
       TEXTURE_2D: 'TEXTURE_2D',
       RGBA16F: 'RGBA16F',
       HALF_FLOAT: 'HALF_FLOAT',
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
-    renderContext = { gl } as RenderContext;
+    renderContext = { gl, supportsHdrRenderTargets: true } as RenderContext;
   });
 
   it('should start with two distinct read and write targets', () => {

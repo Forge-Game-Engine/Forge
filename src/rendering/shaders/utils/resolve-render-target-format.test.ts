@@ -1,36 +1,36 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { resolveRenderTargetFormat } from './resolve-render-target-format';
 import { RENDER_TARGET_FORMAT } from '../../enums/index.js';
+import type { RenderContext } from '../../render-context.js';
+
+const createRenderContext = (
+  supportsHdrRenderTargets: boolean,
+): RenderContext => ({ supportsHdrRenderTargets }) as RenderContext;
 
 describe('resolveRenderTargetFormat', () => {
-  it('returns ldr unmodified without calling gl.getExtension', () => {
-    const gl = {
-      getExtension: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
-
-    const result = resolveRenderTargetFormat(gl, RENDER_TARGET_FORMAT.ldr);
+  it('returns ldr unmodified', () => {
+    const result = resolveRenderTargetFormat(
+      createRenderContext(true),
+      RENDER_TARGET_FORMAT.ldr,
+    );
 
     expect(result).toBe(RENDER_TARGET_FORMAT.ldr);
-    expect(gl.getExtension).not.toHaveBeenCalled();
   });
 
-  it('resolves hdr when EXT_color_buffer_float is supported', () => {
-    const gl = {
-      getExtension: vi.fn().mockReturnValue({}),
-    } as unknown as WebGL2RenderingContext;
-
-    const result = resolveRenderTargetFormat(gl, RENDER_TARGET_FORMAT.hdr);
+  it('resolves hdr when the render context supports HDR render targets', () => {
+    const result = resolveRenderTargetFormat(
+      createRenderContext(true),
+      RENDER_TARGET_FORMAT.hdr,
+    );
 
     expect(result).toBe(RENDER_TARGET_FORMAT.hdr);
-    expect(gl.getExtension).toHaveBeenCalledWith('EXT_color_buffer_float');
   });
 
-  it('falls back to ldr when EXT_color_buffer_float is unavailable', () => {
-    const gl = {
-      getExtension: vi.fn().mockReturnValue(null),
-    } as unknown as WebGL2RenderingContext;
-
-    const result = resolveRenderTargetFormat(gl, RENDER_TARGET_FORMAT.hdr);
+  it('falls back to ldr when the render context does not support HDR render targets', () => {
+    const result = resolveRenderTargetFormat(
+      createRenderContext(false),
+      RENDER_TARGET_FORMAT.hdr,
+    );
 
     expect(result).toBe(RENDER_TARGET_FORMAT.ldr);
   });

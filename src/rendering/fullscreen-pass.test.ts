@@ -35,6 +35,8 @@ describe('beginPostProcessPass', () => {
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
       TEXTURE_2D: 'TEXTURE_2D',
       BLEND: 'BLEND',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
