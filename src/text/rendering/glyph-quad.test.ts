@@ -62,6 +62,7 @@ const glyph: GlyphQuad = {
   size: { x: 5, y: 7 },
   uvOffset: { x: 0.1, y: 0.2 },
   uvScale: { x: 0.3, y: 0.4 },
+  embolden: 0,
 };
 
 describe('pushTextRenderCommands', () => {
@@ -125,6 +126,40 @@ describe('pushTextRenderCommands', () => {
       enabled: true,
       layer: 3,
     });
+  });
+
+  it("tints a glyph with its own rich text color in place of the text's color", () => {
+    const commands: RenderCommand[] = [];
+    const glyphColor = new Color(0, 1, 0, 0.5);
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ color: Color.white }),
+      buildTextMesh([{ ...glyph, color: glyphColor }, glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands[0].components.sprite.tintColor).toBe(glyphColor);
+    expect(commands[1].components.sprite.tintColor).toBe(Color.white);
+  });
+
+  it("passes each glyph's embolden to both its effects and fill commands", () => {
+    const commands: RenderCommand[] = [];
+
+    pushTextRenderCommands(
+      commands,
+      buildTextComponent({ outlineWidth: 1 }),
+      buildTextMesh([{ ...glyph, embolden: 0.1 }, glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
+    );
+
+    expect(commands.map((command) => command.components.textEmbolden)).toEqual([
+      0.1, 0, 0.1, 0,
+    ]);
   });
 
   it("builds textEffects from the text component's outline/shadow fields", () => {

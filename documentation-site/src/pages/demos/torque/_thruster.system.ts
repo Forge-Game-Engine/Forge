@@ -18,16 +18,20 @@ export const createThrusterEcsSystem = (
   time: Time,
 ): EcsSystem<[ThrusterEcsComponent, RigidBodyEcsComponent]> => ({
   query: [thrusterId, rigidBodyId],
-  update: (_world, { components: [thrusterComponents, rigidBodies] }) => {
+  update: (world, { entities, components: [thrusterComponents] }) => {
     for (let i = 0; i < thrusterComponents.length; i++) {
       const thrusterComponent = thrusterComponents[i];
-      const rigidBody = rigidBodies[i];
 
       if (!thrusterComponent.holdAction.isHeld) {
         continue;
       }
 
-      applyTorque(thrusterComponent.torque, time.deltaTimeInSeconds, rigidBody);
+      applyTorque(
+        world,
+        entities[i],
+        thrusterComponent.torque,
+        time.deltaTimeInSeconds,
+      );
     }
   },
 });

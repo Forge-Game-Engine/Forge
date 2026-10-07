@@ -70,6 +70,13 @@ export interface InstanceComponents {
    * sprites.
    */
   textEffects?: TextEffectsInstanceData;
+
+  /**
+   * The glyph's faux-bold edge shift (`GlyphQuad.embolden`), if this
+   * instance is a glyph quad pushed by `pushTextRenderCommands`.
+   * `undefined` for ordinary sprites.
+   */
+  textEmbolden?: number;
 }
 
 /**

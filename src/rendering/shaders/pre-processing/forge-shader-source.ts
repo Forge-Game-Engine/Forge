@@ -1,4 +1,8 @@
 import { ShaderPreProcessor } from './shader-pre-processor';
+import {
+  parseUniformDeclarations,
+  UniformSourceDeclaration,
+} from './uniform-declarations.js';
 
 export interface ForgeShaderPragma {
   lineNumber: number;
@@ -17,6 +21,10 @@ export class ForgeShaderSource {
   private readonly _pragmas: ForgeShaderPragma[] = [];
 
   private _preparedSource: string;
+  private _uniformDeclarations: ReadonlyMap<
+    string,
+    UniformSourceDeclaration
+  > | null = null;
 
   /**
    * Constructs a new instance of the `ForgeShaderSource` class.
@@ -68,6 +76,23 @@ export class ForgeShaderSource {
   }
 
   /**
+   * Gets the `uniform` declarations of the prepared source, by name. Parsed
+   * on first access and cached until a pre-processor changes the source.
+   *
+   * @returns The declared uniforms, in declaration order.
+   * @throws {Error} If a declaration's array size can't be resolved, or a
+   * uniform is declared twice with different types or sizes.
+   */
+  get uniformDeclarations(): ReadonlyMap<string, UniformSourceDeclaration> {
+    this._uniformDeclarations ??= parseUniformDeclarations(
+      this._preparedSource,
+      this.name,
+    );
+
+    return this._uniformDeclarations;
+  }
+
+  /**
    * Applies a single pre-processor to the shader source.
    * The pre-processor can modify the shader source, for example by resolving includes or other transformations.
    *
@@ -75,6 +100,7 @@ export class ForgeShaderSource {
    */
   public applyPreProcessor(preProcessor: ShaderPreProcessor): void {
     this._preparedSource = preProcessor.process(this);
+    this._uniformDeclarations = null;
   }
 
   /**

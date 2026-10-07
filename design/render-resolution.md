@@ -6,7 +6,7 @@
 | **Kind**                              | Defect and feature                                                                                                                                                                                 |
 | **Found in**                          | Galactic Journey demo: `src/graphics/graphics-quality.system.ts` (`maxPixelRatio` written through a cast), `src/rendering/resize-render-targets.system.ts`, `src/systems/register-draw-systems.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                           |
-| **Related**                           | [`post-processing-effects.md`](./post-processing-effects.md) (lands first), [`webgl-context-loss.md`](./webgl-context-loss.md)                                                                     |
+| **Related**                           | [`webgl-context-loss.md`](./webgl-context-loss.md)                                                                                                                                                 |
 
 ## 0. Targeted modules
 
@@ -45,8 +45,9 @@ Effects' intermediate targets are a different case and stay as they are:
 bloom's downsampled targets and the blur's averaged target are sized from
 the camera target they process, not from the canvas, which is right
 (Unity's RTHandles and Bevy's view textures scale with the camera's
-target too). [`post-processing-effects.md`](./post-processing-effects.md)
-removes the full-size scratch targets, so it lands first.
+target too). The effects no longer keep full-size scratch targets: they
+write the camera target's second color buffer through
+`beginPostProcessPass`.
 
 ---
 
@@ -113,9 +114,9 @@ resizes it in `RenderContext.resize`, so it's never out of step with the
 canvas for a frame. `dispose` unregisters it. A fixed-size target behaves
 as today. `RenderTarget.resize` stays for fixed-size targets and throws
 for a canvas-sized one, so the render context is the only writer of a
-canvas-sized target's size. (The second color buffer that
-[`post-processing-effects.md`](./post-processing-effects.md) adds is
-resized inside `resize`, so it follows either kind.)
+canvas-sized target's size. (A target's second color buffer, used by
+`beginPostProcessPass`, is resized inside `resize`, so it follows either
+kind.)
 
 `createRenderTarget` and `PingPongTarget` take the render context instead
 of `gl`, which also lets [`webgl-context-loss.md`](./webgl-context-loss.md)
@@ -158,8 +159,6 @@ read-only to callers: `resize` is their only writer.
 **Definition of done:** no code outside the render context resizes a
 render target to follow the canvas; changing `maxPixelRatio` at runtime
 re-renders at the new resolution.
-
-Lands after [`post-processing-effects.md`](./post-processing-effects.md).
 
 ---
 

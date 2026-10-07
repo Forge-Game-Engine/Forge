@@ -81,9 +81,6 @@ export function spawnCrate(
   const collider = new PolygonCollider(rectangleVertices(crateSize, crateSize));
 
   addColliderComponent(world, entity, { collider, friction: 0.6 });
-  addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, entity);
   addGravityComponent(world, entity, { amount: gravity });
 }

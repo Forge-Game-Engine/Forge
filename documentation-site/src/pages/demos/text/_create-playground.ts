@@ -22,7 +22,7 @@ const glowColor = new Color(0.15, 0.65, 1, 1);
 
 /** The values the playground's controls start at (see `_PlaygroundControls.tsx`). */
 export const playgroundDefaults = {
-  text: "Type your own text here! This is the engine's shipped default font atlas (Liberation Sans, SIL OFL 1.1) - zero font setup required.",
+  text: "Type your own text here! This is the engine's shipped default font atlas (Liberation Sans, SIL OFL 1.1) - zero font setup required. Try <b>bold</b> and <color=#ff7a3d>color</color> tags.",
   size: 24,
   minSize: 12,
   maxSize: 56,

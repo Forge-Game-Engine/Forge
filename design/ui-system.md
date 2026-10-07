@@ -87,9 +87,9 @@ unblocked.
   CSS-ish style sheets, no parser. Layout is expressed in TypeScript.
 - **No visual editor.** The engine is code-only by design. A future editor may
   read and write this system, but is out of scope here.
-- **No rich-text document layout.** Single-font, single-style runs per text
-  element for v1. No inline images, no bidirectional text, no complex script
-  shaping (Arabic, Devanagari).
+- **No rich-text document layout.** One font per text element, styled only
+  by inline `<b>`/`<color>` tags. No inline images, no bidirectional text, no
+  complex script shaping (Arabic, Devanagari).
 - **No DOM-backed widgets.** The one place browser text entry is unavoidable
   (IME, mobile keyboards, clipboard) is isolated as an input primitive in
   `/src/input`, not as DOM inside a UI component — so this module stays
@@ -1500,7 +1500,7 @@ widest label with no hand-computed offsets. Documented in the UI doc's "Layout g
 | 5.4 | **Landed**, outside this module: text effects (outline, drop shadow, glow as MSDF shader parameters) shipped via `/src/text` ([#608](https://github.com/Forge-Game-Engine/Forge/pull/608), [#610](https://github.com/Forge-Game-Engine/Forge/pull/610)), documented in the text module's Text Effects doc. Nothing left to do here. | S         |
 | 5.5 | **Landed.** Tooltips + a UI-safe-area concept for notched displays          | S         |
 | 5.6 | **Landed.** UI stress-test demo - dirty-tracking optimization evaluated and deferred, not warranted at the scale measured; see DL-12 | M (DL-12) |
-| 5.7 | **Scoped out.** Rich text tags (`<b>`, `<color>`) — scoping surfaced real architectural gaps (no per-glyph styling data model, no bold-weight concept in the font-atlas pipeline); see [`design/rich-text-tags.md`](./rich-text-tags.md) for the design addendum instead of a guessed implementation. | L         |
+| 5.7 | **Landed.** Rich text tags (`<b>`, `<color=...>`) in `TextEcsComponent.text`: `shapeText` parses them into per-glyph color and a synthetic-bold embolden; see the Rendering Text guide. | L         |
 
 ---
 

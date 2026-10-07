@@ -8,6 +8,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
 
 /**
  * Creates an ECS system that drives every entity with an
@@ -28,7 +29,7 @@ export const createAngularVelocityMotorEcsSystem = (
   time: Time,
 ): EcsSystem<[AngularVelocityMotorEcsComponent, RigidBodyEcsComponent]> => ({
   query: [angularVelocityMotorId, rigidBodyId],
-  update: (_world, { components: [motors, rigidBodies] }) => {
+  update: (world, { entities, components: [motors, rigidBodies] }) => {
     const dt = time.deltaTimeInSeconds;
 
     if (dt <= 0) {
@@ -43,16 +44,17 @@ export const createAngularVelocityMotorEcsSystem = (
       }
 
       const motor = motors[i];
+      const { invInertia } = getRigidBodyMassData(world, entities[i]);
 
       const velocityError = motor.targetVelocity - rigidBody.angularVelocity;
-      const impulse = rigidBody.momentOfInertia * velocityError;
+      const impulse = velocityError / invInertia;
       const maxImpulse = motor.maxTorque * dt;
       const clampedImpulse = Math.max(
         -maxImpulse,
         Math.min(impulse, maxImpulse),
       );
 
-      rigidBody.angularVelocity += clampedImpulse / rigidBody.momentOfInertia;
+      rigidBody.angularVelocity += clampedImpulse * invInertia;
     }
   },
 });

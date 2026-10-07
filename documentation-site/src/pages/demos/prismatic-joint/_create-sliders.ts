@@ -238,10 +238,7 @@ function createSliderScenario(
     collider: sliderCollider,
     restitution: 0,
   });
-  addRigidBodyComponent(world, sliderEntity, {
-    mass: sliderCollider.mass,
-    momentOfInertia: sliderCollider.momentOfInertia,
-  });
+  addRigidBodyComponent(world, sliderEntity);
   addGravityComponent(world, sliderEntity, { amount: gravity });
 
   const jointEntity = world.createEntity();

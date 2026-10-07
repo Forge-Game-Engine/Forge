@@ -38,10 +38,7 @@ addColliderComponent(world, ball, {
   restitution: 0.6,
   friction: 0.4,
 });
-addRigidBodyComponent(world, ball, {
-  mass: collider.mass,
-  momentOfInertia: collider.momentOfInertia,
-});
+addRigidBodyComponent(world, ball);
 ```
 
 ## Choosing a shape
@@ -63,10 +60,61 @@ decompose it into multiple convex `PolygonCollider`s on separate entities
 rather than trying to pass the concave outline directly.
 :::
 
-A collider's `mass`/`momentOfInertia` are computed from its shape (and, for
-`CircleCollider`, an optional `density`) - pass them straight into
-`addRigidBodyComponent` as shown above, rather than picking mass values by
-hand.
+## Placing a shape on its entity
+
+A collider's shape is in its entity's local space and stays where you
+author it: the entity's world position and rotation place it in the world.
+A `PolygonCollider`'s vertices are used as given, so a shape drawn around a
+sprite's pivot lines up with the sprite. A `CircleCollider` takes an
+optional `center` (its third argument), a local position that turns with
+the entity like a polygon's vertices:
+
+```ts
+import {
+  CircleCollider,
+  PolygonCollider,
+} from '@forge-game-engine/forge/physics';
+
+// A right triangle drawn around its entity's origin, not its centroid.
+const ramp = new PolygonCollider([
+  { x: -16, y: 16 },
+  { x: -16, y: -16 },
+  { x: 16, y: -16 },
+]);
+
+// A circle of radius 8, 20 units in front of its entity (along local +X).
+const bumper = new CircleCollider(8, 1, { x: 20, y: 0 });
+```
+
+## Mass and center of mass
+
+A dynamic body's mass, moment of inertia and center of mass come from the
+`Collider` in its
+`ColliderEcsComponent`: `mass` is the shape's area times its `density` (the
+constructors' second argument), `localCenterOfMass` is the shape's centroid
+(a circle's `center`), and `momentOfInertia` is measured about that
+centroid. `RigidBodyEcsComponent` has no mass fields of its own, and a
+dynamic body with no `ColliderEcsComponent` throws when it's simulated.
+To change how heavy a body is, change its collider's density.
+
+A dynamic body turns about its center of mass, and its
+`RigidBodyEcsComponent.velocity` is the velocity of its center of mass, so
+a shape authored off its entity's origin swings that origin around the
+centroid as it spins. Kinematic and static bodies turn about their
+entity's origin, whatever their shape.
+
+For a dynamic body that needs mass but shouldn't collide with anything
+(an invisible part of a jointed assembly, for example), give it a
+collider with a `mask` of `0`: it collides with nothing, and the body
+still takes its mass from it.
+
+```ts
+addColliderComponent(world, wheelMount, {
+  collider: new CircleCollider(4),
+  mask: 0,
+});
+addRigidBodyComponent(world, wheelMount);
+```
 
 ## Static, kinematic, and dynamic bodies
 
@@ -107,19 +155,10 @@ import { addRigidBodyComponent } from '@forge-game-engine/forge/physics';
 // there. Dynamic bodies standing on it get carried along and pushed by it,
 // but nothing (gravity included) ever changes the platform's own velocity.
 addRigidBodyComponent(world, platformEntity, {
-  mass: platformCollider.mass,
-  momentOfInertia: platformCollider.momentOfInertia,
   type: 'kinematic',
   velocity: { x: 40, y: 0 },
 });
 ```
-
-:::caution
-A `'kinematic'` body still needs `mass`/`momentOfInertia` values to satisfy
-`RigidBodyEcsComponent`'s required options, even though they're never used
-by the solver (its effective mass is always treated as infinite). Pass its
-collider's `mass`/`momentOfInertia` the same as for a dynamic body.
-:::
 
 ## ECS integration
 

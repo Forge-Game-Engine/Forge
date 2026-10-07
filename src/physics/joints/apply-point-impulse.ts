@@ -2,19 +2,19 @@ import { Vec2, Vector2 } from '../../math/index.js';
 import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
 
 /**
- * Applies `impulse` at the point `r` (relative to the body's position) to
+ * Applies `impulse` at the point `r` (relative to the body's center of mass) to
  * `rigidBody`'s velocity and angular velocity. A `null` `rigidBody` (static
  * geometry with no `RigidBodyEcsComponent`) is a no-op, so callers can apply
  * the same impulse to both sides of a constraint without checking whether
  * each side is static themselves. Passing `invMass`/`invInertia` of `0` (as
- * `getRigidBodyInverseMass` returns for a `'static'`/`'kinematic'` body) has
+ * `getRigidBodyMassData` returns for a `'static'`/`'kinematic'` body) has
  * the same zero-effect even when `rigidBody` is non-`null`, which is how a
  * `'kinematic'` body stays unaffected by contact/joint impulses while still
  * being read as the "other side" of one.
  * @param rigidBody - The rigid body to apply the impulse to, or `null` for
  * static geometry.
  * @param r - The point to apply `impulse` at, relative to `rigidBody`'s
- * position.
+ * center of mass.
  * @param invMass - `rigidBody`'s precomputed inverse mass (`0` if static or
  * kinematic).
  * @param invInertia - `rigidBody`'s precomputed inverse moment of inertia

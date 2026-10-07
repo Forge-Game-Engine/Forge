@@ -322,6 +322,35 @@ describe('ResolveIncludesPreProcessor', () => {
     expect(occurrences).toBe(1);
   });
 
+  it('should remove duplicate uniform declarations with qualifiers, arrays and several names', () => {
+    const declaration = 'uniform highp vec4 u_waves[2], u_color;';
+    const shader = new ForgeShaderSource(`
+      #pragma forge name(test)
+
+      #pragma forge include(first)
+      #pragma forge include(second)
+
+      void main() {}
+    `);
+
+    const first = new ForgeShaderSource(`
+      #pragma forge name(first)
+
+      ${declaration}
+    `);
+
+    const second = new ForgeShaderSource(`
+      #pragma forge name(second)
+
+      ${declaration}
+    `);
+
+    const preProcessor = new ResolveIncludesPreProcessor([first, second]);
+    const result = preProcessor.process(shader);
+
+    expect(result.split(declaration).length - 1).toBe(1);
+  });
+
   it('should remove duplicate "in" variable declarations', () => {
     const shader = new ForgeShaderSource(`
       #pragma forge name(test)

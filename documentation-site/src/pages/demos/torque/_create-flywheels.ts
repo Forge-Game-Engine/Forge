@@ -6,6 +6,7 @@ import {
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
+  addColliderComponent,
   addAngularVelocityMotorComponent,
   addRigidBodyComponent,
   PolygonCollider,
@@ -85,9 +86,10 @@ async function createFlywheelEntity(
     height: flywheelHeight,
     slices: narrowSlices,
   });
+  // The flywheel takes its mass from this collider, whose mask of 0 keeps
+  // it from colliding with anything.
+  addColliderComponent(world, entity, { collider: flywheelCollider, mask: 0 });
   addRigidBodyComponent(world, entity, {
-    mass: flywheelCollider.mass,
-    momentOfInertia: flywheelCollider.momentOfInertia,
     angularDrag,
   });
 

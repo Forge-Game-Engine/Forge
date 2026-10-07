@@ -1,5 +1,6 @@
 import { ForgeShaderSource } from '../forge-shader-source';
 import { ShaderPreProcessor } from '../shader-pre-processor';
+import { isUniformDeclarationLine } from '../uniform-declarations.js';
 
 export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
   private readonly _includeMap: ForgeShaderSource[];
@@ -124,7 +125,7 @@ export class ResolveIncludesPreProcessor implements ShaderPreProcessor {
   }
 
   private _isVariableDeclarationLine(line: string): boolean {
-    return /^\s*(uniform|in)\s+\w+\s+\w+;/.test(line);
+    return isUniformDeclarationLine(line) || /^\s*in\s+\w+\s+\w+;/.test(line);
   }
 
   private _processVariableDeclarationLine(

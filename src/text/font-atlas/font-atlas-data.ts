@@ -55,9 +55,11 @@ export interface FontAtlasMetrics {
   /**
    * The distance from the baseline to the top of the font's capital letters
    * (e.g. "H"), excluding ascenders like "b"/"d"/"h" that reach higher than
-   * a capital's flat top. Used by `TextEcsComponent.verticalAlign:
-   * 'capline'` to anchor a title/label to its capital letters specifically,
-   * ignoring both true ascenders and any descenders.
+   * a capital's flat top. Measured on the letter itself, without the
+   * distance field padding around its quad. `TextEcsComponent.verticalAlign`
+   * reads it for `'capline'` (the top of a capital on the anchor) and
+   * `'middle'` (the band from the cap line to the baseline centered on the
+   * anchor).
    */
   capHeight: number;
 }

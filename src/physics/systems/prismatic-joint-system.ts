@@ -5,7 +5,11 @@ import {
   PrismaticJointEcsComponent,
   prismaticJointId,
 } from '../components/prismatic-joint-component.js';
-import { JointBody, resolveJointBody } from '../joints/resolve-joint-body.js';
+import {
+  getJointLeverArm,
+  JointBody,
+  resolveJointBody,
+} from '../joints/resolve-joint-body.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 
@@ -109,19 +113,22 @@ function prepareJoint(
   bodyA: JointBody,
   bodyB: JointBody,
 ): PreparedPrismaticJoint {
-  // Clone before rotating: `joint.localAnchorA`/`localAnchorB`/`axis` are
-  // persistent component fields reused every tick.
-  const rA = Vec2.rotate(Vec2.clone(joint.localAnchorA), bodyA.rotation);
-  const rB = Vec2.rotate(Vec2.clone(joint.localAnchorB), bodyB.rotation);
+  const rA = getJointLeverArm(bodyA, joint.localAnchorA);
+  const rB = getJointLeverArm(bodyB, joint.localAnchorB);
+  // Clone before rotating: `joint.axis` is a persistent component field
+  // reused every tick.
   const axis = Vec2.rotate(Vec2.clone(joint.axis), bodyA.rotation);
   // Clone before computing the perpendicular: `axis` is reused for the rest
   // of this tick (stored on `PreparedPrismaticJoint`).
   const perp = Vec2.perpendicular(Vec2.clone(axis));
 
-  // Clone before adding: `bodyB.position`/`bodyA.position` are the entities'
-  // live world position.
+  // Clone before adding: the bodies' `centerOfMass` is read again by
+  // later solve steps.
   const d = Vec2.subtract(
-    Vec2.subtract(Vec2.add(Vec2.clone(bodyB.position), rB), bodyA.position),
+    Vec2.subtract(
+      Vec2.add(Vec2.clone(bodyB.centerOfMass), rB),
+      bodyA.centerOfMass,
+    ),
     rA,
   );
 

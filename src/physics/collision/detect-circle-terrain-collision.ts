@@ -290,11 +290,9 @@ export function detectCircleTerrainCollision(
   const terrainCollider = terrainBody.collider as TerrainCollider;
   const { radius } = circleCollider;
 
-  // Clone before adding: `circleBody.position` is the entity's live world
-  // position, so this must not mutate it.
   const localCenter = Vec2.rotate(
     Vec2.subtract(
-      Vec2.add(Vec2.clone(circleBody.position), circleCollider.offset),
+      circleCollider.getWorldCenter(circleBody.position, circleBody.rotation),
       terrainBody.position,
     ),
     -terrainBody.rotation,

@@ -166,10 +166,7 @@ function createPhysicsSpriteEntity(
   });
 
   if (!options.isStatic) {
-    addRigidBodyComponent(world, entity, {
-      mass: collider.mass,
-      momentOfInertia: collider.momentOfInertia,
-    });
+    addRigidBodyComponent(world, entity);
     addGravityComponent(world, entity, { amount: gravity });
   }
 

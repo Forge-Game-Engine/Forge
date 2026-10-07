@@ -35,6 +35,7 @@ import {
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
+  msdfFillVertexShader,
   msdfVertexShader,
 } from '../../text/rendering/shaders/index.js';
 
@@ -85,6 +86,7 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(toneMappingFragmentShader))
     .addShader(new ForgeShaderSource(terrainVertexShader))
     .addShader(new ForgeShaderSource(terrainFragmentShader))
+    .addShader(new ForgeShaderSource(msdfFillVertexShader))
     .addShader(new ForgeShaderSource(msdfFillFragmentShader))
     .addShader(new ForgeShaderSource(msdfEffectsFragmentShader))
     .addShader(new ForgeShaderSource(msdfVertexShader));
