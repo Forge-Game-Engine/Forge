@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSlider } from './create-slider.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
@@ -31,7 +31,7 @@ describe('createSlider', () => {
       handleSprite: buildSprite(),
     });
 
-    expect(world.getComponent(slider.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(slider.entity)).toBe(parent);
     expect(world.getComponent(slider.entity, uiInteractableId)).toBe(
       slider.interactable,
     );
@@ -40,9 +40,7 @@ describe('createSlider', () => {
       world.getComponent(slider.entity, uiColorTransitionId),
     ).not.toBeNull();
 
-    expect(world.getComponent(slider.handle, parentId)).toEqual({
-      parent: slider.entity,
-    });
+    expect(world.getParent(slider.handle)).toBe(slider.entity);
     expect(world.getComponent(slider.handle, spriteId)).not.toBeNull();
     expect(world.getComponent(slider.handle, positionId)).not.toBeNull();
     expect(slider.fill).toBeUndefined();

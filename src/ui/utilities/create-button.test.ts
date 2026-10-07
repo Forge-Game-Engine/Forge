@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createButton } from './create-button.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
@@ -38,7 +38,7 @@ describe('createButton', () => {
       labelSize: 32,
     });
 
-    expect(world.getComponent(button.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(button.entity)).toBe(parent);
     expect(world.getComponent(button.entity, positionId)).not.toBeNull();
     expect(world.getComponent(button.entity, rectTransformId)!.x).toEqual(
       UiAnchor.center({ x: 200, y: 60 }).x,
@@ -53,9 +53,7 @@ describe('createButton', () => {
       world.getComponent(button.entity, uiColorTransitionId),
     ).not.toBeNull();
 
-    expect(world.getComponent(button.label, parentId)).toEqual({
-      parent: button.entity,
-    });
+    expect(world.getParent(button.label)).toBe(button.entity);
     expect(world.getComponent(button.label, textId)!.text).toBe('Play');
     expect(world.getComponent(button.label, textId)!.fontAtlas).toBe(fontAtlas);
   });

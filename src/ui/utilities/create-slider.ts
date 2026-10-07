@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { Vec2, Vector2 } from '../../math/index.js';
@@ -192,7 +189,7 @@ export function createSlider(
     fill = world.createEntity();
 
     addPositionComponent(world, fill);
-    addParentComponent(world, fill, { parent: entity });
+    world.setParent(fill, entity);
     addRectTransformComponent(world, fill, {
       // A stretch axis rather than a point one even though it starts at
       // zero width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax`
@@ -213,7 +210,7 @@ export function createSlider(
   const handle = world.createEntity();
 
   addPositionComponent(world, handle);
-  addParentComponent(world, handle, { parent: entity });
+  world.setParent(handle, entity);
   addRectTransformComponent(world, handle, {
     // `x.anchor` is driven to the slider's normalized value below and every
     // tick by `createUiSliderEcsSystem`, sliding the handle along the track.

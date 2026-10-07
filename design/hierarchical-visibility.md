@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Found in**                          | Galactic Journey demo: `setShown` helpers in `src/game-over/create-stats-panel.ts`, `create-flight-history-page.ts`, `pilot-panel.system.ts`, `src/leaderboard/create-leaderboard-page.ts`, `src/main-menu/create-main-menu.ts`; the stats panel's button repositioned by hand when the one above it is hidden; `src/speed/create-hud.ts` (the speed HUD's ring hidden segment by segment) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                                                                                   |
-| **Related**                           | [`ui-system.md`](./ui-system.md), [`hierarchy-removal.md`](./hierarchy-removal.md), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite)                                                                                                                                                                                                                                        |
+| **Related**                           | [`ui-system.md`](./ui-system.md), the world's hierarchy (`EcsWorld.setParent`/`getChildren`, landed), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite)                                                                                                                                                                                                                      |
 
 ## 0. Targeted modules
 
@@ -176,8 +176,8 @@ the gap; a hidden page draws nothing and can't be clicked or focused; the
 dropdown and tooltip have no hand-written hiding.
 
 Depends on [`sprite-draw-order.md`](./sprite-draw-order.md) for the
-per-frame resolution pass, and on [`hierarchy-removal.md`](./hierarchy-removal.md)
-for the hierarchy it walks.
+per-frame resolution pass. The hierarchy it walks (`EcsWorld.getChildren`)
+has landed.
 
 ---
 

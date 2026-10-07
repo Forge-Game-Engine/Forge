@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
 import { uiAxisValue } from '../types/ui-axis.js';
@@ -27,7 +29,7 @@ describe('createPanel', () => {
 
     const panel = createPanel(world, parent, { sprite });
 
-    expect(world.getComponent(panel, parentId)).toEqual({ parent });
+    expect(world.getParent(panel)).toBe(parent);
     expect(world.getComponent(panel, positionId)).not.toBeNull();
     expect(world.getComponent(panel, rectTransformId)!.x).toEqual(
       UiAnchor.center().x,
@@ -35,6 +37,32 @@ describe('createPanel', () => {
     expect(world.getComponent(panel, spriteId)!.renderable).toBe(
       sprite.renderable,
     );
+  });
+
+  it('is removed with its whole subtree of panels and labels', () => {
+    const world = new EcsWorld();
+    const canvas = world.createEntity();
+    const page = createPanel(world, canvas, { sprite: buildSprite() });
+    const nested = createPanel(world, page, { sprite: buildSprite() });
+    const title = createLabel(world, page, {
+      text: 'Options',
+      fontAtlas: {} as FontAtlas,
+      size: 32,
+    });
+    const nestedLabel = createLabel(world, nested, {
+      text: 'Volume',
+      fontAtlas: {} as FontAtlas,
+      size: 16,
+    });
+
+    world.removeEntity(page);
+
+    for (const entity of [page, nested, title, nestedLabel]) {
+      expect(world.isAlive(entity)).toBe(false);
+    }
+
+    expect(world.isAlive(canvas)).toBe(true);
+    expect(world.getChildren(canvas)).toEqual([]);
   });
 
   it('applies the given anchor and anchoredPosition', () => {

@@ -1,4 +1,3 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { Rects } from '../../math/index.js';
 import {
@@ -18,7 +17,7 @@ import { uiAxisValue, withUiAxisValue } from '../types/ui-axis.js';
  * other; `fitInParent`/`envelopeParent` derive both axes from the parent's
  * own resolved `rect` (one frame stale, like every other cross-entity read
  * in this module - see `createUiLayoutEcsSystem`'s own doc comment), and
- * are a no-op for an entity with no `ParentEcsComponent`.
+ * are a no-op for an entity with no parent.
  *
  * Must be registered before `createUiLayoutEcsSystem`.
  * @returns The UI aspect ratio fitter ECS system.
@@ -52,17 +51,14 @@ export const createUiAspectRatioFitterEcsSystem = (): EcsSystem<
         continue;
       }
 
-      const parentComponent = world.getComponent<ParentEcsComponent>(
-        entities[i],
-        parentId,
-      );
+      const parent = world.getParent(entities[i]);
 
-      if (!parentComponent) {
+      if (parent === null) {
         continue;
       }
 
       const parentRectTransform = world.getComponent<RectTransformEcsComponent>(
-        parentComponent.parent,
+        parent,
         rectTransformId,
       );
 
