@@ -106,11 +106,7 @@ export const createScene: CreateScene = async (
     layer: 0,
     clearColor: backgroundColor,
     cullingMask: 0,
-    renderTarget: createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    ),
+    renderTarget: createRenderTarget(renderContext, 'canvas'),
   });
 
   const glowCameraEntity = world.createEntity();
@@ -122,11 +118,7 @@ export const createScene: CreateScene = async (
     clearColor: Color.transparent,
     cullingMask: glowRenderCategory,
     verticalWorldUnits: renderContext.cssHeight,
-    renderTarget: createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    ),
+    renderTarget: createRenderTarget(renderContext, 'canvas'),
   });
   addBloomComponent(world, glowCameraEntity, bloomSettings);
 

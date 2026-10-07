@@ -47,7 +47,7 @@ describe('beginPostProcessPass', () => {
   });
 
   it("returns the target's previous color texture", () => {
-    const target = new RenderTarget(mockGl, 64, 32);
+    const target = new RenderTarget(renderContext, { width: 64, height: 32 });
     const sceneTexture = target.colorTexture;
 
     const source = beginPostProcessPass(renderContext, target);
@@ -57,7 +57,7 @@ describe('beginPostProcessPass', () => {
   });
 
   it("binds, sizes and clears the target's other buffer with blending off", () => {
-    const target = new RenderTarget(mockGl, 64, 32);
+    const target = new RenderTarget(renderContext, { width: 64, height: 32 });
 
     beginPostProcessPass(renderContext, target);
 
@@ -70,7 +70,7 @@ describe('beginPostProcessPass', () => {
   });
 
   it('alternates between the two buffers on each call', () => {
-    const target = new RenderTarget(mockGl, 64, 32);
+    const target = new RenderTarget(renderContext, { width: 64, height: 32 });
     const first = target.colorTexture;
 
     expect(beginPostProcessPass(renderContext, target)).toBe(first);
@@ -83,7 +83,7 @@ describe('beginPostProcessPass', () => {
   });
 
   it('leaves the latest pass in the buffer that later draws and reads use', () => {
-    const target = new RenderTarget(mockGl, 64, 32);
+    const target = new RenderTarget(renderContext, { width: 64, height: 32 });
 
     beginPostProcessPass(renderContext, target);
 

@@ -8,6 +8,7 @@ import {
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
+  createRenderTarget,
   createTransformEcsSystem,
   EcsWorld,
   getCameraView,
@@ -50,6 +51,10 @@ export interface HighDpiCanvasMetrics {
   clientHeight: number;
   /** `RenderContext.pixelRatio`. */
   pixelRatio: number;
+  /** The camera's canvas-sized render target's width, in device pixels. */
+  renderTargetWidth: number;
+  /** The camera's canvas-sized render target's height, in device pixels. */
+  renderTargetHeight: number;
 }
 
 /** The handle `high-dpi-canvas.spec.ts` drives and asserts against. */
@@ -70,6 +75,8 @@ export interface HighDpiCanvasSceneHandle extends SceneHandle {
    * from `MouseInputSource.position` (CSS pixels) through the camera's view.
    */
   readonly pointerWorldPosition: Vector2;
+  /** Sets `RenderContext.maxPixelRatio`, as a graphics-quality setting would. */
+  setMaxPixelRatio(maxPixelRatio: number): void;
   /**
    * Scans the rendered canvas's drawing buffer for pixels matching
    * `targetRgb` and returns their bounding box, in device pixels. Must be
@@ -86,9 +93,10 @@ export interface HighDpiCanvasSceneHandle extends SceneHandle {
  * Builds a scene for checking the canvas renders at the display's device
  * pixel ratio: a canvas sized to its container through `createCanvas` and
  * `createRenderContext`, kept in sync by `createContainerResizeSync` (which
- * also re-sizes it when the device pixel ratio changes), a green landmark
- * square at a known world position, and a `MouseInputSource` whose
- * CSS-pixel position is converted to world space every frame.
+ * also re-sizes it when the device pixel ratio changes), a camera that
+ * renders through a canvas-sized render target, a green landmark square at
+ * a known world position, and a `MouseInputSource` whose CSS-pixel position
+ * is converted to world space every frame.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -107,8 +115,13 @@ export const createScene: CreateScene = async (
   const inputManager = registerInputs(world, time, {});
   const mouseInputSource = new MouseInputSource(inputManager, canvas);
 
+  // Canvas-sized, so the render context resizes it whenever the canvas's
+  // drawing buffer changes size; nothing in this scene resizes it.
+  const renderTarget = createRenderTarget(renderContext, 'canvas');
+
   const cameraEntity = createCamera(world, {
     isStatic: true,
+    renderTarget,
     clearColor: toColor(inputSceneColors.clear),
     verticalWorldUnits,
   });
@@ -156,6 +169,8 @@ export const createScene: CreateScene = async (
         clientWidth: canvas.clientWidth,
         clientHeight: canvas.clientHeight,
         pixelRatio: renderContext.pixelRatio,
+        renderTargetWidth: renderTarget.width,
+        renderTargetHeight: renderTarget.height,
       };
     },
 
@@ -168,6 +183,10 @@ export const createScene: CreateScene = async (
 
     get pointerWorldPosition(): Vector2 {
       return pointerWorldPosition;
+    },
+
+    setMaxPixelRatio(maxPixelRatio: number): void {
+      renderContext.maxPixelRatio = maxPixelRatio;
     },
 
     measureBounds(targetRgb: {

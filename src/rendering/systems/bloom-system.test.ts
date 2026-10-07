@@ -219,7 +219,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('does nothing for a camera without a BloomEcsComponent', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addCameraEntity(target);
 
@@ -237,7 +237,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('draws threshold, blur, and composite passes for a single configured pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 1 });
 
@@ -249,7 +249,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it("composites from the target's previous buffer into its other one", () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
     const sceneTexture = target.colorTexture;
 
     addBloomedCameraEntity(target, { passes: 1 });
@@ -281,7 +281,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('runs a horizontal blur pass followed by a vertical blur pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 1 });
 
@@ -297,7 +297,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('repeats the horizontal/vertical blur pair once per configured pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 3 });
 
@@ -314,7 +314,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('passes the configured threshold to the threshold pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 1, threshold: 0.6 });
 
@@ -329,7 +329,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('passes the configured intensity to the composite pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 1, intensity: 1.5 });
 
@@ -344,7 +344,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('reads the current passes value from the component every frame', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
     const entity = addBloomedCameraEntity(target, { passes: 1 });
 
     world.update();
@@ -363,7 +363,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('draws nothing when passes is 0', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 0, intensity: 1 });
 
@@ -373,7 +373,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('writes the final pass back into the camera render target', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBloomedCameraEntity(target, { passes: 2 });
 
@@ -386,7 +386,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('passes the full-resolution texel size to the threshold pass', () => {
-    const target = new RenderTarget(mockGl, 256, 128);
+    const target = new RenderTarget(renderContext, { width: 256, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 3 });
 
@@ -407,7 +407,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('keeps the blur texel size at a single downsampled texel regardless of pass count', () => {
-    const target = new RenderTarget(mockGl, 256, 128);
+    const target = new RenderTarget(renderContext, { width: 256, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 3 });
 
@@ -430,7 +430,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('passes a 4x4 block size to the threshold pass at a pixel ratio of 1', () => {
-    const target = new RenderTarget(mockGl, 256, 128);
+    const target = new RenderTarget(renderContext, { width: 256, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 1 });
 
@@ -447,9 +447,12 @@ describe('createBloomEcsSystem', () => {
         .map(([, value]) => Array.from(value as Float32Array));
 
     it('scales the threshold block size with the pixel ratio', () => {
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
 
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       addBloomedCameraEntity(target, { passes: 1 });
 
@@ -461,9 +464,16 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('rounds a fractional block size to whole texels', () => {
-      renderContext.pixelRatio = 1.5;
+      renderContext.resize(
+        renderContext.cssWidth,
+        renderContext.cssHeight,
+        1.5,
+      );
 
-      const target = new RenderTarget(mockGl, 384, 192);
+      const target = new RenderTarget(renderContext, {
+        width: 384,
+        height: 192,
+      });
 
       addBloomedCameraEntity(target, { passes: 1 });
 
@@ -473,9 +483,12 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('sizes the downsampled buffers by the scaled block size', () => {
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
 
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       (mockGl.texImage2D as Mock).mockClear();
 
@@ -503,11 +516,18 @@ describe('createBloomEcsSystem', () => {
 
       const blurTexelSizeInCssPixels = (pixelRatio: number): number[] => {
         (mockGl.uniform2fv as Mock).mockClear();
-        renderContext.pixelRatio = pixelRatio;
+        renderContext.resize(
+          renderContext.cssWidth,
+          renderContext.cssHeight,
+          pixelRatio,
+        );
 
         const width = cssWidth * pixelRatio;
         const height = cssHeight * pixelRatio;
-        const target = new RenderTarget(mockGl, width, height);
+        const target = new RenderTarget(renderContext, {
+          width: width,
+          height: height,
+        });
         const entity = addBloomedCameraEntity(target, { passes: 1 });
 
         world.update();
@@ -527,14 +547,17 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('recreates the downsampled buffers when the pixel ratio changes', () => {
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       addBloomedCameraEntity(target, { passes: 1 });
 
       world.update();
       (mockGl.texImage2D as Mock).mockClear();
 
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
       world.update();
 
       const allocatedSizes = (mockGl.texImage2D as Mock).mock.calls.map(
@@ -550,8 +573,11 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('blooms multiple cameras independently', () => {
-    const targetA = new RenderTarget(mockGl, 128, 128);
-    const targetB = new RenderTarget(mockGl, 64, 64);
+    const targetA = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
+    const targetB = new RenderTarget(renderContext, { width: 64, height: 64 });
 
     addBloomedCameraEntity(targetA, { passes: 1 });
     addBloomedCameraEntity(targetB, { passes: 1 });
@@ -562,7 +588,10 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('blooms a render target shared by multiple cameras only once', () => {
-    const sharedTarget = new RenderTarget(mockGl, 128, 128);
+    const sharedTarget = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     addBloomedCameraEntity(sharedTarget, { passes: 1 });
     addBloomedCameraEntity(sharedTarget, { passes: 1 });
@@ -573,7 +602,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('blooms again on the next frame', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 1 });
 
@@ -584,7 +613,7 @@ describe('createBloomEcsSystem', () => {
   });
 
   it('disables blending before drawing so each pass replaces its destination', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addBloomedCameraEntity(target, { passes: 1 });
 
@@ -595,7 +624,10 @@ describe('createBloomEcsSystem', () => {
 
   describe('format', () => {
     it('allocates its scratch buffers as ldr for an ldr camera render target', () => {
-      const target = new RenderTarget(mockGl, 256, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 256,
+      });
 
       addBloomedCameraEntity(target, { passes: 1 });
 
@@ -616,9 +648,8 @@ describe('createBloomEcsSystem', () => {
 
     it('allocates its scratch buffers as hdr when the camera render target is hdr', () => {
       const target = new RenderTarget(
-        mockGl,
-        256,
-        256,
+        renderContext,
+        { width: 256, height: 256 },
         RENDER_TARGET_FORMAT.hdr,
       );
 
@@ -640,7 +671,10 @@ describe('createBloomEcsSystem', () => {
 
   describe('cleanup', () => {
     it('disposes the scratch bright and ping-pong targets when the world stops', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBloomedCameraEntity(target, { passes: 1 });
 
@@ -668,7 +702,10 @@ describe('createBloomEcsSystem', () => {
 
   describe('intensity', () => {
     it('draws nothing when intensity is 0', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBloomedCameraEntity(target, { passes: 2, intensity: 0 });
 
@@ -678,7 +715,10 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('clamps intensity below 0 down to 0', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBloomedCameraEntity(target, { passes: 2, intensity: -0.5 });
 
@@ -688,7 +728,10 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('does not clamp intensity above 1', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBloomedCameraEntity(target, { passes: 1, intensity: 2 });
 
@@ -702,7 +745,10 @@ describe('createBloomEcsSystem', () => {
     });
 
     it('reflects a runtime change to the component on the next frame', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
       const entity = addBloomedCameraEntity(target, {
         passes: 1,
         intensity: 1,
