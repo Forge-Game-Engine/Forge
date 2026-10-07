@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+- **rendering:** `addSpriteComponent` copies the `pivot`, `uvOffset`, `uvScale` and `slices` it's given, so sprites built from one options object (such as one `createImageSprite` result) no longer share them. Two explosions from one template used to show whichever animation frame was written last, and one UI element's layout could move another's pivot. You no longer need to clone those vectors by hand before adding a sprite
 - **rendering:** `Material.setUniform` (and `setColorUniform`/`setVectorUniform`) accepts every uniform its shaders declare, including one the GLSL compiler removed because nothing reads it. Which uniforms a compiler removes depends on the GPU and driver, so a game could throw on some phones (for example when a `mediump` hash folded to zero there and took the only reader of `u_time` with it) and run fine everywhere else. A removed uniform's value is checked against its declared type and size and stored, and simply has nothing to upload. Setting a name neither shader declares still throws, now with `Uniform "<name>" is not declared in material "<vertex>" + "<fragment>". Declared uniforms: ...`. A uniform array's size must be an integer literal, a `#define` or a `const int`, and a uniform declared twice must use the same type and size in both places, or creating the `Material` throws. New export: `parseUniformDeclarations`, and `ForgeShaderSource.uniformDeclarations` returns a shader's declared uniforms
 
 ## [0.25.8] - 2026-10-03

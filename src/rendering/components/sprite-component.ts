@@ -136,8 +136,11 @@ export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the sprite. `width`, `height`,
  * and `renderable` have no sensible default and must always be provided.
- * If `slices` is set, any omitted `nativeWidth`/`nativeHeight` is captured
- * from `width`/`height` here, before anything can resize the sprite.
+ * `pivot`, `uvOffset`, `uvScale` and `slices` are copied, so the component
+ * never shares them with `options` or with other sprites built from the same
+ * options. If `slices` is set, any omitted `nativeWidth`/`nativeHeight` is
+ * captured from `width`/`height` here, before anything can resize the
+ * sprite.
  * @returns The attached component, for further tuning or runtime changes.
  */
 export function addSpriteComponent(
@@ -145,10 +148,6 @@ export function addSpriteComponent(
   entity: number,
   options: SpriteRequiredOptions & Partial<SpriteEcsComponent>,
 ): SpriteEcsComponent {
-  // Built inside the function body (rather than as a shared module-level
-  // default) since `pivot`/`uvOffset`/`uvScale` are mutated in place by
-  // callers (e.g. the sprite animation system), so each entity needs its
-  // own `Vector2` instance.
   const defaultSpriteOptions: SpriteDefaultedOptions = {
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
@@ -162,6 +161,15 @@ export function addSpriteComponent(
     ...defaultSpriteOptions,
     ...options,
   };
+
+  // Systems write these vectors in place per entity (the sprite animation
+  // system writes each entity's frame into `uvOffset`, UI layout writes
+  // `pivot`), so every component gets its own copies, however `options`
+  // was built: sprites created from one shared options object must never
+  // share a frame or pivot.
+  component.pivot = Vec2.clone(component.pivot);
+  component.uvOffset = Vec2.clone(component.uvOffset);
+  component.uvScale = Vec2.clone(component.uvScale);
 
   if (component.slices) {
     component.slices = resolveNineSliceNativeSize(

@@ -110,6 +110,35 @@ describe('addSpriteComponent', () => {
     );
   });
 
+  it("copies the options' pivot, uvOffset, uvScale and slices, so two components built from one options object don't share them", () => {
+    const world = new EcsWorld();
+    const first = world.createEntity();
+    const second = world.createEntity();
+    const options = {
+      width: 32,
+      height: 32,
+      renderable: createRenderable(),
+      pivot: { x: 0, y: 1 },
+      uvOffset: { x: 0.25, y: 0 },
+      uvScale: { x: 0.25, y: 1 },
+      slices: { left: 1, right: 1, top: 1, bottom: 1 },
+    };
+
+    const firstSprite = addSpriteComponent(world, first, options);
+    const secondSprite = addSpriteComponent(world, second, options);
+
+    firstSprite.uvOffset.x = 0.75;
+    firstSprite.pivot.y = 0;
+
+    expect(secondSprite.uvOffset).toEqual({ x: 0.25, y: 0 });
+    expect(secondSprite.pivot).toEqual({ x: 0, y: 1 });
+    expect(options.uvOffset).toEqual({ x: 0.25, y: 0 });
+    expect(firstSprite.uvScale).not.toBe(options.uvScale);
+    expect(firstSprite.uvScale).toEqual(options.uvScale);
+    expect(firstSprite.slices).not.toBe(secondSprite.slices);
+    expect(firstSprite.slices).not.toBe(options.slices);
+  });
+
   it('captures an omitted nine-slice native size from the size the sprite is attached at', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
