@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createUiTextInputEcsSystem } from './ui-text-input-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-  Time,
-} from '../../common/index.js';
+import { addPositionComponent, Time } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
@@ -479,7 +475,7 @@ describe('createUiTextInputEcsSystem', () => {
     const cover = world.createEntity();
 
     addPositionComponent(world, cover);
-    addParentComponent(world, cover, { parent: canvasEntity });
+    world.setParent(cover, canvasEntity);
     addRectTransformComponent(world, cover, {
       rect: { min: { x: -200, y: -200 }, max: { x: 200, y: 200 } },
       sortDepth: 100,
