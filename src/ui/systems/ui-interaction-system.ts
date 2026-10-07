@@ -47,7 +47,13 @@ function updateHoverAndFocus(
   // an element would silently re-focus it on every single tick, fighting
   // (and always winning, since this system runs after navigation) any
   // keyboard/gamepad navigation move made while the pointer hasn't budged.
-  if (isOver && !wasHovered && effectiveInteractable && canvas) {
+  if (
+    isOver &&
+    !wasHovered &&
+    effectiveInteractable &&
+    interactable.focusable &&
+    canvas
+  ) {
     setUiFocus(world, canvas, entity);
   }
 }
@@ -74,13 +80,62 @@ function beginPressIfNeeded(
   interactable.onPointerDown.raise();
 }
 
-/** While a press is captured, promotes it to a drag once it exceeds `dragThreshold`, and raises `onDrag` every tick while dragging. */
+/** A press that crossed `dragThreshold` on one element, handed to an ancestor that receives drags. */
+interface DragHandoff {
+  from: UiInteractableEcsComponent;
+  to: UiInteractableEcsComponent;
+}
+
+/**
+ * The interactable a drag starting on `entity` belongs to: the nearest of
+ * `entity` and its ancestors with `receivesDrag` that can be interacted
+ * with, or `entity` itself when none receives drags.
+ */
+function findDragReceiver(
+  world: EcsWorld,
+  entity: number,
+  interactable: UiInteractableEcsComponent,
+): UiInteractableEcsComponent {
+  for (
+    let current: number | null = entity;
+    current !== null;
+    current = world.getParent(current)
+  ) {
+    const candidate = world.getComponent<UiInteractableEcsComponent>(
+      current,
+      uiInteractableId,
+    );
+
+    if (
+      candidate?.receivesDrag &&
+      candidate.interactable &&
+      resolveCanvasGroupState(world, current).interactable
+    ) {
+      return candidate;
+    }
+
+    if (world.getComponent(current, canvasId) !== null) {
+      break;
+    }
+  }
+
+  return interactable;
+}
+
+/**
+ * While a press is captured, promotes it to a drag once it exceeds
+ * `dragThreshold` - or, when an ancestor receives drags instead (see
+ * `findDragReceiver`), returns the handoff for the caller to apply - and
+ * raises `onDrag` every tick while dragging.
+ */
 function updateDragState(
+  world: EcsWorld,
+  entity: number,
   interactable: UiInteractableEcsComponent,
   pointerPosition: Vector2 | null,
-): void {
+): DragHandoff | null {
   if (interactable.pressCapture === null || !pointerPosition) {
-    return;
+    return null;
   }
 
   if (!interactable.isDragging) {
@@ -89,15 +144,23 @@ function updateDragState(
       interactable.pressCapture.originPosition,
     );
 
-    if (distance >= interactable.dragThreshold) {
-      interactable.isDragging = true;
-      interactable.onBeginDrag.raise();
+    if (distance < interactable.dragThreshold) {
+      return null;
     }
+
+    const receiver = findDragReceiver(world, entity, interactable);
+
+    if (receiver !== interactable) {
+      return { from: interactable, to: receiver };
+    }
+
+    interactable.isDragging = true;
+    interactable.onBeginDrag.raise();
   }
 
-  if (interactable.isDragging) {
-    interactable.onDrag.raise();
-  }
+  interactable.onDrag.raise();
+
+  return null;
 }
 
 /** Resolves a captured press on the matching up edge: `onInvoke` if released inside without dragging, `onEndDrag` if it was a drag, then always `onPointerUp` and clears the capture. */
@@ -124,6 +187,30 @@ function endPressIfNeeded(
 }
 
 /**
+ * Moves a press that became a drag from the pressed element to the element
+ * receiving the drag. The pressed element's press ends (`onPointerUp`, and
+ * no `onInvoke` on release); the receiver starts dragging from the press's
+ * origin, and ends the drag right away if the pointer was also released
+ * this tick.
+ */
+function applyDragHandoff({ from, to }: DragHandoff, upEdge: boolean): void {
+  if (from.pressCapture === null || to.pressCapture !== null) {
+    return;
+  }
+
+  to.pressCapture = from.pressCapture;
+  from.pressCapture = null;
+  from.isPressed = false;
+  from.onPointerUp.raise();
+
+  to.isDragging = true;
+  to.onBeginDrag.raise();
+  to.onDrag.raise();
+
+  endPressIfNeeded(to, false, upEdge);
+}
+
+/**
  * Creates a system that runs the pointer interaction state machine over
  * every `UiInteractableEcsComponent`: hover enter/exit, a captured press
  * (from a pointer-down edge on the element until its matching up edge,
@@ -143,6 +230,11 @@ function endPressIfNeeded(
  * edges are read from separate per-tick sets rather than a single
  * "is held" flag that a same-tick press-then-release would never show as
  * true.
+ *
+ * A press that crosses `dragThreshold` is handed to the nearest element,
+ * the pressed one or an ancestor, with `receivesDrag` (see
+ * `UiInteractableEcsComponent.receivesDrag`): that element drags, and the
+ * pressed one's press ends without `onInvoke`.
  *
  * Also applies the canvas policy that the pointer hovering an interactable
  * focuses it too (via `setUiFocus`), so the focus highlight follows the
@@ -192,6 +284,8 @@ export const createUiInteractionEcsSystem = (
       return position;
     };
 
+    const handoffs: DragHandoff[] = [];
+
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const interactable = interactables[i];
@@ -227,11 +321,30 @@ export const createUiInteractionEcsSystem = (
         pointerPosition,
         effectiveInteractable,
       );
-      updateDragState(interactable, pointerPosition);
+      const handoff = updateDragState(
+        world,
+        entity,
+        interactable,
+        pointerPosition,
+      );
+
+      if (handoff) {
+        // The press now belongs to the receiver, so it can't also end here
+        // as a click on this element.
+        handoffs.push(handoff);
+
+        continue;
+      }
 
       interactable.isPressed = interactable.pressCapture !== null && isOver;
 
       endPressIfNeeded(interactable, isOver, upEdge);
+    }
+
+    // Applied after every element has run this tick, so the receiver's
+    // drag starts exactly once whichever order the two were visited in.
+    for (const handoff of handoffs) {
+      applyDragHandoff(handoff, upEdge);
     }
   },
 });

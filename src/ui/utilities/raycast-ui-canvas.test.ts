@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
   addDrawOrderComponent,
+  addMaskComponent,
   addSpriteComponent,
   RenderContext,
   Texture,
@@ -54,6 +55,46 @@ function addElement(
 }
 
 describe('raycastUiCanvas', () => {
+  it('skips the part of an element an ancestor rect mask clips away', () => {
+    const world = new EcsWorld();
+    const canvas = buildCanvas(world);
+    const viewport = world.createEntity();
+
+    addPositionComponent(world, viewport);
+    world.setParent(viewport, canvas);
+    addRectTransformComponent(world, viewport, {
+      rect: { min: { x: -50, y: 0 }, max: { x: 50, y: 50 } },
+    });
+    addMaskComponent(world, viewport, { width: 100, height: 50 });
+
+    const item = addElement(world, viewport);
+
+    // Canvas (400, 280) is world (0, 20): inside the mask.
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 280 }),
+    ).toBe(item);
+    // Canvas (400, 320) is world (0, -20): on the item, but clipped.
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 320 }),
+    ).toBeNull();
+  });
+
+  it('ignores linear and radial masks', () => {
+    const world = new EcsWorld();
+    const canvas = buildCanvas(world);
+    const item = addElement(world, canvas);
+
+    addMaskComponent(world, item, {
+      width: 100,
+      height: 100,
+      shape: { kind: 'linear', origin: 'left', amount: 0 },
+    });
+
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+    ).toBe(item);
+  });
+
   it('returns the topmost raycast-blocking element under a viewport position', () => {
     const world = new EcsWorld();
     const canvas = buildCanvas(world);

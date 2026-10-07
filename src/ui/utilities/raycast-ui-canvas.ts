@@ -3,6 +3,8 @@ import { Rects, Vector2 } from '../../math/index.js';
 import {
   CameraEcsComponent,
   cameraId,
+  MaskEcsComponent,
+  maskId,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -47,6 +49,46 @@ function isVisibleToCamera(
 }
 
 /**
+ * Whether `point` lies inside the rect of every rect mask (see
+ * `MaskEcsComponent`) on `entity` or its ancestors up to its canvas, so a
+ * part a mask clips away - a list item scrolled out of a scroll view - can't
+ * be clicked. A mask's rect is its element's resolved rect, which
+ * `createUiLayoutEcsSystem` sizes it to. Linear and radial masks reveal part
+ * of a fill and don't clip hits.
+ */
+function isInsideMasks(
+  world: EcsWorld,
+  entity: number,
+  point: Vector2,
+): boolean {
+  for (
+    let current: number | null = entity;
+    current !== null;
+    current = world.getParent(current)
+  ) {
+    const mask = world.getComponent<MaskEcsComponent>(current, maskId);
+    const rectTransform = world.getComponent<RectTransformEcsComponent>(
+      current,
+      rectTransformId,
+    );
+
+    if (
+      mask?.shape.kind === 'rect' &&
+      rectTransform &&
+      !Rects.contains(rectTransform.rect, point)
+    ) {
+      return false;
+    }
+
+    if (world.getComponent(current, canvasId) !== null) {
+      return true;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Finds the topmost `UiInteractableEcsComponent` on `canvasEntity`'s canvas
  * under a pointer position: the canvas's interactables are scanned in
  * reverse draw order (drawn on top first, see `sortByDrawOrder`), for the
@@ -58,7 +100,8 @@ function isVisibleToCamera(
  * `CanvasGroupEcsComponent` whose own `blocksRaycasts` is `false` (see
  * `resolveCanvasGroupState`); an element culled from the canvas's camera
  * by `cullingMask` is skipped the same way an invisible element shouldn't
- * be clickable.
+ * be clickable, and so is the part of an element a rect
+ * `MaskEcsComponent` on it or an ancestor clips away.
  *
  * `createUiRaycastEcsSystem` calls this once per canvas per tick. It's a
  * plain function so code that has to react inside a DOM event handler
@@ -134,7 +177,11 @@ export function raycastUiCanvas(
     }
 
     if (
-      Rects.contains(rectTransformByEntity.get(entity)!.rect, pointerPosition)
+      Rects.contains(
+        rectTransformByEntity.get(entity)!.rect,
+        pointerPosition,
+      ) &&
+      isInsideMasks(world, entity, pointerPosition)
     ) {
       return entity;
     }

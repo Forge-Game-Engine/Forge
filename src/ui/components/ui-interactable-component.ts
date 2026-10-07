@@ -33,6 +33,27 @@ export interface UiInteractableDefaultedOptions {
    * `createUiInteractionEcsSystem`'s pointer state machine).
    */
   dragThreshold: number;
+
+  /**
+   * Whether this element takes drags that start on interactables inside it.
+   * A press that crosses `dragThreshold` is handed to the nearest element,
+   * itself or an ancestor, that receives drags: a scroll view's viewport
+   * receives the drag that starts on a button in its list, so dragging
+   * scrolls the list and the button isn't invoked. Set it on an element
+   * that reacts to dragging (a slider's track, a scroll view, your own
+   * drag-and-drop item), so a drag starting on it stays on it instead of
+   * going to an ancestor that also receives drags. An element with no
+   * receiving ancestor keeps its own drag either way.
+   */
+  receivesDrag: boolean;
+
+  /**
+   * Whether focus can land on this element, by navigation or by the pointer
+   * hovering it. `false` for a surface that only needs pointer input, such
+   * as a scroll view's viewport, which must not take focus from the
+   * controls inside it.
+   */
+  focusable: boolean;
 }
 
 /**
@@ -69,8 +90,9 @@ export interface UiInteractableEcsComponent extends UiInteractableDefaultedOptio
   readonly onPointerUp: ForgeEvent;
 
   /**
-   * Raised when a captured press first exceeds `dragThreshold`. Pointer-only
-   * - a drag has no gamepad/keyboard analogue.
+   * Raised when a captured press first exceeds `dragThreshold`, on the
+   * element that receives the drag (see `receivesDrag`). Pointer-only - a
+   * drag has no gamepad/keyboard analogue.
    */
   readonly onBeginDrag: ForgeEvent;
 
@@ -143,6 +165,8 @@ const defaultUiInteractableOptions: UiInteractableDefaultedOptions = {
   interactable: true,
   blocksRaycasts: true,
   dragThreshold: 8,
+  receivesDrag: false,
+  focusable: true,
 };
 
 /**
