@@ -26,6 +26,8 @@ describe('Texture', () => {
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
       deleteTexture: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
   });
 
@@ -132,7 +134,7 @@ describe('Texture', () => {
   });
 
   it('does nothing when disposed twice', () => {
-    const texture = new Texture(gl);
+    const texture = new Texture(renderContext());
 
     texture.dispose();
     texture.dispose();

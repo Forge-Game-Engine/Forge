@@ -57,9 +57,24 @@ export class Material {
     );
   }
 
-  /** The linked WebGL program, shared with every material made from the same shaders. */
+  /**
+   * The linked WebGL program, shared with every material made from the same
+   * shaders.
+   * @throws An error if the material was created while the WebGL context
+   * is lost and the context hasn't been restored yet, so there's no program
+   * to read. The engine's draw functions don't draw while the context is
+   * lost (see `RenderContext.isContextLost`).
+   */
   get program(): WebGLProgram {
-    return this._shaderProgram.program;
+    const { program, description } = this._shaderProgram;
+
+    if (program === null) {
+      throw new Error(
+        `The program of ${description} hasn't been linked yet: it was created while the WebGL context is lost, and is linked when the context is restored.`,
+      );
+    }
+
+    return program;
   }
 
   /**
@@ -72,7 +87,7 @@ export class Material {
    * @returns The first texture unit the material left free.
    */
   public bind(gl: WebGL2RenderingContext): number {
-    gl.useProgram(this.program);
+    gl.useProgram(this._shaderProgram.program);
 
     let textureUnit = 0;
 
@@ -120,7 +135,8 @@ export class Material {
    * the GLSL compiler removed because nothing reads it: its value is checked
    * and stored the same way, and there's nothing to upload. Members of a
    * struct uniform (`u_light.color`) can be set while the program keeps
-   * them.
+   * them, which is only known once it's linked: a material created while
+   * the WebGL context is lost can't set them until the context is restored.
    * @param name - The uniform's name.
    * @param value - The value to upload.
    * @throws An error if the shaders don't declare a uniform called `name`,

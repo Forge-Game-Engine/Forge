@@ -105,6 +105,10 @@ Using a disposed texture throws: drawing a sprite with it, binding a
 material that has it as a uniform, or calling `update` on it. Disposing a
 texture a second time does nothing.
 
+A texture keeps the source it was last updated from until it's disposed,
+so that it can upload it again if the WebGL context is lost (see
+[Context loss](./context-loss.md)).
+
 Some textures belong to the engine object that created them, and calling
 `update` or `dispose` on them throws:
 

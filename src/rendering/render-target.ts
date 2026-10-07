@@ -2,6 +2,10 @@ import {
   RENDER_TARGET_FORMAT,
   RENDER_TARGET_FORMAT_KEYS,
 } from './enums/index.js';
+import {
+  registerGpuResource,
+  unregisterGpuResource,
+} from './gpu-resource-registry.js';
 import { OwnedTexture } from './owned-texture.js';
 import type { RenderContext } from './render-context.js';
 import {
@@ -23,7 +27,8 @@ export type RenderTargetSize = { width: number; height: number } | 'canvas';
  * One color texture and the framebuffer it's attached to.
  */
 interface ColorBuffer {
-  framebuffer: WebGLFramebuffer;
+  /** `null` while the WebGL context is lost, until it's restored. */
+  framebuffer: WebGLFramebuffer | null;
   texture: OwnedTexture;
 }
 
@@ -45,6 +50,10 @@ interface ColorBuffer {
  * needs resizing by hand and `resize` throws for it. A fixed-size target
  * (a minimap, a render-to-texture with its own resolution, an effect's
  * downsampled scratch buffer) keeps its size until `resize` is called.
+ *
+ * When a lost WebGL context is restored, the render context recreates the
+ * target's framebuffers and color textures at its current size and format,
+ * empty: the next frame draws into them again.
  */
 export class RenderTarget {
   /**
@@ -56,6 +65,7 @@ export class RenderTarget {
   private readonly _renderContext: RenderContext;
   private readonly _isCanvasSized: boolean;
   private readonly _followCanvas: () => void;
+  private readonly _rebuild: () => void;
   private _width: number;
   private _height: number;
   private _current: ColorBuffer;
@@ -85,6 +95,16 @@ export class RenderTarget {
       this._reallocate(renderContext.width, renderContext.height);
     };
 
+    // Runs after every texture has been rebuilt, so only the framebuffers
+    // need recreating.
+    this._rebuild = (): void => {
+      this._createFramebuffer(this._current);
+
+      if (this._other) {
+        this._createFramebuffer(this._other);
+      }
+    };
+
     const { width, height } =
       size === 'canvas'
         ? { width: renderContext.width, height: renderContext.height }
@@ -94,9 +114,11 @@ export class RenderTarget {
 
     this._width = width;
     this._height = height;
-    this.format = resolveRenderTargetFormat(renderContext.gl, format);
+    this.format = resolveRenderTargetFormat(renderContext, format);
     this._current = this._createColorBuffer();
     this._other = null;
+
+    registerGpuResource(renderContext, 'renderTarget', this._rebuild);
 
     if (this._isCanvasSized) {
       registerCanvasSizedRenderTarget(renderContext, this._followCanvas);
@@ -122,9 +144,10 @@ export class RenderTarget {
   /**
    * The framebuffer of the current color buffer: the one that binding this
    * target draws into, and that `colorTexture` is attached to. Changes when
-   * `swapBuffers` runs.
+   * `swapBuffers` runs. `null` for a target created while the WebGL context
+   * is lost, until the context is restored.
    */
-  get framebuffer(): WebGLFramebuffer {
+  get framebuffer(): WebGLFramebuffer | null {
     return this._current.framebuffer;
   }
 
@@ -187,11 +210,13 @@ export class RenderTarget {
   /**
    * Deletes the framebuffers and color textures, freeing their GPU
    * resources, and stops a canvas-sized target following its render
-   * context. The render context holds on to every canvas-sized target until
-   * it's disposed, so dispose a target you stop using.
+   * context. The render context holds on to every target until it's
+   * disposed (to resize it with the canvas, and to rebuild it after a lost
+   * WebGL context is restored), so dispose a target you stop using.
    */
   public dispose(): void {
     unregisterCanvasSizedRenderTarget(this._renderContext, this._followCanvas);
+    unregisterGpuResource(this._renderContext, 'renderTarget', this._rebuild);
     this._disposeColorBuffer(this._current);
 
     if (this._other) {
@@ -211,34 +236,40 @@ export class RenderTarget {
   }
 
   private _createColorBuffer(): ColorBuffer {
-    const { gl } = this._renderContext;
     const buffer: ColorBuffer = {
-      framebuffer: gl.createFramebuffer(),
+      framebuffer: null,
       texture: OwnedTexture.createRenderTargetColor(
-        gl,
+        this._renderContext,
         this._width,
         this._height,
         this.format,
       ),
     };
 
-    this._attachColorTexture(buffer);
+    if (!this._renderContext.isContextLost) {
+      this._createFramebuffer(buffer);
+    }
 
     return buffer;
   }
 
-  private _resizeColorBuffer(buffer: ColorBuffer): void {
-    const { gl } = this._renderContext;
+  private _createFramebuffer(buffer: ColorBuffer): void {
+    buffer.framebuffer = this._renderContext.gl.createFramebuffer();
+    this._attachColorTexture(buffer);
+  }
 
+  private _resizeColorBuffer(buffer: ColorBuffer): void {
     buffer.texture.release();
     buffer.texture = OwnedTexture.createRenderTargetColor(
-      gl,
+      this._renderContext,
       this._width,
       this._height,
       this.format,
     );
 
-    this._attachColorTexture(buffer);
+    if (!this._renderContext.isContextLost) {
+      this._attachColorTexture(buffer);
+    }
   }
 
   private _disposeColorBuffer(buffer: ColorBuffer): void {
@@ -267,7 +298,12 @@ export class RenderTarget {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, previousFramebuffer);
 
-    if (status !== gl.FRAMEBUFFER_COMPLETE) {
+    // A lost context reports every framebuffer incomplete; the target is
+    // rebuilt when the context is restored.
+    if (
+      status !== gl.FRAMEBUFFER_COMPLETE &&
+      !this._renderContext.isContextLost
+    ) {
       throw new Error(`Render target framebuffer is incomplete: ${status}`);
     }
   }

@@ -28,6 +28,9 @@ matches the camera's `cullingMask`, in [draw order](./draw-order.md).
   off-screen texture, and the post-processing effects that process it
   ([Gaussian blur](./gaussian-blur.md), [bloom](./bloom.md) and
   [HDR rendering](./hdr-rendering.md)).
+- [Context loss](./context-loss.md): what happens when the browser loses
+  the WebGL context, and how the engine recreates its GPU resources
+  when the context is restored.
 
 ## Drawing a scene
 

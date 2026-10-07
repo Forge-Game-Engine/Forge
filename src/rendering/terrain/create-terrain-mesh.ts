@@ -162,33 +162,14 @@ function buildTerrainMeshData(
 }
 
 function createTerrainGeometry(
-  gl: WebGL2RenderingContext,
+  renderContext: RenderContext,
   meshData: TerrainMeshData,
 ): Geometry {
-  const geometry = new Geometry();
-
-  const positionBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.positions, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_position', { buffer: positionBuffer, size: 2 });
-
-  const distanceBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, distanceBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.distances, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_distance', {
-    buffer: distanceBuffer,
-    size: 1,
-  });
-
-  const depthBuffer = gl.createBuffer();
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, depthBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, meshData.depths, gl.STATIC_DRAW);
-  geometry.addAttribute(gl, 'a_depth', { buffer: depthBuffer, size: 1 });
-
-  return geometry;
+  return new Geometry(renderContext, [
+    { name: 'a_position', data: meshData.positions, size: 2 },
+    { name: 'a_distance', data: meshData.distances, size: 1 },
+    { name: 'a_depth', data: meshData.depths, size: 1 },
+  ]);
 }
 
 function assertRepeatingTexture(layer: string, texture: Texture): void {
@@ -219,13 +200,13 @@ export function createTerrainMesh(
   const { curvePoints, depth, position, angle, border, fill, borderWidth } =
     options;
   const { borderBlend } = { ...defaultCreateTerrainMeshOptions, ...options };
-  const { gl, shaderCache } = renderContext;
+  const { shaderCache } = renderContext;
 
   const bottomY =
     Math.min(...curvePoints.map((curvePoint) => curvePoint.position.y)) - depth;
 
   const meshData = buildTerrainMeshData(curvePoints, bottomY, angle, position);
-  const geometry = createTerrainGeometry(gl, meshData);
+  const geometry = createTerrainGeometry(renderContext, meshData);
 
   assertRepeatingTexture('fill', fill.texture);
   assertRepeatingTexture('border', border.texture);
