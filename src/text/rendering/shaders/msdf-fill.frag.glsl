@@ -10,6 +10,7 @@ uniform float u_atlasSize;       // FontAtlasData.atlasSize.height (assumes squa
 
 in vec2 v_texCoord;
 in vec4 v_tint;
+in float v_embolden;
 out vec4 fragColor;
 
 float median(float r, float g, float b) {
@@ -19,11 +20,11 @@ float median(float r, float g, float b) {
 // Draws only a glyph's own anti-aliased ink - the same computation
 // `msdf-effects.frag`'s `fillLayer` used to do as one layer of a combined
 // shader, now its own draw pass. Kept in its own shader (rather than a
-// uniform "mode" switch on one shared program) so it can reuse the plain
-// `sprite.vert` and the base `spriteInstanceDataSegment` verbatim - a fill
-// quad needs none of the outline/shadow per-instance data `msdf.vert`
-// forwards, so glyphs with no effects at all (the common case) never pay
-// for it.
+// uniform "mode" switch on one shared program) so its vertex shader
+// (`msdf-fill.vert`) only forwards the sprite data plus the faux-bold
+// embolden - a fill quad needs none of the outline/shadow per-instance data
+// `msdf.vert` forwards, so glyphs with no effects at all (the common case)
+// never pay for it.
 //
 // This pass is always drawn *after* every glyph's outline/shadow ("effects"
 // pass, see `msdf-effects.frag`) for the same text entity - see
@@ -43,6 +44,14 @@ void main() {
   float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
   float screenPxDistance = signedDistance * screenPxRange;
 
-  float glyphAlpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+  // Faux bold (`<b>`) pushes the glyph's edge outwards by `v_embolden`
+  // distance-field units. The field only carries graded data up to about
+  // `screenPxRange / 2` screen pixels past the edge, so the shift is
+  // clamped to that budget - the same clamp `msdf-effects.frag` applies, so
+  // both passes agree on where the bold edge is.
+  float atlasSafeDistance = max(screenPxRange * 0.5 - 0.5, 0.0);
+  float emboldenPx = min(v_embolden * screenPxRange, atlasSafeDistance);
+
+  float glyphAlpha = clamp(screenPxDistance + emboldenPx + 0.5, 0.0, 1.0);
   fragColor = vec4(v_tint.rgb, v_tint.a * glyphAlpha);
 }

@@ -57,6 +57,24 @@ describe('createUiCanvas', () => {
     world = new EcsWorld();
   });
 
+  it('renders the UI camera into a canvas-sized render target, which the render context resizes', () => {
+    const canvas = createUiCanvas(world, renderContext, {
+      cullingMask: testCullingMask,
+    });
+
+    const canvasComponent = world.getComponentRequired(canvas, canvasId);
+    const { renderTarget } = world.getComponentRequired(
+      canvasComponent.camera,
+      cameraId,
+    );
+
+    expect(renderTarget?.width).toBe(1920);
+    expect(renderTarget?.height).toBe(1080);
+    expect(() => renderTarget?.resize(800, 600)).toThrow(
+      /canvas-sized render target/,
+    );
+  });
+
   it('creates a canvas entity wired to a dedicated, static, transparent UI camera', () => {
     const canvas = createUiCanvas(world, renderContext, {
       cullingMask: testCullingMask,
