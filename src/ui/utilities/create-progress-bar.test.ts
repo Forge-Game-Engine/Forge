@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createProgressBar } from './create-progress-bar.js';
-import { parentId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, spriteId, Texture } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
@@ -32,15 +31,11 @@ describe('createProgressBar', () => {
       fillSprite: buildSprite(),
     });
 
-    expect(world.getComponent(progressBar.entity, parentId)).toEqual({
-      parent,
-    });
+    expect(world.getParent(progressBar.entity)).toBe(parent);
     expect(world.getComponent(progressBar.entity, uiProgressBarId)).toBe(
       progressBar.progressBar,
     );
-    expect(world.getComponent(progressBar.fill, parentId)).toEqual({
-      parent: progressBar.entity,
-    });
+    expect(world.getParent(progressBar.fill)).toBe(progressBar.entity);
     expect(world.getComponent(progressBar.fill, spriteId)).not.toBeNull();
   });
 

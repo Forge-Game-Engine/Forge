@@ -114,8 +114,7 @@ Like every system that moves entities, the particle systems only write each
 particle's `local` position, rotation and scale. Register
 `createTransformEcsSystem` after them and before rendering to turn those
 into the world transform (see [Transforms](../common/transforms.md)). That
-also covers a particle you give a
-[`ParentEcsComponent`](/Forge/docs/api/interfaces/ParentEcsComponent), for
+also covers a particle you give a parent with `world.setParent`, for
 example from `onParticleSpawned` to make particles follow a moving ship.
 
 The emitter reads its entity's **world** position and rotation, so move or

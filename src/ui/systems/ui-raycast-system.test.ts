@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createUiRaycastEcsSystem } from './ui-raycast-system.js';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { MouseInputSource } from '../../input/index.js';
 import {
@@ -65,7 +62,7 @@ const createInteractablePanel = (
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  addParentComponent(world, entity, { parent });
+  world.setParent(entity, parent);
   addRectTransformComponent(world, entity, UiAnchor.center(size));
   addUiInteractableComponent(world, entity, overrides);
 
@@ -200,7 +197,7 @@ describe('createUiRaycastEcsSystem', () => {
     const group = world.createEntity();
 
     addPositionComponent(world, group);
-    addParentComponent(world, group, { parent: canvas });
+    world.setParent(group, canvas);
     addRectTransformComponent(
       world,
       group,

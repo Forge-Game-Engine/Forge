@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createToggle } from './create-toggle.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color, spriteId, Texture } from '../../rendering/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
@@ -37,7 +37,7 @@ describe('createToggle', () => {
       checkmarkSprite,
     });
 
-    expect(world.getComponent(toggle.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(toggle.entity)).toBe(parent);
     expect(world.getComponent(toggle.entity, positionId)).not.toBeNull();
     expect(world.getComponent(toggle.entity, rectTransformId)!.x).toEqual(
       UiAnchor.center({ x: 32, y: 32 }).x,
@@ -53,9 +53,7 @@ describe('createToggle', () => {
     ).not.toBeNull();
     expect(world.getComponent(toggle.entity, uiToggleId)).toBe(toggle.toggle);
 
-    expect(world.getComponent(toggle.checkmark, parentId)).toEqual({
-      parent: toggle.entity,
-    });
+    expect(world.getParent(toggle.checkmark)).toBe(toggle.entity);
     expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(false);
   });
 

@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createUiLayoutGroupEcsSystem } from './ui-layout-group-system.js';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { RenderContext } from '../../rendering/index.js';
@@ -52,7 +49,7 @@ function createChild(
 ): number {
   const entity = world.createEntity();
 
-  addParentComponent(world, entity, { parent });
+  world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     x: UiAxis.point(0.5, { size: size.x }),
     y: UiAxis.point(0.5, { size: size.y }),
@@ -113,6 +110,34 @@ describe('createUiLayoutGroupEcsSystem', () => {
         // -> 100 each. Cross axis (height): force-expand fills the full box.
         expect(sizeOf(rect)).toEqual({ x: 100, y: 100 });
         expect(rect.anchoredPosition).toEqual({ x: expectedX, y: 0 });
+      }
+    });
+
+    it('keeps the children in sibling order when an unrelated element is removed', () => {
+      const world = new EcsWorld();
+      // Created first, so removing it moves the last-created element (c)
+      // to the front of the rect transform storage.
+      const unrelated = createGroupEntity(world, 10, 10);
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group);
+
+      const a = createChild(world, group, { x: 50, y: 50 });
+      const b = createChild(world, group, { x: 50, y: 50 });
+      const c = createChild(world, group, { x: 50, y: 50 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.removeEntity(unrelated);
+      world.update();
+
+      for (const [entity, expectedX] of [
+        [a, 0],
+        [b, 100],
+        [c, 200],
+      ] as const) {
+        expect(
+          world.getComponent(entity, rectTransformId)!.anchoredPosition,
+        ).toEqual({ x: expectedX, y: 0 });
       }
     });
 
@@ -1169,7 +1194,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const panel = createGroupEntity(world, 0, 0);
 
       addPositionComponent(world, panel);
-      addParentComponent(world, panel, { parent: canvas });
+      world.setParent(panel, canvas);
       addVerticalLayoutGroupComponent(world, panel, {
         padding: { left: 24, right: 24, top: 64, bottom: 24 },
         spacing: 16,

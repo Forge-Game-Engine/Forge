@@ -98,7 +98,7 @@ as the parent turns, with no code to update its range:
 ```ts
 const exhaust = world.createEntity();
 
-addParentComponent(world, exhaust, { parent: ship });
+world.setParent(exhaust, ship);
 addPositionComponent(world, exhaust, { local: { x: -40, y: 0 } });
 addRotationComponent(world, exhaust);
 addParticleEmitterComponent(world, exhaust, {

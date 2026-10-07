@@ -1,5 +1,6 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { ParentEcsComponent, parentId } from '../../ecs/hierarchy.js';
 import { Vec2 } from '../../math/index.js';
 import {
   PositionEcsComponent,
@@ -7,12 +8,6 @@ import {
   rotationId,
   scaleId,
 } from '../components/index.js';
-import { parentId } from '../components/parent-component.js';
-import {
-  createTransformCache,
-  resetTransformCache,
-  TransformCache,
-} from './transform-cache.js';
 
 function setLocalAsWorldIfExists(entity: number, world: EcsWorld): void {
   const positionComponent = world.getComponent(entity, positionId);
@@ -124,57 +119,56 @@ function composeWithParent(
   composeScaleWithParent(entity, parentEntity, world);
 }
 
+// The parent component a static entity was frozen under, keyed by its
+// position component. `setParent` and `removeParent` replace or remove the
+// parent component, so a frozen entity whose stored one no longer matches
+// has been reparented and is recomputed.
+type FrozenTransforms = WeakMap<
+  PositionEcsComponent,
+  ParentEcsComponent | null
+>;
+
 function computeWorld(
   entity: number,
-  cache: TransformCache,
-  frozen: WeakSet<PositionEcsComponent>,
+  computed: Set<number>,
+  frozen: FrozenTransforms,
   world: EcsWorld,
 ): void {
   const positionComponent = world.getComponent(entity, positionId);
+  const parentComponent = world.getComponent(entity, parentId);
 
   // Static entities (and their static ancestors) have their world transform
   // computed once and then skipped on every subsequent frame. Re-checking
-  // `isStatic` unfreezes an entity whose `isStatic` has been cleared.
+  // `isStatic` and the parent unfreezes an entity whose `isStatic` has been
+  // cleared or that has been reparented.
   if (positionComponent && frozen.has(positionComponent)) {
-    if (positionComponent.isStatic) {
+    if (
+      positionComponent.isStatic &&
+      frozen.get(positionComponent) === parentComponent
+    ) {
       return;
     }
 
     frozen.delete(positionComponent);
   }
 
-  if (cache.computed.has(entity)) {
+  if (computed.has(entity)) {
     return;
   }
-
-  // Cycle detection: if we re-enter an entity, break the cycle by treating it as a root.
-  if (cache.visiting.has(entity)) {
-    setLocalAsWorldIfExists(entity, world);
-    cache.computed.add(entity);
-
-    return;
-  }
-
-  cache.visiting.add(entity);
 
   const hasRotation = world.getComponent(entity, rotationId);
   const hasScale = world.getComponent(entity, scaleId);
 
   if (!positionComponent && !hasRotation && !hasScale) {
-    cache.visiting.delete(entity);
-
     return;
   }
 
-  const parentComponent = world.getComponent(entity, parentId);
-
   if (!parentComponent) {
     setLocalAsWorldIfExists(entity, world);
-    cache.visiting.delete(entity);
-    cache.computed.add(entity);
+    computed.add(entity);
 
     if (positionComponent?.isStatic) {
-      frozen.add(positionComponent);
+      frozen.set(positionComponent, null);
     }
 
     return;
@@ -182,12 +176,11 @@ function computeWorld(
 
   const parentEntity = parentComponent.parent;
 
-  computeWorld(parentEntity, cache, frozen, world);
+  computeWorld(parentEntity, computed, frozen, world);
 
   composeWithParent(entity, parentEntity, world);
 
-  cache.visiting.delete(entity);
-  cache.computed.add(entity);
+  computed.add(entity);
 
   const parentPosition = world.getComponent(parentEntity, positionId);
 
@@ -196,7 +189,7 @@ function computeWorld(
     parentPosition &&
     frozen.has(parentPosition)
   ) {
-    frozen.add(positionComponent);
+    frozen.set(positionComponent, parentComponent);
   }
 }
 
@@ -213,23 +206,23 @@ function computeWorld(
 export const createTransformEcsSystem = (): EcsSystem<
   [PositionEcsComponent]
 > => {
-  const cache = createTransformCache();
+  const computed = new Set<number>();
 
   // The position components of entities whose world transform is static and
   // has already been computed, so `computeWorld` can skip them entirely.
   // Persists across frames. Keyed by component rather than entity, so
-  // removing the entity (or its position) drops it from the set, and a
+  // removing the entity (or its position) drops it from the map, and a
   // position added later starts unfrozen.
-  const frozen = new WeakSet<PositionEcsComponent>();
+  const frozen: FrozenTransforms = new WeakMap();
 
   return {
     query: [positionId],
 
     update: (world, { entities }) => {
-      resetTransformCache(cache);
+      computed.clear();
 
       for (const entity of entities) {
-        computeWorld(entity, cache, frozen, world);
+        computeWorld(entity, computed, frozen, world);
       }
     },
   };

@@ -1,4 +1,3 @@
-import { ParentEcsComponent, parentId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   CanvasGroupEcsComponent,
@@ -24,7 +23,7 @@ const identityCanvasGroupState: CanvasGroupState = {
 };
 
 /**
- * Walks `entity`'s `ParentEcsComponent` chain (starting at `entity` itself)
+ * Walks `entity`'s parent chain (starting at `entity` itself)
  * combining every `CanvasGroupEcsComponent` found along the way: `alpha`
  * multiplies, `interactable`/`blocksRaycasts` AND together. The walk stops
  * after including a group whose `ignoreParentGroups` is `true` - that
@@ -50,12 +49,11 @@ export function resolveCanvasGroupState(
   let interactable = true;
   let blocksRaycasts = true;
 
-  const visited = new Set<number>();
-  let current: number | undefined = entity;
-
-  while (current !== undefined && !visited.has(current)) {
-    visited.add(current);
-
+  for (
+    let current: number | null = entity;
+    current !== null;
+    current = world.getParent(current)
+  ) {
     const group = world.getComponent<CanvasGroupEcsComponent>(
       current,
       canvasGroupId,
@@ -70,8 +68,6 @@ export function resolveCanvasGroupState(
         break;
       }
     }
-
-    current = world.getComponent<ParentEcsComponent>(current, parentId)?.parent;
   }
 
   return alpha === 1 && interactable && blocksRaycasts

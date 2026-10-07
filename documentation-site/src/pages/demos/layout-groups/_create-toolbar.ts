@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
@@ -64,7 +61,7 @@ export async function createToolbar(
   const group = world.createEntity();
 
   addPositionComponent(world, group);
-  addParentComponent(world, group, { parent: canvas });
+  world.setParent(group, canvas);
   addRectTransformComponent(world, group, {
     ...UiAnchor.topRight({ x: width, y: titleHeight + titleGap + panelHeight }),
     anchoredPosition: { x: -60, y: -60 },
@@ -94,7 +91,7 @@ export async function createToolbar(
     const icon = world.createEntity();
 
     addPositionComponent(world, icon);
-    addParentComponent(world, icon, { parent: panel });
+    world.setParent(icon, panel);
     addRectTransformComponent(world, icon, UiAnchor.center({ x: 70, y: 70 }));
 
     const sprite = {
