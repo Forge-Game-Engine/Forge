@@ -4,72 +4,44 @@ sidebar_position: 9
 
 # Bloom
 
-[`createBloomEcsSystem`](/Forge/docs/api/functions/createBloomEcsSystem) is an
-additive glow post-processing effect, built on the same render target/present
-pass plumbing described in
-[Multipass Rendering](./multipass-rendering.md) and the same separable blur
-technique used by [Gaussian Blur](./gaussian-blur.md). Use it to make bright
-sprites (lasers, explosions, engine trails, magical effects) read as glowing
-or emissive rather than flat.
+Bloom is a post-processing effect that adds a glow around the brightest
+pixels of a camera's render target. A
+[`BloomEcsComponent`](/Forge/docs/api/interfaces/BloomEcsComponent) on a
+camera configures the glow, and
+[`createBloomEcsSystem`](/Forge/docs/api/functions/createBloomEcsSystem)
+draws it for every camera that has both a `renderTarget` and a
+`BloomEcsComponent`. A camera missing either is drawn without bloom.
 
-It only affects cameras that have both a `renderTarget` and a
-[`BloomEcsComponent`](/Forge/docs/api/interfaces/BloomEcsComponent) (attach
-one with `addBloomComponent`); a camera missing either renders untouched.
+## How bloom is drawn
 
-## How it works
+Each frame, for each render target of a camera with bloom, the bloom system:
 
-Each frame, for every distinct bloomed render target:
+1. **Thresholds** the scene: it keeps the pixels whose brightness is above
+   `threshold`, fading them in over a small range above it, in a
+   downsampled scratch buffer. Each texel of that buffer averages a 4 by 4
+   block of CSS pixels.
+2. **Blurs** the scratch buffer `passes` times, with the same horizontal and
+   vertical blur as [Gaussian Blur](./gaussian-blur.md).
+3. **Composites** the blurred buffer onto the full-resolution scene: it adds
+   the blurred color, multiplied by `intensity`, to the scene's color.
 
-1. **Threshold** — every pixel's brightness is compared against
-   `threshold`; only the pixels above it (faded in smoothly, not cut off
-   sharply) are kept, into a scratch buffer.
-2. **Blur** — that scratch buffer is blurred with the same two-pass
-   horizontal/vertical technique as `createGaussianBlurEcsSystem`, `passes`
-   times, on a downsampled copy where each texel covers a 4×4 block of CSS
-   pixels (see below).
-3. **Composite** — the blurred bright pixels are added back onto the
-   original (unblurred), full-resolution scene, scaled by `intensity`.
-
-The blur chain runs downsampled because the blur shader's kernel only
-samples a handful of texels per pass: at full render target resolution,
-that reach is a handful of _screen_ pixels, which on a large canvas barely
-registers as a glow no matter how many `passes` you throw at it. Running
-the same kernel and pass count on a buffer downsampled by 4 in each
-direction instead makes each texel already cover several source pixels, so
-the glow visibly spreads
-well past a sprite's edges with a modest, cheap `passes` count. The
-composite pass upsamples it back implicitly, via the bloom texture's own
-linear-filtered sampling.
-
-The downsampling is measured in CSS pixels, not render target pixels, so
-bloom looks the same at any
+The downsampling is measured in CSS pixels, so the glow spreads the same
+distance on screen at any
 [`RenderContext.pixelRatio`](/Forge/docs/api/classes/RenderContext#pixelratio)
-(see [High-DPI displays](./world-units-and-cameras.md#high-dpi-displays)): at a
-pixel ratio of 2, each downsampled texel covers an 8×8 block of the
-render target, which is still 4×4 CSS pixels. Every texel in the block is
-thresholded individually and averaged, so a small bright sprite contributes
-the same share of its block, and the glow spreads the same distance on
-screen, on every display. This assumes the camera's `renderTarget` is sized
-to the canvas (`renderContext.width`/`height`).
+(see [High-DPI displays](./world-units-and-cameras.md#high-dpi-displays)).
 
-The glow is purely additive light: the composite adds it to the scene's
-color and leaves the scene's alpha untouched. Because render targets hold
-premultiplied alpha, that's enough for the halo to show past a sprite's
-silhouette, over pixels that were fully transparent, when the camera's
-`renderTarget` is presented over something else (for example a sharp
-foreground layered over a background, as in
-[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)).
-The glow only ever brightens whatever is beneath it; it never covers it.
+The composite leaves the scene's alpha unchanged. A render target holds
+premultiplied alpha, so the glow shows over pixels that are fully
+transparent and, when the render target is presented over another one (see
+[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)),
+brightens what is beneath it without covering it.
 
-## Wiring it up
+## Adding bloom to a camera
 
-Following the rest of Forge's ECS conventions, bloom settings are entity
-data, not options baked into the system: `createBloomEcsSystem` takes only a
-`RenderContext` and processes whichever cameras carry a
-`BloomEcsComponent`. Give the camera a `renderTarget`, attach the component
-with `addBloomComponent`, then register the bloom system after the render system and
-before the present system, since it reads what the render system just drew
-and the present system draws whatever the bloom system leaves behind:
+Give the camera a `renderTarget`, attach a `BloomEcsComponent` with
+[`addBloomComponent`](/Forge/docs/api/functions/addBloomComponent), and
+register `createBloomEcsSystem` after the render system and before the
+present system:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -86,10 +58,9 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 const { world, renderContext } = createGame('game-container');
 
 const sceneTarget = createRenderTarget(renderContext, 'canvas');
-
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
-addBloomComponent(world, camera, { threshold: 0.7, passes: 4, intensity: 1 });
+const bloom = addBloomComponent(world, camera, { threshold: 0.7 });
 
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
@@ -97,208 +68,103 @@ world.addSystem(createBloomEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
+The bloom system reads the camera's `renderTarget` and writes the result
+back into it, and the present system draws the render target to the canvas.
+
 :::caution
-Registration order matters here in the same way it does for Gaussian blur:
-the bloom system reads the camera's `renderTarget` as it was left by
-whichever system last wrote to it, and writes its result back into that same
-target. Registering it before the render system blooms last frame's stale
-contents; registering it after the present system blooms a frame too late to
-ever be shown.
+Register the bloom system after the render system and before the present
+system. Registered before the render system, it blooms the previous frame's
+contents. Registered after the present system, its result is never drawn to
+the canvas.
 :::
 
-If a camera has both a `BloomEcsComponent` and a `GaussianBlurEcsComponent`,
-register `createBloomEcsSystem` before `createGaussianBlurEcsSystem` so the
-glow itself gets softened along with the rest of the scene, matching what
-the space-shooter demo does for its foreground camera.
+If a camera also has a [`GaussianBlurEcsComponent`](./gaussian-blur.md),
+register `createBloomEcsSystem` before `createGaussianBlurEcsSystem`, so the
+glow is blurred along with the rest of the scene.
 
-Because it's just component data, you can retune it at any point after
-creation by fetching the component and writing to it, the same way the
-space-shooter demo's camera shake works:
+## Tuning the glow
 
-```ts
-import { bloomId } from '@forge-game-engine/forge/rendering';
+`BloomEcsComponent` has three fields:
 
-const bloom = world.getComponent(camera, bloomId)!;
-bloom.intensity = 2; // e.g. a stronger glow while a power-up is active
-```
+- `threshold` (`0` to `1`): the relative luminance above which a pixel
+  contributes to the glow. A lower value makes more of the scene glow.
+- `passes`: how many times the bright pixels are blurred. More passes give
+  a wider, softer glow.
+- `intensity`: the multiplier applied to the glow when it's added to the
+  scene. It isn't limited to `1`: `2` adds the glow at twice its brightness.
 
-To bloom only _some_ of a scene (for example gameplay sprites, but not a
-UI overlay layered on top), give those cameras _separate_ render targets
-instead of a shared one, and attach `BloomEcsComponent` only to the one that
-should glow: see [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets).
-
-## Tuning: threshold, passes, and intensity
-
-[`BloomEcsComponent`](/Forge/docs/api/interfaces/BloomEcsComponent) has
-three knobs:
-
-- **`threshold`** (`0` to `1`, default `0.8`) sets the relative luminance
-  above which a pixel starts contributing to the glow. Lower it to make more
-  of the scene bloom (everything but the darkest pixels); raise it so only
-  the very brightest highlights (a laser core, a muzzle flash) glow.
-- **`passes`** sets how soft and wide-reaching the glow is, exactly like
-  [`GaussianBlurEcsComponent.passes`](/Forge/docs/api/interfaces/GaussianBlurEcsComponent):
-  each pass reads the previous pass's already-blurred bright pixels back out
-  and writes further blurred versions in. Because the blur chain runs
-  downsampled (see above), even a small `passes` count (`3`–`4`) already
-  produces a glow that visibly bleeds past a sprite's edges; there's rarely
-  a need to push it much higher.
-- **`intensity`** (default `1`) scales how strongly the blurred bright
-  pixels are added back onto the scene. Unlike
-  `GaussianBlurEcsComponent.intensity`, this is **not** a `0`–`1` blend
-  factor and isn't clamped to `1`: it's an additive multiplier, so `2` adds
-  the glow at twice its original brightness.
-
-`intensity: 0` or `passes: 0` turns bloom off: nothing is drawn and no
-internal buffers are allocated. To restore it, set the value back.
+`addBloomComponent` returns the component, and the bloom system reads it
+every frame, so a change to a field applies from the next frame:
 
 ```ts
-addBloomComponent(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
+bloom.intensity = 2;
 ```
 
-:::tip
-By default, [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) uses an
-8-bit-per-channel color texture, so scene colors are clamped to `[0, 1]`
-before bloom ever sees them: `threshold` is comparing against already-clamped
-brightness, and a white sprite tinted brighter than white blooms no more
-than one tinted `Color.white`. `threshold` and `intensity` are still enough
-to make specific bright elements (lasers, explosions, magic effects) pop
-against a duller background within that constraint — but if you want a
-sprite to bloom based on true HDR brightness, give the camera's render
-target `RENDER_TARGET_FORMAT.hdr` instead and pair it with
-`addToneMappingComponent`. There, a sprite's `tintColor` can go above `1`
-to make it glow: a sprite tinted `new Color(3, 3, 3)` blooms more than one
-tinted `Color.white`. See [HDR Rendering & Tone
-Mapping](./hdr-rendering.md), and [Emissive-driven
-bloom](#emissive-driven-bloom) below for making only part of a sprite glow.
+An `intensity` or `passes` of `0` draws no bloom.
+
+:::note
+A render target uses 8-bit color by default, which clamps every color to
+`[0, 1]`. On such a target, a sprite tinted brighter than white blooms no
+more than a white one. A render target created with
+`RENDER_TARGET_FORMAT.hdr` keeps values above `1`, so brighter sprites
+bloom more. See [HDR Rendering & Tone Mapping](./hdr-rendering.md).
 :::
 
-## Performance note
+## Blooming part of a scene
 
-Bloom costs one threshold pass, two full-screen draws per blur `passes`
-(same cost shape as [Gaussian Blur](./gaussian-blur.md#performance-note)),
-and one composite pass that writes the camera's `renderTarget` directly:
-`2 * passes + 2` full-screen draws in total, for any `intensity` above `0`. The threshold and blur passes are far cheaper than that count
-suggests, though: they run at a quarter of the canvas's CSS-pixel
-resolution in each direction (a sixteenth of the fragment shader invocations
-per draw on a standard display, and the same number of invocations on a
-high-DPI one, since the downsampling scales with `pixelRatio`), which is also
-why a small `passes` count already produces a wide glow (see Tuning,
-above).
-
-There are two lazily-allocated internal scratch render targets per
-distinct render target the first time it's bloomed: a downsampled
-bright-pass buffer and a downsampled [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
-pair for the blur. Both are resized (or recreated) automatically if the
-render target's dimensions change, and disposed automatically when the world
-stops. The composite runs as a
-[post-processing pass](./multipass-rendering.md#writing-a-post-processing-effect),
-so the camera's render target also allocates its second color buffer the
-first time it's bloomed. Each of these buffers inherits the source render target's format, so bloom on an
-`hdr` camera stays HDR end-to-end without any extra configuration — see
-[HDR Rendering & Tone Mapping](./hdr-rendering.md).
+Bloom applies to a whole render target: everything drawn into a bloomed
+render target is bloomed, whichever camera drew it. To bloom some cameras
+and not others (for example the game world but not a UI overlay), give them
+separate render targets and attach a `BloomEcsComponent` only to the camera
+that should glow. See
+[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets).
 
 ## Emissive-driven bloom
 
-A sprite's [emissive map](./sprites.md#adding-an-emissive-map) is a texture
-added on top of the sprite's tinted texture, unaffected by its tint. An
-emissive `color` with channels above `1` pushes a pixel's brightness above
-the LDR ceiling, so on an `hdr`-format camera it blooms even where the
-sprite's own texture isn't pure white: a neon sign's tube can stay a dim
-color while glowing brighter than the scene around it:
+A sprite's [emissive map](./sprites.md#adding-an-emissive-map) adds light to
+the pixels the map covers, independent of the sprite's tint. On a camera
+whose render target uses `RENDER_TARGET_FORMAT.hdr`, an emissive `color`
+with channels above `1` makes those pixels brighter than white, so they
+bloom more than the rest of the sprite:
 
 ```ts
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
-  addBloomComponent,
   addSpriteComponent,
-  addToneMappingComponent,
   Color,
-  createBloomEcsSystem,
-  createCamera,
   createImageSprite,
-  createPresentEcsSystem,
-  createRenderEcsSystem,
-  createRenderTarget,
   createTexture,
-  createToneMapEcsSystem,
-  RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 
-const sceneTarget = createRenderTarget(
-  renderContext,
-  'canvas',
-  RENDER_TARGET_FORMAT.hdr,
-);
-
-const camera = createCamera(world, { renderTarget: sceneTarget });
-
-addBloomComponent(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
-addToneMappingComponent(world, camera);
-
-addSpriteComponent(world, neonSign, {
-  ...createImageSprite(createTexture(renderContext, neonSignImage)),
+addSpriteComponent(world, entity, {
+  ...createImageSprite(createTexture(renderContext, image)),
   emissive: {
-    texture: createTexture(renderContext, neonSignEmissiveImage),
-    color: new Color(4, 4, 4, 1),
+    texture: createTexture(renderContext, emissiveImage),
+    color: new Color(3, 3, 3, 1),
   },
 });
-
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createRenderEcsSystem(renderContext));
-world.addSystem(createBloomEcsSystem(renderContext));
-world.addSystem(createToneMapEcsSystem(renderContext));
-world.addSystem(createPresentEcsSystem(renderContext));
 ```
 
-A tint above `1` brightens the whole sprite. Without the emissive map,
-`threshold` is the only way to make part of a sprite glow more than the
-rest, and it can't distinguish "this part is meant to be a light source"
-from "this part happens to be pale" — both read as the same brightness.
-The emissive map sidesteps that: its contribution is added _after_ the
-albedo sample, so it can push specific pixels arbitrarily bright
-regardless of the sprite's own tint or texture color, without lightening
-the rest of the sprite. See [HDR
-Rendering & Tone Mapping](./hdr-rendering.md) for how the `hdr` render
-target and `addToneMappingComponent` work together to make this look right once
-presented.
+Pair the `hdr` render target with tone mapping (see
+[HDR Rendering & Tone Mapping](./hdr-rendering.md)) so the values above `1`
+are compressed into the displayable range when the camera is presented.
 
 ### Authoring an emissive map
 
-An emissive map's color is added on top of the tinted albedo; its own
-**alpha channel is ignored**. This matches every mainstream engine's
-emissive model (glTF, Unity, Unreal, three.js all treat emissive as an
-RGB-only additive term): a sprite's opacity comes entirely from its base
-texture's alpha, and emissive can't make an otherwise-transparent pixel
-show up. If part of your emissive map sits over a region where the base
-texture's alpha is near zero, that region will still render as nearly
-invisible, no matter how bright the emissive color is there.
+The emissive map's alpha channel isn't used. The sprite's opacity comes
+from its base texture's alpha (times its tint's alpha), so an emissive map
+can't make a transparent pixel of the base texture visible.
 
-This trips people up coming from older, pre-bloom 2D techniques, where a
-sprite's own soft glow was faked by painting a **low-alpha color gradient**
-into the sprite and letting normal alpha blending fade it into the
-background. That approach actively fights this pipeline: alpha blending
-scales a pixel's contribution by its alpha regardless of how vivid the
-color stored there is, so a wide, softly-fading, low-alpha "glow" only
-ever reaches the render target as a faint wash, far too dim to clear
-bloom's brightness `threshold`, while only the fully-opaque core actually
-blooms.
+A glow painted into the art as a low-alpha gradient is blended into the
+scene at that low alpha, which leaves it too dim to pass the bloom
+`threshold`. Bloom's blur produces the soft falloff instead:
 
-The fix is to stop faking the soft falloff in the source art entirely and
-let bloom's blur produce it instead:
+- Author the base texture and the emissive map as opaque shapes with solid
+  edges, without a gradient fading to transparent.
+- Use moderate emissive `color` channels, around `1` to `3`. Much higher
+  values tone-map to nearly white, losing the emissive color's hue.
+- Use `passes` to set how far the glow spreads.
 
-- Author both the base texture and the emissive map with **solid,
-  reasonably opaque edges** matching the shape you actually want visible
-  (a bullet's core and tail, say) — not a gradient fading to near-zero
-  alpha.
-- Pick a **moderate** emissive `color` (channels of roughly `1`–`3` for a
-  subtle glow); very
-  high values (`5`+) push almost every colored pixel toward the same
-  blown-out white once [tone mapping](./hdr-rendering.md) compresses it
-  back down, which reads as "glowing white" rather than "glowing amber" or
-  whatever hue you intended.
-- Let `passes` (and, for an HDR camera, `RENDER_TARGET_FORMAT.hdr` +
-  `addToneMappingComponent`) do the work of spreading that opaque shape into a soft
-  halo — that's what the blur passes are for, and unlike a hand-painted
-  gradient it composites correctly in HDR and tone-maps smoothly at the
-  edges instead of banding.
+## Removing bloom
+
+Remove the component with `world.removeComponent(camera, bloomId)`. The
+camera is drawn without bloom from the next frame.

@@ -71,6 +71,16 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  * If a camera also has a `GaussianBlurEcsComponent`, register this system
  * before the blur system, so the glow gets softened along with the rest of
  * the scene rather than sharpening it back up afterwards.
+ *
+ * Each bloomed render target costs `2 * passes + 2` full-screen draws a
+ * frame: one threshold pass, two blur draws per pass, and the composite. The
+ * threshold and blur draws run at the downsampled resolution, a quarter of
+ * the render target's size in CSS pixels along each axis. The first time a render
+ * target is bloomed, the system allocates a downsampled bright-pass target
+ * and a downsampled `PingPongTarget` for it, in the render target's
+ * `format`, and the render target allocates its second color buffer for
+ * the composite. The scratch targets are resized when the render target's
+ * size changes, and disposed by the system's `cleanup`.
  * @param renderContext The rendering context
  * @returns The bloom ECS system
  */
