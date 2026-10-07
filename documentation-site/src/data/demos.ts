@@ -243,6 +243,13 @@ export const demos: Demo[] = [
     categories: ['ui'],
   },
   {
+    slug: 'ui-scroll-view',
+    title: 'UI Scroll View',
+    description:
+      'A clipped list scrolled by dragging, the mouse wheel, a scrollbar and focus, with inertia and elastic edges.',
+    categories: ['ui'],
+  },
+  {
     slug: 'ui-progress-bar',
     title: 'UI Progress Bar',
     description:

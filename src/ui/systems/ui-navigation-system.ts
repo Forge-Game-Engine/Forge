@@ -68,12 +68,13 @@ function isFocusable(world: EcsWorld, entity: number): boolean {
 
   return (
     !!interactable?.interactable &&
+    interactable.focusable &&
     resolveCanvasGroupState(world, entity).interactable &&
     isVisibleInHierarchy(world, entity)
   );
 }
 
-/** Groups every focusable candidate (own `interactable: true`, not disabled by an ancestor `CanvasGroupEcsComponent`, and visible in the hierarchy) into `interactableEntities`/`rectTransforms` by its owning canvas entity. */
+/** Groups every focusable candidate (own `interactable: true` and `focusable: true`, not disabled by an ancestor `CanvasGroupEcsComponent`, and visible in the hierarchy) into `interactableEntities`/`rectTransforms` by its owning canvas entity. */
 function groupFocusCandidatesByCanvas(
   world: EcsWorld,
   interactableEntities: readonly number[],
@@ -85,6 +86,7 @@ function groupFocusCandidatesByCanvas(
   for (let i = 0; i < interactableEntities.length; i++) {
     if (
       !interactables[i].interactable ||
+      !interactables[i].focusable ||
       !resolveCanvasGroupState(world, interactableEntities[i]).interactable ||
       !isVisibleInHierarchy(world, interactableEntities[i])
     ) {
@@ -270,7 +272,7 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * counterpart to pointer hover/click that lets a controller or keyboard
  * reach and invoke the same interactables.
  *
- * Every `interactable: true` `UiInteractableEcsComponent` - not disabled by
+ * Every `interactable: true`, `focusable: true` `UiInteractableEcsComponent` - not disabled by
  * an ancestor `CanvasGroupEcsComponent` either, see `resolveCanvasGroupState`
  * - and visible in the hierarchy (see `VisibilityEcsComponent`) is
  * automatically focus-navigable: on the tick a canvas's `navigateInput`

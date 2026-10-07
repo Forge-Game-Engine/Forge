@@ -148,8 +148,10 @@ const canvas = createUiCanvas(world, renderContext, {
 
 An element [hidden](../rendering/visibility.md#hiding-ui-elements) by its
 own or an ancestor's `VisibilityEcsComponent` can't be focused, and focus
-on an element that becomes hidden is cleared. The pointer moving onto an
-interactable element also focuses it. See
+on an element that becomes hidden is cleared. Neither can an element whose
+`focusable` is `false`, such as a scroll view's viewport. The pointer moving
+onto an interactable element also focuses it, unless its `focusable` is
+`false`. See
 [Actions and Input Groups](../input/actions.md) for creating and binding
 the actions.
 
@@ -184,7 +186,9 @@ Every tick, the UI finds the interactable element under the pointer on
 each canvas: of the interactables whose rectangle contains the pointer, the
 one drawn on top (see [Draw Order](../rendering/draw-order.md)). Elements
 with `blocksRaycasts` set to `false`, hidden elements, and elements whose
-sprite the canvas's camera doesn't draw, are skipped. The result is written to the
+sprite the canvas's camera doesn't draw, are skipped, and so is the part of
+an element that a rect [mask](../rendering/masks.md) on it or on an
+ancestor clips away. The result is written to the
 canvas's `hoveredEntity`, and `isPointerOverUi` is `true` while there is
 one. Read it to ignore a click in the game world that landed on the UI:
 
@@ -219,3 +223,12 @@ handle.onDrag.registerListener(() => {
   // Move the element to follow the pointer.
 });
 ```
+
+A drag is raised on the nearest element, the pressed one or one of its
+ancestors, whose `receivesDrag` is `true`. When that is an ancestor, the
+pressed element's press ends (`onPointerUp` is raised, and `onInvoke`
+isn't) and the ancestor raises `onBeginDrag`, `onDrag` and `onEndDrag`. A
+[scroll view](scroll-views.md) receives drags, so a drag that starts on a
+button in its list scrolls the list. Set `receivesDrag` to `true` on an
+element that reacts to its own drags, such as a draggable item, so a drag
+that starts on it stays on it. `createSlider` sets it on its track.

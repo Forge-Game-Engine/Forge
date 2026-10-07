@@ -123,6 +123,22 @@ describe('createUiNavigationEcsSystem', () => {
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(first);
   });
 
+  it('never focuses an element that is not focusable', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const viewport = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const second = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    world.getComponent(viewport, uiInteractableId)!.focusable = false;
+    navigate(navigateInput, 1, 0);
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(second);
+  });
+
   it('moves focus to the nearest candidate in the pressed direction', () => {
     const world = new EcsWorld();
     const navigateInput = new Axis2dAction('navigate');

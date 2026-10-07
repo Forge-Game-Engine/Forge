@@ -34,6 +34,8 @@ The UI is made of:
   `createButton` builds a panel with one.
 - [Controls](controls.md): toggles, sliders, progress bars and dropdowns.
 - [Text inputs](text-input.md): single-line fields the player types into.
+- [Scroll views](scroll-views.md): content clipped to a viewport and
+  scrolled by dragging, the mouse wheel, scrollbars and focus.
 - [Layout groups and fitters](layout-groups.md): components that arrange an
   element's children in a row, a column or a grid, or size an element to
   its content or to an aspect ratio.

@@ -3,6 +3,7 @@ export * from './create-dropdown.js';
 export * from './create-label.js';
 export * from './create-panel.js';
 export * from './create-progress-bar.js';
+export * from './create-scroll-view.js';
 export * from './create-slider.js';
 export * from './create-text-input.js';
 export * from './create-toggle.js';

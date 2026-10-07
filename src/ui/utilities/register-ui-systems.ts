@@ -10,6 +10,7 @@ import { createUiLayoutEcsSystem } from '../systems/ui-layout-system.js';
 import { createUiNavigationEcsSystem } from '../systems/ui-navigation-system.js';
 import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.js';
 import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
+import { createUiScrollRectEcsSystem } from '../systems/ui-scroll-rect-system.js';
 import { createUiSafeAreaEcsSystem } from '../systems/ui-safe-area-system.js';
 import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
 import { createUiTextInputEcsSystem } from '../systems/ui-text-input-system.js';
@@ -46,7 +47,7 @@ export interface RegisterUiSystemsOptions {
  * Registers every system a `createUiCanvas` canvas depends on: layout,
  * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles,
  * tooltips and text inputs - plus, once a
- * `pointerSource` is supplied, pointer raycasting/interaction/sliders, and
+ * `pointerSource` is supplied, pointer raycasting/interaction/sliders/scroll rects, and
  * once `getSafeAreaInsets` is supplied, safe-area insetting - each wired in
  * the order their cross-system reads/writes require.
  *
@@ -61,14 +62,15 @@ export interface RegisterUiSystemsOptions {
  *
  * Registration order: raycast, then navigation, then interaction, then
  * toggle/transition/tooltip/text input (order between those doesn't matter,
- * none reads another's writes), then slider - raycast must run before navigation
+ * none reads another's writes), then slider and scroll rect - raycast must run before navigation
  * and interaction read its hit-test result, interaction must run before
  * transition/tooltip read the interaction state it just wrote, navigation
  * must run before interaction because navigation is what resets
  * `wasInvokedThisFrame` to `false` each tick before interaction
  * conditionally sets it back to `true` for the pointer path, toggle/tooltip
- * must run after both navigation and interaction for the same reason, and
- * slider must run after interaction (it reads `pressCapture`). Progress
+ * must run after both navigation and interaction for the same reason,  and
+ * slider and scroll rect must run after interaction (they read
+ * `pressCapture`/`isDragging`). Progress
  * bars/aspect ratio fitting/layout groups have no interaction dependency
  * and run before layout, so a value they write is resolved into a rect the
  * very same tick rather than lagging a frame behind; canvas groups run
@@ -167,5 +169,13 @@ export function registerUiSystems(
     const slider = createUiSliderEcsSystem(pointerSource, renderContext);
 
     world.addSystem(slider, { after: [interaction] });
+
+    const scrollRect = createUiScrollRectEcsSystem(
+      pointerSource,
+      renderContext,
+      time,
+    );
+
+    world.addSystem(scrollRect, { after: [interaction] });
   }
 }

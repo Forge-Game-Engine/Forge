@@ -86,7 +86,8 @@ export interface CreateSliderDefaultedOptions {
    * Overrides for the track's `UiInteractableEcsComponent`. `dragThreshold`
    * defaults to `0` here (rather than `UiInteractableEcsComponent`'s own
    * default of `8`), so any drag at all - not just one past a dead zone -
-   * moves the handle.
+   * moves the handle, and `receivesDrag` to `true`, so a slider inside a
+   * scroll view keeps its drags instead of scrolling the view.
    */
   interactable?: Partial<UiInteractableDefaultedOptions>;
 
@@ -183,6 +184,7 @@ export function createSlider(
 
   const interactable = addUiInteractableComponent(world, entity, {
     dragThreshold: 0,
+    receivesDrag: true,
     ...interactableOptions,
   });
   addUiColorTransitionComponent(world, entity, transitionOptions);

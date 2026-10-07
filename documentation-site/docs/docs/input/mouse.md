@@ -86,9 +86,9 @@ stay correct after the container is resized, moved or scrolled.
 ## Binding the scroll wheel
 
 A [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) sets
-its `Axis1dAction` to the frame's wheel movement: the sum of
-`WheelEvent.deltaY / 100` over the frame's `wheel` events, clamped to `-1`
-to `1`. The value lasts one frame: the source reports `0` in its `reset()`
+its `Axis1dAction` to the frame's wheel movement: the sum of the vertical
+wheel delta, in CSS pixels, divided by `100` over the frame's `wheel`
+events, clamped to `-1` to `1`. The value lasts one frame: the source reports `0` in its `reset()`
 at the end of the frame, so the action reads `0` once the wheel stops.
 
 ```ts
@@ -109,7 +109,10 @@ debug overlay, reads these properties of the source:
   `renderContext.cssWidth` and `cssHeight` (see
   [High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
 - `delta`: how far the cursor moved since the last frame.
-- `scroll`: the sum of `WheelEvent.deltaY` since the last frame.
+- `scroll`: the wheel movement since the last frame, in CSS pixels: `x` is
+  positive scrolling right and `y` positive scrolling down. A wheel that
+  reports lines counts 40 pixels per line, and one that reports pages
+  counts the container's width or height per page.
 - `buttonsDown`, `buttonsHeld` and `buttonsUp`: the
   [`MouseButton`](/Forge/docs/api/type-aliases/MouseButton)s that went down
   this frame, are held, and came up this frame.
