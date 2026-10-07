@@ -9,7 +9,12 @@ import {
   PositionEcsComponent,
 } from '../../common';
 import { Vec2 } from '../../math';
-import { addCameraComponent, CameraEcsComponent } from '../components';
+import {
+  addCameraComponent,
+  addDrawOrderComponent,
+  CameraEcsComponent,
+  maxDrawOrder,
+} from '../components';
 import {
   addSpriteComponent,
   SpriteEcsComponent,
@@ -325,82 +330,274 @@ describe('createRenderEcsSystem', () => {
     expect(bindOffsets).toEqual([0, 4]);
   });
 
-  it('sorts render commands by world Y (depth) before drawing', () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
+  describe('draw order', () => {
+    // pivot.x is only used here as a per-sprite identity tag: it doesn't
+    // affect the order, and (unlike tintColor) isn't clamped.
+    const addTaggedSprite = (
+      renderable: Renderable,
+      id: number,
+      worldY: number = 0,
+      overrides: Partial<SpriteEcsComponent> = {},
+    ): number =>
+      addSpriteEntity(renderable, worldY, {
+        pivot: { x: id, y: 0 },
+        ...overrides,
+      });
 
-    addSpriteEntity(renderable, 10);
-    addSpriteEntity(renderable, -5);
-    addSpriteEntity(renderable, 2);
+    const drawnIds = (bindInstanceData: Mock): number[] =>
+      bindInstanceData.mock.calls.map(
+        (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite.pivot.x,
+      );
 
-    world.update();
+    const addYSortCamera = (): void => {
+      const entity = world.createEntity();
 
-    const drawnDepths = bindInstanceData.mock.calls.map(
-      (call) =>
-        (call[0] as { position: PositionEcsComponent }).position.world.y,
-    );
+      addCameraComponent(world, entity, {
+        isStatic: true,
+        verticalWorldUnits: 1e7,
+        ySort: true,
+      });
+      addPositionComponent(world, entity);
+    };
 
-    expect(drawnDepths).toEqual([-5, 2, 10]);
-  });
+    it('draws root sprites in creation order, whatever their world Y', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
 
-  it('sorts by sortDepth instead of world Y when set', () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
+      addTaggedSprite(renderable, 0, 10);
+      addTaggedSprite(renderable, 1, -5);
+      addTaggedSprite(renderable, 2, 2);
 
-    addSpriteEntity(renderable, 10, { sortDepth: 1 });
-    addSpriteEntity(renderable, -5, { sortDepth: 3 });
-    addSpriteEntity(renderable, 2, { sortDepth: 2 });
+      world.update();
 
-    world.update();
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
 
-    const drawnWorldYs = bindInstanceData.mock.calls.map(
-      (call) =>
-        (call[0] as { position: PositionEcsComponent }).position.world.y,
-    );
+    it("sorts by the sprite's layer first", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
 
-    // sortDepth order (1, 2, 3) wins over world-Y order (-5, 2, 10).
-    expect(drawnWorldYs).toEqual([10, 2, -5]);
-  });
+      addTaggedSprite(renderable, 0, 0, { layer: 1 });
+      addTaggedSprite(renderable, 1, 0, { layer: -1 });
+      addTaggedSprite(renderable, 2);
 
-  it('falls back to world Y for sprites with no sortDepth set', () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
+      world.update();
 
-    addSpriteEntity(renderable, 10, { sortDepth: -1 });
-    addSpriteEntity(renderable, -5);
-    addSpriteEntity(renderable, 2);
+      expect(drawnIds(bindInstanceData)).toEqual([1, 2, 0]);
+    });
 
-    world.update();
+    it('draws children after their parent, in sibling order, before the next root', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
 
-    const drawnWorldYs = bindInstanceData.mock.calls.map(
-      (call) =>
-        (call[0] as { position: PositionEcsComponent }).position.world.y,
-    );
+      const secondChild = addTaggedSprite(renderable, 2);
+      const parent = addTaggedSprite(renderable, 0);
+      const firstChild = addTaggedSprite(renderable, 1);
 
-    // The explicit sortDepth (-1) sorts between the two world-Y-derived
-    // depths (-5, 2), even though this sprite's own world Y (10) is the
-    // largest.
-    expect(drawnWorldYs).toEqual([-5, 10, 2]);
-  });
+      addTaggedSprite(renderable, 3);
+      world.setParent(firstChild, parent);
+      world.setParent(secondChild, parent);
 
-  it("sorts render commands by the sprite's layer before depth", () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
+      world.update();
 
-    addSpriteEntity(renderable, 10, { layer: 0 });
-    addSpriteEntity(renderable, -5, { layer: 1 });
-    addSpriteEntity(renderable, 2, { layer: 0 });
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 3]);
+    });
 
-    world.update();
+    it('draws a child with order -1 behind every entity at its parent level, with no per-frame code', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
 
-    const drawnDepths = bindInstanceData.mock.calls.map(
-      (call) =>
-        (call[0] as { position: PositionEcsComponent }).position.world.y,
-    );
+      addTaggedSprite(renderable, 1);
+      const ship = addTaggedSprite(renderable, 2);
+      const flame = addTaggedSprite(renderable, 0);
 
-    // Layer 0 entries (depths 10 and 2) are drawn before the layer 1 entry
-    // (depth -5), even though -5 sorts lowest by depth alone.
-    expect(drawnDepths).toEqual([2, 10, -5]);
+      world.setParent(flame, ship);
+      addDrawOrderComponent(world, flame, { order: -1 });
+
+      world.update();
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 0, 1, 2]);
+    });
+
+    it('composes orders through two levels and through a container without a sprite', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const container = world.createEntity();
+      const parent = addTaggedSprite(renderable, 2);
+      const child = addTaggedSprite(renderable, 1);
+
+      addTaggedSprite(renderable, 3, 0, { layer: 0 });
+      addTaggedSprite(renderable, 0);
+      world.setParent(parent, container);
+      world.setParent(child, parent);
+      // 2 + -1 = 1: the child sorts between the order-0 sprites and its
+      // order-2 parent.
+      addDrawOrderComponent(world, container, { order: 2 });
+      addDrawOrderComponent(world, child, { order: -1 });
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([3, 0, 1, 2]);
+    });
+
+    it('keeps root order by creation when other entities are removed and their slots reused', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const removed = addTaggedSprite(renderable, 9);
+
+      addTaggedSprite(renderable, 0);
+      addTaggedSprite(renderable, 1);
+      world.removeEntity(removed);
+      // Reuses the removed entity's slot, but was created last.
+      addTaggedSprite(renderable, 2);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
+
+    it('puts an unparented entity back among the roots at its own creation', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const child = addTaggedSprite(renderable, 0);
+      const middle = addTaggedSprite(renderable, 1);
+      const parent = addTaggedSprite(renderable, 2);
+
+      world.setParent(child, parent);
+      world.removeParent(child);
+      world.setParent(middle, parent);
+      world.removeParent(middle);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
+
+    it('throws when adding a draw order that is not an integer in range', () => {
+      const entity = world.createEntity();
+
+      expect(() =>
+        addDrawOrderComponent(world, entity, { order: 0.5 }),
+      ).toThrow();
+      expect(() =>
+        addDrawOrderComponent(world, entity, { order: maxDrawOrder + 1 }),
+      ).toThrow();
+      expect(() =>
+        addDrawOrderComponent(world, entity, { order: -maxDrawOrder }),
+      ).not.toThrow();
+    });
+
+    it('y-sorts for a camera with ySort: lower on screen draws in front', () => {
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTaggedSprite(renderable, 2, -5);
+      addTaggedSprite(renderable, 0, 10);
+      addTaggedSprite(renderable, 1, 2);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
+
+    it("y-sorts a subtree by its root's Y, so it moves as one", () => {
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const character = addTaggedSprite(renderable, 0, 5);
+      // Far below everything, but it belongs to the character.
+      const sword = addTaggedSprite(renderable, 1, -100);
+
+      addTaggedSprite(renderable, 2, 0);
+      world.setParent(sword, character);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
+
+    it('y-sorts a subtree under a root without a position as Y = 0', () => {
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTaggedSprite(renderable, 2, -1);
+      const container = world.createEntity();
+      const child = addTaggedSprite(renderable, 1, -50);
+
+      addTaggedSprite(renderable, 0, 1);
+      world.setParent(child, container);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+    });
+
+    it('y-sorts exactly, however wide the range of Y in the frame', () => {
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTaggedSprite(renderable, 3, 0);
+      addTaggedSprite(renderable, 4, -1e6);
+      addTaggedSprite(renderable, 2, 1e-3);
+      addTaggedSprite(renderable, 0, 1e6);
+      addTaggedSprite(renderable, 1, 2e-3);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 3, 4]);
+    });
+
+    it('only y-sorts for the cameras that ask for it', () => {
+      addCameraEntity();
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTaggedSprite(renderable, 0, -5);
+      addTaggedSprite(renderable, 1, 5);
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 1, 0]);
+    });
+
+    it('orders many sprites the same way a full comparison sort would', () => {
+      addYSortCamera();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      const layers = [-2, 0, 1, 5];
+      // Deterministic pseudo-random layers, orders and Ys, with plenty of
+      // ties to exercise every part of the key.
+      const sprites = Array.from({ length: 733 }, (_, i) => ({
+        id: i,
+        layer: layers[i % layers.length],
+        order: Math.floor(Math.sin(i * 7.31) * 3),
+        y: Math.floor(Math.sin(i * 12.9898) * 50),
+      }));
+
+      for (const sprite of sprites) {
+        const entity = addTaggedSprite(renderable, sprite.id, sprite.y, {
+          layer: sprite.layer,
+        });
+
+        addDrawOrderComponent(world, entity, { order: sprite.order });
+      }
+
+      world.update();
+
+      const expected = sprites
+        .slice()
+        .sort(
+          (a, b) =>
+            a.layer - b.layer || a.order - b.order || b.y - a.y || a.id - b.id,
+        )
+        .map((sprite) => sprite.id);
+
+      expect(drawnIds(bindInstanceData)).toEqual(expected);
+    });
   });
 
   it('blends color as straight alpha but accumulates alpha with ONE, so destinations store premultiplied alpha', () => {
@@ -470,65 +667,6 @@ describe('createRenderEcsSystem', () => {
     );
     expect(a.bindInstanceData).toHaveBeenCalledTimes(2);
     expect(b.bindInstanceData).toHaveBeenCalledTimes(1);
-  });
-
-  it('preserves creation order for sprites at the same depth (stable sort)', () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
-
-    // All three share a depth (world Y); pivot.x is only used here as a
-    // per-sprite identity tag, unrelated to sort order (unlike tintColor,
-    // it isn't clamped, so it can carry an arbitrary id).
-    addSpriteEntity(renderable, 5, { pivot: { x: 0, y: 0 } });
-    addSpriteEntity(renderable, 5, { pivot: { x: 1, y: 0 } });
-    addSpriteEntity(renderable, 5, { pivot: { x: 2, y: 0 } });
-
-    world.update();
-
-    const drawnIds = bindInstanceData.mock.calls.map(
-      (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite.pivot.x,
-    );
-
-    expect(drawnIds).toEqual([0, 1, 2]);
-  });
-
-  it('orders many sprites across several layers and depths the same way a full comparison sort would', () => {
-    addCameraEntity();
-    const { renderable, bindInstanceData } = createRenderable(4);
-
-    const spriteCount = 733;
-    const layers = [-2, 0, 1, 5];
-    // Deterministic pseudo-random depths/layers (no external RNG needed) -
-    // spread widely enough to exercise many depth buckets while still
-    // producing plenty of exact ties to stress stability.
-    const entities = Array.from({ length: spriteCount }, (_, i) => {
-      const depth = Math.floor(Math.sin(i * 12.9898) * 50);
-      const layer = layers[i % layers.length];
-
-      return { id: i, depth, layer };
-    });
-
-    for (const entity of entities) {
-      addSpriteEntity(renderable, entity.depth, {
-        layer: entity.layer,
-        pivot: { x: entity.id, y: 0 },
-      });
-    }
-
-    world.update();
-
-    const actualOrder = bindInstanceData.mock.calls.map(
-      (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite.pivot.x,
-    );
-
-    const expectedOrder = entities
-      .slice()
-      .sort((a, b) =>
-        a.layer !== b.layer ? a.layer - b.layer : a.depth - b.depth,
-      )
-      .map((entity) => entity.id);
-
-    expect(actualOrder).toEqual(expectedOrder);
   });
 
   it('draws once per camera entity, using each camera projection', () => {
@@ -843,11 +981,70 @@ describe('createRenderEcsSystem', () => {
       );
     });
 
-    // Glyph positioning/tint, disabled-text skipping, and culling-mask
-    // filtering are unit-tested directly against `buildTextCameraCommands`/
+    // Glyph positioning and tint are unit-tested directly against
     // `pushTextRenderCommands` in `src/text/rendering/glyph-quad.test.ts`.
-    // What's left here is integration-only: that text actually reaches the
-    // draw call, and batches correctly alongside sprites.
+
+    const glyph = {
+      offset: Vec2.zero,
+      size: { x: 1, y: 1 },
+      uvOffset: Vec2.zero,
+      uvScale: Vec2.one,
+      embolden: 0,
+    };
+
+    it('skips disabled text', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, { glyphs: [glyph] }, { enabled: false });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it("skips text whose renderable category doesn't match the camera's culling mask", () => {
+      addCameraEntity(0b0010);
+      const { renderable, bindInstanceData } = createRenderable(4);
+
+      addTextEntity(renderable, 0, { glyphs: [glyph] });
+
+      world.update();
+
+      expect(bindInstanceData).not.toHaveBeenCalled();
+    });
+
+    it("draws text with its entity's rotation and scale", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable(4);
+      const entity = addTextEntity(renderable, 0, { glyphs: [glyph] });
+      const rotation = addRotationComponent(world, entity, { local: 1.5 });
+      const scale = addScaleComponent(world, entity, {
+        local: { x: 2, y: 2 },
+      });
+
+      world.update();
+
+      expect(bindInstanceData.mock.calls[0][0]).toMatchObject({
+        rotation,
+        scale,
+      });
+    });
+
+    it("draws an entity's sprite before its text", () => {
+      addCameraEntity();
+      const sprite = createRenderable(4);
+      const text = createRenderable(4);
+      const entity = addTextEntity(text.renderable, 0, { glyphs: [glyph] });
+
+      addSpriteComponent(world, entity, createSprite(sprite.renderable));
+
+      world.update();
+
+      expect(sprite.bindInstanceData.mock.invocationCallOrder[0]).toBeLessThan(
+        text.bindInstanceData.mock.invocationCallOrder[0],
+      );
+    });
 
     it('batches text and sprites sharing a renderable into a single draw call', () => {
       addCameraEntity();
@@ -935,16 +1132,16 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable(4);
 
-      addSpriteAt(renderable, { x: 0, y: 2 }, { sortDepth: 2 });
-      addSpriteAt(renderable, { x: -20, y: 0 }, { sortDepth: 0 });
-      addSpriteAt(renderable, { x: 0, y: -2 }, { sortDepth: 1 });
-      addSpriteAt(renderable, { x: 0, y: -20 }, { sortDepth: 3 });
+      addSpriteAt(renderable, { x: 0, y: 2 }, { uvOffset: { x: 2, y: 0 } });
+      addSpriteAt(renderable, { x: -20, y: 0 }, { uvOffset: { x: 0, y: 0 } });
+      addSpriteAt(renderable, { x: 0, y: -2 }, { uvOffset: { x: 1, y: 0 } });
+      addSpriteAt(renderable, { x: 0, y: -20 }, { uvOffset: { x: 3, y: 0 } });
 
       world.update();
 
       expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
-      ).toEqual([1, 2]);
+        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
+      ).toEqual([2, 1]);
     });
 
     it("respects the sprite's rotation", () => {
@@ -957,7 +1154,7 @@ describe('createRenderEcsSystem', () => {
       const upright = addSpriteAt(
         renderable,
         { x: 8, y: 0 },
-        { width: 4, height: 0.2, sortDepth: 1 },
+        { width: 4, height: 0.2, uvOffset: { x: 1, y: 0 } },
       );
 
       addRotationComponent(world, upright, { local: Math.PI / 2 });
@@ -965,8 +1162,8 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
-      ).toEqual([undefined]);
+        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
+      ).toEqual([0]);
     });
 
     it("respects the sprite's scale", () => {
@@ -977,7 +1174,7 @@ describe('createRenderEcsSystem', () => {
       const scaled = addSpriteAt(
         renderable,
         { x: 7.5, y: 0 },
-        { sortDepth: 1 },
+        { uvOffset: { x: 1, y: 0 } },
       );
 
       addScaleComponent(world, scaled, { local: { x: 4, y: 4 } });
@@ -985,7 +1182,7 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
       ).toEqual([1]);
     });
 
@@ -1004,12 +1201,12 @@ describe('createRenderEcsSystem', () => {
       // The view spans x in [96.67, 103.33] and y in [-2.5, 2.5].
       addSpriteAt(renderable, { x: 0, y: 0 });
       addSpriteAt(renderable, { x: 100, y: 3.1 });
-      addSpriteAt(renderable, { x: 103.5, y: 0 }, { sortDepth: 1 });
+      addSpriteAt(renderable, { x: 103.5, y: 0 }, { uvOffset: { x: 1, y: 0 } });
 
       world.update();
 
       expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.sortDepth),
+        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
       ).toEqual([1]);
     });
 

@@ -67,10 +67,15 @@ async function loadHingeSprites(
       layer: renderLayer,
       slices: squareSlices,
     }),
-    pivot: createImageSprite(pivotImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    // On a layer above the bodies, so a pivot shows on top of what turns
+    // around it.
+    pivot: {
+      ...createImageSprite(pivotImage, renderContext, {
+        pixelsPerUnit: 1,
+        layer: renderLayer,
+      }),
+      layer: 1,
+    },
   };
 }
 

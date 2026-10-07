@@ -304,8 +304,8 @@ in the changelog.
 ### 4.7 Rendering
 
 The render system owns one quad geometry per render context. Commands are
-sorted by layer and draw order (see
-[`sprite-draw-order.md`](./sprite-draw-order.md)), and consecutive
+sorted by layer and draw order (`DrawOrderEcsComponent` and hierarchy
+order, landed), and consecutive
 commands with the same material, texture and emissive texture form one
 instanced draw. Different images still need separate draws; what changes
 is that sprites of the same image batch wherever they came from, and

@@ -77,10 +77,14 @@ async function loadCradleSprites(
       pixelsPerUnit: 1,
       layer: renderLayer,
     }),
-    frame: createImageSprite(frameImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    // On a layer above the arms, so the frame covers their tops.
+    frame: {
+      ...createImageSprite(frameImage, renderContext, {
+        pixelsPerUnit: 1,
+        layer: renderLayer,
+      }),
+      layer: 1,
+    },
     arm: createImageSprite(armImage, renderContext, {
       pixelsPerUnit: 1,
       layer: renderLayer,

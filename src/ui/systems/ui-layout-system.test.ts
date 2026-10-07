@@ -484,7 +484,7 @@ describe('createUiLayoutEcsSystem', () => {
     });
   });
 
-  it('writes sprite width/height/pivot/sortDepth for elements with a SpriteEcsComponent, in hierarchy pre-order', () => {
+  it('writes sprite width/height/pivot for elements with a SpriteEcsComponent', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);
     const { canvas } = createTestCanvas(world);
@@ -526,72 +526,6 @@ describe('createUiLayoutEcsSystem', () => {
     expect(panelSprite.pivot).toEqual({ x: 0.5, y: 0.5 });
     expect(labelSprite.width).toBe(300);
     expect(labelSprite.height).toBe(150);
-
-    // canvas root (index 0) -> panel (index 1) -> label (index 2)
-    expect(panelSprite.sortDepth).toBe(1);
-    expect(labelSprite.sortDepth).toBe(2);
-    expect(world.getComponent(panel, rectTransformId)!.sortDepth).toBe(1);
-    expect(world.getComponent(label, rectTransformId)!.sortDepth).toBe(2);
-  });
-
-  it('writes RectTransformEcsComponent.sortDepth even for elements with no sprite or text', () => {
-    const world = new EcsWorld();
-    const renderContext = buildRenderContext(1920, 1080);
-    const { canvas } = createTestCanvas(world);
-
-    const hitRegion = world.createEntity();
-
-    addPositionComponent(world, hitRegion);
-    world.setParent(hitRegion, canvas);
-    addRectTransformComponent(world, hitRegion, UiAnchor.stretchAll());
-
-    world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.update();
-
-    expect(world.getComponent(hitRegion, rectTransformId)!.sortDepth).toBe(1);
-  });
-
-  it('writes sortDepth for a TextEcsComponent child so it draws after its parent panel regardless of world Y', () => {
-    const world = new EcsWorld();
-    const renderContext = buildRenderContext(1920, 1080);
-    const { canvas } = createTestCanvas(world);
-
-    // Anchored to the top edge, so its own position.world.y sits *above*
-    // the centered label's - without a matching sortDepth, this panel would
-    // draw over (hide) its own label under the render system's world-Y sort.
-    const panel = world.createEntity();
-
-    addPositionComponent(world, panel);
-    world.setParent(panel, canvas);
-    addRectTransformComponent(
-      world,
-      panel,
-      UiAnchor.stretchTop({ height: 96 }),
-    );
-    addSpriteComponent(world, panel, {
-      width: 1,
-      height: 1,
-      renderable: buildRenderable(),
-    });
-
-    const label = world.createEntity();
-
-    addPositionComponent(world, label);
-    world.setParent(label, panel);
-    addRectTransformComponent(world, label, UiAnchor.center());
-    addTextComponent(world, label, {
-      text: 'Title',
-      fontAtlas: {} as FontAtlas,
-      size: 32,
-    });
-
-    world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.update();
-
-    const panelSprite = world.getComponent(panel, spriteId)!;
-    const labelText = world.getComponent(label, textId)!;
-
-    expect(labelText.sortDepth).toBeGreaterThan(panelSprite.sortDepth!);
   });
 
   it("syncs TextEcsComponent.maxWidth to the resolved rect's width for a stretch-x anchor, leaving a point anchor's maxWidth untouched", () => {

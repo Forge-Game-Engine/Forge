@@ -79,6 +79,16 @@ export interface CameraDefaultedOptions {
    * `computeCameraView`). Defaults to `10`.
    */
   verticalWorldUnits: number;
+
+  /**
+   * Whether this camera orders sprites and text by height on screen within
+   * a layer and world order, for top-down and isometric views: a higher
+   * world Y draws first, so whatever is lower on screen is in front. Each
+   * root entity's subtree sorts by the root's Y, so a character's sword
+   * stays with the character. Defaults to `false`: sprites draw in
+   * hierarchy order, the right choice for side views and UI.
+   */
+  ySort: boolean;
 }
 
 export interface CameraEcsComponent extends CameraDefaultedOptions {
@@ -115,6 +125,7 @@ const defaultCameraOptions: CameraDefaultedOptions = {
   layer: 0,
   clearColor: Color.transparent,
   verticalWorldUnits: 10,
+  ySort: false,
 };
 
 /**

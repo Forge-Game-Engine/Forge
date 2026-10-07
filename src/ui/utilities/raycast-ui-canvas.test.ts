@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { raycastUiCanvas } from './raycast-ui-canvas.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { addCameraComponent, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  addDrawOrderComponent,
+  addSpriteComponent,
+  Geometry,
+  Material,
+  Renderable,
+  RenderContext,
+} from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
@@ -32,17 +40,15 @@ function buildCanvas(world: EcsWorld): number {
 
 function addElement(
   world: EcsWorld,
-  canvas: number,
-  sortDepth: number,
+  parent: number,
   blocksRaycasts = true,
 ): number {
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  world.setParent(entity, canvas);
+  world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     rect: { min: { x: -50, y: -50 }, max: { x: 50, y: 50 } },
-    sortDepth,
   });
   addUiInteractableComponent(world, entity, { blocksRaycasts });
 
@@ -54,10 +60,10 @@ describe('raycastUiCanvas', () => {
     const world = new EcsWorld();
     const canvas = buildCanvas(world);
 
-    addElement(world, canvas, 1);
-    const top = addElement(world, canvas, 2);
+    addElement(world, canvas);
+    const top = addElement(world, canvas);
 
-    addElement(world, canvas, 3, false);
+    addElement(world, canvas, false);
 
     expect(
       raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
@@ -85,10 +91,62 @@ describe('raycastUiCanvas', () => {
     const canvas = buildCanvas(world);
     const otherCanvas = buildCanvas(world);
 
-    addElement(world, otherCanvas, 1);
+    addElement(world, otherCanvas);
 
     expect(
       raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
     ).toBeNull();
+  });
+
+  it('hits an element raised with a draw order before its later siblings', () => {
+    const world = new EcsWorld();
+    const canvas = buildCanvas(world);
+    const raised = addElement(world, canvas);
+
+    addElement(world, canvas);
+    addDrawOrderComponent(world, raised, { order: 1 });
+
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+    ).toBe(raised);
+  });
+
+  it("hits a child after its parent, and orders a subtree by its root's draw order", () => {
+    const world = new EcsWorld();
+    const canvas = buildCanvas(world);
+    const window = addElement(world, canvas);
+    const button = addElement(world, window);
+
+    addElement(world, canvas);
+    addDrawOrderComponent(world, window, { order: 1 });
+
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+    ).toBe(button);
+  });
+
+  it("hits by the layer of an element's own sprite, and an invisible hit region as layer 0", () => {
+    const world = new EcsWorld();
+    const canvas = buildCanvas(world);
+    const onTopLayer = addElement(world, canvas);
+
+    addElement(world, canvas);
+    addSpriteComponent(world, onTopLayer, {
+      width: 1,
+      height: 1,
+      layer: 1,
+      renderable: new Renderable(
+        {} as Geometry,
+        {} as Material,
+        0,
+        1,
+        () => {},
+        () => {},
+      ),
+    });
+
+    expect(
+      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+    ).toBe(onTopLayer);
   });
 });

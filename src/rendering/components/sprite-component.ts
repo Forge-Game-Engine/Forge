@@ -81,10 +81,11 @@ export interface SpriteDefaultedOptions {
   enabled: boolean;
 
   /**
-   * The draw-order layer for this sprite, relative to other sprites drawn by
-   * the same camera: lower layers are drawn first, so higher layers appear
-   * on top. Sprites in the same layer are then ordered by depth (world Y
-   * position).
+   * The draw-order layer for this sprite, relative to other sprites and
+   * text drawn by the same camera: lower layers are drawn first, so higher
+   * layers appear on top. Within a layer, sprites draw by their entity's
+   * `DrawOrderEcsComponent` and then in hierarchy order (see the rendering
+   * guide).
    */
   layer: number;
 
@@ -105,15 +106,6 @@ export interface SpriteDefaultedOptions {
 
 export interface SpriteEcsComponent
   extends SpriteRequiredOptions, SpriteDefaultedOptions {
-  /**
-   * Overrides the depth this sprite is sorted by within its `layer`, in
-   * place of the default (`position.world.y`). Lower values draw first
-   * (further back). Left `undefined`, sprites sort by world Y as before -
-   * this is a genuinely optional field, not one with a `0` default, since
-   * `0` would silently override world-Y sorting for every sprite.
-   */
-  sortDepth?: number;
-
   /**
    * An additional multiplier applied to `tintColor.a` when computing this
    * sprite's final rendered alpha, on top of (not instead of) the tint's

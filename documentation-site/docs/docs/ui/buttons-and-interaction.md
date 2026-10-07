@@ -90,7 +90,7 @@ own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
 ## Hit testing and drag
 
 `createUiRaycastEcsSystem` scans interactables topmost-first (reverse
-hierarchy order) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
+[draw order](../rendering/draw-order.md)) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
 `isPointerOverUi` - read the latter to gate world interaction ("don't fire
 the weapon when the click landed on the pause button"). An element with
 `blocksRaycasts: false` is transparent to the scan. A captured press that

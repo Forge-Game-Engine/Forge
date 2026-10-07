@@ -18,8 +18,8 @@ import { raycastUiCanvas } from '../utilities/raycast-ui-canvas.js';
  * `createUiInteractionEcsSystem` and by game systems wanting to gate world
  * interaction on "did this click land on the UI".
  *
- * Must be registered after `createUiLayoutEcsSystem` (it reads the rects/
- * sortDepths that system resolves) and before `createUiInteractionEcsSystem`.
+ * Must be registered after `createUiLayoutEcsSystem` (it reads the rects
+ * that system resolves) and before `createUiInteractionEcsSystem`.
  * @param pointerSource - The pointer source hit-tested against.
  * @param renderContext - The render context canvases' cameras render
  * through, used to convert the pointer position.

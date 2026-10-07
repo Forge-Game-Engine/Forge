@@ -60,7 +60,7 @@ const defaultCreatePanelOptions = {
 /**
  * Creates a UI panel: an entity with a `RectTransformEcsComponent` (parented
  * to `parent`) and a `SpriteEcsComponent`. `createUiLayoutEcsSystem` drives
- * the sprite's `width`/`height`/`pivot`/`sortDepth` from the resolved rect
+ * the sprite's `width`/`height`/`pivot` from the resolved rect
  * every frame - the panel always exactly fills its rect.
  * @param world - The ECS world to create the panel entity in.
  * @param parent - The parent entity - a canvas (see `createUiCanvas`) or

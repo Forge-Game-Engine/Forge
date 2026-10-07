@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # Nine-Slice Sprites
@@ -42,7 +42,7 @@ Nothing else changes: the attached sprite is still one
 sprite. The render system
 detects `slices` and draws it as up to nine quads instead of one, entirely
 transparently to the rest of the ECS (position, rotation, scale, flip, and
-layer/depth sorting all work exactly as they do for a normal sprite).
+draw order all work exactly as they do for a normal sprite).
 
 ## Choosing insets
 

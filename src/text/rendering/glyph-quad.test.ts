@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addRotationComponent,
-  addScaleComponent,
   PositionEcsComponent,
   RotationEcsComponent,
 } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
 import { Color } from '../../rendering/color.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { Renderable } from '../../rendering/renderable.js';
@@ -15,10 +12,7 @@ import type {
   TextMeshEcsComponent,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import {
-  buildTextCameraCommands,
-  pushTextRenderCommands,
-} from './glyph-quad.js';
+import { pushTextRenderCommands } from './glyph-quad.js';
 
 const fillRenderable = { category: 1 } as Renderable;
 const effectsRenderable = { category: 1 } as Renderable;
@@ -117,7 +111,7 @@ describe('pushTextRenderCommands', () => {
       null,
     );
 
-    expect(commands[0].layer).toBe(3);
+    expect(commands[0].components.sprite.layer).toBe(3);
     expect(commands[0].components.sprite).toMatchObject({
       width: glyph.size.x,
       height: glyph.size.y,
@@ -308,53 +302,6 @@ describe('pushTextRenderCommands', () => {
     expect(commands[1].renderable).toBe(fillRenderable);
   });
 
-  it("uses the entity's world Y as depth", () => {
-    const commands: RenderCommand[] = [];
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent(),
-      buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
-      null,
-      null,
-    );
-
-    expect(commands[0].depth).toBe(42);
-  });
-
-  it('uses sortDepth instead of world Y when set', () => {
-    const commands: RenderCommand[] = [];
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent({ sortDepth: 3 }),
-      buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
-      null,
-      null,
-    );
-
-    expect(commands[0].depth).toBe(3);
-  });
-
-  it('uses sortDepth for both the effects pass and the fill pass', () => {
-    const commands: RenderCommand[] = [];
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent({ sortDepth: 3, outlineWidth: 2 }),
-      buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
-      null,
-      null,
-    );
-
-    expect(commands).toHaveLength(2);
-    expect(commands[0].depth).toBe(3);
-    expect(commands[1].depth).toBe(3);
-  });
-
   it('passes rotation and scale components through unchanged, and flip as null', () => {
     const commands: RenderCommand[] = [];
     const rotation: RotationEcsComponent = { local: 0, world: 1.5 };
@@ -387,136 +334,20 @@ describe('pushTextRenderCommands', () => {
 
     expect(commands).toHaveLength(0);
   });
-});
 
-describe('buildTextCameraCommands', () => {
-  const position: PositionEcsComponent = {
-    local: { x: 0, y: 0 },
-    world: { x: 0, y: 0 },
-  };
-
-  it('pushes commands for an enabled entity matching the culling mask', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
+  it('scales the effect sizes by the pixel ratio', () => {
     const commands: RenderCommand[] = [];
 
-    buildTextCameraCommands(
-      world,
-      {
-        entities: [entity],
-        components: [
-          [buildTextComponent()],
-          [buildTextMesh([glyph, glyph])],
-          [position],
-        ],
-      },
-      0xffffffff,
+    pushTextRenderCommands(
       commands,
-    );
-
-    expect(commands).toHaveLength(2);
-  });
-
-  it('skips a disabled text entity', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const commands: RenderCommand[] = [];
-
-    buildTextCameraCommands(
-      world,
-      {
-        entities: [entity],
-        components: [
-          [buildTextComponent({ enabled: false })],
-          [buildTextMesh([glyph])],
-          [position],
-        ],
-      },
-      0xffffffff,
-      commands,
-    );
-
-    expect(commands).toHaveLength(0);
-  });
-
-  it("skips text whose mesh renderable category does not match the camera's culling mask", () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const commands: RenderCommand[] = [];
-    const mismatchedRenderable = { category: 0b0001 } as Renderable;
-
-    buildTextCameraCommands(
-      world,
-      {
-        entities: [entity],
-        components: [
-          [buildTextComponent()],
-          [
-            {
-              glyphs: [glyph],
-              bounds: { width: 0, height: 0 },
-              caretStops: [],
-              fillRenderable: mismatchedRenderable,
-              effectsRenderable: mismatchedRenderable,
-            },
-          ],
-          [position],
-        ],
-      },
-      0b0010,
-      commands,
-    );
-
-    expect(commands).toHaveLength(0);
-  });
-
-  it('passes the pixel ratio through to the text effects', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const commands: RenderCommand[] = [];
-
-    buildTextCameraCommands(
-      world,
-      {
-        entities: [entity],
-        components: [
-          [buildTextComponent({ outlineWidth: 1.5 })],
-          [buildTextMesh([glyph])],
-          [position],
-        ],
-      },
-      0xffffffff,
-      commands,
+      buildTextComponent({ outlineWidth: 1.5 }),
+      buildTextMesh([glyph]),
+      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+      null,
+      null,
       2,
     );
 
     expect(commands[0].components.textEffects?.outlineWidth).toBe(3);
-  });
-
-  it("looks up the entity's rotation and scale components from the world", () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const rotation = addRotationComponent(world, entity, { local: 1.5 });
-    const scale = addScaleComponent(world, entity, {
-      local: { x: 2, y: 2 },
-    });
-    const commands: RenderCommand[] = [];
-
-    buildTextCameraCommands(
-      world,
-      {
-        entities: [entity],
-        components: [
-          [buildTextComponent()],
-          [buildTextMesh([glyph])],
-          [position],
-        ],
-      },
-      0xffffffff,
-      commands,
-    );
-
-    expect(commands[0].components.rotation).toBe(rotation);
-    expect(commands[0].components.scale).toBe(scale);
   });
 });

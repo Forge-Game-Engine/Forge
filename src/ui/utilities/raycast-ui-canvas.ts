@@ -23,6 +23,7 @@ import {
 import { findOwningCanvas } from './find-owning-canvas.js';
 import { resolveCanvasGroupState } from './resolve-canvas-group-state.js';
 import { resolveCanvasPointerPosition } from './resolve-canvas-pointer-position.js';
+import { sortByDrawOrder } from './sort-by-draw-order.js';
 
 /**
  * Whether `camera` can actually see `entity` - `true` when `entity` has no
@@ -50,9 +51,8 @@ function isVisibleToCamera(
 /**
  * Finds the topmost `UiInteractableEcsComponent` on `canvasEntity`'s canvas
  * under a pointer position: the canvas's interactables are scanned in
- * reverse hierarchy order (topmost first, by
- * `RectTransformEcsComponent.sortDepth`) for the first whose resolved
- * `rect` contains the position - a linear reverse-depth scan: element
+ * reverse draw order (drawn on top first, see `sortByDrawOrder`), for the
+ * first whose resolved `rect` contains the position - a linear scan: element
  * counts here are in the hundreds, not the hundreds of thousands, so a
  * plain scan is a few microseconds with no acceleration structure to build
  * or invalidate. An element with `blocksRaycasts: false` is transparent to
@@ -105,28 +105,28 @@ export function raycastUiCanvas(
     rectTransformId,
   ]);
 
-  const indices: number[] = [];
+  const candidates: number[] = [];
+  const rectTransformByEntity = new Map<number, RectTransformEcsComponent>();
 
   for (let i = 0; i < entities.length; i++) {
     if (
       interactables[i].blocksRaycasts &&
       findOwningCanvas(world, entities[i]) === canvasEntity
     ) {
-      indices.push(i);
+      candidates.push(entities[i]);
+      rectTransformByEntity.set(entities[i], rectTransforms[i]);
     }
   }
 
-  indices.sort(
-    (a, b) => rectTransforms[b].sortDepth - rectTransforms[a].sortDepth,
-  );
+  sortByDrawOrder(world, candidates);
 
   const camera = world.getComponent<CameraEcsComponent>(
     canvas.camera,
     cameraId,
   );
 
-  for (const index of indices) {
-    const entity = entities[index];
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const entity = candidates[i];
 
     if (
       !isVisibleToCamera(world, entity, camera) ||
@@ -135,7 +135,9 @@ export function raycastUiCanvas(
       continue;
     }
 
-    if (Rects.contains(rectTransforms[index].rect, pointerPosition)) {
+    if (
+      Rects.contains(rectTransformByEntity.get(entity)!.rect, pointerPosition)
+    ) {
       return entity;
     }
   }
