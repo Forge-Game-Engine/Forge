@@ -64,7 +64,7 @@ its last call and clears it:
 const events = entry.takeEvents();
 
 if (events.submitted) {
-  runCommand(entry.value);
+  submitText(entry.value);
   entry.setValue('');
 }
 ```
