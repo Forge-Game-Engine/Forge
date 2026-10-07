@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * The largest `DrawOrderEcsComponent.order` magnitude. Bounding each
@@ -18,7 +19,8 @@ export const maxDrawOrder = 4096;
  * and entities with the same world order draw in hierarchy order (parents
  * before their children, siblings in the order they were parented). So a
  * child at `-1` draws behind every entity at its parent's level, not just
- * behind its parent.
+ * behind its parent. To draw a child just behind its parent, set
+ * `behindParent` instead.
  */
 export interface DrawOrderEcsComponent {
   /**
@@ -26,6 +28,15 @@ export interface DrawOrderEcsComponent {
    * world order.
    */
   order: number;
+
+  /**
+   * Whether the entity, with everything parented under it, comes just
+   * before its parent in hierarchy order instead of after it, so it draws
+   * behind its parent and in front of whatever its parent draws in front
+   * of. Siblings that set it keep their sibling order among themselves. It
+   * has no effect on an entity without a parent.
+   */
+  behindParent: boolean;
 }
 
 /** The component key of {@link DrawOrderEcsComponent}. */
@@ -34,6 +45,7 @@ export const drawOrderId =
 
 const defaultDrawOrderOptions: DrawOrderEcsComponent = {
   order: 0,
+  behindParent: false,
 };
 
 /**
@@ -50,10 +62,10 @@ export function addDrawOrderComponent(
   entity: number,
   options: Partial<DrawOrderEcsComponent> = {},
 ): DrawOrderEcsComponent {
-  const component: DrawOrderEcsComponent = {
-    ...defaultDrawOrderOptions,
-    ...options,
-  };
+  const component: DrawOrderEcsComponent = withDefaults(
+    defaultDrawOrderOptions,
+    options,
+  );
 
   if (
     !Number.isInteger(component.order) ||

@@ -14,7 +14,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
@@ -63,33 +62,33 @@ async function loadCradleSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<CradleSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [ballImage, frameImage, armImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(
+  const [ballTexture, frameTexture, armTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    textureCache.getOrLoad(
       getAssetUrl('img/kenney_puzzle-pack-2/PNG/Paddles/paddle_10.png'),
     ),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: {
-      ...createImageSprite(createTexture(renderContext, ballImage), {
+      ...createImageSprite(ballTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     // On a layer above the arms, so the frame covers their tops.
     frame: {
-      ...createImageSprite(createTexture(renderContext, frameImage), {
+      ...createImageSprite(frameTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
       layer: 1,
     },
     arm: {
-      ...createImageSprite(createTexture(renderContext, armImage), {
+      ...createImageSprite(armTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

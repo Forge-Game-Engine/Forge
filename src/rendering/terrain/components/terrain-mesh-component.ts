@@ -1,6 +1,7 @@
 import { createComponentId } from '../../../ecs/ecs-component.js';
 import { EcsWorld } from '../../../ecs/ecs-world.js';
 import type { TerrainMesh } from '../create-terrain-mesh.js';
+import { withDefaults } from '../../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link TerrainMeshEcsComponent} with no sensible default;
@@ -57,10 +58,10 @@ export function addTerrainMeshComponent(
   entity: number,
   options: TerrainMeshRequiredOptions & Partial<TerrainMeshEcsComponent>,
 ): TerrainMeshEcsComponent {
-  const component: TerrainMeshEcsComponent = {
-    ...defaultTerrainMeshOptions,
-    ...options,
-  };
+  const component: TerrainMeshEcsComponent = withDefaults(
+    defaultTerrainMeshOptions,
+    options,
+  );
 
   return world.addComponent(entity, terrainMeshId, component);
 }

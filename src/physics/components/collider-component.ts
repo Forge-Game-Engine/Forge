@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Collider } from '../colliders/collider.js';
 import { Aabb } from '../types/aabb.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * A collision mask with every bit set: a collider (or ray) with this mask
@@ -107,8 +108,7 @@ export function addColliderComponent(
   };
 
   const component: ColliderEcsComponent = {
-    ...defaultColliderOptions,
-    ...options,
+    ...withDefaults(defaultColliderOptions, options),
     aabb: {
       min: { x: Infinity, y: Infinity },
       max: { x: -Infinity, y: -Infinity },

@@ -90,14 +90,13 @@ argument: the canvas, or another element. A panel is an element that draws
 one sprite:
 
 ```ts
-import {
-  createImageSprite,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
+import { createImageSprite } from '@forge-game-engine/forge/rendering';
 import { createPanel, UiAnchor } from '@forge-game-engine/forge/ui';
 
+const panelTexture = await renderContext.textureCache.getOrLoad('panel.png');
+
 const panelSprite = {
-  ...createImageSprite(createTexture(renderContext, panelImage), {
+  ...createImageSprite(panelTexture, {
     pixelsPerUnit: 1,
     slices: { left: 12, right: 12, top: 12, bottom: 12 },
   }),

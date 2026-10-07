@@ -1,6 +1,7 @@
 import { linear } from '../easing-functions/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Represents the properties of an animated object.
@@ -130,10 +131,10 @@ export function addAnimationComponent(
     animations: [],
   };
 
-  const component: AnimationEcsComponent = {
-    ...defaultAnimationOptions,
-    ...options,
-  };
+  const component: AnimationEcsComponent = withDefaults(
+    defaultAnimationOptions,
+    options,
+  );
 
   return world.addComponent(entity, animationId, component);
 }

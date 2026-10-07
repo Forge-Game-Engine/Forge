@@ -8,7 +8,6 @@ import { degreesToRadians, Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -58,17 +57,17 @@ export async function createCursorEffects(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<CursorEffects> {
-  const [sparkImage, smokeImage] = await Promise.all([
-    renderContext.imageCache.getOrLoad(
+  const [sparkTexture, smokeTexture] = await Promise.all([
+    renderContext.textureCache.getOrLoad(
       getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/star_07.png'),
     ),
-    renderContext.imageCache.getOrLoad(
+    renderContext.textureCache.getOrLoad(
       getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/smoke_05.png'),
     ),
   ]);
 
   const sparkSprite = {
-    ...createImageSprite(createTexture(renderContext, sparkImage), {
+    ...createImageSprite(sparkTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,
@@ -77,7 +76,7 @@ export async function createCursorEffects(
   sparkSprite.tintColor = sparkColor;
 
   const smokeSprite = {
-    ...createImageSprite(createTexture(renderContext, smokeImage), {
+    ...createImageSprite(smokeTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

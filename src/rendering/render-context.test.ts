@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../asset-loading/index.js';
+import { TextureCache } from './texture-cache.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
@@ -57,6 +58,7 @@ describe('RenderContext', () => {
 
       expect(context.shaderCache).toBe(shaderCache);
       expect(context.imageCache).toBe(imageCache);
+      expect(context.textureCache).toBeInstanceOf(TextureCache);
       expect(context.canvas).toBe(canvas);
       expect(context.clearStrategy).toBe(CLEAR_STRATEGY.blank);
       expect(context.gl).toBe(mockGl);

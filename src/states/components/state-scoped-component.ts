@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { GameState } from '../game-state.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link StateScopedEcsComponent} with no sensible default;
@@ -68,10 +69,10 @@ export function addStateScopedComponent<TName extends string>(
   options: StateScopedRequiredOptions<TName> &
     Partial<StateScopedDefaultedOptions<TName>>,
 ): StateScopedEcsComponent<TName> {
-  const component: StateScopedEcsComponent<TName> = {
-    ...defaultStateScopedOptions,
-    ...options,
-  };
+  const component: StateScopedEcsComponent<TName> = withDefaults(
+    defaultStateScopedOptions,
+    options,
+  );
 
   if (
     component.removeOnExit.length === 0 &&

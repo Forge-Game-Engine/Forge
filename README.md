@@ -30,8 +30,8 @@ import { addPositionComponent } from '@forge-game-engine/forge/common';
 
 const { game, world, renderContext } = createGame('game-container');
 
-const image = await renderContext.imageCache.getOrLoad('sprite.png');
-const sprite = createImageSprite(image, renderContext, 0);
+const texture = await renderContext.textureCache.getOrLoad('sprite.png');
+const sprite = createImageSprite(texture);
 
 const entity = world.createEntity();
 

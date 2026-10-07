@@ -6,9 +6,45 @@ sidebar_position: 1
 
 A [`Texture`](/Forge/docs/api/classes/Texture) is an image on the GPU that a
 shader samples: the image a sprite draws, a font atlas, a terrain layer, or
-the color of a render target. A texture is created from an image, canvas,
-`ImageData`, `ImageBitmap` or video frame. The code that creates a texture
-owns it and disposes it.
+the color of a render target. A texture is loaded from an image file
+through the render context's texture cache, or created from an image,
+canvas, `ImageData`, `ImageBitmap` or video frame. The code that creates a
+texture owns it and disposes it; the texture cache owns the textures it
+loads.
+
+## Loading a texture from an image file
+
+[`renderContext.textureCache`](/Forge/docs/api/classes/RenderContext#texturecache)
+loads an image file into a texture:
+
+```ts
+const texture = await renderContext.textureCache.getOrLoad('ship.png');
+```
+
+[`getOrLoad`](/Forge/docs/api/classes/TextureCache#getorload) loads each
+file once. Every request for the same URL gets the same texture, including
+requests made while it's still loading, so sprites drawn from one file
+share a texture and [batch](./sprites.md#batching) into one draw call. The
+image itself loads through the render context's
+[`imageCache`](../asset-loading/loading-images.md). It rejects if the image
+fails to load, and a later request tries again.
+
+Its second argument takes the same [sampling options](#sampling-options)
+as `createTexture`. A file loaded with other options is a second texture:
+
+```ts
+const pixelArtTexture = await renderContext.textureCache.getOrLoad('hero.png', {
+  filter: 'nearest',
+});
+```
+
+Once a texture has loaded,
+[`get(url, options)`](/Forge/docs/api/classes/TextureCache#get) returns it
+synchronously, and throws for one that hasn't.
+
+The texture cache owns its textures, since any number of sprites may draw
+them: calling `update` or `dispose` on one throws. Create a texture with
+`createTexture` to update or dispose it yourself.
 
 ## Creating a texture
 
@@ -18,8 +54,7 @@ to a new texture in the render context:
 ```ts
 import { createTexture } from '@forge-game-engine/forge/rendering';
 
-const image = await renderContext.imageCache.getOrLoad(imageUrl);
-const texture = createTexture(renderContext, image);
+const texture = createTexture(renderContext, sourceCanvas);
 ```
 
 The texture's `width` and `height` are the source's size in texels (an
@@ -37,7 +72,8 @@ Any number of sprites and materials can use one texture.
 
 ## Sampling options
 
-The third argument to `createTexture` sets how the texture is sampled:
+The third argument to `createTexture`, and the second to
+`textureCache.getOrLoad`, sets how the texture is sampled:
 
 - `filter` sets how a texel is chosen between texels. `'linear'` (the
   default) blends neighboring texels, for smooth edges. `'nearest'` picks
@@ -58,7 +94,7 @@ const tiledTexture = createTexture(renderContext, tileImage, {
 ```
 
 A texture's `filter` and `wrap` are fixed when it's created. To sample one
-image two ways, create two textures from it.
+image two ways, create or load two textures from it.
 
 ## Updating a texture
 
@@ -117,6 +153,6 @@ Some textures belong to the engine object that created them, and calling
 - A render target's `colorTexture` belongs to the render target, which
   frees it in its own `dispose` (see
   [Render Targets](./multipass-rendering.md)).
-
-A [font atlas](../text/loading-a-font-atlas.md)'s `texture` belongs to the
-`FontAtlasCache` that loaded it. Don't update or dispose it.
+- A texture loaded through `renderContext.textureCache`, including a
+  [font atlas](../text/loading-a-font-atlas.md)'s `texture`, belongs to
+  the texture cache.

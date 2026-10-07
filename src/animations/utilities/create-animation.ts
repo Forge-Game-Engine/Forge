@@ -1,5 +1,6 @@
 import { Vec2, Vector2 } from '../../math/index.js';
 import { AnimationClip, AnimationFrame } from '../types/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Generates animation frames based on the provided parameters.
@@ -65,10 +66,10 @@ export function createAnimation(
   spritesPerRow: number,
   options?: Partial<AnimationCreationOptions>,
 ): AnimationClip {
-  const { startPositionPercentage, endPositionPercentage } = {
-    ...defaultCreateAnimationSetParams,
-    ...options,
-  };
+  const { startPositionPercentage, endPositionPercentage } = withDefaults(
+    defaultCreateAnimationSetParams,
+    options,
+  );
 
   const numFrames = spritesPerColumn * spritesPerRow;
 

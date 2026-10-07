@@ -551,6 +551,45 @@ describe('createRenderEcsSystem', () => {
       expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 0, 1, 2]);
     });
 
+    it('draws a behindParent child just behind its parent, in front of what its parent is in front of', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+
+      addTaggedSprite(renderable, 0);
+      const ship = addTaggedSprite(renderable, 2);
+      const flame = addTaggedSprite(renderable, 1);
+
+      addTaggedSprite(renderable, 4);
+      world.setParent(flame, ship);
+      addDrawOrderComponent(world, flame, { behindParent: true });
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 4]);
+    });
+
+    it('keeps a behindParent subtree together, and behindParent siblings in sibling order, around the other children', () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+
+      const parent = addTaggedSprite(renderable, 3);
+      const front = addTaggedSprite(renderable, 4);
+      const firstBehind = addTaggedSprite(renderable, 0);
+      const firstBehindChild = addTaggedSprite(renderable, 1);
+      const secondBehind = addTaggedSprite(renderable, 2);
+
+      world.setParent(front, parent);
+      world.setParent(firstBehind, parent);
+      world.setParent(secondBehind, parent);
+      world.setParent(firstBehindChild, firstBehind);
+      addDrawOrderComponent(world, firstBehind, { behindParent: true });
+      addDrawOrderComponent(world, secondBehind, { behindParent: true });
+
+      world.update();
+
+      expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2, 3, 4]);
+    });
+
     it('composes orders through two levels and through a container without a sprite', () => {
       addCameraEntity();
       const { renderable, bindInstanceData } = createRenderable();

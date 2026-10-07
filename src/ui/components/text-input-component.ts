@@ -5,6 +5,7 @@ import type {
   TextEntry,
   TextEntryAttributes,
 } from '../../input/text-entry/text-entry.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * The HTML attributes a text field's hidden input carries (see
@@ -137,8 +138,7 @@ export function addTextInputComponent(
   }
 
   const component: TextInputEcsComponent = {
-    ...defaultTextInputOptions,
-    ...rest,
+    ...withDefaults(defaultTextInputOptions, rest),
     value: options.entry.value,
     isEditing: false,
     onValueChanged: new ParameterizedForgeEvent('textInput.onValueChanged'),

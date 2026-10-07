@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * How a {@link RigidBodyEcsComponent} participates in the simulation:
@@ -79,10 +80,10 @@ export function addRigidBodyComponent(
     type: 'dynamic',
   };
 
-  const component: RigidBodyEcsComponent = {
-    ...defaultRigidBodyOptions,
-    ...options,
-  };
+  const component: RigidBodyEcsComponent = withDefaults(
+    defaultRigidBodyOptions,
+    options,
+  );
 
   return world.addComponent(entity, rigidBodyId, component);
 }

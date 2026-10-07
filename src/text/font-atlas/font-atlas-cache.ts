@@ -1,5 +1,4 @@
 import type { RenderContext } from '../../rendering/render-context.js';
-import { createTexture } from '../../rendering/texture.js';
 import type { FontAtlas } from './font-atlas.js';
 import type { FontAtlasData } from './font-atlas-data.js';
 import { toFontAtlasData } from './font-atlas-file-data.js';
@@ -25,8 +24,8 @@ interface FontAtlasLoad {
 
 /**
  * Loads and caches `FontAtlas`es from a metrics JSON file and its atlas
- * image, keyed by the metrics file's URL. Uploads each atlas image to a
- * texture, which the cache owns.
+ * image, keyed by the metrics file's URL. Each atlas's texture comes from
+ * the render context's `textureCache`, which owns it.
  */
 export class FontAtlasCache {
   private readonly _renderContext: RenderContext;
@@ -36,7 +35,7 @@ export class FontAtlasCache {
   /**
    * Constructs a new instance of the `FontAtlasCache` class.
    * @param renderContext - The render context the atlas textures are
-   * created in. Atlas images load through its `imageCache`.
+   * created in. Atlas textures load through its `textureCache`.
    */
   constructor(renderContext: RenderContext) {
     this._renderContext = renderContext;
@@ -103,25 +102,22 @@ export class FontAtlasCache {
     metricsUrl: string,
     imageUrl: string,
   ): Promise<FontAtlas> {
-    const [data, image] = await Promise.all([
+    // Linear filtering (the default): the MSDF shaders reconstruct the
+    // glyph's edge from distances interpolated between texels.
+    const [data, texture] = await Promise.all([
       loadFontAtlasData(metricsUrl),
-      this._renderContext.imageCache.getOrLoad(imageUrl),
+      this._renderContext.textureCache.getOrLoad(imageUrl),
     ]);
 
     const { width, height } = data.atlasSize;
 
-    if (image.naturalWidth !== width || image.naturalHeight !== height) {
+    if (texture.width !== width || texture.height !== height) {
       throw new Error(
-        `Font atlas image "${imageUrl}" is ${image.naturalWidth}x${image.naturalHeight}, but the metrics at "${metricsUrl}" expect ${width}x${height}. Check that both files come from the same generated atlas.`,
+        `Font atlas image "${imageUrl}" is ${texture.width}x${texture.height}, but the metrics at "${metricsUrl}" expect ${width}x${height}. Check that both files come from the same generated atlas.`,
       );
     }
 
-    // Linear filtering: the MSDF shaders reconstruct the glyph's edge from
-    // distances interpolated between texels.
-    const fontAtlas: FontAtlas = {
-      data,
-      texture: createTexture(this._renderContext, image),
-    };
+    const fontAtlas: FontAtlas = { data, texture };
 
     this._fontAtlases.set(metricsUrl, fontAtlas);
 

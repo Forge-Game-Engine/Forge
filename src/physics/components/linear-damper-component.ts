@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link LinearDamperEcsComponent} with a sensible default;
@@ -61,10 +62,10 @@ export function addLinearDamperComponent(
     localAnchorB: Vec2.zero,
   };
 
-  const component: LinearDamperEcsComponent = {
-    ...defaultOptions,
-    ...options,
-  };
+  const component: LinearDamperEcsComponent = withDefaults(
+    defaultOptions,
+    options,
+  );
 
   return world.addComponent(entity, linearDamperId, component);
 }

@@ -1,3 +1,4 @@
+import { withDefaults } from '../../utilities/with-defaults.js';
 /**
  * The unit a `UiPointAxis.size`/`UiStretchAxis.margin` value is expressed
  * in. `'referencePixels'` (the default) scales with the owning canvas's live
@@ -133,11 +134,10 @@ export const UiAxis = {
    * @returns The point axis.
    */
   point: (anchor: number, options: UiPointAxisOptions = {}): UiPointAxis => {
-    const { size, pivot, sizeUnit } = {
-      ...defaultUiPointAxisOptions,
-      pivot: anchor,
-      ...options,
-    };
+    const { size, pivot, sizeUnit } = withDefaults(
+      { ...defaultUiPointAxisOptions, pivot: anchor },
+      options,
+    );
 
     return { kind: 'point', anchor, pivot, size, sizeUnit };
   },
@@ -152,10 +152,10 @@ export const UiAxis = {
     range: UiStretchAxisRange,
     options: UiStretchAxisOptions = {},
   ): UiStretchAxis => {
-    const { margin, pivot, marginUnit } = {
-      ...defaultUiStretchAxisOptions,
-      ...options,
-    };
+    const { margin, pivot, marginUnit } = withDefaults(
+      defaultUiStretchAxisOptions,
+      options,
+    );
 
     return {
       kind: 'stretch',

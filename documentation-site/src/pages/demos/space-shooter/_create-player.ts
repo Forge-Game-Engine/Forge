@@ -4,7 +4,6 @@ import {
   addSpriteComponent,
   Color,
   createImageSprite,
-  createTexture,
   getCameraView,
   RenderContext,
   SpriteEcsComponent,
@@ -37,11 +36,11 @@ export async function loadPlayerSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<PlayerSprites> {
-  const playerImage = await renderContext.imageCache.getOrLoad(
+  const playerTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/Spaceship_6.png'),
   );
   const playerSprite = {
-    ...createImageSprite(createTexture(renderContext, playerImage), {
+    ...createImageSprite(playerTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,
@@ -57,20 +56,20 @@ export async function loadPlayerSprites(
   // bullets from every other (non-emissive) sprite in the scene (see the
   // "Emissive-driven bloom" and "Authoring an emissive map" sections of
   // the Bloom docs).
-  const bulletImage = await renderContext.imageCache.getOrLoad(
+  const bulletTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/bullet-yellow.png'),
   );
 
-  const bulletEmission = await renderContext.imageCache.getOrLoad(
+  const bulletEmissionTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/bullet_emission.png'),
   );
 
   const bulletSprite = {
-    ...createImageSprite(createTexture(renderContext, bulletImage), {
+    ...createImageSprite(bulletTexture, {
       pixelsPerUnit: 1,
     }),
     emissive: {
-      texture: createTexture(renderContext, bulletEmission),
+      texture: bulletEmissionTexture,
       color: new Color(2, 1.3, 0.3),
     },
     category: renderLayer,

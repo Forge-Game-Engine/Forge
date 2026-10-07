@@ -3,6 +3,7 @@ import { Random } from '../../math/random.js';
 import { Vector2 } from '../../math/vector2.js';
 import { ParticleEmitter } from '../components/particle-emitter.js';
 import { pickParticleCount, spawnParticle } from './spawn-particle.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Options for {@link emitParticleBurst}.
@@ -48,10 +49,10 @@ export function emitParticleBurst(
   random: Random,
   options: EmitParticleBurstOptions = {},
 ): number[] {
-  const { count, rotation } = {
-    ...defaultEmitParticleBurstOptions,
-    ...options,
-  };
+  const { count, rotation } = withDefaults(
+    defaultEmitParticleBurstOptions,
+    options,
+  );
   const particleCount = count ?? pickParticleCount(particleEmitter, random);
 
   const particles: number[] = [];

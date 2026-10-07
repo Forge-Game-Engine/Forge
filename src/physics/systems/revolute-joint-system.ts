@@ -13,6 +13,7 @@ import {
 } from '../joints/resolve-joint-body.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Tuneable coefficients for `createRevoluteJointEcsSystem`'s solver.
@@ -61,10 +62,10 @@ export const createRevoluteJointEcsSystem = (
   time: Time,
   options: Partial<RevoluteJointSystemOptions> = {},
 ): EcsSystem<[RevoluteJointEcsComponent]> => {
-  const resolvedOptions: RevoluteJointSystemOptions = {
-    ...defaultRevoluteJointSystemOptions,
-    ...options,
-  };
+  const resolvedOptions: RevoluteJointSystemOptions = withDefaults(
+    defaultRevoluteJointSystemOptions,
+    options,
+  );
 
   return {
     query: [revoluteJointId],

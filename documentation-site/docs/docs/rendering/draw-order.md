@@ -17,7 +17,9 @@ only orders items the keys before it leave equal:
 3. **Y**, only for a camera with `ySort`: a higher root Y draws first.
 4. **Hierarchy order**: root entities in the order they were created,
    each followed by its children, parents before children and siblings in
-   the order they were parented.
+   the order they were parented. A child with `behindParent` comes just
+   before its parent instead (see
+   [Drawing a child just behind its parent](#drawing-a-child-just-behind-its-parent)).
 
 Every entity has its own place in hierarchy order, so the order is the same
 every frame until one of these four keys changes. An entity's sprite draws
@@ -75,8 +77,8 @@ backwards within its layer:
 ```ts
 import { addDrawOrderComponent } from '@forge-game-engine/forge/rendering';
 
-world.setParent(child, parent);
-addDrawOrderComponent(world, child, { order: -1 });
+world.setParent(background, panel);
+addDrawOrderComponent(world, background, { order: -1 });
 ```
 
 `order` is an integer from `-4096` to `4096`, and it's relative: an
@@ -84,6 +86,22 @@ entity's world order is its own `order` plus its parent's world order. The
 child at `-1` draws behind every entity at its parent's world order, not
 only behind its own parent. An order on an entity without a sprite or text
 moves its whole subtree.
+
+## Drawing a child just behind its parent
+
+A child draws on top of its parent. To draw it behind its parent but in
+front of everything its parent is in front of, such as an engine flame
+behind its ship or a glow behind the orb it surrounds, set `behindParent`:
+
+```ts
+world.setParent(flame, ship);
+addDrawOrderComponent(world, flame, { behindParent: true });
+```
+
+In hierarchy order, the child and its own children come just before their
+parent instead of after it, so the parent's subtree still draws as one
+block. Siblings that all set `behindParent` keep their sibling order among
+themselves. `behindParent` does nothing on a root entity.
 
 ## Sorting by height on screen
 

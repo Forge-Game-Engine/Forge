@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Configures the additive bloom post-process effect for whichever camera
@@ -54,10 +55,10 @@ export function addBloomComponent(
   entity: number,
   options: Partial<BloomEcsComponent> = {},
 ): BloomEcsComponent {
-  const component: BloomEcsComponent = {
-    ...defaultBloomOptions,
-    ...options,
-  };
+  const component: BloomEcsComponent = withDefaults(
+    defaultBloomOptions,
+    options,
+  );
 
   return world.addComponent(entity, bloomId, component);
 }

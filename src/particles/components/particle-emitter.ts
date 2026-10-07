@@ -5,6 +5,7 @@ import {
   SpriteRequiredOptions,
 } from '../../rendering/components/sprite-component.js';
 import { ParticleVelocityOffsetFunction } from './particle-component.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Interface for range values with a min and max value.
@@ -296,10 +297,10 @@ export class ParticleEmitter {
     sprite: ParticleSprite,
     options: Partial<ParticleEmitterOptions> = {},
   ) {
-    const resolvedOptions: ParticleEmitterOptions = {
-      ...defaultOptions,
-      ...options,
-    };
+    const resolvedOptions: ParticleEmitterOptions = withDefaults(
+      defaultOptions,
+      options,
+    );
 
     assertValidOptions(resolvedOptions);
 
@@ -337,10 +338,10 @@ export class ParticleEmitter {
    * negative.
    */
   public setOptions(options: Partial<ParticleEmitterOptions>): void {
-    const resolvedOptions: ParticleEmitterOptions = {
-      ...this,
-      ...options,
-    };
+    const resolvedOptions: ParticleEmitterOptions = withDefaults<
+      ParticleEmitterOptions,
+      Partial<ParticleEmitterOptions>
+    >(this, options);
 
     assertValidOptions(resolvedOptions);
 

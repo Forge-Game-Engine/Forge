@@ -11,7 +11,6 @@ import {
   addVisibilityComponent,
   Color,
   createImageSprite,
-  createTexture,
   RenderContext,
   SpriteEcsComponent,
   VisibilityEcsComponent,
@@ -54,9 +53,9 @@ export async function createRayVisual(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<RayVisual> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const markerImage = await imageCache.getOrLoad(
+  const markerTexture = await textureCache.getOrLoad(
     getAssetUrl('img/blue-circle.png'),
   );
 
@@ -67,7 +66,7 @@ export async function createRayVisual(
     category: renderLayer,
   };
   const markerSprite = {
-    ...createImageSprite(createTexture(renderContext, markerImage), {
+    ...createImageSprite(markerTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

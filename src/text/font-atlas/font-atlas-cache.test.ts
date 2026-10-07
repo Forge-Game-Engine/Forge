@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../../asset-loading/index.js';
 import type { RenderContext } from '../../rendering/render-context.js';
 import { Texture } from '../../rendering/texture.js';
+import { TextureCache } from '../../rendering/texture-cache.js';
 import { CURRENT_FONT_ATLAS_FORMAT_VERSION } from './font-atlas-data.js';
 import type { FontAtlasFileData } from './font-atlas-file-data.js';
 import { FontAtlasCache } from './font-atlas-cache.js';
@@ -69,7 +70,13 @@ function createRenderContext(
     isContextLost: vi.fn(() => false),
   } as unknown as WebGL2RenderingContext;
 
-  return { imageCache, gl } as unknown as RenderContext;
+  const renderContext = { imageCache, gl } as unknown as RenderContext;
+
+  Object.assign(renderContext, {
+    textureCache: new TextureCache(renderContext),
+  });
+
+  return renderContext;
 }
 
 describe('FontAtlasCache', () => {

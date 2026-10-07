@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Represents a single timer task that can execute a callback after a delay.
@@ -80,10 +81,10 @@ export function addTimerComponent(
     tasks: [],
   };
 
-  const component: TimerEcsComponent = {
-    ...defaultTimerOptions,
-    ...options,
-  };
+  const component: TimerEcsComponent = withDefaults(
+    defaultTimerOptions,
+    options,
+  );
 
   return world.addComponent(entity, TimerId, component);
 }

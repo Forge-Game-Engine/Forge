@@ -1,7 +1,7 @@
 /**
  * The four directions `createUiNavigationEcsSystem` can move focus in,
- * derived from a canvas's `navigateInput` each time its magnitude crosses
- * `navigationThreshold`.
+ * derived from each of a canvas's `navigateInput` presses (see
+ * `Axis2dAction.presses`).
  */
 export const uiNavigationDirections = {
   up: 'up',

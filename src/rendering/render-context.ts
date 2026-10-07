@@ -15,6 +15,7 @@ import { RenderTarget } from './render-target.js';
 import type { ForgeShaderSource } from './shaders/pre-processing/forge-shader-source.js';
 import { ShaderCache } from './shaders/pre-processing/dependency-resolution/shader-cache.js';
 import type { Texture } from './texture.js';
+import { TextureCache } from './texture-cache.js';
 import { createShaderCache, getDevicePixelRatio } from './utilities/index.js';
 
 /**
@@ -60,6 +61,13 @@ export class RenderContext implements Resizable {
    * The image cache containing loaded images.
    */
   public readonly imageCache: ImageCache;
+
+  /**
+   * The texture cache, which loads each image file into a texture once so
+   * sprites drawn from the same file share a texture. Its images load
+   * through `imageCache`.
+   */
+  public readonly textureCache: TextureCache;
 
   /** The canvas element associated with the render context. */
   public readonly canvas: HTMLCanvasElement;
@@ -132,6 +140,7 @@ export class RenderContext implements Resizable {
 
     this.shaderCache = shaderCache;
     this.imageCache = imageCache;
+    this.textureCache = new TextureCache(this);
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;
     this._maxPixelRatio = maxPixelRatio;

@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { UiAlignment, uiAlignments } from '../types/ui-alignment.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Inset, in reference pixels, between a layout group's own resolved rect and
@@ -121,7 +122,7 @@ export function addHorizontalLayoutGroupComponent(
   entity: number,
   options: Partial<UiAxisLayoutGroupDefaultedOptions> = {},
 ): UiAxisLayoutGroupEcsComponent {
-  const merged = { ...defaultUiAxisLayoutGroupOptions, ...options };
+  const merged = withDefaults(defaultUiAxisLayoutGroupOptions, options);
   const component: UiAxisLayoutGroupEcsComponent = {
     ...merged,
     padding: clonePadding(merged.padding),
@@ -150,7 +151,7 @@ export function addVerticalLayoutGroupComponent(
   entity: number,
   options: Partial<UiAxisLayoutGroupDefaultedOptions> = {},
 ): UiAxisLayoutGroupEcsComponent {
-  const merged = { ...defaultUiAxisLayoutGroupOptions, ...options };
+  const merged = withDefaults(defaultUiAxisLayoutGroupOptions, options);
   const component: UiAxisLayoutGroupEcsComponent = {
     ...merged,
     padding: clonePadding(merged.padding),
@@ -326,7 +327,10 @@ export function addGridLayoutGroupComponent(
   // this merge doesn't collapse `options`'s own `UiGridLayoutGroupConstraintFields`
   // union into a single flat (and therefore wrong) shape.
   const commonOptions: Partial<GridLayoutGroupCommonDefaultedOptions> = options;
-  const common = { ...defaultGridLayoutGroupCommonOptions, ...commonOptions };
+  const common = withDefaults(
+    defaultGridLayoutGroupCommonOptions,
+    commonOptions,
+  );
 
   const constraintFields: ResolvedGridLayoutGroupConstraintFields =
     hasFixedGridCountConstraint(options)

@@ -2,7 +2,6 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   createImageSprite,
-  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -27,12 +26,12 @@ export async function createAsteroidSpawner(
 ): Promise<void> {
   const asteroidSprites = await Promise.all(
     asteroidImagePaths.map(async (imagePath) => {
-      const image = await renderContext.imageCache.getOrLoad(
+      const texture = await renderContext.textureCache.getOrLoad(
         getAssetUrl(imagePath),
       );
 
       return {
-        ...createImageSprite(createTexture(renderContext, image), {
+        ...createImageSprite(texture, {
           pixelsPerUnit: 1,
         }),
         category: renderLayer,

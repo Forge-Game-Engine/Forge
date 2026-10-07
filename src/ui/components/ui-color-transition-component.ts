@@ -6,6 +6,7 @@ import {
   UiInteractionVisualState,
   uiInteractionVisualStates,
 } from '../types/ui-interaction-visual-state.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiColorTransitionEcsComponent} with a sensible default;
@@ -91,7 +92,7 @@ export function addUiColorTransitionComponent(
     easing: linear,
   };
 
-  const merged = { ...defaultUiColorTransitionOptions, ...options };
+  const merged = withDefaults(defaultUiColorTransitionOptions, options);
 
   const component: UiColorTransitionEcsComponent = {
     ...merged,

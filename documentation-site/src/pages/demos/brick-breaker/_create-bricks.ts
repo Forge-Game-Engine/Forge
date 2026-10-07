@@ -14,10 +14,10 @@ import {
   addSpriteComponent,
   createImageSprite,
   createSpriteMaterial,
-  createTexture,
   ForgeShaderSource,
   RenderContext,
   SpriteEcsComponent,
+  Texture,
 } from '@forge-game-engine/forge/rendering';
 import { PlayArea } from './_create-boundaries';
 import { brickId } from './_brick.component';
@@ -83,7 +83,7 @@ export interface BrickField {
  * Creates a brick sprite that reuses the default sprite vertex shader, but
  * renders with a custom fragment shader, so different rows of bricks can
  * have their own look (e.g. shiny, flaming).
- * @param image - The brick image to use as the sprite's texture.
+ * @param texture - The brick texture to draw the sprite with.
  * @param renderContext - The render context used to build the material.
  * @param layer - The render layer the sprite should be drawn on.
  * @param fragmentShaderSource - The raw source of the custom fragment shader.
@@ -91,7 +91,7 @@ export interface BrickField {
  * @returns The created sprite.
  */
 function createBrickSprite(
-  image: HTMLImageElement,
+  texture: Texture,
   renderContext: RenderContext,
   layer: number,
   fragmentShaderSource: string,
@@ -104,8 +104,6 @@ function createBrickSprite(
   const material = createSpriteMaterial(renderContext, fragmentShaderName);
 
   material.setUniform('u_time', 0);
-
-  const texture = createTexture(renderContext, image, { filter: 'nearest' });
 
   return {
     ...createImageSprite(texture, { pixelsPerUnit: 1 }),
@@ -133,7 +131,9 @@ export async function createBrickField(
     brickRows.map(
       async ({ imagePath, fragmentShaderSource, fragmentShaderName }) =>
         createBrickSprite(
-          await renderContext.imageCache.getOrLoad(getAssetUrl(imagePath)),
+          await renderContext.textureCache.getOrLoad(getAssetUrl(imagePath), {
+            filter: 'nearest',
+          }),
           renderContext,
           renderLayer,
           fragmentShaderSource,

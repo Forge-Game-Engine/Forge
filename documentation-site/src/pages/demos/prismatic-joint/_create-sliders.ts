@@ -16,7 +16,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -100,29 +99,29 @@ async function loadSliderSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<SliderSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [ballImage, blockImage, dotImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/space-shooter/meteor_small.png')),
+  const [ballTexture, blockTexture, dotTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    textureCache.getOrLoad(getAssetUrl('img/space-shooter/meteor_small.png')),
   ]);
 
   return {
     ball: {
-      ...createImageSprite(createTexture(renderContext, ballImage), {
+      ...createImageSprite(ballTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     block: {
-      ...createImageSprite(createTexture(renderContext, blockImage), {
+      ...createImageSprite(blockTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     dot: {
-      ...createImageSprite(createTexture(renderContext, dotImage), {
+      ...createImageSprite(dotTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

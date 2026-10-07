@@ -12,6 +12,7 @@ export * from './color.js';
 export * from './render-context.js';
 export * from './render-target.js';
 export * from './texture.js';
+export * from './texture-cache.js';
 export * from './ping-pong-target.js';
 export * from './fullscreen-pass.js';
 export * from './terrain/index.js';

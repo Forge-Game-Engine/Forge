@@ -15,7 +15,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -50,23 +49,23 @@ async function loadHingeSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<HingeSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [ballImage, doorImage, pivotImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+  const [ballTexture, doorTexture, pivotTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
   return {
     ball: {
-      ...createImageSprite(createTexture(renderContext, ballImage), {
+      ...createImageSprite(ballTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     door: {
-      ...createImageSprite(createTexture(renderContext, doorImage), {
+      ...createImageSprite(doorTexture, {
         pixelsPerUnit: 1,
         slices: squareSlices,
       }),
@@ -75,7 +74,7 @@ async function loadHingeSprites(
     // On a layer above the bodies, so a pivot shows on top of what turns
     // around it.
     pivot: {
-      ...createImageSprite(createTexture(renderContext, pivotImage), {
+      ...createImageSprite(pivotTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

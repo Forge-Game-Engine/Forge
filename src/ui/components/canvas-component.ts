@@ -4,6 +4,7 @@ import { Axis2dAction, TriggerAction } from '../../input/index.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { uiCanvasRenderModes } from '../types/ui-canvas-render-mode.js';
 import { UiScaleMode, uiScaleModes } from '../types/ui-scale-mode.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * `AddCanvasComponentOptions`/`CanvasEcsComponent` fields specific to a
@@ -57,9 +58,9 @@ export interface CanvasInputOptions {
 
   /**
    * The action that moves this canvas's focus between interactable
-   * elements, read by `createUiNavigationEcsSystem`. A step is taken on the
-   * tick the dominant axis first crosses `navigationThreshold`, not every
-   * tick the stick is held over.
+   * elements, read by `createUiNavigationEcsSystem`. Each of its `presses`
+   * moves focus one step, so holding the stick or key past the threshold is
+   * one step, and a quick tap between two frames still is.
    */
   navigateInput?: Axis2dAction;
 }
@@ -122,17 +123,6 @@ export type CanvasEcsComponent = (
      * mouse). Read-only to callers.
      */
     focusedEntity: number | null;
-
-    /**
-     * Whether `navigateInput`'s magnitude was already past
-     * `createUiNavigationEcsSystem`'s navigation threshold as of the last
-     * tick - the edge-detection state behind "a step is taken on the tick
-     * the stick first crosses the threshold, not every tick it's held past
-     * it." Lives here (rather than in the system itself) so it's ordinary,
-     * serializable component state instead of memory private to one system
-     * instance. System-owned, read-only to callers.
-     */
-    wasNavigateInputBeyondThreshold: boolean;
   };
 
 export const canvasId = createComponentId<CanvasEcsComponent>('canvas');
@@ -171,15 +161,13 @@ export function addCanvasComponent(
     isPointerOverUi: false,
     hoveredEntity: null,
     focusedEntity: null,
-    wasNavigateInputBeyondThreshold: false,
   };
 
   const component: CanvasEcsComponent =
     options.renderMode === uiCanvasRenderModes.worldSpace
       ? { ...options, ...runtimeState }
       : {
-          ...defaultScreenSpaceCanvasFields,
-          ...options,
+          ...withDefaults(defaultScreenSpaceCanvasFields, options),
           renderMode: uiCanvasRenderModes.screenSpace,
           ...runtimeState,
         };

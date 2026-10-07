@@ -4,6 +4,7 @@ import {
   TONE_MAPPING_OPERATOR,
   TONE_MAPPING_OPERATOR_KEYS,
 } from '../enums/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Configures the tone mapping post-process pass for whichever camera entity
@@ -47,10 +48,10 @@ export function addToneMappingComponent(
   entity: number,
   options: Partial<ToneMappingEcsComponent> = {},
 ): ToneMappingEcsComponent {
-  const component: ToneMappingEcsComponent = {
-    ...defaultToneMappingOptions,
-    ...options,
-  };
+  const component: ToneMappingEcsComponent = withDefaults(
+    defaultToneMappingOptions,
+    options,
+  );
 
   return world.addComponent(entity, toneMappingId, component);
 }

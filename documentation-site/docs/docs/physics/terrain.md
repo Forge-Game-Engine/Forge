@@ -132,19 +132,12 @@ below it.
 
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
-import {
-  Color,
-  createTerrainMesh,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
+import { Color, createTerrainMesh } from '@forge-game-engine/forge/rendering';
 
-const borderImage = await renderContext.imageCache.getOrLoad('border.png');
-const fillImage = await renderContext.imageCache.getOrLoad('fill.png');
-
-const borderTexture = createTexture(renderContext, borderImage, {
-  wrap: 'repeat',
-});
-const fillTexture = createTexture(renderContext, fillImage, { wrap: 'repeat' });
+const [borderTexture, fillTexture] = await Promise.all([
+  renderContext.textureCache.getOrLoad('border.png', { wrap: 'repeat' }),
+  renderContext.textureCache.getOrLoad('fill.png', { wrap: 'repeat' }),
+]);
 
 const mesh = createTerrainMesh(renderContext, {
   curvePoints,

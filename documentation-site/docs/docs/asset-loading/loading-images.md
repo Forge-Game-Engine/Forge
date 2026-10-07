@@ -17,26 +17,28 @@ const { imageCache } = renderContext;
 
 [`getOrLoad(path)`](/Forge/docs/api/classes/ImageCache#getorload) returns
 the cached image for `path`, loading it first if it isn't cached. It
-rejects if the image fails to load. A sprite draws a
-[texture](../rendering/textures.md), so upload the image to one with
-`createTexture`:
+rejects if the image fails to load:
 
 ```ts
-import {
-  createImageSprite,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
-
 const playerImage = await imageCache.getOrLoad('player.png');
-const playerTexture = createTexture(renderContext, playerImage);
+```
+
+A sprite draws a [texture](../rendering/textures.md), not an image. Load
+an image file straight into a texture with the render context's
+[texture cache](../rendering/textures.md#loading-a-texture-from-an-image-file),
+which loads the image through this cache and gives every sprite drawn from
+the same file the same texture:
+
+```ts
+import { createImageSprite } from '@forge-game-engine/forge/rendering';
+
+const playerTexture = await renderContext.textureCache.getOrLoad('player.png');
 const playerSprite = createImageSprite(playerTexture);
 ```
 
-The cache holds images, not textures: each `createTexture` call creates a
-new texture. Create one texture per image and share it between the sprites
-that draw it, so they [batch](../rendering/sprites.md#batching) into one
-draw call. [Sprites](../rendering/sprites.md) covers creating sprites from
-a texture.
+Use the image cache directly for an image that isn't drawn as a texture,
+for example one drawn into a canvas. [Sprites](../rendering/sprites.md)
+covers creating sprites from a texture.
 
 ## Preloading images
 
@@ -79,5 +81,5 @@ The cache keeps each image until it's deleted from its `assets` map:
 imageCache.assets.delete('player.png');
 ```
 
-Textures created from the image are separate objects and aren't affected;
-[dispose](../rendering/textures.md#disposing-a-texture) them separately.
+Textures created or loaded from the image are separate objects and aren't
+affected.

@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Shows or hides an entity together with everything parented under it.
@@ -38,10 +39,10 @@ export function addVisibilityComponent(
   entity: number,
   options: Partial<VisibilityEcsComponent> = {},
 ): VisibilityEcsComponent {
-  const component: VisibilityEcsComponent = {
-    ...defaultVisibilityOptions,
-    ...options,
-  };
+  const component: VisibilityEcsComponent = withDefaults(
+    defaultVisibilityOptions,
+    options,
+  );
 
   return world.addComponent(entity, visibilityId, component);
 }

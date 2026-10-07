@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { clamp, lerp } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiSliderEcsComponent} with no sensible default; callers
@@ -84,7 +85,7 @@ export function addUiSliderComponent(
   entity: number,
   options: UiSliderRequiredOptions & Partial<UiSliderDefaultedOptions>,
 ): UiSliderEcsComponent {
-  const merged = { ...defaultUiSliderOptions, ...options };
+  const merged = withDefaults(defaultUiSliderOptions, options);
   const value = clamp(
     options.value ?? merged.minValue,
     merged.minValue,

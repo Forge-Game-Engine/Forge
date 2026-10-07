@@ -15,7 +15,6 @@ import {
   createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
-  createTexture,
   getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
@@ -41,11 +40,11 @@ export const createSensorsGame = async (): Promise<Game> => {
 
   await createScene(world, camera, renderContext, renderLayers.foreground);
 
-  const ballImage = await renderContext.imageCache.getOrLoad(
+  const ballTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/White_Circle.png'),
   );
   const ballSprite = {
-    ...createImageSprite(createTexture(renderContext, ballImage), {
+    ...createImageSprite(ballTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayers.foreground,

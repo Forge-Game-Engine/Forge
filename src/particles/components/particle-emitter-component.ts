@@ -2,6 +2,7 @@ import { ParticleEmitter } from './particle-emitter.js';
 
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * ECS-style component interface for the particle emitter.
@@ -31,10 +32,10 @@ export function addParticleEmitterComponent(
     emitters: new Map(),
   };
 
-  const component: ParticleEmitterEcsComponent = {
-    ...defaultParticleEmitterOptions,
-    ...options,
-  };
+  const component: ParticleEmitterEcsComponent = withDefaults(
+    defaultParticleEmitterOptions,
+    options,
+  );
 
   return world.addComponent(entity, ParticleEmitterId, component);
 }

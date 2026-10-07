@@ -18,6 +18,7 @@ import {
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Tuneable coefficients for `createCollisionResolutionEcsSystem`'s solver.
@@ -118,10 +119,10 @@ export const createCollisionResolutionEcsSystem = (
   time: Time,
   options: Partial<CollisionResolutionOptions> = {},
 ): EcsSystem<[]> => {
-  const resolvedOptions: CollisionResolutionOptions = {
-    ...defaultCollisionResolutionOptions,
-    ...options,
-  };
+  const resolvedOptions: CollisionResolutionOptions = withDefaults(
+    defaultCollisionResolutionOptions,
+    options,
+  );
 
   return {
     query: [],

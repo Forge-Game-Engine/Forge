@@ -21,7 +21,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { ballId } from './_ball.component';
@@ -77,11 +76,11 @@ export async function createBall(
   playAreaWidth: number,
   random: Random,
 ): Promise<void> {
-  const ballImage = await renderContext.imageCache.getOrLoad(
+  const ballTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/brick-breaker/ball.png'),
   );
   const ballSprite = {
-    ...createImageSprite(createTexture(renderContext, ballImage), {
+    ...createImageSprite(ballTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

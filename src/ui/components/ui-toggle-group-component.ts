@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiToggleGroupEcsComponent} with a sensible default;
@@ -43,10 +44,10 @@ export function addUiToggleGroupComponent(
   entity: number,
   options: Partial<UiToggleGroupDefaultedOptions> = {},
 ): UiToggleGroupEcsComponent {
-  const component: UiToggleGroupEcsComponent = {
-    ...defaultUiToggleGroupOptions,
-    ...options,
-  };
+  const component: UiToggleGroupEcsComponent = withDefaults(
+    defaultUiToggleGroupOptions,
+    options,
+  );
 
   return world.addComponent(entity, uiToggleGroupId, component);
 }

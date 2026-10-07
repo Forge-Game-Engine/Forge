@@ -54,10 +54,9 @@ import { addPositionComponent } from '@forge-game-engine/forge/common';
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
-const texture = createTexture(renderContext, image);
+const texture = await renderContext.textureCache.getOrLoad('ship.png');
 const spriteOptions = createImageSprite(texture, { pixelsPerUnit: 32 });
 
 const entity = world.createEntity();
@@ -91,7 +90,7 @@ For a texture that holds several frames, pass the size of one frame in
 texels as `frameDimensions`:
 
 ```ts
-const sheetTexture = createTexture(renderContext, sheetImage, {
+const sheetTexture = await renderContext.textureCache.getOrLoad('hero.png', {
   filter: 'nearest',
 });
 
@@ -189,12 +188,12 @@ tinted texture. `tintColor` doesn't affect it. Set the sprite's `emissive`
 to a texture and a color:
 
 ```ts
-import { Color, createTexture } from '@forge-game-engine/forge/rendering';
+import { Color } from '@forge-game-engine/forge/rendering';
 
 addSpriteComponent(world, entity, {
   ...spriteOptions,
   emissive: {
-    texture: createTexture(renderContext, emissiveImage),
+    texture: await renderContext.textureCache.getOrLoad('ship-emissive.png'),
     color: new Color(4, 1.2, 3, 1),
   },
 });

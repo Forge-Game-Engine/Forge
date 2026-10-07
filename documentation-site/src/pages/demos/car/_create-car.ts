@@ -21,7 +21,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -277,22 +276,22 @@ async function loadCarSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<CarSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [chassisImage, wheelImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/car/car-body.png')),
-    imageCache.getOrLoad(getAssetUrl('img/car/car-wheel.png')),
+  const [chassisTexture, wheelTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/car/car-body.png')),
+    textureCache.getOrLoad(getAssetUrl('img/car/car-wheel.png')),
   ]);
 
   return {
     chassis: {
-      ...createImageSprite(createTexture(renderContext, chassisImage), {
+      ...createImageSprite(chassisTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     wheel: {
-      ...createImageSprite(createTexture(renderContext, wheelImage), {
+      ...createImageSprite(wheelTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

@@ -5,6 +5,7 @@ import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
 import type { Texture } from '../texture.js';
 import type { TerrainCurvePoint } from './terrain-curve.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Texture and tiling options for one of a terrain mesh's two texture
@@ -199,7 +200,10 @@ export function createTerrainMesh(
 ): TerrainMesh {
   const { curvePoints, depth, position, angle, border, fill, borderWidth } =
     options;
-  const { borderBlend } = { ...defaultCreateTerrainMeshOptions, ...options };
+  const { borderBlend } = withDefaults(
+    defaultCreateTerrainMeshOptions,
+    options,
+  );
   const { shaderCache } = renderContext;
 
   const bottomY =

@@ -23,7 +23,6 @@ describe('addCanvasComponent', () => {
       isPointerOverUi: false,
       hoveredEntity: null,
       focusedEntity: null,
-      wasNavigateInputBeyondThreshold: false,
     });
     expect(world.getComponent(entity, canvasId)).toBe(component);
   });

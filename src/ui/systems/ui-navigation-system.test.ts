@@ -85,6 +85,12 @@ describe('createUiNavigationEcsSystem', () => {
     inputManager.setAxis2dInput(testSource, action, x, y);
   };
 
+  /** Runs one frame, ending it the way `registerInputs`' reset system does. */
+  const tick = (world: EcsWorld): void => {
+    world.update();
+    inputManager.reset();
+  };
+
   /** Presses and releases a button bound to `action` on a test input source. */
   const press = (action: TriggerAction): void => {
     const binding = { action, moment: buttonMoments.down, displayText: '' };
@@ -103,7 +109,7 @@ describe('createUiNavigationEcsSystem', () => {
     interactable.wasInvokedThisFrame = true;
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(interactable.wasInvokedThisFrame).toBe(false);
   });
@@ -118,7 +124,7 @@ describe('createUiNavigationEcsSystem', () => {
     navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(first);
   });
@@ -134,7 +140,7 @@ describe('createUiNavigationEcsSystem', () => {
     navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(second);
   });
@@ -149,18 +155,61 @@ describe('createUiNavigationEcsSystem', () => {
     world.addSystem(createUiNavigationEcsSystem());
 
     navigate(navigateInput, 1, 0);
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(left);
 
     // Return to neutral, then press right again - a held stick shouldn't
     // repeat-move every tick, only on a fresh crossing of the threshold.
     navigate(navigateInput, 0, 0);
-    world.update();
+    tick(world);
     navigate(navigateInput, 1, 0);
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
+  });
+
+  it('moves focus for a press released before the next tick', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const left = createButtonAt(world, canvas, { x: -200, y: 0 });
+    const right = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.getComponent(canvas, canvasId)!.focusedEntity = left;
+
+    navigate(navigateInput, 1, 0);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
+  });
+
+  it('takes one step per press, in each press direction, when several land in one tick', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const left = createButtonAt(world, canvas, { x: -200, y: 0 });
+    const middle = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const right = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.getComponent(canvas, canvasId)!.focusedEntity = left;
+
+    navigate(navigateInput, 1, 0);
+    navigate(navigateInput, 0, 0);
+    navigate(navigateInput, 1, 0);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
+
+    navigate(navigateInput, -1, 0);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(middle);
   });
 
   it('does not move focus again while navigateInput stays held past the threshold', () => {
@@ -173,9 +222,9 @@ describe('createUiNavigationEcsSystem', () => {
     world.addSystem(createUiNavigationEcsSystem());
 
     navigate(navigateInput, 1, 0);
-    world.update();
-    world.update();
-    world.update();
+    tick(world);
+    tick(world);
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(left);
   });
@@ -197,7 +246,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.addSystem(createUiNavigationEcsSystem());
 
     navigate(navigateInput, 1, 0);
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(
       overrideTarget,
@@ -223,7 +272,7 @@ describe('createUiNavigationEcsSystem', () => {
     press(submitInput);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(activations).toBe(1);
     expect(interactable.wasInvokedThisFrame).toBe(true);
@@ -247,7 +296,7 @@ describe('createUiNavigationEcsSystem', () => {
     press(submitInput);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(activations).toBe(0);
   });
@@ -264,7 +313,7 @@ describe('createUiNavigationEcsSystem', () => {
     navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(enabled);
   });
@@ -282,7 +331,7 @@ describe('createUiNavigationEcsSystem', () => {
     navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(beyond);
   });
@@ -301,7 +350,7 @@ describe('createUiNavigationEcsSystem', () => {
     navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
   });
@@ -326,7 +375,7 @@ describe('createUiNavigationEcsSystem', () => {
     press(submitInput);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBeNull();
     expect(interactable.isFocused).toBe(false);
@@ -346,7 +395,7 @@ describe('createUiNavigationEcsSystem', () => {
     press(cancelInput);
 
     world.addSystem(createUiNavigationEcsSystem());
-    world.update();
+    tick(world);
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBeNull();
     expect(interactable.isFocused).toBe(false);

@@ -17,7 +17,6 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -152,11 +151,11 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
   };
   toggleBoxSprite.tintColor = boxColor;
 
-  const crossImage = await renderContext.imageCache.getOrLoad(
+  const crossTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/space-shooter/icon_crossSmall.png'),
   );
   const crossSprite = {
-    ...createImageSprite(createTexture(renderContext, crossImage), {
+    ...createImageSprite(crossTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayers.ui,
