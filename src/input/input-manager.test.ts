@@ -202,6 +202,25 @@ describe('InputManager', () => {
       manager.addAxis2dActions(axis2d);
     });
 
+    it("records a 2D axis press that is released before the frame ends, until the frame's reset", () => {
+      manager.setAxis2dInput(keyboard, axis2d, 0, -1);
+      manager.setAxis2dInput(keyboard, axis2d, 0, 0);
+
+      expect(axis2d.value).toEqual({ x: 0, y: 0 });
+      expect(axis2d.presses).toEqual([{ x: 0, y: -1 }]);
+
+      manager.reset();
+
+      expect(axis2d.presses).toEqual([]);
+    });
+
+    it('records no press for an axis whose group is inactive', () => {
+      manager.setActiveGroup(group2);
+      manager.setAxis2dInput(keyboard, axis2d, 0, -1);
+
+      expect(axis2d.presses).toEqual([]);
+    });
+
     it('keeps a reported value across frames until the source reports another', () => {
       manager.setAxis1dInput(keyboard, axis1d, 1);
       manager.setAxis2dInput(keyboard, axis2d, 0, 1);

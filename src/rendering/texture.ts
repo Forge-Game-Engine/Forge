@@ -3,6 +3,8 @@ import {
   unregisterGpuResource,
 } from './gpu-resource-registry.js';
 import type { RenderContext } from './render-context.js';
+import { defaultTextureOptions } from './default-texture-options.js';
+import { withDefaults } from '../utilities/with-defaults.js';
 
 /**
  * How a texture is sampled between texels: `'linear'` blends neighboring
@@ -29,11 +31,6 @@ export interface TextureOptions {
   /** What the texture returns outside `[0, 1]`. Defaults to `'clamp'`. */
   wrap: TextureWrap;
 }
-
-const defaultTextureOptions: TextureOptions = {
-  filter: 'linear',
-  wrap: 'clamp',
-};
 
 /**
  * An image on the GPU, sampled by a shader through a `sampler2D` uniform: a
@@ -85,7 +82,7 @@ export class Texture {
     renderContext: RenderContext,
     options: Partial<TextureOptions> = {},
   ) {
-    const { filter, wrap } = { ...defaultTextureOptions, ...options };
+    const { filter, wrap } = withDefaults(defaultTextureOptions, options);
 
     this.renderContext = renderContext;
     this.filter = filter;

@@ -8,6 +8,7 @@ import {
 } from '../nine-slice-options.js';
 import type { SpriteMaterial } from '../materials/sprite-material.js';
 import type { Texture } from '../texture.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link SpriteEcsComponent} with no sensible default; callers
@@ -190,10 +191,10 @@ export function addSpriteComponent(
     layer: 0,
   };
 
-  const component: SpriteEcsComponent = {
-    ...defaultSpriteOptions,
-    ...options,
-  };
+  const component: SpriteEcsComponent = withDefaults(
+    defaultSpriteOptions,
+    options,
+  );
 
   // Systems write these vectors in place per entity (the sprite animation
   // system writes each entity's frame into `uvOffset`, UI layout writes

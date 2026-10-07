@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * How `AspectRatioFitterEcsComponent` keeps `aspectRatio`:
@@ -59,10 +60,10 @@ export function addAspectRatioFitterComponent(
   entity: number,
   options: Partial<AspectRatioFitterEcsComponent> = {},
 ): AspectRatioFitterEcsComponent {
-  const component: AspectRatioFitterEcsComponent = {
-    ...defaultAspectRatioFitterOptions,
-    ...options,
-  };
+  const component: AspectRatioFitterEcsComponent = withDefaults(
+    defaultAspectRatioFitterOptions,
+    options,
+  );
 
   return world.addComponent(entity, aspectRatioFitterId, component);
 }

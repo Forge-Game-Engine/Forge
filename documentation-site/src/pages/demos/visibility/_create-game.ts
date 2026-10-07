@@ -35,7 +35,6 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createTexture,
   getCameraView,
   RenderContext,
   SpriteEcsComponent,
@@ -219,11 +218,11 @@ export const createVisibilityGame = async (): Promise<Game> => {
     navigateInput,
   });
 
-  const panelImage = await renderContext.imageCache.getOrLoad(
+  const panelTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = {
-    ...createImageSprite(createTexture(renderContext, panelImage), {
+    ...createImageSprite(panelTexture, {
       pixelsPerUnit: 1,
       slices: {
         left: 26,

@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Clips to the mask's whole rect. Nested rect masks intersect, so content
@@ -122,7 +123,7 @@ export function addMaskComponent(
     shape: { kind: 'rect' },
   };
 
-  const component: MaskEcsComponent = { ...defaultMaskOptions, ...options };
+  const component: MaskEcsComponent = withDefaults(defaultMaskOptions, options);
 
   component.pivot = Vec2.clone(component.pivot);
   component.shape = { ...component.shape };

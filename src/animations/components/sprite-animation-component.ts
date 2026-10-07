@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link SpriteAnimationEcsComponent} with no sensible default;
@@ -74,10 +75,10 @@ export function addSpriteAnimationComponent(
   options: SpriteAnimationRequiredOptions &
     Partial<SpriteAnimationEcsComponent>,
 ): SpriteAnimationEcsComponent {
-  const component: SpriteAnimationEcsComponent = {
-    ...defaultSpriteAnimationOptions,
-    ...options,
-  };
+  const component: SpriteAnimationEcsComponent = withDefaults(
+    defaultSpriteAnimationOptions,
+    options,
+  );
 
   return world.addComponent(entity, spriteAnimationId, component);
 }

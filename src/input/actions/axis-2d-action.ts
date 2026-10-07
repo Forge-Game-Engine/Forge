@@ -3,6 +3,16 @@ import { InputAction } from '../input-action.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 
 let writeValue: (action: Axis2dAction, x: number, y: number) => void;
+let clearPresses: (action: Axis2dAction) => void;
+
+/**
+ * The length an `Axis2dAction`'s value has to reach to count as a press
+ * (see `Axis2dAction.presses`): half of a fully pushed stick or a held key.
+ */
+export const axisPressThreshold = 0.5;
+
+const isPressed = (x: number, y: number): boolean =>
+  Math.hypot(x, y) >= axisPressThreshold;
 
 /**
  * An action that represents a 2-dimensional axis input, such as a joystick
@@ -21,6 +31,7 @@ export class Axis2dAction implements InputAction {
   public readonly inputGroup: string;
 
   private readonly _value: Vector2 = Vec2.zero;
+  private readonly _presses: Vector2[] = [];
 
   static {
     writeValue = (action, x, y): void => {
@@ -28,9 +39,17 @@ export class Axis2dAction implements InputAction {
         return;
       }
 
+      if (!isPressed(action._value.x, action._value.y) && isPressed(x, y)) {
+        action._presses.push({ x, y });
+      }
+
       action._value.x = x;
       action._value.y = y;
       action.valueChangeEvent.raise(action._value);
+    };
+
+    clearPresses = (action): void => {
+      action._presses.length = 0;
     };
   }
 
@@ -54,6 +73,21 @@ export class Axis2dAction implements InputAction {
   get value(): Readonly<Vector2> {
     return this._value;
   }
+
+  /**
+   * The value the axis had each time its length rose to
+   * {@link axisPressThreshold} or more this frame, oldest first. Cleared at
+   * the end of every frame by `InputManager.reset`.
+   *
+   * Use it to act on presses rather than on the current value, as UI focus
+   * navigation does: a key pressed and released between two frames, which
+   * `value` never shows, is still one press, and two taps in one frame are
+   * two. Holding the axis past the threshold is one press, on the frame it
+   * crossed.
+   */
+  get presses(): readonly Readonly<Vector2>[] {
+    return this._presses;
+  }
 }
 
 /**
@@ -70,4 +104,13 @@ export const setAxis2dActionValue = (
   y: number,
 ): void => {
   writeValue(action, x, y);
+};
+
+/**
+ * Forgets `action`'s presses at the end of the frame. Internal to the
+ * input module, see `setAxis2dActionValue`.
+ * @param action - The action to clear.
+ */
+export const clearAxis2dActionPresses = (action: Axis2dAction): void => {
+  clearPresses(action);
 };

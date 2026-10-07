@@ -40,12 +40,13 @@ which is how entities are actually assembled everywhere in this codebase
 (see `demo/src/game.ts`).
 
 Follow `AGENTS.md`'s default-options-object pattern (an object literal
-named with "default", spread against the caller's options, not inline `??`
-per field):
+named with "default", applied under the caller's options with
+`withDefaults`, not inline `??` per field):
 
 ```typescript
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * ECS-style component interface for <what this represents>.
@@ -78,10 +79,10 @@ export function add<PascalCaseName>Component(
   entity: number,
   options: Partial<<PascalCaseName>EcsComponent> = {},
 ): <PascalCaseName>EcsComponent {
-  const component: <PascalCaseName>EcsComponent = {
-    ...default<PascalCaseName>Options,
-    ...options,
-  };
+  const component: <PascalCaseName>EcsComponent = withDefaults(
+    default<PascalCaseName>Options,
+    options,
+  );
 
   return world.addComponent(entity, <camelCaseName>Id, component);
 }
@@ -89,6 +90,11 @@ export function add<PascalCaseName>Component(
 
 Notes:
 
+- `withDefaults` gives an option passed as `undefined` its default, the same
+  as one left out. `{ ...defaults, ...options }` doesn't: an explicit
+  `undefined` replaces the default, which breaks a caller that forwards an
+  optional value. It also returns a new object, so the component never
+  shares the defaults object.
 - `createComponentId` wraps `Symbol(name)`, symbols are unique per call
   regardless of the string, so the description string only has to be
   readable for debugging, not globally unique.

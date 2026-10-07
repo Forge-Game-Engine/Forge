@@ -19,6 +19,7 @@ import { RaycastHit, RaycastShapeHit } from '../types/raycast-hit.js';
 import { raycastCircle } from './raycast-circle.js';
 import { raycastPolygon } from './raycast-polygon.js';
 import { raycastTerrain } from './raycast-terrain.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 const raycastDetectors = new Map<
   string,
@@ -109,10 +110,10 @@ export function raycast(
   end: Vector2,
   options: Partial<RaycastOptions> = {},
 ): RaycastHit[] {
-  const { sort, mask, includeSensors } = {
-    ...defaultRaycastOptions,
-    ...options,
-  };
+  const { sort, mask, includeSensors } = withDefaults(
+    defaultRaycastOptions,
+    options,
+  );
   const { entities, components } = world.query<
     [PositionEcsComponent, ColliderEcsComponent]
   >([positionId, colliderId]);

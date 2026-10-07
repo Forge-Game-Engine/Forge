@@ -3,6 +3,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link LinearSpringEcsComponent} with a sensible default;
@@ -69,9 +70,10 @@ export function addLinearSpringComponent(
     options.restLength ?? computeAnchorDistance(world, options);
 
   const component: LinearSpringEcsComponent = {
-    localAnchorA: Vec2.zero,
-    localAnchorB: Vec2.zero,
-    ...options,
+    ...withDefaults(
+      { localAnchorA: Vec2.zero, localAnchorB: Vec2.zero },
+      options,
+    ),
     restLength,
   };
 

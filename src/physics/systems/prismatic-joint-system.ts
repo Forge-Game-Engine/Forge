@@ -12,6 +12,7 @@ import {
 } from '../joints/resolve-joint-body.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Tuneable coefficients for `createPrismaticJointEcsSystem`'s solver.
@@ -66,10 +67,10 @@ export const createPrismaticJointEcsSystem = (
   time: Time,
   options: Partial<PrismaticJointSystemOptions> = {},
 ): EcsSystem<[PrismaticJointEcsComponent]> => {
-  const resolvedOptions: PrismaticJointSystemOptions = {
-    ...defaultPrismaticJointSystemOptions,
-    ...options,
-  };
+  const resolvedOptions: PrismaticJointSystemOptions = withDefaults(
+    defaultPrismaticJointSystemOptions,
+    options,
+  );
 
   return {
     query: [prismaticJointId],

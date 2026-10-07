@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { clamp } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiProgressBarEcsComponent} with no sensible default;
@@ -68,7 +69,7 @@ export function addUiProgressBarComponent(
   options: UiProgressBarRequiredOptions &
     Partial<UiProgressBarDefaultedOptions>,
 ): UiProgressBarEcsComponent {
-  const merged = { ...defaultUiProgressBarOptions, ...options };
+  const merged = withDefaults(defaultUiProgressBarOptions, options);
   const value = clamp(
     options.value ?? merged.minValue,
     merged.minValue,

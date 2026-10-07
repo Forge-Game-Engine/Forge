@@ -1,6 +1,7 @@
 import { Vec2, Vector2 } from '../../math/index.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Options for {@link addPositionComponent}.
@@ -56,10 +57,10 @@ export function addPositionComponent(
     local: Vec2.zero,
   };
 
-  const positionOptions: PositionOptions = {
-    ...defaultPositionOptions,
-    ...options,
-  };
+  const positionOptions: PositionOptions = withDefaults(
+    defaultPositionOptions,
+    options,
+  );
 
   return world.addComponent(entity, positionId, {
     ...positionOptions,

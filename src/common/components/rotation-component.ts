@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Options for {@link addRotationComponent}.
@@ -43,10 +44,10 @@ export function addRotationComponent(
   entity: number,
   options: Partial<RotationOptions> = {},
 ): RotationEcsComponent {
-  const rotationOptions: RotationOptions = {
-    ...defaultRotationOptions,
-    ...options,
-  };
+  const rotationOptions: RotationOptions = withDefaults(
+    defaultRotationOptions,
+    options,
+  );
 
   return world.addComponent(entity, rotationId, {
     ...rotationOptions,

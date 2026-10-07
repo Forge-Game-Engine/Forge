@@ -24,14 +24,6 @@ import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state
 import { setUiFocus } from '../utilities/set-ui-focus.js';
 import { sortByDrawOrder } from '../utilities/sort-by-draw-order.js';
 
-/**
- * The minimum `navigateInput` magnitude that counts as "pointing" in a
- * direction. A step is taken on the tick the magnitude first crosses this
- * from below, not every tick the stick is held past it, so holding a
- * direction doesn't repeat-move focus every frame.
- */
-const navigationThreshold = 0.5;
-
 interface FocusCandidate {
   entity: number;
   rect: Rect;
@@ -221,7 +213,7 @@ function resolveNextFocusTarget(
   );
 }
 
-/** Applies `canvas.navigateInput`: on the tick its magnitude first crosses `navigationThreshold`, moves focus one step in the dominant direction. */
+/** Applies `canvas.navigateInput`: moves focus one step in the dominant direction of each of its presses this frame, in order. */
 function applyNavigateInput(
   world: EcsWorld,
   canvas: CanvasEcsComponent,
@@ -231,14 +223,11 @@ function applyNavigateInput(
     return;
   }
 
-  const value = canvas.navigateInput.value;
-  const isBeyondThreshold = Vec2.magnitude(value) >= navigationThreshold;
-
-  if (isBeyondThreshold && !canvas.wasNavigateInputBeyondThreshold) {
+  for (const press of canvas.navigateInput.presses) {
     const next = resolveNextFocusTarget(
       world,
       canvas,
-      dominantDirection(value),
+      dominantDirection(press),
       candidates,
     );
 
@@ -246,8 +235,6 @@ function applyNavigateInput(
       setUiFocus(world, canvas, next);
     }
   }
-
-  canvas.wasNavigateInputBeyondThreshold = isBeyondThreshold;
 }
 
 /** Applies `canvas.submitInput`: raises `onInvoke` on the focused element, if any, when it triggers. */
@@ -275,10 +262,9 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * Every `interactable: true`, `focusable: true` `UiInteractableEcsComponent` - not disabled by
  * an ancestor `CanvasGroupEcsComponent` either, see `resolveCanvasGroupState`
  * - and visible in the hierarchy (see `VisibilityEcsComponent`) is
- * automatically focus-navigable: on the tick a canvas's `navigateInput`
- * magnitude first
- * crosses `navigationThreshold`, focus moves to the nearest candidate on
- * the same canvas in the dominant direction (a `UiFocusEcsComponent` on the
+ * automatically focus-navigable: for each of a canvas's `navigateInput`
+ * presses this frame (see `Axis2dAction.presses`), focus moves to the
+ * nearest candidate on the same canvas in the press's dominant direction (a `UiFocusEcsComponent` on the
  * currently focused entity overrides that search on whichever sides it
  * sets). `submitInput` raises `onInvoke` on the focused element;
  * `cancelInput` clears focus - register your own listener on

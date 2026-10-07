@@ -138,10 +138,12 @@ const canvas = createUiCanvas(world, renderContext, {
 });
 ```
 
-- `navigateInput`: when its value first reaches a magnitude of `0.5`, focus
-  moves in its main direction to the nearest interactable element on the
-  canvas. Holding it moves focus once. With nothing focused, it focuses the
-  interactable element drawn first.
+- `navigateInput`: each time its value reaches a magnitude of `0.5` (each
+  of its [presses](../input/actions.md#reading-presses-of-an-axis)), focus
+  moves in the press's main direction to the nearest interactable element
+  on the canvas. Holding it moves focus once, and a tap shorter than a
+  frame still moves it. With nothing focused, it focuses the interactable
+  element drawn first.
 - `submitInput`: invokes the focused element.
 - `cancelInput`: clears focus. Register a listener on
   `cancelInput.triggerEvent` to close a menu.

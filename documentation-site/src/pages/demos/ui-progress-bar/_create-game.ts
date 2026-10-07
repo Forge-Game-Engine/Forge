@@ -132,7 +132,7 @@ export const createProgressBarGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const healthFillImage = await renderContext.imageCache.getOrLoad(
+  const healthFillTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/Burn_Gradient.png'),
   );
 
@@ -156,7 +156,7 @@ export const createProgressBarGame = async (): Promise<Game> => {
   const health = createProgressBar(world, canvas, {
     trackSprite,
     fillSprite: {
-      ...createImageSprite(createTexture(renderContext, healthFillImage), {
+      ...createImageSprite(healthFillTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayers.ui,

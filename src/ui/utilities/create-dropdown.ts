@@ -21,6 +21,7 @@ import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { UiAxis, uiAxisValue } from '../types/ui-axis.js';
 import { Button, createButton } from './create-button.js';
 import { createLabel } from './create-label.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateDropdownOptions} with no sensible default; callers
@@ -202,7 +203,7 @@ export function createDropdown(
     optionHeight,
     interactable: interactableOptions,
     transition: transitionOptions,
-  } = { ...defaultCreateDropdownOptions, ...options };
+  } = withDefaults(defaultCreateDropdownOptions, options);
 
   const headerWidth = uiAxisValue(anchor.x);
   const resolvedOptionHeight = optionHeight ?? uiAxisValue(anchor.y);
@@ -214,7 +215,7 @@ export function createDropdown(
 
   const header = createButton(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     labelMaxWidth: headerWidth - chevronReservedWidth,
     sprite: headerSprite,
     slices,
@@ -222,7 +223,7 @@ export function createDropdown(
     fontAtlas,
     labelSize,
     labelColor,
-    ...(labelCategory !== undefined && { labelCategory }),
+    labelCategory,
     interactable: interactableOptions,
     transition: transitionOptions,
   });
@@ -241,7 +242,7 @@ export function createDropdown(
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: 'middle',
     color: labelColor,
-    ...(labelCategory !== undefined && { category: labelCategory }),
+    category: labelCategory,
   });
   const chevronText = world.getComponentRequired(chevron, textId);
 
@@ -274,7 +275,7 @@ export function createDropdown(
       fontAtlas,
       labelSize,
       labelColor,
-      ...(labelCategory !== undefined && { labelCategory }),
+      labelCategory,
       interactable: interactableOptions,
       transition: transitionOptions,
     }),

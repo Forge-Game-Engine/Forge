@@ -12,7 +12,6 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createTexture,
   getCameraView,
   RenderContext,
   spriteId,
@@ -124,11 +123,11 @@ export const createAnchorsGame = async (
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const panelImage = await renderContext.imageCache.getOrLoad(
+  const panelTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
   const panelSprite = {
-    ...createImageSprite(createTexture(renderContext, panelImage), {
+    ...createImageSprite(panelTexture, {
       pixelsPerUnit: 1,
       slices: {
         left: 26,

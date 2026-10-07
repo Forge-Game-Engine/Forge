@@ -1,6 +1,7 @@
 import { Vec2, Vector2 } from '../math/index.js';
 import { Color } from './color.js';
 import type { Texture } from './texture.js';
+import { withDefaults } from '../utilities/with-defaults.js';
 
 /**
  * Options for creating a `Sprite`.
@@ -54,10 +55,10 @@ export class Sprite {
    * @param options - The options for creating the sprite.
    */
   constructor(options: SpriteOptions) {
-    const { texture, pivot, width, height, tintColor } = {
-      ...defaultOptions,
-      ...options,
-    };
+    const { texture, pivot, width, height, tintColor } = withDefaults(
+      defaultOptions,
+      options,
+    );
 
     this.pivot = Vec2.clone(pivot);
 

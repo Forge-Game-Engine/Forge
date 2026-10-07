@@ -15,7 +15,6 @@ import {
   Color,
   createCamera,
   createCameraEcsSystem,
-  createTexture,
   getCameraView,
   createImageSprite,
   createRenderEcsSystem,
@@ -76,11 +75,8 @@ export const createGameStatesGame = async (): Promise<Game> => {
   });
 
   const starSprite = createImageSprite(
-    createTexture(
-      renderContext,
-      await renderContext.imageCache.getOrLoad(
-        getAssetUrl('img/star_large.png'),
-      ),
+    await renderContext.textureCache.getOrLoad(
+      getAssetUrl('img/star_large.png'),
     ),
   );
   starSprite.width = 36;

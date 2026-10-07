@@ -10,7 +10,6 @@ import {
   addVisibilityComponent,
   Color,
   createImageSprite,
-  createTexture,
   RenderContext,
   VisibilityEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -61,12 +60,12 @@ export async function createBeacon(
   });
   world.setParent(lamp, base);
 
-  const sparkImage = await renderContext.imageCache.getOrLoad(
+  const sparkTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/circle_01.png'),
   );
   const sparkEmitter = new ParticleEmitter(
     {
-      ...createImageSprite(createTexture(renderContext, sparkImage), {
+      ...createImageSprite(sparkTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

@@ -7,7 +7,6 @@ import {
   createGame,
   createImageSprite,
   createRenderEcsSystem,
-  createTexture,
   createTransformEcsSystem,
   degreesToRadians,
   EcsSystem,
@@ -228,28 +227,28 @@ const { game, world, renderContext, time } = createGame('demo-container');
 
 const camera = createCamera(world, { verticalWorldUnits });
 
-const { imageCache } = renderContext;
+const { textureCache } = renderContext;
 
-const [ballImage, squareImage, triangleImage] = await Promise.all([
-  imageCache.getOrLoad('ball_blue_large.png'),
-  imageCache.getOrLoad('block_square.png'),
-  imageCache.getOrLoad('Triangle.png'),
+const [ballTexture, squareTexture, triangleTexture] = await Promise.all([
+  textureCache.getOrLoad('ball_blue_large.png'),
+  textureCache.getOrLoad('block_square.png'),
+  textureCache.getOrLoad('Triangle.png'),
 ]);
 
 const ballSprite = {
-  ...createImageSprite(createTexture(renderContext, ballImage)),
+  ...createImageSprite(ballTexture),
   width: shapeSize,
   height: shapeSize,
   category: renderLayer,
 };
 const squareSprite = {
-  ...createImageSprite(createTexture(renderContext, squareImage)),
+  ...createImageSprite(squareTexture),
   width: shapeSize,
   height: shapeSize,
   category: renderLayer,
 };
 const triangleSprite = {
-  ...createImageSprite(createTexture(renderContext, triangleImage)),
+  ...createImageSprite(triangleTexture),
   width: shapeSize,
   height: shapeSize,
   category: renderLayer,

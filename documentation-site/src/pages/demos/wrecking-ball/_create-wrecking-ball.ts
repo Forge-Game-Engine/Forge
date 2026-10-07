@@ -17,7 +17,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
@@ -80,29 +79,29 @@ async function loadWreckingBallSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<WreckingBallSprites> {
-  const { imageCache } = renderContext;
+  const { textureCache } = renderContext;
 
-  const [ballImage, brickImage, armImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
-    imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
+  const [ballTexture, brickTexture, armTexture] = await Promise.all([
+    textureCache.getOrLoad(getAssetUrl('img/physics/ball_blue_large.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
+    textureCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
   ]);
 
   return {
     ball: {
-      ...createImageSprite(createTexture(renderContext, ballImage), {
+      ...createImageSprite(ballTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     brick: {
-      ...createImageSprite(createTexture(renderContext, brickImage), {
+      ...createImageSprite(brickTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,
     },
     arm: {
-      ...createImageSprite(createTexture(renderContext, armImage), {
+      ...createImageSprite(armTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayer,

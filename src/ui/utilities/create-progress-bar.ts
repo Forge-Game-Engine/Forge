@@ -16,6 +16,7 @@ import {
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { UiFillShape } from '../types/ui-fill-shape.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateProgressBarOptions} with no sensible default;
@@ -122,11 +123,11 @@ export function createProgressBar(
     maxValue,
     value,
     fillShape,
-  } = { ...defaultCreateProgressBarOptions, ...options };
+  } = withDefaults(defaultCreateProgressBarOptions, options);
 
   const entity = createPanel(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     sprite: trackSprite,
     slices,
   });
@@ -144,7 +145,7 @@ export function createProgressBar(
     fill,
     minValue,
     maxValue,
-    ...(value !== undefined && { value }),
+    value,
   });
 
   // The layout system sizes the mask to the fill's rect.

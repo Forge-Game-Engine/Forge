@@ -14,7 +14,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   NineSliceOptions,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -63,12 +62,12 @@ async function createFlywheelEntity(
   position: Vector2,
   angularDrag: number = 0,
 ): Promise<number> {
-  const { imageCache } = renderContext;
-  const image = await imageCache.getOrLoad(
+  const { textureCache } = renderContext;
+  const texture = await textureCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
   const sprite = {
-    ...createImageSprite(createTexture(renderContext, image), {
+    ...createImageSprite(texture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

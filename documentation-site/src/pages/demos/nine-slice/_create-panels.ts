@@ -8,7 +8,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -65,11 +64,9 @@ export async function createPanels(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  const panelImage = await renderContext.imageCache.getOrLoad(
+  const panelTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
-
-  const panelTexture = createTexture(renderContext, panelImage);
 
   const naiveSprite = {
     ...createImageSprite(panelTexture, {

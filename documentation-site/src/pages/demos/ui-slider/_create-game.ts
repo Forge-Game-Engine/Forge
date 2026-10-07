@@ -17,7 +17,6 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -108,7 +107,7 @@ export const createSliderGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const handleImage = await renderContext.imageCache.getOrLoad(
+  const handleTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/kenney_ui-pack/PNG/Blue/Default/button_round_gloss.png'),
   );
 
@@ -160,7 +159,7 @@ export const createSliderGame = async (): Promise<Game> => {
   const slider = createSlider(world, canvas, {
     trackSprite,
     handleSprite: {
-      ...createImageSprite(createTexture(renderContext, handleImage), {
+      ...createImageSprite(handleTexture, {
         pixelsPerUnit: 1,
       }),
       category: renderLayers.ui,

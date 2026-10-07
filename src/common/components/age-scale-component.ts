@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * ECS-style component interface for age-based scaling.
@@ -40,10 +41,10 @@ export function addAgeScaleComponent(
   entity: number,
   options: Partial<AgeScaleEcsComponent> = {},
 ): AgeScaleEcsComponent {
-  const component: AgeScaleEcsComponent = {
-    ...defaultAgeScaleOptions,
-    ...options,
-  };
+  const component: AgeScaleEcsComponent = withDefaults(
+    defaultAgeScaleOptions,
+    options,
+  );
 
   return world.addComponent(entity, ageScaleId, component);
 }

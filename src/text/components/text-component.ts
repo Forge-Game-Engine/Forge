@@ -9,6 +9,7 @@ import {
   TextVerticalAlign,
   textVerticalAlignments,
 } from '../types/text-alignment.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * The default rendering category a text entity's glyphs are drawn with when
@@ -233,10 +234,7 @@ export function addTextComponent(
     shadowSoftness: 0,
   };
 
-  const component: TextEcsComponent = {
-    ...defaultTextOptions,
-    ...options,
-  };
+  const component: TextEcsComponent = withDefaults(defaultTextOptions, options);
 
   return world.addComponent(entity, textId, component);
 }

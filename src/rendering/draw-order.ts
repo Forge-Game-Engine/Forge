@@ -15,9 +15,10 @@ import {
  * Each entity's place in the draw order, resolved from the hierarchy by
  * {@link createDrawOrderResolver}. Within a sprite or text `layer`, entities
  * draw by world order, then (for a camera that y-sorts) by their root's Y,
- * then by hierarchy order: roots in creation order, each followed by its
- * subtree in pre-order (parents before children, siblings in sibling
- * order).
+ * then by hierarchy order: roots in creation order, each with its subtree
+ * after it in pre-order (parents before children, siblings in sibling
+ * order), except that a child whose `DrawOrderEcsComponent.behindParent` is
+ * `true` comes, with its own subtree, just before its parent.
  *
  * The same pass resolves which entities are visible in the hierarchy (see
  * `VisibilityEcsComponent`), so a system that draws them can skip the
@@ -46,7 +47,7 @@ export interface DrawOrderResolver {
    */
   rootSequence(entity: number): number;
 
-  /** Reads an entity's pre-order index within its root's subtree. The root itself is `0`. */
+  /** Reads an entity's index in hierarchy order within its root's subtree. */
   hierarchyIndex(entity: number): number;
 
   /**
@@ -88,6 +89,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
   const stack: number[] = [];
   const stackParentOrders: number[] = [];
   const stackParentVisibilities: boolean[] = [];
+  const stackNumbering: boolean[] = [];
 
   const ensureCapacity = (index: number): void => {
     if (index < stamps.length) {
@@ -119,8 +121,12 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     visibilities = grow(visibilities, (length) => new Uint8Array(length));
   };
 
-  // An iterative pre-order walk of `root`'s subtree, so a deep hierarchy
-  // can't overflow the call stack.
+  // An iterative walk of `root`'s subtree in hierarchy order, so a deep
+  // hierarchy can't overflow the call stack. An entity is visited first,
+  // which resolves its world order and visibility and pushes its children
+  // around a second, numbering entry for itself: its `behindParent`
+  // children (each with its whole subtree) are numbered before it, and its
+  // other children after it.
   const resolveSubtree = (
     world: EcsWorld,
     root: number,
@@ -133,14 +139,21 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     stack.push(root);
     stackParentOrders.push(0);
     stackParentVisibilities.push(true);
+    stackNumbering.push(false);
 
     while (stack.length > 0) {
       const entity = stack.pop()!;
       const parentOrder = stackParentOrders.pop()!;
-      const visible =
-        stackParentVisibilities.pop()! &&
-        getVisibility(entity)?.visible !== false;
+      const parentVisible = stackParentVisibilities.pop()!;
       const index = entity & indexMask;
+
+      if (stackNumbering.pop()!) {
+        hierarchyIndices[index] = nextHierarchyIndex++;
+
+        continue;
+      }
+
+      const visible = parentVisible && getVisibility(entity)?.visible !== false;
       const order = Math.max(
         minWorldOrder,
         Math.min(
@@ -153,19 +166,41 @@ export function createDrawOrderResolver(): DrawOrderResolver {
       stamps[index] = stamp;
       worldOrders[index] = order;
       rootSequences[index] = rootSequence;
-      hierarchyIndices[index] = nextHierarchyIndex++;
       roots[index] = root;
       visibilities[index] = visible ? 1 : 0;
 
       const children = world.getChildren(entity);
 
-      // Pushed last to first, so the first child is popped (and numbered)
-      // first.
-      for (let c = children.length - 1; c >= 0; c--) {
-        stack.push(children[c]);
-        stackParentOrders.push(order);
-        stackParentVisibilities.push(visible);
+      // Pushed in the reverse of the order they're numbered in, last
+      // sibling first: the children in front of `entity`, then `entity`
+      // itself, then the children behind it.
+      pushChildren(children, getDrawOrder, false, order, visible);
+      stack.push(entity);
+      stackParentOrders.push(order);
+      stackParentVisibilities.push(visible);
+      stackNumbering.push(true);
+      pushChildren(children, getDrawOrder, true, order, visible);
+    }
+  };
+
+  const pushChildren = (
+    children: readonly number[],
+    getDrawOrder: (entity: number) => DrawOrderEcsComponent | null,
+    behindParent: boolean,
+    parentOrder: number,
+    parentVisible: boolean,
+  ): void => {
+    for (let c = children.length - 1; c >= 0; c--) {
+      const child = children[c];
+
+      if ((getDrawOrder(child)?.behindParent ?? false) !== behindParent) {
+        continue;
       }
+
+      stack.push(child);
+      stackParentOrders.push(parentOrder);
+      stackParentVisibilities.push(parentVisible);
+      stackNumbering.push(false);
     }
   };
 

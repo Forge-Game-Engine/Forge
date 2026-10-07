@@ -2,6 +2,7 @@ import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ForgeEvent } from '../../events/index.js';
 import { Vector2 } from '../../math/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiInteractableEcsComponent} with a sensible default;
@@ -186,8 +187,7 @@ export function addUiInteractableComponent(
   options: Partial<UiInteractableDefaultedOptions> = {},
 ): UiInteractableEcsComponent {
   const component: UiInteractableEcsComponent = {
-    ...defaultUiInteractableOptions,
-    ...options,
+    ...withDefaults(defaultUiInteractableOptions, options),
 
     onInvoke: new ForgeEvent('uiInteractable.onInvoke'),
     onPointerEnter: new ForgeEvent('uiInteractable.onPointerEnter'),

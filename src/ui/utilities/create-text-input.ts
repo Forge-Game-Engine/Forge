@@ -34,6 +34,7 @@ import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { UiAxis } from '../types/ui-axis.js';
 import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateTextInputOptions} with no sensible default; callers
@@ -228,7 +229,7 @@ export function createTextInput(
     attributes,
     interactable: interactableOptions,
     transition: transitionOptions,
-  } = { ...defaultCreateTextInputOptions, ...options };
+  } = withDefaults(defaultCreateTextInputOptions, options);
 
   const container = renderContext.canvas.parentElement;
 
@@ -240,7 +241,7 @@ export function createTextInput(
 
   const entity = createPanel(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     sprite,
     slices,
   });
@@ -296,7 +297,7 @@ export function createTextInput(
     // A player's text is drawn as typed: `<b>` typed into a field isn't
     // markup, and the caret stops must line up with the input's value.
     richText: false,
-    ...(category !== undefined && { category }),
+    category,
   };
 
   const textLabel = createLabel(world, origin, {
@@ -333,9 +334,9 @@ export function createTextInput(
     selection,
     compositionUnderline,
     value,
-    ...(maxLength !== undefined && { maxLength }),
-    ...(filter && { filter }),
-    ...(attributes && { attributes }),
+    maxLength,
+    filter,
+    attributes,
   });
 
   return {

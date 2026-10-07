@@ -13,7 +13,6 @@ import {
   buildTerrainCurve,
   Color,
   createTerrainMesh,
-  createTexture,
   heightAtLocalX,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -170,9 +169,9 @@ export async function createTerrain(
     friction: 0.9,
   });
 
-  const [borderImage, fillImage] = await Promise.all([
-    renderContext.imageCache.getOrLoad(border.textureUrl),
-    renderContext.imageCache.getOrLoad(fill.textureUrl),
+  const [borderTexture, fillTexture] = await Promise.all([
+    renderContext.textureCache.getOrLoad(border.textureUrl, { wrap: 'repeat' }),
+    renderContext.textureCache.getOrLoad(fill.textureUrl, { wrap: 'repeat' }),
   ]);
 
   const mesh = createTerrainMesh(renderContext, {
@@ -181,12 +180,12 @@ export async function createTerrain(
     position,
     angle,
     border: {
-      texture: createTexture(renderContext, borderImage, { wrap: 'repeat' }),
+      texture: borderTexture,
       tileSize: border.tileSize,
       tint: border.tint,
     },
     fill: {
-      texture: createTexture(renderContext, fillImage, { wrap: 'repeat' }),
+      texture: fillTexture,
       tileSize: fill.tileSize,
       tint: fill.tint,
     },

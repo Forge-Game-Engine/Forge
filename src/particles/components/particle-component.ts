@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/vector2.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * A function returning a velocity, in world units per second, that's added
@@ -84,10 +85,10 @@ export function addParticleComponent(
     endOpacity: 1,
   };
 
-  const component: ParticleEcsComponent = {
-    ...defaultParticleOptions,
-    ...options,
-  };
+  const component: ParticleEcsComponent = withDefaults(
+    defaultParticleOptions,
+    options,
+  );
 
   return world.addComponent(entity, ParticleId, component);
 }

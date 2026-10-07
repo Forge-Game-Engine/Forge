@@ -10,6 +10,7 @@ import {
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 export type CreateLabelOptions = TextRequiredOptions &
   Partial<TextDefaultedOptions> & {
@@ -66,13 +67,15 @@ export function createLabel(
   parent: number,
   options: CreateLabelOptions,
 ): number {
-  const { anchor, anchoredPosition, sizeToText, ...textOptions } = {
-    ...defaultCreateLabelOptions,
-    ...(options.sizeToText && options.verticalAlign === undefined
-      ? { verticalAlign: textVerticalAlignments.bottom }
-      : {}),
-    ...options,
-  };
+  const { anchor, anchoredPosition, sizeToText, ...textOptions } = withDefaults(
+    {
+      ...defaultCreateLabelOptions,
+      ...(options.sizeToText && options.verticalAlign === undefined
+        ? { verticalAlign: textVerticalAlignments.bottom }
+        : {}),
+    },
+    options,
+  );
 
   const entity = world.createEntity();
 
@@ -80,7 +83,7 @@ export function createLabel(
   world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     ...anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
   });
   addTextComponent(world, entity, textOptions);
 

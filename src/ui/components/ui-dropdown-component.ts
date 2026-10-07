@@ -1,6 +1,7 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link UiDropdownEcsComponent} with no sensible default; callers
@@ -63,10 +64,10 @@ export function addUiDropdownComponent(
   entity: number,
   options: UiDropdownRequiredOptions & Partial<UiDropdownDefaultedOptions>,
 ): UiDropdownEcsComponent {
-  const { options: optionLabels, selectedIndex } = {
-    ...defaultUiDropdownOptions,
-    ...options,
-  };
+  const { options: optionLabels, selectedIndex } = withDefaults(
+    defaultUiDropdownOptions,
+    options,
+  );
 
   if (optionLabels.length === 0) {
     throw new Error('Unable to add a UiDropdownEcsComponent with no options.');

@@ -13,7 +13,6 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
-  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { PlayArea } from './_create-boundaries';
@@ -52,11 +51,11 @@ export async function createPaddle(
   renderLayer: number,
   playArea: PlayArea,
 ): Promise<Vector2> {
-  const paddleImage = await renderContext.imageCache.getOrLoad(
+  const paddleTexture = await renderContext.textureCache.getOrLoad(
     getAssetUrl('img/brick-breaker/paddle.png'),
   );
   const paddleSprite = {
-    ...createImageSprite(createTexture(renderContext, paddleImage), {
+    ...createImageSprite(paddleTexture, {
       pixelsPerUnit: 1,
     }),
     category: renderLayer,

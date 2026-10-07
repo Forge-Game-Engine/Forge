@@ -9,22 +9,27 @@ import type {
 type Hooks = HierarchicalDrawOrderSceneHandle;
 
 /**
- * Sets the flame's order, steps one frame and samples the canvas in the
- * same task - see AGENTS.md's "Be wary of pixel-level rendering assertions"
- * for why `step()` and the read must happen in one `page.evaluate` call.
+ * Sets the flame's draw order, steps one frame and samples the canvas in
+ * the same task - see AGENTS.md's "Be wary of pixel-level rendering
+ * assertions" for why `step()` and the read must happen in one
+ * `page.evaluate` call.
  */
 const captureMeasurement = (
   page: import('@playwright/test').Page,
   flameOrder: number,
+  flameBehindParent: boolean = false,
 ): Promise<HierarchicalDrawOrderMeasurement> =>
-  page.evaluate((order) => {
-    const scene = window.__forgeTestHooks as unknown as Hooks;
+  page.evaluate(
+    ([order, behindParent]) => {
+      const scene = window.__forgeTestHooks as unknown as Hooks;
 
-    scene.setFlameOrder(order);
-    scene.step();
+      scene.setFlameDrawOrder(order, behindParent);
+      scene.step();
 
-    return scene.measure();
-  }, flameOrder);
+      return scene.measure();
+    },
+    [flameOrder, flameBehindParent] as const,
+  );
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/?scene=hierarchical-draw-order');
@@ -47,4 +52,16 @@ test("a child's draw order moves it behind everything at its parent's level, eve
   expect(inFront.flameOrder).toBe(0);
   expect(inFront.shipAndFlame).toBe('flame');
   expect(inFront.rockAndFlame).toBe('flame');
+});
+
+test('a child with behindParent draws just behind its parent, in front of what its parent is in front of', async ({
+  page,
+}) => {
+  for (let frame = 0; frame < 3; frame++) {
+    const behindShip = await captureMeasurement(page, 0, true);
+
+    expect(behindShip.flameBehindParent).toBe(true);
+    expect(behindShip.shipAndFlame).toBe('ship');
+    expect(behindShip.rockAndFlame).toBe('flame');
+  }
 });

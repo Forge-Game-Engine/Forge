@@ -28,6 +28,7 @@ import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { driveUiAxis, UiAxis } from '../types/ui-axis.js';
 import { createPanel } from './create-panel.js';
 import { driveUiFillMask } from './drive-ui-fill-mask.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateSliderOptions} with no sensible default; callers
@@ -173,11 +174,11 @@ export function createSlider(
     wholeNumbers,
     interactable: interactableOptions,
     transition: transitionOptions,
-  } = { ...defaultCreateSliderOptions, ...options };
+  } = withDefaults(defaultCreateSliderOptions, options);
 
   const entity = createPanel(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     sprite: trackSprite,
     slices,
   });
@@ -225,10 +226,10 @@ export function createSlider(
 
   const slider = addUiSliderComponent(world, entity, {
     handle,
-    ...(fill !== undefined && { fill }),
+    fill,
     minValue,
     maxValue,
-    ...(value !== undefined && { value }),
+    value,
     wholeNumbers,
   });
 
@@ -247,7 +248,7 @@ export function createSlider(
   return {
     entity,
     handle,
-    ...(fill !== undefined && { fill }),
+    fill,
     interactable,
     slider,
     onValueChanged: slider.onValueChanged,

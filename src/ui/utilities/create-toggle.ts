@@ -21,6 +21,7 @@ import {
 } from '../components/ui-toggle-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { createPanel } from './create-panel.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link CreateToggleOptions} with no sensible default; callers
@@ -141,11 +142,11 @@ export function createToggle(
     group,
     interactable: interactableOptions,
     transition: transitionOptions,
-  } = { ...defaultCreateToggleOptions, ...options };
+  } = withDefaults(defaultCreateToggleOptions, options);
 
   const entity = createPanel(world, parent, {
     anchor,
-    ...(anchoredPosition && { anchoredPosition }),
+    anchoredPosition,
     sprite,
     slices,
   });
@@ -158,7 +159,7 @@ export function createToggle(
   addUiColorTransitionComponent(world, entity, transitionOptions);
   const toggle = addUiToggleComponent(world, entity, {
     isOn,
-    ...(group !== undefined && { group }),
+    group,
   });
 
   const checkmark = createPanel(world, entity, {

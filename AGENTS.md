@@ -908,18 +908,20 @@ export class Example {
 Before adding an optional parameter at all, check it against
 "Change Philosophy" above. Most bug fixes shouldn't add one.
 
-Defaults should be stored in an object with the word "default" in its name. Defaults should not be added when reading the value. Types should be narrowed and nullish values should be handled appropriately.
+Defaults should be stored in an object with the word "default" in its name, and applied with `withDefaults(defaults, options)` (`src/utilities/with-defaults.ts`). Defaults should not be added when reading the value. Types should be narrowed and nullish values should be handled appropriately.
 
 ```typescript
+import { withDefaults } from '../utilities/with-defaults.js';
+
 interface MoveOptions {
-  speed: number;
+  speed?: number;
   direction?: Vector2;
 }
 
 const defaultMoveOptions = { speed: 5 };
 
 const move = (options: MoveOptions) => {
-  const { speed, direction } = { ...defaultMoveOptions, ...options };
+  const { speed, direction } = withDefaults(defaultMoveOptions, options);
 
   if (!direction) {
     throw new Error('Needs a direction');
@@ -929,11 +931,23 @@ const move = (options: MoveOptions) => {
 };
 ```
 
-**Incorrect pattern** (do not use):
+`withDefaults` treats an option passed as `undefined` like one left out, the
+way a JavaScript default parameter does. Don't spread the options over the
+defaults (`{ ...defaultMoveOptions, ...options }`): an explicit `undefined`
+replaces the default, so a caller forwarding its own optional parameter
+(`move({ speed })`) breaks. For the same reason, pass an optional value
+straight through (`{ anchoredPosition }`) rather than guarding it with
+`...(anchoredPosition && { anchoredPosition })`.
+
+**Incorrect patterns** (do not use):
 
 ```typescript
 const move = (options: MoveOptions) => {
   doMoveLogic(options.speed ?? 5, options.direction ?? Vector2.Left);
+};
+
+const move = (options: MoveOptions) => {
+  const { speed } = { ...defaultMoveOptions, ...options };
 };
 ```
 

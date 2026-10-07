@@ -1,5 +1,6 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
  * Fields of {@link LifetimeEcsComponent} with no sensible default; callers
@@ -64,10 +65,10 @@ export function addLifetimeComponent(
   entity: number,
   options: LifetimeRequiredOptions & Partial<LifetimeEcsComponent>,
 ): LifetimeEcsComponent {
-  const component: LifetimeEcsComponent = {
-    ...defaultLifetimeOptions,
-    ...options,
-  };
+  const component: LifetimeEcsComponent = withDefaults(
+    defaultLifetimeOptions,
+    options,
+  );
 
   return world.addComponent(entity, lifetimeId, component);
 }
