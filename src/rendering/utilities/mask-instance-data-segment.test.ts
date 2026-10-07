@@ -36,9 +36,11 @@ describe('maskInstanceDataSegment', () => {
   });
 
   it("binds the clip rect in the shader's Y-down space", () => {
-    expect(
-      bind({ visible: true, clip, bounds: clip, shape: null }).slice(0, 4),
-    ).toEqual([-1, -6, 5, 2]);
+    const data = bind({ visible: true, clip, bounds: clip, shape: null });
+
+    expect(data.slice(0, 4)).toEqual([-1, -6, 5, 2]);
+    // No shape, clipped.
+    expect(data[10]).toBe(3);
   });
 
   it('binds a linear mask with its Y inputs flipped for the Y-down shader', () => {
@@ -49,7 +51,7 @@ describe('maskInstanceDataSegment', () => {
       shape: { kind: 'linear', ...frame, edge: 0.5 },
     });
 
-    expect(data.slice(4)).toEqual([1, -2, 3, -4, 3, -4, 1, 0.5, 0, 0]);
+    expect(data.slice(4)).toEqual([1, -2, 3, -4, 3, -4, 4, 0.5, 0, 0]);
   });
 
   it('binds a radial mask', () => {
@@ -66,7 +68,22 @@ describe('maskInstanceDataSegment', () => {
       },
     });
 
-    expect(data.slice(10)).toEqual([2, 0.25, -1.5, 2]);
+    expect(data.slice(10)).toEqual([5, 0.25, -1.5, 2]);
+  });
+
+  it("binds a shape mask's mode without the clip offset when no rect mask clips it", () => {
+    const unbounded = {
+      min: { x: -Infinity, y: -Infinity },
+      max: { x: Infinity, y: Infinity },
+    };
+    const data = bind({
+      visible: true,
+      clip: unbounded,
+      bounds: clip,
+      shape: { kind: 'linear', ...frame, edge: 0.5 },
+    });
+
+    expect(data[10]).toBe(1);
   });
 
   it('sets up its four attributes at the given offset', () => {

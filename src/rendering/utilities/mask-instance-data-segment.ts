@@ -18,10 +18,15 @@ const SHAPE_PARAMETER_0_OFFSET = 11;
 const SHAPE_PARAMETER_1_OFFSET = 12;
 const SHAPE_PARAMETER_2_OFFSET = 13;
 
-/** The shape modes `spriteMaskCoverage` switches on. */
+/**
+ * The shape modes `spriteMaskCoverage` switches on, offset by
+ * `CLIPPED_MODE_OFFSET` when a rect mask clips the instance, so an
+ * instance without one skips the clip test.
+ */
 const SHAPE_MODE_NONE = 0;
 const SHAPE_MODE_LINEAR = 1;
 const SHAPE_MODE_RADIAL = 2;
+const CLIPPED_MODE_OFFSET = 3;
 
 /**
  * Stands in for an unbounded clip rect edge. Finite, so the shader's
@@ -39,6 +44,7 @@ function bindShapeMask(
   shape: InstanceShapeMask,
   buffer: Float32Array,
   offset: number,
+  modeOffset: number,
 ): void {
   const { origin, axes } = shape;
 
@@ -52,7 +58,7 @@ function bindShapeMask(
   buffer[offset + ORIGIN_Y_OFFSET] = -origin.y;
 
   if (shape.kind === 'linear') {
-    buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_LINEAR;
+    buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_LINEAR + modeOffset;
     buffer[offset + SHAPE_PARAMETER_0_OFFSET] = shape.edge;
     buffer[offset + SHAPE_PARAMETER_1_OFFSET] = 0;
     buffer[offset + SHAPE_PARAMETER_2_OFFSET] = 0;
@@ -60,7 +66,7 @@ function bindShapeMask(
     return;
   }
 
-  buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_RADIAL;
+  buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_RADIAL + modeOffset;
   buffer[offset + SHAPE_PARAMETER_0_OFFSET] = shape.startAngle;
   buffer[offset + SHAPE_PARAMETER_1_OFFSET] = shape.filledSweep;
   buffer[offset + SHAPE_PARAMETER_2_OFFSET] = shape.aspect;
@@ -94,6 +100,8 @@ function bindMaskInstanceData(
   }
 
   const { clip } = mask;
+  // Rect masks bound all four edges, so one tells whether there is any.
+  const modeOffset = Number.isFinite(clip.min.x) ? CLIPPED_MODE_OFFSET : 0;
 
   // Y-down, like the rest of the instance data: the clip rect's top edge
   // becomes its minimum.
@@ -103,7 +111,7 @@ function bindMaskInstanceData(
   buffer[offset + CLIP_MAX_Y_OFFSET] = toShaderCoordinate(-clip.min.y);
 
   if (mask.shape) {
-    bindShapeMask(mask.shape, buffer, offset);
+    bindShapeMask(mask.shape, buffer, offset, modeOffset);
 
     return;
   }
@@ -112,6 +120,7 @@ function bindMaskInstanceData(
     unmaskedInstanceData.subarray(AXES_XX_OFFSET),
     offset + AXES_XX_OFFSET,
   );
+  buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_NONE + modeOffset;
 }
 
 function setupMaskInstanceAttributes(

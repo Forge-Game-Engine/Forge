@@ -5,7 +5,7 @@
 in vec4 a_instanceMaskClip;    // Clip rect: min.xy, max.xy
 in vec4 a_instanceMaskAxes;    // World offset -> mask coordinates, by row
 in vec2 a_instanceMaskOrigin;  // The shape mask's center
-in vec4 a_instanceMaskShape;   // Mode (0 none, 1 linear, 2 radial), then its parameters
+in vec4 a_instanceMaskShape;   // Mode (0 none, 1 linear, 2 radial; +3 when clipped), then its parameters
 
 out vec4 v_maskClipDistance;
 out vec2 v_maskCoord;

@@ -56,8 +56,8 @@ highp float spriteMaskRadialCoverage(
   return spriteMaskEdge(angleInside * radius, length(fwidth(point)));
 }
 
-highp float spriteMaskShapeCoverage() {
-  if (v_maskShape.x < 0.5) {
+highp float spriteMaskShapeCoverage(highp float mode) {
+  if (mode < 0.5) {
     return 1.0;
   }
 
@@ -66,7 +66,7 @@ highp float spriteMaskShapeCoverage() {
     spriteMaskEdge(1.0 - abs(v_maskCoord.x), width.x) *
     spriteMaskEdge(1.0 - abs(v_maskCoord.y), width.y);
 
-  if (v_maskShape.x < 1.5) {
+  if (mode < 1.5) {
     // Linear: the edge it reveals from is always -X, turned into place by
     // the mask's axes; `y` is how far the revealed part reaches.
     return rectCoverage * spriteMaskEdge(v_maskShape.y - v_maskCoord.x, width.x);
@@ -80,5 +80,18 @@ highp float spriteMaskShapeCoverage() {
 // `MaskEcsComponent`) let through, 0 to 1. Every sprite fragment shader
 // multiplies its output alpha by it.
 float spriteMaskCoverage() {
-  return spriteMaskClipCoverage() * spriteMaskShapeCoverage();
+  // The mode is the shape's (0 none, 1 linear, 2 radial), plus 3 when a
+  // rect mask clips the instance. Branching on it is uniform across the
+  // quad, since it's flat, so an unmasked quad skips the work.
+  highp float mode = v_maskShape.x;
+
+  if (mode < 0.5) {
+    return 1.0;
+  }
+
+  if (mode < 2.5) {
+    return spriteMaskShapeCoverage(mode);
+  }
+
+  return spriteMaskClipCoverage() * spriteMaskShapeCoverage(mode - 3.0);
 }
