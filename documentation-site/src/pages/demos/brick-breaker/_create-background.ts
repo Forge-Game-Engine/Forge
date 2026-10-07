@@ -1,13 +1,9 @@
 import {
   addSpriteComponent,
-  combineInstanceDataSegments,
-  createQuadGeometry,
+  createSpriteMaterial,
   ForgeShaderSource,
   getCameraView,
-  Material,
-  Renderable,
   RenderContext,
-  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { addPositionComponent } from '@forge-game-engine/forge/common';
@@ -30,24 +26,9 @@ export function createBackground(
 ): void {
   renderContext.shaderCache.addShader(new ForgeShaderSource(backgroundShader));
 
-  const vertexShader = renderContext.shaderCache.getShader('sprite.vert');
-  const fragmentShader = renderContext.shaderCache.getShader('background.frag');
-
-  const material = new Material(vertexShader, fragmentShader, renderContext.gl);
+  const material = createSpriteMaterial(renderContext, 'background.frag');
 
   material.setUniform('u_time', 0);
-
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const renderable = new Renderable(
-    createQuadGeometry(renderContext.gl),
-    material,
-    floatsPerInstance,
-    renderLayer,
-    bindInstanceData,
-    setupInstanceAttributes,
-  );
 
   const backgroundEntity = world.createEntity();
 
@@ -56,7 +37,9 @@ export function createBackground(
   addSpriteComponent(world, backgroundEntity, {
     width: visibleWorldSize.x,
     height: visibleWorldSize.y,
-    renderable,
+    texture: renderContext.whiteTexture,
+    material,
+    category: renderLayer,
     layer: renderLayer,
   });
 

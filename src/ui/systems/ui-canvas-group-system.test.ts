@@ -8,15 +8,15 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   addSpriteComponent,
   Color,
-  Renderable,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { addCanvasGroupComponent } from '../components/canvas-group-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
 
-const buildRenderable = (): Renderable => ({}) as Renderable;
+const buildTexture = (): Texture => ({}) as Texture;
 
 /** Creates a bare UI element (`RectTransformEcsComponent` + `PositionEcsComponent`, optionally parented) - enough for `createUiCanvasGroupEcsSystem`'s query, without a full canvas/camera setup. */
 function createElement(world: EcsWorld, parent?: number): number {
@@ -40,7 +40,7 @@ describe('createUiCanvasGroupEcsSystem', () => {
     addSpriteComponent(world, root, {
       width: 10,
       height: 10,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     world.addSystem(createUiCanvasGroupEcsSystem());
@@ -60,7 +60,7 @@ describe('createUiCanvasGroupEcsSystem', () => {
     addSpriteComponent(world, child, {
       width: 10,
       height: 10,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
     addTextComponent(world, child, {
       text: 'hi',
@@ -86,7 +86,7 @@ describe('createUiCanvasGroupEcsSystem', () => {
     addSpriteComponent(world, leaf, {
       width: 10,
       height: 10,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     world.addSystem(createUiCanvasGroupEcsSystem());
@@ -107,7 +107,7 @@ describe('createUiCanvasGroupEcsSystem', () => {
     const sprite = addSpriteComponent(world, child, {
       width: 10,
       height: 10,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
       tintColor: new Color(1, 0, 0, 0.8),
     });
 

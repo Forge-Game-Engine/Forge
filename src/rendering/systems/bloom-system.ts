@@ -14,6 +14,7 @@ import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
 import { RenderContext } from '../render-context.js';
 import { createRenderTarget, RenderTarget } from '../render-target.js';
+import type { Texture } from '../texture.js';
 
 // The blur chain runs at a fraction of the camera's render target
 // resolution: the blur shader's kernel only reaches a handful of texels per
@@ -79,19 +80,19 @@ export const createBloomEcsSystem = (
   const { gl, shaderCache } = renderContext;
 
   const thresholdMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('bloom-threshold.frag'),
-    gl,
   );
   const blurMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('gaussian-blur.frag'),
-    gl,
   );
   const compositeMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('bloom-composite.frag'),
-    gl,
   );
 
   // Scratch GPU resources, one entry per distinct `renderTarget` in use by a
@@ -156,7 +157,7 @@ export const createBloomEcsSystem = (
   };
 
   const drawBlurPass = (
-    sourceTexture: WebGLTexture,
+    sourceTexture: Texture,
     direction: Float32Array,
     texelSize: Float32Array,
     destination: RenderTarget,

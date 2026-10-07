@@ -15,6 +15,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -58,19 +59,25 @@ async function loadHingeSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    door: createImageSprite(doorImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-      slices: squareSlices,
-    }),
-    pivot: createImageSprite(pivotImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    ball: {
+      ...createImageSprite(createTexture(renderContext, ballImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    door: {
+      ...createImageSprite(createTexture(renderContext, doorImage), {
+        pixelsPerUnit: 1,
+        slices: squareSlices,
+      }),
+      category: renderLayer,
+    },
+    pivot: {
+      ...createImageSprite(createTexture(renderContext, pivotImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
   };
 }
 

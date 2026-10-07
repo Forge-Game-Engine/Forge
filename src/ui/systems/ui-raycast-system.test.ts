@@ -10,8 +10,8 @@ import { MouseInputSource } from '../../input/index.js';
 import {
   addCameraComponent,
   addSpriteComponent,
-  Renderable,
   RenderContext,
+  Texture,
 } from '../../rendering/index.js';
 import {
   addCanvasComponent,
@@ -30,9 +30,6 @@ const buildRenderContext = (width: number, height: number): RenderContext =>
     cssHeight: height,
     pixelRatio: 1,
   }) as RenderContext;
-
-const buildRenderable = (category = 1): Renderable =>
-  ({ category }) as Renderable;
 
 const buildMouseInputSource = (x: number, y: number): MouseInputSource =>
   ({ position: { x, y } }) as MouseInputSource;
@@ -163,7 +160,8 @@ describe('createUiRaycastEcsSystem', () => {
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(1 << 2),
+      texture: {} as Texture,
+      category: 1 << 2,
     });
 
     runRaycast(world, renderContext, 960, 540);
@@ -182,7 +180,8 @@ describe('createUiRaycastEcsSystem', () => {
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(1 << 5),
+      texture: {} as Texture,
+      category: 1 << 5,
     });
 
     runRaycast(world, renderContext, 960, 540);

@@ -8,6 +8,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -68,23 +69,29 @@ export async function createPanels(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
 
-  const naiveSprite = createImageSprite(panelImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const panelTexture = createTexture(renderContext, panelImage);
 
-  const stretchSprite = createImageSprite(panelImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-    slices: {
-      left: borderInset,
-      right: borderInset,
-      top: borderInset,
-      bottom: borderInset,
-      nativeWidth: nativeSize,
-      nativeHeight: nativeSize,
-    },
-  });
+  const naiveSprite = {
+    ...createImageSprite(panelTexture, {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+
+  const stretchSprite = {
+    ...createImageSprite(panelTexture, {
+      pixelsPerUnit: 1,
+      slices: {
+        left: borderInset,
+        right: borderInset,
+        top: borderInset,
+        bottom: borderInset,
+        nativeWidth: nativeSize,
+        nativeHeight: nativeSize,
+      },
+    }),
+    category: renderLayer,
+  };
 
   const height = DEMO_VERTICAL_WORLD_UNITS;
   const spacing = Math.min(height / 2, 160);

@@ -22,7 +22,6 @@ import {
   uiAlignments,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 const cellCount = 8;
 
@@ -93,10 +92,6 @@ export async function createInventoryGrid(
     childAlignment: uiAlignments.center,
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
   for (let i = 0; i < cellCount; i++) {
     const cell = world.createEntity();
 
@@ -104,10 +99,10 @@ export async function createInventoryGrid(
     addParentComponent(world, cell, { parent: panel });
     addRectTransformComponent(world, cell);
 
-    const sprite = createImageSprite(whiteImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiCategory,
-    });
+    const sprite = {
+      ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+      category: uiCategory,
+    };
     sprite.tintColor = new Color(0.55, 0.55, 0.6, 1);
 
     addSpriteComponent(world, cell, sprite);

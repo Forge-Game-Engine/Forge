@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                         |
 | **Found in**                          | Galactic Journey demo: `src/graphics/recover-from-context-loss.ts` (saves a lower quality and reloads the page) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                        |
-| **Related**                           | [`sprite-textures.md`](./sprite-textures.md) (prerequisite), [`render-resolution.md`](./render-resolution.md)   |
+| **Related**                           | [`render-resolution.md`](./render-resolution.md)                                                                |
 
 ## 0. Targeted modules
 
@@ -62,9 +62,9 @@ its settings without a reload.
   demo steps its quality down). With
   [`render-resolution.md`](./render-resolution.md) it can lower
   `maxPixelRatio` in the event handler instead of reloading.
-- **Raw GL objects created by game code.** After
-  [`sprite-textures.md`](./sprite-textures.md) removes the raw GL helpers,
-  a game has no reason to create them; if it does, it rebuilds them in
+- **Raw GL objects created by game code.** Forge no longer exports raw GL
+  helpers (textures are `Texture`s, programs are cached by the render
+  context), so a game has no reason to create them; if it does, it rebuilds them in
   `onContextRestored`.
 
 ---
@@ -103,11 +103,10 @@ For the engine to rebuild everything, everything has to be a Forge
 wrapper that owns its handles and keeps what it was built from. Today
 that's not true:
 
-- [`sprite-textures.md`](./sprite-textures.md) makes textures `Texture`
-  objects that keep their source, makes render targets expose `Texture`s,
-  moves the program cache onto the render context, and deletes the public
-  helpers that return bare handles (`createTextureFromImage`,
-  `createEmptyTexture`, `createProgram`, the shared placeholder textures).
+- Textures are already `Texture` objects (render targets expose
+  `Texture`s too), the program cache is on the render context, and the
+  public helpers that returned bare handles are gone. A `Texture` doesn't
+  keep its source yet: this design adds that, so it can re-upload it.
 - `Material` already takes its uniforms from the shader source's
   declarations rather than from the linked program, so a material created
   while the context is lost can validate `setUniform` without a program.
@@ -193,7 +192,7 @@ nothing extra. A texture made from a canvas keeps the canvas.
 `restoreContext()` draws the same frame as before, with no errors and no
 reload.
 
-Depends on [`sprite-textures.md`](./sprite-textures.md) (Phase 1).
+Builds on `Texture` and the render context's program cache, which have shipped.
 
 ---
 
@@ -221,7 +220,7 @@ resources from (Babylon, PlayCanvas, Phaser). (b) Lazily on next use
 
 **Rationale.** (a) puts the cost in one place, right after the restore,
 and matches Forge's explicit ownership (callers dispose what they create,
-see [`sprite-textures.md`](./sprite-textures.md) DL-2). (b) needs a
+as `Texture` does: its creator disposes it). (b) needs a
 generation check on every bind. (c) can't be iterated without
 `WeakRef`/`FinalizationRegistry` and would keep alive-looking entries for
 resources nobody disposed.

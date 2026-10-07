@@ -4,9 +4,9 @@ import { EcsWorld } from '../../ecs/index.js';
 import { ParticleEmitter, ParticleId } from '../components/index.js';
 import { positionId } from '../../common/index.js';
 import { Random, Vec2 } from '../../math/index.js';
-import { Renderable } from '../../rendering/index.js';
+import { Texture } from '../../rendering/index.js';
 
-const sprite = { width: 1, height: 1, renderable: {} as Renderable };
+const sprite = { width: 1, height: 1, texture: {} as Texture };
 
 describe('emitParticleBurst', () => {
   it('spawns a count from numParticlesRange around the given position, without an emitter entity', () => {

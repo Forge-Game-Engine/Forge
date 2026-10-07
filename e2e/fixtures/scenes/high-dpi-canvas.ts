@@ -17,7 +17,6 @@ import {
   Time,
   Vector2,
 } from '../../../src/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {
   matchesColor,
@@ -92,9 +91,9 @@ export interface HighDpiCanvasSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<HighDpiCanvasSceneHandle> => {
+): HighDpiCanvasSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -113,10 +112,7 @@ export const createScene: CreateScene = async (
     verticalWorldUnits,
   });
 
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
   const square = world.createEntity();
 
   addPositionComponent(world, square, {

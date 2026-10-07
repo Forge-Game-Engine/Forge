@@ -24,6 +24,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -68,13 +69,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = fleetCommandPalette.void;
 
   const { x: width, y: height } = getCameraView(
@@ -165,7 +163,7 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
 
   await createBackdrop(world, camera, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -206,9 +204,6 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
     navigateInput,
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
   const whiteCircleImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/White_Circle.png'),
   );
@@ -221,48 +216,50 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
   // are freely reused across several unrelated elements that happen to
   // share a tint (e.g. `panelSprite` backs the left nav panel *and* the
   // flagship card).
-  const plainSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const plainSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
 
-  const panelSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const panelSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   panelSprite.tintColor = fleetCommandPalette.panel;
 
-  const yellowSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const yellowSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   yellowSprite.tintColor = fleetCommandPalette.yellow;
 
-  const borderSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const borderSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   borderSprite.tintColor = fleetCommandPalette.border;
 
-  const voidSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const voidSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   voidSprite.tintColor = fleetCommandPalette.void;
 
-  const blueSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const blueSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   blueSprite.tintColor = fleetCommandPalette.blue;
 
   // The reference design's decorative backdrop circle is an actual circle,
   // not a tinted square, so it's drawn from its own plain white circle
-  // image rather than reusing `panelSprite`'s square White.png source.
-  const circleSprite = createImageSprite(whiteCircleImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  // image rather than reusing `panelSprite`'s square white texture.
+  const circleSprite = {
+    ...createImageSprite(createTexture(renderContext, whiteCircleImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayers.ui,
+  };
   circleSprite.tintColor = fleetCommandPalette.panel;
 
   const statusLabelWidth = 720;
@@ -357,7 +354,7 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

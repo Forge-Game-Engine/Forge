@@ -3,13 +3,20 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 import type { Vector2 } from '../../math/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
 import {
   TextHorizontalAlign,
   textHorizontalAlignments,
   TextVerticalAlign,
   textVerticalAlignments,
 } from '../types/text-alignment.js';
+
+/**
+ * The default rendering category a text entity's glyphs are drawn with when
+ * `TextEcsComponent.category` isn't overridden, matched against each
+ * camera's `cullingMask`. The same default as `SpriteEcsComponent.category`.
+ * Not reserved or forced - it's a default like any other.
+ */
+export const TEXT_RENDER_CATEGORY = 1;
 
 /**
  * Fields of {@link TextEcsComponent} with no sensible default; callers must
@@ -105,7 +112,7 @@ export interface TextDefaultedOptions {
   /**
    * The render category this text's glyphs are drawn with, matched against
    * each camera's `cullingMask` (the same bitmask-matching
-   * `SpriteEcsComponent.renderable.category` convention). Defaults to
+   * `SpriteEcsComponent.category` convention). Defaults to
    * `TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't
    * override it - not a reserved value, just a default: override it per
    * entity when a game needs a specific text entity (e.g. a UI label) under
@@ -130,7 +137,7 @@ export interface TextDefaultedOptions {
    * by `RenderContext.pixelRatio` so it keeps the same physical thickness
    * on a HiDPI display as on a standard one. Drawn
    * as its own pass, always before every glyph's fill (see
-   * `createTextRenderable`), so an outline can safely reach past a
+   * `createTextRenderables`), so an outline can safely reach past a
    * same-word neighboring glyph - even merge with that neighbor's own
    * outline - without ever painting over any glyph's fill. Requesting more
    * than the atlas's own encoded `distanceRange` can faithfully represent

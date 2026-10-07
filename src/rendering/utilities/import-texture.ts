@@ -1,3 +1,5 @@
+import type { Texture } from '../texture.js';
+
 /**
  * Fields of {@link ImportedTexture} with a sensible default; callers may
  * omit these.
@@ -15,15 +17,15 @@ export interface ImportTextureOptions {
   pixelsPerUnit: number;
 
   /**
-   * The texture's pixel width to import. Defaults to `image.width`;
+   * The texture's pixel width to import. Defaults to `texture.width`;
    * override for a texture whose usable pixel width differs from the
-   * source image, for example a single frame trimmed out of a larger
+   * whole texture, for example a single frame trimmed out of a larger
    * sprite sheet.
    */
   width: number;
 
   /**
-   * The texture's pixel height to import. Defaults to `image.height`.
+   * The texture's pixel height to import. Defaults to `texture.height`.
    */
   height: number;
 }
@@ -33,9 +35,9 @@ export interface ImportTextureOptions {
  */
 export interface ImportedTexture extends ImportTextureOptions {
   /**
-   * The source image this texture was imported from.
+   * The texture that was imported.
    */
-  image: HTMLImageElement;
+  texture: Texture;
 
   /**
    * The texture's width in world units: `width / pixelsPerUnit`.
@@ -56,21 +58,21 @@ const defaultImportTextureOptions = { pixelsPerUnit: 100 };
  * art pipeline's per-texture import settings would. Hand the result's
  * `worldWidth`/`worldHeight` to `createSprite`/`addSpriteComponent` instead
  * of authoring a sprite's world size by hand from pixel dimensions.
- * @param image - The source image to import.
+ * @param texture - The texture to import.
  * @param options - Options for configuring the import. `width`/`height`
- * default to the image's own pixel dimensions; `pixelsPerUnit` defaults to
+ * default to the texture's own size in texels; `pixelsPerUnit` defaults to
  * `100`.
  * @returns The resulting imported texture.
  * @throws An error if `pixelsPerUnit`, `width`, or `height` is not positive.
  */
 export function importTexture(
-  image: HTMLImageElement,
+  texture: Texture,
   options: Partial<ImportTextureOptions> = {},
 ): ImportedTexture {
   const pixelsPerUnit =
     options.pixelsPerUnit ?? defaultImportTextureOptions.pixelsPerUnit;
-  const width = options.width ?? image.width;
-  const height = options.height ?? image.height;
+  const width = options.width ?? texture.width;
+  const height = options.height ?? texture.height;
 
   if (pixelsPerUnit <= 0) {
     throw new Error(
@@ -85,7 +87,7 @@ export function importTexture(
   }
 
   return {
-    image,
+    texture,
     pixelsPerUnit,
     width,
     height,

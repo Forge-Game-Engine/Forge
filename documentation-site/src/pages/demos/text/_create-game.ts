@@ -12,7 +12,6 @@ import {
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createEffectsExamples } from './_create-effects-examples';
 import { createEffectsHeroExample } from './_create-effects-hero-example';
@@ -65,7 +64,7 @@ export const createTextGame = async (
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -76,13 +75,10 @@ export const createTextGame = async (
     imageUrl: defaultFontImageUrl,
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const whiteSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.foreground,
-  });
+  const whiteSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.foreground,
+  };
 
   const { x: width, y: height } = getCameraView(
     world,
@@ -188,7 +184,7 @@ export const createTextGame = async (
   // example moves its guide box each frame), so rendering sees this
   // frame's world positions.
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

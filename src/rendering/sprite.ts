@@ -1,13 +1,13 @@
 import { Vec2, Vector2 } from '../math/index.js';
 import { Color } from './color.js';
-import { Renderable } from './renderable.js';
+import type { Texture } from './texture.js';
 
 /**
  * Options for creating a `Sprite`.
  */
 export type SpriteOptions = {
-  /** The renderable to use for the sprite. */
-  renderable: Renderable;
+  /** The texture the sprite draws. */
+  texture: Texture;
 
   /** The width of the sprite. */
   width: number;
@@ -46,15 +46,15 @@ export class Sprite {
   /** The tint color of the sprite. */
   public tintColor: Color;
 
-  /** The renderable associated with the sprite. */
-  public readonly renderable: Renderable;
+  /** The texture the sprite draws. */
+  public texture: Texture;
 
   /**
    * Constructs a new instance of the `Sprite` class.
    * @param options - The options for creating the sprite.
    */
   constructor(options: SpriteOptions) {
-    const { renderable, pivot, width, height, tintColor } = {
+    const { texture, pivot, width, height, tintColor } = {
       ...defaultOptions,
       ...options,
     };
@@ -65,6 +65,6 @@ export class Sprite {
     this.width = width;
     this.height = height;
 
-    this.renderable = renderable;
+    this.texture = texture;
   }
 }

@@ -29,7 +29,7 @@ import { resolveCanvasPointerPosition } from '../utilities/resolve-canvas-pointe
 /**
  * Whether `camera` can actually see `entity` - `true` when `entity` has no
  * `SpriteEcsComponent` (an invisible hit region has nothing to cull) or its
- * `Renderable.category` matches the camera's `cullingMask`. An element
+ * `category` matches the camera's `cullingMask`. An element
  * culled from its canvas's camera must not be clickable either, or the UI
  * develops invisible hit regions.
  */
@@ -44,9 +44,7 @@ function isVisibleToCamera(
     return true;
   }
 
-  return (
-    !!camera && matchesMask(sprite.renderable.category, camera.cullingMask)
-  );
+  return !!camera && matchesMask(sprite.category, camera.cullingMask);
 }
 
 /** Groups interactable indices (into `interactableEntities`/`rectTransforms`) by their owning canvas entity. */

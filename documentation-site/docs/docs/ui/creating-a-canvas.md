@@ -70,14 +70,14 @@ transparent-cleared, off-screen `RenderTarget` composited onto the canvas
 by `createPresentEcsSystem` (see
 [Multipass Rendering](../rendering/multipass-rendering.md) for how the
 camera/render-target/present-pass pieces fit together generally), isolated
-from the world by `cullingMask`/`Renderable.category`. `cullingMask` has no
+from the world by `cullingMask` and each visual's `category`. `cullingMask` has no
 default - `createUiCanvas` requires it explicitly, since Forge has no
 reserved "this bit means UI" value: pick one your game isn't already using
 for another camera, and reuse that exact value for every UI visual's own
-category. Give a panel's sprite that same category -
-`createImageSprite`'s `layer` option sets a sprite's `Renderable.category`,
-confusingly by that name (see `SpriteEcsComponent.layer`, a _different_,
-draw-order-only field, for the usual meaning of "layer"). Without a
+category. Give a panel's sprite that same
+[`category`](../rendering/sprites.md#choosing-which-cameras-draw-a-sprite)
+(`SpriteEcsComponent.category`, not `layer`, which is the sprite's draw
+order). Without a
 matching category, a world camera whose own `cullingMask` still matches
 everything would draw the panel a second time wherever its UI-space
 position happens to land in the world.
@@ -126,12 +126,13 @@ const fill = createPanel(world, healthBarCanvas, {
 ```
 
 A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
+
 - sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
-options) rather than the render destination's size. Its offset from the
-entity it's attached to comes from `anchoredPosition` above, not from touching
-`PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
-canvas's local position from its anchor every frame, so a manually-set
-`PositionEcsComponent.local` would just be overwritten on the next frame.
+  options) rather than the render destination's size. Its offset from the
+  entity it's attached to comes from `anchoredPosition` above, not from touching
+  `PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
+  canvas's local position from its anchor every frame, so a manually-set
+  `PositionEcsComponent.local` would just be overwritten on the next frame.
 
 It draws through whichever camera `camera` names - typically the game's own
 world camera - not a dedicated UI camera `createUiCanvas` creates for you,
@@ -162,8 +163,10 @@ const followEnemySystem: EcsSystem<[]> = {
     );
 
     // The enemy has no parent, so its local position is its world position.
-    rectTransform.anchoredPosition.x = enemyPosition.local.x + healthBarOffset.x;
-    rectTransform.anchoredPosition.y = enemyPosition.local.y + healthBarOffset.y;
+    rectTransform.anchoredPosition.x =
+      enemyPosition.local.x + healthBarOffset.x;
+    rectTransform.anchoredPosition.y =
+      enemyPosition.local.y + healthBarOffset.y;
   },
 };
 ```

@@ -21,7 +21,6 @@ import {
   RENDER_TARGET_FORMAT_KEYS,
   spriteId,
 } from '../../../src/rendering/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -79,9 +78,9 @@ export interface HdrTintBloomSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<HdrTintBloomSceneHandle> => {
+): HdrTintBloomSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -111,10 +110,7 @@ export const createScene: CreateScene = async (
   addBloomComponent(world, cameraEntity, bloomSettings);
   addToneMappingComponent(world, cameraEntity);
 
-  const squareImage = await createSquareImage('#fff');
-  const sprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const sprite = createImageSprite(renderContext.whiteTexture);
 
   const addSquare = (x: number, tintColor: Color): void => {
     const entity = world.createEntity();

@@ -5,7 +5,7 @@ import type {
   InstanceComponents,
   Renderable,
   TextEffectsInstanceData,
-} from '../../rendering/index.js';
+} from '../../rendering/renderable.js';
 import { textEffectsInstanceDataSegment } from './text-effects-instance-data-segment.js';
 
 function buildComponents(

@@ -1,4 +1,5 @@
 import { Matrix3x3, Vector2 } from '../../math/index.js';
+import { Texture } from '../texture.js';
 
 /**
  * A value that can be assigned to a shader uniform with
@@ -11,7 +12,7 @@ export type UniformValue =
   | Float32Array
   | Int32Array
   | Uint32Array
-  | WebGLTexture
+  | Texture
   | Vector2
   | Matrix3x3;
 
@@ -26,6 +27,7 @@ export function isVector2(value: UniformValue): value is Vector2 {
   return (
     typeof value === 'object' &&
     !(value instanceof Matrix3x3) &&
+    !(value instanceof Texture) &&
     'x' in value &&
     'y' in value
   );

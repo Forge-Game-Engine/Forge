@@ -16,6 +16,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   getCameraView,
   RenderContext,
   SpriteEcsComponent,
@@ -84,22 +85,30 @@ export async function spawnShapes(
       imageCache.getOrLoad(getAssetUrl('img/physics/block_narrow.png')),
     ]);
 
-  const ballSprite = createImageSprite(ballImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
-  const triangleSprite = createImageSprite(triangleImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
-  const narrowSprite = createImageSprite(narrowImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const ballSprite = {
+    ...createImageSprite(createTexture(renderContext, ballImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+  const squareSprite = {
+    ...createImageSprite(createTexture(renderContext, squareImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+  const triangleSprite = {
+    ...createImageSprite(createTexture(renderContext, triangleImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+  const narrowSprite = {
+    ...createImageSprite(createTexture(renderContext, narrowImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   // One spawner per shape: pairs the sprite to render with the physics
   // collider to simulate, both sized relative to the sprite's height.

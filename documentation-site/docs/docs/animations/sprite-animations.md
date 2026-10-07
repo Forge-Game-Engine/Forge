@@ -84,6 +84,7 @@ import {
   createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
+  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
 const { imageCache } = renderContext;
@@ -92,23 +93,21 @@ const { imageCache } = renderContext;
 const spriteEntity = world.createEntity();
 addPositionComponent(world, spriteEntity, { local: { x: 0, y: 0 } });
 
-// 2. load the sprite sheet
+// 2. load the sprite sheet and upload it to a texture
 const image = await imageCache.getOrLoad('character_sprite_sheet_32_32.png');
+const texture = createTexture(renderContext, image, { filter: 'nearest' });
 
 // 3. create a sprite and add it to the entity
 addSpriteComponent(
   world,
   spriteEntity,
-  createImageSprite(
-    image,
-    renderContext,
-    1, // 3.1 render layer
-    { x: 32, y: 32 }, // 3.2 define the dimensions of a frame
-  ),
+  createImageSprite(texture, {
+    frameDimensions: { x: 32, y: 32 }, // 3.1 define the dimensions of a frame
+  }),
 );
 
 // 4. create a sprite sheet
-const spriteSheet = createSpriteSheet(image, 2, 5); // 4.1 define the rows and columns (2x5 = 10 frames in total)
+const spriteSheet = createSpriteSheet(texture, 2, 5); // 4.1 define the rows and columns (2x5 = 10 frames in total)
 
 // 5. create an animation clip
 const idleAnimation = new AnimationClip(

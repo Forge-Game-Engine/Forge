@@ -16,6 +16,7 @@ import {
   Color,
   createCamera,
   createCameraEcsSystem,
+  createTexture,
   getCameraView,
   createImageSprite,
   createRenderEcsSystem,
@@ -65,9 +66,7 @@ export const createGameStatesGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const fontAtlas = await new FontAtlasCache(
-    renderContext.imageCache,
-  ).getOrLoad({
+  const fontAtlas = await new FontAtlasCache(renderContext).getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
     metricsUrl: new URL(
@@ -78,16 +77,17 @@ export const createGameStatesGame = async (): Promise<Game> => {
   });
 
   const starSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(getAssetUrl('img/star_large.png')),
-    renderContext,
+    createTexture(
+      renderContext,
+      await renderContext.imageCache.getOrLoad(
+        getAssetUrl('img/star_large.png'),
+      ),
+    ),
   );
   starSprite.width = 36;
   starSprite.height = 36;
 
-  const basketSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(getAssetUrl('img/White.png')),
-    renderContext,
-  );
+  const basketSprite = createImageSprite(renderContext.whiteTexture);
   basketSprite.width = 110;
   basketSprite.height = 16;
   basketSprite.tintColor = new Color(0.3, 0.75, 1, 1);
@@ -172,7 +172,7 @@ export const createGameStatesGame = async (): Promise<Game> => {
   // These run in every state.
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ParticleEmitter } from './particle-emitter.js';
-import { Renderable } from '../../rendering/index.js';
+import { Texture } from '../../rendering/index.js';
 
 const sprite = {
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
 };
 
 describe('ParticleEmitter', () => {

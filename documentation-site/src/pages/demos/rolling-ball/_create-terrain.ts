@@ -13,6 +13,7 @@ import {
   buildTerrainCurve,
   Color,
   createTerrainMesh,
+  createTexture,
   heightAtLocalX,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -180,12 +181,12 @@ export async function createTerrain(
     position,
     angle,
     border: {
-      image: borderImage,
+      texture: createTexture(renderContext, borderImage, { wrap: 'repeat' }),
       tileSize: border.tileSize,
       tint: border.tint,
     },
     fill: {
-      image: fillImage,
+      texture: createTexture(renderContext, fillImage, { wrap: 'repeat' }),
       tileSize: fill.tileSize,
       tint: fill.tint,
     },

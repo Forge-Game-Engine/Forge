@@ -5,6 +5,7 @@ import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   Color,
   createImageSprite,
+  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -35,10 +36,12 @@ export async function createEmberFountain(
     getAssetUrl('img/kenney_particle-pack/PNG (Transparent)/circle_01.png'),
   );
 
-  const emberSprite = createImageSprite(emberImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const emberSprite = {
+    ...createImageSprite(createTexture(renderContext, emberImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   emberSprite.tintColor = emberColor;
 

@@ -14,6 +14,7 @@ import { Material } from '../materials/index.js';
 import { PingPongTarget } from '../ping-pong-target.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
+import type { Texture } from '../texture.js';
 
 // Shared, read-only direction constants for the two blur passes: passed
 // straight through as the `u_direction` uniform's `Float32Array` value, so
@@ -49,19 +50,19 @@ export const createGaussianBlurEcsSystem = (
   const { gl, shaderCache } = renderContext;
 
   const blurMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('gaussian-blur.frag'),
-    gl,
   );
   const downsampleMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('box-downsample.frag'),
-    gl,
   );
   const crossFadeMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('cross-fade.frag'),
-    gl,
   );
 
   // Scratch GPU resource, one entry per distinct `renderTarget` in use by a
@@ -97,7 +98,7 @@ export const createGaussianBlurEcsSystem = (
 
   const drawPass = (
     material: Material,
-    sourceTexture: WebGLTexture,
+    sourceTexture: Texture,
     direction: Float32Array,
     texelSize: Float32Array,
     destination: RenderTarget,

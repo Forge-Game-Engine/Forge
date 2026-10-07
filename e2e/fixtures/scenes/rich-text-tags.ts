@@ -8,6 +8,7 @@ import {
   createRenderContext,
   createRenderEcsSystem,
   createTextShapingEcsSystem,
+  createTexture,
   createTransformEcsSystem,
   CURRENT_FONT_ATLAS_FORMAT_VERSION,
   EcsWorld,
@@ -144,7 +145,7 @@ export const createScene: CreateScene = async (
       ]),
       kerning: new Map(),
     },
-    image: glyphImage,
+    texture: createTexture(renderContext, glyphImage),
   };
 
   const textEntity = world.createEntity();
@@ -165,7 +166,7 @@ export const createScene: CreateScene = async (
   });
 
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

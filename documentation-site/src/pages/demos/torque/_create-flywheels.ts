@@ -14,6 +14,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   NineSliceOptions,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -66,10 +67,12 @@ async function createFlywheelEntity(
   const image = await imageCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
-  const sprite = createImageSprite(image, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const sprite = {
+    ...createImageSprite(createTexture(renderContext, image), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const entity = world.createEntity();
   const flywheelCollider = new PolygonCollider(

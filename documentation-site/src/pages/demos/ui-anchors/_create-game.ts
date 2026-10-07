@@ -12,6 +12,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   getCameraView,
   RenderContext,
   spriteId,
@@ -57,13 +58,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
   const { x: width, y: height } = getCameraView(
@@ -108,7 +106,7 @@ export const createAnchorsGame = async (
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -129,18 +127,20 @@ export const createAnchorsGame = async (
   const panelImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
-  const panelSprite = createImageSprite(panelImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-    slices: {
-      left: 26,
-      right: 26,
-      top: 26,
-      bottom: 26,
-      nativeWidth: 96,
-      nativeHeight: 96,
-    },
-  });
+  const panelSprite = {
+    ...createImageSprite(createTexture(renderContext, panelImage), {
+      pixelsPerUnit: 1,
+      slices: {
+        left: 26,
+        right: 26,
+        top: 26,
+        bottom: 26,
+        nativeWidth: 96,
+        nativeHeight: 96,
+      },
+    }),
+    category: renderLayers.ui,
+  };
 
   const labeledPanel = (
     text: string,
@@ -228,7 +228,7 @@ export const createAnchorsGame = async (
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

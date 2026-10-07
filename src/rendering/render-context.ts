@@ -2,9 +2,14 @@ import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
-import { UniformValue } from './materials/index.js';
+import { ShaderProgram } from './materials/shader-program.js';
+import { SpriteMaterial } from './materials/sprite-material.js';
+import { UniformValue } from './materials/uniform-value.js';
+import { OwnedTexture } from './owned-texture.js';
 import { RenderTarget } from './render-target.js';
-import { ShaderCache } from './shaders/index.js';
+import type { ForgeShaderSource } from './shaders/pre-processing/forge-shader-source.js';
+import { ShaderCache } from './shaders/pre-processing/dependency-resolution/shader-cache.js';
+import type { Texture } from './texture.js';
 import { createShaderCache, getDevicePixelRatio } from './utilities/index.js';
 
 /**
@@ -101,6 +106,13 @@ export class RenderContext implements Resizable {
   public readonly maxPixelRatio: number;
 
   private readonly _globalUniformValues: Map<string, UniformValue>;
+  private readonly _shaderPrograms = new WeakMap<
+    ForgeShaderSource,
+    WeakMap<ForgeShaderSource, ShaderProgram>
+  >();
+  private _whiteTexture: OwnedTexture | null = null;
+  private _blackTexture: OwnedTexture | null = null;
+  private _spriteMaterial: SpriteMaterial | null = null;
 
   /**
    * Constructs a new instance of the `RenderContext` class.
@@ -248,6 +260,81 @@ export class RenderContext implements Resizable {
     // a render target's color as already premultiplied by its alpha.
     this.gl.clearColor(r * a, g * a, b * a, a);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+  }
+
+  /**
+   * A 1x1 opaque white texture, for a sprite drawn as a solid color: the
+   * sprite shader multiplies the texture by `tintColor`, so white leaves the
+   * tint as it is. Owned by the render context.
+   */
+  get whiteTexture(): Texture {
+    this._whiteTexture ??= OwnedTexture.createSolidColor(
+      this.gl,
+      [255, 255, 255, 255],
+    );
+
+    return this._whiteTexture;
+  }
+
+  /**
+   * A 1x1 opaque black texture: what a sampler a material hasn't set
+   * samples, and the emissive map of a sprite without one. Owned by the
+   * render context.
+   */
+  get blackTexture(): Texture {
+    this._blackTexture ??= OwnedTexture.createSolidColor(
+      this.gl,
+      [0, 0, 0, 255],
+    );
+
+    return this._blackTexture;
+  }
+
+  /**
+   * The material every sprite without its own `material` draws with
+   * (`sprite.vert` + `sprite.frag`), shared by all of them.
+   */
+  get spriteMaterial(): SpriteMaterial {
+    this._spriteMaterial ??= new SpriteMaterial(this, 'sprite.frag');
+
+    return this._spriteMaterial;
+  }
+
+  /**
+   * Returns the linked program for a vertex and fragment shader pair,
+   * compiling and linking it the first time the pair is asked for. Every
+   * `Material` made from the same two shader sources shares it.
+   * @param vertexShaderSource - The vertex shader source.
+   * @param fragmentShaderSource - The fragment shader source.
+   * @returns The shared program.
+   * @throws An error if a shader fails to compile or link, if the two
+   * shaders declare the same uniform with different types or sizes, or if
+   * they declare a sampler other than `sampler2D`.
+   */
+  public getShaderProgram(
+    vertexShaderSource: ForgeShaderSource,
+    fragmentShaderSource: ForgeShaderSource,
+  ): ShaderProgram {
+    let programsByFragment = this._shaderPrograms.get(vertexShaderSource);
+
+    if (!programsByFragment) {
+      programsByFragment = new WeakMap();
+      this._shaderPrograms.set(vertexShaderSource, programsByFragment);
+    }
+
+    let shaderProgram = programsByFragment.get(fragmentShaderSource);
+
+    if (!shaderProgram) {
+      shaderProgram = new ShaderProgram(
+        this.gl,
+        vertexShaderSource,
+        fragmentShaderSource,
+        () => this.blackTexture,
+      );
+      programsByFragment.set(fragmentShaderSource, shaderProgram);
+    }
+
+    return shaderProgram;
   }
 
   public setGlobalUniformValue(name: string, value: UniformValue): void {

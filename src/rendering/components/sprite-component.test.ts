@@ -1,38 +1,31 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { addSpriteComponent, spriteId } from './sprite-component.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { Color } from '../color.js';
-import { Geometry } from '../geometry/geometry.js';
-import { Material } from '../materials/material.js';
-import { Renderable } from '../renderable.js';
+import type { Texture } from '../texture.js';
 
-const createRenderable = (): Renderable =>
-  new Renderable(
-    { bind: vi.fn() } as unknown as Geometry,
-    { bind: vi.fn(), program: {} } as unknown as Material,
-    10,
-    0,
-    vi.fn(),
-    vi.fn(),
-  );
+const createTexture = (): Texture => ({}) as Texture;
 
 describe('addSpriteComponent', () => {
   it('attaches a component with default values for unspecified options', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const renderable = createRenderable();
+    const texture = createTexture();
 
-    addSpriteComponent(world, entity, { width: 32, height: 32, renderable });
+    addSpriteComponent(world, entity, { width: 32, height: 32, texture });
 
     expect(world.getComponent(entity, spriteId)).toEqual({
       width: 32,
       height: 32,
-      renderable,
+      texture,
       pivot: { x: 0.5, y: 0.5 },
       tintColor: Color.white,
       uvOffset: Vec2.zero,
       uvScale: Vec2.one,
+      emissive: null,
+      material: null,
+      category: 1,
       enabled: true,
       layer: 0,
     });
@@ -41,12 +34,12 @@ describe('addSpriteComponent', () => {
   it('overrides only the provided options', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const renderable = createRenderable();
+    const texture = createTexture();
 
     addSpriteComponent(world, entity, {
       width: 32,
       height: 32,
-      renderable,
+      texture,
       enabled: false,
       layer: 2,
     });
@@ -60,12 +53,12 @@ describe('addSpriteComponent', () => {
   it('returns the attached component', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const renderable = createRenderable();
+    const texture = createTexture();
 
     const component = addSpriteComponent(world, entity, {
       width: 32,
       height: 32,
-      renderable,
+      texture,
     });
 
     expect(world.getComponent(entity, spriteId)).toBe(component);
@@ -74,9 +67,9 @@ describe('addSpriteComponent', () => {
   it('leaves sortDepth undefined by default', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const renderable = createRenderable();
+    const texture = createTexture();
 
-    addSpriteComponent(world, entity, { width: 32, height: 32, renderable });
+    addSpriteComponent(world, entity, { width: 32, height: 32, texture });
 
     expect(world.getComponent(entity, spriteId)?.sortDepth).toBeUndefined();
   });
@@ -84,12 +77,12 @@ describe('addSpriteComponent', () => {
   it('accepts an explicit sortDepth override', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
-    const renderable = createRenderable();
+    const texture = createTexture();
 
     addSpriteComponent(world, entity, {
       width: 32,
       height: 32,
-      renderable,
+      texture,
       sortDepth: 7,
     });
 
@@ -100,7 +93,7 @@ describe('addSpriteComponent', () => {
     const world = new EcsWorld();
     const first = world.createEntity();
     const second = world.createEntity();
-    const options = { width: 32, height: 32, renderable: createRenderable() };
+    const options = { width: 32, height: 32, texture: createTexture() };
 
     addSpriteComponent(world, first, options);
     addSpriteComponent(world, second, options);
@@ -117,7 +110,7 @@ describe('addSpriteComponent', () => {
     const options = {
       width: 32,
       height: 32,
-      renderable: createRenderable(),
+      texture: createTexture(),
       pivot: { x: 0, y: 1 },
       uvOffset: { x: 0.25, y: 0 },
       uvScale: { x: 0.25, y: 1 },
@@ -147,7 +140,7 @@ describe('addSpriteComponent', () => {
     const component = addSpriteComponent(world, entity, {
       width: 24,
       height: 16,
-      renderable: createRenderable(),
+      texture: createTexture(),
       slices,
     });
 
@@ -168,7 +161,7 @@ describe('addSpriteComponent', () => {
     const component = addSpriteComponent(world, entity, {
       width: 178,
       height: 80,
-      renderable: createRenderable(),
+      texture: createTexture(),
       slices: {
         left: 8,
         right: 8,
@@ -193,7 +186,7 @@ describe('addSpriteComponent', () => {
     addSpriteComponent(world, entity, {
       width: 24,
       height: 24,
-      renderable: createRenderable(),
+      texture: createTexture(),
       slices,
     });
 

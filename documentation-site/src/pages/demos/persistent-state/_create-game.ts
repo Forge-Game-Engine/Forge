@@ -40,7 +40,6 @@ import {
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { loadSettings, maxSize, minSize } from './_settings';
 import { spinnerId } from './_spinner.component';
 import { createSpinnerEcsSystem } from './_spinner.system';
@@ -64,13 +63,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
   const { x: width, y: height } = getCameraView(
@@ -118,16 +114,12 @@ export const createPersistentStateGame = async (): Promise<Game> => {
 
   await createBackdrop(world, camera, renderContext);
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
   // The square reads its settings from a component, written from the
   // record. Changes go through `settings.set`, never the component.
-  const squareSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const squareSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   squareSprite.width = 120;
   squareSprite.height = 120;
   squareSprite.tintColor = accentColor;
@@ -144,7 +136,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
     Object.assign(world.getComponentRequired(square, spinnerId), values);
   });
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -178,10 +170,10 @@ export const createPersistentStateGame = async (): Promise<Game> => {
   };
 
   const uiSprite = (tint: Color) => {
-    const sprite = createImageSprite(whiteImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayers.ui,
-    });
+    const sprite = {
+      ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+      category: renderLayers.ui,
+    };
     sprite.tintColor = tint;
 
     return sprite;
@@ -262,7 +254,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
   world.addSystem(createSpinnerEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

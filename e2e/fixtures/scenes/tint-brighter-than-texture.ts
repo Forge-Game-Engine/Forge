@@ -12,17 +12,18 @@ import {
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
+  createTexture,
   spriteId,
 } from '../../../src/rendering/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 import { brightTint } from './tint-brighter-than-texture-tint.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
 
-// Mid-gray (102 / 255 = 0.4 per channel), so a tint above 1 has room to
-// brighten it before the canvas's 8-bit channels reach full brightness.
-const textureFill = '#666';
+// A single mid-gray texel (102 / 255 = 0.4 per channel), so a tint above 1
+// has room to brighten it before the canvas's 8-bit channels reach full
+// brightness.
+const textureFill = [102, 102, 102, 255];
 
 // One world unit is one CSS pixel (see `verticalWorldUnits` below).
 const spriteSizeInPixels = 48;
@@ -64,9 +65,9 @@ export interface TintBrighterThanTextureSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<TintBrighterThanTextureSceneHandle> => {
+): TintBrighterThanTextureSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -86,10 +87,12 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: renderContext.cssHeight,
   });
 
-  const squareImage = await createSquareImage(textureFill);
-  const sprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const sprite = createImageSprite(
+    createTexture(
+      renderContext,
+      new ImageData(new Uint8ClampedArray(textureFill), 1, 1),
+    ),
+  );
 
   const addSquare = (x: number, tintColor: Color): void => {
     const entity = world.createEntity();

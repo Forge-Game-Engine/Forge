@@ -1,89 +1,84 @@
 import { Vec2, Vec3, Vector2, Vector3 } from '../../math/index.js';
 import type { Color } from '../color.js';
-import { ForgeShaderSource, UniformSourceDeclaration } from '../index.js';
-import { addUniformDeclaration } from '../shaders/pre-processing/uniform-declarations.js';
-import {
-  createUniformUpload,
-  UniformDeclaration,
-  UniformUpload,
-} from './create-uniform-upload.js';
-import { getUniformType, getUniformTypeByGlslName } from './uniform-types.js';
+import type { RenderContext } from '../render-context.js';
+import type { ForgeShaderSource } from '../shaders/pre-processing/forge-shader-source.js';
+import { createUniformUpload, UniformUpload } from './create-uniform-upload.js';
+import type { ShaderProgram } from './shader-program.js';
 import { UniformValue } from './uniform-value.js';
 
 /**
- * WebGL reports a uniform array under its first element's name
- * (`u_items[0]`); stripping the suffix gives the name it's declared with.
+ * A shader program plus the uniform values to draw with: what other engines
+ * call a material instance. Materials made from the same two shaders share
+ * one linked program (see `RenderContext.getShaderProgram`), so creating a
+ * material is cheap; each material keeps its own uniform values, and binding
+ * it uploads them.
  */
-const arrayElementZeroSuffix = '[0]';
-
-/** A uniform the linked program kept, and where to upload its value. */
-interface ActiveUniformSpec extends UniformDeclaration {
-  readonly location: WebGLUniformLocation;
-}
-
 export class Material {
-  public readonly program: WebGLProgram;
-
-  /** A description of the material's shaders, for error messages. */
-  private readonly _description: string;
-  /** The names of the uniforms its shaders declare, in declaration order. */
-  private readonly _declaredUniformNames: string[] = [];
-  /**
-   * Every uniform that can be set, by name: the declared uniforms, whether
-   * or not the compiler kept them, and the active members of struct
-   * uniforms. Arrays are reachable as `u_items` and `u_items[0]`.
-   */
-  private readonly _uniforms: Map<string, UniformDeclaration> = new Map();
-  /** Active uniforms in program order, each listed once. */
-  private readonly _activeUniforms: ActiveUniformSpec[] = [];
+  private readonly _shaderProgram: ShaderProgram;
   /** Pending uploads by uniform name (see `UniformDeclaration.name`). */
   private readonly _uniformUploads: Map<string, UniformUpload> = new Map();
 
   /**
    * Constructs a new instance of the `Material` class.
+   * @param renderContext - The render context to draw with. Its program
+   * cache compiles and links the two shaders the first time any material
+   * uses them.
    * @param vertexShaderSource - The vertex shader source.
    * @param fragmentShaderSource - The fragment shader source.
-   * @param gl - The WebGL2 rendering context.
-   * @throws An error if a shader fails to compile or link, or if the two
-   * shaders declare the same uniform with different types or sizes.
+   * @throws An error if a shader fails to compile or link, if the two
+   * shaders declare the same uniform with different types or sizes, or if
+   * they declare a sampler other than `sampler2D`.
    */
   constructor(
+    renderContext: RenderContext,
     vertexShaderSource: ForgeShaderSource,
     fragmentShaderSource: ForgeShaderSource,
-    gl: WebGL2RenderingContext,
   ) {
-    this._description = `material "${vertexShaderSource.name}" + "${fragmentShaderSource.name}"`;
-    this.program = this._createProgram(
-      gl,
-      vertexShaderSource.preparedSource,
-      fragmentShaderSource.preparedSource,
+    this._shaderProgram = renderContext.getShaderProgram(
+      vertexShaderSource,
+      fragmentShaderSource,
     );
-    this._addDeclaredUniforms(vertexShaderSource, fragmentShaderSource);
-    this._addActiveUniforms(gl);
+  }
+
+  /** The linked WebGL program, shared with every material made from the same shaders. */
+  get program(): WebGLProgram {
+    return this._shaderProgram.program;
   }
 
   /**
-   * Binds the material: uses its program, uploads every uniform that has a
-   * value, and binds its textures to consecutive texture units.
+   * Binds the material: uses its program and gives every uniform the
+   * program kept a value, the material's own if it set one, and otherwise a
+   * default (zero for numbers, vectors and matrices, the render context's
+   * `blackTexture` for samplers). Textures are bound to consecutive texture
+   * units from `0`.
    * @param gl - The WebGL2 rendering context.
+   * @returns The first texture unit the material left free.
    */
-  public bind(gl: WebGL2RenderingContext): void {
+  public bind(gl: WebGL2RenderingContext): number {
     gl.useProgram(this.program);
 
     let textureUnit = 0;
 
-    for (const spec of this._activeUniforms) {
-      const upload = this._uniformUploads.get(spec.name);
+    for (const uniform of this._shaderProgram.activeUniforms) {
+      const upload =
+        this._uniformUploads.get(uniform.name) ?? uniform.defaultUpload;
 
-      if (upload === undefined) {
-        // TODO: improvement - evaluate whether uniform defaults should be provided.
-        // If needed, defaults may be defined by shader conventions.
-
-        continue;
+      if (upload !== null) {
+        textureUnit = upload(gl, uniform.location, textureUnit);
       }
-
-      textureUnit = upload(gl, spec.location, textureUnit);
     }
+
+    return textureUnit;
+  }
+
+  /**
+   * Whether the material's shaders declare a uniform called `name`, so it
+   * can be set (see {@link Material.setUniform}).
+   * @param name - The uniform's name.
+   * @returns `true` if the uniform can be set.
+   */
+  public hasUniform(name: string): boolean {
+    return this._shaderProgram.uniforms.has(name);
   }
 
   /**
@@ -96,7 +91,7 @@ export class Material {
    * - `int`, `ivecN`: an `Int32Array` (a `number` or `boolean` for `int`).
    * - `uint`, `uvecN`: a `Uint32Array` (a `number` for `uint`).
    * - `bool`, `bvecN`: an `Int32Array` (a `boolean` for `bool`).
-   * - samplers: a `WebGLTexture`.
+   * - `sampler2D`: a `Texture`.
    *
    * A typed array must hold exactly one element's worth of components (4 for
    * a `vec4`, 16 for a `mat4`), or, for a uniform array, a whole number of
@@ -115,15 +110,7 @@ export class Material {
    * or if `value` doesn't fit the uniform's declared type.
    */
   public setUniform(name: string, value: UniformValue): void {
-    const uniform = this._uniforms.get(name);
-
-    if (uniform === undefined) {
-      throw new Error(
-        `Uniform "${name}" is not declared in ${this._description}. Declared uniforms: ${this._declaredUniformNames.join(', ') || 'none'}.`,
-      );
-    }
-
-    this._uniformUploads.set(uniform.name, createUniformUpload(uniform, value));
+    this.storeUniform(name, value);
   }
 
   /**
@@ -149,137 +136,25 @@ export class Material {
     );
   }
 
-  private _createProgram(
-    gl: WebGL2RenderingContext,
-    vertexShaderSource: string,
-    fragmentShaderSource: string,
-  ): WebGLProgram {
-    const vertexShader = this._compileShader(
-      gl,
-      vertexShaderSource,
-      gl.VERTEX_SHADER,
-    );
-    const fragmentShader = this._compileShader(
-      gl,
-      fragmentShaderSource,
-      gl.FRAGMENT_SHADER,
-    );
-
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(program);
-
-      throw new Error(`Failed to link program: ${log}`);
-    }
-
-    return program;
-  }
-
-  private _compileShader(
-    gl: WebGL2RenderingContext,
-    source: string,
-    type: GLenum,
-  ): WebGLShader {
-    const shader = gl.createShader(type)!;
-
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader); // TODO: Add shader cache for compiled shaders.
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader);
-
-      throw new Error(`Shader compile error: ${log}`);
-    }
-
-    return shader;
-  }
-
   /**
-   * Registers every uniform the two shaders declare, with the type and size
-   * from its declaration. A struct-typed uniform isn't settable by its own
-   * name; its active members are added by `_addActiveUniforms`.
+   * Checks `value` against the uniform's declaration and stores it, to be
+   * uploaded on the next {@link Material.bind}. What
+   * {@link Material.setUniform} does, without any restriction a subclass
+   * puts on which uniforms callers may set.
+   * @param name - The uniform's name.
+   * @param value - The value to upload.
+   * @throws An error under the same conditions as {@link Material.setUniform}.
    */
-  private _addDeclaredUniforms(
-    vertexShaderSource: ForgeShaderSource,
-    fragmentShaderSource: ForgeShaderSource,
-  ): void {
-    const declarations = new Map<string, UniformSourceDeclaration>();
+  protected storeUniform(name: string, value: UniformValue): void {
+    const { uniforms, description, declaredUniformNames } = this._shaderProgram;
+    const uniform = uniforms.get(name);
 
-    for (const source of [vertexShaderSource, fragmentShaderSource]) {
-      for (const declaration of source.uniformDeclarations.values()) {
-        addUniformDeclaration(declarations, declaration, this._description);
-      }
+    if (uniform === undefined) {
+      throw new Error(
+        `Uniform "${name}" is not declared in ${description}. Declared uniforms: ${declaredUniformNames.join(', ') || 'none'}.`,
+      );
     }
 
-    for (const declaration of declarations.values()) {
-      const glslType = getUniformTypeByGlslName(declaration.glslTypeName);
-
-      if (glslType === null) {
-        continue;
-      }
-
-      const { name } = declaration;
-      const uniform: UniformDeclaration = {
-        name,
-        glType: glslType.glType,
-        uniformType: glslType.uniformType,
-        size: declaration.size,
-      };
-
-      this._declaredUniformNames.push(name);
-      this._uniforms.set(name, uniform);
-
-      if (declaration.isArray) {
-        this._uniforms.set(`${name}${arrayElementZeroSuffix}`, uniform);
-      }
-    }
-  }
-
-  /**
-   * Records where to upload each uniform the linked program kept, in
-   * program order. A declared uniform keeps its declared type and size;
-   * anything else the program reports (members of a struct uniform) is
-   * typed from what `getActiveUniform` reports.
-   */
-  private _addActiveUniforms(gl: WebGL2RenderingContext): void {
-    const program = this.program;
-
-    const numUniforms = gl.getProgramParameter(
-      program,
-      gl.ACTIVE_UNIFORMS,
-    ) as number;
-
-    for (let i = 0; i < numUniforms; i++) {
-      const info = gl.getActiveUniform(program, i);
-
-      if (!info) {
-        continue;
-      }
-
-      const location = gl.getUniformLocation(program, info.name);
-
-      if (location === null) {
-        continue;
-      }
-
-      const name = info.name.endsWith(arrayElementZeroSuffix)
-        ? info.name.slice(0, -arrayElementZeroSuffix.length)
-        : info.name;
-
-      const uniform = this._uniforms.get(name) ?? {
-        name,
-        glType: info.type,
-        uniformType: getUniformType(info.type),
-        size: info.size,
-      };
-
-      this._uniforms.set(name, uniform);
-      this._uniforms.set(info.name, uniform);
-      this._activeUniforms.push({ ...uniform, location });
-    }
+    this._uniformUploads.set(uniform.name, createUniformUpload(uniform, value));
   }
 }

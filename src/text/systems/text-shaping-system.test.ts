@@ -1,29 +1,13 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ImageCache } from '../../asset-loading/index.js';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
-import {
-  ForgeShaderSource,
-  RenderContext,
-  ShaderCache,
-  spriteFragmentShader,
-} from '../../rendering/index.js';
+import type { Texture } from '../../rendering/texture.js';
 import { addTextComponent } from '../components/text-component.js';
 import {
   TextMeshEcsComponent,
   textMeshId,
 } from '../components/text-mesh-component.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import {
-  msdfEffectsFragmentShader,
-  msdfFillFragmentShader,
-  msdfFillVertexShader,
-  msdfVertexShader,
-} from '../rendering/shaders/index.js';
 import { createTextShapingEcsSystem } from './text-shaping-system.js';
-
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
 
 function buildFontAtlas(): FontAtlas {
   return {
@@ -60,94 +44,16 @@ function buildFontAtlas(): FontAtlas {
       ]),
       kerning: new Map(),
     },
-    image: { width: 256, height: 256 } as HTMLImageElement,
+    texture: {} as Texture,
   };
 }
 
 describe('createTextShapingEcsSystem', () => {
-  let canvas: HTMLCanvasElement;
-  let mockGl: WebGL2RenderingContext;
-  let renderContext: RenderContext;
   let world: EcsWorld;
 
   beforeEach(() => {
-    canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 600;
-
-    mockGl = {
-      VERTEX_SHADER: 'VERTEX_SHADER',
-      FRAGMENT_SHADER: 'FRAGMENT_SHADER',
-      COMPILE_STATUS: 'COMPILE_STATUS',
-      LINK_STATUS: 'LINK_STATUS',
-      ACTIVE_UNIFORMS: 'ACTIVE_UNIFORMS',
-      TEXTURE0: 0,
-      TEXTURE_2D: 'TEXTURE_2D',
-      ARRAY_BUFFER: 'ARRAY_BUFFER',
-      STATIC_DRAW: 'STATIC_DRAW',
-      CLAMP_TO_EDGE: 'CLAMP_TO_EDGE',
-      TEXTURE_WRAP_S: 'TEXTURE_WRAP_S',
-      TEXTURE_WRAP_T: 'TEXTURE_WRAP_T',
-      TEXTURE_MIN_FILTER: 'TEXTURE_MIN_FILTER',
-      TEXTURE_MAG_FILTER: 'TEXTURE_MAG_FILTER',
-      NEAREST: 'NEAREST',
-      LINEAR: 'LINEAR',
-      RGBA: 'RGBA',
-      UNSIGNED_BYTE: 'UNSIGNED_BYTE',
-
-      createBuffer: vi.fn().mockReturnValue({}),
-      bindBuffer: vi.fn(),
-      bufferData: vi.fn(),
-
-      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
-      bindTexture: vi.fn(),
-      texParameteri: vi.fn(),
-      texImage2D: vi.fn(),
-
-      createShader: vi.fn().mockReturnValue({}),
-      shaderSource: vi.fn(),
-      compileShader: vi.fn(),
-      getShaderParameter: vi.fn().mockReturnValue(true),
-      getShaderInfoLog: vi.fn().mockReturnValue(''),
-
-      createProgram: vi.fn().mockReturnValue({}),
-      attachShader: vi.fn(),
-      linkProgram: vi.fn(),
-      getProgramParameter: vi
-        .fn()
-        .mockImplementation((_program: unknown, pname: unknown) =>
-          pname === 'ACTIVE_UNIFORMS' ? 3 : true,
-        ),
-      getProgramInfoLog: vi.fn().mockReturnValue(''),
-
-      getActiveUniform: vi.fn().mockImplementation(
-        (_program, index: number) =>
-          [
-            { name: 'u_atlas', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
-            { name: 'u_distanceRange', type: 0x1406 /* FLOAT */, size: 1 },
-            { name: 'u_atlasSize', type: 0x1406 /* FLOAT */, size: 1 },
-          ][index] ?? null,
-      ),
-      getUniformLocation: vi.fn().mockReturnValue({}),
-      useProgram: vi.fn(),
-      uniform1i: vi.fn(),
-      uniform1f: vi.fn(),
-      activeTexture: vi.fn(),
-      getAttribLocation: vi.fn().mockReturnValue(0),
-    } as unknown as WebGL2RenderingContext;
-
-    vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
-
-    const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(spriteFragmentShader))
-      .addShader(new ForgeShaderSource(msdfVertexShader))
-      .addShader(new ForgeShaderSource(msdfFillVertexShader))
-      .addShader(new ForgeShaderSource(msdfFillFragmentShader))
-      .addShader(new ForgeShaderSource(msdfEffectsFragmentShader));
-
-    renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
     world = new EcsWorld();
-    world.addSystem(createTextShapingEcsSystem(renderContext));
+    world.addSystem(createTextShapingEcsSystem());
   });
 
   it('shapes a TextEcsComponent into a TextMeshEcsComponent', () => {
@@ -323,69 +229,9 @@ describe('createTextShapingEcsSystem', () => {
     expect(mesh?.bounds.height).toBeCloseTo(12);
   });
 
-  it('shares one renderable across entities using the same font atlas', () => {
-    const sharedFontAtlas = buildFontAtlas();
-    const entityA = world.createEntity();
-    const entityB = world.createEntity();
-
-    addTextComponent(world, entityA, {
-      text: 'A',
-      fontAtlas: sharedFontAtlas,
-      size: 10,
-    });
-    addTextComponent(world, entityB, {
-      text: 'B',
-      fontAtlas: sharedFontAtlas,
-      size: 10,
-    });
-
-    world.update();
-
-    const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
-    const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
-
-    expect(meshA?.fillRenderable).toBe(meshB?.fillRenderable);
-    expect(meshA?.effectsRenderable).toBe(meshB?.effectsRenderable);
-  });
-
-  it('creates separate renderables for the same font atlas under different categories', () => {
-    const sharedFontAtlas = buildFontAtlas();
-    const entityA = world.createEntity();
-    const entityB = world.createEntity();
-
-    addTextComponent(world, entityA, {
-      text: 'A',
-      fontAtlas: sharedFontAtlas,
-      size: 10,
-      category: 0b0001,
-    });
-    addTextComponent(world, entityB, {
-      text: 'B',
-      fontAtlas: sharedFontAtlas,
-      size: 10,
-      category: 0b0010,
-    });
-
-    world.update();
-
-    const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
-    const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
-
-    expect(meshA?.fillRenderable).not.toBe(meshB?.fillRenderable);
-    expect(meshA?.fillRenderable.category).toBe(0b0001);
-    expect(meshB?.fillRenderable.category).toBe(0b0010);
-  });
-
-  it('creates separate renderables for different font atlases', () => {
-    const entityA = world.createEntity();
-    const entityB = world.createEntity();
-
-    addTextComponent(world, entityA, {
-      text: 'A',
-      fontAtlas: buildFontAtlas(),
-      size: 10,
-    });
-    addTextComponent(world, entityB, {
+  it('does not re-shape when only the category changes', () => {
+    const entity = world.createEntity();
+    const text = addTextComponent(world, entity, {
       text: 'A',
       fontAtlas: buildFontAtlas(),
       size: 10,
@@ -393,10 +239,13 @@ describe('createTextShapingEcsSystem', () => {
 
     world.update();
 
-    const meshA = world.getComponent<TextMeshEcsComponent>(entityA, textMeshId);
-    const meshB = world.getComponent<TextMeshEcsComponent>(entityB, textMeshId);
+    const mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
 
-    expect(meshA?.fillRenderable).not.toBe(meshB?.fillRenderable);
-    expect(meshA?.effectsRenderable).not.toBe(meshB?.effectsRenderable);
+    text.category = 0b0010;
+    world.update();
+
+    expect(world.getComponent<TextMeshEcsComponent>(entity, textMeshId)).toBe(
+      mesh,
+    );
   });
 });

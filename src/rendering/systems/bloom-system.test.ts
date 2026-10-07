@@ -23,8 +23,17 @@ import {
   ShaderCache,
 } from '../shaders';
 
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
+// Every uniform used across the threshold/blur/composite/copy shaders.
+const knownUniforms: WebGLActiveInfo[] = [
+  { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+  { name: 'u_direction', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+  { name: 'u_texelSize', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
+  { name: 'u_threshold', type: 0x1406 /* FLOAT */, size: 1 },
+  { name: 'u_sceneTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+  { name: 'u_bloomTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
+  { name: 'u_intensity', type: 0x1406 /* FLOAT */, size: 1 },
+  { name: 'u_blockSize', type: 0x1404 /* INT */, size: 1 },
+];
 
 describe('createBloomEcsSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -67,6 +76,21 @@ describe('createBloomEcsSystem', () => {
   };
 
   beforeEach(() => {
+    const shaderSources = new Map<unknown, string>();
+    const programSources = new Map<unknown, string>();
+
+    // A linked program's active uniforms are the ones its own shaders
+    // declare. Material.bind() gives every active uniform a value, so a
+    // program reporting another shader's uniforms would upload defaults to
+    // them and muddy the per-location assertions below.
+    const getActiveUniforms = (program: unknown): WebGLActiveInfo[] => {
+      const source = programSources.get(program) ?? '';
+
+      return knownUniforms.filter(({ name }) =>
+        new RegExp(`uniform\\s+\\w+\\s+${name}\\s*;`).test(source),
+      );
+    };
+
     canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
@@ -114,45 +138,46 @@ describe('createBloomEcsSystem', () => {
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
 
-      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
+      createTexture: vi.fn().mockImplementation(() => ({})),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
-      createShader: vi.fn().mockReturnValue({}),
-      shaderSource: vi.fn(),
+      createShader: vi.fn().mockImplementation(() => ({})),
+      deleteShader: vi.fn(),
+      shaderSource: vi
+        .fn()
+        .mockImplementation((shader: unknown, source: string) => {
+          shaderSources.set(shader, source);
+        }),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
       getShaderInfoLog: vi.fn().mockReturnValue(''),
 
-      createProgram: vi.fn().mockReturnValue({}),
-      attachShader: vi.fn(),
+      createProgram: vi.fn().mockImplementation(() => ({})),
+      attachShader: vi
+        .fn()
+        .mockImplementation((program: unknown, shader: unknown) => {
+          programSources.set(
+            program,
+            `${programSources.get(program) ?? ''}${shaderSources.get(shader) ?? ''}`,
+          );
+        }),
       linkProgram: vi.fn(),
       getProgramParameter: vi
         .fn()
-        .mockImplementation((_program: unknown, pname: unknown) =>
-          pname === 'ACTIVE_UNIFORMS' ? 8 : true,
+        .mockImplementation((program: unknown, pname: unknown) =>
+          pname === 'ACTIVE_UNIFORMS'
+            ? getActiveUniforms(program).length
+            : true,
         ),
       getProgramInfoLog: vi.fn().mockReturnValue(''),
-
-      // Every material's program is reported as having the union of every
-      // uniform used across the threshold/blur/composite/copy shaders.
-      // Materials only ever set values for the uniforms their own shader
-      // actually declares, so this over-broad reporting is harmless:
-      // Material.bind() simply skips uniforms whose value was never set.
-      getActiveUniform: vi.fn().mockImplementation(
-        (_program, index: number) =>
-          [
-            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
-            { name: 'u_direction', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
-            { name: 'u_texelSize', type: 0x8b50 /* FLOAT_VEC2 */, size: 1 },
-            { name: 'u_threshold', type: 0x1406 /* FLOAT */, size: 1 },
-            { name: 'u_sceneTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
-            { name: 'u_bloomTexture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
-            { name: 'u_intensity', type: 0x1406 /* FLOAT */, size: 1 },
-            { name: 'u_blockSize', type: 0x1404 /* INT */, size: 1 },
-          ][index] ?? null,
-      ),
+      getActiveUniform: vi
+        .fn()
+        .mockImplementation(
+          (program: unknown, index: number) =>
+            getActiveUniforms(program)[index] ?? null,
+        ),
       getUniformLocation: vi
         .fn()
         .mockImplementation((_program, name: string) => {
@@ -276,8 +301,10 @@ describe('createBloomEcsSystem', () => {
       .map(([, texture]) => texture as WebGLTexture);
 
     expect(target.colorTexture).not.toBe(sceneTexture);
-    expect(texturesBoundForComposite).toContain(sceneTexture);
-    expect(texturesBoundForComposite).not.toContain(target.colorTexture);
+    expect(texturesBoundForComposite).toContain(sceneTexture.glTexture);
+    expect(texturesBoundForComposite).not.toContain(
+      target.colorTexture.glTexture,
+    );
   });
 
   it('runs a horizontal blur pass followed by a vertical blur pass', () => {

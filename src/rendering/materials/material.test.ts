@@ -1,13 +1,21 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Material } from './material';
+import { ImageCache } from '../../asset-loading/index.js';
 import { Matrix3x3 } from '../../math/index.js';
 import { Color } from '../color.js';
-import { ForgeShaderSource } from '../index.js';
+import { ForgeShaderSource, ShaderCache } from '../index.js';
+import { RenderContext } from '../render-context.js';
+import { Texture } from '../texture.js';
 
-// Mock WebGLTexture constructor for instanceof checks
+/** A render context drawing with `gl`, so materials share its program cache. */
+const createRenderContext = (gl: WebGL2RenderingContext): RenderContext => {
+  const canvas = document.createElement('canvas');
 
-globalThis.WebGLTexture = class WebGLTexture {};
+  vi.spyOn(canvas, 'getContext').mockReturnValue(gl);
+
+  return new RenderContext(new ShaderCache([]), new ImageCache(), canvas);
+};
 
 // GL type enums reported by `getActiveUniform`, as defined by WebGL 2.
 const glTypes = {
@@ -42,6 +50,7 @@ const createShaderSource = (source: string): ForgeShaderSource =>
 
 describe('Material', () => {
   let gl: WebGL2RenderingContext;
+  let renderContext: RenderContext;
   let mockProgram: WebGLProgram;
   let mockVertexShader: WebGLShader;
 
@@ -89,7 +98,12 @@ describe('Material', () => {
       uniformMatrix4fv: vi.fn(),
       activeTexture: vi.fn(),
       bindTexture: vi.fn(),
+      createBuffer: vi.fn(() => ({})),
+      createTexture: vi.fn(() => ({})),
+      texParameteri: vi.fn(),
+      texImage2D: vi.fn(),
     } as unknown as WebGL2RenderingContext;
+    renderContext = createRenderContext(gl);
   });
 
   describe('constructor', () => {
@@ -105,7 +119,11 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      const material = new Material(vertexShader, fragmentShader, gl);
+      const material = new Material(
+        renderContext,
+        vertexShader,
+        fragmentShader,
+      );
 
       expect(material.program).toBe(mockProgram);
       expect(gl.createProgram).toHaveBeenCalled();
@@ -122,9 +140,9 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Shader compile error: Shader compile error',
-      );
+      expect(
+        () => new Material(renderContext, vertexShader, fragmentShader),
+      ).toThrow('Shader compile error in material "testShader');
     });
 
     it('should throw an error if program linking fails', () => {
@@ -140,9 +158,9 @@ describe('Material', () => {
         'void main() { gl_FragColor = vec4(1.0); }',
       );
 
-      expect(() => new Material(vertexShader, fragmentShader, gl)).toThrow(
-        'Failed to link program: Link error',
-      );
+      expect(
+        () => new Material(renderContext, vertexShader, fragmentShader),
+      ).toThrow('Link error');
     });
 
     it('should detect uniforms in the shader program', () => {
@@ -161,7 +179,11 @@ describe('Material', () => {
       );
 
       // Create material to test uniform detection
-      const material = new Material(vertexShader, fragmentShader, gl);
+      const material = new Material(
+        renderContext,
+        vertexShader,
+        fragmentShader,
+      );
 
       expect(material).toBeDefined();
       expect(gl.getActiveUniform).toHaveBeenCalledTimes(2);
@@ -222,9 +244,9 @@ describe('Material', () => {
       );
 
       return new Material(
+        renderContext,
         createShaderSource(`${vertexDeclarations}\nvoid main() {}`),
         createShaderSource(`${fragmentDeclarations}\nvoid main() {}`),
-        gl,
       );
     };
 
@@ -330,13 +352,13 @@ describe('Material', () => {
         expect(() => material.setUniform('u_float', new Int32Array(1))).toThrow(
           'but received an Int32Array of length 1.',
         );
-        expect(() =>
-          material.setUniform('u_float', new WebGLTexture()),
-        ).toThrow('but received a WebGLTexture.');
+        expect(() => material.setUniform('u_float', new Texture(gl))).toThrow(
+          'but received a Texture.',
+        );
         expect(() =>
           material.setUniform('u_texture', new Float32Array(1)),
         ).toThrow(
-          'Uniform "u_texture" is declared as sampler2D and expects a WebGLTexture, but received a Float32Array of length 1.',
+          'Uniform "u_texture" is declared as sampler2D and expects a Texture, but received a Float32Array of length 1.',
         );
         expect(() => material.setUniform('u_floats', 1)).toThrow(
           'Uniform "u_floats" is declared as float[4] and expects a Float32Array of length 1 to 4, but received a number.',
@@ -366,13 +388,11 @@ describe('Material', () => {
       });
 
       it('should throw for a sampler array', () => {
-        const material = createMaterial([
-          { name: 'u_textures[0]', type: glTypes.sampler2D, size: 2 },
-        ]);
-
         expect(() =>
-          material.setUniform('u_textures', new WebGLTexture()),
-        ).toThrow('Material does not support sampler arrays');
+          createMaterial([
+            { name: 'u_textures[0]', type: glTypes.sampler2D, size: 2 },
+          ]),
+        ).toThrow("materials don't support sampler arrays");
       });
 
       it('should throw for a uniform whose GL type is not a WebGL 2 uniform type', () => {
@@ -420,13 +440,90 @@ describe('Material', () => {
         );
 
         const material = new Material(
+          renderContext,
           createShaderSource('void main() {}'),
           createShaderSource('uniform float u_value;\nvoid main() {}'),
-          gl,
         );
 
         expect(() => material.setUniform('gl_DepthRange.near', 1)).toThrow(
           'Declared uniforms: u_value.',
+        );
+      });
+    });
+
+    describe('uniforms a material has not set', () => {
+      const createSharedMaterials = (
+        uniforms: MockActiveUniform[],
+      ): [Material, Material] => {
+        createMaterial(uniforms);
+
+        const vertexShader = createShaderSource('void main() {}');
+        const fragmentShader = createShaderSource(
+          `${declare(uniforms)}\nvoid main() {}`,
+        );
+
+        return [
+          new Material(renderContext, vertexShader, fragmentShader),
+          new Material(renderContext, vertexShader, fragmentShader),
+        ];
+      };
+
+      it('should upload zero for a number, vector or matrix uniform', () => {
+        const material = createMaterial([
+          { name: 'u_time', type: glTypes.float },
+          { name: 'u_color', type: glTypes.vec4 },
+          { name: 'u_ints', type: glTypes.ivec2 },
+          { name: 'u_projection', type: glTypes.mat3 },
+        ]);
+
+        material.bind(gl);
+
+        expect(gl.uniform1fv).toHaveBeenCalledWith(
+          locationOf('u_time'),
+          new Float32Array(1),
+        );
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_color'),
+          new Float32Array(4),
+        );
+        expect(gl.uniform2iv).toHaveBeenCalledWith(
+          locationOf('u_ints'),
+          new Int32Array(2),
+        );
+        expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
+          locationOf('u_projection'),
+          false,
+          new Float32Array(9),
+        );
+      });
+
+      it("should bind the render context's black texture to a sampler", () => {
+        const material = createMaterial([
+          { name: 'u_texture', type: glTypes.sampler2D },
+        ]);
+
+        material.bind(gl);
+
+        expect(gl.bindTexture).toHaveBeenLastCalledWith(
+          gl.TEXTURE_2D,
+          renderContext.blackTexture.glTexture,
+        );
+        expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_texture'), 0);
+      });
+
+      it("should never draw with another material's value for a shared program", () => {
+        const [first, second] = createSharedMaterials([
+          { name: 'u_color', type: glTypes.vec4 },
+        ]);
+
+        first.setUniform('u_color', new Float32Array([1, 1, 1, 1]));
+        first.bind(gl);
+        second.bind(gl);
+
+        expect(second.program).toBe(first.program);
+        expect(gl.uniform4fv).toHaveBeenLastCalledWith(
+          locationOf('u_color'),
+          new Float32Array(4),
         );
       });
     });
@@ -444,8 +541,8 @@ describe('Material', () => {
       it('should validate a stripped uniform against its declared type', () => {
         const material = createMaterial([], 'uniform float u_time;');
 
-        expect(() => material.setUniform('u_time', new WebGLTexture())).toThrow(
-          'Uniform "u_time" is declared as float and expects a number or a Float32Array of length 1, but received a WebGLTexture.',
+        expect(() => material.setUniform('u_time', new Texture(gl))).toThrow(
+          'Uniform "u_time" is declared as float and expects a number or a Float32Array of length 1, but received a Texture.',
         );
         expect(() =>
           material.setUniform('u_time', new Float32Array(2)),
@@ -684,42 +781,55 @@ describe('Material', () => {
           { name: 'u_texture1', type: glTypes.sampler2D },
           { name: 'u_texture2', type: glTypes.sampler2D },
         ]);
-        const texture1 = new WebGLTexture();
-        const texture2 = new WebGLTexture();
+        const texture1 = new Texture(gl);
+        const texture2 = new Texture(gl);
 
+        (gl.bindTexture as Mock).mockClear();
         material.setUniform('u_texture1', texture1);
         material.setUniform('u_texture2', texture2);
-        material.bind(gl);
 
+        expect(material.bind(gl)).toBe(2);
         expect(gl.activeTexture).toHaveBeenNthCalledWith(1, gl.TEXTURE0);
         expect(gl.bindTexture).toHaveBeenNthCalledWith(
           1,
           gl.TEXTURE_2D,
-          texture1,
+          texture1.glTexture,
         );
         expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_texture1'), 0);
         expect(gl.activeTexture).toHaveBeenNthCalledWith(2, gl.TEXTURE0 + 1);
         expect(gl.bindTexture).toHaveBeenNthCalledWith(
           2,
           gl.TEXTURE_2D,
-          texture2,
+          texture2.glTexture,
         );
         expect(gl.uniform1i).toHaveBeenCalledWith(locationOf('u_texture2'), 1);
       });
 
-      it('should bind a texture to the target its sampler type reads from', () => {
+      it('should throw on bind for a texture that was disposed', () => {
+        (gl as unknown as { deleteTexture: Mock }).deleteTexture = vi.fn();
+
         const material = createMaterial([
-          { name: 'u_environment', type: glTypes.samplerCube },
+          { name: 'u_texture', type: glTypes.sampler2D },
         ]);
-        const texture = new WebGLTexture();
+        const texture = new Texture(gl);
 
-        material.setUniform('u_environment', texture);
-        material.bind(gl);
+        material.setUniform('u_texture', texture);
+        texture.dispose();
 
-        expect(gl.bindTexture).toHaveBeenCalledWith(
-          gl.TEXTURE_CUBE_MAP,
-          texture,
-        );
+        expect(() => material.bind(gl)).toThrow('has been disposed');
+      });
+
+      it('should reject a sampler type a Texture cannot be bound to', () => {
+        expect(() =>
+          createMaterial([
+            { name: 'u_environment', type: glTypes.samplerCube },
+          ]),
+        ).toThrow('Uniform "u_environment" in material "testShader');
+        expect(() =>
+          createMaterial([
+            { name: 'u_environment', type: glTypes.samplerCube },
+          ]),
+        ).toThrow('materials only support sampler2D uniforms');
       });
 
       it.each([
@@ -914,25 +1024,60 @@ describe('Material program caching', () => {
       deleteProgram: vi.fn(),
       getActiveUniform: vi.fn(() => null),
       getUniformLocation: vi.fn(),
+      createBuffer: vi.fn(() => ({})),
     } as unknown as WebGL2RenderingContext;
   });
 
+  const createSources = (): [ForgeShaderSource, ForgeShaderSource] => [
+    createShaderSource('void main() { gl_Position = vec4(0.0); }'),
+    createShaderSource('void main() { gl_FragColor = vec4(1.0); }'),
+  ];
+
+  it('should link one program for materials made from the same shaders', () => {
+    const renderContext = createRenderContext(gl);
+    const [vertexShader, fragmentShader] = createSources();
+
+    const materialA = new Material(renderContext, vertexShader, fragmentShader);
+    const materialB = new Material(renderContext, vertexShader, fragmentShader);
+
+    expect(gl.createProgram).toHaveBeenCalledTimes(1);
+    expect(gl.linkProgram).toHaveBeenCalledTimes(1);
+    expect(materialA.program).toBe(materialB.program);
+  });
+
   it('should compile a new program for different shader source', () => {
-    const vertexShaderA = createShaderSource(
-      'void main() { gl_Position = vec4(0.0); }',
+    const renderContext = createRenderContext(gl);
+    const [vertexShaderA, fragmentShaderA] = createSources();
+    const [vertexShaderB, fragmentShaderB] = createSources();
+
+    const materialA = new Material(
+      renderContext,
+      vertexShaderA,
+      fragmentShaderA,
     );
-    const fragmentShaderA = createShaderSource(
-      'void main() { gl_FragColor = vec4(1.0); }',
-    );
-    const vertexShaderB = createShaderSource(
-      'void main() { gl_Position = vec4(1.0); }',
-    );
-    const fragmentShaderB = createShaderSource(
-      'void main() { gl_FragColor = vec4(0.0); }',
+    const materialB = new Material(
+      renderContext,
+      vertexShaderB,
+      fragmentShaderB,
     );
 
-    const materialA = new Material(vertexShaderA, fragmentShaderA, gl);
-    const materialB = new Material(vertexShaderB, fragmentShaderB, gl);
+    expect(gl.createProgram).toHaveBeenCalledTimes(2);
+    expect(materialA.program).not.toBe(materialB.program);
+  });
+
+  it('should link the same shaders again in another render context', () => {
+    const [vertexShader, fragmentShader] = createSources();
+
+    const materialA = new Material(
+      createRenderContext(gl),
+      vertexShader,
+      fragmentShader,
+    );
+    const materialB = new Material(
+      createRenderContext(gl),
+      vertexShader,
+      fragmentShader,
+    );
 
     expect(gl.createProgram).toHaveBeenCalledTimes(2);
     expect(materialA.program).not.toBe(materialB.program);

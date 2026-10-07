@@ -6,7 +6,8 @@ import {
   NineSliceOptions,
   resolveNineSliceNativeSize,
 } from '../nine-slice-options.js';
-import { Renderable } from '../renderable.js';
+import type { SpriteMaterial } from '../materials/sprite-material.js';
+import type { Texture } from '../texture.js';
 
 /**
  * Fields of {@link SpriteEcsComponent} with no sensible default; callers
@@ -26,13 +27,29 @@ export interface SpriteRequiredOptions {
   height: number;
 
   /**
-   * The geometry, material, and instancing configuration used to draw this
-   * sprite. Sprites sharing the same `Renderable` are batched into a single
-   * instanced draw call, and `renderable.category` is matched against each
-   * camera's culling mask to decide whether the camera draws this sprite at
-   * all.
+   * The image the sprite draws, sampled within `uvOffset`/`uvScale`. Assign
+   * another texture to change the image. Consecutive sprites with the same
+   * texture, emissive map and material draw in one instanced draw call.
    */
-  renderable: Renderable;
+  texture: Texture;
+}
+
+/**
+ * An emissive map: light a sprite gives off, added on top of its tinted
+ * texture unaffected by tint.
+ */
+export interface SpriteEmissive {
+  /**
+   * The emissive map, sampled at the same UVs as the sprite's `texture`. A
+   * greyscale mask works well, colored by `color`.
+   */
+  texture: Texture;
+
+  /**
+   * Multiplies the map's RGB. Channels above `1` push the glow into HDR
+   * range, for `createBloomEcsSystem` on an `hdr` render target to bloom.
+   */
+  color: Color;
 }
 
 /**
@@ -73,6 +90,26 @@ export interface SpriteDefaultedOptions {
    * a texture atlas/sprite sheet.
    */
   uvScale: Vector2;
+
+  /**
+   * The sprite's emissive map, or `null` (the default) for none. Assign
+   * another to change the sprite's glow.
+   */
+  emissive: SpriteEmissive | null;
+
+  /**
+   * The material the sprite draws with, from `createSpriteMaterial`, or
+   * `null` (the default) for the render context's shared
+   * `spriteMaterial`.
+   */
+  material: SpriteMaterial | null;
+
+  /**
+   * The render category the sprite belongs to, matched against each
+   * camera's `cullingMask` to decide which cameras draw it. Defaults to
+   * `1`, as for text.
+   */
+  category: number;
 
   /**
    * Whether this sprite is drawn. When `false`, the render system skips
@@ -135,7 +172,7 @@ export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the sprite. `width`, `height`,
- * and `renderable` have no sensible default and must always be provided.
+ * and `texture` have no sensible default and must always be provided.
  * `pivot`, `uvOffset`, `uvScale` and `slices` are copied, so the component
  * never shares them with `options` or with other sprites built from the same
  * options. If `slices` is set, any omitted `nativeWidth`/`nativeHeight` is
@@ -153,6 +190,9 @@ export function addSpriteComponent(
     tintColor: Color.white,
     uvOffset: Vec2.zero,
     uvScale: Vec2.one,
+    emissive: null,
+    material: null,
+    category: 1,
     enabled: true,
     layer: 0,
   };
