@@ -39,6 +39,8 @@ Guides in this section:
   arrangement, content-size fitting, and aspect-ratio fitting.
 - [Canvas Groups and Tooltips](./canvas-groups-and-tooltips.md): fading or
   disabling a whole subtree at once, and hover/focus tooltips.
+- [Text Input](./text-input.md): single-line text fields, editing versus
+  focus, filtering, and submit/cancel events.
 
 ## Quick Start
 
@@ -48,6 +50,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
 } from '@forge-game-engine/forge/rendering';
 import {
   createPanel,
@@ -72,13 +75,15 @@ const canvas = createUiCanvas(world, renderContext, {
   cullingMask: uiRenderCategory,
 });
 
-const panelSprite = createImageSprite(panelImage, renderContext, {
-  // One texture pixel per reference pixel, so the 12px slices below line up
-  // with 12px of border art in panelImage.
-  pixelsPerUnit: 1,
-  slices: { left: 12, right: 12, top: 12, bottom: 12 },
-  layer: uiRenderCategory, // matches the UI camera's cullingMask above
-});
+const panelSprite = {
+  ...createImageSprite(createTexture(renderContext, panelImage), {
+    // One texel per reference pixel, so the 12px slices below line up with
+    // 12px of border art in panelImage.
+    pixelsPerUnit: 1,
+    slices: { left: 12, right: 12, top: 12, bottom: 12 },
+  }),
+  category: uiRenderCategory, // matches the UI camera's cullingMask above
+};
 
 createPanel(world, canvas, {
   anchor: UiAnchor.topLeft({ x: 240, y: 96 }),

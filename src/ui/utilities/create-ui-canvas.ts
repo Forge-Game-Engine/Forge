@@ -27,7 +27,7 @@ export interface ScreenSpaceUiCanvasOptions extends CanvasInputOptions {
 
   /**
    * The dedicated UI camera's culling mask, matched against
-   * `Renderable.category` (see `createImageSprite`'s `layer` option) and
+   * `SpriteEcsComponent.category` and
    * `TextEcsComponent.category` to decide what this camera draws. Forge
    * doesn't reserve or suggest any particular bit for UI - pick any value
    * your game isn't already using for another camera, and reuse that same
@@ -83,7 +83,7 @@ export interface WorldSpaceUiCanvasOptions extends CanvasInputOptions {
    * `UiAnchor.center()` (a literal `100x100` reference-pixel box) - size it
    * to fit the content you'll add as its children (a health bar background,
    * say). To keep the canvas above an entity, either give it a
-   * `ParentEcsComponent` (it then also rotates and scales with that entity)
+   * parent with `world.setParent` (it then also rotates and scales with that entity)
    * or write its `RectTransformEcsComponent.anchoredPosition` from the
    * entity's position in one of your own systems, registered before
    * `registerUiSystems`, so it stays upright.
@@ -124,7 +124,7 @@ export type CreateUiCanvasOptions =
  * `anchoredPosition` - depends on `renderMode`, enforced at compile time
  * (see {@link ScreenSpaceUiCanvasOptions}/{@link WorldSpaceUiCanvasOptions}).
  * @returns The created canvas entity. Attach children to it with
- * `addParentComponent(world, child, { parent: canvas })`, or use
+ * `world.setParent(child, canvas)`, or use
  * `createPanel`/`createLabel`/`createButton`.
  */
 export function createUiCanvas(

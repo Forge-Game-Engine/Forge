@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteComponent,
@@ -21,7 +18,6 @@ import {
   createPanel,
   UiAnchor,
 } from '@forge-game-engine/forge/ui';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 const iconColors = [
   new Color(0.85, 0.35, 0.35, 1),
@@ -65,7 +61,7 @@ export async function createToolbar(
   const group = world.createEntity();
 
   addPositionComponent(world, group);
-  addParentComponent(world, group, { parent: canvas });
+  world.setParent(group, canvas);
   addRectTransformComponent(world, group, {
     ...UiAnchor.topRight({ x: width, y: titleHeight + titleGap + panelHeight }),
     anchoredPosition: { x: -60, y: -60 },
@@ -91,21 +87,17 @@ export async function createToolbar(
     spacing: 16,
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
   for (const tintColor of iconColors) {
     const icon = world.createEntity();
 
     addPositionComponent(world, icon);
-    addParentComponent(world, icon, { parent: panel });
+    world.setParent(icon, panel);
     addRectTransformComponent(world, icon, UiAnchor.center({ x: 70, y: 70 }));
 
-    const sprite = createImageSprite(whiteImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiCategory,
-    });
+    const sprite = {
+      ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+      category: uiCategory,
+    };
     sprite.tintColor = tintColor;
 
     addSpriteComponent(world, icon, sprite);

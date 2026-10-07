@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
 import {
@@ -64,7 +61,7 @@ export function createMissionBrief(
   const root = world.createEntity();
 
   addPositionComponent(world, root);
-  addParentComponent(world, root, { parent });
+  world.setParent(root, parent);
   addRectTransformComponent(world, root, {
     // Fills whatever's left of `parent` after the nav panel's own width:
     // `margin: -leftPanelWidth` shrinks the horizontal stretch span by
@@ -77,7 +74,10 @@ export function createMissionBrief(
     // canvas's live scale factor. The vertical axis is a plain full stretch,
     // for the same reason `createMainMenu`'s panel needs one instead of a
     // literal `1080`.
-    x: UiAxis.stretch({ min: 0, max: 1 }, { pivot: 1, margin: -leftPanelWidth }),
+    x: UiAxis.stretch(
+      { min: 0, max: 1 },
+      { pivot: 1, margin: -leftPanelWidth },
+    ),
     y: UiAxis.stretch({ min: 0, max: 1 }),
   });
 

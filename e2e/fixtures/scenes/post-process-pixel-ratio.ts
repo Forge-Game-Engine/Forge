@@ -18,7 +18,6 @@ import {
   spriteId,
   Time,
 } from '../../../src/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -74,9 +73,9 @@ function readEffect(): PostProcessEffect {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<PostProcessPixelRatioSceneHandle> => {
+): PostProcessPixelRatioSceneHandle => {
   const effect = readEffect();
   const time = new Time();
   const world = new EcsWorld();
@@ -96,10 +95,7 @@ export const createScene: CreateScene = async (
     renderTarget: sceneTarget,
   });
 
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
   const square = world.createEntity();
 
   addPositionComponent(world, square, {

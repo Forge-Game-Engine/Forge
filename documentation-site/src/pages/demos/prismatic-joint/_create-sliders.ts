@@ -16,6 +16,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -108,18 +109,24 @@ async function loadSliderSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    block: createImageSprite(blockImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    dot: createImageSprite(dotImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    ball: {
+      ...createImageSprite(createTexture(renderContext, ballImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    block: {
+      ...createImageSprite(createTexture(renderContext, blockImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    dot: {
+      ...createImageSprite(createTexture(renderContext, dotImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
   };
 }
 

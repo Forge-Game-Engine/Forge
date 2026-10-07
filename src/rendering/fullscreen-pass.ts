@@ -2,6 +2,7 @@ import { createQuadGeometry, Geometry } from './geometry/index.js';
 import { Material } from './materials/index.js';
 import { RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
+import type { Texture } from './texture.js';
 
 // One quad, reused by every full-screen pass (post-processing, present)
 // across every `RenderContext`: recreating it per draw would allocate a new
@@ -67,7 +68,7 @@ export function beginFullscreenReplacePass(
 export function beginPostProcessPass(
   renderContext: RenderContext,
   target: RenderTarget,
-): WebGLTexture {
+): Texture {
   const source = target.swapBuffers();
 
   beginFullscreenReplacePass(renderContext, target);

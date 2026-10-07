@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createCameraEcsSystem } from './camera-system';
-import { Axis1dAction, Axis2dAction } from '../../input';
+import { Axis1dAction, Axis2dAction, InputManager } from '../../input';
 import { addCameraComponent } from '../components';
 import { addPositionComponent, Time } from '../../common';
 import { EcsWorld } from '../../ecs';
@@ -10,6 +10,9 @@ describe('CameraSystem', () => {
   let time: Time;
   let zoomInput: Axis1dAction;
   let panInput: Axis2dAction;
+  let inputManager: InputManager;
+
+  const testSource = { name: 'test' };
 
   beforeEach(() => {
     time = new Time();
@@ -17,6 +20,9 @@ describe('CameraSystem', () => {
 
     panInput = new Axis2dAction('pan', 'default');
     zoomInput = new Axis1dAction('zoom', 'default');
+    inputManager = new InputManager('default');
+    inputManager.addAxis1dActions(zoomInput);
+    inputManager.addAxis2dActions(panInput);
 
     world.addSystem(createCameraEcsSystem(time));
   });
@@ -33,7 +39,7 @@ describe('CameraSystem', () => {
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
     time.update(16.6666);
     world.update();
 
@@ -52,7 +58,7 @@ describe('CameraSystem', () => {
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(-1);
+    inputManager.setAxis1dInput(testSource, zoomInput, -1);
     time.update(16.6666);
     world.update();
 
@@ -71,11 +77,11 @@ describe('CameraSystem', () => {
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
     time.update(16.6666);
     world.update();
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
     time.update(16.6666);
     world.update();
 
@@ -94,19 +100,19 @@ describe('CameraSystem', () => {
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(-1);
+    inputManager.setAxis1dInput(testSource, zoomInput, -1);
     time.update(16.6666);
     world.update();
 
-    zoomInput.set(-1);
+    inputManager.setAxis1dInput(testSource, zoomInput, -1);
     time.update(16.6666);
     world.update();
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
     time.update(16.6666);
     world.update();
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
     time.update(16.6666);
     world.update();
 
@@ -129,14 +135,14 @@ describe('CameraSystem', () => {
 
     addPositionComponent(world, entity);
 
-    zoomInput.set(1);
+    inputManager.setAxis1dInput(testSource, zoomInput, 1);
 
     time.update(16.6666);
     world.update();
 
     expect(cameraComponent.zoom).toBe(cameraComponent.minZoom);
 
-    zoomInput.set(-1);
+    inputManager.setAxis1dInput(testSource, zoomInput, -1);
 
     time.update(16.6666);
     world.update();
@@ -156,7 +162,7 @@ describe('CameraSystem', () => {
 
     const positionComponent = addPositionComponent(world, entity);
 
-    panInput.set(50, -30);
+    inputManager.setAxis2dInput(testSource, panInput, 50, -30);
 
     time.update(16.6666);
     world.update();
@@ -178,8 +184,8 @@ describe('CameraSystem', () => {
 
     const positionComponent = addPositionComponent(world, entity);
 
-    panInput.set(50, -30);
-    zoomInput.set(-5000);
+    inputManager.setAxis2dInput(testSource, panInput, 50, -30);
+    inputManager.setAxis1dInput(testSource, zoomInput, -5000);
 
     time.update(16.6666);
     world.update();

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createSlider } from './create-slider.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, spriteId, Texture } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
@@ -12,11 +12,14 @@ import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -31,7 +34,7 @@ describe('createSlider', () => {
       handleSprite: buildSprite(),
     });
 
-    expect(world.getComponent(slider.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(slider.entity)).toBe(parent);
     expect(world.getComponent(slider.entity, uiInteractableId)).toBe(
       slider.interactable,
     );
@@ -40,9 +43,7 @@ describe('createSlider', () => {
       world.getComponent(slider.entity, uiColorTransitionId),
     ).not.toBeNull();
 
-    expect(world.getComponent(slider.handle, parentId)).toEqual({
-      parent: slider.entity,
-    });
+    expect(world.getParent(slider.handle)).toBe(slider.entity);
     expect(world.getComponent(slider.handle, spriteId)).not.toBeNull();
     expect(world.getComponent(slider.handle, positionId)).not.toBeNull();
     expect(slider.fill).toBeUndefined();

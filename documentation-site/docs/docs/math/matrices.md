@@ -54,7 +54,7 @@ Internally, the material reads [`matrix`](/Forge/docs/api/classes/Matrix3x3#matr
 the underlying `Float32Array`, and uploads it as a `mat3` uniform:
 
 ```ts
-renderable.material.setUniform('u_projection', projectionMatrix);
+material.setUniform('u_projection', projectionMatrix);
 ```
 
 You don't need to call `.matrix` yourself, `setUniform` checks `instanceof Matrix3x3`

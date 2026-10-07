@@ -650,6 +650,100 @@ describe('shapeText', () => {
     });
   });
 
+  describe('caret stops', () => {
+    const baseline = { size: 10, verticalAlign: 'baseline' as const };
+
+    it('has one stop per UTF-16 boundary, including whitespace and the end', () => {
+      const { caretStops } = shapeText(
+        'A V ',
+        buildFixtureFontAtlasData(),
+        baseline,
+      );
+
+      expect(caretStops.map((stop) => stop.x)).toEqual([0, 6, 9, 15, 18]);
+      expect(caretStops.every((stop) => stop.y === 0)).toBe(true);
+    });
+
+    it('puts the stop before a kerned glyph after the kerning', () => {
+      const { caretStops } = shapeText(
+        'AV',
+        buildFixtureFontAtlasData(),
+        baseline,
+      );
+
+      expect(caretStops[1].x).toBeCloseTo(5.2);
+      expect(caretStops[2].x).toBeCloseTo(11.2);
+    });
+
+    it('gives a missing glyph a stop with no advance', () => {
+      const { caretStops } = shapeText(
+        'A?A',
+        buildFixtureFontAtlasData(),
+        baseline,
+      );
+
+      expect(caretStops.map((stop) => stop.x)).toEqual([0, 6, 6, 12]);
+    });
+
+    it('gives the boundary inside a surrogate pair the pair start', () => {
+      const { caretStops } = shapeText(
+        'A😀',
+        buildFixtureFontAtlasData(),
+        baseline,
+      );
+
+      expect(caretStops).toHaveLength(4);
+      expect(caretStops.map((stop) => stop.x)).toEqual([0, 6, 6, 6]);
+    });
+
+    it('has a single stop for an empty string, at the aligned origin', () => {
+      const { caretStops } = shapeText('', buildFixtureFontAtlasData(), {
+        ...baseline,
+        maxWidth: 100,
+        horizontalAlign: 'center',
+      });
+
+      expect(caretStops).toEqual([{ x: 50, y: 0 }]);
+    });
+
+    it('applies alignment and the vertical offset', () => {
+      const { caretStops } = shapeText('A', buildFixtureFontAtlasData(), {
+        size: 10,
+        maxWidth: 20,
+        horizontalAlign: 'right',
+      });
+
+      expect(caretStops.map((stop) => stop.x)).toEqual([14, 20]);
+      expect(caretStops[0].y).toBeCloseTo(-9);
+    });
+
+    it('moves the stops of a wrapped word to the next line', () => {
+      const { caretStops } = shapeText('A V', buildFixtureFontAtlasData(), {
+        ...baseline,
+        maxWidth: 8,
+      });
+
+      expect(caretStops[2]).toEqual({ x: 0, y: -12 });
+      expect(caretStops[3]).toEqual({ x: 6, y: -12 });
+    });
+  });
+
+  describe('richText: false', () => {
+    it('shapes tags as written, with a caret stop for every character', () => {
+      const atlas = buildFixtureFontAtlasData();
+      const tagged = shapeText('<b>A</b>', atlas, { size: 10 });
+      const literal = shapeText('<b>A</b>', atlas, {
+        size: 10,
+        richText: false,
+      });
+
+      expect(tagged.caretStops).toHaveLength(2);
+      expect(tagged.glyphs[0].embolden).toBeGreaterThan(0);
+      expect(literal.caretStops).toHaveLength(9);
+      expect(literal.glyphs[0].embolden).toBe(0);
+    });
+  });
+
   describe('rich text tags', () => {
     const red = new Color(1, 0, 0, 1);
 

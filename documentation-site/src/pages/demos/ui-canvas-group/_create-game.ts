@@ -17,6 +17,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -50,13 +51,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
   const { x: width, y: height } = getCameraView(
@@ -108,7 +106,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
 
   await createBackdrop(world, camera, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -130,15 +128,11 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
   const boxColor = new Color(0.85, 0.85, 0.88, 1);
-  const boxSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const boxSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   boxSprite.tintColor = boxColor;
 
   createLabel(world, canvas, {
@@ -152,19 +146,21 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     category: renderLayers.ui,
   });
 
-  const toggleBoxSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const toggleBoxSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   toggleBoxSprite.tintColor = boxColor;
 
   const crossImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/space-shooter/icon_crossSmall.png'),
   );
-  const crossSprite = createImageSprite(crossImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const crossSprite = {
+    ...createImageSprite(createTexture(renderContext, crossImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayers.ui,
+  };
   crossSprite.tintColor = new Color(0.85, 0.3, 0.3, 1);
 
   // Level 0 (outermost, ungoverned): the modal's own background - this is
@@ -179,10 +175,10 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
   // Level 1: a nested card, visually distinct from the modal background,
   // to make "the whole subtree fades, not just the modal panel itself"
   // obvious at a glance.
-  const cardSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const cardSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   cardSprite.tintColor = new Color(0.2, 0.23, 0.32, 1);
 
   const card = createPanel(world, modal, {
@@ -217,10 +213,10 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     category: renderLayers.ui,
   });
 
-  const nestedButtonSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const nestedButtonSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
 
   const buttonColor = new Color(0.35, 0.55, 0.95, 1);
 
@@ -268,7 +264,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

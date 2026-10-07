@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -239,7 +238,7 @@ describe('createEulerIntegrationEcsSystem', () => {
     const parent = world.createEntity();
     const entity = createBody('dynamic');
 
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
 
     expect(() => world.update()).toThrow(
       `Rigid body entity ${formatEntity(entity)} has a ParentEcsComponent.`,
@@ -250,7 +249,7 @@ describe('createEulerIntegrationEcsSystem', () => {
     const parent = world.createEntity();
     const entity = createBody('static');
 
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
 
     expect(() => world.update()).not.toThrow();
   });

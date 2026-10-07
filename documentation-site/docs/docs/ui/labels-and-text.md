@@ -14,7 +14,7 @@ atlas):
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 import { createLabel, UiAnchor } from '@forge-game-engine/forge/ui';
 
-const fontAtlas = await new FontAtlasCache().getOrLoad({
+const fontAtlas = await new FontAtlasCache(renderContext).getOrLoad({
   metricsUrl: 'assets/fonts/my-font.json',
   imageUrl: 'assets/fonts/my-font.png',
 });

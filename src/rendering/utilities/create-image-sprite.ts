@@ -1,79 +1,30 @@
-import {
-  Color,
-  createQuadGeometry,
-  Renderable,
-  SpriteEcsComponent,
-  Vector2,
-} from '../../index.js';
-import { Material } from '../materials/index.js';
+import type { Vector2 } from '../../math/index.js';
+import { Color } from '../color.js';
+import type { SpriteEcsComponent } from '../components/sprite-component.js';
 import {
   NineSliceOptions,
   resolveNineSliceNativeSize,
 } from '../nine-slice-options.js';
-import { RenderContext } from '../render-context.js';
-import {
-  createTextureFromImage,
-  getSharedBlackTexture,
-} from '../shaders/index.js';
+import type { Texture } from '../texture.js';
 import { importTexture } from './import-texture.js';
-import { combineInstanceDataSegments } from './instance-data-segment.js';
-import { spriteInstanceDataSegment } from './sprite-instance-data-segment.js';
 
 /**
- * Configures an emissive map for `createImageSprite`: a texture, sampled
- * against the sprite's own UVs, that's added on top of the tinted albedo
- * unaffected by lighting.
+ * Options for {@link createImageSprite}.
  */
-export interface EmissiveMapOptions {
-  /**
-   * The emissive map image.
-   */
-  image: HTMLImageElement;
-
-  /**
-   * Tints the emissive map, so a plain greyscale mask can still glow any
-   * color. Multiplied against the emissive map's sampled RGB, before
-   * `intensity` scales the result. Defaults to `Color.white` (no tint,
-   * i.e. the mask's own greyscale value is used as-is).
-   */
-  color?: Color;
-
-  /**
-   * Multiplies the sampled (and tinted) emissive color before it's added on
-   * top of the tinted albedo. Values above `1` push a pixel's brightness
-   * into HDR range, for `createBloomEcsSystem` (on an HDR-format render
-   * target, see `RENDER_TARGET_FORMAT`) to bloom convincingly even where
-   * the sprite's own albedo isn't pure white. Defaults to `1`.
-   */
-  intensity?: number;
-}
-
 export interface CreateImageSpriteOptions {
   /**
-   * The dimensions of a single frame in the image, for sprite sheets. Defaults to the full image size (i.e. a single-frame sprite).
+   * The size of a single frame in the texture, in texels, for sprite
+   * sheets. The sprite is sized to one frame and its `uvScale` selects one
+   * frame's share of the texture. Defaults to the whole texture (a
+   * single-frame sprite).
    */
   frameDimensions?: Vector2;
-
-  /**
-   * The emissive map to add on top of the sprite's tinted albedo, unaffected
-   * by lighting. Omit for a sprite with no emissive contribution.
-   */
-  emissiveMap?: EmissiveMapOptions;
-
-  /**
-   * Samples the sprite's texture (and its emissive map, if any) with nearest-
-   * neighbor filtering for crisp, blocky scaling, appropriate for pixel-art
-   * assets. Defaults to `false`, which uses linear filtering so the sprite's
-   * own anti-aliased edges (for example a soft-edged circle) are preserved
-   * instead of being sampled into a hard, staggered stair-step.
-   */
-  pixelated?: boolean;
 
   /**
    * Nine-slice configuration, for a sprite whose corners should stay a
    * fixed size while its edges/center stretch or tile. Omit for a normal,
    * single-quad sprite. Any omitted `nativeWidth`/`nativeHeight` defaults
-   * to the imported texture's world size (its pixel size divided by
+   * to the texture's world size (its size in texels divided by
    * `pixelsPerUnit`), so the insets should be given in those same units -
    * e.g. with `pixelsPerUnit: 1` (the usual choice for UI sprites, whose
    * insets are in reference pixels), an inset of `8` covers 8 pixels of
@@ -82,104 +33,55 @@ export interface CreateImageSpriteOptions {
   slices?: NineSliceOptions;
 
   /**
-   * The render layer for the sprite. Defaults to `1`.
-   */
-  layer?: number;
-
-  /**
-   * How many pixels of the sprite's texture span one world unit. Defaults
-   * to `100`.
+   * How many texels of the texture span one world unit. Defaults to `100`.
    */
   pixelsPerUnit?: number;
 }
 
-// `color` isn't included here: `Color.white` can't be read at module-init
-// time (this file sits in a circular import cycle through `../../index.js`,
-// so `Color`'s static fields aren't guaranteed to be initialized yet when
-// this module's own top-level code runs). Defaulting it inside
-// `createImageSprite`'s body instead defers that read until the function is
-// actually called, well after every module has finished loading.
-const defaultEmissiveMapOptions = { intensity: 1 };
-
-const defaultCreateImageSpriteOptions = { pixelated: false, layer: 1 };
-
 /**
- * Creates a sprite using the provided image and render layer.
- * @param image - The image to use for the sprite.
- * @param renderContext - The render context to be used.
+ * Computes a sprite's options from a texture: its world size from
+ * `pixelsPerUnit` (and `frameDimensions`, for a sprite sheet), the share of
+ * the texture one frame covers, and nine-slice native sizes. Does no GL
+ * work, so any number of sprites can be created from one texture.
+ *
+ * The result has every other field at its default (no emissive map, the
+ * render context's sprite material, category `1`); spread it into
+ * `addSpriteComponent` with any overrides. `addSpriteComponent` copies its
+ * vectors, so one result can be shared by many sprites.
+ * @param texture - The texture the sprite draws.
  * @param options - Optional parameters for creating the sprite.
- * @returns The created sprite.
+ * @returns The sprite's options.
  */
 export function createImageSprite(
-  image: HTMLImageElement,
-  renderContext: RenderContext,
+  texture: Texture,
   options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
-  const { shaderCache, gl } = renderContext;
-  const { pixelated, layer } = {
-    ...defaultCreateImageSpriteOptions,
-    ...options,
-  };
-
-  const spriteVertexShader = shaderCache.getShader('sprite.vert');
-  const spriteFragmentShader = shaderCache.getShader('sprite.frag');
-
-  const material = new Material(spriteVertexShader, spriteFragmentShader, gl);
-
-  material.setUniform(
-    'u_texture',
-    createTextureFromImage(gl, image, pixelated),
-  );
-
-  const resolvedEmissive = options.emissiveMap
-    ? { ...defaultEmissiveMapOptions, ...options.emissiveMap }
-    : undefined;
-
-  material.setUniform(
-    'u_emissiveTexture',
-    resolvedEmissive
-      ? createTextureFromImage(gl, resolvedEmissive.image, pixelated)
-      : getSharedBlackTexture(gl),
-  );
-  material.setColorUniform(
-    'u_emissiveColor',
-    resolvedEmissive?.color ?? Color.white,
-  );
-  material.setUniform(
-    'u_emissiveIntensity',
-    resolvedEmissive ? resolvedEmissive.intensity : 0,
-  );
-
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const renderable = new Renderable(
-    createQuadGeometry(gl),
-    material,
-    floatsPerInstance,
-    layer,
-    bindInstanceData,
-    setupInstanceAttributes,
-  );
-
-  const { worldWidth, worldHeight } = importTexture(image, {
-    pixelsPerUnit: options.pixelsPerUnit,
-    width: options.frameDimensions?.x,
-    height: options.frameDimensions?.y,
+  const { frameDimensions, slices, pixelsPerUnit } = options;
+  const { worldWidth, worldHeight } = importTexture(texture, {
+    pixelsPerUnit,
+    width: frameDimensions?.x,
+    height: frameDimensions?.y,
   });
 
   return {
-    enabled: true,
+    texture,
     width: worldWidth,
     height: worldHeight,
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
-    renderable,
     uvOffset: { x: 0, y: 0 },
-    uvScale: { x: 1, y: 1 },
+    uvScale: frameDimensions
+      ? {
+          x: frameDimensions.x / texture.width,
+          y: frameDimensions.y / texture.height,
+        }
+      : { x: 1, y: 1 },
+    emissive: null,
+    material: null,
+    category: 1,
+    enabled: true,
     layer: 0,
     slices:
-      options.slices &&
-      resolveNineSliceNativeSize(options.slices, worldWidth, worldHeight),
+      slices && resolveNineSliceNativeSize(slices, worldWidth, worldHeight),
   };
 }

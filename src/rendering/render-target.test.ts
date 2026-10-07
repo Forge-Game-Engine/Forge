@@ -82,7 +82,7 @@ describe('RenderTarget', () => {
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(1);
       expect(target.framebuffer).toBe(framebuffers[0]);
-      expect(target.colorTexture).toBe(textures[0]);
+      expect(target.colorTexture.glTexture).toBe(textures[0]);
       expect(target.width).toBe(256);
       expect(target.height).toBe(128);
       expect(gl.framebufferTexture2D).toHaveBeenCalledWith(
@@ -117,6 +117,34 @@ describe('RenderTarget', () => {
       expect(
         () => new RenderTarget(renderContext, { width: 256, height: 128 }),
       ).toThrow(/Render target framebuffer is incomplete/);
+    });
+  });
+
+  describe('colorTexture', () => {
+    it('throws when the color texture is disposed, since the target owns it', () => {
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
+
+      expect(() => target.colorTexture.dispose()).toThrow(
+        /belongs to its render target/,
+      );
+      expect(gl.deleteTexture).not.toHaveBeenCalled();
+    });
+
+    it('throws when the color texture is updated, since the target owns it', () => {
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
+
+      (gl.texImage2D as Mock).mockClear();
+
+      expect(() =>
+        target.colorTexture.update({} as unknown as TexImageSource),
+      ).toThrow(/belongs to its render target/);
+      expect(gl.texImage2D).not.toHaveBeenCalled();
     });
   });
 
@@ -185,11 +213,13 @@ describe('RenderTarget', () => {
         height: 128,
       });
       const oldTexture = target.colorTexture;
+      const oldGlTexture = oldTexture.glTexture;
 
       target.resize(512, 256);
 
-      expect(gl.deleteTexture).toHaveBeenCalledWith(oldTexture);
-      expect(target.colorTexture).toBe(textures[1]);
+      expect(gl.deleteTexture).toHaveBeenCalledWith(oldGlTexture);
+      expect(() => oldTexture.glTexture).toThrow(/disposed/);
+      expect(target.colorTexture.glTexture).toBe(textures[1]);
       expect(target.width).toBe(512);
       expect(target.height).toBe(256);
     });
@@ -275,14 +305,14 @@ describe('RenderTarget', () => {
 
       const first = target.swapBuffers();
 
-      expect(first).toBe(textures[0]);
-      expect(target.colorTexture).toBe(textures[1]);
+      expect(first.glTexture).toBe(textures[0]);
+      expect(target.colorTexture.glTexture).toBe(textures[1]);
       expect(target.framebuffer).toBe(framebuffers[1]);
 
       const second = target.swapBuffers();
 
-      expect(second).toBe(textures[1]);
-      expect(target.colorTexture).toBe(textures[0]);
+      expect(second.glTexture).toBe(textures[1]);
+      expect(target.colorTexture.glTexture).toBe(textures[0]);
       expect(target.framebuffer).toBe(framebuffers[0]);
     });
 
@@ -297,12 +327,12 @@ describe('RenderTarget', () => {
 
       expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
       expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
-      expect(target.colorTexture).toBe(textures[2]);
+      expect(target.colorTexture.glTexture).toBe(textures[2]);
 
       const other = target.swapBuffers();
 
-      expect(other).toBe(textures[2]);
-      expect(target.colorTexture).toBe(textures[3]);
+      expect(other.glTexture).toBe(textures[2]);
+      expect(target.colorTexture.glTexture).toBe(textures[3]);
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
     });
   });
@@ -313,12 +343,13 @@ describe('RenderTarget', () => {
         width: 256,
         height: 128,
       });
+      const glTexture = target.colorTexture.glTexture;
 
       target.dispose();
 
       expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(1);
       expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[0]);
-      expect(gl.deleteTexture).toHaveBeenCalledWith(target.colorTexture);
+      expect(gl.deleteTexture).toHaveBeenCalledWith(glTexture);
     });
 
     it('deletes both buffers once the second is allocated', () => {

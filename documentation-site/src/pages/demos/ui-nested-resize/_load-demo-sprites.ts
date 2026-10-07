@@ -1,5 +1,6 @@
 import {
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -46,11 +47,13 @@ async function createSprite(
     getAssetUrl(assetPath),
   );
 
-  return createImageSprite(image, renderContext, {
-    pixelsPerUnit: 1,
-    layer: uiLayer,
-    slices,
-  });
+  return {
+    ...createImageSprite(createTexture(renderContext, image), {
+      pixelsPerUnit: 1,
+      slices,
+    }),
+    category: uiLayer,
+  };
 }
 
 /** Loads every sprite the options window and its controls are drawn with. */

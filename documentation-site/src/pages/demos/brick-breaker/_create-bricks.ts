@@ -12,16 +12,12 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   addSpriteComponent,
-  Color,
-  combineInstanceDataSegments,
-  createQuadGeometry,
-  createTextureFromImage,
+  createImageSprite,
+  createSpriteMaterial,
+  createTexture,
   ForgeShaderSource,
-  Material,
-  Renderable,
   RenderContext,
   SpriteEcsComponent,
-  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
 import { PlayArea } from './_create-boundaries';
 import { brickId } from './_brick.component';
@@ -101,39 +97,20 @@ function createBrickSprite(
   fragmentShaderSource: string,
   fragmentShaderName: string,
 ): SpriteEcsComponent {
-  const { shaderCache, gl } = renderContext;
-
-  shaderCache.addShader(new ForgeShaderSource(fragmentShaderSource));
-
-  const vertexShader = shaderCache.getShader('sprite.vert');
-  const fragmentShader = shaderCache.getShader(fragmentShaderName);
-
-  const material = new Material(vertexShader, fragmentShader, gl);
-
-  material.setUniform('u_texture', createTextureFromImage(gl, image, true));
-  material.setUniform('u_time', 0);
-
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const renderable = new Renderable(
-    createQuadGeometry(gl),
-    material,
-    floatsPerInstance,
-    layer,
-    bindInstanceData,
-    setupInstanceAttributes,
+  renderContext.shaderCache.addShader(
+    new ForgeShaderSource(fragmentShaderSource),
   );
 
+  const material = createSpriteMaterial(renderContext, fragmentShaderName);
+
+  material.setUniform('u_time', 0);
+
+  const texture = createTexture(renderContext, image, { filter: 'nearest' });
+
   return {
-    enabled: true,
-    width: image.width,
-    height: image.height,
-    pivot: { x: 0.5, y: 0.5 },
-    tintColor: Color.white,
-    renderable,
-    uvOffset: { x: 0, y: 0 },
-    uvScale: { x: 1, y: 1 },
+    ...createImageSprite(texture, { pixelsPerUnit: 1 }),
+    material,
+    category: layer,
     layer,
   };
 }

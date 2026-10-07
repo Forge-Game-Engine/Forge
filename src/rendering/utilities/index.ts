@@ -7,6 +7,3 @@ export * from './create-sprite.js';
 export * from './get-device-pixel-ratio.js';
 export * from './get-safe-area-insets.js';
 export * from './import-texture.js';
-export * from './instance-data-segment.js';
-export * from './setup-instance-attribute.js';
-export * from './sprite-instance-data-segment.js';

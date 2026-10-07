@@ -1,20 +1,20 @@
-import { Renderable } from '../renderable.js';
 import { Sprite } from '../sprite.js';
+import type { Texture } from '../texture.js';
 
 /**
- * Creates a sprite using the provided material and render context.
+ * Creates a sprite of the given size that draws `texture`.
  * @param width - The width of the sprite.
  * @param height - The height of the sprite.
- * @param renderable - The renderable to use for the sprite.
+ * @param texture - The texture the sprite draws.
  * @returns The created sprite.
  */
 export function createSprite(
   width: number,
   height: number,
-  renderable: Renderable,
+  texture: Texture,
 ): Sprite {
   const sprite = new Sprite({
-    renderable,
+    texture,
     width,
     height,
   });

@@ -2,15 +2,14 @@ import {
   RENDER_TARGET_FORMAT,
   RENDER_TARGET_FORMAT_KEYS,
 } from './enums/index.js';
+import { OwnedTexture } from './owned-texture.js';
 import type { RenderContext } from './render-context.js';
 import {
   registerCanvasSizedRenderTarget,
   unregisterCanvasSizedRenderTarget,
 } from './render-target-registry.js';
-import {
-  createEmptyTexture,
-  resolveRenderTargetFormat,
-} from './shaders/index.js';
+import { resolveRenderTargetFormat } from './shaders/utils/resolve-render-target-format.js';
+import type { Texture } from './texture.js';
 
 /**
  * A render target's size: a fixed `width` x `height` in pixels, or
@@ -25,7 +24,7 @@ export type RenderTargetSize = { width: number; height: number } | 'canvas';
  */
 interface ColorBuffer {
   framebuffer: WebGLFramebuffer;
-  texture: WebGLTexture;
+  texture: OwnedTexture;
 }
 
 /**
@@ -133,9 +132,11 @@ export class RenderTarget {
    * The current color texture, holding this target's latest contents for
    * later passes to read. Changes when `swapBuffers` runs (every
    * post-processing pass over this target) or the target is resized, so
-   * read it when drawing rather than keeping it from an earlier frame.
+   * read it when drawing rather than keeping it from an earlier frame. The
+   * texture belongs to the render target: sample it, but don't update or
+   * dispose it.
    */
-  get colorTexture(): WebGLTexture {
+  get colorTexture(): Texture {
     return this._current.texture;
   }
 
@@ -152,7 +153,7 @@ export class RenderTarget {
    * this target's latest contents.
    * @throws An error if the second buffer's framebuffer is not complete.
    */
-  public swapBuffers(): WebGLTexture {
+  public swapBuffers(): Texture {
     const previous = this._current;
 
     this._current = this._other ?? this._createColorBuffer();
@@ -213,7 +214,12 @@ export class RenderTarget {
     const { gl } = this._renderContext;
     const buffer: ColorBuffer = {
       framebuffer: gl.createFramebuffer(),
-      texture: createEmptyTexture(gl, this._width, this._height, this.format),
+      texture: OwnedTexture.createRenderTargetColor(
+        gl,
+        this._width,
+        this._height,
+        this.format,
+      ),
     };
 
     this._attachColorTexture(buffer);
@@ -224,9 +230,8 @@ export class RenderTarget {
   private _resizeColorBuffer(buffer: ColorBuffer): void {
     const { gl } = this._renderContext;
 
-    gl.deleteTexture(buffer.texture);
-
-    buffer.texture = createEmptyTexture(
+    buffer.texture.release();
+    buffer.texture = OwnedTexture.createRenderTargetColor(
       gl,
       this._width,
       this._height,
@@ -240,7 +245,7 @@ export class RenderTarget {
     const { gl } = this._renderContext;
 
     gl.deleteFramebuffer(buffer.framebuffer);
-    gl.deleteTexture(buffer.texture);
+    buffer.texture.release();
   }
 
   private _attachColorTexture(buffer: ColorBuffer): void {
@@ -254,7 +259,7 @@ export class RenderTarget {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      buffer.texture,
+      buffer.texture.glTexture,
       0,
     );
 

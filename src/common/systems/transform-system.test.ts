@@ -7,7 +7,6 @@ import {
   addScaleComponent,
   positionId,
 } from '../components/index.js';
-import { addParentComponent } from '../components/parent-component.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
 describe('transform-system', () => {
@@ -43,7 +42,7 @@ describe('transform-system', () => {
       local: { x: 5, y: 5 },
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -104,7 +103,7 @@ describe('transform-system', () => {
       isStatic: true,
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -134,7 +133,7 @@ describe('transform-system', () => {
       isStatic: true,
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -148,6 +147,40 @@ describe('transform-system', () => {
 
     expect(parentPosition.world.x).toBe(10);
     expect(childPosition.world.x).toBe(15);
+  });
+
+  it('should recompute a frozen static child when it is reparented or unparented', () => {
+    const first = world.createEntity();
+    const second = world.createEntity();
+    const child = world.createEntity();
+
+    addPositionComponent(world, first, {
+      local: { x: 10, y: 0 },
+      isStatic: true,
+    });
+    addPositionComponent(world, second, {
+      local: { x: 100, y: 0 },
+      isStatic: true,
+    });
+    const childPosition = addPositionComponent(world, child, {
+      local: { x: 5, y: 0 },
+      isStatic: true,
+    });
+
+    world.setParent(child, first);
+    world.update();
+
+    expect(childPosition.world.x).toBe(15);
+
+    world.setParent(child, second);
+    world.update();
+
+    expect(childPosition.world.x).toBe(105);
+
+    world.removeParent(child);
+    world.update();
+
+    expect(childPosition.world.x).toBe(5);
   });
 
   it("should compute a new entity that reuses a removed static entity's slot", () => {
@@ -187,7 +220,7 @@ describe('transform-system', () => {
     world.update();
 
     world.removeComponent(child, positionId);
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     const childPosition = addPositionComponent(world, child, {
       local: { x: 5, y: 0 },
@@ -228,7 +261,7 @@ describe('transform-system', () => {
       local: { x: 10, y: 0 },
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -247,7 +280,7 @@ describe('transform-system', () => {
       local: { x: 10, y: 0 },
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -267,7 +300,7 @@ describe('transform-system', () => {
       local: { x: 10, y: 0 },
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -294,13 +327,13 @@ describe('transform-system', () => {
       local: { x: 1, y: 1 },
     });
 
-    addParentComponent(world, parent, { parent: grandparent });
+    world.setParent(parent, grandparent);
 
     const childPosition = addPositionComponent(world, child, {
       local: { x: 5, y: 0 },
     });
 
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -329,13 +362,13 @@ describe('transform-system', () => {
       local: Math.PI / 2,
     });
 
-    addParentComponent(world, middle, { parent: grandparent });
+    world.setParent(middle, grandparent);
 
     const childPosition = addPositionComponent(world, child, {
       local: { x: 5, y: 5 },
     });
 
-    addParentComponent(world, child, { parent: middle });
+    world.setParent(child, middle);
 
     world.update();
 
@@ -360,7 +393,7 @@ describe('transform-system', () => {
     });
 
     addPositionComponent(world, child, { local: { x: 0, y: 0 } });
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
 
     world.update();
 
@@ -381,7 +414,7 @@ describe('transform-system', () => {
     });
 
     world.update();
-    addParentComponent(world, child, { parent });
+    world.setParent(child, parent);
     world.update();
     world.update();
 

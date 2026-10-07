@@ -8,10 +8,10 @@ import {
   RenderContext,
 } from '../../rendering/index.js';
 import { CanvasEcsComponent } from '../components/canvas-component.js';
-import { UiPointerSource } from '../types/ui-pointer-source.js';
 
 /**
- * Converts a pointer's current position - CSS pixels, Y-down - into
+ * Converts a pointer position - CSS pixels from the canvas's top-left
+ * corner, Y-down, e.g. `UiPointerSource.position` - into
  * `canvas`'s own UI world space, through its dedicated camera. Two canvases
  * with different cameras (e.g. different `verticalWorldUnits`) convert the
  * same pointer position differently, which is why this takes a specific
@@ -20,8 +20,8 @@ import { UiPointerSource } from '../types/ui-pointer-source.js';
  * @param canvas - The canvas to convert the pointer position for.
  * @param renderContext - The render context the canvas's camera renders
  * through.
- * @param pointerSource - The pointer source to read the canvas-space
- * position from.
+ * @param viewportPosition - The pointer position, in CSS pixels from the
+ * canvas's top-left corner, Y-down.
  * @returns The pointer position in `canvas`'s UI world space, or `null` if
  * the canvas's camera entity is missing its `CameraEcsComponent`/
  * `PositionEcsComponent`.
@@ -30,7 +30,7 @@ export function resolveCanvasPointerPosition(
   world: EcsWorld,
   canvas: CanvasEcsComponent,
   renderContext: RenderContext,
-  pointerSource: UiPointerSource,
+  viewportPosition: Vector2,
 ): Vector2 | null {
   const camera = world.getComponent<CameraEcsComponent>(
     canvas.camera,
@@ -46,5 +46,5 @@ export function resolveCanvasPointerPosition(
     camera,
     cameraPosition,
     renderContext,
-  ).viewportToWorld(pointerSource.position);
+  ).viewportToWorld(viewportPosition);
 }

@@ -96,7 +96,7 @@ test.describe('mouse input', () => {
     });
   });
 
-  test('Axis2dAction with noReset tracks the cursor and holds position between mousemove events', async ({
+  test('Axis2dAction tracks the cursor and holds position between mousemove events', async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -133,12 +133,12 @@ test.describe('mouse input', () => {
       await test.step('capture the state after holding the cursor still', () =>
         captureState(page));
 
-    // noReset means the last-dispatched ratio persists, so the square keeps
+    // The axis holds the last-reported cursor ratio, so the square keeps
     // tracking the same position instead of drifting or snapping back.
     expect(stillStill.pointerPosition.x).toBe(afterMove.pointerPosition.x);
   });
 
-  test('Axis1dAction with the default zero reset only moves for one frame per wheel event', async ({
+  test("Axis1dAction reads a frame's summed wheel input for that frame only", async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -174,10 +174,56 @@ test.describe('mouse input', () => {
       await test.step('capture the state after several more frames', () =>
         captureState(page));
 
-    // The default `actionResetTypes.zero` zeroes the axis value every frame
-    // - correct here, since a wheel event has no "up" counterpart to reverse
-    // a lingering value the way a key or button release would.
+    // `MouseInputSource` withdraws its wheel input at the end of the frame
+    // the wheel turned, since a wheel event has no "up" counterpart to
+    // release it the way a key or button release would.
     expect(stillAfter.scrollPosition.x).toBe(afterScroll.scrollPosition.x);
+
+    await test.step('scroll two half-notches within one frame and advance one frame', async () => {
+      await page.locator('canvas').dispatchEvent('wheel', { deltaY: 50 });
+      await page.locator('canvas').dispatchEvent('wheel', { deltaY: 50 });
+      await animateFrames(page, 1);
+    });
+
+    const afterSplitScroll =
+      await test.step('capture the state right after the split-scroll frame', () =>
+        captureState(page));
+
+    // A frame's wheel events add up, so two half-notches in one frame move
+    // the square exactly as far as the single full notch did (back the
+    // other way, so it stays clear of the canvas edge). A whole notch
+    // already reads `1`, the axis's limit, so the sum is checked with
+    // half-notches rather than by expecting two full notches to read `2`.
+    const singleStep = afterScroll.scrollPosition.x - before.scrollPosition.x;
+
+    expect(
+      afterSplitScroll.scrollPosition.x - stillAfter.scrollPosition.x,
+    ).toBeCloseTo(-singleStep);
+
+    await test.step('assert the scroll square visibly moved as far as the full notch did', () => {
+      expect(afterSplitScroll.scrollBounds).not.toBeNull();
+
+      const center = (bounds: { left: number; right: number }) =>
+        (bounds.left + bounds.right) / 2;
+      const singleStepOnScreen =
+        center(afterScroll.scrollBounds!) - center(before.scrollBounds!);
+      const splitStepOnScreen =
+        center(afterSplitScroll.scrollBounds!) -
+        center(stillAfter.scrollBounds!);
+
+      expect(Math.abs(splitStepOnScreen + singleStepOnScreen)).toBeLessThan(3);
+    });
+
+    await test.step('advance several more frames without scrolling again', () =>
+      animateFrames(page, 3));
+
+    const stillAfterSplit =
+      await test.step('capture the state after several more frames', () =>
+        captureState(page));
+
+    expect(stillAfterSplit.scrollPosition.x).toBe(
+      afterSplitScroll.scrollPosition.x,
+    );
   });
 
   test('TriggerAction fires once per click, not per frame held', async ({
@@ -271,7 +317,7 @@ test.describe('mouse input', () => {
     expect(Math.abs(widthAfterRelease - widthBefore)).toBeLessThan(4);
   });
 
-  test('input groups gate which TriggerAction the same button dispatches to, including for MouseInputSource', async ({
+  test('input groups gate which TriggerAction the same button fires, including for MouseInputSource', async ({
     page,
   }) => {
     const initial = await test.step('capture the starting state', () =>
@@ -293,8 +339,8 @@ test.describe('mouse input', () => {
         captureState(page));
 
     // This is the regression this test guards: MouseInputSource used to
-    // call `TriggerAction.trigger()` directly, bypassing InputManager's
-    // active-group gating entirely (unlike KeyboardInputSource). If that
+    // fire the trigger itself, bypassing InputManager's active-group gating
+    // entirely (unlike KeyboardInputSource). If that
     // regressed, `menuTriggerCount` below would be 1 even though the
     // "menu" group was never active.
     expect(afterGameClick.gameTriggerCount).toBe(1);

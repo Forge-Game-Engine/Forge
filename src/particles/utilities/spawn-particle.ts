@@ -91,13 +91,8 @@ export function spawnParticle(
   // particle without changing every other particle from the same emitter.
   // `addSpriteComponent` also fills in what a plain `Sprite` lacks
   // (`enabled`, `layer`, `uvOffset`, `uvScale`).
-  const sprite = addSpriteComponent(world, particle, {
-    ...particleEmitter.sprite,
-  });
+  const sprite = addSpriteComponent(world, particle, particleEmitter.sprite);
 
-  sprite.pivot = Vec2.clone(sprite.pivot);
-  sprite.uvOffset = Vec2.clone(sprite.uvOffset);
-  sprite.uvScale = Vec2.clone(sprite.uvScale);
   sprite.opacityMultiplier = lifetimeOpacity.start;
 
   world.addComponent(particle, ParticleId, {

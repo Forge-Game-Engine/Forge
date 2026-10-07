@@ -4,10 +4,7 @@ import { createUiLayoutEcsSystem } from './ui-layout-system.js';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
 import { createUiRaycastEcsSystem } from './ui-raycast-system.js';
 import { createUiSliderEcsSystem } from './ui-slider-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   MouseButton,
@@ -70,7 +67,7 @@ describe('createUiSliderEcsSystem', () => {
 
     const track = world.createEntity();
     addPositionComponent(world, track);
-    addParentComponent(world, track, { parent: canvas });
+    world.setParent(track, canvas);
     addRectTransformComponent(world, track, UiAnchor.center({ x: 300, y: 24 }));
     const interactable = addUiInteractableComponent(world, track, {
       dragThreshold: 0,
@@ -78,7 +75,7 @@ describe('createUiSliderEcsSystem', () => {
 
     const handle = world.createEntity();
     addPositionComponent(world, handle);
-    addParentComponent(world, handle, { parent: track });
+    world.setParent(handle, track);
     addRectTransformComponent(world, handle, {
       x: UiAxis.point(0, { pivot: 0.5, size: 24 }),
       y: UiAxis.point(0.5, { size: 24 }),
@@ -235,13 +232,13 @@ describe('createUiSliderEcsSystem', () => {
 
     const track = world.createEntity();
     addPositionComponent(world, track);
-    addParentComponent(world, track, { parent: canvas });
+    world.setParent(track, canvas);
     addRectTransformComponent(world, track, UiAnchor.center({ x: 300, y: 24 }));
     addUiInteractableComponent(world, track, { dragThreshold: 0 });
 
     const handle = world.createEntity();
     addPositionComponent(world, handle);
-    addParentComponent(world, handle, { parent: track });
+    world.setParent(handle, track);
     addRectTransformComponent(world, handle, {
       x: UiAxis.point(0, { pivot: 0.5, size: 24 }),
       y: UiAxis.point(0.5, { size: 24 }),
@@ -249,7 +246,7 @@ describe('createUiSliderEcsSystem', () => {
 
     const fill = world.createEntity();
     addPositionComponent(world, fill);
-    addParentComponent(world, fill, { parent: track });
+    world.setParent(fill, track);
     addRectTransformComponent(world, fill, {
       x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
       y: UiAxis.stretch({ min: 0, max: 1 }, { pivot: 0.5 }),
@@ -288,7 +285,7 @@ describe('createUiSliderEcsSystem', () => {
 
     const handle = world.createEntity();
     addPositionComponent(world, handle);
-    addParentComponent(world, handle, { parent: track });
+    world.setParent(handle, track);
     addRectTransformComponent(world, handle, {
       x: UiAxis.point(0, { pivot: 0.5, size: 24 }),
       y: UiAxis.point(0.5, { size: 24 }),

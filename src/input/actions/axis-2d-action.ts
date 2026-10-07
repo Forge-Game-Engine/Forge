@@ -1,73 +1,73 @@
 import { Vec2, Vector2 } from '../../math/index.js';
-import { ActionResetType, actionResetTypes } from '../constants/index.js';
 import { InputAction } from '../input-action.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
-import { Resettable } from '../../common/index.js';
+
+let writeValue: (action: Axis2dAction, x: number, y: number) => void;
 
 /**
- * An action that represents a 2-dimensional axis input, such as a joystick or mouse position.
+ * An action that represents a 2-dimensional axis input, such as a joystick
+ * or mouse position. Read-only to game code: its `InputManager` derives its
+ * value from what the input sources bound to it report.
  */
-export class Axis2dAction implements InputAction, Resettable {
+export class Axis2dAction implements InputAction {
   public readonly name: string;
 
   /**
    * Event that is raised whenever the axis value changes.
    * The new value is passed as a parameter to the event listeners.
    */
-  public readonly valueChangeEvent: ParameterizedForgeEvent<Vector2>;
+  public readonly valueChangeEvent: ParameterizedForgeEvent<Readonly<Vector2>>;
 
-  public inputGroup: string;
+  public readonly inputGroup: string;
 
   private readonly _value: Vector2 = Vec2.zero;
-  private readonly _actionResetType: ActionResetType;
+
+  static {
+    writeValue = (action, x, y): void => {
+      if (action._value.x === x && action._value.y === y) {
+        return;
+      }
+
+      action._value.x = x;
+      action._value.y = y;
+      action.valueChangeEvent.raise(action._value);
+    };
+  }
 
   /**
    * Creates a new Axis2dAction.
    * @param name - The name of the action.
-   * @param inputGroup - The input group this action belongs to.
-   * @param actionResetType - The type of reset behavior for this action. Defaults to `actionResetTypes.zero`.
+   * @param inputGroup - The input group this action belongs to. Defaults to `'game'`.
    */
-  constructor(
-    name: string,
-    inputGroup?: string,
-    actionResetType: ActionResetType = actionResetTypes.zero,
-  ) {
+  constructor(name: string, inputGroup?: string) {
     this.name = name;
-
-    this._actionResetType = actionResetType;
-
     this.valueChangeEvent = new ParameterizedForgeEvent(
       'Axis2d Value Change Event',
     );
-
     this.inputGroup = inputGroup ?? 'game';
   }
 
-  public reset(): void {
-    if (this._actionResetType === actionResetTypes.zero) {
-      this.set(0, 0);
-    }
-  }
-
-  /** Gets the current value of the axis as a Vector2, where x and y range from -1 to 1. */
-  get value(): Vector2 {
+  /**
+   * Gets the current value of the axis. The `InputManager` updates this
+   * vector in place, so copy it to keep a value from an earlier frame.
+   */
+  get value(): Readonly<Vector2> {
     return this._value;
   }
-
-  /** Gets how this action behaves when the `InputManager` resets its actions each frame. */
-  get actionResetType(): ActionResetType {
-    return this._actionResetType;
-  }
-
-  /** Sets the current value of the axis as a Vector2, where x and y range from -1 to 1. */
-  public set(x: number, y: number): void {
-    if (this._value.x === x && this._value.y === y) {
-      return;
-    }
-
-    this._value.x = x;
-    this._value.y = y;
-
-    this.valueChangeEvent.raise(this._value);
-  }
 }
+
+/**
+ * Sets `action`'s value, raising `valueChangeEvent` if it changed. Internal
+ * to the input module and not exported from it: `InputManager` is the only
+ * writer of action state.
+ * @param action - The action to write.
+ * @param x - The new x value.
+ * @param y - The new y value.
+ */
+export const setAxis2dActionValue = (
+  action: Axis2dAction,
+  x: number,
+  y: number,
+): void => {
+  writeValue(action, x, y);
+};

@@ -1,9 +1,9 @@
 import type {
   InstanceComponents,
-  InstanceDataSegment,
   Renderable,
-} from '../../rendering/index.js';
-import { setupInstanceAttribute } from '../../rendering/index.js';
+} from '../../rendering/renderable.js';
+import type { InstanceDataSegment } from '../../rendering/utilities/instance-data-segment.js';
+import { setupInstanceAttribute } from '../../rendering/utilities/setup-instance-attribute.js';
 
 const OUTLINE_COLOR_R_OFFSET = 0;
 const OUTLINE_COLOR_G_OFFSET = 1;
@@ -122,7 +122,7 @@ function setupTextEffectsInstanceAttributes(
  *
  * Combine this with `spriteInstanceDataSegment` via
  * `combineInstanceDataSegments` to build the MSDF text `Renderable`'s
- * instance data layout (see `createTextRenderable`) - per-instance, rather
+ * instance data layout (see `createTextRenderables`) - per-instance, rather
  * than a material uniform, so that text entities sharing the same
  * `FontAtlas` but different outline/shadow settings still batch into a
  * single draw call.

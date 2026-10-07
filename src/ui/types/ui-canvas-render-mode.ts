@@ -15,7 +15,7 @@ export const uiCanvasRenderModes = {
   /**
    * The canvas's root rect is an ordinary `RectTransformEcsComponent`,
    * sized/anchored like any other UI element and positioned via the normal
-   * entity hierarchy (`addParentComponent(world, canvas, { parent: enemy })`
+   * entity hierarchy (`world.setParent(canvas, enemy)`
    * puts a canvas above an entity's head) rather than the render
    * destination's size. Drawn through whichever camera `createUiCanvas`'s
    * `camera` option names - typically the game's own world camera, so the

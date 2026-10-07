@@ -4,15 +4,15 @@ import { Time } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   addSpriteComponent,
-  Renderable,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { addTooltipComponent } from '../components/tooltip-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
 
-const buildRenderable = (): Renderable => ({}) as Renderable;
+const buildTexture = (): Texture => ({}) as Texture;
 
 const buildTime = (deltaTimeInMilliseconds: number): Time =>
   ({ deltaTimeInMilliseconds }) as Time;
@@ -26,7 +26,7 @@ function buildScene(world: EcsWorld) {
   addSpriteComponent(world, panel, {
     width: 10,
     height: 10,
-    renderable: buildRenderable(),
+    texture: buildTexture(),
   });
 
   const label = world.createEntity();

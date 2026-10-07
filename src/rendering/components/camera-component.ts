@@ -49,7 +49,7 @@ export interface CameraDefaultedOptions {
   isStatic: boolean;
 
   /**
-   * A bitmask matched against each sprite's `Renderable.category`
+   * A bitmask matched against each sprite's and text's `category`
    * (`matchesMask`) to decide whether this camera draws it. Defaults to
    * `0xffffffff` (every category) in `addCameraComponent`.
    */

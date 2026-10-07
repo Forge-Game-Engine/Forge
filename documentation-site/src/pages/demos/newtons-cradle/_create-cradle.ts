@@ -14,6 +14,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   NineSliceOptions,
   RenderContext,
   SpriteEcsComponent,
@@ -73,18 +74,24 @@ async function loadCradleSprites(
   ]);
 
   return {
-    ball: createImageSprite(ballImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    frame: createImageSprite(frameImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    arm: createImageSprite(armImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    ball: {
+      ...createImageSprite(createTexture(renderContext, ballImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    frame: {
+      ...createImageSprite(createTexture(renderContext, frameImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    arm: {
+      ...createImageSprite(createTexture(renderContext, armImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
   };
 }
 

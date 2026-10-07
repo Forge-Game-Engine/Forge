@@ -56,7 +56,7 @@ export interface CreateTooltipDefaultedOptions {
   /**
    * The render category the tooltip's label text draws with, forwarded to
    * `createLabel`'s `category` option - the panel's own category comes
-   * from `sprite.renderable.category` instead, unaffected by this. Pass
+   * from `sprite.category` instead, unaffected by this. Pass
    * the same value you gave the tooltip's canvas's `cullingMask` (see
    * `CreateUiCanvasDefaultedOptions.cullingMask`) so the label is actually
    * visible through it. Omitted, the label falls back to `TextEcsComponent`'s

@@ -105,7 +105,7 @@ this step by step for bug fixes.
   /ecs                     # Entity-Component-System core
   /events                  # Event system
   /finite-state-machine    # FSM implementation
-  /input                   # Input handling
+  /input                   # Input handling (keyboard, mouse, gamepad, hidden-DOM text entry)
   /lifecycle               # Lifecycle management
   /math                    # Math utilities
   /particles               # Particle system
@@ -116,7 +116,7 @@ this step by step for bug fixes.
   /storage                 # StorageBackend (localStorage, memory) and createPersistentState: typed records kept outside the game
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
-  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, layout groups, content size/aspect ratio fitters)
+  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, text inputs, layout groups, content size/aspect ratio fitters)
   /utilities               # General utilities
   index.ts                 # Main exports
 
@@ -180,9 +180,12 @@ factory functions, not classes:
 3. **Entities**: Just numeric ids (`number`), created with
    `EcsWorld.createEntity()`. Components are attached/detached by id via the
    world (`addComponent`/`removeComponent`/`addTag`); there is no `Entity`
-   object. Parent-child relationships are expressed via a
-   `ParentEcsComponent` referencing another entity's id, not object
-   containment.
+   object. Parent-child relationships are kept by the world, not object
+   containment: `world.setParent(child, parent)`/`removeParent` write the
+   child's `ParentEcsComponent` (the only writer; `addComponent`/
+   `removeComponent` of `parentId` throw) and the world's children index
+   (`getChildren`, in sibling order). `removeEntity` removes descendants
+   too, so loops that remove entities check `isAlive` first.
 
 4. **World** (`EcsWorld`): Container for component data and registered
    systems. Stores component data grouped by component key, runs each
@@ -485,15 +488,23 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 - When a test constructs a real `Material` against a mocked WebGL context,
-  declare each uniform the test sets in the shader source it passes
-  (`uniform vec4 u_color;`): `Material` takes a uniform's type and array
-  size from its declaration and throws for a name neither shader declares.
-  The mocked `getActiveUniform` decides which declared uniforms are active,
-  and so uploaded on `bind`; leave one out to test a uniform the compiler
-  stripped. Report the real GL type enum (e.g. `0x8b5e /* SAMPLER_2D */`,
-  `0x1406 /* FLOAT */`) and array `size` for what it does return, since
-  undeclared active uniforms (struct members) are typed from it, and mock
-  the `uniform*` method `bind` calls for the declared type
+  build a real `RenderContext` over a canvas whose `getContext` returns the
+  mock (`new Material(renderContext, vertex, fragment)`): the render context
+  caches the linked program, so materials from the same shader sources in
+  one context share it. Declare each uniform the test sets in the shader
+  source it passes (`uniform vec4 u_color;`): `Material` takes a uniform's
+  type and array size from its declaration and throws for a name neither
+  shader declares. The mocked `getActiveUniform` decides which declared
+  uniforms are active; leave one out to test a uniform the compiler
+  stripped. `bind` uploads every active uniform, a zero default when the
+  material didn't set it and `renderContext.blackTexture` for a sampler, so
+  report only the uniforms the shaders really use, mock the `uniform*v`
+  method for each declared type, and mock the texture-creation calls
+  `Texture`'s constructor makes when a sampler is active. Report the real GL type enum (e.g.
+  `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size` for
+  what it does return, since undeclared active uniforms (struct members)
+  are typed from it. Sampler values are `Texture`s (`new Texture(mockGl)`),
+  and `bindTexture` receives `texture.glTexture`
 - Fakes shared by several test files go in a `test-helpers/` folder inside
   the module (e.g. `src/audio/test-helpers/fake-audio-context.ts`, a
   stand-in for the Web Audio API, which jsdom lacks). `tsconfig.build.json`

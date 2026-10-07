@@ -7,6 +7,7 @@ import {
   createGame,
   createImageSprite,
   createRenderEcsSystem,
+  createTexture,
   createTransformEcsSystem,
   degreesToRadians,
   EcsSystem,
@@ -235,21 +236,24 @@ const [ballImage, squareImage, triangleImage] = await Promise.all([
   imageCache.getOrLoad('Triangle.png'),
 ]);
 
-const ballSprite = createImageSprite(ballImage, renderContext, {
-  pixelsPerUnit: 1,
-  frameDimensions: { x: shapeSize, y: shapeSize },
-  layer: renderLayer,
-});
-const squareSprite = createImageSprite(squareImage, renderContext, {
-  pixelsPerUnit: 1,
-  frameDimensions: { x: shapeSize, y: shapeSize },
-  layer: renderLayer,
-});
-const triangleSprite = createImageSprite(triangleImage, renderContext, {
-  pixelsPerUnit: 1,
-  frameDimensions: { x: shapeSize, y: shapeSize },
-  layer: renderLayer,
-});
+const ballSprite = {
+  ...createImageSprite(createTexture(renderContext, ballImage)),
+  width: shapeSize,
+  height: shapeSize,
+  category: renderLayer,
+};
+const squareSprite = {
+  ...createImageSprite(createTexture(renderContext, squareImage)),
+  width: shapeSize,
+  height: shapeSize,
+  category: renderLayer,
+};
+const triangleSprite = {
+  ...createImageSprite(createTexture(renderContext, triangleImage)),
+  width: shapeSize,
+  height: shapeSize,
+  category: renderLayer,
+};
 
 const shapeTemplates: ShapeTemplate[] = [
   {
