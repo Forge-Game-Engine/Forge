@@ -110,7 +110,7 @@ This texture-import `pixelsPerUnit` is a different value from the
 camera-derived one described above: this one is a fixed, per-texture
 authoring choice applied once when a sprite is created; the camera's is
 recomputed every frame from `verticalWorldUnits` and the render
-destination's current height, and converts world units to *screen* pixels
+destination's current height, and converts world units to _screen_ pixels
 at render time rather than texture pixels to world units at import time.
 
 ## High-DPI displays
@@ -126,10 +126,10 @@ the container resizes or the pixel ratio changes.
 
 That gives a `RenderContext` two sizes:
 
-| Property                 | Unit                                   | Use it for                                                                                                                                         |
-| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `width` / `height`       | Device pixels (the drawing buffer)     | Anything rendered into and then shown on the canvas: sizing a `RenderTarget`, a shader uniform compared against `gl_FragCoord`, the WebGL viewport |
-| `cssWidth` / `cssHeight` | CSS pixels (the canvas's on-page size) | Anything measured by the DOM: `MouseInputSource.position`, `getSafeAreaInsets()`, element sizes                                                    |
+| Property                 | Unit                                   | Use it for                                                                                                                                               |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width` / `height`       | Device pixels (the drawing buffer)     | Anything rendered into and then shown on the canvas: a shader uniform compared against `gl_FragCoord`, the WebGL viewport, a canvas-sized `RenderTarget` |
+| `cssWidth` / `cssHeight` | CSS pixels (the canvas's on-page size) | Anything measured by the DOM: `MouseInputSource.position`, `getSafeAreaInsets()`, element sizes                                                          |
 
 `pixelRatio` is the ratio between the two. A camera's view (see
 [What a camera sees](#what-a-camera-sees)) measures its viewport and its
@@ -152,8 +152,24 @@ const { renderContext } = createGame('game-container', {
 });
 ```
 
-Pass `maxPixelRatio: 1` to always render at CSS resolution, the engine's
-behavior before it supported high-DPI displays.
+Pass `maxPixelRatio: 1` to always render at CSS resolution.
+
+`maxPixelRatio` can also be changed at runtime, for example from a graphics
+quality setting:
+
+```ts
+renderContext.maxPixelRatio = 1;
+```
+
+The render context re-applies its last resize at the new cap, so the canvas
+and every canvas-sized render target (see
+[Render target sizes](./multipass-rendering.md#render-target-sizes)) render
+at the new resolution from the next frame. While the canvas has no size,
+for example while its container is hidden, the cap is stored and applies on
+the next resize.
+
+`width`, `height`, `cssWidth`, `cssHeight` and `pixelRatio` are read-only.
+Only `RenderContext.resize` changes them.
 
 ## What a camera sees
 

@@ -43,11 +43,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
