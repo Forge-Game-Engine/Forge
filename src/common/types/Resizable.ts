@@ -7,13 +7,13 @@ export interface Resizable {
    * The current width of the surface's own pixel grid (for a
    * `RenderContext`, its drawing buffer, in device pixels).
    */
-  width: number;
+  readonly width: number;
 
   /**
    * The current height of the surface's own pixel grid (for a
    * `RenderContext`, its drawing buffer, in device pixels).
    */
-  height: number;
+  readonly height: number;
 
   /**
    * Resizes the object to fit an on-page area of `width` x `height` CSS

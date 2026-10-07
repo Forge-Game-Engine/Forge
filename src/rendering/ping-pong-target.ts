@@ -2,7 +2,12 @@ import {
   RENDER_TARGET_FORMAT,
   RENDER_TARGET_FORMAT_KEYS,
 } from './enums/index.js';
-import { createRenderTarget, RenderTarget } from './render-target.js';
+import type { RenderContext } from './render-context.js';
+import {
+  createRenderTarget,
+  RenderTarget,
+  RenderTargetSize,
+} from './render-target.js';
 
 /**
  * A pair of render targets that can be flipped between a "read" and a
@@ -16,21 +21,21 @@ export class PingPongTarget {
 
   /**
    * Creates a new PingPongTarget, allocating two render targets of the given size.
-   * @param gl - The WebGL2 rendering context.
-   * @param width - The render target width in pixels.
-   * @param height - The render target height in pixels.
+   * @param renderContext - The render context both targets belong to.
+   * @param size - Both targets' size: `'canvas'` to follow the render
+   * context's drawing buffer, or a fixed `{ width, height }` in pixels (see
+   * `createRenderTarget`).
    * @param format - The requested color storage format for both underlying
    * render targets. Defaults to `RENDER_TARGET_FORMAT.ldr`.
    */
   constructor(
-    gl: WebGL2RenderingContext,
-    width: number,
-    height: number,
+    renderContext: RenderContext,
+    size: RenderTargetSize,
     format: RENDER_TARGET_FORMAT_KEYS = RENDER_TARGET_FORMAT.ldr,
   ) {
     this._targets = [
-      createRenderTarget(gl, width, height, format),
-      createRenderTarget(gl, width, height, format),
+      createRenderTarget(renderContext, size, format),
+      createRenderTarget(renderContext, size, format),
     ];
   }
 
@@ -57,26 +62,23 @@ export class PingPongTarget {
   }
 
   /**
-   * Resizes both render targets.
-   * @param gl - The WebGL2 rendering context.
+   * Resizes both render targets, if they're fixed-size (see
+   * `RenderTarget.resize`).
    * @param width - The new render target width in pixels.
    * @param height - The new render target height in pixels.
+   * @throws An error if the targets are canvas-sized, or either dimension
+   * isn't positive.
    */
-  public resize(
-    gl: WebGL2RenderingContext,
-    width: number,
-    height: number,
-  ): void {
-    this._targets[0].resize(gl, width, height);
-    this._targets[1].resize(gl, width, height);
+  public resize(width: number, height: number): void {
+    this._targets[0].resize(width, height);
+    this._targets[1].resize(width, height);
   }
 
   /**
    * Deletes both render targets, freeing their GPU resources.
-   * @param gl - The WebGL2 rendering context.
    */
-  public dispose(gl: WebGL2RenderingContext): void {
-    this._targets[0].dispose(gl);
-    this._targets[1].dispose(gl);
+  public dispose(): void {
+    this._targets[0].dispose();
+    this._targets[1].dispose();
   }
 }

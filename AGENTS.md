@@ -784,8 +784,11 @@ sizes that differ on any HiDPI display (and in Playwright only when a test
 sets `deviceScaleFactor`, since it defaults to `1`):
 
 - `width`/`height` - the drawing buffer, in device pixels. Use these for
-  anything GL sees: the viewport, `RenderTarget` sizes, shader uniforms
-  compared against `gl_FragCoord`.
+  anything GL sees: the viewport, shader uniforms compared against
+  `gl_FragCoord`. A render target that covers the canvas is created with
+  `createRenderTarget(renderContext, 'canvas')`, and `RenderContext.resize`
+  resizes it with the canvas; never resize a camera's target by hand to
+  follow the canvas.
 - `cssWidth`/`cssHeight` - the canvas's on-page size, in CSS pixels. Use
   these for anything the DOM measures: `MouseInputSource.position`,
   `getSafeAreaInsets()`, and any UI size meant to stay the same physical

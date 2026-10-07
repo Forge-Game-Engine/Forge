@@ -68,7 +68,7 @@ export function beginPostProcessPass(
   renderContext: RenderContext,
   target: RenderTarget,
 ): WebGLTexture {
-  const source = target.swapBuffers(renderContext.gl);
+  const source = target.swapBuffers();
 
   beginFullscreenReplacePass(renderContext, target);
 
