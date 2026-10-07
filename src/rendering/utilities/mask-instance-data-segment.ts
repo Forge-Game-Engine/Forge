@@ -27,13 +27,13 @@ const SHAPE_MODE_RADIAL = 2;
  * Stands in for an unbounded clip rect edge. Finite, so the shader's
  * distance arithmetic stays finite, and far beyond any world coordinate.
  */
-const UNCLIPPED = 1e30;
+const UNBOUNDED_EDGE = 1e30;
 
 /** The number of floats occupied by an instance's mask data. */
 export const MASK_INSTANCE_DATA_FLOATS_PER_INSTANCE = 14;
 
 const toShaderCoordinate = (value: number): number =>
-  Math.min(Math.max(value, -UNCLIPPED), UNCLIPPED);
+  Math.min(Math.max(value, -UNBOUNDED_EDGE), UNBOUNDED_EDGE);
 
 function bindShapeMask(
   shape: InstanceShapeMask,
@@ -66,41 +66,51 @@ function bindShapeMask(
   buffer[offset + SHAPE_PARAMETER_2_OFFSET] = shape.aspect;
 }
 
+/**
+ * The data every unmasked instance binds: an unbounded clip rect and no
+ * shape. Copied in one call, since most instances aren't masked.
+ */
+const unmaskedInstanceData = new Float32Array(
+  MASK_INSTANCE_DATA_FLOATS_PER_INSTANCE,
+);
+
+unmaskedInstanceData[CLIP_MIN_X_OFFSET] = -UNBOUNDED_EDGE;
+unmaskedInstanceData[CLIP_MIN_Y_OFFSET] = -UNBOUNDED_EDGE;
+unmaskedInstanceData[CLIP_MAX_X_OFFSET] = UNBOUNDED_EDGE;
+unmaskedInstanceData[CLIP_MAX_Y_OFFSET] = UNBOUNDED_EDGE;
+unmaskedInstanceData[SHAPE_MODE_OFFSET] = SHAPE_MODE_NONE;
+
 function bindMaskInstanceData(
   components: InstanceComponents,
   buffer: Float32Array,
   offset: number,
 ): void {
   const { mask } = components;
-  const clip = mask?.clip;
+
+  if (!mask) {
+    buffer.set(unmaskedInstanceData, offset);
+
+    return;
+  }
+
+  const { clip } = mask;
 
   // Y-down, like the rest of the instance data: the clip rect's top edge
   // becomes its minimum.
-  buffer[offset + CLIP_MIN_X_OFFSET] = toShaderCoordinate(
-    clip?.min.x ?? -Infinity,
-  );
-  buffer[offset + CLIP_MIN_Y_OFFSET] = toShaderCoordinate(
-    -(clip?.max.y ?? Infinity),
-  );
-  buffer[offset + CLIP_MAX_X_OFFSET] = toShaderCoordinate(
-    clip?.max.x ?? Infinity,
-  );
-  buffer[offset + CLIP_MAX_Y_OFFSET] = toShaderCoordinate(
-    -(clip?.min.y ?? -Infinity),
-  );
+  buffer[offset + CLIP_MIN_X_OFFSET] = toShaderCoordinate(clip.min.x);
+  buffer[offset + CLIP_MIN_Y_OFFSET] = toShaderCoordinate(-clip.max.y);
+  buffer[offset + CLIP_MAX_X_OFFSET] = toShaderCoordinate(clip.max.x);
+  buffer[offset + CLIP_MAX_Y_OFFSET] = toShaderCoordinate(-clip.min.y);
 
-  if (mask?.shape) {
+  if (mask.shape) {
     bindShapeMask(mask.shape, buffer, offset);
 
     return;
   }
 
-  buffer.fill(0, offset + AXES_XX_OFFSET, offset + SHAPE_MODE_OFFSET);
-  buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_NONE;
-  buffer.fill(
-    0,
-    offset + SHAPE_PARAMETER_0_OFFSET,
-    offset + MASK_INSTANCE_DATA_FLOATS_PER_INSTANCE,
+  buffer.set(
+    unmaskedInstanceData.subarray(AXES_XX_OFFSET),
+    offset + AXES_XX_OFFSET,
   );
 }
 
