@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createDropdown } from './create-dropdown.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, spriteId, Texture } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { positionId } from '../../common/index.js';
@@ -14,11 +14,14 @@ const fontAtlas = {} as FontAtlas;
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });

@@ -6,7 +6,7 @@
 | **Kind**                              | Defect                                                                                                                                                                                                                                                                      |
 | **Found in**                          | Galactic Journey demo: `src/engine-flame/engine-flame.system.ts` (`sortDepth = ship.y - behindShipDepth` every frame), `src/power-ups/power-up.system.ts` (`y - 0.001`), `sortDepth` of `-1e6`, `-1e5`, `-1000` and `-500` on the warnings, exhaust, planet and finish line |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                    |
-| **Related**                           | the world's children index (`EcsWorld.getChildren`, landed), [`sprite-textures.md`](./sprite-textures.md), [`hierarchical-visibility.md`](./hierarchical-visibility.md)                                                                                                     |
+| **Related**                           | the world's children index (`EcsWorld.getChildren`, landed), [`hierarchical-visibility.md`](./hierarchical-visibility.md)                                                                                                                                                   |
 
 ## 0. Targeted modules
 
@@ -36,8 +36,8 @@ three problems in the demo:
 - **Depth is position, so ordering is magic numbers.** Backgrounds that
   must stay behind everything get `sortDepth` values of `-1e6`, `-1e5`,
   `-1000` and `-500`. (The sprite `layer` field would have done it, but
-  `createImageSprite` also has a `layer` option that means something else:
-  the camera culling category. See [`sprite-textures.md`](./sprite-textures.md).)
+  `createImageSprite` used to have a `layer` option that meant something
+  else: the camera culling category, now the sprite's own `category`.)
 - **The sort isn't exact.** The render system buckets depths into 4096
   steps across the range of everything a camera submits that frame, all
   layers and off-screen sprites included. With the exhaust's `-1e5` in the

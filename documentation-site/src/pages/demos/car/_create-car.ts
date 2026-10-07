@@ -21,6 +21,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -284,14 +285,18 @@ async function loadCarSprites(
   ]);
 
   return {
-    chassis: createImageSprite(chassisImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    wheel: createImageSprite(wheelImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    chassis: {
+      ...createImageSprite(createTexture(renderContext, chassisImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    wheel: {
+      ...createImageSprite(createTexture(renderContext, wheelImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
   };
 }
 

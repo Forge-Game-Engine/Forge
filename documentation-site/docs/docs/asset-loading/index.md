@@ -37,14 +37,18 @@ The most common case is loading images through the
 `imageCache`:
 
 ```ts
-import { createImageSprite } from '@forge-game-engine/forge/rendering';
+import {
+  createImageSprite,
+  createTexture,
+} from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { renderContext } = createGame('game-container');
 const { imageCache } = renderContext;
 
 const playerImage = await imageCache.getOrLoad('player.png');
-const playerSprite = createImageSprite(playerImage, renderContext, 1);
+const playerTexture = createTexture(renderContext, playerImage);
+const playerSprite = createImageSprite(playerTexture);
 ```
 
 See [Loading and Caching Images](./loading-images.md) for how `getOrLoad`

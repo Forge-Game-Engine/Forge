@@ -481,6 +481,64 @@ describe('RenderContext', () => {
     });
   });
 
+  describe('white and black textures', () => {
+    const addTextureMocks = (): void => {
+      Object.assign(mockGl, {
+        createTexture: vi.fn(() => ({})),
+        bindTexture: vi.fn(),
+        texParameteri: vi.fn(),
+        texImage2D: vi.fn(),
+      });
+    };
+
+    it('creates them only when first used', () => {
+      addTextureMocks();
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(context.gl.createTexture).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['whiteTexture', [255, 255, 255, 255]],
+      ['blackTexture', [0, 0, 0, 255]],
+    ] as const)('makes %s a 1x1 opaque texel, created once', (name, texel) => {
+      addTextureMocks();
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+      const texture = context[name];
+
+      expect(context[name]).toBe(texture);
+      expect(texture.width).toBe(1);
+      expect(texture.height).toBe(1);
+      expect(mockGl.createTexture).toHaveBeenCalledTimes(1);
+      expect(mockGl.texImage2D).toHaveBeenCalledWith(
+        mockGl.TEXTURE_2D,
+        0,
+        mockGl.RGBA,
+        1,
+        1,
+        0,
+        mockGl.RGBA,
+        mockGl.UNSIGNED_BYTE,
+        new Uint8Array(texel),
+      );
+    });
+
+    it('owns them, so they cannot be updated or disposed', () => {
+      addTextureMocks();
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(() => context.whiteTexture.dispose()).toThrow(
+        'belongs to the render context',
+      );
+      expect(() => context.blackTexture.update({} as TexImageSource)).toThrow(
+        'belongs to the render context',
+      );
+    });
+  });
+
   describe('setGlobalUniformValue', () => {
     it('should set a global uniform value', () => {
       const context = new RenderContext(shaderCache, imageCache, canvas);

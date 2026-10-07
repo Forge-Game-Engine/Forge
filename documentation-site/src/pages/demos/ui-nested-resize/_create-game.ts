@@ -88,7 +88,7 @@ export const createNestedResizeGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -148,7 +148,7 @@ export const createNestedResizeGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

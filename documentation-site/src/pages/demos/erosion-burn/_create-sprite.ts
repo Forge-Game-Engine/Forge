@@ -1,16 +1,12 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 import {
-  Color,
-  combineInstanceDataSegments,
-  createQuadGeometry,
-  createTextureFromImage,
+  createImageSprite,
+  createSpriteMaterial,
+  createTexture,
   ForgeShaderSource,
-  Material,
-  Renderable,
   RenderContext,
   SpriteEcsComponent,
-  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
 import { erosionShader } from './_erosion.shader';
 
@@ -28,7 +24,7 @@ export async function createErosionSprite(
   renderContext: RenderContext,
   layer: number,
 ): Promise<SpriteEcsComponent> {
-  const { shaderCache, gl, imageCache } = renderContext;
+  const { shaderCache, imageCache } = renderContext;
 
   const [logoImage, noiseImage, gradientImage] = await Promise.all([
     imageCache.getOrLoad(getAssetUrl('img/forge-logo.png')),
@@ -38,41 +34,25 @@ export async function createErosionSprite(
 
   shaderCache.addShader(new ForgeShaderSource(erosionShader));
 
-  const vertexShader = shaderCache.getShader('sprite.vert');
-  const fragmentShader = shaderCache.getShader('erosion.frag');
+  const material = createSpriteMaterial(renderContext, 'erosion.frag');
 
-  const material = new Material(vertexShader, fragmentShader, gl);
-
-  material.setUniform('u_texture', createTextureFromImage(gl, logoImage));
-  material.setUniform('u_noiseTexture', createTextureFromImage(gl, noiseImage));
+  material.setUniform(
+    'u_noiseTexture',
+    createTexture(renderContext, noiseImage),
+  );
   material.setUniform(
     'u_burnGradient',
-    createTextureFromImage(gl, gradientImage),
+    createTexture(renderContext, gradientImage),
   );
   material.setUniform('u_burnProgress', 0);
   material.setUniform('u_edgeWidth', initialEdgeWidth);
 
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const renderable = new Renderable(
-    createQuadGeometry(gl),
-    material,
-    floatsPerInstance,
-    layer,
-    bindInstanceData,
-    setupInstanceAttributes,
-  );
-
   return {
-    enabled: true,
-    width: logoImage.width,
-    height: logoImage.height,
-    pivot: { x: 0.5, y: 0.5 },
-    tintColor: Color.white,
-    renderable,
-    uvOffset: { x: 0, y: 0 },
-    uvScale: { x: 1, y: 1 },
+    ...createImageSprite(createTexture(renderContext, logoImage), {
+      pixelsPerUnit: 1,
+    }),
+    material,
+    category: layer,
     layer,
   };
 }

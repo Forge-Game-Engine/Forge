@@ -15,6 +15,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -55,10 +56,12 @@ export async function createPlayer(
   const ballImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/ball_blue_large.png'),
   );
-  const ballSprite = createImageSprite(ballImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const ballSprite = {
+    ...createImageSprite(createTexture(renderContext, ballImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const entity = world.createEntity();
 

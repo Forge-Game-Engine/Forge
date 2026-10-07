@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 8
 ---
 
 # Bloom
@@ -200,24 +200,27 @@ first time it's bloomed. Each of these buffers inherits the source render target
 
 ## Emissive-driven bloom
 
-`createImageSprite` accepts an optional emissive map: a texture added on top
-of the sprite's tinted albedo, unaffected by lighting or tint. Passing an
-`intensity` above `1` pushes a pixel's brightness above the LDR ceiling,
-so on an `hdr`-format camera it blooms convincingly even where the sprite's
-own albedo isn't pure white — a neon sign's tube can stay a dim, believable
-color while still glowing brighter than the scene around it:
+A sprite's [emissive map](./sprites.md#adding-an-emissive-map) is a texture
+added on top of the sprite's tinted texture, unaffected by its tint. An
+emissive `color` with channels above `1` pushes a pixel's brightness above
+the LDR ceiling, so on an `hdr`-format camera it blooms even where the
+sprite's own texture isn't pure white: a neon sign's tube can stay a dim
+color while glowing brighter than the scene around it:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   addBloomComponent,
+  addSpriteComponent,
   addToneMappingComponent,
+  Color,
   createBloomEcsSystem,
   createCamera,
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
   createRenderTarget,
+  createTexture,
   createToneMapEcsSystem,
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
@@ -233,9 +236,12 @@ const camera = createCamera(world, { renderTarget: sceneTarget });
 addBloomComponent(world, camera, { threshold: 0.8, passes: 4, intensity: 1 });
 addToneMappingComponent(world, camera);
 
-const neonSign = createImageSprite(neonSignImage, renderContext, 0, undefined, {
-  image: neonSignEmissiveMap,
-  intensity: 4,
+addSpriteComponent(world, neonSign, {
+  ...createImageSprite(createTexture(renderContext, neonSignImage)),
+  emissive: {
+    texture: createTexture(renderContext, neonSignEmissiveImage),
+    color: new Color(4, 4, 4, 1),
+  },
 });
 
 world.addSystem(createTransformEcsSystem());
@@ -285,7 +291,8 @@ let bloom's blur produce it instead:
   reasonably opaque edges** matching the shape you actually want visible
   (a bullet's core and tail, say) — not a gradient fading to near-zero
   alpha.
-- Pick a **moderate** `intensity` (roughly `1`–`3` for a subtle glow); very
+- Pick a **moderate** emissive `color` (channels of roughly `1`–`3` for a
+  subtle glow); very
   high values (`5`+) push almost every colored pixel toward the same
   blown-out white once [tone mapping](./hdr-rendering.md) compresses it
   back down, which reads as "glowing white" rather than "glowing amber" or

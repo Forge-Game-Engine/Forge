@@ -10,6 +10,7 @@ import {
   addSpriteComponent,
   Color,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -53,19 +54,22 @@ export async function createRayVisual(
 ): Promise<RayVisual> {
   const { imageCache } = renderContext;
 
-  const [lineImage, markerImage] = await Promise.all([
-    imageCache.getOrLoad(getAssetUrl('img/White.png')),
-    imageCache.getOrLoad(getAssetUrl('img/blue-circle.png')),
-  ]);
+  const markerImage = await imageCache.getOrLoad(
+    getAssetUrl('img/blue-circle.png'),
+  );
 
-  const lineSprite = createImageSprite(lineImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
-  const markerSprite = createImageSprite(markerImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const lineSprite = {
+    ...createImageSprite(renderContext.whiteTexture, {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+  const markerSprite = {
+    ...createImageSprite(createTexture(renderContext, markerImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const lineEntity = world.createEntity();
   const linePosition = addPositionComponent(world, lineEntity);

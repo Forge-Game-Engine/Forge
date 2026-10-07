@@ -5,8 +5,8 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   addSpriteComponent,
   Color,
-  Renderable,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import { addUiColorTransitionComponent } from '../components/ui-color-transition-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
@@ -15,7 +15,7 @@ import {
   linear,
 } from '../../animations/easing-functions/index.js';
 
-const buildRenderable = (): Renderable => ({}) as Renderable;
+const buildTexture = (): Texture => ({}) as Texture;
 
 const buildTime = (deltaTimeInMilliseconds: number): Time =>
   ({ deltaTimeInMilliseconds }) as Time;
@@ -30,7 +30,7 @@ describe('createUiTransitionEcsSystem', () => {
     addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
     addUiColorTransitionComponent(world, entity, { normalColor });
 
@@ -52,7 +52,7 @@ describe('createUiTransitionEcsSystem', () => {
     addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
       tintColor: normalColor,
     });
     addUiColorTransitionComponent(world, entity, {
@@ -91,7 +91,7 @@ describe('createUiTransitionEcsSystem', () => {
     addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
     addUiColorTransitionComponent(world, entity, {
       hoverColor,
@@ -127,7 +127,7 @@ describe('createUiTransitionEcsSystem', () => {
     addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
       tintColor: normalColor,
     });
     addUiColorTransitionComponent(world, entity, {
@@ -169,7 +169,7 @@ describe('createUiTransitionEcsSystem', () => {
     addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
       tintColor: normalColor,
     });
     addUiColorTransitionComponent(world, entity, {

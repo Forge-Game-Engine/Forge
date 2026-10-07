@@ -43,7 +43,6 @@ import {
   UiAnchor,
   uiScaleModes,
 } from '../../../src/ui/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { PixelBounds, scanPixelBounds } from './input-scene-helpers.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
@@ -159,22 +158,16 @@ export const createScene: CreateScene = async (
     navigateInput,
   });
 
-  const fontAtlas = await new FontAtlasCache(
-    renderContext.imageCache,
-  ).getOrLoad({ metricsUrl: fontMetricsUrl, imageUrl: fontImageUrl });
+  const fontAtlas = await new FontAtlasCache(renderContext).getOrLoad({
+    metricsUrl: fontMetricsUrl,
+    imageUrl: fontImageUrl,
+  });
 
-  const whiteImage = await createSquareImage('#fff');
-
-  const sprite = (tint: Color) => {
-    const created = createImageSprite(whiteImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiRenderCategory,
-    });
-
-    created.tintColor = tint;
-
-    return created;
-  };
+  const sprite = (tint: Color) => ({
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: uiRenderCategory,
+    tintColor: tint,
+  });
 
   const button = createPanel(world, uiCanvas, {
     sprite: sprite(new Color(0.3, 0.5, 0.9, 1)),
@@ -215,7 +208,7 @@ export const createScene: CreateScene = async (
   field.onCancel.registerListener(() => cancelCount++);
 
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

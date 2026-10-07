@@ -1,6 +1,6 @@
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
   addSpriteComponent,
   NineSliceOptions,
@@ -129,9 +129,6 @@ export function createProgressBar(
   });
   addSpriteComponent(world, fill, {
     ...fillSprite,
-    pivot: Vec2.clone(fillSprite.pivot),
-    uvOffset: Vec2.clone(fillSprite.uvOffset),
-    uvScale: Vec2.clone(fillSprite.uvScale),
   });
 
   const progressBar = addUiProgressBarComponent(world, entity, {

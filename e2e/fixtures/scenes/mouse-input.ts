@@ -28,7 +28,6 @@ import {
   Time,
   TriggerAction,
 } from '../../../src/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {
   matchesColor,
@@ -96,9 +95,9 @@ export interface MouseInputSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<MouseInputSceneHandle> => {
+): MouseInputSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -154,10 +153,7 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: canvas.height,
   });
 
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
 
   function createSquare(
     x: number,

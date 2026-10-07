@@ -27,7 +27,6 @@ import {
   Time,
   TriggerAction,
 } from '../../../src/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {
   matchesColor,
@@ -176,9 +175,9 @@ export interface GamepadInputSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<GamepadInputSceneHandle> => {
+): GamepadInputSceneHandle => {
   const fakeGamepad = installFakeGamepad();
 
   const time = new Time();
@@ -244,10 +243,7 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: canvas.height,
   });
 
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
 
   function createSquare(
     x: number,

@@ -27,7 +27,7 @@ export interface ScreenSpaceUiCanvasOptions extends CanvasInputOptions {
 
   /**
    * The dedicated UI camera's culling mask, matched against
-   * `Renderable.category` (see `createImageSprite`'s `layer` option) and
+   * `SpriteEcsComponent.category` and
    * `TextEcsComponent.category` to decide what this camera draws. Forge
    * doesn't reserve or suggest any particular bit for UI - pick any value
    * your game isn't already using for another camera, and reuse that same

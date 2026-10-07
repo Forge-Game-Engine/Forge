@@ -22,7 +22,6 @@ import {
   registerUiSystems,
   UiAxis,
 } from '../../../src/ui/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -138,9 +137,9 @@ function sampleBlock(
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<TranslucentUiCompositingSceneHandle> => {
+): TranslucentUiCompositingSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -174,13 +173,11 @@ export const createScene: CreateScene = async (
     referenceResolution: { x: canvas.width, y: canvas.height },
   });
 
-  const panelImage = await createSquareImage('#fff');
-
   const panelEntities = panelAlphas.map((alpha, index) => {
-    const panelSprite = createImageSprite(panelImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiRenderCategory,
-    });
+    const panelSprite = {
+      ...createImageSprite(renderContext.whiteTexture),
+      category: uiRenderCategory,
+    };
 
     panelSprite.tintColor = new Color(0, 0, 0, alpha);
 

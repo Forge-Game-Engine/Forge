@@ -28,7 +28,6 @@ import {
   Vec2,
 } from '../../../src/index.js';
 import { clearColorRgb } from './camera-pan-zoom-clear-color.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -41,9 +40,9 @@ const clearColor = new Color(
   1,
 );
 
-// A checkerboard of tinted squares (see `createSquareImage`), spanning
-// world coordinates [-300, 300] on both axes, with a distinct green marker
-// at the origin. This is what makes a recording of the suite (`video: 'on'`
+// A checkerboard of squares drawn with `renderContext.whiteTexture`, each
+// recolored by its `tintColor`, spanning world coordinates [-300, 300] on
+// both axes, with a distinct green marker at the origin. This is what makes a recording of the suite (`video: 'on'`
 // in playwright.config.ts) actually show the camera panning/zooming,
 // instead of a flat clear color that looks identical whether the camera
 // moved or not.
@@ -114,9 +113,9 @@ export interface CameraSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<CameraSceneHandle> => {
+): CameraSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -181,10 +180,7 @@ export const createScene: CreateScene = async (
   // camera's `cullingMask` via bitwise AND), not a draw-order layer - a
   // category of `0` can never match any mask and would silently render
   // nothing.
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
 
   for (let gridX = -gridExtentInCells; gridX <= gridExtentInCells; gridX++) {
     for (let gridY = -gridExtentInCells; gridY <= gridExtentInCells; gridY++) {

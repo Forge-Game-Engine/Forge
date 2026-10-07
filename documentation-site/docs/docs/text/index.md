@@ -41,7 +41,7 @@ import defaultFontMetricsUrl from '@forge-game-engine/forge/fonts/default/defaul
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
-const fontAtlasCache = new FontAtlasCache();
+const fontAtlasCache = new FontAtlasCache(renderContext);
 const fontAtlas = await fontAtlasCache.getOrLoad({
   metricsUrl: defaultFontMetricsUrl,
   imageUrl: defaultFontImageUrl,

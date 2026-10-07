@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 # World Units and Cameras
@@ -82,19 +82,24 @@ size once, consistently, regardless of how many pixels the source art
 happens to have:
 
 ```ts
-import { importTexture } from '@forge-game-engine/forge/rendering';
+import {
+  createTexture,
+  importTexture,
+} from '@forge-game-engine/forge/rendering';
 
-const { worldWidth, worldHeight } = importTexture(playerImage, {
+const playerTexture = createTexture(renderContext, playerImage);
+
+const { worldWidth, worldHeight } = importTexture(playerTexture, {
   pixelsPerUnit: 32,
 });
 ```
 
 [`createImageSprite`](/Forge/docs/api/functions/createImageSprite) runs its
-sprite's pixel dimensions (`frameDimensions`, or the full image) through
+sprite's texel dimensions (`frameDimensions`, or the whole texture) through
 this same pipeline, sized via its own `pixelsPerUnit` option:
 
 ```ts
-const playerSprite = createImageSprite(playerImage, renderContext, {
+const playerSprite = createImageSprite(playerTexture, {
   pixelsPerUnit: 32,
 });
 ```

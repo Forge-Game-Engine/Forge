@@ -1,6 +1,6 @@
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
   addSpriteComponent,
   NineSliceOptions,
@@ -15,7 +15,7 @@ import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
  */
 export interface CreatePanelRequiredOptions {
   /**
-   * The sprite to draw the panel with, e.g. from `createImageSprite`. Cloned
+   * The sprite to draw the panel with, e.g. from `createImageSprite`. Copied
    * rather than attached directly, so the same `sprite` can be passed to
    * multiple `createPanel` calls without one panel's layout-driven
    * `width`/`height`/`pivot` mutations affecting another's.
@@ -89,9 +89,6 @@ export function createPanel(
   });
   addSpriteComponent(world, entity, {
     ...sprite,
-    pivot: Vec2.clone(sprite.pivot),
-    uvOffset: Vec2.clone(sprite.uvOffset),
-    uvScale: Vec2.clone(sprite.uvScale),
     slices: slices ?? sprite.slices,
   });
 

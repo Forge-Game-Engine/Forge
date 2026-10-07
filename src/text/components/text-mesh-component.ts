@@ -1,13 +1,12 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import type { Vector2 } from '../../math/index.js';
 import type { Color } from '../../rendering/color.js';
-import type { Renderable } from '../../rendering/renderable.js';
 
 /**
  * A single shaped glyph's quad: structurally identical to a
  * `NineSliceRegion` (an offset, a size, and a UV rect into an atlas
  * texture), so it can be pushed through the same render-command machinery
- * (see `pushTextRenderCommands` in `render-system.ts`).
+ * (see `pushTextRenderCommands` in `glyph-quad.ts`).
  */
 export interface GlyphQuad {
   /**
@@ -42,7 +41,7 @@ export interface GlyphQuad {
 }
 
 /**
- * The shaped, GPU-ready output of a `TextEcsComponent`: one quad per visible
+ * The shaped output of a `TextEcsComponent`: one quad per visible
  * (non-whitespace, in-charset) glyph, plus the shaped block's own bounds.
  *
  * System-owned: written only by `createTextShapingEcsSystem`, attached
@@ -66,19 +65,6 @@ export interface TextMeshEcsComponent {
    * Used to draw a text field's caret and selection.
    */
   readonly caretStops: readonly Vector2[];
-
-  /**
-   * The `FontAtlas`-backed `Renderable` these glyphs' fill draws with. See
-   * `createTextRenderable`'s doc comment for why fill and effects are two
-   * separate, ordered `Renderable`s rather than one.
-   */
-  readonly fillRenderable: Renderable;
-
-  /**
-   * The `FontAtlas`-backed `Renderable` these glyphs' outline/shadow draws
-   * with.
-   */
-  readonly effectsRenderable: Renderable;
 }
 
 export const textMeshId = createComponentId<TextMeshEcsComponent>('textMesh');

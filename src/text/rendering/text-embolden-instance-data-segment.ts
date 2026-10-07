@@ -1,9 +1,9 @@
 import type {
   InstanceComponents,
-  InstanceDataSegment,
   Renderable,
-} from '../../rendering/index.js';
-import { setupInstanceAttribute } from '../../rendering/index.js';
+} from '../../rendering/renderable.js';
+import type { InstanceDataSegment } from '../../rendering/utilities/instance-data-segment.js';
+import { setupInstanceAttribute } from '../../rendering/utilities/setup-instance-attribute.js';
 
 /** The number of floats occupied by a glyph's faux-bold edge shift. */
 export const TEXT_EMBOLDEN_INSTANCE_DATA_FLOATS_PER_INSTANCE = 1;

@@ -12,7 +12,7 @@ each file:
 ```ts
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
-const fontAtlasCache = new FontAtlasCache();
+const fontAtlasCache = new FontAtlasCache(renderContext);
 const fontAtlas = await fontAtlasCache.getOrLoad({
   metricsUrl: 'assets/fonts/my-font.json',
   imageUrl: 'assets/fonts/my-font.png',
@@ -21,6 +21,11 @@ const fontAtlas = await fontAtlasCache.getOrLoad({
 
 The two URLs are independent: the image doesn't have to be in the same
 directory as the JSON, or keep its original file name.
+
+The cache loads each image through the render context's `imageCache` and
+uploads it to a linear-filtered [texture](../rendering/textures.md),
+`fontAtlas.texture`. The cache owns that texture, so don't update or
+dispose it.
 
 ## Importing atlases through a bundler
 
@@ -36,7 +41,7 @@ import { FontAtlasCache } from '@forge-game-engine/forge/text';
 import myFontMetricsUrl from './fonts/my-font.json?url';
 import myFontImageUrl from './fonts/my-font.png';
 
-const fontAtlasCache = new FontAtlasCache();
+const fontAtlasCache = new FontAtlasCache(renderContext);
 const fontAtlas = await fontAtlasCache.getOrLoad({
   metricsUrl: myFontMetricsUrl,
   imageUrl: myFontImageUrl,
@@ -130,7 +135,7 @@ const kern =
 ```ts
 import { FontAtlasCache } from '@forge-game-engine/forge/text';
 
-const fontAtlasCache = new FontAtlasCache();
+const fontAtlasCache = new FontAtlasCache(renderContext);
 
 const [headingAtlas, bodyAtlas] = await Promise.all([
   fontAtlasCache.getOrLoad({

@@ -1,22 +1,10 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { describe, expect, it, vi } from 'vitest';
 import { getUniformType } from './uniform-types.js';
 
 const location = {} as WebGLUniformLocation;
 
-const textureTargets = {
-  TEXTURE_2D: 0x0de1,
-  TEXTURE_3D: 0x806f,
-  TEXTURE_CUBE_MAP: 0x8513,
-  TEXTURE_2D_ARRAY: 0x8c1a,
-} as const;
-
 const createGl = (): WebGL2RenderingContext =>
   ({
-    TEXTURE_2D: textureTargets.TEXTURE_2D,
-    TEXTURE_3D: textureTargets.TEXTURE_3D,
-    TEXTURE_CUBE_MAP: textureTargets.TEXTURE_CUBE_MAP,
-    TEXTURE_2D_ARRAY: textureTargets.TEXTURE_2D_ARRAY,
     uniform1fv: vi.fn(),
     uniform2fv: vi.fn(),
     uniform3fv: vi.fn(),
@@ -159,37 +147,24 @@ describe('getUniformType', () => {
   );
 
   it.each([
-    [0x8b5e, 'sampler2D', 'TEXTURE_2D'],
-    [0x8b5f, 'sampler3D', 'TEXTURE_3D'],
-    [0x8b60, 'samplerCube', 'TEXTURE_CUBE_MAP'],
-    [0x8b62, 'sampler2DShadow', 'TEXTURE_2D'],
-    [0x8dc1, 'sampler2DArray', 'TEXTURE_2D_ARRAY'],
-    [0x8dc4, 'sampler2DArrayShadow', 'TEXTURE_2D_ARRAY'],
-    [0x8dc5, 'samplerCubeShadow', 'TEXTURE_CUBE_MAP'],
-    [0x8dca, 'isampler2D', 'TEXTURE_2D'],
-    [0x8dcb, 'isampler3D', 'TEXTURE_3D'],
-    [0x8dcc, 'isamplerCube', 'TEXTURE_CUBE_MAP'],
-    [0x8dcf, 'isampler2DArray', 'TEXTURE_2D_ARRAY'],
-    [0x8dd2, 'usampler2D', 'TEXTURE_2D'],
-    [0x8dd3, 'usampler3D', 'TEXTURE_3D'],
-    [0x8dd4, 'usamplerCube', 'TEXTURE_CUBE_MAP'],
-    [0x8dd7, 'usampler2DArray', 'TEXTURE_2D_ARRAY'],
-  ] as const)(
-    'maps GL type %d to %s, bound to %s',
-    (glType, glslName, textureTarget) => {
-      const uniformType = getUniformType(glType);
-
-      expect(uniformType).toMatchObject({ kind: 'sampler', glslName });
-
-      if (uniformType?.kind !== 'sampler') {
-        throw new Error('Expected a sampler uniform type');
-      }
-
-      expect(uniformType.textureTarget(createGl())).toBe(
-        textureTargets[textureTarget],
-      );
-    },
-  );
+    [0x8b5e, 'sampler2D'],
+    [0x8b5f, 'sampler3D'],
+    [0x8b60, 'samplerCube'],
+    [0x8b62, 'sampler2DShadow'],
+    [0x8dc1, 'sampler2DArray'],
+    [0x8dc4, 'sampler2DArrayShadow'],
+    [0x8dc5, 'samplerCubeShadow'],
+    [0x8dca, 'isampler2D'],
+    [0x8dcb, 'isampler3D'],
+    [0x8dcc, 'isamplerCube'],
+    [0x8dcf, 'isampler2DArray'],
+    [0x8dd2, 'usampler2D'],
+    [0x8dd3, 'usampler3D'],
+    [0x8dd4, 'usamplerCube'],
+    [0x8dd7, 'usampler2DArray'],
+  ] as const)('maps GL type %d to the sampler type %s', (glType, glslName) => {
+    expect(getUniformType(glType)).toEqual({ kind: 'sampler', glslName });
+  });
 
   it('returns null for a GL type that is not a WebGL 2 uniform type', () => {
     expect(getUniformType(0)).toBeNull();
