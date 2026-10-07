@@ -115,6 +115,17 @@ describe('createTerrainRenderEcsSystem', () => {
     expect(mockGl.drawArrays).toHaveBeenCalledWith('TRIANGLES', 0, 42);
   });
 
+  it('draws nothing while the WebGL context is lost', () => {
+    addCamera();
+    addTerrain();
+    (mockGl.isContextLost as Mock).mockReturnValue(true);
+
+    world.update();
+
+    expect(material.bind).not.toHaveBeenCalled();
+    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+  });
+
   it("clears to the camera's clear color, premultiplied by its alpha", () => {
     addCamera({ clearColor: new Color(1, 0.5, 0, 0.5) });
     addTerrain();

@@ -88,6 +88,8 @@ describe('WebGL context loss', () => {
       createProgram: vi.fn(newHandle),
       attachShader: vi.fn(),
       linkProgram: vi.fn(),
+      getProgramInfoLog: vi.fn(() => 'link error'),
+      deleteProgram: vi.fn(),
       getProgramParameter: vi.fn((_program: WebGLProgram, name: string) => {
         if (isLost) {
           return null;
@@ -387,6 +389,86 @@ describe('WebGL context loss', () => {
       expect(gl.createVertexArray).toHaveBeenCalledTimes(1);
     });
 
+    it('recreates both framebuffers of a render target that has been post-processed', () => {
+      const target = createRenderTarget(renderContext, {
+        width: 8,
+        height: 8,
+      });
+
+      target.swapBuffers();
+      loseContext();
+      vi.clearAllMocks();
+      restoreContext();
+
+      expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
+    });
+
+    it('rebuilds everything and raises onContextRestored even if a program fails to link, then throws', () => {
+      const material = createMaterial();
+      const texture = createTexture(renderContext, createImage(4, 4));
+      const onRestored = vi.fn();
+      const errors: unknown[] = [];
+
+      const captureError = (event: ErrorEvent): void => {
+        event.preventDefault();
+        errors.push(event.error);
+      };
+
+      renderContext.onContextRestored.registerListener(onRestored);
+      loseContext();
+      (gl.getProgramParameter as Mock).mockReturnValue(false);
+      window.addEventListener('error', captureError);
+      restoreContext();
+      window.removeEventListener('error', captureError);
+
+      expect(onRestored).toHaveBeenCalledTimes(1);
+      expect(renderContext.isContextLost).toBe(false);
+      expect(texture.glTexture).not.toBeNull();
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toBeInstanceOf(AggregateError);
+      expect((errors[0] as AggregateError).errors[0]).toEqual(
+        expect.objectContaining({
+          message: expect.stringContaining('Failed to link') as unknown,
+        }),
+      );
+      expect(material).toBeInstanceOf(Material);
+    });
+
+    it('keeps rebuilding when a render target fails to, then throws', () => {
+      const target = createRenderTarget(
+        renderContext,
+        { width: 8, height: 8 },
+        RENDER_TARGET_FORMAT.hdr,
+      );
+      const geometry = new Geometry(renderContext, [
+        { name: 'a_position', data: new Float32Array(2), size: 2 },
+      ]);
+      const errors: unknown[] = [];
+
+      const captureError = (event: ErrorEvent): void => {
+        event.preventDefault();
+        errors.push(event.error);
+      };
+
+      loseContext();
+      // The restored context can't render into half-float textures.
+      (gl.checkFramebufferStatus as Mock).mockReturnValue(0);
+      vi.clearAllMocks();
+      window.addEventListener('error', captureError);
+      restoreContext();
+      window.removeEventListener('error', captureError);
+
+      expect(target.framebuffer).not.toBeNull();
+      expect(geometry).toBeInstanceOf(Geometry);
+      expect(gl.bufferData).toHaveBeenCalledTimes(1);
+      expect(errors).toHaveLength(1);
+      expect((errors[0] as AggregateError).errors[0]).toEqual(
+        expect.objectContaining({
+          message: expect.stringContaining('incomplete') as unknown,
+        }),
+      );
+    });
+
     it('raises onContextRestored once everything is rebuilt and draws again', () => {
       const texture = createTexture(renderContext, createImage(4, 4));
       const material = createMaterial();
@@ -404,6 +486,43 @@ describe('WebGL context loss', () => {
 
       expect(onRestored).toHaveBeenCalledTimes(1);
       expect(gl.drawArrays).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('geometry', () => {
+    const createGeometry = (): Geometry =>
+      new Geometry(renderContext, [
+        { name: 'a_position', data: new Float32Array(2), size: 2 },
+      ]);
+
+    it('frees its buffers and vertex arrays when disposed, and is not rebuilt', () => {
+      const geometry = createGeometry();
+
+      geometry.bind(createMaterial());
+      geometry.dispose();
+
+      expect(gl.deleteBuffer).toHaveBeenCalledTimes(1);
+      expect(gl.deleteVertexArray).toHaveBeenCalledTimes(1);
+
+      loseContext();
+      vi.clearAllMocks();
+      restoreContext();
+
+      expect(gl.createBuffer).toHaveBeenCalledTimes(1); // the instance buffer
+    });
+
+    it('skips an attribute the program does not read, with a warning', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const geometry = createGeometry();
+
+      (gl.getAttribLocation as Mock).mockReturnValue(-1);
+      geometry.bind(createMaterial());
+
+      expect(warn).toHaveBeenCalledWith(
+        'Attribute a_position not found in shader',
+      );
+      expect(gl.vertexAttribPointer).not.toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 });

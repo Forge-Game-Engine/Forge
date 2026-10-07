@@ -317,6 +317,19 @@ describe('createRenderEcsSystem', () => {
     expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
   });
 
+  it('draws nothing while the WebGL context is lost', () => {
+    addCameraEntity(0b0011);
+    const { renderable, bindInstanceData } = createRenderable();
+
+    addSpriteEntity(renderable, 0, { category: 0b0001 });
+    (mockGl.isContextLost as Mock).mockReturnValue(true);
+
+    world.update();
+
+    expect(bindInstanceData).not.toHaveBeenCalled();
+    expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+  });
+
   it('uses the render context dimensions (not the canvas dimensions) for the projection matrix', () => {
     addCameraEntity();
     const { renderable, material } = createRenderable();

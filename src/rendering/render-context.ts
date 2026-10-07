@@ -494,6 +494,10 @@ export class RenderContext implements Resizable {
    * afterwards.
    */
   private _restore(): void {
+    // Cleared first, so the rebuild runs against a live context with its
+    // compile, link and framebuffer checks on. Nothing else runs until the
+    // rebuild is done, so no one sees the flag cleared early.
+    this._isContextLost = false;
     this._supportsHdrRenderTargets = this._requestExtensions();
     this._instanceBuffer = this.gl.createBuffer();
 
@@ -511,7 +515,6 @@ export class RenderContext implements Resizable {
 
     errors.push(...rebuildGpuResources(this));
 
-    this._isContextLost = false;
     this.onContextRestored.raise();
 
     if (errors.length > 0) {
