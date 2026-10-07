@@ -19,7 +19,9 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createSoundEcsSystem,
   createSoundMixer,
+  MixerBus,
   SoundAssetCache,
+  SoundMixer,
 } from '@forge-game-engine/forge/audio';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
@@ -78,22 +80,33 @@ export const blurDefaults: GaussianBlurEcsComponent = {
   intensity: 0.6,
 };
 
+/** The mixer and buses the demo page's volume and mute controls write to. */
+export interface SpaceShooterAudio {
+  mixer: SoundMixer;
+  musicBus: MixerBus;
+  sfxBus: MixerBus;
+}
+
 export const createSpaceShooterGame = async (
   stopWithGame: (resource: DemoResource) => void,
   onBloomReady?: (bloom: BloomEcsComponent) => void,
   onBlurReady?: (blur: GaussianBlurEcsComponent) => void,
+  onAudioReady?: (audio: SpaceShooterAudio) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
   // One mixer for the whole game, stopped when the demo page closes. Music
-  // and sound effects get their own buses, so each could get its own
-  // volume slider.
+  // and sound effects get their own buses, so each gets its own volume
+  // slider on the demo page.
   const mixer = createSoundMixer();
 
   stopWithGame(mixer);
 
   const musicBus = mixer.createBus('music');
   const sfxBus = mixer.createBus('sfx');
+
+  onAudioReady?.({ mixer, musicBus, sfxBus });
+
   const sounds = new SoundAssetCache(mixer);
   const [musicSound, laserSound, explosionSound] = await Promise.all([
     sounds.getOrLoad(getAssetUrl('audio/background-space-music.mp3')),
