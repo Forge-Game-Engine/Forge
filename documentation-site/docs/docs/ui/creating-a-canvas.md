@@ -71,7 +71,7 @@ const canvas = createUiCanvas(world, renderContext, {
 
 `createUiCanvas` creates a canvas root entity and, for the default
 `renderMode: 'screenSpace'`, a dedicated, static UI camera - a
-transparent-cleared, off-screen `RenderTarget` composited onto the canvas
+transparent-cleared, canvas-sized `RenderTarget` composited onto the canvas
 by `createPresentEcsSystem` (see
 [Multipass Rendering](../rendering/multipass-rendering.md) for how the
 camera/render-target/present-pass pieces fit together generally), isolated

@@ -29,9 +29,8 @@ import {
 } from '@forge-game-engine/forge/rendering';
 
 const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
+  renderContext,
+  'canvas',
   RENDER_TARGET_FORMAT.hdr,
 );
 

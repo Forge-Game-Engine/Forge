@@ -20,9 +20,9 @@ the canvas exactly as before, with no extra passes or texture allocations.
 ## Rendering a camera off-screen
 
 Give the camera a [`RenderTarget`](/Forge/docs/api/classes/RenderTarget)
-sized to the area you want to render into, and register
-`createPresentEcsSystem` after your render system so there's a pass that
-draws the result:
+created with [`createRenderTarget`](/Forge/docs/api/functions/createRenderTarget),
+and register `createPresentEcsSystem` after your render system so there's a
+pass that draws the result:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -36,11 +36,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 createCamera(world, { renderTarget: sceneTarget });
 
@@ -59,14 +55,30 @@ through its own render target, see
 [Creating a Canvas](../ui/creating-a-canvas.md)) sit on top of a world camera
 that has no render target of its own.
 
-:::caution
-`RenderContext.resize` only resizes the canvas and the default framebuffer's
-viewport; it doesn't know about render targets owned by cameras. If you
-resize the render context (for example on a window resize), also call
-`sceneTarget.resize(renderContext.gl, renderContext.width, renderContext.height)`,
-or the off-screen texture will stay at its old resolution while the canvas
-grows or shrinks around it.
-:::
+## Render target sizes
+
+`createRenderTarget` takes the target's size as its second argument:
+
+- `'canvas'`: the render context's drawing buffer
+  (`renderContext.width` by `renderContext.height`, in device pixels).
+  `RenderContext.resize` resizes every canvas-sized target along with the
+  canvas, including when `maxPixelRatio` changes, so the target always
+  matches the canvas. Use it for a camera's target that covers the canvas.
+  Calling `resize` on a canvas-sized target throws.
+- `{ width, height }`: a fixed size in pixels, for a target with its own
+  resolution, such as a minimap or a render-to-texture. It keeps that size
+  until you call `resize(width, height)` on it.
+
+```ts
+const minimapTarget = createRenderTarget(renderContext, {
+  width: 256,
+  height: 256,
+});
+```
+
+The render context keeps a reference to every canvas-sized target. Call
+`dispose()` on a target you no longer use to free its textures and remove
+it from the render context.
 
 ## Layering multiple render targets
 
@@ -80,16 +92,8 @@ replacing it.) This is how you apply an effect to only part of a scene, for
 example blurring a background layer while keeping a foreground layer sharp:
 
 ```ts
-const backgroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
-const foregroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const backgroundTarget = createRenderTarget(renderContext, 'canvas');
+const foregroundTarget = createRenderTarget(renderContext, 'canvas');
 
 const background = createCamera(world, {
   cullingMask: layers.background,
@@ -178,11 +182,7 @@ holds that pair:
 ```ts
 import { PingPongTarget } from '@forge-game-engine/forge/rendering';
 
-const pingPong = new PingPongTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const pingPong = new PingPongTarget(renderContext, 'canvas');
 
 // Each step of a multi-pass effect samples `pingPong.read` and draws into
 // `pingPong.write`, then calls `pingPong.swap()` before the next step.
