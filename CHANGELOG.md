@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.1] - 2026-10-07
+
 #### Added
 
 - **rendering:** `DrawOrderEcsComponent.behindParent` draws a child just behind its parent, and in front of everything its parent is in front of, like Godot's `show_behind_parent`. Use it for an engine flame behind its ship or a glow behind its orb, where `order: -1` also put the child behind every other entity at its parent's level. The child's whole subtree moves with it, and the render order and UI hit testing both follow it
