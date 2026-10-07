@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-07
+
 #### Added
 
 - **ui:** Scroll views. `createScrollView(world, parent, options)` builds a viewport that clips a vertical list to its rect with a mask and scrolls it by dragging (anywhere on it, including on the list's buttons, which aren't invoked by a drag), the mouse wheel, an optional scrollbar, and focus navigation, which scrolls the focused control into view. Released content coasts (`decelerationRate`) and, with `movementType: 'elastic'` (the default), springs back from past its edges (`elasticity`); `'clamped'` stops it at its edges. For other layouts, add `UiScrollRectEcsComponent` (`addUiScrollRectComponent`) to your own viewport; `offset` holds the scroll position in reference pixels and `onValueChanged` reports changes, and `computeUiScrollRange`/`normalizeUiScrollOffset`/`denormalizeUiScrollOffset` convert it to and from a `0`-`1` position. `registerUiSystems` registers the new `createUiScrollRectEcsSystem` when a `pointerSource` is given. See the new Scroll Views guide and demo
