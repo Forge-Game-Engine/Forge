@@ -1,33 +1,7 @@
-import { createQuadGeometry, Geometry } from './geometry/index.js';
 import { Material } from './materials/index.js';
 import { RenderContext } from './render-context.js';
 import { RenderTarget } from './render-target.js';
 import type { Texture } from './texture.js';
-
-// One quad, reused by every full-screen pass (post-processing, present)
-// across every `RenderContext`: recreating it per draw would allocate a new
-// pair of GPU buffers (and, via `Geometry.bind`, a new VAO) every single
-// call, none of which are ever freed, since nothing owns a fresh `Geometry`
-// long enough to dispose it. The quad itself has no material-specific
-// state, so one instance's per-program VAO cache serves every consumer.
-const sharedQuadGeometryByContext = new WeakMap<
-  WebGL2RenderingContext,
-  Geometry
->();
-
-function getSharedQuadGeometry(gl: WebGL2RenderingContext): Geometry {
-  const existing = sharedQuadGeometryByContext.get(gl);
-
-  if (existing) {
-    return existing;
-  }
-
-  const geometry = createQuadGeometry(gl);
-
-  sharedQuadGeometryByContext.set(gl, geometry);
-
-  return geometry;
-}
 
 /**
  * Binds `destination` (or the canvas if `null`) as the current draw target,
@@ -81,7 +55,8 @@ export function beginPostProcessPass(
  * set. Shared by every pass that samples a texture and draws it directly
  * (post-processing passes, presenting a render target onto the canvas):
  * these differ only in which material, uniforms, and destination they use,
- * not in how the draw call itself is issued.
+ * not in how the draw call itself is issued. Draws nothing while the WebGL
+ * context is lost (see `RenderContext.isContextLost`).
  * @param renderContext - The rendering context.
  * @param material - The material to draw with.
  */
@@ -89,11 +64,14 @@ export function drawFullscreenQuad(
   renderContext: RenderContext,
   material: Material,
 ): void {
+  if (renderContext.isContextLost) {
+    return;
+  }
+
   const { gl } = renderContext;
-  const geometry = getSharedQuadGeometry(gl);
 
   material.bind(gl);
-  geometry.bind(gl, material.program);
+  renderContext.quadGeometry.bind(material);
 
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 }

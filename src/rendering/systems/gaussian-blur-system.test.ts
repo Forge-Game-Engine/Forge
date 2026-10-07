@@ -216,6 +216,8 @@ describe('createGaussianBlurEcsSystem', () => {
       clearColor: vi.fn(),
       clear: vi.fn(),
       drawArrays: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -553,7 +555,9 @@ describe('createGaussianBlurEcsSystem', () => {
       // earlier pass stays in the downsampled ping-pong pair.
       expect(drawTargets[drawTargets.length - 1]).toBe(target.framebuffer);
       expect(
-        drawTargets.filter((framebuffer) => framebuffer === target.framebuffer),
+        drawTargets.filter((framebuffer) =>
+          Object.is(framebuffer, target.framebuffer),
+        ),
       ).toHaveLength(1);
     });
 

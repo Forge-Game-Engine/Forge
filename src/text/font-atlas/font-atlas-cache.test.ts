@@ -65,6 +65,8 @@ function createRenderContext(
     bindTexture: vi.fn(),
     texParameteri: vi.fn(),
     texImage2D: vi.fn(),
+    getExtension: vi.fn(() => null),
+    isContextLost: vi.fn(() => false),
   } as unknown as WebGL2RenderingContext;
 
   return { imageCache, gl } as unknown as RenderContext;

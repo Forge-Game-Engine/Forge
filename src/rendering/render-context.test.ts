@@ -34,6 +34,8 @@ describe('RenderContext', () => {
       clear: vi.fn(),
       FRAMEBUFFER: 'FRAMEBUFFER',
       COLOR_BUFFER_BIT: 'COLOR_BUFFER_BIT',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     // Mock canvas.getContext to return our mock GL context
@@ -349,6 +351,8 @@ describe('RenderContext', () => {
         checkFramebufferStatus: vi.fn().mockReturnValue(1),
         getParameter: vi.fn().mockReturnValue(null),
         FRAMEBUFFER_COMPLETE: 1,
+        getExtension: vi.fn(() => null),
+        isContextLost: vi.fn(() => false),
       } as unknown as WebGL2RenderingContext;
 
       vi.spyOn(canvas, 'getContext').mockReturnValue(targetGl);
@@ -639,6 +643,8 @@ describe('createRenderContext', () => {
     // Create mock WebGL2RenderingContext
     mockGl = {
       createBuffer: vi.fn().mockReturnValue(mockBuffer),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     // Mock canvas.getContext to return our mock GL context

@@ -68,6 +68,8 @@ describe('SpriteMaterial', () => {
       createTexture: vi.fn(() => ({})),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     const canvas = document.createElement('canvas');
@@ -103,9 +105,9 @@ describe('SpriteMaterial', () => {
     (name) => {
       const material = createSpriteMaterial(renderContext, 'sprite.frag');
 
-      expect(() => material.setUniform(name, new Texture(gl))).toThrow(
-        'set by the render system',
-      );
+      expect(() =>
+        material.setUniform(name, new Texture(renderContext)),
+      ).toThrow('set by the render system');
     },
   );
 
@@ -116,8 +118,8 @@ describe('SpriteMaterial', () => {
     ];
 
     const material = createSpriteMaterial(renderContext, 'sprite.frag');
-    const texture = new Texture(gl);
-    const emissiveTexture = new Texture(gl);
+    const texture = new Texture(renderContext);
+    const emissiveTexture = new Texture(renderContext);
 
     (gl.bindTexture as Mock).mockClear();
 
