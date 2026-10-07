@@ -57,6 +57,14 @@ export interface TextMeshEcsComponent {
    * a future UI content-size fitter).
    */
   readonly bounds: { width: number; height: number };
+
+  /**
+   * Where a caret sits at every UTF-16 boundary of the shaped text (see
+   * `ShapedText.caretStops`): `text.length + 1` positions, each an offset
+   * from the text's anchor in world units, its y on the line's baseline.
+   * Used to draw a text field's caret and selection.
+   */
+  readonly caretStops: readonly Vector2[];
 }
 
 export const textMeshId = createComponentId<TextMeshEcsComponent>('textMesh');

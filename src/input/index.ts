@@ -11,3 +11,4 @@ export * from './mouse/index.js';
 export * from './keyboard/index.js';
 export * from './gamepad/index.js';
 export * from './register-inputs.js';
+export * from './text-entry/index.js';

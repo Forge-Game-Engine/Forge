@@ -12,6 +12,7 @@ import { createUiProgressBarEcsSystem } from '../systems/ui-progress-bar-system.
 import { createUiRaycastEcsSystem } from '../systems/ui-raycast-system.js';
 import { createUiSafeAreaEcsSystem } from '../systems/ui-safe-area-system.js';
 import { createUiSliderEcsSystem } from '../systems/ui-slider-system.js';
+import { createUiTextInputEcsSystem } from '../systems/ui-text-input-system.js';
 import { createUiToggleEcsSystem } from '../systems/ui-toggle-system.js';
 import { createUiTooltipEcsSystem } from '../systems/ui-tooltip-system.js';
 import { createUiTransitionEcsSystem } from '../systems/ui-transition-system.js';
@@ -43,8 +44,8 @@ export interface RegisterUiSystemsOptions {
 
 /**
  * Registers every system a `createUiCanvas` canvas depends on: layout,
- * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles, and
- * tooltips - plus, once a
+ * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles,
+ * tooltips and text inputs - plus, once a
  * `pointerSource` is supplied, pointer raycasting/interaction/sliders, and
  * once `getSafeAreaInsets` is supplied, safe-area insetting - each wired in
  * the order their cross-system reads/writes require.
@@ -59,8 +60,8 @@ export interface RegisterUiSystemsOptions {
  * touch system registration.
  *
  * Registration order: raycast, then navigation, then interaction, then
- * toggle/transition/tooltip (order between those three doesn't matter, none
- * reads another's writes), then slider - raycast must run before navigation
+ * toggle/transition/tooltip/text input (order between those doesn't matter,
+ * none reads another's writes), then slider - raycast must run before navigation
  * and interaction read its hit-test result, interaction must run before
  * transition/tooltip read the interaction state it just wrote, navigation
  * must run before interaction because navigation is what resets
@@ -144,6 +145,10 @@ export function registerUiSystems(
 
   world.addSystem(tooltip, { after: [navigation] });
 
+  const textInput = createUiTextInputEcsSystem(renderContext, time);
+
+  world.addSystem(textInput, { after: [navigation] });
+
   if (pointerSource) {
     const raycast = createUiRaycastEcsSystem(pointerSource, renderContext);
 
@@ -156,7 +161,7 @@ export function registerUiSystems(
 
     world.addSystem(interaction, {
       after: [navigation, raycast],
-      before: [transition, toggle, tooltip],
+      before: [transition, toggle, tooltip, textInput],
     });
 
     const slider = createUiSliderEcsSystem(pointerSource, renderContext);

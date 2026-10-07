@@ -74,6 +74,7 @@ function createTextMeshChild(
   world.addComponent(entity, textMeshId, {
     glyphs: [],
     bounds,
+    caretStops: [],
   });
   addLayoutElementComponent(world, entity, { sizeToText: true });
 
@@ -841,6 +842,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addComponent(a, textMeshId, {
         glyphs: [],
         bounds: { width: 40, height: 20 },
+        caretStops: [],
       });
       addLayoutElementComponent(world, a, {
         sizeToText: true,

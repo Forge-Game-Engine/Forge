@@ -104,6 +104,13 @@ export interface TextDefaultedOptions {
   horizontalAlignPivot: number;
 
   /**
+   * Whether `<b>` and `<color=...>` tags in `text` are parsed as markup.
+   * Set it to `false` for text a player typed, so it's drawn exactly as
+   * written, tags included (a text field's label does this).
+   */
+  richText: boolean;
+
+  /**
    * The draw-order layer for this text, relative to other sprites/text drawn
    * by the same camera. Identical semantics to `SpriteEcsComponent.layer`.
    */
@@ -216,6 +223,7 @@ export function addTextComponent(
     horizontalAlign: textHorizontalAlignments.left,
     verticalAlign: textVerticalAlignments.top,
     horizontalAlignPivot: 0,
+    richText: true,
     layer: 0,
     category: TEXT_RENDER_CATEGORY,
     enabled: true,

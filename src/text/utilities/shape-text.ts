@@ -1,3 +1,4 @@
+import type { Vector2 } from '../../math/index.js';
 import type { Color } from '../../rendering/color.js';
 import type { GlyphQuad } from '../components/text-mesh-component.js';
 import {
@@ -74,6 +75,13 @@ export interface ShapeTextOptions {
    * assumed.
    */
   horizontalAlignPivot?: number;
+
+  /**
+   * Whether `<b>` and `<color=...>` tags in the text are parsed as markup.
+   * `false` shapes the text exactly as written, tags included, for text a
+   * player typed. Defaults to `true`.
+   */
+  richText?: boolean;
 }
 
 /** The pure-data result of shaping a string against a `FontAtlasData`. */
@@ -83,6 +91,16 @@ export interface ShapedText {
 
   /** The shaped block's own bounds, in world units. */
   bounds: { width: number; height: number };
+
+  /**
+   * Where a caret sits at every UTF-16 boundary of the shaped (tag-free)
+   * text, from `0` (before the first character) to its length (after the
+   * last): the final x and the line's baseline y, offset from the block's
+   * anchor like `glyphs`, after alignment, justification and the vertical
+   * offset. Whitespace and characters with no glyph get stops too. The
+   * boundary inside a surrogate pair gets the position of the pair's start.
+   */
+  caretStops: Vector2[];
 }
 
 const defaultShapeTextOptions = {
@@ -91,6 +109,7 @@ const defaultShapeTextOptions = {
   horizontalAlign: 'left' as const,
   verticalAlign: 'top' as const,
   horizontalAlignPivot: 0,
+  richText: true,
 };
 
 /**
@@ -116,16 +135,22 @@ interface CharacterStyles {
  * the style of each of its characters.
  * @param text - The string to parse.
  * @param fontAtlasData - The font atlas the string is shaped against.
+ * @param richText - Whether tags are parsed, or the string is taken as written.
  * @returns The plain string and its per-character styles.
  */
 function resolveCharacterStyles(
   text: string,
   fontAtlasData: FontAtlasData,
+  richText: boolean,
 ): {
   plainText: string;
   styles: CharacterStyles;
 } {
-  const { text: plainText, colorRuns, boldRuns } = parseRichText(text);
+  const {
+    text: plainText,
+    colorRuns,
+    boldRuns,
+  } = richText ? parseRichText(text) : { text, colorRuns: [], boldRuns: [] };
   const colors = new Array<Color | undefined>(plainText.length);
   const bold = new Array<boolean>(plainText.length).fill(false);
 
@@ -177,6 +202,20 @@ function getFauxBoldEmbolden(fontAtlasData: FontAtlasData): number {
 interface ShapedWord {
   glyphs: GlyphQuad[];
   width: number;
+
+  /** The pen position before each of the word's code points, relative to the word's start. */
+  caretOffsets: number[];
+}
+
+/**
+ * Where a caret sits before one code point (or after the last one), within
+ * its unaligned line: the line it's on, its x from the line's start, and
+ * the index of the word whose justification shift it moves with.
+ */
+interface CaretPlacement {
+  lineIndex: number;
+  x: number;
+  wordIndex: number;
 }
 
 /** A word placed within a line, at `startX` from the line's own (unaligned) start. */
@@ -225,6 +264,7 @@ function shapeWord(
   letterSpacing: number,
 ): ShapedWord {
   const glyphs: GlyphQuad[] = [];
+  const caretOffsets: number[] = [];
   let penX = 0;
   let previousCodePoint: number | null = null;
   let hasPreviousGlyph = false;
@@ -238,6 +278,7 @@ function shapeWord(
     characterIndex += character.length;
 
     if (!glyph) {
+      caretOffsets.push(penX);
       previousCodePoint = null;
 
       continue;
@@ -265,6 +306,8 @@ function shapeWord(
       // proportionally further apart.
       penX += (fontAtlasData.kerning.get(kerningKey) ?? 0) * size;
     }
+
+    caretOffsets.push(penX);
 
     if (glyph.planeBounds && glyph.atlasBounds) {
       const { planeBounds, atlasBounds } = glyph;
@@ -315,36 +358,43 @@ function shapeWord(
     hasPreviousGlyph = true;
   }
 
-  return { glyphs, width: Math.max(0, penX) };
+  return { glyphs, width: Math.max(0, penX), caretOffsets };
 }
 
 /**
- * Sums the advance of a run of whitespace characters, in world units. Never
- * kerns and never applies `letterSpacing`: {@link wrapIntoLines} adds one
- * letter space per word gap itself, so a gap is the whitespace's advance
- * plus exactly one letter space however many whitespace characters it has.
+ * Measures a run of whitespace: its total advance, in world units, and the
+ * pen position before each of its characters, relative to the run's start.
+ * Never kerns and never applies `letterSpacing`: {@link wrapIntoLines} adds
+ * one letter space per word gap itself, so a gap is the whitespace's
+ * advance plus exactly one letter space however many whitespace characters
+ * it has.
  * @param whitespace - A run of whitespace characters.
  * @param fontAtlasData - The font atlas metrics to look up advances in.
  * @param size - Font size, in world units.
- * @returns The whitespace run's total advance.
+ * @returns The run's width and caret offsets.
  */
-function getWhitespaceAdvance(
+function measureWhitespace(
   whitespace: string,
   fontAtlasData: FontAtlasData,
   size: number,
-): number {
-  let advance = 0;
+): { width: number; caretOffsets: number[] } {
+  const caretOffsets: number[] = [];
+  let width = 0;
 
   for (const character of whitespace) {
-    const codePoint = character.codePointAt(0) as number;
-    const glyph = fontAtlasData.glyphs.get(codePoint);
+    const glyph = fontAtlasData.glyphs.get(character.codePointAt(0) as number);
 
-    if (glyph) {
-      advance += glyph.advance * size;
-    }
+    caretOffsets.push(width);
+    width += glyph ? glyph.advance * size : 0;
   }
 
-  return advance;
+  return { width, caretOffsets };
+}
+
+/** The lines {@link wrapIntoLines} produced, plus one caret placement per code point and one after the last. */
+interface WrappedText {
+  lines: ShapedLine[];
+  caretPlacements: CaretPlacement[];
 }
 
 /**
@@ -361,7 +411,8 @@ function getWhitespaceAdvance(
  * @param letterSpacing - Extra spacing between adjacent glyphs, in ems.
  * @param maxWidth - The width to wrap at, in world units, or `undefined` to
  * never wrap (the whole string becomes one line).
- * @returns The wrapped lines, each with its placed words and content width.
+ * @returns The wrapped lines, each with its placed words and content width,
+ * and where a caret sits before each code point and after the last.
  */
 function wrapIntoLines(
   text: string,
@@ -370,9 +421,10 @@ function wrapIntoLines(
   size: number,
   letterSpacing: number,
   maxWidth: number | undefined,
-): ShapedLine[] {
+): WrappedText {
   const tokens = text.split(/(\s+)/).filter((token) => token.length > 0);
   const lines: ShapedLine[] = [];
+  const caretPlacements: CaretPlacement[] = [];
 
   let currentWords: LineWord[] = [];
   let penX = 0;
@@ -385,6 +437,24 @@ function wrapIntoLines(
     lineContentWidth = 0;
   };
 
+  const placeCarets = (
+    startX: number,
+    caretOffsets: readonly number[],
+    wordIndex: number,
+  ): void => {
+    for (const caretOffset of caretOffsets) {
+      caretPlacements.push({
+        lineIndex: lines.length,
+        x: startX + caretOffset,
+        wordIndex,
+      });
+    }
+  };
+
+  // A caret between words (in whitespace, or in a word with no glyphs)
+  // moves with the previous word when a justified line stretches its gaps.
+  const previousWordIndex = (): number => Math.max(0, currentWords.length - 1);
+
   let tokenStart = 0;
 
   for (const token of tokens) {
@@ -393,7 +463,10 @@ function wrapIntoLines(
     tokenStart += token.length;
 
     if (/^\s/.test(token)) {
-      penX += getWhitespaceAdvance(token, fontAtlasData, size);
+      const whitespace = measureWhitespace(token, fontAtlasData, size);
+
+      placeCarets(penX, whitespace.caretOffsets, previousWordIndex());
+      penX += whitespace.width;
 
       continue;
     }
@@ -410,6 +483,8 @@ function wrapIntoLines(
     // A word whose code points are all missing from the atlas draws nothing
     // and takes up no space, so it mustn't add a letter space either.
     if (word.glyphs.length === 0 && word.width === 0) {
+      placeCarets(penX, word.caretOffsets, previousWordIndex());
+
       continue;
     }
 
@@ -429,14 +504,46 @@ function wrapIntoLines(
       wordGap = 0;
     }
 
-    currentWords.push({ word, startX: penX + wordGap });
+    const startX = penX + wordGap;
+
+    placeCarets(startX, word.caretOffsets, currentWords.length);
+    currentWords.push({ word, startX });
     penX += wordGap + word.width;
     lineContentWidth = penX;
   }
 
+  placeCarets(penX, [0], previousWordIndex());
   commitLine();
 
-  return lines;
+  return { lines, caretPlacements };
+}
+
+/**
+ * Expands one caret stop per code point (plus the final one) to one per
+ * UTF-16 code unit boundary: a code point outside the Basic Multilingual
+ * Plane is two code units, and the boundary between them gets the pair's
+ * start.
+ * @param text - The shaped text.
+ * @param codePointStops - One stop before each code point, then one after the last.
+ * @returns One stop per UTF-16 boundary, `text.length + 1` in all.
+ */
+function toUtf16CaretStops(text: string, codePointStops: Vector2[]): Vector2[] {
+  const stops: Vector2[] = [];
+  let index = 0;
+
+  for (const character of text) {
+    const stop = codePointStops[index];
+
+    for (let unit = 0; unit < character.length; unit++) {
+      stops.push({ x: stop.x, y: stop.y });
+    }
+
+    index++;
+  }
+
+  stops.push(codePointStops[index]);
+
+  return stops;
 }
 
 /**
@@ -576,10 +683,15 @@ export function shapeText(
     verticalAlign,
     maxWidth,
     horizontalAlignPivot,
+    richText,
   } = { ...defaultShapeTextOptions, ...options };
 
-  const { plainText, styles } = resolveCharacterStyles(text, fontAtlasData);
-  const lines = wrapIntoLines(
+  const { plainText, styles } = resolveCharacterStyles(
+    text,
+    fontAtlasData,
+    richText,
+  );
+  const { lines, caretPlacements } = wrapIntoLines(
     plainText,
     styles,
     fontAtlasData,
@@ -612,6 +724,7 @@ export function shapeText(
   // Built with each line's un-offset baseline (line 0 at y = 0);
   // `verticalOffset` is applied to every glyph afterwards.
   const glyphs: GlyphQuad[] = [];
+  const lineOffsets: { x: number; y: number; justifyGapStretch: number }[] = [];
 
   lines.forEach((line, lineIndex) => {
     const isLastLine = lineIndex === lines.length - 1;
@@ -635,6 +748,12 @@ export function shapeText(
       line,
     );
     const lineY = -lineIndex * actualLineHeight;
+
+    lineOffsets.push({
+      x: boxLeftOffset + uniformOffset,
+      y: lineY,
+      justifyGapStretch,
+    });
 
     line.words.forEach(({ word, startX }, wordIndex) => {
       const x =
@@ -661,5 +780,20 @@ export function shapeText(
     glyph.offset.y += verticalOffset;
   }
 
-  return { glyphs, bounds: { width: contentWidth, height: blockHeight } };
+  const codePointStops = caretPlacements.map(
+    ({ lineIndex, x, wordIndex }): Vector2 => {
+      const lineOffset = lineOffsets[lineIndex];
+
+      return {
+        x: x + lineOffset.x + wordIndex * lineOffset.justifyGapStretch,
+        y: lineOffset.y + verticalOffset,
+      };
+    },
+  );
+
+  return {
+    glyphs,
+    bounds: { width: contentWidth, height: blockHeight },
+    caretStops: toUtf16CaretStops(plainText, codePointStops),
+  };
 }

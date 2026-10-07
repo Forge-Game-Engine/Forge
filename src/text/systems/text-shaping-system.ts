@@ -24,6 +24,7 @@ interface ShapeSnapshot {
   verticalAlign: TextEcsComponent['verticalAlign'];
   maxWidth: number | undefined;
   horizontalAlignPivot: number;
+  richText: boolean;
 }
 
 function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
@@ -36,7 +37,8 @@ function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
     a.horizontalAlign === b.horizontalAlign &&
     a.verticalAlign === b.verticalAlign &&
     a.maxWidth === b.maxWidth &&
-    a.horizontalAlignPivot === b.horizontalAlignPivot
+    a.horizontalAlignPivot === b.horizontalAlignPivot &&
+    a.richText === b.richText
   );
 }
 
@@ -70,6 +72,7 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
           verticalAlign: textComponent.verticalAlign,
           maxWidth: textComponent.maxWidth,
           horizontalAlignPivot: textComponent.horizontalAlignPivot,
+          richText: textComponent.richText,
         };
 
         const lastSnapshot = lastShapedSnapshotByComponent.get(textComponent);
@@ -84,7 +87,7 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
           continue;
         }
 
-        const { glyphs, bounds } = shapeText(
+        const { glyphs, bounds, caretStops } = shapeText(
           textComponent.text,
           textComponent.fontAtlas.data,
           {
@@ -95,12 +98,14 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
             verticalAlign: textComponent.verticalAlign,
             maxWidth: textComponent.maxWidth,
             horizontalAlignPivot: textComponent.horizontalAlignPivot,
+            richText: textComponent.richText,
           },
         );
 
         world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
           glyphs,
           bounds,
+          caretStops,
         });
         lastShapedSnapshotByComponent.set(textComponent, snapshot);
       }
