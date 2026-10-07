@@ -43,28 +43,29 @@ export interface CreateTerrainMeshDefaultedOptions {
 export interface CreateTerrainMeshOptions extends Partial<CreateTerrainMeshDefaultedOptions> {
   /**
    * The dense curve points to build the mesh from - see `buildTerrainCurve`.
-   * Pass the same points used to build the corresponding `TerrainShape` (by
+   * Pass the same points used to build the corresponding `TerrainCollider` (by
    * mapping each `TerrainCurvePoint.position` into the `Vector2[]`
-   * `TerrainShape` expects), so what's drawn always matches what's touched.
+   * `TerrainCollider` expects), so what's drawn always matches what's touched.
    */
   curvePoints: readonly TerrainCurvePoint[];
 
   /**
    * How far (in world units) the mesh extends below its lowest curve
    * point. Must match the `depth` passed to the corresponding
-   * `TerrainShape` for the mesh to align with the collision volume.
+   * `TerrainCollider` for the mesh to align with the collision volume.
    */
   depth: number;
 
   /**
-   * The world-space position of the mesh. Must match the corresponding
-   * `RigidBody`'s `position`.
+   * The world-space position of the mesh. Must match the world position
+   * of the corresponding `TerrainCollider`'s entity. The mesh's vertices
+   * are baked into world space, so the mesh doesn't follow the entity.
    */
   position: Vector2;
 
   /**
-   * The world-space rotation of the mesh, in radians. Must match the
-   * corresponding `RigidBody`'s `angle`.
+   * The world-space rotation of the mesh, in radians. Must match the world
+   * rotation of the corresponding `TerrainCollider`'s entity.
    */
   angle: number;
 
@@ -180,7 +181,7 @@ function assertRepeatingTexture(layer: string, texture: Texture): void {
 }
 
 /**
- * Builds a single triangulated mesh visualizing a `TerrainShape`'s
+ * Builds a single triangulated mesh visualizing a `TerrainCollider`'s
  * heightmap, textured with a tileable "border" layer near the surface
  * blending into a tileable "fill" layer below it (see
  * `CreateTerrainMeshOptions`). Since the mesh has an arbitrary vertex count

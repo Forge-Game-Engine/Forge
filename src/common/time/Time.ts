@@ -62,7 +62,7 @@ export class Time {
   }
 
   /**
-   * Gets the number of frames.
+   * Gets the number of frames: the number of times `update` has been called.
    * @returns The number of frames.
    */
   get frames(): number {
@@ -70,7 +70,8 @@ export class Time {
   }
 
   /**
-   * Gets the raw time in milliseconds.
+   * Gets the raw time in milliseconds: the timestamp passed to the latest
+   * `update`, not affected by `timeScale`.
    * @returns The raw time in milliseconds.
    */
   get rawTimeInMilliseconds(): number {
@@ -78,7 +79,8 @@ export class Time {
   }
 
   /**
-   * Gets the raw delta time in milliseconds.
+   * Gets the raw delta time in milliseconds: the difference between the
+   * latest two timestamps passed to `update`, not scaled or limited.
    * @returns The raw delta time in milliseconds.
    */
   get rawDeltaTimeInMilliseconds(): number {
@@ -86,7 +88,9 @@ export class Time {
   }
 
   /**
-   * Gets the delta time in milliseconds.
+   * Gets the delta time in milliseconds: the raw delta time multiplied by
+   * `timeScale`, limited to the range `0` to `1000 / 15` (except on the first
+   * `update`).
    * @returns The delta time in milliseconds.
    */
   get deltaTimeInMilliseconds(): number {
@@ -94,7 +98,8 @@ export class Time {
   }
 
   /**
-   * Gets the time in milliseconds.
+   * Gets the time in milliseconds: the sum of every frame's delta time, so it
+   * follows `timeScale`.
    * @returns The time in milliseconds.
    */
   get timeInMilliseconds(): number {
@@ -102,7 +107,8 @@ export class Time {
   }
 
   /**
-   * Gets the previous time in milliseconds.
+   * Gets the previous time in milliseconds: the raw time of the previous
+   * `update`.
    * @returns The previous time in milliseconds.
    */
   get previousTimeInMilliseconds(): number {
@@ -110,7 +116,8 @@ export class Time {
   }
 
   /**
-   * Gets the raw time in seconds.
+   * Gets the raw time in seconds: the timestamp passed to the latest
+   * `update`, not affected by `timeScale`.
    * @returns The raw time in seconds.
    */
   get rawTimeInSeconds(): number {
@@ -118,7 +125,8 @@ export class Time {
   }
 
   /**
-   * Gets the raw delta time in seconds.
+   * Gets the raw delta time in seconds: the difference between the latest
+   * two timestamps passed to `update`, not scaled or limited.
    * @returns The raw delta time in seconds.
    */
   get rawDeltaTimeInSeconds(): number {
@@ -126,7 +134,9 @@ export class Time {
   }
 
   /**
-   * Gets the delta time in seconds.
+   * Gets the delta time in seconds: the raw delta time multiplied by
+   * `timeScale`, limited to the range `0` to `1 / 15` (except on the first
+   * `update`).
    * @returns The delta time in seconds.
    */
   get deltaTimeInSeconds(): number {
@@ -134,7 +144,8 @@ export class Time {
   }
 
   /**
-   * Gets the time in seconds.
+   * Gets the time in seconds: the sum of every frame's delta time, so it
+   * follows `timeScale`.
    * @returns The time in seconds.
    */
   get timeInSeconds(): number {
@@ -142,7 +153,8 @@ export class Time {
   }
 
   /**
-   * Gets the previous time in seconds.
+   * Gets the previous time in seconds: the raw time of the previous
+   * `update`.
    * @returns The previous time in seconds.
    */
   get previousTimeInSeconds(): number {
@@ -150,7 +162,8 @@ export class Time {
   }
 
   /**
-   * Gets the time scale.
+   * Gets the time scale, the multiplier applied to the delta time. `1` is
+   * normal speed and `0` pauses time. Defaults to `1`.
    * @returns The time scale.
    */
   get timeScale(): number {
@@ -166,7 +179,8 @@ export class Time {
   }
 
   /**
-   * Gets the times array.
+   * Gets the timestamps, in milliseconds, of the `update` calls within the
+   * last second. `fps` is its length.
    * @returns The times array.
    */
   get times(): number[] {
@@ -174,8 +188,10 @@ export class Time {
   }
 
   /**
-   * Updates the time-related information.
-   * @param time - The current time.
+   * Updates the time-related information. `Game` calls it once per frame,
+   * before updating its worlds.
+   * @param time - The current time in milliseconds, such as
+   * `performance.now()`.
    */
   public update(time: number): void {
     // The very first call has no real previous frame to delta from
@@ -215,7 +231,8 @@ export class Time {
   }
 
   /**
-   * Gets the current frames per second (FPS).
+   * Gets the current frames per second (FPS): the number of `update` calls
+   * within the last second.
    * @returns The current FPS.
    */
   get fps(): number {

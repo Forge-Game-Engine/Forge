@@ -15,24 +15,26 @@ export interface ContainerResizeSync {
  * Watches `container` for size changes and calls `resize()` on every entry
  * in `resizables` whenever the container's size changes, so a canvas (and
  * anything derived from its width/height, such as a camera's projection
- * matrix) follows a resizable page - or a container that changes size for
- * any other reason, like a fullscreen toggle - instead of staying pinned to
- * whatever size it had when this was created.
+ * matrix) follows the container, for example when the page is resized or
+ * the container goes fullscreen.
  *
  * Also watches the display's `devicePixelRatio`, and resizes again whenever
- * it changes - browser zoom, or dragging the window onto a monitor with a
- * different scale factor - even if the container's CSS size stays the same,
+ * it changes (browser zoom, or moving the window to a monitor with a
+ * different scale factor), even if the container's CSS size stays the same,
  * so a canvas's drawing buffer keeps matching the display's native
  * resolution. Each resizable receives the container's size in CSS pixels
  * plus the current device pixel ratio, and derives its own drawing-buffer
  * size from them (see `RenderContext.resize`).
  *
- * Watching starts immediately and runs independently of any game loop;
- * call the returned `stop()` to disconnect it early (e.g. when switching
- * to a headless mode with no canvas left to keep sized). It's safe to never
- * call `stop()` at all if `container` is simply removed from the DOM -
- * browsers silently drop a `ResizeObserver`'s registration for a target
- * once nothing else references it, so it won't keep the container alive.
+ * The resize runs on the animation frame after the change, not inside the
+ * `ResizeObserver` callback, since resizing from the callback triggers the
+ * browser's "ResizeObserver loop completed with undelivered notifications"
+ * error. A change to a zero width or height is skipped.
+ *
+ * Watching starts immediately and runs independently of any game loop
+ * until the returned `stop()` is called. Call `stop()` when the container
+ * is removed from the page: the device pixel ratio listener references the
+ * container and the resizables until then.
  *
  * Does nothing (and returns a no-op `stop()`) if `resizables` is empty.
  * @param container - The element to watch for size changes.

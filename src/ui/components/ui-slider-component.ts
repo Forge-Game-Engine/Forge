@@ -51,9 +51,9 @@ export interface UiSliderDefaultedOptions {
 export interface UiSliderEcsComponent
   extends UiSliderRequiredOptions, UiSliderDefaultedOptions {
   /**
-   * Raised whenever `value` changes - by a drag, or by a direct
-   * `slider.value =` write followed by `createUiSliderEcsSystem`'s next tick
-   * re-deriving the handle/fill visuals from it. Passes the new value.
+   * Raised when a press or drag on the track changes `value`. Not raised
+   * by a direct write to `value`, though `createUiSliderEcsSystem` still
+   * moves the handle and fill to it. Passes the new value.
    */
   readonly onValueChanged: ParameterizedForgeEvent<number>;
 }

@@ -4,101 +4,122 @@ sidebar_position: 1
 
 # Configuring Emitters
 
-[`ParticleEmitter`](/Forge/docs/api/classes/ParticleEmitter) is a plain
-configuration object, not a component on its own. Create one (or several),
-store them in a
+A [`ParticleEmitter`](/Forge/docs/api/classes/ParticleEmitter) is a
+configuration object, not a component. Its options, passed to its
+constructor or to `setOptions`, set how its particles look and move. It
+spawns particles from a
 [`ParticleEmitterEcsComponent`](/Forge/docs/api/interfaces/ParticleEmitterEcsComponent)'s
-`emitters` map, then call `emit()`, set an `emissionRate`, or pass the
-emitter to `emitParticleBurst`.
+`emitters` map, or from
+[`emitParticleBurst`](/Forge/docs/api/functions/emitParticleBurst).
 
 ## Ranges
 
-Most options are [`Range`](/Forge/docs/api/interfaces/Range) objects with a
-`min` and `max`. Each spawned particle independently picks a random value
-inside that range for its speed, direction, scale, rotation, rotation speed
-and lifetime. Set `min` equal to `max` for a fixed value, for example
-`scaleRange: { min: 0.5, max: 0.5 }` makes every particle the same size.
-
-## Direction and rotation are separate
-
-`directionRange` picks the direction a particle starts moving in, in
-radians, following the engine's [angle
-convention](../math/angles-and-rotation.md#the-convention): `0` points
-along `+X` and angles increase counter-clockwise (`Math.PI / 2` = up,
-`Math.PI` = left, `-Math.PI / 2` = down). For example,
-`{ min: -Math.PI / 2 - Math.PI / 4, max: -Math.PI / 2 + Math.PI / 4 }`
-sprays particles in a quarter-turn cone centered on straight down, useful
-for a dust puff under a character's feet. A range spanning a full turn,
-including the default `{ min: 0, max: 2 * Math.PI }`, sends particles in any
-direction. Keep `min` less than `max`. Use `degreesToRadians` if you'd
-rather author the angles in degrees.
-
-`rotationRange` (in radians, counter-clockwise) and `rotationSpeedRange` (in
-radians per second) only turn the particle's sprite. They never change the
-direction it moves in, so a spinning star still flies in a straight line.
-`rotationRange` defaults to `{ min: 0, max: 0 }`; use
-`{ min: 0, max: 2 * Math.PI }` to give round or symmetrical sprites some
-variety.
-
-## Motion: velocity, acceleration and drag
-
-Each particle stores a `velocity` in its
-[`ParticleEcsComponent`](/Forge/docs/api/interfaces/ParticleEcsComponent),
-picked from `speedRange` and its direction when it spawns.
-`createParticlePositionEcsSystem` then changes it every frame:
-
-- `acceleration` (world units per second squared) is added to the velocity.
-  Use it for gravity (`{ x: 0, y: -400 }`), smoke rising
-  (`{ x: 0, y: 40 }`) or wind.
-- `drag` is the share of the velocity a particle keeps after one second,
-  from `0` to `1`. `1` (the default) is no drag, `0.1` keeps a tenth of its
-  speed after a second, which suits sparks that burst out fast and then
-  hang in the air.
-
-For motion that follows game state, set `getVelocityOffset`. It's read every
-frame and added to each particle's movement on top of its own velocity, and
-drag never slows it down. For example, to keep sparks moving with a world
-that scrolls past at a changing speed:
+Most options are a [`Range`](/Forge/docs/api/interfaces/Range), with a
+`min` and a `max`. Each particle picks its own random value in the range
+for its speed, direction, scale, rotation, rotation speed and lifetime. A
+range with `min` equal to `max` gives every particle the same value:
 
 ```ts
-const sparks = new ParticleEmitter(sparkSprite, {
-  getVelocityOffset: () => ({ x: -gameState.worldSpeed, y: 0 }),
+const emitter = new ParticleEmitter(sprite, {
+  scaleRange: { min: 0.5, max: 0.5 },
 });
 ```
 
-`velocity` and `acceleration` on each particle are plain, mutable vectors,
-so your own systems can change them too.
+## Direction and sprite rotation
 
-## Where particles spawn
+`directionRange` is the direction a particle starts moving in, in radians,
+following the engine's
+[angle convention](../math/angles-and-rotation.md#the-angle-convention): `0`
+points along `+X` and angles increase counter-clockwise (`Math.PI / 2` is
+up, `Math.PI` is left). A range spanning a full turn, such as the default
+`{ min: 0, max: 2 * Math.PI }`, sends particles in every direction. This
+range sends them downwards, in a cone a quarter turn wide:
 
-Particles spawn around an **origin**: the world position
+```ts
+const emitter = new ParticleEmitter(sprite, {
+  directionRange: {
+    min: -Math.PI / 2 - Math.PI / 4,
+    max: -Math.PI / 2 + Math.PI / 4,
+  },
+});
+```
+
+`rotationRange` (in radians, counter-clockwise) and `rotationSpeedRange` (in
+radians per second) turn the particle's sprite. They don't change the
+direction the particle moves in.
+
+## Velocity, acceleration and drag
+
+Each particle's
+[`ParticleEcsComponent`](/Forge/docs/api/interfaces/ParticleEcsComponent)
+stores a `velocity`, from `speedRange` and the direction it spawns with.
+`createParticlePositionEcsSystem` changes it every frame:
+
+- `acceleration`, in world units per second squared, is added to the
+  velocity, for example `{ x: 0, y: -400 }` for gravity.
+- `drag` is the share of the velocity a particle keeps after one second,
+  from `0` to `1`. `1` is no drag, and `0.1` keeps a tenth of the velocity
+  after one second.
+
+`getVelocityOffset` is a function returning a velocity that every particle
+adds to its own each frame. Drag doesn't slow it down. Use it for motion
+that follows a value that changes, for example a world scrolling past:
+
+```ts
+const emitter = new ParticleEmitter(sprite, {
+  getVelocityOffset: () => ({ x: -scrollSpeed, y: 0 }),
+});
+```
+
+`velocity` and `acceleration` on each particle are mutable vectors, so other
+systems can change them too.
+
+## Spawn shapes
+
+Particles spawn around an origin: the world position
 (`PositionEcsComponent.world`) of the entity the emitter is on, or the world
-origin if that entity has no position. Moving the entity moves the effect,
-with no per-emitter closure needed.
+origin if that entity has no position. `spawnShape` sets the area around
+the origin they spawn in:
 
-`spawnShape` sets the area around the origin they spawn in:
-
-- `{ type: 'point' }` (the default): exactly at the origin.
+- `{ type: 'point' }` (the default): at the origin.
 - `{ type: 'circle', radius }`: anywhere inside a circle, spread evenly over
   its area.
-- `{ type: 'ring', radius }`: on the edge of a circle, such as the rim of a
-  glowing orb.
+- `{ type: 'ring', radius }`: on the edge of a circle.
 - `{ type: 'box', width, height }`: anywhere inside a box centered on the
-  origin. A `height` of `0` gives a line, for a fountain or a row of
-  burners.
+  origin. A `height` of `0` gives a line.
+
+With `emitOutward: true`, each particle moves away from the shape's center,
+through the point it spawned at, instead of in a direction from
+`directionRange`. A particle that spawns at the center (every particle of a
+`'point'` shape) uses `directionRange`.
+
+```ts
+const emitter = new ParticleEmitter(sprite, {
+  spawnShape: { type: 'ring', radius: 32 },
+  emitOutward: true,
+});
+```
 
 ## Emitters turn with their entity
 
-The spawn shape and `directionRange` are in the **emitter's frame**: they
-turn with the world rotation (`RotationEcsComponent.world`) of the entity
-the emitter is on. An emitter on a child entity, such as a ship's exhaust
-or a gun's muzzle flash, keeps pointing the same way relative to its parent
-as the parent turns, with no code to update its range:
+The spawn shape and `directionRange` turn with the world rotation
+(`RotationEcsComponent.world`) of the entity the emitter is on. An emitter
+on a child entity keeps the same direction relative to its parent as the
+parent turns:
 
 ```ts
+import {
+  addPositionComponent,
+  addRotationComponent,
+} from '@forge-game-engine/forge/common';
+import {
+  addParticleEmitterComponent,
+  ParticleEmitter,
+} from '@forge-game-engine/forge/particles';
+
 const exhaust = world.createEntity();
 
-world.setParent(exhaust, ship);
+world.setParent(exhaust, vehicle);
 addPositionComponent(world, exhaust, { local: { x: -40, y: 0 } });
 addRotationComponent(world, exhaust);
 addParticleEmitterComponent(world, exhaust, {
@@ -107,7 +128,6 @@ addParticleEmitterComponent(world, exhaust, {
       'exhaust',
       new ParticleEmitter(smokeSprite, {
         emissionRate: 30,
-        // Out of the back of the ship, whichever way it's facing.
         directionRange: {
           min: Math.PI - Math.PI / 12,
           max: Math.PI + Math.PI / 12,
@@ -118,91 +138,77 @@ addParticleEmitterComponent(world, exhaust, {
 });
 ```
 
-A few things don't turn with the entity:
+These particles move out of the back of `vehicle`, whichever way it faces.
 
-- An entity with no `RotationEcsComponent` emits in the world's frame. Put
-  an emitter that should always spray the same way in the world, like a
-  fountain, on an entity without a rotation.
-- The world rotation comes from the transform system, which only updates
-  entities with a `PositionEcsComponent`, so a turning emitter needs a
-  position as well as a rotation.
-- `acceleration` and `getVelocityOffset` stay in world space, since they
-  model forces like gravity and wind.
-- `rotationRange` is the particle sprite's world rotation, not one relative
-  to the emitter.
+Some things don't turn with the entity:
+
+- An entity with no `RotationEcsComponent` emits in the world's frame.
+- The transform system writes `rotation.world` only for entities with a
+  `PositionEcsComponent`, so a turning emitter needs a position as well as a
+  rotation.
+- `acceleration` and `getVelocityOffset` are in world space.
+- `rotationRange` is the particle sprite's world rotation, not relative to
+  the emitter.
 - Spawn shapes don't scale or mirror with the entity's scale.
-- Particles move in world space once they've spawned, so they don't follow
-  the emitter afterwards.
 
-Set `emitOutward: true` to send each particle away from the shape's center,
-through the point it spawned at, instead of in a direction from
-`directionRange`. With a ring, that gives a burst that radiates out from an
-object's edge. A particle spawned exactly on the center (always, for a
-point) still uses `directionRange`.
+## Bursts and steady streams
 
-## Bursts vs steady streams
+An emitter spawns particles in three ways:
 
-There are three ways to spawn particles:
-
-- **`emit()` / `emitIfNotEmitting()`** spawn a batch, picking how many from
-  `numParticlesRange`. `emitDurationSeconds` spreads them out: `0` (the
-  default) spawns them all on the same frame, good for impacts and
-  explosions; greater than `0` spawns them roughly evenly over that many
-  seconds. `emit()` always starts a new batch. `emitIfNotEmitting()` does
-  nothing while a batch is still going, for input-triggered effects that
-  might be retriggered before the previous one finishes.
-- **`emissionRate`** spawns that many particles per second, every frame, for
-  as long as it's above `0`, with no calls needed. Use it for anything that
-  should run while something exists: a torch, an exhaust, an orb shedding
-  sparks. Set it to `0` with `setOptions` to stop the stream. It works
-  alongside `emit()`, so one emitter can both stream and burst.
-- **[`emitParticleBurst`](/Forge/docs/api/functions/emitParticleBurst)**
-  spawns a batch straight away at any world position, with no emitter
-  entity. It's for effects at a place where nothing lives any more, like a
-  pickup that was just collected:
+- `emit()` starts a batch of particles, with a count picked from
+  `numParticlesRange`. With `emitDurationSeconds` at `0` (the default), the
+  whole batch spawns on the next frame; above `0`, the batch spawns evenly
+  over that many seconds. `emit()` always starts a new batch, and
+  `emitIfNotEmitting()` starts one only when no batch is spawning.
+- `emissionRate` spawns that many particles per second, every frame, while
+  it's above `0`. Set it to `0` with `setOptions` to stop the stream. An
+  emitter can stream and spawn batches at the same time.
+- [`emitParticleBurst`](/Forge/docs/api/functions/emitParticleBurst) spawns
+  a batch immediately at a world position, from an emitter that doesn't
+  need to be on an entity, for example at the position of an entity that was removed:
 
 ```ts
+import { Vec2 } from '@forge-game-engine/forge/math';
 import { emitParticleBurst } from '@forge-game-engine/forge/particles';
 
-const pickupPosition = Vec2.clone(position.world);
+const burstPosition = Vec2.clone(position.world);
 
-world.removeEntity(orb);
-emitParticleBurst(world, pickupSparks, pickupPosition, random, {
-  count: 28,
-});
+world.removeEntity(entity);
+emitParticleBurst(world, emitter, burstPosition, random);
 ```
 
-`emitParticleBurst` picks the count from `numParticlesRange` unless you pass
-`count`, and returns the new particle entities. It has no entity to turn
-with, so it emits in the world's frame unless you pass a `rotation` (in
-radians) to turn the spawn shape and `directionRange` by, for example the
-rotation of the thing that just exploded.
+`emitParticleBurst` returns the new particle entities. It emits in the
+world's frame, unless its options pass a `rotation` to turn the spawn shape
+and `directionRange` by.
 
-## Fading, shrinking and growing over a lifetime
+## Fading and scaling over a lifetime
 
-`lifetimeOpacity` fades each particle's sprite from `start` to `end` over its
-lifetime, for example `{ start: 1, end: 0 }` to fade out completely. It sets
-the sprite's `opacityMultiplier`, so it combines with the alpha of the
-sprite's `tintColor`. This needs `createParticleOpacityEcsSystem`.
+`lifetimeOpacity` fades each particle's sprite from `start` to `end` over
+its lifetime, for example `{ start: 1, end: 0 }` to fade out. It sets the
+sprite's `opacityMultiplier`, which multiplies the alpha of its
+`tintColor`. Fading needs `createParticleOpacityEcsSystem`.
 
-`lifetimeScaleReduction` blends each particle's scale from its spawned
-`scaleRange` value to that value multiplied by `lifetimeScaleReduction`
-over its lifetime: `0` (the default) shrinks particles to nothing by the time
-they expire, `1` keeps them the same size, and values above `1` make them
-grow. This needs `createAgeScaleEcsSystem`, see the
-[Quick Start](./index.md#quick-start).
+`lifetimeScaleReduction` multiplies a particle's scale by the end of its
+lifetime: `1` keeps it the same size, and above `1` makes it grow. Scaling
+needs `createAgeScaleEcsSystem`.
+
+:::caution
+`lifetimeScaleReduction` defaults to `0`, so with `createAgeScaleEcsSystem`
+registered, particles shrink to nothing by the end of their lifetime. Set it
+to `1` to keep their size.
+:::
 
 ## Adding your own components
 
-`onParticleSpawned` is called for every particle right after it spawns, with
-all of its components attached. Use it to tag particles for your own
-systems, or to parent them to another entity:
+`onParticleSpawned` is called for every particle right after it spawns,
+with all of its components added. Use it to add components or tags for
+other systems:
 
 ```ts
-const embers = new ParticleEmitter(emberSprite, {
+const emitter = new ParticleEmitter(sprite, {
   emissionRate: 20,
   onParticleSpawned: (world, particle) => {
-    world.addTag(particle, emberTagId);
+    world.addTag(particle, customTagId);
   },
 });
 ```
@@ -210,27 +216,23 @@ const embers = new ParticleEmitter(emberSprite, {
 ## Multiple emitters per entity
 
 `ParticleEmitterEcsComponent.emitters` is a `Map<string, ParticleEmitter>`,
-so one entity can own several independent effects, for example an attack
-swoosh and a footstep puff on the same character:
+so one entity can have several emitters, each started on its own:
 
 ```ts
-addParticleEmitterComponent(world, character, {
+addParticleEmitterComponent(world, entity, {
   emitters: new Map([
     ['attack', attackEmitter],
     ['footstep', footstepEmitter],
   ]),
 });
 
-// later, in your attack/footstep handling code
 attackEmitter.emit();
 ```
 
-:::caution
-`createParticleEcsSystem` checks every emitter on every entity with a
-`ParticleEmitterEcsComponent` each frame, even when nothing is currently
-emitting, so adding more emitters is cheap. Spawning particles isn't free
-though: each one is a full entity with seven components, including its own copy
-of the sprite.
-A `numParticlesRange` of `{ min: 60, max: 80 }` for an occasional explosion
-is fine, but a high `emissionRate` on many entities at once will add up.
+:::note
+Each particle is an entity with seven components and its own copy of the
+sprite. The number of particles alive at once, which follows from
+`numParticlesRange`, `emissionRate` and `lifetimeSecondsRange`, is the
+number of entities the particle, lifecycle and render systems process each
+frame.
 :::

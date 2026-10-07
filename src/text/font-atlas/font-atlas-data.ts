@@ -29,7 +29,10 @@ export interface GlyphMetrics {
 
   /**
    * This glyph's quad, in em units relative to the text baseline origin,
-   * Y-up. `null` for glyphs with no visible ink (e.g. space).
+   * Y-up. Includes the distance field's padding around the glyph's ink
+   * (half of `FontAtlasData.distanceRange`, in atlas pixels), which
+   * outlines and shadows draw into. `null` for glyphs with no visible ink
+   * (e.g. space).
    */
   planeBounds: Bounds | null;
 
@@ -89,7 +92,7 @@ export interface FontAtlasData {
   /** Schema version this data was produced from. */
   formatVersion: typeof CURRENT_FONT_ATLAS_FORMAT_VERSION;
 
-  /** `'msdf'` for v1; reserved for `'mtsdf'` later. */
+  /** The distance field type. Only `'msdf'` is supported. */
   type: 'msdf';
 
   /** Atlas texture pixel dimensions. */

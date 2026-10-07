@@ -61,7 +61,7 @@ export interface CreateTooltipDefaultedOptions {
    * `createLabel`'s `category` option - the panel's own category comes
    * from `sprite.category` instead, unaffected by this. Pass
    * the same value you gave the tooltip's canvas's `cullingMask` (see
-   * `CreateUiCanvasDefaultedOptions.cullingMask`) so the label is actually
+   * `ScreenSpaceUiCanvasOptions.cullingMask`) so the label is actually
    * visible through it. Omitted, the label falls back to `TextEcsComponent`'s
    * own default (`TEXT_RENDER_CATEGORY`).
    */
@@ -93,11 +93,10 @@ export interface Tooltip {
  * shows them once `source`
  * has been continuously hovered or focused for `showDelayMilliseconds`.
  *
- * A tooltip's draw order still follows hierarchy position like any other
- * UI element (see the UI doc's "Draw order" note) - for a tooltip that
- * must always render above every other element regardless of where its
- * source sits in the tree, create it last, after every other UI element on
- * the canvas.
+ * The panel is drawn in hierarchy order, right after `source`'s other
+ * children, so elements that come after `source` in hierarchy order (its
+ * later siblings, for example) draw over it. To draw the tooltip above
+ * them, add a `DrawOrderEcsComponent` with a positive `order` to `panel`.
  * @param world - The ECS world `source` belongs to.
  * @param source - The interactable entity the tooltip appears near. Must
  * already have a `UiInteractableEcsComponent`.

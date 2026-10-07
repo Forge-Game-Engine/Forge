@@ -4,6 +4,10 @@ import type { AssetCache } from '../asset-cache.js';
  * Class to manage the caching and loading of images.
  */
 export class ImageCache implements AssetCache<HTMLImageElement> {
+  /**
+   * The loaded images, keyed by the exact path string they were loaded
+   * with. Deleting an entry removes the image from the cache.
+   */
   public assets = new Map<string, HTMLImageElement>();
 
   /**
@@ -50,9 +54,12 @@ export class ImageCache implements AssetCache<HTMLImageElement> {
   }
 
   /**
-   * Retrieves an image from the cache if it exists, otherwise loads and caches it.
+   * Retrieves an image from the cache if it exists, otherwise loads and
+   * caches it. A load that's still in progress isn't shared: two calls for
+   * the same path made before the first resolves each load the image.
    * @param path - The path of the image to retrieve or load.
    * @returns A promise that resolves to the image element.
+   * @throws The promise rejects if the image fails to load.
    */
   public async getOrLoad(path: string): Promise<HTMLImageElement> {
     if (!this.assets.has(path)) {

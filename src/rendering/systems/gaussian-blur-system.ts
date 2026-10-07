@@ -38,6 +38,16 @@ const verticalBlurDirection = new Float32Array([0, 1]);
  * `1`) the scene is first averaged down to CSS-pixel resolution, blurred
  * there, and scaled back up by the last pass.
  *
+ * Each pass costs two full-screen draws of the 9-tap kernel, at CSS-pixel
+ * resolution. On a high-DPI display, one more draw averages the scene down
+ * first. An `intensity` between `0` and `1` adds one more draw, which blends
+ * the sharp scene with the blurred one in a post-processing pass over the
+ * camera's `renderTarget` (allocating its second color buffer the first
+ * time). The first time a render target is blurred, the system allocates a
+ * `PingPongTarget` for it at CSS-pixel resolution, in the render target's
+ * `format`, resizes it when the render target's size changes, and disposes
+ * it in `cleanup`.
+ *
  * Must be registered after the render system (so there's a scene to blur)
  * and before the present system (so the blurred result gets drawn to the
  * canvas).

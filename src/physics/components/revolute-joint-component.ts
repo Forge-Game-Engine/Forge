@@ -9,26 +9,28 @@ import { Vec2, Vector2 } from '../../math/index.js';
  * callers may omit these.
  */
 export interface RevoluteJointDefaultedOptions {
-  /** Anchor point, in `entityA`'s local space, the joint pins to `entityB`'s anchor. */
+  /** Anchor point, in `entityA`'s local space, the joint pins to `entityB`'s anchor. Defaults to `entityA`'s origin. */
   localAnchorA: Vector2;
-  /** Anchor point, in `entityB`'s local space, the joint pins to `entityA`'s anchor. */
+  /** Anchor point, in `entityB`'s local space, the joint pins to `entityA`'s anchor. Defaults to `entityB`'s origin. */
   localAnchorB: Vector2;
 
-  /** Whether the relative angle between `entityA` and `entityB` is clamped to `[lowerAngle, upperAngle]`. */
+  /** Whether the relative angle between `entityA` and `entityB`, measured from `referenceAngle`, is clamped to `[lowerAngle, upperAngle]`. Defaults to `false`. */
   enableLimit: boolean;
-  /** The lowest relative angle (radians) allowed when `enableLimit` is `true`. */
+  /** The lowest relative angle (radians) allowed when `enableLimit` is `true`. Defaults to `0`. */
   lowerAngle: number;
-  /** The highest relative angle (radians) allowed when `enableLimit` is `true`. */
+  /** The highest relative angle (radians) allowed when `enableLimit` is `true`. Defaults to `0`. */
   upperAngle: number;
 
-  /** The soft constraint's target frequency, in Hz, correcting anchor drift. */
+  /** The soft constraint's target frequency, in Hz, correcting anchor drift. Defaults to `60`. */
   hertz: number;
-  /** The soft constraint's damping ratio correcting anchor drift. */
+  /** The soft constraint's damping ratio correcting anchor drift. Defaults to `2`. */
   dampingRatio: number;
 }
 
 export interface RevoluteJointRequiredOptions {
+  /** The first pinned entity. */
   entityA: number;
+  /** The second pinned entity. */
   entityB: number;
 }
 
@@ -61,6 +63,8 @@ export const revoluteJointId =
  * @param entity - The (dedicated) entity to attach the joint component to.
  * @param options - Options for configuring the joint.
  * @returns The attached component, for further tuning or runtime changes.
+ * @throws An error if `lowerAngle` is greater than `upperAngle`, or
+ * `entityA` or `entityB` has no `RotationEcsComponent`.
  */
 export function addRevoluteJointComponent(
   world: EcsWorld,

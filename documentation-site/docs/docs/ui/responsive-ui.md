@@ -4,84 +4,85 @@ sidebar_position: 3
 
 # Responsive UI
 
-## Coordinate spaces and scale modes
+A screen-space canvas is laid out in **reference pixels**, against a
+reference resolution. Its scale mode decides how many reference pixels the
+screen holds, so one layout fits screens of any size and aspect ratio. A
+safe area element keeps its contents clear of a phone's notch and rounded
+corners.
 
-UI world space uses **reference pixels**: author against a fixed
-`referenceResolution` (`1920x1080` by default), and the same layout reads
-correctly at any actual resolution. `CanvasEcsComponent.scaleMode`
-controls how the canvas's root rect - and its camera's
-`verticalWorldUnits` - responds to the destination's live size:
+## Reference resolution
 
-- `scaleWithScreenSize` (default) - height stays pinned to
-  `referenceResolution.y`; width follows the destination's aspect ratio.
-- `matchWidth` - width stays pinned to `referenceResolution.x`; height
-  follows the aspect ratio instead.
-- `constantPixelSize` - the root rect matches the destination's size in CSS
-  pixels one-to-one (`referenceResolution` is ignored), so 1 UI unit is 1
-  CSS pixel - the same physical size on a high-DPI display as on a standard
-  one, just sharper; UI elements keep a constant on-screen size at the cost
-  of covering a different fraction of the screen on different displays.
-- `fitReferenceResolution` - the root rect is always at least
-  `referenceResolution` on *both* axes, whichever of `scaleWithScreenSize`'s
-  or `matchWidth`'s height would be larger, letterboxing/pillarboxing the
-  destination's excess space on whichever axis isn't the limiting one.
-  Reach for this over the other two when a layout fills the full reference
-  resolution edge to edge (content anchored out to all four corners, say) -
-  `scaleWithScreenSize`/`matchWidth` each only protect *one* axis from
-  shrinking below the reference size, so a destination aspect ratio far
-  enough from `referenceResolution`'s own can crop or squash a layout that
-  assumes it always has the full reference size to work with, on whichever
-  axis that mode doesn't pin.
+`createUiCanvas` takes a `referenceResolution`, `1920` by `1080` by
+default: the screen size the UI is designed for. Sizes, margins and
+positions of elements are in reference pixels, and the layout system sizes
+the canvas's root rectangle, and the height its camera shows, in reference
+pixels every frame.
 
-This only applies to `renderMode: 'screenSpace'` (the default) - a
-world-space canvas has no "destination size" to scale against (see
-[Creating a Canvas](./creating-a-canvas.md)).
+## Scale modes
 
-For an individual element that should keep a constant **on-screen** size
-regardless of `scaleMode`, see
-[Pixel-locking one element with `screenPixels`](./anchors-and-layout.md#pixel-locking-one-element-with-screenpixels).
-
-## Safe area
-
-Mobile browsers report a notch, camera cutout, rounded corners, or home
-indicator via the CSS `env(safe-area-inset-*)` values.
-[`getSafeAreaInsets`](/Forge/docs/api/functions/getSafeAreaInsets) (from
-`@forge-game-engine/forge/rendering`) reads them back into plain numbers;
-pass it to `registerUiSystems` to keep any
-[`UiSafeAreaEcsComponent`](/Forge/docs/api/type-aliases/UiSafeAreaEcsComponent)
-element clear of them automatically:
+`scaleMode` picks how the root rectangle follows the screen. The values are
+in [`uiScaleModes`](/Forge/docs/api/variables/uiScaleModes):
 
 ```ts
+import { createUiCanvas, uiScaleModes } from '@forge-game-engine/forge/ui';
+
+const canvas = createUiCanvas(world, renderContext, {
+  cullingMask: uiRenderCategory,
+  referenceResolution: { x: 1280, y: 720 },
+  scaleMode: uiScaleModes.matchWidth,
+});
+```
+
+- `scaleWithScreenSize` (the default): the root rectangle is
+  `referenceResolution.y` high, and its width follows the screen's aspect
+  ratio.
+- `matchWidth`: the root rectangle is `referenceResolution.x` wide, and its
+  height follows the screen's aspect ratio.
+- `fitReferenceResolution`: the root rectangle is at least
+  `referenceResolution` on both axes, and larger on the axis where the
+  screen's aspect ratio has more room. Use it when the whole reference
+  resolution has to fit on screen, for example a layout with content
+  anchored to all four corners.
+- `constantPixelSize`: the root rectangle is the canvas's size in CSS
+  pixels, so a reference pixel is a CSS pixel and `referenceResolution`
+  isn't used. Elements keep their size on screen, and cover a different
+  share of it on different screens.
+
+Scale modes apply to screen-space canvases only. To keep one element the
+same size on screen in any scale mode, see
+[Sizing an element in screen pixels](anchors-and-layout.md#sizing-an-element-in-screen-pixels).
+
+## Keeping elements inside the safe area
+
+A phone browser reports the area covered by a notch, a camera cutout,
+rounded corners or a home indicator as safe-area insets.
+[`getSafeAreaInsets`](/Forge/docs/api/functions/getSafeAreaInsets) reads
+them. Pass it to `registerUiSystems`, and add a
+[`UiSafeAreaEcsComponent`](/Forge/docs/api/type-aliases/UiSafeAreaEcsComponent)
+to an element:
+
+```ts
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { getSafeAreaInsets } from '@forge-game-engine/forge/rendering';
 import {
+  addRectTransformComponent,
   addUiSafeAreaComponent,
-  createUiCanvas,
   registerUiSystems,
-  UiAnchor,
 } from '@forge-game-engine/forge/ui';
 
 registerUiSystems(world, renderContext, time, { getSafeAreaInsets });
 
-const canvas = createUiCanvas(world, renderContext, {
-  cullingMask: uiRenderCategory,
-});
+const safeArea = world.createEntity();
 
-const hudRoot = createPanel(world, canvas, {
-  anchor: UiAnchor.stretchAll(),
-  sprite: transparentSprite,
-});
-
-addUiSafeAreaComponent(world, hudRoot);
+addPositionComponent(world, safeArea);
+world.setParent(safeArea, canvas);
+addRectTransformComponent(world, safeArea);
+addUiSafeAreaComponent(world, safeArea);
 ```
 
-`addUiSafeAreaComponent` expects its entity to already be
-`UiAnchor.stretchAll()`-anchored - `createUiSafeAreaEcsSystem` (registered
-by `registerUiSystems` once `getSafeAreaInsets` is supplied) overwrites its
-`x`/`y`/`anchoredPosition` every frame to shrink the full-stretch rect
-inward from whichever edges actually need it, converted from CSS pixels
-into that canvas's own UI world units. Set a field (`top`/`right`/`bottom`/
-`left`) `false` to leave that specific edge flush with its parent
-regardless of the device's insets - e.g. a bottom bar that intentionally
-extends under a home indicator. A browser with no notch/cutout (or that
-doesn't support `env()`) reports all zeroes, so this is always safe to
-wire up unconditionally.
+Every frame, the safe area system sets the element's anchors so that it
+fills its parent minus the insets, converted from CSS pixels to reference
+pixels. Parent the HUD's elements to it to keep them inside the safe area.
+Set `top`, `right`, `bottom` or `left` to `false` to leave that edge of the
+element at its parent's edge, for example a bottom bar that extends under a
+home indicator. A browser with no insets reports `0` for every edge.

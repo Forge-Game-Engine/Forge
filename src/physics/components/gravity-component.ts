@@ -7,11 +7,18 @@ import { Vector2 } from '../../math/vector2.js';
  * may omit these.
  */
 export interface GravityDefaultedOptions {
+  /**
+   * The acceleration, in world units per second squared, that
+   * `createGravityEcsSystem` adds to the entity's
+   * `RigidBodyEcsComponent.velocity` every tick, scaled by the tick's
+   * duration. Defaults to `(0, -9.81)`.
+   */
   amount: Vector2;
 }
 
 /**
- * ECS-style component interface for a gravity.
+ * ECS-style component interface for gravity acting on one entity's
+ * `'dynamic'` rigid body.
  */
 export type GravityEcsComponent = GravityDefaultedOptions;
 

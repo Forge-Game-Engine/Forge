@@ -1,5 +1,6 @@
 {
   "label": "Events",
+  "position": 17,
   "link": {
     "type": "doc",
     "id": "docs/events/index"

@@ -31,9 +31,8 @@ function clonePadding(padding: UiLayoutGroupPadding): UiLayoutGroupPadding {
 }
 
 /**
- * Fields shared by `HorizontalLayoutGroupEcsComponent` and
- * `VerticalLayoutGroupEcsComponent`, with a sensible default; callers may
- * omit these.
+ * Fields of a horizontal or vertical `UiAxisLayoutGroupEcsComponent`,
+ * with a sensible default; callers may omit these.
  */
 export interface UiAxisLayoutGroupDefaultedOptions {
   /** Inset between this group's rect and the content box its children fill. */
@@ -102,8 +101,8 @@ const defaultUiAxisLayoutGroupOptions: UiAxisLayoutGroupDefaultedOptions = {
 };
 
 /**
- * Attaches a `HorizontalLayoutGroupEcsComponent` (a `UiAxisLayoutGroupEcsComponent`
- * arranging children left-to-right) to `entity`. `createUiLayoutGroupEcsSystem`
+ * Attaches a horizontal `UiAxisLayoutGroupEcsComponent` (arranging
+ * children left-to-right) to `entity`. `createUiLayoutGroupEcsSystem`
  * arranges every direct child that has a `RectTransformEcsComponent` and
  * whose `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true`
  * and that isn't hidden by its own `VisibilityEcsComponent`, along the
@@ -134,8 +133,8 @@ export function addHorizontalLayoutGroupComponent(
 }
 
 /**
- * Attaches a `VerticalLayoutGroupEcsComponent` (a `UiAxisLayoutGroupEcsComponent`
- * arranging children top-to-bottom) to `entity`. Otherwise identical to
+ * Attaches a vertical `UiAxisLayoutGroupEcsComponent` (arranging
+ * children top-to-bottom) to `entity`. Otherwise identical to
  * {@link addHorizontalLayoutGroupComponent}, with the main/cross axes
  * swapped - width is the cross axis, sized/aligned per
  * `childControlWidth`/`childAlignment.x`.

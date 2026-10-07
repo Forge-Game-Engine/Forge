@@ -4,23 +4,24 @@ sidebar_position: 2
 
 # Asset Registries
 
-[`AssetRegistry<T>`](/Forge/docs/api/classes/AssetRegistry) registers
-assets under a human-readable string ID and hands back a numeric ID. Code
-that runs once, at setup, can keep using the string name; code that runs
-every frame can store and look up the numeric ID instead, avoiding a
-string-keyed map lookup in the hot path.
-
-The sprite animation system is the built-in example: each entity's
-[`SpriteAnimationEcsComponent`](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent)
-stores an `animationClipHandle` (a number), and
+An [`AssetRegistry<T>`](/Forge/docs/api/classes/AssetRegistry) stores
+assets of one type under string names and assigns each one a numeric ID.
+Looking an asset up by its numeric ID is an array index, so code that runs
+for many entities every frame stores the numeric ID instead of the name.
+For example,
 [`createSpriteAnimationEcsSystem`](/Forge/docs/api/functions/createSpriteAnimationEcsSystem)
-calls [`getDirect`](/Forge/docs/api/classes/AssetRegistry#getdirect) with
-that handle on every entity, every frame.
+looks up each entity's animation clip in an `AssetRegistry<AnimationClip>`
+by the numeric `animationClipHandle` of its
+[`SpriteAnimationEcsComponent`](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent).
 
-## Registering assets and storing handles
+Each registry has its own IDs, so an ID from one registry doesn't refer to
+anything in another.
 
-Register each animation clip once during setup. `register` returns the
-numeric handle to store on the component:
+## Registering an asset
+
+[`register(stringId, asset)`](/Forge/docs/api/classes/AssetRegistry#register)
+adds an asset and returns its numeric ID. Register each asset once, during
+setup, and store the ID where the asset is used:
 
 ```ts
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
@@ -35,40 +36,26 @@ const animationRegistry = new AssetRegistry<AnimationClip>();
 
 const runHandle = animationRegistry.register('run', createAnimation(1, 6));
 
-addSpriteAnimationComponent(world, playerEntity, {
+addSpriteAnimationComponent(world, entity, {
   animationClipHandle: runHandle,
 });
 
-world.addSystem(createSpriteAnimationEcsSystem(world.time, animationRegistry));
+world.addSystem(createSpriteAnimationEcsSystem(time, animationRegistry));
 ```
 
-## `getDirect` vs `getId`
+`register` throws if the string ID is already registered.
 
+## Looking up an asset
+
+- [`getId(stringId)`](/Forge/docs/api/classes/AssetRegistry#getid) returns
+  the numeric ID of a registered name, for code that has the name, such as
+  a name read from a level file. It throws for a name that isn't
+  registered.
 - [`getDirect(numericId)`](/Forge/docs/api/classes/AssetRegistry#getdirect)
-  is a plain array index, used by per-frame code that already has the
-  numeric handle (like `animationClipHandle` above). It throws if
-  `numericId` is out of range, so only pass values that came from
-  `register` or `getId`, never a hand-picked number.
-- [`getId(stringId)`](/Forge/docs/api/classes/AssetRegistry#getid) does the
-  string lookup and is meant for setup-time code that only has the
-  human-readable name, for example converting an animation name from a level
-  or character definition file into a handle once before the game loop
-  starts.
+  returns the asset with a numeric ID. It throws for an ID the registry
+  hasn't assigned, so pass only IDs returned by `register` or `getId`.
 
-## Gotchas
-
-- [`register`](/Forge/docs/api/classes/AssetRegistry#register) throws if
-  the string ID is already registered. Register each name exactly once
-  during setup; calling it again later (for example, inside a system's
-  `run`) throws rather than returning the existing handle.
-- A registry only knows about one asset type. `AssetRegistry<AnimationClip>`
-  and, say, an `AssetRegistry<Texture>` are independent instances with their
-  own ID spaces, so a handle from one is meaningless to the other.
-
-## Performance note
-
-The reason `animationClipHandle` is a number rather than the animation's
-name is that `getDirect` becomes a plain array index. For a system that
-runs once per animated sprite per frame, that avoids hashing a string and
-doing a `Map` lookup on every entity, every frame, the cost of which adds up
-with hundreds of animated sprites.
+```ts
+const runHandle = animationRegistry.getId('run');
+const runClip = animationRegistry.getDirect(runHandle);
+```

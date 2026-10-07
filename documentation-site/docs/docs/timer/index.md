@@ -1,35 +1,43 @@
 # Timers
 
-The timer module lets an entity schedule callbacks to run after a delay,
-optionally repeating on an interval. It is built on
-[`TimerEcsComponent`](/Forge/docs/api/interfaces/TimerEcsComponent) and
-[`createTimerEcsSystem`](/Forge/docs/api/functions/createTimerEcsSystem), and
-advances using the same [`Time`](/Forge/docs/api/classes/Time) instance as the
-rest of your game, so timers automatically respect pausing and slow motion.
+A timer runs callbacks after a delay, once or repeatedly. An entity's
+[`TimerEcsComponent`](/Forge/docs/api/interfaces/TimerEcsComponent) holds a
+list of [`TimerTask`](/Forge/docs/api/interfaces/TimerTask)s, and
+[`createTimerEcsSystem`](/Forge/docs/api/functions/createTimerEcsSystem)
+advances them and runs their callbacks.
 
-## Quick Start
+## Timer tasks
 
-Add a `TimerEcsComponent` to an entity with one or more
-[`TimerTask`](/Forge/docs/api/interfaces/TimerTask) entries, then register
-`createTimerEcsSystem`:
+A task has a `callback`, a `delay` in milliseconds and an `elapsed` time in
+milliseconds. On every update, the timer system adds
+`time.deltaTimeInMilliseconds` to each task's `elapsed`. When `elapsed`
+reaches `delay`, it calls `callback`.
+
+- A one-shot task runs once and is removed from `tasks`.
+- A repeating task (`repeat: true` with an `interval`) runs after `delay`,
+  then every `interval` milliseconds.
+
+Timers advance by the [Time](../common/time.md)'s delta time, so they follow
+its `timeScale`: they slow down with it and stop while it's `0`.
+
+## Adding a timer
+
+Add a `TimerEcsComponent` with its tasks, and register the timer system with
+the game's `Time`:
 
 ```ts
-import { createGame } from '@forge-game-engine/forge/utilities';
 import {
   addTimerComponent,
   createTimerEcsSystem,
-  TimerId,
 } from '@forge-game-engine/forge/timer';
 
-const { world, time } = createGame('game-container');
+const entity = world.createEntity();
 
-const spawner = world.createEntity();
-
-addTimerComponent(world, spawner, {
+addTimerComponent(world, entity, {
   tasks: [
     {
-      callback: () => spawnEnemy(),
-      delay: 2_000, // milliseconds
+      callback: () => console.log('2 seconds passed'),
+      delay: 2000,
       elapsed: 0,
     },
   ],
@@ -38,99 +46,62 @@ addTimerComponent(world, spawner, {
 world.addSystem(createTimerEcsSystem(time));
 ```
 
-Each `world.update()`, `createTimerEcsSystem` adds
-`time.deltaTimeInMilliseconds` to every task's `elapsed`. Once
-`elapsed >= delay`, it calls `task.callback()` and either removes the task
-(one-shot) or re-arms it (repeating).
+## Repeating a task
 
-## One-shot vs. repeating timers
-
-By default a task is one-shot: it fires once and is then removed from
-`tasks`. Use a one-shot timer for things like "spawn the boss after 2
-seconds" or "end the round after 30 seconds".
-
-Set `repeat: true` with an `interval` to make a task fire repeatedly. `delay`
-is the wait before the _first_ run; every run after that is spaced by
-`interval` instead:
+Set `repeat: true` and an `interval`. `delay` is the wait before the first
+run, and `interval` the wait between later runs:
 
 ```ts
-addTimerComponent(world, spawner, {
+addTimerComponent(world, entity, {
   tasks: [
     {
-      callback: () => spawnWave(),
-      delay: 1_000, // first wave after 1s
+      callback: () => console.log('tick'),
+      delay: 1000,
       elapsed: 0,
       repeat: true,
-      interval: 5_000, // every 5s after that
-      runsSoFar: 0,
+      interval: 500,
     },
   ],
 });
 ```
 
-:::caution
-`repeat: true` only takes effect when `interval` is also set. A task with
-`repeat: true` but no `interval` runs once and is removed, like a one-shot
-task.
-:::
-
-### Limiting repeats with `maxRuns`
-
-Add `maxRuns` to stop a repeating task after a fixed number of executions,
-for example a damage-over-time effect that ticks three times before expiring:
-
-```ts
-{
-  callback: () => applyPoisonTick(),
-  delay: 500,
-  elapsed: 0,
-  repeat: true,
-  interval: 500,
-  maxRuns: 3,
-  runsSoFar: 0,
-}
-```
+A repeating task runs until it's removed. Set `maxRuns` to remove it after
+that many runs. `runsSoFar` counts its runs.
 
 :::caution
-Always include `runsSoFar: 0` on a repeating task, even though it is an
-optional field on [`TimerTask`](/Forge/docs/api/interfaces/TimerTask). The
-system increments `runsSoFar` directly each run; if it starts as
-`undefined`, that increment produces `NaN`, and `NaN >= maxRuns` is always
-`false`. Without `runsSoFar: 0`, a `maxRuns` task never stops repeating.
+`repeat: true` has no effect without an `interval`: the task runs once and
+is removed.
 :::
 
-## Timers and `timeScale`
+## Adding a task to an existing timer
 
-Because `createTimerEcsSystem` advances tasks using
-`time.deltaTimeInMilliseconds`, every timer is affected by
-[`time.timeScale`](/Forge/docs/api/classes/Time#timescale). Setting
-`timeScale` to `0` to pause your game pauses every timer too, and slow motion
-slows timers down by the same factor. See [Time](../common/time.md) for more
-on `timeScale`.
-
-## Adding and removing tasks at runtime
-
-`tasks` is a plain array on the component, so you can push or splice tasks at
-any time, for example in response to a gameplay event:
+`tasks` is an array, so push a new task onto it:
 
 ```ts
-const timer = world.getComponent(spawner, TimerId);
+import { TimerId } from '@forge-game-engine/forge/timer';
 
-timer?.tasks.push({
-  callback: () => triggerExplosion(),
-  delay: 3_000,
+const timer = world.getComponentRequired(entity, TimerId);
+
+timer.tasks.push({
+  callback: () => console.log('3 seconds passed'),
+  delay: 3000,
   elapsed: 0,
 });
 ```
 
-A task added this frame is not evaluated until the next `world.update()`, so
-even a `delay` of `0` will not fire until the following frame.
+The task's time starts counting on the timer system's next update.
 
-## Performance notes
+## Removing a task
 
-`createTimerEcsSystem` returns early for any entity whose `tasks` array is
-empty, so giving an entity a `TimerEcsComponent` "just in case" costs nothing
-until a task is added. When tasks are present, the system walks them
-back-to-front each frame so it can `splice` out completed one-shot tasks (and
-repeating tasks that hit `maxRuns`) in place, without skipping or re-visiting
-entries.
+Remove a task from `tasks` to cancel it before it runs:
+
+```ts
+const index = timer.tasks.indexOf(task);
+
+if (index !== -1) {
+  timer.tasks.splice(index, 1);
+}
+```
+
+Removing the `TimerEcsComponent` with `world.removeComponent(entity, TimerId)`,
+or removing the entity, cancels all of its tasks.

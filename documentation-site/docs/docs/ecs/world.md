@@ -4,12 +4,14 @@ sidebar_position: 2
 
 # World
 
-`EcsWorld` is the central coordinator for ECS in the engine. It:
+[`EcsWorld`](/Forge/docs/api/classes/EcsWorld) holds a set of entities,
+their components and tags, and the systems that process them. It:
 
+- creates and removes entities
 - stores component data grouped by component key
 - stores registered systems
-- allows you to query for entities by component keys and tags
-- runs systems when you call `update()` (this is the world tick)
+- answers queries for entities by component keys and tags
+- runs its systems when you call `update()` (one world tick)
 
 ## Creating a new entity in the world
 
@@ -41,8 +43,9 @@ new handle, so the removed entity's handle never refers to the new one.
 Removing an entity also removes its children, their children, and so on (see
 [Parenting entities](#parenting-entities)). They're removed first, depth first,
 so `onEntityRemoved` is raised for every descendant before the entity itself.
-While those events are raised the entity is already not alive, but still has
-its components, so a listener can read them.
+While the descendants' events are raised, the entity is already not alive but
+still has its components, so a listener for a descendant can read its
+ancestors' components.
 
 A system's query result is taken before the system runs, so removing an entity
 can remove other entities later in the same result: its descendants. A loop
@@ -71,10 +74,10 @@ transform follows its parent's (see
 parent. The world keeps the hierarchy, so set and clear parents through it:
 
 ```ts
-world.setParent(turret, tank); // turret is now a child of tank
-world.getParent(turret); // tank
-world.getChildren(tank); // [turret]
-world.removeParent(turret); // turret is a root entity again
+world.setParent(child, parent); // child is now a child of parent
+world.getParent(child); // parent
+world.getChildren(parent); // [child]
+world.removeParent(child); // child is a root entity again
 ```
 
 - `setParent` replaces any parent the child already has, and keeps its local
@@ -120,21 +123,19 @@ world.removeComponent(entity, Position);
 
 ## Tagging an entity
 
-Tags behave like lightweight, boolean components. Create a tag key with
-`createTagId(name)` and call `addTag(entity, tagKey)` to mark an entity with the tag.
+A tag is a component with no data. Create a tag key with `createTagId(name)`
+and call `addTag(entity, tagKey)` to mark an entity with the tag.
 
 ```ts
 import { createTagId } from '@forge-game-engine/forge/ecs';
 
-const Enemy = createTagId('Enemy');
-world.addTag(entity, Enemy);
+const Selected = createTagId('Selected');
+world.addTag(entity, Selected);
 ```
 
-Tags differ from normal components in that they carry no payload (they are stored
-internally as a boolean) and are not returned as part of the `components` array
-passed to a system's `update` method. They are similar in that they are indexed by
-the world and can be used in queries. See the [Component docs](component.md)
-for details on component keys and tag creation.
+Tags aren't returned in the `components` array passed to a system's `update`
+method, but queries can require them. `removeComponent(entity, tagKey)`
+removes a tag. See [Component](component.md#tags).
 
 ## Querying for entities
 
@@ -154,17 +155,13 @@ for (let i = 0; i < entities.length; i++) {
 }
 ```
 
-Prefer using systems and `query` declarations rather than manual queries in
-application code. Manual queries have a runtime cost and often indicate that
-logic that should live in a system is being executed ad-hoc; consult the
-[Component docs](component.md) for patterns.
-
 :::caution
-Calling `query` frequently or on large component sets can be
-expensive. Use systems with declared `query` arrays for per-frame processing.
+Each `query` call builds new arrays of every matching entity and component.
+For per-frame processing, register a system with a `query` instead of
+calling `world.query` every frame.
 :::
 
-## Add a system
+## Adding a system
 
 Create a system object that declares a `query` (component keys), optional `tags`,
 and an `update(world, queryResult)` method. Register it with `addSystem(system, options?)`.
@@ -184,8 +181,8 @@ const moverSystem = {
 world.addSystem(moverSystem);
 ```
 
-`name` is optional, but giving your systems one makes any ordering error
-messages (see below) much easier to read.
+`name` is optional. It identifies the system in error messages, such as
+an ordering error.
 
 :::info[Systems With No Ordering Constraint]
 When multiple systems are registered with no ordering relationship between
@@ -194,23 +191,21 @@ systems added later.
 :::
 
 :::info[Adding a System During a World Tick]
-If a system is added while the world is iterating systems during `update()`,
-it will not run as part of the current tick. Newly added systems become active
-on the next tick.
+If a system is added while the world is running its systems during
+`update()`, it doesn't run in the current tick. It runs from the next tick.
 :::
 
 ### Ordering systems with `before`/`after`
 
-Rather than an arbitrary numeric priority, order a system relative to
-specific other systems by passing `before`/`after` to `addSystem`. Every
-system referenced this way must already be registered.
+Order a system relative to specific other systems by passing
+`before`/`after` to `addSystem`. Every system referenced this way must
+already be registered.
 
 ```ts
 const gravitySystem = { name: 'gravity', query: [RigidBody], update() {} };
 world.addSystem(gravitySystem);
 
-// integrationSystem always runs after gravitySystem, regardless of where
-// either one sits in your setup code
+// integrationSystem runs after gravitySystem
 const integrationSystem = {
   name: 'integration',
   query: [RigidBody, Position],
@@ -219,17 +214,17 @@ const integrationSystem = {
 world.addSystem(integrationSystem, { after: [gravitySystem] });
 ```
 
-`before`/`after` can each take multiple systems, and the world resolves
-transitive dependencies for you - if C is `after` B and B is `after` A, C runs
-after A too, even though C never references A directly. Registering a
+`before`/`after` can each take multiple systems, and ordering is
+transitive: if C is `after` B and B is `after` A, C runs after A too, even
+though C never references A. Registering a
 `before`/`after` relationship that would create a cycle, or that references a
 system that hasn't been registered yet, throws.
 
 ### Grouping systems
 
-A system group is a named, coarser unit of ordering: order a whole group of
-systems relative to another group, instead of wiring up `before`/`after`
-between every individual system. Register a group with `addSystemGroup`
+A system group is a named set of systems that is ordered as a unit: a whole
+group runs before or after another group, without `before`/`after` between
+the individual systems. Register a group with `addSystemGroup`
 before adding systems into it, then pass `group` to `addSystem`.
 
 ```ts
@@ -245,13 +240,10 @@ world.addSystem(integrationSystem, {
 });
 ```
 
-Every `EcsWorld` has a `defaultSystemGroup`, which is where `addSystem` puts
-a system when you don't specify a `group`. Order your own groups relative to
-`world.defaultSystemGroup` (as above) to consistently run before or after
-every system a caller registers without specifying a group - useful for
-infrastructure that must run first or last regardless of what game code adds
-later, the same role the old `SystemRegistrationOrder.early`/`late` priorities
-used to serve.
+Every `EcsWorld` has a `defaultSystemGroup`, which `addSystem` registers a
+system into when you don't specify a `group`. A group ordered relative to
+`world.defaultSystemGroup` (as above) runs before or after every system
+registered without a `group`, including systems added later.
 
 `before`/`after` passed to `addSystem` can only reference systems in the same
 group; ordering systems across different groups is done by ordering their
@@ -284,7 +276,24 @@ containing a start-of-tick group throws.
 tick, whether the system or group runs. See
 [System](./system.md#run-conditions).
 
-## Remove a system
+## Running a world tick
+
+Call `world.update()` to run the registered systems for a single frame. For
+each registered system, the world queries `query` (and `tags`) and invokes the
+system's `update` exactly once with the batch of matches, regardless of how
+many entities matched (including zero). A system or group whose `runIf`
+returns `false` is skipped, and the skipped system isn't queried.
+
+A [`Game`](game.md) calls `update()` on its worlds every frame. Call
+`update()` directly to run one tick without a `Game`, for example in a unit
+test.
+
+```ts
+// advance one tick in a test
+world.update();
+```
+
+## Removing a system
 
 Remove a system with `removeSystem(system)`.
 
@@ -293,49 +302,8 @@ world.removeSystem(moverSystem);
 ```
 
 :::info[Removing a System During a World Tick]
-If a system is removed while the world is iterating systems during `update()`,
-it will still run as part of the current tick. The removal is only committed at the end of the update cycle.
+If a system is removed while the world is running its systems during
+`update()`, it still runs in the current tick: the world takes the tick's
+list of systems before running the first one. Its `cleanup` runs when
+`removeSystem` is called.
 :::
-
-## Executing a world tick
-
-Call `world.update()` to run the registered systems for a single frame. For
-each registered system, the world queries `query` (and `tags`) and invokes the
-system's `update` exactly once with the batch of matches, regardless of how
-many entities matched (including zero). A system or group whose `runIf`
-returns `false` is skipped, and the skipped system isn't queried.
-
-In normal usage you don't call `update()` manually. The main loop in `Game` calls it for you every frame. Calling `update()` directly is useful for unit tests.
-
-```ts
-// advance one tick in a test
-world.update();
-```
-
-## World setup example
-
-A minimal setup showing `createGame`, creating an entity, adding a component and
-registering a system:
-
-```ts
-import { createGame } from '@forge-game-engine/forge/utilities';
-import { createComponentId } from '@forge-game-engine/forge/ecs';
-
-const { world } = createGame('demo-container');
-
-const Position = createComponentId<{ x: number; y: number }>('Position');
-
-const entity = world.createEntity();
-world.addComponent(entity, Position, { x: 12, y: 10 });
-
-const logPositionSystem = {
-  query: [Position],
-  update(world, { components: [positions] }) {
-    for (const position of positions) {
-      console.log(`position: [${position.x}, ${position.y}]`); // prints: "position: [12, 10]" every frame
-    }
-  },
-};
-
-world.addSystem(logPositionSystem);
-```

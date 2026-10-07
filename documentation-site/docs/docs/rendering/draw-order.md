@@ -4,9 +4,9 @@ sidebar_position: 2.5
 
 # Draw Order
 
-When sprites and text overlap, the one drawn last is on top. A camera
-draws everything it sees in one order, decided by four things, each one
-only breaking ties left by the one before:
+Where sprites and text overlap, the one drawn last is on top. A camera
+draws its sprites and text in one order, sorted by four keys. Each key
+only orders items the keys before it leave equal:
 
 1. **Layer**: the sprite's or text's own `layer`. A lower layer draws
    first.
@@ -19,83 +19,83 @@ only breaking ties left by the one before:
    each followed by its children, parents before children and siblings in
    the order they were parented.
 
-Hierarchy order is unique for every entity, so the order never depends on
-how entities happen to be stored, and it doesn't change from frame to frame
-unless you change one of these four things. An entity's sprite draws
+Every entity has its own place in hierarchy order, so the order is the same
+every frame until one of these four keys changes. An entity's sprite draws
 before its text.
 
-Draw order is per camera. Which camera's output ends up on top of another
-is decided by the cameras' own `layer` (see
-[Multipass Rendering](./multipass-rendering.md)).
+Draw order applies within one camera. Which camera's output is drawn over
+another's is set by the cameras' own `layer` (see
+[Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)).
+UI hit testing checks elements in the reverse of this order, without
+Y-sorting (see
+[Buttons and Interaction](../ui/buttons-and-interaction.md#hit-testing)).
 
 ## Drawing in hierarchy order
 
 Without a `DrawOrderEcsComponent`, everything in a layer draws in hierarchy
-order. Create backgrounds before what moves over them, and parent things
-that belong together, and they draw in the right order:
+order. A root entity created later draws on top of one created earlier, and
+a child draws on top of its parent:
 
 ```ts
 const background = world.createEntity(); // drawn first
-const ship = world.createEntity();
-const cockpit = world.createEntity();
+const body = world.createEntity(); // drawn on top of background
+const detail = world.createEntity();
 
-world.setParent(cockpit, ship); // drawn right after the ship, on top of it
+world.setParent(detail, body); // drawn right after body, on top of it
 ```
 
-A root entity keeps its place by creation even when entities created
-before it are removed. An entity unparented with `removeParent` goes back
-to its own creation among the roots.
+A root entity keeps its place in creation order when entities created
+before it are removed. An entity unparented with `removeParent` returns to
+its own place in creation order among the roots.
 
-## Putting things on a layer
+## Putting sprites and text on a layer
 
-Things that must stay behind or in front of everything else, whatever was
-created when, go on their own layer. Give them a lower or higher `layer`:
+Sprites and text that stay behind or in front of everything else,
+whatever order their entities were created in, go on their own layer. Give
+them a lower or higher `layer`:
 
 ```ts
-const sky = addSpriteComponent(world, skyEntity, { ...skySprite, layer: -1 });
-const hud = addTextComponent(world, hudEntity, { ...hudText, layer: 1 });
+addSpriteComponent(world, backgroundEntity, {
+  ...backgroundSprite,
+  layer: -1,
+});
+addTextComponent(world, labelEntity, { ...labelText, layer: 1 });
 ```
 
-A layer is a number on the sprite or text, so it isn't inherited by
-children.
+A layer is a field of the sprite or text component, so children don't
+inherit it.
 
 ## Ordering relative to the parent
 
-Add a `DrawOrderEcsComponent` to move an entity, and everything parented
-under it, forwards or backwards within its layer:
+Add a [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
+with [`addDrawOrderComponent`](/Forge/docs/api/functions/addDrawOrderComponent)
+to move an entity, and every entity parented under it, forwards or
+backwards within its layer:
 
 ```ts
-world.setParent(flame, ship);
-addDrawOrderComponent(world, flame, { order: -1 });
+import { addDrawOrderComponent } from '@forge-game-engine/forge/rendering';
+
+world.setParent(child, parent);
+addDrawOrderComponent(world, child, { order: -1 });
 ```
 
-The `order` is an integer from `-4096` to `4096`, and it's relative: an
-entity's world order is its own `order` plus its parent's world order. A
-flame at `-1` draws behind every entity at its ship's level, not only
-behind its own ship, and keeps doing so wherever the ship moves, with no
-code that runs every frame. An order on an entity without a sprite moves
-its whole subtree, so a container can raise a group of sprites at once.
+`order` is an integer from `-4096` to `4096`, and it's relative: an
+entity's world order is its own `order` plus its parent's world order. The
+child at `-1` draws behind every entity at its parent's world order, not
+only behind its own parent. An order on an entity without a sprite or text
+moves its whole subtree.
 
 ## Sorting by height on screen
 
-Top-down and isometric games draw whatever is lower on the screen in front.
-Set `ySort` on their camera:
+For a top-down or isometric view, set `ySort` on the camera, so whatever
+is lower on screen is drawn in front:
 
 ```ts
 const camera = createCamera(world, { ySort: true });
 ```
 
 The camera then sorts by Y after layer and world order: a higher Y draws
-first. Each root entity's subtree sorts by the root's Y, so a character's
-sword stays with the character rather than sorting by its own Y. A game
-that parents its whole scene under one root therefore gets no Y-sorting.
-A root without a position sorts as Y `0`.
-
-## Draw order and UI input
-
-UI elements are entities too, so a UI canvas draws in hierarchy order:
-a panel's label, a child of the panel, draws on top of the panel. UI
-raycasts hit, and navigation that starts with nothing focused picks, by
-the same order: an element raised with a `DrawOrderEcsComponent` both
-draws above its later siblings and takes clicks before them. An element
-without a sprite or text (an invisible hit region) counts as layer `0`.
+first. Every entity sorts by the Y of its root entity (its topmost
+ancestor), so an entity's children sort with it rather than by their own Y.
+Entities under one shared root all sort by that root's Y, so they aren't
+Y-sorted against each other. A root without a position sorts as Y `0`.

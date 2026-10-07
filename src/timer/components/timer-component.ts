@@ -12,16 +12,22 @@ export interface TimerTask {
 
   /**
    * Milliseconds until first execution for one-shot timers, or initial delay before first run for repeating timers.
+   * After each run of a repeating task, the timer system sets it to `interval`.
    */
   delay: number;
 
   /**
-   * Elapsed time in milliseconds tracked by the TimerSystem.
+   * Elapsed time in milliseconds tracked by the timer system. Start a new
+   * task at `0`. The timer system adds `time.deltaTimeInMilliseconds` to it on
+   * every update, and sets it back to `0` after each run of a repeating task,
+   * so time past the deadline isn't carried into the next run.
    */
   elapsed: number;
 
   /**
    * If true, this task will repeat periodically after the initial delay.
+   * Only takes effect when `interval` is also set; without it, the task runs
+   * once and is removed.
    */
   repeat?: boolean;
 
@@ -36,7 +42,9 @@ export interface TimerTask {
   maxRuns?: number;
 
   /**
-   * Counter tracking how many times this task has been executed.
+   * Counter tracking how many times this repeating task has been executed.
+   * The timer system increments it after each run, treating an unset value
+   * as `0`.
    */
   runsSoFar?: number;
 }
@@ -45,6 +53,10 @@ export interface TimerTask {
  * ECS-style component interface for a timer component.
  */
 export interface TimerEcsComponent {
+  /**
+   * The entity's pending tasks. The timer system removes a task once it has
+   * run for the last time. Tasks can be added and removed at any time.
+   */
   tasks: TimerTask[];
 }
 

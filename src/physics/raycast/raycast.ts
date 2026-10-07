@@ -86,10 +86,10 @@ const defaultRaycastOptions: RaycastOptions = {
 
 /**
  * Casts a line segment from `start` to `end` against every entity in
- * `world` with a {@link ColliderEcsComponent}, and returns every point where
- * it intersects one. Use it for hitscan weapons, line-of-sight checks, and
- * ground/wall detection - anything that needs to ask "what's between these
- * two points?" without running a full simulation step.
+ * `world` with a {@link ColliderEcsComponent} and a `PositionEcsComponent`,
+ * and returns one hit for each collider it crosses, at the intersection
+ * closest to `start`. Use it for hitscan weapons, line-of-sight checks, and
+ * ground or wall detection.
  *
  * Before testing an entity's exact collider shape, `raycast` skips any
  * collider whose {@link ColliderEcsComponent.aabb} doesn't overlap the
@@ -101,7 +101,7 @@ const defaultRaycastOptions: RaycastOptions = {
  * @param start - The ray's world-space start point.
  * @param end - The ray's world-space end point.
  * @param options - Sorting and filtering; see {@link RaycastOptions}.
- * @returns Every entity the ray intersects, as a {@link RaycastHit}.
+ * @returns A {@link RaycastHit} for each collider the ray crosses.
  */
 export function raycast(
   world: EcsWorld,

@@ -5,7 +5,9 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  * ECS-style component interface for flipping sprites.
  */
 export interface FlipEcsComponent {
+  /** Whether the sprite is mirrored horizontally. */
   flipX: boolean;
+  /** Whether the sprite is mirrored vertically. */
   flipY: boolean;
 }
 

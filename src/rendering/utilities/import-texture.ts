@@ -6,13 +6,13 @@ import type { Texture } from '../texture.js';
  */
 export interface ImportTextureOptions {
   /**
-   * How many pixels of the texture span one world unit, mirroring a texture
-   * asset's "Pixels Per Unit" import setting in engines like Unity. The
-   * resulting `worldWidth`/`worldHeight` are `width / pixelsPerUnit` and
-   * `height / pixelsPerUnit`. This is independent of `CameraView.pixelsPerUnit`,
-   * which converts world units to *screen* pixels at render time based on
-   * the camera; `pixelsPerUnit` here converts *texture* pixels to world
-   * units once, at import time. Defaults to `100`.
+   * How many pixels of the texture span one world unit. The resulting
+   * `worldWidth`/`worldHeight` are `width / pixelsPerUnit` and
+   * `height / pixelsPerUnit`. This is independent of
+   * `CameraView.pixelsPerUnit`, which converts world units to *screen*
+   * pixels at render time based on the camera; `pixelsPerUnit` here
+   * converts *texture* pixels to world units once, at import time.
+   * Defaults to `100`.
    */
   pixelsPerUnit: number;
 

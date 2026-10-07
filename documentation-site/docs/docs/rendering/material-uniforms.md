@@ -2,134 +2,83 @@
 sidebar_position: 6
 ---
 
-# Material Uniforms
+# Materials
 
-A [`Material`](/Forge/docs/api/classes/Material) pairs a shader program with
-the values of its uniforms. Set a uniform with
-[`setUniform`](/Forge/docs/api/classes/Material#setuniform); the value is
-uploaded every time the material is bound for drawing, so set it once for a
-constant and again whenever it changes (for example, each frame for a time
-uniform).
+A [`Material`](/Forge/docs/api/classes/Material) is a shader program (a
+vertex shader and a fragment shader) and the values of its uniforms.
+Sprites draw with a [`SpriteMaterial`](/Forge/docs/api/classes/SpriteMaterial)
+(see [Drawing sprites with a custom shader](./sprites.md#drawing-sprites-with-a-custom-shader)),
+and [full-screen passes](./multipass-rendering.md#writing-a-full-screen-pass)
+draw with any `Material`.
+
+## Registering a shader
+
+A shader's source names the shader with `#pragma forge name(...)`. Wrap the
+source in a [`ForgeShaderSource`](/Forge/docs/api/classes/ForgeShaderSource)
+and add it to the render context's
+[`shaderCache`](/Forge/docs/api/classes/ShaderCache):
 
 ```ts
-import {
-  createTexture,
-  ForgeShaderSource,
-  Material,
-  RenderContext,
-} from '@forge-game-engine/forge/rendering';
+import { ForgeShaderSource } from '@forge-game-engine/forge/rendering';
 
-const shockwaveShader = `#version 300 es
-#pragma forge name(shockwave.frag)
+const tintShader = `#version 300 es
+#pragma forge name(tint.frag)
 
 precision highp float;
 
-uniform sampler2D u_distortion;
-uniform float u_time;
-uniform vec4 u_waves[4]; // xy = center, z = radius, w = strength
+uniform sampler2D u_texture;
+uniform vec4 u_tint;
 
-// ...
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+void main() {
+  fragColor = texture(u_texture, v_texCoord) * u_tint;
+}
 `;
 
-const createShockwaveMaterial = (
-  renderContext: RenderContext,
-  distortionImage: HTMLImageElement,
-): Material => {
-  const { shaderCache } = renderContext;
-
-  shaderCache.addShader(new ForgeShaderSource(shockwaveShader));
-
-  const material = new Material(
-    renderContext,
-    shaderCache.getShader('passthrough.vert'),
-    shaderCache.getShader('shockwave.frag'),
-  );
-
-  material.setUniform(
-    'u_distortion',
-    createTexture(renderContext, distortionImage),
-  );
-  material.setUniform('u_time', 0);
-  material.setUniform('u_waves', new Float32Array(16));
-
-  return material;
-};
+renderContext.shaderCache.addShader(new ForgeShaderSource(tintShader));
 ```
 
-A material that draws sprites is created with `createSpriteMaterial`
-instead, which pairs a fragment shader with the sprite vertex shader (see
-[Drawing sprites with a custom shader](./sprites.md#drawing-sprites-with-a-custom-shader)).
-Its uniforms are set the same way.
+`#pragma forge include(<name>)` inserts one of the engine's shader
+includes, such as `spriteMask`, into the source. The shader cache already
+holds the engine's own shaders, such as `sprite.vert` and
+`passthrough.vert`.
 
-## Materials that share shaders
+## Creating a material
 
-Materials created from the same two shaders share one linked WebGL program:
-the render context compiles and links a shader pair the first time a
-material uses it, and every later material with the same pair reuses it.
-Creating a material is cheap, so create one material per set of uniform
-values (one per enemy color, say) rather than changing one material's
-values between draws.
-
-Each material keeps its own values. Binding a material gives every uniform
-the program kept a value: the one the material set, or a default if it set
-none. The default is zero for numbers, vectors and matrices, and the render
-context's [`blackTexture`](./textures.md#the-white-and-black-textures) for
-samplers. A material never draws with values another material set on the
-shared program.
-
-## Which uniforms you can set
-
-A material's uniforms are the ones its two shaders declare. `Material` reads
-the `uniform` declarations from the shader sources (after `#include`s are
-resolved), so you can set any declared uniform:
-
-- If the linked program uses the uniform, its value is uploaded every time
-  the material is bound.
-- If the GLSL compiler removed the uniform because nothing it can prove
-  affects the output reads it, the value is still checked against the
-  declared type and stored, and there's nothing to upload. Which uniforms a
-  compiler removes depends on the GPU and driver, so this keeps the same
-  code working on every device. It also means commenting out the code that
-  reads a uniform doesn't break the systems that set it.
-
-Setting a name that neither shader declares throws, listing the declared
-uniforms and naming both shaders, so a typo fails on the first call:
-
-```txt
-Uniform "u_tme" is not declared in material "passthrough.vert" + "shockwave.frag".
-Declared uniforms: u_distortion, u_time, u_waves.
-```
-
-[`hasUniform`](/Forge/docs/api/classes/Material#hasuniform) returns whether
-a material's shaders declare a uniform, without throwing. To check whether a
-uniform actually reaches the GPU while debugging a shader, ask the program
-for its location:
+Create a material from a vertex shader and a fragment shader in the shader
+cache:
 
 ```ts
-const isActive = gl.getUniformLocation(material.program, 'u_time') !== null;
+import { Material } from '@forge-game-engine/forge/rendering';
+
+const { shaderCache } = renderContext;
+
+const tintMaterial = new Material(
+  renderContext,
+  shaderCache.getShader('passthrough.vert'),
+  shaderCache.getShader('tint.frag'),
+);
 ```
 
-`Material` reads declarations of the form
-`uniform [precision] <type> <name>[<size>], ...;` (or `<type>[<size>] <name>`),
-with an optional `layout(...)` qualifier. An array's size must be an integer
-literal, a `#define NAME <integer>`, or a `const int NAME = <integer>;`;
-anything else, such as `u_waves[COUNT * 2]`, throws when the material is
-created. Two declarations of the same name must agree on the type and size,
-in one shader and across the two. `#if`/`#ifdef` blocks aren't evaluated, so
-a uniform declared in a branch that's compiled out is still settable, and
-behaves like one the compiler removed.
+The render context compiles and links a pair of shaders the first time a
+material uses them, and every later material with the same pair shares the
+linked program. Each material keeps its own uniform values, so create one
+material for each set of values (for example one per color) rather than
+changing one material's values between draws.
 
-Uniform blocks (`uniform Block { ... };`) aren't supported. A struct uniform
-(`uniform Light u_light;`) can't be set by its own name; set its members
-(`u_light.color`) instead, which works only while the program uses them.
-The same applies to a uniform whose type is spelled with a macro
-(`uniform TINT_TYPE u_tint;`): write the GLSL type out so `Material` can
-read it.
+## Setting uniforms
 
-## Which value fits which uniform
+[`setUniform`](/Forge/docs/api/classes/Material#setuniform) sets a
+uniform's value:
 
-The upload is chosen from the type the uniform is declared with in GLSL, so
-the value has to fit that type:
+```ts
+tintMaterial.setUniform('u_texture', texture);
+tintMaterial.setUniform('u_tint', new Float32Array([1, 0.5, 0.5, 1]));
+```
+
+The value has to fit the type the uniform is declared with in GLSL:
 
 | GLSL type                          | Value                                                           |
 | ---------------------------------- | --------------------------------------------------------------- |
@@ -144,56 +93,63 @@ the value has to fit that type:
 | `bool` / `bvec2`, `bvec3`, `bvec4` | `boolean` (`bool` only) or `Int32Array` of length 1, 2, 3, or 4 |
 | `sampler2D`                        | [`Texture`](./textures.md)                                      |
 
-[`setColorUniform`](/Forge/docs/api/classes/Material#setcoloruniform) fills a
-`vec4`, and
-[`setVectorUniform`](/Forge/docs/api/classes/Material#setvectoruniform) fills
-a `vec2` or `vec3`, depending on whether the vector has a `z`.
+[`setColorUniform`](/Forge/docs/api/classes/Material#setcoloruniform) sets
+a `vec4` from a `Color`, and
+[`setVectorUniform`](/Forge/docs/api/classes/Material#setvectoruniform)
+sets a `vec2` or `vec3` from a vector, depending on whether it has a `z`.
+`sampler2D` is the only sampler type a material supports.
 
-`sampler2D` is the only sampler type a material supports. A shader that
-declares any other sampler (`sampler3D`, `samplerCube`, `isampler2D`, and so
-on) throws when its program is linked, which is when the first material
-using it is created.
+`setUniform` throws for a name that neither shader declares, listing the
+declared uniforms, and for a value that doesn't fit the declared type.
+[`hasUniform`](/Forge/docs/api/classes/Material#hasuniform) returns whether
+the shaders declare a uniform.
 
-`setUniform` throws when the value doesn't fit, naming the declared type,
-what it accepts, and what it received. A `Float32Array` of 16 floats is a
-`mat4` only for a uniform declared `mat4`; the same array set on a
-`vec4[4]` or `float[16]` uploads four `vec4`s or sixteen `float`s.
+A uniform the GLSL compiler removed because the shader doesn't use it can
+still be set: the value is checked and stored, and isn't uploaded. Which
+uniforms a compiler removes depends on the GPU and driver.
 
-## Uniform arrays
+A uniform the material hasn't set is drawn with zero, or with the render
+context's [`blackTexture`](./textures.md#the-white-and-black-textures) for
+a sampler, not with a value another material set on the shared program.
 
-A uniform array can be set by its declared name (`u_waves`) or by the name
-WebGL reports for it (`u_waves[0]`); both refer to the same uniform. Pass
-the elements flattened into one typed array:
+## Setting uniform arrays
+
+Set a uniform array by its declared name (`u_points`), with its elements
+flattened into one typed array:
 
 ```ts
-// uniform vec4 u_waves[4];
-const waves = new Float32Array(4 * 4);
+// uniform vec4 u_points[4];
+const points = new Float32Array(4 * 4);
 
-waves.set([0.25, 0.5, 0.1, 0.03], 0); // element 0
-waves.set([0.75, 0.5, 0.2, 0.02], 4); // element 1
+points.set([0.25, 0.5, 0.1, 0.03], 0); // element 0
+points.set([0.75, 0.5, 0.2, 0.02], 4); // element 1
 
-material.setUniform('u_waves', waves);
+material.setUniform('u_points', points);
 ```
 
 The array's length must be a whole number of elements, and no more than the
-declared size. A shorter array updates only the leading elements; the rest
-keep whatever was last uploaded to the program, which can be another
-material's values when materials share shaders. To control every element,
-upload the full length.
+declared size.
 
-Sampler arrays (`uniform sampler2D u_textures[4]`) can't be set through a
-`Material`. Declare one sampler uniform per texture instead.
+:::caution
+An array shorter than the declared size sets only the leading elements. The
+other elements keep the values last uploaded to the program, which can be
+another material's when materials share shaders. Set the full length to
+control every element.
+:::
 
 ## When values are uploaded
 
-Values are read when the material is bound, not when they're set. A
-`Float32Array`, `Matrix3x3`, or `Vector2` you keep and mutate after
-`setUniform` uploads its current contents on the next draw. That lets you
-update one array in place each frame instead of allocating a new one, and
-it means mutating an array you passed to a material changes what that
-material draws.
+A material uploads its uniform values each time it's bound for drawing, not
+when they're set. A `Float32Array`, `Matrix3x3` or `Vector2` passed to
+`setUniform` and changed afterwards is uploaded with its contents at the
+next draw. A value that changes every frame, such as a time uniform, can be
+one array updated in place:
 
-Textures are bound to consecutive texture units in the order their uniforms
-appear in the program, starting at unit 0 each time the material is bound.
-A texture that has been [disposed](./textures.md#disposing-a-texture)
-throws when the material is bound.
+```ts
+const time = new Float32Array(1);
+
+material.setUniform('u_time', time);
+
+// Each frame:
+time[0] += deltaSeconds;
+```
