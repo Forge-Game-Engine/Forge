@@ -159,6 +159,7 @@ describe('createToneMapEcsSystem', () => {
       clearColor: vi.fn(),
       clear: vi.fn(),
       drawArrays: vi.fn(),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);

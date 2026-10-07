@@ -238,6 +238,8 @@ describe('createRenderEcsSystem', () => {
       ONE: 'ONE',
       SRC_ALPHA: 'SRC_ALPHA',
       ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);

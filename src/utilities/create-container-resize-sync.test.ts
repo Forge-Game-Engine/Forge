@@ -116,6 +116,8 @@ describe('createContainerResizeSync', () => {
     const mockGl = {
       createBuffer: vi.fn().mockReturnValue({}),
       viewport: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);

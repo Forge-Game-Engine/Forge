@@ -503,8 +503,14 @@ describe('MyClass', () => {
   `Texture`'s constructor makes when a sampler is active. Report the real GL type enum (e.g.
   `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size` for
   what it does return, since undeclared active uniforms (struct members)
-  are typed from it. Sampler values are `Texture`s (`new Texture(mockGl)`),
-  and `bindTexture` receives `texture.glTexture`
+  are typed from it. Sampler values are `Texture`s
+  (`new Texture(renderContext)`), and `bindTexture` receives
+  `texture.glTexture`
+- A mocked WebGL context behind a real `RenderContext` needs
+  `getExtension` (the render context requests `EXT_color_buffer_float` when
+  it's created) and `isContextLost` (returning `false`; GPU resources check
+  it before touching GL). `src/rendering/context-loss.test.ts` shows a mock
+  that can be lost and restored
 - Fakes shared by several test files go in a `test-helpers/` folder inside
   the module (e.g. `src/audio/test-helpers/fake-audio-context.ts`, a
   stand-in for the Web Audio API, which jsdom lacks). `tsconfig.build.json`
@@ -851,6 +857,35 @@ spawn shape and direction) works in that entity's frame, turned by its
 `rotation.world`, the way Unity and Godot emitters follow their transform.
 `documentation-site/docs/docs/math/angles-and-rotation.md` covers the
 convention and which way a sprite faces.
+
+### GPU Resources and Context Loss
+
+The browser can take the WebGL context away at any time, and every GL
+object goes with it. `RenderContext` survives that by rebuilding every GPU
+resource when the context is restored, so every GL object has to belong to
+an engine wrapper that can recreate it from data it keeps on the CPU side:
+`Texture` (its last source), `ShaderProgram` (its shader sources, cached by
+the render context), `RenderTarget` (its size and format) and `Geometry`
+(its vertex data). Each registers itself with its render context when it's
+created (`gpu-resource-registry.ts`, which the package doesn't export) and
+unregisters in `dispose`.
+
+- Don't keep a raw `WebGLTexture`, `WebGLBuffer`, `WebGLProgram` or
+  `WebGLFramebuffer` across frames, or cache one keyed by the
+  `WebGL2RenderingContext` (that object survives a restore, so the cache
+  would hand out dead handles). Read it from its wrapper when drawing, and
+  put shared resources on the render context (`quadGeometry`,
+  `instanceBuffer`, `whiteTexture`).
+- While `renderContext.isContextLost`, creating or resizing a resource
+  records what to create and touches no GL, and checks that read GL state
+  (compile/link status, framebuffer completeness) are skipped, since a lost
+  context fails all of them.
+- Engine draw functions (the render system's batches, `drawFullscreenQuad`,
+  the terrain render system) return early while the context is lost, so
+  game systems that draw through them need no guard of their own.
+
+`e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context
+with `WEBGL_lose_context`.
 
 ### Readonly Fields
 

@@ -159,6 +159,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'context-loss',
+    title: 'Context Loss',
+    description:
+      'Losing and restoring the WebGL context without reloading the page.',
+    categories: ['rendering'],
+  },
+  {
     slug: 'texture-filtering',
     title: 'Texture Filtering',
     description:

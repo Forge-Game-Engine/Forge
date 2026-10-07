@@ -106,6 +106,8 @@ describe('createPresentEcsSystem', () => {
       clearColor: vi.fn(),
       clear: vi.fn(),
       drawArrays: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -129,7 +131,7 @@ describe('createPresentEcsSystem', () => {
 
   it("draws the camera's render target texture onto the canvas", () => {
     const target = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 256,
       height: 256,
@@ -153,13 +155,13 @@ describe('createPresentEcsSystem', () => {
 
   it('presents multiple cameras independently', () => {
     const targetA = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,
@@ -175,13 +177,13 @@ describe('createPresentEcsSystem', () => {
 
   it('clears the canvas only once when layering multiple different render targets', () => {
     const targetA = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,
@@ -197,13 +199,13 @@ describe('createPresentEcsSystem', () => {
 
   it('replaces the canvas for the first layer and blends subsequent layers on top', () => {
     const targetA = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,
@@ -230,7 +232,7 @@ describe('createPresentEcsSystem', () => {
 
   it('blends every layer over the canvas, without clearing it, when a camera renders straight to the canvas', () => {
     const uiTarget = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
@@ -271,13 +273,13 @@ describe('createPresentEcsSystem', () => {
 
   it('presents in ascending layer order regardless of camera creation order', () => {
     const background = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const foreground = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,
@@ -308,13 +310,13 @@ describe('createPresentEcsSystem', () => {
 
   it('clears the canvas again on the next frame', () => {
     const targetA = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,
@@ -331,7 +333,7 @@ describe('createPresentEcsSystem', () => {
 
   it('presents a render target shared by multiple cameras only once', () => {
     const sharedTarget = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
@@ -347,7 +349,7 @@ describe('createPresentEcsSystem', () => {
 
   it('presents again on the next frame', () => {
     const target = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
@@ -363,7 +365,7 @@ describe('createPresentEcsSystem', () => {
 
   it('disables blending before drawing so the present pass replaces the canvas', () => {
     const target = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
@@ -381,13 +383,13 @@ describe('createPresentEcsSystem', () => {
 
   it('leaves blending disabled once every layer has been presented', () => {
     const targetA = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 128,
       height: 128,
     } as RenderTarget;
     const targetB = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 64,
       height: 64,

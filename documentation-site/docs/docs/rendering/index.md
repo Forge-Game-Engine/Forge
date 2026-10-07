@@ -26,3 +26,6 @@ Rendering is made of these parts:
   off-screen texture, and the post-processing effects built on it
   ([Gaussian blur](./gaussian-blur.md), [bloom](./bloom.md) and
   [HDR rendering](./hdr-rendering.md)).
+- [Context loss](./context-loss.md): what happens when the browser takes
+  the WebGL context away, and how the engine rebuilds its GPU resources
+  when it comes back.

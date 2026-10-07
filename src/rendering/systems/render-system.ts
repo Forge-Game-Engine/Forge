@@ -31,7 +31,6 @@ import {
   spriteId,
 } from '../components/index.js';
 import { computeCameraView } from '../camera-view.js';
-import { createQuadGeometry, Geometry } from '../geometry/index.js';
 import { SpriteMaterial } from '../materials/sprite-material.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
@@ -75,12 +74,11 @@ const createSpriteRenderable = (
   );
 
 /**
- * The GPU resources one render system draws with, created on its first
- * frame: the quad every instance is drawn from, a renderable per sprite
- * material, and the text renderables.
+ * The renderables one render system draws with, created on its first
+ * frame: one per sprite material, and the text renderables. Every instance
+ * is drawn from the render context's `quadGeometry`.
  */
 interface RenderResources {
-  quad: Geometry;
   getSpriteRenderable: (material: SpriteMaterial) => Renderable;
   getTextRenderables: () => TextRenderables;
 }
@@ -92,7 +90,6 @@ const createRenderResources = (
   let textRenderables: TextRenderables | null = null;
 
   return {
-    quad: createQuadGeometry(renderContext.gl),
     getSpriteRenderable: (material) => {
       let renderable = spriteRenderables.get(material);
 
@@ -290,7 +287,6 @@ const computeDrawOrder = (
 
 const includeBatch = (
   renderContext: RenderContext,
-  quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
   order: Uint32Array<ArrayBufferLike>,
@@ -304,7 +300,7 @@ const includeBatch = (
 
   renderable.material.setUniform('u_projection', projectionMatrix);
   renderable.bindBatch(gl, firstCommand);
-  quad.bind(gl, renderable.material.program);
+  renderContext.quadGeometry.bind(renderable.material);
 
   const requiredBatchSize = batchLength * renderable.floatsPerInstance;
   const buffer = ensureInstanceDataBufferCapacity(requiredBatchSize);
@@ -510,11 +506,16 @@ const isSameBatch = (a: RenderCommand, b: RenderCommand): boolean =>
 
 function flushBatches(
   renderContext: RenderContext,
-  quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
   order: Uint32Array<ArrayBufferLike>,
 ): void {
+  // Nothing can be drawn until the context is restored, and a material
+  // created while it's lost has no program to look attributes up in yet.
+  if (renderContext.isContextLost) {
+    return;
+  }
+
   let batchStart = 0;
 
   for (let i = 1; i <= order.length; i++) {
@@ -525,7 +526,6 @@ function flushBatches(
     if (isBatchBoundary) {
       includeBatch(
         renderContext,
-        quad,
         projectionMatrix,
         commands,
         order,
@@ -561,7 +561,7 @@ export const createRenderEcsSystem = (
       clearedDestinationsThisFrame.clear();
       resources ??= createRenderResources(renderContext);
 
-      const { quad, getSpriteRenderable, getTextRenderables } = resources;
+      const { getSpriteRenderable, getTextRenderables } = resources;
       const spriteRenderables: SpriteRenderableSource = {
         renderContext,
         getSpriteRenderable,
@@ -642,7 +642,7 @@ export const createRenderEcsSystem = (
 
         const order = computeDrawOrder(commands);
 
-        flushBatches(renderContext, quad, projectionMatrix, commands, order);
+        flushBatches(renderContext, projectionMatrix, commands, order);
       }
 
       renderContext.gl.disable(renderContext.gl.BLEND);

@@ -16,6 +16,11 @@ function drawTerrainMeshesForCamera(
   cameraPositionComponent: PositionEcsComponent,
   clearedDestinationsThisUpdate: Set<RenderTarget | null>,
 ): void {
+  // Nothing can be drawn until the context is restored.
+  if (renderContext.isContextLost) {
+    return;
+  }
+
   const { gl } = renderContext;
   const target = cameraComponent.renderTarget ?? null;
 
@@ -49,7 +54,7 @@ function drawTerrainMeshesForCamera(
 
     material.setUniform('u_projection', projectionMatrix);
     material.bind(gl);
-    geometry.bind(gl, material.program);
+    geometry.bind(material);
 
     gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
   }

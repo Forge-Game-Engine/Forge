@@ -1,3 +1,7 @@
+import {
+  registerGpuResource,
+  unregisterGpuResource,
+} from './gpu-resource-registry.js';
 import type { RenderContext } from './render-context.js';
 
 /**
@@ -40,6 +44,13 @@ const defaultTextureOptions: TextureOptions = {
  * Whoever creates a texture owns it, and calls {@link Texture.dispose} once
  * nothing uses it any more. A render target owns its color textures, and
  * `renderContext.whiteTexture`/`blackTexture` belong to the render context.
+ *
+ * A texture keeps a reference to the source it was last updated from, so
+ * that it can upload it again if the WebGL context is lost and restored
+ * (see `RenderContext.onContextRestored`). It keeps the source itself, not a
+ * copy: a canvas is re-uploaded with whatever it shows at that moment, and a
+ * closed `ImageBitmap` or `VideoFrame` can't be re-uploaded, so a texture
+ * made from one comes back empty until it's updated again.
  */
 export class Texture {
   /** How the texture is sampled between texels. */
@@ -48,41 +59,53 @@ export class Texture {
   /** What the texture returns outside `[0, 1]`. */
   public readonly wrap: TextureWrap;
 
-  /** The WebGL2 context the texture lives in. */
-  protected readonly gl: WebGL2RenderingContext;
+  /** The render context the texture lives in. */
+  protected readonly renderContext: RenderContext;
 
+  private readonly _rebuild: () => void;
   private _glTexture: WebGLTexture | null;
+  private _isDisposed: boolean;
   private _width: number;
   private _height: number;
+
+  /**
+   * Fills the GPU texture with its current contents: re-runs the last
+   * upload, so a restored context gets the same contents back.
+   */
+  private _upload: (() => void) | null;
 
   /**
    * Creates an empty texture with the given sampling options; its contents
    * are set by {@link Texture.update}. Use {@link createTexture} to create
    * one from a source in one step.
-   * @param gl - The WebGL2 rendering context.
+   * @param renderContext - The render context to create the texture in.
    * @param options - How the texture is sampled.
    */
   constructor(
-    gl: WebGL2RenderingContext,
+    renderContext: RenderContext,
     options: Partial<TextureOptions> = {},
   ) {
     const { filter, wrap } = { ...defaultTextureOptions, ...options };
-    const glFilter = filter === 'nearest' ? gl.NEAREST : gl.LINEAR;
-    const glWrap = wrap === 'repeat' ? gl.REPEAT : gl.CLAMP_TO_EDGE;
-    const glTexture = gl.createTexture();
 
-    gl.bindTexture(gl.TEXTURE_2D, glTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrap);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrap);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
-
-    this.gl = gl;
+    this.renderContext = renderContext;
     this.filter = filter;
     this.wrap = wrap;
-    this._glTexture = glTexture;
+    this._glTexture = null;
+    this._isDisposed = false;
     this._width = 0;
     this._height = 0;
+    this._upload = null;
+
+    this._rebuild = (): void => {
+      this._glTexture = this._createGlTexture();
+      this._upload?.();
+    };
+
+    registerGpuResource(renderContext, 'texture', this._rebuild);
+
+    if (!renderContext.isContextLost) {
+      this._glTexture = this._createGlTexture();
+    }
   }
 
   /** The texture's width, in texels. */
@@ -97,11 +120,12 @@ export class Texture {
 
   /**
    * The underlying WebGL texture, for binding it to a texture unit or
-   * attaching it to a framebuffer.
+   * attaching it to a framebuffer. `null` for a texture created while the
+   * WebGL context is lost, until the context is restored.
    * @throws An error if the texture has been disposed.
    */
-  get glTexture(): WebGLTexture {
-    if (this._glTexture === null) {
+  get glTexture(): WebGLTexture | null {
+    if (this._isDisposed) {
       throw new Error(
         'This texture has been disposed and can no longer be used.',
       );
@@ -113,40 +137,46 @@ export class Texture {
   /**
    * Replaces the texture's contents, and size, with `source`, uploaded as
    * 8-bit RGBA with straight (not premultiplied) alpha, the way the sprite
-   * shaders expect it.
+   * shaders expect it. The texture keeps a reference to `source`, to upload
+   * it again if the WebGL context is lost and restored.
    * @param source - The image, canvas, `ImageData`, `ImageBitmap` or video
    * frame to upload.
    * @throws An error if the texture has been disposed.
    */
   public update(source: TexImageSource): void {
-    const { gl } = this;
-
-    gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-
     const { width, height } = getSourceSize(source);
 
-    this._width = width;
-    this._height = height;
+    this._setContents(width, height, () => {
+      const { gl } = this.renderContext;
+
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        source,
+      );
+    });
   }
 
   /**
-   * Frees the GPU texture. Using the texture afterwards (drawing a sprite
-   * with it, binding it to a uniform, updating it) throws. Disposing it
-   * again does nothing.
+   * Frees the GPU texture and the source it keeps. Using the texture
+   * afterwards (drawing a sprite with it, binding it to a uniform, updating
+   * it) throws. Disposing it again does nothing.
    */
   public dispose(): void {
-    if (this._glTexture === null) {
+    if (this._isDisposed) {
       return;
     }
 
-    this.gl.deleteTexture(this._glTexture);
-    this._glTexture = null;
+    this.deleteStorage();
   }
 
   /**
    * Allocates empty storage of the given size and GL format, for a texture
-   * that's rendered into rather than uploaded from a source.
+   * that's rendered into rather than uploaded from a source. Allocated again,
+   * empty, if the WebGL context is lost and restored.
    * @param width - The width, in texels.
    * @param height - The height, in texels.
    * @param internalFormat - The GL internal format (e.g. `RGBA8`, `RGBA16F`).
@@ -158,27 +188,27 @@ export class Texture {
     internalFormat: GLenum,
     type: GLenum,
   ): void {
-    const { gl } = this;
+    this._setContents(width, height, () => {
+      const { gl } = this.renderContext;
 
-    gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      internalFormat,
-      width,
-      height,
-      0,
-      gl.RGBA,
-      type,
-      null,
-    );
-
-    this._width = width;
-    this._height = height;
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        internalFormat,
+        width,
+        height,
+        0,
+        gl.RGBA,
+        type,
+        null,
+      );
+    });
   }
 
   /**
-   * Uploads raw 8-bit RGBA texels, replacing the texture's contents.
+   * Uploads raw 8-bit RGBA texels, replacing the texture's contents. The
+   * texture keeps `pixels`, to upload them again if the WebGL context is
+   * lost and restored.
    * @param width - The width, in texels.
    * @param height - The height, in texels.
    * @param pixels - `width * height * 4` bytes, row by row.
@@ -188,32 +218,76 @@ export class Texture {
     height: number,
     pixels: Uint8Array,
   ): void {
-    const { gl } = this;
+    this._setContents(width, height, () => {
+      const { gl } = this.renderContext;
 
-    gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      width,
-      height,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      pixels,
-    );
-
-    this._width = width;
-    this._height = height;
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        width,
+        height,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels,
+      );
+    });
   }
 
   /**
-   * Deletes the GPU texture. Unlike {@link Texture.dispose}, which a
+   * Deletes the GPU texture, lets go of the source it keeps, and stops the
+   * render context rebuilding it. Unlike {@link Texture.dispose}, which a
    * subclass may forbid, this always frees it.
    */
   protected deleteStorage(): void {
-    this.gl.deleteTexture(this.glTexture);
+    unregisterGpuResource(this.renderContext, 'texture', this._rebuild);
+    this.renderContext.gl.deleteTexture(this._glTexture);
     this._glTexture = null;
+    this._upload = null;
+    this._isDisposed = true;
+  }
+
+  /**
+   * Records the texture's new size and how to fill it, and fills it now
+   * unless the WebGL context is lost (in which case the restore does).
+   */
+  private _setContents(width: number, height: number, fill: () => void): void {
+    if (this._isDisposed) {
+      throw new Error(
+        'This texture has been disposed and can no longer be used.',
+      );
+    }
+
+    this._width = width;
+    this._height = height;
+
+    this._upload = (): void => {
+      const { gl } = this.renderContext;
+
+      gl.bindTexture(gl.TEXTURE_2D, this._glTexture);
+      fill();
+    };
+
+    if (this._glTexture !== null && !this.renderContext.isContextLost) {
+      this._upload();
+    }
+  }
+
+  /** Creates the GL texture and sets its sampling parameters. */
+  private _createGlTexture(): WebGLTexture {
+    const { gl } = this.renderContext;
+    const glFilter = this.filter === 'nearest' ? gl.NEAREST : gl.LINEAR;
+    const glWrap = this.wrap === 'repeat' ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+    const glTexture = gl.createTexture();
+
+    gl.bindTexture(gl.TEXTURE_2D, glTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
+
+    return glTexture;
   }
 }
 
@@ -257,7 +331,7 @@ export function createTexture(
   source: TexImageSource,
   options: Partial<TextureOptions> = {},
 ): Texture {
-  const texture = new Texture(renderContext.gl, options);
+  const texture = new Texture(renderContext, options);
 
   texture.update(source);
 
