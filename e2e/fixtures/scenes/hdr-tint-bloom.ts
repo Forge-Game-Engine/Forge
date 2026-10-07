@@ -95,9 +95,8 @@ export const createScene: CreateScene = (
   });
 
   const renderTarget = createRenderTarget(
-    renderContext.gl,
-    renderContext.width,
-    renderContext.height,
+    renderContext,
+    'canvas',
     RENDER_TARGET_FORMAT.hdr,
   );
   const cameraEntity = createCamera(world, {

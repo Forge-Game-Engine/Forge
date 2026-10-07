@@ -174,7 +174,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('does nothing for a camera without a ToneMappingEcsComponent', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addCameraEntity(target);
 
@@ -192,7 +192,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('draws a single tone-mapping pass, with no copy back', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
@@ -202,7 +202,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it("samples the target's previous buffer and draws into its other one", () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
     const sceneTexture = target.colorTexture;
 
     addToneMappedCameraEntity(target);
@@ -221,7 +221,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('passes the configured exposure to the tone-mapping pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target, { exposure: 2.5 });
 
@@ -236,7 +236,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('selects the aces operator by default', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
@@ -251,7 +251,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('selects reinhard when configured', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target, {
       operator: TONE_MAPPING_OPERATOR.reinhard,
@@ -267,7 +267,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('writes the final pass back into the camera render target', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
@@ -280,7 +280,10 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('tone-maps a render target shared by multiple cameras only once', () => {
-    const sharedTarget = new RenderTarget(mockGl, 128, 128);
+    const sharedTarget = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     addToneMappedCameraEntity(sharedTarget);
     addToneMappedCameraEntity(sharedTarget);
@@ -291,7 +294,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('tone-maps again on the next frame', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addToneMappedCameraEntity(target);
 

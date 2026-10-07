@@ -6,6 +6,7 @@ import { ShaderProgram } from './materials/shader-program.js';
 import { SpriteMaterial } from './materials/sprite-material.js';
 import { UniformValue } from './materials/uniform-value.js';
 import { OwnedTexture } from './owned-texture.js';
+import { resizeCanvasSizedRenderTargets } from './render-target-registry.js';
 import { RenderTarget } from './render-target.js';
 import type { ForgeShaderSource } from './shaders/pre-processing/forge-shader-source.js';
 import { ShaderCache } from './shaders/pre-processing/dependency-resolution/shader-cache.js';
@@ -59,52 +60,6 @@ export class RenderContext implements Resizable {
 
   public instanceBuffer: WebGLBuffer;
 
-  /**
-   * The drawing buffer's width - the canvas's backing store, i.e. the
-   * resolution everything is actually rendered at - in device pixels:
-   * `cssWidth * pixelRatio`, rounded. This is the size the WebGL viewport
-   * uses, so size anything that's rendered into and then shown on the canvas
-   * (a `RenderTarget`, a shader uniform compared against `gl_FragCoord`)
-   * from this, not from `cssWidth`.
-   */
-  public width: number;
-
-  /**
-   * The drawing buffer's height, in device pixels. See `width`.
-   */
-  public height: number;
-
-  /**
-   * The canvas's on-page (layout) width, in CSS pixels. DOM measurements -
-   * `MouseInputSource.position`, `getSafeAreaInsets()` - are in CSS pixels,
-   * so convert them against `cssWidth`/`cssHeight` rather than
-   * `width`/`height`, which are larger by `pixelRatio`.
-   */
-  public cssWidth: number;
-
-  /**
-   * The canvas's on-page (layout) height, in CSS pixels. See `cssWidth`.
-   */
-  public cssHeight: number;
-
-  /**
-   * How many drawing-buffer (device) pixels the canvas currently has per CSS
-   * pixel: the display's `devicePixelRatio` as of the last resize, clamped to
-   * `maxPixelRatio`. `2` on a typical HiDPI/Retina display, so the canvas
-   * renders at the display's native resolution instead of being upscaled
-   * (and blurred) by the browser.
-   */
-  public pixelRatio: number;
-
-  /**
-   * The highest `pixelRatio` this render context will use, however dense
-   * the display is (default: no limit). Rendering cost grows with the
-   * square of the pixel ratio, so a fill-rate-heavy game can cap it (e.g. at
-   * `2` for 3x phone displays, or at `1` to always render at CSS
-   * resolution).
-   */
-  public readonly maxPixelRatio: number;
-
   private readonly _globalUniformValues: Map<string, UniformValue>;
   private readonly _shaderPrograms = new WeakMap<
     ForgeShaderSource,
@@ -113,6 +68,13 @@ export class RenderContext implements Resizable {
   private _whiteTexture: OwnedTexture | null = null;
   private _blackTexture: OwnedTexture | null = null;
   private _spriteMaterial: SpriteMaterial | null = null;
+  private _width: number;
+  private _height: number;
+  private _cssWidth: number;
+  private _cssHeight: number;
+  private _pixelRatio: number;
+  private _maxPixelRatio: number;
+  private _devicePixelRatio: number;
 
   /**
    * Constructs a new instance of the `RenderContext` class.
@@ -139,20 +101,21 @@ export class RenderContext implements Resizable {
     this.imageCache = imageCache;
     this.canvas = canvas;
     this.clearStrategy = clearStrategy;
-    this.maxPixelRatio = maxPixelRatio;
-    this.pixelRatio = Math.min(getDevicePixelRatio(), maxPixelRatio);
-    this.cssWidth = canvas.clientWidth > 0 ? canvas.clientWidth : canvas.width;
-    this.cssHeight =
+    this._maxPixelRatio = maxPixelRatio;
+    this._devicePixelRatio = getDevicePixelRatio();
+    this._pixelRatio = Math.min(this._devicePixelRatio, maxPixelRatio);
+    this._cssWidth = canvas.clientWidth > 0 ? canvas.clientWidth : canvas.width;
+    this._cssHeight =
       canvas.clientHeight > 0 ? canvas.clientHeight : canvas.height;
-    this.width = toDrawingBufferSize(this.cssWidth, this.pixelRatio);
-    this.height = toDrawingBufferSize(this.cssHeight, this.pixelRatio);
+    this._width = toDrawingBufferSize(this._cssWidth, this._pixelRatio);
+    this._height = toDrawingBufferSize(this._cssHeight, this._pixelRatio);
 
     // Sized before `getContext`, so the context's initial viewport already
     // matches the drawing buffer.
-    canvas.width = this.width;
-    canvas.height = this.height;
-    canvas.style.width = `${this.cssWidth}px`;
-    canvas.style.height = `${this.cssHeight}px`;
+    canvas.width = this._width;
+    canvas.height = this._height;
+    canvas.style.width = `${this._cssWidth}px`;
+    canvas.style.height = `${this._cssHeight}px`;
 
     const context = canvas.getContext('webgl2', {
       antialias: true,
@@ -169,9 +132,93 @@ export class RenderContext implements Resizable {
   }
 
   /**
+   * The drawing buffer's width - the canvas's backing store, i.e. the
+   * resolution everything is actually rendered at - in device pixels:
+   * `cssWidth * pixelRatio`, rounded. This is the size the WebGL viewport
+   * uses, so size anything that's rendered into and then shown on the canvas
+   * (a shader uniform compared against `gl_FragCoord`) from this, not from
+   * `cssWidth`. A render target that covers the canvas is created
+   * canvas-sized instead (see `createRenderTarget`), so it follows this
+   * size by itself. Changed only by `resize`.
+   */
+  get width(): number {
+    return this._width;
+  }
+
+  /**
+   * The drawing buffer's height, in device pixels. See `width`.
+   */
+  get height(): number {
+    return this._height;
+  }
+
+  /**
+   * The canvas's on-page (layout) width, in CSS pixels. DOM measurements -
+   * `MouseInputSource.position`, `getSafeAreaInsets()` - are in CSS pixels,
+   * so convert them against `cssWidth`/`cssHeight` rather than
+   * `width`/`height`, which are larger by `pixelRatio`. Changed only by
+   * `resize`.
+   */
+  get cssWidth(): number {
+    return this._cssWidth;
+  }
+
+  /**
+   * The canvas's on-page (layout) height, in CSS pixels. See `cssWidth`.
+   */
+  get cssHeight(): number {
+    return this._cssHeight;
+  }
+
+  /**
+   * How many drawing-buffer (device) pixels the canvas currently has per CSS
+   * pixel: the display's `devicePixelRatio` as of the last resize, clamped to
+   * `maxPixelRatio`. `2` on a typical HiDPI/Retina display, so the canvas
+   * renders at the display's native resolution instead of being upscaled
+   * (and blurred) by the browser. Changed only by `resize` (which setting
+   * `maxPixelRatio` calls).
+   */
+  get pixelRatio(): number {
+    return this._pixelRatio;
+  }
+
+  /**
+   * The highest `pixelRatio` this render context will use, however dense
+   * the display is (default: no limit). Rendering cost grows with the
+   * square of the pixel ratio, so a fill-rate-heavy game can cap it (e.g. at
+   * `2` for 3x phone displays, or at `1` to always render at CSS
+   * resolution), and change it at runtime, as a graphics-quality setting or
+   * from its own frame-time measurements.
+   *
+   * Setting it re-applies the last `resize` at the new cap, against the
+   * display's device pixel ratio as of that resize, so the canvas and every
+   * canvas-sized render target re-render at the new resolution from the
+   * next frame. While the canvas has no size (e.g. its container is hidden)
+   * the cap is only remembered, and applies on the next `resize`.
+   * @throws An error if set to anything but a positive number.
+   */
+  get maxPixelRatio(): number {
+    return this._maxPixelRatio;
+  }
+
+  set maxPixelRatio(value: number) {
+    assertValidPixelRatio('maxPixelRatio', value);
+
+    this._maxPixelRatio = value;
+
+    if (this._cssWidth <= 0 || this._cssHeight <= 0) {
+      return;
+    }
+
+    this.resize(this._cssWidth, this._cssHeight, this._devicePixelRatio);
+  }
+
+  /**
    * Resizes the canvas to `cssWidth` x `cssHeight` CSS pixels on the page,
    * with a drawing buffer of that size times `devicePixelRatio` (clamped to
-   * `maxPixelRatio`), and updates the WebGL viewport to match.
+   * `maxPixelRatio`), updates the WebGL viewport to match, and resizes every
+   * canvas-sized render target (see `createRenderTarget`), so none is ever
+   * out of step with the canvas for a frame.
    *
    * Does nothing if neither the CSS size nor the resulting drawing-buffer
    * size would change - assigning a canvas's `width`/`height` clears its
@@ -179,7 +226,7 @@ export class RenderContext implements Resizable {
    * unchanged size are safe.
    * @param cssWidth - The new on-page width, in CSS pixels.
    * @param cssHeight - The new on-page height, in CSS pixels.
-   * @param devicePixelRatio - Device pixels per CSS pixel on the display the canvas is shown on (default: the browser's current `window.devicePixelRatio`).
+   * @param devicePixelRatio - Device pixels per CSS pixel on the display the canvas is shown on (default: the browser's current `window.devicePixelRatio`). Remembered, so setting `maxPixelRatio` later re-applies it.
    * @throws An error if any argument is not a positive number.
    */
   public resize(
@@ -198,31 +245,38 @@ export class RenderContext implements Resizable {
 
     assertValidPixelRatio('devicePixelRatio', devicePixelRatio);
 
-    const pixelRatio = Math.min(devicePixelRatio, this.maxPixelRatio);
+    const pixelRatio = Math.min(devicePixelRatio, this._maxPixelRatio);
     const width = toDrawingBufferSize(cssWidth, pixelRatio);
     const height = toDrawingBufferSize(cssHeight, pixelRatio);
 
-    if (
-      cssWidth === this.cssWidth &&
-      cssHeight === this.cssHeight &&
-      width === this.width &&
-      height === this.height
-    ) {
-      this.pixelRatio = pixelRatio;
+    this._devicePixelRatio = devicePixelRatio;
+    this._pixelRatio = pixelRatio;
 
+    if (
+      cssWidth === this._cssWidth &&
+      cssHeight === this._cssHeight &&
+      width === this._width &&
+      height === this._height
+    ) {
       return;
     }
+
+    const isDrawingBufferResized =
+      width !== this._width || height !== this._height;
 
     this.canvas.width = width;
     this.canvas.height = height;
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
     this.gl.viewport(0, 0, width, height);
-    this.width = width;
-    this.height = height;
-    this.cssWidth = cssWidth;
-    this.cssHeight = cssHeight;
-    this.pixelRatio = pixelRatio;
+    this._width = width;
+    this._height = height;
+    this._cssWidth = cssWidth;
+    this._cssHeight = cssHeight;
+
+    if (isDrawingBufferResized) {
+      resizeCanvasSizedRenderTargets(this);
+    }
   }
 
   /**
@@ -236,8 +290,8 @@ export class RenderContext implements Resizable {
     this.gl.viewport(
       0,
       0,
-      target?.width ?? this.width,
-      target?.height ?? this.height,
+      target?.width ?? this._width,
+      target?.height ?? this._height,
     );
   }
 

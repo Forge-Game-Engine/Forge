@@ -233,7 +233,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('does nothing for a camera without a GaussianBlurEcsComponent', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addCameraEntity(target);
 
@@ -251,7 +251,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('draws a horizontal and a vertical pass for a single configured pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBlurredCameraEntity(target, { passes: 1 });
 
@@ -261,7 +261,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('runs a horizontal pass followed by a vertical pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBlurredCameraEntity(target, { passes: 1 });
 
@@ -277,7 +277,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('repeats the horizontal/vertical pair once per configured pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBlurredCameraEntity(target, { passes: 3 });
 
@@ -306,7 +306,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('reads the current passes value from the component every frame', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
     const entity = addBlurredCameraEntity(target, { passes: 1 });
 
     world.update();
@@ -328,7 +328,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('writes the final pass back into the camera render target', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addBlurredCameraEntity(target, { passes: 2 });
 
@@ -341,7 +341,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('keeps the texel size at a single texel regardless of pass count', () => {
-    const target = new RenderTarget(mockGl, 256, 128);
+    const target = new RenderTarget(renderContext, { width: 256, height: 128 });
 
     addBlurredCameraEntity(target, { passes: 3 });
 
@@ -412,13 +412,16 @@ describe('createGaussianBlurEcsSystem', () => {
         it(`at a pixel ratio of ${pixelRatio} and an intensity of ${intensity}`, () => {
           const feedbackDraws = trackFeedbackLoops();
 
-          renderContext.pixelRatio = pixelRatio;
-
-          const target = new RenderTarget(
-            mockGl,
-            256 * pixelRatio,
-            128 * pixelRatio,
+          renderContext.resize(
+            renderContext.cssWidth,
+            renderContext.cssHeight,
+            pixelRatio,
           );
+
+          const target = new RenderTarget(renderContext, {
+            width: 256 * pixelRatio,
+            height: 128 * pixelRatio,
+          });
 
           addBlurredCameraEntity(target, { passes: 3, intensity });
 
@@ -443,7 +446,10 @@ describe('createGaussianBlurEcsSystem', () => {
       );
 
     it('blurs at full resolution, without a downsample pass, at a pixel ratio of 1', () => {
-      const target = new RenderTarget(mockGl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       (mockGl.texImage2D as Mock).mockClear();
 
@@ -460,9 +466,12 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('blurs at CSS-pixel resolution on a high-DPI display', () => {
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
 
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       (mockGl.texImage2D as Mock).mockClear();
 
@@ -489,13 +498,16 @@ describe('createGaussianBlurEcsSystem', () => {
 
       for (const pixelRatio of [1, 1.5, 2, 3]) {
         (mockGl.uniform2fv as Mock).mockClear();
-        renderContext.pixelRatio = pixelRatio;
-
-        const target = new RenderTarget(
-          mockGl,
-          cssWidth * pixelRatio,
-          cssHeight * pixelRatio,
+        renderContext.resize(
+          renderContext.cssWidth,
+          renderContext.cssHeight,
+          pixelRatio,
         );
+
+        const target = new RenderTarget(renderContext, {
+          width: cssWidth * pixelRatio,
+          height: cssHeight * pixelRatio,
+        });
         const entity = addBlurredCameraEntity(target, { passes: 1 });
 
         world.update();
@@ -516,13 +528,16 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('upsamples back into the camera render target on the last pass', () => {
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
 
       // Distinct framebuffer objects, so draws into the camera's target can be told
       // apart from draws into the ping-pong pair.
       (mockGl.createFramebuffer as Mock).mockImplementation(() => ({}));
 
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       addBlurredCameraEntity(target, { passes: 3 });
 
@@ -543,9 +558,12 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('cross-fades against the full-resolution scene for a fractional intensity', () => {
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
 
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       (mockGl.texImage2D as Mock).mockClear();
 
@@ -570,14 +588,17 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('recreates the ping-pong pair when the pixel ratio changes', () => {
-      const target = new RenderTarget(mockGl, 512, 256);
+      const target = new RenderTarget(renderContext, {
+        width: 512,
+        height: 256,
+      });
 
       addBlurredCameraEntity(target, { passes: 1 });
 
       world.update();
       (mockGl.texImage2D as Mock).mockClear();
 
-      renderContext.pixelRatio = 2;
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 2);
       world.update();
 
       expect(getAllocatedSizes()).toEqual([
@@ -588,8 +609,11 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('presents multiple cameras independently', () => {
-    const targetA = new RenderTarget(mockGl, 128, 128);
-    const targetB = new RenderTarget(mockGl, 64, 64);
+    const targetA = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
+    const targetB = new RenderTarget(renderContext, { width: 64, height: 64 });
 
     addBlurredCameraEntity(targetA, { passes: 1 });
     addBlurredCameraEntity(targetB, { passes: 1 });
@@ -600,7 +624,10 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('blurs a render target shared by multiple cameras only once', () => {
-    const sharedTarget = new RenderTarget(mockGl, 128, 128);
+    const sharedTarget = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     addBlurredCameraEntity(sharedTarget, { passes: 1 });
     addBlurredCameraEntity(sharedTarget, { passes: 1 });
@@ -613,7 +640,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('blurs again on the next frame', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addBlurredCameraEntity(target, { passes: 1 });
 
@@ -624,7 +651,7 @@ describe('createGaussianBlurEcsSystem', () => {
   });
 
   it('disables blending before drawing so each pass replaces its destination', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addBlurredCameraEntity(target, { passes: 1 });
 
@@ -635,7 +662,10 @@ describe('createGaussianBlurEcsSystem', () => {
 
   describe('cleanup', () => {
     it('disposes the scratch ping-pong target when the world stops', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 1 });
 
@@ -652,7 +682,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('disposes only the ping-pong target when intensity is fractional', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
 
@@ -679,7 +712,10 @@ describe('createGaussianBlurEcsSystem', () => {
 
   describe('intensity', () => {
     it('draws nothing when intensity is 0', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 2, intensity: 0 });
 
@@ -689,7 +725,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('skips blending and draws exactly the blur passes when intensity is 1', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 2, intensity: 1 });
 
@@ -706,7 +745,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('blends the sharp and blurred scene for a fractional intensity', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 0.35 });
 
@@ -726,7 +768,10 @@ describe('createGaussianBlurEcsSystem', () => {
     it("cross-fades from the target's previous buffer into its other one", () => {
       (mockGl.createFramebuffer as Mock).mockImplementation(() => ({}));
 
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
       const sharpTexture = target.colorTexture;
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
@@ -746,7 +791,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('ends by writing back into the camera render target', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 1, intensity: 0.5 });
 
@@ -759,7 +807,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('clamps intensity above 1 down to 1', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 2, intensity: 1.5 });
 
@@ -770,7 +821,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('clamps intensity below 0 down to 0', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
 
       addBlurredCameraEntity(target, { passes: 2, intensity: -0.5 });
 
@@ -780,7 +834,10 @@ describe('createGaussianBlurEcsSystem', () => {
     });
 
     it('reflects a runtime change to the component on the next frame', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 128,
+        height: 128,
+      });
       const entity = addBlurredCameraEntity(target, {
         passes: 1,
         intensity: 1,

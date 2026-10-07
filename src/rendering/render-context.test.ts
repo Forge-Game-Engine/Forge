@@ -4,7 +4,7 @@ import { ImageCache } from '../asset-loading/index.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY } from './enums/index.js';
 import { createRenderContext, RenderContext } from './render-context.js';
-import { RenderTarget } from './render-target.js';
+import { createRenderTarget, RenderTarget } from './render-target.js';
 import { ShaderCache } from './shaders/index.js';
 
 describe('RenderContext', () => {
@@ -300,6 +300,100 @@ describe('RenderContext', () => {
       expect(() => context.resize(100, -1)).toThrow(
         'Render context dimensions must be positive numbers.',
       );
+    });
+  });
+
+  describe('maxPixelRatio', () => {
+    it('re-applies the last resize at the new cap', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 2);
+      context.maxPixelRatio = 1;
+
+      expect(context.maxPixelRatio).toBe(1);
+      expect(context.pixelRatio).toBe(1);
+      expect(context.width).toBe(400);
+      expect(context.height).toBe(300);
+      expect(context.cssWidth).toBe(400);
+      expect(mockGl.viewport).toHaveBeenLastCalledWith(0, 0, 400, 300);
+    });
+
+    it('uses the last device pixel ratio, not the clamped one, when raised again', () => {
+      const context = createRenderContext(canvas, { maxPixelRatio: 1 });
+
+      context.resize(400, 300, 3);
+
+      expect(context.pixelRatio).toBe(1);
+
+      context.maxPixelRatio = 2;
+
+      expect(context.pixelRatio).toBe(2);
+      expect(context.width).toBe(800);
+
+      context.maxPixelRatio = Number.POSITIVE_INFINITY;
+
+      expect(context.pixelRatio).toBe(3);
+      expect(context.width).toBe(1200);
+    });
+
+    it('resizes canvas-sized render targets', () => {
+      const targetGl = {
+        ...mockGl,
+        createFramebuffer: vi.fn().mockReturnValue({}),
+        createTexture: vi.fn().mockReturnValue({}),
+        deleteTexture: vi.fn(),
+        bindTexture: vi.fn(),
+        texParameteri: vi.fn(),
+        texImage2D: vi.fn(),
+        framebufferTexture2D: vi.fn(),
+        checkFramebufferStatus: vi.fn().mockReturnValue(1),
+        getParameter: vi.fn().mockReturnValue(null),
+        FRAMEBUFFER_COMPLETE: 1,
+      } as unknown as WebGL2RenderingContext;
+
+      vi.spyOn(canvas, 'getContext').mockReturnValue(targetGl);
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      context.resize(400, 300, 2);
+
+      const target = createRenderTarget(context, 'canvas');
+
+      context.maxPixelRatio = 1;
+
+      expect(target.width).toBe(400);
+      expect(target.height).toBe(300);
+    });
+
+    it('is only remembered while the canvas has no size, and applies on the next resize', () => {
+      canvas.width = 0;
+      canvas.height = 0;
+
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      vi.mocked(mockGl.viewport).mockClear();
+
+      expect(() => {
+        context.maxPixelRatio = 1;
+      }).not.toThrow();
+      expect(mockGl.viewport).not.toHaveBeenCalled();
+      expect(context.width).toBe(0);
+
+      context.resize(400, 300, 2);
+
+      expect(context.pixelRatio).toBe(1);
+      expect(context.width).toBe(400);
+    });
+
+    it('throws when set to a non-positive number', () => {
+      const context = new RenderContext(shaderCache, imageCache, canvas);
+
+      expect(() => {
+        context.maxPixelRatio = 0;
+      }).toThrow('maxPixelRatio must be a positive number');
+      expect(() => {
+        context.maxPixelRatio = Number.NaN;
+      }).toThrow('maxPixelRatio must be a positive number');
     });
   });
 

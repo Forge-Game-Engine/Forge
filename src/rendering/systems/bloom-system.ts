@@ -77,7 +77,7 @@ const verticalBlurDirection = new Float32Array([0, 1]);
 export const createBloomEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, BloomEcsComponent]> => {
-  const { gl, shaderCache } = renderContext;
+  const { shaderCache } = renderContext;
 
   const thresholdMaterial = new Material(
     renderContext,
@@ -120,10 +120,14 @@ export const createBloomEcsSystem = (
     }
 
     if (existing) {
-      existing.dispose(gl);
+      existing.dispose();
     }
 
-    const brightTarget = createRenderTarget(gl, width, height, target.format);
+    const brightTarget = createRenderTarget(
+      renderContext,
+      { width, height },
+      target.format,
+    );
 
     brightTargetByTarget.set(target, brightTarget);
 
@@ -146,10 +150,14 @@ export const createBloomEcsSystem = (
     }
 
     if (existing) {
-      existing.dispose(gl);
+      existing.dispose();
     }
 
-    const pingPong = new PingPongTarget(gl, width, height, target.format);
+    const pingPong = new PingPongTarget(
+      renderContext,
+      { width, height },
+      target.format,
+    );
 
     pingPongByTarget.set(target, pingPong);
 
@@ -272,10 +280,10 @@ export const createBloomEcsSystem = (
           continue;
         }
 
-        brightTargetByTarget.get(renderTarget)?.dispose(gl);
+        brightTargetByTarget.get(renderTarget)?.dispose();
         brightTargetByTarget.delete(renderTarget);
 
-        pingPongByTarget.get(renderTarget)?.dispose(gl);
+        pingPongByTarget.get(renderTarget)?.dispose();
         pingPongByTarget.delete(renderTarget);
       }
     },

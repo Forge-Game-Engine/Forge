@@ -86,11 +86,7 @@ export const createScene: CreateScene = (
 
   createContainerResizeSync(container, [renderContext]);
 
-  const sceneTarget = createRenderTarget(
-    renderContext.gl,
-    renderContext.width,
-    renderContext.height,
-  );
+  const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
   const cameraEntity = createCamera(world, {
     isStatic: true,
@@ -132,19 +128,6 @@ export const createScene: CreateScene = (
 
   return {
     step(deltaMilliseconds: number = defaultStepDeltaMilliseconds): void {
-      // Keep the render target matched to the drawing buffer, in case the
-      // resize sync resized the canvas after the target was created.
-      if (
-        sceneTarget.width !== renderContext.width ||
-        sceneTarget.height !== renderContext.height
-      ) {
-        sceneTarget.resize(
-          renderContext.gl,
-          renderContext.width,
-          renderContext.height,
-        );
-      }
-
       clockInMilliseconds += deltaMilliseconds;
       time.update(clockInMilliseconds);
       world.update();

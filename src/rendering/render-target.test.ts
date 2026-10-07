@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { createRenderTarget, RenderTarget } from './render-target';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { ImageCache } from '../asset-loading/index.js';
 import { RENDER_TARGET_FORMAT } from './enums/index.js';
+import { RenderContext } from './render-context.js';
+import { createRenderTarget, RenderTarget } from './render-target';
+import { ShaderCache } from './shaders/index.js';
 
 // Identity, not deep equality: every mocked GL object is an empty `{}`.
 const calledWith = (fn: unknown): unknown[] =>
@@ -9,6 +12,7 @@ const calledWith = (fn: unknown): unknown[] =>
 
 describe('RenderTarget', () => {
   let gl: WebGL2RenderingContext;
+  let renderContext: RenderContext;
   let framebuffers: WebGLFramebuffer[];
   let textures: WebGLTexture[];
 
@@ -48,12 +52,33 @@ describe('RenderTarget', () => {
       TEXTURE_2D: 'TEXTURE_2D',
       RGBA16F: 'RGBA16F',
       HALF_FLOAT: 'HALF_FLOAT',
+      createBuffer: vi.fn().mockReturnValue({}),
+      viewport: vi.fn(),
     } as unknown as WebGL2RenderingContext;
+
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 300;
+    canvas.height = 150;
+    vi.spyOn(canvas, 'getContext').mockReturnValue(gl);
+
+    renderContext = new RenderContext(
+      new ShaderCache([]),
+      new ImageCache(),
+      canvas,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('constructor', () => {
     it('should create a framebuffer and an attached color texture', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(1);
       expect(target.framebuffer).toBe(framebuffers[0]);
@@ -74,7 +99,10 @@ describe('RenderTarget', () => {
 
       (gl.getParameter as Mock).mockReturnValue(previousFramebuffer);
 
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       expect(target).toBeDefined();
       expect(gl.bindFramebuffer).toHaveBeenLastCalledWith(
@@ -86,15 +114,18 @@ describe('RenderTarget', () => {
     it('should throw when the framebuffer is incomplete', () => {
       (gl.checkFramebufferStatus as Mock).mockReturnValue(0x8cd6); // FRAMEBUFFER_INCOMPLETE_ATTACHMENT
 
-      expect(() => new RenderTarget(gl, 256, 128)).toThrow(
-        /Render target framebuffer is incomplete/,
-      );
+      expect(
+        () => new RenderTarget(renderContext, { width: 256, height: 128 }),
+      ).toThrow(/Render target framebuffer is incomplete/);
     });
   });
 
   describe('colorTexture', () => {
     it('throws when the color texture is disposed, since the target owns it', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       expect(() => target.colorTexture.dispose()).toThrow(
         /belongs to its render target/,
@@ -103,7 +134,10 @@ describe('RenderTarget', () => {
     });
 
     it('throws when the color texture is updated, since the target owns it', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       (gl.texImage2D as Mock).mockClear();
 
@@ -116,14 +150,21 @@ describe('RenderTarget', () => {
 
   describe('format', () => {
     it('defaults to ldr without calling gl.getExtension', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
       expect(gl.getExtension).not.toHaveBeenCalled();
     });
 
     it('resolves to hdr when requested and supported', () => {
-      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+      const target = new RenderTarget(
+        renderContext,
+        { width: 256, height: 128 },
+        RENDER_TARGET_FORMAT.hdr,
+      );
 
       expect(target.format).toBe(RENDER_TARGET_FORMAT.hdr);
       expect(gl.getExtension).toHaveBeenCalledWith('EXT_color_buffer_float');
@@ -132,15 +173,23 @@ describe('RenderTarget', () => {
     it('falls back to ldr when hdr is requested but unsupported', () => {
       (gl.getExtension as Mock).mockReturnValue(null);
 
-      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+      const target = new RenderTarget(
+        renderContext,
+        { width: 256, height: 128 },
+        RENDER_TARGET_FORMAT.hdr,
+      );
 
       expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
     });
 
     it('preserves the resolved format across resize', () => {
-      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+      const target = new RenderTarget(
+        renderContext,
+        { width: 256, height: 128 },
+        RENDER_TARGET_FORMAT.hdr,
+      );
 
-      target.resize(gl, 512, 256);
+      target.resize(512, 256);
 
       expect(target.format).toBe(RENDER_TARGET_FORMAT.hdr);
       expect(gl.texImage2D).toHaveBeenLastCalledWith(
@@ -159,11 +208,14 @@ describe('RenderTarget', () => {
 
   describe('resize', () => {
     it('should delete the old texture and create a new one at the new size', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
       const oldTexture = target.colorTexture;
       const oldGlTexture = oldTexture.glTexture;
 
-      target.resize(gl, 512, 256);
+      target.resize(512, 256);
 
       expect(gl.deleteTexture).toHaveBeenCalledWith(oldGlTexture);
       expect(() => oldTexture.glTexture).toThrow(/disposed/);
@@ -172,13 +224,24 @@ describe('RenderTarget', () => {
       expect(target.height).toBe(256);
     });
 
-    it('should throw when width or height are not positive', () => {
-      const target = new RenderTarget(gl, 256, 128);
+    it('should throw for a canvas-sized target', () => {
+      const target = new RenderTarget(renderContext, 'canvas');
 
-      expect(() => target.resize(gl, 0, 100)).toThrow(
+      expect(() => target.resize(512, 256)).toThrow(
+        /canvas-sized render target follows its render context/,
+      );
+    });
+
+    it('should throw when width or height are not positive', () => {
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
+
+      expect(() => target.resize(0, 100)).toThrow(
         'Render target dimensions must be positive numbers.',
       );
-      expect(() => target.resize(gl, 100, -1)).toThrow(
+      expect(() => target.resize(100, -1)).toThrow(
         'Render target dimensions must be positive numbers.',
       );
     });
@@ -186,11 +249,14 @@ describe('RenderTarget', () => {
 
   describe('swapBuffers', () => {
     it('allocates the second buffer only on first use', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(1);
 
-      target.swapBuffers(gl);
+      target.swapBuffers();
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
       expect(gl.framebufferTexture2D).toHaveBeenLastCalledWith(
@@ -201,18 +267,22 @@ describe('RenderTarget', () => {
         0,
       );
 
-      target.swapBuffers(gl);
+      target.swapBuffers();
 
       expect(gl.createFramebuffer).toHaveBeenCalledTimes(2);
       expect(gl.createTexture).toHaveBeenCalledTimes(2);
     });
 
     it('allocates the second buffer at the same size and format', () => {
-      const target = new RenderTarget(gl, 256, 128, RENDER_TARGET_FORMAT.hdr);
+      const target = new RenderTarget(
+        renderContext,
+        { width: 256, height: 128 },
+        RENDER_TARGET_FORMAT.hdr,
+      );
 
       (gl.texImage2D as Mock).mockClear();
 
-      target.swapBuffers(gl);
+      target.swapBuffers();
 
       expect(gl.texImage2D).toHaveBeenCalledWith(
         gl.TEXTURE_2D,
@@ -228,15 +298,18 @@ describe('RenderTarget', () => {
     });
 
     it('returns the previous color texture and makes the other buffer current', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
-      const first = target.swapBuffers(gl);
+      const first = target.swapBuffers();
 
       expect(first.glTexture).toBe(textures[0]);
       expect(target.colorTexture.glTexture).toBe(textures[1]);
       expect(target.framebuffer).toBe(framebuffers[1]);
 
-      const second = target.swapBuffers(gl);
+      const second = target.swapBuffers();
 
       expect(second.glTexture).toBe(textures[1]);
       expect(target.colorTexture.glTexture).toBe(textures[0]);
@@ -244,16 +317,19 @@ describe('RenderTarget', () => {
     });
 
     it('resizes both buffers once the second is allocated', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
-      target.swapBuffers(gl);
-      target.resize(gl, 512, 256);
+      target.swapBuffers();
+      target.resize(512, 256);
 
       expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
       expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
       expect(target.colorTexture.glTexture).toBe(textures[2]);
 
-      const other = target.swapBuffers(gl);
+      const other = target.swapBuffers();
 
       expect(other.glTexture).toBe(textures[2]);
       expect(target.colorTexture.glTexture).toBe(textures[3]);
@@ -263,10 +339,13 @@ describe('RenderTarget', () => {
 
   describe('dispose', () => {
     it('should delete the framebuffer and color texture', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
       const glTexture = target.colorTexture.glTexture;
 
-      target.dispose(gl);
+      target.dispose();
 
       expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(1);
       expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[0]);
@@ -274,15 +353,81 @@ describe('RenderTarget', () => {
     });
 
     it('deletes both buffers once the second is allocated', () => {
-      const target = new RenderTarget(gl, 256, 128);
+      const target = new RenderTarget(renderContext, {
+        width: 256,
+        height: 128,
+      });
 
-      target.swapBuffers(gl);
-      target.dispose(gl);
+      target.swapBuffers();
+      target.dispose();
 
       expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[0]);
       expect(calledWith(gl.deleteFramebuffer)).toContain(framebuffers[1]);
       expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
       expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
+    });
+  });
+
+  describe('canvas-sized', () => {
+    it("starts at the render context's drawing-buffer size", () => {
+      const target = new RenderTarget(renderContext, 'canvas');
+
+      expect(target.width).toBe(renderContext.width);
+      expect(target.height).toBe(renderContext.height);
+    });
+
+    for (const devicePixelRatio of [1, 2]) {
+      it(`follows the render context's drawing buffer at a pixel ratio of ${devicePixelRatio}`, () => {
+        const target = new RenderTarget(renderContext, 'canvas');
+
+        target.swapBuffers();
+        renderContext.resize(400, 200, devicePixelRatio);
+
+        expect(target.width).toBe(400 * devicePixelRatio);
+        expect(target.height).toBe(200 * devicePixelRatio);
+        // texImage2D(target, level, internalFormat, width, height, ...)
+        expect((gl.texImage2D as Mock).mock.lastCall?.slice(3, 5)).toEqual([
+          400 * devicePixelRatio,
+          200 * devicePixelRatio,
+        ]);
+        // Both color buffers were reallocated.
+        expect(calledWith(gl.deleteTexture)).toContain(textures[0]);
+        expect(calledWith(gl.deleteTexture)).toContain(textures[1]);
+      });
+    }
+
+    it('leaves fixed-size targets alone when the render context resizes', () => {
+      const target = new RenderTarget(renderContext, {
+        width: 64,
+        height: 32,
+      });
+
+      renderContext.resize(400, 200, 2);
+
+      expect(target.width).toBe(64);
+      expect(target.height).toBe(32);
+      expect(gl.deleteTexture).not.toHaveBeenCalled();
+    });
+
+    it("isn't touched when the drawing buffer keeps its size", () => {
+      const target = new RenderTarget(renderContext, 'canvas');
+
+      (gl.texImage2D as Mock).mockClear();
+      renderContext.resize(renderContext.cssWidth, renderContext.cssHeight, 1);
+
+      expect(target.width).toBe(300);
+      expect(gl.texImage2D).not.toHaveBeenCalled();
+    });
+
+    it('stops following the render context once disposed', () => {
+      const target = new RenderTarget(renderContext, 'canvas');
+
+      target.dispose();
+      (gl.texImage2D as Mock).mockClear();
+      renderContext.resize(400, 200, 1);
+
+      expect(target.width).toBe(300);
+      expect(gl.texImage2D).not.toHaveBeenCalled();
     });
   });
 });
@@ -305,11 +450,23 @@ describe('createRenderTarget', () => {
       COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
       TEXTURE_2D: 'TEXTURE_2D',
     } as unknown as WebGL2RenderingContext;
+    const renderContext = { gl } as RenderContext;
 
-    const target = createRenderTarget(gl, 100, 100);
+    const target = createRenderTarget(renderContext, {
+      width: 100,
+      height: 100,
+    });
 
     expect(target).toBeInstanceOf(RenderTarget);
     expect(target.width).toBe(100);
     expect(target.height).toBe(100);
+  });
+
+  it('should throw for a non-positive fixed size', () => {
+    const renderContext = {} as RenderContext;
+
+    expect(() =>
+      createRenderTarget(renderContext, { width: 0, height: 100 }),
+    ).toThrow('Render target dimensions must be positive numbers.');
   });
 });
