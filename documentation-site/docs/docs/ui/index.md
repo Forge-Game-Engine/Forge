@@ -41,6 +41,8 @@ Guides in this section:
   disabling a whole subtree at once, and hover/focus tooltips.
 - [Text Input](./text-input.md): single-line text fields, editing versus
   focus, filtering, and submit/cancel events.
+- [Scroll Views](./scroll-views.md): clipped content scrolled by dragging,
+  the mouse wheel, scrollbars and focus, with inertia and elastic edges.
 
 ## Quick Start
 

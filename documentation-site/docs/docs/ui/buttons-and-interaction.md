@@ -79,7 +79,8 @@ flag is available for polling instead of registering a listener.
 
 ## Focus navigation
 
-Every `interactable: true` element is automatically focus-navigable: on the
+Every `interactable: true` element is automatically focus-navigable unless
+its `focusable` is `false`: on the
 tick `navigateInput`'s magnitude first crosses a threshold, focus moves to
 the nearest candidate on the same canvas in that direction. Add a
 [`UiFocusEcsComponent`](/Forge/docs/api/interfaces/UiFocusEcsComponent) to
@@ -97,3 +98,16 @@ the weapon when the click landed on the pause button"). An element with
 moves beyond `dragThreshold` (measured in reference pixels) raises
 `onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
 building a slider handle or a scrollbar thumb.
+
+A drag goes to the nearest element, the pressed one or one of its
+ancestors, whose `receivesDrag` is `true`. When that is an ancestor, the
+pressed element's press ends (`onPointerUp`, and no `onInvoke` on release)
+and the ancestor raises `onBeginDrag`, `onDrag` and `onEndDrag`. A
+[scroll view](./scroll-views.md) receives drags this way, so dragging a
+button in its list scrolls the list. Set `receivesDrag: true` on an element
+that reacts to its own drags, such as a draggable item, so a drag that
+starts on it stays on it. `createSlider` sets it on its track.
+
+The raycast skips the part of an element that a rect
+[mask](../rendering/masks.md) on it or on an ancestor clips away, so an
+element can only be clicked where it's drawn.

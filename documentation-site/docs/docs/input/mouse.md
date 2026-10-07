@@ -107,8 +107,8 @@ applying it.
 the bound action keeps that value until the cursor moves again.
 
 [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) (scroll
-wheel) reports the sum of `event.deltaY / 100` over the frame's `wheel`
-events, roughly ±1 per scroll click (the action clamps it to `[-1, 1]`,
+wheel) reports the sum of the vertical wheel delta, in CSS pixels, divided
+by `100` over the frame's `wheel` events, roughly ±1 per scroll click (the action clamps it to `[-1, 1]`,
 like every `Axis1dAction`). The input lasts one frame: the source reports
 `0` again in its `reset()` at the end of the frame, so the action reads
 `0` once scrolling stops.
@@ -145,7 +145,10 @@ can read it straight off `MouseInputSource` without an intervening action:
   `renderContext.cssWidth`/`cssHeight` (see
   [High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
 - `delta` - how far `position` moved since the last tick.
-- `scroll` - accumulated `WheelEvent.deltaY` since the last tick.
+- `scroll` - the wheel scroll since the last tick, in CSS pixels: `x` is
+  positive scrolling right and `y` positive scrolling down. A wheel that
+  reports lines counts 40 pixels per line, and one that reports pages counts
+  the container's width or height per page.
 - `buttonsDown` / `buttonsHeld` / `buttonsUp` - `MouseButton` sets for
   buttons that started being held down this tick, are currently held, and
   stopped being held down this tick, respectively.
