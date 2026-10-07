@@ -27,7 +27,7 @@ const musicToggle = createToggle(world, canvas, {
 });
 
 musicToggle.onValueChanged.registerListener((isOn) => {
-  musicBus.muted = !isOn;
+  settings.musicEnabled = isOn;
 });
 ```
 
@@ -96,7 +96,7 @@ const volumeSlider = createSlider(world, canvas, {
 });
 
 volumeSlider.onValueChanged.registerListener((value) => {
-  musicBus.volume = value / 100;
+  settings.musicVolume = value / 100;
 });
 ```
 
@@ -187,9 +187,9 @@ The chevron on the header's right edge is `v` while the list is closed
 and `^` while it's open.
 
 :::caution
-The option buttons are children of the header, so elements parented to
-the same parent after the dropdown are drawn over the open list and are hit
-before it. Add a `DrawOrderEcsComponent` with a positive `order` to the
+The option buttons are children of the header, so elements that come
+after the dropdown in hierarchy order, such as siblings parented after it,
+are drawn over the open list and are hit before it. Add a `DrawOrderEcsComponent` with a positive `order` to the
 header (see [Draw Order](../rendering/draw-order.md)) to draw the list
 over them.
 :::

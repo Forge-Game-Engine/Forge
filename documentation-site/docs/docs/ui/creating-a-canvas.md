@@ -28,8 +28,8 @@ registerUiSystems(world, renderContext, time, {
 
 `pointerSource` is the pointer the UI is hit-tested against. Without one,
 the pointer systems (hover, click, drag and sliders) aren't registered, and
-the UI is used through [focus navigation](buttons-and-interaction.md#focus-navigation)
-only.
+the UI is used through
+[focus navigation](buttons-and-interaction.md#focus-navigation) only.
 
 Calling `registerUiSystems` a second time for the same world registers
 every system a second time, so each canvas is processed twice per tick.
@@ -84,7 +84,8 @@ take the label's category as an option.
 
 ## Adding elements to a canvas
 
-Every `create*` element factory takes the parent entity as its second
+The element factories (`createPanel`, `createLabel`, `createButton` and
+the [controls](controls.md)) take the parent entity as their second
 argument: the canvas, or another element. A panel is an element that draws
 one sprite:
 
@@ -121,8 +122,8 @@ is 12 pixels of border art. [Anchors and Layout](anchors-and-layout.md)
 covers `anchor` and `anchoredPosition`.
 
 The factories parent each element with `world.setParent`. An element's
-children are laid out and drawn in the order they were parented, and the
-element drawn on top is the one a click hits (see
+children are laid out and drawn in the order they were parented, and a
+click hits the interactable element drawn on top (see
 [Draw Order](../rendering/draw-order.md)).
 
 ## Creating a world-space canvas
@@ -190,6 +191,6 @@ const followTargetSystem: EcsSystem<[]> = {
 ## Removing a canvas
 
 Removing the canvas entity with `world.removeEntity` also removes every
-element under it (see [World](../ecs/world.md)).
-A screen-space canvas's camera is a separate entity: its id is the
-canvas's `CanvasEcsComponent.camera`, and it's removed separately.
+element under it (see [World](../ecs/world.md)). A screen-space canvas's
+camera is a separate entity: its id is the canvas's
+`CanvasEcsComponent.camera`, and it's removed separately.

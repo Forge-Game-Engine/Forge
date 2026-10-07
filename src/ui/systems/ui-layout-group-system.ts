@@ -301,9 +301,9 @@ function measureGridContent(
 
 /**
  * Builds a memoized `measure` function reporting an entity's own
- * min/preferred/flexible size on each axis: a `HorizontalLayoutGroupEcsComponent`/
- * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent`'s own
- * content size (recursing into its own children, bottom-up), or - with none
+ * min/preferred/flexible size on each axis: a
+ * `UiAxisLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent`'s own content
+ * size (recursing into its own children, bottom-up), or - with none
  * of those - `RectTransformEcsComponent`'s own size as the preferred size (a
  * min of `0`, a flexible weight of `0`). A `LayoutElementEcsComponent`
  * overrides individual fields on top of either source. Results are cached
@@ -563,7 +563,7 @@ function placeChild(options: PlaceChildOptions): void {
 }
 
 /**
- * Arranges one `HorizontalLayoutGroupEcsComponent`/`VerticalLayoutGroupEcsComponent`'s
+ * Arranges one `UiAxisLayoutGroupEcsComponent`'s
  * direct children along its main axis (spaced, and - with `childControlWidth`/
  * `childControlHeight` and `childForceExpandWidth`/`childForceExpandHeight` -
  * resized to fill any leftover space), and aligned individually within its
@@ -825,9 +825,8 @@ function applyContentSizeFitter(
 }
 
 /**
- * Creates a system that arranges every `HorizontalLayoutGroupEcsComponent`/
- * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent`'s direct
- * children, and resizes every `ContentSizeFitterEcsComponent`'s own entity
+ * Creates a system that arranges every `UiAxisLayoutGroupEcsComponent`/
+ * `GridLayoutGroupEcsComponent`'s direct children, and resizes every `ContentSizeFitterEcsComponent`'s own entity
  * to its measured content size - both against `RectTransformEcsComponent.rect`
  * as it stood at the *end of the previous frame*, since this system must run
  * before `createUiLayoutEcsSystem` (the one that resolves `rect` for this

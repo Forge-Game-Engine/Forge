@@ -168,7 +168,11 @@ canvas's component:
 ```ts
 import { canvasId, setUiFocus } from '@forge-game-engine/forge/ui';
 
-setUiFocus(world, world.getComponentRequired(canvas, canvasId), playButton.entity);
+setUiFocus(
+  world,
+  world.getComponentRequired(canvas, canvasId),
+  playButton.entity,
+);
 ```
 
 ## Hit testing

@@ -74,7 +74,7 @@ export interface UiInteractableEcsComponent extends UiInteractableDefaultedOptio
    */
   readonly onBeginDrag: ForgeEvent;
 
-  /** Raised every tick the pointer moves while `isDragging`. Pointer-only. */
+  /** Raised every tick while `isDragging`. Pointer-only. */
   readonly onDrag: ForgeEvent;
 
   /** Raised on the pointer-up edge that ends a drag. Pointer-only. */

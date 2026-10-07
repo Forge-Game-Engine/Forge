@@ -35,9 +35,8 @@ const defaultContentSizeFitterOptions: ContentSizeFitterDefaultedOptions = {
  * `RectTransformEcsComponent`'s own size every frame (via
  * `createUiLayoutGroupEcsSystem`, alongside its layout-group handling) to
  * match `entity`'s own measured content size on each configured axis - the
- * same min/preferred size a `HorizontalLayoutGroupEcsComponent`/
- * `VerticalLayoutGroupEcsComponent`/`GridLayoutGroupEcsComponent` on
- * `entity` would report to a parent group, or `entity`'s own
+ * same min/preferred size a `UiAxisLayoutGroupEcsComponent`/
+ * `GridLayoutGroupEcsComponent` on `entity` would report to a parent group, or `entity`'s own
  * `LayoutElementEcsComponent` overrides. With neither, there's no content to
  * measure and this is a no-op - pair it with one of those, most commonly a
  * layout group, to make a panel shrink-wrap its arranged children.

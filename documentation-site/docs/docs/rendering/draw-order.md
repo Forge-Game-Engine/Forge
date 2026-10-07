@@ -28,7 +28,7 @@ another's is set by the cameras' own `layer` (see
 [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)).
 UI hit testing checks elements in the reverse of this order, without
 Y-sorting (see
-[Buttons and Interaction](../ui/buttons-and-interaction.md#hit-testing-and-drag)).
+[Buttons and Interaction](../ui/buttons-and-interaction.md#hit-testing)).
 
 ## Drawing in hierarchy order
 

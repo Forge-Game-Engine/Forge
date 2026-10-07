@@ -32,29 +32,29 @@ A rect transform's `x` and `y` are each a
   smaller than the span.
 
 <svg viewBox="0 0 640 220" role="img" aria-label="A point-anchored element keeps a literal size and sits at a single anchor point on its parent's rect. A stretch-anchored element spans a range of its parent's rect, resizing with it, with a margin inset from that span." style={{width: '100%', height: 'auto', maxWidth: '640px'}}>
-  <defs>
-    <marker id="ui-anchor-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ifm-color-emphasis-600)" />
-    </marker>
-  </defs>
+<defs>
+<marker id="ui-anchor-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ifm-color-emphasis-600)" />
+</marker>
+</defs>
 
-  {/* Point anchor */}
-  <rect x="20" y="30" width="260" height="170" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
-  <rect x="170" y="30" width="110" height="60" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
-  <circle cx="280" cy="30" r="4" fill="var(--ifm-color-primary)" />
-  <text x="276" y="20" textAnchor="end" fontSize="13" fill="var(--ifm-font-color-base)">anchor (1, 1)</text>
-  <text x="225" y="64" textAnchor="middle" fontSize="13" fill="var(--ifm-font-color-base)">size</text>
-  <text x="150" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Point axis</text>
+{/* Point anchor */}
+<rect x="20" y="30" width="260" height="170" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
+<rect x="170" y="30" width="110" height="60" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+<circle cx="280" cy="30" r="4" fill="var(--ifm-color-primary)" />
+<text x="276" y="20" textAnchor="end" fontSize="13" fill="var(--ifm-font-color-base)">anchor (1, 1)</text>
+<text x="225" y="64" textAnchor="middle" fontSize="13" fill="var(--ifm-font-color-base)">size</text>
+<text x="150" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Point axis</text>
 
-  {/* Stretch anchor */}
-  <rect x="360" y="30" width="260" height="170" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
-  <rect x="380" y="30" width="220" height="50" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
-  <line x1="362" y1="55" x2="378" y2="55" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-anchor-arrow)" markerEnd="url(#ui-anchor-arrow)" />
-  <line x1="602" y1="55" x2="618" y2="55" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-anchor-arrow)" markerEnd="url(#ui-anchor-arrow)" />
-  <text x="370" y="45" textAnchor="middle" fontSize="12" fill="var(--ifm-font-color-base)">margin</text>
-  <text x="610" y="45" textAnchor="middle" fontSize="12" fill="var(--ifm-font-color-base)">margin</text>
-  <text x="490" y="64" textAnchor="middle" fontSize="13" fill="var(--ifm-font-color-base)">spans anchorMin..anchorMax</text>
-  <text x="490" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Stretch axis</text>
+{/* Stretch anchor */}
+<rect x="360" y="30" width="260" height="170" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
+<rect x="380" y="30" width="220" height="50" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
+<line x1="362" y1="55" x2="378" y2="55" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-anchor-arrow)" markerEnd="url(#ui-anchor-arrow)" />
+<line x1="602" y1="55" x2="618" y2="55" stroke="var(--ifm-color-emphasis-600)" strokeWidth="1.5" markerStart="url(#ui-anchor-arrow)" markerEnd="url(#ui-anchor-arrow)" />
+<text x="370" y="45" textAnchor="middle" fontSize="12" fill="var(--ifm-font-color-base)">margin</text>
+<text x="610" y="45" textAnchor="middle" fontSize="12" fill="var(--ifm-font-color-base)">margin</text>
+<text x="490" y="64" textAnchor="middle" fontSize="13" fill="var(--ifm-font-color-base)">spans anchorMin..anchorMax</text>
+<text x="490" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Stretch axis</text>
 </svg>
 
 _A point axis (left) keeps its size at one anchor point, here `(1, 1)`,
