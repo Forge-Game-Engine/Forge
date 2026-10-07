@@ -37,7 +37,7 @@ The UI is made of:
 - [Layout groups and fitters](layout-groups.md): components that arrange an
   element's children in a row, a column or a grid, or size an element to
   its content or to an aspect ratio.
-- [Canvas groups and tooltips](canvas-groups-and-tooltips.md): a
-  `CanvasGroupEcsComponent` fades or disables an element and everything
-  under it; a tooltip is a panel shown while an element is hovered or
-  focused.
+- [Hiding, fading and tooltips](canvas-groups-and-tooltips.md): a
+  `VisibilityEcsComponent` hides an element and everything under it, a
+  `CanvasGroupEcsComponent` fades or disables them, and a tooltip is a
+  panel shown while an element is hovered or focused.

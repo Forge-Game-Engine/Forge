@@ -38,7 +38,9 @@ new value. A toggle has no label of its own: place one next to it with
 :::caution
 Writing `toggle.isOn` directly doesn't raise `onValueChanged`, and
 `createToggle`'s checkmark is shown and hidden by an `onValueChanged`
-listener, so it keeps its previous state.
+listener that sets its
+[`VisibilityEcsComponent`](../rendering/visibility.md), so it keeps its
+previous state.
 :::
 
 ### Grouping toggles
@@ -180,14 +182,15 @@ qualityDropdown.onValueChanged.registerListener((index) => {
 ```
 
 Invoking the header opens or closes the option list, and `dropdown.isOpen`
-says which. While the list is closed, the option buttons aren't drawn and
-can't be hit. Invoking an option sets `selectedIndex`, shows the option in
+says which. The option buttons are parented to the dropdown's `list`
+entity, and while the list is closed its `VisibilityEcsComponent` hides
+them, so they aren't drawn, hit or focused. Invoking an option sets `selectedIndex`, shows the option in
 the header, raises `onValueChanged` with its index, and closes the list.
 The chevron on the header's right edge is `v` while the list is closed
 and `^` while it's open.
 
 :::caution
-The option buttons are children of the header, so elements that come
+The `list` entity is a child of the header, so elements that come
 after the dropdown in hierarchy order, such as siblings parented after it,
 are drawn over the open list and are hit before it. Add a `DrawOrderEcsComponent` with a positive `order` to the
 header (see [Draw Order](../rendering/draw-order.md)) to draw the list

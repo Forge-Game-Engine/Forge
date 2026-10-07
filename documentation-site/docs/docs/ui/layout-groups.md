@@ -108,6 +108,10 @@ addLayoutElementComponent(world, nameField.entity, { flexibleWidth: 1 });
 `flexibleWidth` and `flexibleHeight` are a child's share of the leftover
 space, relative to its siblings'. `ignoreLayout: true` leaves a child out
 of the group: it isn't measured or moved, and keeps its own anchor. A
+child hidden by its own
+[`VisibilityEcsComponent`](../rendering/visibility.md#hiding-ui-elements)
+is left out the same way, so the children after it close the gap, and a
+content size fitter is sized to the visible children. A
 label created with `sizeToText` is measured by its text (see
 [Labels and Text](labels-and-text.md#sizing-a-label-to-its-text)).
 

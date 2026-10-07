@@ -3,6 +3,10 @@ import { formatEntity } from '../../ecs/entity.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rects } from '../../math/index.js';
 import {
+  VisibilityEcsComponent,
+  visibilityId,
+} from '../../rendering/components/visibility-component.js';
+import {
   TextEcsComponent,
   textId,
   TextMeshEcsComponent,
@@ -42,14 +46,22 @@ interface Measured {
 
 type Measure = (entity: number) => Measured;
 
+/**
+ * Whether a group or fitter leaves `entity` out: it's `ignoreLayout`, or
+ * hidden by its own `VisibilityEcsComponent`. Only the child's own
+ * visibility matters here, since a hidden ancestor hides the whole group
+ * along with it.
+ */
 function isIgnored(world: EcsWorld, entity: number): boolean {
   return (
     world.getComponent<LayoutElementEcsComponent>(entity, layoutElementId)
-      ?.ignoreLayout === true
+      ?.ignoreLayout === true ||
+    world.getComponent<VisibilityEcsComponent>(entity, visibilityId)
+      ?.visible === false
   );
 }
 
-/** A group's (or fitter's) direct UI element children, in sibling order, minus any `ignoreLayout` ones. */
+/** A group's (or fitter's) direct UI element children, in sibling order, minus any `ignoreLayout` or hidden ones. */
 function arrangeableChildrenOf(
   world: EcsWorld,
   elements: ReadonlySet<number>,

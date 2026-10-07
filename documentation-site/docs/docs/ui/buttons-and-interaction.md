@@ -146,7 +146,10 @@ const canvas = createUiCanvas(world, renderContext, {
 - `cancelInput`: clears focus. Register a listener on
   `cancelInput.triggerEvent` to close a menu.
 
-The pointer moving onto an interactable element also focuses it. See
+An element [hidden](../rendering/visibility.md#hiding-ui-elements) by its
+own or an ancestor's `VisibilityEcsComponent` can't be focused, and focus
+on an element that becomes hidden is cleared. The pointer moving onto an
+interactable element also focuses it. See
 [Actions and Input Groups](../input/actions.md) for creating and binding
 the actions.
 
@@ -180,8 +183,8 @@ setUiFocus(
 Every tick, the UI finds the interactable element under the pointer on
 each canvas: of the interactables whose rectangle contains the pointer, the
 one drawn on top (see [Draw Order](../rendering/draw-order.md)). Elements
-with `blocksRaycasts` set to `false`, and elements whose sprite the
-canvas's camera doesn't draw, are skipped. The result is written to the
+with `blocksRaycasts` set to `false`, hidden elements, and elements whose
+sprite the canvas's camera doesn't draw, are skipped. The result is written to the
 canvas's `hoveredEntity`, and `isPointerOverUi` is `true` while there is
 one. Read it to ignore a click in the game world that landed on the UI:
 
@@ -204,7 +207,9 @@ interactable element under it.
 A press that moves `dragThreshold` reference pixels or more from where it
 started becomes a drag. `onBeginDrag` is raised when it starts,
 `onDrag` every tick while it lasts and `onEndDrag` when the pointer is
-released. A drag doesn't raise `onInvoke`. Read the pointer's position from
+released. A drag doesn't raise `onInvoke`. A press or drag on an element
+that becomes hidden is cancelled: `onEndDrag` (if it was dragging) and
+`onPointerUp` are raised, and `onInvoke` isn't. Read the pointer's position from
 the pointer source.
 
 ```ts

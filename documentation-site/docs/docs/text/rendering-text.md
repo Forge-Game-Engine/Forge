@@ -68,7 +68,7 @@ The shaping system lays the string out again on its next update when
 `text`, `fontAtlas`, `size`, `letterSpacing`, `lineHeight`,
 `horizontalAlign`, `verticalAlign`, `maxWidth`, `horizontalAlignPivot` or
 `richText` has changed. The render system reads the other fields, such as
-`color`, `layer` and `enabled`, every frame.
+`color` and `layer`, every frame.
 
 ## Aligning text to its position
 
@@ -233,6 +233,7 @@ across any number of text entities, as
 
 ## Hiding and removing text
 
-Set `enabled` to `false` to stop drawing the text, and back to `true` to
-draw it again. Removing the `TextEcsComponent` from the entity stops it
+To stop drawing the text and keep its component, hide its entity with a
+`VisibilityEcsComponent` (see [Visibility](../rendering/visibility.md)).
+Removing the `TextEcsComponent` from the entity stops it
 being drawn.

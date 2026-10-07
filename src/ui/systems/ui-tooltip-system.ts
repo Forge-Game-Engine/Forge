@@ -1,8 +1,6 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { EcsWorld } from '../../ecs/ecs-world.js';
-import { SpriteEcsComponent, spriteId } from '../../rendering/index.js';
-import { TextEcsComponent, textId } from '../../text/index.js';
+import { VisibilityEcsComponent, visibilityId } from '../../rendering/index.js';
 import {
   TooltipEcsComponent,
   tooltipId,
@@ -16,32 +14,10 @@ import {
   uiInteractionVisualStates,
 } from '../types/ui-interaction-visual-state.js';
 
-function setTooltipVisible(
-  world: EcsWorld,
-  tooltip: TooltipEcsComponent,
-  visible: boolean,
-): void {
-  const sprite = world.getComponent<SpriteEcsComponent>(
-    tooltip.panel,
-    spriteId,
-  );
-
-  if (sprite) {
-    sprite.enabled = visible;
-  }
-
-  const text = world.getComponent<TextEcsComponent>(tooltip.label, textId);
-
-  if (text) {
-    text.enabled = visible;
-  }
-}
-
 /**
- * Creates a system that shows/hides a `TooltipEcsComponent`'s `panel`/
- * `label` (toggling `SpriteEcsComponent.enabled`/`TextEcsComponent.enabled`,
- * the same mechanism `createDropdown` uses to hide its closed option list)
- * based on the source entity's own `UiInteractableEcsComponent` state:
+ * Creates a system that shows/hides a `TooltipEcsComponent`'s `panel`, and
+ * everything parented under it, through the panel's
+ * `VisibilityEcsComponent`, based on the source entity's own `UiInteractableEcsComponent` state:
  * visible while `deriveUiInteractionVisualState` reads `hover` or `pressed`
  * (pointer-hovered, gamepad/keyboard-focused, or mid-press - source-agnostic,
  * like the rest of this module) *and* that state has held continuously for
@@ -58,6 +34,8 @@ function setTooltipVisible(
  * write) and before `createRenderEcsSystem`.
  * @param time - The time instance driving `hoverElapsedMilliseconds`.
  * @returns The UI tooltip ECS system.
+ * @throws From `update`: an error if a tooltip's `panel` has no
+ * `VisibilityEcsComponent`.
  */
 export const createUiTooltipEcsSystem = (
   time: Time,
@@ -78,12 +56,12 @@ export const createUiTooltipEcsSystem = (
         ? tooltip.hoverElapsedMilliseconds + time.deltaTimeInMilliseconds
         : 0;
 
-      setTooltipVisible(
-        world,
-        tooltip,
+      world.getComponentRequired<VisibilityEcsComponent>(
+        tooltip.panel,
+        visibilityId,
+      ).visible =
         isActive &&
-          tooltip.hoverElapsedMilliseconds >= tooltip.showDelayMilliseconds,
-      );
+        tooltip.hoverElapsedMilliseconds >= tooltip.showDelayMilliseconds;
     }
   },
 });

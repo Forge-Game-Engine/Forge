@@ -2,11 +2,38 @@
 sidebar_position: 8
 ---
 
-# Canvas Groups and Tooltips
+# Hiding, Fading and Tooltips
 
-A canvas group fades, disables or makes click-through an element and
-everything under it with one component. A tooltip is a panel with a label
-that is shown while an interactable element is hovered or focused.
+A `VisibilityEcsComponent` hides an element and everything under it. A
+canvas group fades, disables or makes click-through an element and
+everything under it. A tooltip is a panel with a label that is shown while
+an interactable element is hovered or focused.
+
+## Hiding and fading
+
+Hiding and fading a UI subtree do different things:
+
+- Hiding sets a [`VisibilityEcsComponent`](../rendering/visibility.md)'s
+  `visible` to `false`. The subtree isn't drawn, takes no space in layout
+  groups and content size fitters, can't be hit or focused, and loses focus
+  and any press in progress.
+- Fading sets a canvas group's `alpha`. The subtree is still drawn at the
+  faded opacity, including at `0`, keeps its place in the layout, and is
+  hit and focused unless the group also sets `interactable` and
+  `blocksRaycasts` to `false`.
+
+```ts
+import { addVisibilityComponent } from '@forge-game-engine/forge/rendering';
+
+const settingsVisibility = addVisibilityComponent(world, settingsPanel, {
+  visible: false,
+});
+
+settingsVisibility.visible = true;
+```
+
+A canvas group at `alpha: 0` still takes input and layout space. Set the
+subtree's `visible` to `false` when it should do neither.
 
 ## Fading and disabling a panel
 
@@ -74,7 +101,9 @@ The tooltip's panel is a child of the element, placed above its top edge,
 so it moves with the element. It's shown once the element has been hovered
 or focused (or pressed) continuously for
 [`TooltipEcsComponent`](/Forge/docs/api/interfaces/TooltipEcsComponent)'s
-`showDelayMilliseconds`, and hidden as soon as it isn't.
+`showDelayMilliseconds`, and hidden as soon as it isn't. The tooltip system
+shows and hides it by writing the panel's `VisibilityEcsComponent.visible`
+every frame, so don't set it yourself.
 
 :::caution
 The tooltip is drawn in hierarchy order after its element, so elements

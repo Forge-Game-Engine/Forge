@@ -112,12 +112,6 @@ export interface SpriteDefaultedOptions {
   category: number;
 
   /**
-   * Whether this sprite is drawn. When `false`, the render system skips
-   * this entity entirely for every camera, before any culling-mask check.
-   */
-  enabled: boolean;
-
-  /**
    * The draw-order layer for this sprite, relative to other sprites and
    * text drawn by the same camera: lower layers are drawn first, so higher
    * layers appear on top. Within a layer, sprites draw by their entity's
@@ -193,7 +187,6 @@ export function addSpriteComponent(
     emissive: null,
     material: null,
     category: 1,
-    enabled: true,
     layer: 0,
   };
 

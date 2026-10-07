@@ -120,7 +120,7 @@ doesn't move the particles it already spawned.
 
 `ParticleEmitter` takes either a `SpriteEcsComponent` (from
 `createImageSprite`) or a `Sprite` (from `createSprite`). Fields a `Sprite`
-lacks, such as `enabled` and `layer`, get the defaults `addSpriteComponent`
+lacks, such as `category` and `layer`, get the defaults `addSpriteComponent`
 gives them. Particles are drawn on the sprite's `layer`.
 
 Each particle gets its own copy of the sprite, so a system can change one

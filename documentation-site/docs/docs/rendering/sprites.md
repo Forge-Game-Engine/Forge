@@ -31,7 +31,9 @@ A `SpriteEcsComponent` holds:
   [Choosing which cameras draw a sprite](#choosing-which-cameras-draw-a-sprite)).
 - `layer`: the sprite's place in the draw order (see
   [Setting the draw order](#setting-the-draw-order)).
-- `enabled`: whether the sprite is drawn.
+
+To hide a sprite, hide its entity with a `VisibilityEcsComponent` (see
+[Visibility](./visibility.md)).
 
 The render system places the sprite with the entity's world position,
 rotation and scale, and mirrors it with the entity's
@@ -296,12 +298,8 @@ by packing their images into one sprite sheet and selecting each image with
 
 ## Hiding and removing a sprite
 
-Set `enabled` to `false` to stop drawing a sprite, and back to `true` to
-draw it again:
-
-```ts
-sprite.enabled = false;
-```
+To stop drawing a sprite and keep its component, hide its entity with a
+`VisibilityEcsComponent` (see [Visibility](./visibility.md)).
 
 To remove the sprite from the entity, remove its component:
 

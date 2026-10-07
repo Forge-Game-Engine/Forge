@@ -131,9 +131,6 @@ export interface TextDefaultedOptions {
    */
   category: number;
 
-  /** Whether this text is drawn at all. */
-  enabled: boolean;
-
   /**
    * Outline color. `outlineWidth` of `0` (the default) draws no outline
    * regardless of this value.
@@ -229,7 +226,6 @@ export function addTextComponent(
     richText: true,
     layer: 0,
     category: TEXT_RENDER_CATEGORY,
-    enabled: true,
     outlineColor: Color.black,
     outlineWidth: 0,
     shadowColor: Color.transparent,

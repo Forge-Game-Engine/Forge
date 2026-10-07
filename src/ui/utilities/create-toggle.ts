@@ -2,9 +2,9 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { Vector2 } from '../../math/index.js';
 import {
+  addVisibilityComponent,
   NineSliceOptions,
   SpriteEcsComponent,
-  spriteId,
 } from '../../rendering/index.js';
 import {
   addUiColorTransitionComponent,
@@ -108,7 +108,7 @@ export interface Toggle {
  * Creates a toggle: a panel (see `createPanel`) with a
  * `UiInteractableEcsComponent`, a `UiColorTransitionEcsComponent`, and a
  * `UiToggleEcsComponent` added, plus a child checkmark panel whose
- * `SpriteEcsComponent.enabled` tracks `isOn`. Place a caption next to it with
+ * `VisibilityEcsComponent.visible` tracks `isOn`. Place a caption next to it with
  * a separate `createLabel` call - unlike `createButton`, a toggle doesn't
  * assemble one itself, since a caption's placement (left, right, above) and
  * whether one exists at all varies more than a button's centered label does.
@@ -168,14 +168,12 @@ export function createToggle(
     sprite: checkmarkSprite,
   });
 
-  const checkmarkSpriteComponent = world.getComponentRequired(
-    checkmark,
-    spriteId,
-  );
-  checkmarkSpriteComponent.enabled = isOn;
+  const checkmarkVisibility = addVisibilityComponent(world, checkmark, {
+    visible: isOn,
+  });
 
   toggle.onValueChanged.registerListener((value) => {
-    checkmarkSpriteComponent.enabled = value;
+    checkmarkVisibility.visible = value;
   });
 
   return {

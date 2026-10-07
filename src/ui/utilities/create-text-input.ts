@@ -4,6 +4,7 @@ import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
 import { createTextEntry } from '../../input/text-entry/text-entry.js';
 import { Vector2 } from '../../math/index.js';
 import {
+  addVisibilityComponent,
   Color,
   NineSliceOptions,
   RenderContext,
@@ -272,8 +273,10 @@ export function createTextInput(
   ): number => {
     const part = createPanel(world, origin, {
       anchor: originAnchor(pivot, partSize),
-      sprite: { ...fillSprite, tintColor: color, enabled: false },
+      sprite: { ...fillSprite, tintColor: color },
     });
+
+    addVisibilityComponent(world, part, { visible: false });
 
     return part;
   };
@@ -305,7 +308,10 @@ export function createTextInput(
     ...labelOptions,
     text: placeholder,
     color: placeholderColor,
-    enabled: value.length === 0,
+  });
+
+  addVisibilityComponent(world, placeholderLabel, {
+    visible: value.length === 0,
   });
 
   const compositionUnderline = createFill(

@@ -20,6 +20,8 @@ matches the camera's `cullingMask`, in [draw order](./draw-order.md).
 - [Cameras](./world-units-and-cameras.md): the `CameraEcsComponent`, which
   sets which part of the world is drawn to the canvas, and how world units
   map to screen pixels and texels.
+- [Visibility](./visibility.md): hiding an entity and everything parented
+  under it, in the world and in UI.
 - [Masks](./masks.md): clipping sprites and text to a rect, or revealing
   part of them from an edge or around a center.
 - [Materials](./material-uniforms.md): shader programs and the uniform

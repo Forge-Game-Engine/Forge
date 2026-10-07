@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createToggle } from './create-toggle.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import {
+  Color,
+  spriteId,
+  Texture,
+  visibilityId,
+} from '../../rendering/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiToggleId } from '../components/ui-toggle-component.js';
@@ -21,7 +26,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 
@@ -54,7 +58,9 @@ describe('createToggle', () => {
     expect(world.getComponent(toggle.entity, uiToggleId)).toBe(toggle.toggle);
 
     expect(world.getParent(toggle.checkmark)).toBe(toggle.entity);
-    expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(false);
+    expect(world.getComponent(toggle.checkmark, visibilityId)!.visible).toBe(
+      false,
+    );
   });
 
   it('sizes the checkmark to exactly fill the box, with no stretch margin', () => {
@@ -88,7 +94,9 @@ describe('createToggle', () => {
     });
 
     expect(toggle.toggle.isOn).toBe(true);
-    expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(true);
+    expect(world.getComponent(toggle.checkmark, visibilityId)!.visible).toBe(
+      true,
+    );
   });
 
   it('syncs the checkmark visibility when onValueChanged is raised', () => {
@@ -102,11 +110,15 @@ describe('createToggle', () => {
 
     toggle.toggle.onValueChanged.raise(true);
 
-    expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(true);
+    expect(world.getComponent(toggle.checkmark, visibilityId)!.visible).toBe(
+      true,
+    );
 
     toggle.toggle.onValueChanged.raise(false);
 
-    expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(false);
+    expect(world.getComponent(toggle.checkmark, visibilityId)!.visible).toBe(
+      false,
+    );
   });
 
   it('exposes onValueChanged directly, matching the toggle event', () => {
