@@ -13,6 +13,7 @@ export * from './ui-focus-component.js';
 export * from './ui-interactable-component.js';
 export * from './ui-progress-bar-component.js';
 export * from './ui-safe-area-component.js';
+export * from './ui-scroll-rect-component.js';
 export * from './ui-slider-component.js';
 export * from './ui-toggle-component.js';
 export * from './ui-toggle-group-component.js';

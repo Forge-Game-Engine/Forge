@@ -23,11 +23,9 @@ export interface UiDropdownDefaultedOptions {
 /**
  * A header + option-list selector's state. Unlike `UiToggleEcsComponent`/
  * `UiSliderEcsComponent`, there's no generic `createUiDropdownEcsSystem` -
- * opening/closing the option list touches several sibling entities'
- * `SpriteEcsComponent.enabled`/`TextEcsComponent.enabled`/
- * `UiInteractableEcsComponent.interactable` at once (so a closed list is
- * both invisible and un-raycastable), which only the assembly that created
- * those entities - `createDropdown` - knows how to reach. `isOpen` and
+ * opening/closing the option list shows or hides the list container's
+ * `VisibilityEcsComponent`, an entity only the assembly that created it -
+ * `createDropdown` - knows how to reach. `isOpen` and
  * `selectedIndex` are written by `createDropdown`'s own listeners; treat
  * them as read-only unless you're replacing that wiring with your own.
  */

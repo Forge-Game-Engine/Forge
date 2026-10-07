@@ -28,6 +28,7 @@ export interface DrawOrderEcsComponent {
   order: number;
 }
 
+/** The component key of {@link DrawOrderEcsComponent}. */
 export const drawOrderId =
   createComponentId<DrawOrderEcsComponent>('drawOrder');
 

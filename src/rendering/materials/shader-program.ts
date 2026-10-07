@@ -1,3 +1,4 @@
+import type { RenderContext } from '../render-context.js';
 import type { ForgeShaderSource } from '../shaders/pre-processing/forge-shader-source.js';
 import {
   addUniformDeclaration,
@@ -34,61 +35,107 @@ export interface ActiveUniform extends UniformDeclaration {
  * uniforms its shaders declare, and where the program keeps the active
  * ones. Shared by every `Material` made from the same two shaders, and
  * cached by the render context (see `RenderContext.getShaderProgram`), so
- * each shader pair compiles and links once.
+ * each shader pair compiles and links once, and again each time a lost
+ * WebGL context is restored.
  */
 export class ShaderProgram {
-  /** The linked WebGL program. */
-  public readonly program: WebGLProgram;
-
   /** A description of the program's shaders, for error messages. */
   public readonly description: string;
 
   /** The names of the uniforms its shaders declare, in declaration order. */
   public readonly declaredUniformNames: readonly string[];
 
-  /**
-   * Every uniform that can be set, by name: the declared uniforms, whether
-   * or not the compiler kept them, and the active members of struct
-   * uniforms. Arrays are reachable as `u_items` and `u_items[0]`.
-   */
-  public readonly uniforms: ReadonlyMap<string, UniformDeclaration>;
-
-  /** Active uniforms in program order, each listed once. */
-  public readonly activeUniforms: readonly ActiveUniform[];
+  private readonly _renderContext: RenderContext;
+  private readonly _vertexShaderSource: ForgeShaderSource;
+  private readonly _fragmentShaderSource: ForgeShaderSource;
+  private readonly _declaredUniforms: ReadonlyMap<string, UniformDeclaration>;
+  private _program: WebGLProgram | null;
+  private _uniforms: ReadonlyMap<string, UniformDeclaration>;
+  private _activeUniforms: readonly ActiveUniform[];
 
   /**
-   * Compiles and links the two shaders and reads their uniforms.
-   * @param gl - The WebGL2 rendering context.
+   * Reads the uniforms the two shaders declare, then compiles and links
+   * them, unless the render context's WebGL context is lost, in which case
+   * they're linked when it's restored.
+   * @param renderContext - The render context the program belongs to.
    * @param vertexShaderSource - The vertex shader source.
    * @param fragmentShaderSource - The fragment shader source.
-   * @param blackTexture - Returns the texture an unset sampler samples.
    * @throws An error if a shader fails to compile or link, if the two
    * shaders declare the same uniform with different types or sizes, or if
    * they declare a sampler other than `sampler2D`.
    */
   constructor(
-    gl: WebGL2RenderingContext,
+    renderContext: RenderContext,
     vertexShaderSource: ForgeShaderSource,
     fragmentShaderSource: ForgeShaderSource,
-    blackTexture: () => Texture,
   ) {
     this.description = `material "${vertexShaderSource.name}" + "${fragmentShaderSource.name}"`;
 
-    const uniforms = new Map<string, UniformDeclaration>();
-    const declaredUniformNames = this._addDeclaredUniforms(
-      uniforms,
+    const declaredUniforms = new Map<string, UniformDeclaration>();
+
+    this.declaredUniformNames = this._addDeclaredUniforms(
+      declaredUniforms,
       vertexShaderSource,
       fragmentShaderSource,
     );
+    this._renderContext = renderContext;
+    this._vertexShaderSource = vertexShaderSource;
+    this._fragmentShaderSource = fragmentShaderSource;
+    this._declaredUniforms = declaredUniforms;
+    this._program = null;
+    this._uniforms = declaredUniforms;
+    this._activeUniforms = [];
 
-    this.program = this._createProgram(
+    if (!renderContext.isContextLost) {
+      this.link();
+    }
+  }
+
+  /**
+   * The linked WebGL program, or `null` if it was created while the WebGL
+   * context was lost and hasn't been linked yet.
+   */
+  get program(): WebGLProgram | null {
+    return this._program;
+  }
+
+  /**
+   * Every uniform that can be set, by name: the declared uniforms, whether
+   * or not the compiler kept them, and the active members of struct
+   * uniforms. Arrays are reachable as `u_items` and `u_items[0]`. Struct
+   * members are only known once the program is linked.
+   */
+  get uniforms(): ReadonlyMap<string, UniformDeclaration> {
+    return this._uniforms;
+  }
+
+  /**
+   * Active uniforms in program order, each listed once. Empty until the
+   * program is linked.
+   */
+  get activeUniforms(): readonly ActiveUniform[] {
+    return this._activeUniforms;
+  }
+
+  /**
+   * Compiles and links the two shaders, replacing any previous program, and
+   * reads where the program keeps its active uniforms. The render context
+   * calls this when it creates the program and again when a lost WebGL
+   * context is restored.
+   * @throws An error if a shader fails to compile or link, or if the
+   * program has an active sampler other than `sampler2D`.
+   */
+  public link(): void {
+    const { gl } = this._renderContext;
+    const uniforms = new Map(this._declaredUniforms);
+
+    this._program = this._createProgram(
       gl,
-      vertexShaderSource.preparedSource,
-      fragmentShaderSource.preparedSource,
+      this._vertexShaderSource.preparedSource,
+      this._fragmentShaderSource.preparedSource,
     );
-    this.declaredUniformNames = declaredUniformNames;
-    this.activeUniforms = this._addActiveUniforms(gl, uniforms, blackTexture);
-    this.uniforms = uniforms;
+    this._activeUniforms = this._addActiveUniforms(gl, this._program, uniforms);
+    this._uniforms = uniforms;
   }
 
   private _createProgram(
@@ -117,7 +164,12 @@ export class ShaderProgram {
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
 
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    // Every status query reports failure on a lost context. The program is
+    // linked again when the context is restored.
+    if (
+      !gl.getProgramParameter(program, gl.LINK_STATUS) &&
+      !this._renderContext.isContextLost
+    ) {
       const log = gl.getProgramInfoLog(program);
 
       gl.deleteProgram(program);
@@ -142,7 +194,10 @@ export class ShaderProgram {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    if (
+      !gl.getShaderParameter(shader, gl.COMPILE_STATUS) &&
+      !this._renderContext.isContextLost
+    ) {
       const log = gl.getShaderInfoLog(shader);
 
       gl.deleteShader(shader);
@@ -215,15 +270,15 @@ export class ShaderProgram {
    */
   private _addActiveUniforms(
     gl: WebGL2RenderingContext,
+    program: WebGLProgram,
     uniforms: Map<string, UniformDeclaration>,
-    blackTexture: () => Texture,
   ): ActiveUniform[] {
-    const { program } = this;
     const activeUniforms: ActiveUniform[] = [];
-    const numUniforms = gl.getProgramParameter(
-      program,
-      gl.ACTIVE_UNIFORMS,
-    ) as number;
+    // `null` on a lost context.
+    const numUniforms =
+      (gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) as number | null) ??
+      0;
+    const blackTexture = (): Texture => this._renderContext.blackTexture;
 
     for (let i = 0; i < numUniforms; i++) {
       const info = gl.getActiveUniform(program, i);

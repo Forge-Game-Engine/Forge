@@ -25,9 +25,10 @@ playSound(sfx, laser, { volume: 0.5 });
 
 The pieces:
 
-- [`createSoundMixer`](/Forge/docs/api/functions/createSoundMixer) owns the
-  game's audio output and unlocks it on the player's first click, tap or
-  key press. See [Mixer and Buses](./mixer-and-buses.md).
+- [`createSoundMixer`](/Forge/docs/api/functions/createSoundMixer) creates
+  the mixer, which owns the game's audio output and starts audio on the
+  player's first click, tap or key press. See
+  [Mixer and Buses](./mixer-and-buses.md).
 - A [`MixerBus`](/Forge/docs/api/interfaces/MixerBus) has a `volume` and a
   `muted` flag that apply to every sound played through it, including
   sounds already playing.
@@ -37,8 +38,8 @@ The pieces:
   samples with
   [`createSoundAsset`](/Forge/docs/api/functions/createSoundAsset). See
   [Loading Sounds](./loading-sounds.md).
-- [`playSound`](/Forge/docs/api/functions/playSound) plays a sound without
-  an entity. A
+- [`playSound`](/Forge/docs/api/functions/playSound) plays a sound that
+  doesn't belong to an entity. A
   [`SoundEcsComponent`](/Forge/docs/api/interfaces/SoundEcsComponent),
   played by
   [`createSoundEcsSystem`](/Forge/docs/api/functions/createSoundEcsSystem),

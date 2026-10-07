@@ -35,12 +35,18 @@ export interface RigidBodyEcsComponent {
    * The world-space velocity of the body's center of mass. For a
    * `'dynamic'` body that's its collider's centroid, which needn't be the
    * entity's origin; for every other body it's the entity's origin.
+   * Defaults to `(0, 0)`.
    */
   velocity: Vector2;
+  /**
+   * The body's angular velocity, in radians/second. Positive turns
+   * counter-clockwise. Defaults to `0`.
+   */
   angularVelocity: number;
   /**
    * Damps `angularVelocity` each tick, proportional to itself; `0` disables
-   * damping. Applied by {@link createEulerIntegrationEcsSystem}.
+   * damping. Applied by {@link createEulerIntegrationEcsSystem}. Defaults
+   * to `0`.
    */
   angularDrag: number;
 

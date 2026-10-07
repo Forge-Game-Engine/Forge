@@ -3,10 +3,11 @@ import { SpriteSheet } from './create-sprite-sheet.js';
 
 /**
  * Selects a contiguous run of frames from a sprite sheet, in row-major order, to build an animation clip.
- * @param spriteSheet - An array of AnimationFrame objects representing the frames in the sprite sheet.
+ * @param spriteSheet - The sprite sheet to select frames from.
  * @param numberOfFrames - The total number of frames to include in the animation. This should not exceed the total frames available in the sprite sheet.
  * @param startFrame - The index of the first frame to include in the animation. Default is 0 (the first frame in the sprite sheet).
- * @returns An Animation object containing the generated animation frames.
+ * @returns The selected frames, to pass to the `AnimationClip` constructor.
+ * @throws An error if the selection runs past the last row of the sprite sheet.
  */
 export function selectAnimationFrames(
   spriteSheet: SpriteSheet,

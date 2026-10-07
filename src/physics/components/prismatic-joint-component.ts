@@ -9,28 +9,30 @@ import { Vec2, Vector2 } from '../../math/index.js';
  * callers may omit these.
  */
 export interface PrismaticJointDefaultedOptions {
-  /** Anchor point, in `entityA`'s local space, `entityB`'s anchor slides relative to. */
+  /** Anchor point, in `entityA`'s local space, `entityB`'s anchor slides relative to. Defaults to `entityA`'s origin. */
   localAnchorA: Vector2;
-  /** Anchor point, in `entityB`'s local space, that slides along the axis. */
+  /** Anchor point, in `entityB`'s local space, that slides along the axis. Defaults to `entityB`'s origin. */
   localAnchorB: Vector2;
-  /** The axis `entityB`'s anchor is free to slide along, in `entityA`'s local space. Normalized on add. */
+  /** The axis `entityB`'s anchor is free to slide along, in `entityA`'s local space. Normalized on add. Defaults to `+X`. */
   axis: Vector2;
 
-  /** Whether the translation along `axis` is clamped to `[lowerTranslation, upperTranslation]`. */
+  /** Whether the translation along `axis` (from `entityA`'s anchor to `entityB`'s) is clamped to `[lowerTranslation, upperTranslation]`. Defaults to `false`. */
   enableLimit: boolean;
-  /** The lowest translation along `axis` allowed when `enableLimit` is `true`. */
+  /** The lowest translation along `axis` allowed when `enableLimit` is `true`. Defaults to `0`. */
   lowerTranslation: number;
-  /** The highest translation along `axis` allowed when `enableLimit` is `true`. */
+  /** The highest translation along `axis` allowed when `enableLimit` is `true`. Defaults to `0`. */
   upperTranslation: number;
 
-  /** The soft constraint's target frequency, in Hz, correcting perpendicular/angular drift. */
+  /** The soft constraint's target frequency, in Hz, correcting perpendicular/angular drift. Defaults to `60`. */
   hertz: number;
-  /** The soft constraint's damping ratio correcting perpendicular/angular drift. */
+  /** The soft constraint's damping ratio correcting perpendicular/angular drift. Defaults to `2`. */
   dampingRatio: number;
 }
 
 export interface PrismaticJointRequiredOptions {
+  /** The entity `axis` and the translation are measured relative to. */
   entityA: number;
+  /** The entity that slides along `axis` relative to `entityA`. */
   entityB: number;
 }
 
@@ -66,6 +68,9 @@ export const prismaticJointId =
  * @param entity - The (dedicated) entity to attach the joint component to.
  * @param options - Options for configuring the joint.
  * @returns The attached component, for further tuning or runtime changes.
+ * @throws An error if `axis` is the zero vector, `lowerTranslation` is
+ * greater than `upperTranslation`, or `entityA` or `entityB` has no
+ * `RotationEcsComponent`.
  */
 export function addPrismaticJointComponent(
   world: EcsWorld,

@@ -4,76 +4,90 @@ sidebar_position: 6
 
 # Controls
 
-Toggles, sliders, progress bars, and dropdowns build on the same
-`UiInteractableEcsComponent`/rect-transform pieces `createButton` does -
-each is a plain data component (`UiToggleEcsComponent`,
-`UiSliderEcsComponent`, `UiProgressBarEcsComponent`,
-`UiDropdownEcsComponent`) plus a `create*` aggregate factory that assembles
-the visual pieces around it, the same pattern as `createButton` (see
-[Buttons and Interaction](./buttons-and-interaction.md)).
+Toggles, sliders, progress bars and dropdowns each have a data component
+(`UiToggleEcsComponent`, `UiSliderEcsComponent`,
+`UiProgressBarEcsComponent`, `UiDropdownEcsComponent`) and a `create*`
+factory that builds the control's panels and labels around it. Toggles,
+sliders and dropdowns are [interactable](buttons-and-interaction.md), so
+they respond to the pointer and to focus navigation like buttons do.
 
 ## Toggles
 
-[`createToggle`](/Forge/docs/api/functions/createToggle) creates a box (a
-panel, like `createButton`'s background) with a
-[`UiToggleEcsComponent`](/Forge/docs/api/interfaces/UiToggleEcsComponent)
-added, plus a child checkmark panel whose `SpriteEcsComponent.enabled`
-tracks `isOn`:
+[`createToggle`](/Forge/docs/api/functions/createToggle) creates a box with
+a [`UiToggleEcsComponent`](/Forge/docs/api/interfaces/UiToggleEcsComponent)
+and a child checkmark panel that is drawn while the toggle is on:
 
 ```ts
-const toggle = createToggle(world, canvas, {
+import { createToggle } from '@forge-game-engine/forge/ui';
+
+const musicToggle = createToggle(world, canvas, {
   sprite: boxSprite,
-  checkmarkSprite: checkSprite,
+  checkmarkSprite,
   isOn: true,
 });
 
-toggle.onValueChanged.registerListener((isOn) => {
-  musicMuted = !isOn;
+musicToggle.onValueChanged.registerListener((isOn) => {
+  settings.musicEnabled = isOn;
 });
 ```
 
-`createUiToggleEcsSystem` (registered by `registerUiSystems`) flips `isOn`
-whenever the toggle's `UiInteractableEcsComponent` is invoked - by a
-pointer click or a submit action, same as a button. Unlike a button, a
-toggle doesn't assemble its own caption label; place one with a separate
-`createLabel` call next to it, since where a caption goes (left, right,
-above) - and whether one exists at all - varies more than a button's
-centered label does.
+Invoking the toggle flips its `isOn` and raises `onValueChanged` with the
+new value. A toggle has no label of its own: place one next to it with
+[`createLabel`](labels-and-text.md).
 
-Pass a shared
+:::caution
+Writing `toggle.isOn` directly doesn't raise `onValueChanged`, and
+`createToggle`'s checkmark is shown and hidden by an `onValueChanged`
+listener that sets its
+[`VisibilityEcsComponent`](../rendering/visibility.md), so it keeps its
+previous state.
+:::
+
+### Grouping toggles
+
+Toggles that share a group are mutually exclusive: turning one on turns the
+others off. Add a
 [`UiToggleGroupEcsComponent`](/Forge/docs/api/type-aliases/UiToggleGroupEcsComponent)
-entity (`addUiToggleGroupComponent`) as `group` to make a set of toggles
-mutually exclusive - radio-button behavior by default (`allowSwitchOff:
-false`, so exactly one is always on and clicking the active one is a
-no-op), or checkbox-like mutual exclusion that still allows none selected
-with `allowSwitchOff: true`:
+to any entity and pass that entity as each toggle's `group`:
 
 ```ts
+import {
+  addUiToggleGroupComponent,
+  createToggle,
+} from '@forge-game-engine/forge/ui';
+
 const difficultyGroup = world.createEntity();
+
 addUiToggleGroupComponent(world, difficultyGroup);
 
-const easy = createToggle(world, canvas, {
-  sprite,
+const easyToggle = createToggle(world, canvas, {
+  sprite: boxSprite,
   checkmarkSprite,
   group: difficultyGroup,
   isOn: true,
 });
-const hard = createToggle(world, canvas, {
-  sprite,
+
+const hardToggle = createToggle(world, canvas, {
+  sprite: boxSprite,
   checkmarkSprite,
   group: difficultyGroup,
 });
 ```
+
+By default, invoking the toggle that's on does nothing, so one toggle in
+the group stays on. With `allowSwitchOff: true`, it turns off, and the
+group can have none on.
 
 ## Sliders
 
-[`createSlider`](/Forge/docs/api/functions/createSlider) creates a track (a
-panel used as the drag surface) with a
-[`UiSliderEcsComponent`](/Forge/docs/api/interfaces/UiSliderEcsComponent)
-added, plus a child handle and, if `fillSprite` is given, a child fill:
+[`createSlider`](/Forge/docs/api/functions/createSlider) creates a track
+with a [`UiSliderEcsComponent`](/Forge/docs/api/interfaces/UiSliderEcsComponent),
+a child handle and, if `fillSprite` is given, a child fill:
 
 ```ts
-const volume = createSlider(world, canvas, {
+import { createSlider } from '@forge-game-engine/forge/ui';
+
+const volumeSlider = createSlider(world, canvas, {
   trackSprite,
   handleSprite,
   fillSprite,
@@ -83,65 +97,59 @@ const volume = createSlider(world, canvas, {
   wholeNumbers: true,
 });
 
-volume.onValueChanged.registerListener((value) => {
-  musicBus.volume = value / 100;
+volumeSlider.onValueChanged.registerListener((value) => {
+  settings.musicVolume = value / 100;
 });
 ```
 
-The whole track is the drag surface - clicking anywhere on it, not just the
-handle, jumps the handle there, and `createUiSliderEcsSystem` (registered
-by `registerUiSystems` once a `pointerSource` is given) keeps tracking the
-drag even if the pointer strays outside the track's vertical bounds.
-Because that system has to run after the interaction pipeline each tick
-(it reads this tick's press state) but `createUiLayoutEcsSystem` runs
-_before_ it (layout needs last tick's resolved rects for this tick's
-raycasting), a value change - from a drag or an external `slider.value =`
-write - is reflected one frame later; imperceptible at normal frame rates.
+Pressing anywhere on the track sets `value` from the pointer's horizontal
+position, and dragging keeps setting it while the press lasts. Each change
+raises `onValueChanged`. Every frame, the handle is moved to `value`, and
+the fill is revealed from the left up to it by a linear
+[mask](../rendering/masks.md), so a nine-slice fill keeps its end caps.
+Writing `slider.value` moves the handle and the fill, and doesn't raise
+`onValueChanged`.
 
-The fill covers the whole track. A linear [mask](../rendering/masks.md)
-from the left reveals it up to the handle, so a nine-slice fill keeps its
-end caps at any value.
+:::caution
+The slider system is registered only when `registerUiSystems` has a
+`pointerSource`. Without one, sliders' handles and fills don't move.
+:::
 
 ## Progress bars
 
-[`createProgressBar`](/Forge/docs/api/functions/createProgressBar) creates
-a track with a
+[`createProgressBar`](/Forge/docs/api/functions/createProgressBar) creates a
+track with a
 [`UiProgressBarEcsComponent`](/Forge/docs/api/interfaces/UiProgressBarEcsComponent)
-added and a child fill, driven purely by `value` - no
-`UiInteractableEcsComponent`, since a progress bar reports state rather
-than accepting input:
+and a child fill. A progress bar isn't interactable: game code sets its
+`value`.
 
 ```ts
-const health = createProgressBar(world, canvas, {
+import { createProgressBar } from '@forge-game-engine/forge/ui';
+
+const healthBar = createProgressBar(world, canvas, {
   trackSprite,
   fillSprite,
-  minValue: 0,
-  maxValue: playerMaxHealth,
-  value: playerHealth,
+  maxValue: 100,
+  value: 100,
 });
 
-// Later, whenever health changes:
-health.progressBar.value = playerHealth;
+healthBar.progressBar.value = 40;
 ```
 
-Unlike a slider, `createUiProgressBarEcsSystem` runs _before_
-`createUiLayoutEcsSystem` (it has no interaction dependency to wait on), so
-a `value` write is reflected the same frame.
-
 The fill covers the whole track, and a [mask](../rendering/masks.md) on it
-reveals the part `value` covers: `createUiProgressBarEcsSystem` sets the
-mask's `amount` to `value`'s fraction of the range. A nine-slice fill keeps
-its end caps at any value, and anything parented to the fill (a label) is
-revealed with it.
+reveals the share of it that `value` covers of the range from `minValue` to
+`maxValue`. A nine-slice fill keeps its end caps at any value, and elements
+parented to the fill are revealed with it.
 
 ### Choosing how the fill is revealed
 
-`fillShape` picks the mask shape, without its `amount`. It defaults to a
-linear fill from the left; a linear fill can start from any edge, and a
-radial fill reveals a sector, for a ring or a cooldown:
+`fillShape` is a linear or radial mask shape without its `amount`. It
+defaults to a linear fill from the left. A linear fill can start from any
+edge, and a radial fill reveals a sector around the bar's center, for a
+ring or a cooldown:
 
 ```ts
-const cooldown = createProgressBar(world, canvas, {
+const cooldownRing = createProgressBar(world, canvas, {
   anchor: UiAnchor.center({ x: 64, y: 64 }),
   trackSprite: ringTrackSprite,
   fillSprite: ringFillSprite,
@@ -152,39 +160,44 @@ const cooldown = createProgressBar(world, canvas, {
 ## Dropdowns
 
 [`createDropdown`](/Forge/docs/api/functions/createDropdown) creates a
-header button (`createButton`, showing the currently selected option) with
-a
-[`UiDropdownEcsComponent`](/Forge/docs/api/interfaces/UiDropdownEcsComponent)
-added, plus one option-row button per entry in `options`, stacked below the
-header and hidden until it's clicked open. A chevron label sits on the
-header's right edge, flipping between `v` (closed) and `^` (open) in step
-with `dropdown.isOpen` - the bundled default font atlas is ASCII-only, so
-these stand in for a down/up-pointing triangle rather than proper chevron
-glyphs:
+header button that shows the selected option, with a
+[`UiDropdownEcsComponent`](/Forge/docs/api/interfaces/UiDropdownEcsComponent),
+and one option button per entry in `options`, below the header:
 
 ```ts
-const quality = createDropdown(world, canvas, {
+import { createDropdown } from '@forge-game-engine/forge/ui';
+
+const qualityDropdown = createDropdown(world, canvas, {
   headerSprite,
   optionSprite,
   options: ['Low', 'Medium', 'High'],
   fontAtlas,
+  labelCategory: uiRenderCategory,
   selectedIndex: 1,
 });
 
-quality.onValueChanged.registerListener((index) => {
-  applyGraphicsPreset(quality.dropdown.options[index]);
+qualityDropdown.onValueChanged.registerListener((index) => {
+  applyQualityPreset(qualityDropdown.dropdown.options[index]);
 });
 ```
 
-Selecting an option updates the header's label, raises `onValueChanged`,
-and closes the list. Unlike toggles and sliders, there's no generic
-`createUiDropdownEcsSystem` - opening/closing the list touches several
-sibling entities' `enabled`/`interactable` state at once, which only
-`createDropdown`'s own wiring (registered as ordinary `onInvoke` listeners,
-not a polled system) knows how to reach.
+Invoking the header opens or closes the option list, and `dropdown.isOpen`
+says which. The option buttons are parented to the dropdown's `list`
+entity, and while the list is closed its `VisibilityEcsComponent` hides
+them, so they aren't drawn, hit or focused. Invoking an option sets `selectedIndex`, shows the option in
+the header, raises `onValueChanged` with its index, and closes the list.
+The chevron on the header's right edge is `v` while the list is closed
+and `^` while it's open.
 
-:::info[Known limitation]
-Clicking outside the open list doesn't close it - only clicking the header
-again or selecting an option does. Register your own listener (e.g. gated
-on `dropdown.isOpen`) if your game needs that.
+:::caution
+The `list` entity is a child of the header, so elements that come
+after the dropdown in hierarchy order, such as siblings parented after it,
+are drawn over the open list and are hit before it. Add a `DrawOrderEcsComponent` with a positive `order` to the
+header (see [Draw Order](../rendering/draw-order.md)) to draw the list
+over them.
+:::
+
+:::note
+Clicking outside the open list doesn't close it. Invoking the header or an
+option does.
 :::

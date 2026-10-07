@@ -7,11 +7,28 @@ import type { ShaderProgram } from './shader-program.js';
 import { UniformValue } from './uniform-value.js';
 
 /**
- * A shader program plus the uniform values to draw with: what other engines
- * call a material instance. Materials made from the same two shaders share
- * one linked program (see `RenderContext.getShaderProgram`), so creating a
- * material is cheap; each material keeps its own uniform values, and binding
- * it uploads them.
+ * A shader program plus the uniform values to draw with. Materials made
+ * from the same two shaders share one linked program (see
+ * `RenderContext.getShaderProgram`), so creating a material is cheap; each
+ * material keeps its own uniform values, and binding it uploads them.
+ *
+ * A material's uniforms are the ones its shaders' sources declare, read
+ * after `#pragma forge include(...)`s are resolved, from declarations of
+ * the form `uniform [precision] <type> <name>[<size>], ...;` (or
+ * `<type>[<size>] <name>`), with an optional `layout(...)` qualifier:
+ * - An array's size is an integer literal, a `#define NAME <integer>` or a
+ *   `const int NAME = <integer>;`. Any other size expression throws when
+ *   the material is created.
+ * - Two declarations of the same name, in one shader or across the two,
+ *   must agree on type and size.
+ * - `#if`/`#ifdef` blocks aren't evaluated, so a uniform declared in a
+ *   branch that's compiled out can still be set, and is treated like a
+ *   uniform the compiler removed.
+ * - Uniform blocks (`uniform Block { ... };`) aren't supported.
+ * - A struct uniform (`uniform Light u_light;`) can't be set by its own
+ *   name; its members (`u_light.color`) can be set while the program uses
+ *   them. The same applies to a uniform whose type is a macro
+ *   (`uniform TINT_TYPE u_tint;`).
  */
 export class Material {
   private readonly _shaderProgram: ShaderProgram;
@@ -40,9 +57,24 @@ export class Material {
     );
   }
 
-  /** The linked WebGL program, shared with every material made from the same shaders. */
+  /**
+   * The linked WebGL program, shared with every material made from the same
+   * shaders.
+   * @throws An error if the material was created while the WebGL context
+   * is lost and the context hasn't been restored yet, so there's no program
+   * to read. The engine's draw functions don't draw while the context is
+   * lost (see `RenderContext.isContextLost`).
+   */
   get program(): WebGLProgram {
-    return this._shaderProgram.program;
+    const { program, description } = this._shaderProgram;
+
+    if (program === null) {
+      throw new Error(
+        `The program of ${description} hasn't been linked yet: it was created while the WebGL context is lost, and is linked when the context is restored.`,
+      );
+    }
+
+    return program;
   }
 
   /**
@@ -55,7 +87,7 @@ export class Material {
    * @returns The first texture unit the material left free.
    */
   public bind(gl: WebGL2RenderingContext): number {
-    gl.useProgram(this.program);
+    gl.useProgram(this._shaderProgram.program);
 
     let textureUnit = 0;
 
@@ -103,7 +135,8 @@ export class Material {
    * the GLSL compiler removed because nothing reads it: its value is checked
    * and stored the same way, and there's nothing to upload. Members of a
    * struct uniform (`u_light.color`) can be set while the program keeps
-   * them.
+   * them, which is only known once it's linked: a material created while
+   * the WebGL context is lost can't set them until the context is restored.
    * @param name - The uniform's name.
    * @param value - The value to upload.
    * @throws An error if the shaders don't declare a uniform called `name`,

@@ -1,9 +1,8 @@
 import type { ParameterizedForgeEvent } from './parameterized-forge-event.js';
 
 /**
- * The `EventDispatcher` class is responsible for managing event listeners
- * and dispatching events to those listeners. It allows adding, removing,
- * and dispatching events with associated data.
+ * Stores `ParameterizedForgeEvent`s under string types, and raises the
+ * events stored under a type when that type is dispatched.
  *
  * @template TData - The type of data associated with the events.
  */
@@ -21,10 +20,12 @@ export class EventDispatcher<TData> {
   }
 
   /**
-   * Adds an event listener for the specified event type.
+   * Stores an event under the specified type. A type can have several
+   * events, and adding an event that's already stored under the type does
+   * nothing.
    *
    * @param type - The type of the event.
-   * @param event - The event listener to add.
+   * @param event - The event to raise when `type` is dispatched.
    */
   public addEventListener(
     type: string,
@@ -38,10 +39,12 @@ export class EventDispatcher<TData> {
   }
 
   /**
-   * Removes an event listener for the specified event type.
+   * Removes an event from the specified type. The event stays stored under
+   * any other types, and keeps its listeners. Does nothing if the event
+   * isn't stored under the type.
    *
    * @param type - The type of the event.
-   * @param event - The event listener to remove.
+   * @param event - The event to remove.
    */
   public removeEventListener(
     type: string,
@@ -51,7 +54,9 @@ export class EventDispatcher<TData> {
   }
 
   /**
-   * Dispatches an event of the specified type to all registered listeners.
+   * Raises every event stored under the specified type, in the order they
+   * were added, passing each one `data`. Does nothing if no event is stored
+   * under the type.
    *
    * @param type - The type of the event.
    * @param data - The data associated with the event.

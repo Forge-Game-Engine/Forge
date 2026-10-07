@@ -4,35 +4,35 @@ sidebar_position: 11
 
 # Text
 
-The `text` module turns a `.ttf`/`.otf` font into a **multi-channel signed
-distance field (MSDF) atlas**: a small texture plus a metrics file that
-describes every glyph's shape and spacing. An MSDF atlas stays crisp at any
-render size (12px or 400px, zoomed in or out) without regenerating anything,
-because the texture stores each glyph's distance-to-edge rather than a fixed
-raster of pixels.
+The `text` module draws strings from a **multi-channel signed distance field
+(MSDF) font atlas**: a texture plus a metrics file that describes every
+glyph's shape and spacing. The texture stores each glyph's distance to its
+edge instead of a fixed raster of pixels, so text drawn from it has sharp
+edges at any size and camera zoom.
 
-Three pieces make up the module:
+The module has three parts:
 
-- An offline command, `forge-generate-font-atlas`, that reads a font file
-  and writes out an atlas image plus a
-  [`FontAtlasData`](/Forge/docs/api/interfaces/FontAtlasData)-shaped JSON
-  file, sized to your game's actual `charset`.
+- `forge-generate-font-atlas`, an offline command that reads a `.ttf` or
+  `.otf` font file and writes an atlas image and a
+  [`FontAtlasData`](/Forge/docs/api/interfaces/FontAtlasData) JSON file. See
+  [Generating a Font Atlas](./generating-a-font-atlas.md).
 - [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache), which loads
-  that JSON/image pair at runtime into a
-  [`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas) (see
-  [Loading a Font Atlas](./loading-a-font-atlas.md)).
+  that JSON and image pair at runtime into a
+  [`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas). See
+  [Loading a Font Atlas](./loading-a-font-atlas.md).
 - [`addTextComponent`](/Forge/docs/api/functions/addTextComponent) and
   [`createTextShapingEcsSystem`](/Forge/docs/api/functions/createTextShapingEcsSystem),
-  which draw a string from a loaded `FontAtlas` through the render system
-  (see [Rendering Text](./rendering-text.md)).
+  which lay out a string from a loaded `FontAtlas` and draw it through the
+  render system. See [Rendering Text](./rendering-text.md) and
+  [Text Effects](./text-effects.md).
 
-## Quick start
+## The default font
 
-The engine ships a pre-generated default atlas (Liberation Sans, SIL Open
-Font License 1.1) inside the `@forge-game-engine/forge` package, so you can
-render text with zero font setup - no `.ttf`, no `forge-generate-font-atlas`
-run. Import its two files through the package's `fonts/default` exports and
-pass the URLs your bundler gives you (this is Vite; see
+The `@forge-game-engine/forge` package includes a generated atlas of
+Liberation Sans (SIL Open Font License 1.1) with the printable ASCII
+characters. Import its two files through the package's `fonts/default`
+exports and pass the URLs your bundler gives you to `FontAtlasCache` (this
+example uses Vite; see
 [Loading a Font Atlas](./loading-a-font-atlas.md#importing-atlases-through-a-bundler)
 for webpack):
 
@@ -48,25 +48,7 @@ const fontAtlas = await fontAtlasCache.getOrLoad({
 });
 ```
 
-The font's attribution is in `assets/fonts/default/License.txt` in the
-package.
-
-When you need your own font (a different look, or characters the default
-atlas's ASCII charset doesn't cover), generate one:
-
-```bash
-npm install --save-dev msdf-bmfont-xml
-npx forge-generate-font-atlas --font my-font.ttf --charset ascii --out src/fonts/my-font
-```
-
-```ts
-import myFontMetricsUrl from './fonts/my-font.json?url';
-import myFontImageUrl from './fonts/my-font.png';
-
-const fontAtlas = await fontAtlasCache.getOrLoad({
-  metricsUrl: myFontMetricsUrl,
-  imageUrl: myFontImageUrl,
-});
-
-console.log(fontAtlas.data.glyphs.get('A'.codePointAt(0)!));
-```
+The font's license is in `assets/fonts/default/License.txt` in the package.
+For another typeface, or for characters outside printable ASCII, generate
+an atlas of your own (see
+[Generating a Font Atlas](./generating-a-font-atlas.md)).

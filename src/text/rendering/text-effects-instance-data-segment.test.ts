@@ -62,6 +62,8 @@ describe('textEffectsInstanceDataSegment', () => {
       vertexAttribPointer,
       vertexAttribDivisor: vi.fn(),
       FLOAT: 'FLOAT',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
     const renderable = {
       material: { program: {} },

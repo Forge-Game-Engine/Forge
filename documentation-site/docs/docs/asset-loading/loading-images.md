@@ -5,11 +5,9 @@ sidebar_position: 1
 # Loading and Caching Images
 
 [`ImageCache`](/Forge/docs/api/classes/ImageCache) loads image files into
-`HTMLImageElement`s and keeps them keyed by the path they were loaded from,
-so the same file is only ever downloaded and decoded once. Every
-[`RenderContext`](/Forge/docs/api/classes/RenderContext) creates one
-automatically and exposes it as
-[`imageCache`](/Forge/docs/api/classes/RenderContext#imagecache):
+`HTMLImageElement`s and keeps each one keyed by the path it was loaded
+from. Every [`RenderContext`](/Forge/docs/api/classes/RenderContext) has
+one, as [`imageCache`](/Forge/docs/api/classes/RenderContext#imagecache):
 
 ```ts
 const { imageCache } = renderContext;
@@ -17,90 +15,69 @@ const { imageCache } = renderContext;
 
 ## Loading an image
 
-[`getOrLoad(path)`](/Forge/docs/api/classes/ImageCache#getorload) is the
-method you'll use almost everywhere: it returns the cached image if `path`
-has already been loaded, otherwise it loads it first. Either way you get
-back an `HTMLImageElement`. A sprite draws a
+[`getOrLoad(path)`](/Forge/docs/api/classes/ImageCache#getorload) returns
+the cached image for `path`, loading it first if it isn't cached. It
+rejects if the image fails to load. A sprite draws a
 [texture](../rendering/textures.md), so upload the image to one with
 `createTexture`:
-
-```ts
-const playerImage = await imageCache.getOrLoad('player.png');
-const playerTexture = createTexture(renderContext, playerImage);
-const playerSprite = createImageSprite(playerTexture);
-```
-
-The image cache caches images, not textures: each `createTexture` call
-creates a new texture. Create one texture per image and share it between
-the sprites that draw it, so they [batch](../rendering/sprites.md#batching)
-into one draw call.
-
-The sprite's world-unit size is derived from the texture's dimensions
-via a `pixelsPerUnit` option (defaulting to `100`; pass `1` to size the
-sprite directly from its pixel dimensions instead) - see
-[Importing Textures at a Fixed PPU](../rendering/world-units-and-cameras.md#importing-textures-at-a-fixed-ppu).
-
-[`get(path)`](/Forge/docs/api/classes/ImageCache#get) and
-[`load(path)`](/Forge/docs/api/classes/ImageCache#load) are the two halves
-`getOrLoad` combines, and are mostly useful if you want to load and "get"
-at different points in time. `get` throws if `path` hasn't been loaded yet,
-so don't call it for an image you haven't awaited `load` or `getOrLoad` for.
-
-## Preload up front, not mid-gameplay
-
-Calling `getOrLoad` the first time an image is needed works, but the
-`await` means whatever you're doing (spawning an entity, starting a level)
-pauses until the network request finishes. For anything beyond a quick demo,
-load every image you'll need during setup, before the game loop starts:
-
-```ts
-const [ballImage, squareImage, triangleImage] = await Promise.all([
-  imageCache.getOrLoad('ball_blue_large.png'),
-  imageCache.getOrLoad('block_square.png'),
-  imageCache.getOrLoad('block_corner_large.png'),
-]);
-```
-
-After this resolves, every later `getOrLoad('ball_blue_large.png')` returns
-the cached image instantly with no `await` needed (its promise still
-resolves on the same tick, but no network or decode work happens).
-
-:::caution
-`getOrLoad` does not deduplicate _in-flight_ loads. If you call
-`getOrLoad('player.png')` from two places before the first call has
-resolved, both see an empty cache and both create a new `Image()` and start
-a separate load. Awaiting a single `Promise.all` preload step (as above)
-avoids this, since by the time gameplay code runs, every path is already
-cached.
-:::
-
-## Cache keys are exact paths
-
-The cache is a `Map<string, HTMLImageElement>` keyed by the exact string
-passed to `load` / `getOrLoad`. `'player.png'` and `'./player.png'` are
-treated as two different entries (and trigger two separate loads), even if
-they resolve to the same file. Pick one path format per asset and use it
-consistently.
-
-## Worked example
 
 ```ts
 import {
   createImageSprite,
   createTexture,
 } from '@forge-game-engine/forge/rendering';
-import { createGame } from '@forge-game-engine/forge/utilities';
 
-const { renderContext } = createGame('game-container');
-const { imageCache } = renderContext;
-
-const [ballImage, squareImage] = await Promise.all([
-  imageCache.getOrLoad('ball_blue_large.png'),
-  imageCache.getOrLoad('block_square.png'),
-]);
-
-const ballSprite = createImageSprite(createTexture(renderContext, ballImage));
-const squareSprite = createImageSprite(
-  createTexture(renderContext, squareImage),
-);
+const playerImage = await imageCache.getOrLoad('player.png');
+const playerTexture = createTexture(renderContext, playerImage);
+const playerSprite = createImageSprite(playerTexture);
 ```
+
+The cache holds images, not textures: each `createTexture` call creates a
+new texture. Create one texture per image and share it between the sprites
+that draw it, so they [batch](../rendering/sprites.md#batching) into one
+draw call. [Sprites](../rendering/sprites.md) covers creating sprites from
+a texture.
+
+## Preloading images
+
+`await getOrLoad` waits for the network request the first time a path is
+loaded. Load the images a game needs during setup, before the game loop
+starts:
+
+```ts
+const [ballImage, blockImage] = await Promise.all([
+  imageCache.getOrLoad('ball.png'),
+  imageCache.getOrLoad('block.png'),
+]);
+```
+
+After this resolves, `getOrLoad` for these paths returns the cached images
+without loading them again, and
+[`get(path)`](/Forge/docs/api/classes/ImageCache#get) returns them
+synchronously. `get` throws for a path that hasn't finished loading.
+[`load(path)`](/Forge/docs/api/classes/ImageCache#load) loads an image into
+the cache without returning it.
+
+:::caution
+`getOrLoad` doesn't share a load that's still in progress. Two calls for
+the same path made before the first one resolves each load the image.
+Preloading every path in one step, as above, avoids this.
+:::
+
+## Cache keys
+
+The cache's `assets` map is keyed by the exact string passed to `load` or
+`getOrLoad`. `'player.png'` and `'./player.png'` are two entries, loaded
+separately, even though they refer to the same file. Use one path for each
+image.
+
+## Removing an image from the cache
+
+The cache keeps each image until it's deleted from its `assets` map:
+
+```ts
+imageCache.assets.delete('player.png');
+```
+
+Textures created from the image are separate objects and aren't affected;
+[dispose](../rendering/textures.md#disposing-a-texture) them separately.

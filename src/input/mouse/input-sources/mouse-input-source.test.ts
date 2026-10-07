@@ -323,15 +323,40 @@ describe('MouseInputSource', () => {
     expect(source.delta).toEqual({ x: 0, y: 0 });
   });
 
-  it('accumulates wheel scroll delta and clears it on reset', () => {
-    container.dispatchEvent(new WheelEvent('wheel', { deltaY: 50 }));
+  it('accumulates wheel scroll delta on both axes and clears it on reset', () => {
+    container.dispatchEvent(
+      new WheelEvent('wheel', { deltaX: 10, deltaY: 50 }),
+    );
     container.dispatchEvent(new WheelEvent('wheel', { deltaY: -20 }));
 
-    expect(source.scroll).toBe(30);
+    expect(source.scroll).toEqual({ x: 10, y: 30 });
 
     source.reset();
 
-    expect(source.scroll).toBe(0);
+    expect(source.scroll).toEqual({ x: 0, y: 0 });
+  });
+
+  it('converts a wheel delta in lines to CSS pixels', () => {
+    container.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: 3,
+        deltaMode: WheelEvent.DOM_DELTA_LINE,
+      }),
+    );
+
+    expect(source.scroll).toEqual({ x: 0, y: 120 });
+  });
+
+  it('converts a wheel delta in pages to the container size', () => {
+    Object.defineProperty(container, 'clientHeight', { value: 500 });
+    container.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: 1,
+        deltaMode: WheelEvent.DOM_DELTA_PAGE,
+      }),
+    );
+
+    expect(source.scroll).toEqual({ x: 0, y: 500 });
   });
 
   it('tracks buttonsDown, buttonsHeld, and buttonsUp across down/up edges', () => {

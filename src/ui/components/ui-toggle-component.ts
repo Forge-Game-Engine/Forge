@@ -7,7 +7,11 @@ import { ParameterizedForgeEvent } from '../../events/index.js';
  * may omit these.
  */
 export interface UiToggleDefaultedOptions {
-  /** Whether this toggle is currently on. System-owned once `group` links it into a radio group's mutual exclusivity; freely settable otherwise. */
+  /**
+   * Whether this toggle is currently on. Writing it directly doesn't raise
+   * `onValueChanged`, so listeners (including `createToggle`'s checkmark)
+   * aren't updated.
+   */
   isOn: boolean;
 
   /**
@@ -29,10 +33,10 @@ export interface UiToggleDefaultedOptions {
  */
 export interface UiToggleEcsComponent extends UiToggleDefaultedOptions {
   /**
-   * Raised whenever `isOn` changes - by a pointer click, a submit action, a
-   * group-driven mutual-exclusion flip, or a direct `toggle.isOn =` write
-   * followed by `createUiToggleEcsSystem`'s next tick reconciling group
-   * state. Passes the new value.
+   * Raised when `createUiToggleEcsSystem` changes `isOn`: on a pointer
+   * click or a submit action, or when another toggle in the same group is
+   * turned on. Not raised by a direct write to `isOn`. Passes the new
+   * value.
    */
   readonly onValueChanged: ParameterizedForgeEvent<boolean>;
 }

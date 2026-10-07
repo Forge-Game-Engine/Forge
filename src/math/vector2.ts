@@ -12,7 +12,7 @@ export interface Vector2 {
 }
 
 /**
- * Static operations on {@link Vector2}. Mutating operations (`set`, `add`,
+ * Static operations on {@link Vector2}. Mutating operations (`add`,
  * `subtract`, `multiply`, `multiplyComponents`, `divide`, `normalize`,
  * `floorComponents`, `rotate`, `perpendicular`, `negate`) mutate their
  * `target` argument in place and return it, rather than allocating a new

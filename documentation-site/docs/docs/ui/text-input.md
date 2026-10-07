@@ -27,8 +27,8 @@ ordinary UI entities.
 - child entities for the text label, the placeholder label, the caret, the
   selection highlight and the IME composition underline.
 
-`createUiTextInputEcsSystem` runs every field. `registerUiSystems` registers
-it, so a game that calls `registerUiSystems` needs nothing else.
+`registerUiSystems` registers `createUiTextInputEcsSystem`, which runs
+every field.
 
 ## Creating a text input
 
@@ -45,7 +45,7 @@ const nameField = createTextInput(world, canvas, {
   placeholder: 'Your name',
   maxLength: 16,
   attributes: { ariaLabel: 'Your name', autocapitalize: 'words' },
-  category: uiLayer,
+  category: uiRenderCategory,
 });
 ```
 

@@ -90,7 +90,7 @@ export function spawnParticle(
   // Each particle gets its own sprite, so a system can fade or tint one
   // particle without changing every other particle from the same emitter.
   // `addSpriteComponent` also fills in what a plain `Sprite` lacks
-  // (`enabled`, `layer`, `uvOffset`, `uvScale`).
+  // (`category`, `layer`, `uvOffset`, `uvScale`).
   const sprite = addSpriteComponent(world, particle, particleEmitter.sprite);
 
   sprite.opacityMultiplier = lifetimeOpacity.start;

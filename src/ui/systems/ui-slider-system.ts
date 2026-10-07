@@ -125,8 +125,8 @@ function applySliderVisuals(
  * already has relative to the interaction state it eases from.
  *
  * Must be registered after `createUiInteractionEcsSystem` (it reads
- * `pressCapture`, which that system writes). `createUiCanvas` does this for
- * you whenever a `pointerSource` is supplied.
+ * `pressCapture`, which that system writes). `registerUiSystems` registers
+ * it whenever a `pointerSource` is supplied.
  * @param pointerSource - The pointer source dragged against.
  * @param renderContext - The render context canvases' cameras render
  * through, used to convert the pointer position.

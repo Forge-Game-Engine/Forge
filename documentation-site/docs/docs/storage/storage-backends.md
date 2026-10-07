@@ -103,6 +103,6 @@ Every backend keeps this contract:
   timeouts.
 - Failures reject with a `StorageError`, with the original error as its
   `cause`.
-- Creating the backend touches no storage; only its methods do. The docs
-  site and other server-side builds import engine modules where there's no
-  `window`.
+- Creating the backend touches no storage; only its methods do, so the
+  backend can be created where there's no `window`, such as during
+  server-side rendering.

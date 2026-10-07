@@ -21,7 +21,7 @@ import {
   createRenderEcsSystem,
   getCameraView,
   RenderContext,
-  spriteId,
+  visibilityId,
 } from '@forge-game-engine/forge/rendering';
 import {
   createTextShapingEcsSystem,
@@ -232,15 +232,15 @@ export const createPersistentStateGame = async (): Promise<Game> => {
   // Writing a control's value directly doesn't raise its `onValueChanged`,
   // so the controls follow a reset without storing the defaults. The
   // toggle's checkmark only follows `onValueChanged`, so it's shown here.
-  const checkmarkSprite = world.getComponentRequired(
+  const checkmarkVisibility = world.getComponentRequired(
     spinToggle.checkmark,
-    spriteId,
+    visibilityId,
   );
 
   settings.onChange.registerListener(({ size, spin }) => {
     sizeSlider.slider.value = size;
     spinToggle.toggle.isOn = spin;
-    checkmarkSprite.enabled = spin;
+    checkmarkVisibility.visible = spin;
   });
 
   caption(

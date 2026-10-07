@@ -24,12 +24,14 @@ Entities may only be created or removed via `EcsWorld` APIs such as
 adding a component to a handle the world didn't create throws.
 :::
 
-Minimal example, create an entity and attach a component.
+## Creating and removing an entity
 
-This demonstrates creating an entity, attaching a `Position` component,
-reading the component, and removing the entity.
+This creates an entity, attaches a `Position` component, reads the
+component, and removes the entity:
 
 ```ts
+import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
+
 const world = new EcsWorld();
 const entity = world.createEntity();
 
@@ -48,8 +50,8 @@ world.removeEntity(entity);
 ## Holding on to other entities
 
 Storing another entity's handle is safe, whether in a component field (a
-`ParentEcsComponent`'s `parent`, a homing missile's `target`), a closure, or
-a collection. A handle packs a slot index with a generation. When an entity
+`ParentEcsComponent`'s `parent`, or a `target` field of your own), a
+closure, or a collection. A handle packs a slot index with a generation. When an entity
 is removed, the world reuses its slot for a later entity under the next
 generation, so the old handle never refers to the new entity:
 
@@ -62,13 +64,13 @@ So code holding a handle checks whether its entity is still there, and drops
 the handle once it isn't:
 
 ```ts
-const homingSystem: EcsSystem<[MissileEcsComponent]> = {
-  query: [missileId],
-  update(world, { components: [missiles] }) {
-    for (const missile of missiles) {
-      if (missile.target !== null && !world.isAlive(missile.target)) {
-        // The target was destroyed. Fly straight from now on.
-        missile.target = null;
+const followSystem: EcsSystem<[FollowEcsComponent]> = {
+  query: [followId],
+  update(world, { components: [follows] }) {
+    for (const follow of follows) {
+      if (follow.target !== null && !world.isAlive(follow.target)) {
+        // The target was removed. Stop following it.
+        follow.target = null;
       }
 
       // ...
@@ -77,16 +79,16 @@ const homingSystem: EcsSystem<[MissileEcsComponent]> = {
 };
 ```
 
-Removing an entity that may already be gone is fine. A bullet that hits two
-enemies in the same tick can be removed by both collisions; the second
-`removeEntity` does nothing.
+Removing an entity that may already be removed is safe. When two systems
+remove the same entity in one tick, for example on two collisions, the
+second `removeEntity` does nothing.
 
 :::caution
 A slot's generation wraps after 1,024 reuses, so a handle held across 1,024
 removals and creations of entities in the same slot would match again. The
 world reuses the slot that's been free longest first, so this takes a long
-time even in a game that creates and removes entities every frame. Still,
-drop a handle once you know its entity is gone rather than keeping it
+time even in a game that creates and removes entities every frame. Drop a
+handle once you know its entity is gone rather than keeping it
 forever.
 :::
 

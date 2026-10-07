@@ -9,6 +9,10 @@ import type { SoundMixer } from './sound-mixer.js';
  * Sounds stay usable after the world that played them stops.
  */
 export class SoundAssetCache implements AssetCache<SoundAsset> {
+  /**
+   * The loaded sounds, keyed by URL. Deleting an entry removes the sound
+   * from the cache.
+   */
   public assets = new Map<string, SoundAsset>();
 
   private readonly _context: BaseAudioContext;

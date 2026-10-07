@@ -4,48 +4,45 @@ sidebar_position: 2
 
 # Systems
 
-## createLifetimeTrackingEcsSystem
+## Tracking lifetimes
 
-Updates elapsed time for all entities with a `LifetimeEcsComponent` and sets
-the `hasExpired` flag when the lifetime duration is reached.
-
-### Signature
-
-```ts
-createLifetimeTrackingEcsSystem(time: Time): EcsSystem<[LifetimeEcsComponent]>
-```
-
-### Usage
-
-Add this system to your world before any disposal systems:
+[`createLifetimeTrackingEcsSystem`](/Forge/docs/api/functions/createLifetimeTrackingEcsSystem)
+creates the system that counts every lifetime. Register it with the game's
+[`Time`](../common/time.md):
 
 ```ts
+import { createLifetimeTrackingEcsSystem } from '@forge-game-engine/forge/lifecycle';
+
 world.addSystem(createLifetimeTrackingEcsSystem(time));
 ```
 
-### Behavior
+Each tick, it adds `time.deltaTimeInSeconds` to every
+`LifetimeEcsComponent`'s `elapsedSeconds`, and sets `hasExpired` to `true`
+when `elapsedSeconds` is greater than or equal to `durationSeconds`. It
+doesn't remove entities.
 
-- Increments `elapsedSeconds` on each frame based on `time.deltaTimeInSeconds`
-- Sets `hasExpired` to `true` when `elapsedSeconds >= durationSeconds`
-- Does not remove or modify entities (only tracks time)
+## Removing expired entities
 
-## createRemoveFromWorldEcsSystem
-
-Removes expired entities from the world. Only processes entities that have
-both:
-
-- `LifetimeEcsComponent` (with `hasExpired` set to `true`)
-- the `RemoveFromWorldLifetimeStrategyId` tag
-
-### Signature
+[`createRemoveFromWorldEcsSystem`](/Forge/docs/api/functions/createRemoveFromWorldEcsSystem)
+creates the system that removes expired entities tagged with
+`RemoveFromWorldLifetimeStrategyId`:
 
 ```ts
-createRemoveFromWorldEcsSystem(): EcsSystem<[LifetimeEcsComponent]>
-```
+import {
+  createLifetimeTrackingEcsSystem,
+  createRemoveFromWorldEcsSystem,
+} from '@forge-game-engine/forge/lifecycle';
 
-### Usage
-
-```ts
 world.addSystem(createLifetimeTrackingEcsSystem(time));
 world.addSystem(createRemoveFromWorldEcsSystem());
 ```
+
+It queries entities with both a `LifetimeEcsComponent` and the tag, and
+calls `world.removeEntity` for each one whose `hasExpired` is `true`.
+Entities with a `LifetimeEcsComponent` and no tag aren't removed.
+
+:::note
+Register it after `createLifetimeTrackingEcsSystem` (by adding it later, or
+with `after`, see [Ordering systems](../ecs/world.md#ordering-systems-with-beforeafter)).
+Registered before it, an entity is removed one tick after it expires.
+:::

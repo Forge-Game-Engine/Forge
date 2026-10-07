@@ -4,7 +4,10 @@ import { createUiLayoutEcsSystem } from './ui-layout-system.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
-import { RenderContext } from '../../rendering/index.js';
+import {
+  addVisibilityComponent,
+  RenderContext,
+} from '../../rendering/index.js';
 import { TextEcsComponent, textId, textMeshId } from '../../text/index.js';
 import { addContentSizeFitterComponent } from '../components/content-size-fitter-component.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
@@ -218,6 +221,106 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(
         uiAxisValue(world.getComponent(b, rectTransformId)!.x),
       ).toBeCloseTo(200);
+    });
+  });
+
+  describe('hidden children', () => {
+    it('closes the gap a hidden child leaves in a vertical group, and opens it again once shown', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 60);
+
+      addVerticalLayoutGroupComponent(world, group, {
+        spacing: 0,
+        childForceExpandHeight: false,
+      });
+
+      const a = createChild(world, group, { x: 40, y: 20 });
+      const hidden = createChild(world, group, { x: 40, y: 20 });
+      const c = createChild(world, group, { x: 40, y: 20 });
+      const visibility = addVisibilityComponent(world, hidden, {
+        visible: false,
+      });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      const rectA = world.getComponent(a, rectTransformId)!;
+      const rectC = world.getComponent(c, rectTransformId)!;
+
+      // `c` sits directly under `a`, where `hidden` would have been.
+      expect(rectA.anchoredPosition.y).toBeCloseTo(40);
+      expect(rectC.anchoredPosition.y).toBeCloseTo(20);
+
+      visibility.visible = true;
+      world.update();
+
+      expect(rectC.anchoredPosition.y).toBeCloseTo(0);
+    });
+
+    it("gives a horizontal group's space to its visible children only", () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group);
+
+      const a = createChild(world, group, { x: 50, y: 50 });
+      const hidden = createChild(world, group, { x: 50, y: 50 });
+
+      addVisibilityComponent(world, hidden, { visible: false });
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(uiAxisValue(world.getComponent(a, rectTransformId)!.x)).toBe(300);
+    });
+
+    it('skips a hidden cell in a grid group', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addGridLayoutGroupComponent(world, group, {
+        cellSize: { x: 50, y: 50 },
+        constraint: 'fixedColumnCount',
+        constraintCount: 2,
+      });
+
+      const cells = [0, 1, 2].map(() =>
+        createChild(world, group, { x: 50, y: 50 }),
+      );
+
+      addVisibilityComponent(world, cells[0], { visible: false });
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(
+        world.getComponent(cells[1], rectTransformId)!.anchoredPosition,
+      ).toEqual({ x: 0, y: 50 });
+      expect(
+        world.getComponent(cells[2], rectTransformId)!.anchoredPosition,
+      ).toEqual({ x: 50, y: 50 });
+    });
+
+    it('shrinks a content size fitter to its visible children', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 500, 500);
+
+      addVerticalLayoutGroupComponent(world, group, { spacing: 10 });
+      addContentSizeFitterComponent(world, group, {
+        horizontalFit: 'preferredSize',
+        verticalFit: 'preferredSize',
+      });
+
+      createChild(world, group, { x: 40, y: 20 });
+
+      const hidden = createChild(world, group, { x: 60, y: 30 });
+
+      addVisibilityComponent(world, hidden, { visible: false });
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(sizeOf(world.getComponent(group, rectTransformId)!)).toEqual({
+        x: 40,
+        y: 20,
+      });
     });
   });
 

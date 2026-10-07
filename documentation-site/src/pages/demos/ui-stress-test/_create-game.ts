@@ -82,7 +82,8 @@ async function createBackdrop(
  * many panels had been spawned when the frame rate first dropped below
  * 100, 60, and 30 FPS - this is `createUiLayoutEcsSystem`/
  * `createUiLayoutGroupEcsSystem`'s own full-recompute-every-frame design
- * (DL-12 in `design/ui-system.md`) under load, with no dirty tracking.
+ * under load: they keep no dirty tracking, trading per-frame cost for
+ * layouts that can never go stale.
  * @returns The created game.
  */
 export const createUiStressTestGame = async (): Promise<Game> => {

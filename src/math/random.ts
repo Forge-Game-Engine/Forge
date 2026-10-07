@@ -8,8 +8,11 @@ export class Random {
   private readonly _rng: seedrandom.PRNG;
 
   /**
-   * Creates a new instance of the `Random` class with the given seed.
-   * @param seed - The seed for the random number generator.
+   * Creates a new instance of the `Random` class with the given seed. Two
+   * instances created with the same seed produce the same sequence of values.
+   * @param seed - The seed for the random number generator. Defaults to
+   * `'seed'`, so instances created without a seed all produce the same
+   * sequence.
    */
   constructor(seed: string = 'seed') {
     this._rng = seedrandom(seed);
@@ -26,10 +29,11 @@ export class Random {
   }
 
   /**
-   * Generates a random float between the specified minimum and maximum values (inclusive).
+   * Generates a random float from the specified minimum value (inclusive) up
+   * to the maximum value (exclusive).
    * @param min - The minimum value (inclusive).
-   * @param max - The maximum value (inclusive).
-   * @returns A random float between min and max.
+   * @param max - The maximum value (exclusive).
+   * @returns A random float from `min` up to, but not including, `max`.
    */
   public randomFloat(min: number, max: number): number {
     return this._random() * (max - min) + min;
