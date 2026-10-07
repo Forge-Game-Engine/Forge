@@ -19,13 +19,13 @@ import {
 } from '../../../src/input/index.js';
 import {
   addCameraComponent,
+  addVisibilityComponent,
   Color,
   createCanvas,
   createImageSprite,
   createPresentEcsSystem,
   createRenderContext,
   createRenderEcsSystem,
-  spriteId,
 } from '../../../src/rendering/index.js';
 import {
   createTextShapingEcsSystem,
@@ -194,12 +194,11 @@ export const createScene: CreateScene = async (
     sprite: sprite(new Color(0.1, 0.6, 0.2, 1)),
     anchor: UiAnchor.center({ x: 440, y: 100 }),
   });
-  const coverInteractable = addUiInteractableComponent(world, cover, {
-    blocksRaycasts: false,
-  });
-  const coverSprite = world.getComponentRequired(cover, spriteId);
+  addUiInteractableComponent(world, cover);
 
-  coverSprite.enabled = false;
+  const coverVisibility = addVisibilityComponent(world, cover, {
+    visible: false,
+  });
 
   const submittedValues: string[] = [];
   let cancelCount = 0;
@@ -264,8 +263,7 @@ export const createScene: CreateScene = async (
     },
 
     setCoverVisible(visible: boolean): void {
-      coverSprite.enabled = visible;
-      coverInteractable.blocksRaycasts = visible;
+      coverVisibility.visible = visible;
     },
 
     measureTextInk(): PixelBounds | null {

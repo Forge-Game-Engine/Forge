@@ -3,6 +3,7 @@ import { Rects, Vector2 } from '../../math/index.js';
 import {
   CameraEcsComponent,
   cameraId,
+  isVisibleInHierarchy,
   MaskEcsComponent,
   maskId,
   RenderContext,
@@ -98,7 +99,8 @@ function isInsideMasks(
  * or invalidate. An element with `blocksRaycasts: false` is transparent to
  * the scan (never considered, hit or not) - so is one with an ancestor
  * `CanvasGroupEcsComponent` whose own `blocksRaycasts` is `false` (see
- * `resolveCanvasGroupState`); an element culled from the canvas's camera
+ * `resolveCanvasGroupState`), and so is one hidden in the hierarchy (see
+ * `VisibilityEcsComponent`); an element culled from the canvas's camera
  * by `cullingMask` is skipped the same way an invisible element shouldn't
  * be clickable, and so is the part of an element a rect
  * `MaskEcsComponent` on it or an ancestor clips away.
@@ -152,7 +154,8 @@ export function raycastUiCanvas(
   for (let i = 0; i < entities.length; i++) {
     if (
       interactables[i].blocksRaycasts &&
-      findOwningCanvas(world, entities[i]) === canvasEntity
+      findOwningCanvas(world, entities[i]) === canvasEntity &&
+      isVisibleInHierarchy(world, entities[i])
     ) {
       candidates.push(entities[i]);
       rectTransformByEntity.set(entities[i], rectTransforms[i]);

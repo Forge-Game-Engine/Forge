@@ -87,7 +87,11 @@ way as `UiAnchor`'s nine point presets) places the child block within any
 leftover main-axis space, and aligns each child individually within the
 cross axis. A child with `LayoutElementEcsComponent.ignoreLayout: true` is
 skipped entirely - useful for a decorative element (a background flourish, a
-badge) placed inside an otherwise-arranged panel.
+badge) placed inside an otherwise-arranged panel. A child hidden by its own
+[`VisibilityEcsComponent`](../rendering/visibility.md#hiding-ui-elements) is
+skipped the same way, so hiding a button in a vertical group moves the
+buttons below it up to close the gap, and a content size fitter shrinks to
+the visible children.
 
 ## Grid layout groups
 

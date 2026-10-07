@@ -90,7 +90,6 @@ const setUp = (scrollRectOptions = {}, withScrollbar = false) => {
     emissive: null,
     material: null,
     category: 1,
-    enabled: true,
     layer: 0,
   };
   const scrollView = createScrollView(world, canvas, {

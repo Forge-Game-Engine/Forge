@@ -159,7 +159,7 @@ levels.scrollRect.offset.y = 0; // back to the top
 
 ```ts
 levels.scrollRect.onValueChanged.registerListener((offset) => {
-  showMoreIndicator.enabled = offset.y < maxOffsetY;
+  showMoreIndicator.visible = offset.y < maxOffsetY;
 });
 ```
 

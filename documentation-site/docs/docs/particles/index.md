@@ -126,7 +126,7 @@ turn the emitter entity by writing its `position.local` and
 
 `ParticleEmitter` takes either a `SpriteEcsComponent` (from
 `createImageSprite`) or a `Sprite` (from `createSprite`). Fields a `Sprite`
-lacks, like `enabled` and `layer`, get the same defaults `addSpriteComponent`
+lacks, like `category` and `layer`, get the same defaults `addSpriteComponent`
 gives them. Particles are drawn on the sprite's `layer`.
 
 Every particle gets its own copy of the sprite, so a system can change one

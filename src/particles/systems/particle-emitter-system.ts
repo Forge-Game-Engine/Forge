@@ -5,6 +5,7 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Random } from '../../math/random.js';
 import { Vector2 } from '../../math/vector2.js';
+import { isVisibleInHierarchy } from '../../rendering/components/visibility-component.js';
 import { ParticleEmitter } from '../components/particle-emitter.js';
 import {
   ParticleEmitterEcsComponent,
@@ -57,6 +58,7 @@ function emitNewParticles(
   rotation: number,
   random: Random,
   world: EcsWorld,
+  visible: boolean,
 ): void {
   if (
     !particleEmitter.currentlyEmitting ||
@@ -69,7 +71,9 @@ function emitNewParticles(
 
   const currentAmountToEmit = getAmountToEmitBasedOnDuration(particleEmitter);
 
-  for (let i = 0; i < currentAmountToEmit; i++) {
+  // A hidden emitter's batch still runs its course, so showing the emitter
+  // again doesn't release the particles it skipped all at once.
+  for (let i = 0; visible && i < currentAmountToEmit; i++) {
     spawnParticle(world, particleEmitter, origin, rotation, random);
   }
 
@@ -83,6 +87,7 @@ function emitParticleStream(
   deltaTimeInSeconds: number,
   random: Random,
   world: EcsWorld,
+  visible: boolean,
 ): void {
   if (particleEmitter.emissionRate <= 0) {
     particleEmitter.emissionRemainder = 0;
@@ -97,7 +102,7 @@ function emitParticleStream(
 
   particleEmitter.emissionRemainder = due - amountToEmit;
 
-  for (let i = 0; i < amountToEmit; i++) {
+  for (let i = 0; visible && i < amountToEmit; i++) {
     spawnParticle(world, particleEmitter, origin, rotation, random);
   }
 }
@@ -111,6 +116,12 @@ function emitParticleStream(
  * world origin if it has no position. Each emitter's spawn shape and
  * `directionRange` turn with the entity's world rotation
  * (`RotationEcsComponent.world`), or don't turn if it has no rotation.
+ *
+ * An emitter on an entity hidden in the hierarchy (see
+ * `VisibilityEcsComponent`) spawns nothing, but its batches and stream
+ * keep their timing, so showing it again picks up where a visible emitter
+ * would be rather than spawning the particles it skipped. Particles
+ * already spawned are their own entities and live out their lifetimes.
  * @param time - The time instance used to advance emitter timers.
  * @param random - The random instance used to pick values from emitter ranges.
  * @returns The particle emitter ECS system.
@@ -127,6 +138,7 @@ export const createParticleEcsSystem = (
       const origin =
         world.getComponent(entities[i], positionId)?.world ?? worldOrigin;
       const rotation = world.getComponent(entities[i], rotationId)?.world ?? 0;
+      const visible = isVisibleInHierarchy(world, entities[i]);
 
       for (const particleEmitter of particleEmitterComponents[
         i
@@ -135,7 +147,14 @@ export const createParticleEcsSystem = (
 
         startEmittingParticles(particleEmitter, random);
 
-        emitNewParticles(particleEmitter, origin, rotation, random, world);
+        emitNewParticles(
+          particleEmitter,
+          origin,
+          rotation,
+          random,
+          world,
+          visible,
+        );
 
         emitParticleStream(
           particleEmitter,
@@ -144,6 +163,7 @@ export const createParticleEcsSystem = (
           deltaTimeInSeconds,
           random,
           world,
+          visible,
         );
       }
     }

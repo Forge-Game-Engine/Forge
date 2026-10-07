@@ -8,7 +8,10 @@ import {
   InputManager,
   TriggerAction,
 } from '../../input/index.js';
-import { addCameraComponent } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  addVisibilityComponent,
+} from '../../rendering/index.js';
 import {
   addCanvasComponent,
   canvasId,
@@ -264,6 +267,70 @@ describe('createUiNavigationEcsSystem', () => {
     world.update();
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(enabled);
+  });
+
+  it('skips a hidden candidate when moving focus', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const start = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const hidden = createButtonAt(world, canvas, { x: 200, y: 0 });
+    const beyond = createButtonAt(world, canvas, { x: 400, y: 0 });
+
+    addVisibilityComponent(world, hidden, { visible: false });
+    world.getComponent(canvas, canvasId)!.focusedEntity = start;
+    navigate(navigateInput, 1, 0);
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(beyond);
+  });
+
+  it('ignores an explicit UiFocusEcsComponent override that points at a hidden element', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const start = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const hidden = createButtonAt(world, canvas, { x: 0, y: -200 });
+    const right = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    addUiFocusComponent(world, start, { right: hidden });
+    addVisibilityComponent(world, hidden, { visible: false });
+    world.getComponent(canvas, canvasId)!.focusedEntity = start;
+    navigate(navigateInput, 1, 0);
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
+  });
+
+  it('releases focus when the focused element is hidden by an ancestor', () => {
+    const world = new EcsWorld();
+    const submitInput = new TriggerAction('submit');
+    const canvas = createTestCanvas(world, { submitInput });
+    const page = world.createEntity();
+
+    world.setParent(page, canvas);
+
+    const button = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const interactable = world.getComponent(button, uiInteractableId)!;
+    let invokeCount = 0;
+
+    world.setParent(button, page);
+    interactable.onInvoke.registerListener(() => invokeCount++);
+    world.getComponent(canvas, canvasId)!.focusedEntity = button;
+    interactable.isFocused = true;
+    addVisibilityComponent(world, page, { visible: false });
+    press(submitInput);
+
+    world.addSystem(createUiNavigationEcsSystem());
+    world.update();
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBeNull();
+    expect(interactable.isFocused).toBe(false);
+    expect(invokeCount).toBe(0);
   });
 
   it('clears focus when cancelInput triggers', () => {

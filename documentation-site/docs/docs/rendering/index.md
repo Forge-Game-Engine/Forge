@@ -23,6 +23,8 @@ Rendering is made of these parts:
 - [Draw order](./draw-order.md): which sprite or text is drawn on top
   where they overlap, drawing a child relative to its parent, and sorting
   by height on screen for top-down views.
+- [Visibility](./visibility.md): hiding an entity and everything parented
+  under it, in the world and in UI alike.
 - [Masks](./masks.md): clipping sprites and text to a rect, or revealing
   part of them from an edge or around a center, for scroll views, filling
   bars and draining rings.

@@ -278,6 +278,13 @@ export const demos: Demo[] = [
     categories: ['ui'],
   },
   {
+    slug: 'visibility',
+    title: 'Visibility',
+    description:
+      'Hiding an entity hides everything under it: drawing, UI layout, input and particle emitters.',
+    categories: ['ui', 'rendering'],
+  },
+  {
     slug: 'ui-world-space-canvas',
     title: 'UI World-Space Canvas',
     description:

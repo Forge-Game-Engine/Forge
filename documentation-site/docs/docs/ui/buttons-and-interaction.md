@@ -87,6 +87,9 @@ the nearest candidate on the same canvas in that direction. Add a
 override the search on specific sides (e.g. to wrap focus from the last
 item in a row back to the first). `cancelInput` clears focus; register your
 own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
+An element [hidden](../rendering/visibility.md#hiding-ui-elements) by its
+own or an ancestor's `VisibilityEcsComponent` isn't a candidate, and focus
+on an element that becomes hidden is cleared.
 
 ## Hit testing and drag
 
@@ -94,7 +97,10 @@ own listener on `cancelInput.triggerEvent` for "close this menu" behavior.
 [draw order](../rendering/draw-order.md)) each tick, publishing `CanvasEcsComponent.hoveredEntity`/
 `isPointerOverUi` - read the latter to gate world interaction ("don't fire
 the weapon when the click landed on the pause button"). An element with
-`blocksRaycasts: false` is transparent to the scan. A captured press that
+`blocksRaycasts: false` is transparent to the scan, and so is a hidden
+element. A press or drag on an element that becomes hidden is cancelled:
+`onEndDrag` (if it was dragging) and `onPointerUp` are raised, and
+`onInvoke` isn't. A captured press that
 moves beyond `dragThreshold` (measured in reference pixels) raises
 `onBeginDrag`/`onDrag`/`onEndDrag` instead of `onInvoke` - useful for
 building a slider handle or a scrollbar thumb.

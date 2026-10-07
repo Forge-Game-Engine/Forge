@@ -8,11 +8,13 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
+  addVisibilityComponent,
   Color,
   createImageSprite,
   createTexture,
   RenderContext,
   SpriteEcsComponent,
+  VisibilityEcsComponent,
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
@@ -37,7 +39,7 @@ export interface RayVisual {
   };
   marker: {
     position: PositionEcsComponent;
-    sprite: SpriteEcsComponent;
+    visibility: VisibilityEcsComponent;
   };
 }
 
@@ -83,12 +85,14 @@ export async function createRayVisual(
 
   const markerEntity = world.createEntity();
   const markerPosition = addPositionComponent(world, markerEntity);
-  const markerSpriteComponent = addSpriteComponent(world, markerEntity, {
+  addSpriteComponent(world, markerEntity, {
     ...markerSprite,
     width: markerSize,
     height: markerSize,
     tintColor: hitColor,
-    enabled: false,
+  });
+  const markerVisibility = addVisibilityComponent(world, markerEntity, {
+    visible: false,
   });
 
   return {
@@ -97,7 +101,7 @@ export async function createRayVisual(
       rotation: lineRotation,
       sprite: lineSpriteComponent,
     },
-    marker: { position: markerPosition, sprite: markerSpriteComponent },
+    marker: { position: markerPosition, visibility: markerVisibility },
   };
 }
 
@@ -133,7 +137,7 @@ export function updateRayVisual(
   ray.line.sprite.height = length;
   ray.line.sprite.tintColor = hitPoint ? hitColor : missColor;
 
-  ray.marker.sprite.enabled = hitPoint !== null;
+  ray.marker.visibility.visible = hitPoint !== null;
 
   if (hitPoint) {
     ray.marker.position.local = Vec2.clone(hitPoint);

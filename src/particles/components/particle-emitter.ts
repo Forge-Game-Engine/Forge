@@ -94,7 +94,7 @@ export type ParticleSpawnedCallback = (
 /**
  * The sprite a particle emitter draws its particles with. Takes a
  * `SpriteEcsComponent` (for example from `createImageSprite`) or a `Sprite`
- * (from `createSprite`): any field a `Sprite` lacks, such as `enabled` or
+ * (from `createSprite`): any field a `Sprite` lacks, such as `category` or
  * `layer`, gets the same default `addSpriteComponent` gives it.
  */
 export type ParticleSprite = SpriteRequiredOptions &

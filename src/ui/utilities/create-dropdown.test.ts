@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createDropdown } from './create-dropdown.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import {
+  Color,
+  isVisibleInHierarchy,
+  Texture,
+  visibilityId,
+} from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { positionId } from '../../common/index.js';
@@ -22,7 +27,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 
@@ -44,15 +48,15 @@ describe('createDropdown', () => {
     expect(world.getComponent(dropdown.header.label, textId)!.text).toBe('Low');
     expect(dropdown.options).toHaveLength(3);
 
+    expect(world.getParent(dropdown.list)).toBe(dropdown.entity);
+    expect(world.getComponent(dropdown.list, visibilityId)!.visible).toBe(
+      false,
+    );
+
     for (const optionButton of dropdown.options) {
-      expect(optionButton.interactable.interactable).toBe(false);
-      expect(optionButton.interactable.blocksRaycasts).toBe(false);
-      expect(world.getComponent(optionButton.entity, spriteId)!.enabled).toBe(
-        false,
-      );
-      expect(world.getComponent(optionButton.label, textId)!.enabled).toBe(
-        false,
-      );
+      expect(world.getParent(optionButton.entity)).toBe(dropdown.list);
+      expect(isVisibleInHierarchy(world, optionButton.entity)).toBe(false);
+      expect(isVisibleInHierarchy(world, optionButton.label)).toBe(false);
     }
   });
 
@@ -72,11 +76,7 @@ describe('createDropdown', () => {
     expect(dropdown.dropdown.isOpen).toBe(true);
 
     for (const optionButton of dropdown.options) {
-      expect(optionButton.interactable.interactable).toBe(true);
-      expect(optionButton.interactable.blocksRaycasts).toBe(true);
-      expect(world.getComponent(optionButton.entity, spriteId)!.enabled).toBe(
-        true,
-      );
+      expect(isVisibleInHierarchy(world, optionButton.entity)).toBe(true);
     }
 
     dropdown.header.interactable.onInvoke.raise();
@@ -84,7 +84,7 @@ describe('createDropdown', () => {
     expect(dropdown.dropdown.isOpen).toBe(false);
 
     for (const optionButton of dropdown.options) {
-      expect(optionButton.interactable.interactable).toBe(false);
+      expect(isVisibleInHierarchy(world, optionButton.entity)).toBe(false);
     }
   });
 
