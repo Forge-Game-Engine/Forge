@@ -8,9 +8,9 @@ import { clamp } from '../../math/index.js';
  */
 export interface UiProgressBarRequiredOptions {
   /**
-   * The entity id of the fill visual - a child `RectTransformEcsComponent`
-   * stretch-anchored from the bar's left edge, whose `anchorMax.x`
-   * `createUiProgressBarEcsSystem` drives to track `value` every tick.
+   * The entity id of the fill visual: a child covering the bar with a
+   * linear or radial `MaskEcsComponent`, whose `shape.amount`
+   * `createUiProgressBarEcsSystem` sets from `value` every tick.
    */
   fill: number;
 }
@@ -82,8 +82,8 @@ export function addUiProgressBarComponent(
 
 /**
  * Normalizes `progressBar.value` to a `0`-`1` fraction of the way from
- * `minValue` to `maxValue` - the anchor fraction
- * `createUiProgressBarEcsSystem` drives the fill visual with.
+ * `minValue` to `maxValue` - the mask amount
+ * `createUiProgressBarEcsSystem` reveals the fill with.
  * @param progressBar - The progress bar's `value`/`minValue`/`maxValue`.
  * @returns The normalized fraction, clamped to `[0, 1]`. `0` if `minValue`
  * and `maxValue` coincide (a zero-length range has no meaningful fraction).

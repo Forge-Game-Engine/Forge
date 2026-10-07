@@ -82,6 +82,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -100,7 +101,7 @@ describe('pushTextRenderCommands', () => {
       buildTextComponent(),
       buildTextMesh([glyph]),
       renderables,
-      { position: entityPosition, rotation: null, scale: null },
+      { position: entityPosition, rotation: null, scale: null, mask: null },
     );
 
     expect(commands[0].components.position.world).toEqual({ x: 13, y: 24 });
@@ -121,6 +122,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -150,6 +152,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -169,6 +172,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -197,6 +201,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -227,6 +232,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
       2,
     );
@@ -252,6 +258,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -275,6 +282,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -307,6 +315,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -331,6 +340,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -352,6 +362,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -375,6 +386,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -393,6 +405,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -411,6 +424,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 42 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -432,6 +446,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: rotation,
         scale: null,
+        mask: null,
       },
     );
 
@@ -452,6 +467,7 @@ describe('pushTextRenderCommands', () => {
         position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
         rotation: null,
         scale: null,
+        mask: null,
       },
     );
 
@@ -483,6 +499,7 @@ describe('buildTextCameraCommands', () => {
       0xffffffff,
       commands,
       () => renderables,
+      () => null,
     );
 
     expect(commands).toHaveLength(2);
@@ -506,6 +523,7 @@ describe('buildTextCameraCommands', () => {
       0xffffffff,
       commands,
       () => renderables,
+      () => null,
     );
 
     expect(commands).toHaveLength(0);
@@ -529,6 +547,7 @@ describe('buildTextCameraCommands', () => {
       0b0010,
       commands,
       () => renderables,
+      () => null,
     );
 
     expect(commands).toHaveLength(0);
@@ -552,6 +571,7 @@ describe('buildTextCameraCommands', () => {
       0xffffffff,
       commands,
       () => renderables,
+      () => null,
       2,
     );
 
@@ -580,6 +600,7 @@ describe('buildTextCameraCommands', () => {
       0xffffffff,
       commands,
       () => renderables,
+      () => null,
     );
 
     expect(commands[0].components.rotation).toBe(rotation);
