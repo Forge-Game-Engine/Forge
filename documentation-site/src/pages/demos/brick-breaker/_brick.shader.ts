@@ -11,6 +11,8 @@ in vec2 v_texCoord;
 in vec4 v_tint;
 out vec4 fragColor;
 
+#pragma forge include(spriteMask)
+
 void main() {
   vec4 tex = texture(u_texture, v_texCoord);
   vec3 color = tex.rgb * v_tint.rgb;
@@ -25,5 +27,5 @@ void main() {
 
   color += (gloss + sheen) * tex.a;
 
-  fragColor = vec4(color, tex.a);
+  fragColor = vec4(color, tex.a * spriteMaskCoverage());
 }`;
