@@ -13,6 +13,7 @@ import {
   addCameraComponent,
   addDrawOrderComponent,
   addMaskComponent,
+  addVisibilityComponent,
   CameraEcsComponent,
   maxDrawOrder,
 } from '../components';
@@ -135,7 +136,6 @@ describe('createRenderEcsSystem', () => {
     category: 1,
     uvOffset: Vec2.zero,
     uvScale: Vec2.zero,
-    enabled: true,
     layer: 0,
     ...overrides,
   });
@@ -289,16 +289,66 @@ describe('createRenderEcsSystem', () => {
     expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
   });
 
-  it('skips disabled sprites', () => {
+  it('skips sprites hidden by their own visibility', () => {
     addCameraEntity();
     const { renderable, bindInstanceData } = createRenderable();
 
-    addSpriteEntity(renderable, 0, { enabled: false });
+    const entity = addSpriteEntity(renderable, 0);
+    addVisibilityComponent(world, entity, { visible: false });
 
     world.update();
 
     expect(bindInstanceData).not.toHaveBeenCalled();
     expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
+  });
+
+  it("skips sprites and text under a hidden ancestor, and draws them again once it's shown", () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable();
+
+    const root = world.createEntity();
+    const visibility = addVisibilityComponent(world, root, { visible: false });
+    const middle = world.createEntity();
+    world.setParent(middle, root);
+    const sprite = addSpriteEntity(renderable, 0);
+    world.setParent(sprite, middle);
+    const text = addTextEntity(renderable, 0, {
+      glyphs: [
+        {
+          offset: Vec2.zero,
+          size: { x: 1, y: 1 },
+          uvOffset: Vec2.zero,
+          uvScale: Vec2.one,
+          embolden: 0,
+        },
+      ],
+    });
+    world.setParent(text, middle);
+
+    world.update();
+
+    expect(bindInstanceData).not.toHaveBeenCalled();
+
+    visibility.visible = true;
+    world.update();
+
+    expect(bindInstanceData).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws a visible sibling of a hidden entity', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable();
+
+    const parent = world.createEntity();
+    const hidden = addSpriteEntity(renderable, 0);
+    const shown = addSpriteEntity(renderable, 0);
+    world.setParent(hidden, parent);
+    world.setParent(shown, parent);
+    addVisibilityComponent(world, hidden, { visible: false });
+
+    world.update();
+
+    expect(bindInstanceData).toHaveBeenCalledTimes(1);
   });
 
   it('skips sprites whose category does not match the camera culling mask', () => {
@@ -1120,11 +1170,12 @@ describe('createRenderEcsSystem', () => {
       embolden: 0,
     };
 
-    it('skips disabled text', () => {
+    it('skips hidden text', () => {
       addCameraEntity();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTextEntity(renderable, 0, { glyphs: [glyph] }, { enabled: false });
+      const entity = addTextEntity(renderable, 0, { glyphs: [glyph] });
+      addVisibilityComponent(world, entity, { visible: false });
 
       world.update();
 

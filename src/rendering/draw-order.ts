@@ -6,6 +6,10 @@ import {
   DrawOrderEcsComponent,
   drawOrderId,
 } from './components/draw-order-component.js';
+import {
+  VisibilityEcsComponent,
+  visibilityId,
+} from './components/visibility-component.js';
 
 /**
  * Each entity's place in the draw order, resolved from the hierarchy by
@@ -14,6 +18,10 @@ import {
  * then by hierarchy order: roots in creation order, each followed by its
  * subtree in pre-order (parents before children, siblings in sibling
  * order).
+ *
+ * The same pass resolves which entities are visible in the hierarchy (see
+ * `VisibilityEcsComponent`), so a system that draws them can skip the
+ * hidden ones without walking each one's ancestors again.
  */
 export interface DrawOrderResolver {
   /**
@@ -46,6 +54,13 @@ export interface DrawOrderResolver {
    * orders its whole subtree by. `0` when that ancestor has no position.
    */
   rootY(entity: number): number;
+
+  /**
+   * Reads whether an entity is visible in the hierarchy: `false` if it or
+   * any ancestor has `VisibilityEcsComponent.visible` set to `false`, the
+   * same answer as `isVisibleInHierarchy`.
+   */
+  isVisible(entity: number): boolean;
 }
 
 // An entity's slot index, inlined rather than calling `entityIndex` since
@@ -67,10 +82,12 @@ export function createDrawOrderResolver(): DrawOrderResolver {
   let rootSequences = new Float64Array(0);
   let hierarchyIndices = new Uint32Array(0);
   let roots = new Float64Array(0);
+  let visibilities = new Uint8Array(0);
   let getRootPosition:
     ((entity: number) => PositionEcsComponent | null) | null = null;
   const stack: number[] = [];
   const stackParentOrders: number[] = [];
+  const stackParentVisibilities: boolean[] = [];
 
   const ensureCapacity = (index: number): void => {
     if (index < stamps.length) {
@@ -79,7 +96,9 @@ export function createDrawOrderResolver(): DrawOrderResolver {
 
     const capacity = Math.max(64, stamps.length * 2, index + 1);
 
-    const grow = <T extends Uint32Array | Int32Array | Float64Array>(
+    const grow = <
+      T extends Uint8Array | Uint32Array | Int32Array | Float64Array,
+    >(
       buffer: T,
       create: (length: number) => T,
     ): T => {
@@ -97,6 +116,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
       (length) => new Uint32Array(length),
     );
     roots = grow(roots, (length) => new Float64Array(length));
+    visibilities = grow(visibilities, (length) => new Uint8Array(length));
   };
 
   // An iterative pre-order walk of `root`'s subtree, so a deep hierarchy
@@ -105,16 +125,21 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     world: EcsWorld,
     root: number,
     getDrawOrder: (entity: number) => DrawOrderEcsComponent | null,
+    getVisibility: (entity: number) => VisibilityEcsComponent | null,
   ): void => {
     const rootSequence = world.getCreationSequence(root);
     let nextHierarchyIndex = 0;
 
     stack.push(root);
     stackParentOrders.push(0);
+    stackParentVisibilities.push(true);
 
     while (stack.length > 0) {
       const entity = stack.pop()!;
       const parentOrder = stackParentOrders.pop()!;
+      const visible =
+        stackParentVisibilities.pop()! &&
+        getVisibility(entity)?.visible !== false;
       const index = entity & indexMask;
       const order = Math.max(
         minWorldOrder,
@@ -130,6 +155,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
       rootSequences[index] = rootSequence;
       hierarchyIndices[index] = nextHierarchyIndex++;
       roots[index] = root;
+      visibilities[index] = visible ? 1 : 0;
 
       const children = world.getChildren(entity);
 
@@ -138,6 +164,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
       for (let c = children.length - 1; c >= 0; c--) {
         stack.push(children[c]);
         stackParentOrders.push(order);
+        stackParentVisibilities.push(visible);
       }
     }
   };
@@ -157,6 +184,8 @@ export function createDrawOrderResolver(): DrawOrderResolver {
         world.getComponentAccessor<PositionEcsComponent>(positionId);
       const getParent =
         world.getComponentAccessor<ParentEcsComponent>(parentId);
+      const getVisibility =
+        world.getComponentAccessor<VisibilityEcsComponent>(visibilityId);
 
       for (const entities of entityLists) {
         for (const entity of entities) {
@@ -178,7 +207,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
             root = parent.parent;
           }
 
-          resolveSubtree(world, root, getDrawOrder);
+          resolveSubtree(world, root, getDrawOrder, getVisibility);
         }
       }
     },
@@ -187,6 +216,7 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     hierarchyIndex: (entity) => hierarchyIndices[entity & indexMask],
     rootY: (entity) =>
       getRootPosition?.(roots[entity & indexMask])?.world.y ?? 0,
+    isVisible: (entity) => visibilities[entity & indexMask] === 1,
   };
 }
 

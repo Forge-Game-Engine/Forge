@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createTooltip } from './create-tooltip.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import { Color, Texture, visibilityId } from '../../rendering/index.js';
 import { textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
@@ -22,7 +22,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 
@@ -48,13 +47,14 @@ describe('createTooltip', () => {
       sprite: buildSprite(),
     });
 
-    expect(world.getComponent(tooltip.panel, spriteId)!.enabled).toBe(false);
-    expect(world.getComponent(tooltip.label, textId)!.enabled).toBe(false);
+    expect(world.getComponent(tooltip.panel, visibilityId)!.visible).toBe(
+      false,
+    );
+    expect(world.getParent(tooltip.label)).toBe(tooltip.panel);
 
     const tooltipComponent = world.getComponent(source, tooltipId)!;
 
     expect(tooltipComponent.panel).toBe(tooltip.panel);
-    expect(tooltipComponent.label).toBe(tooltip.label);
     expect(tooltipComponent.showDelayMilliseconds).toBe(400);
   });
 

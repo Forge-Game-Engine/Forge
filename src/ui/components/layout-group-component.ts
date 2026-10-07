@@ -105,10 +105,11 @@ const defaultUiAxisLayoutGroupOptions: UiAxisLayoutGroupDefaultedOptions = {
  * Attaches a `HorizontalLayoutGroupEcsComponent` (a `UiAxisLayoutGroupEcsComponent`
  * arranging children left-to-right) to `entity`. `createUiLayoutGroupEcsSystem`
  * arranges every direct child that has a `RectTransformEcsComponent` and
- * whose `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true`,
- * along the entity's own content box (its resolved rect, inset by
- * `padding`) - each child's height is the group's cross axis, sized/aligned
- * per `childControlHeight`/`childAlignment.y`.
+ * whose `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true`
+ * and that isn't hidden by its own `VisibilityEcsComponent`, along the
+ * entity's own content box (its resolved rect, inset by `padding`) - each
+ * child's height is the group's cross axis, sized/aligned per
+ * `childControlHeight`/`childAlignment.y`.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Its own
  * `RectTransformEcsComponent` supplies the group's content box - add one
@@ -298,8 +299,9 @@ function hasFixedGridCountConstraint(
 /**
  * Attaches a {@link GridLayoutGroupEcsComponent} to `entity`, arranging every
  * direct child that has a `RectTransformEcsComponent` and whose
- * `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true` into a
- * cell grid within the entity's own content box (its resolved rect, inset by
+ * `LayoutElementEcsComponent.ignoreLayout` (if present) isn't `true` and
+ * that isn't hidden by its own `VisibilityEcsComponent` into a cell grid
+ * within the entity's own content box (its resolved rect, inset by
  * `padding`). Unlike the axis groups, cell size never comes from a child's
  * own measured size on a `'fixed'` axis (the default for both
  * `columnWidthMode`/`rowHeightMode`) - every cell on that axis is exactly

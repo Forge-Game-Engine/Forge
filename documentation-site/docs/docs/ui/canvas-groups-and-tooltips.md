@@ -2,7 +2,35 @@
 sidebar_position: 8
 ---
 
-# Canvas Groups and Tooltips
+# Hiding, Fading and Tooltips
+
+## Hiding and fading
+
+A UI subtree can be hidden or faded, and the two do different things:
+
+- **Hiding** sets a
+  [`VisibilityEcsComponent`](../rendering/visibility.md)'s `visible` to
+  `false`. The subtree isn't drawn, takes no space in layout groups and
+  content size fitters, can't be hit or focused, and loses focus and any
+  press in progress. Use it for pages, menus and controls that aren't on
+  screen.
+- **Fading** sets a canvas group's `alpha`. The subtree is still drawn (at
+  the faded opacity, including `0`), keeps its place in the layout, and is
+  hit and focused as usual unless the group also turns off `interactable`
+  and `blocksRaycasts`. Use it for a disabled or dimmed panel, and for
+  fading a page in or out.
+
+```ts
+const settingsVisibility = addVisibilityComponent(world, settingsPage, {
+  visible: false,
+});
+
+// Opening the settings page:
+settingsVisibility.visible = true;
+```
+
+A canvas group at `alpha: 0` still takes input and layout space, so when a
+fade out ends, set the subtree's `visible` to `false` too.
 
 ## Canvas groups
 
@@ -69,8 +97,11 @@ createTooltip(world, muteToggle.entity, {
 The tooltip panel is parented directly to the source element, pinned just
 above its top edge, so it follows the source automatically as an ordinary
 UI child - [`createUiTooltipEcsSystem`](/Forge/docs/api/functions/createUiTooltipEcsSystem)
-(registered by `registerUiSystems`) only ever toggles it visible/hidden,
-never repositions it. It appears while the source reads `hover` or
+(registered by `registerUiSystems`) only ever shows or hides it, through the
+panel's [`VisibilityEcsComponent`](../rendering/visibility.md) (the label is
+the panel's child, so it's hidden with it), and never repositions it. The
+system writes the panel's `visible` every frame, so don't set it
+yourself. It appears while the source reads `hover` or
 `pressed` under
 [`deriveUiInteractionVisualState`](/Forge/docs/api/functions/deriveUiInteractionVisualState)
 - hovered by pointer *or* focused by gamepad/keyboard, matching the rest of

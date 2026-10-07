@@ -17,7 +17,12 @@ import {
   Time,
 } from '../../common/index.js';
 import { Random, Vec2, Vector2 } from '../../math/index.js';
-import { Sprite, spriteId, Texture } from '../../rendering/index.js';
+import {
+  addVisibilityComponent,
+  Sprite,
+  spriteId,
+  Texture,
+} from '../../rendering/index.js';
 
 describe('createParticleEcsSystem', () => {
   let world: EcsWorld;
@@ -365,7 +370,6 @@ describe('createParticleEcsSystem', () => {
     expect(first.pivot).not.toBe(second.pivot);
     expect(first.pivot).not.toBe(sprite.pivot);
     expect(first).toMatchObject({
-      enabled: true,
       layer: 0,
       width: 10,
       height: 10,
@@ -434,6 +438,77 @@ describe('createParticleEcsSystem', () => {
     for (const particle of getParticles()) {
       expect(onParticleSpawned).toHaveBeenCalledWith(world, particle);
     }
+  });
+
+  describe('on an entity hidden in the hierarchy', () => {
+    it("doesn't spawn a batch, but counts it as emitted so showing the emitter doesn't release it", () => {
+      const parent = world.createEntity();
+      const entity = world.createEntity();
+
+      world.setParent(entity, parent);
+
+      const visibility = addVisibilityComponent(world, parent, {
+        visible: false,
+      });
+      const emitter = addEmitter(
+        { numParticlesRange: { min: 3, max: 3 } },
+        entity,
+      );
+
+      emitter.emit();
+      time.update(100);
+      world.update();
+
+      expect(getParticles()).toHaveLength(0);
+      expect(emitter.emitCount).toBe(3);
+
+      visibility.visible = true;
+      time.update(200);
+      world.update();
+
+      expect(getParticles()).toHaveLength(0);
+    });
+
+    it("doesn't stream, and drops what it skipped, then streams again once shown", () => {
+      const entity = world.createEntity();
+      const visibility = addVisibilityComponent(world, entity, {
+        visible: false,
+      });
+
+      addEmitter({ emissionRate: 100 }, entity);
+      time.update(0);
+      time.update(100);
+      world.update();
+
+      expect(getParticles()).toHaveLength(0);
+
+      visibility.visible = true;
+      time.update(200);
+      world.update();
+
+      // At most this frame's 100 milliseconds' worth, none of the skipped
+      // frame's.
+      expect(getParticles().length).toBeGreaterThan(0);
+      expect(getParticles().length).toBeLessThanOrEqual(10);
+    });
+
+    it('leaves the particles it already spawned alive when hidden', () => {
+      const entity = world.createEntity();
+      const visibility = addVisibilityComponent(world, entity);
+      const emitter = addEmitter(
+        { numParticlesRange: { min: 3, max: 3 } },
+        entity,
+      );
+
+      emitter.emit();
+      time.update(100);
+      world.update();
+      visibility.visible = false;
+      time.update(200);
+      world.update();
+
+      expect(getParticles()).toHaveLength(3);
+    });
   });
 
   describe('emissionRate', () => {

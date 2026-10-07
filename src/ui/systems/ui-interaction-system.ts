@@ -2,7 +2,7 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { mouseButtons } from '../../input/index.js';
 import { Vec2, Vector2 } from '../../math/index.js';
-import { RenderContext } from '../../rendering/index.js';
+import { isVisibleInHierarchy, RenderContext } from '../../rendering/index.js';
 import {
   CanvasEcsComponent,
   canvasId,
@@ -124,6 +124,26 @@ function endPressIfNeeded(
 }
 
 /**
+ * Cancels a captured press on an element that's been hidden: `onEndDrag`
+ * if it was a drag, then `onPointerUp`, never `onInvoke`, so every
+ * `onPointerDown`/`onBeginDrag` a listener saw still gets its matching end.
+ */
+function cancelPress(interactable: UiInteractableEcsComponent): void {
+  if (interactable.pressCapture === null) {
+    return;
+  }
+
+  if (interactable.isDragging) {
+    interactable.onEndDrag.raise();
+  }
+
+  interactable.onPointerUp.raise();
+  interactable.pressCapture = null;
+  interactable.isDragging = false;
+  interactable.isPressed = false;
+}
+
+/**
  * Creates a system that runs the pointer interaction state machine over
  * every `UiInteractableEcsComponent`: hover enter/exit, a captured press
  * (from a pointer-down edge on the element until its matching up edge,
@@ -153,6 +173,13 @@ function endPressIfNeeded(
  * begin a new press or gain focus by hover - see `resolveCanvasGroupState`
  * - the same way it couldn't if `interactable` were `false` on the element
  * itself.
+ *
+ * An element hidden in the hierarchy (see `VisibilityEcsComponent`) is
+ * never hit, so the pointer exits it, and a press it captured before it
+ * was hidden is cancelled (`onEndDrag` if it was dragging, then
+ * `onPointerUp`, without `onInvoke`), so a slider stops following the
+ * pointer. Losing `interactable` mid-press doesn't cancel the press: the
+ * element is still on screen, and the release resolves as usual.
  *
  * Must be registered after `createUiRaycastEcsSystem` (it reads
  * `CanvasEcsComponent.hoveredEntity`).
@@ -207,6 +234,13 @@ export const createUiInteractionEcsSystem = (
         canvas && owningCanvasEntity !== null
           ? getPointerPosition(owningCanvasEntity, canvas)
           : null;
+
+      if (!isVisibleInHierarchy(world, entity)) {
+        updateHoverAndFocus(world, entity, interactable, canvas, false, false);
+        cancelPress(interactable);
+
+        continue;
+      }
 
       const effectiveInteractable =
         interactable.interactable &&

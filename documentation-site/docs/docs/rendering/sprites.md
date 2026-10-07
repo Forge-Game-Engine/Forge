@@ -29,7 +29,9 @@ A `SpriteEcsComponent` holds:
   [Choosing which cameras draw a sprite](#choosing-which-cameras-draw-a-sprite)).
 - `layer`: the sprite's draw order (see
   [Setting the draw order](#setting-the-draw-order)).
-- `enabled`: whether the sprite is drawn.
+
+To hide a sprite, hide its entity with a `VisibilityEcsComponent` (see
+[Visibility](./visibility.md)).
 
 The render system reads the entity's world position, rotation and scale, and
 its [`FlipEcsComponent`](/Forge/docs/api/interfaces/FlipEcsComponent) if it

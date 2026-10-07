@@ -17,8 +17,8 @@ the visual pieces around it, the same pattern as `createButton` (see
 [`createToggle`](/Forge/docs/api/functions/createToggle) creates a box (a
 panel, like `createButton`'s background) with a
 [`UiToggleEcsComponent`](/Forge/docs/api/interfaces/UiToggleEcsComponent)
-added, plus a child checkmark panel whose `SpriteEcsComponent.enabled`
-tracks `isOn`:
+added, plus a child checkmark panel whose
+[`VisibilityEcsComponent`](../rendering/visibility.md) tracks `isOn`:
 
 ```ts
 const toggle = createToggle(world, canvas, {
@@ -178,10 +178,12 @@ quality.onValueChanged.registerListener((index) => {
 
 Selecting an option updates the header's label, raises `onValueChanged`,
 and closes the list. Unlike toggles and sliders, there's no generic
-`createUiDropdownEcsSystem` - opening/closing the list touches several
-sibling entities' `enabled`/`interactable` state at once, which only
+`createUiDropdownEcsSystem` - the option rows are parented to one `list`
+entity, and opening/closing the list sets that entity's
+[`VisibilityEcsComponent`](../rendering/visibility.md), which only
 `createDropdown`'s own wiring (registered as ordinary `onInvoke` listeners,
-not a polled system) knows how to reach.
+not a polled system) knows how to reach. While the list is hidden its rows
+aren't drawn, hit or focusable.
 
 :::info[Known limitation]
 Clicking outside the open list doesn't close it - only clicking the header

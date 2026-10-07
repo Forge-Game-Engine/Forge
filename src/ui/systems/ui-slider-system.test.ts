@@ -14,6 +14,7 @@ import {
 import {
   addCameraComponent,
   addMaskComponent,
+  addVisibilityComponent,
   maskId,
   RenderContext,
 } from '../../rendering/index.js';
@@ -110,6 +111,7 @@ describe('createUiSliderEcsSystem', () => {
 
     return {
       world,
+      track,
       mouseInputSource,
       interactable,
       slider,
@@ -162,6 +164,26 @@ describe('createUiSliderEcsSystem', () => {
     tick();
 
     expect(slider.value).toBeCloseTo(1);
+  });
+
+  it('stops following the pointer once the slider is hidden mid-drag', () => {
+    const { world, track, mouseInputSource, tick, slider } = setUp();
+
+    mouseInputSource.position = { x: 960, y: 540 }; // center -> 0.5
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    tick();
+
+    expect(slider.value).toBeCloseTo(0.5);
+
+    const visibility = addVisibilityComponent(world, track, {
+      visible: false,
+    });
+    mouseInputSource.position = { x: 1110, y: 540 };
+    tick();
+    visibility.visible = true;
+    tick();
+
+    expect(slider.value).toBeCloseTo(0.5);
   });
 
   it('keeps tracking a drag that strays outside the track vertically', () => {

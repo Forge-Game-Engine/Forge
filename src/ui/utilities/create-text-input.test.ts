@@ -4,8 +4,8 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   Color,
   RenderContext,
-  spriteId,
   Texture,
+  visibilityId,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
@@ -37,7 +37,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 
@@ -92,16 +91,16 @@ describe('createTextInput', () => {
     expect(world.getComponent(field.placeholderLabel, textId)!.text).toBe(
       'Name',
     );
-    expect(world.getComponent(field.placeholderLabel, textId)!.enabled).toBe(
-      false,
-    );
+    expect(
+      world.getComponent(field.placeholderLabel, visibilityId)!.visible,
+    ).toBe(false);
 
     for (const part of [
       field.textInput.caret,
       field.textInput.selection,
       field.textInput.compositionUnderline,
     ]) {
-      expect(world.getComponent(part, spriteId)!.enabled).toBe(false);
+      expect(world.getComponent(part, visibilityId)!.visible).toBe(false);
     }
   });
 

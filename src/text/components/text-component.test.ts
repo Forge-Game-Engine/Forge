@@ -30,7 +30,6 @@ describe('addTextComponent', () => {
       richText: true,
       layer: 0,
       category: TEXT_RENDER_CATEGORY,
-      enabled: true,
       outlineColor: Color.black,
       outlineWidth: 0,
       shadowColor: Color.transparent,

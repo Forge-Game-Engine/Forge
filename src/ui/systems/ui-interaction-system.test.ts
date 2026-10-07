@@ -10,7 +10,11 @@ import {
   mouseButtons,
   MouseInputSource,
 } from '../../input/index.js';
-import { addCameraComponent, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  addVisibilityComponent,
+  RenderContext,
+} from '../../rendering/index.js';
 import {
   addCanvasComponent,
   canvasId,
@@ -252,6 +256,59 @@ describe('createUiInteractionEcsSystem', () => {
     expect(endDrags).toBe(1);
     expect(activations).toBe(0);
     expect(interactable().isDragging).toBe(false);
+  });
+
+  it('cancels a drag when the element is hidden: onEndDrag and onPointerUp, no onInvoke, and no more onDrag', () => {
+    const { world, panel, mouseInputSource, tick, interactable } = setUp();
+
+    const events: string[] = [];
+    interactable().onInvoke.registerListener(() => events.push('invoke'));
+    interactable().onDrag.registerListener(() => events.push('drag'));
+    interactable().onEndDrag.registerListener(() => events.push('endDrag'));
+    interactable().onPointerUp.registerListener(() => events.push('up'));
+    interactable().onPointerExit.registerListener(() => events.push('exit'));
+    interactable().dragThreshold = 10;
+
+    mouseInputSource.position = { x: 960, y: 540 };
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    tick();
+    mouseInputSource.position = { x: 960, y: 500 };
+    tick();
+
+    expect(events).toEqual(['drag']);
+
+    const visibility = addVisibilityComponent(world, panel, {
+      visible: false,
+    });
+    tick();
+
+    expect(events).toEqual(['drag', 'exit', 'endDrag', 'up']);
+    expect(interactable().pressCapture).toBeNull();
+    expect(interactable().isDragging).toBe(false);
+    expect(interactable().isPressed).toBe(false);
+    expect(interactable().isHovered).toBe(false);
+
+    // Releasing later, even once shown again, resolves nothing.
+    visibility.visible = true;
+    mouseInputSource.buttonsUp.add(mouseButtons.left);
+    tick();
+
+    expect(events).toEqual(['drag', 'exit', 'endDrag', 'up']);
+  });
+
+  it("can't be pressed while hidden", () => {
+    const { world, panel, mouseInputSource, tick, interactable } = setUp();
+
+    let downs = 0;
+    interactable().onPointerDown.registerListener(() => (downs += 1));
+    addVisibilityComponent(world, panel, { visible: false });
+
+    mouseInputSource.position = { x: 960, y: 540 };
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    tick();
+
+    expect(downs).toBe(0);
+    expect(interactable().pressCapture).toBeNull();
   });
 
   it('focuses an interactable the pointer hovers, per canvas policy', () => {
