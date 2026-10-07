@@ -65,11 +65,11 @@ const spriteInstanceLayout = combineInstanceDataSegments(
  * Creates the renderable that draws sprites with `material`, binding each
  * batch's texture and emissive map (or the black texture) to it.
  */
-const createSpriteRenderable = (
+function createSpriteRenderable(
   renderContext: RenderContext,
   material: SpriteMaterial,
-): Renderable =>
-  new Renderable(
+): Renderable {
+  return new Renderable(
     material,
     spriteInstanceLayout.floatsPerInstance,
     spriteInstanceLayout.bindInstanceData,
@@ -82,6 +82,7 @@ const createSpriteRenderable = (
       );
     },
   );
+}
 
 /**
  * The GPU resources one render system draws with, created on its first
@@ -94,9 +95,7 @@ interface RenderResources {
   getTextRenderables: () => TextRenderables;
 }
 
-const createRenderResources = (
-  renderContext: RenderContext,
-): RenderResources => {
+function createRenderResources(renderContext: RenderContext): RenderResources {
   const spriteRenderables = new WeakMap<SpriteMaterial, Renderable>();
   let textRenderables: TextRenderables | null = null;
 
@@ -118,13 +117,13 @@ const createRenderResources = (
       return textRenderables;
     },
   };
-};
+}
 
-const setupInstanceAttributesAndDraw = (
+function setupInstanceAttributesAndDraw(
   renderContext: RenderContext,
   renderable: Renderable,
   batchLength: number,
-) => {
+): void {
   const { gl } = renderContext;
 
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
@@ -147,26 +146,26 @@ const setupInstanceAttributesAndDraw = (
     gl.ONE_MINUS_SRC_ALPHA,
   );
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
-};
+}
 
 let instanceDataBuffer = new Float32Array(0);
 
-const ensureInstanceDataBufferCapacity = (size: number): Float32Array => {
+function ensureInstanceDataBufferCapacity(size: number): Float32Array {
   if (instanceDataBuffer.length < size) {
     instanceDataBuffer = new Float32Array(size);
   }
 
   return instanceDataBuffer;
-};
+}
 
-const includeBatch = (
+function includeBatch(
   renderContext: RenderContext,
   quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
   batchStart: number,
   batchEnd: number,
-) => {
+): void {
   const { gl } = renderContext;
   const firstCommand = commands[batchStart];
   const { renderable } = firstCommand;
@@ -195,9 +194,9 @@ const includeBatch = (
   gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW, 0, requiredBatchSize);
 
   setupInstanceAttributesAndDraw(renderContext, renderable, batchLength);
-};
+}
 
-const pushSpriteRenderCommands = (
+function pushSpriteRenderCommands(
   commands: RenderCommand[],
   renderable: Renderable,
   spriteComponent: SpriteEcsComponent,
@@ -205,7 +204,7 @@ const pushSpriteRenderCommands = (
   rotationComponent: RotationEcsComponent | null,
   scaleComponent: ScaleEcsComponent | null,
   flipComponent: FlipEcsComponent | null,
-): void => {
+): void {
   const { texture, slices } = spriteComponent;
   const emissiveTexture = spriteComponent.emissive?.texture ?? null;
 
@@ -280,7 +279,7 @@ const pushSpriteRenderCommands = (
       },
     });
   }
-};
+}
 
 const commandBounds: Rect = Rects.zero;
 
@@ -315,10 +314,13 @@ function cullCommandsOutsideView(
  * Whether two commands draw in the same instanced batch: the same
  * renderable (material and instance layout), texture and emissive map.
  */
-const isSameBatch = (a: RenderCommand, b: RenderCommand): boolean =>
-  a.renderable === b.renderable &&
-  a.texture === b.texture &&
-  a.emissiveTexture === b.emissiveTexture;
+function isSameBatch(a: RenderCommand, b: RenderCommand): boolean {
+  return (
+    a.renderable === b.renderable &&
+    a.texture === b.texture &&
+    a.emissiveTexture === b.emissiveTexture
+  );
+}
 
 function flushBatches(
   renderContext: RenderContext,
@@ -375,7 +377,7 @@ let ySortedOrderBuffer = new Uint32Array(0);
 let hierarchySortScratch = new Uint32Array(0);
 let ySortScratch = new Uint32Array(0);
 
-const ensureSortCapacity = (count: number): void => {
+function ensureSortCapacity(count: number): void {
   if (hierarchyKeys.length >= count) {
     return;
   }
@@ -393,9 +395,9 @@ const ensureSortCapacity = (count: number): void => {
   ySortedOrderBuffer = new Uint32Array(capacity);
   hierarchySortScratch = new Uint32Array(capacity);
   ySortScratch = new Uint32Array(capacity);
-};
+}
 
-const setDrawItem = (
+function setDrawItem(
   index: number,
   entity: number,
   category: number,
@@ -403,7 +405,7 @@ const setDrawItem = (
   sprite: SpriteEcsComponent | null,
   text: TextEcsComponent | null,
   textMesh: TextMeshEcsComponent | null,
-): void => {
+): void {
   const item = drawItems[index];
 
   if (!item) {
@@ -418,19 +420,19 @@ const setDrawItem = (
   item.sprite = sprite;
   item.text = text;
   item.textMesh = textMesh;
-};
+}
 
 /**
  * Collects one draw item per enabled sprite and text, in no particular
  * order.
  * @returns The number of draw items.
  */
-const collectDrawItems = (
+function collectDrawItems(
   spriteQuery: QueryResult<[SpriteEcsComponent, PositionEcsComponent]>,
   textQuery: QueryResult<
     [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
   >,
-): number => {
+): number {
   const {
     entities: spriteEntities,
     components: [sprites, spritePositions],
@@ -474,9 +476,9 @@ const collectDrawItems = (
   }
 
   return count;
-};
+}
 
-const writeSortKeys = (resolver: DrawOrderResolver, count: number): void => {
+function writeSortKeys(resolver: DrawOrderResolver, count: number): void {
   ensureSortCapacity(count);
 
   for (let i = 0; i < count; i++) {
@@ -492,13 +494,10 @@ const writeSortKeys = (resolver: DrawOrderResolver, count: number): void => {
     // An entity's sprite draws before its text.
     hierarchyKeys[i] = resolver.hierarchyIndex(entity) * 2 + (sprite ? 0 : 1);
   }
-};
+}
 
 // Only needed when a camera y-sorts, so only written then.
-const writeRootYSortKeys = (
-  resolver: DrawOrderResolver,
-  count: number,
-): void => {
+function writeRootYSortKeys(resolver: DrawOrderResolver, count: number): void {
   for (let i = 0; i < count; i++) {
     // Negated, so a higher Y (further up the screen) draws first.
     writeSortableFloat64(
@@ -508,15 +507,15 @@ const writeRootYSortKeys = (
       i,
     );
   }
-};
+}
 
-const pushDrawItemCommands = (
+function pushDrawItemCommands(
   commands: RenderCommand[],
   item: DrawItem,
   optionalComponents: OptionalComponentAccessors,
   renderContext: RenderContext,
   resources: RenderResources,
-): void => {
+): void {
   const { entity, sprite, text, textMesh, position } = item;
   const rotation = optionalComponents.getRotation(entity);
   const scale = optionalComponents.getScale(entity);
@@ -545,7 +544,7 @@ const pushDrawItemCommands = (
     { position, rotation, scale },
     renderContext.pixelRatio,
   );
-};
+}
 
 interface OptionalComponentAccessors {
   getRotation: (entity: number) => RotationEcsComponent | null;
