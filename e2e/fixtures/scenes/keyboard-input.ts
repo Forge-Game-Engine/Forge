@@ -1,7 +1,5 @@
 import {
-  actionResetTypes,
   addPositionComponent,
-  Axis1dAction,
   Axis2dAction,
   buttonMoments,
   Color,
@@ -15,7 +13,6 @@ import {
   EcsSystem,
   EcsWorld,
   HoldAction,
-  KeyboardAxis1dBinding,
   KeyboardAxis2dBinding,
   KeyboardHoldBinding,
   KeyboardInputSource,
@@ -40,10 +37,6 @@ import { CreateScene, SceneHandle } from './scene.js';
 const defaultStepDeltaMilliseconds = 16.6666;
 const squareSize = 60;
 const moveSpeedInWorldUnitsPerSecond = 200;
-// How far, in world units, a single non-zero `impulseAction.value` frame
-// moves the impulse square - see the scene doc comment for why this only
-// ever applies for exactly one frame per key press.
-const impulseStepInWorldUnits = 80;
 const holdSmallSize = 40;
 const holdBigSize = 90;
 
@@ -54,10 +47,8 @@ function toColor(rgb: { r: number; g: number; b: number }): Color {
 
 /** The handle `keyboard-input.spec.ts` drives and asserts against. */
 export interface KeyboardInputSceneHandle extends SceneHandle {
-  /** The WASD-driven square's local position (`Axis2dAction`, `noReset`). */
+  /** The WASD-driven square's local position (`Axis2dAction`). */
   readonly moverPosition: { x: number; y: number };
-  /** The arrow-key-driven square's local position (`Axis1dAction`, default `zero` reset). */
-  readonly impulsePosition: { x: number; y: number };
   /** How many times the `'game'`-group jump `TriggerAction` has fired. */
   readonly gameTriggerCount: number;
   /** How many times the `'menu'`-group confirm `TriggerAction` has fired. */
@@ -81,10 +72,8 @@ export interface KeyboardInputSceneHandle extends SceneHandle {
 
 /**
  * Builds a scene exercising every keyboard-bound action type against real
- * `KeyboardEvent`s: a WASD-driven `Axis2dAction` (continuous movement, via
- * `actionResetTypes.noReset`), an arrow-key-driven `Axis1dAction` (the
- * default `actionResetTypes.zero`, deliberately - see the impulse square's
- * comment below), a `TriggerAction` on Space, a `HoldAction` on `KeyC`, and
+ * `KeyboardEvent`s: a WASD-driven `Axis2dAction` (continuous movement for as
+ * long as a key is held), a `TriggerAction` on Space, a `HoldAction` on `KeyC`, and
  * a second `TriggerAction` bound to the *same* Space key but a different
  * (`'menu'`) input group, to prove `InputManager`'s active-group gating
  * actually gates dispatch rather than just binding lookup.
@@ -101,19 +90,13 @@ export const createScene: CreateScene = (
     preserveDrawingBuffer: true,
   });
 
-  const moveAction = new Axis2dAction('move', 'game', actionResetTypes.noReset);
-  // Default `actionResetTypes.zero`, on purpose: this is the scene's
-  // demonstration of the "twitchy" behavior actions.md warns about for a
-  // held key bound with the default reset type - see the spec for the
-  // exact single-impulse-then-snap-back sequence this produces.
-  const impulseAction = new Axis1dAction('impulse', 'game');
+  const moveAction = new Axis2dAction('move', 'game');
   const jumpAction = new TriggerAction('jump', 'game');
   const menuConfirmAction = new TriggerAction('confirm', 'menu');
   const crouchAction = new HoldAction('crouch', 'game');
 
   const inputManager = registerInputs(world, time, {
     axis2dActions: [moveAction],
-    axis1dActions: [impulseAction],
     triggerActions: [jumpAction, menuConfirmAction],
     holdActions: [crouchAction],
   });
@@ -127,14 +110,6 @@ export const createScene: CreateScene = (
       keyCodes.s,
       keyCodes.d,
       keyCodes.a,
-    ),
-  );
-
-  keyboardInputSource.axis1dBindings.add(
-    new KeyboardAxis1dBinding(
-      impulseAction,
-      keyCodes.arrowRight,
-      keyCodes.arrowLeft,
     ),
   );
 
@@ -188,7 +163,6 @@ export const createScene: CreateScene = (
   }
 
   const mover = createSquare(-300, -200, toColor(inputSceneColors.blue));
-  const impulse = createSquare(-300, 0, toColor(inputSceneColors.yellow));
   const marker = createSquare(-300, 200, toColor(inputSceneColors.red));
   const holdSquare = createSquare(300, 0, toColor(inputSceneColors.orange));
 
@@ -215,8 +189,6 @@ export const createScene: CreateScene = (
         moveAction.value.x * moveSpeedInWorldUnitsPerSecond * deltaSeconds;
       mover.position.local.y +=
         moveAction.value.y * moveSpeedInWorldUnitsPerSecond * deltaSeconds;
-
-      impulse.position.local.x += impulseAction.value * impulseStepInWorldUnits;
 
       if (jumpAction.isTriggered) {
         gameTriggerCount++;
@@ -254,10 +226,6 @@ export const createScene: CreateScene = (
 
     get moverPosition(): { x: number; y: number } {
       return { x: mover.position.local.x, y: mover.position.local.y };
-    },
-
-    get impulsePosition(): { x: number; y: number } {
-      return { x: impulse.position.local.x, y: impulse.position.local.y };
     },
 
     get gameTriggerCount(): number {

@@ -1,111 +1,43 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Axis1dAction } from './axis-1d-action';
-import { actionResetTypes } from '../constants';
+import { describe, expect, it, vi } from 'vitest';
+import { Axis1dAction, setAxis1dActionValue } from './axis-1d-action';
 
-describe('InputAxis1d', () => {
-  let action: Axis1dAction;
+describe('Axis1dAction', () => {
+  it('should initialize with the given name and group, and a value of 0', () => {
+    const action = new Axis1dAction('zoom', 'default');
 
-  beforeEach(() => {
-    action = new Axis1dAction('zoom', 'default');
-  });
-
-  it('should initialize with the given name', () => {
     expect(action.name).toBe('zoom');
-  });
-
-  it('should initialize value to 0', () => {
-    expect(action.value).toBe(0);
-  });
-
-  it('should initialize with given group', () => {
     expect(action.inputGroup).toBe('default');
-  });
-
-  it('should set value correctly', () => {
-    action.set(1);
-    expect(action.value).toBe(1);
-
-    action.set(-1);
-    expect(action.value).toBe(-1);
-  });
-
-  it('should reset value to 0', () => {
-    action.set(1);
-    expect(action.value).toBe(1);
-
-    action.reset();
     expect(action.value).toBe(0);
   });
 
   it('should default the input group to "game" when not provided', () => {
-    const defaultGroupAction = new Axis1dAction('zoom');
-    expect(defaultGroupAction.inputGroup).toBe('game');
+    expect(new Axis1dAction('zoom').inputGroup).toBe('game');
   });
 
-  it('should not reset the value when the reset type is noReset', () => {
-    const noResetAction = new Axis1dAction(
-      'zoom',
-      'default',
-      actionResetTypes.noReset,
-    );
+  it('should clamp written values to the range -1 to 1', () => {
+    const action = new Axis1dAction('zoom');
 
-    noResetAction.set(1);
-    noResetAction.reset();
-
-    expect(noResetAction.value).toBe(1);
-  });
-
-  it('should raise valueChangeEvent when the value changes', () => {
-    const listener = vi.fn();
-
-    action.valueChangeEvent.registerListener(listener);
-    action.set(1);
-
-    expect(listener).toHaveBeenCalledWith(1);
-  });
-
-  it('should not raise valueChangeEvent when set to the same value', () => {
-    action.set(1);
-
-    const listener = vi.fn();
-
-    action.valueChangeEvent.registerListener(listener);
-    action.set(1);
-
-    expect(listener).not.toHaveBeenCalled();
-  });
-
-  it('should clamp the value to the range -1 to 1', () => {
-    action.set(2);
+    setAxis1dActionValue(action, 2);
     expect(action.value).toBe(1);
 
-    action.set(-1.5);
+    setAxis1dActionValue(action, -1.5);
     expect(action.value).toBe(-1);
 
-    action.set(0.25);
+    setAxis1dActionValue(action, 0.25);
     expect(action.value).toBe(0.25);
   });
 
-  it('should not raise valueChangeEvent when a clamped value matches the current value', () => {
-    action.set(1);
-
+  it('should raise valueChangeEvent only when the clamped value changes', () => {
+    const action = new Axis1dAction('zoom');
     const listener = vi.fn();
 
     action.valueChangeEvent.registerListener(listener);
-    action.set(2);
 
-    expect(listener).not.toHaveBeenCalled();
-  });
+    setAxis1dActionValue(action, 1);
+    setAxis1dActionValue(action, 1);
+    setAxis1dActionValue(action, 2);
 
-  it('should expose its reset type', () => {
-    expect(action.actionResetType).toBe(actionResetTypes.zero);
-
-    const noResetAction = new Axis1dAction(
-      'zoom',
-      'default',
-      actionResetTypes.noReset,
-    );
-
-    expect(noResetAction.actionResetType).toBe(actionResetTypes.noReset);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith(1);
   });
 });

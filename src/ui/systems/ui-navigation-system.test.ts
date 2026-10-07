@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Axis2dAction, TriggerAction } from '../../input/index.js';
+import {
+  Axis2dAction,
+  buttonMoments,
+  InputManager,
+  TriggerAction,
+} from '../../input/index.js';
 import { addCameraComponent } from '../../rendering/index.js';
 import {
   addCanvasComponent,
@@ -63,6 +68,29 @@ const createButtonAt = (
 };
 
 describe('createUiNavigationEcsSystem', () => {
+  const testSource = { name: 'test' };
+
+  let inputManager: InputManager;
+
+  beforeEach(() => {
+    inputManager = new InputManager();
+  });
+
+  /** Reports `x`/`y` for `action` from a test input source. */
+  const navigate = (action: Axis2dAction, x: number, y: number): void => {
+    inputManager.addAxis2dActions(action);
+    inputManager.setAxis2dInput(testSource, action, x, y);
+  };
+
+  /** Presses and releases a button bound to `action` on a test input source. */
+  const press = (action: TriggerAction): void => {
+    const binding = { action, moment: buttonMoments.down, displayText: '' };
+
+    inputManager.addTriggerActions(action);
+    inputManager.setTriggerInput(testSource, binding, true);
+    inputManager.setTriggerInput(testSource, binding, false);
+  };
+
   it('resets wasInvokedThisFrame to false every tick before applying this tick', () => {
     const world = new EcsWorld();
     const canvas = createTestCanvas(world);
@@ -84,7 +112,7 @@ describe('createUiNavigationEcsSystem', () => {
     const first = createButtonAt(world, canvas, { x: 0, y: 0 });
     createButtonAt(world, canvas, { x: 200, y: 0 });
 
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();
@@ -101,16 +129,16 @@ describe('createUiNavigationEcsSystem', () => {
 
     world.addSystem(createUiNavigationEcsSystem());
 
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
     world.update();
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(left);
 
     // Return to neutral, then press right again - a held stick shouldn't
     // repeat-move every tick, only on a fresh crossing of the threshold.
-    navigateInput.set(0, 0);
+    navigate(navigateInput, 0, 0);
     world.update();
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
     world.update();
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
@@ -125,7 +153,7 @@ describe('createUiNavigationEcsSystem', () => {
 
     world.addSystem(createUiNavigationEcsSystem());
 
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
     world.update();
     world.update();
     world.update();
@@ -149,7 +177,7 @@ describe('createUiNavigationEcsSystem', () => {
 
     world.addSystem(createUiNavigationEcsSystem());
 
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
     world.update();
 
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(
@@ -173,7 +201,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.getComponent(canvas, canvasId)!.focusedEntity = button;
     interactable.isFocused = true;
 
-    submitInput.trigger();
+    press(submitInput);
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();
@@ -197,7 +225,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.getComponent(canvas, canvasId)!.focusedEntity = button;
     interactable.isFocused = true;
 
-    submitInput.trigger();
+    press(submitInput);
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();
@@ -214,7 +242,7 @@ describe('createUiNavigationEcsSystem', () => {
 
     addCanvasGroupComponent(world, disabled, { interactable: false });
 
-    navigateInput.set(1, 0);
+    navigate(navigateInput, 1, 0);
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();
@@ -232,7 +260,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.getComponent(canvas, canvasId)!.focusedEntity = button;
     interactable.isFocused = true;
 
-    cancelInput.trigger();
+    press(cancelInput);
 
     world.addSystem(createUiNavigationEcsSystem());
     world.update();

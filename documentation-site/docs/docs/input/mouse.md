@@ -6,7 +6,8 @@ sidebar_position: 3
 
 [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) listens for
 `mousedown`, `mouseup`, `wheel`, and `mousemove` events on a container
-element and dispatches to whichever bindings match. Pass the render canvas
+element and reports the state of the matching bindings to its
+`InputManager`. Pass the render canvas
 as the container so cursor positions are measured relative to it:
 
 ```ts
@@ -39,7 +40,6 @@ values from
 import {
   Axis2dAction,
   TriggerAction,
-  actionResetTypes,
   buttonMoments,
   mouseButtons,
   MouseAxis2dBinding,
@@ -47,7 +47,7 @@ import {
   MouseTriggerBinding,
 } from '@forge-game-engine/forge/input';
 
-const aim = new Axis2dAction('aim', 'game', actionResetTypes.noReset);
+const aim = new Axis2dAction('aim');
 const fire = new TriggerAction('fire');
 
 const inputManager = registerInputs(world, time, {
@@ -85,7 +85,7 @@ containerSize`. With the default origin, this is the pixel offset from the
 import { cursorValueTypes } from '@forge-game-engine/forge/input';
 
 // Pixel offset from the center of the canvas, e.g. for an aim reticle.
-const reticle = new Axis2dAction('reticle', 'game', actionResetTypes.noReset);
+const reticle = new Axis2dAction('reticle');
 
 mouse.axis2dBindings.add(
   new MouseAxis2dBinding(reticle, {
@@ -103,28 +103,24 @@ applying it.
 
 ## Gotchas
 
-:::caution
-Like keyboard axes, cursor position needs `actionResetTypes.noReset` on the
-bound `Axis2dAction`, see
-[Actions and Input Groups](./actions.md#reset-behavior-zero-vs-noreset).
-`MouseAxis2dBinding` only calls `set()` on `mousemove`, so with the default
-`actionResetTypes.zero` the value snaps back to `Vec2.zero` on the next
-frame's reset, even while the cursor sits still.
-:::
+`MouseAxis2dBinding` reports the cursor position on every `mousemove`, and
+the bound action keeps that value until the cursor moves again.
 
 [`MouseAxis1dBinding`](/Forge/docs/api/classes/MouseAxis1dBinding) (scroll
-wheel) sets the bound `Axis1dAction`'s value to `event.deltaY / 100` on each
-`wheel` event, roughly ±1 per scroll click (clamped to `[-1, 1]`, like every
-`Axis1dAction`). Unlike cursor position, this is
-naturally a "delta this frame" value, so the default
-`actionResetTypes.zero` is correct here, the value goes back to `0` once
-scrolling stops.
+wheel) reports the sum of `event.deltaY / 100` over the frame's `wheel`
+events, roughly ±1 per scroll click (the action clamps it to `[-1, 1]`,
+like every `Axis1dAction`). The input lasts one frame: the source reports
+`0` again in its `reset()` at the end of the frame, so the action reads
+`0` once scrolling stops.
 
 Like every other binding, `MouseAxis1dBinding` and `MouseAxis2dBinding`
-only reach their action while its
+only affect their action while its
 [input group](./actions.md#input-groups) is active. A cursor-position action
-in an inactive group stays at `0`, and picks up the latest cursor position
-as soon as its group becomes active again.
+in an inactive group reads `0`, and reads the latest cursor position as soon
+as its group becomes active again.
+
+Several `MouseHoldBinding`s on one action hold it while any of their buttons
+is held.
 
 [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource) calls the
 container's `getBoundingClientRect()` fresh on every `mousemove` event, so
@@ -133,8 +129,8 @@ otherwise reflowed (a responsive canvas, a window resize) - no need to
 recreate the source afterward.
 
 [`MouseInputSource.stop()`](/Forge/docs/api/classes/MouseInputSource#stop)
-removes its event listeners from the container and unregisters it from the
-`InputManager`. Call it when the source is no longer needed.
+removes its event listeners from the container and releases everything it
+was holding: buttons, cursor position and wheel input. Call it when the source is no longer needed.
 
 ## Raw pointer state: position, delta, scroll, and buttons
 

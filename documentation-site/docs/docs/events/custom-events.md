@@ -158,21 +158,22 @@ world.addComponent(player, Health, {
 
 Only `raise()` an event when the underlying value actually changes, not on
 every tick a system runs.
-[`Axis2dAction.set()`](/Forge/docs/api/classes/Axis2dAction#set) follows this
-pattern, returning early if the new value matches the current one, so
-`valueChangeEvent` only fires, and only runs its listeners, on real changes:
+[`Axis2dAction`](/Forge/docs/api/classes/Axis2dAction) follows this
+pattern: its value is written by a function that returns early if the new
+value matches the current one, so `valueChangeEvent` only fires, and only
+runs its listeners, on real changes:
 
 ```ts
-public set(x: number, y: number): void {
-  if (this._value.x === x && this._value.y === y) {
+const setValue = (x: number, y: number): void => {
+  if (value.x === x && value.y === y) {
     return;
   }
 
-  this._value.x = x;
-  this._value.y = y;
+  value.x = x;
+  value.y = y;
 
-  this.valueChangeEvent.raise(this._value);
-}
+  valueChangeEvent.raise(value);
+};
 ```
 
 Raising an event you don't need to costs a loop over every registered
