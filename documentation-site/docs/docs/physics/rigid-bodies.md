@@ -120,8 +120,9 @@ velocity of its center of mass. A shape that isn't centered on its
 entity's origin moves that origin around the centroid as the body turns.
 Kinematic and static bodies turn about their entity's origin.
 
-A dynamic body that has mass but collides with nothing has a collider with
-a `mask` of `0` (see [Collision filtering](./collisions.md#filtering-which-colliders-collide)):
+To give a dynamic body mass without letting it collide with anything, give
+its collider a `mask` of `0` (see
+[Filtering which colliders collide](./collisions.md#filtering-which-colliders-collide)):
 
 ```ts
 addColliderComponent(world, entity, {

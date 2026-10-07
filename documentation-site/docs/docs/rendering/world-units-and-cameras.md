@@ -112,8 +112,8 @@ zoom it by writing `zoom`:
 import { positionId } from '@forge-game-engine/forge/common';
 import { cameraId } from '@forge-game-engine/forge/rendering';
 
-const position = world.getComponent(camera, positionId)!;
-const cameraComponent = world.getComponent(camera, cameraId)!;
+const position = world.getComponentRequired(camera, positionId);
+const cameraComponent = world.getComponentRequired(camera, cameraId);
 
 position.local.x = 5;
 cameraComponent.zoom = 2;

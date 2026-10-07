@@ -41,7 +41,7 @@ import {
 const STATIC_GEOMETRY = 1 << 0;
 const PROJECTILES = 1 << 1;
 
-// Projectiles collide with static geometry, but not with each other.
+// Projectiles collide with every category except other projectiles.
 addColliderComponent(world, projectile, {
   collider: projectileCollider,
   category: PROJECTILES,
