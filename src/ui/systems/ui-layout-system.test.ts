@@ -7,9 +7,9 @@ import {
   addCameraComponent,
   addSpriteComponent,
   cameraId,
-  Renderable,
   RenderContext,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
@@ -36,7 +36,7 @@ const buildRenderContext = (width: number, height: number): RenderContext =>
     pixelRatio: 1,
   }) as RenderContext;
 
-const buildRenderable = (): Renderable => ({}) as Renderable;
+const buildTexture = (): Texture => ({}) as Texture;
 
 /** Creates a canvas entity (`CanvasEcsComponent` + `RectTransformEcsComponent` + `PositionEcsComponent`) with a UI camera, without going through `createUiCanvas`, so the layout system can be tested in isolation. */
 const createTestCanvas = (
@@ -501,7 +501,7 @@ describe('createUiLayoutEcsSystem', () => {
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     const label = world.createEntity();
@@ -512,7 +512,7 @@ describe('createUiLayoutEcsSystem', () => {
     addSpriteComponent(world, label, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));

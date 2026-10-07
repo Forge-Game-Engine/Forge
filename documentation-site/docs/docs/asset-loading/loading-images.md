@@ -20,14 +20,22 @@ const { imageCache } = renderContext;
 [`getOrLoad(path)`](/Forge/docs/api/classes/ImageCache#getorload) is the
 method you'll use almost everywhere: it returns the cached image if `path`
 has already been loaded, otherwise it loads it first. Either way you get
-back an `HTMLImageElement` ready to hand to a sprite:
+back an `HTMLImageElement`. A sprite draws a
+[texture](../rendering/textures.md), so upload the image to one with
+`createTexture`:
 
 ```ts
 const playerImage = await imageCache.getOrLoad('player.png');
-const playerSprite = createImageSprite(playerImage, renderContext, layer);
+const playerTexture = createTexture(renderContext, playerImage);
+const playerSprite = createImageSprite(playerTexture);
 ```
 
-The sprite's world-unit size is derived from the image's pixel dimensions
+The image cache caches images, not textures: each `createTexture` call
+creates a new texture. Create one texture per image and share it between
+the sprites that draw it, so they [batch](../rendering/sprites.md#batching)
+into one draw call.
+
+The sprite's world-unit size is derived from the texture's dimensions
 via a `pixelsPerUnit` option (defaulting to `100`; pass `1` to size the
 sprite directly from its pixel dimensions instead) - see
 [Importing Textures at a Fixed PPU](../rendering/world-units-and-cameras.md#importing-textures-at-a-fixed-ppu).
@@ -77,7 +85,10 @@ consistently.
 ## Worked example
 
 ```ts
-import { createImageSprite } from '@forge-game-engine/forge/rendering';
+import {
+  createImageSprite,
+  createTexture,
+} from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { renderContext } = createGame('game-container');
@@ -88,6 +99,8 @@ const [ballImage, squareImage] = await Promise.all([
   imageCache.getOrLoad('block_square.png'),
 ]);
 
-const ballSprite = createImageSprite(ballImage, renderContext, 1);
-const squareSprite = createImageSprite(squareImage, renderContext, 1);
+const ballSprite = createImageSprite(createTexture(renderContext, ballImage));
+const squareSprite = createImageSprite(
+  createTexture(renderContext, squareImage),
+);
 ```

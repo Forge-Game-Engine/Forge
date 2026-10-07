@@ -5,9 +5,9 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
   Color,
-  Renderable,
   RenderContext,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId, TextMeshEcsComponent, textMeshId } from '../../text/index.js';
@@ -52,11 +52,14 @@ const fontAtlas = {
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: { category: 1 } as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -325,8 +328,6 @@ describe('createUiTextInputEcsSystem', () => {
         { x: 20, y: 0 },
         { x: 30, y: 0 },
       ],
-      fillRenderable: {} as Renderable,
-      effectsRenderable: {} as Renderable,
     });
     editTextInput(world, field.entity);
     type('abc');

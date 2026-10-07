@@ -3,7 +3,7 @@ import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, spriteId, Texture } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
@@ -12,11 +12,14 @@ import { uiAxisValue } from '../types/ui-axis.js';
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -34,9 +37,7 @@ describe('createPanel', () => {
     expect(world.getComponent(panel, rectTransformId)!.x).toEqual(
       UiAnchor.center().x,
     );
-    expect(world.getComponent(panel, spriteId)!.renderable).toBe(
-      sprite.renderable,
-    );
+    expect(world.getComponent(panel, spriteId)!.texture).toBe(sprite.texture);
   });
 
   it('is removed with its whole subtree of panels and labels', () => {

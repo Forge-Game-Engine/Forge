@@ -15,7 +15,6 @@ import {
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const wallThickness = 16;
 
@@ -68,13 +67,12 @@ export async function createBoundaries(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<PlayArea> {
-  const wallImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const wallSprite = createImageSprite(wallImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const wallSprite = {
+    ...createImageSprite(renderContext.whiteTexture, {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const width = playAreaWidth;
   const height = playAreaHeight;

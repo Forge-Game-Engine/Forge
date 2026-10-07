@@ -13,6 +13,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -48,10 +49,12 @@ export async function loadCrateSprite(
     getAssetUrl('img/physics/block_square.png'),
   );
 
-  return createImageSprite(crateImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  return {
+    ...createImageSprite(createTexture(renderContext, crateImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 }
 
 /**

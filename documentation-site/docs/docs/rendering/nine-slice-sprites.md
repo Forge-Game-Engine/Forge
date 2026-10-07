@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 4
 ---
 
 # Nine-Slice Sprites
@@ -20,9 +20,12 @@ import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
-const panelSprite = createImageSprite(panelImage, renderContext, {
+const panelTexture = createTexture(renderContext, panelImage);
+
+const panelSprite = createImageSprite(panelTexture, {
   pixelsPerUnit: 1,
   slices: { left: 12, right: 12, top: 12, bottom: 12 },
 });
@@ -47,8 +50,8 @@ draw order all work exactly as they do for a normal sprite).
 ## Choosing insets
 
 `left`/`right`/`top`/`bottom` are measured in the same world units as the
-sprite's `width`/`height`. For `createImageSprite`, that's the source
-image's pixel size divided by `pixelsPerUnit` — so with `pixelsPerUnit: 1`
+sprite's `width`/`height`. For `createImageSprite`, that's the
+texture's size in texels divided by `pixelsPerUnit` — so with `pixelsPerUnit: 1`
 an inset of `12` covers 12 pixels of border art in the source texture (with
 the default `pixelsPerUnit` of `100`, the same 12 pixels would be an inset
 of `0.12`). Pick insets that cover exactly the rounded corner/border
@@ -88,7 +91,7 @@ Set the relevant mode to `'tile'` instead to repeat that region's texture
 at its native size:
 
 ```ts
-createImageSprite(panelImage, renderContext, {
+createImageSprite(panelTexture, {
   pixelsPerUnit: 1,
   slices: {
     left: 12,
@@ -117,8 +120,9 @@ drawn at its native size tiles as a single, unrepeated region.
 A sliced sprite draws as up to nine separate instances (fewer if any
 inset is `0`, or more if a `'tile'` region needs several repeat tiles)
 instead of one, so it costs proportionally more per-instance data than a
-normal sprite. They still batch into the same instanced draw call as every
-other sprite sharing the same `Renderable`, so this only shows up as more
+normal sprite. They still batch into the same instanced draw call as the
+sprites drawn next to them with the same material and texture (see
+[Batching](./sprites.md#batching)), so this only shows up as more
 instances in that batch, not extra draw calls — for the handful of panels
 and buttons a typical UI needs, this is negligible. It's not a fit for
 slicing thousands of sprites per frame (a particle system, say); use it for

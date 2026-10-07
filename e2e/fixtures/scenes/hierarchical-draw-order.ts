@@ -15,7 +15,6 @@ import {
   createRenderEcsSystem,
   DrawOrderEcsComponent,
 } from '../../../src/rendering/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -95,17 +94,15 @@ export const createScene: CreateScene = async (
     verticalWorldUnits,
   });
 
-  const squareImage = await createSquareImage('#fff');
-
   const addSquare = (x: number, color: Color): number => {
     const entity = world.createEntity();
-    const sprite = createImageSprite(squareImage, renderContext, {
-      pixelsPerUnit: 32,
-    });
-
-    sprite.tintColor = color;
     addPositionComponent(world, entity, { local: { x, y: 0 } });
-    addSpriteComponent(world, entity, sprite);
+    addSpriteComponent(world, entity, {
+      ...createImageSprite(renderContext.whiteTexture),
+      width: 2,
+      height: 2,
+      tintColor: color,
+    });
 
     return entity;
   };

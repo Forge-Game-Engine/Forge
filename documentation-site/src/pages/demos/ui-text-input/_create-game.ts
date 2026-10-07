@@ -6,7 +6,6 @@ import {
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
-  actionResetTypes,
   Axis2dAction,
   buttonMoments,
   KeyboardAxis2dBinding,
@@ -23,6 +22,7 @@ import {
   createCamera,
   createCameraEcsSystem,
   createImageSprite,
+  createTexture,
   createPresentEcsSystem,
   createRenderEcsSystem,
   getCameraView,
@@ -98,11 +98,7 @@ function createUiInputs(
   navigateInput: Axis2dAction;
 } {
   const submitInput = new TriggerAction('ui-submit');
-  const navigateInput = new Axis2dAction(
-    'ui-navigate',
-    undefined,
-    actionResetTypes.noReset,
-  );
+  const navigateInput = new Axis2dAction('ui-navigate');
 
   const inputManager = registerInputs(world, time, {
     triggerActions: [submitInput],
@@ -154,11 +150,10 @@ export const createTextInputGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const createWhiteSprite = (layer: number): SpriteEcsComponent =>
-    createImageSprite(whiteImage, renderContext, { pixelsPerUnit: 1, layer });
+  const createWhiteSprite = (category: number): SpriteEcsComponent => ({
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category,
+  });
 
   await createBackdrop(
     world,
@@ -167,7 +162,7 @@ export const createTextInputGame = async (): Promise<Game> => {
     createWhiteSprite(renderLayers.world),
   );
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -198,18 +193,20 @@ export const createTextInputGame = async (): Promise<Game> => {
   const panelImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/kenney_fantasy-ui-borders/PNG/Double/Panel/panel-030.png'),
   );
-  const panelSprite = createImageSprite(panelImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-    slices: {
-      left: 26,
-      right: 26,
-      top: 26,
-      bottom: 26,
-      nativeWidth: 96,
-      nativeHeight: 96,
-    },
-  });
+  const panelSprite = {
+    ...createImageSprite(createTexture(renderContext, panelImage), {
+      pixelsPerUnit: 1,
+      slices: {
+        left: 26,
+        right: 26,
+        top: 26,
+        bottom: 26,
+        nativeWidth: 96,
+        nativeHeight: 96,
+      },
+    }),
+    category: renderLayers.ui,
+  };
   const fillSprite = createWhiteSprite(renderLayers.ui);
 
   const transition = {
@@ -343,7 +340,7 @@ export const createTextInputGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

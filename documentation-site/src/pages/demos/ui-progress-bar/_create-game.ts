@@ -12,6 +12,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -44,13 +45,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
   const { x: width, y: height } = getCameraView(
@@ -87,7 +85,7 @@ export const createProgressBarGame = async (): Promise<Game> => {
 
   await createBackdrop(world, camera, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -105,17 +103,14 @@ export const createProgressBarGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
   const healthFillImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/Burn_Gradient.png'),
   );
 
-  const trackSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const trackSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   trackSprite.tintColor = new Color(0.85, 0.85, 0.88, 1);
 
   createLabel(world, canvas, {
@@ -131,10 +126,12 @@ export const createProgressBarGame = async (): Promise<Game> => {
 
   const health = createProgressBar(world, canvas, {
     trackSprite,
-    fillSprite: createImageSprite(healthFillImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayers.ui,
-    }),
+    fillSprite: {
+      ...createImageSprite(createTexture(renderContext, healthFillImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayers.ui,
+    },
     anchor: UiAnchor.center({ x: 460, y: 28 }),
     anchoredPosition: { x: 0, y: 0 },
     minValue: 0,
@@ -150,7 +147,7 @@ export const createProgressBarGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createPulseEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

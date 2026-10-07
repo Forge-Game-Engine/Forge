@@ -3,6 +3,7 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   Color,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -59,10 +60,12 @@ async function loadControlSprites(
       getAssetUrl(assetPath),
     );
 
-    return createImageSprite(image, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiCategory,
-    });
+    return {
+      ...createImageSprite(createTexture(renderContext, image), {
+        pixelsPerUnit: 1,
+      }),
+      category: uiCategory,
+    };
   };
 
   return {

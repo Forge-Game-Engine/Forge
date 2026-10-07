@@ -3,9 +3,9 @@ import { createTextInput } from './create-text-input.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Color,
-  Renderable,
   RenderContext,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
@@ -29,11 +29,14 @@ const fontAtlas = {
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });

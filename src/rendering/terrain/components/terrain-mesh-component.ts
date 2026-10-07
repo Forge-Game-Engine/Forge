@@ -23,7 +23,7 @@ export interface TerrainMeshRequiredOptions {
 export interface TerrainMeshDefaultedOptions {
   /**
    * A bitmask matched against each camera's `cullingMask` (`matchesMask`),
-   * the same convention `Renderable.category` uses for sprites, to decide
+   * the same convention `SpriteEcsComponent.category` uses, to decide
    * whether a given camera draws this terrain mesh. Defaults to
    * `0xffffffff` (every camera).
    */

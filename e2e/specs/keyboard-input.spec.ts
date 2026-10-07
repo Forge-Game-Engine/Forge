@@ -11,19 +11,17 @@ type Page = import('@playwright/test').Page;
 
 const captureState = (page: Page) =>
   page.evaluate(
-    ({ blue, yellow, red, green, magenta, orange }) => {
+    ({ blue, red, green, magenta, orange }) => {
       const scene = window.__forgeTestHooks as unknown as Hooks;
 
       scene.step();
 
       return {
         moverPosition: scene.moverPosition,
-        impulsePosition: scene.impulsePosition,
         gameTriggerCount: scene.gameTriggerCount,
         menuTriggerCount: scene.menuTriggerCount,
         isCrouching: scene.isCrouching,
         moverBounds: scene.measureBounds(blue),
-        impulseBounds: scene.measureBounds(yellow),
         redMarkerBounds: scene.measureBounds(red),
         greenMarkerBounds: scene.measureBounds(green),
         magentaMarkerBounds: scene.measureBounds(magenta),
@@ -32,7 +30,6 @@ const captureState = (page: Page) =>
     },
     {
       blue: inputSceneColors.blue,
-      yellow: inputSceneColors.yellow,
       red: inputSceneColors.red,
       green: inputSceneColors.green,
       magenta: inputSceneColors.magenta,
@@ -82,7 +79,7 @@ test.describe('keyboard input', () => {
     });
   });
 
-  test('Axis2dAction with noReset moves continuously while WASD is held, and stops on release', async ({
+  test('Axis2dAction moves continuously while WASD is held, and stops on release', async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -123,72 +120,10 @@ test.describe('keyboard input', () => {
       await test.step('capture the state one more frame later', () =>
         captureState(page));
 
-    // noReset means the value is left at whatever it was last set to (0,
-    // dispatched by the keyup handler), so movement should have fully
-    // stopped instead of continuing or reverting.
+    // The axis holds whatever the keyboard last reported, and the key-up
+    // reported 0 (no keys held), so movement should have fully stopped
+    // instead of continuing or reverting.
     expect(oneMoreStepLater.moverPosition.x).toBe(afterRelease.moverPosition.x);
-  });
-
-  test('Axis1dAction with the default zero reset only moves for one frame per key event, even while held', async ({
-    page,
-  }) => {
-    const before = await test.step('capture the starting state', () =>
-      captureState(page));
-
-    await test.step('press ArrowRight down and advance one frame', async () => {
-      await page.keyboard.down('ArrowRight');
-      await animateFrames(page, 1);
-    });
-
-    const afterFirstFrame =
-      await test.step('capture the state right after the key-down frame', () =>
-        captureState(page));
-
-    expect(afterFirstFrame.impulsePosition.x).toBeGreaterThan(
-      before.impulsePosition.x,
-    );
-
-    await test.step('assert the impulse square visibly jumped right on screen', () => {
-      expect(before.impulseBounds).not.toBeNull();
-      expect(afterFirstFrame.impulseBounds).not.toBeNull();
-
-      const centerBefore =
-        (before.impulseBounds!.left + before.impulseBounds!.right) / 2;
-      const centerAfter =
-        (afterFirstFrame.impulseBounds!.left +
-          afterFirstFrame.impulseBounds!.right) /
-        2;
-
-      expect(centerAfter).toBeGreaterThan(centerBefore);
-    });
-
-    await test.step('keep holding ArrowRight over several more frames without it moving further', () =>
-      animateFrames(page, 8));
-
-    const stillHeld =
-      await test.step('capture the state after holding for several more frames', () =>
-        captureState(page));
-
-    // The default `actionResetTypes.zero` zeroes the axis value every frame
-    // regardless of key state (see actions.md's "Reset behavior" caution),
-    // so a held-but-not-newly-pressed key produces no further movement.
-    expect(stillHeld.impulsePosition.x).toBe(afterFirstFrame.impulsePosition.x);
-
-    await test.step('release ArrowRight and advance one frame', async () => {
-      await page.keyboard.up('ArrowRight');
-      await animateFrames(page, 1);
-    });
-
-    const afterRelease =
-      await test.step('capture the state after release', () =>
-        captureState(page));
-
-    // The key-up sets the axis from the keys still held (none), so it's `0`
-    // and the square stays where the key-down frame left it, rather than
-    // the release producing an impulse of its own.
-    expect(afterRelease.impulsePosition.x).toBe(
-      afterFirstFrame.impulsePosition.x,
-    );
   });
 
   test('TriggerAction fires once per key press, not per frame held', async ({
@@ -282,7 +217,89 @@ test.describe('keyboard input', () => {
     expect(Math.abs(widthAfterRelease - widthBefore)).toBeLessThan(4);
   });
 
-  test('input groups gate which TriggerAction the same key dispatches to', async ({
+  test('a HoldAction needs a fresh press after its group is reactivated', async ({
+    page,
+  }) => {
+    const holdWidth = (state: Awaited<ReturnType<typeof captureState>>) => {
+      expect(state.holdBounds).not.toBeNull();
+
+      return state.holdBounds!.right - state.holdBounds!.left;
+    };
+
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
+
+    expect(before.isCrouching).toBe(false);
+
+    await test.step('press and hold KeyC while "game" is active', async () => {
+      await page.keyboard.down('KeyC');
+      await animateFrames(page, 3);
+    });
+
+    const whileHeld = await test.step('capture the state while held', () =>
+      captureState(page));
+
+    expect(whileHeld.isCrouching).toBe(true);
+    expect(holdWidth(whileHeld)).toBeGreaterThan(holdWidth(before));
+
+    await test.step('switch to "menu" and back to "game" with KeyC still held', async () => {
+      await page.evaluate(() =>
+        (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('menu'),
+      );
+      await animateFrames(page, 2);
+      await page.evaluate(() =>
+        (window.__forgeTestHooks as unknown as Hooks).setActiveGroup('game'),
+      );
+      await animateFrames(page, 3);
+    });
+
+    const afterSwitchingBack =
+      await test.step('capture the state after switching back to "game"', () =>
+        captureState(page));
+
+    // Deactivating "game" ended the hold, and a key that's already down when
+    // its group becomes active doesn't start a new one - only a press made
+    // while the group is active does.
+    expect(afterSwitchingBack.isCrouching).toBe(false);
+
+    await test.step('assert the hold square shrank back on screen', () => {
+      expect(holdWidth(afterSwitchingBack)).toBeLessThan(holdWidth(whileHeld));
+      // Generous tolerance for antialiased edge pixels, not an exact byte
+      // match - see input-scene-helpers.ts's `colorMatchTolerance`.
+      expect(
+        Math.abs(holdWidth(afterSwitchingBack) - holdWidth(before)),
+      ).toBeLessThan(4);
+    });
+
+    await test.step('release KeyC and press it again', async () => {
+      await page.keyboard.up('KeyC');
+      await animateFrames(page, 1);
+      await page.keyboard.down('KeyC');
+      await animateFrames(page, 3);
+    });
+
+    const afterFreshPress =
+      await test.step('capture the state after the fresh press', () =>
+        captureState(page));
+
+    expect(afterFreshPress.isCrouching).toBe(true);
+
+    await test.step('assert the hold square grew again on screen', () => {
+      expect(holdWidth(afterFreshPress)).toBeGreaterThan(
+        holdWidth(afterSwitchingBack),
+      );
+      expect(
+        Math.abs(holdWidth(afterFreshPress) - holdWidth(whileHeld)),
+      ).toBeLessThan(4);
+    });
+
+    await test.step('release KeyC', async () => {
+      await page.keyboard.up('KeyC');
+      await animateFrames(page, 1);
+    });
+  });
+
+  test('input groups gate which TriggerAction the same key fires', async ({
     page,
   }) => {
     const initial = await test.step('capture the starting state', () =>

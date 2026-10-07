@@ -4,6 +4,7 @@ import { EcsWorld } from '../ecs';
 import { Time } from '../common';
 import { inputsId } from './components/index.js';
 import { InputManager } from './input-manager';
+import { buttonMoments } from './constants/index.js';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -63,8 +64,11 @@ describe('registerInputs', () => {
       triggerActions: [triggerAction],
     });
 
-    inputManager.setActiveGroup('game');
-    triggerAction.trigger();
+    inputManager.setTriggerInput(
+      { name: 'test' },
+      { action: triggerAction, moment: buttonMoments.down, displayText: '' },
+      true,
+    );
     expect(triggerAction.isTriggered).toBe(true);
 
     time.update(16);

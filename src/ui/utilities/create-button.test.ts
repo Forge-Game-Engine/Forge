@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createButton } from './create-button.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, spriteId, Texture } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
@@ -16,11 +16,14 @@ const fontAtlas = {} as FontAtlas;
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -43,8 +46,8 @@ describe('createButton', () => {
     expect(world.getComponent(button.entity, rectTransformId)!.x).toEqual(
       UiAnchor.center({ x: 200, y: 60 }).x,
     );
-    expect(world.getComponent(button.entity, spriteId)!.renderable).toBe(
-      sprite.renderable,
+    expect(world.getComponent(button.entity, spriteId)!.texture).toBe(
+      sprite.texture,
     );
     expect(world.getComponent(button.entity, uiInteractableId)).toBe(
       button.interactable,

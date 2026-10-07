@@ -13,6 +13,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -97,14 +98,18 @@ export async function createTargets(
     imageCache.getOrLoad(getAssetUrl('img/physics/block_square.png')),
   ]);
 
-  const ballSprite = createImageSprite(ballImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const ballSprite = {
+    ...createImageSprite(createTexture(renderContext, ballImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
+  const squareSprite = {
+    ...createImageSprite(createTexture(renderContext, squareImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const { x: width } = getCameraView(world, camera, renderContext).size;
 

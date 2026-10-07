@@ -1,6 +1,7 @@
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import {
   createImageSprite,
+  createTexture,
   RenderContext,
   Sprite,
 } from '@forge-game-engine/forge/rendering';
@@ -10,17 +11,19 @@ export async function createSprite(
   renderLayer: number,
   pixelated: boolean,
 ): Promise<Sprite> {
-  const starSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(
-      getAssetUrl('img/pixel-planet.png'),
+  const starSprite = {
+    ...createImageSprite(
+      createTexture(
+        renderContext,
+        await renderContext.imageCache.getOrLoad(
+          getAssetUrl('img/pixel-planet.png'),
+        ),
+        { filter: pixelated ? 'nearest' : 'linear' },
+      ),
+      { pixelsPerUnit: 1 },
     ),
-    renderContext,
-    {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-      pixelated,
-    },
-  );
+    category: renderLayer,
+  };
 
   return starSprite;
 }

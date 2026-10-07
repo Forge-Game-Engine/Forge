@@ -7,11 +7,26 @@ import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { TextEffectsInstanceData } from '../../rendering/renderable.js';
+import type { TextRenderables } from './create-text-renderables.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import {
   GlyphQuad,
   TextMeshEcsComponent,
 } from '../components/text-mesh-component.js';
+
+/**
+ * The transform a text entity's glyphs are placed with.
+ */
+export interface TextTransform {
+  /** The entity's position; each glyph is offset from it. */
+  position: PositionEcsComponent;
+
+  /** The entity's rotation, if it has one. */
+  rotation: RotationEcsComponent | null;
+
+  /** The entity's scale, if it has one. */
+  scale: ScaleEcsComponent | null;
+}
 
 /**
  * Builds the glyph-centered position offset from `entityPosition` shared by
@@ -42,29 +57,31 @@ function buildGlyphPosition(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`).
  */
 function pushTextEffectsRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
   pixelRatio: number,
 ): void {
-  const { effectsRenderable } = textMesh;
+  const { effectsRenderable } = renderables;
   const {
     layer,
+    category,
+    fontAtlas,
     outlineColor,
     outlineWidth,
     shadowColor,
     shadowOffset,
     shadowSoftness,
   } = textComponent;
+  const { position: entityPosition, rotation, scale } = transform;
+
   // Uniform across every glyph in this entity, so built once rather than
   // per glyph. The effect sizes are authored in CSS pixels but the shader
   // measures them in the destination's own (device) pixels, so they're
@@ -89,17 +106,23 @@ function pushTextEffectsRenderCommands(
       // colors it actually draws with come from `textEffects` below - but
       // `SpriteEcsComponent.tintColor` still has to be a `Color`.
       tintColor: outlineColor,
-      renderable: effectsRenderable,
+      texture: fontAtlas.texture,
+      emissive: null,
+      material: null,
+      category,
       enabled: true,
       layer,
     };
 
     commands.push({
       renderable: effectsRenderable,
+      texture: fontAtlas.texture,
+      emissiveTexture: null,
+      fontAtlas,
       components: {
         position: buildGlyphPosition(entityPosition, glyph),
-        rotation: rotationComponent,
-        scale: scaleComponent,
+        rotation,
+        scale,
         sprite: glyphSprite,
         flip: null,
         textEffects,
@@ -117,20 +140,19 @@ function pushTextEffectsRenderCommands(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for `color`, for glyphs outside a `<color>` tag).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  */
 function pushTextFillRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
 ): void {
-  const { fillRenderable } = textMesh;
-  const { layer, color } = textComponent;
+  const { fillRenderable } = renderables;
+  const { layer, category, fontAtlas, color } = textComponent;
+  const { position: entityPosition, rotation, scale } = transform;
 
   for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
@@ -141,17 +163,23 @@ function pushTextFillRenderCommands(
       uvScale: glyph.uvScale,
       tintColor: glyph.color ?? color,
       opacityMultiplier: textComponent.opacityMultiplier,
-      renderable: fillRenderable,
+      texture: fontAtlas.texture,
+      emissive: null,
+      material: null,
+      category,
       enabled: true,
       layer,
     };
 
     commands.push({
       renderable: fillRenderable,
+      texture: fontAtlas.texture,
+      emissiveTexture: null,
+      fontAtlas,
       components: {
         position: buildGlyphPosition(entityPosition, glyph),
-        rotation: rotationComponent,
-        scale: scaleComponent,
+        rotation,
+        scale,
         sprite: glyphSprite,
         flip: null,
         textEmbolden: glyph.embolden,
@@ -163,7 +191,7 @@ function pushTextFillRenderCommands(
 /**
  * Pushes the render commands for every visible glyph in `textMesh`, as two
  * ordered passes: outline/shadow ("effects") first, then fill - see
- * `createTextRenderable`'s doc comment for why. The effects pass is skipped
+ * `createTextRenderables`' doc comment for why. The effects pass is skipped
  * entirely when neither an outline nor a shadow is actually configured (the
  * common case), so plain text costs exactly what it did before this split.
  * The render system sorts whole text entities, not glyphs, and draws an
@@ -172,18 +200,16 @@ function pushTextFillRenderCommands(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for `color` and its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function pushTextRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
   pixelRatio: number = 1,
 ): void {
   const { outlineWidth, shadowColor } = textComponent;
@@ -194,9 +220,8 @@ export function pushTextRenderCommands(
       commands,
       textComponent,
       textMesh,
-      entityPosition,
-      rotationComponent,
-      scaleComponent,
+      renderables,
+      transform,
       pixelRatio,
     );
   }
@@ -205,8 +230,7 @@ export function pushTextRenderCommands(
     commands,
     textComponent,
     textMesh,
-    entityPosition,
-    rotationComponent,
-    scaleComponent,
+    renderables,
+    transform,
   );
 }

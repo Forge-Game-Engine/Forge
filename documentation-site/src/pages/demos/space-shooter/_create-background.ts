@@ -1,15 +1,11 @@
 import {
   addSpriteComponent,
   Color,
-  combineInstanceDataSegments,
-  createQuadGeometry,
-  createTextureFromImage,
+  createSpriteMaterial,
+  createTexture,
   ForgeShaderSource,
   getCameraView,
-  Material,
-  Renderable,
   RenderContext,
-  spriteInstanceDataSegment,
 } from '@forge-game-engine/forge/rendering';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { addPositionComponent } from '@forge-game-engine/forge/common';
@@ -25,13 +21,9 @@ export async function createBackground(
 ): Promise<void> {
   renderContext.shaderCache.addShader(new ForgeShaderSource(backgroundShader));
 
-  const vertexShader = renderContext.shaderCache.getShader('sprite.vert');
-  const fragmentShader = renderContext.shaderCache.getShader('background.frag');
-
-  const backgroundMaterial = new Material(
-    vertexShader,
-    fragmentShader,
-    renderContext.gl,
+  const backgroundMaterial = createSpriteMaterial(
+    renderContext,
+    'background.frag',
   );
 
   backgroundMaterial.setUniform(
@@ -46,24 +38,12 @@ export async function createBackground(
 
   backgroundMaterial.setUniform(
     'u_bgTexture',
-    createTextureFromImage(
-      renderContext.gl,
+    createTexture(
+      renderContext,
       await renderContext.imageCache.getOrLoad(
         getAssetUrl('img/space-shooter/nebula.png'),
       ),
     ),
-  );
-
-  const { floatsPerInstance, bindInstanceData, setupInstanceAttributes } =
-    combineInstanceDataSegments(spriteInstanceDataSegment);
-
-  const renderable = new Renderable(
-    createQuadGeometry(renderContext.gl),
-    backgroundMaterial,
-    floatsPerInstance,
-    renderLayer,
-    bindInstanceData,
-    setupInstanceAttributes,
   );
 
   const backgroundEntity = world.createEntity();
@@ -73,7 +53,9 @@ export async function createBackground(
   addSpriteComponent(world, backgroundEntity, {
     width: visibleWorldSize.x,
     height: visibleWorldSize.y,
-    renderable,
+    texture: renderContext.whiteTexture,
+    material: backgroundMaterial,
+    category: renderLayer,
   });
 
   addPositionComponent(world, backgroundEntity);

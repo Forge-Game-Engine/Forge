@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                                               |
 | **Found in**                          | Galactic Journey demo: `src/speed/create-hud.ts` (32 pre-rendered "drain" images for one ring segment), `src/game-over/create-stats-panel.ts` (progress fill held at a minimum width, hidden at zero) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                              |
-| **Related**                           | [`ui-system.md`](./ui-system.md) backlog 3.7 (radial fill deferred), [`sprite-textures.md`](./sprite-textures.md) (Phase 2 lands after it)                                                            |
+| **Related**                           | [`ui-system.md`](./ui-system.md) backlog 3.7 (radial fill deferred), sprite textures and sprite materials (shipped)                                                                                   |
 
 ## 0. Targeted modules
 
@@ -128,8 +128,7 @@ needs (Godot's `radial_fill_degrees`).
   angles the player sees. The fragment test is a shared GLSL function
   (an include) that computes coverage with `fwidth` rather than
   `discard`, so the moving edge is anti-aliased. `sprite.frag` calls it;
-  a custom sprite fragment shader (from
-  [`sprite-textures.md`](./sprite-textures.md)'s `createSpriteMaterial`)
+  a custom sprite fragment shader (from `createSpriteMaterial`)
   must call it too, and drawing a radially filled sprite with a material
   whose fragment shader doesn't include it throws, rather than silently
   ignoring the fill. Instances without a radial fill send a full turn and
@@ -162,8 +161,9 @@ width and a straight cut; the progress bar and slider no longer resize their fil
 
 ### Phase 2: Radial fill
 
-Lands after [`sprite-textures.md`](./sprite-textures.md), which settles
-the sprite instance layout and custom sprite materials.
+Builds on the sprite instance layout (sprite data plus the emissive
+color) and custom sprite materials (`createSpriteMaterial`), which have
+shipped.
 
 | #   | Task                                                                                                      | Size |
 | --- | --------------------------------------------------------------------------------------------------------- | ---- |

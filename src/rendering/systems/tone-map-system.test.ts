@@ -20,9 +20,6 @@ import {
   toneMappingFragmentShader,
 } from '../shaders';
 
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
-
 describe('createToneMapEcsSystem', () => {
   let canvas: HTMLCanvasElement;
   let mockGl: WebGL2RenderingContext;
@@ -101,12 +98,13 @@ describe('createToneMapEcsSystem', () => {
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
 
-      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
+      createTexture: vi.fn().mockImplementation(() => ({})),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
       createShader: vi.fn().mockReturnValue({}),
+      deleteShader: vi.fn(),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
@@ -122,11 +120,9 @@ describe('createToneMapEcsSystem', () => {
         ),
       getProgramInfoLog: vi.fn().mockReturnValue(''),
 
-      // Every material's program is reported as having the union of every
-      // uniform used across the tone-mapping/copy shaders. Materials only
-      // ever set values for the uniforms their own shader actually
-      // declares, so this over-broad reporting is harmless: Material.bind()
-      // simply skips uniforms whose value was never set.
+      // The tone-mapping shader's active uniforms. The system's material
+      // sets every one of them, so Material.bind() never falls back to a
+      // default value here.
       getActiveUniform: vi.fn().mockImplementation(
         (_program, index: number) =>
           [
@@ -216,7 +212,9 @@ describe('createToneMapEcsSystem', () => {
     expect(target.colorTexture).not.toBe(sceneTexture);
     // The material binds its sampler last, after the second buffer's
     // texture was created (and bound) for the swap.
-    expect((mockGl.bindTexture as Mock).mock.lastCall?.[1]).toBe(sceneTexture);
+    expect((mockGl.bindTexture as Mock).mock.lastCall?.[1]).toBe(
+      sceneTexture.glTexture,
+    );
     expect((mockGl.bindFramebuffer as Mock).mock.lastCall?.[1]).toBe(
       target.framebuffer,
     );

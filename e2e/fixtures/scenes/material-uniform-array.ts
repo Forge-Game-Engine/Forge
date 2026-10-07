@@ -1,4 +1,8 @@
-import { ForgeShaderSource, Material } from '../../../src/index.js';
+import {
+  createRenderContext,
+  ForgeShaderSource,
+  Material,
+} from '../../../src/index.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 /** How many `vec4` elements the scene's `u_waves` uniform array declares. */
@@ -80,16 +84,13 @@ export const createScene: CreateScene = (container) => {
   canvas.height = canvasHeight;
   container.appendChild(canvas);
 
-  const gl = canvas.getContext('webgl2');
-
-  if (!gl) {
-    throw new Error('WebGL2 context not available');
-  }
+  const renderContext = createRenderContext(canvas);
+  const { gl } = renderContext;
 
   const material = new Material(
+    renderContext,
     new ForgeShaderSource(vertexShaderSource),
     new ForgeShaderSource(fragmentShaderSource),
-    gl,
   );
 
   const handle: MaterialUniformArraySceneHandle = {

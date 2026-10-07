@@ -6,10 +6,8 @@ import {
   addCameraComponent,
   addDrawOrderComponent,
   addSpriteComponent,
-  Geometry,
-  Material,
-  Renderable,
   RenderContext,
+  Texture,
 } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
@@ -135,14 +133,7 @@ describe('raycastUiCanvas', () => {
       width: 1,
       height: 1,
       layer: 1,
-      renderable: new Renderable(
-        {} as Geometry,
-        {} as Material,
-        0,
-        1,
-        () => {},
-        () => {},
-      ),
+      texture: {} as Texture,
     });
 
     expect(

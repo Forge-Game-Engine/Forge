@@ -3,7 +3,7 @@ import { Color } from '../color.js';
 import { Geometry } from '../geometry/index.js';
 import { Material } from '../materials/index.js';
 import { RenderContext } from '../render-context.js';
-import { createTextureFromImage } from '../shaders/index.js';
+import type { Texture } from '../texture.js';
 import type { TerrainCurvePoint } from './terrain-curve.js';
 
 /**
@@ -12,10 +12,10 @@ import type { TerrainCurvePoint } from './terrain-curve.js';
  */
 export interface TerrainMeshLayerOptions {
   /**
-   * The (already-loaded) image to tile across this layer - the same
-   * convention `createImageSprite` uses, rather than loading a URL itself.
+   * The texture to tile across this layer. Create it with
+   * `wrap: 'repeat'`, so it tiles instead of stretching its edge texels.
    */
-  image: HTMLImageElement;
+  texture: Texture;
 
   /**
    * The world-space size of one tile of the texture: x tiles along the
@@ -190,6 +190,14 @@ function createTerrainGeometry(
   return geometry;
 }
 
+function assertRepeatingTexture(layer: string, texture: Texture): void {
+  if (texture.wrap !== 'repeat') {
+    throw new Error(
+      `createTerrainMesh tiles its ${layer} texture across the terrain, so it must be created with wrap: 'repeat' (it has wrap: '${texture.wrap}').`,
+    );
+  }
+}
+
 /**
  * Builds a single triangulated mesh visualizing a `TerrainShape`'s
  * heightmap, textured with a tileable "border" layer near the surface
@@ -200,6 +208,7 @@ function createTerrainGeometry(
  * `createRenderEcsSystem`.
  * @param renderContext - The render context used to build the mesh's geometry and material.
  * @param options - Sizing and texturing options for the mesh.
+ * @throws An error if a layer's texture doesn't have `wrap: 'repeat'`.
  * @returns The built `TerrainMesh`.
  */
 export function createTerrainMesh(
@@ -217,20 +226,17 @@ export function createTerrainMesh(
   const meshData = buildTerrainMeshData(curvePoints, bottomY, angle, position);
   const geometry = createTerrainGeometry(gl, meshData);
 
+  assertRepeatingTexture('fill', fill.texture);
+  assertRepeatingTexture('border', border.texture);
+
   const material = new Material(
+    renderContext,
     shaderCache.getShader('terrain.vert'),
     shaderCache.getShader('terrain.frag'),
-    gl,
   );
 
-  material.setUniform(
-    'u_fillTexture',
-    createTextureFromImage(gl, fill.image, false, true),
-  );
-  material.setUniform(
-    'u_borderTexture',
-    createTextureFromImage(gl, border.image, false, true),
-  );
+  material.setUniform('u_fillTexture', fill.texture);
+  material.setUniform('u_borderTexture', border.texture);
   material.setVectorUniform('u_fillTileSize', fill.tileSize);
   material.setVectorUniform('u_borderTileSize', border.tileSize);
   material.setColorUniform('u_fillTint', fill.tint);

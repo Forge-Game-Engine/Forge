@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { describe, expect, it, vi } from 'vitest';
-import type { InstanceComponents, Renderable } from '../../rendering/index.js';
+import type {
+  InstanceComponents,
+  Renderable,
+} from '../../rendering/renderable.js';
 import { textEmboldenInstanceDataSegment } from './text-embolden-instance-data-segment.js';
 
 describe('textEmboldenInstanceDataSegment', () => {

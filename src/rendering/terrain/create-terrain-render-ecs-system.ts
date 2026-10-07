@@ -66,8 +66,8 @@ function drawTerrainMeshesForCamera(
  *
  * A world can have any number of terrain mesh entities; each is matched
  * against every camera's `cullingMask` (via `TerrainMeshEcsComponent.category`,
- * the same convention `Renderable.category` uses for sprites) exactly like
- * a normal renderable, so different cameras can show different terrain
+ * the same convention `SpriteEcsComponent.category` uses) exactly like
+ * a sprite, so different cameras can show different terrain
  * meshes.
  *
  * This system owns clearing each camera's destination for the frame:

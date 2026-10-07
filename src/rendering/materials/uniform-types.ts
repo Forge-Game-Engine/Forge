@@ -40,13 +40,12 @@ export interface UintUniformType {
 }
 
 /**
- * A sampler uniform, set from a `WebGLTexture` bound to the texture target
- * the sampler reads from.
+ * A sampler uniform. Only a `sampler2D` can be given a value (a `Texture`);
+ * a program declaring any other sampler type is rejected when it's linked.
  */
 export interface SamplerUniformType {
   readonly kind: 'sampler';
   readonly glslName: string;
-  readonly textureTarget: (gl: WebGL2RenderingContext) => GLenum;
 }
 
 /**
@@ -120,17 +119,10 @@ const uintType = (
   upload: UniformArrayUpload<Uint32Array>,
 ): UintUniformType => ({ kind: 'uint', glslName, componentCount, upload });
 
-const samplerType = (
-  glslName: string,
-  textureTarget: (gl: WebGL2RenderingContext) => GLenum,
-): SamplerUniformType => ({ kind: 'sampler', glslName, textureTarget });
-
-const texture2d = (gl: WebGL2RenderingContext): GLenum => gl.TEXTURE_2D;
-const texture3d = (gl: WebGL2RenderingContext): GLenum => gl.TEXTURE_3D;
-const textureCubeMap = (gl: WebGL2RenderingContext): GLenum =>
-  gl.TEXTURE_CUBE_MAP;
-const texture2dArray = (gl: WebGL2RenderingContext): GLenum =>
-  gl.TEXTURE_2D_ARRAY;
+const samplerType = (glslName: string): SamplerUniformType => ({
+  kind: 'sampler',
+  glslName,
+});
 
 const uniformTypes: ReadonlyMap<GLenum, UniformType> = new Map<
   GLenum,
@@ -188,21 +180,21 @@ const uniformTypes: ReadonlyMap<GLenum, UniformType> = new Map<
   [glUnsignedIntVec2, uintType('uvec2', 2, (gl, l, d) => gl.uniform2uiv(l, d))],
   [glUnsignedIntVec3, uintType('uvec3', 3, (gl, l, d) => gl.uniform3uiv(l, d))],
   [glUnsignedIntVec4, uintType('uvec4', 4, (gl, l, d) => gl.uniform4uiv(l, d))],
-  [glSampler2d, samplerType('sampler2D', texture2d)],
-  [glSampler3d, samplerType('sampler3D', texture3d)],
-  [glSamplerCube, samplerType('samplerCube', textureCubeMap)],
-  [glSampler2dShadow, samplerType('sampler2DShadow', texture2d)],
-  [glSampler2dArray, samplerType('sampler2DArray', texture2dArray)],
-  [glSampler2dArrayShadow, samplerType('sampler2DArrayShadow', texture2dArray)],
-  [glSamplerCubeShadow, samplerType('samplerCubeShadow', textureCubeMap)],
-  [glIntSampler2d, samplerType('isampler2D', texture2d)],
-  [glIntSampler3d, samplerType('isampler3D', texture3d)],
-  [glIntSamplerCube, samplerType('isamplerCube', textureCubeMap)],
-  [glIntSampler2dArray, samplerType('isampler2DArray', texture2dArray)],
-  [glUnsignedIntSampler2d, samplerType('usampler2D', texture2d)],
-  [glUnsignedIntSampler3d, samplerType('usampler3D', texture3d)],
-  [glUnsignedIntSamplerCube, samplerType('usamplerCube', textureCubeMap)],
-  [glUnsignedIntSampler2dArray, samplerType('usampler2DArray', texture2dArray)],
+  [glSampler2d, samplerType('sampler2D')],
+  [glSampler3d, samplerType('sampler3D')],
+  [glSamplerCube, samplerType('samplerCube')],
+  [glSampler2dShadow, samplerType('sampler2DShadow')],
+  [glSampler2dArray, samplerType('sampler2DArray')],
+  [glSampler2dArrayShadow, samplerType('sampler2DArrayShadow')],
+  [glSamplerCubeShadow, samplerType('samplerCubeShadow')],
+  [glIntSampler2d, samplerType('isampler2D')],
+  [glIntSampler3d, samplerType('isampler3D')],
+  [glIntSamplerCube, samplerType('isamplerCube')],
+  [glIntSampler2dArray, samplerType('isampler2DArray')],
+  [glUnsignedIntSampler2d, samplerType('usampler2D')],
+  [glUnsignedIntSampler3d, samplerType('usampler3D')],
+  [glUnsignedIntSamplerCube, samplerType('usamplerCube')],
+  [glUnsignedIntSampler2dArray, samplerType('usampler2DArray')],
 ]);
 
 /**

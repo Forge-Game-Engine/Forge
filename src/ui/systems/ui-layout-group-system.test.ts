@@ -5,12 +5,7 @@ import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { RenderContext } from '../../rendering/index.js';
-import {
-  TextEcsComponent,
-  textId,
-  TextMeshEcsComponent,
-  textMeshId,
-} from '../../text/index.js';
+import { TextEcsComponent, textId, textMeshId } from '../../text/index.js';
 import { addContentSizeFitterComponent } from '../components/content-size-fitter-component.js';
 import { addLayoutElementComponent } from '../components/layout-element-component.js';
 import {
@@ -76,7 +71,8 @@ function createTextMeshChild(
   world.addComponent(entity, textMeshId, {
     glyphs: [],
     bounds,
-  } as unknown as TextMeshEcsComponent);
+    caretStops: [],
+  });
   addLayoutElementComponent(world, entity, { sizeToText: true });
 
   return entity;
@@ -871,7 +867,8 @@ describe('createUiLayoutGroupEcsSystem', () => {
       world.addComponent(a, textMeshId, {
         glyphs: [],
         bounds: { width: 40, height: 20 },
-      } as unknown as TextMeshEcsComponent);
+        caretStops: [],
+      });
       addLayoutElementComponent(world, a, {
         sizeToText: true,
         preferredWidth: 123,

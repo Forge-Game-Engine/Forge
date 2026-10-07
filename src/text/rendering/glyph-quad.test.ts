@@ -6,6 +6,8 @@ import {
 import { Color } from '../../rendering/color.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { Renderable } from '../../rendering/renderable.js';
+import type { Texture } from '../../rendering/texture.js';
+import type { TextRenderables } from './create-text-renderables.js';
 import type { TextEcsComponent } from '../components/text-component.js';
 import type {
   GlyphQuad,
@@ -14,15 +16,17 @@ import type {
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { pushTextRenderCommands } from './glyph-quad.js';
 
-const fillRenderable = { category: 1 } as Renderable;
-const effectsRenderable = { category: 1 } as Renderable;
+const fillRenderable = {} as Renderable;
+const effectsRenderable = {} as Renderable;
+const renderables: TextRenderables = { fillRenderable, effectsRenderable };
+const atlasTexture = {} as Texture;
 
 function buildTextComponent(
   overrides: Partial<TextEcsComponent> = {},
 ): TextEcsComponent {
   return {
     text: 'A',
-    fontAtlas: {} as FontAtlas,
+    fontAtlas: { texture: atlasTexture } as FontAtlas,
     size: 10,
     color: Color.white,
     letterSpacing: 0,
@@ -48,8 +52,6 @@ function buildTextMesh(glyphs: GlyphQuad[]): TextMeshEcsComponent {
     glyphs,
     bounds: { width: 0, height: 0 },
     caretStops: [],
-    fillRenderable,
-    effectsRenderable,
   };
 }
 
@@ -69,9 +71,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent(),
       buildTextMesh([glyph, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands).toHaveLength(2);
@@ -88,9 +93,8 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent(),
       buildTextMesh([glyph]),
-      entityPosition,
-      null,
-      null,
+      renderables,
+      { position: entityPosition, rotation: null, scale: null },
     );
 
     expect(commands[0].components.position.world).toEqual({ x: 13, y: 24 });
@@ -106,9 +110,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ color, layer: 3 }),
       buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands[0].components.sprite.layer).toBe(3);
@@ -132,9 +139,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ color: Color.white }),
       buildTextMesh([{ ...glyph, color: glyphColor }, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands[0].components.sprite.tintColor).toBe(glyphColor);
@@ -148,9 +158,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ outlineWidth: 1 }),
       buildTextMesh([{ ...glyph, embolden: 0.1 }, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands.map((command) => command.components.textEmbolden)).toEqual([
@@ -173,9 +186,12 @@ describe('pushTextRenderCommands', () => {
         shadowSoftness: 3,
       }),
       buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands[0].components.textEffects).toEqual({
@@ -200,9 +216,12 @@ describe('pushTextRenderCommands', () => {
         shadowSoftness: 3,
       }),
       buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
       2,
     );
 
@@ -222,9 +241,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ outlineWidth: 5 }),
       buildTextMesh([glyph, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     // Outline/shadow are uniform across a whole `TextEcsComponent`, so the
@@ -242,15 +264,18 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ outlineWidth: 2 }),
       buildTextMesh([glyph, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     // Two glyphs, two passes: [effects, effects, fill, fill] - not
     // interleaved per glyph - so that when these are drawn (effects always
-    // as one earlier, contiguous batch than fill, since both passes share
-    // the same layer/depth and the render system's sort is stable), every
+    // as one earlier, contiguous batch than fill, since the render system
+    // draws an entity's commands in the order they're pushed), every
     // glyph's fill ends up on top of every glyph's outline/shadow,
     // regardless of how far an outline reaches into a neighboring glyph.
     expect(commands).toHaveLength(4);
@@ -271,9 +296,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent({ outlineWidth: 0, shadowColor: Color.transparent }),
       buildTextMesh([glyph, glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands).toHaveLength(2);
@@ -292,14 +320,41 @@ describe('pushTextRenderCommands', () => {
         shadowColor: new Color(0, 0, 0, 0.5),
       }),
       buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands).toHaveLength(2);
     expect(commands[0].renderable).toBe(effectsRenderable);
     expect(commands[1].renderable).toBe(fillRenderable);
+  });
+
+  it("draws every glyph from its font atlas's texture, naming the atlas for the batch", () => {
+    const commands: RenderCommand[] = [];
+    const textComponent = buildTextComponent({ outlineWidth: 1 });
+
+    pushTextRenderCommands(
+      commands,
+      textComponent,
+      buildTextMesh([glyph]),
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
+    );
+
+    for (const command of commands) {
+      expect(command.texture).toBe(atlasTexture);
+      expect(command.emissiveTexture).toBeNull();
+      expect(command.fontAtlas).toBe(textComponent.fontAtlas);
+      expect(command.components.sprite.texture).toBe(atlasTexture);
+    }
   });
 
   it('passes rotation and scale components through unchanged, and flip as null', () => {
@@ -310,9 +365,12 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent(),
       buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      rotation,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: rotation,
+        scale: null,
+      },
     );
 
     expect(commands[0].components.rotation).toBe(rotation);
@@ -327,27 +385,14 @@ describe('pushTextRenderCommands', () => {
       commands,
       buildTextComponent(),
       buildTextMesh([]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
+      renderables,
+      {
+        position: { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
+        rotation: null,
+        scale: null,
+      },
     );
 
     expect(commands).toHaveLength(0);
-  });
-
-  it('scales the effect sizes by the pixel ratio', () => {
-    const commands: RenderCommand[] = [];
-
-    pushTextRenderCommands(
-      commands,
-      buildTextComponent({ outlineWidth: 1.5 }),
-      buildTextMesh([glyph]),
-      { local: { x: 0, y: 0 }, world: { x: 0, y: 0 } },
-      null,
-      null,
-      2,
-    );
-
-    expect(commands[0].components.textEffects?.outlineWidth).toBe(3);
   });
 });

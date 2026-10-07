@@ -188,10 +188,19 @@ each with its own tile size and tint.
 
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
-import { Color, createTerrainMesh } from '@forge-game-engine/forge/rendering';
+import {
+  Color,
+  createTerrainMesh,
+  createTexture,
+} from '@forge-game-engine/forge/rendering';
 
 const borderImage = await renderContext.imageCache.getOrLoad('grass.png');
 const fillImage = await renderContext.imageCache.getOrLoad('dirt.png');
+
+const borderTexture = createTexture(renderContext, borderImage, {
+  wrap: 'repeat',
+});
+const fillTexture = createTexture(renderContext, fillImage, { wrap: 'repeat' });
 
 const mesh = createTerrainMesh(renderContext, {
   curvePoints,
@@ -199,12 +208,12 @@ const mesh = createTerrainMesh(renderContext, {
   position: Vec2.zero, // must match the entity's PositionEcsComponent
   angle: 0, // must match the entity's RotationEcsComponent
   border: {
-    image: borderImage,
+    texture: borderTexture,
     tileSize: { x: 160, y: 70 },
     tint: Color.white,
   },
   fill: {
-    image: fillImage,
+    texture: fillTexture,
     tileSize: { x: 90, y: 90 },
     tint: Color.white,
   },
@@ -213,12 +222,12 @@ const mesh = createTerrainMesh(renderContext, {
 });
 ```
 
-`createTerrainMesh` loads each layer's texture with `REPEAT` wrapping on
-both axes (rather than the `CLAMP_TO_EDGE` `createTextureFromImage` uses by
-default for ordinary sprite frames, which must never bleed into a
-neighboring frame in the same atlas) - pass `tile: true` to
-`createTextureFromImage` directly if you ever need a tiled texture outside
-this pipeline.
+`createTerrainMesh` tiles each layer's texture across the terrain, so both
+textures must be created with `wrap: 'repeat'` (see
+[Sampling options](../rendering/textures.md#sampling-options));
+`createTerrainMesh` throws for a texture with the default `wrap: 'clamp'`.
+The mesh doesn't own the textures: dispose them yourself once no terrain
+mesh uses them.
 
 ### Drawing the mesh
 
@@ -231,7 +240,8 @@ going through `createRenderEcsSystem`. It draws every entity with a
 (attached with
 [`addTerrainMeshComponent`](/Forge/docs/api/functions/addTerrainMeshComponent)),
 so a world can have any number of terrain meshes, each matched against
-cameras via `category`/`cullingMask` exactly like a sprite's `Renderable.category`.
+cameras via `category`/`cullingMask` exactly like a
+[sprite's `category`](../rendering/sprites.md#choosing-which-cameras-draw-a-sprite).
 
 ```ts
 import {

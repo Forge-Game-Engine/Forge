@@ -1,4 +1,3 @@
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
@@ -109,14 +108,10 @@ export async function createEasingRows(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
-  const spriteTemplate = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const spriteTemplate = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayer,
+  };
 
   const { x: width, y: height } = getCameraView(
     world,

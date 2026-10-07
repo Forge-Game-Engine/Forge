@@ -51,9 +51,9 @@ export const createPresentEcsSystem = (
   const { gl, shaderCache } = renderContext;
 
   const material = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('passthrough.frag'),
-    gl,
   );
 
   return {
